@@ -63,14 +63,12 @@ RUN cd /tmp && pipenv install --system --deploy
 # Install subset of dev dependencies needed for CI
 RUN pip install matplotlib==3.1.1 dictdiffer==0.8.0 fastcluster==1.1.25 aenum==2.2.1 scipy==1.3.1 lru-dict==1.1.6 tenacity==5.1.1 azure-common==1.1.23 azure-nspkg==3.0.2 azure-storage-blob==2.1.0 azure-storage-common==2.1.0 azure-storage-nspkg==3.1.0 pycurl==7.43.0.3
 
-COPY phonelibs/install_capnp.sh /tmp/install_capnp.sh
-RUN /tmp/install_capnp.sh
-
-RUN git clone --branch v0.7 https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
-
+ENV PATH="/tmp/openpilot/external/bin:${PATH}"
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
-COPY ./flake8_openpilot.sh /tmp/openpilot
-COPY ./pylint_openpilot.sh /tmp/openpilot
+
+RUN mkdir -p /tmp/openpilot
+COPY ./flake8_openpilot.sh /tmp/openpilot/
+COPY ./pylint_openpilot.sh /tmp/openpilot/
 COPY ./.pylintrc /tmp/openpilot/
 
 COPY ./release /tmp/openpilot/release
@@ -81,6 +79,8 @@ COPY ./selfdrive /tmp/openpilot/selfdrive
 COPY ./phonelibs /tmp/openpilot/phonelibs
 COPY ./pyextra /tmp/openpilot/pyextra
 COPY ./panda /tmp/openpilot/panda
+COPY ./external /tmp/openpilot/external
+COPY ./tools /tmp/openpilot/tools
 
 COPY SConstruct /tmp/openpilot/SConstruct
 
