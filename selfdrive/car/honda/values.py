@@ -166,16 +166,39 @@ FW_VERSIONS = {
     (Ecu.eps, 0x18da30f1, None): [b'39990-TVA-A150\x00\x00'],
   },
   CAR.CIVIC_BOSCH: {
-    (Ecu.unknown, 0x18da10f1, None): [b'37805-5BB-L640\x00\x00'],
-    (Ecu.unknown, 0x18da1ef1, None): [b'28101-5DJ-A710\x00\x00'],
-    (Ecu.unknown, 0x18daeff1, None): [b'38897-TBA-A110\x00\x00'],
-    (Ecu.eps, 0x18da30f1, None): [b'39990-TBA-C020\x00\x00'],
-    (Ecu.unknown, 0x18da53f1, None): [b'77959-TBA-A060\x00\x00'],
-    (Ecu.unknown, 0x18da28f1, None): [b'57114-TBG-A340\x00\x00'],
-    (Ecu.unknown, 0x18da60f1, None): [b'78109-TBA-A910\x00\x00'],
-    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TBA-A150\x00\x00'],
-    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TBA-A130\x00\x00'],
+    (Ecu.unknown, 0x18da10f1, None): [
+      b'37805-5AN-A750\x00\x00',
+      b'37805-5AN-A930\x00\x00',
+      b'37805-5BB-L640\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da1ef1, None): [
+      b'28101-5CK-A130\x00\x00',
+      b'28101-5CK-A150\x00\x00',
+      b'28101-5DJ-A710\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TBG-A340\x00\x00', b'57114-TGG-A340\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TBA-C020\x00\x00',
+      b'39990-TGG-A120\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TBA-A060\x00\x00', b'77959-TGG-A020\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-TBA-A910\x00\x00',
+      b'78109-TGG-A210\x00\x00',
+      b'78109-TGG-A310\x00\x00',
+    ],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TBA-A150\x00\x00', b'36802-TGG-A050\x00\x00'],
+    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TBA-A130\x00\x00', b'36161-TGG-A060\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TBA-A110\x00\x00', b'38897-TBA-A020\x00\x00'],
   },
+  CAR.RIDGELINE: {
+    (Ecu.eps, 0x18da30f1, None): [b'39990-T6Z-A020\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36161-T6Z-A310\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-T6Z-A010\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-T6Z-A420\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-T6Z-A020\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-T6Z-A130\x00\x00'],
+  }
 }
 
 DBC = {
