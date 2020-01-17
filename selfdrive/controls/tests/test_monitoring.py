@@ -100,7 +100,7 @@ class TestMonitoring(unittest.TestCase):
                       ((_DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)][0].name, 'promptDriverDistracted')
     self.assertEqual(events_output[int((_DISTRACTED_TIME+\
                       ((_TEST_TIMESPAN-10-_DISTRACTED_TIME)/2))/DT_DMON)][0].name, 'driverDistracted')
-    self.assertTrue(type(d_status.awareness)==float)
+    self.assertIs(type(d_status.awareness), float)
 
   # 2. op engaged, no face detected the whole time, no action
   def test_fully_invisible_driver(self):
