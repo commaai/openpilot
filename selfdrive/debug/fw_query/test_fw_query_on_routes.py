@@ -22,6 +22,7 @@ if __name__ == "__main__":
     sys.exit(1)
 
   i = 0
+  dongles = []
   for route in open(sys.argv[1]):
     route = route.rstrip()
 
@@ -37,6 +38,11 @@ if __name__ == "__main__":
 
         live_fingerprint = msg.carParams.carFingerprint
 
+        if live_fingerprint == "mock":
+          continue
+
+        dongles.append(dongle_id)
+
         fw_versions = fw_versions_to_dict(car_fw)
         candidates = match_fw_to_car(fw_versions)
         if (len(candidates) == 1) and (list(candidates)[0] == live_fingerprint):
@@ -45,9 +51,14 @@ if __name__ == "__main__":
 
         print("Old style:", live_fingerprint)
         print("New style:", candidates)
-        print(msg.carParams.carFw)
+
+        for version in car_fw:
+          subaddr = None if version.subAddress == 0 else hex(version.subAddress)
+          print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+
 
         i += 1
         break
 
-  print(f"Unfingerprinted cars {i}")
+  print(f"Unfingerprinted cars: {i}")
+  print(f"Number of dongle ids checked: {len(set(dongles))}")
