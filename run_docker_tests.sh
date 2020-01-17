@@ -7,8 +7,8 @@ RUN="docker run --shm-size 1G --rm tmppilot /bin/sh -c"
 docker build -t tmppilot -f Dockerfile.openpilot .
 
 $RUN "$SETUP cd /tmp/openpilot/selfdrive/test/ && ./test_fingerprints.py"
-$RUN 'cd /tmp/openpilot/ && flake8 --select=F $(find . -iname "*.py" | grep -vi "^\./pyextra.*" | grep -vi "^\./panda" | grep -vi "^\./tools")'
-$RUN 'cd /tmp/openpilot/ && pylint --disable=R,C,W $(find . -iname "*.py" | grep -vi "^\./pyextra.*" | grep -vi "^\./panda" | grep -vi "^\./tools"); exit $(($? & 3))'
+$RUN "$SETUP ./flake8_openpilot.sh"
+$RUN "$SETUP ./pylint_openpilot.sh"
 $RUN "$SETUP python -m unittest discover common"
 $RUN "$SETUP python -m unittest discover opendbc/can"
 $RUN "$SETUP python -m unittest discover selfdrive/boardd"
