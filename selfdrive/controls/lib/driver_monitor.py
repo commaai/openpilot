@@ -176,7 +176,7 @@ class DriverStatus():
     self.pose.pitch_std = driver_monitoring.faceOrientationStd[0]
     self.pose.yaw_std = driver_monitoring.faceOrientationStd[1]
     # self.pose.roll_std = driver_monitoring.faceOrientationStd[2]
-    max_std = np.max([self.pose.pitch_std, self.pose.yaw_std])
+    max_std = max(self.pose.pitch_std, self.pose.yaw_std)
     self.pose.low_std = max_std < _POSESTD_THRESHOLD
     self.blink.left_blink = driver_monitoring.leftBlinkProb * (driver_monitoring.leftEyeProb>_EYE_THRESHOLD)
     self.blink.right_blink = driver_monitoring.rightBlinkProb * (driver_monitoring.rightEyeProb>_EYE_THRESHOLD)
