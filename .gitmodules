@@ -1,0 +1,15 @@
+[submodule "apks"]
+	path = apks
+	url = git@github.com:commaai/openpilot-apks.git
+[submodule "cereal"]
+	path = cereal
+	url = git@github.com:commaai/cereal.git
+[submodule "panda"]
+	path = panda
+	url = git@github.com:commaai/panda.git
+[submodule "laika_repo"]
+	path = laika_repo
+	url = git@github.com:commaai/laika.git
+[submodule "opendbc"]
+	path = opendbc
+	url = git@github.com:commaai/opendbc.git
