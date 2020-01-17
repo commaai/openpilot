@@ -1,2 +1,0 @@
-class CAR:
-  MOCK = 'mock'
