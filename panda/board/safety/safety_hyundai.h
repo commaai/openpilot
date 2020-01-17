@@ -5,8 +5,14 @@ const int HYUNDAI_MAX_RATE_UP = 3;
 const int HYUNDAI_MAX_RATE_DOWN = 7;
 const int HYUNDAI_DRIVER_TORQUE_ALLOWANCE = 50;
 const int HYUNDAI_DRIVER_TORQUE_FACTOR = 2;
-
 const AddrBus HYUNDAI_TX_MSGS[] = {{832, 0}, {1265, 0}};
+
+// TODO: do checksum and counter checks
+AddrCheckStruct hyundai_rx_checks[] = {
+  {.addr = {897}, .bus = 0, .expected_timestep = 10000U},
+  {.addr = {1057}, .bus = 0, .expected_timestep = 20000U},
+};
+const int HYUNDAI_RX_CHECK_LEN = sizeof(hyundai_rx_checks) / sizeof(hyundai_rx_checks[0]);
 
 int hyundai_rt_torque_last = 0;
 int hyundai_desired_torque_last = 0;
@@ -14,7 +20,7 @@ int hyundai_cruise_engaged_last = 0;
 uint32_t hyundai_ts_last = 0;
 struct sample_t hyundai_torque_driver;         // last few driver torques measured
 
-static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
@@ -22,11 +28,6 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     int torque_driver_new = ((GET_BYTES_04(to_push) >> 11) & 0xfff) - 2048;
     // update array of samples
     update_sample(&hyundai_torque_driver, torque_driver_new);
-  }
-
-  // check if stock camera ECU is on bus 0
-  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 832)) {
-    relay_malfunction = true;
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
@@ -41,6 +42,14 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
     hyundai_cruise_engaged_last = cruise_engaged;
   }
+
+  // TODO: check gas pressed
+
+  // check if stock camera ECU is on bus 0
+  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 832)) {
+    relay_malfunction = true;
+  }
+  return 1;
 }
 
 static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -49,7 +58,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
-  if (!addr_allowed(addr, bus, HYUNDAI_TX_MSGS, sizeof(HYUNDAI_TX_MSGS)/sizeof(HYUNDAI_TX_MSGS[0]))) {
+  if (!msg_allowed(addr, bus, HYUNDAI_TX_MSGS, sizeof(HYUNDAI_TX_MSGS)/sizeof(HYUNDAI_TX_MSGS[0]))) {
     tx = 0;
   }
 
@@ -140,4 +149,6 @@ const safety_hooks hyundai_hooks = {
   .tx = hyundai_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = hyundai_fwd_hook,
+  .addr_check = hyundai_rx_checks,
+  .addr_check_len = sizeof(hyundai_rx_checks) / sizeof(hyundai_rx_checks[0]),
 };

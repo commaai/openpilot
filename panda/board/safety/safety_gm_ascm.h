@@ -41,4 +41,3 @@ const safety_hooks gm_ascm_hooks = {
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = gm_ascm_fwd_hook,
 };
-

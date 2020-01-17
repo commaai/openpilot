@@ -1,20 +1,32 @@
+import os
 import binascii
 import itertools
 import re
 import struct
 import subprocess
 
+ANDROID = os.path.isfile('/EON')
+
 def getprop(key):
+  if not ANDROID:
+    return ""
   return subprocess.check_output(["getprop", key], encoding='utf8').strip()
 
-def get_imei():
-  ret = getprop("oem.device.imeicache")
-  if ret == "":
+def get_imei(slot):
+  slot = str(slot)
+  if slot not in ("0", "1"):
+    raise ValueError("SIM slot must be 0 or 1")
+
+  ret = parse_service_call_string(["iphonesubinfo", "3" ,"i32", str(slot)])
+  if not ret:
     ret = "000000000000000"
   return ret
 
 def get_serial():
-  return getprop("ro.serialno")
+  ret = getprop("ro.serialno")
+  if ret == "":
+    ret = "cccccccc"
+  return ret
 
 def get_subscriber_info():
   ret = parse_service_call_string(["iphonesubinfo", "7"])
@@ -60,6 +72,8 @@ def parse_service_call_string(call):
     return None
 
 def parse_service_call_bytes(call):
+  if not ANDROID:
+    return None
   ret = subprocess.check_output(["service", "call", *call], encoding='utf8').strip()
   if 'Parcel' not in ret:
     return None

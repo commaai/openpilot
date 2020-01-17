@@ -1,6 +1,7 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 
+Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # Car button codes
@@ -10,28 +11,18 @@ class CruiseButtons:
   CANCEL      = 2
   MAIN        = 1
 
-class AH:
-  #[alert_idx, value]
-  # See dbc files for info on values"
-  NONE           = [0, 0]
-  FCW            = [1, 1]
-  STEER          = [2, 1]
-  BRAKE_PRESSED  = [3, 10]
-  GEAR_NOT_D     = [4, 6]
-  SEATBELT       = [5, 5]
-  SPEED_TOO_HIGH = [6, 8]
-
+# See dbc files for info on values"
 VISUAL_HUD = {
-  VisualAlert.none: AH.NONE,
-  VisualAlert.fcw: AH.FCW,
-  VisualAlert.steerRequired: AH.STEER,
-  VisualAlert.brakePressed: AH.BRAKE_PRESSED,
-  VisualAlert.wrongGear: AH.GEAR_NOT_D,
-  VisualAlert.seatbeltUnbuckled: AH.SEATBELT,
-  VisualAlert.speedTooHigh: AH.SPEED_TOO_HIGH}
+  VisualAlert.none: 0,
+  VisualAlert.fcw: 1,
+  VisualAlert.steerRequired: 1,
+  VisualAlert.brakePressed: 10,
+  VisualAlert.wrongGear: 6,
+  VisualAlert.seatbeltUnbuckled: 5,
+  VisualAlert.speedTooHigh: 8}
 
 class ECU:
-  CAM = 0
+  CAM = Ecu.fwdCamera
 
 class CAR:
   ACCORD = "HONDA ACCORD 2018 SPORT 2T"
@@ -81,9 +72,8 @@ FINGERPRINTS = {
   CAR.CRV: [{
     57: 3, 145: 8, 316: 8, 340: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 6, 401: 8, 404: 4, 420: 8, 422: 8, 426: 8, 432: 7, 464: 8, 474: 5, 476: 4, 487: 4, 490: 8, 493: 3, 506: 8, 507: 1, 512: 6, 513: 6, 542: 7, 545: 4, 597: 8, 660: 8, 661: 4, 773: 7, 777: 8, 780: 8, 800: 8, 804: 8, 808: 8, 829: 5, 882: 2, 884: 7, 888: 8, 891: 8, 892: 8, 923: 2, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1033: 5, 1036: 8, 1039: 8, 1057: 5, 1064: 7, 1108: 8, 1125: 8, 1296: 8, 1365: 5, 1424: 5, 1600: 5, 1601: 8,
   }],
-  # msg 1115 has seen with len 2 and 4, so ignore it
   CAR.CRV_5G: [{
-    57: 3, 148: 8, 199: 4, 228: 5, 231: 5, 232: 7, 304: 8, 330: 8, 340: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 423: 2, 427: 3, 428: 8, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 467: 2, 469: 3, 470: 2, 474: 8, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 507: 1, 545: 6, 597: 8, 661: 4, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 814: 4, 815: 8, 817: 4, 825: 4, 829: 5, 862: 8, 881: 8, 882: 4, 884: 8, 888: 8, 891: 8, 927: 8, 918: 7, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1108: 8, 1092: 1, 1125: 8, 1127: 2, 1296: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1618: 5, 1633: 8, 1670: 5
+    57: 3, 148: 8, 199: 4, 228: 5, 231: 5, 232: 7, 304: 8, 330: 8, 340: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 423: 2, 427: 3, 428: 8, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 467: 2, 469: 3, 470: 2, 474: 8, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 507: 1, 545: 6, 597: 8, 661: 4, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 814: 4, 815: 8, 817: 4, 825: 4, 829: 5, 862: 8, 881: 8, 882: 4, 884: 8, 888: 8, 891: 8, 927: 8, 918: 7, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1108: 8, 1092: 1, 1115: 2, 1125: 8, 1127: 2, 1296: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1618: 5, 1633: 8, 1670: 5
   }],
   CAR.CRV_HYBRID: [{
     57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 408: 6, 415: 6, 419: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 477: 8, 479: 8, 490: 8, 495: 8, 525: 8, 531: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 814: 4, 829: 5, 833: 6, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 930: 8, 931: 8, 1302: 8, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1626: 5, 1627: 5
@@ -129,6 +119,36 @@ for c in FINGERPRINTS:
   for f, _ in enumerate(FINGERPRINTS[c]):
     for d in DIAG_MSGS:
       FINGERPRINTS[c][f][d] = DIAG_MSGS[d]
+
+# TODO: Figure out what is relevant
+FW_VERSIONS = {
+  CAR.CIVIC: {
+    (Ecu.unknown, 0x18da10f1, None): [b'37805-5AA-L660\x00\x00'],
+    (Ecu.unknown, 0x18da1ef1, None): [b'28101-5CG-A050\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TBA-A550\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TBA-A030\x00\x00', b'39990-TBA,A030\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TBA-A030\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-TBC-A310\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36161-TBC-A030\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TBA-A020\x00\x00'],
+
+  },
+  CAR.ACCORD: {
+    (Ecu.unknown, 0x18da10f1, None): [b'37805-6B2-A650\x00\x00'],
+    (Ecu.unknown, 0x18da0bf1, None): [b'54008-TVC-A910\x00\x00'],
+    (Ecu.unknown, 0x18da1ef1, None): [b'28102-6B8-A560\x00\x00'],
+    (Ecu.unknown, 0x18da2bf1, None): [b'46114-TVA-A060\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TVA-C050\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TVA-A150\x00\x00'],
+    (Ecu.unknown, 0x18da3af1, None): [b'39390-TVA-A020\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TVA-A460\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-TVC-A210\x00\x00'],
+    (Ecu.unknown, 0x18da61f1, None): [b'78209-TVA-A010\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TVA-A160\x00\x00'],
+    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TVA-A060\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TVA-A010\x00\x00'],
+  }
+}
 
 DBC = {
   CAR.ACCORD: dbc_dict('honda_accord_s2t_2018_can_generated', None),
