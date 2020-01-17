@@ -1,0 +1,15 @@
+Import('env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
+
+src = ['ui.cc', 'paint.cc', '#phonelibs/nanovg/nanovg.c']
+libs = [common, 'zmq', 'czmq', 'capnp', 'capnp_c', 'm', cereal, 'json', messaging, 'OpenCL', gpucommon, visionipc]
+
+if arch == "aarch64":
+  src += ['sound.cc', 'slplay.c']
+  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid']
+else:
+  src += ['linux.cc']
+  libs += ['EGL', 'pthread', 'X11-xcb', 'xcb', 'X11', 'glfw']
+  
+env.Program('_ui', src,
+  LINKFLAGS=['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib'],
+  LIBS=libs)
