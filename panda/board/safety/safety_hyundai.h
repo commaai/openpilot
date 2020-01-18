@@ -36,20 +36,22 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 832)) {
     relay_malfunction = true;
   }
-  // check if we have a MDPS on Bus1
-  if ((bus == 1) && (addr == 593 || addr == 897)) {
-    if (hyundai_forward_bus1 != true) {
-      if (addr != 1057) {hyundai_mdps_bus = bus;}
-      hyundai_forward_bus1 = true;
-    }
-  }
   // check if we have a LCAN on Bus1
   if (bus == 1 && addr == 1296) {
     hyundai_LCAN_bus = bus;
   }
+  // check if we have a MDPS on Bus1
+  if (bus == 1 && (addr == 593 || addr == 897) && hyundai_LCAN_bus == 0) {
+    if (hyundai_forward_bus1 != true) {
+      hyundai_mdps_bus = bus;
+      hyundai_forward_bus1 = true;
+    }
+  }
   // check if we have a SCC on Bus1 and LCAN not on the bus
   if (bus == 1 && addr == 1057 && hyundai_LCAN_bus == 0) {
-    hyundai_forward_bus1 = true;
+    if (hyundai_forward_bus1 != true) {
+      hyundai_forward_bus1 = true;
+    }
   }
   // enter controls on rising edge of ACC, exit controls on ACC off
   if ((addr == 1057) && OP_SCC_live) { // for cars with long control
