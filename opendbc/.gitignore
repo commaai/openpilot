@@ -1,6 +1,7 @@
 *.pyc
 *.os
 *.tmp
+*.dylib
 .*.swp
 can/*.so
 can/build/

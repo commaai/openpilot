@@ -29,7 +29,7 @@ cereal_objects = env.SharedObject([
   ])
 
 env.Library('cereal', cereal_objects)
-env.SharedLibrary('cereal_shared', cereal_objects)
+env.SharedLibrary('cereal_shared', cereal_objects, LIBS=["capnp_c"])
 
 cereal_dir = Dir('.')
 services_h = env.Command(
@@ -49,7 +49,7 @@ Depends('messaging/impl_zmq.cc', services_h)
 
 # note, this rebuilds the deps shared, zmq is statically linked to make APK happy
 # TODO: get APK to load system zmq to remove the static link
-shared_lib_shared_lib = [zmq, 'm', 'stdc++'] + ["gnustl_shared"] if arch == "aarch64" else []
+shared_lib_shared_lib = [zmq, 'm', 'stdc++'] + ["gnustl_shared"] if arch == "aarch64" else [zmq]
 env.SharedLibrary('messaging_shared', messaging_objects, LIBS=shared_lib_shared_lib)
 
 env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging_lib, 'zmq'])

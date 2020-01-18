@@ -47,11 +47,6 @@ TIM_TypeDef *TIM2 = &timer;
 // from main_declarations.h
 uint8_t hw_type = HW_TYPE_UNKNOWN;
 
-// from board.h
-bool board_has_relay(void) {
-  return hw_type == HW_TYPE_BLACK_PANDA || hw_type == HW_TYPE_UNO;
-}
-
 // from config.h
 #define MIN(a,b)                                \
   ({ __typeof__ (a) _a = (a);                   \
@@ -86,10 +81,6 @@ void set_relay_malfunction(bool c){
   relay_malfunction = c;
 }
 
-void set_long_controls_allowed(bool c){
-  long_controls_allowed = c;
-}
-
 void set_gas_interceptor_detected(bool c){
   gas_interceptor_detected = c;
 }
@@ -104,10 +95,6 @@ bool get_controls_allowed(void){
 
 bool get_relay_malfunction(void){
   return relay_malfunction;
-}
-
-bool get_long_controls_allowed(void){
-  return long_controls_allowed;
 }
 
 bool get_gas_interceptor_detected(void){
@@ -257,12 +244,12 @@ void set_honda_alt_brake_msg(bool c){
   honda_alt_brake_msg = c;
 }
 
-void set_honda_bosch_hardware(bool c){
-  honda_bosch_hardware = c;
+void set_honda_hw(int c){
+  honda_hw = c;
 }
 
-int get_honda_bosch_hardware(void) {
-  return honda_bosch_hardware;
+int get_honda_hw(void) {
+  return honda_hw;
 }
 
 void set_honda_fwd_brake(bool c){

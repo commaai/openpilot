@@ -32,10 +32,8 @@ class TestAthenadMethods(unittest.TestCase):
     assert dispatcher["echo"]("bob") == "bob"
 
   def test_getMessage(self):
-    try:
+    with self.assertRaises(TimeoutError) as _:
       dispatcher["getMessage"]("controlsState")
-    except TimeoutError:
-      pass
 
     def send_thermal():
       messaging.context = messaging.Context()
@@ -50,6 +48,7 @@ class TestAthenadMethods(unittest.TestCase):
 
     p = Process(target=send_thermal)
     p.start()
+    time.sleep(0.1)
     try:
       thermal = dispatcher["getMessage"]("thermal")
       assert thermal['thermal']
@@ -60,7 +59,7 @@ class TestAthenadMethods(unittest.TestCase):
     print(dispatcher["listDataDirectory"]())
 
   @with_http_server
-  def test_do_upload(self):
+  def test_do_upload(self, host):
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')
     Path(fn).touch()
 
@@ -71,14 +70,14 @@ class TestAthenadMethods(unittest.TestCase):
       except requests.exceptions.ConnectionError:
         pass
 
-      item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+      item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
       resp = athenad._do_upload(item)
       self.assertEqual(resp.status_code, 201)
     finally:
       os.unlink(fn)
 
   @with_http_server
-  def test_uploadFileToUrl(self):
+  def test_uploadFileToUrl(self, host):
     not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
     self.assertEqual(not_exists_resp, 404)
 
@@ -86,9 +85,9 @@ class TestAthenadMethods(unittest.TestCase):
     Path(fn).touch()
 
     try:
-      resp = dispatcher["uploadFileToUrl"]("qlog.bz2", "http://localhost:44444/qlog.bz2", {})
+      resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
       self.assertEqual(resp['enqueued'], 1)
-      self.assertDictContainsSubset({"path": fn, "url": "http://localhost:44444/qlog.bz2", "headers": {}}, resp['item'])
+      self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['item'])
       self.assertIsNotNone(resp['item'].get('id'))
       self.assertEqual(athenad.upload_queue.qsize(), 1)
     finally:
@@ -96,10 +95,10 @@ class TestAthenadMethods(unittest.TestCase):
       os.unlink(fn)
 
   @with_http_server
-  def test_upload_handler(self):
+  def test_upload_handler(self, host):
     fn = os.path.join(athenad.ROOT, 'qlog.bz2')
     Path(fn).touch()
-    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
 
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))

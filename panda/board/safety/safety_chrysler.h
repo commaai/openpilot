@@ -6,13 +6,20 @@ const int CHRYSLER_MAX_RATE_DOWN = 3;
 const int CHRYSLER_MAX_TORQUE_ERROR = 80;    // max torque cmd in excess of torque motor
 const AddrBus CHRYSLER_TX_MSGS[] = {{571, 0}, {658, 0}, {678, 0}};
 
+// TODO: do checksum and counter checks
+AddrCheckStruct chrysler_rx_checks[] = {
+  {.addr = {544}, .bus = 0, .expected_timestep = 10000U},
+  {.addr = {500}, .bus = 0, .expected_timestep = 20000U},
+};
+const int CHRYSLER_RX_CHECK_LEN = sizeof(chrysler_rx_checks) / sizeof(chrysler_rx_checks[0]);
+
 int chrysler_rt_torque_last = 0;
 int chrysler_desired_torque_last = 0;
 int chrysler_cruise_engaged_last = 0;
 uint32_t chrysler_ts_last = 0;
 struct sample_t chrysler_torque_meas;         // last few torques measured
 
-static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
@@ -36,10 +43,13 @@ static void chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     chrysler_cruise_engaged_last = cruise_engaged;
   }
 
+  // TODO: add gas pressed check
+
   // check if stock camera ECU is on bus 0
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 0x292)) {
     relay_malfunction = true;
   }
+  return 1;
 }
 
 static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -48,7 +58,7 @@ static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
-  if (!addr_allowed(addr, bus, CHRYSLER_TX_MSGS, sizeof(CHRYSLER_TX_MSGS) / sizeof(CHRYSLER_TX_MSGS[0]))) {
+  if (!msg_allowed(addr, bus, CHRYSLER_TX_MSGS, sizeof(CHRYSLER_TX_MSGS) / sizeof(CHRYSLER_TX_MSGS[0]))) {
     tx = 0;
   }
 
@@ -137,4 +147,6 @@ const safety_hooks chrysler_hooks = {
   .tx = chrysler_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = chrysler_fwd_hook,
+  .addr_check = chrysler_rx_checks,
+  .addr_check_len = sizeof(chrysler_rx_checks) / sizeof(chrysler_rx_checks[0]),
 };

@@ -19,7 +19,7 @@ void* read_file(const char* path, size_t* out_len) {
   long f_len = ftell(f);
   rewind(f);
 
-  char* buf = calloc(f_len + 1, 1);
+  char* buf = (char*)calloc(f_len, 1);
   assert(buf);
 
   size_t num_read = fread(buf, f_len, 1, f);
@@ -31,7 +31,7 @@ void* read_file(const char* path, size_t* out_len) {
   }
 
   if (out_len) {
-    *out_len = f_len + 1;
+    *out_len = f_len;
   }
 
   return buf;
@@ -54,6 +54,8 @@ int set_realtime_priority(int level) {
   memset(&sa, 0, sizeof(sa));
   sa.sched_priority = level;
   return sched_setscheduler(tid, SCHED_FIFO, &sa);
+#else
+  return -1;
 #endif
 }
 
