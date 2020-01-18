@@ -20,36 +20,42 @@ uint32_t chrysler_ts_last = 0;
 struct sample_t chrysler_torque_meas;         // last few torques measured
 
 static int chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  int bus = GET_BUS(to_push);
-  int addr = GET_ADDR(to_push);
 
-  // Measured eps torque
-  if (addr == 544) {
-    int torque_meas_new = ((GET_BYTE(to_push, 4) & 0x7U) << 8) + GET_BYTE(to_push, 5) - 1024U;
+  bool valid = addr_safety_check(to_push, chrysler_rx_checks, CHRYSLER_RX_CHECK_LEN,
+                                 NULL, NULL, NULL);
 
-    // update array of samples
-    update_sample(&chrysler_torque_meas, torque_meas_new);
-  }
+  if (valid) {
+    int bus = GET_BUS(to_push);
+    int addr = GET_ADDR(to_push);
 
-  // enter controls on rising edge of ACC, exit controls on ACC off
-  if (addr == 0x1F4) {
-    int cruise_engaged = ((GET_BYTE(to_push, 2) & 0x38) >> 3) == 7;
-    if (cruise_engaged && !chrysler_cruise_engaged_last) {
-      controls_allowed = 1;
+    // Measured eps torque
+    if (addr == 544) {
+      int torque_meas_new = ((GET_BYTE(to_push, 4) & 0x7U) << 8) + GET_BYTE(to_push, 5) - 1024U;
+
+      // update array of samples
+      update_sample(&chrysler_torque_meas, torque_meas_new);
     }
-    if (!cruise_engaged) {
-      controls_allowed = 0;
+
+    // enter controls on rising edge of ACC, exit controls on ACC off
+    if (addr == 0x1F4) {
+      int cruise_engaged = ((GET_BYTE(to_push, 2) & 0x38) >> 3) == 7;
+      if (cruise_engaged && !chrysler_cruise_engaged_last) {
+        controls_allowed = 1;
+      }
+      if (!cruise_engaged) {
+        controls_allowed = 0;
+      }
+      chrysler_cruise_engaged_last = cruise_engaged;
     }
-    chrysler_cruise_engaged_last = cruise_engaged;
-  }
 
-  // TODO: add gas pressed check
+    // TODO: add gas pressed check
 
-  // check if stock camera ECU is on bus 0
-  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 0x292)) {
-    relay_malfunction = true;
+    // check if stock camera ECU is on bus 0
+    if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 0x292)) {
+      relay_malfunction = true;
+    }
   }
-  return 1;
+  return valid;
 }
 
 static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
