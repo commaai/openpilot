@@ -10,6 +10,8 @@ from selfdrive.car import gen_empty_fingerprint
 
 def get_startup_alert(car_recognized, controller_available):
   alert = 'startup'
+  if Params().get("GitBranch") in ['master', 'master-ci']:
+    alert = 'startupMaster'
   if not car_recognized:
     alert = 'startupNoCar'
   elif car_recognized and not controller_available:
