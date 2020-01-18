@@ -1,5 +1,6 @@
 bool HKG_forward_BUS1 = false;
 bool HKG_forward_BUS2 = true;
+bool HKG_LCAN_on_BUS1 = false;
 int HKG_MDPS12_checksum = -1;
 int HKG_MDPS12_cnt = 0;   
 int HKG_last_StrColT = 0;
@@ -14,8 +15,12 @@ void default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       HKG_forward_BUS2 = false;
 	}
   }
+  // check if we have a LCAN on Bus1
+  if (bus == 1 && addr == 1296) {
+    HKG_LCAN_on_BUS1 = true;
+  }
   // check if we have a MDPS or SCC on Bus1
-  if ((bus == 1) && (addr == 593 || addr == 897 || addr == 1057)) {
+  if (bus == 1 && (addr == 593 || addr == 897 || addr == 1057) && !HKG_LCAN_on_BUS1) {
     if (HKG_forward_BUS1 != true) {
       HKG_forward_BUS1 = true;
 	}
