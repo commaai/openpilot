@@ -23,7 +23,7 @@ int cadillac_get_torque_idx(int addr, int array_size) {
   return MIN(MAX(addr - 0x151, 0), array_size);  // 0x151 is id 0, 0x152 is id 1 and so on...
 }
 
-static void cadillac_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int cadillac_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
@@ -51,6 +51,7 @@ static void cadillac_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((addr == 0x152) || (addr == 0x154)) {
     cadillac_supercruise_on = (GET_BYTE(to_push, 4) & 0x10) != 0;
   }
+  return 1;
 }
 
 static int cadillac_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -58,7 +59,7 @@ static int cadillac_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
-  if (!addr_allowed(addr, bus, CADILLAC_TX_MSGS, sizeof(CADILLAC_TX_MSGS) / sizeof(CADILLAC_TX_MSGS[0]))) {
+  if (!msg_allowed(addr, bus, CADILLAC_TX_MSGS, sizeof(CADILLAC_TX_MSGS) / sizeof(CADILLAC_TX_MSGS[0]))) {
     tx = 0;
   }
 

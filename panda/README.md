@@ -39,9 +39,11 @@ Find user made scripts on the [wiki](https://community.comma.ai/wiki/index.php/P
 
 Note that you may have to setup [udev rules](https://community.comma.ai/wiki/index.php/Panda#Linux_udev_rules) for Linux, such as
 ```
-sudo -i
-echo 'SUBSYSTEMS=="usb", ATTR{idVendor}=="bbaa", ATTR{idProduct}=="ddcc", MODE:="0666"' > /etc/udev/rules.d/11-panda.rules
-exit
+sudo tee /etc/udev/rules.d/11-panda.rules <<EOF
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
+EOF
+sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
 Usage (JavaScript)

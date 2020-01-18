@@ -88,6 +88,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     lowMemory @63;
     stockAeb @64;
     ldw @65;
+    carUnrecognized @66;
+    radarCommIssue @67;
   }
 }
 
@@ -410,11 +412,11 @@ struct CarParams {
 
   enum SafetyModel {
     silent @0;
-    honda @1;
+    hondaNidec @1;
     toyota @2;
     elm327 @3;
     gm @4;
-    hondaBosch @5;
+    hondaBoschGiraffe @5;
     ford @6;
     cadillac @7;
     hyundai @8;
@@ -428,7 +430,9 @@ struct CarParams {
     toyotaIpas @16;
     allOutput @17;
     gmAscm @18;
-    noOutput @19;  # like silent but with silent CAN TXs
+    noOutput @19;  # like silent but without silent CAN TXs
+    hondaBoschHarness @20;
+    volkswagenPq @21;
   }
 
   enum SteerControlType {
@@ -444,7 +448,9 @@ struct CarParams {
 
   struct CarFw {
     ecu @0 :Ecu;
-    fwVersion @1 :Text;
+    fwVersion @1 :Data;
+    address @2: UInt32;
+    subAddress @3: UInt8;
   }
 
   enum Ecu {
@@ -452,5 +458,11 @@ struct CarParams {
     esp @1;
     fwdRadar @2;
     fwdCamera @3;
+    engine @4;
+    unknown @5;
+
+    # Toyota only
+    dsu @6;
+    apgs @7;
   }
 }

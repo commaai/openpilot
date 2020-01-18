@@ -1,9 +1,5 @@
-import os
-import sys
 import time
 import random
-import subprocess
-import requests
 import _thread
 import faulthandler
 from functools import wraps
@@ -19,6 +15,7 @@ SPEED_GMLAN = 33.3
 BUS_SPEEDS = [(0, SPEED_NORMAL), (1, SPEED_NORMAL), (2, SPEED_NORMAL), (3, SPEED_GMLAN)]
 TIMEOUT = 30
 GEN2_HW_TYPES = [Panda.HW_TYPE_BLACK_PANDA, Panda.HW_TYPE_UNO]
+GPS_HW_TYPES = [Panda.HW_TYPE_GREY_PANDA, Panda.HW_TYPE_BLACK_PANDA, Panda.HW_TYPE_UNO]
 
 # Enable fault debug
 faulthandler.enable(all_threads=False)
@@ -51,6 +48,9 @@ test_all_pandas = parameterized(
   )
 test_all_gen2_pandas = parameterized(
     list(map(lambda x: x[0], filter(lambda x: x[1] in GEN2_HW_TYPES, _panda_serials)))
+  )
+test_all_gps_pandas = parameterized(
+    list(map(lambda x: x[0], filter(lambda x: x[1] in GPS_HW_TYPES, _panda_serials)))
   )
 test_white_and_grey = parameterized([
     param(panda_type=Panda.HW_TYPE_WHITE_PANDA),

@@ -78,28 +78,6 @@ class SwagLogger(logging.Logger):
     self.log_local = local()
     self.log_local.ctx = {}
 
-  def findCaller(self, stack_info=None):
-    """
-      Find the stack frame of the caller so that we can note the source
-      file name, line number and function name.
-      """
-    # f = currentframe()
-    f = sys._getframe(3)
-    #On some versions of IronPython, currentframe() returns None if
-    #IronPython isn't run with -X:Frames.
-    if f is not None:
-      f = f.f_back
-    rv = "(unknown file)", 0, "(unknown function)"
-    while hasattr(f, "f_code"):
-      co = f.f_code
-      filename = os.path.normcase(co.co_filename)
-      if filename in (logging._srcfile, _srcfile):
-        f = f.f_back
-        continue
-      rv = (co.co_filename, f.f_lineno, co.co_name)
-      break
-    return rv
-
   def local_ctx(self):
     try:
       return self.log_local.ctx

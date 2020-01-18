@@ -44,6 +44,7 @@ def get_calib_from_vp(vp):
   roll_calib = 0
   return roll_calib, pitch_calib, yaw_calib
 
+
 # aka 'extrinsic_matrix'
 # road : x->forward, y -> left, z->up
 def get_view_frame_from_road_frame(roll, pitch, yaw, height):
@@ -60,6 +61,13 @@ def vp_from_ke(m):
   The vanishing point is defined as lim x->infinity C (x, 0, 0, 1).T
   """
   return (m[0, 0]/m[2,0], m[1,0]/m[2,0])
+
+
+def vp_from_rpy(rpy):
+  e = get_view_frame_from_road_frame(rpy[0], rpy[1], rpy[2], 1.22)
+  ke = np.dot(eon_intrinsics, e)
+  return vp_from_ke(ke)
+
 
 def roll_from_ke(m):
   # note: different from calibration.h/RollAnglefromKE: i think that one's just wrong

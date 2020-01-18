@@ -1,5 +1,6 @@
-void default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   UNUSED(to_push);
+  return true;
 }
 
 // *** no output safety mode ***

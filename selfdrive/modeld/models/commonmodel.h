@@ -4,7 +4,6 @@
 #include <CL/cl.h>
 
 #include "common/mat.h"
-#include "common/modeldata.h"
 #include "transforms/transform.h"
 #include "transforms/loadyuv.h"
 
@@ -15,7 +14,7 @@ extern "C" {
 float softplus(float input);
 float sigmoid(float input);
 
-typedef struct ModelInput {
+typedef struct ModelFrame {
   cl_device_id device_id;
   cl_context context;
 
@@ -26,14 +25,14 @@ typedef struct ModelInput {
   LoadYUVState loadyuv;
   cl_mem net_input;
   size_t net_input_size;
-} ModelInput;
+} ModelFrame;
 
-void model_input_init(ModelInput* s, int width, int height,
+void frame_init(ModelFrame* frame, int width, int height,
                       cl_device_id device_id, cl_context context);
-float *model_input_prepare(ModelInput* s, cl_command_queue q,
+float *frame_prepare(ModelFrame* frame, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
                            mat3 transform);
-void model_input_free(ModelInput* s);
+void frame_free(ModelFrame* frame);
 
 #ifdef __cplusplus
 }

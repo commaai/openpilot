@@ -19,11 +19,11 @@
 
 // from cereal.car.CarParams.SafetyModel
 #define SAFETY_SILENT 0U
-#define SAFETY_HONDA 1U
+#define SAFETY_HONDA_NIDEC 1U
 #define SAFETY_TOYOTA 2U
 #define SAFETY_ELM327 3U
 #define SAFETY_GM 4U
-#define SAFETY_HONDA_BOSCH 5U
+#define SAFETY_HONDA_BOSCH_GIRAFFE 5U
 #define SAFETY_FORD 6U
 #define SAFETY_CADILLAC 7U
 #define SAFETY_HYUNDAI 8U
@@ -36,12 +36,13 @@
 #define SAFETY_ALLOUTPUT 17U
 #define SAFETY_GM_ASCM 18U
 #define SAFETY_NOOUTPUT 19U
+#define SAFETY_HONDA_BOSCH_HARNESS 20U
 
 uint16_t current_safety_mode = SAFETY_SILENT;
 const safety_hooks *current_hooks = &nooutput_hooks;
 
-void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push){
-  current_hooks->rx(to_push);
+int safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push){
+  return current_hooks->rx(to_push);
 }
 
 int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -56,7 +57,7 @@ int safety_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return current_hooks->fwd(bus_num, to_fwd);
 }
 
-bool addr_allowed(int addr, int bus, const AddrBus addr_list[], int len) {
+bool msg_allowed(int addr, int bus, const AddrBus addr_list[], int len) {
   bool allowed = false;
   for (int i = 0; i < len; i++) {
     if ((addr == addr_list[i].addr) && (bus == addr_list[i].bus)) {
@@ -67,6 +68,106 @@ bool addr_allowed(int addr, int bus, const AddrBus addr_list[], int len) {
   return allowed;
 }
 
+// compute the time elapsed (in microseconds) from 2 counter samples
+// case where ts < ts_last is ok: overflow is properly re-casted into uint32_t
+uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last) {
+  return ts - ts_last;
+}
+
+int get_addr_check_index(CAN_FIFOMailBox_TypeDef *to_push, AddrCheckStruct addr_list[], const int len) {
+  int bus = GET_BUS(to_push);
+  int addr = GET_ADDR(to_push);
+
+  int index = -1;
+  for (int i = 0; i < len; i++) {
+    for (uint8_t j = 0U; addr_list[i].addr[j] != 0; j++) {
+      if ((addr == addr_list[i].addr[j]) && (bus == addr_list[i].bus)) {
+        index = i;
+        goto Return;
+      }
+    }
+  }
+Return:
+  return index;
+}
+
+// 1Hz safety function called by main. Now just a check for lagging safety messages
+void safety_tick(const safety_hooks *hooks) {
+  uint32_t ts = TIM2->CNT;
+  if (hooks->addr_check != NULL) {
+    for (int i=0; i < hooks->addr_check_len; i++) {
+      uint32_t elapsed_time = get_ts_elapsed(ts, hooks->addr_check[i].last_timestamp);
+      // lag threshold is max of: 1s and MAX_MISSED_MSGS * expected timestep.
+      // Quite conservative to not risk false triggers.
+      // 2s of lag is worse case, since the function is called at 1Hz
+      bool lagging = elapsed_time > MAX(hooks->addr_check[i].expected_timestep * MAX_MISSED_MSGS, 1e6);
+      hooks->addr_check[i].lagging = lagging;
+      if (lagging) {
+        controls_allowed = 0;
+      }
+    }
+  }
+}
+
+void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter) {
+  if (index != -1) {
+    uint8_t expected_counter = (addr_list[index].last_counter + 1U) % (addr_list[index].max_counter + 1U);
+    addr_list[index].wrong_counters += (expected_counter == counter) ? -1 : 1;
+    addr_list[index].wrong_counters = MAX(MIN(addr_list[index].wrong_counters, MAX_WRONG_COUNTERS), 0);
+    addr_list[index].last_counter = counter;
+  }
+}
+
+bool is_msg_valid(AddrCheckStruct addr_list[], int index) {
+  bool valid = true;
+  if (index != -1) {
+    if ((!addr_list[index].valid_checksum) || (addr_list[index].wrong_counters >= MAX_WRONG_COUNTERS)) {
+      valid = false;
+      controls_allowed = 0;
+    }
+  }
+  return valid;
+}
+
+void update_addr_timestamp(AddrCheckStruct addr_list[], int index) {
+  if (index != -1) {
+    uint32_t ts = TIM2->CNT;
+    addr_list[index].last_timestamp = ts;
+  }
+}
+
+bool addr_safety_check(CAN_FIFOMailBox_TypeDef *to_push,
+                       AddrCheckStruct *rx_checks,
+                       const int rx_checks_len,
+                       uint8_t (*get_checksum)(CAN_FIFOMailBox_TypeDef *to_push),
+                       uint8_t (*compute_checksum)(CAN_FIFOMailBox_TypeDef *to_push),
+                       uint8_t (*get_counter)(CAN_FIFOMailBox_TypeDef *to_push)) {
+
+  int index = get_addr_check_index(to_push, rx_checks, rx_checks_len);
+  update_addr_timestamp(rx_checks, index);
+
+  if (index != -1) {
+    // checksum check
+    if ((get_checksum != NULL) && (compute_checksum != NULL)) {
+      if (rx_checks[index].check_checksum) {
+        uint8_t checksum = get_checksum(to_push);
+        uint8_t checksum_comp = compute_checksum(to_push);
+        rx_checks[index].valid_checksum = checksum_comp == checksum;
+      }
+    }
+
+    // counter check
+    if (get_counter != NULL) {
+      if (rx_checks[index].max_counter > 0U) {
+        uint8_t counter = get_counter(to_push);
+        update_counter(rx_checks, index, counter);
+      }
+    }
+  }
+  return is_msg_valid(rx_checks, index);
+}
+
+
 typedef struct {
   uint16_t id;
   const safety_hooks *hooks;
@@ -74,11 +175,12 @@ typedef struct {
 
 const safety_hook_config safety_hook_registry[] = {
   {SAFETY_SILENT, &nooutput_hooks},
-  {SAFETY_HONDA, &honda_hooks},
+  {SAFETY_HONDA_NIDEC, &honda_nidec_hooks},
   {SAFETY_TOYOTA, &toyota_hooks},
   {SAFETY_ELM327, &elm327_hooks},
   {SAFETY_GM, &gm_hooks},
-  {SAFETY_HONDA_BOSCH, &honda_bosch_hooks},
+  {SAFETY_HONDA_BOSCH_GIRAFFE, &honda_bosch_giraffe_hooks},
+  {SAFETY_HONDA_BOSCH_HARNESS, &honda_bosch_harness_hooks},
   {SAFETY_HYUNDAI, &hyundai_hooks},
   {SAFETY_CHRYSLER, &chrysler_hooks},
   {SAFETY_SUBARU, &subaru_hooks},
@@ -111,12 +213,6 @@ int set_safety_hooks(uint16_t mode, int16_t param) {
     current_hooks->init(param);
   }
   return set_status;
-}
-
-// compute the time elapsed (in microseconds) from 2 counter samples
-// case where ts < ts_last is ok: overflow is properly re-casted into uint32_t
-uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last) {
-  return ts - ts_last;
 }
 
 // convert a trimmed integer to signed 32 bit int

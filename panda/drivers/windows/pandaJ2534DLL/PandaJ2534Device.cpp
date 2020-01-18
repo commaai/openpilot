@@ -170,7 +170,7 @@ DWORD PandaJ2534Device::msg_tx_thread() {
 				} else { //Ran out of things that need to be sent now. Sleep!
 					auto time_diff = std::chrono::duration_cast<std::chrono::milliseconds>
 						(this->task_queue.front()->expire - std::chrono::steady_clock::now());
-					sleepDuration = MAX(1, time_diff.count());
+					sleepDuration = max(1, time_diff.count());
 					goto break_flow_ctrl_loop;
 				}
 			}

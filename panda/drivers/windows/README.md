@@ -20,7 +20,7 @@ ______/\\\\\\\\\\\____/\\\\\\\\\_______/\\\\\\\\\\\\\\\______/\\\\\\\\\\________
 
 # Installing J2534 driver:
 
-[Download](https://github.com/commaai/panda/files/1742802/panda.J2534.driver.install.zip)
+[Download](https://github.com/commaai/panda/files/4017364/panda.J2534.driver.install.zip)
 
 Depending on what version of windows you are on, you may need to separately install the WinUSB driver (see next section).
 
