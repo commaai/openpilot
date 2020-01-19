@@ -1,21 +1,19 @@
 from cereal import car
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11
-from selfdrive.car.hyundai.values import CAR, Buttons, SteerLimitParams
+from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-
 def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
                        right_line, left_lane_depart, right_lane_depart):
-
   hud_alert = 0
   if visual_alert == VisualAlert.steerRequired:
     hud_alert = 3
 
   # initialize to no line visible
   lane_visible = 1
-  if left_line and right_line or hud_alert:
+  if left_line and right_line or hud_alert: #HUD alert only display when LKAS status is active
     if enabled or hud_alert:
       lane_visible = 3
     else:
@@ -39,11 +37,11 @@ class CarController():
   def __init__(self, dbc_name, car_fingerprint):
     self.apply_steer_last = 0
     self.car_fingerprint = car_fingerprint
-    self.last_lead_distance = 0
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
     self.resume_cnt = 0
     self.last_resume_frame = 0
+    self.last_lead_distance = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
               left_line, right_line, left_lane_depart, right_lane_depart):
@@ -53,8 +51,12 @@ class CarController():
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
-    # Fix for sharp turns mdps fault and Genesis hard fault at low speed
-    lkas_active = enabled and abs(CS.angle_steers) < 100. and (not CS.v_ego < 16.7 or not self.car_fingerprint == CAR.GENESIS)
+    # disable if steer angle reach 90 deg, otherwise mdps fault in some models
+    lkas_active = enabled and abs(CS.angle_steers) < 90.
+    # fix for Genesis hard fault at low speed
+    if CS.v_ego < 16.7 and self.car_fingerprint == CAR.GENESIS:
+      lkas_active = 0
+
     if not lkas_active:
       apply_steer = 0
 

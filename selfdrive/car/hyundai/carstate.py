@@ -63,14 +63,12 @@ def get_can_parser(CP):
 
     ("SAS_Angle", "SAS11", 0),
     ("SAS_Speed", "SAS11", 0),
-
   ]
 
   checks = [
     # address, frequency
     ("MDPS12", 50),
     ("TCS15", 10),
-    ("TCS13", 50),
     ("CLU11", 50),
     ("ESP12", 100),
     ("CGW1", 10),
@@ -109,7 +107,7 @@ def get_can_parser(CP):
   elif CP.carFingerprint in FEATURES["use_elect_gears"]:
     signals += [
       ("Elect_Gear_Shifter", "ELECT_GEAR", 0),
-    ]
+	]
   else:
     signals += [
       ("CF_Lvr_Gear","LVR12",0),
@@ -121,6 +119,7 @@ def get_camera_parser(CP):
 
   signals = [
     # sig_name, sig_address, default
+    ("CF_Lkas_Bca_R", "LKAS11", 0),
     ("CF_Lkas_LdwsSysState", "LKAS11", 0),
     ("CF_Lkas_SysWarning", "LKAS11", 0),
     ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
@@ -177,7 +176,6 @@ class CarState():
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
-
     self.main_on = (cp.vl["SCC11"]["MainMode_ACC"] != 0) if not self.no_radar else \
                                             cp.vl['EMS16']['CRUISE_LAMP_M']
     self.acc_active = (cp.vl["SCC12"]['ACCMode'] != 0) if not self.no_radar else \
@@ -259,7 +257,7 @@ class CarState():
     # Gear Selecton - This is only compatible with optima hybrid 2017
     elif self.car_fingerprint in FEATURES["use_elect_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
-      if gear == 5:
+      if gear in (5, 8): # 5: D, 8: sport mode
         self.gear_shifter = GearShifter.drive
       elif gear == 6:
         self.gear_shifter = GearShifter.neutral
@@ -272,7 +270,7 @@ class CarState():
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
-      if gear == 5:
+      if gear in (5, 8): # 5: D, 8: sport mode
         self.gear_shifter = GearShifter.drive
       elif gear == 6:
         self.gear_shifter = GearShifter.neutral
@@ -282,7 +280,6 @@ class CarState():
         self.gear_shifter = GearShifter.reverse
       else:
         self.gear_shifter = GearShifter.unknown
-
 
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
