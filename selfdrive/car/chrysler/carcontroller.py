@@ -1,7 +1,7 @@
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, \
                                                create_wheel_buttons
-from selfdrive.car.chrysler.values import ECU, CAR, SteerLimitParams
+from selfdrive.car.chrysler.values import Ecu, CAR, SteerLimitParams
 from opendbc.can.packer import CANPacker
 
 class CarController():
@@ -20,7 +20,7 @@ class CarController():
 
     self.fake_ecus = set()
     if enable_camera:
-      self.fake_ecus.add(ECU.CAM)
+      self.fake_ecus.add(Ecu.fwdCamera)
 
     self.packer = CANPacker(dbc_name)
 
