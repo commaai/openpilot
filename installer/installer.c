@@ -37,6 +37,14 @@
 extern const uint8_t str_continue[] asm("_binary_continue_" BRAND_S "_sh_start");
 extern const uint8_t str_continue_end[] asm("_binary_continue_" BRAND_S "_sh_end");
 
+static bool time_valid() {
+  time_t rawtime;
+  time(&rawtime);
+
+  struct tm * sys_time = gmtime(&rawtime);
+  return (1900 + sys_time->tm_year) >= 2019;
+}
+
 static int use_pre_checkout() {
   int err;
 
@@ -93,6 +101,13 @@ static int fresh_clone() {
 
 static int do_install() {
   int err;
+
+
+  // Wait for valid time
+  while (!time_valid()){
+    usleep(500 * 1000);
+    printf("Waiting for valid time\n");
+  }
 
   struct stat sb;
   if (stat(PRE_CHECKOUT_FOLDER, &sb) == 0 && S_ISDIR(sb.st_mode)) {
