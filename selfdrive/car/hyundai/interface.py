@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_can2_parser, get_camera_parser
-from selfdrive.car.hyundai.values import ECU, ECU_FINGERPRINT, CAR, FINGERPRINTS
+from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -176,7 +176,7 @@ class CarInterface(CarInterfaceBase):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
     ret.openpilotLongitudinalControl = True
 
     ret.stoppingControl = True
@@ -275,9 +275,9 @@ class CarInterface(CarInterfaceBase):
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:	
-      self.low_speed_alert = True	
-    if ret.vEgo > (self.CP.minSteerSpeed + 0.7):	
+    if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:
+      self.low_speed_alert = True
+    if ret.vEgo > (self.CP.minSteerSpeed + 0.7):
       self.low_speed_alert = False
 
     # turning indicator alert logic
@@ -331,10 +331,8 @@ class CarInterface(CarInterfaceBase):
     return ret.as_reader()
 
   def apply(self, c):
-    
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                                c.cruiseControl.cancel, c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
                                c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
-
     self.frame += 1
     return can_sends
