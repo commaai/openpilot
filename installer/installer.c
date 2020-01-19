@@ -68,6 +68,8 @@ static int use_pre_checkout() {
   if(err) return 1;
   err = system("git checkout " BRANCH_S);
   if(err) return 1;
+  err = system("git reset --hard origin/" BRANCH_S);
+  if(err) return 1;
 
   // Move to final location
   err = system("mv /tmp/openpilot /data");
