@@ -32,6 +32,7 @@ def start_frame():
 
 def set_package_permissions():
   pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
+  pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
   appops_set("ai.comma.plus.offroad", "READ_EXTERNAL_STORAGE", "allow")
