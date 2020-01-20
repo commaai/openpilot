@@ -1,4 +1,5 @@
 sudo: required
+language: minimal
 
 services:
   - docker
