@@ -6,6 +6,11 @@ jobs:
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v2
+    - name: checkout submodules
+      run: |
+        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+        git submodule sync --recursive
+        git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
     - run: docker build -t tmppilot -f Dockerfile.openpilot .
     - uses: actions/upload-artifact@v1
       with:
@@ -15,6 +20,7 @@ jobs:
   linter:
     name: linter
     runs-on: ubuntu-16.04
+    needs: build
     steps:
     - uses: actions/download-artifact@v1
       with:
