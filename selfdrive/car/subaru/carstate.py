@@ -88,10 +88,17 @@ class CarState():
     self.CP = CP
 
     self.car_fingerprint = CP.carFingerprint
+
     self.left_blinker_on = False
     self.prev_left_blinker_on = False
+    self.prev_left_blinker_light_on = False
+    self.left_blinker_interval = 0
+
     self.right_blinker_on = False
     self.prev_right_blinker_on = False
+    self.prev_right_blinker_light_on = False
+    self.right_blinker_interval = 0
+
     self.steer_torque_driver = 0
     self.steer_not_allowed = False
     self.main_on = False
@@ -134,10 +141,45 @@ class CarState():
     self.a_ego = float(v_ego_x[1])
     self.standstill = self.v_ego_raw < 0.01
 
+    ## Hacks required for blinkers because we don't have the blinker status itself,
+    ## we have only the dashlights, which oscillate.
+
+    # Set previous states for BLINKER status (not the lights)
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
-    self.left_blinker_on = cp.vl["Dashlights"]['LEFT_BLINKER'] == 1
-    self.right_blinker_on = cp.vl["Dashlights"]['RIGHT_BLINKER'] == 1
+
+    temp_left_blinker_light_on = cp.vl["Dashlights"]['LEFT_BLINKER'] == 1
+    temp_right_blinker_light_on = cp.vl["Dashlights"]['RIGHT_BLINKER'] == 1
+
+    # Reset the timer when blinker state changes.
+    if temp_left_blinker_light_on != self.prev_left_blinker_light_on:
+      self.left_blinker_interval = 0
+      if temp_left_blinker_light_on:
+        self.left_blinker_on = True
+
+    if temp_right_blinker_light_on != self.prev_right_blinker_light_on:
+      self.right_blinker_interval = 0
+      if temp_right_blinker_light_on:
+        self.right_blinker_on = True
+
+    # Counts frames that blinker has been off, and if it's been off for 50+ frames, then reset the blinker state.
+    BLINKER_INTERVAL = 50
+    if self.left_blinker_interval < BLINKER_INTERVAL:
+      if not temp_left_blinker_light_on:
+        self.left_blinker_interval += 1
+    else:
+      self.left_blinker_on = False
+
+    if self.right_blinker_interval < BLINKER_INTERVAL:
+      if not temp_right_blinker_light_on:
+        self.right_blinker_interval += 1
+    else:
+      self.right_blinker_on = False
+
+    # Set previous states for blinker lights.
+    self.prev_left_blinker_light_on = temp_left_blinker_light_on
+    self.prev_right_blinker_light_on = temp_right_blinker_light_on
+
     self.seatbelt_unlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     self.steer_torque_driver = cp.vl["Steering_Torque"]['Steer_Torque_Sensor']
     self.acc_active = cp.vl["CruiseControl"]['Cruise_Activated']
