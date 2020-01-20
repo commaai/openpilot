@@ -1,0 +1,25 @@
+on: [push]
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v2
+    - run: docker build -t tmppilot -f Dockerfile.openpilot .
+    - uses: actions/upload-artifact@v1
+      with:
+        name: tmppilot
+        path: tmppilot
+
+  linter:
+    name: linter
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/download-artifact@v1
+      with:
+        name: tmppilot
+    - run:
+        docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot/ && ./flake8_opepnilot.sh"
+
+
