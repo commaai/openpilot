@@ -134,7 +134,9 @@ class CarController():
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if (frame - self.last_fault_frame < 200) or abs(CS.angle_steers) > 100 or abs(CS.angle_steers_rate) > 100:
+    if (frame - self.last_fault_frame < 200) or \
+       (abs(CS.angle_steers_rate) > 100 and CS.CP.carFingerprint in (CAR.RAV4H, CAR.COROLLA)) or \
+       (CS.CP.carFingerprint == CAR.RAV4H and abs(CS.angle_steers) > 100):
       new_steer = 0
       apply_steer_req = 0
     else:
