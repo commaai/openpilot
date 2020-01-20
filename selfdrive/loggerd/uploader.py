@@ -71,7 +71,7 @@ def is_on_wifi():
     if result is None:
       return True
     return 'WIFI' in result
-  except AttributeError:
+  except (AttributeError, subprocess.CalledProcessError):
     return False
 
 def is_on_hotspot():
