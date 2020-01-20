@@ -27,19 +27,17 @@ from selfdrive.car.mock.values import CAR as MOCK
 os.environ['NOCRASH'] = '1'
 
 
-def wait_for_socket(name, timeout=10.0):
-  socket = messaging.sub_sock(name)
-  cur_time = time.time()
+def wait_for_sockets(socks, timeout=10.0):
+  sm = messaging.SubMaster(socks)
+  t = time.time()
 
-  r = None
-  while time.time() - cur_time < timeout:
-    print("waiting for %s" % name)
-    r = socket.receive(non_blocking=True)
-    if r is not None:
-      break
-    time.sleep(0.5)
-
-  return r
+  recvd = []
+  while time.time() - t < timeout and len(recvd) < len(socks):
+    sm.update()
+    for s in socks:
+      if s not in recvd and sm.updated[s]:
+        recvd.append(s)
+  return recvd
 
 def get_route_logs(route_name):
   for log_f in ["rlog.bz2", "fcamera.hevc"]:
@@ -449,11 +447,18 @@ non_public_routes = [
 
 if __name__ == "__main__":
 
+  tested_procs = ["controlsd", "radard", "plannerd"]
+  tested_socks = ["radarState", "controlsState", "carState", "plan"]
+
   # TODO: add routes for untested cars and fail test if we have an untested car
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
     if car_model not in tested_cars:
       print("***** WARNING: %s not tested *****" % car_model)
+
+  print("Preparing processes")
+  for p in tested_procs:
+    manager.prepare_managed_process(p)
 
   results = {}
   for route, checks in routes.items():
@@ -463,83 +468,46 @@ if __name__ == "__main__":
       continue
 
     shutil.rmtree('/data/params')
-    manager.gctx = {}
     params = Params()
     params.manager_start()
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
-
-    if route in passive_routes:
-      params.put("Passive", "1")
-    else:
-      params.put("Passive", "0")
+    params.put("Passive", "1" if route in passive_routes else "0")
 
     print("testing ", route, " ", checks['carFingerprint'])
-    print("Preparing processes")
-    manager.prepare_managed_process("radard")
-    manager.prepare_managed_process("controlsd")
-    manager.prepare_managed_process("plannerd")
     print("Starting processes")
-    manager.start_managed_process("radard")
-    manager.start_managed_process("controlsd")
-    manager.start_managed_process("plannerd")
-    time.sleep(2)
+    for p in tested_procs:
+      manager.start_managed_process(p)
 
     # Start unlogger
     print("Start unlogger")
     if route in non_public_routes:
-      unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), '%s' % route, '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive']
+      unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), route]
     else:
-      unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), '%s' % route, '/tmp', '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive']
-    unlogger = subprocess.Popen(unlogger_cmd, preexec_fn=os.setsid)
+      unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
+    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
 
     print("Check sockets")
-    controls_state_result = wait_for_socket('controlsState', timeout=30)
-
+    extra_socks = []
     has_camera = checks.get('enableCamera', False)
     if (route not in passive_routes) and (route not in forced_dashcam_routes) and has_camera:
-      controls_state_result = controls_state_result and wait_for_socket('sendcan', timeout=30)
+      extra_socks.append("sendcan")
+    if route not in passive_routes:
+      extra_socks.append("pathPlan")
 
-    radarstate_result = wait_for_socket('radarState', timeout=30)
-    plan_result = wait_for_socket('plan', timeout=30)
-
-    if route not in passive_routes:  # TODO The passive routes have very flaky models
-      path_plan_result = wait_for_socket('pathPlan', timeout=30)
-    else:
-      path_plan_result = True
-
-    carstate_result = wait_for_socket('carState', timeout=30)
+    recvd_socks = wait_for_sockets(tested_socks + extra_socks, timeout=30)
+    failures = [s for s in tested_socks + extra_socks if s not in recvd_socks]
 
     print("Check if everything is running")
     running = manager.get_running()
-    controlsd_running = running['controlsd'].is_alive()
-    radard_running = running['radard'].is_alive()
-    plannerd_running = running['plannerd'].is_alive()
-
-    manager.kill_managed_process("controlsd")
-    manager.kill_managed_process("radard")
-    manager.kill_managed_process("plannerd")
+    for p in tested_procs:
+      if not running[p].is_alive:
+        failures.append(p)
+      manager.kill_managed_process(p)
     os.killpg(os.getpgid(unlogger.pid), signal.SIGTERM)
 
-    sockets_ok = all([
-      controls_state_result, radarstate_result, plan_result, path_plan_result, carstate_result,
-      controlsd_running, radard_running, plannerd_running
-    ])
+    sockets_ok = len(failures) == 0
     params_ok = True
-    failures = []
-
-    if not controlsd_running:
-      failures.append('controlsd')
-    if not radard_running:
-      failures.append('radard')
-    if not radarstate_result:
-      failures.append('radarState')
-    if not controls_state_result:
-      failures.append('controlsState')
-    if not plan_result:
-      failures.append('plan')
-    if not path_plan_result:
-      failures.append('pathPlan')
 
     try:
       car_params = car.CarParams.from_bytes(params.get("CarParams"))
@@ -558,11 +526,12 @@ if __name__ == "__main__":
       results[route] = False, failures
       break
 
-    time.sleep(2)
+  # put back not passive to not leave the params in an unintended state
+  Params().put("Passive", "0")
 
   for route in results:
     print(results[route])
-  Params().put("Passive", "0")   # put back not passive to not leave the params in an unintended state
+
   if not all(passed for passed, _ in results.values()):
     print("TEST FAILED")
     sys.exit(1)
