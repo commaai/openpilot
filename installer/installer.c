@@ -123,8 +123,8 @@ static int do_install() {
 
 
   // Write continue.sh
-  FILE *of = fopen("/data/data/com.termux/files/continue.sh", "wb");
-  assert(of);
+  FILE *of = fopen("/data/data/com.termux/files/continue.sh.new", "wb");
+  if(of == NULL) return 1;
 
   size_t num = str_continue_end - str_continue;
   size_t num_written = fwrite(str_continue, 1, num, of);
@@ -132,7 +132,14 @@ static int do_install() {
 
   fclose(of);
 
-  err = system("chmod +x /data/data/com.termux/files/continue.sh");
+  err = system("chmod +x /data/data/com.termux/files/continue.sh.new");
+  if(err) return 1;
+
+  err = rename("/data/data/com.termux/files/continue.sh.new", "/data/data/com.termux/files/continue.sh");
+  if(err == -1) return 1;
+
+  // Disable SSH
+  err = system("setprop persist.neos.ssh 0");
   if(err) return 1;
 
   return 0;
