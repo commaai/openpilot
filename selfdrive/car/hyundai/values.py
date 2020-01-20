@@ -70,8 +70,8 @@ FINGERPRINTS = {
   },
   {
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 593: 8, 608: 8, 688: 6, 764: 8, 809: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1155: 8, 1162: 8, 1164: 8, 1168: 7, 1170: 8, 1173: 8, 1180: 8, 1183: 8, 1186: 2, 1227: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 8, 1384: 8, 1407: 8, 1414: 3, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 1988: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8
-  }],
-  CAR.SANTA_FE_1: [{
+  },
+  {
     67: 8, 68: 8, 80: 4, 160: 8, 161: 8, 272: 8, 288: 4, 339: 8, 356: 8, 357: 8, 399: 8, 544: 8, 608: 8, 672: 8, 688: 5, 704: 1, 790: 8, 809: 8, 848: 8, 880: 8, 898: 8, 900: 8, 901: 8, 904: 8, 1056: 8, 1064: 8, 1065: 8, 1072: 8, 1075: 8, 1087: 8, 1088: 8, 1151: 8, 1200: 8, 1201: 8, 1232: 4, 1264: 8, 1265: 8, 1266: 8, 1296: 8, 1306: 8, 1312: 8, 1322: 8, 1331: 8, 1332: 8, 1333: 8, 1348: 8, 1349: 8, 1369: 8, 1370: 8, 1371: 8, 1407: 8, 1415: 8, 1419: 8, 1440: 8, 1442: 4, 1461: 8, 1470: 8
   }],
   CAR.GENESIS_G90: [{
@@ -120,7 +120,7 @@ ECU_FINGERPRINT = {
 }
 
 CHECKSUM = {
-  "crc8": [CAR.SANTA_FE, CAR.SANTA_FE_1],
+  "crc8": [CAR.SANTA_FE],
   "6B": [CAR.KIA_SORENTO, CAR.GENESIS],
 }
 
@@ -128,7 +128,6 @@ FEATURES = {
   "use_cluster_gears": [CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30],     # Use Cluster for Gear Selection, rather than Transmission
   "use_tcu_gears": [CAR.KIA_OPTIMA],                                    # Use TCU Message for Gear Selection
   "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD],              # Use TCU Message for Gear Selection
-  "non_scc": [CAR.IONIQ, CAR.KONA, CAR.KIA_FORTE, CAR.SANTA_FE_1],      # Car without SCC
 }
 
 DBC = {
@@ -139,7 +138,6 @@ DBC = {
   CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
-  CAR.SANTA_FE_1: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ: dbc_dict('hyundai_kia_generic', None),

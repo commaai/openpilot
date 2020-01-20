@@ -4,7 +4,7 @@ import time
 from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
-from selfdrive.car.hyundai.values import DBC, FEATURES
+from selfdrive.car.hyundai.values import DBC
 
 def get_radar_can_parser(CP):
   signals = [
@@ -30,10 +30,10 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages = set()
     self.trigger_msg = 0x420
     self.track_id = 0
-    self.no_radar = CP.carFingerprint in FEATURES["non_scc"]
+    self.radar_off_can = CP.radarOffCan
 
   def update(self, can_strings):
-    if self.no_radar:
+    if self.radar_off_can:
       if 'NO_RADAR_SLEEP' not in os.environ:
         time.sleep(0.05)  # radard runs on RI updates
 

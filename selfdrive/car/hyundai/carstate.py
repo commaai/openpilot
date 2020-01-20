@@ -63,6 +63,12 @@ def get_can_parser(CP):
 
     ("SAS_Angle", "SAS11", 0),
     ("SAS_Speed", "SAS11", 0),
+
+    ("MainMode_ACC", "SCC11", 0),
+    ("VSetDis", "SCC11", 0),
+    ("SCCInfoDisplay", "SCC11", 0),
+    ("ACC_ObjDist", "SCC11", 0),
+    ("ACCMode", "SCC12", 1),
   ]
 
   checks = [
@@ -74,25 +80,10 @@ def get_can_parser(CP):
     ("CGW1", 10),
     ("CGW4", 5),
     ("WHL_SPD11", 50),
-    ("SAS11", 100)
+    ("SAS11", 100),
+    ("SCC11", 50),
+    ("SCC12", 50),
   ]
-  if CP.carFingerprint not in FEATURES["non_scc"]:
-    signals += [
-      ("MainMode_ACC", "SCC11", 0),
-      ("VSetDis", "SCC11", 0),
-      ("SCCInfoDisplay", "SCC11", 0),
-      ("ACC_ObjDist", "SCC11", 0),
-      ("ACCMode", "SCC12", 1),
-    ]
-    checks += [
-      ("SCC11", 50),
-      ("SCC12", 50),
-    ]
-  else:
-    signals += [
-      ("CRUISE_LAMP_M", "EMS16", 0),
-      ("CF_Lvr_CruiseSet", "LVR12", 0),
-    ]
   if CP.carFingerprint in FEATURES["use_cluster_gears"]:
     signals += [
       ("CF_Clu_InhibitD", "CLU15", 0),
@@ -163,7 +154,6 @@ class CarState():
     self.left_blinker_flash = 0
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
-    self.no_radar = self.CP.carFingerprint in FEATURES["non_scc"]
 
   def update(self, cp, cp_cam):
     # update prevs, update must run once per Loop
@@ -176,10 +166,8 @@ class CarState():
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
-    self.main_on = (cp.vl["SCC11"]["MainMode_ACC"] != 0) if not self.no_radar else \
-                                            cp.vl['EMS16']['CRUISE_LAMP_M']
-    self.acc_active = (cp.vl["SCC12"]['ACCMode'] != 0) if not self.no_radar else \
-                                      (cp.vl["LVR12"]['CF_Lvr_CruiseSet'] != 0)
+    self.main_on = cp.vl["SCC11"]["MainMode_ACC"] != 0
+    self.acc_active = cp.vl["SCC12"]['ACCMode'] != 0
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -201,8 +189,7 @@ class CarState():
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
-    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv if not self.no_radar else \
-                                         (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv)
+    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
     self.standstill = not v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
@@ -218,8 +205,8 @@ class CarState():
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS12"]['CR_Mdps_StrColTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
-    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if not self.no_radar else False
-    self.lead_distance = cp.vl["SCC11"]['ACC_ObjDist'] if not self.no_radar else 0
+    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+    self.lead_distance = cp.vl["SCC11"]['ACC_ObjDist']
 
     self.user_brake = 0
 
