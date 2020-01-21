@@ -50,10 +50,10 @@ if __name__ == "__main__":
           fw_versions = fw_versions_to_dict(car_fw)
           candidates = match_fw_to_car(fw_versions)
           if (len(candidates) == 1) and (list(candidates)[0] == live_fingerprint):
-            print("Correct", live_fingerprint, dongle_id)
+            # print("Correct", live_fingerprint, dongle_id)
             break
 
-          print("Old style:", live_fingerprint)
+          print("Old style:", live_fingerprint, "Vin", msg.carParams.carVin)
           print("New style:", candidates)
 
           for version in car_fw:
