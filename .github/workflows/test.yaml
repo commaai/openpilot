@@ -1,4 +1,4 @@
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -30,28 +30,28 @@ jobs:
       - name: Load image
         run: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
       - name: flake8
-        run: docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot/ && ./flake8_openilot.sh"
+        run: docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
         run: docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot/ && ./pylint.sh"
 
-#  unit_tests:
-#    name: unit tests
-#    runs-on: ubuntu-16.04
-#    needs: build
-#    - uses: actions/download-artifact@v1
-#      with:
-#        name: tmppilot.tar.gz
-#    - run: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
-#    container: tmppilot
-#    steps:
-#      - run: |
-#          cd /tmp/openpilot
-#
-#          python -m unittest discover common
-#          python -m unittest discover opendbc/can
-#          python -m unittest discover selfdrive/boardd
-#          python -m unittest discover selfdrive/controls
-#          python -m unittest discover selfdrive/loggerd
-#          python -m unittest discover selfdrive/car
-#          python -m unittest discover selfdrive/locationd
+  unit_tests:
+    name: unit tests
+    runs-on: ubuntu-16.04
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
+      - name: Run unit tests
+        run: |
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover common"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover opendbc/can"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/boardd"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/controls"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/loggerd"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/car"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/locationd"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/athena"
 
