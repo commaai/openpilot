@@ -1,8 +1,8 @@
+name: test
 on: [push, pull_request]
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
-  RUN_NO_RM: 
   LOAD: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
   UNIT_TEST: cd /tmp/openpilot && python -m unittest discover
 
@@ -82,19 +82,6 @@ jobs:
           name: process_replay_diff.txt
           path: diff.txt
 
-  test_car_models:
-    name: test car models
-    runs-on: ubuntu-16.04
-    needs: build
-    steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
-      - name: Test car models
-        run: $RUN "mkdir -p /data/params && cd /tmp/openpilot/selfdrive/test/ && ./test_car_models.py"
-
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-16.04
@@ -116,4 +103,17 @@ jobs:
         with:
           name: longitudinal
           path: out
+
+  test_car_models:
+    name: test car models
+    runs-on: ubuntu-16.04
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
+      - name: Test car models
+        run: $RUN "mkdir -p /data/params && cd /tmp/openpilot/selfdrive/test/ && ./test_car_models.py"
 
