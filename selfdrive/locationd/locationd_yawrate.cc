@@ -19,6 +19,12 @@ void Localizer::update_state(const Eigen::Matrix<double, 1, 4> &C, const double 
     prev_update_time = current_time;
   }
 
+  A <<
+    1,  dt, 0,  0,
+    0,  1,  0,  0,
+    0,  0,  1,  dt,
+    0,  0,  0,  1;
+
   x = A * x;
   P = A * P * A.transpose() + dt * Q;
 
@@ -58,11 +64,6 @@ void Localizer::handle_controls_state(cereal::ControlsState::Reader controls_sta
 
 Localizer::Localizer() {
   // States: [yaw rate, yaw rate diff, gyro bias, gyro bias diff]
-  A <<
-    1, 1, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 1,
-    0, 0, 0, 1;
   I <<
     1, 0, 0, 0,
     0, 1, 0, 0,
