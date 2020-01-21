@@ -53,13 +53,13 @@ if __name__ == "__main__":
             # print("Correct", live_fingerprint, dongle_id)
             break
 
+          print(dongle_id, time)
           print("Old style:", live_fingerprint, "Vin", msg.carParams.carVin)
           print("New style:", candidates)
 
           for version in car_fw:
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
             print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
-
 
           i += 1
           break

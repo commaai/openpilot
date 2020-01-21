@@ -83,6 +83,10 @@ def match_fw_to_car(fw_versions):
       if ecu_type == Ecu.esp and candidate == TOYOTA.RAV4 and found_version is None:
         continue
 
+      # TODO: COROLLA_TSS2 engine can show on two different addresses
+      if ecu_type == Ecu.enigine and candidate == TOYOTA.COROLLA_TSS2 and found_version is None:
+        continue
+
       # Allow DSU not being present
       if ecu_type in [Ecu.unknown, Ecu.dsu] and found_version is None:
         continue
