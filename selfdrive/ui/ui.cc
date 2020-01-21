@@ -128,7 +128,7 @@ static void ui_init(UIState *s) {
                              });
 
 #ifdef SHOW_SPEEDLIMIT
-  s->map_data_sock = SubSock::create(s->ctx, "liveMapData");
+  s->map_data_sock = SubSocket::create(s->ctx, "liveMapData");
   assert(s->map_data_sock != NULL);
   s->poller.registerSocket(s->map_data_sock);
 #endif
