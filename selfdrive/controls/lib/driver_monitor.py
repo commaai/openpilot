@@ -1,4 +1,5 @@
-import numpy as np
+from common.numpy_fast import interp
+from math import atan2, sqrt
 from common.realtime import DT_CTRL, DT_DMON
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from common.filter_simple import FirstOrderFilter
@@ -56,8 +57,8 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   roll_net = angles_desc[2]
 
   face_pixel_position = ((pos_desc[0] + .5)*W - W + FULL_W, (pos_desc[1]+.5)*H)
-  yaw_focal_angle = np.arctan2(face_pixel_position[0] - FULL_W//2, RESIZED_FOCAL)
-  pitch_focal_angle = np.arctan2(face_pixel_position[1] - H//2, RESIZED_FOCAL)
+  yaw_focal_angle = atan2(face_pixel_position[0] - FULL_W//2, RESIZED_FOCAL)
+  pitch_focal_angle = atan2(face_pixel_position[1] - H//2, RESIZED_FOCAL)
 
   roll = roll_net
   pitch = pitch_net + pitch_focal_angle
@@ -66,7 +67,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # no calib for roll
   pitch -= rpy_calib[1]
   yaw -= rpy_calib[2]
-  return np.array([roll, pitch, yaw])
+  return roll, pitch, yaw
 
 class DriverPose():
   def __init__(self):
@@ -153,7 +154,7 @@ class DriverStatus():
     if pitch_error > 0.:
       pitch_error = max(pitch_error - _PITCH_POS_ALLOWANCE, 0.)
     pitch_error *= _PITCH_WEIGHT
-    pose_metric = np.sqrt(yaw_error**2 + pitch_error**2)
+    pose_metric = sqrt(yaw_error**2 + pitch_error**2)
 
     if pose_metric > _METRIC_THRESHOLD*pose.cfactor:
       return DistractedType.BAD_POSE
@@ -164,8 +165,8 @@ class DriverStatus():
 
   def set_policy(self, model_data):
     ep = min(model_data.meta.engagedProb, 0.8) / 0.8
-    self.pose.cfactor = np.interp(ep, [0, 0.5, 1], [_METRIC_THRESHOLD_STRICT, _METRIC_THRESHOLD, _METRIC_THRESHOLD_SLACK])/_METRIC_THRESHOLD
-    self.blink.cfactor = np.interp(ep, [0, 0.5, 1], [_BLINK_THRESHOLD_STRICT, _BLINK_THRESHOLD, _BLINK_THRESHOLD_SLACK])/_BLINK_THRESHOLD
+    self.pose.cfactor = interp(ep, [0, 0.5, 1], [_METRIC_THRESHOLD_STRICT, _METRIC_THRESHOLD, _METRIC_THRESHOLD_SLACK])/_METRIC_THRESHOLD
+    self.blink.cfactor = interp(ep, [0, 0.5, 1], [_BLINK_THRESHOLD_STRICT, _BLINK_THRESHOLD, _BLINK_THRESHOLD_SLACK])/_BLINK_THRESHOLD
 
   def get_pose(self, driver_monitoring, cal_rpy, car_speed, op_engaged):
     # 10 Hz

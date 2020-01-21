@@ -155,7 +155,7 @@ ALERTS = [
       "CHECK DRIVER FACE VISIBILITY",
       "Driver Monitor Model Output Uncertain",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .4, 0., 4.),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .4, 0., 1.),
 
   Alert(
       "geofence",
