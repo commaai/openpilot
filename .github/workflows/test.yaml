@@ -79,8 +79,8 @@ jobs:
           docker rm $CONTAINER_NAME
       - uses: actions/upload-artifact@v1
         with:
-          name: diff.txt
-          path: process_replay_diff.txt
+          name: process_replay_diff.txt
+          path: diff.txt
 
   test_car_models:
     name: test car models
@@ -110,10 +110,10 @@ jobs:
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
           docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
           mkdir out
-          docker cp $CONTAINER_NAME:/tmp/openpilot/out/longitduinal/ out/
+          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
           docker rm $CONTAINER_NAME
       - uses: actions/upload-artifact@v1
         with:
-          name: longitudinal_out
+          name: longitudinal
           path: out
 
