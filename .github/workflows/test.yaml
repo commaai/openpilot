@@ -66,7 +66,14 @@ jobs:
       - name: Load image
         run: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
       - name: Replay processes
-        run: docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
+        run: |
+          docker run --shm-size 1G tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
+          docker rm tmppilot
+      - uses: actions/upload-artifact@v1
+        with:
+          name: diff.txt
+          path: process_replay_diff.txt
 
   test_car_models:
     name: test car models
@@ -92,5 +99,12 @@ jobs:
       - name: Load image
         run: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
       - name: Test Longitudinal
-        run: docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+        run: |
+          docker run --shm-size 1G tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+          docker cp tmppilot:/tmp/openpilot/out/longitduinal/ out/
+          docker rm tmppilot
+      - uses: actions/upload-artifact@v1
+        with:
+          name: longitudinal_out
+          path: out
 
