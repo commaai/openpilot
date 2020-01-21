@@ -1,8 +1,0 @@
-sudo: required
-language: minimal
-
-services:
-  - docker
-
-script:
-  - ./run_docker_tests.sh

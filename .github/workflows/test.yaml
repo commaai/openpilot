@@ -1,4 +1,4 @@
-name: test
+name: tests
 on: [push, pull_request]
 
 env:
