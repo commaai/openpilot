@@ -1,5 +1,6 @@
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
+#include <memory>
 
 #include <QtNetwork>
 
