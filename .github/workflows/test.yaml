@@ -1,0 +1,119 @@
+name: tests
+on: [push, pull_request]
+
+env:
+  RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
+  LOAD: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
+  UNIT_TEST: cd /tmp/openpilot && python -m unittest discover
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout submodules
+      run: |
+        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+        git submodule sync --recursive
+        git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+    - run: |
+        docker build -t tmppilot -f Dockerfile.openpilot .
+        docker save tmppilot:latest | gzip > tmppilot.tar.gz
+    - uses: actions/upload-artifact@v1
+      with:
+        name: tmppilot.tar.gz
+        path: tmppilot.tar.gz
+
+  linter:
+    name: linter
+    runs-on: ubuntu-16.04
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
+      - name: flake8
+        run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
+      - name: pylint
+        run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
+
+  unit_tests:
+    name: unit tests
+    runs-on: ubuntu-16.04
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
+      - name: Run unit tests
+        run: |
+          $RUN "$UNIT_TEST common"
+          $RUN "$UNIT_TEST opendbc/can"
+          $RUN "$UNIT_TEST selfdrive/boardd"
+          $RUN "$UNIT_TEST selfdrive/controls"
+          $RUN "$UNIT_TEST selfdrive/loggerd"
+          $RUN "$UNIT_TEST selfdrive/car"
+          $RUN "$UNIT_TEST selfdrive/locationd"
+          $RUN "$UNIT_TEST selfdrive/athena"
+
+  process_replay:
+    name: process replay
+    runs-on: ubuntu-16.04
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
+      - name: Run replay
+        run: |
+          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
+          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
+          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
+          docker rm $CONTAINER_NAME
+      - uses: actions/upload-artifact@v1
+        with:
+          name: process_replay_diff.txt
+          path: diff.txt
+
+  test_longitudinal:
+    name: longitudinal
+    runs-on: ubuntu-16.04
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
+      - name: Test longitudinal
+        run: |
+          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
+          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+          mkdir out
+          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
+          docker rm $CONTAINER_NAME
+      - uses: actions/upload-artifact@v1
+        with:
+          name: longitudinal
+          path: out
+
+  test_car_models:
+    name: test car models
+    runs-on: ubuntu-16.04
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
+      - name: Test car models
+        run: $RUN "mkdir -p /data/params && cd /tmp/openpilot/selfdrive/test/ && ./test_car_models.py"
+
