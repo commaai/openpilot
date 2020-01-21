@@ -346,7 +346,8 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
   CC.hudControl.leftLaneVisible = bool(left_lane_visible)
 
   recent_blinker = (sm.frame - last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
-  ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and is_ldw_enabled and not isActive(state)
+  calibrated = sm['liveCalibration'].calStatus == Calibration.CALIBRATED
+  ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and is_ldw_enabled and not isActive(state) and calibrated
 
   md = sm['model']
   if len(md.meta.desirePrediction):
