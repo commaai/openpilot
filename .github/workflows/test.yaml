@@ -46,14 +46,14 @@ jobs:
         run: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
       - name: Run unit tests
         run: |
-          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover common"
-          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover opendbc/can"
-          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/boardd"
-          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/controls"
-          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/loggerd"
-          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/car"
-          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/locationd"
-          docker run --shm-size 1G --rm tmppilot /bin/sh -c "python -m unittest discover selfdrive/athena"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot && python -m unittest discover common"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot && python -m unittest discover opendbc/can"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot && python -m unittest discover selfdrive/boardd"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot && python -m unittest discover selfdrive/controls"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot && python -m unittest discover selfdrive/loggerd"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot && python -m unittest discover selfdrive/car"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot && python -m unittest discover selfdrive/locationd"
+          docker run --shm-size 1G --rm tmppilot /bin/sh -c "cd /tmp/openpilot && python -m unittest discover selfdrive/athena"
 
   process_replay:
     name: process replay
