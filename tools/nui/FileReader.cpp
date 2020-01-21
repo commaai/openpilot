@@ -83,8 +83,7 @@ void LogReader::mergeEvents(int dled) {
       capnp::FlatArrayMessageReader cmsg = capnp::FlatArrayMessageReader(amsg);
 
       // this needed? it is
-      capnp::FlatArrayMessageReader *tmsg =
-        new capnp::FlatArrayMessageReader(kj::arrayPtr(amsg.begin(), cmsg.getEnd()));
+      std::unique_ptr<capnp::FlatArrayMessageReader> tmsg(new capnp::FlatArrayMessageReader(kj::arrayPtr(amsg.begin(), cmsg.getEnd()));
 
       amsg = kj::arrayPtr(cmsg.getEnd(), amsg.end());
 
