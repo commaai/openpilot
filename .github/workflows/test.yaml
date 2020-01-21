@@ -72,7 +72,7 @@ jobs:
       - name: Replay processes
         run: |
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          $RUN "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
+          docker run --shm-size 1G tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
           docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
           docker rm $CONTAINER_NAME
       - uses: actions/upload-artifact@v1
@@ -103,10 +103,11 @@ jobs:
           name: tmppilot.tar.gz
       - name: Load image
         run: $LOAD
-      - name: Test Longitudinal
+      - name: Test longitudinal
         run: |
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          $RUN "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+          docker run --shm-size 1G tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+          mkdir out
           docker cp $CONTAINER_NAME:/tmp/openpilot/out/longitduinal/ out/
           docker rm $CONTAINER_NAME
       - uses: actions/upload-artifact@v1
