@@ -10,7 +10,6 @@
 #include <czmq.h>
 
 #include "common/util.h"
-#include "common/messaging.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/touch.h"
@@ -130,7 +129,7 @@ static void ui_init(UIState *s) {
 #ifdef SHOW_SPEEDLIMIT
   s->map_data_sock = SubSocket::create(s->ctx, "liveMapData");
   assert(s->map_data_sock != NULL);
-  s->poller.registerSocket(s->map_data_sock);
+  s->poller->registerSocket(s->map_data_sock);
 #endif
 
   s->ipc_fd = -1;
