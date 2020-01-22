@@ -7,7 +7,7 @@ services:
 
 env:
  - SETUP="cd /tmp/openpilot && "
- - RUN="docker run --shm-size 1G --rm tmppilot /bin/sh -c"
+   RUN="docker run --shm-size 1G --rm tmppilot /bin/sh -c"
 
 install:
  - docker build -t tmppilot -f Dockerfile.openpilot .
