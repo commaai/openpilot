@@ -52,6 +52,7 @@ RUN pyenv install 3.7.3
 RUN pyenv global 3.7.3
 RUN pyenv rehash
 
+RUN pip install --upgrade pip
 RUN pip install pipenv==2018.11.26
 
 COPY Pipfile /tmp/
