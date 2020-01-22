@@ -58,7 +58,7 @@ def update_panda():
     serial = None
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
-  panda_signature = "bootstub" if panda.bootstub else panda.get_signature()
+  panda_signature = b"" if panda.bootstub else panda.get_signature()
   cloudlog.warning("Panda %s connected, version: %s, signature %s, expected %s" % (
     serial,
     panda_version,
