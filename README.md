@@ -245,6 +245,10 @@ Safety and Testing
 * panda has additional hardware in the loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
 * We run the latest openpilot in a testing closet containing 10 EONs continuously replaying routes.
 
+openpilot loop tests status on master branch:
+ * x86-64 ![GitHub Actions build status](https://github.com/commaai/openpilot/workflows/tests/badge.svg)
+ * Arm64 [![Travis build status](https://travis-ci.org/commaai/openpilot.svg?branch=master)](https://travis-ci.org/commaai/openpilot)
+
 Testing on PC
 ------
 
