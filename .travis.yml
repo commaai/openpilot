@@ -1,0 +1,9 @@
+sudo: required
+language: minimal
+arch: arm64
+
+services:
+  - docker
+
+script:
+  - ./run_docker_tests.sh
