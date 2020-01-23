@@ -1,4 +1,4 @@
-name: tests
+name: Openpilot Tests
 on: [push, pull_request]
 
 env:
@@ -65,6 +65,7 @@ jobs:
     name: process replay
     runs-on: ubuntu-16.04
     needs: build
+    timeout-minutes: 30
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -86,6 +87,7 @@ jobs:
     name: longitudinal
     runs-on: ubuntu-16.04
     needs: build
+    timeout-minutes: 30
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -108,6 +110,7 @@ jobs:
     name: test car models
     runs-on: ubuntu-16.04
     needs: build
+    timeout-minutes: 30
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -116,4 +119,3 @@ jobs:
         run: $LOAD
       - name: Test car models
         run: $RUN "mkdir -p /data/params && cd /tmp/openpilot/selfdrive/test/ && ./test_car_models.py"
-
