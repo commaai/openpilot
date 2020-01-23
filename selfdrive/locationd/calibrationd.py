@@ -38,8 +38,8 @@ def is_calibration_valid(vp):
 def sanity_clip(vp):
   if np.isnan(vp).any():
     vp = VP_INIT
-  return [np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 20, VP_VALIDITY_CORNERS[1,0] + 20),
-          np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 20, VP_VALIDITY_CORNERS[1,1] + 20)]
+  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 20, VP_VALIDITY_CORNERS[1,0] + 20),
+                   np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 20, VP_VALIDITY_CORNERS[1,1] + 20)])
 
 
 def intrinsics_from_vp(vp):
