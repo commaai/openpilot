@@ -280,6 +280,10 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+    "7e34a988419b5307|2019-12-18--19-13-30": {
+    'carFingerprint': TOYOTA.RAV4H_TSS2,
+    'enableCamera': True,
+  },
   "e6a24be49a6cd46e|2019-10-29--10-52-42": {
     'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
     'enableCamera': True,
