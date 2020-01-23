@@ -79,6 +79,7 @@ jobs:
           docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
           docker rm $CONTAINER_NAME
       - uses: actions/upload-artifact@v1
+        if: always()
         with:
           name: process_replay_diff.txt
           path: diff.txt
@@ -102,6 +103,7 @@ jobs:
           docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
           docker rm $CONTAINER_NAME
       - uses: actions/upload-artifact@v1
+        if: always()
         with:
           name: longitudinal
           path: out
