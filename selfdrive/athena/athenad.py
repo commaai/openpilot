@@ -204,8 +204,8 @@ def getSimInfo():
   network_type = android.getprop("gsm.network.type").split(',')
   mcc_mnc = android.getprop("gsm.sim.operator.numeric") or None
 
-  sim_id = android.parse_service_call_string(['iphonesubinfo', '11'])
-  cell_data_state = android.parse_service_call_unpack(['phone', '46'], ">q")
+  sim_id = android.parse_service_call_string(android.service_call(['iphonesubinfo', '11']))
+  cell_data_state = android.parse_service_call_unpack(android.service_call(['phone', '46']), ">q")
   cell_data_connected = (cell_data_state == 2)
 
   return {
