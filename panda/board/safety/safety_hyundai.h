@@ -9,7 +9,8 @@ const AddrBus HYUNDAI_TX_MSGS[] = {{832, 0}, {832, 1}, {1265, 0}, {1265, 1}, {12
 
 // TODO: do checksum and counter checks
 AddrCheckStruct hyundai_rx_checks[] = {
-  {.addr = {593}, .bus = 0, .expected_timestep = 10000U},
+  {.addr = {593}, .bus = 0, .expected_timestep = 20000U},
+  {.addr = {1057}, .bus = 0, .expected_timestep = 20000U},
 };
 const int HYUNDAI_RX_CHECK_LEN = sizeof(hyundai_rx_checks) / sizeof(hyundai_rx_checks[0]);
 
@@ -98,7 +99,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       relay_malfunction = true;
     }
     // check if we have a LCAN on Bus1
-    if (bus == 1 && addr == 1296) {
+    if (bus == 1 && (addr == 1296 || addr == 524)) {
       hyundai_LCAN_bus = bus;
     }
     // check if we have a MDPS on Bus1 and LCAN not on the bus
