@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+from tqdm import tqdm
 from tools.lib.logreader import LogReader
 from selfdrive.car.fw_versions import match_fw_to_car
 
@@ -23,7 +24,7 @@ if __name__ == "__main__":
 
   i = 0
   dongles = []
-  for route in open(sys.argv[1]):
+  for route in tqdm(list(open(sys.argv[1]))):
     route = route.rstrip()
     dongle_id, time = route.split('|')
     qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
