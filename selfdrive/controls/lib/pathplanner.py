@@ -57,6 +57,7 @@ class PathPlanner():
     self.lane_change_state = LaneChangeState.off
     self.lane_change_timer = 0.0
     self.prev_one_blinker = False
+    self.pre_auto_LCA_timer = 0.0
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -81,6 +82,9 @@ class PathPlanner():
 
     angle_offset = sm['liveParameters'].angleOffset
 
+    lca_left = sm['carState'].lcaLeft
+    lca_right = sm['carState'].lcaRight
+
     # Run MPC
     self.angle_steers_des_prev = self.angle_steers_des_mpc
     VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
@@ -101,9 +105,14 @@ class PathPlanner():
       elif sm['carState'].rightBlinker:
         lane_change_direction = LaneChangeDirection.right
 
-      torque_applied = sm['carState'].steeringPressed and \
-                       ((sm['carState'].steeringTorque > 0 and lane_change_direction == LaneChangeDirection.left) or \
-                        (sm['carState'].steeringTorque < 0 and lane_change_direction == LaneChangeDirection.right))
+      if lane_change_direction == LaneChangeDirection.left:
+        torque_applied = sm['carState'].steeringTorque > 0 and sm['carState'].steeringPressed
+        if CP.autoLcaEnabled and 2.5 > self.pre_auto_LCA_timer > 2.0 and not lca_left:
+          torque_applied = True # Enable auto LCA only once after 2 sec 
+      else:
+        torque_applied = sm['carState'].steeringTorque < 0 and sm['carState'].steeringPressed
+        if CP.autoLcaEnabled and 2.5 > self.pre_auto_LCA_timer > 2.0 and not lca_right:
+          torque_applied = True # Enable auto LCA only once after 2 sec 
 
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
 
@@ -134,6 +143,13 @@ class PathPlanner():
       self.lane_change_timer = 0.0
     else:
       self.lane_change_timer += DT_MDL
+      if self.lane_change_timer > 1.0 and sm['carState'].steeringPressed: # disable if driver override steering after 1 sec
+        self.lane_change_state = LaneChangeState.preLaneChange
+
+    if self.lane_change_state == LaneChangeState.off:
+      self.pre_auto_LCA_timer = 0.0
+    else:
+      self.pre_auto_LCA_timer += DT_MDL
 
     self.prev_one_blinker = one_blinker
 

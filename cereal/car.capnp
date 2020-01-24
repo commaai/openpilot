@@ -90,6 +90,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     ldw @65;
     carUnrecognized @66;
     radarCommIssue @67;
+    turningIndicatorOn @68;
+    lkasButtonOff @69;
   }
 }
 
@@ -147,6 +149,9 @@ struct CarState {
   # clutch (manual transmission only)
   clutchPressed @28 :Bool;
 
+  lcaLeft @32 :Bool;
+  lcaRight @33 :Bool;
+  
   # which packets this state came from
   canMonoTimes @12: List(UInt64);
 
@@ -371,6 +376,10 @@ struct CarParams {
   carFw @44 :List(CarFw);
   radarTimeStep @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
   communityFeature @46: Bool;  # true if a community maintained feature is detected
+  mdpsBus @48: Int8;
+  sasBus @49: Int8;
+  sccBus @50: Int8;
+  autoLcaEnabled @51: Int8;
 
   struct LateralPIDTuning {
     kpBP @0 :List(Float32);
