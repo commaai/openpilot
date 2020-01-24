@@ -299,6 +299,16 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+    "886fcd8408d570e9|2020-01-29--05-11-22": {
+      'carFingerprint': TOYOTA.LEXUS_RX,
+      'enableCamera': True,
+      'enableDsu': True,
+    },
+    "886fcd8408d570e9|2020-01-29--02-18-55": {
+      'carFingerprint': TOYOTA.LEXUS_RX,
+      'enableCamera': True,
+      'enableDsu': False,
+    },
   "b0f5a01cf604185c|2018-02-01--21-12-28": {
     'carFingerprint': TOYOTA.LEXUS_RXH,
     'enableCamera': True,
