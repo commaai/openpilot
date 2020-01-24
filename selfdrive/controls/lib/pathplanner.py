@@ -256,6 +256,7 @@ class PathPlanner():
     plan_send.pathPlan.desire = desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
     plan_send.pathPlan.laneChangeDirection = lane_change_direction
+    plan_send.pathPlan.laneChangeBSM = self.lane_change_BSM
 
     pm.send('pathPlan', plan_send)
 
