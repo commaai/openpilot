@@ -70,7 +70,7 @@ def fingerprint(logcan, sendcan, has_relay):
   Params().put("CarVin", vin)
 
   finger = gen_empty_fingerprint()
-  candidate_cars = {i: all_known_cars() for i == 0}  # attempt fingerprint on bus 0 only
+  candidate_cars = {i: all_known_cars() if i == 0}  # attempt fingerprint on bus 0 only
   frame = 0
   frame_fingerprint = 10  # 0.1s
   car_fingerprint = None
