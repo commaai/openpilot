@@ -1,4 +1,9 @@
 import os
+import sys
+import time
+import subprocess
+import requests
+from panda import Panda
 FNULL = open(os.devnull, 'w')
 def _connect_wifi(dongle_id, pw, insecure_okay=False):
   ssid = "panda-" + dongle_id

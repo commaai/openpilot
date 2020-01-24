@@ -43,12 +43,11 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 4.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), vin="", has_relay=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
     ret = car.CarParams.new_message()
 
     ret.carName = "gm"
     ret.carFingerprint = candidate
-    ret.carVin = vin
     ret.isPandaBlack = has_relay
 
     ret.enableCruise = False

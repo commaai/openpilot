@@ -3,11 +3,14 @@ venv/
 .tags
 .ipynb_checkpoints
 .idea
+.overlay_init
+.overlay_consistent
 .sconsign.dblite
 .vscode
 model2.png
 a.out
 
+*.dylib
 *.DSYM
 *.d
 *.pyc
@@ -27,6 +30,7 @@ a.out
 config.json
 clcache
 
+persist
 board/obj/
 selfdrive/boardd/boardd
 selfdrive/logcatd/logcatd
@@ -51,4 +55,5 @@ panda_jungle
 
 .coverage*
 htmlcov
+pandaextra
 

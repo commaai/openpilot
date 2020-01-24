@@ -1,4 +1,6 @@
 from selfdrive.car import dbc_dict
+from cereal import car
+Ecu = car.CarParams.Ecu
 
 # Steer torque limits
 class SteerLimitParams:
@@ -31,9 +33,9 @@ class CAR:
 
 
 class ECU:
-  CAM = 0 # camera
-  DSU = 1 # driving support unit
-  APGS = 2 # advanced parking guidance system
+  CAM = Ecu.fwdCamera # camera
+  DSU = Ecu.dsu # driving support unit
+  APGS = Ecu.apgs # advanced parking guidance system
 
 
 # addr: (ecu, cars, bus, 1/freq*100, vl)
@@ -213,6 +215,32 @@ FINGERPRINTS = {
   CAR.LEXUS_CTH: [{
     36: 8, 37: 8, 170: 8, 180: 8, 288: 8, 426: 6, 452: 8, 466: 8, 467: 8, 548: 8, 552: 4, 560: 7, 581: 5, 608: 8, 610: 5, 643: 7, 713: 8, 740: 5, 800: 8, 810: 2, 832: 8, 835: 8, 836: 8, 849: 4, 869: 7, 870: 7, 871: 2, 897: 8, 900: 6, 902: 6, 905: 8, 911: 8, 916: 1, 921: 8, 933: 8, 944: 6, 945: 8, 950: 8, 951: 8, 953: 3, 955: 4, 956: 8, 979: 2, 992: 8, 998: 5, 999: 7, 1000: 8, 1001: 8, 1017: 8, 1041: 8, 1042: 8, 1043: 8, 1056: 8, 1057: 8, 1059: 1, 1076: 8, 1077: 8, 1114: 8, 1116: 8, 1160: 8, 1161: 8, 1162: 8, 1163: 8, 1164: 8, 1165: 8, 1166: 8, 1167: 8, 1176: 8, 1177: 8, 1178: 8, 1179: 8, 1180: 8, 1181: 8, 1184: 8, 1185: 8, 1186: 8, 1190: 8, 1191: 8, 1192: 8, 1227: 8, 1235: 8, 1279: 8, 1552: 8, 1553: 8, 1554: 8, 1555: 8, 1556: 8, 1557: 8, 1558: 8, 1561: 8, 1562: 8, 1568: 8, 1569: 8, 1570: 8, 1571: 8, 1572: 8, 1575: 8, 1584: 8, 1589: 8, 1592: 8, 1593: 8, 1595: 8, 1664: 8, 1728: 8, 1779: 8, 1904: 8, 1912: 8, 1990: 8, 1998: 8
   }]
+}
+
+FW_VERSIONS = {
+  CAR.COROLLA_TSS2: {
+    (Ecu.engine, 0x700, None): [b'\x01896630ZG5000\x00\x00\x00\x00'],
+    (Ecu.eps, 0x7a1, None): [b'\x018965B12350\x00\x00\x00\x00\x00\x00'],
+    (Ecu.esp, 0x7b0, None): [b'\x01F152602280\x00\x00\x00\x00\x00\x00'],
+    (Ecu.fwdRadar, 0x750, 0xf): [b'\x018821F3301100\x00\x00\x00\x00'],
+    (Ecu.fwdCamera, 0x750, 0x6d): [b'\x028646F1201200\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00'],
+  },
+  CAR.PRIUS: {
+    (Ecu.engine, 0x700, None): [b'\x03896634759200\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF4701003\x00\x00\x00\x00'],
+    (Ecu.eps, 0x7a1, None): [b'8965B47023\x00\x00\x00\x00\x00\x00'],
+    (Ecu.esp, 0x7b0, None): [b'F152647416\x00\x00\x00\x00\x00\x00'],
+    (Ecu.dsu, 0x791, None): [b'881514703100\x00\x00\x00\x00'],
+    (Ecu.fwdRadar, 0x750, 0xf): [b'8821F4702100\x00\x00\x00\x00'],
+    (Ecu.fwdCamera, 0x750, 0x6d): [b'8646F4702100\x00\x00\x00\x00'],
+  },
+  CAR.RAV4: {
+    (Ecu.engine, 0x7e0, None): [b'\x02342Q2100\x00\x00\x00\x00\x00\x00\x00\x0054213000\x00\x00\x00\x00\x00\x00\x00\x00'],
+    (Ecu.eps, 0x7a1, None): [b'8965B42083\x00\x00\x00\x00\x00\x00'],
+    (Ecu.esp, 0x7b0, None): [b'F15260R103\x00\x00\x00\x00\x00\x00'],
+    (Ecu.dsu, 0x791, None): [b'881514201400\x00\x00\x00\x00'],
+    (Ecu.fwdRadar, 0x750, 0xf): [b'8821F4702100\x00\x00\x00\x00'],
+    (Ecu.fwdCamera, 0x750, 0x6d): [b'8646F4202100\x00\x00\x00\x00'],
+  }
 }
 
 STEER_THRESHOLD = 100

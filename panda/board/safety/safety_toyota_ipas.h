@@ -31,9 +31,9 @@ uint32_t ts_angle_last = 0;
 int controls_allowed_last = 0;
 
 
-static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // check standard toyota stuff as well
-  toyota_rx_hook(to_push);
+  bool valid = toyota_rx_hook(to_push);
 
   int addr = GET_ADDR(to_push);
 
@@ -95,6 +95,7 @@ static void toyota_ipas_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
                         (ipas_state==5))) {
     controls_allowed = 0;
   }
+  return valid;
 }
 
 static int toyota_ipas_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {

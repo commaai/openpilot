@@ -16,8 +16,9 @@ def replay_drive(lr, safety_mode, param):
   if "SEGMENT" in os.environ:
     init_segment(safety, lr, mode)
 
-  tx_tot, tx_blocked, tx_controls, tx_controls_blocked = 0, 0, 0, 0
+  rx_tot, rx_invalid, tx_tot, tx_blocked, tx_controls, tx_controls_blocked = 0, 0, 0, 0, 0, 0
   blocked_addrs = set()
+  invalid_addrs = set()
   start_t = None
 
   for msg in lr:
@@ -44,15 +45,24 @@ def replay_drive(lr, safety_mode, param):
         if canmsg.src >= 128:
           continue
         to_push = package_can_msg(canmsg)
-        safety.safety_rx_hook(to_push)
+        recv = safety.safety_rx_hook(to_push)
+        if not recv:
+          rx_invalid += 1
+          invalid_addrs.add(canmsg.address)
+        rx_tot += 1
 
+  print("\nRX")
+  print("total rx msgs:", rx_tot)
+  print("invalid rx msgs:", rx_invalid)
+  print("invalid addrs:", invalid_addrs)
+  print("\nTX")
   print("total openpilot msgs:", tx_tot)
   print("total msgs with controls allowed:", tx_controls)
   print("blocked msgs:", tx_blocked)
   print("blocked with controls allowed:", tx_controls_blocked)
   print("blocked addrs:", blocked_addrs)
 
-  return tx_controls_blocked == 0
+  return tx_controls_blocked == 0 and rx_invalid == 0
 
 if __name__ == "__main__":
   mode = int(sys.argv[2])

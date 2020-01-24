@@ -7,7 +7,6 @@
 #include <sys/time.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/timerfd.h>
 #include <sys/resource.h>
 
 #include <pthread.h>
@@ -30,8 +29,6 @@
 volatile sig_atomic_t do_exit = 0;
 
 namespace {
-
-pthread_t clock_thread_handle;
 
 Context *gps_context;
 PubSocket *gps_publisher;
@@ -181,61 +178,6 @@ int64_t arm_cntpct() {
   return v;
 }
 
-// TODO: move this out of here
-void* clock_thread(void* args) {
-  int err = 0;
-
-  PubSocket* clock_publisher = PubSocket::create(gps_context, "clocks");
-  assert(clock_publisher != NULL);
-
-  int timerfd = timerfd_create(CLOCK_BOOTTIME, 0);
-  assert(timerfd >= 0);
-
-  struct itimerspec spec = {0};
-  spec.it_interval.tv_sec = 1;
-  spec.it_interval.tv_nsec = 0;
-  spec.it_value.tv_sec = 1;
-  spec.it_value.tv_nsec = 0;
-
-  err = timerfd_settime(timerfd, 0, &spec, 0);
-  assert(err == 0);
-
-  uint64_t expirations = 0;
-  while ((err = read(timerfd, &expirations, sizeof(expirations)))) {
-    if (err < 0) break;
-
-    if (do_exit) break;
-
-    uint64_t boottime = nanos_since_boot();
-    uint64_t monotonic = nanos_monotonic();
-    uint64_t monotonic_raw = nanos_monotonic_raw();
-    uint64_t wall_time = nanos_since_epoch();
-
-    uint64_t modem_uptime_v = arm_cntpct() / 19200ULL; // 19.2 mhz clock
-
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(boottime);
-    auto clocks = event.initClocks();
-
-    clocks.setBootTimeNanos(boottime);
-    clocks.setMonotonicNanos(monotonic);
-    clocks.setMonotonicRawNanos(monotonic_raw);
-    clocks.setWallTimeNanos(wall_time);
-    clocks.setModemUptimeMillis(modem_uptime_v);
-
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    clock_publisher->send((char*)bytes.begin(), bytes.size());
-  }
-
-  close(timerfd);
-  delete clock_publisher;
-
-  return NULL;
-}
-
-
 }
 
 int main() {
@@ -249,14 +191,7 @@ int main() {
 
   rawgps_init();
 
-  err = pthread_create(&clock_thread_handle, NULL,
-                       clock_thread, NULL);
-  assert(err == 0);
-
   while(!do_exit) pause();
-
-  err = pthread_join(clock_thread_handle, NULL);
-  assert(err == 0);
 
   rawgps_destroy();
 

@@ -5,10 +5,12 @@ import sys
 import fcntl
 import errno
 import signal
+import shutil
 import subprocess
 import datetime
 
 from common.basedir import BASEDIR
+from common.android import ANDROID
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
@@ -21,7 +23,7 @@ try:
 except FileExistsError:
   pass
 
-if os.path.isfile('/EON'):
+if ANDROID:
   os.chmod("/dev/shm", 0o777)
 
 def unblock_stdout():
@@ -74,7 +76,11 @@ if not prebuilt:
     # run scons
     env = os.environ.copy()
     env['SCONS_PROGRESS'] = "1"
-    scons = subprocess.Popen(["scons", "-j4"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    env['SCONS_CACHE'] = "1"
+
+    nproc = os.cpu_count()
+    j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
+    scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
     # Read progress from stderr and update spinner
     while scons.poll() is None:
@@ -96,8 +102,12 @@ if not prebuilt:
 
     if scons.returncode != 0:
       if retry:
-        print("scons build failed, make clean")
+        print("scons build failed, cleaning in")
+        for i in range(3,-1,-1):
+          print("....%d" % i)
+          time.sleep(1)
         subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
+        shutil.rmtree("/tmp/scons_cache")
       else:
         raise RuntimeError("scons build failed")
     else:
@@ -139,11 +149,13 @@ managed_processes = {
   "paramsd": ("selfdrive/locationd", ["./paramsd"]),
   "camerad": ("selfdrive/camerad", ["./camerad"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
+  "clocksd": ("selfdrive/clocksd", ["./clocksd"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
   "updated": "selfdrive.updated",
   "monitoringd": ("selfdrive/modeld", ["./monitoringd"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
 }
+
 daemon_processes = {
   "manage_athenad": ("selfdrive.athena.manage_athenad", "AthenadPid"),
 }
@@ -161,32 +173,42 @@ interrupt_processes = []
 # processes to end with SIGKILL instead of SIGTERM
 kill_processes = ['sensord', 'paramsd']
 
+# processes to end if thermal conditions exceed Green parameters
+green_temp_processes = ['uploader']
+
 persistent_processes = [
   'thermald',
   'logmessaged',
-  'logcatd',
-  'tombstoned',
-  'uploader',
   'ui',
-  'updated',
+  'uploader',
 ]
+if ANDROID:
+  persistent_processes += [
+    'logcatd',
+    'tombstoned',
+    'updated',
+  ]
 
 car_started_processes = [
   'controlsd',
   'plannerd',
   'loggerd',
-  'sensord',
   'radard',
   'calibrationd',
   'paramsd',
   'camerad',
   'modeld',
-  'monitoringd',
   'proclogd',
   'ubloxd',
-  'gpsd',
-  'deleter',
 ]
+if ANDROID:
+  car_started_processes += [
+    'sensord',
+    'clocksd',
+    'gpsd',
+    'monitoringd',
+    'deleter',
+  ]
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
@@ -303,7 +325,8 @@ def kill_managed_process(name):
 def cleanup_all_processes(signal, frame):
   cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
 
-  pm_apply_packages('disable')
+  if ANDROID:
+    pm_apply_packages('disable')
 
   for name in list(running.keys()):
     kill_managed_process(name)
@@ -365,8 +388,9 @@ def manager_thread():
     start_managed_process(p)
 
   # start frame
-  pm_apply_packages('enable')
-  start_frame()
+  if ANDROID:
+    pm_apply_packages('enable')
+    start_frame()
 
   if os.getenv("NOBOARD") is None:
     start_managed_process("pandad")
@@ -376,11 +400,15 @@ def manager_thread():
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
 
-    # uploader is gated based on the phone temperature
+    # heavyweight batch processes are gated on favorable thermal conditions
     if msg.thermal.thermalStatus >= ThermalStatus.yellow:
-      kill_managed_process("uploader")
+      for p in green_temp_processes:
+        if p in persistent_processes:
+          kill_managed_process(p)
     else:
-      start_managed_process("uploader")
+      for p in green_temp_processes:
+        if p in persistent_processes:
+          start_managed_process(p)
 
     if msg.thermal.freeSpace < 0.05:
       logger_dead = True
@@ -430,13 +458,6 @@ def main():
   # disable bluetooth
   os.system('service call bluetooth_manager 8')
 
-  # support additional internal only extensions
-  try:
-    import selfdrive.manager_extensions
-    selfdrive.manager_extensions.register(register_managed_process)  # pylint: disable=no-member
-  except ImportError:
-    pass
-
   params = Params()
   params.manager_start()
 
@@ -480,7 +501,8 @@ def main():
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
 
-  update_apks()
+  if ANDROID:
+    update_apks()
   manager_init()
   manager_prepare(spinner)
   spinner.close()

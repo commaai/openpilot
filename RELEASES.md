@@ -1,3 +1,12 @@
+Version 0.7.1 (2020-01-20)
+========================
+ * comma two support!
+ * Lane Change Assist above 45 mph!
+ * Replace zmq with custom messaging library, msgq!
+ * Supercombo model: calibration and driving models are combined for better lead estimate
+ * More robust updater thanks to jyoung8607! Requires NEOS update
+ * Improve low speed ACC tuning
+
 Version 0.7 (2019-12-13)
 ========================
  * Move to SCons build system!

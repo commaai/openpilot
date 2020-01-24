@@ -67,14 +67,18 @@ def clear_locks(root):
 def is_on_wifi():
   # ConnectivityManager.getActiveNetworkInfo()
   try:
-    result = android.parse_service_call_string(["connectivity", "2"])
+    # TODO: figure out why the android service call sometimes dies with SIGUSR2 (signal from MSGQ)
+    result = android.parse_service_call_string(android.service_call(["connectivity", "2"]))
+    if result is None:
+      return True
     return 'WIFI' in result
-  except AttributeError:
+  except (AttributeError, subprocess.CalledProcessError):
+    cloudlog.exception("is_on_wifi failed")
     return False
 
 def is_on_hotspot():
   try:
-    result = subprocess.check_output(["ifconfig", "wlan0"], encoding='utf8')
+    result = subprocess.check_output(["ifconfig", "wlan0"], stderr=subprocess.STDOUT, encoding='utf8')
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
 
     is_android = result.startswith('192.168.43.')

@@ -5,7 +5,7 @@ int HKG_MDPS12_checksum = -1;
 int HKG_MDPS12_cnt = 0;   
 int HKG_last_StrColT = 0;
 
-void default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
@@ -45,6 +45,7 @@ void default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       HKG_MDPS12_checksum = 1;
     }
   }
+  return true;
 }
 
 // *** no output safety mode ***
