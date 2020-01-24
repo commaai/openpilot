@@ -92,6 +92,9 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     radarCommIssue @67;
     turningIndicatorOn @68;
     lkasButtonOff @69;
+    rightLCAbsm @70;
+    leftLCAbsm @71;
+    preventLCA @72;
   }
 }
 
