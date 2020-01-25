@@ -14,6 +14,7 @@ typedef struct {
 
 #define BUS_MAX 4U
 
+uint32_t can_rx_errs = 0;
 uint32_t can_send_errs = 0;
 uint32_t can_fwd_errs = 0;
 uint32_t gmlan_send_errs = 0;
@@ -212,6 +213,7 @@ void can_set_gmlan(uint8_t bus) {
 
 // TODO: remove
 void can_set_obd(uint8_t harness_orientation, bool obd){
+  obd = true;
   if(obd){
     puts("setting CAN2 to be OBD\n");
   } else {
@@ -386,7 +388,7 @@ void can_rx(uint8_t can_number) {
       }
     }
 
-    safety_rx_hook(&to_push);
+    can_rx_errs += safety_rx_hook(&to_push) ? 0U : 1U;
     ignition_can_hook(&to_push);
 
     current_board->set_led(LED_BLUE, true);

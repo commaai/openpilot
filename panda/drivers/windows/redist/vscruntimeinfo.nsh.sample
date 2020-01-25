@@ -7,7 +7,7 @@
 ;An list of the registry keys has been maintained here: https://stackoverflow.com/a/34209692/627525
 
 
-;Microsoft Visual C++ 2015 Redistributable (x86) - 14.0.24123
-!define VCRuntimeRegKey "SOFTWARE\Classes\Installer\Dependencies\{206898cc-4b41-4d98-ac28-9f9ae57f91fe}"
+;Microsoft Visual C++ 2015-2019 Redistributable (x86) - 14.24.28127
+!define VCRuntimeRegKey "Installer\Dependencies\VC,redist.x86,x86,14.24,bundle"
 !define VCRuntimeSetupPath "redist\"
 !define VCRuntimeSetupFile "vc_redist.x86.exe"

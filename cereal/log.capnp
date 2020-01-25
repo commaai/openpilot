@@ -310,6 +310,7 @@ struct HealthData {
   hasGps @6 :Bool;
   canSendErrs @7 :UInt32;
   canFwdErrs @8 :UInt32;
+  canRxErrs @19 :UInt32;
   gmlanSendErrs @9 :UInt32;
   hwType @10 :HwType;
   fanSpeedRpm @11 :UInt16;
@@ -484,6 +485,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   decelForTurn @47 :Bool;
 
   decelForModel @54 :Bool;
+  canErrorCounter @57 :UInt32;
 
   lateralControlState :union {
     indiState @52 :LateralINDIState;
@@ -575,6 +577,7 @@ struct ModelData {
   leadFuture @7 :LeadData;
   speed @8 :List(Float32);
   meta @10 :MetaData;
+  longitudinal @11 :LongitudinalData;
 
   struct PathData {
     points @0 :List(Float32);
@@ -605,12 +608,18 @@ struct ModelData {
     yuvCorrection @5 :List(Float32);
     inputTransform @6 :List(Float32);
   }
+
   struct MetaData {
     engagedProb @0 :Float32;
     desirePrediction @1 :List(Float32);
     brakeDisengageProb @2 :Float32;
     gasDisengageProb @3 :Float32;
     steerOverrideProb @4 :Float32;
+  }
+
+  struct LongitudinalData {
+    speeds @0 :List(Float32);
+    accelerations @1 :List(Float32);
   }
 }
 
@@ -1757,6 +1766,8 @@ struct DriverMonitoring {
   leftBlinkProb @8 :Float32;
   rightBlinkProb @9 :Float32;
   irPwrDEPRECATED @10 :Float32;
+  faceOrientationStd @11 :List(Float32);
+  facePositionStd @12 :List(Float32);
 }
 
 struct Boot {

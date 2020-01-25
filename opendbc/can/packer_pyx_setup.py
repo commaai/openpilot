@@ -1,6 +1,7 @@
 import os
 import sysconfig
 import subprocess
+import platform
 from distutils.core import Extension, setup  # pylint: disable=import-error,no-name-in-module
 
 from Cython.Build import cythonize
@@ -38,6 +39,10 @@ ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()  # pyl
 if ARCH == "aarch64":
   extra_compile_args += ["-Wno-deprecated-register"]
 
+if platform.system() == "Darwin":
+  libdbc = "libdbc.dylib"
+else:
+  libdbc = "libdbc.so"
 
 setup(name='CAN packer',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},
@@ -52,9 +57,13 @@ setup(name='CAN packer',
             os.path.join(BASEDIR, 'phonelibs', 'capnp-cpp/include'),
           ],
           extra_link_args=[
-            os.path.join(BASEDIR, 'opendbc', 'can', 'libdbc.so'),
+            os.path.join(BASEDIR, 'opendbc', 'can', libdbc),
           ],
         )
       ),
       nthreads=4,
 )
+
+if platform.system() == "Darwin":
+  os.system("install_name_tool -change opendbc/can/libdbc.dylib "+BASEDIR+"/opendbc/can/libdbc.dylib packer_pyx.so")
+

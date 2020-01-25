@@ -1,5 +1,7 @@
 from panda.tests.safety import libpandasafety_py
 
+MAX_WRONG_COUNTERS = 5
+
 def make_msg(bus, addr, length=8):
   to_send = libpandasafety_py.ffi.new('CAN_FIFOMailBox_TypeDef *')
   if addr >= 0x800:

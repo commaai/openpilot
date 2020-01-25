@@ -1,4 +1,7 @@
 import http.server
+import multiprocessing
+import queue
+import random
 import requests
 import socket
 import time
@@ -70,27 +73,41 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     self.send_response(201, "Created")
     self.end_headers()
 
+def http_server(port_queue, **kwargs):
+  while 1:
+    try:
+      port = random.randrange(40000, 50000)
+      port_queue.put(port)
+      http.server.test(**kwargs, port=port)
+    except OSError as e:
+      if e.errno == 98:
+        continue
+
 def with_http_server(func):
   @wraps(func)
   def inner(*args, **kwargs):
-    p = Process(target=http.server.test,
+    port_queue = multiprocessing.Queue()
+    host = '127.0.0.1'
+    p = Process(target=http_server,
+                args=(port_queue,),
                 kwargs={
                   'HandlerClass': HTTPRequestHandler,
-                  'port': 44444,
-                  'bind': '127.0.0.1'})
+                  'bind': host})
     p.start()
     now = time.time()
+    port = None
     while 1:
       if time.time() - now > 5:
         raise Exception('HTTP Server did not start')
       try:
-        requests.put('http://localhost:44444/qlog.bz2', data='')
+        port = port_queue.get(timeout=0.1)
+        requests.put(f'http://{host}:{port}/qlog.bz2', data='')
         break
-      except requests.exceptions.ConnectionError:
+      except (requests.exceptions.ConnectionError, queue.Empty):
         time.sleep(0.1)
 
     try:
-      return func(*args, **kwargs)
+      return func(*args, f'http://{host}:{port}', **kwargs)
     finally:
       p.terminate()
 

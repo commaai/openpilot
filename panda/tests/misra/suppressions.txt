@@ -1,8 +1,10 @@
-# Advisory: union types can be used
-misra.19.2
 # Advisory: casting from void pointer to type pointer is ok. Done by STM libraries as well
 misra.11.4
 # Advisory: casting from void pointer to type pointer is ok. Done by STM libraries as well
 misra.11.5
+# Advisory: as stated in the Misra document, use of goto statements in accordance to 15.2 and 15.3 is ok
+misra.15.1
+# Advisory: union types can be used
+misra.19.2
 # Required: it's ok re-defining potentially reserved Macro names. Not likely to cause confusion
 misra.21.1

@@ -1,4 +1,4 @@
-[![](https://i.imgur.com/UetIFyH.jpg)](#)
+[![](https://i.imgur.com/UelUjKAh.png)](#)
 
 Table of Contents
 =======================
@@ -57,81 +57,80 @@ openpilot should preserve all other vehicle's stock features, including, but are
 Supported Hardware
 ------
 
-At the moment, openpilot supports the [EON DevKit](https://comma.ai/shop/products/eon-dashcam-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON to the car. In the future, we'd like to support other platforms as well.
+At the moment, openpilot supports the [EON DevKit](https://comma.ai/shop/products/eon-dashcam-devkit) and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. In the future, we'd like to support other platforms as well, like gaming PCs.
 
 Supported Cars
 ------
 
-| Make      | Model (US Market Reference)        | Supported Package | ACC              | No ACC accel below | No ALC below |
-| ----------| -----------------------------------| ------------------| -----------------| -------------------| -------------|
-| Acura     | ILX 2016-18                        | AcuraWatch Plus   | openpilot        | 25mph<sup>6</sup>  | 25mph        |
-| Acura     | RDX 2016-18                        | AcuraWatch Plus   | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Chrysler  | Pacifica 2017-18<sup>1</sup>       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Chrysler  | Pacifica Hybrid 2017-18<sup>1</sup>| Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Chrysler  | Pacifica Hybrid 2019<sup>1</sup>   | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Genesis   | G80 2018                           | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G90 2018                           | All               | Stock            | 0mph               | 0mph         |
-| Honda     | Accord 2018-19                     | All               | Stock            | 0mph               | 3mph         |
-| Honda     | Accord Hybrid 2018-19              | All               | Stock            | 0mph               | 3mph         |
-| Honda     | Civic Sedan/Coupe 2016-18          | Honda Sensing     | openpilot        | 0mph               | 12mph        |
-| Honda     | Civic Sedan/Coupe 2019             | Honda Sensing     | Stock            | 0mph               | 2mph         |
-| Honda     | Civic Hatchback 2017-19            | Honda Sensing     | Stock            | 0mph               | 12mph        |
-| Honda     | CR-V 2015-16                       | Touring           | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Honda     | CR-V 2017-19                       | Honda Sensing     | Stock            | 0mph               | 12mph        |
-| Honda     | CR-V Hybrid 2017-2019              | Honda Sensing     | Stock            | 0mph               | 12mph        |
-| Honda     | Fit 2018-19                        | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Honda     | Odyssey 2018-20                    | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 0mph         |
-| Honda     | Passport 2019                      | All               | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Honda     | Pilot 2016-18                      | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Honda     | Pilot 2019                         | All               | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Honda     | Ridgeline 2017-19                  | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph        |
-| Hyundai   | Elantra 2017-19<sup>5</sup>        | SCC + LKAS        | Stock            | 19mph              | 34mph        |
-| Hyundai   | Elantra GT/i30 2017-19             | All               | Stock            | 0mph               | 30mph        |
-| Hyundai   | Genesis 2018                       | All               | Stock            | 19mph              | 34mph        |
-| Hyundai   | Ioniq 2017<sup>5</sup>             | All               | Stock            | 0mph               | 34mph        |
-| Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS              | Stock            | 22mph              | 0mph         |
-| Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph         |
-| Jeep      | Grand Cherokee 2016-18<sup>1</sup> | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Jeep      | Grand Cherokee 2019<sup>1</sup>    | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Kia       | Forte 2018<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
-| Kia       | Optima 2017<sup>5</sup>            | SCC + LKAS/LDWS   | Stock            | 0mph               | 34mph        |
-| Kia       | Optima 2019<sup>5</sup>            | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Sorento 2018<sup>5</sup>           | All               | Stock            | 0mph               | 0mph         |
-| Kia       | Stinger 2018<sup>5</sup>           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Lexus     | CT Hybrid 2017-18                  | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Lexus     | ES Hybrid 2019                     | All               | openpilot        | 0mph               | 0mph         |
-| Lexus     | RX Hybrid 2016-19                  | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Lexus     | IS 2017-2019                       | All               | Stock            | 22mph              | 0mph         |
-| Lexus     | IS Hybrid 2017                     | All               | Stock            | 0mph               | 0mph         |
-| Subaru    | Crosstrek 2018-19                  | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Impreza 2019-20                    | EyeSight          | Stock            | 0mph               | 0mph         |
-| Toyota    | Avalon 2016                        | TSS-P             | Stock<sup>5</sup>| 20mph<sup>6</sup>  | 0mph         |
-| Toyota    | Avalon 2017-18                     | All               | Stock<sup>5</sup>| 20mph<sup>6</sup>  | 0mph         |
-| Toyota    | Camry 2018-19                      | All               | Stock            | 0mph<sup>3</sup>   | 0mph         |
-| Toyota    | Camry Hybrid 2018-19               | All               | Stock            | 0mph<sup>3</sup>   | 0mph         |
-| Toyota    | C-HR 2017-19                       | All               | Stock            | 0mph               | 0mph         |
-| Toyota    | C-HR Hybrid 2017-19                | All               | Stock            | 0mph               | 0mph         |
-| Toyota    | Corolla 2017-19                    | All               | Stock<sup>5</sup>| 20mph<sup>6</sup>  | 0mph         |
-| Toyota    | Corolla 2020                       | All               | openpilot        | 0mph               | 0mph         |
-| Toyota    | Corolla Hatchback 2019             | All               | openpilot        | 0mph               | 0mph         |
-| Toyota    | Corolla Hybrid 2020                | All               | openpilot        | 0mph               | 0mph         |
-| Toyota    | Highlander 2017-19                 | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Toyota    | Highlander Hybrid 2017-19          | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Toyota    | Prius 2016                         | TSS-P             | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Toyota    | Prius 2017-19                      | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Toyota    | Prius Prime 2017-20                | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Toyota    | Rav4 2016                          | TSS-P             | Stock<sup>5</sup>| 20mph<sup>6</sup>  | 0mph         |
-| Toyota    | Rav4 2017-18                       | All               | Stock<sup>5</sup>| 20mph<sup>6</sup>  | 0mph         |
-| Toyota    | Rav4 2019                          | All               | openpilot        | 0mph               | 0mph         |
-| Toyota    | Rav4 Hybrid 2016                   | TSS-P             | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Toyota    | Rav4 Hybrid 2017-18                | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Toyota    | Sienna 2018                        | All               | Stock<sup>5</sup>| 0mph               | 0mph         |
-| Volkswagen| Golf 2016-19<sup>4</sup>           | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
+| ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
+| Acura     | ILX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>5</sup>  | 25mph        |
+| Acura     | RDX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>5</sup>  | 12mph        |
+| Chrysler  | Pacifica 2017-18              | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
+| Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
+| Chrysler  | Pacifica Hybrid 2019          | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
+| Genesis   | G80 2018<sup>1</sup>          | All               | Stock            | 0mph               | 0mph         |
+| Genesis   | G90 2018<sup>1</sup>          | All               | Stock            | 0mph               | 0mph         |
+| Honda     | Accord 2018-19                | All               | Stock            | 0mph               | 3mph         |
+| Honda     | Accord Hybrid 2018-19         | All               | Stock            | 0mph               | 3mph         |
+| Honda     | Civic Sedan/Coupe 2016-18     | Honda Sensing     | openpilot        | 0mph               | 12mph        |
+| Honda     | Civic Sedan/Coupe 2019        | Honda Sensing     | Stock            | 0mph               | 2mph         |
+| Honda     | Civic Hatchback 2017-19       | Honda Sensing     | Stock            | 0mph               | 12mph        |
+| Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>5</sup>  | 12mph        |
+| Honda     | CR-V 2017-19                  | Honda Sensing     | Stock            | 0mph               | 12mph        |
+| Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph        |
+| Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>5</sup>  | 12mph        |
+| Honda     | Odyssey 2018-20               | Honda Sensing     | openpilot        | 25mph<sup>5</sup>  | 0mph         |
+| Honda     | Passport 2019                 | All               | openpilot        | 25mph<sup>5</sup>  | 12mph        |
+| Honda     | Pilot 2016-18                 | Honda Sensing     | openpilot        | 25mph<sup>5</sup>  | 12mph        |
+| Honda     | Pilot 2019                    | All               | openpilot        | 25mph<sup>5</sup>  | 12mph        |
+| Honda     | Ridgeline 2017-19             | Honda Sensing     | openpilot        | 25mph<sup>5</sup>  | 12mph        |
+| Hyundai   | Elantra 2017-19<sup>1</sup>   | SCC + LKAS        | Stock            | 19mph              | 34mph        |
+| Hyundai   | Elantra GT 2017-19<sup>1</sup>| All               | Stock            | 0mph               | 30mph        |
+| Hyundai   | Genesis 2018<sup>1</sup>      | All               | Stock            | 19mph              | 34mph        |
+| Hyundai   | Ioniq 2017<sup>1</sup>        | All               | Stock            | 0mph               | 34mph        |
+| Hyundai   | Kona 2017-19<sup>1</sup>      | LDWS              | Stock            | 22mph              | 0mph         |
+| Hyundai   | Santa Fe 2019<sup>1</sup>     | All               | Stock            | 0mph               | 0mph         |
+| Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
+| Jeep      | Grand Cherokee 2019           | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
+| Kia       | Forte 2018<sup>1</sup>        | LKAS              | Stock            | 0mph               | 0mph         |
+| Kia       | Optima 2017<sup>1</sup>       | SCC + LKAS/LDWS   | Stock            | 0mph               | 34mph        |
+| Kia       | Optima 2019<sup>1</sup>       | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Sorento 2018<sup>1</sup>      | All               | Stock            | 0mph               | 0mph         |
+| Kia       | Stinger 2018<sup>1</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Lexus     | CT Hybrid 2017-18             | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph         |
+| Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph         |
+| Lexus     | IS Hybrid 2017                | All               | Stock            | 0mph               | 0mph         |
+| Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Impreza 2019-20               | EyeSight          | Stock            | 0mph               | 0mph         |
+| Toyota    | Avalon 2016                   | TSS-P             | Stock<sup>4</sup>| 20mph<sup>5</sup>  | 0mph         |
+| Toyota    | Avalon 2017-18                | All               | Stock<sup>4</sup>| 20mph<sup>5</sup>  | 0mph         |
+| Toyota    | Camry 2018-19                 | All               | Stock            | 0mph<sup>2</sup>   | 0mph         |
+| Toyota    | Camry Hybrid 2018-19          | All               | Stock            | 0mph<sup>2</sup>   | 0mph         |
+| Toyota    | C-HR 2017-19                  | All               | Stock            | 0mph               | 0mph         |
+| Toyota    | C-HR Hybrid 2017-19           | All               | Stock            | 0mph               | 0mph         |
+| Toyota    | Corolla 2017-19               | All               | Stock<sup>4</sup>| 20mph<sup>5</sup>  | 0mph         |
+| Toyota    | Corolla 2020                  | All               | openpilot        | 0mph               | 0mph         |
+| Toyota    | Corolla Hatchback 2019        | All               | openpilot        | 0mph               | 0mph         |
+| Toyota    | Corolla Hybrid 2020           | All               | openpilot        | 0mph               | 0mph         |
+| Toyota    | Highlander 2017-19            | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Highlander Hybrid 2017-19     | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Prius 2016                    | TSS-P             | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Prius 2017-19                 | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Prius Prime 2017-20           | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Rav4 2016                     | TSS-P             | Stock<sup>4</sup>| 20mph<sup>5</sup>  | 0mph         |
+| Toyota    | Rav4 2017-18                  | All               | Stock<sup>4</sup>| 20mph<sup>5</sup>  | 0mph         |
+| Toyota    | Rav4 2019                     | All               | openpilot        | 0mph               | 0mph         |
+| Toyota    | Rav4 Hybrid 2016              | TSS-P             | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Rav4 Hybrid 2017-18           | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Sienna 2018                   | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Volkswagen| Golf 2016-19<sup>3</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 
-<sup>1</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [FCA giraffe](https://comma.ai/shop/products/giraffe) <br />
-<sup>2</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and open sourced [Hyundai giraffe](https://github.com/commaai/neo/tree/master/giraffe/hyundai), designed for the 2019 Sante Fe; pinout may differ for other Hyundai and Kia models. <br />
-<sup>3</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
-<sup>4</sup>Requires a [custom connector](https://community.comma.ai/wiki/index.php/Volkswagen#Integration_at_R242_Camera) for the [car harness](https://comma.ai/shop/products/car-harness) <br />
+<sup>1</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and open sourced [Hyundai giraffe](https://github.com/commaai/neo/tree/master/giraffe/hyundai), designed for the 2019 Sante Fe; pinout may differ for other Hyundai and Kia models. <br />
+<sup>2</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
+<sup>3</sup>Requires a [custom connector](https://community.comma.ai/wiki/index.php/Volkswagen#Integration_at_R242_Camera) for the [car harness](https://comma.ai/shop/products/car-harness) <br />
 
 Community Maintained Cars and Features
 ------
@@ -166,6 +165,8 @@ Limitations of openpilot ALC and LDW
 ------
 
 openpilot ALC and openpilot LDW do not automatically drive the vehicle or reduce the amount of attention that must be paid to operate your vehicle. The driver must always keep control of the steering wheel and be ready to correct the openpilot ALC action at all times.
+
+While changing lanes, openpilot is not capable of looking next to you or checking your blind spot. Only nudge the wheel to initiate a lane change after you have confirmed it's safe to do so.
 
 Many factors can impact the performance of openpilot ALC and openpilot LDW, causing them to be unable to function as intended. These include, but are not limited to:
 
@@ -248,7 +249,7 @@ Safety and Testing
 Testing on PC
 ------
 
-Check out [openpilot-tools](https://github.com/commaai/openpilot-tools): lots of tools you can use to replay driving data, test and develop openpilot from your pc.
+Check out the tools directory in master: lots of tools you can use to replay driving data, test and develop openpilot from your pc.
 
 Community and Contributing
 ------
