@@ -36,7 +36,7 @@ HwType = log.HealthData.HwType
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
-
+LaneChangeBSM = log.PathPlan.LaneChangeBSM
 
 def add_lane_change_event(events, path_plan):
   if path_plan.laneChangeState == LaneChangeState.preLaneChange:
@@ -67,7 +67,7 @@ def events_to_bytes(events):
   return ret
 
 
-def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, params):
+def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, can_error_counter, params):
   """Receive data from sockets and create events for battery, temperature and disk space"""
 
   # Update carstate from CAN and create events
@@ -79,9 +79,11 @@ def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, pa
   events = list(CS.events)
   add_lane_change_event(events, sm['pathPlan'])
   enabled = isEnabled(state)
-
+  lane_change_bsm = sm['pathPlan'].laneChangeBSM
+  
   # Check for CAN timeout
   if not can_strs:
+    can_error_counter += 1
     events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
   overtemp = sm['thermal'].thermalStatus >= ThermalStatus.red
@@ -89,6 +91,12 @@ def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, pa
   low_battery = sm['thermal'].batteryPercent < 1 and sm['thermal'].chargingError  # at zero percent battery, while discharging, OP should not allowed
   mem_low = sm['thermal'].memUsedPercent > 90
 
+  #bsm alerts 
+  if lane_change_bsm == LaneChangeBSM.left:
+    events.append(create_event('preventLCA', [ET.WARNING])) 
+  if lane_change_bsm == LaneChangeBSM.right:
+    events.append(create_event('preventLCA', [ET.WARNING]))
+    
   # Create events for battery, temperature and disk space
   if low_battery:
     events.append(create_event('lowBattery', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -147,7 +155,7 @@ def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, pa
   if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
     events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
 
-  return CS, events, cal_perc, mismatch_counter
+  return CS, events, cal_perc, mismatch_counter, can_error_counter
 
 
 def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM):
@@ -257,9 +265,13 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   # add eventual driver distracted events
   events = driver_status.update(events, driver_engaged, isActive(state), CS.standstill)
 
-  # send FCW alert if triggered by planner
-  if plan.fcw or CS.stockFcw:
+  if plan.fcw:
+    # send FCW alert if triggered by planner
     AM.add(frame, "fcw", enabled)
+
+  elif CS.stockFcw:
+    # send a silent alert when stock fcw triggers, since the car is already beeping
+    AM.add(frame, "fcwStock", enabled)
 
   # State specific actions
 
@@ -315,7 +327,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
 
 def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, AM,
               driver_status, LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev,
-              last_blinker_frame, is_ldw_enabled):
+              last_blinker_frame, is_ldw_enabled, can_error_counter):
   """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
   CC = car.CarControl.new_message()
@@ -412,6 +424,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     "startMonoTime": int(start_time * 1e9),
     "mapValid": sm['plan'].mapValid,
     "forceDecel": bool(force_decel),
+    "canErrorCounter": can_error_counter,
   }
 
   if CP.lateralTuning.which() == 'pid':
@@ -530,6 +543,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   v_cruise_kph = 255
   v_cruise_kph_last = 0
   mismatch_counter = 0
+  can_error_counter = 0
   last_blinker_frame = 0
   events_prev = []
 
@@ -553,11 +567,13 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
-    CS, events, cal_perc, mismatch_counter = data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, params)
+    CS, events, cal_perc, mismatch_counter, can_error_counter = data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, can_error_counter, params)
     prof.checkpoint("Sample")
 
     # Create alerts
-    if not sm.all_alive_and_valid():
+    if not sm.alive['plan'] and sm.alive['pathPlan']:  # only plan not being received: radar not communicating
+      events.append(create_event('radarCommIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    elif not sm.all_alive_and_valid():
       events.append(create_event('commIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not sm['pathPlan'].mpcSolutionValid:
       events.append(create_event('plannerError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
@@ -579,6 +595,8 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
       events.append(create_event('internetConnectivityNeeded', [ET.NO_ENTRY, ET.PERMANENT]))
     if community_feature_disallowed:
       events.append(create_event('communityFeatureDisallowed', [ET.PERMANENT]))
+    if read_only and not passive:
+      events.append(create_event('carUnrecognized', [ET.PERMANENT]))
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
@@ -599,7 +617,8 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
     # Publish data
     CC, events_prev = data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, AM, driver_status, LaC,
-                                LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev, last_blinker_frame, is_ldw_enabled)
+                                LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev, last_blinker_frame,
+                                is_ldw_enabled, can_error_counter)
     prof.checkpoint("Sent")
 
     rk.monitor_time()

@@ -6,6 +6,7 @@ import datetime
 import psutil
 from smbus2 import SMBus
 from cereal import log
+from common.android import ANDROID
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot, DT_TRML
@@ -15,9 +16,9 @@ from selfdrive.version import terms_version, training_version
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.loggerd.config import get_available_percent
-from selfdrive.pandad import get_expected_version
+from selfdrive.pandad import get_expected_signature
 
-FW_VERSION = get_expected_version()
+FW_SIGNATURE = get_expected_signature()
 
 ThermalStatus = log.ThermalData.ThermalStatus
 CURRENT_TAU = 15.   # 15s time constant
@@ -29,10 +30,13 @@ with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
   OFFROAD_ALERTS = json.load(json_file)
 
 def read_tz(x, clip=True):
-  with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
-    ret = int(f.read())
-    if clip:
-      ret = max(0, ret)
+  try:
+    with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
+      ret = int(f.read())
+      if clip:
+        ret = max(0, ret)
+  except FileNotFoundError:
+    return 0
 
   return ret
 
@@ -156,7 +160,7 @@ def thermald_thread():
   should_start_prev = False
 
   is_uno = (read_tz(29, clip=False) < -1000)
-  if is_uno:
+  if is_uno or not ANDROID:
     handle_fan = handle_fan_uno
   else:
     setup_eon_fan()
@@ -178,20 +182,28 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
-    msg.thermal.freeSpace = get_available_percent() / 100.0  # disk space
+    msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
 
-    with open("/sys/class/power_supply/battery/capacity") as f:
-      msg.thermal.batteryPercent = int(f.read())
-    with open("/sys/class/power_supply/battery/status") as f:
-      msg.thermal.batteryStatus = f.read().strip()
-    with open("/sys/class/power_supply/battery/current_now") as f:
-      msg.thermal.batteryCurrent = int(f.read())
-    with open("/sys/class/power_supply/battery/voltage_now") as f:
-      msg.thermal.batteryVoltage = int(f.read())
-    with open("/sys/class/power_supply/usb/present") as f:
-      msg.thermal.usbOnline = bool(int(f.read()))
+    try:
+      with open("/sys/class/power_supply/battery/capacity") as f:
+        msg.thermal.batteryPercent = int(f.read())
+      with open("/sys/class/power_supply/battery/status") as f:
+        msg.thermal.batteryStatus = f.read().strip()
+      with open("/sys/class/power_supply/battery/current_now") as f:
+        msg.thermal.batteryCurrent = int(f.read())
+      with open("/sys/class/power_supply/battery/voltage_now") as f:
+        msg.thermal.batteryVoltage = int(f.read())
+      with open("/sys/class/power_supply/usb/present") as f:
+        msg.thermal.usbOnline = bool(int(f.read()))
+    except FileNotFoundError:
+      pass
+
+    # Fake battery levels on uno for frame
+    if is_uno:
+      msg.thermal.batteryPercent = 100
+      msg.thermal.batteryStatus = "Charging"
 
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
 
@@ -268,8 +280,9 @@ def thermald_thread():
     do_uninstall = params.get("DoUninstall") == b"1"
     accepted_terms = params.get("HasAcceptedTerms") == terms_version
     completed_training = params.get("CompletedTrainingVersion") == training_version
-    fw_version = params.get("PandaFirmware", encoding="utf8")
-    fw_version_match = fw_version is None or fw_version.startswith(FW_VERSION)  # don't show alert is no panda is connected (None)
+
+    panda_signature = params.get("PandaFirmware")
+    fw_version_match = (panda_signature is None) or (panda_signature == FW_SIGNATURE)   # don't show alert is no panda is connected (None)
 
     should_start = ignition
 
@@ -306,12 +319,18 @@ def thermald_thread():
         params.delete("Offroad_TemperatureTooHigh")
 
     if should_start:
+      if not should_start_prev:
+        params.delete("IsOffroad")
+
       off_ts = None
       if started_ts is None:
         started_ts = sec_since_boot()
         started_seen = True
         os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
     else:
+      if should_start_prev or (count == 0):
+        params.put("IsOffroad", "1")
+
       started_ts = None
       if off_ts is None:
         off_ts = sec_since_boot()

@@ -680,14 +680,6 @@ void* visionserver_client_thread(void* arg) {
         } else {
           assert(false);
         }
-
-        if (stream_type == VISION_STREAM_RGB_BACK ||
-            stream_type == VISION_STREAM_RGB_FRONT) {
-          /*stream_bufs->buf_info.ui_info = (VisionUIInfo){
-            .transformed_width = s->model.in.transformed_width,
-            .transformed_height = s->model.in.transformed_height,
-          };*/
-        }
         vipc_send(fd, &rep);
         streams[stream_type].subscribed = true;
       } else if (p.type == VIPC_STREAM_RELEASE) {

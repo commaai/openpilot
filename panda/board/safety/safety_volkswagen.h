@@ -17,48 +17,64 @@ const int VOLKSWAGEN_DRIVER_TORQUE_FACTOR = 3;
 // MSG_GRA_ACC_01 is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
 const AddrBus VOLKSWAGEN_TX_MSGS[] = {{MSG_HCA_01, 0}, {MSG_GRA_ACC_01, 0}, {MSG_GRA_ACC_01, 2}, {MSG_LDW_02, 0}};
 
-struct sample_t volkswagen_torque_driver;           // last few driver torques measured
+// TODO: do checksum and counter checks
+AddrCheckStruct volkswagen_rx_checks[] = {
+  {.addr = {MSG_EPS_01}, .bus = 0, .expected_timestep = 10000U},
+  {.addr = {MSG_ACC_06}, .bus = 0, .expected_timestep = 20000U},
+  {.addr = {MSG_MOTOR_20}, .bus = 0, .expected_timestep = 20000U},
+};
+
+const int VOLKSWAGEN_RX_CHECK_LEN = sizeof(volkswagen_rx_checks) / sizeof(volkswagen_rx_checks[0]);
+
+struct sample_t volkswagen_torque_driver;  // last few driver torques measured
 int volkswagen_rt_torque_last = 0;
 int volkswagen_desired_torque_last = 0;
 uint32_t volkswagen_ts_last = 0;
 int volkswagen_gas_prev = 0;
 
-static void volkswagen_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  int bus = GET_BUS(to_push);
-  int addr = GET_ADDR(to_push);
+static int volkswagen_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
-  // Update driver input torque samples from EPS_01.Driver_Strain for absolute torque, and EPS_01.Driver_Strain_VZ
-  // for the direction.
-  if ((bus == 0) && (addr == MSG_EPS_01)) {
-    int torque_driver_new = GET_BYTE(to_push, 5) | ((GET_BYTE(to_push, 6) & 0x1F) << 8);
-    int sign = (GET_BYTE(to_push, 6) & 0x80) >> 7;
-    if (sign == 1) {
-      torque_driver_new *= -1;
-    }
+  bool valid = addr_safety_check(to_push, volkswagen_rx_checks, VOLKSWAGEN_RX_CHECK_LEN,
+                                 NULL, NULL, NULL);
 
-    update_sample(&volkswagen_torque_driver, torque_driver_new);
+  if (valid) {
+   int bus = GET_BUS(to_push);
+   int addr = GET_ADDR(to_push);
+
+   // Update driver input torque samples from EPS_01.Driver_Strain for absolute torque, and EPS_01.Driver_Strain_VZ
+   // for the direction.
+   if ((bus == 0) && (addr == MSG_EPS_01)) {
+     int torque_driver_new = GET_BYTE(to_push, 5) | ((GET_BYTE(to_push, 6) & 0x1F) << 8);
+     int sign = (GET_BYTE(to_push, 6) & 0x80) >> 7;
+     if (sign == 1) {
+       torque_driver_new *= -1;
+     }
+
+     update_sample(&volkswagen_torque_driver, torque_driver_new);
+   }
+
+   // Monitor ACC_06.ACC_Status_ACC for stock ACC status. Because the current MQB port is lateral-only, OP's control
+   // allowed state is directly driven by stock ACC engagement. Permit the ACC message to come from either bus, in
+   // order to accommodate future camera-side integrations if needed.
+   if (addr == MSG_ACC_06) {
+     int acc_status = (GET_BYTE(to_push, 7) & 0x70) >> 4;
+     controls_allowed = ((acc_status == 3) || (acc_status == 4) || (acc_status == 5)) ? 1 : 0;
+   }
+
+   // exit controls on rising edge of gas press. Bits [12-20)
+   if (addr == MSG_MOTOR_20) {
+     int gas = (GET_BYTES_04(to_push) >> 12) & 0xFF;
+     if ((gas > 0) && (volkswagen_gas_prev == 0)) {
+       controls_allowed = 0;
+     }
+     volkswagen_gas_prev = gas;
+   }
+
+   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == MSG_HCA_01)) {
+     relay_malfunction = true;
+   }
   }
-
-  // Monitor ACC_06.ACC_Status_ACC for stock ACC status. Because the current MQB port is lateral-only, OP's control
-  // allowed state is directly driven by stock ACC engagement. Permit the ACC message to come from either bus, in
-  // order to accommodate future camera-side integrations if needed.
-  if (addr == MSG_ACC_06) {
-    int acc_status = (GET_BYTE(to_push, 7) & 0x70) >> 4;
-    controls_allowed = ((acc_status == 3) || (acc_status == 4) || (acc_status == 5)) ? 1 : 0;
-  }
-
-  // exit controls on rising edge of gas press. Bits [12-20)
-  if (addr == MSG_MOTOR_20) {
-    int gas = (GET_BYTES_04(to_push) >> 12) & 0xFF;
-    if ((gas > 0) && (volkswagen_gas_prev == 0) && long_controls_allowed) {
-      controls_allowed = 0;
-    }
-    volkswagen_gas_prev = gas;
-  }
-
-  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == MSG_HCA_01)) {
-    relay_malfunction = true;
-  }
+  return valid;
 }
 
 static int volkswagen_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -66,7 +82,7 @@ static int volkswagen_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int bus = GET_BUS(to_send);
   int tx = 1;
 
-  if (!addr_allowed(addr, bus, VOLKSWAGEN_TX_MSGS, sizeof(VOLKSWAGEN_TX_MSGS)/sizeof(VOLKSWAGEN_TX_MSGS[0]))) {
+  if (!msg_allowed(addr, bus, VOLKSWAGEN_TX_MSGS, sizeof(VOLKSWAGEN_TX_MSGS)/sizeof(VOLKSWAGEN_TX_MSGS[0]))) {
     tx = 0;
   }
 
@@ -174,4 +190,6 @@ const safety_hooks volkswagen_hooks = {
   .tx = volkswagen_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = volkswagen_fwd_hook,
+  .addr_check = volkswagen_rx_checks,
+  .addr_check_len = sizeof(volkswagen_rx_checks) / sizeof(volkswagen_rx_checks[0]),
 };

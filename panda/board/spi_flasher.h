@@ -65,11 +65,13 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       // so it's blocked over wifi
       switch (setup->b.wValue.w) {
         case 0:
-          #ifdef ALLOW_DEBUG
+          // TODO: put this back when it's no longer a "devkit"
+          //#ifdef ALLOW_DEBUG
+          #if 1
           if (hardwired) {
           #else
-          // no more bootstub on UNO
-          if (hardwired && hw_type != HW_TYPE_UNO) {
+          // no more bootstub on UNO once OTP block is flashed
+          if (hardwired && ((hw_type != HW_TYPE_UNO) || (!is_provisioned()))) {
           #endif
             puts("-> entering bootloader\n");
             enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;

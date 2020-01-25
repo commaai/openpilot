@@ -11,7 +11,7 @@ int ford_brake_prev = 0;
 int ford_gas_prev = 0;
 bool ford_moving = false;
 
-static void ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   int addr = GET_ADDR(to_push);
   int bus = GET_BUS(to_push);
@@ -58,6 +58,7 @@ static void ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 0x3CA)) {
     relay_malfunction = true;
   }
+  return 1;
 }
 
 // all commands: just steering

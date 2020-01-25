@@ -243,10 +243,6 @@ int read_db_value(const char* params_path, const char* key, char** value,
     goto cleanup;
   }
 
-  // Remove one for null byte.
-  if (value_sz != NULL) {
-    *value_sz -= 1;
-  }
   result = 0;
 
 cleanup:

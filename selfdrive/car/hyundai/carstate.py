@@ -58,7 +58,6 @@ def get_can_parser(CP):
     ("CF_Lca_Stat", "LCA11", 0),
     ("CF_Lca_IndLeft", "LCA11", 0),
     ("CF_Lca_IndRight", "LCA11", 0),
-
   ]
 
   checks = [
@@ -149,7 +148,7 @@ def get_can_parser(CP):
   elif CP.carFingerprint in FEATURES["use_elect_gears"]:
     signals += [
       ("Elect_Gear_Shifter", "ELECT_GEAR", 0),
-    ]
+	]
   else:
     signals += [
       ("CF_Lvr_Gear","LVR12",0),
@@ -304,6 +303,8 @@ class CarState():
     self.left_blinker_flash = 0
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
+    self.lca_left = 0
+    self.lca_left = 0
     self.no_radar = CP.sccBus == -1
     self.mdps_bus = CP.mdpsBus
     self.sas_bus = CP.sasBus
@@ -407,7 +408,7 @@ class CarState():
     # Gear Selecton - This is only compatible with optima hybrid 2017
     elif self.car_fingerprint in FEATURES["use_elect_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
-      if gear in (5, 8): # 8 sport mode
+      if gear in (5, 8): # 5: D, 8: sport mode
         self.gear_shifter = GearShifter.drive
       elif gear == 6:
         self.gear_shifter = GearShifter.neutral
@@ -420,7 +421,7 @@ class CarState():
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
-      if gear in (5, 8): # 8 sport mode
+      if gear in (5, 8): # 5: D, 8: sport mode
         self.gear_shifter = GearShifter.drive
       elif gear == 6:
         self.gear_shifter = GearShifter.neutral

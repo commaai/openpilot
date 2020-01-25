@@ -5,8 +5,14 @@ const int HYUNDAI_MAX_RATE_UP = 3;
 const int HYUNDAI_MAX_RATE_DOWN = 7;
 const int HYUNDAI_DRIVER_TORQUE_ALLOWANCE = 50;
 const int HYUNDAI_DRIVER_TORQUE_FACTOR = 2;
-
 const AddrBus HYUNDAI_TX_MSGS[] = {{832, 0}, {832, 1}, {1265, 0}, {1265, 1}, {1265, 2}, {593, 2}, {1057, 0}};
+
+// TODO: do checksum and counter checks
+AddrCheckStruct hyundai_rx_checks[] = {
+  {.addr = {593}, .bus = 0, .expected_timestep = 20000U},
+  {.addr = {1057}, .bus = 0, .expected_timestep = 20000U},
+};
+const int HYUNDAI_RX_CHECK_LEN = sizeof(hyundai_rx_checks) / sizeof(hyundai_rx_checks[0]);
 
 int hyundai_rt_torque_last = 0;
 int hyundai_desired_torque_last = 0;
@@ -22,89 +28,98 @@ int hyundai_mdps_bus = 0;
 bool hyundai_LCAN_on_bus1 = false;
 bool hyundai_forward_bus1 = false;
 
-static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  int bus = GET_BUS(to_push);
-  int addr = GET_ADDR(to_push);
 
-  if (addr == 593) {
-    int torque_driver_new = ((GET_BYTES_04(to_push) & 0x7ff) * 0.79) - 808; // scale down new driver torque to match previous signal
-    // update array of samples
-    update_sample(&hyundai_torque_driver, torque_driver_new);
-  }
+static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
-  // check if stock camera ECU is on bus 0
-  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 832)) {
-    relay_malfunction = true;
-  }
-  // disable can2 forwarding if we have a LCAN on Bus1
-  if (bus == 1 && addr == 1296) {
-    if (hyundai_forward_bus1 != false) {
-      hyundai_LCAN_on_bus1 = true;
-      hyundai_forward_bus1 = false;
-    }
-  }
-  // check if we have a MDPS on Bus1
-  if (bus == 1 && (addr == 593 || addr == 897) && !hyundai_LCAN_on_bus1) {
-    if (hyundai_forward_bus1 != true) {
-      hyundai_mdps_bus = bus;
-      hyundai_forward_bus1 = true;
-    }
-  }
-  // check if we have a SCC on Bus1 and LCAN not on the bus
-  if (bus == 1 && addr == 1057 && !hyundai_LCAN_on_bus1) {
-    if (hyundai_forward_bus1 != true) {
-      hyundai_forward_bus1 = true;
-    }
-  }
-  // enter controls on rising edge of ACC, exit controls on ACC off
-  if ((addr == 1057) && OP_SCC_live) { // for cars with long control
-    hyundai_has_scc = 1;
-    // 2 bits: 13-14
-    int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
-    if (cruise_engaged && !hyundai_cruise_engaged_last) {
-      controls_allowed = 1;
-    }
-    if (!cruise_engaged) {
-      controls_allowed = 0;
-    }
-    hyundai_cruise_engaged_last = cruise_engaged;
-  }
-  else if (addr == 1056) { // for cars without long control
-    hyundai_has_scc = 1;
-    // first bit
-    int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
-    if (cruise_engaged && !hyundai_cruise_engaged_last) {
-      controls_allowed = 1;
-    }
-    if (!cruise_engaged) {
-      controls_allowed = 0;
-    }
-    hyundai_cruise_engaged_last = cruise_engaged;
-  }
-  // cruise control for car without SCC
-  if ((addr == 871) && (!hyundai_has_scc) && OP_SCC_live) {
-    // first byte
-    int cruise_engaged = (GET_BYTES_04(to_push) & 0xFF);
-    if (cruise_engaged && !hyundai_cruise_engaged_last) {
-      controls_allowed = 1;
-    }
-    if (!cruise_engaged) {
-      controls_allowed = 0;
-    }
-    hyundai_cruise_engaged_last = cruise_engaged;
-  }
-  else if ((addr == 608) && (!hyundai_has_scc)) {
-    // bit 25
-    int cruise_engaged = (GET_BYTES_04(to_push) >> 25 & 0x1); // ACC main_on signal
-    if (cruise_engaged && !hyundai_cruise_engaged_last) {
-      controls_allowed = 1;
-    }
-    if (!cruise_engaged) {
-      controls_allowed = 0;
-    }
-    hyundai_cruise_engaged_last = cruise_engaged;
-  }
+  bool valid = addr_safety_check(to_push, hyundai_rx_checks, HYUNDAI_RX_CHECK_LEN,
+                                 NULL, NULL, NULL);
 
+  if (valid) {
+    int bus = GET_BUS(to_push);
+    int addr = GET_ADDR(to_push);
+
+    if (addr == 593) {
+      int torque_driver_new = ((GET_BYTES_04(to_push) & 0x7ff) * 0.79) - 808; // scale down new driver torque signal to match previous one
+      // update array of samples
+      update_sample(&hyundai_torque_driver, torque_driver_new);
+    }
+
+    // enter controls on rising edge of ACC, exit controls on ACC off
+    if (addr == 1057 && OP_SCC_live) { // for cars with long control
+      hyundai_has_scc = true;
+      // 2 bits: 13-14
+      int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
+      if (cruise_engaged && !hyundai_cruise_engaged_last) {
+        controls_allowed = 1;
+      }
+      if (!cruise_engaged) {
+        controls_allowed = 0;
+      }
+      hyundai_cruise_engaged_last = cruise_engaged;
+    }
+    if (addr == 1056 && !OP_SCC_live) { // for cars without long control
+      hyundai_has_scc = true;
+      // 2 bits: 13-14
+      int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
+      if (cruise_engaged && !hyundai_cruise_engaged_last) {
+        controls_allowed = 1;
+      }
+      if (!cruise_engaged) {
+        controls_allowed = 0;
+      }
+      hyundai_cruise_engaged_last = cruise_engaged;
+    }
+    // cruise control for car without SCC
+    if (addr == 871 && !hyundai_has_scc && OP_SCC_live) {
+      // first byte
+      int cruise_engaged = (GET_BYTES_04(to_push) & 0xFF);
+      if (cruise_engaged && !hyundai_cruise_engaged_last) {
+        controls_allowed = 1;
+      }
+      if (!cruise_engaged) {
+        controls_allowed = 0;
+      }
+      hyundai_cruise_engaged_last = cruise_engaged;
+    }
+    if (addr == 608 && !hyundai_has_scc && !OP_SCC_live) {
+      // bit 25
+      int cruise_engaged = (GET_BYTES_04(to_push) >> 25 & 0x1); // ACC main_on signal
+      if (cruise_engaged && !hyundai_cruise_engaged_last) {
+        controls_allowed = 1;
+      }
+      if (!cruise_engaged) {
+        controls_allowed = 0;
+      }
+      hyundai_cruise_engaged_last = cruise_engaged;
+    }
+    // TODO: check gas pressed
+
+    // check if stock camera ECU is on bus 0
+    if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 832)) {
+      relay_malfunction = true;
+    }
+    // check if we have a LCAN on Bus1
+    if (bus == 1 && (addr == 1296 || addr == 524)) {
+      if (hyundai_forward_bus1 != false || hyundai_LCAN_on_bus1 != true) {
+        hyundai_LCAN_on_bus1 = true;
+        hyundai_forward_bus1 = false;
+      }
+    }
+    // check if we have a MDPS on Bus1 and LCAN not on the bus
+    if (bus == 1 && (addr == 593 || addr == 897) && hyundai_LCAN_on_bus1 == false) {
+      if (hyundai_forward_bus1 != true) {
+        hyundai_mdps_bus = bus;
+        hyundai_forward_bus1 = true;
+      }
+    }
+    // check if we have a SCC on Bus1 and LCAN not on the bus
+    if (bus == 1 && addr == 1057 && hyundai_LCAN_on_bus1 == false) {
+      if (hyundai_forward_bus1 != true) {
+        hyundai_forward_bus1 = true;
+      }
+    }
+  }
+  return valid;
 }
 
 static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
@@ -113,7 +128,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
-  if (!addr_allowed(addr, bus, HYUNDAI_TX_MSGS, sizeof(HYUNDAI_TX_MSGS)/sizeof(HYUNDAI_TX_MSGS[0]))) {
+  if (!msg_allowed(addr, bus, HYUNDAI_TX_MSGS, sizeof(HYUNDAI_TX_MSGS)/sizeof(HYUNDAI_TX_MSGS[0]))) {
     tx = 0;
   }
 
@@ -255,4 +270,6 @@ const safety_hooks hyundai_hooks = {
   .tx = hyundai_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = hyundai_fwd_hook,
+  .addr_check = hyundai_rx_checks,
+  .addr_check_len = sizeof(hyundai_rx_checks) / sizeof(hyundai_rx_checks[0]),
 };

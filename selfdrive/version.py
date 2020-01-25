@@ -48,7 +48,7 @@ try:
         dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"], encoding='utf8')
         commit = subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"], encoding='utf8').rstrip()
         origin_commit = subprocess.check_output(["git", "rev-parse", "--verify", branch], encoding='utf8').rstrip()
-        cloudlog.event("dirty comma branch", vesion=version, dirty=dirty, origin=origin, branch=branch, dirty_files=dirty_files, commit=commit, origin_commit=origin_commit)
+        cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch, dirty_files=dirty_files, commit=commit, origin_commit=origin_commit)
 
   else:
     dirty = True
@@ -59,7 +59,7 @@ except subprocess.CalledProcessError:
     pass
   dirty = True
 
-training_version = b"0.1.0"
+training_version = b"0.2.0"
 terms_version = b"2"
 
 if __name__ == "__main__":

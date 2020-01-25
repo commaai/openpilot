@@ -3,7 +3,7 @@ from common.numpy_fast import clip
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, \
                                              create_scc12, create_mdps12
-from selfdrive.car.hyundai.values import CAR, Buttons, SteerLimitParams
+from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -27,7 +27,6 @@ def accel_hysteresis(accel, accel_steady):
 
 def process_hud_alert(enabled, button_on, fingerprint, visual_alert, left_line,
                        right_line, left_lane_depart, right_lane_depart):
-
   hud_alert = 0
   if visual_alert == VisualAlert.steerRequired:
     hud_alert = 3
@@ -37,7 +36,7 @@ def process_hud_alert(enabled, button_on, fingerprint, visual_alert, left_line,
   lane_visible = 1
   if not button_on:
     lane_visible = 0
-  elif left_line and right_line or hud_alert:
+  elif left_line and right_line or hud_alert: #HUD alert only display when LKAS status is active
     if enabled or hud_alert:
       lane_visible = 3
     else:
@@ -96,9 +95,10 @@ class CarController():
         self.lkas_button = not self.lkas_button
       self.lkas_button_last = CS.lkas_button_on
 
+    # disable if steer angle reach 90 deg, otherwise mdps fault in some models
     lkas_active = enabled and abs(CS.angle_steers) < 90. and self.lkas_button
 
-    # Fix for sharp turns mdps fault and Genesis hard fault at low speed
+    # fix for Genesis hard fault at low speed
     if CS.v_ego < 16.7 and self.car_fingerprint == CAR.GENESIS and not CS.mdps_bus:
       lkas_active = 0
 
@@ -112,7 +112,6 @@ class CarController():
       lkas_active = 0
     if self.turning_signal_timer:
       self.turning_signal_timer -= 1
-
     if not lkas_active:
       apply_steer = 0
 
