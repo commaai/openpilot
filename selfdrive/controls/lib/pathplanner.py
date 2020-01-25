@@ -60,6 +60,7 @@ class PathPlanner():
     self.prev_one_blinker = False
     self.pre_auto_LCA_timer = 0.0
     self.lane_change_BSM = LaneChangeBSM.off
+    self.prev_torque_applied = False
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -126,25 +127,24 @@ class PathPlanner():
       # pre
       elif self.lane_change_state == LaneChangeState.preLaneChange:
         if not one_blinker or below_lane_change_speed:
-          self.lane_change_state = LaneChangeState.off
-        elif lca_left or lca_right:
-          if lca_left and lane_change_direction == LaneChangeDirection.left:
-            self.lane_change_state = LaneChangeState.off
-          else:
-            self.lane_change_state = LaneChangeState.preLaneChange
-          if lca_right and lane_change_direction == LaneChangeDirection.right:
-            self.lane_change_state = LaneChangeState.off
-          else:
-            self.lane_change_state = LaneChangeState.preLaneChange          
+          self.lane_change_state = LaneChangeState.off   
         elif torque_applied:
-          self.lane_change_state = LaneChangeState.laneChangeStarting
+          if self.prev_torque_applied or lane_change_direction == LaneChangeDirection.left and not lca_left or \
+                  lane_change_direction == LaneChangeDirection.right and not lca_right:
+            self.lane_change_state = LaneChangeState.laneChangeStarting
+          else:
+            if self.pre_auto_LCA_timer < 10.:
+              self.pre_auto_LCA_timer = 10.
+        else:
+          if self.pre_auto_LCA_timer > 10.3:
+            self.prev_torque_applied = True
 
       # bsm
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
-        if lca_left and lane_change_direction == LaneChangeDirection.left:
+        if lca_left and lane_change_direction == LaneChangeDirection.left and not self.prev_torque_applied:
           self.lane_change_BSM = LaneChangeBSM.left
           self.lane_change_state = LaneChangeState.preLaneChange
-        elif lca_right and lane_change_direction == LaneChangeDirection.right:
+        elif lca_right and lane_change_direction == LaneChangeDirection.right and not self.prev_torque_applied:
           self.lane_change_BSM = LaneChangeBSM.right
           self.lane_change_state = LaneChangeState.preLaneChange
         else:
@@ -174,6 +174,12 @@ class PathPlanner():
           self.lane_change_BSM = LaneChangeBSM.off
     else:
       self.lane_change_timer += DT_MDL
+
+    if self.lane_change_state == LaneChangeState.off:
+      self.pre_auto_LCA_timer = 0.0
+      self.prev_torque_applied = False
+    elif not (3. < self.pre_auto_LCA_timer < 10.): # stop afer 3 sec resume from 10 when torque applied
+      self.pre_auto_LCA_timer += DT_MDL
 
     self.prev_one_blinker = one_blinker
 
