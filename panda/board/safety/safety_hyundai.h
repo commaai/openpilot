@@ -45,7 +45,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
 
     // enter controls on rising edge of ACC, exit controls on ACC off
-    if (addr == 1057 && OP_SCC_live) { // for cars with long control
+    if (addr == 1057 && OP_SCC_live && (bus != 1 || !hyundai_LCAN_on_bus1)) { // for cars with long control
       hyundai_has_scc = true;
       // 2 bits: 13-14
       int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
@@ -57,7 +57,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       }
       hyundai_cruise_engaged_last = cruise_engaged;
     }
-    if (addr == 1056 && !OP_SCC_live) { // for cars without long control
+    if (addr == 1056 && !OP_SCC_live && (bus != 1 || !hyundai_LCAN_on_bus1)) { // for cars without long control
       hyundai_has_scc = true;
       // 2 bits: 13-14
       int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
@@ -100,21 +100,21 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
     // check if we have a LCAN on Bus1
     if (bus == 1 && (addr == 1296 || addr == 524)) {
-      if (hyundai_forward_bus1 != false || hyundai_LCAN_on_bus1 != true) {
+      if (hyundai_forward_bus1 || !hyundai_LCAN_on_bus1) {
         hyundai_LCAN_on_bus1 = true;
         hyundai_forward_bus1 = false;
       }
     }
     // check if we have a MDPS on Bus1 and LCAN not on the bus
-    if (bus == 1 && (addr == 593 || addr == 897) && hyundai_LCAN_on_bus1 == false) {
-      if (hyundai_forward_bus1 != true) {
+    if (bus == 1 && (addr == 593 || addr == 897) && !hyundai_LCAN_on_bus1) {
+      if (!hyundai_forward_bus1) {
         hyundai_mdps_bus = bus;
         hyundai_forward_bus1 = true;
       }
     }
     // check if we have a SCC on Bus1 and LCAN not on the bus
-    if (bus == 1 && addr == 1057 && hyundai_LCAN_on_bus1 == false) {
-      if (hyundai_forward_bus1 != true) {
+    if (bus == 1 && addr == 1057 && !hyundai_LCAN_on_bus1) {
+      if (!hyundai_forward_bus1) {
         hyundai_forward_bus1 = true;
       }
     }
