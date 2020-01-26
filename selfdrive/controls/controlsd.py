@@ -36,7 +36,7 @@ HwType = log.HealthData.HwType
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
-
+LaneChangeBSM = log.PathPlan.LaneChangeBSM
 
 def add_lane_change_event(events, path_plan):
   if path_plan.laneChangeState == LaneChangeState.preLaneChange:
@@ -79,7 +79,8 @@ def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, ca
   events = list(CS.events)
   add_lane_change_event(events, sm['pathPlan'])
   enabled = isEnabled(state)
-
+  lane_change_bsm = sm['pathPlan'].laneChangeBSM
+  
   # Check for CAN timeout
   if not can_strs:
     can_error_counter += 1
@@ -90,6 +91,12 @@ def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, ca
   low_battery = sm['thermal'].batteryPercent < 1 and sm['thermal'].chargingError  # at zero percent battery, while discharging, OP should not allowed
   mem_low = sm['thermal'].memUsedPercent > 90
 
+  #bsm alerts 
+  if lane_change_bsm == LaneChangeBSM.left:
+    events.append(create_event('preventLCA', [ET.WARNING])) 
+  if lane_change_bsm == LaneChangeBSM.right:
+    events.append(create_event('preventLCA', [ET.WARNING]))
+    
   # Create events for battery, temperature and disk space
   if low_battery:
     events.append(create_event('lowBattery', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
