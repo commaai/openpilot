@@ -25,7 +25,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
     "COMPUTER_BRAKE_REQUEST": brake_rq,
     "SET_ME_1": 1,
     "BRAKE_LIGHTS": brakelights,
-    "CHIME": 0,  # send the chime for stock fcw
+    "CHIME": 0,  # send the chime for stock fcw - remove brake chime (set 0) 
     "FCW": fcw << 1,  # TODO: Why are there two bits for fcw?
     "AEB_REQ_1": 0,
     "AEB_REQ_2": 0,
@@ -62,8 +62,8 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
       'SET_ME_X01': 1,
       "FCM_OFF": stock_hud["FCM_OFF"],
       "FCM_OFF_2": stock_hud["FCM_OFF_2"],
-      #"FCM_PROBLEM": stock_hud["FCM_PROBLEM"],
-      #"ICONS": stock_hud["ICONS"],
+      #"FCM_PROBLEM": stock_hud["FCM_PROBLEM"], (remove error lights) 
+      "ICONS": stock_hud["ICONS"],
     }
     commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values, idx))
 
