@@ -117,7 +117,7 @@ def fingerprint(logcan, sendcan, has_relay):
   return car_fingerprint, finger, vin, car_fw
 
 
-def dump_fingerprints(fingerprints):
+def dump_fingerprints(candidate, fingerprints):
   """
   dump all fingerprints from various CAN buses into /data/my_car/my_fingerprints.txt
 
@@ -128,6 +128,7 @@ def dump_fingerprints(fingerprints):
   os.makedirs(my_own_dir, exist_ok=True)
   outfile = os.path.join(my_own_dir, 'my_fingerprints.txt')
   with open(outfile, 'wt') as fout:
+    fout.write(f"Candidate Car: {candidate}\n\n")
     for key in fingerprints:
       d = fingerprints[key]
       fout.write(f"CAN={key}:\n")
@@ -137,7 +138,7 @@ def dump_fingerprints(fingerprints):
 
 def get_car(logcan, sendcan, has_relay=False):
   candidate, fingerprints, vin, car_fw = fingerprint(logcan, sendcan, has_relay)
-  dump_fingerprints(fingerprints)
+  dump_fingerprints(candidate, fingerprints)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
