@@ -3,7 +3,6 @@ import os
 os.environ['OLD_CAN'] = '1'
 os.environ['NOCRASH'] = '1'
 
-import time
 import unittest
 import shutil
 import matplotlib
