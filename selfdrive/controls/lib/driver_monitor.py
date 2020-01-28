@@ -5,9 +5,9 @@ from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
 
-_AWARENESS_TIME = 100.  # 1.6 minutes limit without user touching steering wheels make the car enter a terminal status
-_AWARENESS_PRE_TIME_TILL_TERMINAL = 25.  # a first alert is issued 25s before expiration
-_AWARENESS_PROMPT_TIME_TILL_TERMINAL = 15.  # a second alert is issued 15s before start decelerating the car
+_AWARENESS_TIME = 70.  # one minute limit without user touching steering wheels make the car enter a terminal status
+_AWARENESS_PRE_TIME_TILL_TERMINAL = 15.  # a first alert is issued 25s before expiration
+_AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.  # a second alert is issued 15s before start decelerating the car
 _DISTRACTED_TIME = 11.
 _DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
 _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
@@ -27,6 +27,7 @@ _PITCH_NATURAL_OFFSET = 0.02 # people don't seem to look straight when they driv
 _YAW_NATURAL_OFFSET = 0.08 # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
 _HI_STD_TIMEOUT = 2
+_HI_STD_FALLBACK_TIME = 10 # fall back to wheel touch if model is uncertain for a long time
 _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
 _POSE_CALIB_MIN_SPEED = 13 # 30 mph
@@ -177,8 +178,8 @@ class DriverStatus():
     self.pose.pitch_std = driver_monitoring.faceOrientationStd[0]
     self.pose.yaw_std = driver_monitoring.faceOrientationStd[1]
     # self.pose.roll_std = driver_monitoring.faceOrientationStd[2]
-    max_std = max(self.pose.pitch_std, self.pose.yaw_std)
-    self.pose.low_std = max_std < _POSESTD_THRESHOLD
+    model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
+    self.pose.low_std = model_std_max < _POSESTD_THRESHOLD
     self.blink.left_blink = driver_monitoring.leftBlinkProb * (driver_monitoring.leftEyeProb>_EYE_THRESHOLD)
     self.blink.right_blink = driver_monitoring.rightBlinkProb * (driver_monitoring.rightEyeProb>_EYE_THRESHOLD)
     self.face_detected = driver_monitoring.faceProb > _FACE_THRESHOLD and \
@@ -198,9 +199,11 @@ class DriverStatus():
     self.pose_calibrated = self.pose.pitch_offseter.filtered_stat.n > _POSE_OFFSET_MIN_COUNT and \
                             self.pose.yaw_offseter.filtered_stat.n > _POSE_OFFSET_MIN_COUNT
 
-    self._set_timers(self.face_detected)
+    is_model_uncertain = self.hi_stds * DT_DMON > _HI_STD_FALLBACK_TIME
+    self._set_timers(self.face_detected and not is_model_uncertain)
     if self.face_detected and not self.pose.low_std:
-      self.step_change *= max(0, (max_std-0.5)*(max_std-2))
+      if not is_model_uncertain:
+        self.step_change *= max(0, (model_std_max-0.5)*(model_std_max-2))
       self.hi_stds += 1
     elif self.face_detected and self.pose.low_std:
       self.hi_stds = 0
@@ -219,7 +222,7 @@ class DriverStatus():
     if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT:
       events.append(create_event('driverMonitorLowAcc', [ET.WARNING]))
 
-    if (driver_attentive and self.face_detected and self.awareness > 0):
+    if (driver_attentive and self.face_detected and self.pose.low_std and self.awareness > 0):
       # only restore awareness when paying attention and alert is not red
       self.awareness = min(self.awareness + ((_RECOVERY_FACTOR_MAX-_RECOVERY_FACTOR_MIN)*(1.-self.awareness)+_RECOVERY_FACTOR_MIN)*self.step_change, 1.)
       if self.awareness == 1.:
