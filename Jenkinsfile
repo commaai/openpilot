@@ -8,14 +8,16 @@ pipeline {
   stages {
     stage('Install dependencies') {
       steps {
-        sh '''apt update
-apt install git'''
+        sh '''
+sudo apt update
+sudo apt install -y git'''
       }
     }
 
     stage('Build') {
       steps {
-        sh '''ls
+        sh '''
+ls
 git rev-parse --abbrev-ref HEAD
 uname -a'''
       }
