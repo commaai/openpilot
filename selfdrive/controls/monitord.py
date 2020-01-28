@@ -2,6 +2,7 @@
 import gc
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
 from common.params import Params, put_nonblocking
+from common.profiler import Profiler
 import cereal.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
@@ -38,6 +39,7 @@ def monitord_thread(sm=None, pm=None):
     CS_updated = sm.updated['carState']
 
   rk = Ratekeeper(100, print_delay_threshold=None)
+  prof = Profiler(False)
   # 100Hz
   while(True):
     start_time = sec_since_boot()
@@ -82,6 +84,7 @@ def monitord_thread(sm=None, pm=None):
                    CS.steeringPressed
     v_cruise_last = v_cruise
     events = driver_status.update(events, driver_engaged, CS.cruiseState.enabled, CS.standstill)
+    prof.checkpoint("Update")
 
     # monitorState packet
     dat = messaging.new_message()
@@ -104,6 +107,9 @@ def monitord_thread(sm=None, pm=None):
       "hiStdCount": driver_status.hi_stds,
     }
     pm.send('monitorState', dat)
+    prof.checkpoint("Sent")
+    rk.monitor_time()
+    prof.display()
 
 def main(sm=None, pm=None):
   monitord_thread(sm, pm)
