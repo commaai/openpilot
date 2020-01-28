@@ -14,5 +14,12 @@ uname -a'''
       }
     }
 
+    stage('Install dependencies') {
+      steps {
+        sh '''apt update
+apt install git'''
+      }
+    }
+
   }
 }
