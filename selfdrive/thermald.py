@@ -107,7 +107,7 @@ _FAN_SPEEDS = [0, 16384, 32768, 65535]
 _BAT_TEMP_THERSHOLD = 45.
 
 
-def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed):
+def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
 
@@ -126,9 +126,15 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed):
 
   return fan_speed
 
-def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed):
-  # TODO: implement better fan control
-  return int(interp(max_cpu_temp, [40.0, 80.0], [0, 100]))
+
+def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
+  new_speed = int(interp(max_cpu_temp, [40.0, 80.0], [0, 100]))
+
+  if not ignition:
+    new_speed = min(30, new_speed)
+
+  return new_speed
+
 
 def thermald_thread():
   # prevent LEECO from undervoltage
@@ -141,6 +147,7 @@ def thermald_thread():
   health_sock = messaging.sub_sock('health', timeout=health_timeout)
   location_sock = messaging.sub_sock('gpsLocation')
 
+  ignition = False
   fan_speed = 0
   count = 0
 
@@ -213,7 +220,7 @@ def thermald_thread():
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat/1000.
 
-    fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed)
+    fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
     msg.thermal.fanSpeed = fan_speed
 
     # thermal logic with hysterisis

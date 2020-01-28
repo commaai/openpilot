@@ -92,6 +92,7 @@ Supported Cars
 | Kia       | Sorento 2018<sup>1</sup>      | All               | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018<sup>1</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Lexus     | CT Hybrid 2017-18             | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Lexus     | ES 2019                       | All               | openpilot        | 0mph               | 0mph         |
 | Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph         |
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph         |
@@ -106,7 +107,7 @@ Supported Cars
 | Toyota    | C-HR Hybrid 2017-19           | All               | Stock            | 0mph               | 0mph         |
 | Toyota    | Corolla 2017-19               | All               | Stock<sup>4</sup>| 20mph<sup>5</sup>  | 0mph         |
 | Toyota    | Corolla 2020                  | All               | openpilot        | 0mph               | 0mph         |
-| Toyota    | Corolla Hatchback 2019        | All               | openpilot        | 0mph               | 0mph         |
+| Toyota    | Corolla Hatchback 2019-20     | All               | openpilot        | 0mph               | 0mph         |
 | Toyota    | Corolla Hybrid 2020           | All               | openpilot        | 0mph               | 0mph         |
 | Toyota    | Highlander 2017-19            | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Toyota    | Highlander Hybrid 2017-19     | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
@@ -118,6 +119,7 @@ Supported Cars
 | Toyota    | Rav4 2019                     | All               | openpilot        | 0mph               | 0mph         |
 | Toyota    | Rav4 Hybrid 2016              | TSS-P             | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Toyota    | Rav4 Hybrid 2017-18           | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Rav4 Hybrid 2019-20           | All               | openpilot        | 0mph               | 0mph         |
 | Toyota    | Sienna 2018                   | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Volkswagen| Golf 2016-19<sup>3</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 

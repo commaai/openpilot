@@ -172,6 +172,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kf = 0.00007818594
+      
+    elif candidate == CAR.RAV4H_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.68986
+      ret.steerRatio = 14.3
+      tire_stiffness_factor = 0.7933
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.mass = 3800. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
       stop_and_go = True
