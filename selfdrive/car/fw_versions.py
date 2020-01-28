@@ -64,9 +64,11 @@ REQUESTS = [
   )
 ]
 
+
 def chunks(l, n=128):
   for i in range(0, len(l), n):
     yield l[i:i + n]
+
 
 def match_fw_to_car(fw_versions):
   candidates = FW_VERSIONS
@@ -79,12 +81,12 @@ def match_fw_to_car(fw_versions):
 
       found_version = fw_versions.get(addr, None)
 
-      # TODO: RAV4 esp sometimes doesn't show up
-      if ecu_type == Ecu.esp and candidate == TOYOTA.RAV4 and found_version is None:
+      # TODO: RAV4, COROLLA esp sometimes doesn't show up
+      if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA] and found_version is None:
         continue
 
       # TODO: COROLLA_TSS2 engine can show on two different addresses
-      if ecu_type == Ecu.enigine and candidate == TOYOTA.COROLLA_TSS2 and found_version is None:
+      if ecu_type == Ecu.engine and candidate == TOYOTA.COROLLA_TSS2 and found_version is None:
         continue
 
       # Allow DSU not being present
