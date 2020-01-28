@@ -6,6 +6,13 @@ pipeline {
 
   }
   stages {
+    stage('Install dependencies') {
+      steps {
+        sh '''apt update
+apt install git'''
+      }
+    }
+
     stage('Build') {
       steps {
         sh '''ls
@@ -14,12 +21,6 @@ uname -a'''
       }
     }
 
-    stage('Install dependencies') {
-      steps {
-        sh '''apt update
-apt install git'''
-      }
-    }
 
   }
 }
