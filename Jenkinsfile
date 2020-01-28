@@ -9,6 +9,7 @@ pipeline {
     stage('Build') {
       steps {
         sh '''ls
+git rev-parse --abbrev-ref HEAD
 uname -a'''
       }
     }
