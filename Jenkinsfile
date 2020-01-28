@@ -9,6 +9,7 @@ pipeline {
     stage('Install dependencies') {
       steps {
         sh '''
+whoami
 sudo apt update
 sudo apt install -y git'''
       }
