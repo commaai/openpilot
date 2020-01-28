@@ -46,8 +46,6 @@ def monitord_thread(sm=None, pm=None):
     if not sm.updated['driverMonitoring']:
       continue
 
-    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, CS.vEgo, CS.cruiseState.enabled)
-
     CS = sm['carState']
     events = []
 
@@ -65,6 +63,8 @@ def monitord_thread(sm=None, pm=None):
       rpy = sm['liveCalibration'].rpyCalib
       if len(rpy) == 3:
         cal_rpy = rpy
+
+    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, CS.vEgo, CS.cruiseState.enabled)
 
     # Get model meta
     if sm.updated['model']:
