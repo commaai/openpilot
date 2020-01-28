@@ -2,7 +2,6 @@
 import gc
 from common.realtime import sec_since_boot, set_realtime_priority
 from common.params import Params, put_nonblocking
-from common.profiler import Profiler
 import cereal.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION

@@ -357,6 +357,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     "alertBlinkingRate": AM.alert_rate,
     "alertType": AM.alert_type,
     "alertSound": AM.audible_alert,
+    "driverMonitoringOn": bool(sm['monitorState'].driverState.faceDetected),
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": sm.logMonoTime['plan'],
     "pathPlanMonoTime": sm.logMonoTime['pathPlan'],
