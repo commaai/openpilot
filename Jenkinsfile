@@ -2,6 +2,7 @@ pipeline {
   agent {
     docker {
       image 'ubuntu:16.04'
+      args '--user=root'
     }
 
   }
@@ -23,7 +24,6 @@ git rev-parse --abbrev-ref HEAD
 uname -a'''
       }
     }
-
 
   }
 }
