@@ -228,7 +228,7 @@ class TestMonitoring(unittest.TestCase):
     self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL))/DT_DMON)][1].name, 'preDriverDistracted')
     self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL))/DT_DMON)][1].name, 'promptDriverDistracted')
     self.assertEqual(events_output[int((_DISTRACTED_TIME+1)/DT_DMON)][1].name, 'promptDriverDistracted')
-    self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)][1].name, 'driverDistracted')
+    self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)][1].name, 'promptDriverDistracted') # set_timer blocked
 
 if __name__ == "__main__":
   print('MAX_TERMINAL_ALERTS', MAX_TERMINAL_ALERTS)
