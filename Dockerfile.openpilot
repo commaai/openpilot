@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y \
     opencl-headers \
     python-dev \
     python-pip \
-    python-pip3 \
+    python3-pip \
     screen \
     sudo \
     vim \
