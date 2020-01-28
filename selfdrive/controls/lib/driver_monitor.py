@@ -1,6 +1,6 @@
 from common.numpy_fast import interp
 from math import atan2, sqrt
-from common.realtime import DT_CTRL, DT_DMON
+from common.realtime import DT_DMON
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
@@ -31,14 +31,14 @@ _HI_STD_FALLBACK_TIME = 10 # fall back to wheel touch if model is uncertain for 
 _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
 _POSE_CALIB_MIN_SPEED = 13 # 30 mph
-_POSE_OFFSET_MIN_COUNT = 600 # valid data counts before calibration completes, 1 seg is 600 counts
-_POSE_OFFSET_MAX_COUNT = 3600 # stop deweighting new data after 6 min, aka "short term memory"
+_POSE_OFFSET_MIN_COUNT = 60 # valid data counts before calibration completes, 1 seg is 600 counts
+_POSE_OFFSET_MAX_COUNT = 360 # stop deweighting new data after 6 min, aka "short term memory"
 
 _RECOVERY_FACTOR_MAX = 5. # relative to minus step change
 _RECOVERY_FACTOR_MIN = 1.25 # relative to minus step change
 
 MAX_TERMINAL_ALERTS = 3 # not allowed to engage after 3 terminal alerts
-MAX_TERMINAL_DURATION = 3000 # 30s
+MAX_TERMINAL_DURATION = 300 # 30s
 
 # model output refers to center of cropped image, so need to apply the x displacement offset
 RESIZED_FOCAL = 320.0
@@ -116,7 +116,7 @@ class DriverStatus():
   def _set_timers(self, active_monitoring):
     if self.active_monitoring_mode and self.awareness <= self.threshold_prompt:
       if active_monitoring:
-        self.step_change = DT_CTRL / _DISTRACTED_TIME
+        self.step_change = DT_DMON / _DISTRACTED_TIME
       else:
         self.step_change = 0.
       return # no exploit after orange alert
@@ -131,7 +131,7 @@ class DriverStatus():
 
       self.threshold_pre = _DISTRACTED_PRE_TIME_TILL_TERMINAL / _DISTRACTED_TIME
       self.threshold_prompt = _DISTRACTED_PROMPT_TIME_TILL_TERMINAL / _DISTRACTED_TIME
-      self.step_change = DT_CTRL / _DISTRACTED_TIME
+      self.step_change = DT_DMON / _DISTRACTED_TIME
       self.active_monitoring_mode = True
     else:
       if self.active_monitoring_mode:
@@ -140,7 +140,7 @@ class DriverStatus():
 
       self.threshold_pre = _AWARENESS_PRE_TIME_TILL_TERMINAL / _AWARENESS_TIME
       self.threshold_prompt = _AWARENESS_PROMPT_TIME_TILL_TERMINAL / _AWARENESS_TIME
-      self.step_change = DT_CTRL / _AWARENESS_TIME
+      self.step_change = DT_DMON / _AWARENESS_TIME
       self.active_monitoring_mode = False
 
   def _is_driver_distracted(self, pose, blink):

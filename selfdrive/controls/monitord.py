@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import gc
-from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper
+from common.realtime import sec_since_boot, set_realtime_priority
 from common.params import Params, put_nonblocking
 from common.profiler import Profiler
 import cereal.messaging as messaging
@@ -38,14 +38,16 @@ def monitord_thread(sm=None, pm=None):
     sm.update(0)
     CS_updated = sm.updated['carState']
 
-  rk = Ratekeeper(100, print_delay_threshold=None)
-  prof = Profiler(False)
-  # 100Hz
+  # 10Hz <- monitoringd
   while(True):
     start_time = sec_since_boot()
-    prof.checkpoint("Ratekeeper", ignore=True)
-
     sm.update(0)
+
+    # Get data from monitoringd
+    if not sm.updated['driverMonitoring']:
+      continue
+
+    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, CS.vEgo, CS.cruiseState.enabled)
 
     CS = sm['carState']
     events = []
@@ -69,10 +71,6 @@ def monitord_thread(sm=None, pm=None):
     if sm.updated['model']:
       driver_status.set_policy(sm['model'])
 
-    # Get data from monitoringd (10Hz)
-    if sm.updated['driverMonitoring']:
-      driver_status.get_pose(sm['driverMonitoring'], cal_rpy, CS.vEgo, CS.cruiseState.enabled)
-
     # Block any engage after certain distrations
     if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
       events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
@@ -84,7 +82,6 @@ def monitord_thread(sm=None, pm=None):
                    CS.steeringPressed
     v_cruise_last = v_cruise
     events = driver_status.update(events, driver_engaged, CS.cruiseState.enabled, CS.standstill)
-    prof.checkpoint("Update")
 
     # monitorState packet
     dat = messaging.new_message()
@@ -107,9 +104,6 @@ def monitord_thread(sm=None, pm=None):
       "hiStdCount": driver_status.hi_stds,
     }
     pm.send('monitorState', dat)
-    prof.checkpoint("Sent")
-    rk.monitor_time()
-    prof.display()
 
 def main(sm=None, pm=None):
   monitord_thread(sm, pm)
