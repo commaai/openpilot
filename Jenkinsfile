@@ -10,9 +10,9 @@ pipeline {
     stage('Install dependencies') {
       steps {
         sh '''
-whoami
-sudo apt update
-sudo apt install -y git'''
+apt update
+apt install -y git
+'''
       }
     }
 
@@ -21,7 +21,8 @@ sudo apt install -y git'''
         sh '''
 ls
 git rev-parse --abbrev-ref HEAD
-uname -a'''
+uname -a
+'''
       }
     }
 
