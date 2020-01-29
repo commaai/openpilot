@@ -24,7 +24,7 @@ def wait_for_event(evt):
   if not evt.wait(15):
     if threading.currentThread().getName() == "MainThread":
       # tested process likely died. don't let test just hang
-      raise Exception("Timeout reached. Thread likely crashed.")
+      raise Exception("Timeout reached. Tested process likely crashed.")
     else:
       # done testing this process, let it die
       sys.exit(0)
