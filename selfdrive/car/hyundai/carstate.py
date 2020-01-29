@@ -26,10 +26,6 @@ def get_can_parser(CP):
     ("CF_Gway_TurnSigRh", "CGW1", 0),
     ("CF_Gway_ParkBrakeSw", "CGW1", 0),
 
-    ("BRAKE_ACT", "EMS12", 0),
-    ("PV_AV_CAN", "EMS12", 0),
-    ("TPS", "EMS12", 0),
-
     ("CYL_PRES", "ESP12", 0),
 
     ("CF_Clu_CruiseSwState", "CLU11", 0),
@@ -74,9 +70,11 @@ def get_can_parser(CP):
   checks = [
     # address, frequency
     ("MDPS12", 50),
+    ("TCS13", 50),
     ("TCS15", 10),
     ("CLU11", 50),
     ("ESP12", 100),
+    ("EMS12", 100),
     ("CGW1", 10),
     ("CGW4", 5),
     ("WHL_SPD11", 50),
@@ -86,22 +84,42 @@ def get_can_parser(CP):
   ]
   if CP.carFingerprint in FEATURES["use_cluster_gears"]:
     signals += [
+      ("BRAKE_ACT", "EMS12", 0),
+      ("PV_AV_CAN", "EMS12", 0),
+      ("TPS", "EMS12", 0),
       ("CF_Clu_InhibitD", "CLU15", 0),
       ("CF_Clu_InhibitP", "CLU15", 0),
       ("CF_Clu_InhibitN", "CLU15", 0),
       ("CF_Clu_InhibitR", "CLU15", 0),
     ]
+    checks += [
+      ("EMS12", 100),
+      ("CLU15", 20)
+    ]
   elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
     signals += [
-      ("CUR_GR", "TCU12",0),
+      ("BRAKE_ACT", "EMS12", 0),
+      ("PV_AV_CAN", "EMS12", 0),
+      ("TPS", "EMS12", 0),
+      ("CUR_GR", "TCU12",0)
+    ]
+    checks += [
+      ("EMS12", 100),
+      ("TCU12", 20)
     ]
   elif CP.carFingerprint in FEATURES["use_elect_gears"]:
-    signals += [
-      ("Elect_Gear_Shifter", "ELECT_GEAR", 0),
-	]
+    signals += [("Elect_Gear_Shifter", "ELECT_GEAR", 0)]
+    checks += [("ELECT_GEAR", 20)]
   else:
     signals += [
-      ("CF_Lvr_Gear","LVR12",0),
+      ("BRAKE_ACT", "EMS12", 0),
+      ("PV_AV_CAN", "EMS12", 0),
+      ("TPS", "EMS12", 0),
+      ("CF_Lvr_Gear","LVR12",0)
+    ]
+    checks += [
+      ("EMS12", 100),
+      ("LVR12", 20)
     ]
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -217,6 +235,7 @@ class CarState():
     else:
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
+    #TODO: find pedal signal for EV/HYBRID Cars
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
     if self.car_fingerprint in FEATURES["use_cluster_gears"]:
