@@ -50,16 +50,16 @@ origin = get_git_remote()
 branch = get_git_full_branchname()
 
 try:
-  is_comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
-  if is_comma_remote and branch is not None:
-    # This is needed otherwise touched files might show up as modified
-    try:
-      subprocess.check_call(["git", "update-index", "--refresh"])
-    except subprocess.CalledProcessError:
-      pass
+  # This is needed otherwise touched files might show up as modified
+  subprocess.check_call(["git", "update-index", "--refresh"])
 
-    dirty = 'master' in branch
+  if (origin is not None) and (branch is not None):
+    comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
+
+    dirty = not comma_remote
+    dirty = dirty or ('master' in branch)
     dirty = dirty or (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
+
     if dirty:
       dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"], encoding='utf8')
       commit = subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"], encoding='utf8').rstrip()
