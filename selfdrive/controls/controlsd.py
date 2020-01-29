@@ -452,7 +452,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
   if sm is None:
     sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'monitorState', 'plan', 'pathPlan', \
-                              'model', 'gpsLocation'], ignore_alive=['gpsLocation'])
+                              'model'])
 
 
   if can_sock is None:
