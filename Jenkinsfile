@@ -11,18 +11,23 @@ pipeline {
       steps {
         sh '''
 apt update
-apt install -y git
+apt install -y python python-pip
+pip install paramiko
 '''
       }
     }
-
-    stage('Build') {
+    stage('EON Build/Test') {
       steps {
-        sh '''
-ls
-git rev-parse --abbrev-ref HEAD
-uname -a
-'''
+        lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_name', quantity: 1){
+          timeout(time: 90, unit: 'MINUTES') {
+            dir(path: 'selfdrive/test') {
+              ansiColor('xterm') {
+                ls
+                #sh './release_build.py'
+              }
+            }
+          }
+        }
       }
     }
 

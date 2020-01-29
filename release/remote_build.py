@@ -1,5 +1,4 @@
-#! /usr/bin/env python2
-
+#!/usr/bin/env python2
 import paramiko
 import os
 import sys
@@ -64,13 +63,24 @@ def start_build(name):
 
   # Send go.sh
   sftp = s.open_sftp()
-  sftp.put(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'go.sh'), '/tmp/go.sh')
 
   conn = ssh.invoke_shell()
   branch = os.environ['GIT_BRANCH']
+  commit = os.environ.get('GIT_COMMIT', branch)
+
+  conn.send('cd /data/openpilot\n')
+  conn.send("git reset --hard\n")
+  conn.send("git fetch origin\n")
+  conn.send("git checkout %s\n" % commit)
+  conn.send("git clean -xdf\n")
+  conn.send("git submodule --init update\n")
+  conn.send("git submodule foreach --recursive git reset --hard\n")
+  conn.send("git submodule foreach --recursive git clean -xdf\n")
+  conn.send("echo \"git took $SECONDS seconds\"\n")
+
   push = "PUSH=one-master" if branch == "master" else ""
 
-  conn.send(f"{push} /tmp/go.sh\n")
+  conn.send("%s /data/openpilot/release/go.sh\n" % push)
   conn.send('echo "RESULT:" $?\n')
   conn.send("exit\n")
   return conn
