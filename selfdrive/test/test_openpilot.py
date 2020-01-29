@@ -1,3 +1,4 @@
+# flake8: noqa
 import os
 os.environ['FAKEUPLOAD'] = "1"
 
