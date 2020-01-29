@@ -57,8 +57,8 @@ def monitord_thread(sm=None, pm=None):
         if len(sm['liveCalibration'].rpyCalib) == 3:
           cal_rpy = sm['liveCalibration'].rpyCalib
 
+    # Get interaction
     if sm.updated['carState']:
-      # Update events from driver state
       v_cruise = sm['carState'].cruiseState.speed
       driver_engaged = len(sm['carState'].buttonEvents) > 0 or \
                         v_cruise != v_cruise_last or \
@@ -70,37 +70,36 @@ def monitord_thread(sm=None, pm=None):
       driver_status.set_policy(sm['model'])
 
     # Get data from monitoringd
-    if not sm.updated['driverMonitoring']:
-      continue
-      
-    events = []
-    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
-    # Block any engage after certain distrations
-    if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
-      events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
-    events = driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
+    if sm.updated['driverMonitoring']:
+      events = []
+      driver_status.get_pose(sm['driverMonitoring'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
+      # Block any engage after certain distrations
+      if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
+        events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
+      # Update events from driver state
+      events = driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
 
-    # monitorState packet
-    dat = messaging.new_message()
-    dat.init('monitorState')
-    dat.monitorState.events = events
-    dat.monitorState.driverState = {
-      "faceDetected": driver_status.face_detected,
-      "isDistracted": driver_status.driver_distracted,
-      "awarenessStatus": driver_status.awareness,
-      "isRHD": driver_status.is_rhd_region,
-      "rhdChecked": driver_status.is_rhd_region_checked,
-      "posePitchOffset": driver_status.pose.pitch_offseter.filtered_stat.mean(),
-      "posePitchValidCount": driver_status.pose.pitch_offseter.filtered_stat.n,
-      "poseYawOffset": driver_status.pose.yaw_offseter.filtered_stat.mean(),
-      "poseYawValidCount": driver_status.pose.yaw_offseter.filtered_stat.n,
-      "stepChange": driver_status.step_change,
-      "awarenessActive": driver_status.awareness_active,
-      "awarenessPassive": driver_status.awareness_passive,
-      "isLowStd": driver_status.pose.low_std,
-      "hiStdCount": driver_status.hi_stds,
-    }
-    pm.send('monitorState', dat)
+      # monitorState packet
+      dat = messaging.new_message()
+      dat.init('monitorState')
+      dat.monitorState.events = events
+      dat.monitorState.driverState = {
+        "faceDetected": driver_status.face_detected,
+        "isDistracted": driver_status.driver_distracted,
+        "awarenessStatus": driver_status.awareness,
+        "isRHD": driver_status.is_rhd_region,
+        "rhdChecked": driver_status.is_rhd_region_checked,
+        "posePitchOffset": driver_status.pose.pitch_offseter.filtered_stat.mean(),
+        "posePitchValidCount": driver_status.pose.pitch_offseter.filtered_stat.n,
+        "poseYawOffset": driver_status.pose.yaw_offseter.filtered_stat.mean(),
+        "poseYawValidCount": driver_status.pose.yaw_offseter.filtered_stat.n,
+        "stepChange": driver_status.step_change,
+        "awarenessActive": driver_status.awareness_active,
+        "awarenessPassive": driver_status.awareness_passive,
+        "isLowStd": driver_status.pose.low_std,
+        "hiStdCount": driver_status.hi_stds,
+      }
+      pm.send('monitorState', dat)
 
 def main(sm=None, pm=None):
   monitord_thread(sm, pm)
