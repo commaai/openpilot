@@ -73,7 +73,7 @@ def start_build(name):
   conn.send("git fetch origin\n")
   conn.send("git checkout %s\n" % commit)
   conn.send("git clean -xdf\n")
-  conn.send("git submodule --init update\n")
+  conn.send("git submodule update --init\n")
   conn.send("git submodule foreach --recursive git reset --hard\n")
   conn.send("git submodule foreach --recursive git clean -xdf\n")
   conn.send("echo \"git took $SECONDS seconds\"\n")

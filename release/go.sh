@@ -32,9 +32,9 @@ export GIT_AUTHOR_EMAIL="user@comma.ai"
 # export GIT_SSH_COMMAND="ssh -i /tmp/deploy_key"
 
 echo "[-] Setting up repo T=$SECONDS"
-if [ ! -d "$SOURCE_DIR" ]; then
+if [ ! -d "$TARGET_DIR" ]; then
     mkdir -p $TARGET_DIR
-    cd $SOURCE_DIR
+    cd $TARGET_DIR
     git init
     git remote add origin git@github.com:commaai/openpilot.git
 fi
