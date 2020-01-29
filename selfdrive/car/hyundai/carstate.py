@@ -70,8 +70,8 @@ def get_can_parser(CP):
   checks = [
     # address, frequency
     ("MDPS12", 50),
-    ("TCS13", 50),
     ("TCS15", 10),
+    ("TCS13", 50),
     ("CLU11", 50),
     ("ESP12", 100),
     ("EMS12", 100),
@@ -94,7 +94,7 @@ def get_can_parser(CP):
     ]
     checks += [
       ("EMS12", 100),
-      ("CLU15", 20)
+      ("CLU15", 5)
     ]
   elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
     signals += [
@@ -105,7 +105,7 @@ def get_can_parser(CP):
     ]
     checks += [
       ("EMS12", 100),
-      ("TCU12", 20)
+      ("TCU12", 100)
     ]
   elif CP.carFingerprint in FEATURES["use_elect_gears"]:
     signals += [("Elect_Gear_Shifter", "ELECT_GEAR", 0)]
@@ -119,7 +119,7 @@ def get_can_parser(CP):
     ]
     checks += [
       ("EMS12", 100),
-      ("LVR12", 20)
+      ("LVR12", 100)
     ]
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
