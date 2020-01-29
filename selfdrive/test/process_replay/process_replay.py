@@ -231,8 +231,8 @@ CONFIGS = [
   ProcessConfig(
     proc_name="monitord",
     pub_sub={
-      "monitorState": [],
-      "driverMonitoring": [], "liveCalibration": [], "carState": [], "model": [], "gpsLocation": [],
+      "driverMonitoring": ["monitorState"],
+      "liveCalibration": [], "carState": [], "model": [], "gpsLocation": [],
     },
     ignore=[("logMonoTime", 0), ("valid", True)],
     init_callback=get_car_params,

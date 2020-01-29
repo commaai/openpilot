@@ -75,8 +75,7 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
   sm.update(0)
 
   events = list(CS.events)
-  if sm.updated['monitorState']:
-    events += list(sm['monitorState'].events)
+  events += list(sm['monitorState'].events)
   add_lane_change_event(events, sm['pathPlan'])
   enabled = isEnabled(state)
 
@@ -357,7 +356,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     "alertBlinkingRate": AM.alert_rate,
     "alertType": AM.alert_type,
     "alertSound": AM.audible_alert,
-    "driverMonitoringOn": bool(sm['monitorState'].driverState.faceDetected),
+    "driverMonitoringOn": sm['monitorState'].driverState.faceDetected,
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": sm.logMonoTime['plan'],
     "pathPlanMonoTime": sm.logMonoTime['pathPlan'],

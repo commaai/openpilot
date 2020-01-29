@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import gc
-from common.realtime import sec_since_boot, set_realtime_priority
+from common.realtime import set_realtime_priority
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
@@ -29,25 +29,20 @@ def monitord_thread(sm=None, pm=None):
     driver_status.is_rhd = bool(int(is_rhd))
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
-  v_cruise_last = 0
+  sm['carState'].vEgo = 0.
+  sm['carState'].cruiseState.enabled = False
+  sm['carState'].cruiseState.speed = 0.
+  sm['carState'].buttonEvents = []
+  sm['carState'].steeringPressed = False
+  sm['carState'].standstill = True
 
-  # wait until carState live
-  CS_updated = False
-  while(not CS_updated):
-    sm.update(0)
-    CS_updated = sm.updated['carState']
+  cal_rpy = [0,0,0]
+  v_cruise_last = 0
+  driver_engaged = False
 
   # 10Hz <- monitoringd
-  while(True):
-    start_time = sec_since_boot()
-    sm.update(0)
-
-    # Get data from monitoringd
-    if not sm.updated['driverMonitoring']:
-      continue
-
-    CS = sm['carState']
-    events = []
+  while True:
+    sm.update()
 
     # GPS coords RHD parsing, once every restart
     if not driver_status.is_rhd_region_checked and sm.updated['gpsLocation']:
@@ -57,30 +52,33 @@ def monitord_thread(sm=None, pm=None):
       put_nonblocking("IsRHD", "1" if is_rhd else "0")
 
     # Handle calibration
-    cal_status = sm['liveCalibration'].calStatus
-    cal_rpy = [0,0,0]
-    if cal_status == Calibration.CALIBRATED:
-      rpy = sm['liveCalibration'].rpyCalib
-      if len(rpy) == 3:
-        cal_rpy = rpy
+    if sm.updated['liveCalibration']:
+      if sm['liveCalibration'].calStatus == Calibration.CALIBRATED:
+        if len(sm['liveCalibration'].rpyCalib) == 3:
+          cal_rpy = sm['liveCalibration'].rpyCalib
 
-    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, CS.vEgo, CS.cruiseState.enabled)
+    if sm.updated['carState']:
+      # Update events from driver state
+      v_cruise = sm['carState'].cruiseState.speed
+      driver_engaged = len(sm['carState'].buttonEvents) > 0 or \
+                        v_cruise != v_cruise_last or \
+                        sm['carState'].steeringPressed
+      v_cruise_last = v_cruise
 
     # Get model meta
     if sm.updated['model']:
       driver_status.set_policy(sm['model'])
 
+    # Get data from monitoringd
+    if not sm.updated['driverMonitoring']:
+      continue
+      
+    events = []
+    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
     # Block any engage after certain distrations
     if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
       events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
-
-    # Update events from driver state
-    v_cruise = CS.cruiseState.speed
-    driver_engaged = len(CS.buttonEvents) > 0 or \
-                   v_cruise != v_cruise_last or \
-                   CS.steeringPressed
-    v_cruise_last = v_cruise
-    events = driver_status.update(events, driver_engaged, CS.cruiseState.enabled, CS.standstill)
+    events = driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
 
     # monitorState packet
     dat = messaging.new_message()
