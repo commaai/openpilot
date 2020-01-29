@@ -22,8 +22,7 @@ pip install paramiko
           timeout(time: 90, unit: 'MINUTES') {
             dir(path: 'selfdrive/test') {
               ansiColor('xterm') {
-                ls
-                #sh './release_build.py'
+                sh 'ls #./release_build.py'
               }
             }
           }
