@@ -508,6 +508,9 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   sm['pathPlan'].sensorValid = True
   sm['pathPlan'].posenetValid = True
   sm['thermal'].freeSpace = 1.
+  sm['monitorState'].events = []
+  sm['monitorState'].driverState.awarenessStatus = 1.
+  sm['monitorState'].driverState.faceDetected = False
 
   # detect sound card presence
   sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
