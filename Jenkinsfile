@@ -7,28 +7,19 @@ pipeline {
 
   }
   stages {
-    stage('Install dependencies') {
-      steps {
-        sh '''
-apt update
-apt install -y python python-pip
-pip install paramiko
-'''
-      }
-    }
     stage('EON Build/Test') {
       steps {
         lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_name', quantity: 1){
-          timeout(time: 90, unit: 'MINUTES') {
+          timeout(time: 30, unit: 'MINUTES') {
             dir(path: 'selfdrive/test') {
-              ansiColor('xterm') {
-                sh 'ls #./release_build.py'
-              }
+              sh 'apt update'
+              sh 'apt install -y python python-pip'
+              sh 'pip install paramiko'
+              sh 'ls'
             }
           }
         }
       }
     }
-
   }
 }
