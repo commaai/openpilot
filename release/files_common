@@ -1,27 +1,18 @@
 README.md
-
-launch_openpilot.sh
 SAFETY.md
-
-.travis.yml
-.pylintrc
-run_docker_tests.sh
-Dockerfile.openpilot
-phonelibs/install_capnp.sh
-check_code_quality.sh
-
-Pipfile
-Pipfile.lock
 
 .gitignore
 LICENSE
-Makefile
 launch_chffrplus.sh
+launch_openpilot.sh
 
 CONTRIBUTING.md
 RELEASES.md
 
 SConstruct
+
+flake8_openpilot.sh
+pylint_openpilot.sh
 
 .github/**
 
@@ -312,7 +303,6 @@ selfdrive/test/process_replay/update_refs.py
 selfdrive/test/process_replay/ref_commit
 selfdrive/test/process_replay/README.md
 
-selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.c
 selfdrive/ui/*.cc
