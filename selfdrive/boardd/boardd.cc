@@ -685,13 +685,18 @@ void *hardware_control_thread(void *crap) {
       } else if (type == cereal::Event::FRONT_FRAME){
         float cur_front_gain = event.getFrontFrame().getGainFrac();
         uint16_t ir_pwr;
-          if (cur_front_gain <= CUTOFF_GAIN) {
-            ir_pwr = 100.0 * MIN_IR_POWER;
-          } else if (cur_front_gain > SATURATE_GAIN) {
-            ir_pwr = 100.0 * MAX_IR_POWER;
-          } else {
-            ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
-          }
+
+        if (cur_front_gain <= CUTOFF_GAIN) {
+          ir_pwr = 100.0 * MIN_IR_POWER;
+        } else if (cur_front_gain > SATURATE_GAIN) {
+          ir_pwr = 100.0 * MAX_IR_POWER;
+        } else {
+          ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
+        }
+
+        if (!ignition){
+          ir_pwr = 0;
+        }
 
         if (ir_pwr != prev_ir_pwr || cnt % 100 == 0 || ir_pwr >= 50.0){
           pthread_mutex_lock(&usb_lock);
