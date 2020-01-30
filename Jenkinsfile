@@ -15,7 +15,7 @@ pipeline {
               sh 'apt update'
               sh 'apt install -y python python-pip'
               sh 'pip install paramiko'
-              sh 'ls'
+              sh 'python release/remote_build.py'
             }
           }
         }

@@ -68,6 +68,9 @@ def start_build(name):
   branch = os.environ['GIT_BRANCH']
   commit = os.environ.get('GIT_COMMIT', branch)
 
+  conn.send('uname -a\n')
+  return conn  # Exit early for test
+
   conn.send('cd /data/openpilot\n')
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")
