@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-      image 'ubuntu:16.04'
+      image 'python:3.7.3'
       args '--user=root'
     }
 
@@ -12,8 +12,6 @@ pipeline {
         lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_name', quantity: 1){
           timeout(time: 30, unit: 'MINUTES') {
             dir(path: 'release') {
-              sh 'apt update'
-              sh 'apt install -y python python-pip'
               sh 'pip install paramiko'
               sh 'python remote_build.py'
             }
