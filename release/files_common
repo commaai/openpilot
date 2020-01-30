@@ -11,6 +11,9 @@ RELEASES.md
 
 SConstruct
 
+flake8_openpilot.sh
+pylint_openpilot.sh
+
 .github/**
 
 apk/ai.comma*.apk
