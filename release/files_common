@@ -11,6 +11,7 @@ RELEASES.md
 
 SConstruct
 
+Dockerfile.openpilot
 flake8_openpilot.sh
 pylint_openpilot.sh
 
