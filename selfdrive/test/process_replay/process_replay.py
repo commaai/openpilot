@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import threading
 import importlib
 import shutil
@@ -21,7 +22,12 @@ ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', '
 
 def wait_for_event(evt):
   if not evt.wait(15):
-    raise Exception("Timeout reached. Thread likely crashed.")
+    if threading.currentThread().getName() == "MainThread":
+      # tested process likely died. don't let test just hang
+      raise Exception("Timeout reached. Tested process likely crashed.")
+    else:
+      # done testing this process, let it die
+      sys.exit(0)
 
 class FakeSocket:
   def __init__(self, wait=True):
