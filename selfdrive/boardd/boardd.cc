@@ -694,7 +694,7 @@ void *hardware_control_thread(void *crap) {
           ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
         }
 
-        if (!ignition){
+        if (!ignition_last){
           ir_pwr = 0;
         }
 
