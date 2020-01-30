@@ -35,7 +35,7 @@ def start_build(name):
 
   conn.send('uname -a\n')
 
-  conn.send('cd /data/openpilot\n')
+  conn.send('cd /data/openpilot_source\n')
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")
   conn.send("git checkout %s\n" % commit)
