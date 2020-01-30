@@ -108,7 +108,7 @@ popd
 
 if [ ! -z "$PUSH" ]; then
     echo "[-] Pushing to $PUSH T=$SECONDS"
-    git push -f origin master:$PUSH
+    git push -f origin master-ci:$PUSH
 fi
 
 echo "[-] done pushing T=$SECONDS"
