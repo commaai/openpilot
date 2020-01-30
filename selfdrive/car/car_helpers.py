@@ -8,6 +8,8 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 
+from cereal import car
+
 def get_startup_alert(car_recognized, controller_available):
   alert = 'startup'
   if Params().get("GitRemote", encoding="utf8") in ['git@github.com:commaai/openpilot.git', 'https://github.com/commaai/openpilot.git']:
@@ -54,10 +56,11 @@ def _get_interface_names():
 # imports from directory selfdrive/car/<name>/
 interfaces = load_interfaces(_get_interface_names())
 
+
 def only_toyota_left(candidate_cars):
   return all(("TOYOTA" in c or "LEXUS" in c) for c in candidate_cars) and len(candidate_cars) > 0
 
-# BOUNTY: every added fingerprint in selfdrive/car/*/values.py is a $100 coupon code on shop.comma.ai
+
 # **** for use live only ****
 def fingerprint(logcan, sendcan, has_relay):
   if has_relay:
@@ -113,16 +116,19 @@ def fingerprint(logcan, sendcan, has_relay):
 
     frame += 1
 
+  source = car.CarParams.FingerprintSource.can
+
   # If FW query returns exactly 1 candidate, use it
   if len(fw_candidates) == 1:
     car_fingerprint = list(fw_candidates)[0]
+    source = car.CarParams.FingerprintSource.fw
 
   cloudlog.warning("fingerprinted %s", car_fingerprint)
-  return car_fingerprint, finger, vin, car_fw
+  return car_fingerprint, finger, vin, car_fw, source
 
 
 def get_car(logcan, sendcan, has_relay=False):
-  candidate, fingerprints, vin, car_fw = fingerprint(logcan, sendcan, has_relay)
+  candidate, fingerprints, vin, car_fw, source = fingerprint(logcan, sendcan, has_relay)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
@@ -132,5 +138,6 @@ def get_car(logcan, sendcan, has_relay=False):
   car_params = CarInterface.get_params(candidate, fingerprints, has_relay, car_fw)
   car_params.carVin = vin
   car_params.carFw = car_fw
+  car_params.fingerprintSource = source
 
   return CarInterface(car_params, CarController), car_params
