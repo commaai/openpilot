@@ -21,9 +21,10 @@ add_subtree() {
   fi
 }
 
-
 SOURCE_DIR=/data/openpilot_source
 TARGET_DIR=/data/openpilot
+
+ln -sf $TARGET_DIR /data/pythonpath
 
 export GIT_COMMITTER_NAME="Vehicle Researcher"
 export GIT_COMMITTER_EMAIL="user@comma.ai"
