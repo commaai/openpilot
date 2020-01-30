@@ -64,10 +64,10 @@ def fingerprint(logcan, sendcan, has_relay):
     # Vin query only reliably works thorugh OBDII
     bus = 1
     addr, vin = get_vin(logcan, sendcan, bus)
-    _, car_fw = get_fw_versions(logcan, sendcan, bus)
+    fw_candidates, car_fw = get_fw_versions(logcan, sendcan, bus)
   else:
     vin = VIN_UNKNOWN
-    _, car_fw = set(), []
+    fw_candidates, car_fw = set(), []
 
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
@@ -112,6 +112,10 @@ def fingerprint(logcan, sendcan, has_relay):
     done = failed or succeeded
 
     frame += 1
+
+  # If FW query returns exactly 1 candidate, use it
+  if len(fw_candidates) == 1:
+    car_fingerprint = list(fw_candidates)[0]
 
   cloudlog.warning("fingerprinted %s", car_fingerprint)
   return car_fingerprint, finger, vin, car_fw
