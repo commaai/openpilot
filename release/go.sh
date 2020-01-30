@@ -71,10 +71,10 @@ git checkout -- cereal panda opendbc pyextra
 # reset tree and get version
 cd $SOURCE_DIR
 git clean -xdf
-git checkout -- common/version.h
+git checkout -- selfdrive/common/version.h
 
-VERSION=$(cat common/version.h | awk -F\" '{print $2}')
-echo "#define COMMA_VERSION \"$VERSION-release\"" > common/version.h
+VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
+echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
@@ -114,6 +114,6 @@ echo "[-] done pushing T=$SECONDS"
 
 # reset version
 cd $SOURCE_DIR
-git checkout -- common/version.h
+git checkout -- selfdrive/common/version.h
 
 echo "[-] done T=$SECONDS"
