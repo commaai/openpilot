@@ -11,11 +11,11 @@ pipeline {
       steps {
         lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_name', quantity: 1){
           timeout(time: 30, unit: 'MINUTES') {
-            dir(path: 'selfdrive/test') {
+            dir(path: 'release') {
               sh 'apt update'
               sh 'apt install -y python python-pip'
               sh 'pip install paramiko'
-              sh 'python release/remote_build.py'
+              sh 'python remote_build.py'
             }
           }
         }
