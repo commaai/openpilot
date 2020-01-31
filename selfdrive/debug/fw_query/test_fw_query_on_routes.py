@@ -8,18 +8,6 @@ from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 
 
-def fw_versions_to_dict(car_fw):
-  fw_versions = {}
-  for f in car_fw:
-    addr = f.address
-    subaddr = f.subAddress
-    if subaddr == 0:
-      subaddr = None
-    fw_versions[(addr, subaddr)] = f.fwVersion
-
-  return fw_versions
-
-
 if __name__ == "__main__":
   if len(sys.argv) < 2:
     print("Usage: ./test_fw_query_on_routes.py <route_list>")
@@ -55,8 +43,7 @@ if __name__ == "__main__":
           if live_fingerprint not in list(TOYOTA_FW_VERSIONS.keys()) + list(HONDA_FW_VERSIONS.keys()):
             continue
 
-          fw_versions = fw_versions_to_dict(car_fw)
-          candidates = match_fw_to_car(fw_versions)
+          candidates = match_fw_to_car(car_fw)
           if (len(candidates) == 1) and (list(candidates)[0] == live_fingerprint):
             print("Correct", live_fingerprint, dongle_id)
             break

@@ -3,7 +3,7 @@ from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions
+from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -66,8 +66,18 @@ def fingerprint(logcan, sendcan, has_relay):
   if has_relay:
     # Vin query only reliably works thorugh OBDII
     bus = 1
-    addr, vin = get_vin(logcan, sendcan, bus)
-    fw_candidates, car_fw = get_fw_versions(logcan, sendcan, bus)
+
+    cached_params = Params().get("CarParamsCache")
+    if cached_params is not None:
+      cloudlog.warning("Using cached CarParams")
+      CP = car.CarParams.from_bytes(cached_params)
+      vin = CP.carVin
+      car_fw = list(CP.carFw)
+    else:
+      _, vin = get_vin(logcan, sendcan, bus)
+      car_fw = get_fw_versions(logcan, sendcan, bus)
+
+    fw_candidates = match_fw_to_car(car_fw)
   else:
     vin = VIN_UNKNOWN
     fw_candidates, car_fw = set(), []

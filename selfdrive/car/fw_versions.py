@@ -74,12 +74,17 @@ def match_fw_to_car(fw_versions):
   candidates = FW_VERSIONS
   invalid = []
 
+  fw_versions_dict = {}
+  for fw in fw_versions:
+    addr = fw.address
+    sub_addr = fw.subAddress if fw.subAddress != 0 else None
+    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
+
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
       ecu_type = ecu[0]
       addr = ecu[1:]
-
-      found_version = fw_versions.get(addr, None)
+      found_version = fw_versions_dict.get(addr, None)
 
       # TODO: RAV4, COROLLA esp sometimes doesn't show up
       if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA] and found_version is None:
@@ -149,8 +154,7 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
 
     car_fw.append(f)
 
-  candidates = match_fw_to_car(fw_versions)
-  return candidates, car_fw
+  return car_fw
 
 
 if __name__ == "__main__":
@@ -158,7 +162,6 @@ if __name__ == "__main__":
   import argparse
   import cereal.messaging as messaging
   from selfdrive.car.vin import get_vin
-
 
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
   parser.add_argument('--scan', action='store_true')
