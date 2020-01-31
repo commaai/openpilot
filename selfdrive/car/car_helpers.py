@@ -67,11 +67,12 @@ def fingerprint(logcan, sendcan, has_relay):
     # Vin query only reliably works thorugh OBDII
     bus = 1
 
-    cached_params = Params().get("CarParams")
+    cached_params = Params().get("CarParamsCache")
     if cached_params is not None:
+      cloudlog.warning("Using cached CarParams")
       CP = car.CarParams.from_bytes(cached_params)
       vin = CP.carVin
-      car_fw = CP.carFw
+      car_fw = list(CP.carFw)
     else:
       _, vin = get_vin(logcan, sendcan, bus)
       car_fw = get_fw_versions(logcan, sendcan, bus)
