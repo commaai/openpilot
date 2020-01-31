@@ -80,7 +80,7 @@ def test_logging():
   time.sleep(1.0)
 
 @phone_only
-@with_processes(['camerad', 'modeld', 'monitoringd'])
+@with_processes(['camerad', 'modeld', 'dmonitoringmodeld'])
 def test_visiond():
   print("VISIOND IS SET UP")
   time.sleep(5.0)

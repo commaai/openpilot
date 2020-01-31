@@ -169,21 +169,21 @@ class DriverStatus():
     self.pose.cfactor = interp(ep, [0, 0.5, 1], [_METRIC_THRESHOLD_STRICT, _METRIC_THRESHOLD, _METRIC_THRESHOLD_SLACK])/_METRIC_THRESHOLD
     self.blink.cfactor = interp(ep, [0, 0.5, 1], [_BLINK_THRESHOLD_STRICT, _BLINK_THRESHOLD, _BLINK_THRESHOLD_SLACK])/_BLINK_THRESHOLD
 
-  def get_pose(self, driver_monitoring, cal_rpy, car_speed, op_engaged):
+  def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged):
     # 10 Hz
-    if len(driver_monitoring.faceOrientation) == 0 or len(driver_monitoring.facePosition) == 0 or len(driver_monitoring.faceOrientationStd) == 0 or len(driver_monitoring.facePositionStd) == 0:
+    if len(driver_state.faceOrientation) == 0 or len(driver_state.facePosition) == 0 or len(driver_state.faceOrientationStd) == 0 or len(driver_state.facePositionStd) == 0:
       return
 
-    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_monitoring.faceOrientation, driver_monitoring.facePosition, cal_rpy)
-    self.pose.pitch_std = driver_monitoring.faceOrientationStd[0]
-    self.pose.yaw_std = driver_monitoring.faceOrientationStd[1]
-    # self.pose.roll_std = driver_monitoring.faceOrientationStd[2]
+    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy)
+    self.pose.pitch_std = driver_state.faceOrientationStd[0]
+    self.pose.yaw_std = driver_state.faceOrientationStd[1]
+    # self.pose.roll_std = driver_state.faceOrientationStd[2]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
     self.pose.low_std = model_std_max < _POSESTD_THRESHOLD
-    self.blink.left_blink = driver_monitoring.leftBlinkProb * (driver_monitoring.leftEyeProb>_EYE_THRESHOLD)
-    self.blink.right_blink = driver_monitoring.rightBlinkProb * (driver_monitoring.rightEyeProb>_EYE_THRESHOLD)
-    self.face_detected = driver_monitoring.faceProb > _FACE_THRESHOLD and \
-                          abs(driver_monitoring.facePosition[0]) <= 0.4 and abs(driver_monitoring.facePosition[1]) <= 0.45 and \
+    self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb>_EYE_THRESHOLD)
+    self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb>_EYE_THRESHOLD)
+    self.face_detected = driver_state.faceProb > _FACE_THRESHOLD and \
+                          abs(driver_state.facePosition[0]) <= 0.4 and abs(driver_state.facePosition[1]) <= 0.45 and \
                           not self.is_rhd_region
 
     self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0

@@ -75,7 +75,7 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
   sm.update(0)
 
   events = list(CS.events)
-  events += list(sm['monitorState'].events)
+  events += list(sm['dMonitoringState'].events)
   add_lane_change_event(events, sm['pathPlan'])
   enabled = isEnabled(state)
 
@@ -342,7 +342,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     can_sends = CI.apply(CC)
     pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-  force_decel = sm['monitorState'].driverState.awarenessStatus < 0.
+  force_decel = sm['dMonitoringState'].awarenessStatus < 0.
 
   # controlsState
   dat = messaging.new_message()
@@ -356,7 +356,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     "alertBlinkingRate": AM.alert_rate,
     "alertType": AM.alert_type,
     "alertSound": AM.audible_alert,
-    "driverMonitoringOn": sm['monitorState'].driverState.faceDetected,
+    "driverMonitoringOn": sm['dMonitoringState'].faceDetected,
     "canMonoTimes": list(CS.canMonoTimes),
     "planMonoTime": sm.logMonoTime['plan'],
     "pathPlanMonoTime": sm.logMonoTime['pathPlan'],
@@ -451,7 +451,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
 
   if sm is None:
-    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'monitorState', 'plan', 'pathPlan', \
+    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', \
                               'model'])
 
 
@@ -508,9 +508,9 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   sm['pathPlan'].sensorValid = True
   sm['pathPlan'].posenetValid = True
   sm['thermal'].freeSpace = 1.
-  sm['monitorState'].events = []
-  sm['monitorState'].driverState.awarenessStatus = 1.
-  sm['monitorState'].driverState.faceDetected = False
+  sm['dMonitoringState'].events = []
+  sm['dMonitoringState'].awarenessStatus = 1.
+  sm['dMonitoringState'].faceDetected = False
 
   # detect sound card presence
   sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') and open('/proc/asound/card0/state').read().strip() == 'ONLINE')

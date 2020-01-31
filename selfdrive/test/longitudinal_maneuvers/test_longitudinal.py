@@ -338,7 +338,7 @@ class LongitudinalControl(unittest.TestCase):
     manager.prepare_managed_process('radard')
     manager.prepare_managed_process('controlsd')
     manager.prepare_managed_process('plannerd')
-    manager.prepare_managed_process('monitord')
+    manager.prepare_managed_process('dmonitoringd')
 
   @classmethod
   def tearDownClass(cls):
@@ -361,7 +361,7 @@ def run_maneuver_worker(k):
       manager.start_managed_process('radard')
       manager.start_managed_process('controlsd')
       manager.start_managed_process('plannerd')
-      manager.start_managed_process('monitord')
+      manager.start_managed_process('dmonitoringd')
 
       plot, valid = man.evaluate()
       plot.write_plot(output_dir, "maneuver" + str(k + 1).zfill(2))
@@ -369,7 +369,7 @@ def run_maneuver_worker(k):
       manager.kill_managed_process('radard')
       manager.kill_managed_process('controlsd')
       manager.kill_managed_process('plannerd')
-      manager.kill_managed_process('monitord')
+      manager.kill_managed_process('dmonitoringd')
 
       if valid:
         break

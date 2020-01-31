@@ -8,7 +8,7 @@ from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALE
 from selfdrive.locationd.calibration_helpers import Calibration
 from selfdrive.controls.lib.gps_helpers import is_rhd_region
 
-def monitord_thread(sm=None, pm=None):
+def dmonitoringd_thread(sm=None, pm=None):
   gc.disable()
 
   # start the loop
@@ -18,10 +18,10 @@ def monitord_thread(sm=None, pm=None):
 
   # Pub/Sub Sockets
   if pm is None:
-    pm = messaging.PubMaster(['monitorState'])
+    pm = messaging.PubMaster(['dMonitoringState'])
 
   if sm is None:
-    sm = messaging.SubMaster(['driverMonitoring', 'liveCalibration', 'carState', 'model', 'gpsLocation'], ignore_alive=['gpsLocation'])
+    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model', 'gpsLocation'], ignore_alive=['gpsLocation'])
 
   driver_status = DriverStatus()
   is_rhd = params.get("IsRHD")
@@ -40,7 +40,7 @@ def monitord_thread(sm=None, pm=None):
   v_cruise_last = 0
   driver_engaged = False
 
-  # 10Hz <- monitoringd
+  # 10Hz <- dmonitoringmodeld
   while True:
     sm.update()
 
@@ -69,21 +69,21 @@ def monitord_thread(sm=None, pm=None):
     if sm.updated['model']:
       driver_status.set_policy(sm['model'])
 
-    # Get data from monitoringd
-    if sm.updated['driverMonitoring']:
+    # Get data from dmonitoringmodeld
+    if sm.updated['driverState']:
       events = []
-      driver_status.get_pose(sm['driverMonitoring'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
+      driver_status.get_pose(sm['driverState'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
       # Block any engage after certain distrations
       if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
         events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
       # Update events from driver state
       events = driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
 
-      # monitorState packet
+      # dMonitoringState packet
       dat = messaging.new_message()
-      dat.init('monitorState')
-      dat.monitorState.events = events
-      dat.monitorState.driverState = {
+      dat.init('dMonitoringState')
+      dat.dMonitoringState = {
+        "events": events,
         "faceDetected": driver_status.face_detected,
         "isDistracted": driver_status.driver_distracted,
         "awarenessStatus": driver_status.awareness,
@@ -99,10 +99,10 @@ def monitord_thread(sm=None, pm=None):
         "isLowStd": driver_status.pose.low_std,
         "hiStdCount": driver_status.hi_stds,
       }
-      pm.send('monitorState', dat)
+      pm.send('dMonitoringState', dat)
 
 def main(sm=None, pm=None):
-  monitord_thread(sm, pm)
+  dmonitoringd_thread(sm, pm)
 
 if __name__ == '__main__':
   main()
