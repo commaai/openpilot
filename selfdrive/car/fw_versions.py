@@ -78,7 +78,7 @@ def match_fw_to_car(fw_versions):
   for fw in fw_versions:
     addr = fw.address
     sub_addr = fw.subAddress if fw.subAddress != 0 else None
-    fw_versions_dict[(addr, sub_addr)] = fw.version
+    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
 
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
