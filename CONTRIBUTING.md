@@ -29,3 +29,12 @@ Code is automatically check for style by travis as part of the automated tests. 
 We've released a [Model Port guide](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) for porting to Toyota/Lexus models.
 
 If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://medium.com/@comma_ai/how-to-write-a-car-port-for-openpilot-7ce0785eda84). You might also be eligible for a bounty. See our bounties at [comma.ai/bounties.html](https://comma.ai/bounties.html)
+
+## Pull Requests
+
+Pull requests should be against the master branch. Before running master on in-car hardware, you'll need to run
+```
+git submodule init
+git submodule update
+```
+in order to pull down the submodules, such as `panda` and `opendbc`.

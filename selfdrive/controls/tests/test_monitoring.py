@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from common.realtime import DT_CTRL, DT_DMON
+from common.realtime import DT_DMON
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, \
                                   _AWARENESS_TIME, _AWARENESS_PRE_TIME_TILL_TERMINAL, \
                                   _AWARENESS_PROMPT_TIME_TILL_TERMINAL, _DISTRACTED_TIME, \
@@ -63,9 +63,7 @@ def run_DState_seq(driver_state_msgs, driver_car_interaction, openpilot_status, 
     DS.get_pose(driver_state_msgs[idx], [0,0,0], 0, openpilot_status[idx])
                 # cal_rpy and car_speed don't matter here
 
-    # to match frequency of controlsd (100Hz)
-    for _ in range(int(DT_DMON/DT_CTRL)):
-      event_per_state = DS.update([], driver_car_interaction[idx], openpilot_status[idx], car_standstill_status[idx])
+    event_per_state = DS.update([], driver_car_interaction[idx], openpilot_status[idx], car_standstill_status[idx])
     events_from_DM.append(event_per_state) # evaluate events at 10Hz for tests
 
   assert len(events_from_DM)==len(driver_state_msgs), 'somethings wrong'
@@ -228,7 +226,7 @@ class TestMonitoring(unittest.TestCase):
     self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL))/DT_DMON)][1].name, 'preDriverDistracted')
     self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL))/DT_DMON)][1].name, 'promptDriverDistracted')
     self.assertEqual(events_output[int((_DISTRACTED_TIME+1)/DT_DMON)][1].name, 'promptDriverDistracted')
-    self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)][1].name, 'driverDistracted')
+    self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)][1].name, 'promptDriverDistracted') # set_timer blocked
 
 if __name__ == "__main__":
   print('MAX_TERMINAL_ALERTS', MAX_TERMINAL_ALERTS)

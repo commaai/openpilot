@@ -453,21 +453,22 @@ kj::Array<capnp::word> gen_init_data() {
   }
 
   char* git_commit = NULL;
-  read_db_value(NULL, "GitCommit", &git_commit, NULL);
+  size_t size;
+  read_db_value(NULL, "GitCommit", &git_commit, &size);
   if (git_commit) {
-    init.setGitCommit(capnp::Text::Reader(git_commit));
+    init.setGitCommit(capnp::Text::Reader(git_commit, size));
   }
 
   char* git_branch = NULL;
-  read_db_value(NULL, "GitBranch", &git_branch, NULL);
+  read_db_value(NULL, "GitBranch", &git_branch, &size);
   if (git_branch) {
-    init.setGitBranch(capnp::Text::Reader(git_branch));
+    init.setGitBranch(capnp::Text::Reader(git_branch, size));
   }
 
   char* git_remote = NULL;
-  read_db_value(NULL, "GitRemote", &git_remote, NULL);
+  read_db_value(NULL, "GitRemote", &git_remote, &size);
   if (git_remote) {
-    init.setGitRemote(capnp::Text::Reader(git_remote));
+    init.setGitRemote(capnp::Text::Reader(git_remote, size));
   }
 
   char* passive = NULL;
