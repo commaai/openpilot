@@ -8,7 +8,7 @@
 #include "common/visionipc.h"
 #include "common/swaglog.h"
 
-#include "models/monitoring.h"
+#include "models/dmonitoring.h"
 
 #ifndef PATH_MAX
 #include <linux/limits.h>
@@ -27,11 +27,11 @@ int main(int argc, char **argv) {
 
   // messaging
   Context *msg_context = Context::create();
-  PubSocket *monitoring_sock = PubSocket::create(msg_context, "driverMonitoring");
+  PubSocket *dmonitoring_sock = PubSocket::create(msg_context, "driverState");
 
   // init the models
-  MonitoringState monitoring;
-  monitoring_init(&monitoring);
+  DMonitoringModelState dmonitoringmodel;
+  dmonitoring_init(&dmonitoringmodel);
 
   // loop
   VisionStream stream;
@@ -58,14 +58,14 @@ int main(int argc, char **argv) {
 
       double t1 = millis_since_boot();
 
-      MonitoringResult res = monitoring_eval_frame(&monitoring, buf->addr, buf_info.width, buf_info.height);
+      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf_info.width, buf_info.height);
 
       double t2 = millis_since_boot();
 
       // send dm packet
-      monitoring_publish(monitoring_sock, extra.frame_id, res);
+      dmonitoring_publish(dmonitoring_sock, extra.frame_id, res);
 
-      LOGD("monitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
+      LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
     }
 
@@ -73,8 +73,8 @@ int main(int argc, char **argv) {
 
   visionstream_destroy(&stream);
 
-  delete monitoring_sock;
-  monitoring_free(&monitoring);
+  delete dmonitoring_sock;
+  dmonitoring_free(&dmonitoringmodel);
 
   return 0;
 }
