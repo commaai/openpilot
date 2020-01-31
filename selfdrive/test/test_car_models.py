@@ -422,7 +422,6 @@ forced_dashcam_routes = [
 ]
 
 # TODO: replace all these with public routes
-# TODO: add routes for untested cars: HONDA ACCORD 2018 HYBRID TOURING and CHRYSLER PACIFICA 2018
 non_public_routes = [
   "0607d2516fc2148f|2019-02-13--23-03-16",  # CHRYSLER PACIFICA HYBRID 2019
   "3e9592a1c78a3d63|2018-02-08--20-28-24",  # HONDA PILOT 2017 TOURING
@@ -459,16 +458,23 @@ non_public_routes = [
   "fbd011384db5e669|2018-07-26--20-51-48",  # TOYOTA CAMRY HYBRID 2018
 ]
 
+# TODO: add routes for these cars
+non_tested_cars = [TOYOTA.LEXUS_CTH, CHRYSLER.PACIFICA_2018, HONDA.ACCORDH]
+
 if __name__ == "__main__":
 
   tested_procs = ["controlsd", "radard", "plannerd"]
   tested_socks = ["radarState", "controlsState", "carState", "plan"]
 
-  # TODO: add routes for untested cars and fail test if we have an untested car
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
     if car_model not in tested_cars:
       print("***** WARNING: %s not tested *****" % car_model)
+
+      # TODO: skip these for now, but make sure any new ports get routes
+      if car_model not in non_tested_cars:
+        print("TEST FAILED: Missing route for car '%s'" % car_model)
+        sys.exit(1)
 
   print("Preparing processes")
   for p in tested_procs:
