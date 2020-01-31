@@ -24,6 +24,7 @@ SERVICE = BlockBlobService(_DATA_ACCOUNT_CI, sas_token=DEST_KEY)
 def sync_to_ci_public(route):
   print(f"Uploading {route}")
   key_prefix = route.replace('|', '/')
+  dongle_id = key_prefix.split('/')[0]
 
   if next(azureutil.list_all_blobs(SERVICE, "openpilotci", prefix=key_prefix), None) is not None:
     print("Already synced")
@@ -35,7 +36,7 @@ def sync_to_ci_public(route):
       f"{BASEDIR}/external/bin/azcopy",
       "copy",
       "https://{}.blob.core.windows.net/{}/{}?{}".format(source_account, source_bucket, key_prefix, source_key),
-      "https://{}.blob.core.windows.net/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", DEST_KEY),
+      "https://{}.blob.core.windows.net/{}/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", dongle_id, DEST_KEY),
       "--recursive=true",
       "--overwrite=false",
     ]
