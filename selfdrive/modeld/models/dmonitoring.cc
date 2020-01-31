@@ -1,5 +1,5 @@
 #include <string.h>
-#include "monitoring.h"
+#include "dmonitoring.h"
 #include "common/mat.h"
 #include "common/timing.h"
 
@@ -10,11 +10,11 @@
 #define MODEL_HEIGHT 320
 #define FULL_W 426
 
-void monitoring_init(MonitoringState* s) {
-  s->m = new DefaultRunModel("../../models/monitoring_model_q.dlc", (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
+void dmonitoring_init(DMonitoringModelState* s) {
+  s->m = new DefaultRunModel("../../models/dmonitoring_model_q.dlc", (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
 }
 
-MonitoringResult monitoring_eval_frame(MonitoringState* s, void* stream_buf, int width, int height) {
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
 
   uint8_t *raw_buf = (uint8_t*) stream_buf;
   uint8_t *raw_y_buf = raw_buf;
@@ -111,7 +111,7 @@ MonitoringResult monitoring_eval_frame(MonitoringState* s, void* stream_buf, int
   s->m->execute(net_input_buf);
   delete[] net_input_buf;
 
-  MonitoringResult ret = {0};
+  DMonitoringResult ret = {0};
   memcpy(&ret.face_orientation, &s->output[0], sizeof ret.face_orientation);
   memcpy(&ret.face_orientation_meta, &s->output[6], sizeof ret.face_orientation_meta);
   memcpy(&ret.face_position, &s->output[3], sizeof ret.face_position);
@@ -129,13 +129,13 @@ MonitoringResult monitoring_eval_frame(MonitoringState* s, void* stream_buf, int
   return ret;
 }
 
-void monitoring_publish(PubSocket* sock, uint32_t frame_id, const MonitoringResult res) {
+void dmonitoring_publish(PubSocket* sock, uint32_t frame_id, const DMonitoringResult res) {
   // make msg
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
 
-  auto framed = event.initDriverMonitoring();
+  auto framed = event.initDriverState();
   framed.setFrameId(frame_id);
 
   kj::ArrayPtr<const float> face_orientation(&res.face_orientation[0], ARRAYSIZE(res.face_orientation));
@@ -158,6 +158,6 @@ void monitoring_publish(PubSocket* sock, uint32_t frame_id, const MonitoringResu
   sock->send((char*)bytes.begin(), bytes.size());
 }
 
-void monitoring_free(MonitoringState* s) {
+void dmonitoring_free(DMonitoringModelState* s) {
   delete s->m;
 }

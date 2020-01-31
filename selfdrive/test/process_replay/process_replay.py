@@ -198,7 +198,7 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "thermal": [], "health": [], "liveCalibration": [], "driverMonitoring": [], "plan": [], "pathPlan": [], "gpsLocation": [],
+      "thermal": [], "health": [], "liveCalibration": [], "dMonitoringState": [], "plan": [], "pathPlan": [], "gpsLocation": [],
       "model": [],
     },
     ignore=[("logMonoTime", 0), ("valid", True), ("controlsState.startMonoTime", 0), ("controlsState.cumLagMs", 0)],
@@ -233,6 +233,16 @@ CONFIGS = [
     ignore=[("logMonoTime", 0), ("valid", True)],
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
+  ),
+  ProcessConfig(
+    proc_name="dmonitoringd",
+    pub_sub={
+      "driverState": ["dMonitoringState"],
+      "liveCalibration": [], "carState": [], "model": [], "gpsLocation": [],
+    },
+    ignore=[("logMonoTime", 0), ("valid", True)],
+    init_callback=get_car_params,
+    should_recv_callback=None,
   ),
 ]
 
