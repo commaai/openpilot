@@ -508,7 +508,9 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     CP.safetyModel = car.CarParams.SafetyModel.noOutput
 
   # Write CarParams for radard and boardd safety mode
-  params.put("CarParams", CP.to_bytes())
+  cp_bytes = CP.to_bytes()
+  params.put("CarParams", cp_bytes)
+  params.put("CarParamsCache", cp_bytes)
   params.put("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
 
   CC = car.CarControl.new_message()
