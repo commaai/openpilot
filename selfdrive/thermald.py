@@ -6,8 +6,7 @@ import datetime
 import psutil
 from smbus2 import SMBus
 from cereal import log
-from common import android
-from common.android import ANDROID
+from common.android import ANDROID, get_network_type
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot, DT_TRML
@@ -137,37 +136,6 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   return new_speed
 
-def get_network_type():
-  wifi_check = android.parse_service_call_string(android.service_call(["connectivity", "2"]))
-  cell_check = android.parse_service_call_unpack(android.service_call(['phone', '59']), ">q")
-  cell_networks = {
-    0: NetworkType.none,
-    1: NetworkType.cell2G,
-    2: NetworkType.cell2G,
-    4: NetworkType.cell2G,
-    7: NetworkType.cell2G,
-    11: NetworkType.cell2G,
-    16: NetworkType.cell2G,
-    3: NetworkType.cell3G,
-    5: NetworkType.cell3G,
-    6: NetworkType.cell3G,
-    8: NetworkType.cell3G,
-    9: NetworkType.cell3G,
-    10: NetworkType.cell3G,
-    12: NetworkType.cell3G,
-    13: NetworkType.cell3G,
-    14: NetworkType.cell3G,
-    15: NetworkType.cell3G,
-    17: NetworkType.cell3G,
-    18: NetworkType.cell4G,
-    20: NetworkType.cell5G
-  }
-
-  if 'WIFI' in wifi_check:
-    return NetworkType.wifi
-  else:
-    return cell_networks.get(cell_check, NetworkType.none)
-
 def thermald_thread():
   # prevent LEECO from undervoltage
   BATT_PERC_OFF = 10 if LEON else 3
@@ -224,7 +192,7 @@ def thermald_thread():
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
-    msg.thermal.networkType = get_network_type()
+    msg.thermal.networkType = get_network_type(NetworkType)
 
     try:
       with open("/sys/class/power_supply/battery/capacity") as f:
