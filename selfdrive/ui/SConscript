@@ -5,7 +5,7 @@ libs = [common, 'zmq', 'czmq', 'capnp', 'capnp_c', 'm', cereal, 'json', messagin
 
 if arch == "aarch64":
   src += ['sound.cc', 'slplay.c']
-  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid']
+  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
   linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
 else:
   src += ['linux.cc']
