@@ -18,9 +18,6 @@
 typedef struct FramebufferState FramebufferState;
 typedef struct TouchState TouchState;
 
-#define FALSE 0
-#define TRUE 1
-
 extern "C" {
 
 FramebufferState* framebuffer_init(

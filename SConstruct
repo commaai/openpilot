@@ -220,7 +220,6 @@ SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
-
 SConscript(['selfdrive/proclogd/SConscript'])
 
 SConscript(['selfdrive/ui/SConscript'])
