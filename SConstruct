@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import platform
 
 AddOption('--test',
           action='store_true',
@@ -11,6 +12,8 @@ AddOption('--asan',
           help='turn on ASAN')
 
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
+if platform.system() == "Darwin":
+  arch = "Darwin"
 
 if arch == "aarch64":
   lenv = {
@@ -48,20 +51,33 @@ else:
     "#phonelibs/zmq/x64/include",
     "#external/tensorflow/include",
   ]
-  libpath = [
-    "#phonelibs/capnp-cpp/x64/lib",
-    "#phonelibs/capnp-c/x64/lib",
-    "#phonelibs/yaml-cpp/x64/lib",
-    "#phonelibs/snpe/x86_64-linux-clang",
-    "#phonelibs/zmq/x64/lib",
-    "#phonelibs/libyuv/x64/lib",
-    "#external/zmq/lib",
-    "#external/tensorflow/lib",
-    "#cereal",
-    "#selfdrive/common",
-    "/usr/lib",
-    "/usr/local/lib",
-  ]
+
+  if arch == "Darwin":
+    libpath = [
+      "#phonelibs/capnp-cpp/mac/lib",
+      "#phonelibs/capnp-c/mac/lib",
+      "#phonelibs/yaml-cpp/mac/lib",
+      "#phonelibs/libyuv/mac/lib",
+      "#cereal",
+      "#selfdrive/common",
+      "/usr/local/lib",
+      "/System/Library/Frameworks/OpenGL.framework/Libraries",
+    ]
+  else:
+    libpath = [
+      "#phonelibs/capnp-cpp/x64/lib",
+      "#phonelibs/capnp-c/x64/lib",
+      "#phonelibs/yaml-cpp/x64/lib",
+      "#phonelibs/snpe/x86_64-linux-clang",
+      "#phonelibs/zmq/x64/lib",
+      "#phonelibs/libyuv/x64/lib",
+      "#external/zmq/lib",
+      "#external/tensorflow/lib",
+      "#cereal",
+      "#selfdrive/common",
+      "/usr/lib",
+      "/usr/local/lib",
+    ]
 
   rpath = ["phonelibs/capnp-cpp/x64/lib",
            "external/tensorflow/lib",
@@ -195,8 +211,10 @@ SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
 SConscript(['phonelibs/SConscript'])
 
-SConscript(['selfdrive/modeld/SConscript'])
-SConscript(['selfdrive/camerad/SConscript'])
+if arch != "Darwin":
+  SConscript(['selfdrive/camerad/SConscript'])
+  SConscript(['selfdrive/modeld/SConscript'])
+
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
