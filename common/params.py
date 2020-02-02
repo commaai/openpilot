@@ -328,6 +328,11 @@ class Params():
       with self.transaction(write=True):
         pass
 
+  def clear_all(self):
+    shutil.rmtree(self.db, ignore_errors=True)
+    with self.transaction(write=True):
+      pass
+
   def transaction(self, write=False):
     if write:
       return DBWriter(self.db)
