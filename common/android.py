@@ -92,6 +92,8 @@ def parse_service_call_bytes(ret):
 
 def get_network_type(NetworkType):
   wifi_check = parse_service_call_string(service_call(["connectivity", "2"]))
+  if wifi_check is None:
+    return NetworkType.none
   if 'WIFI' in wifi_check:
     return NetworkType.wifi
   else:

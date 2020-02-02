@@ -4,7 +4,6 @@ os.environ['OLD_CAN'] = '1'
 os.environ['NOCRASH'] = '1'
 
 import unittest
-import shutil
 import matplotlib
 matplotlib.use('svg')
 
@@ -328,8 +327,8 @@ class LongitudinalControl(unittest.TestCase):
 
     setup_output()
 
-    shutil.rmtree('/data/params', ignore_errors=True)
     params = Params()
+    params.clear_all()
     params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")

@@ -1,11 +1,12 @@
 import os
 
 from cffi import FFI
+from common.ffi_wrapper import suffix
 
 mpc_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 
 def _get_libmpc(mpc_id):
-    libmpc_fn = os.path.join(mpc_dir, "libmpc%d.so" % mpc_id)
+    libmpc_fn = os.path.join(mpc_dir, "libmpc%d%s" % (mpc_id, suffix()))
 
     ffi = FFI()
     ffi.cdef("""

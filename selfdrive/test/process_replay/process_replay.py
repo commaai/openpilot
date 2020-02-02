@@ -3,7 +3,6 @@ import os
 import sys
 import threading
 import importlib
-import shutil
 
 if "CI" in os.environ:
   tqdm = lambda x: x
@@ -260,8 +259,8 @@ def replay_process(cfg, lr):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  shutil.rmtree('/data/params', ignore_errors=True)
   params = Params()
+  params.clear_all()
   params.manager_start()
   params.put("OpenpilotEnabledToggle", "1")
   params.put("Passive", "0")

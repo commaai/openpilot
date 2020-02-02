@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import shutil
 import time
 import os
 import sys
@@ -487,8 +486,8 @@ if __name__ == "__main__":
     elif "UNLOGGER_PATH" not in os.environ:
       continue
 
-    shutil.rmtree('/data/params')
     params = Params()
+    params.clear_all()
     params.manager_start()
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
