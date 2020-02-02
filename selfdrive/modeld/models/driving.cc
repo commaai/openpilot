@@ -138,7 +138,8 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   valid_len =  data[MODEL_PATH_DISTANCE*2];
   for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
     points_arr[i] = data[i] + offset;
-    if (i < valid_len) {
+    // Always do at least 5 points
+    if (i < 5 || i < valid_len) {
       stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
     } else {
       stds_arr[i] = 1.0e3; 
