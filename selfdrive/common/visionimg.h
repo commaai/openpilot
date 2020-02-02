@@ -9,7 +9,8 @@
 #include <EGL/eglext.h>
 #undef Status
 #else
-typedef int EGLImageKHR, EGLClientBuffer;
+typedef int EGLImageKHR;
+typedef void *EGLClientBuffer;
 #endif
 
 #ifdef __cplusplus
