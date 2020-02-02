@@ -1,5 +1,3 @@
-# vim: set filetype=python:
-
 import os
 import subprocess
 import sys
@@ -213,13 +211,15 @@ SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
 SConscript(['phonelibs/SConscript'])
 
-SConscript(['selfdrive/modeld/SConscript'])
-SConscript(['selfdrive/camerad/SConscript'])
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
 
-SConscript(['selfdrive/boardd/SConscript'])
+if arch != "Darwin":
+  SConscript(['selfdrive/boardd/SConscript'])
+  SConscript(['selfdrive/camerad/SConscript'])
+  SConscript(['selfdrive/modeld/SConscript'])
+
 SConscript(['selfdrive/proclogd/SConscript'])
 
 SConscript(['selfdrive/ui/SConscript'])

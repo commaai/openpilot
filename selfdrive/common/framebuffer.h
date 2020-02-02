@@ -1,8 +1,6 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-#include <EGL/eglext.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
