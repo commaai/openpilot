@@ -211,14 +211,15 @@ SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
 SConscript(['phonelibs/SConscript'])
 
+if arch != "Darwin":
+  SConscript(['selfdrive/camerad/SConscript'])
+  SConscript(['selfdrive/modeld/SConscript'])
+
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
 
-if arch != "Darwin":
-  SConscript(['selfdrive/boardd/SConscript'])
-  SConscript(['selfdrive/camerad/SConscript'])
-  SConscript(['selfdrive/modeld/SConscript'])
+SConscript(['selfdrive/boardd/SConscript'])
 
 SConscript(['selfdrive/proclogd/SConscript'])
 

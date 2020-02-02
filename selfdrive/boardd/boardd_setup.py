@@ -1,4 +1,5 @@
 import subprocess
+import platform
 from distutils.core import Extension, setup
 
 from Cython.Build import cythonize
@@ -10,14 +11,24 @@ import os
 PHONELIBS = os.path.join(BASEDIR, 'phonelibs')
 
 ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
-ARCH_DIR = 'x64' if ARCH == "x86_64" else 'aarch64'
+
+if ARCH == "x86_64":
+  if platform.system() == "Darwin":
+    libraries = ['can_list_to_can_capnp', 'capnp', 'kj']
+    ARCH_DIR = 'mac'
+  else:
+    libraries = [':libcan_list_to_can_capnp.a', ':libcapnp.a', ':libkj.a']
+    ARCH_DIR = 'x64'
+else:
+  libraries = [':libcan_list_to_can_capnp.a', 'capnp', 'kj']
+  ARCH_DIR = 'aarch64'
 
 setup(name='Boardd API Implementation',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},
       ext_modules=cythonize(
         Extension(
           "boardd_api_impl",
-          libraries=[':libcan_list_to_can_capnp.a', ':libcapnp.a', ':libkj.a'] if ARCH == "x86_64" else [':libcan_list_to_can_capnp.a', 'capnp', 'kj'],
+          libraries=libraries,
           library_dirs=[
             './',
             PHONELIBS + '/capnp-cpp/' + ARCH_DIR + '/lib/',
