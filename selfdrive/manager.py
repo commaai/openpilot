@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import datetime
 
-from common.basedir import BASEDIR
+from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
@@ -457,6 +457,8 @@ def uninstall():
   android.reboot(reason="recovery")
 
 def main():
+  os.environ['PARAMS_PATH'] = PARAMS
+
   # the flippening!
   os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
 
