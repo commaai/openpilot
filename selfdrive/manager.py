@@ -22,6 +22,8 @@ try:
   os.mkdir("/dev/shm")
 except FileExistsError:
   pass
+except PermissionError:
+  print("WARNING: failed to make /dev/shm")
 
 if ANDROID:
   os.chmod("/dev/shm", 0o777)
