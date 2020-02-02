@@ -211,7 +211,7 @@ class CarInterface(CarInterfaceBase):
         # stock filter output values:     0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
         # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
         # note: max request allowed is 4096, but request is clamped to at 3840 in fw torque curve lookup function
-        # 3600 is 3x max of 1200
+        # 2400 is 2x max of 1200
         # command of 0xF00 * 0xDDB4 >> 0xF >> 0x2 = 0x67E torque table index -> 3600 torque table output
         # torque table goes up to 0x6EE but lookup function input is clamped at 67E therefore max request is 0xF00
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0x0, 0x746, 0xB04, 0xCDF, 0xE19, 0x1008, 0x1200, 0x1B00, 0x2400], [0x0, 0x1E0, 0x2D0, 0x42F, 0x58B, 0x780, 0x95E, 0xD1F, 0xF00]]
@@ -285,7 +285,7 @@ class CarInterface(CarInterfaceBase):
         # stock filter output values:     0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
         # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
         # note: max request allowed is 4096, but request is clamped to at 3840 in fw torque curve lookup function
-        # 3C00 is 3x max of 1400
+        # 2800 is 2x max of 1400
         # command of 0xF00 * ddb4 >> 0xf >> 0x2 = 0x67E torque table index -> 3C00 torque table output
         # torque table lookup is clamped at 6EE but table only goes up to 67E therefore max request is 0xF00
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0x0, 0x500, 0xA15, 0xE6D, 0x1100, 0x1200, 0x1955, 0x20AA, 0x2800], [0x0, 0x200, 0x400, 0x600, 0x800, 0xA00, 0xC00, 0xE00, 0xF00]]
