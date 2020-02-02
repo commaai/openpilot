@@ -6,18 +6,17 @@
 
 #include "ui.hpp"
 
+#ifndef __APPLE__
 #define GLFW_INCLUDE_ES2
+#else
+#define GLFW_INCLUDE_GLCOREARB
+#endif
+
 #define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 typedef struct FramebufferState FramebufferState;
 typedef struct TouchState TouchState;
-
-#define FALSE 0
-#define TRUE 1
-
-#include <xcb/xcb.h>
-#include <X11/Xlib-xcb.h>
 
 extern "C" {
 
@@ -90,7 +89,7 @@ GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img->width, img->height, 0, GL_RGB, GL_UNSIGNED_BYTE, *pph);
   glGenerateMipmap(GL_TEXTURE_2D);
-  *pkhr = (EGLImageKHR *)1; // not NULL
+  *pkhr = (EGLImageKHR)1; // not NULL
   return texture;
 }
 
