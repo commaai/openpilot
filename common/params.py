@@ -29,13 +29,7 @@ import fcntl
 import tempfile
 import threading
 from enum import Enum
-from common.android import ANDROID
-from common.basedir import BASEDIR
-
-if ANDROID:
-  db_base = "/data/params"
-else:
-  db_base = os.path.join(BASEDIR, "persist", "params")
+from common.basedir import PARAMS
 
 def mkdirs_exists_ok(path):
   try:
@@ -326,7 +320,7 @@ def write_db(params_path, key, value):
     lock.release()
 
 class Params():
-  def __init__(self, db=db_base):
+  def __init__(self, db=PARAMS):
     self.db = db
 
     # create the database if it doesn't exist...

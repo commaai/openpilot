@@ -11,7 +11,7 @@ from cereal import car
 import selfdrive.manager as manager
 import cereal.messaging as messaging
 from common.params import Params
-from common.basedir import BASEDIR
+from common.basedir import BASEDIR, PARAMS
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.toyota.values import CAR as TOYOTA
@@ -487,7 +487,7 @@ if __name__ == "__main__":
     elif "UNLOGGER_PATH" not in os.environ:
       continue
 
-    shutil.rmtree('/data/params')
+    shutil.rmtree(PARAMS)
     params = Params()
     params.manager_start()
     params.put("OpenpilotEnabledToggle", "1")
