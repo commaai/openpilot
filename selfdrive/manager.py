@@ -367,9 +367,10 @@ def manager_init(should_register=True):
     pass
 
   # ensure shared libraries are readable by apks
-  os.chmod(BASEDIR, 0o755)
-  os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
-  os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
+  if ANDROID:
+    os.chmod(BASEDIR, 0o755)
+    os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
+    os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
 def manager_thread():
   # now loop
