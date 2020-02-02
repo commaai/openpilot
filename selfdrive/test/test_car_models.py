@@ -487,7 +487,7 @@ if __name__ == "__main__":
     elif "UNLOGGER_PATH" not in os.environ:
       continue
 
-    shutil.rmtree(PARAMS)
+    shutil.rmtree(PARAMS, ignore_errors=True)
     params = Params()
     params.manager_start()
     params.put("OpenpilotEnabledToggle", "1")
