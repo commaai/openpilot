@@ -67,6 +67,10 @@ routes = {
     'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
     'enableCamera': True,
   },
+  "8190c7275a24557b|2020-01-29--08-33-58": {
+    'carFingerprint': CHRYSLER.PACIFICA_2020_HYBRID,
+    'enableCamera': True,
+  },
   # This pacifica was removed because the fingerprint seemed from a Volt
   #"9f7a7e50a51fb9db|2019-01-03--14-05-01": {
   #  'carFingerprint': CHRYSLER.PACIFICA_2018,

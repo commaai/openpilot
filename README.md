@@ -68,7 +68,7 @@ Supported Cars
 | Acura     | RDX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>5</sup>  | 12mph        |
 | Chrysler  | Pacifica 2017-18              | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Chrysler  | Pacifica Hybrid 2019          | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
+| Chrysler  | Pacifica Hybrid 2019-20       | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Honda     | Accord 2018-19                | All               | Stock            | 0mph               | 3mph         |
 | Honda     | Accord Hybrid 2018-19         | All               | Stock            | 0mph               | 3mph         |
 | Honda     | Civic Hatchback 2017-19       | Honda Sensing     | Stock            | 0mph               | 12mph        |
