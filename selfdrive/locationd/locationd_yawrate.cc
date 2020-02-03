@@ -10,7 +10,7 @@
 #include "locationd_yawrate.h"
 
 
-void Localizer::update_state(const Eigen::Matrix<double, 1, 4> &C, const double R, double current_time, double meas) {
+void Localizer::update_state(const Eigen::Matrix<double, 1, 2> &C, const double R, double current_time, double meas) {
   double dt = current_time - prev_update_time;
 
   if (dt < 0) {
@@ -19,18 +19,12 @@ void Localizer::update_state(const Eigen::Matrix<double, 1, 4> &C, const double 
     prev_update_time = current_time;
   }
 
-  A <<
-    1,  0, 0,  0,
-    0,  1,  0,  0,
-    0,  0,  1,  0,
-    0,  0,  0,  1;
-
   x = A * x;
   P = A * P * A.transpose() + dt * Q;
 
   double y = meas - C * x;
   double S = R + C * P * C.transpose();
-  Eigen::Vector4d K = P * C.transpose() * (1.0 / S);
+  Eigen::Vector2d K = P * C.transpose() * (1.0 / S);
   x = x + K * y;
   P = (I - K * C) * P;
 }
@@ -63,27 +57,25 @@ void Localizer::handle_controls_state(cereal::ControlsState::Reader controls_sta
 
 
 Localizer::Localizer() {
-  // States: [yaw rate, yaw rate diff, gyro bias, gyro bias diff]
-  I <<
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1;
+  // States: [yaw rate, gyro bias]
+  A <<
+    1, 0,
+    0, 1;
 
   Q <<
-    pow(.1, 2.0), 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, pow(0.005/ 100.0, 2.0), 0,
-    0, 0, 0, 0;
+    pow(.1, 2.0), 0,
+    0, pow(0.005/ 100.0, 2.0),
   P <<
-    pow(10000.0, 2.0), 0, 0, 0,
-    0, pow(10000.0, 2.0), 0, 0,
-    0, 0, pow(10000.0, 2.0), 0,
-    0, 0, 0, pow(10000.0, 2.0);
+    pow(10000.0, 2.0), 0,
+    0, pow(10000.0, 2.0);
 
-  C_posenet << 1, 0, 0, 0;
-  C_gyro << 1, 0, 1, 0;
-  x << 0, 0, 0, 0;
+  I <<
+    1, 0,
+    0, 1;
+
+  C_posenet << 1, 0;
+  C_gyro << 1, 1;
+  x << 0, 0;
 
   R_gyro = pow(0.025, 2.0);
 }
