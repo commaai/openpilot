@@ -126,7 +126,7 @@ extern "C" {
   }
   double localizer_get_bias(void * localizer) {
     Localizer * loc = (Localizer*) localizer;
-    return loc->x[2];
+    return loc->x[1];
   }
 
   double * localizer_get_state(void * localizer) {
