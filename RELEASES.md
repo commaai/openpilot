@@ -1,6 +1,6 @@
 Version 0.7.2 (2020-02-07)
 ========================
- * ECU Firwmare version based fingerprinting for Honda & Toyota
+ * ECU firmware version based fingerprinting for Honda & Toyota
  * New driving model: improved path prediction during turns and lane changes and better lead speed tracking
  * Improve driver monitoring under extreme lighting and add low accuracy alert
  * Support for 2019 Rav4 Hybrid thanks to illumiN8i!
