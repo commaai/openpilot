@@ -317,6 +317,10 @@ routes = {
     'enableCamera': True,
     'enableDsu': True,
   },
+    "01b22eb2ed121565|2020-02-02--11-25-51": {
+    'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
+    'enableCamera': True,
+  },
   #FIXME: This works sometimes locally, but never in CI. Timing issue?
   #"b0f5a01cf604185c|2018-01-31--20-11-39": {
   #  'carFingerprint': TOYOTA.LEXUS_RXH,
