@@ -16,7 +16,7 @@ int ipc_connect(const char* socket_path) {
   int err;
 
   int sock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
-  assert(sock >= 0);
+  if (sock < 0) return -1;
   struct sockaddr_un addr = {
     .sun_family = AF_UNIX,
   };
