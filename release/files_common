@@ -11,15 +11,6 @@ RELEASES.md
 
 SConstruct
 
-Pipfile
-Pipfile.lock
-
-Dockerfile.openpilot
-flake8_openpilot.sh
-pylint_openpilot.sh
-
-.github/**
-
 apk/ai.comma*.apk
 
 common/.gitignore
@@ -369,13 +360,10 @@ phonelibs/eigen/**
 
 phonelibs/yaml-cpp/include/**
 phonelibs/yaml-cpp/lib/**
-phonelibs/yaml-cpp/x64/**
 phonelibs/yaml-cpp/LICENSE
 
 phonelibs/nanovg/*.c
 phonelibs/nanovg/*.h
-
-phonelibs/zmq/x64/**
 
 phonelibs/libgralloc/**
 phonelibs/linux/**
@@ -394,9 +382,14 @@ phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
 
 phonelibs/qpoases/**
-phonelibs/libyuv/**
-phonelibs/snpe/**
-phonelibs/fastcv/**
+
+phonelibs/libyuv/include/**
+phonelibs/libyuv/lib/**
+
+phonelibs/snpe/include/**
+phonelibs/snpe/aarch64-android-clang3.8/**
+
+phonelibs/fastcv/aarch64/**
 
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**
@@ -409,5 +402,3 @@ installer/updater/Makefile
 
 scripts/update_now.sh
 scripts/stop_updater.sh
-
-release/files_common
