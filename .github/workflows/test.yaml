@@ -16,7 +16,10 @@ jobs:
       run: |
         git submodule update --init
     - run: |
-        docker build -t tmppilot -f Dockerfile.openpilot .
+        docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+        docker pull docker.pkg.github.com/commaai/openpilot/openpilot:latest || true
+
+        docker build --cache-from docker.pkg.github.com/commaai/openpilot/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
         docker save tmppilot:latest | gzip > tmppilot.tar.gz
     - uses: actions/upload-artifact@v1
       with:
