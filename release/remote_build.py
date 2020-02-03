@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-# flake8: noqa
 import paramiko
 import os
 import sys
