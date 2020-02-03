@@ -11,6 +11,9 @@ RELEASES.md
 
 SConstruct
 
+Pipfile
+Pipfile.lock
+
 Dockerfile.openpilot
 flake8_openpilot.sh
 pylint_openpilot.sh
