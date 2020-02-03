@@ -4,6 +4,7 @@ import json
 import copy
 import datetime
 import psutil
+import subprocess
 from smbus2 import SMBus
 from cereal import log
 from common.android import ANDROID, get_network_type
@@ -159,6 +160,8 @@ def thermald_thread():
   usb_power = True
   usb_power_prev = True
 
+  network_type = NetworkType.none
+
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   health_prev = None
   fw_version_match_prev = True
@@ -189,10 +192,15 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
+    try:
+      network_type = get_network_type()
+    except subprocess.CalledProcessError:
+      pass
+
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
-    msg.thermal.networkType = get_network_type(NetworkType)
+    msg.thermal.networkType = network_type
 
     try:
       with open("/sys/class/power_supply/battery/capacity") as f:

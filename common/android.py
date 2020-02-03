@@ -5,6 +5,9 @@ import re
 import struct
 import subprocess
 import random
+from cereal import log
+
+NetworkType = log.ThermalData.NetworkType
 
 ANDROID = os.path.isfile('/EON')
 
@@ -90,7 +93,7 @@ def parse_service_call_bytes(ret):
   except Exception:
     return None
 
-def get_network_type(NetworkType):
+def get_network_type():
   wifi_check = parse_service_call_string(service_call(["connectivity", "2"]))
   if wifi_check is None:
     return NetworkType.none
