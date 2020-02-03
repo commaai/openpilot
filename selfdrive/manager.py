@@ -250,14 +250,16 @@ def start_managed_process(name):
 def start_daemon_process(name):
   params = Params()
   proc, pid_param = daemon_processes[name]
-  pid = params.get(pid_param)
+  pid = params.get(pid_param, encoding='utf-8')
 
   if pid is not None:
     try:
       os.kill(int(pid), 0)
-      # process is running (kill is a poorly-named system call)
-      return
-    except OSError:
+      with open(f'/proc/{pid}/cmdline') as f:
+        if proc in f.read():
+          # daemon is running
+          return
+    except (OSError, FileNotFoundError):
       # process is dead
       pass
 
