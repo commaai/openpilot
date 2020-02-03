@@ -296,7 +296,7 @@ class CarInterface(CarInterfaceBase):
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
       if ret.gasPressed:
         events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-      if ret.cruiseState.standstill:
+      if self.CS.pcm_acc_status == AccState.STANDSTILL:
         events.append(create_event('resumeRequired', [ET.WARNING]))
       if self.CS.pcm_acc_status == AccState.FAULTED:
         events.append(create_event('controlsFailed', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
