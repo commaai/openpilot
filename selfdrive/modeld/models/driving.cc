@@ -7,9 +7,9 @@
 
 
 #define PATH_IDX 0
-#define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2
-#define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 1
-#define LEAD_IDX RL_IDX + MODEL_PATH_DISTANCE*2 + 1
+#define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2 + 1
+#define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 2
+#define LEAD_IDX RL_IDX + MODEL_PATH_DISTANCE*2 + 2
 #define LONG_X_IDX LEAD_IDX + MDN_GROUP_SIZE*LEAD_MDN_N + SELECTION 
 #define LONG_V_IDX LONG_X_IDX + TIME_DISTANCE*2
 #define LONG_A_IDX LONG_V_IDX + TIME_DISTANCE*2
@@ -133,13 +133,20 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   float poly_arr[POLYFIT_DEGREE];
   float std;
   float prob;
+  float valid_len;
 
+  valid_len =  data[MODEL_PATH_DISTANCE*2];
   for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
     points_arr[i] = data[i] + offset;
-    stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
+    // Always do at least 5 points
+    if (i < 5 || i < valid_len) {
+      stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
+    } else {
+      stds_arr[i] = 1.0e3; 
+    }
   }
   if (has_prob) {
-    prob =  sigmoid(data[MODEL_PATH_DISTANCE*2]);
+    prob =  sigmoid(data[MODEL_PATH_DISTANCE*2 + 1]);
   } else {
     prob = 1.0;
   }
