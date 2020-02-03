@@ -890,6 +890,28 @@ void ui_draw(UIState *s) {
   }
 }
 
+#ifdef NANOVG_GL3_IMPLEMENTATION
+static const char frame_vertex_shader[] =
+  "#version 150 core\n"
+  "in vec4 aPosition;\n"
+  "in vec4 aTexCoord;\n"
+  "uniform mat4 uTransform;\n"
+  "out vec4 vTexCoord;\n"
+  "void main() {\n"
+  "  gl_Position = uTransform * aPosition;\n"
+  "  vTexCoord = aTexCoord;\n"
+  "}\n";
+
+static const char frame_fragment_shader[] =
+  "#version 150 core\n"
+  "precision mediump float;\n"
+  "uniform sampler2D uTexture;\n"
+  "out vec4 vTexCoord;\n"
+  "out vec4 outColor;\n"
+  "void main() {\n"
+  "  outColor = texture(uTexture, vTexCoord.xy);\n"
+  "}\n";
+#else
 static const char frame_vertex_shader[] =
   "attribute vec4 aPosition;\n"
   "attribute vec4 aTexCoord;\n"
@@ -907,6 +929,7 @@ static const char frame_fragment_shader[] =
   "void main() {\n"
   "  gl_FragColor = texture2D(uTexture, vTexCoord.xy);\n"
   "}\n";
+#endif
 
 static const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
