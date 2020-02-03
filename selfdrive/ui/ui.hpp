@@ -199,10 +199,6 @@ typedef struct UIState {
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
 
-  GLuint line_program;
-  GLint line_pos_loc, line_color_loc;
-  GLint line_transform_loc;
-
   int rgb_width, rgb_height, rgb_stride;
   size_t rgb_buf_len;
   mat4 rgb_transform;
