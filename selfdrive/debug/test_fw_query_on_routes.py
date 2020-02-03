@@ -7,6 +7,9 @@ from selfdrive.car.fw_versions import match_fw_to_car
 from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 
+from selfdrive.car.toyota.values import FINGERPRINTS as TOYOTA_FINGERPRINTS
+from selfdrive.car.honda.values import FINGERPRINTS as HONDA_FINGERPRINTS
+
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
@@ -42,7 +45,7 @@ if __name__ == "__main__":
           dongles.append(dongle_id)
           live_fingerprint = msg.carParams.carFingerprint
 
-          if live_fingerprint not in list(TOYOTA_FW_VERSIONS.keys()) + list(HONDA_FW_VERSIONS.keys()):
+          if live_fingerprint not in list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()):
             continue
 
           candidates = match_fw_to_car(car_fw)
