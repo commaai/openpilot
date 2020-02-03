@@ -46,7 +46,7 @@ FramebufferState* framebuffer_init(
   glfwSwapInterval(0);
 
   // clear screen
-  glClearColor(0.2f, 0.2f, 0.2f, 1.0f );
+  glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   framebuffer_swap((FramebufferState*)window);
 
@@ -61,6 +61,7 @@ void framebuffer_set_power(FramebufferState *s, int mode) {
 
 void framebuffer_swap(FramebufferState *s) {
   glfwSwapBuffers((GLFWwindow*)s);
+  glfwPollEvents();
 }
 
 void touch_init(TouchState *s) {
