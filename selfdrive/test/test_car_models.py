@@ -490,7 +490,9 @@ if __name__ == "__main__":
   results = {}
   for route, checks in routes.items():
     if route not in non_public_routes:
+      print("GETTING ROUTE LOGS")
       get_route_logs(route)
+      print("DONE GETTING ROUTE LOGS")
     elif "UNLOGGER_PATH" not in os.environ:
       continue
 
