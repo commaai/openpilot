@@ -1,0 +1,16 @@
+Needs Ubuntu 16.04
+
+== Install (in tab 1) ==
+
+./start_carla.sh to install CARLA 0.9.7 and start the server
+
+== openpilot (in tab 2) ==
+
+cd ~/openpilot/selfdrive/
+./manager.py
+
+== bridge (in tab 3) ==
+
+# links carla to openpilot
+./bridge.py
+

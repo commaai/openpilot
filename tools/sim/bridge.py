@@ -9,7 +9,7 @@ import random
 import cereal.messaging as messaging
 from common.params import Params
 from common.realtime import Ratekeeper
-from can import can_function, sendcan_function
+from lib.can import can_function, sendcan_function
 import queue
 
 pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
@@ -148,6 +148,7 @@ if __name__ == "__main__":
   from selfdrive.version import terms_version, training_version
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
+  params.put("CommunityFeaturesToggle", "1")
 
   threading.Thread(target=health_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
