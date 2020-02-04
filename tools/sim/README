@@ -1,5 +1,10 @@
 Needs Ubuntu 16.04
 
+== Tensorflow (optional, for fast models) ==
+
+cd ~/openpilot/external/tensorflow
+./download.sh
+
 == Install (in tab 1) ==
 
 ./start_carla.sh to install CARLA 0.9.7 and start the server
