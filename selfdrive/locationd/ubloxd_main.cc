@@ -106,7 +106,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
               send_func(ubloxGnss, bytes.begin(), bytes.size());
             }
           } else {
-            LOGW("Unknown rxm msg id: 0x%02X", parser.msg_id());
+            LOGW("Unknown mon msg id: 0x%02X", parser.msg_id());
           }
         } else
           LOGW("Unknown msg class: 0x%02X", parser.msg_class());
