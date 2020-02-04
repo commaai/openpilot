@@ -4,7 +4,8 @@ import csv
 path = os.path.dirname(os.path.abspath(__file__))
 csv_file_name = path + '/rg_cities1000.csv'
 
-# right hand drive is the same as left hand traffic
+# right hand drive is when the steering wheel is on the right of the car
+# left hand traffic is when cars driver on the left side of the road
 LHT_COUNTRIES = ['AU', 'IN', 'IE', 'JP', 'MU', 'MY', 'NZ', 'UK', 'ZA']
 
 
