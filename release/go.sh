@@ -85,6 +85,8 @@ cp -pR --parents $(cat release/files_common) $TARGET_DIR/
 # in the directory
 cd $TARGET_DIR
 
+rm -f panda/board/obj/panda.bin.signed
+
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git status

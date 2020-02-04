@@ -5,7 +5,6 @@ import math
 import atexit
 import numpy as np
 import threading
-import carla
 import random
 import cereal.messaging as messaging
 from common.params import Params
@@ -62,15 +61,16 @@ def health_function():
     rk.keep_time()
 
 def fake_driver_monitoring():
-  pm = messaging.PubMaster(['driverMonitoring'])
+  pm = messaging.PubMaster(['driverState'])
   while 1:
     dat = messaging.new_message()
-    dat.init('driverMonitoring')
-    dat.driverMonitoring.faceProb = 1.0
-    pm.send('driverMonitoring', dat)
+    dat.init('driverState')
+    dat.driverState.faceProb = 1.0
+    pm.send('driverState', dat)
     time.sleep(0.1)
 
 def go():
+  import carla
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(5.0)
   world = client.load_world('Town03')
@@ -123,8 +123,6 @@ def go():
     print("done")
   atexit.register(destroy)
 
-  threading.Thread(target=health_function).start()
-  threading.Thread(target=fake_driver_monitoring).start()
 
   # can loop
   sendcan = messaging.sub_sock('sendcan')
@@ -151,5 +149,16 @@ if __name__ == "__main__":
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
 
+  threading.Thread(target=health_function).start()
+  threading.Thread(target=fake_driver_monitoring).start()
+
+  # no carla, still run
+  try:
+    import carla
+  except ImportError:
+    print("WARNING: NO CARLA")
+    while 1:
+      time.sleep(1)
+    
   go()
 

@@ -51,7 +51,10 @@ branch = get_git_full_branchname()
 
 try:
   # This is needed otherwise touched files might show up as modified
-  subprocess.check_call(["git", "update-index", "--refresh"])
+  try:
+    subprocess.check_call(["git", "update-index", "--refresh"])
+  except subprocess.CalledProcessError:
+    pass
 
   if (origin is not None) and (branch is not None):
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
