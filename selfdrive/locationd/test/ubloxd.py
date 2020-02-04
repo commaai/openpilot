@@ -277,7 +277,7 @@ def handle_msg(dev, msg, nav_frame_buffer):
   #  dev.close()
 
 def main(gctx=None):
-  global gpsLocationExternal, ubloxGnss, ubloxHw
+  global gpsLocationExternal, ubloxGnss
   nav_frame_buffer = {}
   nav_frame_buffer[0] = {}
   for i in range(1,33):
