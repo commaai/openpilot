@@ -80,6 +80,7 @@ else:
     ]
 
   rpath = ["phonelibs/capnp-cpp/x64/lib",
+           "phonelibs/zmq/x64/lib",
            "external/tensorflow/lib",
            "cereal",
            "selfdrive/common"]
