@@ -24,9 +24,9 @@ else:
 
 common = lenv.Object(common_src)
 
-lenv.Program('_monitoringd', [
-    "monitoringd.cc",
-    "models/monitoring.cc",
+lenv.Program('_dmonitoringmodeld', [
+    "dmonitoringmodeld.cc",
+    "models/dmonitoring.cc",
   ]+common, LIBS=libs)
 
 lenv.Program('_modeld', [

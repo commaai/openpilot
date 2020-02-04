@@ -6,18 +6,17 @@
 
 #include "ui.hpp"
 
+#ifndef __APPLE__
 #define GLFW_INCLUDE_ES2
+#else
+#define GLFW_INCLUDE_GLCOREARB
+#endif
+
 #define GLFW_INCLUDE_GLEXT
 #include <GLFW/glfw3.h>
 
 typedef struct FramebufferState FramebufferState;
 typedef struct TouchState TouchState;
-
-#define FALSE 0
-#define TRUE 1
-
-#include <xcb/xcb.h>
-#include <X11/Xlib-xcb.h>
 
 extern "C" {
 
@@ -26,9 +25,16 @@ FramebufferState* framebuffer_init(
     int *out_w, int *out_h) {
   glfwInit();
 
+#ifndef __APPLE__
   glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#else
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+#endif
   glfwWindowHint(GLFW_RESIZABLE, 0);
   GLFWwindow* window;
   window = glfwCreateWindow(1920, 1080, "ui", NULL, NULL);
@@ -40,7 +46,7 @@ FramebufferState* framebuffer_init(
   glfwSwapInterval(0);
 
   // clear screen
-  glClearColor(0.2f, 0.2f, 0.2f, 1.0f );
+  glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   framebuffer_swap((FramebufferState*)window);
 
@@ -55,6 +61,7 @@ void framebuffer_set_power(FramebufferState *s, int mode) {
 
 void framebuffer_swap(FramebufferState *s) {
   glfwSwapBuffers((GLFWwindow*)s);
+  glfwPollEvents();
 }
 
 void touch_init(TouchState *s) {
@@ -90,7 +97,7 @@ GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img->width, img->height, 0, GL_RGB, GL_UNSIGNED_BYTE, *pph);
   glGenerateMipmap(GL_TEXTURE_2D);
-  *pkhr = (EGLImageKHR *)1; // not NULL
+  *pkhr = (EGLImageKHR)1; // not NULL
   return texture;
 }
 

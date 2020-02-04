@@ -1,3 +1,12 @@
+Version 0.7.2 (2020-02-07)
+========================
+ * ECU firmware version based fingerprinting for Honda & Toyota
+ * New driving model: improved path prediction during turns and lane changes and better lead speed tracking
+ * Improve driver monitoring under extreme lighting and add low accuracy alert
+ * Support for 2019 Rav4 Hybrid thanks to illumiN8i!
+ * Support for 2016, 2017 and 2020 Lexus RX thanks to illumiN8i!
+ * Support for 2020 Chrysler Pacifica Hybrid thanks to adhintz!
+
 Version 0.7.1 (2020-01-20)
 ========================
  * comma two support!

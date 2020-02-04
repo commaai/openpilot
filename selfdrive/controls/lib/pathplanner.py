@@ -55,6 +55,7 @@ class PathPlanner():
     self.solution_invalid_cnt = 0
     self.path_offset_i = 0.0
     self.lane_change_state = LaneChangeState.off
+    self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
     self.prev_one_blinker = False
 
@@ -89,21 +90,21 @@ class PathPlanner():
     self.LP.parse_model(sm['model'])
 
     # Lane change logic
-    lane_change_direction = LaneChangeDirection.none
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
+    if sm['carState'].leftBlinker:
+      self.lane_change_direction = LaneChangeDirection.left
+    elif sm['carState'].rightBlinker:
+      self.lane_change_direction = LaneChangeDirection.right
+
     if not active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
+      self.lane_change_direction = LaneChangeDirection.none
     else:
-      if sm['carState'].leftBlinker:
-        lane_change_direction = LaneChangeDirection.left
-      elif sm['carState'].rightBlinker:
-        lane_change_direction = LaneChangeDirection.right
-
       torque_applied = sm['carState'].steeringPressed and \
-                       ((sm['carState'].steeringTorque > 0 and lane_change_direction == LaneChangeDirection.left) or \
-                        (sm['carState'].steeringTorque < 0 and lane_change_direction == LaneChangeDirection.right))
+                       ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or \
+                        (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
 
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
 
@@ -137,7 +138,7 @@ class PathPlanner():
 
     self.prev_one_blinker = one_blinker
 
-    desire = DESIRES[lane_change_direction][self.lane_change_state]
+    desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
     # Turn off lanes during lane change
     if desire == log.PathPlan.Desire.laneChangeRight or desire == log.PathPlan.Desire.laneChangeLeft:
@@ -215,7 +216,7 @@ class PathPlanner():
 
     plan_send.pathPlan.desire = desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
-    plan_send.pathPlan.laneChangeDirection = lane_change_direction
+    plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
 
     pm.send('pathPlan', plan_send)
 

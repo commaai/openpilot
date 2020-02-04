@@ -890,6 +890,28 @@ void ui_draw(UIState *s) {
   }
 }
 
+#ifdef NANOVG_GL3_IMPLEMENTATION
+static const char frame_vertex_shader[] =
+  "#version 150 core\n"
+  "in vec4 aPosition;\n"
+  "in vec4 aTexCoord;\n"
+  "uniform mat4 uTransform;\n"
+  "out vec4 vTexCoord;\n"
+  "void main() {\n"
+  "  gl_Position = uTransform * aPosition;\n"
+  "  vTexCoord = aTexCoord;\n"
+  "}\n";
+
+static const char frame_fragment_shader[] =
+  "#version 150 core\n"
+  "precision mediump float;\n"
+  "uniform sampler2D uTexture;\n"
+  "out vec4 vTexCoord;\n"
+  "out vec4 outColor;\n"
+  "void main() {\n"
+  "  outColor = texture(uTexture, vTexCoord.xy);\n"
+  "}\n";
+#else
 static const char frame_vertex_shader[] =
   "attribute vec4 aPosition;\n"
   "attribute vec4 aTexCoord;\n"
@@ -907,24 +929,7 @@ static const char frame_fragment_shader[] =
   "void main() {\n"
   "  gl_FragColor = texture2D(uTexture, vTexCoord.xy);\n"
   "}\n";
-
-static const char line_vertex_shader[] =
-  "attribute vec4 aPosition;\n"
-  "attribute vec4 aColor;\n"
-  "uniform mat4 uTransform;\n"
-  "varying vec4 vColor;\n"
-  "void main() {\n"
-  "  gl_Position = uTransform * aPosition;\n"
-  "  vColor = aColor;\n"
-  "}\n";
-
-static const char line_fragment_shader[] =
-  "precision mediump float;\n"
-  "uniform sampler2D uTexture;\n"
-  "varying vec4 vColor;\n"
-  "void main() {\n"
-  "  gl_FragColor = vColor;\n"
-  "}\n";
+#endif
 
 static const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
@@ -951,7 +956,7 @@ static const mat4 full_to_wide_frame_transform = {{
 
 void ui_nvg_init(UIState *s) {
   // init drawing
-  s->vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+  s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
 
   s->font_courbd = nvgCreateFont(s->vg, "courbd", "../assets/fonts/courbd.ttf");
@@ -984,13 +989,6 @@ void ui_nvg_init(UIState *s) {
 
   s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
   s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
-
-  s->line_program = load_program(line_vertex_shader, line_fragment_shader);
-  assert(s->line_program);
-
-  s->line_pos_loc = glGetAttribLocation(s->line_program, "aPosition");
-  s->line_color_loc = glGetAttribLocation(s->line_program, "aColor");
-  s->line_transform_loc = glGetUniformLocation(s->line_program, "uTransform");
 
   glViewport(0, 0, s->fb_w, s->fb_h);
 

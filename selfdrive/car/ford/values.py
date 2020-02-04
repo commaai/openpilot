@@ -1,4 +1,6 @@
 from selfdrive.car import dbc_dict
+from cereal import car
+Ecu = car.CarParams.Ecu
 
 MAX_ANGLE = 87.  # make sure we never command the extremes (0xfff) which cause latching fault
 
@@ -11,11 +13,8 @@ FINGERPRINTS = {
   }],
 }
 
-class ECU:
-  CAM = 0
-
 ECU_FINGERPRINT = {
-  ECU.CAM: [970, 973, 984]
+  Ecu.fwdCamera: [970, 973, 984]
 }
 
 DBC = {

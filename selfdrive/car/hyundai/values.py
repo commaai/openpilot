@@ -1,5 +1,6 @@
 from cereal import car
 from selfdrive.car import dbc_dict
+Ecu = car.CarParams.Ecu
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -61,11 +62,8 @@ FINGERPRINTS = {
   ],
 }
 
-class ECU:
-  CAM = 0
-
 ECU_FINGERPRINT = {
-  ECU.CAM: [832, 1156, 1191, 1342]
+  Ecu.fwdCamera: [832, 1156, 1191, 1342]
 }
 
 CHECKSUM = {
