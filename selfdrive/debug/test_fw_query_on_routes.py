@@ -13,7 +13,9 @@ if __name__ == "__main__":
     print("Usage: ./test_fw_query_on_routes.py <route_list>")
     sys.exit(1)
 
-  i = 0
+  wrong = 0
+  good = 0
+
   dongles = []
   for route in tqdm(list(open(sys.argv[1]))):
     route = route.rstrip()
@@ -45,6 +47,7 @@ if __name__ == "__main__":
 
           candidates = match_fw_to_car(car_fw)
           if (len(candidates) == 1) and (list(candidates)[0] == live_fingerprint):
+            good += 1
             print("Correct", live_fingerprint, dongle_id)
             break
 
@@ -71,10 +74,10 @@ if __name__ == "__main__":
                       print(f"({hex(addr)}, {'None' if sub_addr is None else hex(sub_addr)}) - {version.fwVersion}")
 
           print()
-          i += 1
+          wrong += 1
           break
     except Exception:
       traceback.print_exc()
 
-  print(f"Unfingerprinted cars: {i}")
+  print(f"Fingerprinted: {good} - Not fingerprinted: {wrong}")
   print(f"Number of dongle ids checked: {len(dongles)}")
