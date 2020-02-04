@@ -90,6 +90,7 @@ class PathPlanner():
     self.LP.parse_model(sm['model'])
 
     # Lane change logic
+    self.lane_change_direction = LaneChangeDirection.none
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
