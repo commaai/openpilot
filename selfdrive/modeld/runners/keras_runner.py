@@ -2,6 +2,7 @@
 # TODO: why are the keras models saved with python 2?
 from __future__ import print_function
 
+import os
 import sys
 import tensorflow.keras as keras
 import numpy as np
@@ -12,16 +13,14 @@ def read(sz):
   dd = []
   gt = 0
   while gt < sz*4:
-    # TODO: wrong for python 3
-    st = sys.stdin.read()
-    print(len(st), file=sys.stderr)
+    st = os.read(0, sz*4 - gt)
+    assert(len(st) > 0)
     dd.append(st)
     gt += len(st)
   return np.fromstring(b''.join(dd), dtype=np.float32)
 
 def write(d):
-  # TODO: wrong for python 3
-  sys.stdout.write(np.tostring(d))
+  os.write(1, d.tobytes())
 
 def run_loop(m):
   isize = m.inputs[0].shape[1]
@@ -41,7 +40,7 @@ if __name__ == "__main__":
   tii = []
   acc = 0
   for i, ii in enumerate(m.inputs):
-    ti = keras.layers.Lambda(lambda x: x[acc:acc+bs[i]])(ri)
+    ti = keras.layers.Lambda(lambda x: x[:,acc:acc+bs[i]], output_shape=(1, bs[i]))(ri)
     acc += bs[i]
     tii.append(keras.layers.Reshape(ii.shape[1:])(ti))
   no = keras.layers.Concatenate()(m(tii))

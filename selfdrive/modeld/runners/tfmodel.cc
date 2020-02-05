@@ -13,6 +13,9 @@
 
 
 TFModel::TFModel(const char *path, float *_output, size_t _output_size, int runtime) {
+  output = _output;
+  output_size = _output_size;
+
   char tmp[1024];
   strncpy(tmp, path, sizeof(tmp));
   strstr(tmp, ".dlc")[0] = '\0';
@@ -54,11 +57,12 @@ void TFModel::pwrite(float *buf, int size) {
   int tw = size*sizeof(float);
   while (tw > 0) {
     int err = write(pipein[1], cbuf, tw);
-    printf("write %d\n", err);
+    //printf("host write %d\n", err);
     assert(err >= 0);
     cbuf += err;
     tw -= err;
   }
+  //printf("host write done\n");
 }
 
 void TFModel::pread(float *buf, int size) {
@@ -66,10 +70,12 @@ void TFModel::pread(float *buf, int size) {
   int tr = size*sizeof(float);
   while (tr > 0) {
     int err = read(pipeout[0], cbuf, tr);
+    //printf("host read %d/%d\n", err, tr);
     assert(err >= 0);
     cbuf += err;
     tr -= err;
   }
+  //printf("host read done\n");
 }
 
 void TFModel::addRecurrent(float *state, int state_size) {
