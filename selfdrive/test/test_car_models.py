@@ -43,7 +43,12 @@ def get_route_log(route_name):
 
   if not os.path.isfile(log_path):
     log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), "rlog.bz2")
-    r = requests.get(log_url, timeout=15)
+
+    # if request fails, try again once and let it throw exception if fails again
+    try:
+      r = requests.get(log_url, timeout=15)
+    except:
+      r = requests.get(log_url, timeout=15)
 
     if r.status_code == 200:
       with open(log_path, "wb") as f:
