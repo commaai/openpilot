@@ -19,22 +19,33 @@ TFModel::TFModel(const char *path, float *_output, size_t _output_size, int runt
   strcat(tmp, ".keras");
   LOGD("loading model %s", tmp);
 
-  pipe(pipein);
-  pipe(pipeout);
+  assert(pipe(pipein) == 0);
+  assert(pipe(pipeout) == 0);
 
   std::string exe_dir = util::dir_name(util::readlink("/proc/self/exe"));
-  std::string keras_runner = exe_dir + "runners/keras_runner.py";
+  std::string keras_runner = exe_dir + "/runners/keras_runner.py";
 
   proc_pid = fork();
   if (proc_pid == 0) {
-    char *argv[] = {tmp, NULL};
+    LOGD("spawning keras process %s", keras_runner.c_str());
+    char *argv[] = {(char*)keras_runner.c_str(), tmp, NULL};
     dup2(pipein[0], 0);
     dup2(pipeout[1], 1);
+    close(pipein[0]);
+    close(pipein[1]);
+    close(pipeout[0]);
+    close(pipeout[1]);
     execvp(keras_runner.c_str(), argv);
   }
+
+  // parent
+  close(pipein[0]);
+  close(pipeout[1]);
 }
 
 TFModel::~TFModel() {
+  close(pipein[1]);
+  close(pipeout[0]);
   kill(proc_pid, SIGTERM);
 }
 
@@ -43,6 +54,7 @@ void TFModel::pwrite(float *buf, int size) {
   int tw = size*sizeof(float);
   while (tw > 0) {
     int err = write(pipein[1], cbuf, tw);
+    printf("write %d\n", err);
     assert(err >= 0);
     cbuf += err;
     tw -= err;
