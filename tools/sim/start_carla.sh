@@ -5,6 +5,7 @@ if [ ! -f $FILE ]; then
   curl -O http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/$FILE
 fi
 if [ ! -d carla ]; then
+  rm -rf carla_tmp
   mkdir -p carla_tmp
   cd carla_tmp
   tar xvf ../$FILE
