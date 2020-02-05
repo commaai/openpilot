@@ -2,6 +2,8 @@ import numpy as np
 import os
 import csv
 path = os.path.dirname(os.path.abspath(__file__))
+# locally cache cities from
+# https://github.com/thampiman/reverse-geocoder
 csv_file_name = path + '/rg_cities1000.csv'
 
 # right hand drive is when the steering wheel is on the right of the car
