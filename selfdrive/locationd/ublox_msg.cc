@@ -347,6 +347,22 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
   return kj::Array<capnp::word>();
 }
 
+kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw() {
+  mon_hw_msg *msg = (mon_hw_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
+
+  capnp::MallocMessageBuilder msg_builder;
+  cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto gnss = event.initUbloxGnss();
+  auto hwStatus = gnss.initHwStatus();
+  hwStatus.setNoisePerMS(msg->noisePerMS);
+  hwStatus.setAgcCnt(msg->agcCnt);
+  hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->aStatus);
+  hwStatus.setAPower((cereal::UbloxGnss::HwStatus::AntennaPowerStatus) msg->aPower);
+  hwStatus.setJamInd(msg->jamInd);
+  return capnp::messageToFlatArray(msg_builder);
+}
+
 bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
   int needed = needed_bytes();
   if(needed > 0) {
