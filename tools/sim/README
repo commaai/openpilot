@@ -4,11 +4,7 @@ Needs Ubuntu 16.04
 cd ~/
 git clone https://github.com/commaai/openpilot.git
 # Add export PYTHONPATH=$HOME/openpilot to your bashrc
-
-== Tensorflow (optional, for fast models) ==
-
-cd ~/openpilot/external/tensorflow
-./download.sh
+# Have a working tensorflow+keras in python2
 
 == Install (in tab 1) ==
 
