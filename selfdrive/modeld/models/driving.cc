@@ -70,7 +70,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   float *new_frame_buf = frame_prepare(&s->frame, q, yuv_cl, width, height, transform);
   memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
   memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
-  s->m->execute(s->input_frames);
+  s->m->execute(s->input_frames, MODEL_FRAME_SIZE*2);
 
   #ifdef DUMP_YUV
     FILE *dump_yuv_file = fopen("/sdcard/dump.yuv", "wb");
