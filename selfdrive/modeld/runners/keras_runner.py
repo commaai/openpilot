@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # TODO: why are the keras models saved with python 2?
 from __future__ import print_function
 
+import tensorflow as tf
 import os
 import sys
 import tensorflow.keras as keras
@@ -32,6 +33,7 @@ def run_loop(m):
     write(ret)
 
 if __name__ == "__main__":
+  print(tf.__version__, file=sys.stderr)
   m = load_model(sys.argv[1])
   print(m, file=sys.stderr)
   bs = [int(np.product(ii.shape[1:])) for ii in m.inputs]
@@ -40,9 +42,11 @@ if __name__ == "__main__":
   tii = []
   acc = 0
   for i, ii in enumerate(m.inputs):
+    print(ii, file=sys.stderr)
     ti = keras.layers.Lambda(lambda x: x[:,acc:acc+bs[i]], output_shape=(1, bs[i]))(ri)
     acc += bs[i]
-    tii.append(keras.layers.Reshape(ii.shape[1:])(ti))
+    tr = keras.layers.Reshape(ii.shape[1:])(ti)
+    tii.append(tr)
   no = keras.layers.Concatenate()(m(tii))
   m = Model(inputs=ri, outputs=[no])
   run_loop(m)
