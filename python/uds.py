@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import struct
+from collections import deque
 from typing import Callable, NamedTuple, Tuple, List
 from enum import IntEnum
 
@@ -275,11 +276,12 @@ class CanClient():
     self.rx = can_recv
     self.tx_addr = tx_addr
     self.rx_addr = rx_addr
+    self.rx_buff = deque()
     self.sub_addr = sub_addr
     self.bus = bus
     self.debug = debug
 
-  def _recv_filter(self, bus, addr):
+  def _recv_filter(self, bus: int, addr: int) -> bool:
     # handle functional addresses (switch to first addr to respond)
     if self.tx_addr == 0x7DF:
       is_response = addr >= 0x7E8 and addr <= 0x7EF
@@ -296,12 +298,12 @@ class CanClient():
         self.rx_addr = addr
     return bus == self.bus and addr == self.rx_addr
 
-  def recv(self, drain=False) -> List[bytes]:
-    msg_array = []
+  def _recv_buffer(self, drain: bool=False) -> None:
     while True:
       msgs = self.rx()
       if drain:
         if self.debug: print("CAN-RX: drain - {}".format(len(msgs)))
+        self.rx_buff.clear()
       else:
         for rx_addr, rx_ts, rx_data, rx_bus in msgs or []:
           if self._recv_filter(rx_bus, rx_addr) and len(rx_data) > 0:
@@ -313,15 +315,24 @@ class CanClient():
             if self.sub_addr is not None:
               rx_data = rx_data[1:]
 
-            msg_array.append(rx_data)
+            self.rx_buff.append(rx_data)
       # break when non-full buffer is processed
       if len(msgs) < 254:
-        return msg_array
+        return
+
+  def recv(self, drain: bool=False) -> List[bytes]:
+    # buffer rx messages in case two response messages are received at once
+    # (e.g. response pending and success/failure response)
+    self._recv_buffer(drain)
+    try:
+      while True:
+        yield self.rx_buff.popleft()
+    except IndexError:
+      pass # empty
 
   def send(self, msgs: List[bytes], delay: float=0) -> None:
-    first = True
-    for msg in msgs:
-      if delay and not first:
+    for i, msg in enumerate(msgs):
+      if delay and i != 0:
         if self.debug: print(f"CAN-TX: delay - {delay}")
         time.sleep(delay)
 
@@ -332,8 +343,9 @@ class CanClient():
       assert len(msg) <= 8
 
       self.tx(self.tx_addr, msg, self.bus)
-      first = False
-
+      # prevent rx buffer from overflowing on large tx
+      if i % 10 == 9:
+        self._recv_buffer()
 
 class IsoTpMessage():
   def __init__(self, can_client: CanClient, timeout: float=1, debug: bool=False, max_len: int=8):
