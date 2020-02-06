@@ -32,7 +32,6 @@ if arch == "aarch64":
     "/data/data/com.termux/files/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
-    "#phonelibs/yaml-cpp/lib",
     "#phonelibs/nanovg",
     "#phonelibs/libyuv/lib",
   ]
@@ -56,7 +55,6 @@ else:
     libpath = [
       "#phonelibs/capnp-cpp/mac/lib",
       "#phonelibs/capnp-c/mac/lib",
-      "#phonelibs/yaml-cpp/mac/lib",
       "#phonelibs/libyuv/mac/lib",
       "#cereal",
       "#selfdrive/common",
@@ -67,7 +65,6 @@ else:
     libpath = [
       "#phonelibs/capnp-cpp/x64/lib",
       "#phonelibs/capnp-c/x64/lib",
-      "#phonelibs/yaml-cpp/x64/lib",
       "#phonelibs/snpe/x86_64-linux-clang",
       "#phonelibs/zmq/x64/lib",
       "#phonelibs/libyuv/x64/lib",
@@ -115,7 +112,6 @@ env = Environment(
     "#selfdrive",
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
-    "#phonelibs/yaml-cpp/include",
     "#phonelibs/openmax/include",
     "#phonelibs/json/src",
     "#phonelibs/json11",
