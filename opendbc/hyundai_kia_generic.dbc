@@ -792,7 +792,7 @@ BO_ 1362 SNV11: 4 SNV
  SG_ CF_Snv_IRLampControl : 10|2@1+ (1.0,0.0) [0.0|3.0] ""  BCM,CLU,HUD
 
 BO_ 593 MDPS12: 8 MDPS
- SG_ CR_Mdps_StrColTq : 0|11@1+ (0.0078125,-8.0) [-8.0|7.9921875] "Nm"  LDWS_LKAS
+ SG_ CR_Mdps_StrColTq : 0|11@1+ (1.0,-1024.0) [-1024.0|1024.0] ""  LDWS_LKAS
  SG_ CF_Mdps_Def : 11|1@1+ (1.0,0.0) [0.0|1.0] ""  ESC
  SG_ CF_Mdps_ToiUnavail : 12|1@1+ (1.0,0.0) [0.0|1.0] ""  LDWS_LKAS
  SG_ CF_Mdps_ToiActive : 13|1@1+ (1.0,0.0) [0.0|1.0] ""  LDWS_LKAS
@@ -1444,3 +1444,5 @@ BO_ 905 SCC14: 8 SCC
  SG_ JerkLowerLimit : 19|7@1+ (0.1,0) [0|12.7] "m/s^3"  ESC
  SG_ SCCMode : 32|3@1+ (1,0) [0|7] ""  ESC
 
+BO_ 882 ELECT_GEAR: 8 XXX
+ SG_ Elect_Gear_Shifter : 16|3@1+ (1,0) [0|7] ""  CLU
