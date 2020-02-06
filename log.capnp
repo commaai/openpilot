@@ -279,6 +279,7 @@ struct ThermalData {
   batteryCurrent @15 :Int32;
   batteryVoltage @16 :Int32;
   usbOnline @12 :Bool;
+  networkType @22 :NetworkType;
 
   fanSpeed @10 :UInt16;
   started @11 :Bool;
@@ -296,6 +297,15 @@ struct ThermalData {
     yellow @1;  # critical processes run (kill uploader), engage still allowed
     red @2;     # no engage, will disengage
     danger @3;  # immediate process shutdown
+  }
+
+  enum NetworkType {
+    none @0;
+    wifi @1;
+    cell2G @2;
+    cell3G @3;
+    cell4G @4;
+    cell5G @5;
   }
 }
 
@@ -1422,6 +1432,7 @@ struct UbloxGnss {
     measurementReport @0 :MeasurementReport;
     ephemeris @1 :Ephemeris;
     ionoData @2 :IonoData;
+    hwStatus @3 :HwStatus;
   }
 
   struct MeasurementReport {
@@ -1545,8 +1556,29 @@ struct UbloxGnss {
     healthValid @5 :Bool;
     ionoCoeffsValid @6 :Bool;
   }
-}
 
+  struct HwStatus {
+    noisePerMS @0 :UInt16;
+    agcCnt @1 :UInt16;
+    aStatus @2 :AntennaSupervisorState;
+    aPower @3 :AntennaPowerStatus;
+    jamInd @4 :UInt8;
+
+    enum AntennaSupervisorState {
+      init @0;
+      dontknow @1;
+      ok @2;
+      short @3;
+      open @4;
+    }
+
+    enum AntennaPowerStatus {
+      off @0;
+      on @1;
+      dontknow @2;
+    }
+  }
+}
 
 struct Clocks {
   bootTimeNanos @0 :UInt64;
@@ -1754,7 +1786,7 @@ struct OrbKeyFrame {
   descriptors @3 :Data;
 }
 
-struct DriverMonitoring {
+struct DriverState {
   frameId @0 :UInt32;
   descriptorDEPRECATED @1 :List(Float32);
   stdDEPRECATED @2 :Float32;
@@ -1768,6 +1800,25 @@ struct DriverMonitoring {
   irPwrDEPRECATED @10 :Float32;
   faceOrientationStd @11 :List(Float32);
   facePositionStd @12 :List(Float32);
+}
+
+struct DMonitoringState {
+  # TODO: deprecate old fields in controlsState
+  events @0 :List(Car.CarEvent);
+  faceDetected @1 :Bool;
+  isDistracted @2 :Bool;
+  awarenessStatus @3 :Float32;
+  isRHD @4 :Bool;
+  rhdChecked @5 :Bool;
+  posePitchOffset @6 :Float32;
+  posePitchValidCount @7 :UInt32;
+  poseYawOffset @8 :Float32;
+  poseYawValidCount @9 :UInt32;
+  stepChange @10 :Float32;
+  awarenessActive @11 :Float32;
+  awarenessPassive @12 :Float32;
+  isLowStd @13 :Bool;
+  hiStdCount @14 :UInt32;
 }
 
 struct Boot {
@@ -1889,7 +1940,7 @@ struct Event {
     orbKeyFrame @56 :OrbKeyFrame;
     uiLayoutState @57 :UiLayoutState;
     orbFeaturesSummary @58 :OrbFeaturesSummary;
-    driverMonitoring @59 :DriverMonitoring;
+    driverState @59 :DriverState;
     boot @60 :Boot;
     liveParameters @61 :LiveParametersData;
     liveMapData @62 :LiveMapData;
@@ -1900,5 +1951,6 @@ struct Event {
     carEvents @68: List(Car.CarEvent);
     carParams @69: Car.CarParams;
     frontFrame @70: FrameData;
+    dMonitoringState @71: DMonitoringState;
   }
 }
