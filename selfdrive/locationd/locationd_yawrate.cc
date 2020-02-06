@@ -10,7 +10,7 @@
 #include "locationd_yawrate.h"
 
 
-void Localizer::update_state(const Eigen::Matrix<double, 1, 4> &C, const double R, double current_time, double meas) {
+void Localizer::update_state(const Eigen::Matrix<double, 1, 2> &C, const double R, double current_time, double meas) {
   double dt = current_time - prev_update_time;
 
   if (dt < 0) {
@@ -24,7 +24,7 @@ void Localizer::update_state(const Eigen::Matrix<double, 1, 4> &C, const double 
 
   double y = meas - C * x;
   double S = R + C * P * C.transpose();
-  Eigen::Vector4d K = P * C.transpose() * (1.0 / S);
+  Eigen::Vector2d K = P * C.transpose() * (1.0 / S);
   x = x + K * y;
   P = (I - K * C) * P;
 }
@@ -40,7 +40,7 @@ void Localizer::handle_sensor_events(capnp::List<cereal::SensorEventData>::Reade
 }
 
 void Localizer::handle_camera_odometry(cereal::CameraOdometry::Reader camera_odometry, double current_time) {
-  double R = pow(30.0 *camera_odometry.getRotStd()[2], 2);
+  double R = pow(5 * camera_odometry.getRotStd()[2], 2);
   double meas = camera_odometry.getRot()[2];
   update_state(C_posenet, R, current_time, meas);
 
@@ -57,34 +57,27 @@ void Localizer::handle_controls_state(cereal::ControlsState::Reader controls_sta
 
 
 Localizer::Localizer() {
-  // States: [yaw rate, yaw rate diff, gyro bias, gyro bias diff]
+  // States: [yaw rate, gyro bias]
   A <<
-    1, 1, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 1,
-    0, 0, 0, 1;
-  I <<
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1;
+    1, 0,
+    0, 1;
 
   Q <<
-    0, 0, 0, 0,
-    0, pow(0.1, 2.0), 0, 0,
-    0, 0, 0, 0,
-    0, 0, pow(0.005 / 100.0, 2.0), 0;
+    pow(.1, 2.0), 0,
+    0, pow(0.05/ 100.0, 2.0),
   P <<
-    pow(100.0, 2.0), 0, 0, 0,
-    0, pow(100.0, 2.0), 0, 0,
-    0, 0, pow(100.0, 2.0), 0,
-    0, 0, 0, pow(100.0, 2.0);
+    pow(10000.0, 2.0), 0,
+    0, pow(10000.0, 2.0);
 
-  C_posenet << 1, 0, 0, 0;
-  C_gyro << 1, 0, 1, 0;
-  x << 0, 0, 0, 0;
+  I <<
+    1, 0,
+    0, 1;
 
-  R_gyro = pow(0.25, 2.0);
+  C_posenet << 1, 0;
+  C_gyro << 1, 1;
+  x << 0, 0;
+
+  R_gyro = pow(0.025, 2.0);
 }
 
 void Localizer::handle_log(cereal::Event::Reader event) {
@@ -133,7 +126,7 @@ extern "C" {
   }
   double localizer_get_bias(void * localizer) {
     Localizer * loc = (Localizer*) localizer;
-    return loc->x[2];
+    return loc->x[1];
   }
 
   double * localizer_get_state(void * localizer) {

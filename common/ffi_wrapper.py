@@ -2,8 +2,14 @@ import os
 import sys
 import fcntl
 import hashlib
+import platform
 from cffi import FFI
 
+def suffix():
+  if platform.system() == "Darwin":
+    return ".dylib"
+  else:
+    return ".so"
 
 def ffi_wrap(name, c_code, c_header, tmpdir="/tmp/ccache", cflags="", libraries=None):
   if libraries is None:

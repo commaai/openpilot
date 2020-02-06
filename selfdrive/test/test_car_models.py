@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import shutil
 import time
 import os
 import sys
@@ -27,34 +26,36 @@ from selfdrive.car.mock.values import CAR as MOCK
 os.environ['NOCRASH'] = '1'
 
 
-def wait_for_socket(name, timeout=10.0):
-  socket = messaging.sub_sock(name)
-  cur_time = time.time()
+def wait_for_sockets(socks, timeout=10.0):
+  sm = messaging.SubMaster(socks)
+  t = time.time()
 
-  r = None
-  while time.time() - cur_time < timeout:
-    print("waiting for %s" % name)
-    r = socket.receive(non_blocking=True)
-    if r is not None:
-      break
-    time.sleep(0.5)
+  recvd = []
+  while time.time() - t < timeout and len(recvd) < len(socks):
+    sm.update()
+    for s in socks:
+      if s not in recvd and sm.updated[s]:
+        recvd.append(s)
+  return recvd
 
-  return r
+def get_route_log(route_name):
+  log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), "rlog.bz2"))
 
-def get_route_logs(route_name):
-  for log_f in ["rlog.bz2", "fcamera.hevc"]:
-    log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), log_f))
+  if not os.path.isfile(log_path):
+    log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), "rlog.bz2")
 
-    if not os.path.isfile(log_path):
-      log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), log_f)
-      r = requests.get(log_url)
+    # if request fails, try again once and let it throw exception if fails again
+    try:
+      r = requests.get(log_url, timeout=15)
+    except:
+      r = requests.get(log_url, timeout=15)
 
-      if r.status_code == 200:
-        with open(log_path, "wb") as f:
-          f.write(r.content)
-      else:
-        print("failed to download test log %s" % route_name)
-        sys.exit(-1)
+    if r.status_code == 200:
+      with open(log_path, "wb") as f:
+        f.write(r.content)
+    else:
+      print("failed to download test log %s" % route_name)
+      sys.exit(-1)
 
 routes = {
 
@@ -68,6 +69,10 @@ routes = {
   },
   "0607d2516fc2148f|2019-02-13--23-03-16": {
     'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
+    'enableCamera': True,
+  },
+  "8190c7275a24557b|2020-01-29--08-33-58": {
+    'carFingerprint': CHRYSLER.PACIFICA_2020_HYBRID,
     'enableCamera': True,
   },
   # This pacifica was removed because the fingerprint seemed from a Volt
@@ -282,6 +287,10 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+    "7e34a988419b5307|2019-12-18--19-13-30": {
+    'carFingerprint': TOYOTA.RAV4H_TSS2,
+    'enableCamera': True,
+  },
   "e6a24be49a6cd46e|2019-10-29--10-52-42": {
     'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
     'enableCamera': True,
@@ -297,10 +306,24 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+    "886fcd8408d570e9|2020-01-29--05-11-22": {
+      'carFingerprint': TOYOTA.LEXUS_RX,
+      'enableCamera': True,
+      'enableDsu': True,
+    },
+    "886fcd8408d570e9|2020-01-29--02-18-55": {
+      'carFingerprint': TOYOTA.LEXUS_RX,
+      'enableCamera': True,
+      'enableDsu': False,
+    },
   "b0f5a01cf604185c|2018-02-01--21-12-28": {
     'carFingerprint': TOYOTA.LEXUS_RXH,
     'enableCamera': True,
     'enableDsu': True,
+  },
+    "01b22eb2ed121565|2020-02-02--11-25-51": {
+    'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
+    'enableCamera': True,
   },
   #FIXME: This works sometimes locally, but never in CI. Timing issue?
   #"b0f5a01cf604185c|2018-01-31--20-11-39": {
@@ -410,7 +433,6 @@ forced_dashcam_routes = [
 ]
 
 # TODO: replace all these with public routes
-# TODO: add routes for untested cars: HONDA ACCORD 2018 HYBRID TOURING and CHRYSLER PACIFICA 2018
 non_public_routes = [
   "0607d2516fc2148f|2019-02-13--23-03-16",  # CHRYSLER PACIFICA HYBRID 2019
   "3e9592a1c78a3d63|2018-02-08--20-28-24",  # HONDA PILOT 2017 TOURING
@@ -447,99 +469,78 @@ non_public_routes = [
   "fbd011384db5e669|2018-07-26--20-51-48",  # TOYOTA CAMRY HYBRID 2018
 ]
 
+# TODO: add routes for these cars
+non_tested_cars = [TOYOTA.LEXUS_CTH, CHRYSLER.PACIFICA_2018, HONDA.ACCORDH]
+
 if __name__ == "__main__":
 
-  # TODO: add routes for untested cars and fail test if we have an untested car
+  tested_procs = ["controlsd", "radard", "plannerd"]
+  tested_socks = ["radarState", "controlsState", "carState", "plan"]
+
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
     if car_model not in tested_cars:
       print("***** WARNING: %s not tested *****" % car_model)
 
+      # TODO: skip these for now, but make sure any new ports get routes
+      if car_model not in non_tested_cars:
+        print("TEST FAILED: Missing route for car '%s'" % car_model)
+        sys.exit(1)
+
+  print("Preparing processes")
+  for p in tested_procs:
+    manager.prepare_managed_process(p)
+
   results = {}
   for route, checks in routes.items():
     if route not in non_public_routes:
-      get_route_logs(route)
+      print("GETTING ROUTE LOGS")
+      get_route_log(route)
+      print("DONE GETTING ROUTE LOGS")
     elif "UNLOGGER_PATH" not in os.environ:
       continue
 
-    shutil.rmtree('/data/params')
-    manager.gctx = {}
     params = Params()
+    params.clear_all()
     params.manager_start()
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
-
-    if route in passive_routes:
-      params.put("Passive", "1")
-    else:
-      params.put("Passive", "0")
+    params.put("Passive", "1" if route in passive_routes else "0")
 
     print("testing ", route, " ", checks['carFingerprint'])
-    print("Preparing processes")
-    manager.prepare_managed_process("radard")
-    manager.prepare_managed_process("controlsd")
-    manager.prepare_managed_process("plannerd")
     print("Starting processes")
-    manager.start_managed_process("radard")
-    manager.start_managed_process("controlsd")
-    manager.start_managed_process("plannerd")
-    time.sleep(2)
+    for p in tested_procs:
+      manager.start_managed_process(p)
 
     # Start unlogger
     print("Start unlogger")
     if route in non_public_routes:
-      unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), '%s' % route, '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive']
+      unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), route]
     else:
-      unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), '%s' % route, '/tmp', '--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive']
-    unlogger = subprocess.Popen(unlogger_cmd, preexec_fn=os.setsid)
+      unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
+    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
 
     print("Check sockets")
-    controls_state_result = wait_for_socket('controlsState', timeout=30)
-
+    extra_socks = []
     has_camera = checks.get('enableCamera', False)
     if (route not in passive_routes) and (route not in forced_dashcam_routes) and has_camera:
-      controls_state_result = controls_state_result and wait_for_socket('sendcan', timeout=30)
+      extra_socks.append("sendcan")
+    if route not in passive_routes:
+      extra_socks.append("pathPlan")
 
-    radarstate_result = wait_for_socket('radarState', timeout=30)
-    plan_result = wait_for_socket('plan', timeout=30)
-
-    if route not in passive_routes:  # TODO The passive routes have very flaky models
-      path_plan_result = wait_for_socket('pathPlan', timeout=30)
-    else:
-      path_plan_result = True
-
-    carstate_result = wait_for_socket('carState', timeout=30)
+    recvd_socks = wait_for_sockets(tested_socks + extra_socks, timeout=30)
+    failures = [s for s in tested_socks + extra_socks if s not in recvd_socks]
 
     print("Check if everything is running")
     running = manager.get_running()
-    controlsd_running = running['controlsd'].is_alive()
-    radard_running = running['radard'].is_alive()
-    plannerd_running = running['plannerd'].is_alive()
-
-    manager.kill_managed_process("controlsd")
-    manager.kill_managed_process("radard")
-    manager.kill_managed_process("plannerd")
+    for p in tested_procs:
+      if not running[p].is_alive:
+        failures.append(p)
+      manager.kill_managed_process(p)
     os.killpg(os.getpgid(unlogger.pid), signal.SIGTERM)
 
-    sockets_ok = all([
-      controls_state_result, radarstate_result, plan_result, path_plan_result, carstate_result,
-      controlsd_running, radard_running, plannerd_running
-    ])
+    sockets_ok = len(failures) == 0
     params_ok = True
-    failures = []
-
-    if not controlsd_running:
-      failures.append('controlsd')
-    if not radard_running:
-      failures.append('radard')
-    if not radarstate_result:
-      failures.append('radarState')
-    if not controls_state_result:
-      failures.append('controlsState')
-    if not plan_result:
-      failures.append('plan')
-    if not path_plan_result:
-      failures.append('pathPlan')
 
     try:
       car_params = car.CarParams.from_bytes(params.get("CarParams"))
@@ -558,11 +559,12 @@ if __name__ == "__main__":
       results[route] = False, failures
       break
 
-    time.sleep(2)
+  # put back not passive to not leave the params in an unintended state
+  Params().put("Passive", "0")
 
   for route in results:
     print(results[route])
-  Params().put("Passive", "0")   # put back not passive to not leave the params in an unintended state
+
   if not all(passed for passed, _ in results.values()):
     print("TEST FAILED")
     sys.exit(1)

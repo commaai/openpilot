@@ -72,10 +72,11 @@ def configure_ublox(dev):
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_NAVX5)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ODO)
 
-  # Configure RAW and PVT messages to be sent every solution cycle
+  # Configure RAW, PVT and HW messages to be sent every solution cycle
   dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_PVT, 1)
   dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_RAW, 1)
   dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_SFRBX, 1)
+  dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW, 1)
 
 
 
@@ -222,6 +223,17 @@ def gen_raw(msg):
                 'measurements': measurements_parsed}}
   return log.Event.new_message(ubloxGnss=raw_meas)
 
+def gen_hw_status(msg):
+  msg_data = msg.unpack()[0]
+  ublox_hw_status = {'hwStatus': {
+    'noisePerMS': msg_data['noisePerMS'],
+    'agcCnt': msg_data['agcCnt'],
+    'aStatus': msg_data['aStatus'],
+    'aPower': msg_data['aPower'],
+    'jamInd': msg_data['jamInd']
+  }}
+  return log.Event.new_message(ubloxGnss=ublox_hw_status)
+
 def init_reader():
   port_counter = 0
   while True:
@@ -252,9 +264,12 @@ def handle_msg(dev, msg, nav_frame_buffer):
       if nav is not None:
         nav.logMonoTime = int(realtime.sec_since_boot() * 1e9)
         ubloxGnss.send(nav.to_bytes())
-
+    elif msg.name() == 'MON_HW':
+      hw = gen_hw_status(msg)
+      hw.logMonoTime = int(realtime.sec_since_boot() * 1e9)
+      ubloxGnss.send(hw.to_bytes())
     else:
-      print("UNKNNOWN MESSAGE:", msg.name())
+      print("UNKNOWN MESSAGE:", msg.name())
   except ublox.UBloxError as e:
     print(e)
 

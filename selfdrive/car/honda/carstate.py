@@ -9,14 +9,9 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 
 GearShifter = car.CarState.GearShifter
 
-def parse_gear_shifter(gear, vals):
-
-  val_to_capnp = {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
-                  'D': GearShifter.drive, 'S': GearShifter.sport, 'L': GearShifter.low}
-  try:
-    return val_to_capnp[vals[gear]]
-  except KeyError:
-    return "unknown"
+def parse_gear_shifter(gear):
+  return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
+            'D': GearShifter.drive, 'S': GearShifter.sport, 'L': GearShifter.low}.get(gear, GearShifter.unknown)
 
 
 def calc_cruise_offset(offset, speed):
@@ -315,7 +310,7 @@ class CarState():
       self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
     can_gear_shifter = int(cp.vl["GEARBOX"]['GEAR_SHIFTER'])
-    self.gear_shifter = parse_gear_shifter(can_gear_shifter, self.shifter_values)
+    self.gear_shifter = parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control

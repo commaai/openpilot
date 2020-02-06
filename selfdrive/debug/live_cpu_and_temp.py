@@ -15,6 +15,7 @@ def cputime_busy(ct):
 sm = SubMaster(['thermal', 'procLog'])
 
 last_temp = 0.0
+last_mem = 0.0
 total_times = [0., 0., 0., 0.]
 busy_times = [0., 0., 0.0, 0.]
 
@@ -25,9 +26,19 @@ while True:
   if sm.updated['thermal']:
     t = sm['thermal']
     last_temp = np.mean([t.cpu0, t.cpu1, t.cpu2, t.cpu3]) / 10.
+    last_mem = t.memUsedPercent
 
   if sm.updated['procLog']:
     m = sm['procLog']
+
+    mems = {}
+    for proc in m.procs:
+      name = proc.name
+      if len(proc.cmdline):
+        name = proc.cmdline[0]
+      if len(proc.exe):
+        name = proc.exe + " - " + name
+      mems[name] = float(proc.memRss) / 1e6
 
     cores = [0., 0., 0., 0.]
     total_times_new = [0., 0., 0., 0.]
@@ -46,4 +57,8 @@ while True:
     total_times = total_times_new[:]
     busy_times = busy_times_new[:]
 
-    print("CPU %.2f%% - Temp %.2f" % (100. * np.mean(cores), last_temp ))
+    print()
+    print("CPU %.2f%% - RAM: %.2f - Temp %.2f" % (100. * np.mean(cores), last_mem, last_temp))
+    print("Top memory usage:")
+    for k, v in sorted(mems.items(), key=lambda item: item[1], reverse=True)[:10]:
+      print(f"{k.rjust(70)}   {v:.2f} MB")

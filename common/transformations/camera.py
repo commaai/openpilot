@@ -131,37 +131,6 @@ def img_from_device(pt_device):
   return pt_img.reshape(input_shape)[:,:2]
 
 
-#TODO please use generic img transform below
-def rotate_img(img, eulers, crop=None, intrinsics=eon_intrinsics):
-  import cv2  # pylint: disable=import-error
-
-  size = img.shape[:2]
-  rot = orient.rot_from_euler(eulers)
-  quadrangle = np.array([[0, 0],
-                         [size[1]-1, 0],
-                         [0, size[0]-1],
-                         [size[1]-1, size[0]-1]], dtype=np.float32)
-  quadrangle_norm = np.hstack((normalize(quadrangle, intrinsics=intrinsics), np.ones((4,1))))
-  warped_quadrangle_full = np.einsum('ij, kj->ki', intrinsics.dot(rot), quadrangle_norm)
-  warped_quadrangle = np.column_stack((warped_quadrangle_full[:,0]/warped_quadrangle_full[:,2],
-                                       warped_quadrangle_full[:,1]/warped_quadrangle_full[:,2])).astype(np.float32)
-  if crop:
-    W_border = (size[1] - crop[0])//2
-    H_border = (size[0] - crop[1])//2
-    outside_crop = (((warped_quadrangle[:,0] < W_border) |
-                     (warped_quadrangle[:,0] >= size[1] - W_border)) &
-                    ((warped_quadrangle[:,1] < H_border) |
-                     (warped_quadrangle[:,1] >= size[0] - H_border)))
-    if not outside_crop.all():
-      raise ValueError("warped image not contained inside crop")
-  else:
-    H_border, W_border = 0, 0
-  M = cv2.getPerspectiveTransform(quadrangle, warped_quadrangle)
-  img_warped = cv2.warpPerspective(img, M, size[::-1])
-  return img_warped[H_border: size[0] - H_border,
-                    W_border: size[1] - W_border]
-
-
 def get_camera_frame_from_calib_frame(camera_frame_from_road_frame):
   camera_frame_from_ground = camera_frame_from_road_frame[:, (0, 1, 3)]
   calib_frame_from_ground = np.dot(eon_intrinsics,
