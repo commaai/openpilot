@@ -4,7 +4,7 @@ from common.numpy_fast import interp
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, SUPERCRUISE_CARS
+from selfdrive.car.gm.values import DBC, SUPERCRUISE_CARS, CAR, NO_ASCM_CARS
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -18,6 +18,12 @@ class CarControllerParams():
       self.STEER_DELTA_UP = 2          # 0.75s time to peak torque
       self.STEER_DELTA_DOWN = 5        # 0.3s from peak torque to zero
       self.MIN_STEER_SPEED = -1.       # can steer down to zero
+    elif car_fingerprint in NO_ASCM_CARS:
+      self.STEER_MAX = 300
+      self.STEER_STEP = 2              # how often we update the steer cmd
+      self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
+      self.STEER_DELTA_DOWN = 17       # ~0.3s from peak torque to zero
+      self.MIN_STEER_SPEED = 3.
     else:
       self.STEER_MAX = 300
       self.STEER_STEP = 2              # how often we update the steer cmd
@@ -137,17 +143,17 @@ class CarController():
       else:
         apply_gas = int(round(interp(final_pedal, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
         apply_brake = int(round(interp(final_pedal, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
+      if not self.car_fingerprint in NO_ASCM_CARS:
+        # Gas/regen and brakes - all at 25Hz
+        if (frame % 4) == 0:
+          idx = (frame // 4) % 4
 
-      # Gas/regen and brakes - all at 25Hz
-      if (frame % 4) == 0:
-        idx = (frame // 4) % 4
+          at_full_stop = enabled and CS.standstill
+          near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
+          can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
 
-        at_full_stop = enabled and CS.standstill
-        near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
-
-        at_full_stop = enabled and CS.standstill
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
+          at_full_stop = enabled and CS.standstill
+          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
 
       # Send dashboard UI commands (ACC status), 25hz
       if (frame % 4) == 0:
