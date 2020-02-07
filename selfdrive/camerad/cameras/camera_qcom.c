@@ -1710,6 +1710,9 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   int good_count = 0;
   int16_t max_focus = -32767;
   int avg_focus = 0;
+  // force to max if not able to determine focus for long
+  const int patience_cnt = 100;
+  static int nan_cnt = 0;
 
   /*printf("FOCUS: ");
   for (int i = 0; i < 0x10; i++) {
@@ -1733,17 +1736,24 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
 
   if (good_count < 4) {
     s->focus_err = nan("");
+    nan_cnt += 1;
     return;
   }
 
   avg_focus /= good_count;
 
   if (abs(avg_focus - max_focus) > 16) {
-    s->focus_err = nan("");
-    return;
-    // s->focus_err = max_focus*8.0;
+    if (nan_cnt < patience_cnt) {
+      s->focus_err = nan("");
+      nan_cnt += 1;
+      return;
+    } else {
+      s->focus_err = max_focus*8.0;
+      nan_cnt = 0;
+    }
   } else {
     s->focus_err = avg_focus*8.0;
+    nan_cnt = 0;
   }
   // printf("fe=%f\n", s->focus_err);
 }
