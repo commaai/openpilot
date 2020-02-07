@@ -162,7 +162,7 @@ class CarInterface(CarInterfaceBase):
 
     
     # Thanks Kish for Bolt tuning!
-    if candidate == CAR.BOLT
+    if candidate == CAR.BOLT:
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.01]]
       ret.lateralTuning.pid.kf = 0.000045
