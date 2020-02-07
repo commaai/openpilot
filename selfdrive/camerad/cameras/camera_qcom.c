@@ -1717,12 +1717,12 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   }*/
 
   for (int i = 0; i < NUM_FOCUS; i++) {
-    int doff = i*5+5;
-    s->confidence[i] = d[doff];
-    int16_t focus_t = (d[doff+1] << 3) | (d[doff+2] >> 5);
-    if (focus_t >= 1024) focus_t = -(2048-focus_t);
-    s->focus[i] = focus_t;
-    //printf("%x->%d ", d[doff], focus_t);
+    int pd_idx = (i+1)*5;
+    s->confidence[i] = d[pd_idx];
+    int16_t focus_delta = d[pd_idx+1];
+    if (focus_delta >= 128) focus_delta = - (256 - focus_delta);
+    s->focus[i] = focus_delta;
+
     if (s->confidence[i] > 0x20) {
       good_count++;
       max_focus = max(max_focus, s->focus[i]);
@@ -1730,7 +1730,6 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
     }
   }
 
-  //printf("\n");
   if (good_count < 4) {
     s->focus_err = nan("");
     return;
@@ -1738,18 +1737,17 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
 
   avg_focus /= good_count;
 
-  // outlier rejection
-  if (abs(avg_focus - max_focus) > 200) {
-    s->focus_err = nan("");
-    return;
+  if (abs(avg_focus - max_focus) > 32) {
+    s->focus_err = max_focus*8.0;
+  } else {
+    s->focus_err = avg_focus*8.0;
   }
-
-  s->focus_err = max_focus*1.0;
+  // printf("fe=%f\n", s->focus_err);
 }
 
 static void do_autofocus(CameraState *s) {
   // params for focus PI controller
-  const float focus_kp = 0.005;
+  const float focus_kp = 0.1;
 
   float err = s->focus_err;
   float offset = 0;
@@ -1776,6 +1774,7 @@ static void do_autofocus(CameraState *s) {
   LOGD(debug);*/
 
   actuator_move(s, target);
+  // printf("ltp=%f, clp=%d\n",s->lens_true_pos,s->cur_lens_pos);
 }
 
 
@@ -2165,6 +2164,9 @@ void cameras_run(DualCameraState *s) {
         } else {
           uint8_t *d = c->ss[buffer].bufs[buf_idx].addr;
           if (buffer == 1) {
+            // FILE *df = fopen("/sdcard/focus_buf","wb");
+            // fwrite(d, c->ss[buffer].bufs[buf_idx].len, sizeof(uint8_t), df);
+            // fclose(df);
             parse_autofocus(c, d);
           }
           c->ss[buffer].qbuf_info[buf_idx].dirty_buf = 1;
