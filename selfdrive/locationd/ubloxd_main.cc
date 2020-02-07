@@ -97,6 +97,17 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             }
           } else
             LOGW("Unknown rxm msg id: 0x%02X", parser.msg_id());
+        } else if(parser.msg_class() == CLASS_MON) {
+          if(parser.msg_id() == MSG_MON_HW) {
+            //LOGD("MSG_MON_HW");
+            auto words = parser.gen_mon_hw();
+            if(words.size() > 0) {
+              auto bytes = words.asBytes();
+              send_func(ubloxGnss, bytes.begin(), bytes.size());
+            }
+          } else {
+            LOGW("Unknown mon msg id: 0x%02X", parser.msg_id());
+          }
         } else
           LOGW("Unknown msg class: 0x%02X", parser.msg_class());
         parser.reset();
