@@ -1,16 +1,16 @@
 [submodule "panda"]
 	path = panda
-	url = ../../commaai/panda.git
+	url = ../../JasonJShuler/panda.git
 [submodule "opendbc"]
 	path = opendbc
-	url = ../../commaai/opendbc.git
+	url = ../../JasonJShuler/opendbc.git
 [submodule "laika_repo"]
 	path = laika_repo
-	url = ../../commaai/laika.git
+	url = ../../JasonJShuler/laika.git
 [submodule "apks"]
 	path = apks
-	url = ../../commaai/openpilot-apks.git
+	url = ../../JasonJShuler/openpilot-apks.git
 [submodule "cereal"]
 	path = cereal
-	url = ../../commaai/cereal.git
+	url = ../../JasonJShuler/cereal.git
 
