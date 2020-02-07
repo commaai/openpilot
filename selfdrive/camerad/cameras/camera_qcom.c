@@ -1727,7 +1727,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
       good_count++;
       max_focus = max(max_focus, s->focus[i]);
       avg_focus += s->focus[i];
-    printf("%d\n", s->focus[i]);
+    // printf("%d\n", s->focus[i]);
     }
   }
 
@@ -1745,7 +1745,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   } else {
     s->focus_err = avg_focus*8.0;
   }
-  printf("fe=%f\n", s->focus_err);
+  // printf("fe=%f\n", s->focus_err);
 }
 
 static void do_autofocus(CameraState *s) {
