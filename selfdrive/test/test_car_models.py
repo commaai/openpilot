@@ -38,20 +38,24 @@ def wait_for_sockets(socks, timeout=10.0):
         recvd.append(s)
   return recvd
 
-def get_route_logs(route_name):
-  for log_f in ["rlog.bz2", "fcamera.hevc"]:
-    log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), log_f))
+def get_route_log(route_name):
+  log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), "rlog.bz2"))
 
-    if not os.path.isfile(log_path):
-      log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), log_f)
-      r = requests.get(log_url)
+  if not os.path.isfile(log_path):
+    log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), "rlog.bz2")
 
-      if r.status_code == 200:
-        with open(log_path, "wb") as f:
-          f.write(r.content)
-      else:
-        print("failed to download test log %s" % route_name)
-        sys.exit(-1)
+    # if request fails, try again once and let it throw exception if fails again
+    try:
+      r = requests.get(log_url, timeout=15)
+    except:
+      r = requests.get(log_url, timeout=15)
+
+    if r.status_code == 200:
+      with open(log_path, "wb") as f:
+        f.write(r.content)
+    else:
+      print("failed to download test log %s" % route_name)
+      sys.exit(-1)
 
 routes = {
 
@@ -490,7 +494,9 @@ if __name__ == "__main__":
   results = {}
   for route, checks in routes.items():
     if route not in non_public_routes:
-      get_route_logs(route)
+      print("GETTING ROUTE LOGS")
+      get_route_log(route)
+      print("DONE GETTING ROUTE LOGS")
     elif "UNLOGGER_PATH" not in os.environ:
       continue
 
@@ -512,7 +518,7 @@ if __name__ == "__main__":
       unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), route]
     else:
       unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
-    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
+    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
 
     print("Check sockets")
     extra_socks = []

@@ -94,34 +94,37 @@ def parse_service_call_bytes(ret):
     return None
 
 def get_network_type():
+  if not ANDROID:
+    return NetworkType.none
+
   wifi_check = parse_service_call_string(service_call(["connectivity", "2"]))
   if wifi_check is None:
     return NetworkType.none
-  if 'WIFI' in wifi_check:
+  elif 'WIFI' in wifi_check:
     return NetworkType.wifi
   else:
     cell_check = parse_service_call_unpack(service_call(['phone', '59']), ">q")
+    # from TelephonyManager.java
     cell_networks = {
       0: NetworkType.none,
       1: NetworkType.cell2G,
       2: NetworkType.cell2G,
-      4: NetworkType.cell2G,
-      7: NetworkType.cell2G,
-      11: NetworkType.cell2G,
-      16: NetworkType.cell2G,
       3: NetworkType.cell3G,
+      4: NetworkType.cell2G,
       5: NetworkType.cell3G,
       6: NetworkType.cell3G,
+      7: NetworkType.cell3G,
       8: NetworkType.cell3G,
       9: NetworkType.cell3G,
       10: NetworkType.cell3G,
+      11: NetworkType.cell2G,
       12: NetworkType.cell3G,
-      13: NetworkType.cell3G,
-      14: NetworkType.cell3G,
+      13: NetworkType.cell4G,
+      14: NetworkType.cell4G,
       15: NetworkType.cell3G,
+      16: NetworkType.cell2G,
       17: NetworkType.cell3G,
       18: NetworkType.cell4G,
-      19: NetworkType.cell4G,
-      20: NetworkType.cell5G
+      19: NetworkType.cell4G
     }
     return cell_networks.get(cell_check, NetworkType.none)
