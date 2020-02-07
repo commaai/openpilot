@@ -1723,10 +1723,11 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
     if (focus_delta >= 128) focus_delta = - (256 - focus_delta);
     s->focus[i] = focus_delta;
 
-    if (s->confidence[i] > 0x20) {
+    if (s->confidence[i] > 64) {
       good_count++;
       max_focus = max(max_focus, s->focus[i]);
       avg_focus += s->focus[i];
+    printf("%d\n", s->focus[i]);
     }
   }
 
@@ -1737,12 +1738,14 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
 
   avg_focus /= good_count;
 
-  if (abs(avg_focus - max_focus) > 32) {
-    s->focus_err = max_focus*8.0;
+  if (abs(avg_focus - max_focus) > 16) {
+    s->focus_err = nan("");
+    return;
+    // s->focus_err = max_focus*8.0;
   } else {
     s->focus_err = avg_focus*8.0;
   }
-  // printf("fe=%f\n", s->focus_err);
+  printf("fe=%f\n", s->focus_err);
 }
 
 static void do_autofocus(CameraState *s) {
@@ -1750,7 +1753,6 @@ static void do_autofocus(CameraState *s) {
   const float focus_kp = 0.1;
 
   float err = s->focus_err;
-  float offset = 0;
   float sag = (s->last_sag_acc_z/9.8) * 128;
 
   const int dac_up = s->device == DEVICE_LP3? 634:456;
