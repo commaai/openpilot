@@ -10,7 +10,8 @@
 #define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2 + 1
 #define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 2
 #define LEAD_IDX RL_IDX + MODEL_PATH_DISTANCE*2 + 2
-#define LONG_X_IDX LEAD_IDX + MDN_GROUP_SIZE*LEAD_MDN_N + SELECTION 
+#define DESIRE_STATE LEAD_IDX + MDN_GROUP_SIZE*LEAD_MDN_N + SELECTION 
+#define LONG_X_IDX DESIRE_STATE_IDX + DESIRE_LEN
 #define LONG_V_IDX LONG_X_IDX + TIME_DISTANCE*2
 #define LONG_A_IDX LONG_V_IDX + TIME_DISTANCE*2
 #define META_IDX LONG_A_IDX + TIME_DISTANCE*2
@@ -85,6 +86,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   net_outputs.left_lane = &s->output[LL_IDX];
   net_outputs.right_lane = &s->output[RL_IDX];
   net_outputs.lead = &s->output[LEAD_IDX];
+  net_outputs.desire_state = &s->output[DESIRE_STATE_IDX];
   net_outputs.long_x = &s->output[LONG_X_IDX];
   net_outputs.long_v = &s->output[LONG_V_IDX];
   net_outputs.long_a = &s->output[LONG_A_IDX];

@@ -34,6 +34,7 @@
 #define MODEL_PATH_DISTANCE 192
 #define POLYFIT_DEGREE 4
 #define SPEED_PERCENTILES 10
+#define DESIRE_LEN 8
 #define DESIRE_PRED_SIZE 32
 #define OTHER_META_SIZE 4
 #define LEAD_MDN_N 5 // probs for 5 groups
