@@ -97,6 +97,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   net_outputs.left_lane = &s->output[LL_IDX];
   net_outputs.right_lane = &s->output[RL_IDX];
   net_outputs.lead = &s->output[LEAD_IDX];
+  net_outputs.desire_state = &s->output[DESIRE_STATE_IDX];
   net_outputs.long_x = &s->output[LONG_X_IDX];
   net_outputs.long_v = &s->output[LONG_V_IDX];
   net_outputs.long_a = &s->output[LONG_A_IDX];
