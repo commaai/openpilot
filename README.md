@@ -132,18 +132,21 @@ Supported Cars
 Community Maintained Cars and Features
 ------
 
-| Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
-| ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
-| Buick     | Regal 2018<sup>6</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Cadillac  | ATS 2018<sup>6</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Malibu 2017<sup>6</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Volt 2017-18<sup>6</sup>      | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| GMC       | Acadia Denali 2018<sup>6</sup>| Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Holden    | Astra 2017<sup>6</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Make      | Model (US Market Reference)     | Supported Package    | ACC              | No ACC accel below | No ALC below |
+| ----------| --------------------------------| ---------------------| -----------------| -------------------| -------------|
+| Buick     | Regal 2018<sup>6</sup>          | Adaptive Cruise      | openpilot        | 0mph               | 7mph         |
+| Cadillac  | ATS 2018<sup>6</sup>            | Adaptive Cruise      | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Malibu 2017<sup>6</sup>         | Adaptive Cruise      | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Volt 2017-18<sup>6</sup>        | Adaptive Cruise      | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Bolt EV 2017-20<sup>7</sup>     | Driver Confidence II | manual           | n/a                | 5mph         |
+| Chevrolet | Equinox Premier 2020<sup>7</sup>| n/a                  | manual/?         | n/a                | 5mph         |
+| GMC       | Acadia Denali 2018<sup>6</sup>  | Adaptive Cruise      | openpilot        | 0mph               | 7mph         |
+| Holden    | Astra 2017<sup>6</sup>          | Adaptive Cruise      | openpilot        | 0mph               | 7mph         |
 
 <sup>4</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
 <sup>5</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
 <sup>6</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
+<sup>7</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://shulerent.com/openpilot-2019-chevy-bolt-port/).<br />
 
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
 
