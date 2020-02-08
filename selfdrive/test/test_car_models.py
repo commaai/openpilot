@@ -364,6 +364,11 @@ routes = {
   #   'enableDsu': False,
   # },
   # TODO: missingsome combos for highlander
+  "0a302ffddbb3e3d3|2020-02-08--16-19-08": {
+    'carFingerprint': TOYOTA.HIGHLANDER_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   "aa659debdd1a7b54|2018-08-31--11-12-01": {
     'carFingerprint': TOYOTA.HIGHLANDER,
     'enableCamera': False,
