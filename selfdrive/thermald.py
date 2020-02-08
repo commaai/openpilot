@@ -4,9 +4,10 @@ import json
 import copy
 import datetime
 import psutil
+import subprocess
 from smbus2 import SMBus
 from cereal import log
-from common.android import ANDROID
+from common.android import ANDROID, get_network_type
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot, DT_TRML
@@ -21,6 +22,7 @@ from selfdrive.pandad import get_expected_signature
 FW_SIGNATURE = get_expected_signature()
 
 ThermalStatus = log.ThermalData.ThermalStatus
+NetworkType = log.ThermalData.NetworkType
 CURRENT_TAU = 15.   # 15s time constant
 DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
@@ -135,7 +137,6 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   return new_speed
 
-
 def thermald_thread():
   # prevent LEECO from undervoltage
   BATT_PERC_OFF = 10 if LEON else 3
@@ -158,6 +159,8 @@ def thermald_thread():
   thermal_status_prev = ThermalStatus.green
   usb_power = True
   usb_power_prev = True
+
+  network_type = NetworkType.none
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   health_prev = None
@@ -189,9 +192,15 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
+    try:
+      network_type = get_network_type()
+    except subprocess.CalledProcessError:
+      pass
+
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
+    msg.thermal.networkType = network_type
 
     try:
       with open("/sys/class/power_supply/battery/capacity") as f:

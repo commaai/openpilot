@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import shutil
 import time
 import os
 import sys
@@ -39,20 +38,24 @@ def wait_for_sockets(socks, timeout=10.0):
         recvd.append(s)
   return recvd
 
-def get_route_logs(route_name):
-  for log_f in ["rlog.bz2", "fcamera.hevc"]:
-    log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), log_f))
+def get_route_log(route_name):
+  log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), "rlog.bz2"))
 
-    if not os.path.isfile(log_path):
-      log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), log_f)
-      r = requests.get(log_url)
+  if not os.path.isfile(log_path):
+    log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), "rlog.bz2")
 
-      if r.status_code == 200:
-        with open(log_path, "wb") as f:
-          f.write(r.content)
-      else:
-        print("failed to download test log %s" % route_name)
-        sys.exit(-1)
+    # if request fails, try again once and let it throw exception if fails again
+    try:
+      r = requests.get(log_url, timeout=15)
+    except:
+      r = requests.get(log_url, timeout=15)
+
+    if r.status_code == 200:
+      with open(log_path, "wb") as f:
+        f.write(r.content)
+    else:
+      print("failed to download test log %s" % route_name)
+      sys.exit(-1)
 
 routes = {
 
@@ -66,6 +69,10 @@ routes = {
   },
   "0607d2516fc2148f|2019-02-13--23-03-16": {
     'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
+    'enableCamera': True,
+  },
+  "8190c7275a24557b|2020-01-29--08-33-58": {
+    'carFingerprint': CHRYSLER.PACIFICA_2020_HYBRID,
     'enableCamera': True,
   },
   # This pacifica was removed because the fingerprint seemed from a Volt
@@ -314,6 +321,10 @@ routes = {
     'enableCamera': True,
     'enableDsu': True,
   },
+    "01b22eb2ed121565|2020-02-02--11-25-51": {
+    'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
+    'enableCamera': True,
+  },
   #FIXME: This works sometimes locally, but never in CI. Timing issue?
   #"b0f5a01cf604185c|2018-01-31--20-11-39": {
   #  'carFingerprint': TOYOTA.LEXUS_RXH,
@@ -422,7 +433,6 @@ forced_dashcam_routes = [
 ]
 
 # TODO: replace all these with public routes
-# TODO: add routes for untested cars: HONDA ACCORD 2018 HYBRID TOURING and CHRYSLER PACIFICA 2018
 non_public_routes = [
   "0607d2516fc2148f|2019-02-13--23-03-16",  # CHRYSLER PACIFICA HYBRID 2019
   "3e9592a1c78a3d63|2018-02-08--20-28-24",  # HONDA PILOT 2017 TOURING
@@ -459,16 +469,23 @@ non_public_routes = [
   "fbd011384db5e669|2018-07-26--20-51-48",  # TOYOTA CAMRY HYBRID 2018
 ]
 
+# TODO: add routes for these cars
+non_tested_cars = [TOYOTA.LEXUS_CTH, CHRYSLER.PACIFICA_2018, HONDA.ACCORDH]
+
 if __name__ == "__main__":
 
   tested_procs = ["controlsd", "radard", "plannerd"]
   tested_socks = ["radarState", "controlsState", "carState", "plan"]
 
-  # TODO: add routes for untested cars and fail test if we have an untested car
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
     if car_model not in tested_cars:
       print("***** WARNING: %s not tested *****" % car_model)
+
+      # TODO: skip these for now, but make sure any new ports get routes
+      if car_model not in non_tested_cars:
+        print("TEST FAILED: Missing route for car '%s'" % car_model)
+        sys.exit(1)
 
   print("Preparing processes")
   for p in tested_procs:
@@ -477,12 +494,14 @@ if __name__ == "__main__":
   results = {}
   for route, checks in routes.items():
     if route not in non_public_routes:
-      get_route_logs(route)
+      print("GETTING ROUTE LOGS")
+      get_route_log(route)
+      print("DONE GETTING ROUTE LOGS")
     elif "UNLOGGER_PATH" not in os.environ:
       continue
 
-    shutil.rmtree('/data/params')
     params = Params()
+    params.clear_all()
     params.manager_start()
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
@@ -499,7 +518,7 @@ if __name__ == "__main__":
       unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), route]
     else:
       unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
-    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
+    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
 
     print("Check sockets")
     extra_socks = []

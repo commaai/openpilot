@@ -86,8 +86,7 @@ def match_fw_to_car(fw_versions):
       addr = ecu[1:]
       found_version = fw_versions_dict.get(addr, None)
 
-      # TODO: RAV4, COROLLA esp sometimes doesn't show up
-      if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA] and found_version is None:
+      if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER] and found_version is None:
         continue
 
       # TODO: COROLLA_TSS2 engine can show on two different addresses
@@ -190,7 +189,8 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  candidates, fw_vers = get_fw_versions(logcan, sendcan, 1, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, 1, extra=extra, debug=args.debug, progress=True)
+  candidates = match_fw_to_car(fw_vers)
 
   print()
   print("Found FW versions")
@@ -199,7 +199,6 @@ if __name__ == "__main__":
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
     print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
   print("}")
-
 
   print()
   print("Possible matches:", candidates)

@@ -25,7 +25,7 @@ public:
   }
   void addRecurrent(float *state, int state_size);
   void addDesire(float *state, int state_size);
-  void execute(float *net_input_buf);
+  void execute(float *net_input_buf, int buf_size);
 private:
   uint8_t *model_data = NULL;
 

@@ -68,7 +68,7 @@ Supported Cars
 | Acura     | RDX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>5</sup>  | 12mph        |
 | Chrysler  | Pacifica 2017-18              | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Chrysler  | Pacifica Hybrid 2019          | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
+| Chrysler  | Pacifica Hybrid 2019-20       | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Genesis   | G80 2018<sup>1</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Genesis   | G90 2018<sup>1</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Honda     | Accord 2018-19                | All               | Stock            | 0mph               | 3mph         |
@@ -104,6 +104,7 @@ Supported Cars
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph         |
 | Lexus     | IS Hybrid 2017                | All               | Stock            | 0mph               | 0mph         |
 | Lexus     | RX 2016-17                    | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Lexus     | RX 2020                       | All               | openpilot        | 0mph               | 0mph         |
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Impreza 2019-20               | EyeSight          | Stock            | 0mph               | 0mph         |

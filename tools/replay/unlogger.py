@@ -68,7 +68,7 @@ class UnloggerWorker(object):
       while True:
         while poller.poll(0.) or route is None:
           cookie, cmd = commands_socket.recv_pyobj()
-          route = self._process_commands(cmd, route)
+          route = self._process_commands(cmd, route, pub_types)
 
         # **** get message ****
         self._read_logs(cookie, pub_types)
@@ -121,7 +121,7 @@ class UnloggerWorker(object):
       data_socket.send_pyobj((cookie, typ, msg.logMonoTime, route_time), flags=zmq.SNDMORE)
       data_socket.send(smsg.to_bytes(), copy=False)
 
-  def _process_commands(self, cmd, route):
+  def _process_commands(self, cmd, route, pub_types):
     seek_to = None
     if route is None or (isinstance(cmd, SetRoute) and route.name != cmd.name):
       seek_to = cmd.start_time
@@ -129,10 +129,11 @@ class UnloggerWorker(object):
       self._lr = MultiLogIterator(route.log_paths(), wraparound=True)
       if self._frame_reader is not None:
         self._frame_reader.close()
-      # reset frames for a route
-      self._frame_id_lookup = {}
-      self._frame_reader = RouteFrameReader(
-        route.camera_paths(), None, self._frame_id_lookup, readahead=True)
+      if "frame" in pub_types or "encodeIdx" in pub_types:
+        # reset frames for a route
+        self._frame_id_lookup = {}
+        self._frame_reader = RouteFrameReader(
+          route.camera_paths(), None, self._frame_id_lookup, readahead=True)
 
     # always reset this on a seek
     if isinstance(cmd, SeekRelativeTime):
