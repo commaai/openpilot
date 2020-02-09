@@ -169,7 +169,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.84988  # 112.2 in = 2.84988 m
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.8
-      ret.mass = 4900. * CV.LB_TO_KG + STD_CARGO_KG  # 4450 + 4-5 people
+      ret.mass = 4700. * CV.LB_TO_KG + STD_CARGO_KG  # 4260 + 4-5 people
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.015]]  # community tuning
       ret.lateralTuning.pid.kf = 0.00012  # community tuning
 
