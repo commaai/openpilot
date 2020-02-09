@@ -108,7 +108,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 
   delete[] cropped_buf;
   delete[] resized_buf;
-  s->m->execute(net_input_buf);
+  s->m->execute(net_input_buf, yuv_buf_len);
   delete[] net_input_buf;
 
   DMonitoringResult ret = {0};

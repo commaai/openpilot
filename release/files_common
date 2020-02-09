@@ -358,10 +358,6 @@ phonelibs/SConscript
 
 phonelibs/eigen/**
 
-phonelibs/yaml-cpp/include/**
-phonelibs/yaml-cpp/lib/**
-phonelibs/yaml-cpp/LICENSE
-
 phonelibs/nanovg/*.c
 phonelibs/nanovg/*.h
 

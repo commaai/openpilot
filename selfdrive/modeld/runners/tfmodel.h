@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include "runmodel.h"
 
-#include "tensorflow/c/c_api.h"
-
 struct TFState;
 
 class TFModel : public RunModel {
@@ -14,25 +12,23 @@ public:
 	~TFModel();
   void addRecurrent(float *state, int state_size);
   void addDesire(float *state, int state_size);
-  void execute(float *net_input_buf);
+  void execute(float *net_input_buf, int buf_size);
 private:
-  void status_check() const;
-  TF_Tensor *allocate_tensor_for_output(TF_Output out, float *dat);
+  int proc_pid;
 
   float *output;
   size_t output_size;
 
-  TF_Session* session;
-  TF_Graph* graph;
-  TF_Status* status;
-
-  TF_Output input_operation;
-  TF_Output rnn_operation;
-  TF_Output desire_operation;
-  TF_Output output_operation;
-
   float *rnn_input_buf = NULL;
+  int rnn_state_size;
   float *desire_input_buf = NULL;
+  int desire_state_size;
+
+  // pipe to communicate to keras subprocess
+  void pread(float *buf, int size);
+  void pwrite(float *buf, int size);
+  int pipein[2];
+  int pipeout[2];
 };
 
 #endif
