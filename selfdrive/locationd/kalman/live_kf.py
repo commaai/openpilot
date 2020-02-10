@@ -6,20 +6,18 @@ from .kalman_helpers import ObservationKind
 from .ekf_sym import EKF_sym
 
 
+initial_x = np.array([-2.7e6, 4.2e6, 3.8e6,
+                       1, 0, 0, 0,
+                       0, 0, 0,
+                       0, 0, 0,
+                       0, 0, 0,
+                       1,
+                       0, 0, 0,
+                       0, 0, 0])
 
-class LiveKalman():
-  def __init__(self, N=0, max_tracks=3000):
-    x_initial = np.array([-2.7e6, 4.2e6, 3.8e6,
-                          1, 0, 0, 0,
-                          0, 0, 0,
-                          0, 0, 0,
-                          0, 0, 0,
-                          1,
-                          0, 0, 0,
-                          0, 0, 0])
 
-    # state covariance
-    P_initial = np.diag([10000**2, 10000**2, 10000**2,
+# state covariance
+initial_P_diag = np.array([10000**2, 10000**2, 10000**2,
                          10**2, 10**2, 10**2,
                          10**2, 10**2, 10**2,
                          1**2, 1**2, 1**2,
@@ -27,6 +25,11 @@ class LiveKalman():
                          0.02**2,
                          1**2, 1**2, 1**2,
                          (0.01)**2, (0.01)**2, (0.01)**2])
+
+
+class LiveKalman():
+  def __init__(self, N=0, max_tracks=3000):
+
 
     # process noise
     Q = np.diag([0.03**2, 0.03**2, 0.03**2,
@@ -52,7 +55,7 @@ class LiveKalman():
     gen_model(name, self.dim_state, self.dim_state_err)
 
     # init filter
-    self.filter = EKF_sym(name, Q, x_initial, P_initial, self.dim_state, self.dim_state_err)
+    self.filter = EKF_sym(name, Q, initial_x, np.diag(initial_P_diag), self.dim_state, self.dim_state_err)
 
   @property
   def x(self):
