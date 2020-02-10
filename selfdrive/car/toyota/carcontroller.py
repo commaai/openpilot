@@ -23,12 +23,6 @@ ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
-TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
-              0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
-              0x373, 0x374, 0x375, 0x380, 0x381, 0x382,
-              0x383]
-
-
 def accel_hysteresis(accel, accel_steady, enabled):
 
   # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
