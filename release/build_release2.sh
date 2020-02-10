@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set e
+set -e
 
 export GIT_COMMITTER_NAME="Vehicle Researcher"
 export GIT_COMMITTER_EMAIL="user@comma.ai"
@@ -15,7 +15,7 @@ cd /data/openpilot
 
 # Create git repo
 git init
-git remote add public git@github.com:commaai/$BRAND.git
+git remote add public git@github.com:commaai/openpilot.git
 git fetch public
 
 # Checkout devel
