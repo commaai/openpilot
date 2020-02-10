@@ -8,12 +8,10 @@ export GIT_AUTHOR_EMAIL="user@comma.ai"
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
-TARGET_DIR=/data/openpilot/
-
 # Create folders
-rm -rf $TARGET_DIR
-mkdir -p $TARGET_DIR
-cd $TARGET_DIR
+rm -rf /data/openpilot
+mkdir -p /data/openpilot
+cd /data/openpilot
 
 # Create git repo
 git init
@@ -33,7 +31,7 @@ git commit -m "openpilot v$VERSION"
 
 # Build signed panda firmware
 pushd panda/board/
-cp -r /tmp/pandaextra $TARGET_DIR
+cp -r /tmp/pandaextra /data/openpilot/
 RELEASE=1 make obj/panda.bin
 mv obj/panda.bin /tmp/panda.bin
 make clean
