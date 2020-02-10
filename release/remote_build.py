@@ -47,7 +47,7 @@ def start_build(name):
 
   push = "PUSH=master-ci" if branch == "master" else ""
 
-  conn.send("%s /data/openpilot_source/release/go.sh\n" % push)
+  conn.send("%s /data/openpilot_source/release/build_devel.sh\n" % push)
   conn.send('echo "RESULT:" $?\n')
   conn.send("exit\n")
   return conn
