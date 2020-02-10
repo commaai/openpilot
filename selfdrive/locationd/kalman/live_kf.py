@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-from live_model import gen_model, States
+from .live_model import gen_model, States
 
 from .kalman_helpers import ObservationKind
 from .ekf_sym import EKF_sym
