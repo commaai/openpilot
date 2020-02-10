@@ -8,7 +8,7 @@ from selfdrive.swaglog import cloudlog
 from common.transformations.orientation import rotations_from_quats, ecef_euler_from_ned, euler2quat, ned_euler_from_ecef, quat2euler
 import common.transformations.coordinates as coord
 
-from selfdrive.locationd.kalman.live_kf import LiveKalman, States, inital_x, initial_P_diag
+from selfdrive.locationd.kalman.live_kf import LiveKalman, States, initial_x, initial_P_diag
 from selfdrive.locationd.kalman.kalman_helpers import ObservationKind
 os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -69,7 +69,7 @@ class Localizer():
       quat_uncertainty = 0.2**2
       initial_pose_ecef_quat = euler2quat(initial_pose_ecef)
 
-      initial_state = inital_x
+      initial_state = initial_x
       initial_covs_diag = initial_P_diag
 
       initial_state[States.ECEF_POS] = initial_ecef
