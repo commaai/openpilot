@@ -3,7 +3,7 @@ import numpy as np
 
 from selfdrive.swaglog import cloudlog
 from selfdrive.locationd.kalman.live_model import gen_model
-from selfdrive.locationd.kalman.kalman_helpers import ObservationKind
+from selfdrive.locationd.kalman.kalman_helpers import ObservationKind, KalmanError
 from selfdrive.locationd.kalman.ekf_sym import EKF_sym
 
 
@@ -103,7 +103,7 @@ class LiveKalman():
     # Should not continue if the quats behave this weirdly
     if not (0.1 < quat_norm < 10):
       cloudlog.error("Kalman filter quaternions unstable")
-      raise RuntimeError  # TODO: Handle cleanly
+      raise KalmanError
 
     self.filter.x[3:7, 0] = self.filter.x[3:7, 0] / quat_norm
 

@@ -11,7 +11,7 @@ from common.transformations.orientation import (ecef_euler_from_ned,
                                                 ned_euler_from_ecef,
                                                 quat2euler,
                                                 rotations_from_quats)
-from selfdrive.locationd.kalman.kalman_helpers import ObservationKind
+from selfdrive.locationd.kalman.kalman_helpers import ObservationKind, KalmanError
 from selfdrive.locationd.kalman.live_kf import (LiveKalman, initial_P_diag,
                                                 initial_x)
 from selfdrive.locationd.kalman.live_model import States
@@ -60,7 +60,11 @@ class Localizer():
     self.observation_buffer.insert(idx, (time, kind, meas))
     while self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
       if self.filter_ready:
-        self.kf.predict_and_observe(*self.observation_buffer.pop(0))
+        try:
+          self.kf.predict_and_observe(*self.observation_buffer.pop(0))
+        except KalmanError:
+          cloudlog.error("Error in predict and observe, kalman reset")
+          self.reset_kalman()
       else:
         self.observation_buffer.pop(0)
 
@@ -98,7 +102,7 @@ class Localizer():
                               (self.kf.x[1] - fix_ecef[1])**2 +
                               (self.kf.x[2] - fix_ecef[2])**2)
       if gps_est_error > 50:
-        cloudlog.info("Locationd vs ubloxLocation difference too large, kalman reset")
+        cloudlog.error("Locationd vs ubloxLocation difference too large, kalman reset")
         self.reset_kalman()
 
   def handle_car_state(self, log, current_time):
