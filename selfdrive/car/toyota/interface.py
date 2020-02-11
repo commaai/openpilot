@@ -163,6 +163,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
 
+    elif candidate == CAR.HIGHLANDER_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.84988  # 112.2 in = 2.84988 m
+      ret.steerRatio = 16.0
+      tire_stiffness_factor = 0.8
+      ret.mass = 4700. * CV.LB_TO_KG + STD_CARGO_KG  # 4260 + 4-5 people
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.015]]  # community tuning
+      ret.lateralTuning.pid.kf = 0.00012  # community tuning
+
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
       ret.safetyParam = 73
@@ -192,7 +202,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kf = 0.00007818594
-      
+
     elif candidate == CAR.RAV4H_TSS2:
       stop_and_go = True
       ret.safetyParam = 73
