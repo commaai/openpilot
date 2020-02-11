@@ -15,16 +15,17 @@ cd /data/openpilot
 
 # Create git repo
 git init
-git remote add public git@github.com:commaai/openpilot.git
-git fetch public
+git remote add origin git@github.com:commaai/openpilot.git
+git fetch origin devel
+git fetch origin release2-staging
+git fetch origin dashcam-staging
 
 # Checkout devel
-git checkout public/devel
-git clean -xdf
+#git checkout origin/devel
+#git clean -xdf
 
 # Create release2 with no history
-git branch -D release2 || true
-git checkout --orphan release2
+git checkout --orphan release2-staging origin/devel
 
 VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
 git commit -m "openpilot v$VERSION"
@@ -57,10 +58,10 @@ git add -f .
 git commit --amend -m "openpilot v$VERSION"
 
 # Push to release2-staging
-git push -f public release2-staging
+git push -f origin release2-staging
 
 # Create dashcam release
 git rm selfdrive/car/*/carcontroller.py
 
 git commit -m "create dashcam release from release2"
-git push -f public release2-staging:dashcam-staging
+git push -f origin release2-staging:dashcam-staging
