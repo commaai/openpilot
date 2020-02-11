@@ -255,7 +255,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_NXH:
       stop_and_go = True
-      ret.safetyParam = 100
+      ret.safetyParam = 73
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
       tire_stiffness_factor = 0.444 # not optimized yet
