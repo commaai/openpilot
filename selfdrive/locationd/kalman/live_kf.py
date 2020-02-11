@@ -2,7 +2,7 @@
 import numpy as np
 
 from selfdrive.swaglog import cloudlog
-from selfdrive.locationd.kalman.live_model import gen_model
+from selfdrive.locationd.kalman.live_model import gen_model, States
 from selfdrive.locationd.kalman.kalman_helpers import ObservationKind, KalmanError
 from selfdrive.locationd.kalman.ekf_sym import EKF_sym
 
@@ -29,7 +29,7 @@ initial_P_diag = np.array([10000**2, 10000**2, 10000**2,
 
 
 class LiveKalman():
-  def __init__(self, N=0, max_tracks=3000):
+  def __init__(self):
     # process noise
     Q = np.diag([0.03**2, 0.03**2, 0.03**2,
                  0.0**2, 0.0**2, 0.0**2,
@@ -52,7 +52,7 @@ class LiveKalman():
                       ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
                       ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2])}
 
-    name = f'live_{N}'
+    name = 'live'
     gen_model(name, self.dim_state, self.dim_state_err, [])
 
     # init filter
@@ -105,7 +105,7 @@ class LiveKalman():
       cloudlog.error("Kalman filter quaternions unstable")
       raise KalmanError
 
-    self.filter.x[3:7, 0] = self.filter.x[3:7, 0] / quat_norm
+    self.filter.x[States.ECEF_ORIENTATION, 0] = self.filter.x[States.ECEF_ORIENTATION, 0] / quat_norm
 
     return r
 

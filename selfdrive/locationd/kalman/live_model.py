@@ -1,6 +1,7 @@
 import numpy as np
 import sympy as sp
 import os
+import sysconfig
 
 from laika.constants import EARTH_GM
 from common.sympy_helpers import euler_rotate, quat_rotate, quat_matrix_r
@@ -38,7 +39,7 @@ def gen_model(name, dim_state, dim_state_err, maha_test_kinds):
             dir_path + '/' + name + '_kf.py']
 
     outs = [dir_path + '/' + name + '.o',
-            dir_path + '/' + name + '.so',
+            dir_path + '/' + name + sysconfig.get_config_var('EXT_SUFFIX'),
             dir_path + '/' + name + '.cpp']
     out_times = list(map(os.path.getmtime, outs))
     dep_times = list(map(os.path.getmtime, deps))
@@ -46,7 +47,9 @@ def gen_model(name, dim_state, dim_state_err, maha_test_kinds):
     if min(out_times) > max(dep_times) and not rebuild:
       return
     list(map(os.remove, outs))
-  except OSError:
+  except OSError as e:
+    print('HAHAHA')
+    print(e)
     pass
 
   # make functions and jacobians with sympy
@@ -122,7 +125,7 @@ def gen_model(name, dim_state, dim_state_err, maha_test_kinds):
   err_function_sym = sp.Matrix(np.zeros((dim_state,1)))
   delta_quat = sp.Matrix(np.ones((4)))
   delta_quat[1:,:] = sp.Matrix(0.5*delta_x[3:6,:])
-  err_function_sym[3:7,0] = quat_matrix_r(nom_x[3:6,0])*delta_quat
+  err_function_sym[3:7,0] = quat_matrix_r(nom_x[3:7,0])*delta_quat
   err_function_sym[0:3,:] = sp.Matrix(nom_x[0:3,:] + delta_x[0:3,:])
 
   inv_err_function_sym = sp.Matrix(np.zeros((dim_state_err,1)))
