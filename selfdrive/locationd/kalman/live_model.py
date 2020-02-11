@@ -3,9 +3,9 @@ import sympy as sp
 import os
 
 from laika.constants import EARTH_GM
-from .kalman_helpers import ObservationKind
-from .ekf_sym import gen_code
 from common.sympy_helpers import euler_rotate, quat_rotate, quat_matrix_r
+from selfdrive.locationd.kalman.kalman_helpers import ObservationKind
+from selfdrive.locationd.kalman.ekf_sym import gen_code
 
 
 class States():
@@ -28,11 +28,7 @@ class States():
   IMU_OFFSET_ERR = slice(19, 22)
 
 
-def gen_model(name,
-                 dim_state, dim_state_err,
-                 maha_test_kinds):
-
-
+def gen_model(name, dim_state, dim_state_err, maha_test_kinds):
   # check if rebuild is needed
   try:
     dir_path = os.path.dirname(__file__)
