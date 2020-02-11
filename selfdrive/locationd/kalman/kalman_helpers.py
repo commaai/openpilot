@@ -4,6 +4,10 @@ from bisect import bisect
 from tqdm import tqdm
 
 
+class KalmanError(Exception):
+  pass
+
+
 class ObservationKind():
   UNKNOWN = 0
   NO_OBSERVATION = 1
