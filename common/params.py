@@ -93,6 +93,7 @@ keys = {
   "TermsVersion": [TxType.PERSISTENT],
   "TrainingVersion": [TxType.PERSISTENT],
   "UpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
+  "UpdateFailedCount": [TxType.CLEAR_ON_MANAGER_START],
   "Version": [TxType.PERSISTENT],
   "Offroad_ChargeDisabled": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "Offroad_ConnectivityNeeded": [TxType.CLEAR_ON_MANAGER_START],
