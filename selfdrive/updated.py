@@ -337,9 +337,9 @@ def main(gctx=None):
 
         if params.get("IsOffroad") == b"1":
           attempt_update()
+          update_failed_count = 0
         else:
           cloudlog.info("not running updater, openpilot running")
-        update_failed_count = 0
 
       except subprocess.CalledProcessError as e:
         cloudlog.event(
