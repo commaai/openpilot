@@ -1,3 +1,7 @@
+Version 0.7.3 (2020-xx-xx)
+========================
+ * Support for 2020 Highlander thanks to che220!
+
 Version 0.7.2 (2020-02-07)
 ========================
  * ECU firmware version based fingerprinting for Honda & Toyota
