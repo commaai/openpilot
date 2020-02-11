@@ -26,7 +26,7 @@ jobs:
         name: tmppilot.tar.gz
         path: tmppilot.tar.gz
 
-  linter:
+  push:
     name: push
     runs-on: ubuntu-16.04
     needs: build
