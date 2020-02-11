@@ -66,6 +66,9 @@ add_subtree "openpilot-pyextra" "pyextra" master
 echo "[-] erasing old openpilot T=$SECONDS"
 rm -rf $TARGET_DIR/* $TARGET_DIR/.gitmodules
 
+# delete dotfiles in root
+find . -maxdepth 1 -type f -delete
+
 # dont delete our subtrees
 git checkout -- cereal panda opendbc pyextra
 
