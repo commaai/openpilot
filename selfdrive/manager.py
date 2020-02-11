@@ -266,8 +266,8 @@ def start_daemon_process(name):
   cloudlog.info("starting daemon %s" % name)
   proc = subprocess.Popen(['python', '-m', proc],
                          stdin=open('/dev/null', 'r'),
-                         stdout=open('/dev/null', 'w'),
-                         stderr=open('/dev/null', 'w'),
+                         stdout=sys.stdout,
+                         stderr=sys.stderr,
                          preexec_fn=os.setpgrp)
 
   params.put(pid_param, str(proc.pid))
