@@ -124,21 +124,23 @@ class Localizer():
   def handle_sensors(self, log, current_time):
     # TODO does not yet account for double sensor readings in the log
     for sensor_reading in log.sensorEvents:
-      # Gyro
-      if sensor_reading.type == 4:
+      # Gyro Uncalibrated
+      if sensor_reading.sensor == 5 and sensor_reading.type == 16:
         self.gyro_counter += 1
         if self.gyro_counter % SENSOR_DECIMATION == 0:
           if max(abs(self.kf.x[States.IMU_OFFSET])) > 0.07:
             cloudlog.info('imu frame angles exceeded, correcting')
             self.update_kalman(current_time, ObservationKind.IMU_FRAME, [0, 0, 0])
 
-          self.update_kalman(current_time, ObservationKind.PHONE_GYRO, [-sensor_reading.gyro.v[2], -sensor_reading.gyro.v[1], -sensor_reading.gyro.v[0]])
+          v = sensor_reading.gyroUncalibrated.v
+          self.update_kalman(current_time, ObservationKind.PHONE_GYRO, [-v[2], -v[1], -v[0]])
 
       # Accelerometer
-      if sensor_reading.type == 1:
+      if sensor_reading.sensor == 1 and sensor_reading.type == 1:
         self.acc_counter += 1
         if self.acc_counter % SENSOR_DECIMATION == 0:
-          self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-sensor_reading.acceleration.v[2], -sensor_reading.acceleration.v[1], -sensor_reading.acceleration.v[0]])
+          v = sensor_reading.acceleration.v
+          self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
 
   def handle_log(self, log):
     current_time = 1e-9 * log.logMonoTime
