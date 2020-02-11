@@ -884,8 +884,8 @@ int main(int argc, char* argv[]) {
       set_awake(s, false);
     }
 
-    // Don't waste resources on drawing in case screen is off or car is not started.
-    if (s->awake && s->vision_connected) {
+    // Don't waste resources on drawing in case screen is off
+    if (s->awake) {
       ui_draw(s);
       glFinish();
       should_swap = true;

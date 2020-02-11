@@ -165,6 +165,18 @@ typedef struct UIState {
   int img_turn;
   int img_face;
   int img_map;
+  int img_button_settings;
+  int img_button_home;
+  int img_battery_0;
+  int img_battery_0_charging;
+  int img_battery_25;
+  int img_battery_25_charging;
+  int img_battery_50;
+  int img_battery_50_charging;
+  int img_battery_75;
+  int img_battery_75_charging;
+  int img_battery_100;
+  int img_battery_100_charging;
 
   // sockets
   Context *ctx;
@@ -251,8 +263,9 @@ typedef struct UIState {
 
 // API
 void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
-                          const char* va_text1, const char* va_text2); 
+                          const char* va_text1, const char* va_text2);
 void ui_draw(UIState *s);
+void ui_draw_sidebar(UIState *s);
 void ui_nvg_init(UIState *s);
 
 #endif

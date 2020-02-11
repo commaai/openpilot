@@ -872,6 +872,7 @@ static void ui_draw_blank(UIState *s) {
 }
 
 void ui_draw(UIState *s) {
+  ui_draw_sidebar(s);
   if (s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
     ui_draw_vision(s);
   } else {
@@ -979,6 +980,42 @@ void ui_nvg_init(UIState *s) {
 
   assert(s->img_map >= 0);
   s->img_map = nvgCreateImage(s->vg, "../assets/img_map.png", 1);
+
+  assert(s->img_button_settings >= 0);
+  s->img_button_settings = nvgCreateImage(s->vg, "../assets/images/img_button_settings.png", 1);
+
+  assert(s->img_button_home >= 0);
+  s->img_button_home = nvgCreateImage(s->vg, "../assets/images/img_button_home.png", 1);
+
+  assert(s->img_battery_0 >= 0);
+  s->img_battery_0 = nvgCreateImage(s->vg, "../assets/images/img_battery_0.png", 1);
+
+  assert(s->img_battery_0_charging >= 0);
+  s->img_battery_0_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_0_charging.png", 1);
+
+  assert(s->img_battery_25 >= 0);
+  s->img_battery_25 = nvgCreateImage(s->vg, "../assets/images/img_battery_25.png", 1);
+
+  assert(s->img_battery_25_charging >= 0);
+  s->img_battery_25_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_25_charging.png", 1);
+
+  assert(s->img_battery_50 >= 0);
+  s->img_battery_50 = nvgCreateImage(s->vg, "../assets/images/img_battery_50.png", 1);
+
+  assert(s->img_battery_50_charging >= 0);
+  s->img_battery_50_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_50_charging.png", 1);
+
+  assert(s->img_battery_75 >= 0);
+  s->img_battery_75 = nvgCreateImage(s->vg, "../assets/images/img_battery_75.png", 1);
+
+  assert(s->img_battery_75_charging >= 0);
+  s->img_battery_75_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_75_charging.png", 1);
+
+  assert(s->img_battery_100 >= 0);
+  s->img_battery_100 = nvgCreateImage(s->vg, "../assets/images/img_battery_100.png", 1);
+
+  assert(s->img_battery_100_charging >= 0);
+  s->img_battery_100_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_100_charging.png", 1);
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
