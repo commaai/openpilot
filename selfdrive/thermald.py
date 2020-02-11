@@ -275,7 +275,7 @@ def thermald_thread():
     update_failed_count = params.get("UpdateFailedCount")
     update_failed_count = 0 if update_failed_count is None else int(update_failed_count)
 
-    if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 0:
+    if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
       if current_connectivity_alert != "expired":
         current_connectivity_alert = "expired"
         params.delete("Offroad_ConnectivityNeededPrompt")
