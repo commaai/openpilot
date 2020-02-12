@@ -9,6 +9,7 @@ to_build = {
     'feature_handler_5': 'helpers/feature_handler.py',
     'gnss': 'models/gnss_kf.py',
     'loc_4': 'models/loc_kf.py',
+    'live': 'models/live_kf.py',
 }
 
 if File('#xx/pipeline/lib/ekf/lane_kf.py').exists():
