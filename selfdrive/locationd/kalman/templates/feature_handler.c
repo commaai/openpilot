@@ -1,3 +1,4 @@
+extern "C"{
 bool sane(double track [K + 1][5]) {
   double diffs_x [K-1];
   double diffs_y [K-1];
@@ -14,7 +15,7 @@ bool sane(double track [K + 1][5]) {
 	 (diffs_y[i] > 2*diffs_y[i-1] or
           diffs_y[i] < .5*diffs_y[i-1]))){
       return false;
-    } 
+    }
   }
   return true;
 }
@@ -40,9 +41,9 @@ void merge_features(double *tracks, double *features, long long *empty_idxs) {
         track_arr[match][0][3] = 1;
 	if (sane(track_arr[match])){
           // label valid
-          track_arr[match][0][4] = 1; 
+          track_arr[match][0][4] = 1;
 	}
-      }		
+      }
     } else {
       // gen new track with this feature
       track_arr[empty_idxs[empty_idx]][0][0] = 1;
@@ -50,7 +51,8 @@ void merge_features(double *tracks, double *features, long long *empty_idxs) {
       track_arr[empty_idxs[empty_idx]][0][2] = 1;
       memcpy(track_arr[empty_idxs[empty_idx]][1], feature_arr[i], 5 * sizeof(double));
       empty_idx = empty_idx + 1;
-    } 
+    }
   }
   memcpy(tracks, track_arr, (K+1) * 6000 * 5 * sizeof(double));
+}
 }
