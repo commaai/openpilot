@@ -37,13 +37,13 @@ the error-state. This library supports and defining an arbitrary error-state tha
 ### Multi-State Constraint Kalman Filter
 paper:
 
-###Rauch–Tung–Striebel smoothing
+### Rauch–Tung–Striebel smoothing
 When doing offline estimation with a kalman filter there can be an initialzition period where states are badly estimated. 
 Global estimators don't suffer from this, to make our kalman filter competitive with global optimizers when can run the filter
 backwards using an RTS smoother. Those combined with potentially multiple forward and backwards passes of the data should make
 performance very close to global optimization.
 
-###Mahalanobis distance outlier rejector
+### Mahalanobis distance outlier rejector
 A lot of measurements do not come from a Gaussian distribution and as such have outliers that do not fit the statistical model
 of the Kalman filter. This can cause a lot of performance issues if not dealt with. This library allows the use of a mahalanobis
 distance statistical test on the incoming measurements to deal with this. Note that good initialization is critical to prevent
