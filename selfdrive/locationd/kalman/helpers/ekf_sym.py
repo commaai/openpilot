@@ -1,14 +1,16 @@
 import os
 from bisect import bisect_right
-import sympy as sp
+
 import numpy as np
+import sympy as sp
 from numpy import dot
-from common.ffi_wrapper import compile_code, wrap_compiled
-from common.sympy_helpers import sympy_into_c
-from .chi2_lookup import chi2_ppf
 
+from selfdrive.locationd.kalman.helpers.sympy_helpers import sympy_into_c
+from selfdrive.locationd.kalman.helpers import (TEMPLATE_DIR, load_code,
+                                                write_code)
 
-EXTERNAL_PATH = os.path.dirname(os.path.abspath(__file__))
+from selfdrive.locationd.kalman.helpers.chi2_lookup import chi2_ppf
+
 
 def solve(a, b):
   if a.shape[0] == 1 and a.shape[1] == 1:
@@ -17,12 +19,14 @@ def solve(a, b):
   else:
     return np.linalg.solve(a, b)
 
+
 def null(H, eps=1e-12):
   u, s, vh = np.linalg.svd(H)
   padding = max(0,np.shape(H)[1]-np.shape(s)[0])
   null_mask = np.concatenate(((s <= eps), np.ones((padding,),dtype=bool)),axis=0)
   null_space = np.compress(null_mask, vh, axis=0)
   return np.transpose(null_space)
+
 
 def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=None, msckf_params=None, maha_test_kinds=[]):
   # optional state transition matrix, H modifier
@@ -129,11 +133,13 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
     extra_header += "\nconst static double MAHA_THRESH_%d = %f;" % (kind, maha_thresh)
     extra_header += "\nvoid update_%d(double *, double *, double *, double *, double *);" % kind
 
-  code += "\n" + extra_header
-  code += "\n" + open(os.path.join(EXTERNAL_PATH, "ekf_c.c")).read()
-  code += "\n" + extra_post
+  code += '\nextern "C"{\n' + extra_header + "\n}\n"
+  code += "\n" + open(os.path.join(TEMPLATE_DIR, "ekf_c.c")).read()
+  code += '\nextern "C"{\n' + extra_post + "\n}\n"
   header += "\n" + extra_header
-  compile_code(name, code, header, EXTERNAL_PATH)
+
+  write_code(name, code, header)
+
 
 class EKF_sym():
   def __init__(self, name, Q, x_initial, P_initial, dim_main, dim_main_err,
@@ -174,7 +180,7 @@ class EKF_sym():
     self.rewind_obscache = []
     self.init_state(x_initial, P_initial, None)
 
-    ffi, lib = wrap_compiled(name, EXTERNAL_PATH)
+    ffi, lib = load_code(name)
     kinds, self.feature_track_kinds = [], []
     for func in dir(lib):
       if func[:2] == 'h_':
@@ -516,9 +522,6 @@ class EKF_sym():
       return False
     else:
       return True
-
-
-
 
   def rts_smooth(self, estimates, norm_quats=False):
     '''

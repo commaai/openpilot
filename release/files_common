@@ -28,7 +28,6 @@ common/profiler.py
 common/testing.py
 common/basedir.py
 common/filter_simple.py
-common/sympy_helpers.py
 common/stat_live.py
 common/spinner.py
 common/cython_hacks.py
