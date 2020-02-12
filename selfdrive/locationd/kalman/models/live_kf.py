@@ -2,13 +2,14 @@
 import numpy as np
 import sympy as sp
 
-from laika.constants import EARTH_GM
 from selfdrive.locationd.kalman.helpers import KalmanError, ObservationKind
 from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.kalman.helpers.sympy_helpers import (euler_rotate,
                                                               quat_matrix_r,
                                                               quat_rotate)
 from selfdrive.swaglog import cloudlog
+#from laika.constants import EARTH_GM
+EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
 
 class States():
