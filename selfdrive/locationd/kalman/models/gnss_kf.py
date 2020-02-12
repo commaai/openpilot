@@ -9,13 +9,13 @@ from selfdrive.locationd.kalman.models.loc_kf import parse_pr, parse_prr
 
 
 class States():
-  ECEF_POS = slice(0,3) # x, y and z in ECEF in meters
-  ECEF_VELOCITY = slice(3,6)
-  CLOCK_BIAS = slice(6, 7) # clock bias in light-meters,
-  CLOCK_DRIFT = slice(7, 8) # clock drift in light-meters/s,
-  CLOCK_ACCELERATION = slice(8, 9) # clock acceleration in light-meters/s**2
-  GLONASS_BIAS = slice(9, 10) # clock drift in light-meters/s,
-  GLONASS_FREQ_SLOPE = slice(10, 11) # GLONASS bias in m expressed as bias + freq_num*freq_slope
+  ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
+  ECEF_VELOCITY = slice(3, 6)
+  CLOCK_BIAS = slice(6, 7)  # clock bias in light-meters,
+  CLOCK_DRIFT = slice(7, 8)  # clock drift in light-meters/s,
+  CLOCK_ACCELERATION = slice(8, 9)  # clock acceleration in light-meters/s**2
+  GLONASS_BIAS = slice(9, 10)  # clock drift in light-meters/s,
+  GLONASS_FREQ_SLOPE = slice(10, 11)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
 
 
 class GNSSKalman():
@@ -38,8 +38,7 @@ class GNSSKalman():
                (.1)**2, (0)**2, (0.01)**2,
                .1**2, (.01)**2])
 
-  maha_test_kinds = [] #ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
-
+  maha_test_kinds = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
 
   @staticmethod
   def generate_code():
@@ -51,23 +50,22 @@ class GNSSKalman():
     # state variables
     state_sym = sp.MatrixSymbol('state', dim_state, 1)
     state = sp.Matrix(state_sym)
-    x,y,z = state[0:3,:]
-    v = state[3:6,:]
+    x, y, z = state[0:3, :]
+    v = state[3:6, :]
     vx, vy, vz = v
-    cb, cd, ca = state[6:9,:]
-    glonass_bias, glonass_freq_slope = state[9:11,:]
+    cb, cd, ca = state[6:9, :]
+    glonass_bias, glonass_freq_slope = state[9:11, :]
 
     dt = sp.Symbol('dt')
 
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
-    state_dot[:3,:] = v
-    state_dot[6,0] = cd
-    state_dot[7,0] = ca
+    state_dot[:3, :] = v
+    state_dot[6, 0] = cd
+    state_dot[7, 0] = ca
 
     # Basic descretization, 1st order integrator
     # Can be pretty bad if dt is big
-    f_sym = state + dt*state_dot
-
+    f_sym = state + dt * state_dot
 
     #
     # Observation functions
@@ -85,29 +83,33 @@ class GNSSKalman():
     los_x, los_y, los_z = sat_los_sym
     orb_x, orb_y, orb_z = orb_epos_sym
 
-    h_pseudorange_sym = sp.Matrix([sp.sqrt(
-                                    (x - sat_x)**2 +
-                                    (y - sat_y)**2 +
-                                    (z - sat_z)**2) +
-                                    cb])
+    h_pseudorange_sym = sp.Matrix([
+      sp.sqrt(
+        (x - sat_x)**2 +
+        (y - sat_y)**2 +
+        (z - sat_z)**2
+      ) + cb
+    ])
 
-    h_pseudorange_glonass_sym = sp.Matrix([sp.sqrt(
-                                    (x - sat_x)**2 +
-                                    (y - sat_y)**2 +
-                                    (z - sat_z)**2) +
-                                    cb + glonass_bias + glonass_freq_slope*glonass_freq])
+    h_pseudorange_glonass_sym = sp.Matrix([
+      sp.sqrt(
+        (x - sat_x)**2 +
+        (y - sat_y)**2 +
+        (z - sat_z)**2
+      ) + cb + glonass_bias + glonass_freq_slope * glonass_freq
+    ])
 
     los_vector = (sp.Matrix(sat_pos_vel_sym[0:3]) - sp.Matrix([x, y, z]))
     los_vector = los_vector / sp.sqrt(los_vector[0]**2 + los_vector[1]**2 + los_vector[2]**2)
-    h_pseudorange_rate_sym = sp.Matrix([los_vector[0]*(sat_vx - vx) +
-                                          los_vector[1]*(sat_vy - vy) +
-                                          los_vector[2]*(sat_vz - vz) +
-                                          cd])
+    h_pseudorange_rate_sym = sp.Matrix([los_vector[0] * (sat_vx - vx) +
+                                        los_vector[1] * (sat_vy - vy) +
+                                        los_vector[2] * (sat_vz - vz) +
+                                        cd])
 
     obs_eqs = [[h_pseudorange_sym, ObservationKind.PSEUDORANGE_GPS, sat_pos_freq_sym],
-              [h_pseudorange_glonass_sym, ObservationKind.PSEUDORANGE_GLONASS, sat_pos_freq_sym],
-              [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GPS, sat_pos_vel_sym],
-              [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GLONASS, sat_pos_vel_sym]]
+               [h_pseudorange_glonass_sym, ObservationKind.PSEUDORANGE_GLONASS, sat_pos_freq_sym],
+               [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GPS, sat_pos_vel_sym],
+               [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GLONASS, sat_pos_vel_sym]]
 
     gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)
 
@@ -155,9 +157,9 @@ class GNSSKalman():
     z = np.zeros((len(meas), 1))
     for i, m in enumerate(meas):
       z_i, R_i, sat_pos_freq_i = parse_pr(m)
-      sat_pos_freq[i,:] = sat_pos_freq_i
-      z[i,:] = z_i
-      R[i,:,:] = R_i
+      sat_pos_freq[i, :] = sat_pos_freq_i
+      z[i, :] = z_i
+      R[i, :, :] = R_i
     return self.filter.predict_and_update_batch(t, kind, z, R, sat_pos_freq)
 
   def predict_and_update_pseudorange_rate(self, meas, t, kind):
@@ -167,7 +169,7 @@ class GNSSKalman():
     for i, m in enumerate(meas):
       z_i, R_i, sat_pos_vel_i = parse_prr(m)
       sat_pos_vel[i] = sat_pos_vel_i
-      R[i,:,:] = R_i
+      R[i, :, :] = R_i
       z[i, :] = z_i
     return self.filter.predict_and_update_batch(t, kind, z, R, sat_pos_vel)
 
