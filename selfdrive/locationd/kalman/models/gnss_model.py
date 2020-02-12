@@ -7,27 +7,6 @@ from selfdrive.locationd.kalman.helpers.ekf_sym import gen_code
 from common.sympy_helpers import cross, euler_rotate, quat_rotate, quat_matrix_l, quat_matrix_r
 
 def gen_model(name, dim_state, maha_test_kinds):
-
-  # check if rebuild is needed
-  try:
-    dir_path = os.path.dirname(__file__)
-    deps = [dir_path + '/' + 'ekf_c.c',
-            dir_path + '/' + 'ekf_sym.py',
-            dir_path + '/' + 'gnss_model.py',
-            dir_path + '/' + 'gnss_kf.py']
-
-    outs = [dir_path + '/' + name + '.o',
-            dir_path + '/' + name + '.so',
-            dir_path + '/' + name + '.cpp']
-    out_times = list(map(os.path.getmtime, outs))
-    dep_times = list(map(os.path.getmtime, deps))
-    rebuild = os.getenv("REBUILD", False)
-    if min(out_times) > max(dep_times) and not rebuild:
-      return
-    list(map(os.remove, outs))
-  except OSError as e:
-    pass
-
   # make functions and jacobians with sympy
   # state variables
   state_sym = sp.MatrixSymbol('state', dim_state, 1)

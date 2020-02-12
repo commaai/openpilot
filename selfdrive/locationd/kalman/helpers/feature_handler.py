@@ -33,7 +33,7 @@ class FeatureHandler():
   name = 'feature_handler'
 
   @staticmethod
-  def generate_code(K=4):
+  def generate_code(K=5):
     # Wrap c code for slow matching
     c_header = "\nvoid merge_features(double *tracks, double *features, long long *empty_idxs);"
 
@@ -45,7 +45,7 @@ class FeatureHandler():
     filename = f"{FeatureHandler.name}_{K}"
     write_code(filename, c_code, c_header)
 
-  def __init__(self, K=4):
+  def __init__(self, K=5):
     self.MAX_TRACKS = 6000
     self.K = K
 

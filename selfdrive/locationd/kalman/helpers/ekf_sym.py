@@ -6,9 +6,8 @@ from numpy import dot
 from common.ffi_wrapper import compile_code, wrap_compiled
 from common.sympy_helpers import sympy_into_c
 from .chi2_lookup import chi2_ppf
+from selfdrive.locationd.kalman.helpers import TEMPLATE_DIR, GENERATED_DIR
 
-
-EXTERNAL_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def solve(a, b):
   if a.shape[0] == 1 and a.shape[1] == 1:
@@ -130,10 +129,10 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
     extra_header += "\nvoid update_%d(double *, double *, double *, double *, double *);" % kind
 
   code += "\n" + extra_header
-  code += "\n" + open(os.path.join(EXTERNAL_PATH, "ekf_c.c")).read()
+  code += "\n" + open(os.path.join(TEMPLATE_DIR, "ekf_c.c")).read()
   code += "\n" + extra_post
   header += "\n" + extra_header
-  # compile_code(name, code, header, EXTERNAL_PATH)
+  compile_code(name, code, header, GENERATED_DIR)
 
 class EKF_sym():
   def __init__(self, name, Q, x_initial, P_initial, dim_main, dim_main_err,
@@ -174,7 +173,7 @@ class EKF_sym():
     self.rewind_obscache = []
     self.init_state(x_initial, P_initial, None)
 
-    ffi, lib = wrap_compiled(name, EXTERNAL_PATH)
+    ffi, lib = wrap_compiled(name, GENERATED_DIR)
     kinds, self.feature_track_kinds = [], []
     for func in dir(lib):
       if func[:2] == 'h_':

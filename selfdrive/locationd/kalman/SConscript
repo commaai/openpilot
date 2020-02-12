@@ -5,7 +5,7 @@ sympy_helpers = "#common/sympy_helpers.py"
 
 to_build = {
     'pos_computer_4': 'helpers/lst_sq_computer.py',
-    'feature_handler_4': 'helpers/feature_handler.py',
+    'feature_handler_5': 'helpers/feature_handler.py',
 }
 
 
