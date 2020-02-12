@@ -10,12 +10,16 @@ to_build = {
     'gnss': 'models/gnss_kf.py',
     'loc_4': 'models/loc_kf.py',
     'live': 'models/live_kf.py',
+    'lane': '#xx/pipeline/lib/ekf/lane_kf.py',
 }
 
-if File('#xx/pipeline/lib/ekf/lane_kf.py').exists():
-    to_build['lane'] = '#xx/pipeline/lib/ekf/lane_kf.py'
+found = {}
 
 for target, command in to_build.items():
+    if File(command).exists():
+        found[target] = command
+
+for target, command in found.items():
     target_files = File([f'generated/{target}.cpp', f'generated/{target}.h'])
     command_file = File(command)
     env.Command(target_files,
