@@ -159,6 +159,7 @@ class EKF_sym():
     self.dim_err = P_initial.shape[0]
     assert dim_main + dim_augment*N == self.dim_x
     assert dim_main_err + dim_augment_err*N == self.dim_err
+    assert Q.shape == P_initial.shape
 
     # kinds that should get mahalanobis distance
     # tested for outlier rejection
