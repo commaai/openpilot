@@ -9,6 +9,9 @@ GENERATED_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'g
 
 
 def write_code(name, code, header):
+  if not os.path.exists(GENERATED_DIR):
+    os.mkdir(GENERATED_DIR)
+
   open(os.path.join(GENERATED_DIR, f"{name}.cpp"), 'w').write(code)
   open(os.path.join(GENERATED_DIR, f"{name}.h"), 'w').write(header)
 
