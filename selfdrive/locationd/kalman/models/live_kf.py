@@ -126,7 +126,7 @@ class LiveKalman():
 
     # Observation matrix modifier
     H_mod_sym = sp.Matrix(np.zeros((dim_state, dim_state_err)))
-    H_mod_sym[States.ECEF_POSITION, States.ECEF_POSITION_ERR] = np.eye(States.ECEF_POSITION.stop - States.ECEF_POSTION.stop)
+    H_mod_sym[States.ECEF_POS, States.ECEF_POS_ERR] = np.eye(States.ECEF_POS.stop - States.ECEF_POS.start)
     H_mod_sym[States.ECEF_ORIENTATION, States.ECEF_ORIENTATION_ERR] = 0.5 * quat_matrix_r(state[3:7])[:, 1:]
     H_mod_sym[States.ECEF_ORIENTATION.stop:, States.ECEF_ORIENTATION_ERR.stop:] = np.eye(dim_state - States.ECEF_ORIENTATION.stop)
 
@@ -141,12 +141,12 @@ class LiveKalman():
     err_function_sym = sp.Matrix(np.zeros((dim_state, 1)))
     delta_quat = sp.Matrix(np.ones((4)))
     delta_quat[1:, :] = sp.Matrix(0.5 * delta_x[States.ECEF_ORIENTATION_ERR, :])
-    err_function_sym[States.ECEF_POSITION, :] = sp.Matrix(nom_x[States.ECEF_POSITION, :] + delta_x[States.ECEF_POSITION_ERR, :])
+    err_function_sym[States.ECEF_POS, :] = sp.Matrix(nom_x[States.ECEF_POS, :] + delta_x[States.ECEF_POS_ERR, :])
     err_function_sym[States.ECEF_ORIENTATION, 0] = quat_matrix_r(nom_x[States.ECEF_ORIENTATION, 0]) * delta_quat
     err_function_sym[States.ECEF_ORIENTATION.stop:, :] = sp.Matrix(nom_x[States.ECEF_ORIENTATION.stop:, :] + delta_x[States.ECEF_ORIENTATION_ERR.stop:, :])
 
     inv_err_function_sym = sp.Matrix(np.zeros((dim_state_err, 1)))
-    inv_err_function_sym[States.ECEF_POSITION_ERR, 0] = sp.Matrix(-nom_x[States.ECEF_POSITION, 0] + true_x[States.ECEF_POSITION, 0])
+    inv_err_function_sym[States.ECEF_POS_ERR, 0] = sp.Matrix(-nom_x[States.ECEF_POS, 0] + true_x[States.ECEF_POS, 0])
     delta_quat = quat_matrix_r(nom_x[States.ECEF_ORIENTATION, 0]).T * true_x[States.ECEF_ORIENTATION, 0]
     inv_err_function_sym[States.ECEF_ORIENTATION_ERR, 0] = sp.Matrix(2 * delta_quat[1:])
     inv_err_function_sym[States.ECEF_ORIENTATION_ERR.stop:, 0] = sp.Matrix(-nom_x[States.ECEF_ORIENTATION.stop:, 0] + true_x[States.ECEF_ORIENTATION.stop:, 0])
