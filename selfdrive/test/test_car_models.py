@@ -58,7 +58,6 @@ def get_route_log(route_name):
       sys.exit(-1)
 
 routes = {
-
   "975b26878285314d|2018-12-25--14-42-13": {
     'carFingerprint': CHRYSLER.PACIFICA_2018_HYBRID,
     'enableCamera': True,
@@ -290,6 +289,7 @@ routes = {
     "7e34a988419b5307|2019-12-18--19-13-30": {
     'carFingerprint': TOYOTA.RAV4H_TSS2,
     'enableCamera': True,
+    'fingerprintSource': 'fixed'
   },
   "e6a24be49a6cd46e|2019-10-29--10-52-42": {
     'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
@@ -516,6 +516,11 @@ if __name__ == "__main__":
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
     params.put("Passive", "1" if route in passive_routes else "0")
+
+    if checks.get('fingerprintSource', None) == 'fixed':
+      os.environ['FINGERPRINT'] = checks['carFingerprint']
+    else:
+      os.environ['FINGERPRINT'] = ""
 
     print("testing ", route, " ", checks['carFingerprint'])
     print("Starting processes")
