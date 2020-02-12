@@ -99,7 +99,7 @@ git commit -a -m "openpilot v$VERSION release"
 SCONS_CACHE=1 scons -j3
 
 echo "[-] testing openpilot T=$SECONDS"
-PYTHONPATH="$SOURCE_DIR:$SOURCE_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
+PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
 
 echo "[-] testing panda build T=$SECONDS"
 pushd panda/board/
