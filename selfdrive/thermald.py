@@ -18,6 +18,8 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
+from selfdrive.kegman_conf import kegman_conf
+kegman = kegman_conf()
 
 FW_SIGNATURE = get_expected_signature()
 
@@ -137,10 +139,31 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   return new_speed
 
+def check_car_battery_voltage(should_start, health, charging_disabled, msg):
+
+  # charging disallowed if:
+  #   - there are health packets from panda, and;
+  #   - 12V battery voltage is too low, and;
+  #   - onroad isn't started
+  print(health)
+  
+  if charging_disabled and (health is None or health.health.voltage > (int(kegman.conf['carVoltageMinEonShutdown'])+500)) and msg.thermal.batteryPercent < int(kegman.conf['battChargeMin']):
+    charging_disabled = False
+    os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
+  elif not charging_disabled and (msg.thermal.batteryPercent > int(kegman.conf['battChargeMax']) or (health is not None and health.health.voltage < int(kegman.conf['carVoltageMinEonShutdown']) and not should_start)):
+    charging_disabled = True
+    os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
+  elif msg.thermal.batteryCurrent < 0 and msg.thermal.batteryPercent > int(kegman.conf['battChargeMax']):
+    charging_disabled = True
+    os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
+
+  return charging_disabled
+
+
 def thermald_thread():
   # prevent LEECO from undervoltage
-  BATT_PERC_OFF = 10 if LEON else 3
-
+  BATT_PERC_OFF = int(kegman.conf['battPercOff'])
+  
   health_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected health frequency
 
   # now loop
@@ -166,6 +189,7 @@ def thermald_thread():
   health_prev = None
   fw_version_match_prev = True
   current_connectivity_alert = None
+  charging_disabled = False
   time_valid_prev = True
   should_start_prev = False
 
@@ -266,29 +290,29 @@ def thermald_thread():
     time_valid_prev = time_valid
 
     # Show update prompt
-    try:
-      last_update = datetime.datetime.fromisoformat(params.get("LastUpdateTime", encoding='utf8'))
-    except (TypeError, ValueError):
-      last_update = now
-    dt = now - last_update
+#    try:
+#      last_update = datetime.datetime.fromisoformat(params.get("LastUpdateTime", encoding='utf8'))
+#    except (TypeError, ValueError):
+#      last_update = now
+#    dt = now - last_update
 
-    if dt.days > DAYS_NO_CONNECTIVITY_MAX:
-      if current_connectivity_alert != "expired":
-        current_connectivity_alert = "expired"
-        params.delete("Offroad_ConnectivityNeededPrompt")
-        params.put("Offroad_ConnectivityNeeded", json.dumps(OFFROAD_ALERTS["Offroad_ConnectivityNeeded"]))
-    elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
-      remaining_time = str(DAYS_NO_CONNECTIVITY_MAX - dt.days)
-      if current_connectivity_alert != "prompt" + remaining_time:
-        current_connectivity_alert = "prompt" + remaining_time
-        alert_connectivity_prompt = copy.copy(OFFROAD_ALERTS["Offroad_ConnectivityNeededPrompt"])
-        alert_connectivity_prompt["text"] += remaining_time + " days."
-        params.delete("Offroad_ConnectivityNeeded")
-        params.put("Offroad_ConnectivityNeededPrompt", json.dumps(alert_connectivity_prompt))
-    elif current_connectivity_alert is not None:
-      current_connectivity_alert = None
-      params.delete("Offroad_ConnectivityNeeded")
-      params.delete("Offroad_ConnectivityNeededPrompt")
+#    if dt.days > DAYS_NO_CONNECTIVITY_MAX:
+#      if current_connectivity_alert != "expired":
+#        current_connectivity_alert = "expired"
+#        params.delete("Offroad_ConnectivityNeededPrompt")
+#        params.put("Offroad_ConnectivityNeeded", json.dumps(OFFROAD_ALERTS["Offroad_ConnectivityNeeded"]))
+#    elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
+#      remaining_time = str(DAYS_NO_CONNECTIVITY_MAX - dt.days)
+#      if current_connectivity_alert != "prompt" + remaining_time:
+#        current_connectivity_alert = "prompt" + remaining_time
+#        alert_connectivity_prompt = copy.copy(OFFROAD_ALERTS["Offroad_ConnectivityNeededPrompt"])
+#        alert_connectivity_prompt["text"] += remaining_time + " days."
+#        params.delete("Offroad_ConnectivityNeeded")
+#        params.put("Offroad_ConnectivityNeededPrompt", json.dumps(alert_connectivity_prompt))
+#    elif current_connectivity_alert is not None:
+#      current_connectivity_alert = None
+#      params.delete("Offroad_ConnectivityNeeded")
+#      params.delete("Offroad_ConnectivityNeededPrompt")
 
     # start constellation of processes when the car starts
     ignition = health is not None and (health.health.ignitionLine or health.health.ignitionCan)
@@ -309,7 +333,7 @@ def thermald_thread():
     should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
 
     # check for firmware mismatch
-    should_start = should_start and fw_version_match
+    #should_start = should_start and fw_version_match
 
     # check if system time is valid
     should_start = should_start and time_valid
@@ -358,6 +382,15 @@ def thermald_thread():
          started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
+    charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled, msg)
+
+    if msg.thermal.batteryCurrent > 0:
+      msg.thermal.batteryStatus = "Discharging"
+    else:
+      msg.thermal.batteryStatus = "Charging"
+
+    
+    msg.thermal.chargingDisabled = charging_disabled
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
     msg.thermal.startedTs = int(1e9*(started_ts or 0))
@@ -375,7 +408,7 @@ def thermald_thread():
     fw_version_match_prev = fw_version_match
     should_start_prev = should_start
 
-    #print(msg)
+    print(msg)
 
     # report to server once per minute
     if (count % int(60. / DT_TRML)) == 0:
