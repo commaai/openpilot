@@ -14,16 +14,15 @@ from selfdrive.locationd.kalman.helpers.chi2_lookup import chi2_ppf
 
 def solve(a, b):
   if a.shape[0] == 1 and a.shape[1] == 1:
-    #assert np.allclose(b/a[0][0], np.linalg.solve(a, b))
-    return b/a[0][0]
+    return b / a[0][0]
   else:
     return np.linalg.solve(a, b)
 
 
 def null(H, eps=1e-12):
   u, s, vh = np.linalg.svd(H)
-  padding = max(0,np.shape(H)[1]-np.shape(s)[0])
-  null_mask = np.concatenate(((s <= eps), np.ones((padding,),dtype=bool)),axis=0)
+  padding = max(0, np.shape(H)[1] - np.shape(s)[0])
+  null_mask = np.concatenate(((s <= eps), np.ones((padding,), dtype=bool)), axis=0)
   null_space = np.compress(null_mask, vh, axis=0)
   return np.transpose(null_space)
 
@@ -41,9 +40,9 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
     f_err_sym = eskf_params[3]
     x_err_sym = eskf_params[4]
   else:
-    nom_x = sp.MatrixSymbol('nom_x',dim_x,1)
-    true_x = sp.MatrixSymbol('true_x',dim_x,1)
-    delta_x = sp.MatrixSymbol('delta_x',dim_x,1)
+    nom_x = sp.MatrixSymbol('nom_x', dim_x, 1)
+    true_x = sp.MatrixSymbol('true_x', dim_x, 1)
+    delta_x = sp.MatrixSymbol('delta_x', dim_x, 1)
     err_function_sym = sp.Matrix(nom_x + delta_x)
     inv_err_function_sym = sp.Matrix(true_x - nom_x)
     err_eqs = [err_function_sym, nom_x, delta_x]
@@ -63,8 +62,8 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
     dim_augment_err = msckf_params[3]
     N = msckf_params[4]
     feature_track_kinds = msckf_params[5]
-    assert dim_main + dim_augment*N == dim_x
-    assert dim_main_err + dim_augment_err*N == dim_err
+    assert dim_main + dim_augment * N == dim_x
+    assert dim_main_err + dim_augment_err * N == dim_err
   else:
     msckf = False
     dim_main = dim_x
@@ -123,7 +122,7 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
     else:
       He_str = 'NULL'
       # ea_dim = 1 # not really dim of ea but makes c function work
-    maha_thresh = chi2_ppf(0.95, int(h_sym.shape[0])) # mahalanobis distance for outlier detection
+    maha_thresh = chi2_ppf(0.95, int(h_sym.shape[0]))  # mahalanobis distance for outlier detection
     maha_test = kind in maha_test_kinds
     extra_post += """
       void update_%d(double *in_x, double *in_P, double *in_z, double *in_R, double *in_ea) {
@@ -143,16 +142,9 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
 
 class EKF_sym():
   def __init__(self, name, Q, x_initial, P_initial, dim_main, dim_main_err,
-                     N=0, dim_augment=0, dim_augment_err=0, maha_test_kinds=[]):
-    '''
-    Generates process function and all
-    observation functions for the kalman
-    filter.
-    '''
-    if N > 0:
-      self.msckf = True
-    else:
-      self.msckf = False
+               N=0, dim_augment=0, dim_augment_err=0, maha_test_kinds=[]):
+    """Generates process function and all observation functions for the kalman filter."""
+    self.msckf = N > 0
     self.N = N
     self.dim_augment = dim_augment
     self.dim_augment_err = dim_augment_err
@@ -163,8 +155,8 @@ class EKF_sym():
     x_initial = x_initial.reshape((-1, 1))
     self.dim_x = x_initial.shape[0]
     self.dim_err = P_initial.shape[0]
-    assert dim_main + dim_augment*N == self.dim_x
-    assert dim_main_err + dim_augment_err*N == self.dim_err
+    assert dim_main + dim_augment * N == self.dim_x
+    assert dim_main_err + dim_augment_err * N == self.dim_err
     assert Q.shape == P_initial.shape
 
     # kinds that should get mahalanobis distance
@@ -190,24 +182,29 @@ class EKF_sym():
 
     # wrap all the sympy functions
     def wrap_1lists(name):
-      func = eval("lib.%s" % name, {"lib":lib})
+      func = eval("lib.%s" % name, {"lib": lib})
+
       def ret(lst1, out):
         func(ffi.cast("double *", lst1.ctypes.data),
-          ffi.cast("double *", out.ctypes.data))
+             ffi.cast("double *", out.ctypes.data))
       return ret
+
     def wrap_2lists(name):
-      func = eval("lib.%s" % name, {"lib":lib})
+      func = eval("lib.%s" % name, {"lib": lib})
+
       def ret(lst1, lst2, out):
         func(ffi.cast("double *", lst1.ctypes.data),
-          ffi.cast("double *", lst2.ctypes.data),
-          ffi.cast("double *", out.ctypes.data))
+             ffi.cast("double *", lst2.ctypes.data),
+             ffi.cast("double *", out.ctypes.data))
       return ret
+
     def wrap_1list_1float(name):
-      func = eval("lib.%s" % name, {"lib":lib})
+      func = eval("lib.%s" % name, {"lib": lib})
+
       def ret(lst1, fl, out):
         func(ffi.cast("double *", lst1.ctypes.data),
-          ffi.cast("double", fl),
-          ffi.cast("double *", out.ctypes.data))
+             ffi.cast("double", fl),
+             ffi.cast("double *", out.ctypes.data))
       return ret
 
     self.f = wrap_1list_1float("f_fun")
@@ -221,7 +218,7 @@ class EKF_sym():
     for kind in kinds:
       self.hs[kind] = wrap_2lists("h_%d" % kind)
       self.Hs[kind] = wrap_2lists("H_%d" % kind)
-      if self.msckf  and kind in self.feature_track_kinds:
+      if self.msckf and kind in self.feature_track_kinds:
         self.Hes[kind] = wrap_2lists("He_%d" % kind)
 
     # wrap the C++ predict function
@@ -235,6 +232,7 @@ class EKF_sym():
     # wrap the C++ update function
     def fun_wrapper(f, kind):
       f = eval("lib.%s" % f, {"lib": lib})
+
       def _update_inner_blas(x, P, z, R, extra_args):
         f(ffi.cast("double *", x.ctypes.data),
           ffi.cast("double *", P.ctypes.data),
@@ -257,43 +255,42 @@ class EKF_sym():
 
     # assign the functions
     self._predict = _predict_blas
-    #self._predict = self._predict_python
+    # self._predict = self._predict_python
     self._update = _update_blas
-    #self._update = self._update_python
-
+    # self._update = self._update_python
 
   def init_state(self, state, covs, filter_time):
     self.x = np.array(state.reshape((-1, 1))).astype(np.float64)
     self.P = np.array(covs).astype(np.float64)
     self.filter_time = filter_time
-    self.augment_times = [0]*self.N
+    self.augment_times = [0] * self.N
     self.rewind_obscache = []
     self.rewind_t = []
     self.rewind_states = []
 
   def augment(self):
-    # TODO this is not a generalized way of doing
-    # this and implies that the augmented states
-    # are simply the first (dim_augment_state)
-    # elements of the main state.
+    # TODO this is not a generalized way of doing this and implies that the augmented states
+    # are simply the first (dim_augment_state) elements of the main state.
     assert self.msckf
     d1 = self.dim_main
     d2 = self.dim_main_err
     d3 = self.dim_augment
     d4 = self.dim_augment_err
+
     # push through augmented states
-    self.x[d1:-d3] = self.x[d1+d3:]
+    self.x[d1:-d3] = self.x[d1 + d3:]
     self.x[-d3:] = self.x[:d3]
     assert self.x.shape == (self.dim_x, 1)
+
     # push through augmented covs
     assert self.P.shape == (self.dim_err, self.dim_err)
     P_reduced = self.P
-    P_reduced = np.delete(P_reduced, np.s_[d2:d2+d4], axis=1)
-    P_reduced = np.delete(P_reduced, np.s_[d2:d2+d4], axis=0)
-    assert P_reduced.shape == (self.dim_err -d4, self.dim_err -d4)
+    P_reduced = np.delete(P_reduced, np.s_[d2:d2 + d4], axis=1)
+    P_reduced = np.delete(P_reduced, np.s_[d2:d2 + d4], axis=0)
+    assert P_reduced.shape == (self.dim_err - d4, self.dim_err - d4)
     to_mult = np.zeros((self.dim_err, self.dim_err - d4))
-    to_mult[:-d4,:] = np.eye(self.dim_err - d4)
-    to_mult[-d4:,:d4] = np.eye(d4)
+    to_mult[:-d4, :] = np.eye(self.dim_err - d4)
+    to_mult[-d4:, :d4] = np.eye(d4)
     self.P = to_mult.dot(P_reduced.dot(to_mult.T))
     self.augment_times = self.augment_times[1:]
     self.augment_times.append(self.filter_time)
@@ -308,13 +305,13 @@ class EKF_sym():
   def rewind(self, t):
     # find where we are rewinding to
     idx = bisect_right(self.rewind_t, t)
-    assert self.rewind_t[idx-1] <= t
+    assert self.rewind_t[idx - 1] <= t
     assert self.rewind_t[idx] > t    # must be true, or rewind wouldn't be called
 
     # set the state to the time right before that
-    self.filter_time = self.rewind_t[idx-1]
-    self.x[:] = self.rewind_states[idx-1][0]
-    self.P[:] = self.rewind_states[idx-1][1]
+    self.filter_time = self.rewind_t[idx - 1]
+    self.x[:] = self.rewind_states[idx - 1][0]
+    self.P[:] = self.rewind_states[idx - 1][1]
 
     # return the observations we rewound over for fast forwarding
     ret = self.rewind_obscache[idx:]
@@ -344,7 +341,7 @@ class EKF_sym():
 
     # rewind
     if self.filter_time is not None and t < self.filter_time:
-      if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] -1.0:
+      if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] - 1.0:
         print("observation too old at %.3f with filter at %.3f, ignoring" % (t, self.filter_time))
         return None
       rewound = self.rewind(t)
@@ -430,7 +427,7 @@ class EKF_sym():
       P[:d2, d2:] = F_curr.dot(P[:d2, d2:])
       P[d2:, :d2] = P[d2:, :d2].dot(F_curr.T)
 
-    P += dt*self.Q
+    P += dt * self.Q
     return x_new, P
 
   def _update_python(self, x, P, kind, z, R, extra_args=[]):
@@ -477,15 +474,15 @@ class EKF_sym():
       a = np.linalg.inv(H.dot(P).dot(H.T) + R)
       maha_dist = y.T.dot(a.dot(y))
       if maha_dist > chi2_ppf(0.95, y.shape[0]):
-        R = 10e16*R
+        R = 10e16 * R
 
     # *** same below this line ***
 
     # Outlier resilient weighting as described in:
     # "A Kalman Filter for Robust Outlier Detection - Jo-Anne Ting, ..."
-    weight = 1 #(1.5)/(1 + np.sum(y**2)/np.sum(R))
+    weight = 1  # (1.5)/(1 + np.sum(y**2)/np.sum(R))
 
-    S = dot(dot(H, P), H.T) + R/weight
+    S = dot(dot(H, P), H.T) + R / weight
     K = solve(S, dot(H, P.T)).T
     I_KH = np.eye(P.shape[0]) - dot(K, H)
 
@@ -550,16 +547,16 @@ class EKF_sym():
 
       d1 = self.dim_main
       d2 = self.dim_main_err
-      Ck = np.linalg.solve(Pk1_k[:d2,:d2], Fk_1[:d2,:d2].dot(Pk_k[:d2,:d2].T)).T
+      Ck = np.linalg.solve(Pk1_k[:d2, :d2], Fk_1[:d2, :d2].dot(Pk_k[:d2, :d2].T)).T
       xk_n = xk_k
       delta_x = np.zeros((Pk_n.shape[0], 1), dtype=np.float64)
       self.inv_err_function(xk1_k, xk1_n, delta_x)
       delta_x[:d2] = Ck.dot(delta_x[:d2])
       x_new = np.zeros((xk_n.shape[0], 1), dtype=np.float64)
       self.err_function(xk_k, delta_x, x_new)
-      xk_n[:d1] = x_new[:d1,0]
+      xk_n[:d1] = x_new[:d1, 0]
       Pk_n = Pk_k
-      Pk_n[:d2,:d2] = Pk_k[:d2,:d2] + Ck.dot(Pk1_n[:d2,:d2] - Pk1_k[:d2,:d2]).dot(Ck.T)
+      Pk_n[:d2, :d2] = Pk_k[:d2, :d2] + Ck.dot(Pk1_n[:d2, :d2] - Pk1_k[:d2, :d2]).dot(Ck.T)
       states_smoothed.append(xk_n)
       covs_smoothed.append(Pk_n)
 

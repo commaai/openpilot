@@ -1,13 +1,14 @@
-import numpy as np
 import os
+
+import numpy as np
 
 
 def gen_chi2_ppf_lookup(max_dim=200):
   from scipy.stats import chi2
   table = np.zeros((max_dim, 98))
-  for dim in range(1,max_dim):
+  for dim in range(1, max_dim):
     table[dim] = chi2.ppf(np.arange(.01, .99, .01), dim)
-  #outfile = open('chi2_lookup_table', 'w')
+
   np.save('chi2_lookup_table', table)
 
 
@@ -17,5 +18,5 @@ def chi2_ppf(p, dim):
   return result
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
   gen_chi2_ppf_lookup()
