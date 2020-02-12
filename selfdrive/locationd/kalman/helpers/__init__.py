@@ -2,6 +2,25 @@ import numpy as np
 import os
 from bisect import bisect
 from tqdm import tqdm
+from cffi import FFI
+
+TEMPLATE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+GENERATED_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'generated'))
+
+
+def write_code(name, code, header):
+  open(os.path.join(GENERATED_DIR, f"{name}.cpp"), 'w').write(code)
+  open(os.path.join(GENERATED_DIR, f"{name}.h"), 'w').write(header)
+
+
+def load_code(name):
+  shared_fn = os.path.join(GENERATED_DIR, f"lib{name}.so")
+  header_fn = os.path.join(GENERATED_DIR, f"{name}.h")
+  header = open(header_fn).read()
+
+  ffi = FFI()
+  ffi.cdef(header)
+  return (ffi, ffi.dlopen(shared_fn))
 
 
 class KalmanError(Exception):

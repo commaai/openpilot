@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import numpy as np
-from . import loc_model
+from selfdrive.locationd.kalman.models.loc_model import gen_model
 
-from .kalman_helpers import ObservationKind
-from .ekf_sym import EKF_sym
-from .feature_handler import LstSqComputer, unroll_shutter
+from selfdrive.locationd.kalman.helpers import ObservationKind
+from selfdrive.locationd.kalman.helpers.lst_sq_computer import LstSqComputer, unroll_shutter
+from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym
 from laika.raw_gnss import GNSSMeasurement
 
 
@@ -107,7 +107,7 @@ class LocKalman():
     maha_test_kinds = [ObservationKind.ORB_FEATURES] #, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
 
     name = 'loc_%d' % N
-    loc_model.gen_model(name, N, self.dim_main, self.dim_main_err,
+    gen_model(name, N, self.dim_main, self.dim_main_err,
                         self.dim_augment, self.dim_augment_err,
                         self.dim_state, self.dim_state_err,
                         maha_test_kinds)

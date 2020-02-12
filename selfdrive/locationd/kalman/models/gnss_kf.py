@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import numpy as np
-from . import gnss_model
+import selfdrive.locationd.kalman.models.gnss_model as gnss_model
 
-from .kalman_helpers import ObservationKind
-from .ekf_sym import EKF_sym
-from selfdrive.locationd.kalman.loc_kf import parse_pr, parse_prr
+from selfdrive.locationd.kalman.helpers import ObservationKind
+from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym
+from selfdrive.locationd.kalman.models.loc_kf import parse_pr, parse_prr
 
 class States():
   ECEF_POS = slice(0,3) # x, y and z in ECEF in meters

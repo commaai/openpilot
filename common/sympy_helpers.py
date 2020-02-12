@@ -77,5 +77,6 @@ def sympy_into_c(sympy_functions):
   [(c_name, c_code), (h_name, c_header)] = codegen.get_code_generator('C', 'ekf', 'C99').write(routines, "ekf")
   c_code = '\n'.join(x for x in c_code.split("\n") if len(x) > 0 and x[0] != '#')
   c_header = '\n'.join(x for x in  c_header.split("\n") if len(x) > 0 and x[0] != '#')
+  c_code = "#include <math.h>\n" + c_code
 
   return c_header, c_code

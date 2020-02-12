@@ -1,0 +1,20 @@
+Import('env')
+
+templates = Glob('templates/*')
+sympy_helpers = "#common/sympy_helpers.py"
+
+to_build = {
+    'pos_computer_4': 'helpers/lst_sq_computer.py',
+    'feature_handler_4': 'helpers/feature_handler.py',
+}
+
+
+for target, command in to_build.items():
+    target_files = File([f'generated/{target}.cpp', f'generated/{target}.h'])
+    command_file = File(command)
+    env.Command(target_files,
+                [templates, command_file, sympy_helpers],
+                command_file.get_abspath()
+    )
+
+    env.SharedLibrary('generated/' + target, target_files[0])

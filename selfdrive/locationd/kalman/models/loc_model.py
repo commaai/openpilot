@@ -3,8 +3,8 @@ import sympy as sp
 import os
 
 from laika.constants import EARTH_GM
-from .kalman_helpers import ObservationKind
-from .ekf_sym import gen_code
+from selfdrive.locationd.kalman.helpers import ObservationKind
+from selfdrive.locationd.kalman.helpers.ekf_sym import gen_code
 from common.sympy_helpers import cross, euler_rotate, quat_rotate, quat_matrix_l, quat_matrix_r
 
 def gen_model(name, N, dim_main, dim_main_err,

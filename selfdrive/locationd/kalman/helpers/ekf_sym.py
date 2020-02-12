@@ -133,7 +133,7 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
   code += "\n" + open(os.path.join(EXTERNAL_PATH, "ekf_c.c")).read()
   code += "\n" + extra_post
   header += "\n" + extra_header
-  compile_code(name, code, header, EXTERNAL_PATH)
+  # compile_code(name, code, header, EXTERNAL_PATH)
 
 class EKF_sym():
   def __init__(self, name, Q, x_initial, P_initial, dim_main, dim_main_err,
