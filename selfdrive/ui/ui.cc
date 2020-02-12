@@ -111,19 +111,22 @@ static void ui_init(UIState *s) {
   s->uilayout_sock = SubSocket::create(s->ctx, "uiLayoutState");
   s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
   s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
+  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
 
   assert(s->model_sock != NULL);
   assert(s->controlsstate_sock != NULL);
   assert(s->uilayout_sock != NULL);
   assert(s->livecalibration_sock != NULL);
   assert(s->radarstate_sock != NULL);
+  assert(s->thermal_sock != NULL);
 
   s->poller = Poller::create({
                               s->model_sock,
                               s->controlsstate_sock,
                               s->uilayout_sock,
                               s->livecalibration_sock,
-                              s->radarstate_sock
+                              s->radarstate_sock,
+                              s->thermal_sock
                              });
 
 #ifdef SHOW_SPEEDLIMIT
@@ -417,8 +420,50 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_LiveMapData datad;
     cereal_read_LiveMapData(&datad, eventd.liveMapData);
     s->scene.map_valid = datad.mapValid;
+  } else if (eventd.which == cereal_Event_thermal) {
+    struct cereal_ThermalData datad;
+    cereal_read_ThermalData(&datad, eventd.thermal);
+
+    if (datad.networkType == cereal_ThermalData_NetworkType_none) {
+      s->scene.networkType = NETWORKTYPE_NONE;
+    } else if (datad.networkType == cereal_ThermalData_NetworkType_wifi) {
+      s->scene.networkType = NETWORKTYPE_WIFI;
+    } else if (datad.networkType == cereal_ThermalData_NetworkType_cell2G) {
+      s->scene.networkType = NETWORKTYPE_CELL2G;
+    } else if (datad.networkType == cereal_ThermalData_NetworkType_cell3G) {
+      s->scene.networkType = NETWORKTYPE_CELL3G;
+    } else if (datad.networkType == cereal_ThermalData_NetworkType_cell4G) {
+      s->scene.networkType = NETWORKTYPE_CELL4G;
+    } else if (datad.networkType == cereal_ThermalData_NetworkType_cell5G) {
+      s->scene.networkType = NETWORKTYPE_CELL5G;
+    }
+
+    s->scene.batteryPercent = datad.batteryPercent;
+    snprintf(s->scene.batteryStatus, sizeof(s->scene.batteryStatus), "%s", datad.batteryStatus.str);
   }
   capn_free(&ctx);
+}
+
+static void check_messages(UIState *s) {
+  while(true) {
+    auto polls = s->poller->poll(0);
+
+    if (polls.size() == 0)
+      return;
+
+    for (auto sock : polls){
+      Message * msg = sock->receive();
+      if (msg == NULL) continue;
+
+      if (s->vision_connected) {
+        set_awake(s, true);
+      }
+
+      handle_message(s, msg);
+
+      delete msg;
+    }
+  }
 }
 
 static void ui_update(UIState *s) {
@@ -571,23 +616,7 @@ static void ui_update(UIState *s) {
     break;
   }
   // peek and consume all events in the zmq queue, then return.
-  while(true) {
-    auto polls = s->poller->poll(0);
-
-    if (polls.size() == 0)
-      return;
-
-    for (auto sock : polls){
-      Message * msg = sock->receive();
-      if (msg == NULL) continue;
-
-      set_awake(s, true);
-
-      handle_message(s, msg);
-
-      delete msg;
-    }
-  }
+  check_messages(s);
 }
 
 static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
@@ -728,7 +757,6 @@ fail:
   return NULL;
 }
 
-
 static void* bg_thread(void* args) {
   UIState *s = (UIState*)args;
   set_thread_name("bg");
@@ -844,6 +872,7 @@ int main(int argc, char* argv[]) {
     set_brightness(s, (int)smooth_brightness);
 
     if (!s->vision_connected) {
+      check_messages(s);
       // Car is not started, keep in idle state and awake on touch events
       zmq_pollitem_t polls[1] = {{0}};
       polls[0].fd = s->touch_fd;

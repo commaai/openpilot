@@ -993,30 +993,6 @@ void ui_nvg_init(UIState *s) {
   assert(s->img_battery_0_charging >= 0);
   s->img_battery_0_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_0_charging.png", 1);
 
-  assert(s->img_battery_25 >= 0);
-  s->img_battery_25 = nvgCreateImage(s->vg, "../assets/images/img_battery_25.png", 1);
-
-  assert(s->img_battery_25_charging >= 0);
-  s->img_battery_25_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_25_charging.png", 1);
-
-  assert(s->img_battery_50 >= 0);
-  s->img_battery_50 = nvgCreateImage(s->vg, "../assets/images/img_battery_50.png", 1);
-
-  assert(s->img_battery_50_charging >= 0);
-  s->img_battery_50_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_50_charging.png", 1);
-
-  assert(s->img_battery_75 >= 0);
-  s->img_battery_75 = nvgCreateImage(s->vg, "../assets/images/img_battery_75.png", 1);
-
-  assert(s->img_battery_75_charging >= 0);
-  s->img_battery_75_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_75_charging.png", 1);
-
-  assert(s->img_battery_100 >= 0);
-  s->img_battery_100 = nvgCreateImage(s->vg, "../assets/images/img_battery_100.png", 1);
-
-  assert(s->img_battery_100_charging >= 0);
-  s->img_battery_100_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_100_charging.png", 1);
-
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
   assert(s->frame_program);

@@ -38,6 +38,13 @@
 #define ALERTSIZE_MID 2
 #define ALERTSIZE_FULL 3
 
+#define NETWORKTYPE_NONE 0
+#define NETWORKTYPE_WIFI 1
+#define NETWORKTYPE_CELL2G 2
+#define NETWORKTYPE_CELL3G 3
+#define NETWORKTYPE_CELL4G 4
+#define NETWORKTYPE_CELL5G 5
+
 #ifndef QCOM
   #define UI_60FPS
 #endif
@@ -128,6 +135,10 @@ typedef struct UIScene {
 
   // Used to show gps planner status
   bool gps_planner_active;
+
+  uint8_t networkType;
+  int batteryPercent;
+  char batteryStatus[64];
 } UIScene;
 
 typedef struct {
@@ -169,14 +180,6 @@ typedef struct UIState {
   int img_button_home;
   int img_battery_0;
   int img_battery_0_charging;
-  int img_battery_25;
-  int img_battery_25_charging;
-  int img_battery_50;
-  int img_battery_50_charging;
-  int img_battery_75;
-  int img_battery_75_charging;
-  int img_battery_100;
-  int img_battery_100_charging;
 
   // sockets
   Context *ctx;
@@ -186,6 +189,7 @@ typedef struct UIState {
   SubSocket *radarstate_sock;
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
+  SubSocket *thermal_sock;
   Poller * poller;
 
   int active_app;
