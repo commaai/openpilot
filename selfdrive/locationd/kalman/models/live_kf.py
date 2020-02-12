@@ -22,8 +22,9 @@ class States():
   ACCELERATION = slice(17, 20)  # Acceleration in device frame in m/s**2
   IMU_OFFSET = slice(20, 23)  # imu offset angles in radians
 
+  # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
-  ECEF_ORIENTATION_ERR = slice(3, 6)
+  ECEF_ORIENTATION_ERR = slice(3, 6)  # euler angles for orientation error
   ECEF_VELOCITY_ERR = slice(6, 9)
   ANGULAR_VELOCITY_ERR = slice(9, 12)
   GYRO_BIAS_ERR = slice(12, 15)

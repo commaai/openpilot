@@ -34,7 +34,7 @@ def parse_pr(m):
 
 class States():
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
-  ECEF_ORIENTATION = slice(3, 7)  # quat for pose of phone in ecef
+  ECEF_ORIENTATION = slice(3, 7)  # quat for orientation of phone in ecef
   ECEF_VELOCITY = slice(7, 10)  # ecef velocity in m/s
   ANGULAR_VELOCITY = slice(10, 13)  # roll, pitch and yaw rates in device frame in radians/s
   CLOCK_BIAS = slice(13, 14)  # clock bias in light-meters,
@@ -47,6 +47,22 @@ class States():
   GLONASS_BIAS = slice(26, 27)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   GLONASS_FREQ_SLOPE = slice(27, 28)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   CLOCK_ACCELERATION = slice(28, 29)  # clock acceleration in light-meters/s**2,
+
+  # Error-state has different slices because it is an ESKF
+  ECEF_POS_ERR = slice(0, 3)
+  ECEF_ORIENTATION_ERR = slice(3, 6)  # euler angles for orientation error
+  ECEF_VELOCITY_ERR = slice(6, 9)
+  ANGULAR_VELOCITY_ERR = slice(9, 12)
+  CLOCK_BIAS_ERR = slice(12, 13)
+  CLOCK_DRIFT_ERR = slice(13, 14)
+  GYRO_BIAS_ERR = slice(14, 17)
+  ODO_SCALE_ERR = slice(17, 18)
+  ACCELERATION_ERR = slice(18, 21)
+  FOCAL_SCALE_ERR = slice(21, 22)
+  IMU_OFFSET_ERR = slice(22, 25)
+  GLONASS_BIAS_ERR = slice(25, 26)
+  GLONASS_FREQ_SLOPE_ERR = slice(26, 27)
+  CLOCK_ACCELERATION_ERR = slice(27, 28)
 
 
 class LocKalman():
@@ -92,6 +108,7 @@ class LocKalman():
                (.1)**2, (.01)**2,
                0.005**2])
 
+  # measurements that need to pass mahalanobis distance outlier rejector
   maha_test_kinds = [ObservationKind.ORB_FEATURES]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
   dim_augment = 7
   dim_augment_err = 6
@@ -113,20 +130,22 @@ class LocKalman():
     # state variables
     state_sym = sp.MatrixSymbol('state', dim_state, 1)
     state = sp.Matrix(state_sym)
-    x, y, z = state[0:3, :]
-    q = state[3:7, :]
-    v = state[7:10, :]
+    x, y, z = state[States.ECEF_POS, :]
+    q = state[States.ECEF_ORIENTATION, :]
+    v = state[States.ECEF_VELOCITY, :]
     vx, vy, vz = v
-    omega = state[10:13, :]
+    omega = state[States.ANGULAR_VELOCITY, :]
     vroll, vpitch, vyaw = omega
-    cb, cd = state[13:15, :]
-    roll_bias, pitch_bias, yaw_bias = state[15:18, :]
-    odo_scale = state[18, :]
-    acceleration = state[19:22, :]
-    focal_scale = state[22, :]
-    imu_angles = state[23:26, :]
-    glonass_bias, glonass_freq_slope = state[26:28, :]
-    ca = state[28, 0]
+    cb = state[States.CLOCK_BIAS, :][0, 0]
+    cd = state[States.CLOCK_DRIFT, :][0, 0]
+    roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
+    odo_scale = state[States.ODO_SCALE, :][0,0]
+    acceleration = state[States.ACCELERATION, :]
+    focal_scale = state[States.FOCAL_SCALE, :][0,0]
+    imu_angles = state[States.IMU_OFFSET, :]
+    glonass_bias = state[States.GLONASS_BIAS, :][0,0]
+    glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :][0,0]
+    ca = state[States.CLOCK_ACCELERATION, :][0,0]
 
     dt = sp.Symbol('dt')
 
@@ -145,11 +164,11 @@ class LocKalman():
 
     # Time derivative of the state as a function of state
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
-    state_dot[:3, :] = v
-    state_dot[3:7, :] = q_dot
-    state_dot[7:10, 0] = quat_rot * acceleration
-    state_dot[13, 0] = cd
-    state_dot[14, 0] = ca
+    state_dot[States.ECEF_POS, :] = v
+    state_dot[States.ECEF_ORIENTATION, :] = q_dot
+    state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
+    state_dot[States.CLOCK_BIAS, 0][0,0] = cd
+    state_dot[States.CLOCK_DRIFT, 0][0,0] = ca
 
     # Basic descretization, 1st order intergrator
     # Can be pretty bad if dt is big
@@ -157,22 +176,22 @@ class LocKalman():
 
     state_err_sym = sp.MatrixSymbol('state_err', dim_state_err, 1)
     state_err = sp.Matrix(state_err_sym)
-    quat_err = state_err[3:6, :]
-    v_err = state_err[6:9, :]
-    omega_err = state_err[9:12, :]
-    cd_err = state_err[13, :]
-    acceleration_err = state_err[18:21, :]
-    ca_err = state_err[27, :]
+    quat_err = state_err[States.ECEF_ORIENTATION_ERR, :]
+    v_err = state_err[States.ECEF_VELOCITY_ERR, :]
+    omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
+    cd_err = state_err[States.CLOCK_DRIFT_ERR, :][0,:]
+    acceleration_err = state_err[States.ACCELERATION_ERR, :]
+    ca_err = state_err[States.CLOCK_ACCELERATION_ERR, :][0,:]
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])
     q_err_dot = quat_err_matrix * quat_rot * (omega + omega_err)
     state_err_dot = sp.Matrix(np.zeros((dim_state_err, 1)))
-    state_err_dot[:3, :] = v_err
-    state_err_dot[3:6, :] = q_err_dot
-    state_err_dot[6:9, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
-    state_err_dot[12, :] = cd_err
-    state_err_dot[13, :] = ca_err
+    state_err_dot[States.ECEF_POS_ERR, :] = v_err
+    state_err_dot[States.ECEF_ORIENTATION_ERR, :] = q_err_dot
+    state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
+    state_err_dot[States.CLOCK_BIAS_ERR, :][0,:] = cd_err
+    state_err_dot[States.CLOCK_DRIFT_ERR, :][0,:] = ca_err
     f_err_sym = state_err + dt * state_err_dot
 
     # convenient indexing
