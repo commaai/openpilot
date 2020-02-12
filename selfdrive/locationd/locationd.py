@@ -11,10 +11,8 @@ from common.transformations.orientation import (ecef_euler_from_ned,
                                                 ned_euler_from_ecef,
                                                 quat2euler,
                                                 rotations_from_quats)
-from selfdrive.locationd.kalman.kalman_helpers import ObservationKind, KalmanError
-from selfdrive.locationd.kalman.live_kf import (LiveKalman, initial_P_diag,
-                                                initial_x)
-from selfdrive.locationd.kalman.live_model import States
+from selfdrive.locationd.kalman.helpers import ObservationKind, KalmanError
+from selfdrive.locationd.kalman.models.live_kf import LiveKalman, States
 from selfdrive.swaglog import cloudlog
 
 SENSOR_DECIMATION = 1  # No decimation
@@ -56,17 +54,17 @@ class Localizer():
     return fix
 
   def update_kalman(self, time, kind, meas):
-    idx = bisect_right([x[0] for x in self.observation_buffer], time)
-    self.observation_buffer.insert(idx, (time, kind, meas))
-    while len(self.observation_buffer) > 0 and self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
-      if self.filter_ready:
-        try:
-          self.kf.predict_and_observe(*self.observation_buffer.pop(0))
-        except KalmanError:
-          cloudlog.error("Error in predict and observe, kalman reset")
-          self.reset_kalman()
-      else:
-        self.observation_buffer.pop(0)
+    if self.filter_ready:
+      try:
+        self.kf.predict_and_observe(time, kind, meas)
+      except KalmanError:
+        cloudlog.error("Error in predict and observe, kalman reset")
+        self.reset_kalman()
+    #idx = bisect_right([x[0] for x in self.observation_buffer], time)
+    #self.observation_buffer.insert(idx, (time, kind, meas))
+    #while len(self.observation_buffer) > 0 and self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
+    #  else:
+    #    self.observation_buffer.pop(0)
 
   def handle_gps(self, current_time, log):
     converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
@@ -83,8 +81,8 @@ class Localizer():
       quat_uncertainty = 0.2**2
       initial_pose_ecef_quat = euler2quat(initial_pose_ecef)
 
-      initial_state = initial_x
-      initial_covs_diag = initial_P_diag
+      initial_state = LiveKalman.initial_x
+      initial_covs_diag = LiveKalman.initial_P_diag
 
       initial_state[States.ECEF_POS] = initial_ecef
       initial_state[States.ECEF_ORIENTATION] = initial_pose_ecef_quat
@@ -95,7 +93,6 @@ class Localizer():
       initial_covs_diag[States.ECEF_VELOCITY_ERR] = 1**2
       self.kf.init_state(initial_state, covs=np.diag(initial_covs_diag), filter_time=current_time)
       cloudlog.info("Filter initialized")
-
     elif self.filter_ready:
       self.update_kalman(current_time, ObservationKind.ECEF_POS, fix_ecef)
       gps_est_error = np.sqrt((self.kf.x[0] - fix_ecef[0])**2 +
@@ -109,8 +106,8 @@ class Localizer():
     self.speed_counter += 1
 
     if self.speed_counter % SENSOR_DECIMATION == 0:
-      self.update_kalman(current_time, ObservationKind.ODOMETRIC_SPEED, log.vEgo)
-      if log.carState.vEgo == 0:
+      self.update_kalman(current_time, ObservationKind.ODOMETRIC_SPEED, [log.vEgo])
+      if log.vEgo == 0:
         self.update_kalman(current_time, ObservationKind.NO_ROT, [0, 0, 0])
 
   def handle_cam_odo(self, current_time, log):
