@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 
 import os
-import argparse
-import time
 
 import numpy as np
 import scipy.optimize as opt
+import sympy as sp
 
 import common.transformations.orientation as orient
-from common.ffi_wrapper import compile_code, ffi_wrap, wrap_compiled
-from common.sympy_helpers import quat_matrix_l, sympy_into_c
-from selfdrive.locationd.kalman.helpers import TEMPLATE_DIR, GENERATED_DIR, write_code, load_code
+from selfdrive.locationd.kalman.helpers import (TEMPLATE_DIR, load_code,
+                                                write_code)
+from selfdrive.locationd.kalman.helpers.sympy_helpers import (quat_rotate,
+                                                              sympy_into_c)
 
 
 def generate_residual(K):
-  import sympy as sp
-  from common.sympy_helpers import quat_rotate
-
   x_sym = sp.MatrixSymbol('abr', 3,1)
   poses_sym = sp.MatrixSymbol('poses', 7*K,1)
   img_pos_sym = sp.MatrixSymbol('img_positions', 2*K,1)

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+
 import numpy as np
-import selfdrive.locationd.kalman.models.gnss_model as gnss_model
+import sympy as sp
 
 from selfdrive.locationd.kalman.helpers import ObservationKind
-from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym
+from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.kalman.models.loc_kf import parse_pr, parse_prr
+
 
 class States():
   ECEF_POS = slice(0,3) # x, y and z in ECEF in meters
@@ -17,34 +19,103 @@ class States():
 
 
 class GNSSKalman():
-  def __init__(self, N=0, max_tracks=3000):
-    x_initial = np.array([-2712700.6008, -4281600.6679, 3859300.1830,
-                          0, 0, 0,
-                          0, 0, 0,
-                          0, 0])
+  name = 'gnss'
 
-    # state covariance
-    P_initial = np.diag([10000**2, 10000**2, 10000**2,
-                         10**2, 10**2, 10**2,
-                         (2000000)**2, (100)**2, (0.5)**2,
-                         (10)**2, (1)**2])
+  x_initial = np.array([-2712700.6008, -4281600.6679, 3859300.1830,
+                        0, 0, 0,
+                        0, 0, 0,
+                        0, 0])
 
-    # process noise
-    Q = np.diag([0.3**2, 0.3**2, 0.3**2,
-                 3**2, 3**2, 3**2,
-                 (.1)**2, (0)**2, (0.01)**2,
-                 .1**2, (.01)**2])
+  # state covariance
+  P_initial = np.diag([10000**2, 10000**2, 10000**2,
+                       10**2, 10**2, 10**2,
+                       (2000000)**2, (100)**2, (0.5)**2,
+                       (10)**2, (1)**2])
 
-    self.dim_state = x_initial.shape[0]
+  # process noise
+  Q = np.diag([0.3**2, 0.3**2, 0.3**2,
+               3**2, 3**2, 3**2,
+               (.1)**2, (0)**2, (0.01)**2,
+               .1**2, (.01)**2])
 
-    # mahalanobis outlier rejection
-    maha_test_kinds = []#ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
+  maha_test_kinds = [] #ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
 
-    name = 'gnss'
-    gnss_model.gen_model(name, self.dim_state, maha_test_kinds)
+
+  @staticmethod
+  def generate_code():
+    dim_state = GNSSKalman.x_initial.shape[0]
+    name = GNSSKalman.name
+    maha_test_kinds = GNSSKalman.maha_test_kinds
+
+    # make functions and jacobians with sympy
+    # state variables
+    state_sym = sp.MatrixSymbol('state', dim_state, 1)
+    state = sp.Matrix(state_sym)
+    x,y,z = state[0:3,:]
+    v = state[3:6,:]
+    vx, vy, vz = v
+    cb, cd, ca = state[6:9,:]
+    glonass_bias, glonass_freq_slope = state[9:11,:]
+
+    dt = sp.Symbol('dt')
+
+    state_dot = sp.Matrix(np.zeros((dim_state, 1)))
+    state_dot[:3,:] = v
+    state_dot[6,0] = cd
+    state_dot[7,0] = ca
+
+    # Basic descretization, 1st order integrator
+    # Can be pretty bad if dt is big
+    f_sym = state + dt*state_dot
+
+
+    #
+    # Observation functions
+    #
+
+    # extra args
+    sat_pos_freq_sym = sp.MatrixSymbol('sat_pos', 4, 1)
+    sat_pos_vel_sym = sp.MatrixSymbol('sat_pos_vel', 6, 1)
+    sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1)
+    orb_epos_sym = sp.MatrixSymbol('orb_epos_sym', 3, 1)
+
+    # expand extra args
+    sat_x, sat_y, sat_z, glonass_freq = sat_pos_freq_sym
+    sat_vx, sat_vy, sat_vz = sat_pos_vel_sym[3:]
+    los_x, los_y, los_z = sat_los_sym
+    orb_x, orb_y, orb_z = orb_epos_sym
+
+    h_pseudorange_sym = sp.Matrix([sp.sqrt(
+                                    (x - sat_x)**2 +
+                                    (y - sat_y)**2 +
+                                    (z - sat_z)**2) +
+                                    cb])
+
+    h_pseudorange_glonass_sym = sp.Matrix([sp.sqrt(
+                                    (x - sat_x)**2 +
+                                    (y - sat_y)**2 +
+                                    (z - sat_z)**2) +
+                                    cb + glonass_bias + glonass_freq_slope*glonass_freq])
+
+    los_vector = (sp.Matrix(sat_pos_vel_sym[0:3]) - sp.Matrix([x, y, z]))
+    los_vector = los_vector / sp.sqrt(los_vector[0]**2 + los_vector[1]**2 + los_vector[2]**2)
+    h_pseudorange_rate_sym = sp.Matrix([los_vector[0]*(sat_vx - vx) +
+                                          los_vector[1]*(sat_vy - vy) +
+                                          los_vector[2]*(sat_vz - vz) +
+                                          cd])
+
+    obs_eqs = [[h_pseudorange_sym, ObservationKind.PSEUDORANGE_GPS, sat_pos_freq_sym],
+              [h_pseudorange_glonass_sym, ObservationKind.PSEUDORANGE_GLONASS, sat_pos_freq_sym],
+              [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GPS, sat_pos_vel_sym],
+              [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GLONASS, sat_pos_vel_sym]]
+
+    gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)
+
+  def __init__(self):
+    self.dim_state = self.x_initial.shape[0]
 
     # init filter
-    self.filter = EKF_sym(name, Q, x_initial, P_initial, self.dim_state, self.dim_state, maha_test_kinds=maha_test_kinds)
+    self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds)
 
   @property
   def x(self):
@@ -102,4 +173,4 @@ class GNSSKalman():
 
 
 if __name__ == "__main__":
-  GNSSKalman()
+  GNSSKalman.generate_code()

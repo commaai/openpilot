@@ -4,14 +4,10 @@ import os
 import time
 
 import numpy as np
-import scipy.optimize as opt
 
 import common.transformations.orientation as orient
-from common.ffi_wrapper import compile_code, ffi_wrap, wrap_compiled
-from common.sympy_helpers import quat_matrix_l, sympy_into_c
-from selfdrive.locationd.kalman.helpers import TEMPLATE_DIR, GENERATED_DIR, write_code, load_code
-
-EXTERNAL_PATH = os.path.dirname(os.path.abspath(__file__))
+from selfdrive.locationd.kalman.helpers.sympy_helpers import quat_matrix_l
+from selfdrive.locationd.kalman.helpers import TEMPLATE_DIR, write_code, load_code
 
 
 def sane(track):
