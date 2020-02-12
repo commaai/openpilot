@@ -186,10 +186,10 @@ class CarInterface(CarInterfaceBase):
         # 2D00 is 2x max of 1680
         # command of 0xF00 * ddb4 >> 0xf >> 0x2 = 0x67E torque table index -> 2D00 torque table output
         # torque table goes up to 0x6EE but lookup function input is clamped at 67E therefore max request is 0xF00
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 0x917, 0xDC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x2880, 0x2D00],  [0x0, 0x1E0, 0x2D0, 0x42F, 0x58B, 0x780, 0x95E, 0xD1F, 0xF00]]
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 0x917, 0xDC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x2880, 0x2D00],  [0x0, 0x200, 0x301, 0x477, 0x5EA, 0x800, 0x9FE, 0xE00, 0xF00]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]]
       else:
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0x0, 0x917, 0xDC5, 0x1017, 0x119F, 0x140B, 0x1680], [0x0, 0x1E0, 0x2D0, 0x42F, 0x58B, 0x780, 0x95E]] # max request allowed is 4096, but above 2560 is flat
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0x0, 0x917, 0xDC5, 0x1017, 0x119F, 0x140B, 0x1680], [0x0, 0x200, 0x301, 0x477, 0x5EA, 0x800, 0x9FF]] # max request allowed is 4096, but above 2560 is flat
         # torque table goes up to 0x6EE but lookup function input is clamped at 67E therefore max request is 0xF00, but output is flat above 0x95E, so dont send higher
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       tire_stiffness_factor = 1.
@@ -212,12 +212,12 @@ class CarInterface(CarInterfaceBase):
         # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
         # note: max request allowed is 4096, but request is clamped to at 3840 in fw torque curve lookup function
         # 2400 is 2x max of 1200
-        # command of 0xF00 * 0xDDB4 >> 0xF >> 0x2 = 0x67E torque table index -> 3600 torque table output
+        # command of 0xF00 * 0xDDB4 >> 0xF >> 0x2 = 0x67E torque table index -> 2400 torque table output
         # torque table goes up to 0x6EE but lookup function input is clamped at 67E therefore max request is 0xF00
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0x0, 0x746, 0xB04, 0xCDF, 0xE19, 0x1008, 0x1200, 0x1B00, 0x2400], [0x0, 0x1E0, 0x2D0, 0x42F, 0x58B, 0x780, 0x95E, 0xD1F, 0xF00]]
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0x0, 0x746, 0xB04, 0xCDF, 0xE19, 0x1008, 0x1200, 0x1B00, 0x2400], [0x0, 0x200, 0x301, 0x477, 0x5EA, 0x800, 0x9FE, 0xE00, 0xF00]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.5], [0.11]]
       else:
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0x0, 0x746, 0xB04, 0xCDF, 0xE19, 0x1008, 0x1200], [0x0, 0x1E0, 0x2D0, 0x42F, 0x58B, 0x780, 0x95E]] # max request allowed is 4096, but above 2560 is flat
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0x0, 0x746, 0xB04, 0xCDF, 0xE19, 0x1008, 0x1200], [0x0, 0x200, 0x301, 0x477, 0x5EA, 0x800, 0x9FF]] # max request allowed is 4096, but above 2560 is flat
         # torque table goes up to 0x6EE but lookup function input is clamped at 67E therefore max request is 0xF00, but output is flat above 0x95E, so dont send higher
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       tire_stiffness_factor = 1.
