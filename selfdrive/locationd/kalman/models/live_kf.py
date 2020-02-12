@@ -8,7 +8,7 @@ from selfdrive.locationd.kalman.helpers.sympy_helpers import (euler_rotate,
                                                               quat_matrix_r,
                                                               quat_rotate)
 from selfdrive.swaglog import cloudlog
-#from laika.constants import EARTH_GM
+
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
 
@@ -44,7 +44,6 @@ class LiveKalman():
                         0, 0, 0,
                         0, 0, 0])
 
-
   # state covariance
   initial_P_diag = np.array([10000**2, 10000**2, 10000**2,
                              10**2, 10**2, 10**2,
@@ -60,10 +59,10 @@ class LiveKalman():
                0.0**2, 0.0**2, 0.0**2,
                0.0**2, 0.0**2, 0.0**2,
                0.1**2, 0.1**2, 0.1**2,
-               (0.005/100)**2, (0.005/100)**2, (0.005/100)**2,
-               (0.02/100)**2,
+               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+               (0.02 / 100)**2,
                3**2, 3**2, 3**2,
-               (0.05/60)**2, (0.05/60)**2, (0.05/60)**2])
+               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
 
   @staticmethod
   def generate_code():
@@ -73,16 +72,16 @@ class LiveKalman():
 
     state_sym = sp.MatrixSymbol('state', dim_state, 1)
     state = sp.Matrix(state_sym)
-    x,y,z = state[States.ECEF_POS,:]
-    q = state[States.ECEF_ORIENTATION,:]
-    v = state[States.ECEF_VELOCITY,:]
+    x, y, z = state[States.ECEF_POS, :]
+    q = state[States.ECEF_ORIENTATION, :]
+    v = state[States.ECEF_VELOCITY, :]
     vx, vy, vz = v
-    omega = state[States.ANGULAR_VELOCITY,:]
+    omega = state[States.ANGULAR_VELOCITY, :]
     vroll, vpitch, vyaw = omega
-    roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS,:]
-    odo_scale = state[16,:]
-    acceleration = state[States.ACCELERATION,:]
-    imu_angles= state[States.IMU_OFFSET,:]
+    roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
+    odo_scale = state[16, :]
+    acceleration = state[States.ACCELERATION, :]
+    imu_angles = state[States.IMU_OFFSET, :]
 
     dt = sp.Symbol('dt')
 
@@ -93,104 +92,97 @@ class LiveKalman():
     # A New Quaternion-Based Kalman Filter for
     # Real-Time Attitude Estimation Using the Two-Step
     # Geometrically-Intuitive Correction Algorithm
-    A = 0.5*sp.Matrix([[0, -vroll, -vpitch, -vyaw],
-                  [vroll, 0, vyaw, -vpitch],
-                  [vpitch, -vyaw, 0, vroll],
-                  [vyaw, vpitch, -vroll, 0]])
+    A = 0.5 * sp.Matrix([[0, -vroll, -vpitch, -vyaw],
+                         [vroll, 0, vyaw, -vpitch],
+                         [vpitch, -vyaw, 0, vroll],
+                         [vyaw, vpitch, -vroll, 0]])
     q_dot = A * q
 
     # Time derivative of the state as a function of state
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
-    state_dot[States.ECEF_POS,:] = v
-    state_dot[States.ECEF_ORIENTATION,:] = q_dot
-    state_dot[States.ECEF_VELOCITY,0] = quat_rot * acceleration
+    state_dot[States.ECEF_POS, :] = v
+    state_dot[States.ECEF_ORIENTATION, :] = q_dot
+    state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
 
     # Basic descretization, 1st order intergrator
     # Can be pretty bad if dt is big
-    f_sym = state + dt*state_dot
+    f_sym = state + dt * state_dot
 
-    state_err_sym = sp.MatrixSymbol('state_err',dim_state_err,1)
+    state_err_sym = sp.MatrixSymbol('state_err', dim_state_err, 1)
     state_err = sp.Matrix(state_err_sym)
-    quat_err = state_err[States.ECEF_ORIENTATION_ERR,:]
-    v_err = state_err[States.ECEF_VELOCITY_ERR,:]
-    omega_err = state_err[States.ANGULAR_VELOCITY_ERR,:]
-    acceleration_err = state_err[States.ACCELERATION_ERR,:]
+    quat_err = state_err[States.ECEF_ORIENTATION_ERR, :]
+    v_err = state_err[States.ECEF_VELOCITY_ERR, :]
+    omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
+    acceleration_err = state_err[States.ACCELERATION_ERR, :]
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])
     q_err_dot = quat_err_matrix * quat_rot * (omega + omega_err)
     state_err_dot = sp.Matrix(np.zeros((dim_state_err, 1)))
-    state_err_dot[States.ECEF_POS_ERR,:] = v_err
-    state_err_dot[States.ECEF_ORIENTATION_ERR,:] = q_err_dot
-    state_err_dot[States.ECEF_VELOCITY_ERR,:] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
-    f_err_sym = state_err + dt*state_err_dot
+    state_err_dot[States.ECEF_POS_ERR, :] = v_err
+    state_err_dot[States.ECEF_ORIENTATION_ERR, :] = q_err_dot
+    state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
+    f_err_sym = state_err + dt * state_err_dot
 
     # Observation matrix modifier
     H_mod_sym = sp.Matrix(np.zeros((dim_state, dim_state_err)))
     H_mod_sym[0:3, 0:3] = np.eye(3)
-    H_mod_sym[3:7,3:6] = 0.5*quat_matrix_r(state[3:7])[:,1:]
-    H_mod_sym[7:, 6:] = np.eye(dim_state-7)
+    H_mod_sym[3:7, 3:6] = 0.5 * quat_matrix_r(state[3:7])[:, 1:]
+    H_mod_sym[7:, 6:] = np.eye(dim_state - 7)
 
     # these error functions are defined so that say there
     # is a nominal x and true x:
     # true x = err_function(nominal x, delta x)
     # delta x = inv_err_function(nominal x, true x)
-    nom_x = sp.MatrixSymbol('nom_x',dim_state,1)
-    true_x = sp.MatrixSymbol('true_x',dim_state,1)
-    delta_x = sp.MatrixSymbol('delta_x',dim_state_err,1)
+    nom_x = sp.MatrixSymbol('nom_x', dim_state, 1)
+    true_x = sp.MatrixSymbol('true_x', dim_state, 1)
+    delta_x = sp.MatrixSymbol('delta_x', dim_state_err, 1)
 
-    err_function_sym = sp.Matrix(np.zeros((dim_state,1)))
+    err_function_sym = sp.Matrix(np.zeros((dim_state, 1)))
     delta_quat = sp.Matrix(np.ones((4)))
-    delta_quat[1:,:] = sp.Matrix(0.5*delta_x[3:6,:])
-    err_function_sym[0:3,:] = sp.Matrix(nom_x[0:3,:] + delta_x[0:3,:])
-    err_function_sym[3:7,0] = quat_matrix_r(nom_x[3:7,0])*delta_quat
-    err_function_sym[7:,:] = sp.Matrix(nom_x[7:,:] + delta_x[6:,:])
+    delta_quat[1:, :] = sp.Matrix(0.5 * delta_x[3:6, :])
+    err_function_sym[0:3, :] = sp.Matrix(nom_x[0:3, :] + delta_x[0:3, :])
+    err_function_sym[3:7, 0] = quat_matrix_r(nom_x[3:7, 0]) * delta_quat
+    err_function_sym[7:, :] = sp.Matrix(nom_x[7:, :] + delta_x[6:, :])
 
-    inv_err_function_sym = sp.Matrix(np.zeros((dim_state_err,1)))
-    inv_err_function_sym[0:3,0] = sp.Matrix(-nom_x[0:3,0] + true_x[0:3,0])
-    delta_quat = quat_matrix_r(nom_x[3:7,0]).T*true_x[3:7,0]
-    inv_err_function_sym[3:6,0] = sp.Matrix(2*delta_quat[1:])
-    inv_err_function_sym[6:,0] = sp.Matrix(-nom_x[7:,0] + true_x[7:,0])
+    inv_err_function_sym = sp.Matrix(np.zeros((dim_state_err, 1)))
+    inv_err_function_sym[0:3, 0] = sp.Matrix(-nom_x[0:3, 0] + true_x[0:3, 0])
+    delta_quat = quat_matrix_r(nom_x[3:7, 0]).T * true_x[3:7, 0]
+    inv_err_function_sym[3:6, 0] = sp.Matrix(2 * delta_quat[1:])
+    inv_err_function_sym[6:, 0] = sp.Matrix(-nom_x[7:, 0] + true_x[7:, 0])
 
     eskf_params = [[err_function_sym, nom_x, delta_x],
-                  [inv_err_function_sym, nom_x, true_x],
-                  H_mod_sym, f_err_sym, state_err_sym]
-
-
-
+                   [inv_err_function_sym, nom_x, true_x],
+                   H_mod_sym, f_err_sym, state_err_sym]
     #
     # Observation functions
     #
-
-
     imu_rot = euler_rotate(*imu_angles)
-    h_gyro_sym = imu_rot*sp.Matrix([vroll + roll_bias,
-                                  vpitch + pitch_bias,
-                                  vyaw + yaw_bias])
+    h_gyro_sym = imu_rot * sp.Matrix([vroll + roll_bias,
+                                      vpitch + pitch_bias,
+                                      vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
-    gravity = quat_rot.T * ((EARTH_GM/((x**2 + y**2 + z**2)**(3.0/2.0)))*pos)
-    h_acc_sym = imu_rot*(gravity + acceleration)
-    h_phone_rot_sym = sp.Matrix([vroll,
-                                vpitch,
-                                vyaw])
-    speed = vx**2 + vy**2 + vz**2
-    h_speed_sym = sp.Matrix([sp.sqrt(speed)*odo_scale])
+    gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
+    h_acc_sym = imu_rot * (gravity + acceleration)
+    h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
+
+    speed = sp.sqrt(vx**2 + vy**2 + vz**2)
+    h_speed_sym = sp.Matrix([speed * odo_scale])
 
     h_pos_sym = sp.Matrix([x, y, z])
     h_imu_frame_sym = sp.Matrix(imu_angles)
 
     h_relative_motion = sp.Matrix(quat_rot.T * v)
 
-
     obs_eqs = [[h_speed_sym, ObservationKind.ODOMETRIC_SPEED, None],
-              [h_gyro_sym, ObservationKind.PHONE_GYRO, None],
-              [h_phone_rot_sym, ObservationKind.NO_ROT, None],
-              [h_acc_sym, ObservationKind.PHONE_ACCEL, None],
-              [h_pos_sym, ObservationKind.ECEF_POS, None],
-              [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
-              [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
-              [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
+               [h_gyro_sym, ObservationKind.PHONE_GYRO, None],
+               [h_phone_rot_sym, ObservationKind.NO_ROT, None],
+               [h_acc_sym, ObservationKind.PHONE_ACCEL, None],
+               [h_pos_sym, ObservationKind.ECEF_POS, None],
+               [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
+               [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
+               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
 
     gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params)
 
@@ -200,7 +192,7 @@ class LiveKalman():
 
     self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
                       ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
-                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5*2]),
+                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
                       ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
