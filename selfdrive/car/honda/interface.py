@@ -183,7 +183,7 @@ class CarInterface(CarInterfaceBase):
         # stock filter output values:     0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
         # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
         # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in 2x max
-        ret.lateralParams.torqueBP = [0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x2880, 0x3180]
+        ret.lateralParams.torqueBP = [0x0000, 0x0917, 0x0DC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x2880, 0x2D00]
         ret.lateralParams.torqueV  = [0x0000, 0x0201, 0x0302, 0x0478, 0x05EB, 0x0801, 0x09FF, 0x0E01, 0x0F01]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]] # TODO: test these numbers
         ret.lateralTuning.pid.kf = 0.00006 # TODO: what should this be?
