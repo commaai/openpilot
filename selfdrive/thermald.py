@@ -130,7 +130,7 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
 
 
 def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
-  new_speed = int(interp(max_cpu_temp, [40.0, 80.0], [0, 100]))
+  new_speed = int(interp(max_cpu_temp, [40.0, 80.0], [0, 80]))
 
   if not ignition:
     new_speed = min(30, new_speed)
@@ -272,13 +272,16 @@ def thermald_thread():
       last_update = now
     dt = now - last_update
 
-    if dt.days > DAYS_NO_CONNECTIVITY_MAX:
+    update_failed_count = params.get("UpdateFailedCount")
+    update_failed_count = 0 if update_failed_count is None else int(update_failed_count)
+
+    if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
       if current_connectivity_alert != "expired":
         current_connectivity_alert = "expired"
         params.delete("Offroad_ConnectivityNeededPrompt")
         params.put("Offroad_ConnectivityNeeded", json.dumps(OFFROAD_ALERTS["Offroad_ConnectivityNeeded"]))
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
-      remaining_time = str(DAYS_NO_CONNECTIVITY_MAX - dt.days)
+      remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
       if current_connectivity_alert != "prompt" + remaining_time:
         current_connectivity_alert = "prompt" + remaining_time
         alert_connectivity_prompt = copy.copy(OFFROAD_ALERTS["Offroad_ConnectivityNeededPrompt"])

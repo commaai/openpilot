@@ -287,6 +287,7 @@ FW_VERSIONS = {
       b'37805-5AN-L940\x00\x00',
       b'37805-5AZ-E850\x00\x00',
       b'37805-5BB-L640\x00\x00',
+      b'37805-5AN-LJ20\x00\x00',
     ],
     (Ecu.unknown, 0x18da1ef1, None): [
       b'28101-5CG-A920\x00\x00',
@@ -296,11 +297,13 @@ FW_VERSIONS = {
       b'28101-5CK-C130\x00\x00',
       b'28101-5DJ-A710\x00\x00',
       b'28101-5DV-E330\x00\x00',
+      b'28101-5CG-C320\x00\x00',
     ],
     (Ecu.unknown, 0x18da28f1, None): [
       b'57114-TBG-A340\x00\x00',
       b'57114-TGG-A340\x00\x00',
       b'57114-TGL-G330\x00\x00',
+      b'57114-TGG-C320\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TBA-C020\x00\x00',
@@ -308,11 +311,13 @@ FW_VERSIONS = {
       b'39990-TGG-A020\x00\x00',
       b'39990-TGG-A120\x00\x00',
       b'39990-TGL-E130\x00\x00',
+      b'39990-TGG-A020\x00\x00',
     ],
     (Ecu.unknown, 0x18da53f1, None): [
       b'77959-TBA-A060\x00\x00',
       b'77959-TGG-A020\x00\x00',
       b'77959-TGG-G010\x00\x00',
+      b'77959-TGG-A020\x00\x00',
     ],
     (Ecu.unknown, 0x18da60f1, None): [
       b'78109-TBA-A910\x00\x00',
@@ -321,18 +326,25 @@ FW_VERSIONS = {
       b'78109-TGG-A310\x00\x00',
       b'78109-TGG-A810\x00\x00',
       b'78109-TGL-G120\x00\x00',
+      b'78109-TGG-A820\x00\x00',
     ],
     (Ecu.unknown, 0x18dab0f1, None): [
       b'36802-TBA-A150\x00\x00',
       b'36802-TGG-A050\x00\x00',
       b'36802-TGL-G040\x00\x00',
+      b'36802-TGG-A060\x00\x00',
     ],
     (Ecu.unknown, 0x18dab5f1, None): [
       b'36161-TBA-A130\x00\x00',
       b'36161-TGG-A060\x00\x00',
       b'36161-TGL-G050\x00\x00',
+      b'36161-TGG-A080\x00\x00',
     ],
-    (Ecu.unknown, 0x18daeff1, None): [b'38897-TBA-A110\x00\x00', b'38897-TBA-A020\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [
+      b'38897-TBA-A110\x00\x00', 
+      b'38897-TBA-A020\x00\x00',
+      b'38897-TBA-A020\x00\x00',
+    ],
   },
   CAR.CRV_5G: {
     (Ecu.unknown, 0x18da10f1, None): [

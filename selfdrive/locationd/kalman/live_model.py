@@ -60,7 +60,7 @@ def gen_model(name, dim_state, dim_state_err, maha_test_kinds):
   q = state[States.ECEF_ORIENTATION,:]
   v = state[States.ECEF_VELOCITY,:]
   vx, vy, vz = v
-  omega = state[States.GYRO_BIAS,:]
+  omega = state[States.ANGULAR_VELOCITY,:]
   vroll, vpitch, vyaw = omega
   roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS,:]
   odo_scale = state[16,:]
@@ -111,8 +111,8 @@ def gen_model(name, dim_state, dim_state_err, maha_test_kinds):
   # Observation matrix modifier
   H_mod_sym = sp.Matrix(np.zeros((dim_state, dim_state_err)))
   H_mod_sym[0:3, 0:3] = np.eye(3)
-
   H_mod_sym[3:7,3:6] = 0.5*quat_matrix_r(state[3:7])[:,1:]
+  H_mod_sym[7:, 6:] = np.eye(dim_state-7)
 
   # these error functions are defined so that say there
   # is a nominal x and true x:
@@ -125,13 +125,15 @@ def gen_model(name, dim_state, dim_state_err, maha_test_kinds):
   err_function_sym = sp.Matrix(np.zeros((dim_state,1)))
   delta_quat = sp.Matrix(np.ones((4)))
   delta_quat[1:,:] = sp.Matrix(0.5*delta_x[3:6,:])
-  err_function_sym[3:7,0] = quat_matrix_r(nom_x[3:7,0])*delta_quat
   err_function_sym[0:3,:] = sp.Matrix(nom_x[0:3,:] + delta_x[0:3,:])
+  err_function_sym[3:7,0] = quat_matrix_r(nom_x[3:7,0])*delta_quat
+  err_function_sym[7:,:] = sp.Matrix(nom_x[7:,:] + delta_x[6:,:])
 
   inv_err_function_sym = sp.Matrix(np.zeros((dim_state_err,1)))
   inv_err_function_sym[0:3,0] = sp.Matrix(-nom_x[0:3,0] + true_x[0:3,0])
   delta_quat = quat_matrix_r(nom_x[3:7,0]).T*true_x[3:7,0]
   inv_err_function_sym[3:6,0] = sp.Matrix(2*delta_quat[1:])
+  inv_err_function_sym[6:,0] = sp.Matrix(-nom_x[7:,0] + true_x[7:,0])
 
   eskf_params = [[err_function_sym, nom_x, delta_x],
                  [inv_err_function_sym, nom_x, true_x],
