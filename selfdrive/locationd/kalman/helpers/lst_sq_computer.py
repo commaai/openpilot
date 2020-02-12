@@ -3,8 +3,8 @@
 import os
 
 import numpy as np
-import scipy.optimize as opt
 import sympy as sp
+#import scipy.optimize as opt
 
 import common.transformations.orientation as orient
 from selfdrive.locationd.kalman.helpers import (TEMPLATE_DIR, load_code,

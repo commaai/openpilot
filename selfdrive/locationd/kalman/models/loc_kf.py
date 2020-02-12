@@ -5,17 +5,18 @@ import os
 import numpy as np
 import sympy as sp
 
-from laika.constants import EARTH_GM
-from laika.raw_gnss import GNSSMeasurement
 from selfdrive.locationd.kalman.helpers import ObservationKind
 from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.kalman.helpers.lst_sq_computer import LstSqComputer
 from selfdrive.locationd.kalman.helpers.sympy_helpers import (euler_rotate,
                                                               quat_matrix_r,
                                                               quat_rotate)
+#from laika.constants import EARTH_GM
+EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
 
 def parse_prr(m):
+  from laika.raw_gnss import GNSSMeasurement
   sat_pos_vel_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
                                   m[GNSSMeasurement.SAT_VEL]))
   R_i = np.atleast_2d(m[GNSSMeasurement.PRR_STD]**2)
@@ -24,6 +25,7 @@ def parse_prr(m):
 
 
 def parse_pr(m):
+  from laika.raw_gnss import GNSSMeasurement
   pseudorange = m[GNSSMeasurement.PR]
   pseudorange_stdev = m[GNSSMeasurement.PR_STD]
   sat_pos_freq_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
