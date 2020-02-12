@@ -135,7 +135,6 @@ def fingerprint(logcan, sendcan, has_relay):
 
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   if len(fixed_fingerprint):
-    print("Fixed", fixed_fingerprint)
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
