@@ -48,7 +48,7 @@ def start_build(name):
   push = "PUSH=master-ci" if branch == "master" else ""
   comma_jwt = "COMMA_JWT=" + os.getenv('COMMA_JWT', '')
 
-  conn.send(f"{push} {comma_jwt} /data/openpilot_source/release/go.sh\n")
+  conn.send("%s /data/openpilot_source/release/build_devel.sh\n" % push)
   conn.send('echo "RESULT:" $?\n')
   conn.send("exit\n")
   return conn

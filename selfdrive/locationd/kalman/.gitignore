@@ -1,4 +1,5 @@
 lane.cpp
 gnss.cpp
 loc*.cpp
+live.cpp
 pos_computer*.cpp

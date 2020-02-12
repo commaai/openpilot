@@ -1710,6 +1710,9 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   int good_count = 0;
   int16_t max_focus = -32767;
   int avg_focus = 0;
+  // force to max if not able to determine focus for long
+  const int patience_cnt = 100;
+  static int nan_cnt = 0;
 
   /*printf("FOCUS: ");
   for (int i = 0; i < 0x10; i++) {
@@ -1717,42 +1720,56 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   }*/
 
   for (int i = 0; i < NUM_FOCUS; i++) {
-    int doff = i*5+5;
-    s->confidence[i] = d[doff];
-    int16_t focus_t = (d[doff+1] << 3) | (d[doff+2] >> 5);
-    if (focus_t >= 1024) focus_t = -(2048-focus_t);
-    s->focus[i] = focus_t;
-    //printf("%x->%d ", d[doff], focus_t);
-    if (s->confidence[i] > 0x20) {
+    int pd_idx = (i+1)*5;
+    s->confidence[i] = d[pd_idx];
+    int16_t focus_delta = d[pd_idx+1];
+    if (focus_delta >= 128) focus_delta = - (256 - focus_delta);
+    s->focus[i] = focus_delta;
+
+    if (s->confidence[i] > 64) {
       good_count++;
       max_focus = max(max_focus, s->focus[i]);
       avg_focus += s->focus[i];
+    // printf("%d\n", s->focus[i]);
     }
   }
 
-  //printf("\n");
   if (good_count < 4) {
     s->focus_err = nan("");
+    nan_cnt += 1;
+    if (nan_cnt > patience_cnt) {
+      s->focus_err = 16*8.0;
+      nan_cnt = 0;
+    }
     return;
   }
 
   avg_focus /= good_count;
 
-  // outlier rejection
-  if (abs(avg_focus - max_focus) > 200) {
-    s->focus_err = nan("");
-    return;
+  if (abs(avg_focus - max_focus) > 32) {
+    if (nan_cnt < patience_cnt) {
+      s->focus_err = nan("");
+      nan_cnt += 1;
+      return;
+    } else {
+      s->focus_err = 16*8.0;
+      // s->focus_err = max_focus*8.0;
+      nan_cnt = 0;
+    }
+  } else {
+    s->focus_err = avg_focus*8.0;
+    nan_cnt = 0;
   }
-
-  s->focus_err = max_focus*1.0;
+  // printf("fe=%f\n", s->focus_err);
 }
 
 static void do_autofocus(CameraState *s) {
-  // params for focus PI controller
-  const float focus_kp = 0.005;
+  // params for focus P controller
+  const float focus_kp = 0.1;
 
   float err = s->focus_err;
-  float offset = 0;
+  // don't allow big change
+  err = clamp(err, -128, 128);
   float sag = (s->last_sag_acc_z/9.8) * 128;
 
   const int dac_up = s->device == DEVICE_LP3? 634:456;
@@ -1776,6 +1793,7 @@ static void do_autofocus(CameraState *s) {
   LOGD(debug);*/
 
   actuator_move(s, target);
+  // printf("ltp=%f, clp=%d\n",s->lens_true_pos,s->cur_lens_pos);
 }
 
 
@@ -2165,6 +2183,9 @@ void cameras_run(DualCameraState *s) {
         } else {
           uint8_t *d = c->ss[buffer].bufs[buf_idx].addr;
           if (buffer == 1) {
+            // FILE *df = fopen("/sdcard/focus_buf","wb");
+            // fwrite(d, c->ss[buffer].bufs[buf_idx].len, sizeof(uint8_t), df);
+            // fclose(df);
             parse_autofocus(c, d);
           }
           c->ss[buffer].qbuf_info[buf_idx].dirty_buf = 1;

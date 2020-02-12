@@ -113,6 +113,7 @@ Supported Cars
 | Toyota    | Corolla Hybrid 2020           | All               | openpilot        | 0mph               | 0mph         |
 | Toyota    | Highlander 2017-19            | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Toyota    | Highlander Hybrid 2017-19     | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
+| Toyota    | Highlander 2020               | All               | openpilot        | 0mph               | 0mph         |
 | Toyota    | Prius 2016                    | TSS-P             | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Toyota    | Prius 2017-19                 | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>4</sup>| 0mph               | 0mph         |
