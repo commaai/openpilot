@@ -47,7 +47,13 @@ class LatControlLQR():
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, v_ego)
-    torque_scale = (0.45 + v_ego / 60.0)**2  # Scale actuator model with speed
+    if (self.output_steer > 0.0) and (angle_steers > 0.0):
+        factor = -1.0
+    elif (self.output_steer < 0.0) and (angle_steers < 0.0):
+        factor = -1.0
+    else:
+        factor = 1.0
+    torque_scale = (1-factor*max(abs(angle_steers)/100,1.0)*0.3)*(0.45 + v_ego / 60.0)**2  # Scale actuator model with speed
 
     # Subtract offset. Zero angle should correspond to zero torque
     self.angle_steers_des = path_plan.angleSteers - path_plan.angleOffset
