@@ -46,11 +46,16 @@ class Localizer():
     fix.gyro = [float(predicted_state[10]), float(predicted_state[11]), float(predicted_state[12])]
     fix.accel = [float(predicted_state[19]), float(predicted_state[20]), float(predicted_state[21])]
 
-    local_vel = rotations_from_quats(predicted_state[States.ECEF_ORIENTATION]).T.dot(predicted_state[States.ECEF_VELOCITY])
-    fix.pitchCalibration = math.degrees(math.atan2(local_vel[2], local_vel[0]))
-    fix.yawCalibration = math.degrees(math.atan2(local_vel[1], local_vel[0]))
+    ned_vel = self.converter.ecef2ned(predicted_state[States.ECEF_POS] + predicted_state[States.ECEF_VELOCITY]) - self.converter.ecef2ned(predicted_state[States.ECEF_POS])
+    fix.vNED = [float(ned_vel[0]), float(ned_vel[1]), float(ned_vel[2])]
+    fix.source = 'kalman'
 
-    #fix.imuFrame = [(180/np.pi)*float(predicted_state[23]), (180/np.pi)*float(predicted_state[24]), (180/np.pi)*float(predicted_state[25])]
+    #local_vel = rotations_from_quats(predicted_state[States.ECEF_ORIENTATION]).T.dot(predicted_state[States.ECEF_VELOCITY])
+    #fix.pitchCalibration = math.degrees(math.atan2(local_vel[2], local_vel[0]))
+    #fix.yawCalibration = math.degrees(math.atan2(local_vel[1], local_vel[0]))
+
+    imu_frame = predicted_state[States.IMU_OFFSET]
+    fix.imuFrame = [math.degrees(imu_frame[0]), math.degrees(imu_frame[1]), math.degrees(imu_frame[2])]
     return fix
 
   def update_kalman(self, time, kind, meas):
@@ -67,8 +72,8 @@ class Localizer():
     #    self.observation_buffer.pop(0)
 
   def handle_gps(self, current_time, log):
-    converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
-    fix_ecef = converter.ned2ecef([0, 0, 0])
+    self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
+    fix_ecef = self.converter.ned2ecef([0, 0, 0])
 
     # TODO initing with bad bearing not allowed, maybe not bad?
     if not self.filter_ready and log.speed > 5:
