@@ -15,7 +15,8 @@ from selfdrive.locationd.kalman.helpers import ObservationKind, KalmanError
 from selfdrive.locationd.kalman.models.live_kf import LiveKalman, States
 from selfdrive.swaglog import cloudlog
 
-SENSOR_DECIMATION = 1  # No decimation
+VISION_DECIMATION = 2
+SENSOR_DECIMATION = 10
 
 
 class Localizer():
@@ -116,12 +117,15 @@ class Localizer():
         self.update_kalman(current_time, ObservationKind.NO_ROT, [0, 0, 0])
 
   def handle_cam_odo(self, current_time, log):
-    self.update_kalman(current_time,
-                       ObservationKind.CAMERA_ODO_ROTATION,
-                       np.concatenate([log.rot, log.rotStd]))
-    self.update_kalman(current_time,
-                       ObservationKind.CAMERA_ODO_TRANSLATION,
-                       np.concatenate([log.trans, log.transStd]))
+    self.cam_counter += 1
+
+    if self.cam_counter % VISION_DECIMATION == 0:
+      self.update_kalman(current_time,
+                         ObservationKind.CAMERA_ODO_ROTATION,
+                         np.concatenate([log.rot, log.rotStd]))
+      self.update_kalman(current_time,
+                         ObservationKind.CAMERA_ODO_TRANSLATION,
+                         np.concatenate([log.trans, log.transStd]))
 
   def handle_sensors(self, current_time, log):
     # TODO does not yet account for double sensor readings in the log
@@ -152,6 +156,7 @@ class Localizer():
     self.gyro_counter = 0
     self.acc_counter = 0
     self.speed_counter = 0
+    self.cam_counter = 0
 
 
 def locationd_thread(sm, pm, disabled_logs=[]):
