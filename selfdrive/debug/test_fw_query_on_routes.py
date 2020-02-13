@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import traceback
 import sys
 from tqdm import tqdm
@@ -13,14 +14,19 @@ from selfdrive.car.honda.values import FINGERPRINTS as HONDA_FINGERPRINTS
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
-    print("Usage: ./test_fw_query_on_routes.py <route_list>")
+    print("Usage: ./test_fw_query_on_routes.py <route_list>/<route>")
     sys.exit(1)
+
+  if os.path.exists(sys.argv[1]):
+    routes = list(open(sys.argv[1]))
+  else:
+    routes = [sys.argv[1]]
 
   wrong = 0
   good = 0
 
   dongles = []
-  for route in tqdm(list(open(sys.argv[1]))):
+  for route in tqdm(routes):
     route = route.rstrip()
     dongle_id, time = route.split('|')
     qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
