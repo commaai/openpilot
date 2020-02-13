@@ -136,16 +136,21 @@ class LocKalman():
     vx, vy, vz = v
     omega = state[States.ANGULAR_VELOCITY, :]
     vroll, vpitch, vyaw = omega
-    cb = state[States.CLOCK_BIAS, :][0, 0]
-    cd = state[States.CLOCK_DRIFT, :][0, 0]
+    #cb = state[States.CLOCK_BIAS, :][0, 0]
+    #cd = state[States.CLOCK_DRIFT, :][0, 0]
+    cb, cd = state[13:15, :]
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
-    odo_scale = state[States.ODO_SCALE, :][0,0]
+    #odo_scale = state[States.ODO_SCALE, :][0,0]
+    odo_scale = state[18, :]
     acceleration = state[States.ACCELERATION, :]
-    focal_scale = state[States.FOCAL_SCALE, :][0,0]
+    #focal_scale = state[States.FOCAL_SCALE, :][0,0]
+    focal_scale = state[22, :]
     imu_angles = state[States.IMU_OFFSET, :]
-    glonass_bias = state[States.GLONASS_BIAS, :][0,0]
-    glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :][0,0]
-    ca = state[States.CLOCK_ACCELERATION, :][0,0]
+    glonass_bias, glonass_freq_slope = state[26:28, :]
+    ca = state[28, 0]
+    #glonass_bias = state[States.GLONASS_BIAS, :][0,0]
+    #glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :][0,0]
+    #ca = state[States.CLOCK_ACCELERATION, :][0,0]
 
     dt = sp.Symbol('dt')
 
@@ -167,7 +172,9 @@ class LocKalman():
     state_dot[States.ECEF_POS, :] = v
     state_dot[States.ECEF_ORIENTATION, :] = q_dot
     state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
-    state_dot[States.CLOCK_BIAS, 0][0,0] = cd
+    state_dot[13, 0] = cd
+    state_dot[14, 0] = ca
+    #state_dot[States.CLOCK_BIAS, 0][0,0] = cd
     state_dot[States.CLOCK_DRIFT, 0][0,0] = ca
 
     # Basic descretization, 1st order intergrator
@@ -179,9 +186,10 @@ class LocKalman():
     quat_err = state_err[States.ECEF_ORIENTATION_ERR, :]
     v_err = state_err[States.ECEF_VELOCITY_ERR, :]
     omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
-    cd_err = state_err[States.CLOCK_DRIFT_ERR, :][0,:]
+    #cd_err = state_err[States.CLOCK_DRIFT_ERR, :][0,:]
+    cd_err = state_err[13, :]
     acceleration_err = state_err[States.ACCELERATION_ERR, :]
-    ca_err = state_err[States.CLOCK_ACCELERATION_ERR, :][0,:]
+    ca_err = state_err[27, :]
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])
@@ -190,8 +198,10 @@ class LocKalman():
     state_err_dot[States.ECEF_POS_ERR, :] = v_err
     state_err_dot[States.ECEF_ORIENTATION_ERR, :] = q_err_dot
     state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
-    state_err_dot[States.CLOCK_BIAS_ERR, :][0,:] = cd_err
-    state_err_dot[States.CLOCK_DRIFT_ERR, :][0,:] = ca_err
+    #state_err_dot[States.CLOCK_BIAS_ERR, :][0,:] = cd_err
+    #state_err_dot[States.CLOCK_DRIFT_ERR, :][0,:] = ca_err
+    state_err_dot[12, :][0,:] = cd_err
+    state_err_dot[13, :][0,:] = ca_err
     f_err_sym = state_err + dt * state_err_dot
 
     # convenient indexing
@@ -352,7 +362,7 @@ class LocKalman():
 
     self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
                       ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
-                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
+                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5*2]),
                       ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
