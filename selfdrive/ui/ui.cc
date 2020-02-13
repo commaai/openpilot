@@ -440,6 +440,9 @@ void handle_message(UIState *s, Message * msg) {
 
     s->scene.batteryPercent = datad.batteryPercent;
     snprintf(s->scene.batteryStatus, sizeof(s->scene.batteryStatus), "%s", datad.batteryStatus.str);
+    s->scene.freeSpace = datad.freeSpace;
+    s->scene.thermalStatus = datad.thermalStatus;
+    s->scene.paTemp = datad.pa0;
   }
   capn_free(&ctx);
 }
@@ -472,6 +475,8 @@ static void ui_update(UIState *s) {
   if (s->vision_connect_firstrun) {
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
+
+    s->scene.uilayout_sidebarcollapsed = true;
 
     for (int i=0; i<UI_BUF_COUNT; i++) {
       if(s->khr[i] != NULL) {

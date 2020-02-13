@@ -45,6 +45,11 @@
 #define NETWORKTYPE_CELL4G 4
 #define NETWORKTYPE_CELL5G 5
 
+#define THERMALSTATUS_GREEN 0
+#define THERMALSTATUS_YELLOW 1
+#define THERMALSTATUS_RED 2
+#define THERMALSTATUS_DANGER 3
+
 #ifndef QCOM
   #define UI_60FPS
 #endif
@@ -139,6 +144,9 @@ typedef struct UIScene {
   uint8_t networkType;
   int batteryPercent;
   char batteryStatus[64];
+  float freeSpace;
+  uint8_t thermalStatus;
+  int paTemp;
 } UIScene;
 
 typedef struct {
