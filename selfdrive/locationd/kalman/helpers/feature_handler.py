@@ -118,7 +118,7 @@ class FeatureHandler():
 
 def generate_orient_error_jac(K):
   import sympy as sp
-  from common.sympy_helpers import quat_rotate
+  from selfdrive.locationd.kalman.helpers.sympy_helpers import quat_rotate
 
   x_sym = sp.MatrixSymbol('abr', 3, 1)
   dtheta = sp.MatrixSymbol('dtheta', 3, 1)
