@@ -160,7 +160,7 @@ class PathPlanner():
     elif sm['carState'].rightBlinker:
       self.lane_change_direction = LaneChangeDirection.right
 
-    if not active or self.lane_change_timer > 10.0:
+    if (not active) or (self.lane_change_timer > 10.0) or (not one_blinker):
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
     else:
