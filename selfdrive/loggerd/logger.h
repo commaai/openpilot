@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <bzlib.h>
+#include <zstd.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,11 +20,17 @@ typedef struct LoggerHandle {
   char log_path[4096];
   char lock_path[4096];
   FILE* log_file;
-  BZFILE* bz_file;
+  //BZFILE* bz_file;
 
   FILE* qlog_file;
   char qlog_path[4096];
-  BZFILE* bz_qlog;
+  //BZFILE* bz_qlog;
+
+  ZSTD_CCtx* zstd_ctx_rlog;
+  ZSTD_CCtx* zstd_ctx_qlog;
+
+  size_t zstd_out_buf_sz;
+  void * zstd_out_buf;
 } LoggerHandle;
 
 typedef struct LoggerState {
@@ -39,6 +46,8 @@ typedef struct LoggerState {
 
   LoggerHandle handles[LOGGER_MAX_HANDLES];
   LoggerHandle* cur_handle;
+
+
 } LoggerState;
 
 void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog);

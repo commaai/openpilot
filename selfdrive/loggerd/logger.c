@@ -53,6 +53,8 @@ void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data,
   struct tm timeinfo;
   localtime_r(&rawtime, &timeinfo);
 
+
+
   strftime(s->route_name, sizeof(s->route_name),
            "%Y-%m-%d--%H-%M-%S", &timeinfo);
   snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
@@ -73,8 +75,8 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->segment_path, sizeof(h->segment_path),
           "%s/%s--%d", root_path, s->route_name, s->part);
 
-  snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
-  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
+  snprintf(h->log_path, sizeof(h->log_path), "%s/%s.zst", h->segment_path, s->log_name);
+  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.zst", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
 
   err = mkpath(h->log_path);
@@ -92,25 +94,18 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
     if (h->qlog_file == NULL) goto fail;
   }
 
-  int bzerror;
-  h->bz_file = BZ2_bzWriteOpen(&bzerror, h->log_file, 9, 0, 30);
-  if (bzerror != BZ_OK) goto fail;
+  int level = 5;
 
-  if (s->has_qlog) {
-    h->bz_qlog = BZ2_bzWriteOpen(&bzerror, h->qlog_file, 9, 0, 30);
-    if (bzerror != BZ_OK) goto fail;
-  }
+  h->zstd_ctx_rlog = ZSTD_createCCtx();
+  assert(h->zstd_ctx_rlog != NULL);
+  ZSTD_CCtx_setParameter(h->zstd_ctx_rlog, ZSTD_c_compressionLevel, level);
 
-  if (s->init_data) {
-    BZ2_bzWrite(&bzerror, h->bz_file, s->init_data, s->init_data_len);
-    if (bzerror != BZ_OK) goto fail;
+  h->zstd_ctx_qlog = ZSTD_createCCtx();
+  assert(h->zstd_ctx_qlog != NULL);
+  ZSTD_CCtx_setParameter(h->zstd_ctx_qlog, ZSTD_c_compressionLevel, level);
 
-    if (s->has_qlog) {
-      // init data goes in the qlog too
-      BZ2_bzWrite(&bzerror, h->bz_qlog, s->init_data, s->init_data_len);
-      if (bzerror != BZ_OK) goto fail;
-    }
-  }
+  h->zstd_out_buf_sz = ZSTD_CStreamOutSize();
+  h->zstd_out_buf = malloc(h->zstd_out_buf_sz);
 
   pthread_mutex_init(&h->lock, NULL);
   h->refcnt++;
@@ -179,15 +174,33 @@ void logger_close(LoggerState *s) {
   pthread_mutex_unlock(&s->lock);
 }
 
+
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog) {
   pthread_mutex_lock(&h->lock);
   assert(h->refcnt > 0);
-  int bzerror;
-  BZ2_bzWrite(&bzerror, h->bz_file, data, data_size);
 
-  if (in_qlog && h->bz_qlog != NULL) {
-    BZ2_bzWrite(&bzerror, h->bz_qlog, data, data_size);
+  ZSTD_inBuffer input_r = { data, data_size, 0 };
+
+  int finished;
+  do {
+      ZSTD_outBuffer output = { h->zstd_out_buf, h->zstd_out_buf_sz, 0 };
+      size_t const remaining = ZSTD_compressStream2(h->zstd_ctx_rlog, &output, &input_r, ZSTD_e_continue);
+      fwrite(h->zstd_out_buf, 1, output.pos, h->log_file);
+
+      finished = (input_r.pos == input_r.size);
+  } while (!finished);
+
+  if (in_qlog) {
+    ZSTD_inBuffer input_q = { data, data_size, 0 };
+    do {
+        ZSTD_outBuffer output = { h->zstd_out_buf, h->zstd_out_buf_sz, 0 };
+        size_t const remaining = ZSTD_compressStream2(h->zstd_ctx_qlog, &output, &input_q, ZSTD_e_continue);
+        fwrite(h->zstd_out_buf, 1, output.pos, h->qlog_file);
+
+        finished = (input_q.pos == input_q.size);
+    } while (!finished);
   }
+
   pthread_mutex_unlock(&h->lock);
 }
 
@@ -196,18 +209,29 @@ void lh_close(LoggerHandle* h) {
   assert(h->refcnt > 0);
   h->refcnt--;
   if (h->refcnt == 0) {
-    if (h->bz_file){
-      int bzerror;
-      BZ2_bzWriteClose(&bzerror, h->bz_file, 0, NULL, NULL);
-      h->bz_file = NULL;
+    free(h->zstd_out_buf);
+
+    // End stream
+    while (true) {
+      ZSTD_outBuffer output = { h->zstd_out_buf, h->zstd_out_buf_sz, 0 };
+      int r = ZSTD_endStream(h->zstd_ctx_rlog, &output);
+      fwrite(h->zstd_out_buf, 1, output.pos, h->log_file);
+      if (r == 0) break;
     }
-    if (h->bz_qlog){
-      int bzerror;
-      BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
-      h->bz_qlog = NULL;
-    }
-    if (h->qlog_file) fclose(h->qlog_file);
+    ZSTD_freeCCtx(h->zstd_ctx_rlog);
     fclose(h->log_file);
+
+    if (h->qlog_file){
+      while (true) {
+        ZSTD_outBuffer output = { h->zstd_out_buf, h->zstd_out_buf_sz, 0 };
+        int r = ZSTD_endStream(h->zstd_ctx_qlog, &output);
+        fwrite(h->zstd_out_buf, 1, output.pos, h->qlog_file);
+        if (r == 0) break;
+      }
+      ZSTD_freeCCtx(h->zstd_ctx_qlog);
+      fclose(h->qlog_file);
+    }
+
     unlink(h->lock_path);
     pthread_mutex_unlock(&h->lock);
     pthread_mutex_destroy(&h->lock);
