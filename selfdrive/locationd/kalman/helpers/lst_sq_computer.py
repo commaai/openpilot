@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-
 import os
+import sys
 
 import numpy as np
 import sympy as sp
@@ -174,5 +174,6 @@ def project(poses, ecef_pos):
 
 
 if __name__ == "__main__":
-  # TODO: get K from argparse
-  LstSqComputer.generate_code()
+  K = int(sys.argv[1].split("_")[-1])
+  LstSqComputer.generate_code(K=K)
+
