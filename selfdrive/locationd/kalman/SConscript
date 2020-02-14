@@ -6,6 +6,7 @@ ekf_sym = "helpers/ekf_sym.py"
 
 to_build = {
     'pos_computer_4': 'helpers/lst_sq_computer.py',
+    'pos_computer_5': 'helpers/lst_sq_computer.py',
     'feature_handler_5': 'helpers/feature_handler.py',
     'gnss': 'models/gnss_kf.py',
     'loc_4': 'models/loc_kf.py',
@@ -24,7 +25,7 @@ for target, command in found.items():
     command_file = File(command)
     env.Command(target_files,
                 [templates, command_file, sympy_helpers, ekf_sym],
-                command_file.get_abspath()
+                command_file.get_abspath()+" "+target
     )
 
     env.SharedLibrary('generated/' + target, target_files[0])
