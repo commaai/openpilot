@@ -109,9 +109,6 @@ class LstSqComputer():
 
     depth = 1 / param[2]
     if debug:
-      if not self.debug:
-        raise NotImplementedError("This is not a debug computer")
-
       # orient_err_jac = self.orient_error_jac(param, poses, img_positions, np.zeros(3)).reshape((-1,2,3))
       jac = self.residual_jac(param, poses, img_positions).reshape((-1, 2, 3))
       res = self.residual(param, poses, img_positions).reshape((-1, 2))
