@@ -502,6 +502,8 @@ def main():
     params.put("LastUpdateTime", t.encode('utf8'))
   if params.get("OpenpilotEnabledToggle") is None:
     params.put("OpenpilotEnabledToggle", "1")
+  if params.get("LaneChangeEnabled") is None:
+    params.put("LaneChangeEnabled", "1")
 
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:
