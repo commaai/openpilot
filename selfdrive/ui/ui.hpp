@@ -148,6 +148,8 @@ typedef struct UIScene {
   float angleSteersDes;
   float pa0;
   float freeSpace;
+  uint16_t maxCpuTemp;
+  uint32_t maxBatTemp;
 
 } UIScene;
 
@@ -273,7 +275,7 @@ typedef struct UIState {
   track_vertices_data track_vertices[2];
 
   // dev ui
-  //SubSocket *thermal_sock;
+  SubSocket *thermal_sock;
 } UIState;
 
 // API
