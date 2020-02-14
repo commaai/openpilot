@@ -112,6 +112,7 @@ static void ui_init(UIState *s) {
   s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
   s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
   s->thermal_sock = SubSocket::create(s->ctx, "thermal");
+  s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
 
   assert(s->model_sock != NULL);
   assert(s->controlsstate_sock != NULL);
@@ -119,6 +120,7 @@ static void ui_init(UIState *s) {
   assert(s->livecalibration_sock != NULL);
   assert(s->radarstate_sock != NULL);
   assert(s->thermal_sock != NULL);
+  assert(s->ubloxgnss_sock != NULL);
 
   s->poller = Poller::create({
                               s->model_sock,
@@ -126,7 +128,8 @@ static void ui_init(UIState *s) {
                               s->uilayout_sock,
                               s->livecalibration_sock,
                               s->radarstate_sock,
-                              s->thermal_sock
+                              s->thermal_sock,
+                              s->ubloxgnss_sock
                              });
 
 #ifdef SHOW_SPEEDLIMIT
@@ -443,6 +446,13 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.freeSpace = datad.freeSpace;
     s->scene.thermalStatus = datad.thermalStatus;
     s->scene.paTemp = datad.pa0;
+  } else if (eventd.which == cereal_Event_ubloxGnss) {
+    struct cereal_UbloxGnss datad;
+    cereal_read_UbloxGnss(&datad, eventd.ubloxGnss);
+    struct cereal_UbloxGnss_MeasurementReport reportdatad;
+    cereal_read_UbloxGnss_MeasurementReport(&reportdatad, datad.measurementReport);
+
+    s->scene.satelliteCount = reportdatad.numMeas;
   }
   capn_free(&ctx);
 }

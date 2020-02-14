@@ -982,16 +982,34 @@ void ui_nvg_init(UIState *s) {
   s->img_map = nvgCreateImage(s->vg, "../assets/img_map.png", 1);
 
   assert(s->img_button_settings >= 0);
-  s->img_button_settings = nvgCreateImage(s->vg, "../assets/images/img_button_settings.png", 1);
+  s->img_button_settings = nvgCreateImage(s->vg, "../assets/images/button_settings.png", 1);
 
   assert(s->img_button_home >= 0);
-  s->img_button_home = nvgCreateImage(s->vg, "../assets/images/img_button_home.png", 1);
+  s->img_button_home = nvgCreateImage(s->vg, "../assets/images/button_home.png", 1);
 
-  assert(s->img_battery_0 >= 0);
-  s->img_battery_0 = nvgCreateImage(s->vg, "../assets/images/img_battery_0.png", 1);
+  assert(s->img_battery >= 0);
+  s->img_battery = nvgCreateImage(s->vg, "../assets/images/battery.png", 1);
 
-  assert(s->img_battery_0_charging >= 0);
-  s->img_battery_0_charging = nvgCreateImage(s->vg, "../assets/images/img_battery_0_charging.png", 1);
+  assert(s->img_battery_charging >= 0);
+  s->img_battery_charging = nvgCreateImage(s->vg, "../assets/images/battery_charging.png", 1);
+
+  assert(s->img_network_0 >= 0);
+  s->img_network_0 = nvgCreateImage(s->vg, "../assets/images/network_0.png", 1);
+
+  assert(s->img_network_1 >= 0);
+  s->img_network_1 = nvgCreateImage(s->vg, "../assets/images/network_1.png", 1);
+
+  assert(s->img_network_2 >= 0);
+  s->img_network_2 = nvgCreateImage(s->vg, "../assets/images/network_2.png", 1);
+
+  assert(s->img_network_3 >= 0);
+  s->img_network_3 = nvgCreateImage(s->vg, "../assets/images/network_3.png", 1);
+
+  assert(s->img_network_4 >= 0);
+  s->img_network_4 = nvgCreateImage(s->vg, "../assets/images/network_4.png", 1);
+
+  assert(s->img_network_5 >= 0);
+  s->img_network_5 = nvgCreateImage(s->vg, "../assets/images/network_5.png", 1);
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);

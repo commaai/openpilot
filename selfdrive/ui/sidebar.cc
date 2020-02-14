@@ -10,7 +10,7 @@ static void ui_draw_sidebar_background(UIState *s) {
 
   nvgBeginPath(s->vg);
   nvgRect(s->vg, sbr_x, 0, sbr_w, vwp_h);
-  nvgFillColor(s->vg, nvgRGBAf(0,0,0,0.53));
+  nvgFillColor(s->vg, nvgRGBAf(0,0,0,0.33));
   nvgFill(s->vg);
 }
 
@@ -46,6 +46,23 @@ static void ui_draw_sidebar_home_button(UIState *s) {
   nvgFill(s->vg);
 }
 
+static void ui_draw_sidebar_network_strength(UIState *s) {
+  const UIScene *scene = &s->scene;
+  bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
+  const int network_img_h = 27;
+  const int network_img_w = 176;
+  const int network_img_x = hasSidebar ? 58 : -(sbr_w);
+  const int network_img_y = 196;
+  const int network_img = s->img_network_0;
+
+  nvgBeginPath(s->vg);
+  NVGpaint imgPaint = nvgImagePattern(s->vg, network_img_x, network_img_y,
+    network_img_w, network_img_h, 0, network_img, 1.0f);
+  nvgRect(s->vg, network_img_x, network_img_y, network_img_w, network_img_h);
+  nvgFillPaint(s->vg, imgPaint);
+  nvgFill(s->vg);
+}
+
 static void ui_draw_sidebar_battery_icon(UIState *s) {
   const UIScene *scene = &s->scene;
   bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
@@ -55,7 +72,7 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
   const int battery_img_y = 255;
 
   int battery_img = strcmp(s->scene.batteryStatus, "Charging") == 0 ?
-    s->img_battery_0_charging : s->img_battery_0;
+    s->img_battery_charging : s->img_battery;
 
   nvgBeginPath(s->vg);
   nvgRect(s->vg, battery_img_x + 6, battery_img_y + 5,
@@ -101,13 +118,13 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   nvgTextBox(s->vg, network_x, network_y, network_w, network_type_str, NULL);
 }
 
-static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char* value_str, const int severity, const int y_offset) {
+static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char* value_str, const int severity, const int y_offset, const char* message_str) {
   const UIScene *scene = &s->scene;
   bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
   const int metric_x = hasSidebar ? 30 : -(sbr_w);
   const int metric_y = 338 + y_offset;
   const int metric_w = 240;
-  const int metric_h = 148;
+  const int metric_h = message_str ? strlen(message_str) > 8 ? 124 : 100 : 148;
   NVGcolor status_color;
 
   if (severity == 0) {
@@ -122,7 +139,7 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
 
   nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, metric_x, metric_y, metric_w, metric_h, 20);
-  nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, severity > 0 ? 255 : 125));
+  nvgStrokeColor(s->vg, nvgRGBA(255, 255, 255, severity > 0 ? 255 : 85));
   nvgStrokeWidth(s->vg, 2);
   nvgStroke(s->vg);
 
@@ -131,20 +148,28 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
   nvgFillColor(s->vg, status_color);
   nvgFill(s->vg);
 
-  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
-  nvgFontSize(s->vg, 78);
-  nvgFontFace(s->vg, "sans-bold");
-  nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-  nvgTextBox(s->vg, metric_x + 50, metric_y + 50, metric_w - 60, value_str, NULL);
+  if (!message_str) {
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+    nvgFontSize(s->vg, 78);
+    nvgFontFace(s->vg, "sans-bold");
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+    nvgTextBox(s->vg, metric_x + 50, metric_y + 50, metric_w - 60, value_str, NULL);
 
-  nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
-  nvgFontSize(s->vg, 48);
-  nvgFontFace(s->vg, "sans-regular");
-  nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-  nvgTextBox(s->vg, metric_x + 50, metric_y + 50 + 66, metric_w - 60, label_str, NULL);
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+    nvgFontSize(s->vg, 48);
+    nvgFontFace(s->vg, "sans-regular");
+    nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+    nvgTextBox(s->vg, metric_x + 50, metric_y + 50 + 66, metric_w - 60, label_str, NULL);
+  } else {
+    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
+    nvgFontSize(s->vg, 48);
+    nvgFontFace(s->vg, "sans-bold");
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgTextBox(s->vg, metric_x + 35, metric_y + (strlen(message_str) > 8 ? 40 : 50), metric_w - 50, message_str, NULL);
+  }
 }
 
-static void ui_draw_sidebar_metric_storage(UIState *s) {
+static void ui_draw_sidebar_storage_metric(UIState *s) {
   int storage_severity;
   char storage_label_str[32];
   char storage_value_str[32];
@@ -165,10 +190,10 @@ static void ui_draw_sidebar_metric_storage(UIState *s) {
   snprintf(storage_label_str, sizeof(storage_label_str), "%s", "STORAGE");
   strcat(storage_value_str, storage_value_unit);
 
-  ui_draw_sidebar_metric(s, storage_label_str, storage_value_str, storage_severity, storage_y_offset);
+  ui_draw_sidebar_metric(s, storage_label_str, storage_value_str, storage_severity, storage_y_offset, NULL);
 }
 
-static void ui_draw_sidebar_metric_temp(UIState *s) {
+static void ui_draw_sidebar_temp_metric(UIState *s) {
   int temp_severity;
   char temp_label_str[32];
   char temp_value_str[32];
@@ -190,15 +215,39 @@ static void ui_draw_sidebar_metric_temp(UIState *s) {
   snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");
   strcat(temp_value_str, temp_value_unit);
 
-  ui_draw_sidebar_metric(s, temp_label_str, temp_value_str, temp_severity, temp_y_offset);
+  ui_draw_sidebar_metric(s, temp_label_str, temp_value_str, temp_severity, temp_y_offset, NULL);
+}
+
+static void ui_draw_sidebar_panda_metric(UIState *s) {
+  int panda_severity;
+  char panda_message_str[32];
+  const int panda_y_offset = (148 + 32) * 2;
+
+  // todo: handle no panda case
+  // panda_severity = 2;
+  // snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO PANDA");
+  if (s->scene.satelliteCount == -1) {
+    panda_severity = 0;
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA ACTIVE");
+  } else if (s->scene.satelliteCount < 6) {
+    panda_severity = 1;
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nNO GPS");
+  } else if (s->scene.satelliteCount >= 6) {
+    panda_severity = 0;
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA GOOD GPS");
+  }
+
+  ui_draw_sidebar_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message_str);
 }
 
 void ui_draw_sidebar(UIState *s) {
   ui_draw_sidebar_background(s);
   ui_draw_sidebar_settings_button(s);
   ui_draw_sidebar_home_button(s);
+  ui_draw_sidebar_network_strength(s);
   ui_draw_sidebar_battery_icon(s);
   ui_draw_sidebar_network_type(s);
-  ui_draw_sidebar_metric_storage(s);
-  ui_draw_sidebar_metric_temp(s);
+  ui_draw_sidebar_storage_metric(s);
+  ui_draw_sidebar_temp_metric(s);
+  ui_draw_sidebar_panda_metric(s);
 }

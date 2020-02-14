@@ -147,6 +147,7 @@ typedef struct UIScene {
   float freeSpace;
   uint8_t thermalStatus;
   int paTemp;
+  int satelliteCount;
 } UIScene;
 
 typedef struct {
@@ -186,8 +187,14 @@ typedef struct UIState {
   int img_map;
   int img_button_settings;
   int img_button_home;
-  int img_battery_0;
-  int img_battery_0_charging;
+  int img_battery;
+  int img_battery_charging;
+  int img_network_0;
+  int img_network_1;
+  int img_network_2;
+  int img_network_3;
+  int img_network_4;
+  int img_network_5;
 
   // sockets
   Context *ctx;
@@ -198,6 +205,7 @@ typedef struct UIState {
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
   SubSocket *thermal_sock;
+  SubSocket *ubloxgnss_sock;
   Poller * poller;
 
   int active_app;
