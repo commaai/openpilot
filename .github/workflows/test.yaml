@@ -71,7 +71,7 @@ jobs:
         run: $LOAD
       - name: Run unit tests
         run: |
-          $RUN cd /tmp/openpilot/selfdrive/test/test_fingerprints.py
+          $RUN /tmp/openpilot/selfdrive/test/test_fingerprints.py
           $RUN "$UNIT_TEST common"
           $RUN "$UNIT_TEST opendbc/can"
           $RUN "$UNIT_TEST selfdrive/boardd"
