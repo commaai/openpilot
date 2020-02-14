@@ -22,6 +22,8 @@ class InterpTest(unittest.TestCase):
       actual = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
       np.testing.assert_equal(actual, expected)
 
+    self.assertTrue(False)
+
 
 if __name__ == "__main__":
   unittest.main()
