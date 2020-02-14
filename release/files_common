@@ -243,6 +243,7 @@ selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
 selfdrive/locationd/test/*.py
 
+selfdrive/locationd/locationd.py
 selfdrive/locationd/kalman/.gitignore
 selfdrive/locationd/kalman/__init__.py
 selfdrive/locationd/kalman/README.md
