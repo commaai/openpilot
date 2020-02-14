@@ -244,7 +244,9 @@ selfdrive/locationd/ublox_msg.h
 selfdrive/locationd/test/*.py
 
 selfdrive/locationd/kalman/.gitignore
-selfdrive/locationd/kalman/*
+selfdrive/locationd/kalman/__init__.py
+selfdrive/locationd/kalman/README.md
+selfdrive/locationd/kalman/SConscript
 selfdrive/locationd/kalman/templates/*
 selfdrive/locationd/kalman/helpers/*
 selfdrive/locationd/kalman/models/live_kf.py
