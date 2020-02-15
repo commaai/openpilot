@@ -1,7 +1,7 @@
 from cereal import car
 from opendbc.can.parser import CANParser
+from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
-from common.kalman.simple_kalman import KF1D
 
 GearShifter = car.CarState.GearShifter
 
@@ -68,7 +68,7 @@ def get_camera_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
-class CarState():
+class CarState(CarStateBase):
   def __init__(self, CP):
 
     self.CP = CP
@@ -77,17 +77,6 @@ class CarState():
 
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
-
-    # vEgo kalman filter
-    dt = 0.01
-    # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
-    # R = 1e3
-    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
-                         A=[[1.0, dt], [0.0, 1.0]],
-                         C=[1.0, 0.0],
-                         K=[[0.12287673], [0.29666309]])
-    self.v_ego = 0.0
-
 
   def update(self, cp, cp_cam):
 
@@ -113,17 +102,10 @@ class CarState():
     self.v_wheel_rr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RR']
     self.v_wheel_rl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RL']
     self.v_wheel_fr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FR']
-    v_wheel = (cp.vl['SPEED_1']['SPEED_LEFT'] + cp.vl['SPEED_1']['SPEED_RIGHT']) / 2.
+    self.v_ego_raw = (cp.vl['SPEED_1']['SPEED_LEFT'] + cp.vl['SPEED_1']['SPEED_RIGHT']) / 2.
 
-    # Kalman filter
-    if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_kf.x = [[v_wheel], [0.0]]
-
-    self.v_ego_raw = v_wheel
-    v_ego_x = self.v_ego_kf.update(v_wheel)
-    self.v_ego = float(v_ego_x[0])
-    self.a_ego = float(v_ego_x[1])
-    self.standstill = not v_wheel > 0.001
+    self.v_ego, self.a_ego = self.update_speed_kf(self.v_ego_raw)
+    self.standstill = not self.v_ego_raw > 0.001
 
     self.angle_steers = cp.vl["STEERING"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING"]['STEERING_RATE']

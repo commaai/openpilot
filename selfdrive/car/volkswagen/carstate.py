@@ -1,7 +1,7 @@
 import numpy as np
 from cereal import car
-from common.kalman.simple_kalman import KF1D
 from selfdrive.config import Conversions as CV
+from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.volkswagen.values import DBC, BUTTON_STATES, CarControllerParams
@@ -102,9 +102,9 @@ def get_mqb_cam_can_parser(CP, canbus):
 def parse_gear_shifter(gear):
   # Return mapping of gearshift position to selected gear.
   return {'P': GEAR.park, 'R': GEAR.reverse, 'N': GEAR.neutral,
-              'D': GEAR.drive, 'E': GEAR.eco, 'S': GEAR.sport, 'T': GEAR.manumatic}.get(gear, GEAR.unknown)
+          'D': GEAR.drive, 'E': GEAR.eco, 'S': GEAR.sport, 'T': GEAR.manumatic}.get(gear, GEAR.unknown)
 
-class CarState():
+class CarState(CarStateBase):
   def __init__(self, CP, canbus):
     # initialize can parser
     self.CP = CP
@@ -115,15 +115,6 @@ class CarState():
 
     self.buttonStates = BUTTON_STATES.copy()
 
-    # vEgo Kalman filter
-    dt = 0.01
-    self.v_ego_kf = KF1D(x0=[[0.], [0.]],
-                         A=[[1., dt], [0., 1.]],
-                         C=[1., 0.],
-                         K=[[0.12287673], [0.29666309]])
-
-    self.vEgo = 0.
-
   def update(self, pt_cp):
     # Update vehicle speed and acceleration from ABS wheel speeds.
     self.wheelSpeedFL = pt_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
@@ -132,13 +123,8 @@ class CarState():
     self.wheelSpeedRR = pt_cp.vl["ESP_19"]['ESP_HR_Radgeschw_02'] * CV.KPH_TO_MS
 
     self.vEgoRaw = float(np.mean([self.wheelSpeedFL, self.wheelSpeedFR, self.wheelSpeedRL, self.wheelSpeedRR]))
+    self.vEgo, self.aEgo = self.update_speed_kf(self.vEgoRaw)
 
-    if abs(self.vEgoRaw - self.vEgo) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_kf.x = [[self.vEgoRaw], [0.0]]
-
-    v_ego_x = self.v_ego_kf.update(self.vEgoRaw)
-    self.vEgo = float(v_ego_x[0])
-    self.aEgo = float(v_ego_x[1])
     self.standstill = self.vEgoRaw < 0.1
 
     # Update steering angle, rate, yaw rate, and driver input torque. VW send
