@@ -1,6 +1,8 @@
 import os
 import time
 from cereal import car
+from common.kalman.simple_kalman import KF1D
+from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
 
 # generic car and radar interfaces
@@ -42,3 +44,23 @@ class RadarInterfaceBase():
       time.sleep(self.radar_ts)  # radard runs on RI updates
 
     return ret
+
+class CarStateBase:
+  # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
+  # R = 1e3
+  v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                  A=[[1.0, DT_CTRL], [0.0, 1.0]],
+                  C=[1.0, 0.0],
+                  K=[[0.12287673], [0.29666309]])
+  v_ego_k = 0.0
+
+  def update_speed_kf(self, v_ego_raw):
+    if abs(v_ego_raw - self.v_ego_k) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_kf.x = [[v_ego_raw], [0.0]]
+
+    v_ego_x = self.v_ego_kf.update(speed)
+    return float(v_ego_x[0]), float(v_ego_x[1])
+
+
+
+
