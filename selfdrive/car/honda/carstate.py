@@ -1,7 +1,6 @@
 from cereal import car
 from collections import defaultdict
 from common.numpy_fast import interp
-from common.kalman.simple_kalman import KF1D
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
