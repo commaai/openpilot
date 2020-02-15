@@ -6,6 +6,7 @@ from tqdm import tqdm
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.fingerprints import FW_VERSIONS
+from selfdrive.car.toyota.values import CAR as TOYOTA
 import panda.python.uds as uds
 
 from cereal import car
@@ -63,20 +64,34 @@ REQUESTS = [
   )
 ]
 
+
 def chunks(l, n=128):
   for i in range(0, len(l), n):
     yield l[i:i + n]
+
 
 def match_fw_to_car(fw_versions):
   candidates = FW_VERSIONS
   invalid = []
 
+  fw_versions_dict = {}
+  for fw in fw_versions:
+    addr = fw.address
+    sub_addr = fw.subAddress if fw.subAddress != 0 else None
+    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
+
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
       ecu_type = ecu[0]
       addr = ecu[1:]
+      found_version = fw_versions_dict.get(addr, None)
 
-      found_version = fw_versions.get(addr, None)
+      if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER] and found_version is None:
+        continue
+
+      # TODO: COROLLA_TSS2 engine can show on two different addresses
+      if ecu_type == Ecu.engine and candidate == TOYOTA.COROLLA_TSS2 and found_version is None:
+        continue
 
       # Allow DSU not being present
       if ecu_type in [Ecu.unknown, Ecu.dsu] and found_version is None:
@@ -138,8 +153,7 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
 
     car_fw.append(f)
 
-  candidates = match_fw_to_car(fw_versions)
-  return candidates, car_fw
+  return car_fw
 
 
 if __name__ == "__main__":
@@ -147,7 +161,6 @@ if __name__ == "__main__":
   import argparse
   import cereal.messaging as messaging
   from selfdrive.car.vin import get_vin
-
 
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
   parser.add_argument('--scan', action='store_true')
@@ -176,7 +189,8 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  candidates, fw_vers = get_fw_versions(logcan, sendcan, 1, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, 1, extra=extra, debug=args.debug, progress=True)
+  candidates = match_fw_to_car(fw_vers)
 
   print()
   print("Found FW versions")
@@ -185,7 +199,6 @@ if __name__ == "__main__":
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
     print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
   print("}")
-
 
   print()
   print("Possible matches:", candidates)

@@ -49,10 +49,9 @@ void set_power_save_state(int state) {
       set_gpio_output(GPIOA, 14, enable);
     }
 
-    // Switch off IR and fan when in power saving
+    // Switch off IR when in power saving
     if(!enable){
       current_board->set_ir_power(0U);
-      current_board->set_fan_power(0U);
     }   
 
     power_save_status = state;

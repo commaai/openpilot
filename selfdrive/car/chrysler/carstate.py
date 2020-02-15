@@ -6,17 +6,8 @@ from common.kalman.simple_kalman import KF1D
 GearShifter = car.CarState.GearShifter
 
 def parse_gear_shifter(can_gear):
-  if can_gear == 0x1:
-    return GearShifter.park
-  elif can_gear == 0x2:
-    return GearShifter.reverse
-  elif can_gear == 0x3:
-    return GearShifter.neutral
-  elif can_gear == 0x4:
-    return GearShifter.drive
-  elif can_gear == 0x5:
-    return GearShifter.low
-  return GearShifter.unknown
+  return {0x1: GearShifter.park, 0x2: GearShifter.reverse, 0x3: GearShifter.neutral,
+          0x4: GearShifter.drive, 0x5: GearShifter.low}.get(can_gear, GearShifter.unknown)
 
 
 def get_can_parser(CP):

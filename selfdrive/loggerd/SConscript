@@ -1,7 +1,7 @@
 Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
 src = ['loggerd.cc', 'logger.c']
-libs = ['zmq', 'czmq', 'capnp', 'kj', 'yaml-cpp', 'z',
+libs = ['zmq', 'czmq', 'capnp', 'kj', 'z',
   'avformat', 'avcodec', 'swscale', 'avutil',
   'yuv', 'bz2', common, 'json', messaging, visionipc]
 

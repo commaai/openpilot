@@ -1,5 +1,6 @@
 from cereal import car
 from selfdrive.car import dbc_dict
+Ecu = car.CarParams.Ecu
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
@@ -86,11 +87,8 @@ FINGERPRINTS = {
 
 STEER_THRESHOLD = 1.0
 
-class ECU:
-  CAM = 0
-
 ECU_FINGERPRINT = {
-  ECU.CAM: [384, 715]  # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
+  Ecu.fwdCamera: [384, 715]  # 384 = "ASCMLKASteeringCmd", 715 = "ASCMGasRegenCmd"
 }
 
 DBC = {

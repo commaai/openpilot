@@ -1,4 +1,4 @@
 #!/bin/sh
-export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64-android-clang3.8/:/home/batman/one/phonelibs/snpe/x86_64-linux-clang:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64-android-clang3.8/:$HOME/openpilot/phonelibs/snpe/x86_64-linux-clang:$LD_LIBRARY_PATH"
 exec ./_modeld
 

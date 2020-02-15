@@ -21,9 +21,6 @@ VISUAL_HUD = {
   VisualAlert.seatbeltUnbuckled: 5,
   VisualAlert.speedTooHigh: 8}
 
-class ECU:
-  CAM = Ecu.fwdCamera
-
 class CAR:
   ACCORD = "HONDA ACCORD 2018 SPORT 2T"
   ACCORD_15 = "HONDA ACCORD 2018 LX 1.5T"
@@ -68,6 +65,14 @@ FINGERPRINTS = {
   CAR.CIVIC_BOSCH: [{
   # 2017 Civic Hatchback EX, 2019 Civic Sedan Touring Canadian, and 2018 Civic Hatchback Executive Premium 1.0L CVT European
     57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 460: 3, 464: 8, 470: 2, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 506: 8, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 892: 8, 927: 8, 929: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1108: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1625: 5, 1629: 5, 1633: 8,
+  },
+  # 2017 Civic Hatchback LX
+  {
+    57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 423: 2, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 470: 2, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 506: 8, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 815: 8, 825: 4, 829: 5, 846: 8, 862: 8, 881: 8, 882: 4, 884: 8, 888: 8, 891: 8, 892: 8, 918: 7, 927: 8, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1092: 1, 1108: 8, 1125: 8, 1127: 2, 1296: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1633: 8
+  },
+  # 2019 Civic Hatchback EX
+  {
+    57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 470: 2, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 506: 8, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 892: 8, 927: 8, 929: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1108: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1633: 8
   }],
   CAR.CRV: [{
     57: 3, 145: 8, 316: 8, 340: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 6, 401: 8, 404: 4, 420: 8, 422: 8, 426: 8, 432: 7, 464: 8, 474: 5, 476: 4, 487: 4, 490: 8, 493: 3, 506: 8, 507: 1, 512: 6, 513: 6, 542: 7, 545: 4, 597: 8, 660: 8, 661: 4, 773: 7, 777: 8, 780: 8, 800: 8, 804: 8, 808: 8, 829: 5, 882: 2, 884: 7, 888: 8, 891: 8, 892: 8, 923: 2, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1033: 5, 1036: 8, 1039: 8, 1057: 5, 1064: 7, 1108: 8, 1125: 8, 1296: 8, 1365: 5, 1424: 5, 1600: 5, 1601: 8,
@@ -122,32 +127,354 @@ for c in FINGERPRINTS:
 
 # TODO: Figure out what is relevant
 FW_VERSIONS = {
-  CAR.CIVIC: {
-    (Ecu.unknown, 0x18da10f1, None): [b'37805-5AA-L660\x00\x00'],
-    (Ecu.unknown, 0x18da1ef1, None): [b'28101-5CG-A050\x00\x00'],
-    (Ecu.unknown, 0x18da28f1, None): [b'57114-TBA-A550\x00\x00'],
-    (Ecu.eps, 0x18da30f1, None): [b'39990-TBA-A030\x00\x00', b'39990-TBA,A030\x00\x00'],
-    (Ecu.unknown, 0x18da53f1, None): [b'77959-TBA-A030\x00\x00'],
-    (Ecu.unknown, 0x18da60f1, None): [b'78109-TBC-A310\x00\x00'],
-    (Ecu.unknown, 0x18dab0f1, None): [b'36161-TBC-A030\x00\x00'],
-    (Ecu.unknown, 0x18daeff1, None): [b'38897-TBA-A020\x00\x00'],
-
-  },
   CAR.ACCORD: {
-    (Ecu.unknown, 0x18da10f1, None): [b'37805-6B2-A650\x00\x00'],
+    (Ecu.unknown, 0x18da10f1, None): [
+      b'37805-6A0-A640\x00\x00',
+      b'37805-6B2-A550\x00\x00',
+      b'37805-6B2-A650\x00\x00',
+      b'37805-6B2-M520\x00\x00',
+    ],
     (Ecu.unknown, 0x18da0bf1, None): [b'54008-TVC-A910\x00\x00'],
-    (Ecu.unknown, 0x18da1ef1, None): [b'28102-6B8-A560\x00\x00'],
+    (Ecu.unknown, 0x18da1ef1, None): [b'28102-6B8-A560\x00\x00', b'28102-6B8-M520\x00\x00'],
     (Ecu.unknown, 0x18da2bf1, None): [b'46114-TVA-A060\x00\x00'],
     (Ecu.unknown, 0x18da28f1, None): [b'57114-TVA-C050\x00\x00'],
-    (Ecu.eps, 0x18da30f1, None): [b'39990-TVA-A150\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TVA-A150\x00\x00',
+      b'39990-TVA-A160\x00\x00',
+      b'39990-TVA-X030\x00\x00',
+    ],
     (Ecu.unknown, 0x18da3af1, None): [b'39390-TVA-A020\x00\x00'],
-    (Ecu.unknown, 0x18da53f1, None): [b'77959-TVA-A460\x00\x00'],
-    (Ecu.unknown, 0x18da60f1, None): [b'78109-TVC-A210\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TVA-A460\x00\x00', b'77959-TVA-X330\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-TVA-A210\x00\x00',
+      b'78109-TVC-A010\x00\x00',
+      b'78109-TVC-A110\x00\x00',
+      b'78109-TVC-A210\x00\x00',
+      b'78109-TVC-M510\x00\x00',
+    ],
     (Ecu.unknown, 0x18da61f1, None): [b'78209-TVA-A010\x00\x00'],
-    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TVA-A160\x00\x00'],
-    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TVA-A060\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TVA-A160\x00\x00', b'36802-TWA-A070\x00\x00'],
+    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TVA-A060\x00\x00', b'36161-TWA-A070\x00\x00'],
     (Ecu.unknown, 0x18daeff1, None): [b'38897-TVA-A010\x00\x00'],
-  }
+  },
+  CAR.ACCORD_15: {
+    (Ecu.unknown, 0x18da10f1, None): [
+      b'37805-6A0-9620\x00\x00',
+      b'37805-6A0-A640\x00\x00',
+      b'37805-6A0-A740\x00\x00',
+      b'37805-6A0-A840\x00\x00',
+      b'37805-6A0-A850\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da1ef1, None): [
+      b'28101-6A7-A220\x00\x00',
+      b'28101-6A7-A320\x00\x00',
+      b'28101-6A7-A510\x00\x00',
+    ],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TVA-A230\x00\x00'],
+    (Ecu.unknown, 0x18da2bf1, None): [
+      b'46114-TVA-A050\x00\x00',
+      b'46114-TVA-A060\x00\x00',
+      b'46114-TVA-A120\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-TVA-A010\x00\x00',
+      b'78109-TVA-A210\x00\x00',
+      b'78109-TVA-A220\x00\x00',
+      b'78109-TVA-A310\x00\x00',
+      b'78109-TWA-A210\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da61f1, None): [b'78209-TVA-A010\x00\x00'],
+    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TVA-A060\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TVA-A460\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [
+      b'57114-TVA-B050\x00\x00',
+      b'57114-TVA-B040\x00\x00',
+    ],
+    (Ecu.unknown, 0x18dab0f1, None): [
+      b'36802-TVA-A150\x00\x00',
+      b'36802-TVA-A160\x00\x00',
+      b'36802-TVA-A170\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TVA-A140\x00\x00',
+      b'39990-TVA-A150\x00\x00',  # Are these two different steerRatio?
+      b'39990-TVA-A160\x00\x00',  # Sport, Sport 2.0T and Touring 2.0T have different ratios
+    ],
+  },
+  CAR.ACCORDH: {
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TWA-A120\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TWA-A040\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TWA-A440\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-TWA-A010\x00\x00',
+      b'78109-TWA-A120\x00\x00',
+      b'78109-TWA-A210\x00\x00',
+      b'78109-TWA-A110\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da0bf1, None): [b'54008-TWA-A910\x00\x00'],
+    (Ecu.unknown, 0x18da61f1, None): [b'78209-TVA-A010\x00\x00'],
+    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TWA-A070\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TWA-A080\x00\x00', b'36802-TWA-A070\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TVA-A160\x00\x00', b'39990-TVA-A150\x00\x00'],
+  },
+  CAR.CIVIC: {
+    (Ecu.unknown, 0x18da10f1, None): [
+      b'37805-5AA-A640\x00\x00',
+      b'37805-5AA-A650\x00\x00',
+      b'37805-5AA-A670\x00\x00',
+      b'37805-5AA-A680\x00\x00',
+      b'37805-5AA-A810\x00\x00',
+      b'37805-5AA-L660\x00\x00',
+      b'37805-5AJ-A610\x00\x00',
+      b'37805-5BA-A510\x00\x00',
+      b'37805-5BA-L940\x00\x00',
+      b'37805-5BA-L960\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da1ef1, None): [
+      b'28101-5CG-A040\x00\x00',
+      b'28101-5CG-A050\x00\x00',
+      b'28101-5CG-A070\x00\x00',
+      b'28101-5CG-A080\x00\x00',
+      b'28101-5CG-A810\x00\x00',
+      b'28101-5DJ-A040\x00\x00',
+      b'28101-5DJ-A060\x00\x00',
+      b'28101-5DJ-A510\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da28f1, None): [
+      b'57114-TBA-A550\x00\x00',
+      b'57114-TBA-A560\x00\x00',
+      b'57114-TBA-A570\x00\x00'
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TBA,A030\x00\x00',
+      b'39990-TBA-A030\x00\x00',
+      b'39990-TBG-A030\x00\x00',
+      b'39990-TEG-A010\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da53f1, None): [
+      b'77959-TBA-A030\x00\x00',
+      b'77959-TBA-A040\x00\x00',
+      b'77959-TBG-A030\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-TBC-A310\x00\x00',
+      b'78109-TBC-A320\x00\x00',
+      b'78109-TBC-A510\x00\x00',
+      b'78109-TBC-A520\x00\x00',
+      b'78109-TBC-A530\x00\x00',
+      b'78109-TBH-A530\x00\x00',
+      b'78109-TEG-A310\x00\x00',
+    ],
+    (Ecu.unknown, 0x18dab0f1, None): [
+      b'36161-TBA-A030\x00\x00',
+      b'36161-TBC-A020\x00\x00',
+      b'36161-TBC-A030\x00\x00',
+      b'36161-TEG-A010\x00\x00',
+    ],
+    (Ecu.unknown, 0x18daeff1, None): [
+      b'36161-TBA-A030\x00\x00',
+      b'38897-TBA-A010\x00\x00',
+      b'38897-TBA-A020\x00\x00',
+    ],
+  },
+  CAR.CIVIC_BOSCH: {
+    (Ecu.unknown, 0x18da10f1, None): [
+      b'37805-5AA-A950\x00\x00',
+      b'37805-5AA-L950\x00\x00',
+      b'37805-5AN-A750\x00\x00',
+      b'37805-5AN-A830\x00\x00',
+      b'37805-5AN-A930\x00\x00',
+      b'37805-5AN-L940\x00\x00',
+      b'37805-5AZ-E850\x00\x00',
+      b'37805-5BB-L640\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da1ef1, None): [
+      b'28101-5CG-A920\x00\x00',
+      b'28101-5CK-A130\x00\x00',
+      b'28101-5CK-A140\x00\x00',
+      b'28101-5CK-A150\x00\x00',
+      b'28101-5CK-C130\x00\x00',
+      b'28101-5DJ-A710\x00\x00',
+      b'28101-5DV-E330\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da28f1, None): [
+      b'57114-TBG-A340\x00\x00',
+      b'57114-TGG-A340\x00\x00',
+      b'57114-TGL-G330\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TBA-C020\x00\x00',
+      b'39990-TBA-C120\x00\x00',
+      b'39990-TGG-A020\x00\x00',
+      b'39990-TGG-A120\x00\x00',
+      b'39990-TGL-E130\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da53f1, None): [
+      b'77959-TBA-A060\x00\x00',
+      b'77959-TGG-A020\x00\x00',
+      b'77959-TGG-G010\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-TBA-A910\x00\x00',
+      b'78109-TBC-A740\x00\x00',
+      b'78109-TGG-A210\x00\x00',
+      b'78109-TGG-A310\x00\x00',
+      b'78109-TGG-A810\x00\x00',
+      b'78109-TGL-G120\x00\x00',
+    ],
+    (Ecu.unknown, 0x18dab0f1, None): [
+      b'36802-TBA-A150\x00\x00',
+      b'36802-TGG-A050\x00\x00',
+      b'36802-TGL-G040\x00\x00',
+    ],
+    (Ecu.unknown, 0x18dab5f1, None): [
+      b'36161-TBA-A130\x00\x00',
+      b'36161-TGG-A060\x00\x00',
+      b'36161-TGL-G050\x00\x00',
+    ],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TBA-A110\x00\x00', b'38897-TBA-A020\x00\x00'],
+  },
+  CAR.CRV_5G: {
+    (Ecu.unknown, 0x18da10f1, None): [
+      b'37805-5PA-3080\x00\x00',
+      b'37805-5PA-4050\x00\x00',
+      b'37805-5PA-6530\x00\x00',
+      b'37805-5PA-6630\x00\x00',
+      b'37805-5PA-A670\x00\x00',
+      b'37805-5PA-A680\x00\x00',
+      b'37805-5PA-A850\x00\x00',
+      b'37805-5PA-A870\x00\x00',
+      b'37805-5PA-A890\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da1ef1, None): [
+      b'28101-5RG-A020\x00\x00',
+      b'28101-5RG-A030\x00\x00',
+      b'28101-5RG-A040\x00\x00',
+      b'28101-5RG-A120\x00\x00',
+      b'28101-5RH-A030\x00\x00',
+      b'28101-5RH-A040\x00\x00',
+      b'28101-5RH-A120\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da28f1, None): [
+      b'57114-TLA-A040\x00\x00',
+      b'57114-TLA-A050\x00\x00',
+      b'57114-TLA-A060\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TLA-A040\x00\x00', b'39990-TLA,A040\x00\x00'],
+    (Ecu.unknown, 0x18da2bf1, None): [b'46114-TLA-A040\x00\x00', b'46114-TLA-A050\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-TLA-A110\x00\x00',
+      b'78109-TLA-A210\x00\x00',
+      b'78109-TLA-C210\x00\x00',
+      b'78109-TLB-A110\x00\x00',
+      b'78109-TLB-A210\x00\x00',
+    ],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TLA-A010\x00\x00', b'38897-TNY-G010\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [
+      b'36802-TLA-A040\x00\x00',
+      b'36802-TLA-A050\x00\x00',
+      b'36802-TLA-A060\x00\x00',
+    ],
+    (Ecu.unknown, 0x18dab5f1, None): [
+      b'36161-TLA-A060\x00\x00',
+      b'36161-TLA-A070\x00\x00',
+      b'36161-TLA-A080\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da53f1, None): [
+      b'77959-TLA-A240\x00\x00',
+      b'77959-TLA-A250\x00\x00',
+      b'77959-TLA-A320\x00\x00',
+    ],
+  },
+  CAR.CRV_HYBRID: {
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TPA-G020\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TPA-G030\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TMA-H110\x00\x00'],
+    (Ecu.unknown, 0x18da0bf1, None): [b'54008-TMB-H510\x00\x00'],
+    (Ecu.unknown, 0x18dab5f1, None): [b'36161-TPA-E050\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-TPA-G520\x00\x00'],
+    (Ecu.unknown, 0x18da61f1, None): [b'78209-TLA-X010\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TPA-E040\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TLA-G220\x00\x00'],
+  },
+  CAR.ODYSSEY: {
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-THR-A010\x00\x00', b'38897-THR-A020\x00\x00'],
+    (Ecu.unknown, 0x18da10f1, None): [
+      b'37805-5MR-A250\x00\x00',
+      b'37805-5MR-A310\x00\x00',
+      b'37805-5MR-A750\x00\x00',
+      b'37805-5MR-A840\x00\x00',
+      b'37805-5MR-C620\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-THR-A020\x00\x00', b'39990-THR-A030\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-THR-A010\x00\x00', b'77959-THR-A110\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [
+      b'36161-THR-A030\x00\x00',
+      b'36161-THR-A110\x00\x00',
+      b'36161-THR-A720\x00\x00',
+      b'36161-THR-A810\x00\x00',
+      b'36161-THR-C010\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da1ef1, None): [
+      b'28101-5NZ-A310\x00\x00',
+      b'28101-5NZ-C310\x00\x00',
+      b'28102-5MX-A001\x00\x00',
+      b'28102-5MX-A610\x00\x00',
+      b'28102-5MX-A710\x00\x00',
+      b'28102-5MX-A910\x00\x00',
+      b'28103-5NZ-A300\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-THR-A040\x00\x00', b'57114-THR-A110\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-THR-A230\x00\x00',
+      b'78109-THR-A430\x00\x00',
+      b'78109-THR-A820\x00\x00',
+      b'78109-THR-AB20\x00\x00',
+      b'78109-THR-AB20\x00\x00',
+      b'78109-THR-AB40\x00\x00',
+      b'78109-THR-AC40\x00\x00',
+      b'78109-THR-AE40\x00\x00',
+      b'78109-THR-AL10\x00\x00',
+      b'78109-THR-C330\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da0bf1, None): [b'54008-THR-A020\x00\x00'],
+  },
+  CAR.PILOT_2019: {
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TG7-A060\x00\x00', b'39990-TGS-A230\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-TG7-A110\x00\x00', b'38897-TG7-A030\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [
+      b'36161-TG7-A630\x00\x00',
+      b'36161-TG7-A930\x00\x00',
+      b'36161-TG8-A630\x00\x00',
+      b'36161-TGS-A130\x00\x00',
+      b'36161-TGT-A030\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TG7-A210\x00\x00', b'77959-TGS-A010\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [
+      b'78109-TG7-AJ20\x00\x00',
+      b'78109-TG7-AP10\x00\x00',
+      b'78109-TG7-AP20\x00\x00',
+      b'78109-TG8-AJ20\x00\x00',
+      b'78109-TGS-AK20\x00\x00',
+      b'78109-TGS-AP20\x00\x00',
+      b'78109-TGT-AJ20\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da28f1, None): [
+      b'57114-TG7-A630\x00\x00',
+      b'57114-TG7-A730\x00\x00',
+      b'57114-TG8-A630\x00\x00',
+      b'57114-TGS-A530\x00\x00',
+      b'57114-TGT-A530\x00\x00',
+    ],
+  },
+  CAR.RIDGELINE: {
+    (Ecu.eps, 0x18da30f1, None): [b'39990-T6Z-A020\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36161-T6Z-A310\x00\x00'],
+    (Ecu.unknown, 0x18daeff1, None): [b'38897-T6Z-A010\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-T6Z-A420\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-T6Z-A020\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-T6Z-A130\x00\x00'],
+  },
 }
 
 DBC = {
@@ -210,7 +537,7 @@ SPEED_FACTOR = {
 # msgs sent for steering controller by camera module on can 0.
 # those messages are mutually exclusive on CRV and non-CRV cars
 ECU_FINGERPRINT = {
-  ECU.CAM: [0xE4, 0x194],   # steer torque cmd
+  Ecu.fwdCamera: [0xE4, 0x194],   # steer torque cmd
 }
 
 HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_5G, CAR.CRV_HYBRID]

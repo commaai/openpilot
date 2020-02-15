@@ -38,8 +38,8 @@ def is_calibration_valid(vp):
 def sanity_clip(vp):
   if np.isnan(vp).any():
     vp = VP_INIT
-  return [np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 20, VP_VALIDITY_CORNERS[1,0] + 20),
-          np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 20, VP_VALIDITY_CORNERS[1,1] + 20)]
+  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 20, VP_VALIDITY_CORNERS[1,0] + 20),
+                   np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 20, VP_VALIDITY_CORNERS[1,1] + 20)])
 
 
 def intrinsics_from_vp(vp):
@@ -96,6 +96,7 @@ class Calibrator():
       intrinsics = intrinsics_from_vp(self.vp)
       new_vp = intrinsics.dot(view_frame_from_device_frame.dot(trans))
       new_vp = new_vp[:2]/new_vp[2]
+      new_vp = sanity_clip(new_vp)
 
       self.vps[self.block_idx] = (self.idx*self.vps[self.block_idx] + (BLOCK_SIZE - self.idx) * new_vp) / float(BLOCK_SIZE)
       self.idx = (self.idx + 1) % BLOCK_SIZE
@@ -103,8 +104,7 @@ class Calibrator():
         self.block_idx += 1
         self.valid_blocks = max(self.block_idx, self.valid_blocks)
         self.block_idx = self.block_idx % INPUTS_WANTED
-      raw_vp = np.mean(self.vps[:max(1, self.valid_blocks)], axis=0)
-      self.vp = sanity_clip(raw_vp)
+      self.vp = np.mean(self.vps[:max(1, self.valid_blocks)], axis=0)
       self.update_status()
 
       if self.param_put and ((self.idx == 0 and self.block_idx == 0) or self.just_calibrated):
