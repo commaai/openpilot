@@ -58,7 +58,7 @@ class CarStateBase:
     if abs(v_ego_raw - self.v_ego_k) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_kf.x = [[v_ego_raw], [0.0]]
 
-    v_ego_x = self.v_ego_kf.update(speed)
+    v_ego_x = self.v_ego_kf.update(v_ego_raw)
     return float(v_ego_x[0]), float(v_ego_x[1])
 
 
