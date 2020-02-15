@@ -84,6 +84,7 @@ def get_camera_can_parser(CP):
 
 class CarState(CarStateBase):
   def __init__(self, CP):
+    super().__init__()
     # initialize can parser
     self.CP = CP
 

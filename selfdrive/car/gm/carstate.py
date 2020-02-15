@@ -52,6 +52,7 @@ def get_powertrain_can_parser(CP, canbus):
 
 class CarState(CarStateBase):
   def __init__(self, CP, canbus):
+    super().__init__()
     self.CP = CP
     # initialize can parser
 

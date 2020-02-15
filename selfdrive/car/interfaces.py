@@ -46,12 +46,13 @@ class RadarInterfaceBase():
     return ret
 
 class CarStateBase:
-  # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
-  # R = 1e3
-  v_ego_kf = KF1D(x0=[[0.0], [0.0]],
-                  A=[[1.0, DT_CTRL], [0.0, 1.0]],
-                  C=[1.0, 0.0],
-                  K=[[0.12287673], [0.29666309]])
+  def __init__(self):
+    # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
+    # R = 1e3
+    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                         A=[[1.0, DT_CTRL], [0.0, 1.0]],
+                         C=[1.0, 0.0],
+                         K=[[0.12287673], [0.29666309]])
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed

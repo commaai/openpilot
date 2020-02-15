@@ -70,7 +70,7 @@ def get_camera_parser(CP):
 
 class CarState(CarStateBase):
   def __init__(self, CP):
-
+    super().__init__()
     self.CP = CP
     self.left_blinker_on = 0
     self.right_blinker_on = 0

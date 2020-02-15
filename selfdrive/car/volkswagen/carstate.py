@@ -106,6 +106,7 @@ def parse_gear_shifter(gear):
 
 class CarState(CarStateBase):
   def __init__(self, CP, canbus):
+    super().__init__()
     # initialize can parser
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint

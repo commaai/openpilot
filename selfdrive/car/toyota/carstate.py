@@ -92,6 +92,7 @@ def get_cam_can_parser(CP):
 class CarState(CarStateBase):
   def __init__(self, CP):
 
+    super().__init__()
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
