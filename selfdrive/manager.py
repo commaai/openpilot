@@ -311,12 +311,12 @@ def kill_managed_process(name):
     else:
       running[name].terminate()
 
-    join_process(running[name].exitcode, 5)
+    join_process(running[name], 5)
 
     if running[name].exitcode is None:
       if name in unkillable_processes:
         cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
-        join_process(running[name].exitcode, 15)
+        join_process(running[name], 15)
         if running[name].exitcode is None:
           cloudlog.critical("FORCE REBOOTING PHONE!")
           os.system("date >> /sdcard/unkillable_reboot")
