@@ -52,10 +52,9 @@ class CarStateBase:
                   A=[[1.0, DT_CTRL], [0.0, 1.0]],
                   C=[1.0, 0.0],
                   K=[[0.12287673], [0.29666309]])
-  v_ego_k = 0.0
 
   def update_speed_kf(self, v_ego_raw):
-    if abs(v_ego_raw - self.v_ego_k) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+    if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_kf.x = [[v_ego_raw], [0.0]]
 
     v_ego_x = self.v_ego_kf.update(v_ego_raw)
