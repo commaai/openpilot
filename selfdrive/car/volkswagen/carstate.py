@@ -122,6 +122,8 @@ class CarState():
                          C=[1., 0.],
                          K=[[0.12287673], [0.29666309]])
 
+    self.vEgo = 0.
+
   def update(self, pt_cp):
     # Update vehicle speed and acceleration from ABS wheel speeds.
     self.wheelSpeedFL = pt_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
@@ -130,6 +132,10 @@ class CarState():
     self.wheelSpeedRR = pt_cp.vl["ESP_19"]['ESP_HR_Radgeschw_02'] * CV.KPH_TO_MS
 
     self.vEgoRaw = float(np.mean([self.wheelSpeedFL, self.wheelSpeedFR, self.wheelSpeedRL, self.wheelSpeedRR]))
+
+    if abs(self.vEgoRaw - self.vEgo) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_kf.x = [[self.vEgoRaw], [0.0]]
+
     v_ego_x = self.v_ego_kf.update(self.vEgoRaw)
     self.vEgo = float(v_ego_x[0])
     self.aEgo = float(v_ego_x[1])
