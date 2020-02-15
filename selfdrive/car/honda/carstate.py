@@ -5,7 +5,7 @@ from common.kalman.simple_kalman import KF1D
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car import CarStateBase
+from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
 
 GearShifter = car.CarState.GearShifter
