@@ -85,8 +85,8 @@ def get_cam_can_parser(CP):
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["GEAR_PACKET"]['GEAR']
     self.angle_offset = 0.
     self.init_angle_offset = False
 

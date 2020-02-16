@@ -100,8 +100,8 @@ def get_mqb_cam_can_parser(CP, canbus):
 class CarState(CarStateBase):
   def __init__(self, CP, canbus):
     super().__init__(CP)
-    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = self.can_define.dv["Getriebe_11"]['GE_Fahrstufe']
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["Getriebe_11"]['GE_Fahrstufe']
     self.buttonStates = BUTTON_STATES.copy()
 
   def update(self, pt_cp):

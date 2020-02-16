@@ -1,15 +1,7 @@
-from cereal import car
 from opendbc.can.parser import CANParser
+from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
-
-GearShifter = car.CarState.GearShifter
-
-# TODO: use VALs from dbc file
-def parse_gear_shifter(gear):
-  return {0x1: GearShifter.park, 0x2: GearShifter.reverse, 0x3: GearShifter.neutral,
-          0x4: GearShifter.drive, 0x5: GearShifter.low}.get(gear, GearShifter.unknown)
-
 
 def get_can_parser(CP):
 
@@ -70,6 +62,11 @@ def get_camera_parser(CP):
 
 
 class CarState(CarStateBase):
+  def __init__(self, CP):
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["GEAR"]['PRNDL']
+
   def update(self, cp, cp_cam):
 
     # update prevs, update must run once per loop
@@ -101,7 +98,7 @@ class CarState(CarStateBase):
 
     self.angle_steers = cp.vl["STEERING"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING"]['STEERING_RATE']
-    self.gear_shifter = parse_gear_shifter(cp.vl['GEAR']['PRNDL'])
+    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
     self.main_on = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
