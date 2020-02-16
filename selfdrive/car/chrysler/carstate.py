@@ -84,7 +84,6 @@ class CarState(CarStateBase):
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
     self.pedal_gas = cp.vl["ACCEL_GAS_134"]['ACCEL_134']
-    self.car_gas = self.pedal_gas
     self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 
     self.v_wheel_fl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FL']

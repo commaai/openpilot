@@ -104,7 +104,6 @@ class CarState(CarStateBase):
       self.pedal_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
     else:
       self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
-    self.car_gas = self.pedal_gas
     self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
 
     # calc best v_ego estimate, by averaging two opposite corners

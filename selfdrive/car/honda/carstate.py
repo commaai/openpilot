@@ -190,11 +190,8 @@ class CarState(CarStateBase):
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
-
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
-    self.blinker_on = 0
-
     self.cruise_mode = 0
     self.stopped = 0
 
