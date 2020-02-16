@@ -237,10 +237,10 @@ class CarInterface(CarInterfaceBase):
       be.pressed = self.CS.right_blinker_on
       buttonEvents.append(be)
 
-    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
+    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = car.CarState.ButtonEvent.new_message()
       be.type = ButtonType.unknown
-      if self.CS.cruise_buttons not in [CruiseButtons.UNPRESS, CruiseButtons.INIT]:
+      if self.CS.cruise_buttons != CruiseButtons.UNPRESS:
         be.pressed = True
         but = self.CS.cruise_buttons
       else:

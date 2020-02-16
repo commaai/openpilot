@@ -1,9 +1,10 @@
 from cereal import car
 from common.numpy_fast import mean
 from selfdrive.config import Conversions as CV
+from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, CAR, parse_gear_shifter, \
+from selfdrive.car.gm.values import DBC, CAR, \
                                     CruiseButtons, is_eps_status_ok, \
                                     STEER_THRESHOLD, SUPERCRUISE_CARS
 
@@ -51,6 +52,10 @@ def get_powertrain_can_parser(CP, canbus):
 
 
 class CarState(CarStateBase):
+  def __init__(self, CP):
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
 
   def update(self, pt_cp):
     self.prev_cruise_buttons = self.cruise_buttons
@@ -65,7 +70,7 @@ class CarState(CarStateBase):
     self.standstill = self.v_ego_raw < 0.01
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
-    self.gear_shifter = parse_gear_shifter(pt_cp.vl["ECMPRDNL"]['PRNDL'])
+    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
 
     self.pedal_gas = pt_cp.vl["AcceleratorPedal"]['AcceleratorPedal']

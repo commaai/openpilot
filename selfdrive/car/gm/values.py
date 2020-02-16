@@ -35,18 +35,6 @@ def is_eps_status_ok(eps_status, car_fingerprint):
     valid_eps_status += [0, 1]
   return eps_status in valid_eps_status
 
-def parse_gear_shifter(can_gear):
-  if can_gear == 0:
-    return car.CarState.GearShifter.park
-  elif can_gear == 1:
-    return car.CarState.GearShifter.neutral
-  elif can_gear == 2:
-    return car.CarState.GearShifter.drive
-  elif can_gear == 3:
-    return car.CarState.GearShifter.reverse
-  else:
-    return car.CarState.GearShifter.unknown
-
 FINGERPRINTS = {
   # Astra BK MY17, ASCM unplugged
   CAR.HOLDEN_ASTRA: [{
