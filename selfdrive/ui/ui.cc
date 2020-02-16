@@ -6,7 +6,6 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 
-#include <json.h>
 #include <czmq.h>
 
 #include "common/util.h"
