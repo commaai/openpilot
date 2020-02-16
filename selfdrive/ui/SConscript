@@ -11,7 +11,7 @@ else:
   src += ['linux.cc']
   libs += ['pthread', 'glfw']
   linkflags = []
-  
+
 env.Program('_ui', src,
   LINKFLAGS=linkflags,
   LIBS=libs)
