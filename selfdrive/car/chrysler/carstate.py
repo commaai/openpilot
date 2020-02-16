@@ -5,9 +5,10 @@ from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 
 GearShifter = car.CarState.GearShifter
 
-def parse_gear_shifter(can_gear):
+# TODO: use VALs from dbc file
+def parse_gear_shifter(gear):
   return {0x1: GearShifter.park, 0x2: GearShifter.reverse, 0x3: GearShifter.neutral,
-          0x4: GearShifter.drive, 0x5: GearShifter.low}.get(can_gear, GearShifter.unknown)
+          0x4: GearShifter.drive, 0x5: GearShifter.low}.get(gear, GearShifter.unknown)
 
 
 def get_can_parser(CP):
@@ -69,15 +70,6 @@ def get_camera_parser(CP):
 
 
 class CarState(CarStateBase):
-  def __init__(self, CP):
-    super().__init__()
-    self.CP = CP
-    self.left_blinker_on = 0
-    self.right_blinker_on = 0
-
-    # initialize can parser
-    self.car_fingerprint = CP.carFingerprint
-
   def update(self, cp, cp_cam):
 
     # update prevs, update must run once per loop

@@ -51,17 +51,6 @@ def get_powertrain_can_parser(CP, canbus):
 
 
 class CarState(CarStateBase):
-  def __init__(self, CP, canbus):
-    super().__init__()
-    self.CP = CP
-    # initialize can parser
-
-    self.car_fingerprint = CP.carFingerprint
-    self.cruise_buttons = CruiseButtons.UNPRESS
-    self.left_blinker_on = False
-    self.prev_left_blinker_on = False
-    self.right_blinker_on = False
-    self.prev_right_blinker_on = False
 
   def update(self, pt_cp):
     self.prev_cruise_buttons = self.cruise_buttons

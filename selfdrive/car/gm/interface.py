@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
 
     # *** init the major players ***
     canbus = CanBus()
-    self.CS = CarState(CP, canbus)
+    self.CS = CarState(CP)
     self.VM = VehicleModel(CP)
     self.pt_cp = get_powertrain_can_parser(CP, canbus)
     self.ch_cp_dbc_name = DBC[CP.carFingerprint]['chassis']
@@ -240,7 +240,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
       be = car.CarState.ButtonEvent.new_message()
       be.type = ButtonType.unknown
-      if self.CS.cruise_buttons != CruiseButtons.UNPRESS:
+      if self.CS.cruise_buttons not in [CruiseButtons.UNPRESS, CruiseButtons.INIT]:
         be.pressed = True
         but = self.CS.cruise_buttons
       else:

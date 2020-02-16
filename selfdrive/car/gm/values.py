@@ -14,6 +14,7 @@ class CAR:
 SUPERCRUISE_CARS = [CAR.CADILLAC_CT6]
 
 class CruiseButtons:
+  INIT        = 0
   UNPRESS     = 1
   RES_ACCEL   = 2
   DECEL_SET   = 3

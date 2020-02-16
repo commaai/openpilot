@@ -1,12 +1,9 @@
 import numpy as np
-from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.volkswagen.values import DBC, BUTTON_STATES, CarControllerParams
-
-GEAR = car.CarState.GearShifter
 
 def get_mqb_pt_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -99,21 +96,12 @@ def get_mqb_cam_can_parser(CP, canbus):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.cam)
 
-def parse_gear_shifter(gear):
-  # Return mapping of gearshift position to selected gear.
-  return {'P': GEAR.park, 'R': GEAR.reverse, 'N': GEAR.neutral,
-          'D': GEAR.drive, 'E': GEAR.eco, 'S': GEAR.sport, 'T': GEAR.manumatic}.get(gear, GEAR.unknown)
 
 class CarState(CarStateBase):
   def __init__(self, CP, canbus):
-    super().__init__()
-    # initialize can parser
-    self.CP = CP
-    self.car_fingerprint = CP.carFingerprint
+    super().__init__(CP)
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-
     self.shifter_values = self.can_define.dv["Getriebe_11"]['GE_Fahrstufe']
-
     self.buttonStates = BUTTON_STATES.copy()
 
   def update(self, pt_cp):
@@ -145,7 +133,7 @@ class CarState(CarStateBase):
 
     # Update gear and/or clutch position data.
     can_gear_shifter = int(pt_cp.vl["Getriebe_11"]['GE_Fahrstufe'])
-    self.gearShifter = parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
+    self.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
 
     # Update door and trunk/hatch lid open status.
     self.doorOpen = any([pt_cp.vl["Gateway_72"]['ZV_FT_offen'],

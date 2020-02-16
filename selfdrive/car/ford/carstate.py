@@ -33,15 +33,6 @@ def get_can_parser(CP):
 
 
 class CarState(CarStateBase):
-  def __init__(self, CP):
-    super().__init__()
-    self.CP = CP
-    self.left_blinker_on = 0
-    self.right_blinker_on = 0
-
-    # initialize can parser
-    self.car_fingerprint = CP.carFingerprint
-
   def update(self, cp):
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
