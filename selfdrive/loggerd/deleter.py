@@ -35,7 +35,7 @@ def deleter_thread(exit_event):
       exit_event.wait(30)
 
 
-def main(gctx=None):
+def main():
   deleter_thread(threading.Event())
 
 

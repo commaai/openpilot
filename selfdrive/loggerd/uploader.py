@@ -266,7 +266,7 @@ def uploader_fn(exit_event):
       backoff = min(backoff*2, 120)
     cloudlog.info("upload done, success=%r", success)
 
-def main(gctx=None):
+def main():
   uploader_fn(threading.Event())
 
 if __name__ == "__main__":
