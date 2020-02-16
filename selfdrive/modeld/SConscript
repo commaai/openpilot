@@ -14,19 +14,17 @@ if arch == "aarch64":
 else:
   libs += ['symphony-cpu', 'pthread']
 
-  if FindFile('libtensorflow.so', env['LIBPATH']):
-    # for tensorflow support
-    common_src += ['runners/tfmodel.cc']
-    libs += ['tensorflow']
-    # tell runners to use it
-    lenv['CFLAGS'].append("-DUSE_TF_MODEL")
-    lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
+  # for tensorflow support
+  common_src += ['runners/tfmodel.cc']
+  # tell runners to use it
+  lenv['CFLAGS'].append("-DUSE_TF_MODEL")
+  lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
 
 common = lenv.Object(common_src)
 
-lenv.Program('_monitoringd', [
-    "monitoringd.cc",
-    "models/monitoring.cc",
+lenv.Program('_dmonitoringmodeld', [
+    "dmonitoringmodeld.cc",
+    "models/dmonitoring.cc",
   ]+common, LIBS=libs)
 
 lenv.Program('_modeld', [

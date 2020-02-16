@@ -3,6 +3,10 @@
 
 #include <stdio.h>
 
+#ifndef sighandler_t
+typedef void (*sighandler_t)(int sig);
+#endif
+
 #ifndef __cplusplus
 
 #define min(a,b) \

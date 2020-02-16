@@ -4,7 +4,7 @@
     "severity": 0
   },
   "Offroad_TemperatureTooHigh": {
-    "text": "EON temperature too high. System won't start.",
+    "text": "Device temperature too high. System won't start.",
     "severity": 1
   },
   "Offroad_ConnectivityNeededPrompt": {
@@ -17,7 +17,7 @@
     "severity": 1
   },
   "Offroad_PandaFirmwareMismatch": {
-    "text": "Unexpected panda firmware version. System won't start. Reboot your EON to reflash panda.",
+    "text": "Unexpected panda firmware version. System won't start. Reboot your device to reflash panda.",
     "severity": 1
   },
   "Offroad_InvalidTime": {

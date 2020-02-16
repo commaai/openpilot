@@ -3,13 +3,18 @@ from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions
+from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 
+from cereal import car
+
 def get_startup_alert(car_recognized, controller_available):
   alert = 'startup'
+  if Params().get("GitRemote", encoding="utf8") in ['git@github.com:commaai/openpilot.git', 'https://github.com/commaai/openpilot.git']:
+    if Params().get("GitBranch", encoding="utf8") not in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']:
+      alert = 'startupMaster'
   if not car_recognized:
     alert = 'startupNoCar'
   elif car_recognized and not controller_available:
@@ -51,20 +56,31 @@ def _get_interface_names():
 # imports from directory selfdrive/car/<name>/
 interfaces = load_interfaces(_get_interface_names())
 
+
 def only_toyota_left(candidate_cars):
   return all(("TOYOTA" in c or "LEXUS" in c) for c in candidate_cars) and len(candidate_cars) > 0
 
-# BOUNTY: every added fingerprint in selfdrive/car/*/values.py is a $100 coupon code on shop.comma.ai
+
 # **** for use live only ****
 def fingerprint(logcan, sendcan, has_relay):
   if has_relay:
     # Vin query only reliably works thorugh OBDII
     bus = 1
-    addr, vin = get_vin(logcan, sendcan, bus)
-    _, car_fw = get_fw_versions(logcan, sendcan, bus)
+
+    cached_params = Params().get("CarParamsCache")
+    if cached_params is not None:
+      cloudlog.warning("Using cached CarParams")
+      CP = car.CarParams.from_bytes(cached_params)
+      vin = CP.carVin
+      car_fw = list(CP.carFw)
+    else:
+      _, vin = get_vin(logcan, sendcan, bus)
+      car_fw = get_fw_versions(logcan, sendcan, bus)
+
+    fw_candidates = match_fw_to_car(car_fw)
   else:
     vin = VIN_UNKNOWN
-    _, car_fw = set(), []
+    fw_candidates, car_fw = set(), []
 
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
@@ -110,12 +126,19 @@ def fingerprint(logcan, sendcan, has_relay):
 
     frame += 1
 
+  source = car.CarParams.FingerprintSource.can
+
+  # If FW query returns exactly 1 candidate, use it
+  if len(fw_candidates) == 1:
+    car_fingerprint = list(fw_candidates)[0]
+    source = car.CarParams.FingerprintSource.fw
+
   cloudlog.warning("fingerprinted %s", car_fingerprint)
-  return car_fingerprint, finger, vin, car_fw
+  return car_fingerprint, finger, vin, car_fw, source
 
 
 def get_car(logcan, sendcan, has_relay=False):
-  candidate, fingerprints, vin, car_fw = fingerprint(logcan, sendcan, has_relay)
+  candidate, fingerprints, vin, car_fw, source = fingerprint(logcan, sendcan, has_relay)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
@@ -125,5 +148,6 @@ def get_car(logcan, sendcan, has_relay=False):
   car_params = CarInterface.get_params(candidate, fingerprints, has_relay, car_fw)
   car_params.carVin = vin
   car_params.carFw = car_fw
+  car_params.fingerprintSource = source
 
   return CarInterface(car_params, CarController), car_params

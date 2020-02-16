@@ -99,15 +99,10 @@ def get_mqb_cam_can_parser(CP, canbus):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.cam)
 
-def parse_gear_shifter(gear, vals):
+def parse_gear_shifter(gear):
   # Return mapping of gearshift position to selected gear.
-
-  val_to_capnp = {'P': GEAR.park, 'R': GEAR.reverse, 'N': GEAR.neutral,
-                  'D': GEAR.drive, 'E': GEAR.eco, 'S': GEAR.sport, 'T': GEAR.manumatic}
-  try:
-    return val_to_capnp[vals[gear]]
-  except KeyError:
-    return "unknown"
+  return {'P': GEAR.park, 'R': GEAR.reverse, 'N': GEAR.neutral,
+              'D': GEAR.drive, 'E': GEAR.eco, 'S': GEAR.sport, 'T': GEAR.manumatic}.get(gear, GEAR.unknown)
 
 class CarState():
   def __init__(self, CP, canbus):
@@ -157,7 +152,7 @@ class CarState():
 
     # Update gear and/or clutch position data.
     can_gear_shifter = int(pt_cp.vl["Getriebe_11"]['GE_Fahrstufe'])
-    self.gearShifter = parse_gear_shifter(can_gear_shifter, self.shifter_values)
+    self.gearShifter = parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
 
     # Update door and trunk/hatch lid open status.
     self.doorOpen = any([pt_cp.vl["Gateway_72"]['ZV_FT_offen'],

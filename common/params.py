@@ -29,7 +29,7 @@ import fcntl
 import tempfile
 import threading
 from enum import Enum
-
+from common.basedir import PARAMS
 
 def mkdirs_exists_ok(path):
   try:
@@ -54,6 +54,7 @@ keys = {
   "AthenadPid": [TxType.PERSISTENT],
   "CalibrationParams": [TxType.PERSISTENT],
   "CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  "CarParamsCache": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "CarVin": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "CommunityFeaturesToggle": [TxType.PERSISTENT],
   "CompletedTrainingVersion": [TxType.PERSISTENT],
@@ -319,13 +320,18 @@ def write_db(params_path, key, value):
     lock.release()
 
 class Params():
-  def __init__(self, db='/data/params'):
+  def __init__(self, db=PARAMS):
     self.db = db
 
     # create the database if it doesn't exist...
     if not os.path.exists(self.db+"/d"):
       with self.transaction(write=True):
         pass
+
+  def clear_all(self):
+    shutil.rmtree(self.db, ignore_errors=True)
+    with self.transaction(write=True):
+      pass
 
   def transaction(self, write=False):
     if write:

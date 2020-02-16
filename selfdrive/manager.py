@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import datetime
 
-from common.basedir import BASEDIR
+from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
@@ -22,6 +22,8 @@ try:
   os.mkdir("/dev/shm")
 except FileExistsError:
   pass
+except PermissionError:
+  print("WARNING: failed to make /dev/shm")
 
 if ANDROID:
   os.chmod("/dev/shm", 0o777)
@@ -136,6 +138,7 @@ managed_processes = {
   "controlsd": "selfdrive.controls.controlsd",
   "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
+  "dmonitoringd": "selfdrive.controls.dmonitoringd",
   "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
@@ -152,7 +155,7 @@ managed_processes = {
   "clocksd": ("selfdrive/clocksd", ["./clocksd"]),
   "gpsd": ("selfdrive/sensord", ["./gpsd"]),
   "updated": "selfdrive.updated",
-  "monitoringd": ("selfdrive/modeld", ["./monitoringd"]),
+  "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
 }
 
@@ -194,6 +197,7 @@ car_started_processes = [
   'plannerd',
   'loggerd',
   'radard',
+  'dmonitoringd',
   'calibrationd',
   'paramsd',
   'camerad',
@@ -206,7 +210,7 @@ if ANDROID:
     'sensord',
     'clocksd',
     'gpsd',
-    'monitoringd',
+    'dmonitoringmodeld',
     'deleter',
   ]
 
@@ -246,14 +250,16 @@ def start_managed_process(name):
 def start_daemon_process(name):
   params = Params()
   proc, pid_param = daemon_processes[name]
-  pid = params.get(pid_param)
+  pid = params.get(pid_param, encoding='utf-8')
 
   if pid is not None:
     try:
       os.kill(int(pid), 0)
-      # process is running (kill is a poorly-named system call)
-      return
-    except OSError:
+      with open(f'/proc/{pid}/cmdline') as f:
+        if proc in f.read():
+          # daemon is running
+          return
+    except (OSError, FileNotFoundError):
       # process is dead
       pass
 
@@ -363,9 +369,10 @@ def manager_init(should_register=True):
     pass
 
   # ensure shared libraries are readable by apks
-  os.chmod(BASEDIR, 0o755)
-  os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
-  os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
+  if ANDROID:
+    os.chmod(BASEDIR, 0o755)
+    os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
+    os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
 def manager_thread():
   # now loop
@@ -452,6 +459,8 @@ def uninstall():
   android.reboot(reason="recovery")
 
 def main():
+  os.environ['PARAMS_PATH'] = PARAMS
+
   # the flippening!
   os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
 
