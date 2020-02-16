@@ -497,7 +497,7 @@ def main():
   # set unset params
   for k, v in default_params:
     if params.get(k) is None:
-      params.put(v)
+      params.put(k, v)
 
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:
