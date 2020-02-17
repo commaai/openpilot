@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import copy
 from cereal import car
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
@@ -106,15 +107,9 @@ class CarInterface(CarInterfaceBase):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
 
-    self.CS.update(self.cp)
-
-    # create message
-    ret = car.CarState.new_message()
+    ret = self.CS.update(self.cp)
 
     ret.canValid = self.cp.can_valid
-
-    ret.cruiseState.enabled = not (self.CS.pcm_acc_status in [0, 3])
-    ret.cruiseState.available = self.CS.pcm_acc_status != 0
 
     # events
     events = []
@@ -145,7 +140,9 @@ class CarInterface(CarInterfaceBase):
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
 
-    return ret.as_reader()
+    self.CS.out = ret.as_reader()
+
+    return copy.copy(self.CS.out)
 
   # pass in a car.CarControl
   # to be called @ 100hz

@@ -1,3 +1,4 @@
+from cereal import car
 from opendbc.can.parser import CANParser
 from common.numpy_fast import mean
 from selfdrive.config import Conversions as CV
@@ -48,9 +49,10 @@ class CarState(CarStateBase):
     ret.steeringAngle = cp.vl["Steering_Wheel_Data_CG1"]['SteWhlRelInit_An_Sns']
     ret.steeringPressed = not cp.vl["Lane_Keep_Assist_Status"]['LaHandsOff_B_Actl']
     ret.cruiseState.speed = cp.vl["Cruise_Status"]['Set_Speed'] * CV.MPH_TO_MS
-    self.pcm_acc_status = cp.vl["Cruise_Status"]['Cruise_State']
-    self.main_on = cp.vl["Cruise_Status"]['Cruise_State'] != 0
     self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
+    self.pcm_acc_status = cp.vl["Cruise_Status"]['Cruise_State']
+    ret.cruiseState.enabled = not (self.pcm_acc_status in [0, 3])
+    ret.cruiseState.available = self.pcm_acc_status != 0
     ret.gas = cp.vl["EngineData_14"]['ApedPosScal_Pc_Actl'] / 100.
     ret.gasPressed = ret.gas > 1e-6
     ret.brakePressed = bool(cp.vl["Cruise_Status"]["Brake_Drv_Appl"])
