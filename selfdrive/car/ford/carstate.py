@@ -49,16 +49,15 @@ class CarState(CarStateBase):
     ret.steeringAngle = cp.vl["Steering_Wheel_Data_CG1"]['SteWhlRelInit_An_Sns']
     ret.steeringPressed = not cp.vl["Lane_Keep_Assist_Status"]['LaHandsOff_B_Actl']
     ret.cruiseState.speed = cp.vl["Cruise_Status"]['Set_Speed'] * CV.MPH_TO_MS
-    self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
-    self.pcm_acc_status = cp.vl["Cruise_Status"]['Cruise_State']
-    ret.cruiseState.enabled = not (self.pcm_acc_status in [0, 3])
-    ret.cruiseState.available = self.pcm_acc_status != 0
+    ret.cruiseState.enabled = not (cp.vl["Cruise_Status"]['Cruise_State'] in [0, 3])
+    ret.cruiseState.available = cp.vl["Cruise_Status"]['Cruise_State'] != 0
     ret.gas = cp.vl["EngineData_14"]['ApedPosScal_Pc_Actl'] / 100.
     ret.gasPressed = ret.gas > 1e-6
     ret.brakePressed = bool(cp.vl["Cruise_Status"]["Brake_Drv_Appl"])
     ret.brakeLights = bool(cp.vl["BCM_to_HS_Body"]["Brake_Lights"])
     ret.genericToggle = bool(cp.vl["Steering_Buttons"]["Dist_Incr"])
     # TODO: we also need raw driver torque, needed for Assisted Lane Change
+    self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
     self.steer_error = cp.vl["Lane_Keep_Assist_Status"]['LaActDeny_B_Actl']
 
     return ret
