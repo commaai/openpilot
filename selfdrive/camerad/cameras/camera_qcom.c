@@ -1734,7 +1734,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
     }
   }
 
-  if (good_count < 4) {
+  if (good_count < 7) {
     s->focus_err = nan("");
     nan_cnt += 1;
     if (nan_cnt > patience_cnt) {
