@@ -51,11 +51,12 @@ class CarState(CarStateBase):
     self.pcm_acc_status = cp.vl["Cruise_Status"]['Cruise_State']
     self.main_on = cp.vl["Cruise_Status"]['Cruise_State'] != 0
     self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
+    ret.gas = cp.vl["EngineData_14"]['ApedPosScal_Pc_Actl'] / 100.
+    ret.gasPressed = ret.gas > 1e-6
+    ret.brakePressed = bool(cp.vl["Cruise_Status"]["Brake_Drv_Appl"])
+    ret.brakeLights = bool(cp.vl["BCM_to_HS_Body"]["Brake_Lights"])
+    ret.genericToggle = bool(cp.vl["Steering_Buttons"]["Dist_Incr"])
     # TODO: we also need raw driver torque, needed for Assisted Lane Change
     self.steer_error = cp.vl["Lane_Keep_Assist_Status"]['LaActDeny_B_Actl']
-    self.user_gas = cp.vl["EngineData_14"]['ApedPosScal_Pc_Actl']
-    self.brake_pressed = bool(cp.vl["Cruise_Status"]["Brake_Drv_Appl"])
-    self.brake_lights = bool(cp.vl["BCM_to_HS_Body"]["Brake_Lights"])
-    self.generic_toggle = bool(cp.vl["Steering_Buttons"]["Dist_Incr"])
 
     return ret

@@ -113,17 +113,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid
 
-    # gas pedal
-    ret.gas = self.CS.user_gas / 100.
-    ret.gasPressed = self.CS.user_gas > 0.0001
-    ret.brakePressed = self.CS.brake_pressed
-    ret.brakeLights = self.CS.brake_lights
-
     ret.cruiseState.enabled = not (self.CS.pcm_acc_status in [0, 3])
-    ret.cruiseState.speed = self.CS.v_cruise_pcm
     ret.cruiseState.available = self.CS.pcm_acc_status != 0
-
-    ret.genericToggle = self.CS.generic_toggle
 
     # events
     events = []
