@@ -1,9 +1,10 @@
 from cereal import car
 from common.numpy_fast import mean
-from common.kalman.simple_kalman import KF1D
 from selfdrive.config import Conversions as CV
+from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from selfdrive.car.gm.values import DBC, CAR, parse_gear_shifter, \
+from selfdrive.car.interfaces import CarStateBase
+from selfdrive.car.gm.values import DBC, CAR, \
                                     CruiseButtons, is_eps_status_ok, \
                                     STEER_THRESHOLD, SUPERCRUISE_CARS
 
@@ -50,25 +51,11 @@ def get_powertrain_can_parser(CP, canbus):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], canbus.powertrain)
 
 
-class CarState():
-  def __init__(self, CP, canbus):
-    self.CP = CP
-    # initialize can parser
-
-    self.car_fingerprint = CP.carFingerprint
-    self.cruise_buttons = CruiseButtons.UNPRESS
-    self.left_blinker_on = False
-    self.prev_left_blinker_on = False
-    self.right_blinker_on = False
-    self.prev_right_blinker_on = False
-
-    # vEgo kalman filter
-    dt = 0.01
-    self.v_ego_kf = KF1D(x0=[[0.], [0.]],
-                         A=[[1., dt], [0., 1.]],
-                         C=[1., 0.],
-                         K=[[0.12287673], [0.29666309]])
-    self.v_ego = 0.
+class CarState(CarStateBase):
+  def __init__(self, CP):
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
 
   def update(self, pt_cp):
     self.prev_cruise_buttons = self.cruise_buttons
@@ -78,20 +65,12 @@ class CarState():
     self.v_wheel_fr = pt_cp.vl["EBCMWheelSpdFront"]['FRWheelSpd'] * CV.KPH_TO_MS
     self.v_wheel_rl = pt_cp.vl["EBCMWheelSpdRear"]['RLWheelSpd'] * CV.KPH_TO_MS
     self.v_wheel_rr = pt_cp.vl["EBCMWheelSpdRear"]['RRWheelSpd'] * CV.KPH_TO_MS
-    v_wheel = mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr])
-
-    if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_kf.x = [[v_wheel], [0.0]]
-
-    self.v_ego_raw = v_wheel
-    v_ego_x = self.v_ego_kf.update(v_wheel)
-    self.v_ego = float(v_ego_x[0])
-    self.a_ego = float(v_ego_x[1])
-
+    self.v_ego_raw = mean([self.v_wheel_fl, self.v_wheel_fr, self.v_wheel_rl, self.v_wheel_rr])
+    self.v_ego, self.a_ego = self.update_speed_kf(self.v_ego_raw)
     self.standstill = self.v_ego_raw < 0.01
 
     self.angle_steers = pt_cp.vl["PSCMSteeringAngle"]['SteeringWheelAngle']
-    self.gear_shifter = parse_gear_shifter(pt_cp.vl["ECMPRDNL"]['PRNDL'])
+    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]['PRNDL'], None))
     self.user_brake = pt_cp.vl["EBCMBrakePedalPosition"]['BrakePedalPosition']
 
     self.pedal_gas = pt_cp.vl["AcceleratorPedal"]['AcceleratorPedal']

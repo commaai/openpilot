@@ -1,18 +1,10 @@
-from cereal import car
 from collections import defaultdict
 from common.numpy_fast import interp
-from common.kalman.simple_kalman import KF1D
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
+from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
-
-GearShifter = car.CarState.GearShifter
-
-def parse_gear_shifter(gear):
-  return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
-            'D': GearShifter.drive, 'S': GearShifter.sport, 'L': GearShifter.low}.get(gear, GearShifter.unknown)
-
 
 def calc_cruise_offset(offset, speed):
   # euristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
@@ -188,37 +180,20 @@ def get_cam_can_parser(CP):
   bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH  and not CP.isPandaBlack else 2
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_cam)
 
-class CarState():
+class CarState(CarStateBase):
   def __init__(self, CP):
-    self.CP = CP
-    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = self.can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
-    self.steer_status_values = defaultdict(lambda: "UNKNOWN", self.can_define.dv["STEER_STATUS"]["STEER_STATUS"])
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
+    self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
-
-    self.cruise_buttons = 0
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
-    self.blinker_on = 0
-
-    self.left_blinker_on = 0
-    self.right_blinker_on = 0
-
     self.cruise_mode = 0
     self.stopped = 0
-
-    # vEgo kalman filter
-    dt = 0.01
-    # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
-    # R = 1e3
-    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
-                         A=[[1.0, dt], [0.0, 1.0]],
-                         C=[1.0, 0.0],
-                         K=[[0.12287673], [0.29666309]])
-    self.v_ego = 0.0
 
   def update(self, cp, cp_cam):
 
@@ -229,8 +204,6 @@ class CarState():
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
-    self.prev_blinker_on = self.blinker_on
-
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
@@ -270,16 +243,10 @@ class CarState():
 
     # blend in transmission speed at low speed, since it has more low speed accuracy
     self.v_weight = interp(v_wheel, v_weight_bp, v_weight_v)
-    speed = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS * speed_factor + \
+    self.v_ego_raw = (1. - self.v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS * speed_factor + \
       self.v_weight * v_wheel
 
-    if abs(speed - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_kf.x = [[speed], [0.0]]
-
-    self.v_ego_raw = speed
-    v_ego_x = self.v_ego_kf.update(speed)
-    self.v_ego = float(v_ego_x[0])
-    self.a_ego = float(v_ego_x[1])
+    self.v_ego, self.a_ego = self.update_speed_kf(self.v_ego_raw)
 
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
@@ -310,7 +277,7 @@ class CarState():
       self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
     can_gear_shifter = int(cp.vl["GEARBOX"]['GEAR_SHIFTER'])
-    self.gear_shifter = parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
+    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control
