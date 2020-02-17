@@ -33,27 +33,27 @@ class CarController():
 
       if (frame % 3) == 0:
 
-        curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.v_ego)
+        curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
 
         # The use of the toggle below is handy for trying out the various LKAS modes
         if TOGGLE_DEBUG:
-          self.lkas_action += int(CS.generic_toggle and not self.generic_toggle_last)
+          self.lkas_action += int(CS.out.genericToggle and not self.generic_toggle_last)
           self.lkas_action &= 0xf
         else:
           self.lkas_action = 5   # 4 and 5 seem the best. 8 and 9 seem to aggressive and laggy
 
         can_sends.append(create_steer_command(self.packer, apply_steer, enabled,
-                                              CS.lkas_state, CS.angle_steers, curvature, self.lkas_action))
-        self.generic_toggle_last = CS.generic_toggle
+                                              CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
+        self.generic_toggle_last = CS.out.genericToggle
 
       if (frame % 100) == 0:
 
         can_sends.append(make_can_msg(973, b'\x00\x00\x00\x00\x00\x00\x00\x00', 0))
         #can_sends.append(make_can_msg(984, b'\x00\x00\x00\x00\x80\x45\x60\x30', 0))
 
-      if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.main_on) or \
+      if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
          (self.steer_alert_last != steer_alert):
-        can_sends.append(create_lkas_ui(self.packer, CS.main_on, enabled, steer_alert))
+        can_sends.append(create_lkas_ui(self.packer, CS.out.cruiseState.available, enabled, steer_alert))
 
       if (frame % 200) == 0:
         can_sends.append(make_can_msg(1875, b'\x80\xb0\x55\x55\x78\x90\x00\x00', 1))
@@ -81,7 +81,7 @@ class CarController():
         can_sends.append(make_can_msg(addr, (cnt<<4).to_bytes(1, 'little') + b'\x00\x00\x00\x00\x00\x00\x00', 1))
 
       self.enabled_last = enabled
-      self.main_on_last = CS.main_on
+      self.main_on_last = CS.out.cruiseState.available
       self.steer_alert_last = steer_alert
 
     return can_sends

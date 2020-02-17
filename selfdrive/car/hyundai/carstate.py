@@ -142,7 +142,6 @@ class CarState(CarStateBase):
     self.acc_active = cp.vl["SCC12"]['ACCMode'] != 0
     self.pcm_acc_status = int(self.acc_active)
 
-    # calc best v_ego estimate, by averaging two opposite corners
     self.v_wheel_fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS
     self.v_wheel_fr = cp.vl["WHL_SPD11"]['WHL_SPD_FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS
