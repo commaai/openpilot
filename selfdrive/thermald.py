@@ -192,10 +192,12 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
-    try:
-      network_type = get_network_type()
-    except subprocess.CalledProcessError:
-      pass
+    # get_network_type is an expensive call. update every 3s
+    if (count % int(3. / DT_TRML)) == 0:
+      try:
+        network_type = get_network_type()
+      except subprocess.CalledProcessError:
+        pass
 
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
