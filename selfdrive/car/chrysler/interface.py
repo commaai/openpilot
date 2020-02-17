@@ -122,7 +122,6 @@ class CarInterface(CarInterfaceBase):
 
     # speeds
     ret.yawRate = self.VM.yaw_rate(ret.steeringAngle * CV.DEG_TO_RAD, ret.vEgo)
-
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # TODO: button presses
