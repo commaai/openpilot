@@ -184,7 +184,7 @@ class CarInterface(CarInterfaceBase):
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()
 
-    return copy.copy(self.CS.out)
+    return self.CS.out
 
   # pass in a car.CarControl
   # to be called @ 100hz
