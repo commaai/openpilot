@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import copy
 from cereal import car
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
@@ -142,7 +141,7 @@ class CarInterface(CarInterfaceBase):
 
     self.CS.out = ret.as_reader()
 
-    return copy.copy(self.CS.out)
+    return self.CS.out
 
   # pass in a car.CarControl
   # to be called @ 100hz
