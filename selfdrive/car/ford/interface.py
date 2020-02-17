@@ -113,19 +113,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid
 
-    # speeds
-    ret.vEgo = self.CS.v_ego
-    ret.vEgoRaw = self.CS.v_ego_raw
-    ret.standstill = self.CS.standstill
-    ret.wheelSpeeds.fl = self.CS.v_wheel_fl
-    ret.wheelSpeeds.fr = self.CS.v_wheel_fr
-    ret.wheelSpeeds.rl = self.CS.v_wheel_rl
-    ret.wheelSpeeds.rr = self.CS.v_wheel_rr
-
-    # steering wheel
-    ret.steeringAngle = self.CS.angle_steers
-    ret.steeringPressed = self.CS.steer_override
-
     # gas pedal
     ret.gas = self.CS.user_gas / 100.
     ret.gasPressed = self.CS.user_gas > 0.0001
