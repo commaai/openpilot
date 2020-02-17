@@ -1,4 +1,4 @@
-Version 0.7.3 (2020-xx-xx)
+Version 0.7.3 (2020-02-21)
 ========================
  * Improved autofocus for road facing camera
  * Support for 2020 Highlander thanks to che220!
