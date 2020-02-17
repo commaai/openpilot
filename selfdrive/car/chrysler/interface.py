@@ -135,7 +135,7 @@ class CarInterface(CarInterfaceBase):
     ret.gearShifter = self.CS.gear_shifter
 
     # gas pedal
-    ret.gas = self.CS.car_gas
+    ret.gas = self.CS.pedal_gas
     ret.gasPressed = self.CS.pedal_gas > 0
 
     # brake pedal

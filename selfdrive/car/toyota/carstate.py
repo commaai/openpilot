@@ -1,16 +1,9 @@
-from cereal import car
 from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR, NO_DSU_CAR
-
-GearShifter = car.CarState.GearShifter
-
-def parse_gear_shifter(gear):
-  return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
-              'D': GearShifter.drive, 'B': GearShifter.brake}.get(gear, GearShifter.unknown)
 
 
 def get_can_parser(CP):
@@ -91,18 +84,11 @@ def get_cam_can_parser(CP):
 
 class CarState(CarStateBase):
   def __init__(self, CP):
-
-    super().__init__()
-    self.CP = CP
-    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
-    self.left_blinker_on = 0
-    self.right_blinker_on = 0
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["GEAR_PACKET"]['GEAR']
     self.angle_offset = 0.
     self.init_angle_offset = False
-
-    # initialize can parser
-    self.car_fingerprint = CP.carFingerprint
 
   def update(self, cp, cp_cam):
     # update prevs, update must run once per loop
@@ -118,7 +104,6 @@ class CarState(CarStateBase):
       self.pedal_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
     else:
       self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
-    self.car_gas = self.pedal_gas
     self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -145,7 +130,7 @@ class CarState(CarStateBase):
       self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
-    self.gear_shifter = parse_gear_shifter(self.shifter_values.get(can_gear, None))
+    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       self.main_on = cp.vl["DSU_CRUISE"]['MAIN_ON']
     else:

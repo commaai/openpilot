@@ -84,20 +84,10 @@ def get_camera_can_parser(CP):
 
 class CarState(CarStateBase):
   def __init__(self, CP):
-    super().__init__()
+    super().__init__(CP)
     # initialize can parser
-    self.CP = CP
-
-    self.car_fingerprint = CP.carFingerprint
-    self.left_blinker_on = False
     self.left_blinker_cnt = 0
-    self.prev_left_blinker_on = False
-    self.right_blinker_on = False
     self.right_blinker_cnt = 0
-    self.prev_right_blinker_on = False
-    self.steer_torque_driver = 0
-    self.steer_not_allowed = False
-    self.main_on = False
 
   def update(self, cp, cp_cam):
 

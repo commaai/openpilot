@@ -125,17 +125,6 @@ def get_camera_parser(CP):
 
 
 class CarState(CarStateBase):
-  def __init__(self, CP):
-    super().__init__()
-    self.CP = CP
-
-    # initialize can parser
-    self.car_fingerprint = CP.carFingerprint
-
-    self.left_blinker_on = 0
-    self.left_blinker_flash = 0
-    self.right_blinker_on = 0
-    self.right_blinker_flash = 0
 
   def update(self, cp, cp_cam):
     # update prevs, update must run once per Loop
@@ -173,9 +162,7 @@ class CarState(CarStateBase):
     self.yaw_rate = cp.vl["ESP12"]['YAW_RATE']
     self.main_on = True
     self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigLHSw']
-    self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigRHSw']
-    self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
     self.steer_override = abs(cp.vl["MDPS11"]['CR_Mdps_DrvTq']) > STEER_THRESHOLD
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_error = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']

@@ -269,9 +269,9 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
       tire_stiffness_factor = 0.444 # not optimized yet
-      ret.mass = 4070 * CV.LB_TO_KG + STD_CARGO_KG 
+      ret.mass = 4070 * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00006      
+      ret.lateralTuning.pid.kf = 0.00006
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
@@ -365,7 +365,7 @@ class CarInterface(CarInterfaceBase):
     ret.gearShifter = self.CS.gear_shifter
 
     # gas pedal
-    ret.gas = self.CS.car_gas
+    ret.gas = self.CS.pedal_gas
     if self.CP.enableGasInterceptor:
     # use interceptor values to disengage on pedal press
       ret.gasPressed = self.CS.pedal_gas > 15

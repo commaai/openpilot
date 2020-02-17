@@ -1,4 +1,3 @@
-from cereal import car
 from collections import defaultdict
 from common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
@@ -6,13 +5,6 @@ from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
-
-GearShifter = car.CarState.GearShifter
-
-def parse_gear_shifter(gear):
-  return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
-            'D': GearShifter.drive, 'S': GearShifter.sport, 'L': GearShifter.low}.get(gear, GearShifter.unknown)
-
 
 def calc_cruise_offset(offset, speed):
   # euristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
@@ -190,24 +182,16 @@ def get_cam_can_parser(CP):
 
 class CarState(CarStateBase):
   def __init__(self, CP):
-    super().__init__()
-    self.CP = CP
-    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = self.can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
-    self.steer_status_values = defaultdict(lambda: "UNKNOWN", self.can_define.dv["STEER_STATUS"]["STEER_STATUS"])
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
+    self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
-
-    self.cruise_buttons = 0
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
-    self.blinker_on = 0
-
-    self.left_blinker_on = 0
-    self.right_blinker_on = 0
-
     self.cruise_mode = 0
     self.stopped = 0
 
@@ -220,8 +204,6 @@ class CarState(CarStateBase):
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
     self.prev_cruise_setting = self.cruise_setting
-    self.prev_blinker_on = self.blinker_on
-
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
@@ -295,7 +277,7 @@ class CarState(CarStateBase):
       self.main_on = cp.vl["SCM_BUTTONS"]['MAIN_ON']
 
     can_gear_shifter = int(cp.vl["GEARBOX"]['GEAR_SHIFTER'])
-    self.gear_shifter = parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
+    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
     # crv doesn't include cruise control

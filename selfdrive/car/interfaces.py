@@ -5,6 +5,8 @@ from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
 
+GearShifter = car.CarState.GearShifter
+
 # generic car and radar interfaces
 
 class CarInterfaceBase():
@@ -46,7 +48,13 @@ class RadarInterfaceBase():
     return ret
 
 class CarStateBase:
-  def __init__(self):
+  def __init__(self, CP):
+    self.CP = CP
+    self.car_fingerprint = CP.carFingerprint
+    self.left_blinker_on = 0
+    self.right_blinker_on = 0
+    self.cruise_buttons = 0
+
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
     self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
@@ -60,3 +68,9 @@ class CarStateBase:
 
     v_ego_x = self.v_ego_kf.update(v_ego_raw)
     return float(v_ego_x[0]), float(v_ego_x[1])
+
+  @staticmethod
+  def parse_gear_shifter(gear):
+    return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
+            'E': GearShifter.eco, 'T': GearShifter.manumatic, 'D': GearShifter.drive,
+            'S': GearShifter.sport, 'L': GearShifter.low, 'B': GearShifter.brake}.get(gear, GearShifter.unknown)

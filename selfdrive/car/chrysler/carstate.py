@@ -1,14 +1,7 @@
-from cereal import car
 from opendbc.can.parser import CANParser
+from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
-
-GearShifter = car.CarState.GearShifter
-
-def parse_gear_shifter(can_gear):
-  return {0x1: GearShifter.park, 0x2: GearShifter.reverse, 0x3: GearShifter.neutral,
-          0x4: GearShifter.drive, 0x5: GearShifter.low}.get(can_gear, GearShifter.unknown)
-
 
 def get_can_parser(CP):
 
@@ -70,13 +63,9 @@ def get_camera_parser(CP):
 
 class CarState(CarStateBase):
   def __init__(self, CP):
-    super().__init__()
-    self.CP = CP
-    self.left_blinker_on = 0
-    self.right_blinker_on = 0
-
-    # initialize can parser
-    self.car_fingerprint = CP.carFingerprint
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["GEAR"]['PRNDL']
 
   def update(self, cp, cp_cam):
 
@@ -95,7 +84,6 @@ class CarState(CarStateBase):
 
     self.brake_pressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5 # human-only
     self.pedal_gas = cp.vl["ACCEL_GAS_134"]['ACCEL_134']
-    self.car_gas = self.pedal_gas
     self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 
     self.v_wheel_fl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FL']
@@ -109,7 +97,7 @@ class CarState(CarStateBase):
 
     self.angle_steers = cp.vl["STEERING"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING"]['STEERING_RATE']
-    self.gear_shifter = parse_gear_shifter(cp.vl['GEAR']['PRNDL'])
+    self.gear_shifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
     self.main_on = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
