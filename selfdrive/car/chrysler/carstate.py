@@ -1,7 +1,9 @@
-from cereal import car
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
+<<<<<<< HEAD
 from selfdrive.config import Conversions as CV
+=======
+>>>>>>> 5c52be27ca8ecef959b1bb7eabcedc0c970d0a8f
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 
@@ -95,7 +97,6 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.rl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RL']
     ret.wheelSpeeds.fr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FR']
     ret.vEgoRaw = (cp.vl['SPEED_1']['SPEED_LEFT'] + cp.vl['SPEED_1']['SPEED_RIGHT']) / 2.
-
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = not ret.vEgoRaw > 0.001
 
