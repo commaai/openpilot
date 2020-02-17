@@ -100,6 +100,7 @@ jobs:
           docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
           docker rm $CONTAINER_NAME
       - name: Print diff
+        if: always()
         run: cat diff.txt
       - uses: actions/upload-artifact@v1
         if: always()
