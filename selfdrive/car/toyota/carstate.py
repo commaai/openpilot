@@ -106,7 +106,6 @@ class CarState(CarStateBase):
       self.pedal_gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
     self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
 
-    # calc best v_ego estimate, by averaging two opposite corners
     self.v_wheel_fl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FL'] * CV.KPH_TO_MS
     self.v_wheel_fr = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
     self.v_wheel_rl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS

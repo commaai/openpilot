@@ -35,10 +35,7 @@ def get_can_parser(CP):
 
 class CarState(CarStateBase):
   def update(self, cp):
-
     ret = car.CarState.new_message()
-
-    # calc best v_ego estimate, by averaging two opposite corners
     ret.wheelSpeeds.rr = cp.vl["WheelSpeed_CG1"]['WhlRr_W_Meas'] * WHEEL_RADIUS
     ret.wheelSpeeds.rl = cp.vl["WheelSpeed_CG1"]['WhlRl_W_Meas'] * WHEEL_RADIUS
     ret.wheelSpeeds.fr = cp.vl["WheelSpeed_CG1"]['WhlFr_W_Meas'] * WHEEL_RADIUS
