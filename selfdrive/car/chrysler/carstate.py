@@ -1,9 +1,6 @@
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-<<<<<<< HEAD
 from selfdrive.config import Conversions as CV
-=======
->>>>>>> 5c52be27ca8ecef959b1bb7eabcedc0c970d0a8f
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 
