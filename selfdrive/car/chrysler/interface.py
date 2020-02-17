@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import copy
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
