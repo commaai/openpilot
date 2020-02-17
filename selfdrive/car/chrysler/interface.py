@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import copy
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
@@ -184,7 +183,7 @@ class CarInterface(CarInterfaceBase):
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()
 
-    return copy.copy(self.CS.out)
+    return self.CS.out
 
   # pass in a car.CarControl
   # to be called @ 100hz
