@@ -165,12 +165,13 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kf = 0.00006 # conservative feed-forward
 
+    steerConfigIndex = 1
     eps_modified = False
     for fw in car_fw:
       if fw.ecu == "eps" and b"," in fw.fwVersion:
         eps_modified = True
 
-    if candidate == CAR.CIVIC:
+    if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
       stop_and_go = True
       ret.mass = CivicParams.MASS
       ret.wheelbase = CivicParams.WHEELBASE
@@ -183,31 +184,21 @@ class CarInterface(CarInterfaceBase):
         # stock filter output values:     0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
         # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
         # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in 2x max
-        ret.lateralParams.torqueBP = [0, 2560, 8000]
-        ret.lateralParams.torqueV  = [0, 2560, 3840]
+        ret.lateralParams.torqueBP = [0x0, 0xA00, 0x2000]
+        ret.lateralParams.torqueV  = [0x0, 0xA00, 0xF00]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]
         ret.lateralTuning.pid.kf = 0.00006 # TODO: can this go higher?
       else:
-        ret.lateralParams.torqueBP = [0, 2560]
-        ret.lateralParams.torqueV  = [0, 2560]
+        if steerConfigIndex in [1, 2, 3, 4, 5, 6]:
+          ret.lateralParams.torqueBP =   [0x0, 0xA00]
+          ret.lateralParams.torqueV = [0x0, 0xA00]
+        elif steerConfigIndex == 7:
+          ret.lateralParams.torqueBP = [0x0, 0xE00]
+          ret.lateralParams.torqueV = [0x0, 0xE00]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]] # TODO: test these numbers
         ret.lateralTuning.pid.kf = 0.00006 # TODO: adjust for new range?
       tire_stiffness_factor = 1.
 
-      ret.longitudinalTuning.kpBP = [0., 5., 35.]
-      ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
-      ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.54, 0.36]
-
-    elif candidate == CAR.CIVIC_BOSCH:
-      stop_and_go = True
-      ret.mass = CivicParams.MASS
-      ret.wheelbase = CivicParams.WHEELBASE
-      ret.centerToFront = CivicParams.CENTER_TO_FRONT
-      ret.steerRatio = 15.38  # 10.93 is end-to-end spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
-      tire_stiffness_factor = 1.
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
@@ -268,13 +259,21 @@ class CarInterface(CarInterfaceBase):
         # stock request input values:     0x0000, 0x00DB, 0x01BB, 0x0296, 0x0377, 0x0454, 0x0532, 0x0610, 0x067F
         # stock request output values:    0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x129A, 0x134D, 0x1400
         # modified request output values: 0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x1ACD, 0x239A, 0x2800
-        ret.lateralParams.torqueBP = [0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x1ACD, 0x239A, 0x2800]
-        ret.lateralParams.torqueV  = [0x0000, 0x01FA, 0x0400, 0x05F9, 0x0801, 0x09FF, 0x0C00, 0x0E01, 0x0F01]
+        if steerConfigIndex in [1, 2]:
+          ret.lateralParams.torqueBP = [0x0, 0xA00, 0x2000]
+          ret.lateralParams.torqueV = [0x0, 0xA00, 0xF00]
+        elif steerConfigIndex in [3, 4, 5, 6, 7]:
+          ret.lateralParams.torqueBP =   [0x0, 0xA00, 0x2000]
+          ret.lateralParams.torqueV = [0x0, 0xA00, 0x1000]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.09]] # TODO: test these numbers
         ret.lateralTuning.pid.kf = 0.00006 # TODO: what should this be?
       else:
-        ret.lateralParams.torqueBP = [0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x129A, 0x134D, 0x1400]
-        ret.lateralParams.torqueV  = [0x0000, 0x01FA, 0x0400, 0x05F9, 0x0801, 0x09FF, 0x0C00, 0x0E01, 0x0F01]
+        if steerConfigIndex in [1, 2, 7]:
+          ret.lateralParams.torqueBP = [0x0, 0xF00]
+          ret.lateralParams.torqueV = [0x0, 0xF00]
+        elif steerConfigIndex in [3, 4, 5, 6]:
+          ret.lateralParams.torqueBP =   [0x0, 0xE00]
+          ret.lateralParams.torqueV = [0x0, 0xE00]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: test these numbers
         ret.lateralTuning.pid.kf = 0.00006 # TODO: adjust for new range?
       tire_stiffness_factor = 0.677
@@ -293,6 +292,33 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.677
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
+
+    elif candidate == CAR.INSIGHT:
+      stop_and_go = True
+      ret.mass = 2987. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 15.
+      if eps_modified:
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]]
+        ret.lateralParams.torqueBP = [0x0, 0xA00, 0x2000]
+        ret.lateralParams.torqueV = [0x0, 0xA00, 0xF00]
+      else:
+        if steerConfigIndex == 1:
+          ret.lateralParams.torqueBP = [0x0, 0xF00]
+          ret.lateralParams.torqueV  = [0x0, 0xF00]
+        elif steerConfigIndex in [2, 7]:
+          ret.lateralParams.torqueBP = [0x0, 0xA00]
+          ret.lateralParams.torqueV  = [0x0, 0xA00]
+        elif steerConfigIndex in [3, 4, 5, 6]:
+          ret.lateralParams.torqueBP = [0x0, 0xE00]
+          ret.lateralParams.torqueV  = [0x0, 0xE00]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      tire_stiffness_factor = 0.677
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
