@@ -114,7 +114,7 @@ def pm_calculate(health):
 
 # Get the power usage
 def get_power_used():
-  return power_used_uWh
+  return int(power_used_uWh)
 
 
 
