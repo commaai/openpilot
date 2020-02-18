@@ -214,9 +214,6 @@ class LiveKalman():
   def P(self):
     return self.filter.covs()
 
-  def predict(self, t):
-    return self.filter.predict(t)
-
   def rts_smooth(self, estimates):
     return self.filter.rts_smooth(estimates, norm_quats=True)
 
