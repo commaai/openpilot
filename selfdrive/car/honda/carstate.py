@@ -279,13 +279,9 @@ class CarState(CarStateBase):
     if self.CP.enableGasInterceptor:
       self.user_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
       self.user_gas_pressed = self.user_gas > 1e-5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
-
-    # gas pedal
-    if not self.CP.enableGasInterceptor:
-      ret.gasPressed = self.pedal_gas > 1e-5
-    else:
       ret.gasPressed = self.user_gas_pressed
-
+    else:
+      ret.gasPressed = self.pedal_gas > 1e-5
 
     ret.steeringTorque = cp.vl["STEER_STATUS"]['STEER_TORQUE_SENSOR']
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]['MOTOR_TORQUE']
