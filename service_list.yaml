@@ -31,7 +31,7 @@ carState: [8021, true, 100., 10]
 # 8022 is reserved for sshd
 carControl: [8023, true, 100., 10]
 plan: [8024, true, 20.]
-liveLocation: [8025, true, 0.]
+liveLocation: [8025, true, 0., 1]
 gpsLocation: [8026, true, 1., 1]
 ethernetData: [8027, true, 0.]
 navUpdate: [8028, true, 0.]
