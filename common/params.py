@@ -22,6 +22,7 @@ file in place without messing with <params_dir>/d.
 """
 import time
 import os
+import string
 import binascii
 import errno
 import sys
@@ -409,7 +410,7 @@ if __name__ == "__main__":
       pp = params.get(k)
       if pp is None:
         print("%s is None" % k)
-      elif all(c < 128 and c >= 32 for c in pp):
+      elif all(chr(c) in string.printable for c in pp):
         print("%s = %s" % (k, pp))
       else:
         print("%s = %s" % (k, binascii.hexlify(pp)))
