@@ -360,7 +360,7 @@ def thermald_thread():
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     # Offroad power monitoring
-    pm_calculate()
+    pm_calculate(health)
     msg.thermal.offroadPowerUsage = get_power_used()
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged

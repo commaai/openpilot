@@ -66,7 +66,7 @@ def pm_calculate(health):
     return
 
   # First measurement, set integration time
-  if last_measurement_time = None:
+  if last_measurement_time == None:
     last_measurement_time = now
     return
 
