@@ -157,7 +157,7 @@ def run_observations_through_filter(kf, observations, filter_time=None):
 
 def save_residuals_plot(obs, save_path, data_name):
   import matplotlib.pyplot as plt
-  import mpld3
+  import mpld3  # pylint: disable=import-error
   fig = plt.figure(figsize=(10,20))
   fig.suptitle('Residuals of ' + data_name, fontsize=24)
   n = len(list(obs.keys()))
