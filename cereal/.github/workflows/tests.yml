@@ -1,0 +1,23 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+
+    runs-on: ubuntu-16.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: docker build -t cereal .
+    - name: Unit Tests
+      run: |
+        docker run cereal bash -c "scons --test --asan -j$(nproc) && messaging/test_runner"
+    - name: Test ZMQ
+      run: |
+        docker run cereal bash -c "ZMQ=1 python -m unittest discover ."
+    - name: Test MSGQ
+      run: |
+        docker run cereal bash -c "MSGQ=1 python -m unittest discover ."
+
