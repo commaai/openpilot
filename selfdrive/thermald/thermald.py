@@ -17,7 +17,7 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
-from selfdrive.thermald.power_monitoring import get_battery_capacity, get_battery_status, get_battery_current, get_battery_voltage, get_usb_present, pm_calculate, get_power_used
+from selfdrive.thermald.power_monitoring import *
 
 FW_SIGNATURE = get_expected_signature()
 
@@ -181,6 +181,7 @@ def thermald_thread():
     handle_fan = handle_fan_eon
 
   params = Params()
+  pm = PowerMonitoring()
 
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
@@ -360,8 +361,8 @@ def thermald_thread():
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     # Offroad power monitoring
-    pm_calculate(health)
-    msg.thermal.offroadPowerUsage = get_power_used()
+    pm.calculate(health)
+    msg.thermal.offroadPowerUsage = pm.get_power_used()
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
