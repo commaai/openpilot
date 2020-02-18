@@ -22,8 +22,6 @@ class CarInterface(CarInterfaceBase):
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
-    self.left_blinker_prev = False
-    self.right_blinker_prev = False
     self.low_speed_alert = False
 
     # *** init the major players ***
@@ -159,21 +157,7 @@ class CarInterface(CarInterfaceBase):
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
     # TODO: button presses
-    buttonEvents = []
-
-    if ret.leftBlinker != self.left_blinker_prev:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.leftBlinker
-      be.pressed = ret.leftBlinker != 0
-      buttonEvents.append(be)
-
-    if ret.rightBlinker != self.right_blinker_prev:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.rightBlinker
-      be.pressed = ret.rightBlinker != 0
-      buttonEvents.append(be)
-
-    ret.buttonEvents = buttonEvents
+    ret.buttonEvents = []
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
@@ -218,11 +202,8 @@ class CarInterface(CarInterfaceBase):
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
-    self.left_blinker_prev = ret.leftBlinker
-    self.right_blinker_prev = ret.rightBlinker
 
     self.CS.out = ret.as_reader()
-
     return self.CS.out
 
   def apply(self, c):

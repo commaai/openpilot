@@ -51,8 +51,6 @@ class CarStateBase:
   def __init__(self, CP):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
-    self.left_blinker_on = 0
-    self.right_blinker_on = 0
     self.cruise_buttons = 0
 
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
