@@ -10,12 +10,12 @@ struct harness_configuration {
   const bool has_harness;
   GPIO_TypeDef *GPIO_SBU1;
   GPIO_TypeDef *GPIO_SBU2;
-  GPIO_TypeDef *GPIO_relay_normal;
-  GPIO_TypeDef *GPIO_relay_flipped;
+  GPIO_TypeDef *GPIO_relay_SBU1;
+  GPIO_TypeDef *GPIO_relay_SBU2;
   uint8_t pin_SBU1;
   uint8_t pin_SBU2;
-  uint8_t pin_relay_normal;
-  uint8_t pin_relay_flipped;
+  uint8_t pin_relay_SBU1;
+  uint8_t pin_relay_SBU2;
   uint8_t adc_channel_SBU1;
   uint8_t adc_channel_SBU2;
 };
@@ -30,9 +30,9 @@ void set_intercept_relay(bool intercept) {
     }
 
     if(car_harness_status == HARNESS_STATUS_NORMAL){
-      set_gpio_output(current_board->harness_config->GPIO_relay_normal, current_board->harness_config->pin_relay_normal, !intercept);
+      set_gpio_output(current_board->harness_config->GPIO_relay_SBU2, current_board->harness_config->pin_relay_SBU2, !intercept);
     } else {
-      set_gpio_output(current_board->harness_config->GPIO_relay_flipped, current_board->harness_config->pin_relay_flipped, !intercept);
+      set_gpio_output(current_board->harness_config->GPIO_relay_SBU1, current_board->harness_config->pin_relay_SBU1, !intercept);
     }
   }
 }
@@ -41,10 +41,10 @@ bool harness_check_ignition(void) {
   bool ret = false;
   switch(car_harness_status){
     case HARNESS_STATUS_NORMAL:
-      ret = !get_gpio_input(current_board->harness_config->GPIO_SBU2, current_board->harness_config->pin_SBU2);
+      ret = !get_gpio_input(current_board->harness_config->GPIO_SBU1, current_board->harness_config->pin_SBU1);
       break;
     case HARNESS_STATUS_FLIPPED:
-      ret = !get_gpio_input(current_board->harness_config->GPIO_SBU1, current_board->harness_config->pin_SBU1);
+      ret = !get_gpio_input(current_board->harness_config->GPIO_SBU2, current_board->harness_config->pin_SBU2);
       break;
     default:
       break;
@@ -62,11 +62,11 @@ uint8_t harness_detect_orientation(void) {
   // Detect connection and orientation
   if((sbu1_voltage < HARNESS_CONNECTED_THRESHOLD) || (sbu2_voltage < HARNESS_CONNECTED_THRESHOLD)){
     if (sbu1_voltage < sbu2_voltage) {
-      // orientation normal
-      ret = HARNESS_STATUS_NORMAL;
-    } else {
-      // orientation flipped
+      // orientation flipped (PANDA_SBU1->HARNESS_SBU1(relay), PANDA_SBU2->HARNESS_SBU2(ign))
       ret = HARNESS_STATUS_FLIPPED;
+    } else {
+      // orientation normal (PANDA_SBU2->HARNESS_SBU1(relay), PANDA_SBU1->HARNESS_SBU2(ign))
+      ret = HARNESS_STATUS_NORMAL;
     }
   }
   #endif
@@ -89,13 +89,6 @@ void harness_init(void) {
     // set the SBU lines to be inputs before using the relay. The lines are not 5V tolerant in ADC mode!
     set_gpio_mode(current_board->harness_config->GPIO_SBU1, current_board->harness_config->pin_SBU1, MODE_INPUT);
     set_gpio_mode(current_board->harness_config->GPIO_SBU2, current_board->harness_config->pin_SBU2, MODE_INPUT);
-
-    // now we have orientation, set pin ignition detection
-    if(car_harness_status == HARNESS_STATUS_NORMAL){
-      set_gpio_mode(current_board->harness_config->GPIO_SBU2, current_board->harness_config->pin_SBU2, MODE_INPUT);
-    } else {
-      set_gpio_mode(current_board->harness_config->GPIO_SBU1, current_board->harness_config->pin_SBU1, MODE_INPUT);
-    }
 
     // keep busses connected by default
     set_intercept_relay(false);
