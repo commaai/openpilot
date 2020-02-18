@@ -19,8 +19,6 @@ class CarControllerParams:
   STEER_DRIVER_FACTOR = 1        # from dbc
 
 BUTTON_STATES = {
-  "leftBlinker": False,
-  "rightBlinker": False,
   "accelCruise": False,
   "decelCruise": False,
   "cancel": False,

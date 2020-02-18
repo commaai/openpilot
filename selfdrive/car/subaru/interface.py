@@ -15,7 +15,7 @@ class CarInterface(CarInterfaceBase):
     self.CP = CP
 
     self.frame = 0
-    self.acc_active_prev = 0
+    self.enabled_prev = 0
     self.gas_pressed_prev = False
 
     # *** init the major players ***
@@ -98,66 +98,16 @@ class CarInterface(CarInterfaceBase):
     self.pt_cp.update_strings(can_strings)
     self.cam_cp.update_strings(can_strings)
 
-    self.CS.update(self.pt_cp, self.cam_cp)
-
-    # create message
-    ret = car.CarState.new_message()
+    ret = self.CS.update(self.pt_cp, self.cam_cp)
 
     ret.canValid = self.pt_cp.can_valid and self.cam_cp.can_valid
-
-    # speeds
-    ret.vEgo = self.CS.v_ego
-    ret.aEgo = self.CS.a_ego
-    ret.vEgoRaw = self.CS.v_ego_raw
-    ret.yawRate = self.VM.yaw_rate(self.CS.angle_steers * CV.DEG_TO_RAD, self.CS.v_ego)
-    ret.standstill = self.CS.standstill
-    ret.wheelSpeeds.fl = self.CS.v_wheel_fl
-    ret.wheelSpeeds.fr = self.CS.v_wheel_fr
-    ret.wheelSpeeds.rl = self.CS.v_wheel_rl
-    ret.wheelSpeeds.rr = self.CS.v_wheel_rr
-
-    # steering wheel
-    ret.steeringAngle = self.CS.angle_steers
-
-    # torque and user override. Driver awareness
-    # timer resets when the user uses the steering wheel.
-    ret.steeringPressed = self.CS.steer_override
-    ret.steeringTorque = self.CS.steer_torque_driver
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
-    ret.gas = self.CS.pedal_gas / 255.
-    ret.gasPressed = self.CS.user_gas_pressed
-
-    # cruise state
-    ret.cruiseState.enabled = bool(self.CS.acc_active)
-    ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
-    ret.cruiseState.available = bool(self.CS.main_on)
-    ret.cruiseState.speedOffset = 0.
-
-    ret.leftBlinker = self.CS.left_blinker_on
-    ret.rightBlinker = self.CS.right_blinker_on
-    ret.seatbeltUnlatched = self.CS.seatbelt_unlatched
-    ret.doorOpen = self.CS.door_open
+    ret.yawRate = self.VM.yaw_rate(ret.steeringAngle * CV.DEG_TO_RAD, ret.vEgo)
 
     buttonEvents = []
-
-    # blinkers
-    if self.CS.left_blinker_on != self.CS.prev_left_blinker_on:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.leftBlinker
-      be.pressed = self.CS.left_blinker_on
-      buttonEvents.append(be)
-
-    if self.CS.right_blinker_on != self.CS.prev_right_blinker_on:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.rightBlinker
-      be.pressed = self.CS.right_blinker_on
-      buttonEvents.append(be)
-
     be = car.CarState.ButtonEvent.new_message()
     be.type = ButtonType.accelCruise
     buttonEvents.append(be)
-
 
     events = []
     if ret.seatbeltUnlatched:
@@ -166,9 +116,9 @@ class CarInterface(CarInterfaceBase):
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    if self.CS.acc_active and not self.acc_active_prev:
+    if ret.cruiseState.enabled and not self.enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
-    if not self.CS.acc_active:
+    if not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # disable on gas pedal rising edge
@@ -180,12 +130,11 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events
 
-    # update previous brake/gas pressed
     self.gas_pressed_prev = ret.gasPressed
-    self.acc_active_prev = self.CS.acc_active
+    self.enabled_prev = ret.cruiseState.enabled
 
-    # cast to reader so it can't be modified
-    return ret.as_reader()
+    self.CS.out = ret.as_reader()
+    return self.CS.out
 
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
