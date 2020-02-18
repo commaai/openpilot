@@ -9,13 +9,13 @@ from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
 from tools.lib.logreader import LogReader
 
 segments = [
-  #"0375fdf7b1ce594d|2019-06-13--08-32-25--3", # HONDA.ACCORD
-  #"99c94dc769b5d96e|2019-08-03--14-19-59--2", # HONDA.CIVIC
-  #"cce908f7eb8db67d|2019-08-02--15-09-51--3", # TOYOTA.COROLLA_TSS2
-  #"7ad88f53d406b787|2019-07-09--10-18-56--8", # GM.VOLT
+  "0375fdf7b1ce594d|2019-06-13--08-32-25--3", # HONDA.ACCORD
+  "99c94dc769b5d96e|2019-08-03--14-19-59--2", # HONDA.CIVIC
+  "cce908f7eb8db67d|2019-08-02--15-09-51--3", # TOYOTA.COROLLA_TSS2
+  "7ad88f53d406b787|2019-07-09--10-18-56--8", # GM.VOLT
   "704b2230eb5190d6|2019-07-06--19-29-10--0", # HYUNDAI.KIA_SORENTO
-  #"b6e1317e1bfbefa6|2019-07-06--04-05-26--5", # CHRYSLER.JEEP_CHEROKEE
-  #"7873afaf022d36e2|2019-07-03--18-46-44--0", # SUBARU.IMPREZA
+  "b6e1317e1bfbefa6|2019-07-06--04-05-26--5", # CHRYSLER.JEEP_CHEROKEE
+  "7873afaf022d36e2|2019-07-03--18-46-44--0", # SUBARU.IMPREZA
 ]
 
 def get_segment(segment_name):
