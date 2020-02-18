@@ -99,7 +99,7 @@ void black_set_can_mode(uint8_t mode){
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:
-      if ((bool)(mode == CAN_MODE_NORMAL) != (bool)(car_harness_status == HARNESS_STATUS_NORMAL)) {
+      if ((bool)(mode == CAN_MODE_NORMAL) != (bool)(car_harness_status == HARNESS_STATUS_FLIPPED)) {
         // B12,B13: disable OBD mode
         set_gpio_mode(GPIOB, 12, MODE_INPUT);
         set_gpio_mode(GPIOB, 13, MODE_INPUT);
@@ -198,7 +198,7 @@ void black_init(void) {
   black_set_can_mode(CAN_MODE_NORMAL);
 
   // flip CAN0 and CAN2 if we are flipped
-  if (car_harness_status == HARNESS_STATUS_NORMAL) {
+  if (car_harness_status == HARNESS_STATUS_FLIPPED) {
     can_flip_buses(0, 2);
   }
 
@@ -210,12 +210,12 @@ const harness_configuration black_harness_config = {
   .has_harness = true,
   .GPIO_SBU1 = GPIOC,
   .GPIO_SBU2 = GPIOC,
-  .GPIO_relay_normal = GPIOC,
-  .GPIO_relay_flipped = GPIOC,
+  .GPIO_relay_SBU1 = GPIOC,
+  .GPIO_relay_SBU2 = GPIOC,
   .pin_SBU1 = 0,
   .pin_SBU2 = 3,
-  .pin_relay_normal = 10,
-  .pin_relay_flipped = 11,
+  .pin_relay_SBU1 = 10,
+  .pin_relay_SBU2 = 11,
   .adc_channel_SBU1 = 10,
   .adc_channel_SBU2 = 13
 };
