@@ -63,24 +63,22 @@ def only_toyota_left(candidate_cars):
 
 # **** for use live only ****
 def fingerprint(logcan, sendcan, has_relay):
-  if has_relay:
-    # Vin query only reliably works thorugh OBDII
-    bus = 1
 
-    cached_params = Params().get("CarParamsCache")
-    if cached_params is not None:
-      cloudlog.warning("Using cached CarParams")
-      CP = car.CarParams.from_bytes(cached_params)
-      vin = CP.carVin
-      car_fw = list(CP.carFw)
-    else:
-      _, vin = get_vin(logcan, sendcan, bus)
-      car_fw = get_fw_versions(logcan, sendcan, bus)
-
-    fw_candidates = match_fw_to_car(car_fw)
+  cached_params = Params().get("CarParamsCache")
+  if cached_params is not None:
+    cloudlog.warning("Using cached CarParams")
+    CP = car.CarParams.from_bytes(cached_params)
+    vin = CP.carVin
+    car_fw = list(CP.carFw)
   else:
-    vin = VIN_UNKNOWN
-    fw_candidates, car_fw = set(), []
+    if has_relay:
+      _, vin = get_vin(logcan, sendcan, has_relay)
+    else:
+      vin = VIN_UNKNOWN
+    car_fw = get_fw_versions(logcan, sendcan, has_relay)
+
+  fw_candidates = match_fw_to_car(car_fw)
+
 
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)

@@ -66,7 +66,7 @@ REQUESTS = [
 
 
 def chunks(l, n=128):
-  for i in range(0, len(l), n):
+  for i in range(0, len(l)-1, n):
     yield l[i:i + n]
 
 
@@ -118,9 +118,14 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
 
   for c in versions.values():
     for ecu_type, addr, sub_addr in c.keys():
-      a = (addr, sub_addr)
+      if bus == 0:
+        if ecu_type == 3:
+          canbus = 2
+        else:
+          canbus = 0
+      a = (addr, sub_addr, canbus)
       if a not in ecu_types:
-        ecu_types[a] = ecu_type
+        ecu_types[a[0:1]] = ecu_type
 
       if sub_addr is None:
         if a not in parallel_addrs:
@@ -133,14 +138,16 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
 
   fw_versions = {}
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
-    for addr_chunk in chunks(addr):
-      for request, response in REQUESTS:
-        try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, addr_chunk, request, response, debug=debug)
-          t = 2 * timeout if i == 0 else timeout
-          fw_versions.update(query.get_data(t))
-        except Exception:
-          cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
+    for _, _, canbus in addr:
+      can = canbus
+      for addr_chunk in chunks(addr):
+        for request, response in REQUESTS:
+          try:
+            query = IsoTpParallelQuery(sendcan, logcan, can, addr_chunk, request, response, debug=debug)
+            t = 2 * timeout if i == 0 else timeout
+            fw_versions.update(query.get_data(t))
+          except Exception:
+            cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
