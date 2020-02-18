@@ -26,8 +26,6 @@ class CarInterface(CarInterfaceBase):
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.acc_active_prev = 0
-    self.left_blinker_prev = False
-    self.right_blinker_prev = False
 
     # *** init the major players ***
     canbus = CanBus()
@@ -185,19 +183,6 @@ class CarInterface(CarInterfaceBase):
 
     buttonEvents = []
 
-    # blinkers
-    if ret.leftBlinker != self.left_blinker_prev:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.leftBlinker
-      be.pressed = ret.leftBlinker
-      buttonEvents.append(be)
-
-    if ret.rightBlinker != self.right_blinker_prev:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.rightBlinker
-      be.pressed = ret.rightBlinker
-      buttonEvents.append(be)
-
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = car.CarState.ButtonEvent.new_message()
       be.type = ButtonType.unknown
@@ -273,8 +258,6 @@ class CarInterface(CarInterfaceBase):
     self.acc_active_prev = self.CS.acc_active
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
-    self.left_blinker_prev = ret.leftBlinker
-    self.right_blinker_prev = ret.rightBlinker
 
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()

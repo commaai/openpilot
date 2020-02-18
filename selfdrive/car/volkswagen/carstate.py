@@ -182,16 +182,14 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = 0
 
     # Update control button states for turn signals and ACC controls.
-    self.buttonStates["leftBlinker"] = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_li'])
-    self.buttonStates["rightBlinker"] = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_re'])
     self.buttonStates["accelCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Hoch'])
     self.buttonStates["decelCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Runter'])
     self.buttonStates["cancel"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Abbrechen'])
     self.buttonStates["setCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Setzen'])
     self.buttonStates["resumeCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Wiederaufnahme'])
     self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Verstellung_Zeitluecke'])
-    ret.leftBlinker = self.buttonStates["leftBlinker"]
-    ret.rightBlinker = self.buttonStates["rightBlinker"]
+    ret.leftBlinker = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_li'])
+    ret.rightBlinker = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_re'])
 
     # Read ACC hardware button type configuration info that has to pass thru
     # to the radar. Ends up being different for steering wheel buttons vs
