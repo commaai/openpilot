@@ -20,8 +20,6 @@ class CarInterface(CarInterfaceBase):
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
-    self.left_blinker_prev = False
-    self.right_blinker_prev = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -123,22 +121,7 @@ class CarInterface(CarInterfaceBase):
     ret.yawRate = self.VM.yaw_rate(ret.steeringAngle * CV.DEG_TO_RAD, ret.vEgo)
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
-    # TODO: button presses
-    buttonEvents = []
-
-    if ret.leftBlinker != self.left_blinker_prev:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.leftBlinker
-      be.pressed = ret.leftBlinker != 0
-      buttonEvents.append(be)
-
-    if ret.rightBlinker != self.right_blinker_prev:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.rightBlinker
-      be.pressed = ret.rightBlinker != 0
-      buttonEvents.append(be)
-
-    ret.buttonEvents = buttonEvents
+    ret.buttonEvents = []
 
     self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
 
@@ -177,8 +160,6 @@ class CarInterface(CarInterfaceBase):
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
-    self.left_blinker_prev = ret.leftBlinker
-    self.right_blinker_prev = ret.rightBlinker
 
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()

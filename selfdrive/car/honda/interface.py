@@ -81,8 +81,6 @@ class CarInterface(CarInterfaceBase):
     self.last_enable_sent = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
-    self.left_blinker_prev = False
-    self.right_blinker_prev = False
 
     self.cp = get_can_parser(CP)
     self.cp_cam = get_cam_can_parser(CP)
@@ -393,18 +391,6 @@ class CarInterface(CarInterfaceBase):
 
     buttonEvents = []
 
-    if ret.leftBlinker != self.left_blinker_prev:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.leftBlinker
-      be.pressed = ret.leftBlinker != 0
-      buttonEvents.append(be)
-
-    if ret.rightBlinker != self.right_blinker_prev:
-      be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.rightBlinker
-      be.pressed = ret.rightBlinker != 0
-      buttonEvents.append(be)
-
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
       be = car.CarState.ButtonEvent.new_message()
       be.type = ButtonType.unknown
@@ -519,11 +505,8 @@ class CarInterface(CarInterfaceBase):
     # update previous brake/gas pressed
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
-    self.left_blinker_prev = ret.leftBlinker
-    self.right_blinker_prev = ret.rightBlinker
 
     self.CS.out = ret.as_reader()
-
     return self.CS.out
 
   # pass in a car.CarControl
