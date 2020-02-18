@@ -140,6 +140,7 @@ managed_processes = {
   "radard": "selfdrive.controls.radard",
   "dmonitoringd": "selfdrive.controls.dmonitoringd",
   "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
+  "locationd": "selfdrive.locationd.locationd",
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
   "tombstoned": "selfdrive.tombstoned",
@@ -204,6 +205,7 @@ car_started_processes = [
   'modeld',
   'proclogd',
   'ubloxd',
+  'locationd',
 ]
 if ANDROID:
   car_started_processes += [
