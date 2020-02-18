@@ -120,59 +120,21 @@ class CarInterface(CarInterfaceBase):
     events = []
     buttonEvents = []
     params = Params()
-    ret = car.CarState.new_message()
 
     # Process the most recent CAN message traffic, and check for validity
     # The camera CAN has no signals we use at this time, but we process it
     # anyway so we can test connectivity with can_valid
     self.pt_cp.update_strings(can_strings)
     self.cam_cp.update_strings(can_strings)
-    self.CS.update(self.pt_cp)
+
+    ret = self.CS.update(self.pt_cp)
     ret.canValid = self.pt_cp.can_valid and self.cam_cp.can_valid
-
-    # Wheel and vehicle speed, yaw rate
-    ret.wheelSpeeds.fl = self.CS.wheelSpeedFL
-    ret.wheelSpeeds.fr = self.CS.wheelSpeedFR
-    ret.wheelSpeeds.rl = self.CS.wheelSpeedRL
-    ret.wheelSpeeds.rr = self.CS.wheelSpeedRR
-    ret.vEgoRaw = self.CS.vEgoRaw
-    ret.vEgo = self.CS.vEgo
-    ret.aEgo = self.CS.aEgo
-    ret.standstill = self.CS.standstill
-
-    # Steering wheel position, movement, yaw rate, and driver input
-    ret.steeringAngle = self.CS.steeringAngle
-    ret.steeringRate = self.CS.steeringRate
-    ret.steeringTorque = self.CS.steeringTorque
-    ret.steeringPressed = self.CS.steeringPressed
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-    ret.yawRate = self.CS.yawRate
-
-    # Gas, brakes and shifting
-    ret.gas = self.CS.gas
-    ret.gasPressed = self.CS.gasPressed
-    ret.brake = self.CS.brake
-    ret.brakePressed = self.CS.brakePressed
-    ret.brakeLights = self.CS.brakeLights
-    ret.gearShifter = self.CS.gearShifter
-
-    # Doors open, seatbelt unfastened
-    ret.doorOpen = self.CS.doorOpen
-    ret.seatbeltUnlatched = self.CS.seatbeltUnlatched
 
     # Update the EON metric configuration to match the car at first startup,
     # or if there's been a change.
     if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
       params.put("IsMetric", "1" if self.CS.displayMetricUnits else "0")
-
-    # Blinker switch updates
-    ret.leftBlinker = self.CS.buttonStates["leftBlinker"]
-    ret.rightBlinker = self.CS.buttonStates["rightBlinker"]
-
-    # ACC cruise state
-    ret.cruiseState.available = self.CS.accAvailable
-    ret.cruiseState.enabled = self.CS.accEnabled
-    ret.cruiseState.speed = self.CS.accSetSpeed
 
     # Check for and process state-change events (button press or release) from
     # the turn stalk switch or ACC steering wheel/control stalk buttons.
@@ -230,8 +192,8 @@ class CarInterface(CarInterfaceBase):
     self.displayMetricUnitsPrev = self.CS.displayMetricUnits
     self.buttonStatesPrev = self.CS.buttonStates.copy()
 
-    # cast to reader so it can't be modified
-    return ret.as_reader()
+    self.CS.out = ret.as_reader()
+    return  self.CS.out
 
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,

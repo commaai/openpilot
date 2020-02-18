@@ -101,10 +101,10 @@ class CarController():
     ### STEER ###
 
     if (frame % P.STEER_STEP) == 0:
-      lkas_enabled = enabled and not CS.steer_not_allowed and CS.v_ego > P.MIN_STEER_SPEED
+      lkas_enabled = enabled and not CS.steer_not_allowed and CS.out.vEgo > P.MIN_STEER_SPEED
       if lkas_enabled:
         new_steer = actuators.steer * P.STEER_MAX
-        apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, P)
+        apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
         self.steer_rate_limited = new_steer != apply_steer
       else:
         apply_steer = 0
@@ -114,7 +114,7 @@ class CarController():
 
       if self.car_fingerprint in SUPERCRUISE_CARS:
         can_sends += gmcan.create_steering_control_ct6(self.packer_pt,
-          canbus, apply_steer, CS.v_ego, idx, lkas_enabled)
+          canbus, apply_steer, CS.out.vEgo, idx, lkas_enabled)
       else:
         can_sends.append(gmcan.create_steering_control(self.packer_pt,
           canbus.powertrain, apply_steer, idx, lkas_enabled))
@@ -142,11 +142,11 @@ class CarController():
       if (frame % 4) == 0:
         idx = (frame // 4) % 4
 
-        at_full_stop = enabled and CS.standstill
-        near_stop = enabled and (CS.v_ego < P.NEAR_STOP_BRAKE_PHASE)
+        at_full_stop = enabled and CS.out.standstill
+        near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, canbus.chassis, apply_brake, idx, near_stop, at_full_stop))
 
-        at_full_stop = enabled and CS.standstill
+        at_full_stop = enabled and CS.out.standstill
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, canbus.powertrain, apply_gas, idx, enabled, at_full_stop))
 
       # Send dashboard UI commands (ACC status), 25hz
@@ -167,7 +167,7 @@ class CarController():
       if frame % speed_and_accelerometer_step == 0:
         idx = (frame // speed_and_accelerometer_step) % 4
         can_sends.append(gmcan.create_adas_steering_status(canbus.obstacle, idx))
-        can_sends.append(gmcan.create_adas_accelerometer_speed_status(canbus.obstacle, CS.v_ego, idx))
+        can_sends.append(gmcan.create_adas_accelerometer_speed_status(canbus.obstacle, CS.out.vEgo, idx))
 
       if frame % P.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(canbus.powertrain)
