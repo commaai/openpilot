@@ -392,12 +392,18 @@ void can_health(PubSocket *publisher) {
   bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
   bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
   if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
-    printf("TURN OFF CHARGING!\n");
-    pthread_mutex_lock(&usb_lock);
-    libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
-    pthread_mutex_unlock(&usb_lock);
-    printf("POWER DOWN DEVICE\n");
-    system("service call power 17 i32 0 i32 1");
+    char *disable_power_down = NULL;
+    size_t disable_power_down_sz = 0;
+    const int result = read_db_value(NULL, "DisablePowerDown", &disable_power_down, &disable_power_down_sz);
+    if (disable_power_down_sz != 1 || disable_power_down[0] != '1') {
+      printf("TURN OFF CHARGING!\n");
+      pthread_mutex_lock(&usb_lock);
+      libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
+      pthread_mutex_unlock(&usb_lock);
+      printf("POWER DOWN DEVICE\n");
+      system("service call power 17 i32 0 i32 1");
+    }
+    if (disable_power_down) free(disable_power_down);
   }
   if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
     printf("TURN ON CHARGING!\n");
