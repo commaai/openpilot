@@ -60,7 +60,6 @@ selfdrive/crash.py
 selfdrive/launcher.py
 selfdrive/manager.py
 selfdrive/swaglog.py
-selfdrive/thermald.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/pandad.py
@@ -294,6 +293,9 @@ selfdrive/sensord/rawgps.h
 selfdrive/sensord/sensors.cc
 selfdrive/sensord/sensord
 selfdrive/sensord/gpsd
+
+selfdrive/thermald/thermald.py
+selfdrive/thermald/power_monitoring.py
 
 selfdrive/test/__init__.py
 selfdrive/test/longitudinal_maneuvers/*.py
