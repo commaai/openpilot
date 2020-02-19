@@ -10,7 +10,6 @@ from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 from common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
-from tools.lib.storage import secret_url_for_data_key
 
 class URLFile(object):
   _tlocal = threading.local()
@@ -49,20 +48,18 @@ class URLFile(object):
     c.setopt(pycurl.NOSIGNAL, 1)
     c.setopt(pycurl.TIMEOUT_MS, 500000)
     c.setopt(pycurl.HTTPHEADER, ["Range: " + trange, "Connection: keep-alive"])
-    #c.setopt(pycurl.HTTPHEADER, ["Range: " + trange, "Connection: close"])
-    # TODO: cache 302 URL and skip it next request
     c.setopt(pycurl.FOLLOWLOCATION, True)
 
     if self._debug:
-      #print "downloading", self._url
+      print("downloading", self._url)
       def header(x):
         if b'MISS' in x:
           print(x.strip())
       c.setopt(pycurl.HEADERFUNCTION, header)
-      #def test(debug_type, debug_msg):
-      #  print "  debug(%d): %s" % (debug_type, debug_msg.strip())
-      #c.setopt(pycurl.VERBOSE, 1)
-      #c.setopt(pycurl.DEBUGFUNCTION, test)
+      def test(debug_type, debug_msg):
+       print("  debug(%d): %s" % (debug_type, debug_msg.strip()))
+      c.setopt(pycurl.VERBOSE, 1)
+      c.setopt(pycurl.DEBUGFUNCTION, test)
       t1 = time.time()
 
     c.perform()
@@ -109,22 +106,7 @@ class URLFile(object):
     return self._local_file.name
 
 def FileReader(fn, debug=False):
-  if not fn:
-    raise ValueError('file name must be non-empty string')
   if fn.startswith("http://") or fn.startswith("https://"):
     return URLFile(fn, debug=debug)
-  elif fn.startswith("cd:/"):
-    key = fn[4:]
-    return URLFile(secret_url_for_data_key(key), debug=debug)
   else:
     return open(fn, "rb")
-
-if __name__ == "__main__":
-  path = sys.argv[1]
-  if not path.startswith("cd:/"): path = "cd:/"+path
-  with FileReader(path) as f:
-    while 1:
-      ff = f.read(1024*1024)
-      if len(ff) == 0:
-        break
-      sys.stdout.write(ff)
