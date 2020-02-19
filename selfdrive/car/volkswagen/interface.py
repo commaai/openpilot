@@ -117,7 +117,6 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def update(self, c, can_strings):
     canMonoTimes = []
-    events = []
     buttonEvents = []
     params = Params()
 
@@ -145,11 +144,9 @@ class CarInterface(CarInterfaceBase):
         be.pressed = self.CS.buttonStates[button]
         buttonEvents.append(be)
 
+    events = self.create_common_events(c, ret)
+
     # Vehicle operation safety checks and events
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.gearShifter == GEAR.reverse:
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if not ret.gearShifter in [GEAR.drive, GEAR.eco, GEAR.sport]:

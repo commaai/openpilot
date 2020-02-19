@@ -109,12 +109,7 @@ class CarInterface(CarInterfaceBase):
     be.type = ButtonType.accelCruise
     buttonEvents.append(be)
 
-    events = []
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    events = self.create_common_events(c, ret)
 
     if ret.cruiseState.enabled and not self.enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
