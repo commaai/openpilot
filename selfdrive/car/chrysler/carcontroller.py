@@ -5,7 +5,7 @@ from selfdrive.car.chrysler.values import Ecu, CAR, SteerLimitParams
 from opendbc.can.packer import CANPacker
 
 class CarController():
-  def __init__(self, dbc_name, car_fingerprint, enable_camera):
+  def __init__(self, dbc_name, CP, VM):
     self.braking = False
     # redundant safety check with the board
     self.controls_allowed = True
@@ -13,13 +13,13 @@ class CarController():
     self.ccframe = 0
     self.prev_frame = -1
     self.hud_count = 0
-    self.car_fingerprint = car_fingerprint
+    self.car_fingerprint = CP.carFingerprint
     self.alert_active = False
     self.gone_fast_yet = False
     self.steer_rate_limited = False
 
     self.fake_ecus = set()
-    if enable_camera:
+    if CP.enableCamera:
       self.fake_ecus.add(Ecu.fwdCamera)
 
     self.packer = CANPacker(dbc_name)

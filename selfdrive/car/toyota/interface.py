@@ -15,10 +15,6 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
     super().__init__(CP, CarController, CarState, get_can_parser, get_cam_can_parser=get_cam_can_parser)
 
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera, CP.enableDsu, CP.enableApgs)
-
   @staticmethod
   def compute_gb(accel, speed):
     return float(accel) / 3.0

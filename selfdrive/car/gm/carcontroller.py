@@ -69,19 +69,19 @@ def process_hud_alert(hud_alert):
   return steer
 
 class CarController():
-  def __init__(self, car_fingerprint):
+  def __init__(self, dbc_name, CP, VM):
     self.pedal_steady = 0.
     self.start_time = 0.
     self.steer_idx = 0
     self.apply_steer_last = 0
-    self.car_fingerprint = car_fingerprint
+    self.car_fingerprint = CP.carFingerprint
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
 
-    self.params = CarControllerParams(car_fingerprint)
+    self.params = CarControllerParams(CP.carFingerprint)
 
-    self.packer_pt = CANPacker(DBC[car_fingerprint]['pt'])
-    self.packer_ch = CANPacker(DBC[car_fingerprint]['chassis'])
+    self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
+    self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
   def update(self, enabled, CS, frame, actuators, \
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):

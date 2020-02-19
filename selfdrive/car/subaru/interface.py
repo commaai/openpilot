@@ -16,10 +16,6 @@ class CarInterface(CarInterfaceBase):
 
     self.enabled_prev = 0
 
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(CP.carFingerprint)
-
   @staticmethod
   def compute_gb(accel, speed):
     return float(accel) / 4.0

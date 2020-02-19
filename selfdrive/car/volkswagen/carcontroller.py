@@ -8,11 +8,10 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController():
-  def __init__(self, car_fingerprint):
+  def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
-    self.car_fingerprint = car_fingerprint
 
-    self.packer_pt = CANPacker(DBC[car_fingerprint]['pt'])
+    self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0

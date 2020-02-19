@@ -76,7 +76,7 @@ HUDData = namedtuple("HUDData",
 
 
 class CarController():
-  def __init__(self, dbc_name, CP):
+  def __init__(self, dbc_name, CP, VM):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.

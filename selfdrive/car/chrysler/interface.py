@@ -16,10 +16,6 @@ class CarInterface(CarInterfaceBase):
 
     self.low_speed_alert = False
 
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint, CP.enableCamera)
-
   @staticmethod
   def compute_gb(accel, speed):
     return float(accel) / 3.0
