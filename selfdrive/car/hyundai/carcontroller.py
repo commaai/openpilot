@@ -18,7 +18,7 @@ class CarController():
 
     ### Steering Torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
-    apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
+    apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
     if not enabled:
@@ -38,7 +38,7 @@ class CarController():
 
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL))
-    elif CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
+    elif CS.out.cruiseState.standstill and (self.cnt - self.last_resume_cnt) > 5:
       self.last_resume_cnt = self.cnt
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL))
 

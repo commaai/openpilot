@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -127,95 +127,101 @@ def get_camera_parser(CP):
 class CarState(CarStateBase):
 
   def update(self, cp, cp_cam):
-    # update prevs, update must run once per Loop
-    self.prev_left_blinker_on = self.left_blinker_on
-    self.prev_right_blinker_on = self.right_blinker_on
+    ret = car.CarState.new_message()
 
-    self.door_all_closed = True
-    self.seatbelt = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw']
+    ret.doorOpen = False  # FIXME
+    ret.seatbeltUnlatched = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw'] == 0
 
-    self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
-    self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
+    ret.wheelSpeeds.fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.fr = cp.vl["WHL_SPD11"]['WHL_SPD_FR'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
+    ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
-    self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
-    self.main_on = True
-    self.acc_active = cp.vl["SCC12"]['ACCMode'] != 0
-    self.pcm_acc_status = int(self.acc_active)
+    ret.standstill = ret.vEgoRaw < 0.1
 
-    self.v_wheel_fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS
-    self.v_wheel_fr = cp.vl["WHL_SPD11"]['WHL_SPD_FR'] * CV.KPH_TO_MS
-    self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS
-    self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
-    self.v_ego_raw = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
-    self.v_ego, self.a_ego = self.update_speed_kf(self.v_ego_raw)
+    ret.steeringAngle = cp.vl["SAS11"]['SAS_Angle']
+    ret.steeringRate = cp.vl["SAS11"]['SAS_Speed']
+    ret.yawRate = cp.vl["ESP12"]['YAW_RATE']
+    ret.leftBlinker = cp.vl["CGW1"]['CF_Gway_TSigLHSw'] != 0
+    ret.rightBlinker = cp.vl["CGW1"]['CF_Gway_TSigRHSw'] != 0
+    ret.steeringTorque = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
+    ret.steeringTorqueEps = cp.vl["MDPS12"]['CR_Mdps_OutTq']
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
-    self.low_speed_lockout = self.v_ego_raw < 1.0
-
-    is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
-    speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
-    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
-    self.standstill = not self.v_ego_raw > 0.1
-
-    self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
-    self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
-    self.yaw_rate = cp.vl["ESP12"]['YAW_RATE']
-    self.main_on = True
-    self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigLHSw']
-    self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigRHSw']
-    self.steer_override = abs(cp.vl["MDPS11"]['CR_Mdps_DrvTq']) > STEER_THRESHOLD
-    self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
-    self.steer_error = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
-    self.brake_error = 0
-    self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
-    self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
-    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
-
-    self.user_brake = 0
-
-    self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
-    self.brake_lights = bool(self.brake_pressed)
-    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
-      self.pedal_gas = 0
+    # cruise state
+    ret.cruiseState.enabled = cp.vl["SCC12"]['ACCMode'] != 0
+    ret.cruiseState.available = True
+    ret.cruiseState.standstill = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+    if ret.cruiseState.enabled:
+      is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
+      speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
+      ret.cruiseState.speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
     else:
-      self.pedal_gas = cp.vl["EMS12"]['TPS']
-    self.car_gas = cp.vl["EMS12"]['TPS']
+      ret.cruiseState.speed = 0
+
+    ret.brake = 0  # FIXME
+    ret.brakePressed = cp.vl["TCS13"]['DriverBraking'] != 0
+    ret.brakeLights = ret.brakePressed
+    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
+      pedal_gas = 0
+    else:
+      pedal_gas = cp.vl["EMS12"]['TPS']
+    ret.gasPressed = pedal_gas > 1e-3
+    ret.gas = cp.vl["EMS12"]['TPS']
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
     if gear == 5:
-      self.gear_shifter = GearShifter.drive
+      gear_shifter = GearShifter.drive
     elif gear == 6:
-      self.gear_shifter = GearShifter.neutral
+      gear_shifter = GearShifter.neutral
     elif gear == 0:
-      self.gear_shifter = GearShifter.park
+      gear_shifter = GearShifter.park
     elif gear == 7:
-      self.gear_shifter = GearShifter.reverse
+      gear_shifter = GearShifter.reverse
     else:
-      self.gear_shifter = GearShifter.unknown
+      gear_shifter = GearShifter.unknown
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
     if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
-      self.gear_shifter_cluster = GearShifter.drive
+      gear_shifter_cluster = GearShifter.drive
     elif cp.vl["CLU15"]["CF_Clu_InhibitN"] == 1:
-      self.gear_shifter_cluster = GearShifter.neutral
+      gear_shifter_cluster = GearShifter.neutral
     elif cp.vl["CLU15"]["CF_Clu_InhibitP"] == 1:
-      self.gear_shifter_cluster = GearShifter.park
+      gear_shifter_cluster = GearShifter.park
     elif cp.vl["CLU15"]["CF_Clu_InhibitR"] == 1:
-      self.gear_shifter_cluster = GearShifter.reverse
+      gear_shifter_cluster = GearShifter.reverse
     else:
-      self.gear_shifter_cluster = GearShifter.unknown
+      gear_shifter_cluster = GearShifter.unknown
 
     # Gear Selecton via TCU12
     gear2 = cp.vl["TCU12"]["CUR_GR"]
     if gear2 == 0:
-      self.gear_tcu = GearShifter.park
+      gear_tcu = GearShifter.park
     elif gear2 == 14:
-      self.gear_tcu = GearShifter.reverse
+      gear_tcu = GearShifter.reverse
     elif gear2 > 0 and gear2 < 9:    # unaware of anything over 8 currently
-      self.gear_tcu = GearShifter.drive
+      gear_tcu = GearShifter.drive
     else:
-      self.gear_tcu = GearShifter.unknown
+      gear_tcu = GearShifter.unknown
+
+    # gear shifter
+    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
+      ret.gearShifter = gear_shifter_cluster
+    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+      ret.gearShifter = gear_tcu
+    else:
+      ret.gearShifter = gear_shifter
 
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
+    self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
+    self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
+    self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
+    self.steer_error = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
+    self.brake_error = 0
+
+    return ret
