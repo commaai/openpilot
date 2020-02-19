@@ -34,6 +34,9 @@ def get_can_parser(CP):
 
 
 class CarState(CarStateBase):
+  def __init__(self, CP):
+    self.esp_disabled = False
+
   def update(self, cp):
     ret = car.CarState.new_message()
     ret.wheelSpeeds.rr = cp.vl["WheelSpeed_CG1"]['WhlRr_W_Meas'] * WHEEL_RADIUS

@@ -205,13 +205,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = buttonEvents
 
-    events = []
+    events = self.create_common_events(c, ret)
+
     if self.CS.steer_not_allowed:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
     if self.CS.car_fingerprint in SUPERCRUISE_CARS:
       if self.CS.acc_active and not self.acc_active_prev:
@@ -220,6 +217,7 @@ class CarInterface(CarInterfaceBase):
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     else:
+      # TOOD: why is this only not supercruise? ignore supercruise?
       if ret.gearShifter != car.CarState.GearShifter.drive:
         events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
       if self.CS.esp_disabled:
