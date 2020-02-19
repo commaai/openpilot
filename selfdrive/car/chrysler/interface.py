@@ -127,8 +127,6 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(c, ret, extra_gears=[GearShifter.low])
-    if self.CS.esp_disabled:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
 

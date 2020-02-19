@@ -218,8 +218,6 @@ class CarInterface(CarInterfaceBase):
 
     else:
       # TODO: why is this only not supercruise? ignore supercruise?
-      if self.CS.esp_disabled:
-        events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
       if ret.vEgo < self.CP.minEnableSpeed:
         events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if self.CS.park_brake:

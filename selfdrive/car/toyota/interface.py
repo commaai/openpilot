@@ -357,8 +357,6 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT]))
     if not ret.gearShifter == GearShifter.drive and self.CP.openpilotLongitudinalControl:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.esp_disabled and self.CP.openpilotLongitudinalControl:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:

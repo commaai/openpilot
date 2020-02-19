@@ -48,6 +48,10 @@ class CarInterfaceBase():
     if not cs_out.cruiseState.available:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
+    # TODO: move this stuff to the capnp strut
+    if getattr(self.CS, "esp_disabled", False):
+      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+
     return events
 
 class RadarInterfaceBase():

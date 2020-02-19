@@ -149,8 +149,6 @@ class CarInterface(CarInterfaceBase):
     # Vehicle operation safety checks and events
     if not ret.gearShifter in [GEAR.drive, GEAR.eco, GEAR.sport]:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.stabilityControlDisabled:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.parkingBrakeSet:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
 

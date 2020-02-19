@@ -433,8 +433,6 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('steerTempUnavailable', [ET.WARNING]))
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-    if self.CS.esp_disabled:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.brake_hold and self.CS.CP.carFingerprint not in HONDA_BOSCH:
       events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if self.CS.park_brake:
