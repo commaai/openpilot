@@ -15,7 +15,8 @@ jobs:
     - name: Checkout submodules
       run: |
         git submodule update --init
-    - run: |
+    - name: Build docker image
+      run: |
         docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
         docker pull docker.io/commaai/openpilot:latest || true
 
@@ -25,6 +26,24 @@ jobs:
       with:
         name: tmppilot.tar.gz
         path: tmppilot.tar.gz
+
+  push:
+    name: push
+    runs-on: ubuntu-16.04
+    needs: build
+    if: github.ref == 'master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
+      - name: Login to dockerhub
+        run: docker login -u wmelching -p ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Tag image
+        run: docker tag tmppilot docker.io/commaai/openpilot:latest
+      - name: Push image
+        run: docker push docker.io/commaai/openpilot:latest
 
   linter:
     name: linter
@@ -53,7 +72,7 @@ jobs:
         run: $LOAD
       - name: Run unit tests
         run: |
-          $RUN cd /tmp/openpilot/selfdrive/test/test_fingerprints.py
+          $RUN /tmp/openpilot/selfdrive/test/test_fingerprints.py
           $RUN "$UNIT_TEST common"
           $RUN "$UNIT_TEST opendbc/can"
           $RUN "$UNIT_TEST selfdrive/boardd"
@@ -80,6 +99,9 @@ jobs:
           docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
           docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
           docker rm $CONTAINER_NAME
+      - name: Print diff
+        if: always()
+        run: cat diff.txt
       - uses: actions/upload-artifact@v1
         if: always()
         with:

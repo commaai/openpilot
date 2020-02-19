@@ -6,6 +6,9 @@ pipeline {
     }
 
   }
+  environment {
+    COMMA_JWT = credentials('athena-test-jwt')
+  }
   stages {
     stage('EON Build/Test') {
       steps {

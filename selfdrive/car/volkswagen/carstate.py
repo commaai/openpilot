@@ -1,12 +1,10 @@
 import numpy as np
 from cereal import car
-from common.kalman.simple_kalman import KF1D
 from selfdrive.config import Conversions as CV
+from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.volkswagen.values import DBC, BUTTON_STATES, CarControllerParams
-
-GEAR = car.CarState.GearShifter
 
 def get_mqb_pt_can_parser(CP, canbus):
   # this function generates lists for signal, messages and initial values
@@ -99,70 +97,55 @@ def get_mqb_cam_can_parser(CP, canbus):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.cam)
 
-def parse_gear_shifter(gear):
-  # Return mapping of gearshift position to selected gear.
-  return {'P': GEAR.park, 'R': GEAR.reverse, 'N': GEAR.neutral,
-              'D': GEAR.drive, 'E': GEAR.eco, 'S': GEAR.sport, 'T': GEAR.manumatic}.get(gear, GEAR.unknown)
 
-class CarState():
+class CarState(CarStateBase):
   def __init__(self, CP, canbus):
-    # initialize can parser
-    self.CP = CP
-    self.car_fingerprint = CP.carFingerprint
-    self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-
-    self.shifter_values = self.can_define.dv["Getriebe_11"]['GE_Fahrstufe']
-
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["Getriebe_11"]['GE_Fahrstufe']
     self.buttonStates = BUTTON_STATES.copy()
 
-    # vEgo Kalman filter
-    dt = 0.01
-    self.v_ego_kf = KF1D(x0=[[0.], [0.]],
-                         A=[[1., dt], [0., 1.]],
-                         C=[1., 0.],
-                         K=[[0.12287673], [0.29666309]])
-
   def update(self, pt_cp):
+    ret = car.CarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
-    self.wheelSpeedFL = pt_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
-    self.wheelSpeedFR = pt_cp.vl["ESP_19"]['ESP_VR_Radgeschw_02'] * CV.KPH_TO_MS
-    self.wheelSpeedRL = pt_cp.vl["ESP_19"]['ESP_HL_Radgeschw_02'] * CV.KPH_TO_MS
-    self.wheelSpeedRR = pt_cp.vl["ESP_19"]['ESP_HR_Radgeschw_02'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.fl = pt_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.fr = pt_cp.vl["ESP_19"]['ESP_VR_Radgeschw_02'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rl = pt_cp.vl["ESP_19"]['ESP_HL_Radgeschw_02'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rr = pt_cp.vl["ESP_19"]['ESP_HR_Radgeschw_02'] * CV.KPH_TO_MS
 
-    self.vEgoRaw = float(np.mean([self.wheelSpeedFL, self.wheelSpeedFR, self.wheelSpeedRL, self.wheelSpeedRR]))
-    v_ego_x = self.v_ego_kf.update(self.vEgoRaw)
-    self.vEgo = float(v_ego_x[0])
-    self.aEgo = float(v_ego_x[1])
-    self.standstill = self.vEgoRaw < 0.1
+    ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+
+    ret.standstill = ret.vEgoRaw < 0.1
 
     # Update steering angle, rate, yaw rate, and driver input torque. VW send
     # the sign/direction in a separate signal so they must be recombined.
-    self.steeringAngle = pt_cp.vl["LWI_01"]['LWI_Lenkradwinkel'] * (1,-1)[int(pt_cp.vl["LWI_01"]['LWI_VZ_Lenkradwinkel'])]
-    self.steeringRate = pt_cp.vl["LWI_01"]['LWI_Lenkradw_Geschw'] * (1,-1)[int(pt_cp.vl["LWI_01"]['LWI_VZ_Lenkradwinkel'])]
-    self.steeringTorque = pt_cp.vl["EPS_01"]['Driver_Strain'] * (1,-1)[int(pt_cp.vl["EPS_01"]['Driver_Strain_VZ'])]
-    self.steeringPressed = abs(self.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
-    self.yawRate = pt_cp.vl["ESP_02"]['ESP_Gierrate'] * (1,-1)[int(pt_cp.vl["ESP_02"]['ESP_VZ_Gierrate'])] * CV.DEG_TO_RAD
+    ret.steeringAngle = pt_cp.vl["LWI_01"]['LWI_Lenkradwinkel'] * (1,-1)[int(pt_cp.vl["LWI_01"]['LWI_VZ_Lenkradwinkel'])]
+    ret.steeringRate = pt_cp.vl["LWI_01"]['LWI_Lenkradw_Geschw'] * (1,-1)[int(pt_cp.vl["LWI_01"]['LWI_VZ_Lenkradwinkel'])]
+    ret.steeringTorque = pt_cp.vl["EPS_01"]['Driver_Strain'] * (1,-1)[int(pt_cp.vl["EPS_01"]['Driver_Strain_VZ'])]
+    ret.steeringPressed = abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
+    ret.yawRate = pt_cp.vl["ESP_02"]['ESP_Gierrate'] * (1,-1)[int(pt_cp.vl["ESP_02"]['ESP_VZ_Gierrate'])] * CV.DEG_TO_RAD
 
     # Update gas, brakes, and gearshift.
-    self.gas = pt_cp.vl["Motor_20"]['MO_Fahrpedalrohwert_01'] / 100.0
-    self.gasPressed = self.gas > 0
-    self.brake = pt_cp.vl["ESP_05"]['ESP_Bremsdruck'] / 250.0 # FIXME: this is pressure in Bar, not sure what OP expects
-    self.brakePressed = bool(pt_cp.vl["ESP_05"]['ESP_Fahrer_bremst'])
-    self.brakeLights = bool(pt_cp.vl["ESP_05"]['ESP_Status_Bremsdruck'])
+    ret.gas = pt_cp.vl["Motor_20"]['MO_Fahrpedalrohwert_01'] / 100.0
+    ret.gasPressed = ret.gas > 0
+    ret.brake = pt_cp.vl["ESP_05"]['ESP_Bremsdruck'] / 250.0 # FIXME: this is pressure in Bar, not sure what OP expects
+    ret.brakePressed = bool(pt_cp.vl["ESP_05"]['ESP_Fahrer_bremst'])
+    ret.brakeLights = bool(pt_cp.vl["ESP_05"]['ESP_Status_Bremsdruck'])
 
     # Update gear and/or clutch position data.
     can_gear_shifter = int(pt_cp.vl["Getriebe_11"]['GE_Fahrstufe'])
-    self.gearShifter = parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
 
     # Update door and trunk/hatch lid open status.
-    self.doorOpen = any([pt_cp.vl["Gateway_72"]['ZV_FT_offen'],
-                         pt_cp.vl["Gateway_72"]['ZV_BT_offen'],
-                         pt_cp.vl["Gateway_72"]['ZV_HFS_offen'],
-                         pt_cp.vl["Gateway_72"]['ZV_HBFS_offen'],
-                         pt_cp.vl["Gateway_72"]['ZV_HD_offen']])
+    ret.doorOpen = any([pt_cp.vl["Gateway_72"]['ZV_FT_offen'],
+                        pt_cp.vl["Gateway_72"]['ZV_BT_offen'],
+                        pt_cp.vl["Gateway_72"]['ZV_HFS_offen'],
+                        pt_cp.vl["Gateway_72"]['ZV_HBFS_offen'],
+                        pt_cp.vl["Gateway_72"]['ZV_HD_offen']])
 
     # Update seatbelt fastened status.
-    self.seatbeltUnlatched = False if pt_cp.vl["Airbag_02"]["AB_Gurtschloss_FA"] == 3 else True
+    ret.seatbeltUnlatched = False if pt_cp.vl["Airbag_02"]["AB_Gurtschloss_FA"] == 3 else True
 
     # Update driver preference for metric. VW stores many different unit
     # preferences, including separate units for for distance vs. speed.
@@ -174,38 +157,39 @@ class CarState():
     if accStatus == 1:
       # ACC okay but disabled
       self.accFault = False
-      self.accAvailable = False
-      self.accEnabled = False
+      ret.cruiseState.available = False
+      ret.cruiseState.enabled = False
     elif accStatus == 2:
       # ACC okay and enabled, but not currently engaged
       self.accFault = False
-      self.accAvailable = True
-      self.accEnabled = False
+      ret.cruiseState.available = True
+      ret.cruiseState.enabled = False
     elif accStatus in [3, 4, 5]:
       # ACC okay and enabled, currently engaged and regulating speed (3) or engaged with driver accelerating (4) or overrun (5)
       self.accFault = False
-      self.accAvailable = True
-      self.accEnabled = True
+      ret.cruiseState.available = True
+      ret.cruiseState.enabled = True
     else:
       # ACC fault of some sort. Seen statuses 6 or 7 for CAN comms disruptions, visibility issues, etc.
       self.accFault = True
-      self.accAvailable = False
-      self.accEnabled = False
+      ret.cruiseState.available = False
+      ret.cruiseState.enabled = False
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
-    self.accSetSpeed = pt_cp.vl["ACC_02"]['SetSpeed']
-    if self.accSetSpeed > 90: self.accSetSpeed = 0
+    ret.cruiseState.speed = pt_cp.vl["ACC_02"]['SetSpeed']
+    if ret.cruiseState.speed > 90:
+      ret.cruiseState.speed = 0
 
     # Update control button states for turn signals and ACC controls.
-    self.buttonStates["leftBlinker"] = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_li'])
-    self.buttonStates["rightBlinker"] = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_re'])
     self.buttonStates["accelCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Hoch'])
     self.buttonStates["decelCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Runter'])
     self.buttonStates["cancel"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Abbrechen'])
     self.buttonStates["setCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Setzen'])
     self.buttonStates["resumeCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Tip_Wiederaufnahme'])
     self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_ACC_01"]['GRA_Verstellung_Zeitluecke'])
+    ret.leftBlinker = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_li'])
+    ret.rightBlinker = bool(pt_cp.vl["Gateway_72"]['BH_Blinker_re'])
 
     # Read ACC hardware button type configuration info that has to pass thru
     # to the radar. Ends up being different for steering wheel buttons vs
@@ -226,3 +210,4 @@ class CarState():
     self.parkingBrakeSet = bool(pt_cp.vl["Kombi_01"]['KBI_Handbremse']) # FIXME: need to include an EPB check as well
     self.stabilityControlDisabled = pt_cp.vl["ESP_21"]['ESP_Tastung_passiv']
 
+    return ret

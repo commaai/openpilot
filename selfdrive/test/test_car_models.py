@@ -58,7 +58,6 @@ def get_route_log(route_name):
       sys.exit(-1)
 
 routes = {
-
   "975b26878285314d|2018-12-25--14-42-13": {
     'carFingerprint': CHRYSLER.PACIFICA_2018_HYBRID,
     'enableCamera': True,
@@ -290,6 +289,7 @@ routes = {
     "7e34a988419b5307|2019-12-18--19-13-30": {
     'carFingerprint': TOYOTA.RAV4H_TSS2,
     'enableCamera': True,
+    'fingerprintSource': 'fixed'
   },
   "e6a24be49a6cd46e|2019-10-29--10-52-42": {
     'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
@@ -324,6 +324,11 @@ routes = {
     "01b22eb2ed121565|2020-02-02--11-25-51": {
     'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
     'enableCamera': True,
+  },
+  "ec429c0f37564e3c|2020-02-01--17-28-12": {
+    'carFingerprint': TOYOTA.LEXUS_NXH,
+    'enableCamera': True,
+    'enableDsu': False,
   },
   #FIXME: This works sometimes locally, but never in CI. Timing issue?
   #"b0f5a01cf604185c|2018-01-31--20-11-39": {
@@ -368,6 +373,11 @@ routes = {
   #   'enableDsu': False,
   # },
   # TODO: missingsome combos for highlander
+  "0a302ffddbb3e3d3|2020-02-08--16-19-08": {
+    'carFingerprint': TOYOTA.HIGHLANDER_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   "aa659debdd1a7b54|2018-08-31--11-12-01": {
     'carFingerprint': TOYOTA.HIGHLANDER,
     'enableCamera': False,
@@ -506,6 +516,11 @@ if __name__ == "__main__":
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
     params.put("Passive", "1" if route in passive_routes else "0")
+
+    if checks.get('fingerprintSource', None) == 'fixed':
+      os.environ['FINGERPRINT'] = checks['carFingerprint']
+    else:
+      os.environ['FINGERPRINT'] = ""
 
     print("testing ", route, " ", checks['carFingerprint'])
     print("Starting processes")

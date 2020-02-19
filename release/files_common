@@ -28,7 +28,6 @@ common/profiler.py
 common/testing.py
 common/basedir.py
 common/filter_simple.py
-common/sympy_helpers.py
 common/stat_live.py
 common/spinner.py
 common/cython_hacks.py
@@ -243,6 +242,15 @@ selfdrive/locationd/ubloxd_test.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
 selfdrive/locationd/test/*.py
+
+selfdrive/locationd/locationd.py
+selfdrive/locationd/kalman/.gitignore
+selfdrive/locationd/kalman/__init__.py
+selfdrive/locationd/kalman/README.md
+selfdrive/locationd/kalman/SConscript
+selfdrive/locationd/kalman/templates/*
+selfdrive/locationd/kalman/helpers/*
+selfdrive/locationd/kalman/models/live_kf.py
 
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py

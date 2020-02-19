@@ -588,7 +588,6 @@ int main(int argc, char** argv) {
 
   for (const auto& it : services) {
     std::string name = it.name;
-    int qlog_freq = it.decimation ? it.decimation : 0;
 
     if (it.should_log) {
       SubSocket * sock = SubSocket::create(s.ctx, name);
@@ -601,8 +600,8 @@ int main(int argc, char** argv) {
         frame_sock = sock;
       }
 
-      qlog_counter[sock] = (qlog_freq == 0) ? -1 : 0;
-      qlog_freqs[sock] = qlog_freq;
+      qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
+      qlog_freqs[sock] = it.decimation;
     }
   }
 
