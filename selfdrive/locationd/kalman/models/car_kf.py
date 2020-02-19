@@ -102,10 +102,12 @@ class CarKalman():
     #
     h_yaw_rate = sp.Matrix([r])
     h_velocity = sp.Matrix([u, v])
+    h_steer_angle = sp.Matrix([sa])
 
     obs_eqs = [
       [h_yaw_rate, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, None],
       [h_velocity, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, None],
+      [h_steer_angle, ObservationKind.STEER_ANGLE, None],
     ]
 
     gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)

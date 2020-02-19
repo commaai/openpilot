@@ -74,8 +74,13 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
 
   # linearize with jacobians
   F_sym = f_err_sym.jacobian(x_err_sym)
-  for sym in x_err_sym:
-    F_sym = F_sym.subs(sym, 0)
+
+  if eskf_params:
+    for sym in x_err_sym:
+      F_sym = F_sym.subs(sym, 0)
+
+  assert dt_sym in F_sym.free_symbols
+
   for i in range(len(obs_eqs)):
     obs_eqs[i].append(obs_eqs[i][0].jacobian(x_sym))
     if msckf and obs_eqs[i][1] in feature_track_kinds:
