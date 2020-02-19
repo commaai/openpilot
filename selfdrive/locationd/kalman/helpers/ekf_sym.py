@@ -341,6 +341,17 @@ class EKF_sym():
     self.rewind_states = self.rewind_states[-REWIND_TO_KEEP:]
     self.rewind_obscache = self.rewind_obscache[-REWIND_TO_KEEP:]
 
+  def predict(self, t):
+    # initialize time
+    if self.filter_time is None:
+      self.filter_time = t
+
+    # predict
+    dt = t - self.filter_time
+    assert dt >= 0
+    self.x, self.P = self._predict(self.x, self.P, dt)
+    self.filter_time = t
+
   def predict_and_update_batch(self, t, kind, z, R, extra_args=[[]], augment=False):
     # TODO handle rewinding at this level"
 
