@@ -993,23 +993,12 @@ void ui_nvg_init(UIState *s) {
   assert(s->img_battery_charging >= 0);
   s->img_battery_charging = nvgCreateImage(s->vg, "../assets/images/battery_charging.png", 1);
 
-  assert(s->img_network_0 >= 0);
-  s->img_network_0 = nvgCreateImage(s->vg, "../assets/images/network_0.png", 1);
-
-  assert(s->img_network_1 >= 0);
-  s->img_network_1 = nvgCreateImage(s->vg, "../assets/images/network_1.png", 1);
-
-  assert(s->img_network_2 >= 0);
-  s->img_network_2 = nvgCreateImage(s->vg, "../assets/images/network_2.png", 1);
-
-  assert(s->img_network_3 >= 0);
-  s->img_network_3 = nvgCreateImage(s->vg, "../assets/images/network_3.png", 1);
-
-  assert(s->img_network_4 >= 0);
-  s->img_network_4 = nvgCreateImage(s->vg, "../assets/images/network_4.png", 1);
-
-  assert(s->img_network_5 >= 0);
-  s->img_network_5 = nvgCreateImage(s->vg, "../assets/images/network_5.png", 1);
+  for(int i=0;i<=5;++i) {
+    assert(s->img_network[i] >= 0);
+    char network_asset[32];
+    snprintf(network_asset, sizeof(network_asset), "../assets/images/network_%d.png", i);
+    s->img_network[i] = nvgCreateImage(s->vg, network_asset, 1);
+  }
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);

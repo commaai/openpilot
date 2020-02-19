@@ -189,12 +189,7 @@ typedef struct UIState {
   int img_button_home;
   int img_battery;
   int img_battery_charging;
-  int img_network_0;
-  int img_network_1;
-  int img_network_2;
-  int img_network_3;
-  int img_network_4;
-  int img_network_5;
+  int img_network[6];
 
   // sockets
   Context *ctx;
