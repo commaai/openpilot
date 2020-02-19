@@ -10,26 +10,15 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 
-class CanBus(CarInterfaceBase):
-  def __init__(self):
-    self.powertrain = 0
-    self.obstacle = 1
-    self.chassis = 2
-    self.sw_gmlan = 3
-
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
-    super().__init__(CP, CarController, CarState, None)
-    self.acc_active_prev = 0
+    super().__init__(CP, CarController, CarState, get_powertrain_can_parser)
 
-    # *** init the major players ***
-    canbus = CanBus()
-    self.pt_cp = get_powertrain_can_parser(CP, canbus)
-    self.ch_cp_dbc_name = DBC[CP.carFingerprint]['chassis']
+    self.acc_active_prev = 0
 
     self.CC = None
     if CarController is not None:
-      self.CC = CarController(canbus, CP.carFingerprint)
+      self.CC = CarController(CP.carFingerprint)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -166,11 +155,11 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def update(self, c, can_strings):
-    self.pt_cp.update_strings(can_strings)
+    self.cp.update_strings(can_strings)
 
-    ret = self.CS.update(self.pt_cp)
+    ret = self.CS.update(self.cp)
 
-    ret.canValid = self.pt_cp.can_valid
+    ret.canValid = self.cp.can_valid
     ret.yawRate = self.VM.yaw_rate(ret.steeringAngle * CV.DEG_TO_RAD, ret.vEgo)
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
