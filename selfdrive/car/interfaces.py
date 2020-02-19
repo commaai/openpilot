@@ -21,8 +21,7 @@ class CarInterfaceBase():
     self.cruise_enabled_prev = False
 
     self.CS = CarState(CP)
-    if get_can_parser is not None:
-      self.cp = get_can_parser(CP)
+    self.cp = get_can_parser(CP)
     if get_cam_can_parser is not None:
       self.cp_cam = get_cam_can_parser(CP)
 
