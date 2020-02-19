@@ -20,6 +20,7 @@
 #include "ui.hpp"
 #include "sound.hpp"
 
+
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
@@ -112,7 +113,7 @@ static void ui_init(UIState *s) {
   s->uilayout_sock = SubSocket::create(s->ctx, "uiLayoutState");
   s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
   s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
-  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
+  //s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->carstate_sock = SubSocket::create(s->ctx, "carState");
   s->livempc_sock = SubSocket::create(s->ctx, "liveMpc");
 
@@ -121,7 +122,7 @@ static void ui_init(UIState *s) {
   assert(s->uilayout_sock != NULL);
   assert(s->livecalibration_sock != NULL);
   assert(s->radarstate_sock != NULL);
-  assert(s->thermal_sock != NULL);
+  //assert(s->thermal_sock != NULL);
   assert(s->carstate_sock != NULL);
   assert(s->livempc_sock != NULL);
 
@@ -132,9 +133,21 @@ static void ui_init(UIState *s) {
                               s->livecalibration_sock,
                               s->radarstate_sock,
                               s->carstate_sock,
-                              s->thermal_sock,
                               s->livempc_sock
                              });
+
+  /*
+  s->poller = Poller::create({
+                              s->model_sock,
+                              s->controlsstate_sock,
+                              s->uilayout_sock,
+                              s->livecalibration_sock,
+                              s->radarstate_sock,
+                              s->thermal_sock,
+	                            s->carstate_sock
+                             });
+  */
+
 
 #ifdef SHOW_SPEEDLIMIT
   s->map_data_sock = SubSocket::create(s->ctx, "liveMapData");
@@ -466,27 +479,6 @@ void handle_message(UIState *s, Message * msg) {
       s->scene.mpc_y[i] = capn_to_f32(capn_get32(y_list, i));
     }
     s->livempc_or_radarstate_changed = true;
-  // getting thermal related data for dev ui
-  } else if (eventd.which == cereal_Event_thermal) {
-    struct cereal_ThermalData datad;
-    cereal_read_ThermalData(&datad, eventd.thermal);
-    //BBB CPU TEMP
-    s->scene.maxCpuTemp = datad.cpu0;
-    if (s->scene.maxCpuTemp < datad.cpu1)
-    {
-      s->scene.maxCpuTemp = datad.cpu1;
-    }
-    else if (s->scene.maxCpuTemp < datad.cpu2)
-    {
-      s->scene.maxCpuTemp = datad.cpu2;
-    }
-    else if (s->scene.maxCpuTemp < datad.cpu3)
-    {
-      s->scene.maxCpuTemp = datad.cpu3;
-    }
-    s->scene.maxBatTemp = datad.bat;
-    s->scene.freeSpace = datad.freeSpace;
-    //BBB END CPU TEMP
   } else if (eventd.which == cereal_Event_uiLayoutState) {
     struct cereal_UiLayoutState datad;
     cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
@@ -513,6 +505,13 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.speedlimitahead_valid = datad.speedLimitAheadValid;
     s->scene.speedlimitaheaddistance = datad.speedLimitAheadDistance;
     s->scene.speedlimit_valid = datad.speedLimitValid;
+  // getting thermal related data for dev ui
+  //} else if (eventd.which == cereal_Event_thermal) {
+  //  struct cereal_ThermalData datad;
+  //  cereal_read_ThermalData(&datad, eventd.thermal);
+
+  //  s->scene.pa0 = datad.pa0;
+  //  s->scene.freeSpace = datad.freeSpace;
   } else if (eventd.which == cereal_Event_carState) {
     struct cereal_CarState datad;
     cereal_read_CarState(&datad, eventd.carState);
@@ -521,28 +520,6 @@ void handle_message(UIState *s, Message * msg) {
       s->scene.blinker_blinkingrate = 100;
     s->scene.leftBlinker = datad.leftBlinker;
     s->scene.rightBlinker = datad.rightBlinker;
-  // getting thermal related data for dev ui
-    /*
-  }
-  capn_free(&ctx);
-}
-
-void handle_message(UIState *s, Message * msg) {
-  struct capn ctx;
-  capn_init_mem(&ctx, (uint8_t*)msg->getData(), msg->getSize(), 0);
-
-  cereal_Event_ptr eventp;
-  eventp.p = capn_getp(capn_root(&ctx), 0, 1);
-  struct Event eventd;
-  cereal_read_Event(&eventd, eventp);
-
-  if (eventd.which == cereal_Event_thermal) {
-    struct cereal_ThermalData datad;
-    cereal_read_ThermalData(&datad, event.thermal);
-
-    s->scene.pa0 = datad.pa0;
-    s->scene.freeSpace = datad.freeSpace;
-    */
   }
   capn_free(&ctx);
 }
