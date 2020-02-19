@@ -1,7 +1,5 @@
 import os
 import sys
-import gzip
-import zlib
 import json
 import bz2
 import tempfile
@@ -11,8 +9,6 @@ import urllib.parse
 from aenum import Enum
 import capnp
 import numpy as np
-
-import platform
 
 from tools.lib.exceptions import DataUnreadableError
 try:
