@@ -4,6 +4,7 @@ from cereal import car
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 
 GearShifter = car.CarState.GearShifter
 
@@ -32,6 +33,36 @@ class CarInterfaceBase():
   # return sendcan, pass in a car.CarControl
   def apply(self, c):
     raise NotImplementedError
+
+  def create_common_events(self, c, cs_out):
+    events = []
+
+    if not cs_out.gearShifter == GearShifter.drive and self.CP.openpilotLongitudinalControl:
+      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.doorOpen:
+      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.seatbeltUnlatched:
+      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if self.CS.esp_disabled and self.CP.openpilotLongitudinalControl:
+      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if not cs_out.cruiseState.available and self.CP.openpilotLongitudinalControl:
+      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
+    if cs_out.gearShifter == GearShifter.reverse and self.CP.openpilotLongitudinalControl:
+      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    if self.CS.steer_error:
+      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+    if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
+      events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
+    if cs_out.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
+      events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
+      if c.actuators.gas > 0.1:
+        # some margin on the actuator to not false trigger cancellation while stopping
+        events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
+      if cs_out.vEgo < 0.001:
+        # while in standstill, send a user alert
+        events.append(create_event('manualRestart', [ET.WARNING]))
+
+    return events
 
 class RadarInterfaceBase():
   def __init__(self, CP):
