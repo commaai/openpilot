@@ -132,6 +132,11 @@ class PathPlanner():
         else:
           self.lane_change_state = LaneChangeState.off
 
+      # cancel if driver override steering after 1 sec from starting
+      if self.lane_change_state in [LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing] and \
+                                                  self.lane_change_timer > 1.0 and sm['carState'].steeringPressed: 
+        self.lane_change_state = LaneChangeState.off
+
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
       self.lane_change_timer = 0.0
     else:
