@@ -2,7 +2,7 @@ from collections import namedtuple
 from cereal import car
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import rate_limit
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD
@@ -74,6 +74,15 @@ HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise",  "car",
                      "lanes", "fcw", "acc_alert", "steer_required"])
 
+class CarControllerParams():
+  def __init__(self, CP):
+      self.BRAKE_MAX = 1024//4
+      self.STEER_MAX = CP.lateralParams.torqueBP[-1]
+      # mirror of list (assuming first item is zero) for interp of signed request values
+      assert(CP.lateralParams.torqueBP[0] == 0)
+      assert(CP.lateralParams.torqueBP[0] == 0)
+      self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
+      self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
 class CarController():
   def __init__(self, dbc_name, CP):
@@ -84,15 +93,14 @@ class CarController():
     self.last_pump_ts = 0.
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
-    self.eps_modified = False
-    for fw in CP.carFw:
-      if fw.ecu == "eps" and b"," in fw.fwVersion:
-        print("EPS FW MODIFIED!")
-        self.eps_modified = True
+
+    self.params = CarControllerParams(CP)
 
   def update(self, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
+
+    P = self.params
 
     # *** apply brake hysteresis ***
     brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
@@ -126,29 +134,10 @@ class CarController():
 
     # **** process the car messages ****
 
-    # *** compute control surfaces ***
-    BRAKE_MAX = 1024//4
-    if CS.CP.carFingerprint in (CAR.ACURA_ILX):
-      STEER_MAX = 0xF00
-    elif CS.CP.carFingerprint in (CAR.CRV, CAR.ACURA_RDX):
-      STEER_MAX = 0x3e8  # CR-V only uses 12-bits and requires a lower value
-    elif CS.CP.carFingerprint in (CAR.ODYSSEY_CHN):
-      STEER_MAX = 0x7FFF
-    elif CS.CP.carFingerprint in (CAR.CIVIC) and self.eps_modified:
-      STEER_MAX = 0x1400
-    else:
-      STEER_MAX = 0x1000
-
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
-    apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
-    apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
-
-    if CS.CP.carFingerprint in (CAR.CIVIC) and self.eps_modified:
-      if apply_steer > 0xA00:
-        apply_steer = (apply_steer - 0xA00) / 2 + 0xA00
-      elif apply_steer < -0xA00:
-        apply_steer = (apply_steer + 0xA00) / 2 - 0xA00
+    apply_brake = int(clip(self.brake_last * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
+    apply_steer = int(interp(-actuators.steer * P.STEER_MAX, P.STEER_LOOKUP_BP, P.STEER_LOOKUP_V))
 
     lkas_active = enabled and not CS.steer_not_allowed
 
