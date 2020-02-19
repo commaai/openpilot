@@ -89,8 +89,6 @@ class CarState(CarStateBase):
     self.left_blinker_cnt = 0
     self.right_blinker_cnt = 0
 
-    self.esp_disabled = False
-
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 

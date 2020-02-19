@@ -117,6 +117,7 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def update(self, c, can_strings):
     canMonoTimes = []
+    events = []
     buttonEvents = []
     params = Params()
 
@@ -144,9 +145,15 @@ class CarInterface(CarInterfaceBase):
         be.pressed = self.CS.buttonStates[button]
         buttonEvents.append(be)
 
-    events = self.create_common_events(c, ret)
-    
-    # TODO: make this more generic
+    # Vehicle operation safety checks and events
+    if ret.doorOpen:
+      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if ret.seatbeltUnlatched:
+      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if ret.gearShifter == GEAR.reverse:
+      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    if not ret.gearShifter in [GEAR.drive, GEAR.eco, GEAR.sport]:
+      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.stabilityControlDisabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.parkingBrakeSet:
@@ -157,8 +164,7 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('radarFault', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steeringFault:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    
-    # TODO: why is this different?
+
     # Per the Comma safety model, disable on pedals rising edge or when brake
     # is pressed and speed isn't zero.
     if (ret.gasPressed and not self.gasPressedPrev) or \
@@ -192,6 +198,7 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                    c.hudControl.visualAlert,
+                   c.hudControl.audibleAlert,
                    c.hudControl.leftLaneVisible,
                    c.hudControl.rightLaneVisible)
     self.frame += 1

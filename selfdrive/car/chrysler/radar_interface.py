@@ -7,6 +7,7 @@ from selfdrive.car.interfaces import RadarInterfaceBase
 RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724
 RADAR_MSGS_D = list(range(0x2a2, 0x2b4+2, 2))  # d_ messages
 LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
+NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 
 def _create_radar_can_parser():
   dbc_f = 'chrysler_pacifica_2017_hybrid_private_fusion.dbc'

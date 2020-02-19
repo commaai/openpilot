@@ -7,6 +7,8 @@ from opendbc.can.packer import CANPacker
 class CarController():
   def __init__(self, dbc_name, car_fingerprint, enable_camera):
     self.braking = False
+    # redundant safety check with the board
+    self.controls_allowed = True
     self.apply_steer_last = 0
     self.ccframe = 0
     self.prev_frame = -1

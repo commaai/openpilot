@@ -37,59 +37,10 @@ class CarInterfaceBase():
   def create_common_events(self, c, cs_out):
     events = []
 
-    if self.CP.openpilotLongitudinalControl:
-      if not cs_out.gearShifter == GearShifter.drive:
-        events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if self.CS.esp_disabled:
-        events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if not cs_out.cruiseState.available:
-        events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if cs_out.gearShifter == GearShifter.reverse:
-        events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-
-      # TODO: is this one toyota specific?
-      if cs_out.vEgo < self.CP.minEnableSpeed:
-        events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
-        if c.actuators.gas > 0.1:
-          # some margin on the actuator to not false trigger cancellation while stopping
-          events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
-        if cs_out.vEgo < 0.001:
-          # while in standstill, send a user alert
-          events.append(create_event('manualRestart', [ET.WARNING]))
-
-    # TODO: add these to carstate struct?
-    try:
-      if self.CS.steer_error:
-        events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-
-      if self.CS.brake_error:
-        events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-    except:
-      pass
-
     if cs_out.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if cs_out.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-
-    # TODO: some are temp unavailable and some are just unavailable
-    #if self.CS.steer_error:
-    #  events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-
-    # TODO: add these to carstate struct?
-    try:
-      if self.CS.park_brake:
-        events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    except:
-      pass
-
-    # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (cs_out.gasPressed and not self.gas_pressed_prev) or \
-       (cs_out.brakePressed and (not self.brake_pressed_prev or cs_out.vEgo > 0.001)):
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-
-    if cs_out.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     return events
 

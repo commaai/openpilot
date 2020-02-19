@@ -78,6 +78,8 @@ def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_
 class CarController():
   def __init__(self, dbc_name, car_fingerprint, enable_camera, enable_dsu, enable_apg):
     self.braking = False
+    # redundant safety check with the board
+    self.controls_allowed = True
     self.last_steer = 0
     self.last_angle = 0
     self.accel_steady = 0.

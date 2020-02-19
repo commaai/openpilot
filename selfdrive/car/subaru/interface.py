@@ -109,13 +109,24 @@ class CarInterface(CarInterfaceBase):
     be.type = ButtonType.accelCruise
     buttonEvents.append(be)
 
-    events = self.create_common_events(c, ret)
+    events = []
+    if ret.seatbeltUnlatched:
+      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    # TODO: abstract this. honda different for some reason
+    if ret.doorOpen:
+      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+
     if ret.cruiseState.enabled and not self.enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     if not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+
+    # disable on gas pedal rising edge
+    if (ret.gasPressed and not self.gas_pressed_prev):
+      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+
+    if ret.gasPressed:
+      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     ret.events = events
 
