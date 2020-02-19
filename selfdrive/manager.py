@@ -476,22 +476,22 @@ def main():
   params.manager_start()
 
   default_params = [
-    [("CommunityFeaturesToggle", "0")],
-    [("CompletedTrainingVersion", "0")],
-    [("IsMetric", "0")],
-    [("RecordFront", "0")],
-    [("HasAcceptedTerms", "0")],
-    [("HasCompletedSetup", "0")],
-    [("IsUploadRawEnabled", "1")],
-    [("IsLdwEnabled", "1")],
-    [("IsGeofenceEnabled", "-1")],
-    [("SpeedLimitOffset", "0")],
-    [("LongitudinalControl", "0")],
-    [("LimitSetSpeed", "0")],
-    [("LimitSetSpeedNeural", "0")],
-    [("LastUpdateTime", datetime.datetime.now().isoformat().encode('utf8'))],
-    [("OpenpilotEnabledToggle", "1")],
-    [("LaneChangeEnabled", "1")],
+    ("CommunityFeaturesToggle", "0"),
+    ("CompletedTrainingVersion", "0"),
+    ("IsMetric", "0"),
+    ("RecordFront", "0"),
+    ("HasAcceptedTerms", "0"),
+    ("HasCompletedSetup", "0"),
+    ("IsUploadRawEnabled", "1"),
+    ("IsLdwEnabled", "1"),
+    ("IsGeofenceEnabled", "-1"),
+    ("SpeedLimitOffset", "0"),
+    ("LongitudinalControl", "0"),
+    ("LimitSetSpeed", "0"),
+    ("LimitSetSpeedNeural", "0"),
+    ("LastUpdateTime", datetime.datetime.now().isoformat().encode('utf8')),
+    ("OpenpilotEnabledToggle", "1"),
+    ("LaneChangeEnabled", "1"),
   ]
 
   # set unset params

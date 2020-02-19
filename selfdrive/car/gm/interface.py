@@ -224,8 +224,6 @@ class CarInterface(CarInterfaceBase):
         events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
       if not ret.cruiseState.available:
         events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if ret.gearShifter == car.CarState.GearShifter.reverse:
-        events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
       if ret.vEgo < self.CP.minEnableSpeed:
         events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if self.CS.park_brake:

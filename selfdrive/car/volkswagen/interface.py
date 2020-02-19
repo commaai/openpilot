@@ -147,8 +147,6 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(c, ret)
 
     # Vehicle operation safety checks and events
-    if ret.gearShifter == GEAR.reverse:
-      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if not ret.gearShifter in [GEAR.drive, GEAR.eco, GEAR.sport]:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.stabilityControlDisabled:
