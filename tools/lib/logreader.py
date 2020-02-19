@@ -26,7 +26,6 @@ def index_log(fn):
 
   subprocess.check_call(["make", "PHONELIBS=" + phonelibs_dir], cwd=index_log_dir, stdout=subprocess.DEVNULL)
 
-
   try:
     dat = subprocess.check_output([index_log, fn, "-"])
   except subprocess.CalledProcessError:
