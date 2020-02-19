@@ -60,7 +60,7 @@ print(psis)
 
 plt.figure()
 plt.subplot(3, 1, 1)
-plt.plot(xs, ys)
+plt.plot(-ys, xs)
 
 plt.subplot(3, 1, 2)
 plt.plot(np.degrees(psis), label='Psi [deg]')
