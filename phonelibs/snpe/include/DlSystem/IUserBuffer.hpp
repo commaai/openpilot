@@ -1,6 +1,6 @@
 //==============================================================================
 //
-// Copyright (c) 2017-2018 Qualcomm Technologies, Inc.
+// Copyright (c) 2017-2019 Qualcomm Technologies, Inc.
 // All Rights Reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -11,6 +11,7 @@
 
 #include "TensorShape.hpp"
 #include "ZdlExportDefine.hpp"
+#include <math.h>
 
 namespace zdl {
 namespace DlSystem {
@@ -44,7 +45,10 @@ public:
         UNSIGNED8BIT    = 2,
 
         /// Each element is presented by an 8-bit quantized value.
-        TF8             = 10
+        TF8             = 10,
+
+        /// Each element is presented by an 16-bit quantized value.
+        TF16            = 11
     };
 
     /**
@@ -147,6 +151,7 @@ public:
   * An encoding type where each element is represented by tf8, which is an
   * 8-bit quantizd value, which has an exact representation of 0.0
   */
+
 class ZDL_EXPORT UserBufferEncodingTf8 : public UserBufferEncodingUnsigned8Bit {
 public:
     UserBufferEncodingTf8() = delete;
@@ -155,60 +160,72 @@ public:
             m_StepExactly0(stepFor0),
             m_QuantizedStepSize(stepSize) {};
 
-    /**
+
+/**
       * @brief Sets the step value that represents 0
       *
       * @param[in] stepExactly0 The step value that represents 0
       *
      */
+
     void setStepExactly0(const unsigned char stepExactly0) {
         m_StepExactly0 = stepExactly0;
     }
 
-    /**
+
+/**
       * @brief Sets the float value that each step represents
       *
       * @param[in] quantizedStepSize The float value of each step size
       *
      */
+
     void setQuantizedStepSize(const float quantizedStepSize) {
         m_QuantizedStepSize = quantizedStepSize;
     }
 
-    /**
+
+/**
       * @brief Retrieves the step that represents 0.0
       *
       * @return Step value
      */
+
     unsigned char getStepExactly0() const {
         return m_StepExactly0;
     }
 
-    /**
+
+/**
      * Calculates the minimum floating point value that
      * can be represented with this encoding.
      *
      * @return Minimum representable floating point value
      */
+
     float getMin() const {
         return m_QuantizedStepSize * (0 - m_StepExactly0);
     }
 
-    /**
+
+/**
      * Calculates the maximum floating point value that
      * can be represented with this encoding.
      *
      * @return Maximum representable floating point value
      */
+
     float getMax() const {
         return m_QuantizedStepSize * (255 - m_StepExactly0);
     }
 
-    /**
+
+/**
       * @brief Retrieves the step size
       *
       * @return Step size
      */
+
     float getQuantizedStepSize() const {
         return m_QuantizedStepSize;
     }
@@ -218,6 +235,84 @@ private:
 
     float m_QuantizedStepSize;
 };
+
+
+
+class ZDL_EXPORT UserBufferEncodingTfN : public UserBufferEncoding {
+public:
+   UserBufferEncodingTfN() = delete;
+   UserBufferEncodingTfN(uint64_t stepFor0, float stepSize, uint8_t bWidth=8):
+                                           UserBufferEncoding(getTypeFromWidth(bWidth)),
+                                           bitWidth(bWidth),
+                                           m_StepExactly0(stepFor0),
+                                           m_QuantizedStepSize(stepSize){};
+   size_t getElementSize() const noexcept override;
+   /**
+      * @brief Sets the step value that represents 0
+      *
+      * @param[in] stepExactly0 The step value that represents 0
+      *
+     */
+   void setStepExactly0(uint64_t stepExactly0) {
+      m_StepExactly0 = stepExactly0;
+   }
+
+   /**
+     * @brief Sets the float value that each step represents
+     *
+     * @param[in] quantizedStepSize The float value of each step size
+     *
+    */
+   void setQuantizedStepSize(const float quantizedStepSize) {
+      m_QuantizedStepSize = quantizedStepSize;
+   }
+
+   /**
+     * @brief Retrieves the step that represents 0.0
+     *
+     * @return Step value
+    */
+   uint64_t getStepExactly0() const {
+      return m_StepExactly0;
+   }
+
+   /**
+    * Calculates the minimum floating point value that
+    * can be represented with this encoding.
+    *
+    * @return Minimum representable floating point value
+    */
+   float getMin() const {
+      return m_QuantizedStepSize * (0 - (double)m_StepExactly0);
+   }
+
+   /**
+    * Calculates the maximum floating point value that
+    * can be represented with this encoding.
+    *
+    * @return Maximum representable floating point value
+    */
+   float getMax() const{
+       return m_QuantizedStepSize * (pow(2,bitWidth)-1 - (double)m_StepExactly0);
+   };
+
+   /**
+     * @brief Retrieves the step size
+     *
+     * @return Step size
+    */
+   float getQuantizedStepSize() const {
+      return m_QuantizedStepSize;
+   }
+
+   ElementType_t getTypeFromWidth(uint8_t width);
+
+   uint8_t bitWidth;
+private:
+   uint64_t m_StepExactly0;
+   float m_QuantizedStepSize;
+};
+
 
 /**
  * @brief UserBuffer contains a pointer and info on how to walk it and interpret its content.
@@ -242,6 +337,24 @@ public:
       * @return Size of the underlying buffer, in bytes.
      */
     virtual size_t getSize() const = 0;
+
+    /**
+      * @brief Retrieves the size of the inference data in the buffer, in bytes.
+      *
+      * The inference results from a dynamic-sized model may not be exactly the same size
+      * as the UserBuffer provided to SNPE. This function can be used to get the amount
+      * of output inference data, which may be less or greater than the size of the UserBuffer.
+      *
+      * If the inference results fit in the UserBuffer, getOutputSize() would be less than
+      * or equal to getSize(). But if the inference results were more than the capacity of
+      * the provided UserBuffer, the results would be truncated to fit the UserBuffer. But,
+      * getOutputSize() would be greater than getSize(), which indicates a bigger buffer
+      * needs to be provided to SNPE to hold all of the inference results.
+      *
+      * @return Size required for the buffer to hold all inference results, which can be less
+      * or more than the size of the buffer, in bytes.
+    */
+    virtual size_t getOutputSize() const = 0;
 
     /**
       * @brief Changes the underlying memory that backs the UserBuffer.

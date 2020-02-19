@@ -10,6 +10,7 @@
 #define _DL_SYSTEM_PLATFORM_CONFIG_HPP_
 
 #include "DlSystem/ZdlExportDefine.hpp"
+#include <string>
 
 namespace zdl{
 namespace DlSystem
@@ -92,7 +93,8 @@ public:
       PlatformConfigInfo(){};
    };
 
-   PlatformConfig() : m_PlatformType(PlatformType_t::UNKNOWN) {};
+   PlatformConfig() : m_PlatformType(PlatformType_t::UNKNOWN),
+                      m_PlatformOptions("") {};
 
    /**
      * @brief Retrieves the platform type
@@ -156,9 +158,42 @@ public:
          return false;
    }
 
+   /**
+     * @brief Sets the platform options
+     *
+     * @param[in] options Options as a string in the form of "keyword:options"
+     *
+     * @return True if options are pass validation; otherwise false.  If false, the options are not updated.
+     */
+   bool setPlatformOptions(std::string options) {
+      std::string oldOptions = m_PlatformOptions;
+      m_PlatformOptions = options;
+      if (isOptionsValid()) {
+         return true;
+      } else {
+         m_PlatformOptions = oldOptions;
+         return false;
+      }
+   }
+
+   /**
+     * @brief Indicates whther the plaform configuration is valid.
+     *
+     * @return True if the platform configuration is valid; false otherwise.
+     */
+   bool isOptionsValid() const;
+
+   /**
+     * @brief Gets the platform options
+     *
+     * @return Options as a string
+     */
+   std::string getPlatformOptions() const { return m_PlatformOptions; }
+
 private:
    PlatformType_t m_PlatformType;
    PlatformConfigInfo m_PlatformConfigInfo;
+   std::string m_PlatformOptions;
 };
 
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */

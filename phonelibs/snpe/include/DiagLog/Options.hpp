@@ -32,7 +32,8 @@ public:
       DiagLogMask(""),
       LogFileDirectory("diaglogs"),
       LogFileName("DiagLog"),
-      LogFileRotateCount(20)
+      LogFileRotateCount(20),
+      LogFileReplace(true)
    {
       // Solves the empty string problem with multiple std libs
       DiagLogMask.reserve(1);
@@ -65,6 +66,13 @@ public:
    /// any existing log file that may exist.
    /// Default value is 20
    uint32_t LogFileRotateCount;
+
+   /// @brief
+   ///
+   /// If the log file already exists, control whether it will be replaced
+   /// (existing contents truncated), or appended.
+   /// Default value is true
+   bool LogFileReplace;
 };
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 
