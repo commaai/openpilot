@@ -113,9 +113,6 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(c, ret)
 
-    if self.CS.steer_error:
-      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
