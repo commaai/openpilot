@@ -4,7 +4,6 @@ import math
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
-import scipy.signal
 
 
 from selfdrive.car.honda.interface import CarInterface
@@ -40,9 +39,8 @@ for i, t in tqdm(list(enumerate(ts))):
   sa = steering_angles[i]
 
   A, B = create_dyn_state_matrices(u, VM)
-  A_d, B_d, _, _, _ = scipy.signal.cont2discrete((A, B, 0, 0), DT)
 
-  state = A_d.dot(state) + B_d.dot(sa)
+  state += DT * (A.dot(state) + B.dot(sa))
 
   x += u * math.cos(psi) * DT
   y += (float(state[0]) * math.sin(psi) + u * math.sin(psi)) * DT
