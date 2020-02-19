@@ -1,4 +1,5 @@
 import copy
+from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
@@ -85,54 +86,50 @@ def get_camera_can_parser(CP):
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    # initialize can parser
     self.left_blinker_cnt = 0
     self.right_blinker_cnt = 0
 
   def update(self, cp, cp_cam):
+    ret = car.CarState.new_message()
 
-    self.pedal_gas = cp.vl["Throttle"]['Throttle_Pedal']
-    self.brake_pressure = cp.vl["Brake_Pedal"]['Brake_Pedal']
-    self.user_gas_pressed = self.pedal_gas > 0
-    self.brake_pressed = self.brake_pressure > 0
-    self.brake_lights = bool(self.brake_pressed)
+    ret.gas = cp.vl["Throttle"]['Throttle_Pedal'] / 255.
+    ret.gasPressed = ret.gas > 1e-5
+    ret.brakePressed = cp.vl["Brake_Pedal"]['Brake_Pedal'] > 1e-5
+    ret.brakeLights = ret.brakePressed
 
-    self.v_wheel_fl = cp.vl["Wheel_Speeds"]['FL'] * CV.KPH_TO_MS
-    self.v_wheel_fr = cp.vl["Wheel_Speeds"]['FR'] * CV.KPH_TO_MS
-    self.v_wheel_rl = cp.vl["Wheel_Speeds"]['RL'] * CV.KPH_TO_MS
-    self.v_wheel_rr = cp.vl["Wheel_Speeds"]['RR'] * CV.KPH_TO_MS
-
-    self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed']
-    # 1 = imperial, 6 = metric
-    if cp.vl["Dash_State"]['Units'] == 1:
-      self.v_cruise_pcm *= CV.MPH_TO_KPH
-
-    self.v_ego_raw = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
+    ret.wheelSpeeds.fl = cp.vl["Wheel_Speeds"]['FL'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.fr = cp.vl["Wheel_Speeds"]['FR'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rl = cp.vl["Wheel_Speeds"]['RL'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rr = cp.vl["Wheel_Speeds"]['RR'] * CV.KPH_TO_MS
+    ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     # Kalman filter, even though Subaru raw wheel speed is heaviliy filtered by default
-    self.v_ego, self.a_ego = self.update_speed_kf(self.v_ego_raw)
-
-    self.standstill = self.v_ego_raw < 0.01
-
-    self.prev_left_blinker_on = self.left_blinker_on
-    self.prev_right_blinker_on = self.right_blinker_on
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.standstill = ret.vEgoRaw < 0.01
 
     # continuous blinker signals for assisted lane change
     self.left_blinker_cnt = 50 if cp.vl["Dashlights"]['LEFT_BLINKER'] else max(self.left_blinker_cnt - 1, 0)
-    self.left_blinker_on = self.left_blinker_cnt > 0
-
+    ret.leftBlinker = self.left_blinker_cnt > 0
     self.right_blinker_cnt = 50 if cp.vl["Dashlights"]['RIGHT_BLINKER'] else max(self.right_blinker_cnt - 1, 0)
-    self.right_blinker_on = self.right_blinker_cnt > 0
+    ret.rightBlinker = self.right_blinker_cnt > 0
 
-    self.seatbelt_unlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
-    self.steer_torque_driver = cp.vl["Steering_Torque"]['Steer_Torque_Sensor']
-    self.acc_active = cp.vl["CruiseControl"]['Cruise_Activated']
-    self.main_on = cp.vl["CruiseControl"]['Cruise_On']
-    self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD[self.car_fingerprint]
-    self.angle_steers = cp.vl["Steering_Torque"]['Steering_Angle']
-    self.door_open = any([cp.vl["BodyInfo"]['DOOR_OPEN_RR'],
+    ret.steeringAngle = cp.vl["Steering_Torque"]['Steering_Angle']
+    ret.steeringTorque = cp.vl["Steering_Torque"]['Steer_Torque_Sensor']
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.car_fingerprint]
+
+    ret.cruiseState.enabled = cp.vl["CruiseControl"]['Cruise_Activated'] != 0
+    ret.cruiseState.available = cp.vl["CruiseControl"]['Cruise_On'] != 0
+    ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.KPH_TO_MS
+    # 1 = imperial, 6 = metric
+    if cp.vl["Dash_State"]['Units'] == 1:
+      ret.cruiseState.speed *= CV.MPH_TO_KPH
+
+    ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
+    ret.doorOpen = any([cp.vl["BodyInfo"]['DOOR_OPEN_RR'],
       cp.vl["BodyInfo"]['DOOR_OPEN_RL'],
       cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
       cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
     self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
     self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+
+    return ret
