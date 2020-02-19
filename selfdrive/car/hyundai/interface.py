@@ -166,8 +166,6 @@ class CarInterface(CarInterfaceBase):
       self.low_speed_alert = False
 
     events = self.create_common_events(c, ret)
-    if not ret.gearShifter == GearShifter.drive:
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.steer_error:

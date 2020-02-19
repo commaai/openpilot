@@ -9,6 +9,7 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
+GearShifter = car.CarState.GearShifter
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
@@ -109,7 +110,8 @@ class CarInterface(CarInterfaceBase):
     be.type = ButtonType.accelCruise
     buttonEvents.append(be)
 
-    events = self.create_common_events(c, ret)
+    # TODO: add gearShifter to carState
+    events = self.create_common_events(c, ret, extra_gears=[GearShifter.unknown])
 
     if ret.cruiseState.enabled and not self.enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))

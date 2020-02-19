@@ -217,9 +217,7 @@ class CarInterface(CarInterfaceBase):
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     else:
-      # TOOD: why is this only not supercruise? ignore supercruise?
-      if ret.gearShifter != car.CarState.GearShifter.drive:
-        events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      # TODO: why is this only not supercruise? ignore supercruise?
       if self.CS.esp_disabled:
         events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
       if ret.vEgo < self.CP.minEnableSpeed:
