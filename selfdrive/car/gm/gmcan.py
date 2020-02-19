@@ -31,7 +31,7 @@ def create_steering_control_ct6(packer, CanBus, apply_steer, v_ego, idx, enabled
   # pack again with checksum
   dat = packer.make_can_msg("ASCMLKASteeringCmd", 0, values)[2]
 
-  return [0x152, 0, dat, CanBus.PowerTrain], \
+  return [0x152, 0, dat, CanBus.POWERTRAIN], \
          [0x154, 0, dat, CanBus.POWERTRAIN], \
          [0x151, 0, dat, CanBus.CHASSIS], \
          [0x153, 0, dat, CanBus.CHASSIS]
