@@ -13,18 +13,9 @@ ButtonType = car.CarState.ButtonEvent.Type
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
-    self.CP = CP
-    self.VM = VehicleModel(CP)
+    super().__init__(CP, CarController, CarState, get_can_parser, get_cam_can_parser=get_camera_parser)
 
-    self.gas_pressed_prev = False
-    self.brake_pressed_prev = False
-    self.cruise_enabled_prev = False
     self.low_speed_alert = False
-
-    # *** init the major players ***
-    self.CS = CarState(CP)
-    self.cp = get_can_parser(CP)
-    self.cp_cam = get_camera_parser(CP)
 
     self.CC = None
     if CarController is not None:
