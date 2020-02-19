@@ -7,8 +7,6 @@ from statistics import mean
 
 import cereal.messaging as messaging
 
-QUEUE_LEN = 10
-
 def sigint_handler(signal, frame):
   print("handler!")
   exit(0)
@@ -28,10 +26,6 @@ if __name__ == "__main__":
   sm = messaging.SubMaster(['carState', 'carControl', 'controlsState'], addr=args.addr)
 
   msg_cnt = 0
-  speed = deque(maxlen=QUEUE_LEN)
-  angle_actual = deque(maxlen=QUEUE_LEN)
-  angle_desire = deque(maxlen=QUEUE_LEN)
-  error = deque(maxlen=QUEUE_LEN)
   stats = defaultdict(lambda: {'err': 0, "cnt": 0, "=": 0, "+": 0, "-": 0})
   cnt = 0
   total_error = 0
@@ -43,43 +37,44 @@ if __name__ == "__main__":
     actual_speed = sm['carState'].vEgo
     enabled = sm['controlsState'].enabled
     steer_override = sm['controlsState'].steerOverride
-    actual_angle = sm['controlsState'].angleSteers
-    desired_angle = sm['carControl'].actuators.steerAngle
-    angle_error = abs(desired_angle - actual_angle)
 
+    # must be above 10 m/s, engaged and not overriding steering
     if actual_speed > 10.0 and enabled and not steer_override:
-      speed.append(actual_speed)
-      angle_actual.append(actual_angle)
-      angle_desire.append(desired_angle)
-      error.append(angle_error)
       cnt += 1
 
-      if cnt >= 500 and cnt % QUEUE_LEN == 0:
-        speed_avg = round(mean(speed), 2)
-        actual_avg = round(mean(angle_actual), 1)
-        desire_avg = round(mean(angle_desire), 1)
-        error_avg = round(mean(error), 2)
-        angle_abs = int(abs(round(desire_avg, 0)))
+      # wait 5 seconds after engage/override
+      if cnt >= 500:
+        # calculate error before rounding
+        actual_angle = sm['controlsState'].angleSteers
+        desired_angle = sm['carControl'].actuators.steerAngle
+        angle_error = abs(desired_angle - actual_angle)
 
-        stats[angle_abs]["err"] += error_avg
+        # round numbers
+        actual_angle = round(actual_angle, 1)
+        desired_angle = round(desired_angle, 1)
+        angle_error = round(angle_error, 2)
+        angle_abs = int(abs(round(desired_angle, 0)))
+
+        # collect stats
+        stats[angle_abs]["err"] += angle_error
         stats[angle_abs]["cnt"] += 1
-        if actual_avg == desire_avg:
+        if actual_angle == desired_angle:
           stats[angle_abs]["="] += 1
         else:
           if desired_angle == 0.:
             overshoot = True
           else:
-            overshoot = desire_avg < actual_avg if desire_avg > 0. else desire_avg > actual_avg
+            overshoot = desired_angle < actual_angle if desired_angle > 0. else desired_angle > actual_angle
           stats[angle_abs]["+" if overshoot else "-"] += 1
-      if cnt > 0 and msg_cnt % 100 == 0:
-        print(chr(27) + "[2J")
-        for k in sorted(stats.keys()):
-          v = stats[k]
-          print(f'angle: {k:#2} | error: {round(v["err"] / v["cnt"], 2):2.2f} | =:{int(v["="] / v["cnt"] * 100):#3}% | +:{int(v["+"] / v["cnt"] * 100):#3}% | -:{int(v["-"] / v["cnt"] * 100):#3}% | count: {v["cnt"]:#4}')
-
     else:
-      speed.clear()
-      angle_actual.clear()
-      angle_desire.clear()
-      error.clear()
       cnt = 0
+
+    if msg_cnt % 100 == 0:
+      print(chr(27) + "[2J")
+      if cnt != 0:
+        print("COLLECTING ...")
+      else:
+        print("DISABLED (speed too low, not engaged, or steer override)")
+      for k in sorted(stats.keys()):
+        v = stats[k]
+        print(f'angle: {k:#2} | error: {round(v["err"] / v["cnt"], 2):2.2f} | =:{int(v["="] / v["cnt"] * 100):#3}% | +:{int(v["+"] / v["cnt"] * 100):#4}% | -:{int(v["-"] / v["cnt"] * 100):#3}% | count: {v["cnt"]:#4}')
