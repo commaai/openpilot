@@ -30,6 +30,7 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.GOLF:
       # Set common MQB parameters that will apply globally
       ret.carName = "volkswagen"
+      ret.radarOffCan = True
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
       ret.enableCruise = True # Stock ACC still controls acceleration and braking
       ret.openpilotLongitudinalControl = False
