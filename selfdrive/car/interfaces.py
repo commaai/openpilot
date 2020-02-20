@@ -12,7 +12,7 @@ GearShifter = car.CarState.GearShifter
 
 class CarInterfaceBase():
   def __init__(self, CP, CarController):
-    pass
+    self.CS = None
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
