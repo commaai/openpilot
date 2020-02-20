@@ -404,6 +404,21 @@ static void ui_draw_world(UIState *s) {
     draw_chevron(s, scene->lead_d_rel+2.7, scene->lead_y_rel, 25,
                   nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
   }
+  if (scene->lead_status2) {
+    // Draw lead2 car indicator
+    float fillAlpha = 0;
+    float speedBuff = 10.;
+    float leadBuff = 40.;
+    if (scene->lead_d_rel2 < leadBuff) {
+      fillAlpha = 255*(1.0-(scene->lead_d_rel2/leadBuff));
+      if (scene->lead_v_rel2 < 0) {
+        fillAlpha += 255*(-1*(scene->lead_v_rel2/speedBuff));
+      }
+      fillAlpha = (int)(fmin(fillAlpha, 255));
+    }
+    draw_chevron(s, scene->lead_d_rel2+2.7, scene->lead_y_rel2, 25,
+                  nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
+  }
 }
 
 static void ui_draw_vision_maxspeed(UIState *s) {
