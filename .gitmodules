@@ -1,10 +1,10 @@
 [submodule "panda"]
 	path = panda
-	url = git@github.com:avolmensky/panda.git
+	url = https://github.com/avolmensky/panda.git
 	branch = nissan-staging
 [submodule "opendbc"]
 	path = opendbc
-	url = git@github.com:avolmensky/opendbc.git
+	url = https://github.com/avolmensky/opendbc.git
 	branch = master
 [submodule "laika_repo"]
 	path = laika_repo
