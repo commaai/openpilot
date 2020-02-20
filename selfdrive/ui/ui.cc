@@ -357,11 +357,17 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_RadarState datad;
     cereal_read_RadarState(&datad, eventd.radarState);
     struct cereal_RadarState_LeadData leaddatad;
+    struct cereal_RadarState_LeadData leaddatae;
     cereal_read_RadarState_LeadData(&leaddatad, datad.leadOne);
+    cereal_read_RadarState_LeadData(&leaddatae, datad.leadTwo);
     s->scene.lead_status = leaddatad.status;
     s->scene.lead_d_rel = leaddatad.dRel;
     s->scene.lead_y_rel = leaddatad.yRel;
     s->scene.lead_v_rel = leaddatad.vRel;
+    s->scene.lead_status2 = leaddatae.status;
+    s->scene.lead_d_rel2 = leaddatae.dRel;
+    s->scene.lead_y_rel2 = leaddatae.yRel;
+    s->scene.lead_v_rel2 = leaddatae.vRel;
     s->livempc_or_radarstate_changed = true;
   } else if (eventd.which == cereal_Event_liveCalibration) {
     s->scene.world_objects_visible = true;
