@@ -108,6 +108,23 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgRestore(s->vg);
 }
 
+static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
+    const UIScene *scene = &s->scene;
+    // Draw lead car indicator
+    float fillAlpha = 0;
+    float speedBuff = 10.;
+    float leadBuff = 40.;
+    if (d_rel < leadBuff) {
+      fillAlpha = 255*(1.0-(d_rel/leadBuff));
+      if (v_rel < 0) {
+        fillAlpha += 255*(-1*(v_rel/speedBuff));
+      }
+      fillAlpha = (int)(fmin(fillAlpha, 255));
+    }
+    draw_chevron(s, d_rel+2.7, y_rel, 25,
+                  nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
+}
+
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
   const UIScene *scene = &s->scene;
 
@@ -204,7 +221,7 @@ static void update_all_track_data(UIState *s) {
 
 
 static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
-const UIScene *scene = &s->scene;
+  const UIScene *scene = &s->scene;
   const PathData path = scene->model.path;
   const float *mpc_x_coords = &scene->mpc_x[0];
   const float *mpc_y_coords = &scene->mpc_y[0];
@@ -390,34 +407,10 @@ static void ui_draw_world(UIState *s) {
   ui_draw_vision_lanes(s);
 
   if (scene->lead_status) {
-    // Draw lead car indicator
-    float fillAlpha = 0;
-    float speedBuff = 10.;
-    float leadBuff = 40.;
-    if (scene->lead_d_rel < leadBuff) {
-      fillAlpha = 255*(1.0-(scene->lead_d_rel/leadBuff));
-      if (scene->lead_v_rel < 0) {
-        fillAlpha += 255*(-1*(scene->lead_v_rel/speedBuff));
-      }
-      fillAlpha = (int)(fmin(fillAlpha, 255));
-    }
-    draw_chevron(s, scene->lead_d_rel+2.7, scene->lead_y_rel, 25,
-                  nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
+    draw_lead(s,scene->lead_d_rel,scene->lead_v_rel,scene->lead_y_rel)
   }
-  if (scene->lead_status2) {
-    // Draw lead2 car indicator
-    float fillAlpha = 0;
-    float speedBuff = 10.;
-    float leadBuff = 40.;
-    if (scene->lead_d_rel2 < leadBuff) {
-      fillAlpha = 255*(1.0-(scene->lead_d_rel2/leadBuff));
-      if (scene->lead_v_rel2 < 0) {
-        fillAlpha += 255*(-1*(scene->lead_v_rel2/speedBuff));
-      }
-      fillAlpha = (int)(fmin(fillAlpha, 255));
-    }
-    draw_chevron(s, scene->lead_d_rel2+2.7, scene->lead_y_rel2, 25,
-                  nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
+  if ((scene->lead_status2) &&(fabs(scene->lead_d_rel - scene->lead_d_rel2)>0.1)||(fabs(scene->lead_y_rel - scene->lead_y_rel2)>0.1))) {
+    draw_lead(s,scene->lead_d_rel2,scene->lead_v_rel2,scene->lead_y_rel2)
   }
 }
 
