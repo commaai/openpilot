@@ -6,7 +6,6 @@ from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
-from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, Ecu, ECU_FINGERPRINT, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
@@ -74,24 +73,10 @@ def get_compute_gb_acura():
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
-    self.CP = CP
+    super().__init__(CP, CarController, CarState, get_can_parser, get_cam_can_parser=get_cam_can_parser)
 
-    self.frame = 0
     self.last_enable_pressed = 0
     self.last_enable_sent = 0
-    self.gas_pressed_prev = False
-    self.brake_pressed_prev = False
-
-    self.cp = get_can_parser(CP)
-    self.cp_cam = get_cam_can_parser(CP)
-
-    # *** init the major players ***
-    self.CS = CarState(CP)
-    self.VM = VehicleModel(CP)
-
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(self.cp.dbc_name, CP)
 
     if self.CS.CP.carFingerprint == CAR.ACURA_ILX:
       self.compute_gb = get_compute_gb_acura()

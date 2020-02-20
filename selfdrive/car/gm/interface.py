@@ -2,8 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
-from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.gm.values import DBC, CAR, Ecu, ECU_FINGERPRINT, \
+from selfdrive.car.gm.values import CAR, Ecu, ECU_FINGERPRINT, \
                                     SUPERCRUISE_CARS, AccState, FINGERPRINTS
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
@@ -11,32 +10,11 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 
-class CanBus(CarInterfaceBase):
-  def __init__(self):
-    self.powertrain = 0
-    self.obstacle = 1
-    self.chassis = 2
-    self.sw_gmlan = 3
-
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
-    self.CP = CP
+    super().__init__(CP, CarController, CarState, get_powertrain_can_parser)
 
-    self.frame = 0
-    self.gas_pressed_prev = False
-    self.brake_pressed_prev = False
     self.acc_active_prev = 0
-
-    # *** init the major players ***
-    canbus = CanBus()
-    self.CS = CarState(CP)
-    self.VM = VehicleModel(CP)
-    self.pt_cp = get_powertrain_can_parser(CP, canbus)
-    self.ch_cp_dbc_name = DBC[CP.carFingerprint]['chassis']
-
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(canbus, CP.carFingerprint)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -71,11 +49,13 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
 
+    # default to gm
+    ret.safetyModel = car.CarParams.SafetyModel.gm
+
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1607. + STD_CARGO_KG
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.69
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
@@ -85,7 +65,6 @@ class CarInterface(CarInterfaceBase):
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1496. + STD_CARGO_KG
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.83
       ret.steerRatio = 15.8
       ret.steerRatioRear = 0.
@@ -97,14 +76,12 @@ class CarInterface(CarInterfaceBase):
       # Remaining parameters copied from Volt for now
       ret.centerToFront = ret.wheelbase * 0.4
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1. # engage speed is decided by pcm
       ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.86
       ret.steerRatio = 14.4  #end to end is 13.46
       ret.steerRatioRear = 0.
@@ -113,7 +90,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.83 #111.4 inches in meters
       ret.steerRatio = 14.4 # guess for tourx
       ret.steerRatioRear = 0.
@@ -122,7 +98,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.CADILLAC_ATS:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1601. + STD_CARGO_KG
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
       ret.steerRatioRear = 0.
@@ -173,11 +148,11 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def update(self, c, can_strings):
-    self.pt_cp.update_strings(can_strings)
+    self.cp.update_strings(can_strings)
 
-    ret = self.CS.update(self.pt_cp)
+    ret = self.CS.update(self.cp)
 
-    ret.canValid = self.pt_cp.can_valid
+    ret.canValid = self.cp.can_valid
     ret.yawRate = self.VM.yaw_rate(ret.steeringAngle * CV.DEG_TO_RAD, ret.vEgo)
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 

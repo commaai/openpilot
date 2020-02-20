@@ -85,7 +85,7 @@ class CarControllerParams():
       self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
 class CarController():
-  def __init__(self, dbc_name, CP):
+  def __init__(self, dbc_name, CP, VM):
     self.braking = False
     self.brake_steady = 0.
     self.brake_last = 0.

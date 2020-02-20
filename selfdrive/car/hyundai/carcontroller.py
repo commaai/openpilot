@@ -5,9 +5,9 @@ from opendbc.can.packer import CANPacker
 
 
 class CarController():
-  def __init__(self, dbc_name, car_fingerprint):
+  def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
-    self.car_fingerprint = car_fingerprint
+    self.car_fingerprint = CP.carFingerprint
     self.lkas11_cnt = 0
     self.cnt = 0
     self.last_resume_cnt = 0

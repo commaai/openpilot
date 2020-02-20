@@ -1,20 +1,17 @@
 from cereal import car
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
-from selfdrive.car.volkswagen.values import DBC, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams
+from selfdrive.car.volkswagen.values import DBC, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController():
-  def __init__(self, canbus, car_fingerprint):
+  def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
-    self.car_fingerprint = car_fingerprint
 
-    # Setup detection helper. Routes commands to an appropriate CAN bus number.
-    self.canbus = canbus
-    self.packer_pt = CANPacker(DBC[car_fingerprint]['pt'])
+    self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
@@ -32,7 +29,6 @@ class CarController():
 
     # Send CAN commands.
     can_sends = []
-    canbus = self.canbus
 
     #--------------------------------------------------------------------------
     #                                                                         #
@@ -102,7 +98,7 @@ class CarController():
 
       self.apply_steer_last = apply_steer
       idx = (frame / P.HCA_STEP) % 16
-      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, canbus.pt, apply_steer,
+      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer,
                                                                  idx, hcaEnabled))
 
     #--------------------------------------------------------------------------
@@ -123,7 +119,7 @@ class CarController():
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]
 
-      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, canbus.pt, hcaEnabled,
+      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, hcaEnabled,
                                                             CS.out.steeringPressed, hud_alert, leftLaneVisible,
                                                             rightLaneVisible))
 
@@ -182,7 +178,7 @@ class CarController():
         if self.graMsgSentCount == 0:
           self.graMsgStartFramePrev = frame
         idx = (CS.graMsgBusCounter + 1) % 16
-        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, canbus.pt, self.graButtonStatesToSend, CS, idx))
+        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, CANBUS.pt, self.graButtonStatesToSend, CS, idx))
         self.graMsgSentCount += 1
         if self.graMsgSentCount >= P.GRA_VBP_COUNT:
           self.graButtonStatesToSend = None
