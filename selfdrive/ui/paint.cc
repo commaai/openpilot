@@ -109,7 +109,6 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
 }
 
 static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
-    const UIScene *scene = &s->scene;
     // Draw lead car indicator
     float fillAlpha = 0;
     float speedBuff = 10.;
@@ -126,8 +125,6 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
 }
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
-  const UIScene *scene = &s->scene;
-
   nvgSave(s->vg);
   nvgTranslate(s->vg, 240.0f, 0.0); // rgb-box space
   nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2); // zoom 2x
