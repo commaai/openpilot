@@ -407,10 +407,10 @@ static void ui_draw_world(UIState *s) {
   ui_draw_vision_lanes(s);
 
   if (scene->lead_status) {
-    draw_lead(s,scene->lead_d_rel,scene->lead_v_rel,scene->lead_y_rel)
+    draw_lead(s,scene->lead_d_rel,scene->lead_v_rel,scene->lead_y_rel);
   }
   if ((scene->lead_status2) &&(fabs(scene->lead_d_rel - scene->lead_d_rel2)>0.1)||(fabs(scene->lead_y_rel - scene->lead_y_rel2)>0.1))) {
-    draw_lead(s,scene->lead_d_rel2,scene->lead_v_rel2,scene->lead_y_rel2)
+    draw_lead(s,scene->lead_d_rel2,scene->lead_v_rel2,scene->lead_y_rel2);
   }
 }
 
