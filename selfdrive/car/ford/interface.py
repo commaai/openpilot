@@ -16,18 +16,10 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-
-    ret = car.CarParams.new_message()
-
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "ford"
-    ret.carFingerprint = candidate
-    ret.isPandaBlack = has_relay
-
     ret.safetyModel = car.CarParams.SafetyModel.ford
     ret.dashcamOnly = True
-
-    # pedal
-    ret.enableCruise = True
 
     ret.wheelbase = 2.85
     ret.steerRatio = 14.8
@@ -41,10 +33,6 @@ class CarInterface(CarInterfaceBase):
     ret.centerToFront = ret.wheelbase * 0.44
     tire_stiffness_factor = 0.5328
 
-    # min speed to enable ACC. if car can do stop and go, then set enabling speed
-    # to a negative value, so it won't matter.
-    ret.minEnableSpeed = -1.
-
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
@@ -54,31 +42,10 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    # no rear steering, at least on the listed cars above
-    ret.steerRatioRear = 0.
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
-    # steer, gas, brake limitations VS speed
-    ret.steerMaxBP = [0.]  # breakpoints at 1 and 40 kph
-    ret.steerMaxV = [1.0]  # 2/3rd torque allowed above 45 kph
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.5]
-    ret.brakeMaxBP = [5., 20.]
-    ret.brakeMaxV = [1., 0.8]
-
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
-    ret.openpilotLongitudinalControl = False
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
-
-    ret.stoppingControl = False
-    ret.startAccel = 0.0
-
-    ret.longitudinalTuning.deadzoneBP = [0., 9.]
-    ret.longitudinalTuning.deadzoneV = [0., .15]
-    ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
-    ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kiV = [0.54, 0.36]
 
     return ret
 

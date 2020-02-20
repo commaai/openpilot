@@ -40,6 +40,37 @@ class CarInterfaceBase():
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
     raise NotImplementedError
 
+  # returns a set of default params to avoid repetition in car specific params
+  @staticmethod
+  def get_std_params(candidate, fingerprint, has_relay):
+    ret = car.CarParams.new_message()
+    ret.carFingerprint = candidate
+    ret.isPandaBlack = has_relay
+
+    # standard ALC params
+    ret.steerControlType = car.CarParams.SteerControlType.torque
+    ret.steerMaxBP = [0.]
+    ret.steerMaxV = [1.]
+
+    # stock ACC by default
+    ret.enableCruise = True
+    ret.minEnableSpeed = -1.  # enable is done by stock ACC, so ignore this
+    ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
+    ret.gasMaxBP = [0.]
+    ret.gasMaxV = [.5]  # half max brake
+    ret.brakeMaxBP = [0.]
+    ret.brakeMaxV = [1.]
+    ret.openpilotLongitudinalControl = False
+    ret.startAccel = 0.0
+    ret.stoppingControl = False
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [1.]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [1.]
+    return ret
+
   # returns a car.CarState, pass in car.CarControl
   def update(self, c, can_strings):
     raise NotImplementedError
