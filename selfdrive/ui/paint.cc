@@ -120,8 +120,8 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
       }
       fillAlpha = (int)(fmin(fillAlpha, 255));
     }
-    draw_chevron(s, d_rel+2.7, y_rel, 25,
-                  nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
+    draw_chevron(s, d_rel, y_rel, 25,
+                 nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
 }
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
@@ -404,10 +404,10 @@ static void ui_draw_world(UIState *s) {
   ui_draw_vision_lanes(s);
 
   if (scene->lead_status) {
-    draw_lead(s,scene->lead_d_rel,scene->lead_v_rel,scene->lead_y_rel);
+    draw_lead(s, scene->lead_d_rel, scene->lead_v_rel, scene->lead_y_rel);
   }
   if ((scene->lead_status2) && (fabs(scene->lead_d_rel - scene->lead_d_rel2) > 3.0)) {
-    draw_lead(s,scene->lead_d_rel2,scene->lead_v_rel2,scene->lead_y_rel2);
+    draw_lead(s, scene->lead_d_rel2, scene->lead_v_rel2, scene->lead_y_rel2);
   }
 }
 
