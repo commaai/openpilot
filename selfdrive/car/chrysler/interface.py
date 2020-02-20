@@ -7,10 +7,6 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
-    self.low_speed_alert = False
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -73,8 +69,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = []
 
-    self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
-
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
 
@@ -88,7 +82,7 @@ class CarInterface(CarInterfaceBase):
     if (ret.gasPressed and (not self.gas_pressed_prev) and ret.vEgo > 2.0):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if self.low_speed_alert:
+    if ret.vEgo < self.CP.minSteerSpeed:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events

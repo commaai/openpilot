@@ -10,9 +10,6 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
 
-    self.idx = 0
-    self.lanes = 0
-    self.lkas_request = 0
     self.low_speed_alert = False
 
   @staticmethod

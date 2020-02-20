@@ -165,9 +165,6 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret)
 
-    if self.CS.steer_not_allowed:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-
     if self.CS.car_fingerprint in SUPERCRUISE_CARS:
       if self.CS.acc_active and not self.acc_active_prev:
         events.append(create_event('pcmEnable', [ET.ENABLE]))
