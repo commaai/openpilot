@@ -1757,7 +1757,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
       nan_cnt = 0;
     }
   } else {
-    s->focus_err = avg_focus;
+    s->focus_err = max_focus;
     nan_cnt = 0;
   }
   // printf("fe=%f\n", s->focus_err);
@@ -2084,7 +2084,6 @@ static void* ops_thread(void* arg) {
         if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
           if (cmsg.camera_num == 0) {
             do_autoexposure(&s->rear, cmsg.grey_frac);
-            do_autofocus(&s->rear);
           } else {
             do_autoexposure(&s->front, cmsg.grey_frac);
           }
@@ -2187,6 +2186,7 @@ void cameras_run(DualCameraState *s) {
             // fwrite(d, c->ss[buffer].bufs[buf_idx].len, sizeof(uint8_t), df);
             // fclose(df);
             parse_autofocus(c, d);
+            do_autofocus(&s->rear);
           }
           c->ss[buffer].qbuf_info[buf_idx].dirty_buf = 1;
           ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &c->ss[buffer].qbuf_info[buf_idx]);
