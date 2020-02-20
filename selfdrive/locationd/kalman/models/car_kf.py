@@ -63,7 +63,7 @@ class CarKalman():
     (.05/100)**2,
     .01**2,
     math.radians(0.01)**2,
-    math.radians(0.1)**2,
+    math.radians(0.2)**2,
 
     .1**2, .1**2,
     math.radians(0.1)**2,
