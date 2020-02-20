@@ -34,7 +34,6 @@ def get_can_parser(CP):
     ("COUNTER", "EPS_STATUS", -1),
     ("TRACTION_OFF", "TRACTION_BUTTON", 0),
     ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
-    ("COUNTER", "WHEEL_BUTTONS", -1),  # incrementing counter for 23b
   ]
 
   # It's considered invalid if it is not received for 10x the expected period (1/f).
@@ -73,7 +72,6 @@ class CarState(CarStateBase):
 
     ret = car.CarState.new_message()
 
-    self.frame_23b = int(cp.vl["WHEEL_BUTTONS"]['COUNTER'])
     self.frame = int(cp.vl["EPS_STATUS"]['COUNTER'])
 
     ret.doorOpen = any([cp.vl["DOORS"]['DOOR_OPEN_FL'],

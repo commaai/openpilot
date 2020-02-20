@@ -27,6 +27,12 @@ class AccState:
   FAULTED    = 3
   STANDSTILL = 4
 
+class CanBus:
+  POWERTRAIN = 0
+  OBSTACLE   = 1
+  CHASSIS    = 2
+  SW_GMLAN   = 3
+
 def is_eps_status_ok(eps_status, car_fingerprint):
   valid_eps_status = []
   if car_fingerprint in SUPERCRUISE_CARS:

@@ -2,7 +2,6 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
-from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.subaru.values import CAR
 from selfdrive.car.subaru.carstate import CarState, get_powertrain_can_parser, get_camera_can_parser
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
@@ -12,23 +11,10 @@ ButtonType = car.CarState.ButtonEvent.Type
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
+    super().__init__(CP, CarController, CarState, get_powertrain_can_parser, get_cam_can_parser=get_camera_can_parser)
     self.CP = CP
 
-    self.frame = 0
     self.enabled_prev = 0
-    self.gas_pressed_prev = False
-
-    # *** init the major players ***
-    self.CS = CarState(CP)
-    self.VM = VehicleModel(CP)
-    self.pt_cp = get_powertrain_can_parser(CP)
-    self.cam_cp = get_camera_can_parser(CP)
-
-    self.gas_pressed_prev = False
-
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(CP.carFingerprint)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -95,12 +81,12 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def update(self, c, can_strings):
-    self.pt_cp.update_strings(can_strings)
-    self.cam_cp.update_strings(can_strings)
+    self.cp.update_strings(can_strings)
+    self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.pt_cp, self.cam_cp)
+    ret = self.CS.update(self.cp, self.cp_cam)
 
-    ret.canValid = self.pt_cp.can_valid and self.cam_cp.can_valid
+    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
     ret.yawRate = self.VM.yaw_rate(ret.steeringAngle * CV.DEG_TO_RAD, ret.vEgo)
 

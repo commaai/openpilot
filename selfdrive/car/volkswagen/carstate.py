@@ -4,9 +4,9 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC, BUTTON_STATES, CarControllerParams
+from selfdrive.car.volkswagen.values import DBC, CANBUS, BUTTON_STATES, CarControllerParams
 
-def get_mqb_pt_can_parser(CP, canbus):
+def get_mqb_pt_can_parser(CP):
   # this function generates lists for signal, messages and initial values
   signals = [
     # sig_name, sig_address, default
@@ -78,12 +78,12 @@ def get_mqb_pt_can_parser(CP, canbus):
     ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.pt)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
 
 # A single signal is monitored from the camera CAN bus, and then ignored,
 # so the presence of CAN traffic can be verified with cam_cp.valid.
 
-def get_mqb_cam_can_parser(CP, canbus):
+def get_mqb_cam_can_parser(CP):
 
   signals = [
     # sig_name, sig_address, default
@@ -95,11 +95,11 @@ def get_mqb_cam_can_parser(CP, canbus):
     ("LDW_02", 10)        # From R242 Driver assistance camera
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, canbus.cam)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)
 
 
 class CarState(CarStateBase):
-  def __init__(self, CP, canbus):
+  def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["Getriebe_11"]['GE_Fahrstufe']
