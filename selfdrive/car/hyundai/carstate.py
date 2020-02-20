@@ -1,8 +1,9 @@
 from cereal import car
 from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
-from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
+from common.kalman.simple_kalman import KF1D
+from common.realtime import DT_CTRL
 
 GearShifter = car.CarState.GearShifter
 
@@ -281,12 +282,12 @@ def get_camera_parser(CP):
     ]
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
-class CarState(CarStateBase):
+class CarState():
 
   def __init__(self, CP):
-
     self.CP = CP
-
+    # initialize can parser
+    self.car_fingerprint = CP.carFingerprint
     self.left_blinker_on = 0
     self.left_blinker_flash = 0
     self.left_blinker_cnt = 0
@@ -300,6 +301,20 @@ class CarState(CarStateBase):
     self.sas_bus = CP.sasBus
     self.scc_bus = CP.sccBus
 
+    # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
+    # R = 1e3
+    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                         A=[[1.0, DT_CTRL], [0.0, 1.0]],
+                         C=[1.0, 0.0],
+                         K=[[0.12287673], [0.29666309]])
+
+  def update_speed_kf(self, v_ego_raw):
+    if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_kf.x = [[v_ego_raw], [0.0]]
+
+    v_ego_x = self.v_ego_kf.update(v_ego_raw)
+    return float(v_ego_x[0]), float(v_ego_x[1])
+	
   def update(self, cp, cp2, cp_cam):
 
     cp_mdps = cp2 if self.mdps_bus else cp
