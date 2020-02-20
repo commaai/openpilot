@@ -6,9 +6,6 @@ from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, get_hud_aler
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-GearShifter = car.CarState.GearShifter
-ButtonType = car.CarState.ButtonEvent.Type
-
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)

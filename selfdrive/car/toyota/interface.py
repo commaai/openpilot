@@ -7,9 +7,6 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
 
-ButtonType = car.CarState.ButtonEvent.Type
-GearShifter = car.CarState.GearShifter
-
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
@@ -304,8 +301,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera:
       events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT]))
-    if not ret.gearShifter == GearShifter.drive and self.CP.openpilotLongitudinalControl:
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:

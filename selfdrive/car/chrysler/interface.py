@@ -6,9 +6,6 @@ from selfdrive.car.chrysler.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINT
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-GearShifter = car.CarState.GearShifter
-ButtonType = car.CarState.ButtonEvent.Type
-
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
@@ -79,7 +76,7 @@ class CarInterface(CarInterfaceBase):
     self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
 
     # events
-    events = self.create_common_events(ret, extra_gears=[GearShifter.low])
+    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
