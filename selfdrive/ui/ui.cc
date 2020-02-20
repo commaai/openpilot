@@ -19,6 +19,7 @@
 
 #include "ui.hpp"
 #include "sound.hpp"
+#include "dashcam.h"
 
 
 static int last_brightness = -1;
@@ -113,7 +114,7 @@ static void ui_init(UIState *s) {
   s->uilayout_sock = SubSocket::create(s->ctx, "uiLayoutState");
   s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
   s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
-  //s->thermal_sock = SubSocket::create(s->ctx, "thermal");
+  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->carstate_sock = SubSocket::create(s->ctx, "carState");
   s->livempc_sock = SubSocket::create(s->ctx, "liveMpc");
 
@@ -122,7 +123,7 @@ static void ui_init(UIState *s) {
   assert(s->uilayout_sock != NULL);
   assert(s->livecalibration_sock != NULL);
   assert(s->radarstate_sock != NULL);
-  //assert(s->thermal_sock != NULL);
+  assert(s->thermal_sock != NULL);
   assert(s->carstate_sock != NULL);
   assert(s->livempc_sock != NULL);
 
@@ -133,20 +134,9 @@ static void ui_init(UIState *s) {
                               s->livecalibration_sock,
                               s->radarstate_sock,
                               s->carstate_sock,
-                              s->livempc_sock
+                              s->livempc_sock,
+                              s->thermal_sock
                              });
-
-  /*
-  s->poller = Poller::create({
-                              s->model_sock,
-                              s->controlsstate_sock,
-                              s->uilayout_sock,
-                              s->livecalibration_sock,
-                              s->radarstate_sock,
-                              s->thermal_sock,
-	                            s->carstate_sock
-                             });
-  */
 
 
 #ifdef SHOW_SPEEDLIMIT
@@ -224,57 +214,6 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->longitudinal_control_timeout = UI_FREQ / 3;
   s->is_metric_timeout = UI_FREQ / 2;
   s->limit_set_speed_timeout = UI_FREQ;
-}
-
-struct tm get_time_struct() {
-  time_t t = time(NULL);
-  struct tm tm = *localtime(&t);
-  return tm;
-}
-
-bool dashcam_button_clicked(int touch_x, int touch_y) {
-  if (touch_x >= 1660 && touch_x <= 1810) {
-    if (touch_y >= 885 && touch_y <= 1035) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-void toggle_dashcam_start() {
-  const char *dashcam_root = "/data/media/0/dashcam/";
-  char *env_dashcam_root = getenv("DASHCAM_ROOT");
-  dashcam_root = env_dashcam_root ? env_dashcam_root : dashcam_root;
-
-  // NOTE: make sure dashcam_root folder exists on the device!
-  struct stat st = {0};
-  if (stat(dashcam_root, &st) == -1) {
-    umask(0);
-    mkdir(dashcam_root, 0777);
-  }
-
-  char cmd[128];
-  char filename[64];
-  struct tm tm = get_time_struct();
-  snprintf(filename, sizeof(filename), "%04d%02d%02d_%02d%02d%02d.mp4", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-  snprintf(cmd, sizeof(cmd), "/data/openpilot/selfdrive/ui/screenrecord --bit-rate 2560000 %s%s&", dashcam_root, filename);
-
-  system(cmd);
-}
-
-void toggle_dashcam_stop() {
-  system("killall -SIGINT screenrecord");
-}
-
-void toggle_dashcam(UIState *s) {
-  if (s->scene.recording) {
-    toggle_dashcam_stop();
-    s->scene.recording = false;
-  } else {
-    toggle_dashcam_start();
-    s->scene.recording = true;
-  }
 }
 
 static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
@@ -479,6 +418,35 @@ void handle_message(UIState *s, Message * msg) {
       s->scene.mpc_y[i] = capn_to_f32(capn_get32(y_list, i));
     }
     s->livempc_or_radarstate_changed = true;
+  } else if (eventd.which == cereal_Event_thermal) {
+    struct cereal_ThermalData datad;
+    cereal_read_ThermalData(&datad, eventd.thermal);
+
+    if (!datad.started) {
+      update_status(s, STATUS_STOPPED);
+    } else if (s->status == STATUS_STOPPED) {
+      // car is started but controls doesn't have fingerprint yet
+      update_status(s, STATUS_DISENGAGED);
+    }
+
+    s->scene.started_ts = datad.startedTs;
+    //BBB CPU TEMP
+    s->scene.maxCpuTemp = datad.cpu0;
+    if (s->scene.maxCpuTemp < datad.cpu1)
+    {
+      s->scene.maxCpuTemp = datad.cpu1;
+    }
+    else if (s->scene.maxCpuTemp < datad.cpu2)
+    {
+      s->scene.maxCpuTemp = datad.cpu2;
+    }
+    else if (s->scene.maxCpuTemp < datad.cpu3)
+    {
+      s->scene.maxCpuTemp = datad.cpu3;
+    }
+    s->scene.maxBatTemp = datad.bat;
+    s->scene.freeSpace = datad.freeSpace;
+    //BBB END CPU TEMP
   } else if (eventd.which == cereal_Event_uiLayoutState) {
     struct cereal_UiLayoutState datad;
     cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
@@ -505,13 +473,6 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.speedlimitahead_valid = datad.speedLimitAheadValid;
     s->scene.speedlimitaheaddistance = datad.speedLimitAheadDistance;
     s->scene.speedlimit_valid = datad.speedLimitValid;
-  // getting thermal related data for dev ui
-  //} else if (eventd.which == cereal_Event_thermal) {
-  //  struct cereal_ThermalData datad;
-  //  cereal_read_ThermalData(&datad, eventd.thermal);
-
-  //  s->scene.pa0 = datad.pa0;
-  //  s->scene.freeSpace = datad.freeSpace;
   } else if (eventd.which == cereal_Event_carState) {
     struct cereal_CarState datad;
     cereal_read_CarState(&datad, eventd.carState);
@@ -974,11 +935,17 @@ int main(int argc, char* argv[]) {
       ui_update(s);
       if(!s->vision_connected) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
-        toggle_dashcam_stop();
         ui_draw(s);
         glFinish();
         should_swap = true;
       }
+    }
+
+    //awake on any touch
+    int touch_x = -1, touch_y = -1;
+    int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+    if (touched == 1) {
+      set_awake(s, true);
     }
 
     // manage wakefulness
@@ -988,22 +955,9 @@ int main(int argc, char* argv[]) {
       set_awake(s, false);
     }
 
-    //dashcam process manage
-    if (s->awake && s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
-      //dashcam button
-      ///ui_draw_dashcam_button(s);
-      //dashcam button clicked
-      if (s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
-        int touch_x = -1, touch_y = -1;
-        int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
-        if (dashcam_button_clicked(touch_x, touch_y)) {
-          toggle_dashcam(s);
-        }
-      }
-    }
-
     // Don't waste resources on drawing in case screen is off or car is not started.
     if (s->awake && s->vision_connected) {
+      dashcam(s, touch_x, touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;

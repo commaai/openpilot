@@ -145,6 +145,9 @@ typedef struct UIScene {
   bool gps_planner_active;
 
   // dev ui
+  uint16_t maxCpuTemp;
+  uint32_t maxBatTemp;
+  uint64_t started_ts;
   float angleSteersDes;
   float pa0;
   float freeSpace;
@@ -273,7 +276,7 @@ typedef struct UIState {
   track_vertices_data track_vertices[2];
 
   // dev ui
-  //SubSocket *thermal_sock;
+  SubSocket *thermal_sock;
 } UIState;
 
 // API

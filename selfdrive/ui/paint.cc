@@ -464,7 +464,7 @@ static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) 
   int bb_uom_dx =  (int)(bb_w /2 - uom_fontSize*2.5) ;
 
   //add CPU temperature
-/*  if (true) {
+  if (true) {
         char val_str[16];
     char uom_str[6];
     NVGcolor val_color = nvgRGBA(255, 255, 255, 200);
@@ -504,7 +504,7 @@ static void bb_ui_draw_measures_left(UIState *s, int bb_x, int bb_y, int bb_w ) 
         value_fontSize, label_fontSize, uom_fontSize );
     bb_ry = bb_y + bb_h;
   }
-*/
+
   //add grey panda GPS accuracy
   /*if (true) {
     char val_str[16];
@@ -1090,30 +1090,6 @@ static void ui_draw_vision_brake(UIState *s) {
   nvgFill(s->vg);
 }
 
-static void ui_draw_dashcam_button(UIState *s) {
-  int btn_w = 150;
-  int btn_h = 150;
-  int btn_x = 1920 - btn_w;
-  int btn_y = 1080 - btn_h - 50;
-  nvgBeginPath(s->vg);
-  nvgRoundedRect(s->vg, btn_x-110, btn_y-45, btn_w, btn_h, 100);
-  nvgStrokeColor(s->vg, nvgRGBA(255,255,255,80));
-  nvgStrokeWidth(s->vg, 6);
-  nvgStroke(s->vg);
-
-  nvgFontSize(s->vg, 70);
-
-  if (s->scene.recording) {
-    NVGcolor fillColor = nvgRGBA(255,0,0,150);
-    nvgFillColor(s->vg, fillColor);
-    nvgFill(s->vg);
-    nvgFillColor(s->vg, nvgRGBA(255,255,255,200));
-  } else {
-    nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 200));
-  }
-  nvgText(s->vg,btn_x-38,btn_y+50,"REC",NULL);
-}
-
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -1147,7 +1123,6 @@ static void ui_draw_vision_footer(UIState *s) {
 
   ui_draw_vision_face(s);
   ui_draw_vision_brake(s);
-  ui_draw_dashcam_button(s);
 
 #ifdef SHOW_SPEEDLIMIT
   ui_draw_vision_map(s);
