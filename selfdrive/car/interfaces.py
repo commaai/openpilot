@@ -5,14 +5,29 @@ from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
+from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 GearShifter = car.CarState.GearShifter
 
 # generic car and radar interfaces
 
 class CarInterfaceBase():
-  def __init__(self, CP, CarController):
-    self.CS = None
+  def __init__(self, CP, CarController, CarState):
+    self.CP = CP
+    self.VM = VehicleModel(CP)
+
+    self.frame = 0
+    self.gas_pressed_prev = False
+    self.brake_pressed_prev = False
+    self.cruise_enabled_prev = False
+
+    self.CS = CarState(CP)
+    self.cp = self.CS.get_can_parser(CP)
+    self.cp_cam = self.CS.get_cam_can_parser(CP)
+
+    self.CC = None
+    if CarController is not None:
+      self.CC = CarController(self.cp.dbc_name, CP, self.VM)
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
@@ -97,3 +112,7 @@ class CarStateBase:
     return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
             'E': GearShifter.eco, 'T': GearShifter.manumatic, 'D': GearShifter.drive,
             'S': GearShifter.sport, 'L': GearShifter.low, 'B': GearShifter.brake}.get(gear, GearShifter.unknown)
+
+  @staticmethod
+  def get_cam_can_parser(CP):
+    return None

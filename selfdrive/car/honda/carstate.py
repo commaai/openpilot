@@ -150,37 +150,6 @@ def get_can_signals(CP):
   return signals, checks
 
 
-def get_can_parser(CP):
-  signals, checks = get_can_signals(CP)
-  bus_pt = 1 if CP.isPandaBlack and CP.carFingerprint in HONDA_BOSCH else 0
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_pt)
-
-
-def get_cam_can_parser(CP):
-  signals = []
-
-  if CP.carFingerprint in HONDA_BOSCH:
-    signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
-                ("AEB_STATUS", "ACC_CONTROL", 0)]
-  else:
-    signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
-                ("AEB_REQ_1", "BRAKE_COMMAND", 0),
-                ("FCW", "BRAKE_COMMAND", 0),
-                ("CHIME", "BRAKE_COMMAND", 0),
-                ("FCM_OFF", "ACC_HUD", 0),
-                ("FCM_OFF_2", "ACC_HUD", 0),
-                ("FCM_PROBLEM", "ACC_HUD", 0),
-                ("ICONS", "ACC_HUD", 0)]
-
-
-  # all hondas except CRV, RDX and 2019 Odyssey@China use 0xe4 for steering
-  checks = [(0xe4, 100)]
-  if CP.carFingerprint in [CAR.CRV, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
-    checks = [(0x194, 100)]
-
-  bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH  and not CP.isPandaBlack else 2
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_cam)
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -341,3 +310,35 @@ class CarState(CarStateBase):
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
 
     return ret
+
+  @staticmethod
+  def get_can_parser(CP):
+    signals, checks = get_can_signals(CP)
+    bus_pt = 1 if CP.isPandaBlack and CP.carFingerprint in HONDA_BOSCH else 0
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_pt)
+
+  @staticmethod
+  def get_cam_can_parser(CP):
+    signals = []
+
+    if CP.carFingerprint in HONDA_BOSCH:
+      signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
+                  ("AEB_STATUS", "ACC_CONTROL", 0)]
+    else:
+      signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
+                  ("AEB_REQ_1", "BRAKE_COMMAND", 0),
+                  ("FCW", "BRAKE_COMMAND", 0),
+                  ("CHIME", "BRAKE_COMMAND", 0),
+                  ("FCM_OFF", "ACC_HUD", 0),
+                  ("FCM_OFF_2", "ACC_HUD", 0),
+                  ("FCM_PROBLEM", "ACC_HUD", 0),
+                  ("ICONS", "ACC_HUD", 0)]
+
+
+    # all hondas except CRV, RDX and 2019 Odyssey@China use 0xe4 for steering
+    checks = [(0xe4, 100)]
+    if CP.carFingerprint in [CAR.CRV, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
+      checks = [(0x194, 100)]
+
+    bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH  and not CP.isPandaBlack else 2
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_cam)

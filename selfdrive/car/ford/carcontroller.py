@@ -8,12 +8,12 @@ MAX_STEER_DELTA = 1
 TOGGLE_DEBUG = False
 
 class CarController():
-  def __init__(self, dbc_name, enable_camera, vehicle_model):
+  def __init__(self, dbc_name, CP, VM):
     self.packer = CANPacker(dbc_name)
-    self.enable_camera = enable_camera
+    self.enable_camera = CP.enableCamera
     self.enabled_last = False
     self.main_on_last = False
-    self.vehicle_model = vehicle_model
+    self.vehicle_model = VM
     self.generic_toggle_last = 0
     self.steer_alert_last = False
     self.lkas_action = 0

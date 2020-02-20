@@ -1,41 +1,19 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
-from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
-from selfdrive.car.volkswagen.carstate import CarState, get_mqb_pt_can_parser, get_mqb_cam_can_parser
 from common.params import Params
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
 GEAR = car.CarState.GearShifter
 
-class CANBUS:
-  pt = 0
-  cam = 2
-
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController):
-    self.CP = CP
-    self.CC = None
+  def __init__(self, CP, CarController, CarState):
+    super().__init__(CP, CarController, CarState)
 
-    self.frame = 0
-
-    self.gasPressedPrev = False
-    self.brakePressedPrev = False
-    self.cruiseStateEnabledPrev = False
     self.displayMetricUnitsPrev = None
     self.buttonStatesPrev = BUTTON_STATES.copy()
-
-    # *** init the major players ***
-    self.CS = CarState(CP, CANBUS)
-    self.VM = VehicleModel(CP)
-    self.pt_cp = get_mqb_pt_can_parser(CP, CANBUS)
-    self.cam_cp = get_mqb_cam_can_parser(CP, CANBUS)
-
-    # sending if read only is False
-    if CarController is not None:
-      self.CC = CarController(CANBUS, CP.carFingerprint)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -51,6 +29,7 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.GOLF:
       # Set common MQB parameters that will apply globally
       ret.carName = "volkswagen"
+      ret.radarOffCan = True
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
       ret.enableCruise = True # Stock ACC still controls acceleration and braking
       ret.openpilotLongitudinalControl = False
@@ -123,11 +102,11 @@ class CarInterface(CarInterfaceBase):
     # Process the most recent CAN message traffic, and check for validity
     # The camera CAN has no signals we use at this time, but we process it
     # anyway so we can test connectivity with can_valid
-    self.pt_cp.update_strings(can_strings)
-    self.cam_cp.update_strings(can_strings)
+    self.cp.update_strings(can_strings)
+    self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.pt_cp)
-    ret.canValid = self.pt_cp.can_valid and self.cam_cp.can_valid
+    ret = self.CS.update(self.cp)
+    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # Update the EON metric configuration to match the car at first startup,
@@ -160,8 +139,8 @@ class CarInterface(CarInterfaceBase):
 
     # Per the Comma safety model, disable on pedals rising edge or when brake
     # is pressed and speed isn't zero.
-    if (ret.gasPressed and not self.gasPressedPrev) or \
-            (ret.brakePressed and (not self.brakePressedPrev or not ret.standstill)):
+    if (ret.gasPressed and not self.gas_pressed_prev) or \
+            (ret.brakePressed and (not self.brake_pressed_prev or not ret.standstill)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
@@ -171,7 +150,7 @@ class CarInterface(CarInterfaceBase):
     if not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
     # Attempt OP engagement only on rising edge of stock ACC engagement.
-    elif not self.cruiseStateEnabledPrev:
+    elif not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
 
     ret.events = events
@@ -179,9 +158,9 @@ class CarInterface(CarInterfaceBase):
     ret.canMonoTimes = canMonoTimes
 
     # update previous car states
-    self.gasPressedPrev = ret.gasPressed
-    self.brakePressedPrev = ret.brakePressed
-    self.cruiseStateEnabledPrev = ret.cruiseState.enabled
+    self.gas_pressed_prev = ret.gasPressed
+    self.brake_pressed_prev = ret.brakePressed
+    self.cruise_enabled_prev = ret.cruiseState.enabled
     self.displayMetricUnitsPrev = self.CS.displayMetricUnits
     self.buttonStatesPrev = self.CS.buttonStates.copy()
 

@@ -16,6 +16,7 @@ segments = [
   "704b2230eb5190d6|2019-07-06--19-29-10--0", # HYUNDAI.KIA_SORENTO
   "b6e1317e1bfbefa6|2019-07-06--04-05-26--5", # CHRYSLER.JEEP_CHEROKEE
   "7873afaf022d36e2|2019-07-03--18-46-44--0", # SUBARU.IMPREZA
+  "b0c9d2329ad1606b|2020-02-19--16-29-36--7", # VW.GOLF
 ]
 
 def get_segment(segment_name):
