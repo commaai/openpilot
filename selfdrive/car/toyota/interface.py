@@ -331,7 +331,7 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = []
 
     # events
-    events = self.create_common_events(c, ret)
+    events = self.create_common_events(ret)
 
     if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera:
       events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT]))

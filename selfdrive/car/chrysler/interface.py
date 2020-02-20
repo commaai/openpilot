@@ -111,7 +111,7 @@ class CarInterface(CarInterfaceBase):
     self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
 
     # events
-    events = self.create_common_events(c, ret, extra_gears=[GearShifter.low])
+    events = self.create_common_events(ret, extra_gears=[GearShifter.low])
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))

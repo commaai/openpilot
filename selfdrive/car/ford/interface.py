@@ -92,7 +92,7 @@ class CarInterface(CarInterfaceBase):
     ret.canValid = self.cp.can_valid
 
     # events
-    events = self.create_common_events(c, ret)
+    events = self.create_common_events(ret)
 
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:

@@ -123,11 +123,9 @@ class CarInterface(CarInterfaceBase):
         be.pressed = self.CS.buttonStates[button]
         buttonEvents.append(be)
 
-    events = self.create_common_events(c, ret)
+    events = self.create_common_events(ret, extra_gears=[GEAR.eco, GEAR.sport])
 
     # Vehicle operation safety checks and events
-    if not ret.gearShifter in [GEAR.drive, GEAR.eco, GEAR.sport]:
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.parkingBrakeSet:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
 

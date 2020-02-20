@@ -94,7 +94,7 @@ class CarInterface(CarInterfaceBase):
     buttonEvents.append(be)
 
     # TODO: add gearShifter to carState
-    events = self.create_common_events(c, ret, extra_gears=[GearShifter.unknown])
+    events = self.create_common_events(ret, extra_gears=[GearShifter.unknown])
 
     if ret.cruiseState.enabled and not self.enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))

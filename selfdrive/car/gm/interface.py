@@ -179,7 +179,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = buttonEvents
 
-    events = self.create_common_events(c, ret)
+    events = self.create_common_events(ret)
 
     if self.CS.steer_not_allowed:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
