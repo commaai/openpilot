@@ -4,6 +4,7 @@ import sys
 import time
 import tempfile
 import threading
+import urllib.parse
 import pycurl
 import hashlib
 from io import BytesIO
@@ -89,7 +90,8 @@ class URLFile(object):
        This can be used to interface with modules that require local files.
     """
     if self._local_file is None:
-      local_fd, local_path = tempfile.mkstemp(suffix=os.path.splitext(self._url)[1])
+      _, ext = os.path.splitext(urllib.parse.urlparse(self._url).path)
+      local_fd, local_path = tempfile.mkstemp(suffix=ext)
       try:
         os.write(local_fd, self.read())
         local_file = open(local_path, "rb")
