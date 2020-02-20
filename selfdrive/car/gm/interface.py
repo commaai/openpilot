@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-    ret = CarInterfaceBase.get_params(candidate, fingerprint, has_relay)
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "gm"
     ret.safetyModel = car.CarParams.SafetyModel.gm  # default to gm
 
