@@ -49,11 +49,13 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
 
+    # default to gm
+    ret.safetyModel = car.CarParams.SafetyModel.gm
+
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1607. + STD_CARGO_KG
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.69
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
@@ -63,7 +65,6 @@ class CarInterface(CarInterfaceBase):
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1496. + STD_CARGO_KG
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.83
       ret.steerRatio = 15.8
       ret.steerRatioRear = 0.
@@ -75,14 +76,12 @@ class CarInterface(CarInterfaceBase):
       # Remaining parameters copied from Volt for now
       ret.centerToFront = ret.wheelbase * 0.4
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1. # engage speed is decided by pcm
       ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.86
       ret.steerRatio = 14.4  #end to end is 13.46
       ret.steerRatioRear = 0.
@@ -91,7 +90,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.83 #111.4 inches in meters
       ret.steerRatio = 14.4 # guess for tourx
       ret.steerRatioRear = 0.
@@ -100,7 +98,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.CADILLAC_ATS:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1601. + STD_CARGO_KG
-      ret.safetyModel = car.CarParams.SafetyModel.gm
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
       ret.steerRatioRear = 0.

@@ -147,7 +147,7 @@ class CarInterface(CarInterfaceBase):
     # Per the Comma safety model, disable on pedals rising edge or when brake
     # is pressed and speed isn't zero.
     if (ret.gasPressed and not self.gas_pressed_prev) or \
-            (ret.brakePressed and (not self.brakePressedPrev or not ret.standstill)):
+            (ret.brakePressed and (not self.brake_pressed_prev or not ret.standstill)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
@@ -157,7 +157,7 @@ class CarInterface(CarInterfaceBase):
     if not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
     # Attempt OP engagement only on rising edge of stock ACC engagement.
-    elif not self.cruiseStateEnabledPrev:
+    elif not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
 
     ret.events = events

@@ -20,7 +20,6 @@ class CarControllerParams():
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.lkas_active = False
-    self.steer_idx = 0
     self.apply_steer_last = 0
     self.es_distance_cnt = -1
     self.es_lkas_cnt = -1
