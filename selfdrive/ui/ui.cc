@@ -362,6 +362,11 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.lead_d_rel = leaddatad.dRel;
     s->scene.lead_y_rel = leaddatad.yRel;
     s->scene.lead_v_rel = leaddatad.vRel;
+    cereal_read_RadarState_LeadData(&leaddatad, datad.leadTwo);
+    s->scene.lead_status2 = leaddatad.status;
+    s->scene.lead_d_rel2 = leaddatad.dRel;
+    s->scene.lead_y_rel2 = leaddatad.yRel;
+    s->scene.lead_v_rel2 = leaddatad.vRel;
     s->livempc_or_radarstate_changed = true;
   } else if (eventd.which == cereal_Event_liveCalibration) {
     s->scene.world_objects_visible = true;
