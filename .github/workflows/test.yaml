@@ -97,6 +97,10 @@ jobs:
         run: |
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
           docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
+      - name: Copy diff
+        if: always()
+        run: |
+          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
           docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
           docker rm $CONTAINER_NAME
       - name: Print diff
@@ -123,6 +127,10 @@ jobs:
         run: |
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
           docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+      - name: Copy artifacts
+        if: always()
+        run: |
+          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
           mkdir out
           docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
           docker rm $CONTAINER_NAME
