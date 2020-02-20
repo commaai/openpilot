@@ -25,6 +25,7 @@ class States():
   STIFFNESS = _slice(1)  # [-]
   STEER_RATIO = _slice(1)  # [-]
   ANGLE_OFFSET = _slice(1)  # [rad]
+  ANGLE_OFFSET_FAST = _slice(1)  # [rad]
 
   VELOCITY = _slice(2)  # (x, y) [m/s]
   YAW_RATE = _slice(1)  # [rad/s]
@@ -38,6 +39,7 @@ class CarKalman():
     0.5,
     12.0,
     0.0,
+    0.0,
 
     10.0, 0.0,
     0.0,
@@ -49,6 +51,7 @@ class CarKalman():
     5**2,
     10**2,
     math.radians(5.0)**2,
+    math.radians(5.0)**2,
 
     10**2, 10**2,
     1**2,
@@ -57,8 +60,9 @@ class CarKalman():
 
   # process noise
   Q = np.diag([
+    (.05/100)**2,
     .01**2,
-    .01**2,
+    math.radians(0.01)**2,
     math.radians(0.1)**2,
 
     .1**2, .1**2,
@@ -70,6 +74,7 @@ class CarKalman():
     ObservationKind.CAL_DEVICE_FRAME_XY_SPEED: np.diag([0.1**2, 0.1**2]),
     ObservationKind.CAL_DEVICE_FRAME_YAW_RATE: np.atleast_2d(math.radians(0.1)**2),
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.1)**2),
+    ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(5.0)**2),
   }
 
   maha_test_kinds = []
@@ -95,6 +100,7 @@ class CarKalman():
 
     cF, cR = x * CivicParams.TIRE_STIFFNESS_FRONT, x * CivicParams.TIRE_STIFFNESS_REAR
     angle_offset = state[States.ANGLE_OFFSET, :][0, 0]
+    angle_offset_fast = state[States.ANGLE_OFFSET_FAST, :][0, 0]
     sa = state[States.STEER_ANGLE, :][0, 0]
 
     sR = state[States.STEER_RATIO, :][0, 0]
@@ -111,8 +117,8 @@ class CarKalman():
     B[0, 0] = cF / m / sR
     B[1, 0] = (cF * aF) / j / sR
 
-    x = sp.Matrix([v, r])
-    x_dot = A * x + B * (sa + angle_offset)
+    x = sp.Matrix([v, r])  # lateral velocity, yaw rate
+    x_dot = A * x + B * (sa + angle_offset + angle_offset_fast)
 
     dt = sp.Symbol('dt')
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
@@ -130,11 +136,13 @@ class CarKalman():
     # h_velocity = sp.Matrix([u, v])
     h_velocity = sp.Matrix([u, v])
     h_steer_angle = sp.Matrix([sa])
+    h_fast_angle_offset = sp.Matrix([angle_offset_fast])
 
     obs_eqs = [
       [h_yaw_rate, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, None],
       [h_velocity, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, None],
       [h_steer_angle, ObservationKind.STEER_ANGLE, None],
+      [h_fast_angle_offset, ObservationKind.ANGLE_OFFSET_FAST, None],
     ]
 
     gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)

@@ -12,7 +12,7 @@ from selfdrive.car.honda.values import CAR
 from selfdrive.controls.lib.vehicle_model import VehicleModel, create_dyn_state_matrices
 from selfdrive.locationd.kalman.models.car_kf import CarKalman, ObservationKind, States
 
-T_SIM = 2 * 60  # s
+T_SIM = 5 * 60  # s
 DT = 0.01
 
 
@@ -62,6 +62,7 @@ for i, t in tqdm(list(enumerate(ts))):
   kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, [float(state[1])])
   kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, [[u, float(state[0])]])
   kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, [sa])
+  kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, [0])
   kf.predict(t)
 
   speed_ys.append(float(state[0]))
@@ -119,6 +120,8 @@ axes[3].set_ylim([0.8, 1.2])
 
 sns.lineplot(ts, np.degrees(angle_offsets), label='Angle offset [deg]', ax=axes[4])
 plot_with_bands(ts, States.ANGLE_OFFSET, 'Angle offset kf deg', axes[4], converter=np.degrees)
+plot_with_bands(ts, States.ANGLE_OFFSET_FAST, 'Fast Angle offset kf deg', axes[4], converter=np.degrees, idx=2)
+
 axes[4].set_ylim([-2, 2])
 
 sns.lineplot(ts, speeds, ax=axes[5])
