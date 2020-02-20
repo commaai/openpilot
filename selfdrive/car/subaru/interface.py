@@ -60,7 +60,7 @@ class CarInterface(CarInterfaceBase):
 
     buttonEvents = []
     be = car.CarState.ButtonEvent.new_message()
-    be.type = car.CarState.ButtonType.accelCruise
+    be.type = car.CarState.ButtonEvent.Type.accelCruise
     buttonEvents.append(be)
 
     # TODO: add gearShifter to carState
