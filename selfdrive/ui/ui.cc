@@ -852,6 +852,7 @@ int main(int argc, char* argv[]) {
   TouchState touch = {0};
   touch_init(&touch);
   s->touch_fd = touch.fd;
+  s->scene.touch_active = false;
 
   ui_sound_init();
 
@@ -886,24 +887,39 @@ int main(int argc, char* argv[]) {
     if (smooth_brightness > 255) smooth_brightness = 255;
     set_brightness(s, (int)smooth_brightness);
 
-    if (!s->vision_connected) {
-      check_messages(s);
-      // Car is not started, keep in idle state and awake on touch events
-      zmq_pollitem_t polls[1] = {{0}};
-      polls[0].fd = s->touch_fd;
-      polls[0].events = ZMQ_POLLIN;
-      int ret = zmq_poll(polls, 1, 0);
-      if (ret < 0){
-        if (errno == EINTR) continue;
-        LOGW("poll failed (%d)", ret);
-      } else if (ret > 0) {
-        // awake on any touch
-        int touch_x = -1, touch_y = -1;
-        int touched = touch_read(&touch, &touch_x, &touch_y);
-        if (touched == 1) {
+    zmq_pollitem_t polls[1] = {{0}};
+    polls[0].fd = s->touch_fd;
+    polls[0].events = ZMQ_POLLIN;
+    int touched = zmq_poll(polls, 1, 0);
+    int touch_x = -1, touch_y = -1;
+
+    if (touched < 0) {
+      if (errno == EINTR) continue;
+      LOGW("poll failed (%d)", touched);
+    } else if (touched > 0) {
+      int touched = touch_read(&touch, &touch_x, &touch_y);
+      if (touched == 1 && !s->scene.touch_active) {
+        if (!s->vision_connected) {
+          // awake on any touch
           set_awake(s, true);
         }
+
+        // handle sidebar touch events
+        if (!s->scene.uilayout_sidebarcollapsed) {
+          if (touch_x >= settings_btn_x && touch_x < settings_btn_x + settings_btn_w
+            && touch_y >= settings_btn_y && touch_y < settings_btn_y + settings_btn_h) {
+              system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
+          }
+          if (touch_x >= home_btn_x && touch_x < home_btn_x + home_btn_w
+            && touch_y >= home_btn_y && touch_y < home_btn_y + home_btn_h) {
+              system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
+          }
+        }
       }
+    }
+
+    if (!s->vision_connected) {
+      check_messages(s);
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
       }

@@ -17,15 +17,12 @@ static void ui_draw_sidebar_background(UIState *s) {
 static void ui_draw_sidebar_settings_button(UIState *s) {
   const UIScene *scene = &s->scene;
   bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-  const int settings_btn_h = 117;
-  const int settings_btn_w = 200;
-  const int settings_btn_x = hasSidebar ? 50 : -(sbr_w);
-  const int settings_btn_y = 35;
+  const int settings_btn_xr = hasSidebar ? settings_btn_x : -(sbr_w);
 
   nvgBeginPath(s->vg);
-  NVGpaint imgPaint = nvgImagePattern(s->vg, settings_btn_x, settings_btn_y,
+  NVGpaint imgPaint = nvgImagePattern(s->vg, settings_btn_xr, settings_btn_y,
     settings_btn_w, settings_btn_h, 0, s->img_button_settings, 1.0f);
-  nvgRect(s->vg, settings_btn_x, settings_btn_y, settings_btn_w, settings_btn_h);
+  nvgRect(s->vg, settings_btn_xr, settings_btn_y, settings_btn_w, settings_btn_h);
   nvgFillPaint(s->vg, imgPaint);
   nvgFill(s->vg);
 }
@@ -33,15 +30,12 @@ static void ui_draw_sidebar_settings_button(UIState *s) {
 static void ui_draw_sidebar_home_button(UIState *s) {
   const UIScene *scene = &s->scene;
   bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-  const int home_btn_h = 180;
-  const int home_btn_w = 180;
-  const int home_btn_x = hasSidebar ? 60 : -(sbr_w);
-  const int home_btn_y = vwp_h - home_btn_h - 40;
+  const int home_btn_xr = hasSidebar ? home_btn_x : -(sbr_w);
 
   nvgBeginPath(s->vg);
-  NVGpaint imgPaint = nvgImagePattern(s->vg, home_btn_x, home_btn_y,
+  NVGpaint imgPaint = nvgImagePattern(s->vg, home_btn_xr, home_btn_y,
     home_btn_w, home_btn_h, 0, s->img_button_home, 1.0f);
-  nvgRect(s->vg, home_btn_x, home_btn_y, home_btn_w, home_btn_h);
+  nvgRect(s->vg, home_btn_xr, home_btn_y, home_btn_w, home_btn_h);
   nvgFillPaint(s->vg, imgPaint);
   nvgFill(s->vg);
 }
