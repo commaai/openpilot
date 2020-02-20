@@ -7,82 +7,6 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR, NO_DSU_CAR, NO_STOP_TIMER_CAR
 
 
-def get_can_parser(CP):
-
-  signals = [
-    # sig_name, sig_address, default
-    ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
-    ("GEAR", "GEAR_PACKET", 0),
-    ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
-    ("GAS_PEDAL", "GAS_PEDAL", 0),
-    ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
-    ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
-    ("DOOR_OPEN_FL", "SEATS_DOORS", 1),
-    ("DOOR_OPEN_FR", "SEATS_DOORS", 1),
-    ("DOOR_OPEN_RL", "SEATS_DOORS", 1),
-    ("DOOR_OPEN_RR", "SEATS_DOORS", 1),
-    ("SEATBELT_DRIVER_UNLATCHED", "SEATS_DOORS", 1),
-    ("TC_DISABLED", "ESP_CONTROL", 1),
-    ("STEER_FRACTION", "STEER_ANGLE_SENSOR", 0),
-    ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
-    ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
-    ("CRUISE_STATE", "PCM_CRUISE", 0),
-    ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
-    ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
-    ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
-    ("LKA_STATE", "EPS_STATUS", 0),
-    ("IPAS_STATE", "EPS_STATUS", 1),
-    ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
-    ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
-  ]
-
-  checks = [
-    ("BRAKE_MODULE", 40),
-    ("GAS_PEDAL", 33),
-    ("WHEEL_SPEEDS", 80),
-    ("STEER_ANGLE_SENSOR", 80),
-    ("PCM_CRUISE", 33),
-    ("STEER_TORQUE_SENSOR", 50),
-    ("EPS_STATUS", 25),
-  ]
-
-  if CP.carFingerprint == CAR.LEXUS_IS:
-    signals.append(("MAIN_ON", "DSU_CRUISE", 0))
-    signals.append(("SET_SPEED", "DSU_CRUISE", 0))
-    checks.append(("DSU_CRUISE", 5))
-  else:
-    signals.append(("MAIN_ON", "PCM_CRUISE_2", 0))
-    signals.append(("SET_SPEED", "PCM_CRUISE_2", 0))
-    signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
-    checks.append(("PCM_CRUISE_2", 33))
-
-  if CP.carFingerprint in NO_DSU_CAR:
-    signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
-
-  if CP.carFingerprint == CAR.PRIUS:
-    signals += [("STATE", "AUTOPARK_STATUS", 0)]
-
-  # add gas interceptor reading if we are using it
-  if CP.enableGasInterceptor:
-    signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
-    signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
-    checks.append(("GAS_SENSOR", 50))
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
-
-
-def get_cam_can_parser(CP):
-
-  signals = [("FORCE", "PRE_COLLISION", 0), ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0)]
-
-  # use steering message to check if panda is connected to frc
-  checks = [("STEERING_LKA", 42)]
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
-
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -169,3 +93,79 @@ class CarState(CarStateBase):
     self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
 
     return ret
+
+  @staticmethod
+  def get_can_parser(CP):
+
+    signals = [
+      # sig_name, sig_address, default
+      ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
+      ("GEAR", "GEAR_PACKET", 0),
+      ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
+      ("GAS_PEDAL", "GAS_PEDAL", 0),
+      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
+      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
+      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
+      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
+      ("DOOR_OPEN_FL", "SEATS_DOORS", 1),
+      ("DOOR_OPEN_FR", "SEATS_DOORS", 1),
+      ("DOOR_OPEN_RL", "SEATS_DOORS", 1),
+      ("DOOR_OPEN_RR", "SEATS_DOORS", 1),
+      ("SEATBELT_DRIVER_UNLATCHED", "SEATS_DOORS", 1),
+      ("TC_DISABLED", "ESP_CONTROL", 1),
+      ("STEER_FRACTION", "STEER_ANGLE_SENSOR", 0),
+      ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
+      ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
+      ("CRUISE_STATE", "PCM_CRUISE", 0),
+      ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
+      ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
+      ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
+      ("LKA_STATE", "EPS_STATUS", 0),
+      ("IPAS_STATE", "EPS_STATUS", 1),
+      ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
+      ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
+    ]
+
+    checks = [
+      ("BRAKE_MODULE", 40),
+      ("GAS_PEDAL", 33),
+      ("WHEEL_SPEEDS", 80),
+      ("STEER_ANGLE_SENSOR", 80),
+      ("PCM_CRUISE", 33),
+      ("STEER_TORQUE_SENSOR", 50),
+      ("EPS_STATUS", 25),
+    ]
+
+    if CP.carFingerprint == CAR.LEXUS_IS:
+      signals.append(("MAIN_ON", "DSU_CRUISE", 0))
+      signals.append(("SET_SPEED", "DSU_CRUISE", 0))
+      checks.append(("DSU_CRUISE", 5))
+    else:
+      signals.append(("MAIN_ON", "PCM_CRUISE_2", 0))
+      signals.append(("SET_SPEED", "PCM_CRUISE_2", 0))
+      signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
+      checks.append(("PCM_CRUISE_2", 33))
+
+    if CP.carFingerprint in NO_DSU_CAR:
+      signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
+
+    if CP.carFingerprint == CAR.PRIUS:
+      signals += [("STATE", "AUTOPARK_STATUS", 0)]
+
+    # add gas interceptor reading if we are using it
+    if CP.enableGasInterceptor:
+      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+      signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
+      checks.append(("GAS_SENSOR", 50))
+
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+
+  @staticmethod
+  def get_cam_can_parser(CP):
+
+    signals = [("FORCE", "PRE_COLLISION", 0), ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0)]
+
+    # use steering message to check if panda is connected to frc
+    checks = [("STEERING_LKA", 42)]
+
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)

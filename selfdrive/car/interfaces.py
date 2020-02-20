@@ -11,7 +11,7 @@ GearShifter = car.CarState.GearShifter
 # generic car and radar interfaces
 
 class CarInterfaceBase():
-  def __init__(self, CP, CarController, CarState, get_can_parser, get_cam_can_parser=None):
+  def __init__(self, CP, CarController, CarState):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
@@ -21,9 +21,8 @@ class CarInterfaceBase():
     self.cruise_enabled_prev = False
 
     self.CS = CarState(CP)
-    self.cp = get_can_parser(CP)
-    if get_cam_can_parser is not None:
-      self.cp_cam = get_cam_can_parser(CP)
+    self.cp = self.CS.get_can_parser(CP)
+    self.cp_cam = self.CS.get_cam_can_parser(CP)
 
     self.CC = None
     if CarController is not None:
@@ -88,3 +87,7 @@ class CarStateBase:
     return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
             'E': GearShifter.eco, 'T': GearShifter.manumatic, 'D': GearShifter.drive,
             'S': GearShifter.sport, 'L': GearShifter.low, 'B': GearShifter.brake}.get(gear, GearShifter.unknown)
+
+  @staticmethod
+  def get_cam_can_parser(CP):
+    return None

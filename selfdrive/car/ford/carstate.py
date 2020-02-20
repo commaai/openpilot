@@ -7,32 +7,6 @@ from selfdrive.car.ford.values import DBC
 
 WHEEL_RADIUS = 0.33
 
-def get_can_parser(CP):
-
-  signals = [
-    # sig_name, sig_address, default
-    ("WhlRr_W_Meas", "WheelSpeed_CG1", 0.),
-    ("WhlRl_W_Meas", "WheelSpeed_CG1", 0.),
-    ("WhlFr_W_Meas", "WheelSpeed_CG1", 0.),
-    ("WhlFl_W_Meas", "WheelSpeed_CG1", 0.),
-    ("SteWhlRelInit_An_Sns", "Steering_Wheel_Data_CG1", 0.),
-    ("Cruise_State", "Cruise_Status", 0.),
-    ("Set_Speed", "Cruise_Status", 0.),
-    ("LaActAvail_D_Actl", "Lane_Keep_Assist_Status", 0),
-    ("LaHandsOff_B_Actl", "Lane_Keep_Assist_Status", 0),
-    ("LaActDeny_B_Actl", "Lane_Keep_Assist_Status", 0),
-    ("ApedPosScal_Pc_Actl", "EngineData_14", 0.),
-    ("Dist_Incr", "Steering_Buttons", 0.),
-    ("Brake_Drv_Appl", "Cruise_Status", 0.),
-    ("Brake_Lights", "BCM_to_HS_Body", 0.),
-  ]
-
-  checks = [
-  ]
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
-
-
 class CarState(CarStateBase):
   def update(self, cp):
     ret = car.CarState.new_message()
@@ -58,3 +32,25 @@ class CarState(CarStateBase):
     self.steer_error = cp.vl["Lane_Keep_Assist_Status"]['LaActDeny_B_Actl']
 
     return ret
+
+  @staticmethod
+  def get_can_parser(CP):
+    signals = [
+      # sig_name, sig_address, default
+      ("WhlRr_W_Meas", "WheelSpeed_CG1", 0.),
+      ("WhlRl_W_Meas", "WheelSpeed_CG1", 0.),
+      ("WhlFr_W_Meas", "WheelSpeed_CG1", 0.),
+      ("WhlFl_W_Meas", "WheelSpeed_CG1", 0.),
+      ("SteWhlRelInit_An_Sns", "Steering_Wheel_Data_CG1", 0.),
+      ("Cruise_State", "Cruise_Status", 0.),
+      ("Set_Speed", "Cruise_Status", 0.),
+      ("LaActAvail_D_Actl", "Lane_Keep_Assist_Status", 0),
+      ("LaHandsOff_B_Actl", "Lane_Keep_Assist_Status", 0),
+      ("LaActDeny_B_Actl", "Lane_Keep_Assist_Status", 0),
+      ("ApedPosScal_Pc_Actl", "EngineData_14", 0.),
+      ("Dist_Incr", "Steering_Buttons", 0.),
+      ("Brake_Drv_Appl", "Cruise_Status", 0.),
+      ("Brake_Lights", "BCM_to_HS_Body", 0.),
+    ]
+    checks = []
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
