@@ -21,26 +21,18 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-    ret = car.CarParams.new_message()
-
-    ret.carFingerprint = candidate
-    ret.isPandaBlack = has_relay
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     if candidate == CAR.GOLF:
       # Set common MQB parameters that will apply globally
       ret.carName = "volkswagen"
       ret.radarOffCan = True
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
-      ret.enableCruise = True # Stock ACC still controls acceleration and braking
-      ret.openpilotLongitudinalControl = False
-      ret.steerControlType = car.CarParams.SteerControlType.torque
 
       # Additional common MQB parameters that may be overridden per-vehicle
       ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.05 # Hopefully all MQB racks are similar here
       ret.steerLimitTimer = 0.4
-      ret.steerMaxBP = [0.]  # m/s
-      ret.steerMaxV = [1.]
 
       # As a starting point for speed-adjusted lateral tuning, use the example
       # map speed breakpoints from a VW Tiguan (SSP 399 page 9). It's unclear
@@ -68,19 +60,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.enableCamera = True # Stock camera detection doesn't apply to VW
     ret.transmissionType = car.CarParams.TransmissionType.automatic
-    ret.steerRatioRear = 0.
-
-    # No support for OP longitudinal control on Volkswagen at this time.
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [0.]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.]
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
