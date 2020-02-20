@@ -6,98 +6,6 @@ from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.volkswagen.values import DBC, CANBUS, BUTTON_STATES, CarControllerParams
 
-def get_mqb_pt_can_parser(CP):
-  # this function generates lists for signal, messages and initial values
-  signals = [
-    # sig_name, sig_address, default
-    ("LWI_Lenkradwinkel", "LWI_01", 0),           # Absolute steering angle
-    ("LWI_VZ_Lenkradwinkel", "LWI_01", 0),        # Steering angle sign
-    ("LWI_Lenkradw_Geschw", "LWI_01", 0),         # Absolute steering rate
-    ("LWI_VZ_Lenkradw_Geschw", "LWI_01", 0),      # Steering rate sign
-    ("ESP_VL_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, front left
-    ("ESP_VR_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, front right
-    ("ESP_HL_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, rear left
-    ("ESP_HR_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, rear right
-    ("ESP_Gierrate", "ESP_02", 0),                # Absolute yaw rate
-    ("ESP_VZ_Gierrate", "ESP_02", 0),             # Yaw rate sign
-    ("ZV_FT_offen", "Gateway_72", 0),             # Door open, driver
-    ("ZV_BT_offen", "Gateway_72", 0),             # Door open, passenger
-    ("ZV_HFS_offen", "Gateway_72", 0),            # Door open, rear left
-    ("ZV_HBFS_offen", "Gateway_72", 0),           # Door open, rear right
-    ("ZV_HD_offen", "Gateway_72", 0),             # Trunk or hatch open
-    ("BH_Blinker_li", "Gateway_72", 0),           # Left turn signal on
-    ("BH_Blinker_re", "Gateway_72", 0),           # Right turn signal on
-    ("GE_Fahrstufe", "Getriebe_11", 0),           # Auto trans gear selector position
-    ("AB_Gurtschloss_FA", "Airbag_02", 0),        # Seatbelt status, driver
-    ("AB_Gurtschloss_BF", "Airbag_02", 0),        # Seatbelt status, passenger
-    ("ESP_Fahrer_bremst", "ESP_05", 0),           # Brake pedal pressed
-    ("ESP_Status_Bremsdruck", "ESP_05", 0),       # Brakes applied
-    ("ESP_Bremsdruck", "ESP_05", 0),              # Brake pressure applied
-    ("MO_Fahrpedalrohwert_01", "Motor_20", 0),    # Accelerator pedal value
-    ("MO_Kuppl_schalter", "Motor_14", 0),         # Clutch switch
-    ("Driver_Strain", "EPS_01", 0),               # Absolute driver torque input
-    ("Driver_Strain_VZ", "EPS_01", 0),            # Driver torque input sign
-    ("HCA_Ready", "EPS_01", 0),                   # Steering rack HCA support configured
-    ("ESP_Tastung_passiv", "ESP_21", 0),          # Stability control disabled
-    ("KBI_MFA_v_Einheit_02", "Einheiten_01", 0),  # MPH vs KMH speed display
-    ("KBI_Handbremse", "Kombi_01", 0),            # Manual handbrake applied
-    ("TSK_Fahrzeugmasse_02", "Motor_16", 0),      # Estimated vehicle mass from drivetrain coordinator
-    ("ACC_Status_ACC", "ACC_06", 0),              # ACC engagement status
-    ("ACC_Typ", "ACC_06", 0),                     # ACC type (follow to stop, stop&go)
-    ("SetSpeed", "ACC_02", 0),                    # ACC set speed
-    ("GRA_Hauptschalter", "GRA_ACC_01", 0),       # ACC button, on/off
-    ("GRA_Abbrechen", "GRA_ACC_01", 0),           # ACC button, cancel
-    ("GRA_Tip_Setzen", "GRA_ACC_01", 0),          # ACC button, set
-    ("GRA_Tip_Hoch", "GRA_ACC_01", 0),            # ACC button, increase or accel
-    ("GRA_Tip_Runter", "GRA_ACC_01", 0),          # ACC button, decrease or decel
-    ("GRA_Tip_Wiederaufnahme", "GRA_ACC_01", 0),  # ACC button, resume
-    ("GRA_Verstellung_Zeitluecke", "GRA_ACC_01", 0), # ACC button, time gap adj
-    ("GRA_Typ_Hauptschalter", "GRA_ACC_01", 0),   # ACC main button type
-    ("GRA_Tip_Stufe_2", "GRA_ACC_01", 0),         # unknown related to stalk type
-    ("GRA_ButtonTypeInfo", "GRA_ACC_01", 0),      # unknown related to stalk type
-    ("COUNTER", "GRA_ACC_01", 0),                 # GRA_ACC_01 CAN message counter
-  ]
-
-  checks = [
-    # sig_address, frequency
-    ("LWI_01", 100),      # From J500 Steering Assist with integrated sensors
-    ("EPS_01", 100),      # From J500 Steering Assist with integrated sensors
-    ("ESP_19", 100),      # From J104 ABS/ESP controller
-    ("ESP_05", 50),       # From J104 ABS/ESP controller
-    ("ESP_21", 50),       # From J104 ABS/ESP controller
-    ("ACC_06", 50),       # From J428 ACC radar control module
-    ("Motor_20", 50),     # From J623 Engine control module
-    ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
-    ("ACC_02", 17),       # From J428 ACC radar control module
-    ("Getriebe_11", 20),  # From J743 Auto transmission control module
-    ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
-    ("Motor_14", 10),     # From J623 Engine control module
-    ("Airbag_02", 5),     # From J234 Airbag control module
-    ("Kombi_01", 2),      # From J285 Instrument cluster
-    ("Motor_16", 2),      # From J623 Engine control module
-    ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
-  ]
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
-
-# A single signal is monitored from the camera CAN bus, and then ignored,
-# so the presence of CAN traffic can be verified with cam_cp.valid.
-
-def get_mqb_cam_can_parser(CP):
-
-  signals = [
-    # sig_name, sig_address, default
-    ("Kombi_Lamp_Green", "LDW_02", 0),            # Lane Assist status LED
-  ]
-
-  checks = [
-    # sig_address, frequency
-    ("LDW_02", 10)        # From R242 Driver assistance camera
-  ]
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)
-
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -211,3 +119,96 @@ class CarState(CarStateBase):
     self.stabilityControlDisabled = pt_cp.vl["ESP_21"]['ESP_Tastung_passiv']
 
     return ret
+
+  @staticmethod
+  def get_can_parser(CP):
+    # this function generates lists for signal, messages and initial values
+    signals = [
+      # sig_name, sig_address, default
+      ("LWI_Lenkradwinkel", "LWI_01", 0),           # Absolute steering angle
+      ("LWI_VZ_Lenkradwinkel", "LWI_01", 0),        # Steering angle sign
+      ("LWI_Lenkradw_Geschw", "LWI_01", 0),         # Absolute steering rate
+      ("LWI_VZ_Lenkradw_Geschw", "LWI_01", 0),      # Steering rate sign
+      ("ESP_VL_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, front left
+      ("ESP_VR_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, front right
+      ("ESP_HL_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, rear left
+      ("ESP_HR_Radgeschw_02", "ESP_19", 0),         # ABS wheel speed, rear right
+      ("ESP_Gierrate", "ESP_02", 0),                # Absolute yaw rate
+      ("ESP_VZ_Gierrate", "ESP_02", 0),             # Yaw rate sign
+      ("ZV_FT_offen", "Gateway_72", 0),             # Door open, driver
+      ("ZV_BT_offen", "Gateway_72", 0),             # Door open, passenger
+      ("ZV_HFS_offen", "Gateway_72", 0),            # Door open, rear left
+      ("ZV_HBFS_offen", "Gateway_72", 0),           # Door open, rear right
+      ("ZV_HD_offen", "Gateway_72", 0),             # Trunk or hatch open
+      ("BH_Blinker_li", "Gateway_72", 0),           # Left turn signal on
+      ("BH_Blinker_re", "Gateway_72", 0),           # Right turn signal on
+      ("GE_Fahrstufe", "Getriebe_11", 0),           # Auto trans gear selector position
+      ("AB_Gurtschloss_FA", "Airbag_02", 0),        # Seatbelt status, driver
+      ("AB_Gurtschloss_BF", "Airbag_02", 0),        # Seatbelt status, passenger
+      ("ESP_Fahrer_bremst", "ESP_05", 0),           # Brake pedal pressed
+      ("ESP_Status_Bremsdruck", "ESP_05", 0),       # Brakes applied
+      ("ESP_Bremsdruck", "ESP_05", 0),              # Brake pressure applied
+      ("MO_Fahrpedalrohwert_01", "Motor_20", 0),    # Accelerator pedal value
+      ("MO_Kuppl_schalter", "Motor_14", 0),         # Clutch switch
+      ("Driver_Strain", "EPS_01", 0),               # Absolute driver torque input
+      ("Driver_Strain_VZ", "EPS_01", 0),            # Driver torque input sign
+      ("HCA_Ready", "EPS_01", 0),                   # Steering rack HCA support configured
+      ("ESP_Tastung_passiv", "ESP_21", 0),          # Stability control disabled
+      ("KBI_MFA_v_Einheit_02", "Einheiten_01", 0),  # MPH vs KMH speed display
+      ("KBI_Handbremse", "Kombi_01", 0),            # Manual handbrake applied
+      ("TSK_Fahrzeugmasse_02", "Motor_16", 0),      # Estimated vehicle mass from drivetrain coordinator
+      ("ACC_Status_ACC", "ACC_06", 0),              # ACC engagement status
+      ("ACC_Typ", "ACC_06", 0),                     # ACC type (follow to stop, stop&go)
+      ("SetSpeed", "ACC_02", 0),                    # ACC set speed
+      ("GRA_Hauptschalter", "GRA_ACC_01", 0),       # ACC button, on/off
+      ("GRA_Abbrechen", "GRA_ACC_01", 0),           # ACC button, cancel
+      ("GRA_Tip_Setzen", "GRA_ACC_01", 0),          # ACC button, set
+      ("GRA_Tip_Hoch", "GRA_ACC_01", 0),            # ACC button, increase or accel
+      ("GRA_Tip_Runter", "GRA_ACC_01", 0),          # ACC button, decrease or decel
+      ("GRA_Tip_Wiederaufnahme", "GRA_ACC_01", 0),  # ACC button, resume
+      ("GRA_Verstellung_Zeitluecke", "GRA_ACC_01", 0), # ACC button, time gap adj
+      ("GRA_Typ_Hauptschalter", "GRA_ACC_01", 0),   # ACC main button type
+      ("GRA_Tip_Stufe_2", "GRA_ACC_01", 0),         # unknown related to stalk type
+      ("GRA_ButtonTypeInfo", "GRA_ACC_01", 0),      # unknown related to stalk type
+      ("COUNTER", "GRA_ACC_01", 0),                 # GRA_ACC_01 CAN message counter
+    ]
+
+    checks = [
+      # sig_address, frequency
+      ("LWI_01", 100),      # From J500 Steering Assist with integrated sensors
+      ("EPS_01", 100),      # From J500 Steering Assist with integrated sensors
+      ("ESP_19", 100),      # From J104 ABS/ESP controller
+      ("ESP_05", 50),       # From J104 ABS/ESP controller
+      ("ESP_21", 50),       # From J104 ABS/ESP controller
+      ("ACC_06", 50),       # From J428 ACC radar control module
+      ("Motor_20", 50),     # From J623 Engine control module
+      ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
+      ("ACC_02", 17),       # From J428 ACC radar control module
+      ("Getriebe_11", 20),  # From J743 Auto transmission control module
+      ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
+      ("Motor_14", 10),     # From J623 Engine control module
+      ("Airbag_02", 5),     # From J234 Airbag control module
+      ("Kombi_01", 2),      # From J285 Instrument cluster
+      ("Motor_16", 2),      # From J623 Engine control module
+      ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
+    ]
+
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
+
+  # A single signal is monitored from the camera CAN bus, and then ignored,
+  # so the presence of CAN traffic can be verified with cam_cp.valid.
+
+  @staticmethod
+  def get_cam_can_parser(CP):
+
+    signals = [
+      # sig_name, sig_address, default
+      ("Kombi_Lamp_Green", "LDW_02", 0),            # Lane Assist status LED
+    ]
+
+    checks = [
+      # sig_address, frequency
+      ("LDW_02", 10)        # From R242 Driver assistance camera
+    ]
+
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)

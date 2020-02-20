@@ -29,10 +29,12 @@ def load_interfaces(brand_names):
     CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
     if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carcontroller.py'):
       CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
+      CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
     else:
       CarController = None
+      CarState = None
     for model_name in brand_names[brand_name]:
-      ret[model_name] = (CarInterface, CarController)
+      ret[model_name] = (CarInterface, CarController, CarState)
   return ret
 
 
@@ -149,10 +151,10 @@ def get_car(logcan, sendcan, has_relay=False):
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     candidate = "mock"
 
-  CarInterface, CarController = interfaces[candidate]
+  CarInterface, CarController, CarState = interfaces[candidate]
   car_params = CarInterface.get_params(candidate, fingerprints, has_relay, car_fw)
   car_params.carVin = vin
   car_params.carFw = car_fw
   car_params.fingerprintSource = source
 
-  return CarInterface(car_params, CarController), car_params
+  return CarInterface(car_params, CarController, CarState), car_params

@@ -2,7 +2,6 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
-from selfdrive.car.volkswagen.carstate import CarState, get_mqb_pt_can_parser, get_mqb_cam_can_parser
 from common.params import Params
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -10,8 +9,8 @@ from selfdrive.car.interfaces import CarInterfaceBase
 GEAR = car.CarState.GearShifter
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController):
-    super().__init__(CP, CarController, CarState, get_mqb_pt_can_parser, get_mqb_cam_can_parser)
+  def __init__(self, CP, CarController, CarState):
+    super().__init__(CP, CarController, CarState)
 
     self.displayMetricUnitsPrev = None
     self.buttonStatesPrev = BUTTON_STATES.copy()
