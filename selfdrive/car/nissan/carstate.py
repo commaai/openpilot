@@ -12,10 +12,12 @@ def get_powertrain_can_parser(CP):
     ("FR", "WheelspeedFront", 0),
     ("RL", "WheelspeedRear", 0),
     ("RR", "WheelspeedRear", 0),
-    ("DOOR_OPEN_FR", "Doors", 1),
-    ("DOOR_OPEN_FL", "Doors", 1),
-    ("DOOR_OPEN_RR", "Doors", 1),
-    ("DOOR_OPEN_RL", "Doors", 1),
+    ("DOOR_OPEN_FR", "DoorsLights", 1),
+    ("DOOR_OPEN_FL", "DoorsLights", 1),
+    ("DOOR_OPEN_RR", "DoorsLights", 1),
+    ("DOOR_OPEN_RL", "DoorsLights", 1),
+    ("USER_BRAKE_PRESSED", "DoorsLights", 1),
+    ("BRAKE_LIGHT", "DoorsLights", 1),
     ("DriverTorque", "Steering", 0),
     ("DriverTouchingWheel", "STEER_TORQUE", 0),
     ("ThrottlePedal", "Throttle", 0),
@@ -39,7 +41,7 @@ def get_powertrain_can_parser(CP):
     # sig_address, frequency
     ("WheelspeedRear", 50),
     ("WheelspeedFront", 50),
-    ("Doors", 10),
+    ("DoorsLights", 10),
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -102,8 +104,8 @@ class CarState(object):
     self.pedal_gas = cp.vl["Throttle"]["ThrottlePedal"]
     self.brake_pressure = 0
     self.user_gas_pressed = self.pedal_gas > 0
-    self.brake_pressed = self.brake_pressure > 0
-    self.brake_lights = bool(self.brake_pressed)
+    self.brake_pressed = cp.vl["DoorsLights"]["USER_BRAKE_PRESSED"]
+    self.brake_lights = cp.vl["DoorsLights"]["BRAKE_LIGHT"]
 
     self.v_wheel_fl = cp.vl["WheelspeedFront"]["FL"] * CV.KPH_TO_MS
     self.v_wheel_fr = cp.vl["WheelspeedFront"]["FR"] * CV.KPH_TO_MS
@@ -135,7 +137,7 @@ class CarState(object):
     self.steer_override = bool(cp.vl["STEER_TORQUE"]["DriverTouchingWheel"])
     self.angle_steers = cp.vl["SteeringWheel"]["Steering_Angle"]
     self.cruise_throttle_msg = copy.copy(cp.vl["CruiseThrottle"])
-    self.door_open = any([cp.vl["Doors"]["DOOR_OPEN_RR"],
-      cp.vl["Doors"]["DOOR_OPEN_RL"],
-      cp.vl["Doors"]["DOOR_OPEN_FR"],
-      cp.vl["Doors"]["DOOR_OPEN_FL"]])
+    self.door_open = any([cp.vl["DoorsLights"]["DOOR_OPEN_RR"],
+      cp.vl["DoorsLights"]["DOOR_OPEN_RL"],
+      cp.vl["DoorsLights"]["DOOR_OPEN_FR"],
+      cp.vl["DoorsLights"]["DOOR_OPEN_FL"]])
