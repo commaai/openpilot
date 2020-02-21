@@ -31,7 +31,7 @@ jobs:
     name: push
     runs-on: ubuntu-16.04
     needs: build
-    if: github.ref == 'master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
       - uses: actions/download-artifact@v1
         with:
