@@ -30,7 +30,7 @@ class CarState(CarStateBase):
     ret.gas = cp.vl["ACCEL_GAS_134"]['ACCEL_134']
     ret.gasPressed = ret.gas > 1e-5
 
-    self.esp_disabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
+    ret.espDisabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
 
     ret.wheelSpeeds.fl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FL']
     ret.wheelSpeeds.rr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RR']
