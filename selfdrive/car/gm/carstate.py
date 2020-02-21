@@ -59,7 +59,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = False
       self.esp_disabled = False
       regen_pressed = False
-      self.pcm_acc_status = int(events.append(create_event('pedalPressed', [ET.PRE_ENABLE])))
+      self.pcm_acc_status = int(pt_cp.vl["ASCMActiveCruiseControlStatus"]['ACCCmdActive'])
     else:
       self.park_brake = pt_cp.vl["EPBStatus"]['EPBClosed']
       ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]['CruiseMainOn'])
