@@ -64,22 +64,19 @@ class CarState(CarStateBase):
     accStatus = pt_cp.vl["ACC_06"]['ACC_Status_ACC']
     if accStatus == 1:
       # ACC okay but disabled
-      self.accFault = False
       ret.cruiseState.available = False
       ret.cruiseState.enabled = False
     elif accStatus == 2:
       # ACC okay and enabled, but not currently engaged
-      self.accFault = False
       ret.cruiseState.available = True
       ret.cruiseState.enabled = False
     elif accStatus in [3, 4, 5]:
       # ACC okay and enabled, currently engaged and regulating speed (3) or engaged with driver accelerating (4) or overrun (5)
-      self.accFault = False
       ret.cruiseState.available = True
       ret.cruiseState.enabled = True
     else:
       # ACC fault of some sort. Seen statuses 6 or 7 for CAN comms disruptions, visibility issues, etc.
-      self.accFault = True
+      # We won't do anything different from accStatus == 1, but keeping this block for documentation.
       ret.cruiseState.available = False
       ret.cruiseState.enabled = False
 
