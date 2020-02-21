@@ -163,13 +163,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = buttonEvents
 
-    events = []
-    if self.CS.steer_not_allowed:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    events = self.create_common_events(ret)
 
     if self.CS.car_fingerprint in SUPERCRUISE_CARS:
       if self.CS.acc_active and not self.acc_active_prev:
@@ -178,14 +172,7 @@ class CarInterface(CarInterfaceBase):
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     else:
-      if ret.gearShifter != car.CarState.GearShifter.drive:
-        events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if self.CS.esp_disabled:
-        events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if not ret.cruiseState.available:
-        events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if ret.gearShifter == car.CarState.GearShifter.reverse:
-        events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      # TODO: why is this only not supercruise? ignore supercruise?
       if ret.vEgo < self.CP.minEnableSpeed:
         events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if self.CS.park_brake:
