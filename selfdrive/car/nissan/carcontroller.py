@@ -32,10 +32,6 @@ class CarController(object):
     apply_angle = actuators.steerAngle
 
     if acc_active:
-      # steer angle
-      angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
-      apply_angle = clip(apply_angle, -angle_lim, angle_lim)
-
       # # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
         angle_rate_lim = interp(CS.v_ego, ANGLE_DELTA_BP, ANGLE_DELTA_V)
@@ -44,6 +40,10 @@ class CarController(object):
 
       apply_angle = clip(apply_angle, self.last_angle -
                          angle_rate_lim, self.last_angle + angle_rate_lim)
+
+      # steer angle
+      angle_lim = interp(CS.v_ego, ANGLE_MAX_BP, ANGLE_MAX_V)
+      apply_angle = clip(apply_angle, -angle_lim, angle_lim)
 
       # Max torque from driver before EPS will give up and not apply torque
       if not bool(CS.steer_override):
