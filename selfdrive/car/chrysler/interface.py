@@ -6,14 +6,7 @@ from selfdrive.car.chrysler.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINT
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-GearShifter = car.CarState.GearShifter
-ButtonType = car.CarState.ButtonEvent.Type
-
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
-    self.low_speed_alert = False
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -76,24 +69,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = []
 
-    self.low_speed_alert = (ret.vEgo < self.CP.minSteerSpeed)
-
     # events
-    events = []
-    if not (ret.gearShifter in (GearShifter.drive, GearShifter.low)):
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.esp_disabled:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not ret.cruiseState.available:
-      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if ret.gearShifter == GearShifter.reverse:
-      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if self.CS.steer_error:
-      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
+    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
@@ -105,7 +82,7 @@ class CarInterface(CarInterfaceBase):
     if (ret.gasPressed and (not self.gas_pressed_prev) and ret.vEgo > 2.0):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if self.low_speed_alert:
+    if ret.vEgo < self.CP.minSteerSpeed:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events

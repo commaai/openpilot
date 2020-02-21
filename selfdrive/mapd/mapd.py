@@ -273,7 +273,7 @@ def mapsd_thread():
     map_data_sock.send(dat.to_bytes())
 
 
-def main(gctx=None):
+def main():
   params = Params()
   dongle_id = params.get("DongleId")
   crash.bind_user(id=dongle_id)

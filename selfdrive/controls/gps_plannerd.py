@@ -362,7 +362,7 @@ def gps_planner_plan():
     gps_planner_plan.send(m.to_bytes())
 
 
-def main(gctx=None):
+def main():
   cloudlog.info("Starting gps_plannerd main thread")
 
   point_thread = Thread(target=gps_planner_point_selection)

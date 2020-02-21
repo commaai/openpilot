@@ -6,12 +6,7 @@ from selfdrive.car.subaru.values import CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-ButtonType = car.CarState.ButtonEvent.Type
-
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-    self.enabled_prev = 0
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -65,17 +60,13 @@ class CarInterface(CarInterfaceBase):
 
     buttonEvents = []
     be = car.CarState.ButtonEvent.new_message()
-    be.type = ButtonType.accelCruise
+    be.type = car.CarState.ButtonEvent.Type.accelCruise
     buttonEvents.append(be)
 
-    events = []
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    # TODO: add gearShifter to carState
+    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.unknown])
 
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-
-    if ret.cruiseState.enabled and not self.enabled_prev:
+    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     if not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
@@ -90,7 +81,7 @@ class CarInterface(CarInterfaceBase):
     ret.events = events
 
     self.gas_pressed_prev = ret.gasPressed
-    self.enabled_prev = ret.cruiseState.enabled
+    self.cruise_enabled_prev = ret.cruiseState.enabled
 
     self.CS.out = ret.as_reader()
     return self.CS.out

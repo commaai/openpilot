@@ -292,7 +292,7 @@ def attempt_update():
   set_update_available_params(new_version=new_version)
 
 
-def main(gctx=None):
+def main():
   update_failed_count = 0
   overlay_init_done = False
   wait_helper = WaitTimeHelper()

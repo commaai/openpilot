@@ -4,6 +4,7 @@ from cereal import car
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 GearShifter = car.CarState.GearShifter
@@ -78,6 +79,30 @@ class CarInterfaceBase():
   # return sendcan, pass in a car.CarControl
   def apply(self, c):
     raise NotImplementedError
+
+  def create_common_events(self, cs_out, extra_gears=[]):
+    events = []
+
+    if cs_out.doorOpen:
+      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.seatbeltUnlatched:
+      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.gearShifter != GearShifter.drive and cs_out.gearShifter not in extra_gears:
+      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.gearShifter == GearShifter.reverse:
+      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    if not cs_out.cruiseState.available:
+      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
+
+    # TODO: move this stuff to the capnp strut
+    if getattr(self.CS, "steer_error", False):
+      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
+    elif getattr(self.CS, "steer_warning", False):
+      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+    if getattr(self.CS, "esp_disabled", False):
+      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+
+    return events
 
 class RadarInterfaceBase():
   def __init__(self, CP):

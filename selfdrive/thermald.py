@@ -393,7 +393,7 @@ def thermald_thread():
     count += 1
 
 
-def main(gctx=None):
+def main():
   thermald_thread()
 
 if __name__ == "__main__":

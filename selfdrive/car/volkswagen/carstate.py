@@ -116,7 +116,7 @@ class CarState(CarStateBase):
 
     # Additional safety checks performed in CarInterface.
     self.parkingBrakeSet = bool(pt_cp.vl["Kombi_01"]['KBI_Handbremse']) # FIXME: need to include an EPB check as well
-    self.stabilityControlDisabled = pt_cp.vl["ESP_21"]['ESP_Tastung_passiv']
+    self.esp_disabled = pt_cp.vl["ESP_21"]['ESP_Tastung_passiv']
 
     return ret
 
