@@ -174,6 +174,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TVA-A160\x00\x00',
       b'36802-TVA-A160\x00\x00',
+      b'36802-TVA-A170\x00\x00',
       b'36802-TWA-A070\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
@@ -408,8 +409,6 @@ FW_VERSIONS = {
       b'38897-TBA-A020\x00\x00',
     ],
   },
-
-
   CAR.CRV_5G: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-5PA-3080\x00\x00',
