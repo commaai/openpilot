@@ -416,14 +416,14 @@ FW_VERSIONS = {
     ],
   },
   CAR.CIVIC_BOSCH_DIESEL: {
-    (Ecu.unknown, 0x18da10f1, None): [b'37805-59N-G830\x00\x00'],
-    (Ecu.unknown, 0x18da1ef1, None): [b'28101-59Y-G620\x00\x00'],
-    (Ecu.unknown, 0x18da28f1, None): [b'57114-TGN-E320\x00\x00'],
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [b'37805-59N-G830\x00\x00'],
+    (Ecu.transmission, 0x18da1ef1, None): [b'28101-59Y-G620\x00\x00'],
+    (Ecu.vsa, 0x18da28f1, None): [b'57114-TGN-E320\x00\x00'],
     (Ecu.eps, 0x18da30f1, None): [b'39990-TFK-G020\x00\x00'],
-    (Ecu.unknown, 0x18da53f1, None): [b'77959-TFK-G210\x00\x00'],
-    (Ecu.unknown, 0x18da60f1, None): [b'78109-TFK-G020\x00\x00'],
-    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TFK-G130\x00\x00'],
-    (Ecu.unknown, 0x18da0bf1, None): [b'54008-TGN-E010\x00\x00'],
+    (Ecu.srs, 0x18da53f1, None): [b'77959-TFK-G210\x00\x00'],
+    (Ecu.combinationMeter, 0x18da60f1, None): [b'78109-TFK-G020\x00\x00'],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [b'36802-TFK-G130\x00\x00'],
+    (Ecu.shiftByWire, 0x18da0bf1, None): [b'54008-TGN-E010\x00\x00'],
   },
   CAR.CRV_5G: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
