@@ -57,14 +57,12 @@ class CarState(CarStateBase):
     if self.car_fingerprint in SUPERCRUISE_CARS:
       self.park_brake = False
       ret.cruiseState.available = False
-      self.acc_active = pt_cp.vl["ASCMActiveCruiseControlStatus"]['ACCCmdActive']
       self.esp_disabled = False
       regen_pressed = False
-      self.pcm_acc_status = int(self.acc_active)
+      self.pcm_acc_status = int(events.append(create_event('pedalPressed', [ET.PRE_ENABLE])))
     else:
       self.park_brake = pt_cp.vl["EPBStatus"]['EPBClosed']
       ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]['CruiseMainOn'])
-      self.acc_active = False
       self.esp_disabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
       self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]['CruiseState']
       if self.car_fingerprint == CAR.VOLT:
