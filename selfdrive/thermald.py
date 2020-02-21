@@ -196,7 +196,7 @@ def thermald_thread():
     if (count % int(10. / DT_TRML)) == 0:
       try:
         network_type = get_network_type()
-      except subprocess.CalledProcessError:
+      except Exception:
         pass
 
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0

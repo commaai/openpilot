@@ -72,7 +72,7 @@ def is_on_wifi():
     if result is None:
       return True
     return 'WIFI' in result
-  except (AttributeError, subprocess.CalledProcessError):
+  except Exception:
     cloudlog.exception("is_on_wifi failed")
     return False
 
