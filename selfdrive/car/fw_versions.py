@@ -85,7 +85,7 @@ def match_fw_to_car(fw_versions):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_version = fw_versions_dict.get(addr, None)
-
+      ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa, Ecu.electricBrakeBooster]
       if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER] and found_version is None:
         continue
 
@@ -93,8 +93,8 @@ def match_fw_to_car(fw_versions):
       if ecu_type == Ecu.engine and candidate == TOYOTA.COROLLA_TSS2 and found_version is None:
         continue
 
-      # Allow DSU not being present
-      if ecu_type in [Ecu.unknown, Ecu.dsu] and found_version is None:
+      # ignore non essential ecus
+      if ecu_type not in ESSENTIAL_ECUS and found_version is None:
         continue
 
       if found_version not in expected_versions:
