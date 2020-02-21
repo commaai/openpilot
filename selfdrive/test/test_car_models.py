@@ -196,6 +196,11 @@ routes = {
     'carFingerprint': HONDA.CIVIC_BOSCH,
     'enableCamera': True,
   },
+  "d83f36766f8012a5|2020-02-05--18-42-21": {
+    'carFingerprint': HONDA.CIVIC_BOSCH_DIESEL,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
+  },
   #"18971a99f3f2b385|2018-11-14--19-09-31": {
   #  'carFingerprint': HONDA.INSIGHT,
   #  'enableCamera': True,

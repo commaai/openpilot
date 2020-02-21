@@ -27,6 +27,7 @@ class CAR:
   ACCORDH = "HONDA ACCORD 2018 HYBRID TOURING"
   CIVIC = "HONDA CIVIC 2016 TOURING"
   CIVIC_BOSCH = "HONDA CIVIC HATCHBACK 2017 SEDAN/COUPE 2019"
+  CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL"
   ACURA_ILX = "ACURA ILX 2016 ACURAWATCH PLUS"
   CRV = "HONDA CR-V 2016 TOURING"
   CRV_5G = "HONDA CR-V 2017 EX"
@@ -73,6 +74,10 @@ FINGERPRINTS = {
   # 2019 Civic Hatchback EX
   {
     57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 470: 2, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 506: 8, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 892: 8, 927: 8, 929: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1108: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1633: 8
+  }],
+  CAR.CIVIC_BOSCH_DIESEL: [{
+  # 2019 Civic Sedan 1.6 i-dtec Diesel European
+    57: 3, 148: 8, 228: 5, 308: 5, 316: 8, 330: 8, 344: 8, 380: 8, 399: 7, 419: 8, 420: 8, 426: 8, 427: 3, 432: 7, 441: 5, 450: 8, 464: 8, 470: 2, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 506: 8, 507: 1, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 801: 3, 804: 8, 806: 8, 808: 8, 815: 8, 824: 8, 825: 4, 829: 5, 837: 5, 862: 8, 881: 8, 882: 4, 884: 8, 887: 8, 888: 8, 891: 8, 902: 8, 918: 7, 927: 8, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1092: 1, 1108: 8, 1115: 2, 1125: 8, 1296: 8, 1302: 8, 1322: 5, 1337: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8
   }],
   CAR.CRV: [{
     57: 3, 145: 8, 316: 8, 340: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 6, 401: 8, 404: 4, 420: 8, 422: 8, 426: 8, 432: 7, 464: 8, 474: 5, 476: 4, 487: 4, 490: 8, 493: 3, 506: 8, 507: 1, 512: 6, 513: 6, 542: 7, 545: 4, 597: 8, 660: 8, 661: 4, 773: 7, 777: 8, 780: 8, 800: 8, 804: 8, 808: 8, 829: 5, 882: 2, 884: 7, 888: 8, 891: 8, 892: 8, 923: 2, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1033: 5, 1036: 8, 1039: 8, 1057: 5, 1064: 7, 1108: 8, 1125: 8, 1296: 8, 1365: 5, 1424: 5, 1600: 5, 1601: 8,
@@ -410,6 +415,16 @@ FW_VERSIONS = {
       b'38897-TBA-A020\x00\x00',
     ],
   },
+  CAR.CIVIC_BOSCH_DIESEL: {
+    (Ecu.unknown, 0x18da10f1, None): [b'37805-59N-G830\x00\x00'],
+    (Ecu.unknown, 0x18da1ef1, None): [b'28101-59Y-G620\x00\x00'],
+    (Ecu.unknown, 0x18da28f1, None): [b'57114-TGN-E320\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TFK-G020\x00\x00'],
+    (Ecu.unknown, 0x18da53f1, None): [b'77959-TFK-G210\x00\x00'],
+    (Ecu.unknown, 0x18da60f1, None): [b'78109-TFK-G020\x00\x00'],
+    (Ecu.unknown, 0x18dab0f1, None): [b'36802-TFK-G130\x00\x00'],
+    (Ecu.unknown, 0x18da0bf1, None): [b'54008-TGN-E010\x00\x00'],
+  },
   CAR.CRV_5G: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-5PA-3080\x00\x00',
@@ -626,6 +641,7 @@ DBC = {
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CIVIC: dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CIVIC_BOSCH: dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
+  CAR.CIVIC_BOSCH_DIESEL: dbc_dict('honda_civic_sedan_16_diesel_2019_can_generated', None),
   CAR.CRV: dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CRV_5G: dbc_dict('honda_crv_ex_2017_can_generated', None),
   CAR.CRV_HYBRID: dbc_dict('honda_crv_hybrid_2019_can_generated', None),
@@ -645,6 +661,7 @@ STEER_THRESHOLD = {
   CAR.ACURA_RDX: 400,
   CAR.CIVIC: 1200,
   CAR.CIVIC_BOSCH: 1200,
+  CAR.CIVIC_BOSCH_DIESEL: 1200,
   CAR.CRV: 1200,
   CAR.CRV_5G: 1200,
   CAR.CRV_HYBRID: 1200,
@@ -664,6 +681,7 @@ SPEED_FACTOR = {
   CAR.ACURA_RDX: 1.,
   CAR.CIVIC: 1.,
   CAR.CIVIC_BOSCH: 1.,
+  CAR.CIVIC_BOSCH_DIESEL: 1.,
   CAR.CRV: 1.025,
   CAR.CRV_5G: 1.025,
   CAR.CRV_HYBRID: 1.025,
@@ -681,4 +699,4 @@ ECU_FINGERPRINT = {
   Ecu.fwdCamera: [0xE4, 0x194],   # steer torque cmd
 }
 
-HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_5G, CAR.CRV_HYBRID]
+HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID]
