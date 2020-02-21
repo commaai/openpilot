@@ -62,11 +62,7 @@ class CarState(CarStateBase):
 
     # Update ACC radar status.
     accStatus = pt_cp.vl["ACC_06"]['ACC_Status_ACC']
-    if accStatus == 1:
-      # ACC okay but disabled
-      ret.cruiseState.available = False
-      ret.cruiseState.enabled = False
-    elif accStatus == 2:
+    if accStatus == 2:
       # ACC okay and enabled, but not currently engaged
       ret.cruiseState.available = True
       ret.cruiseState.enabled = False
@@ -75,8 +71,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = True
       ret.cruiseState.enabled = True
     else:
-      # ACC fault of some sort. Seen statuses 6 or 7 for CAN comms disruptions, visibility issues, etc.
-      # We won't do anything different from accStatus == 1, but keeping this block for documentation.
+      # ACC okay but disabled (1), or a radar visibility or other fault/disruption (6 or 7)
       ret.cruiseState.available = False
       ret.cruiseState.enabled = False
 
