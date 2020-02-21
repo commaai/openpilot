@@ -3,12 +3,10 @@ HKG Community information
 
 This is the "Community fork" for Kia, Hyundai and Genesis.
 it is a fork of comma's openpilot: https://github.com/commaai/openpilot. It is open source and inherits MIT license.  By installing this software you accept all responsibility for anything that might occur while you use it.  All contributors to this fork are not liable.  <b>Use at your own risk.</b>
-I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JX92RNKXRPJKN&currency_code=USD&source=url)
 
-The port was started by Andrew Frahn of Emmertex, ku7 tech on youtube
+<b>The port was started by Andrew Frahn of Emmertex, ku7 tech on youtube
 https://www.youtube.com/c/ku7tech
-
-
+I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JX92RNKXRPJKN&currency_code=USD&source=url)</b>
 
 Changes:
 ------
