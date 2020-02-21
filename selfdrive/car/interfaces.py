@@ -96,13 +96,6 @@ class CarInterfaceBase():
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if cs_out.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-    # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if cs_out.vEgo < (self.CP.minSteerSpeed + 1.) and self.CP.minSteerSpeed > 10.:
-      self.low_speed_alert = True
-    if cs_out.vEgo > (self.CP.minSteerSpeed + 2.):
-      self.low_speed_alert = False
-    if self.low_speed_alert:
-      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     # TODO: move this stuff to the capnp strut
     if getattr(self.CS, "steer_error", False):
