@@ -26,6 +26,7 @@ class CarInterface(CarInterfaceBase):
     self.cam_cp = get_camera_can_parser(CP)
 
     self.gas_pressed_prev = False
+    self.brake_pressed_prev = False
 
     self.CC = None
     if CarController is not None:
@@ -126,6 +127,10 @@ class CarInterface(CarInterfaceBase):
     ret.gas = self.CS.pedal_gas
     ret.gasPressed = self.CS.user_gas_pressed
 
+    # brake pedal
+    ret.brakePressed = self.CS.brake_pressed != 0
+    ret.brakeLights = self.CS.brake_lights
+
     # cruise state
     ret.cruiseState.enabled = bool(self.CS.acc_active)
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
@@ -169,10 +174,11 @@ class CarInterface(CarInterfaceBase):
     if not self.CS.acc_active:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
-    # disable on gas pedal rising edge
-    if (ret.gasPressed and not self.gas_pressed_prev):
+    # disable on pedals rising edge or when brake is pressed and speed isn't zero
+    if (ret.gasPressed and not self.gas_pressed_prev) or \
+       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-
+  
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
@@ -180,6 +186,7 @@ class CarInterface(CarInterfaceBase):
 
     # update previous brake/gas pressed
     self.gas_pressed_prev = ret.gasPressed
+    self.brake_pressed_prev = ret.brakePressed
     self.acc_active_prev = self.CS.acc_active
 
     # cast to reader so it can't be modified
