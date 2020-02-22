@@ -323,9 +323,6 @@ class CarInterface(CarInterfaceBase):
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-
     ret.events = events
 
     self.gas_pressed_prev = ret.gasPressed
