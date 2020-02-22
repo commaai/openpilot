@@ -2,6 +2,7 @@
 import bz2
 import os
 import sys
+import numbers
 
 import dictdiffer
 if "CI" in os.environ:
@@ -22,7 +23,7 @@ def save_log(dest, log_msgs):
 
 def remove_ignored_fields(msg, ignore):
   msg = msg.as_builder()
-  for key, val in ignore:
+  for key in ignore:
     attr = msg
     keys = key.split(".")
     if msg.which() not in key and len(keys) > 1:
@@ -34,13 +35,19 @@ def remove_ignored_fields(msg, ignore):
       except:
         break
     else:
+      v = getattr(attr, keys[-1])
+      if isinstance(v, bool):
+        val = False
+      elif isinstance(v, numbers.Number):
+        val = 0
+      else:
+        raise NotImplementedError
       setattr(attr, keys[-1], val)
   return msg.as_reader()
 
 def compare_logs(log1, log2, ignore=[]):
   assert len(log1) == len(log2), "logs are not same length: " + str(len(log1)) + " VS " + str(len(log2))
 
-  ignore_fields = [k for k, v in ignore]
   diff = []
   for msg1, msg2 in tqdm(zip(log1, log2)):
     if msg1.which() != msg2.which():
@@ -53,7 +60,7 @@ def compare_logs(log1, log2, ignore=[]):
     if msg1_bytes != msg2_bytes:
       msg1_dict = msg1.to_dict(verbose=True)
       msg2_dict = msg2.to_dict(verbose=True)
-      dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields, tolerance=0)
+      dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore, tolerance=0)
       diff.extend(dd)
   return diff
 

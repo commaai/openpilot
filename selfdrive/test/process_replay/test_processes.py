@@ -36,12 +36,8 @@ def get_segment(segment_name):
     f.write(req.content)
     return f.name
 
-def test_process(cfg, lr):
-  # replay the log through the process and get its output
-  log_msgs = replay_process(cfg, lr)
-
+def test_process(cfg, lr, ignore=[]):
   cmp_log_fn = "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit)
-
   if not os.path.isfile(cmp_log_fn):
     req = requests.get(BASE_URL + os.path.basename(cmp_log_fn))
     assert req.status_code == 200, ("Failed to download %s" % cmp_log_fn)
@@ -54,7 +50,10 @@ def test_process(cfg, lr):
   else:
     cmp_log_msgs = list(LogReader(cmp_log_fn))
 
-  return compare_logs(cmp_log_msgs, log_msgs, cfg.ignore)
+  log_msgs = replay_process(cfg, lr)
+  ignore.extend(cfg.ignore)
+  print("ignoring: ", ignore)
+  return compare_logs(cmp_log_msgs, log_msgs, ignore)
 
 def prettyprint_diff(results):
   ret = "***** tested against commit %s *****\n" % ref_commit
@@ -72,7 +71,7 @@ def prettyprint_diff(results):
 
       if isinstance(diff, str):
         #print("\t\t%s" % diff)
-        ret += "\t\t%s" % diff
+        ret += "\t\t%s\n" % diff
 
         failed = True
       elif len(diff):
@@ -86,7 +85,7 @@ def prettyprint_diff(results):
 
         for k, v in sorted(cnt.items()):
           #print("\t\t%s: %s" % (k, v))
-          ret += "\t\t%s: %s" % (k, v)
+          ret += "\t\t%s: %s\n" % (k, v)
         failed = True
   return ret, failed
 
@@ -104,6 +103,8 @@ if __name__ == "__main__":
                         help="Blacklist given processes from the test (e.g. controlsd)")
   parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
                         help="Blacklist given cars from the test (e.g. HONDA)")
+  parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
+                        help="Extra fields or msgs to ignore (e.g. carState.events)")
   args = parser.parse_args()
 
   cars_whitelisted = len(args.whitelist_cars) > 0
@@ -142,7 +143,7 @@ if __name__ == "__main__":
           (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
-      results[segment][cfg.proc_name] = test_process(cfg, lr)
+      results[segment][cfg.proc_name] = test_process(cfg, lr, ignore=args.ignore_fields)
     os.remove(rlog_fn)
 
   diff_txt, failed = prettyprint_diff(results)
