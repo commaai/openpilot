@@ -5,6 +5,7 @@ import requests
 import sys
 import tempfile
 
+from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.process_replay.compare_logs import compare_logs
 from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
 from tools.lib.logreader import LogReader
@@ -19,6 +20,9 @@ segments = [
   ("SUBARU", "7873afaf022d36e2|2019-07-03--18-46-44--0"), # SUBARU.IMPREZA
   ("VW", "b0c9d2329ad1606b|2020-02-19--16-29-36--7"), # VW.GOLF
 ]
+
+# ford doesn't need to be tested until a full port is done
+excluded_interfaces = ["mock", "ford"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
@@ -92,27 +96,33 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
 
   # whitelist has precedence over blacklist in case both are defined
-  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[], help="Whitelist given processes from the test (e.g. controlsd)")
-  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[], help="Whitelist given cars from the test (e.g. HONDA)")
-
-
-  parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[], help="Blacklist given processes from the test (e.g. controlsd)")
-  parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[], help="Blacklist given cars from the test (e.g. HONDA)")
-
+  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[],
+                        help="Whitelist given processes from the test (e.g. controlsd)")
+  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[],
+                        help="Whitelist given cars from the test (e.g. HONDA)")
+  parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[],
+                        help="Blacklist given processes from the test (e.g. controlsd)")
+  parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
+                        help="Blacklist given cars from the test (e.g. HONDA)")
   args = parser.parse_args()
 
   cars_whitelisted = len(args.whitelist_cars) > 0
   procs_whitelisted = len(args.whitelist_procs) > 0
 
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
-  ref_commit_fn = os.path.join(process_replay_dir, "ref_commit")
-
-  if not os.path.isfile(ref_commit_fn):
+  try:
+    ref_commit = open(os.path.join(process_replay_dir, "ref_commit")).read().strip()
+  except:
     print("couldn't find reference commit")
     sys.exit(1)
 
-  ref_commit = open(ref_commit_fn).read().strip()
   print("***** testing against commit %s *****" % ref_commit)
+
+  # check to make sure all car brands are tested. only run when no args given
+  if len(sys.argv) <= 1:
+    tested_cars = set(c.lower() for c, _ in segments)
+    untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
+    assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
 
   results = {}
   for car_brand, segment in segments:
@@ -128,7 +138,7 @@ if __name__ == "__main__":
     lr = LogReader(rlog_fn)
 
     for cfg in CONFIGS:
-      if (procs_whitelisted and cfg.proc_name not in arsgs.whitelist_procs) or \
+      if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
           (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
