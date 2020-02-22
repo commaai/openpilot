@@ -90,10 +90,19 @@ def prettyprint_diff(results):
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
-  parser.add_argument("--exclude-procs", type=str, nargs="*", default=[], help="Exclude given processes from the test (e.g. controlsd)")
-  parser.add_argument("--exclude-cars", type=str, nargs="*", default=[], help="Exclude given cars from the test (e.g. HONDA)")
+
+  # whitelist has precedence over blacklist in case both are defined
+  parser.add_argument("--whitelist-procs", type=str, nargs="*", default=[], help="Whitelist given processes from the test (e.g. controlsd)")
+  parser.add_argument("--whitelist-cars", type=str, nargs="*", default=[], help="Whitelist given cars from the test (e.g. HONDA)")
+
+
+  parser.add_argument("--blacklist-procs", type=str, nargs="*", default=[], help="Blacklist given processes from the test (e.g. controlsd)")
+  parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[], help="Blacklist given cars from the test (e.g. HONDA)")
 
   args = parser.parse_args()
+
+  cars_whitelisted = len(args.whitelist_cars) > 0
+  procs_whitelisted = len(args.whitelist_procs) > 0
 
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(process_replay_dir, "ref_commit")
@@ -107,7 +116,8 @@ if __name__ == "__main__":
 
   results = {}
   for car_brand, segment in segments:
-    if car_brand.upper() in args.exclude_cars:
+    if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
+        (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
       continue
 
     print("***** testing route segment %s *****\n" % segment)
@@ -118,7 +128,8 @@ if __name__ == "__main__":
     lr = LogReader(rlog_fn)
 
     for cfg in CONFIGS:
-      if cfg.proc_name in args.exclude_procs:
+      if (procs_whitelisted and cfg.proc_name not in arsgs.whitelist_procs) or \
+          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
       results[segment][cfg.proc_name] = test_process(cfg, lr)
