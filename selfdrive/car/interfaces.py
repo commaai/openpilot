@@ -20,6 +20,7 @@ class CarInterfaceBase():
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
+    self.low_speed_alert = False
 
     self.CS = CarState(CP)
     self.cp = self.CS.get_can_parser(CP)
@@ -95,6 +96,8 @@ class CarInterfaceBase():
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if cs_out.espDisabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.gasPressed:
+      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # TODO: move this stuff to the capnp strut
     if getattr(self.CS, "steer_error", False):
