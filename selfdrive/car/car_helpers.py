@@ -133,6 +133,11 @@ def fingerprint(logcan, sendcan, has_relay):
     car_fingerprint = list(fw_candidates)[0]
     source = car.CarParams.FingerprintSource.fw
 
+  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
+  if len(fixed_fingerprint):
+    car_fingerprint = fixed_fingerprint
+    source = car.CarParams.FingerprintSource.fixed
+
   cloudlog.warning("fingerprinted %s", car_fingerprint)
   return car_fingerprint, finger, vin, car_fw, source
 

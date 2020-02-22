@@ -293,6 +293,7 @@ def attempt_update():
 
 
 def main(gctx=None):
+  update_failed_count = 0
   overlay_init_done = False
   wait_helper = WaitTimeHelper()
   params = Params()
@@ -312,6 +313,7 @@ def main(gctx=None):
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
   while True:
+    update_failed_count += 1
     time_wrong = datetime.datetime.now().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
 
@@ -335,6 +337,7 @@ def main(gctx=None):
 
         if params.get("IsOffroad") == b"1":
           attempt_update()
+          update_failed_count = 0
         else:
           cloudlog.info("not running updater, openpilot running")
 
@@ -348,8 +351,8 @@ def main(gctx=None):
         overlay_init_done = False
       except Exception:
         cloudlog.exception("uncaught updated exception, shouldn't happen")
-        overlay_init_done = False
 
+    params.put("UpdateFailedCount", str(update_failed_count))
     wait_between_updates(wait_helper.ready_event)
     if wait_helper.shutdown:
       break

@@ -241,7 +241,7 @@ VAL_ 481 LKAButton 1 "Active" 0 "Inactive" ;
 VAL_ 481 ACCButtons 6 "Cancel" 5 "Main" 3 "Set" 2 "Resume" 1 "None" ;
 VAL_ 481 DriveModeButton 1 "Active" 0 "Inactive" ;
 VAL_ 452 CruiseState 4 "Standstill" 3 "Faulted" 1 "Active" 0 "Off" ;
-VAL_ 309 PRNDL 3 "Reverse" 2 "Drive" 1 "Neutral" 0 "Park" ;
+VAL_ 309 PRNDL 3 "R" 2 "D" 1 "N" 0 "P" ;
 VAL_ 309 ESPButton 1 "Active" 0 "Inactive" ;
 VAL_ 384 LKASteeringCmdActive 1 "Active" 0 "Inactive" ;
 VAL_ 880 ACCLeadCar 1 "Present" 0 "Not Present" ;
