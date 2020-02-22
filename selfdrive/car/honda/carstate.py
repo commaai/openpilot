@@ -199,7 +199,7 @@ class CarState(CarStateBase):
       self.brake_error = 0
     else:
       self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
-    self.esp_disabled = cp.vl["VSA_STATUS"]['ESP_DISABLED']
+    ret.espDisabled = cp.vl["VSA_STATUS"]['ESP_DISABLED'] != 0
 
     speed_factor = SPEED_FACTOR[self.CP.carFingerprint]
     ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FL'] * CV.KPH_TO_MS * speed_factor

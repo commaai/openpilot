@@ -52,6 +52,7 @@ class CarState(CarStateBase):
       pedal_gas = cp.vl["EMS12"]['TPS']
     ret.gasPressed = pedal_gas > 1e-3
     ret.gas = cp.vl["EMS12"]['TPS']
+    ret.espDisabled = cp.vl["TCS15"]['ESC_Off_Step'] != 0
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
@@ -100,7 +101,6 @@ class CarState(CarStateBase):
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
-    self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_warning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']

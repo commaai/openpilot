@@ -9,7 +9,6 @@ from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     STEER_THRESHOLD, SUPERCRUISE_CARS
 
 
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -57,15 +56,13 @@ class CarState(CarStateBase):
     if self.car_fingerprint in SUPERCRUISE_CARS:
       self.park_brake = False
       ret.cruiseState.available = False
-      self.acc_active = pt_cp.vl["ASCMActiveCruiseControlStatus"]['ACCCmdActive']
-      self.esp_disabled = False
+      ret.espDisabled = False
       regen_pressed = False
-      self.pcm_acc_status = int(self.acc_active)
+      self.pcm_acc_status = int(pt_cp.vl["ASCMActiveCruiseControlStatus"]['ACCCmdActive'])
     else:
       self.park_brake = pt_cp.vl["EPBStatus"]['EPBClosed']
       ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]['CruiseMainOn'])
-      self.acc_active = False
-      self.esp_disabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
+      ret.espDisabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
       self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]['CruiseState']
       if self.car_fingerprint == CAR.VOLT:
         regen_pressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])

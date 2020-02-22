@@ -10,10 +10,6 @@ from selfdrive.car.interfaces import CarInterfaceBase
 ButtonType = car.CarState.ButtonEvent.Type
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
-    self.acc_active_prev = 0
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -166,9 +162,9 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret)
 
     if self.CS.car_fingerprint in SUPERCRUISE_CARS:
-      if self.CS.acc_active and not self.acc_active_prev:
+      if ret.cruiseState.enabled and not self.cruise_enabled_prev:
         events.append(create_event('pcmEnable', [ET.ENABLE]))
-      if not self.CS.acc_active:
+      if not ret.cruiseState.enabled:
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     else:
@@ -181,8 +177,6 @@ class CarInterface(CarInterfaceBase):
       if (ret.gasPressed and not self.gas_pressed_prev) or \
         (ret.brakePressed): # and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if ret.gasPressed:
-        events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
       if ret.cruiseState.standstill:
         events.append(create_event('resumeRequired', [ET.WARNING]))
       if self.CS.pcm_acc_status == AccState.FAULTED:
@@ -200,7 +194,7 @@ class CarInterface(CarInterfaceBase):
     ret.events = events
 
     # update previous brake/gas pressed
-    self.acc_active_prev = self.CS.acc_active
+    self.cruise_enabled_prev = ret.cruiseState.enabled
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
 
