@@ -50,6 +50,9 @@
 #define THERMALSTATUS_RED 2
 #define THERMALSTATUS_DANGER 3
 
+#define ACTIVEAPP_HOME 0
+#define ACTIVEAPP_SETTINGS 3
+
 #ifndef QCOM
   #define UI_60FPS
 #endif
@@ -126,7 +129,6 @@ typedef struct UIScene {
   bool engageable;
   bool monitoring_active;
 
-  bool touch_active;
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
   // responsive layout
@@ -244,9 +246,11 @@ typedef struct UIState {
 
   UIScene scene;
   bool awake;
+  bool touch_enabled;
 
   // timeouts
   int awake_timeout;
+  int touch_timeout;
   int volume_timeout;
   int controls_timeout;
   int alert_sound_timeout;

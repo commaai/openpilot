@@ -58,6 +58,34 @@ static void set_awake(UIState *s, bool awake) {
 #endif
 }
 
+static void navigate_to_settings(UIState *s) {
+#ifdef QCOM
+  if (s->touch_enabled && s->active_app != ACTIVEAPP_SETTINGS) {
+    s->touch_enabled = false;
+    s->active_app = ACTIVEAPP_SETTINGS;
+    s->touch_timeout = 0.5*30; // 0.5sec at 30fps
+
+    system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
+  }
+#else
+  // computer UI doesn't have offroad settings
+#endif
+}
+
+static void navigate_to_home(UIState *s) {
+#ifdef QCOM
+  if (s->touch_enabled && s->active_app != ACTIVEAPP_HOME) {
+    s->touch_enabled = false;
+    s->active_app = ACTIVEAPP_HOME;
+    s->touch_timeout = 0.5*30; // 0.5sec at 30fps
+
+    system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
+  }
+#else
+  // computer UI doesn't have offroad home
+#endif
+}
+
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
@@ -852,8 +880,6 @@ int main(int argc, char* argv[]) {
   TouchState touch = {0};
   touch_init(&touch);
   s->touch_fd = touch.fd;
-  s->scene.touch_active = false;
-
   ui_sound_init();
 
   // light sensor scaling params
@@ -870,6 +896,7 @@ int main(int argc, char* argv[]) {
   set_volume(MIN_VOLUME);
   s->volume_timeout = 5 * UI_FREQ;
   int draws = 0;
+
   while (!do_exit) {
     bool should_swap = false;
     if (!s->vision_connected) {
@@ -890,15 +917,15 @@ int main(int argc, char* argv[]) {
     zmq_pollitem_t polls[1] = {{0}};
     polls[0].fd = s->touch_fd;
     polls[0].events = ZMQ_POLLIN;
-    int touched = zmq_poll(polls, 1, 0);
-    int touch_x = -1, touch_y = -1;
+    int touch_p = zmq_poll(polls, 1, 0);
 
-    if (touched < 0) {
+    if (touch_p < 0) {
       if (errno == EINTR) continue;
-      LOGW("poll failed (%d)", touched);
-    } else if (touched > 0) {
+      LOGW("poll failed (%d)", touch_p);
+    } else if (touch_p > 0) {
+      int touch_x = -1, touch_y = -1;
       int touched = touch_read(&touch, &touch_x, &touch_y);
-      if (touched == 1 && !s->scene.touch_active) {
+      if (touched == 1) {
         if (!s->vision_connected) {
           // awake on any touch
           set_awake(s, true);
@@ -908,11 +935,11 @@ int main(int argc, char* argv[]) {
         if (!s->scene.uilayout_sidebarcollapsed) {
           if (touch_x >= settings_btn_x && touch_x < settings_btn_x + settings_btn_w
             && touch_y >= settings_btn_y && touch_y < settings_btn_y + settings_btn_h) {
-              system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
+              navigate_to_settings(s);
           }
           if (touch_x >= home_btn_x && touch_x < home_btn_x + home_btn_w
             && touch_y >= home_btn_y && touch_y < home_btn_y + home_btn_h) {
-              system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
+              navigate_to_home(s);
           }
         }
       }
@@ -942,6 +969,13 @@ int main(int argc, char* argv[]) {
       s->awake_timeout--;
     } else {
       set_awake(s, false);
+    }
+
+    // manage touch
+    if (s->touch_timeout > 0) {
+      s->touch_timeout--;
+    } else {
+      s->touch_enabled = true;
     }
 
     // Don't waste resources on drawing in case screen is off
