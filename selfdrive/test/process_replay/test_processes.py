@@ -65,40 +65,36 @@ def test_process(cfg, lr, cmp_log_fn, ignore=[]):
       raise Exception("Route never enabled: %s" % segment)
 
   ignore.extend(cfg.ignore)
-  return enabled, compare_logs(cmp_log_msgs, log_msgs, ignore)
+  return compare_logs(cmp_log_msgs, log_msgs, ignore)
 
-def prettyprint_diff(results):
-  ret = "***** tested against commit %s *****\n" % ref_commit
+def prettyprint_diff(results, ref_commit):
+  diff1, diff2 = "", ""
+  diff2 += "***** tested against commit %s *****\n" % ref_commit
 
   failed = False
   for segment, result in list(results.items()):
-    ret += "***** results for segment %s *****\n" % segment
+    diff1 += "***** results for segment %s *****\n" % segment
+    diff2 += "***** differences for segment %s *****\n" % segment
 
     for proc, diff in list(result.items()):
-      #f.write("*** process: %s ***\n" % proc)
-      #print("\t%s" % proc)
-      ret += "*** process: %s ***\n" % proc
+      diff1 += "\t%s\n" % proc
+      diff2 += "*** process: %s ***\n" % proc
 
       if isinstance(diff, str):
-        #print("\t\t%s" % diff)
-        ret += "\t\t%s\n" % diff
-
+        diff1 += "\t\t%s\n" % diff
         failed = True
       elif len(diff):
         cnt = {}
         for d in diff:
-          #f.write("\t%s\n" % str(d))
-          #ret += "\t"
+          diff2 += "\t%s\n" % str(d)
 
           k = str(d[1])
           cnt[k] = 1 if k not in cnt else cnt[k] + 1
 
         for k, v in sorted(cnt.items()):
-          #print("\t\t%s: %s" % (k, v))
-          ret += "\t\t%s: %s\n" % (k, v)
-        failed = True
-  return ret, failed
-
+          diff1 += "\t\t%s: %s\n" % (k, v)
+        failed1= True
+  return diff1, diff2, failed
 
 if __name__ == "__main__":
 
@@ -154,14 +150,13 @@ if __name__ == "__main__":
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
-      enabled, results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, ignore=args.ignore_fields)
-      assert enabled is None or enabled, ("Never enabled in route %s" % segment)
+      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields)
     os.remove(rlog_fn)
 
-  diff_txt, failed = prettyprint_diff(results)
+  diff1, diff2, failed = prettyprint_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:
-    f.write(diff_txt)
-  print(diff_txt)
+    f.write(diff2)
+  print(diff1)
 
   print("TEST", "FAILED" if failed else "SUCCEEDED")
 
