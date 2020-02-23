@@ -46,12 +46,8 @@ class CarState(CarStateBase):
     ret.brake = 0  # FIXME
     ret.brakePressed = cp.vl["TCS13"]['DriverBraking'] != 0
     ret.brakeLights = ret.brakePressed
-    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
-      pedal_gas = 0
-    else:
-      pedal_gas = cp.vl["EMS12"]['TPS']
-    ret.gasPressed = pedal_gas > 1e-3
-    ret.gas = cp.vl["EMS12"]['TPS']
+    ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100
+    ret.gasPressed = cp.vl["EMS16"]["CF_Ems_AclAct"] != 0
     ret.espDisabled = cp.vl["TCS15"]['ESC_Off_Step'] != 0
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
@@ -131,7 +127,7 @@ class CarState(CarStateBase):
 
       ("BRAKE_ACT", "EMS12", 0),
       ("PV_AV_CAN", "EMS12", 0),
-      ("TPS", "EMS12", 0),
+      ("CF_Ems_AclAct", "EMS16", 0),
 
       ("CYL_PRES", "ESP12", 0),
 
@@ -157,9 +153,7 @@ class CarState(CarStateBase):
       ("CUR_GR", "TCU12",0),
 
       ("ACCEnable", "TCS13", 0),
-      ("ACC_REQ", "TCS13", 0),
       ("DriverBraking", "TCS13", 0),
-      ("DriverOverride", "TCS13", 0),
 
       ("ESC_Off_Step", "TCS15", 0),
 
@@ -190,6 +184,7 @@ class CarState(CarStateBase):
       ("CLU11", 50),
       ("ESP12", 100),
       ("EMS12", 100),
+      ("EMS16", 100),
       ("CGW1", 10),
       ("CGW4", 5),
       ("WHL_SPD11", 50),
