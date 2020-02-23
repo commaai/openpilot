@@ -67,7 +67,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore=[]):
   ignore.extend(cfg.ignore)
   return compare_logs(cmp_log_msgs, log_msgs, ignore)
 
-def prettyprint_diff(results, ref_commit):
+def format_diff(results, ref_commit):
   diff1, diff2 = "", ""
   diff2 += "***** tested against commit %s *****\n" % ref_commit
 
@@ -93,7 +93,7 @@ def prettyprint_diff(results, ref_commit):
 
         for k, v in sorted(cnt.items()):
           diff1 += "\t\t%s: %s\n" % (k, v)
-        failed1= True
+        failed = True
   return diff1, diff2, failed
 
 if __name__ == "__main__":
@@ -153,7 +153,7 @@ if __name__ == "__main__":
       results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields)
     os.remove(rlog_fn)
 
-  diff1, diff2, failed = prettyprint_diff(results, ref_commit)
+  diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:
     f.write(diff2)
   print(diff1)
