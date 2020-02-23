@@ -1772,8 +1772,8 @@ static void do_autofocus(CameraState *s) {
   err = clamp(err, -16, 16);
   float sag = (s->last_sag_acc_z/9.8) * 128;
 
-  const int dac_up = s->device == DEVICE_LP3? 634:456;
-  const int dac_down = s->device == DEVICE_LP3? 366:224;
+  const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
+  const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
 
   if (!isnan(err))  {
     // learn lens_true_pos

@@ -25,6 +25,11 @@
 
 #define NUM_FOCUS 8
 
+#define LP3_AF_DAC_DOWN 366
+#define LP3_AF_DAC_UP 634
+#define OP3T_AF_DAC_DOWN 224
+#define OP3T_AF_DAC_UP 456
+
 #ifdef __cplusplus
 extern "C" {
 #endif
