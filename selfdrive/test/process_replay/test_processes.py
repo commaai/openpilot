@@ -26,6 +26,9 @@ excluded_interfaces = ["mock", "ford"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
+# run the full test (including checks) when no args given
+FULL_TEST = len(sys.argv) <= 1
+
 def get_segment(segment_name):
   route_name, segment_num = segment_name.rsplit("--", 1)
   rlog_url = BASE_URL + "%s/%s/rlog.bz2" % (route_name.replace("|", "/"), segment_num)
@@ -36,8 +39,7 @@ def get_segment(segment_name):
     f.write(req.content)
     return f.name
 
-def test_process(cfg, lr, ignore=[]):
-  cmp_log_fn = "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit)
+def test_process(cfg, lr, cmp_log_fn, ignore=[]):
   if not os.path.isfile(cmp_log_fn):
     req = requests.get(BASE_URL + os.path.basename(cmp_log_fn))
     assert req.status_code == 200, ("Failed to download %s" % cmp_log_fn)
@@ -51,17 +53,25 @@ def test_process(cfg, lr, ignore=[]):
     cmp_log_msgs = list(LogReader(cmp_log_fn))
 
   log_msgs = replay_process(cfg, lr)
+
+  # check to make sure
+  if cfg.proc_name == "controlsd" and FULL_TEST:
+    for msg in log_msgs:
+      if msg.which() == "carControl":
+        if msg.carControl.enabled:
+          break
+    else:
+      segment = cmp_log_fn.split("/")[-1].split("_")[0]
+      raise Exception("Route never enabled: %s" % segment)
+
   ignore.extend(cfg.ignore)
-  print("ignoring: ", ignore)
-  return compare_logs(cmp_log_msgs, log_msgs, ignore)
+  return enabled, compare_logs(cmp_log_msgs, log_msgs, ignore)
 
 def prettyprint_diff(results):
   ret = "***** tested against commit %s *****\n" % ref_commit
 
   failed = False
   for segment, result in list(results.items()):
-    #f.write("***** differences for segment %s *****\n" % segment)
-    #print("***** results for segment %s *****" % segment)
     ret += "***** results for segment %s *****\n" % segment
 
     for proc, diff in list(result.items()):
@@ -119,8 +129,8 @@ if __name__ == "__main__":
 
   print("***** testing against commit %s *****" % ref_commit)
 
-  # check to make sure all car brands are tested. only run when no args given
-  if len(sys.argv) <= 1:
+  # check to make sure all car brands are tested
+  if FULL_TEST:
     tested_cars = set(c.lower() for c, _ in segments)
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
@@ -143,7 +153,9 @@ if __name__ == "__main__":
           (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
-      results[segment][cfg.proc_name] = test_process(cfg, lr, ignore=args.ignore_fields)
+      cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
+      enabled, results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, ignore=args.ignore_fields)
+      assert enabled is None or enabled, ("Never enabled in route %s" % segment)
     os.remove(rlog_fn)
 
   diff_txt, failed = prettyprint_diff(results)
