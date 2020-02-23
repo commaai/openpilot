@@ -1711,7 +1711,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   int16_t max_focus = -32767;
   int avg_focus = 0;
   // force to max if not able to determine focus for long
-  const int patience_cnt = 100;
+  const int patience_cnt = 20;
   static int nan_cnt = 0;
 
   /*printf("FOCUS: ");

@@ -4,7 +4,6 @@ import json
 import copy
 import datetime
 import psutil
-import subprocess
 from smbus2 import SMBus
 from cereal import log
 from common.android import ANDROID, get_network_type
@@ -196,7 +195,7 @@ def thermald_thread():
     if (count % int(10. / DT_TRML)) == 0:
       try:
         network_type = get_network_type()
-      except subprocess.CalledProcessError:
+      except Exception:
         pass
 
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
@@ -393,7 +392,7 @@ def thermald_thread():
     count += 1
 
 
-def main(gctx=None):
+def main():
   thermald_thread()
 
 if __name__ == "__main__":

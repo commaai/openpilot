@@ -333,7 +333,6 @@ class LongitudinalControl(unittest.TestCase):
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
 
-    manager.gctx = {}
     manager.prepare_managed_process('radard')
     manager.prepare_managed_process('controlsd')
     manager.prepare_managed_process('plannerd')

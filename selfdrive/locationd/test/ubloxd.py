@@ -276,7 +276,7 @@ def handle_msg(dev, msg, nav_frame_buffer):
   #if dev is not None and dev.dev is not None:
   #  dev.close()
 
-def main(gctx=None):
+def main():
   global gpsLocationExternal, ubloxGnss
   nav_frame_buffer = {}
   nav_frame_buffer[0] = {}
