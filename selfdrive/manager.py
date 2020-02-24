@@ -475,40 +475,29 @@ def main():
   params = Params()
   params.manager_start()
 
+  default_params = [
+    ("CommunityFeaturesToggle", "0"),
+    ("CompletedTrainingVersion", "0"),
+    ("IsMetric", "0"),
+    ("RecordFront", "0"),
+    ("HasAcceptedTerms", "0"),
+    ("HasCompletedSetup", "0"),
+    ("IsUploadRawEnabled", "1"),
+    ("IsLdwEnabled", "1"),
+    ("IsGeofenceEnabled", "-1"),
+    ("SpeedLimitOffset", "0"),
+    ("LongitudinalControl", "0"),
+    ("LimitSetSpeed", "0"),
+    ("LimitSetSpeedNeural", "0"),
+    ("LastUpdateTime", datetime.datetime.now().isoformat().encode('utf8')),
+    ("OpenpilotEnabledToggle", "1"),
+    ("LaneChangeEnabled", "1"),
+  ]
+
   # set unset params
-  if params.get("CommunityFeaturesToggle") is None:
-    params.put("CommunityFeaturesToggle", "0")
-  if params.get("CompletedTrainingVersion") is None:
-    params.put("CompletedTrainingVersion", "0")
-  if params.get("IsMetric") is None:
-    params.put("IsMetric", "0")
-  if params.get("RecordFront") is None:
-    params.put("RecordFront", "0")
-  if params.get("HasAcceptedTerms") is None:
-    params.put("HasAcceptedTerms", "0")
-  if params.get("HasCompletedSetup") is None:
-    params.put("HasCompletedSetup", "0")
-  if params.get("IsUploadRawEnabled") is None:
-    params.put("IsUploadRawEnabled", "1")
-  if params.get("IsLdwEnabled") is None:
-    params.put("IsLdwEnabled", "1")
-  if params.get("IsGeofenceEnabled") is None:
-    params.put("IsGeofenceEnabled", "-1")
-  if params.get("SpeedLimitOffset") is None:
-    params.put("SpeedLimitOffset", "0")
-  if params.get("LongitudinalControl") is None:
-    params.put("LongitudinalControl", "0")
-  if params.get("LimitSetSpeed") is None:
-    params.put("LimitSetSpeed", "0")
-  if params.get("LimitSetSpeedNeural") is None:
-    params.put("LimitSetSpeedNeural", "0")
-  if params.get("LastUpdateTime") is None:
-    t = datetime.datetime.now().isoformat()
-    params.put("LastUpdateTime", t.encode('utf8'))
-  if params.get("OpenpilotEnabledToggle") is None:
-    params.put("OpenpilotEnabledToggle", "1")
-  if params.get("LaneChangeEnabled") is None:
-    params.put("LaneChangeEnabled", "1")
+  for k, v in default_params:
+    if params.get(k) is None:
+      params.put(k, v)
 
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:

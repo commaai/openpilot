@@ -2,18 +2,12 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
-from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.toyota.values import Ecu, ECU_FINGERPRINT, CAR, TSS2_CAR, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
 
-ButtonType = car.CarState.ButtonEvent.Type
-GearShifter = car.CarState.GearShifter
-
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController):
-    super().__init__(CP, CarController, CarState, get_can_parser, get_cam_can_parser=get_cam_can_parser)
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -21,16 +15,10 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-
-    ret = car.CarParams.new_message()
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.carName = "toyota"
-    ret.carFingerprint = candidate
-    ret.isPandaBlack = has_relay
-
     ret.safetyModel = car.CarParams.SafetyModel.toyota
-
-    ret.enableCruise = True
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
@@ -52,19 +40,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.outerLoopGain = 3.0
       ret.lateralTuning.indi.timeConstant = 1.0
       ret.lateralTuning.indi.actuatorEffectiveness = 1.0
-
-      # TODO: Determine if this is better than INDI
-      # ret.lateralTuning.init('lqr')
-      # ret.lateralTuning.lqr.scale = 1500.0
-      # ret.lateralTuning.lqr.ki = 0.01
-
-      # ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
-      # ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
-      # ret.lateralTuning.lqr.c = [1., 0.]
-      # ret.lateralTuning.lqr.k = [-110.73572306, 451.22718255]
-      # ret.lateralTuning.lqr.l = [0.03233671, 0.03185757]
-      # ret.lateralTuning.lqr.dcGain = 0.002237852961363602
-
       ret.steerActuatorDelay = 0.5
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
@@ -268,16 +243,6 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    # no rear steering, at least on the listed cars above
-    ret.steerRatioRear = 0.
-    ret.steerControlType = car.CarParams.SteerControlType.torque
-
-    # steer, gas, brake limitations VS speed
-    ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
-    ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [1.]
-
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
     # Detect smartDSU, which intercepts ACC_CMD from the DSU allowing openpilot to send it
     smartDsu = 0x2FF in fingerprint[0]
@@ -304,8 +269,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.deadzoneV = [0., .15]
     ret.longitudinalTuning.kpBP = [0., 5., 35.]
     ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.stoppingControl = False
-    ret.startAccel = 0.0
 
     if ret.enableGasInterceptor:
       ret.gasMaxBP = [0., 9., 35]
@@ -334,24 +297,10 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = []
 
     # events
-    events = []
+    events = self.create_common_events(ret)
 
     if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera:
       events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT]))
-    if not ret.gearShifter == GearShifter.drive and self.CP.openpilotLongitudinalControl:
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.esp_disabled and self.CP.openpilotLongitudinalControl:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not ret.cruiseState.available and self.CP.openpilotLongitudinalControl:
-      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if ret.gearShifter == GearShifter.reverse and self.CP.openpilotLongitudinalControl:
-      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if self.CS.steer_error:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
@@ -373,9 +322,6 @@ class CarInterface(CarInterfaceBase):
     if (ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-
-    if ret.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     ret.events = events
 

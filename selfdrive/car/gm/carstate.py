@@ -8,48 +8,6 @@ from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     CruiseButtons, is_eps_status_ok, \
                                     STEER_THRESHOLD, SUPERCRUISE_CARS
 
-def get_powertrain_can_parser(CP):
-  # this function generates lists for signal, messages and initial values
-  signals = [
-    # sig_name, sig_address, default
-    ("BrakePedalPosition", "EBCMBrakePedalPosition", 0),
-    ("FrontLeftDoor", "BCMDoorBeltStatus", 0),
-    ("FrontRightDoor", "BCMDoorBeltStatus", 0),
-    ("RearLeftDoor", "BCMDoorBeltStatus", 0),
-    ("RearRightDoor", "BCMDoorBeltStatus", 0),
-    ("LeftSeatBelt", "BCMDoorBeltStatus", 0),
-    ("RightSeatBelt", "BCMDoorBeltStatus", 0),
-    ("TurnSignals", "BCMTurnSignals", 0),
-    ("AcceleratorPedal", "AcceleratorPedal", 0),
-    ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
-    ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
-    ("FLWheelSpd", "EBCMWheelSpdFront", 0),
-    ("FRWheelSpd", "EBCMWheelSpdFront", 0),
-    ("RLWheelSpd", "EBCMWheelSpdRear", 0),
-    ("RRWheelSpd", "EBCMWheelSpdRear", 0),
-    ("PRNDL", "ECMPRDNL", 0),
-    ("LKADriverAppldTrq", "PSCMStatus", 0),
-    ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
-  ]
-
-  if CP.carFingerprint == CAR.VOLT:
-    signals += [
-      ("RegenPaddle", "EBCMRegenPaddle", 0),
-    ]
-  if CP.carFingerprint in SUPERCRUISE_CARS:
-    signals += [
-      ("ACCCmdActive", "ASCMActiveCruiseControlStatus", 0)
-    ]
-  else:
-    signals += [
-      ("TractionControlOn", "ESPStatus", 0),
-      ("EPBClosed", "EPBStatus", 0),
-      ("CruiseMainOn", "ECMEngineStatus", 0),
-      ("CruiseState", "AcceleratorPedal2", 0),
-    ]
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], CanBus.POWERTRAIN)
-
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -98,15 +56,13 @@ class CarState(CarStateBase):
     if self.car_fingerprint in SUPERCRUISE_CARS:
       self.park_brake = False
       ret.cruiseState.available = False
-      self.acc_active = pt_cp.vl["ASCMActiveCruiseControlStatus"]['ACCCmdActive']
-      self.esp_disabled = False
+      ret.espDisabled = False
       regen_pressed = False
-      self.pcm_acc_status = int(self.acc_active)
+      self.pcm_acc_status = int(pt_cp.vl["ASCMActiveCruiseControlStatus"]['ACCCmdActive'])
     else:
       self.park_brake = pt_cp.vl["EPBStatus"]['EPBClosed']
       ret.cruiseState.available = bool(pt_cp.vl["ECMEngineStatus"]['CruiseMainOn'])
-      self.acc_active = False
-      self.esp_disabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
+      ret.espDisabled = pt_cp.vl["ESPStatus"]['TractionControlOn'] != 1
       self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]['CruiseState']
       if self.car_fingerprint == CAR.VOLT:
         regen_pressed = bool(pt_cp.vl["EBCMRegenPaddle"]['RegenPaddle'])
@@ -120,6 +76,49 @@ class CarState(CarStateBase):
 
     # 0 - inactive, 1 - active, 2 - temporary limited, 3 - failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]['LKATorqueDeliveredStatus']
-    self.steer_not_allowed = not is_eps_status_ok(self.lkas_status, self.car_fingerprint)
+    self.steer_warning = not is_eps_status_ok(self.lkas_status, self.car_fingerprint)
 
     return ret
+
+  @staticmethod
+  def get_can_parser(CP):
+    # this function generates lists for signal, messages and initial values
+    signals = [
+      # sig_name, sig_address, default
+      ("BrakePedalPosition", "EBCMBrakePedalPosition", 0),
+      ("FrontLeftDoor", "BCMDoorBeltStatus", 0),
+      ("FrontRightDoor", "BCMDoorBeltStatus", 0),
+      ("RearLeftDoor", "BCMDoorBeltStatus", 0),
+      ("RearRightDoor", "BCMDoorBeltStatus", 0),
+      ("LeftSeatBelt", "BCMDoorBeltStatus", 0),
+      ("RightSeatBelt", "BCMDoorBeltStatus", 0),
+      ("TurnSignals", "BCMTurnSignals", 0),
+      ("AcceleratorPedal", "AcceleratorPedal", 0),
+      ("ACCButtons", "ASCMSteeringButton", CruiseButtons.UNPRESS),
+      ("SteeringWheelAngle", "PSCMSteeringAngle", 0),
+      ("FLWheelSpd", "EBCMWheelSpdFront", 0),
+      ("FRWheelSpd", "EBCMWheelSpdFront", 0),
+      ("RLWheelSpd", "EBCMWheelSpdRear", 0),
+      ("RRWheelSpd", "EBCMWheelSpdRear", 0),
+      ("PRNDL", "ECMPRDNL", 0),
+      ("LKADriverAppldTrq", "PSCMStatus", 0),
+      ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
+    ]
+
+    if CP.carFingerprint == CAR.VOLT:
+      signals += [
+        ("RegenPaddle", "EBCMRegenPaddle", 0),
+      ]
+    if CP.carFingerprint in SUPERCRUISE_CARS:
+      signals += [
+        ("ACCCmdActive", "ASCMActiveCruiseControlStatus", 0)
+      ]
+    else:
+      signals += [
+        ("TractionControlOn", "ESPStatus", 0),
+        ("EPBClosed", "EPBStatus", 0),
+        ("CruiseMainOn", "ECMEngineStatus", 0),
+        ("CruiseState", "AcceleratorPedal2", 0),
+      ]
+
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], CanBus.POWERTRAIN)

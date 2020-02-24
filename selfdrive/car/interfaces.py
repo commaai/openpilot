@@ -4,6 +4,7 @@ from cereal import car
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 GearShifter = car.CarState.GearShifter
@@ -11,7 +12,7 @@ GearShifter = car.CarState.GearShifter
 # generic car and radar interfaces
 
 class CarInterfaceBase():
-  def __init__(self, CP, CarController, CarState, get_can_parser, get_cam_can_parser=None):
+  def __init__(self, CP, CarController, CarState):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
@@ -19,11 +20,11 @@ class CarInterfaceBase():
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
+    self.low_speed_alert = False
 
     self.CS = CarState(CP)
-    self.cp = get_can_parser(CP)
-    if get_cam_can_parser is not None:
-      self.cp_cam = get_cam_can_parser(CP)
+    self.cp = self.CS.get_can_parser(CP)
+    self.cp_cam = self.CS.get_cam_can_parser(CP)
 
     self.CC = None
     if CarController is not None:
@@ -41,6 +42,37 @@ class CarInterfaceBase():
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
     raise NotImplementedError
 
+  # returns a set of default params to avoid repetition in car specific params
+  @staticmethod
+  def get_std_params(candidate, fingerprint, has_relay):
+    ret = car.CarParams.new_message()
+    ret.carFingerprint = candidate
+    ret.isPandaBlack = has_relay
+
+    # standard ALC params
+    ret.steerControlType = car.CarParams.SteerControlType.torque
+    ret.steerMaxBP = [0.]
+    ret.steerMaxV = [1.]
+
+    # stock ACC by default
+    ret.enableCruise = True
+    ret.minEnableSpeed = -1.  # enable is done by stock ACC, so ignore this
+    ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
+    ret.gasMaxBP = [0.]
+    ret.gasMaxV = [.5]  # half max brake
+    ret.brakeMaxBP = [0.]
+    ret.brakeMaxV = [1.]
+    ret.openpilotLongitudinalControl = False
+    ret.startAccel = 0.0
+    ret.stoppingControl = False
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [1.]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [1.]
+    return ret
+
   # returns a car.CarState, pass in car.CarControl
   def update(self, c, can_strings):
     raise NotImplementedError
@@ -48,6 +80,32 @@ class CarInterfaceBase():
   # return sendcan, pass in a car.CarControl
   def apply(self, c):
     raise NotImplementedError
+
+  def create_common_events(self, cs_out, extra_gears=[]):
+    events = []
+
+    if cs_out.doorOpen:
+      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.seatbeltUnlatched:
+      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.gearShifter != GearShifter.drive and cs_out.gearShifter not in extra_gears:
+      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.gearShifter == GearShifter.reverse:
+      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    if not cs_out.cruiseState.available:
+      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
+    if cs_out.espDisabled:
+      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if cs_out.gasPressed:
+      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+
+    # TODO: move this stuff to the capnp strut
+    if getattr(self.CS, "steer_error", False):
+      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
+    elif getattr(self.CS, "steer_warning", False):
+      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+
+    return events
 
 class RadarInterfaceBase():
   def __init__(self, CP):
@@ -88,3 +146,7 @@ class CarStateBase:
     return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
             'E': GearShifter.eco, 'T': GearShifter.manumatic, 'D': GearShifter.drive,
             'S': GearShifter.sport, 'L': GearShifter.low, 'B': GearShifter.brake}.get(gear, GearShifter.unknown)
+
+  @staticmethod
+  def get_cam_can_parser(CP):
+    return None

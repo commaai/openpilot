@@ -2,7 +2,6 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
-from selfdrive.car.volkswagen.carstate import CarState, get_mqb_pt_can_parser, get_mqb_cam_can_parser
 from common.params import Params
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -10,8 +9,8 @@ from selfdrive.car.interfaces import CarInterfaceBase
 GEAR = car.CarState.GearShifter
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController):
-    super().__init__(CP, CarController, CarState, get_mqb_pt_can_parser, get_mqb_cam_can_parser)
+  def __init__(self, CP, CarController, CarState):
+    super().__init__(CP, CarController, CarState)
 
     self.displayMetricUnitsPrev = None
     self.buttonStatesPrev = BUTTON_STATES.copy()
@@ -22,25 +21,18 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-    ret = car.CarParams.new_message()
-
-    ret.carFingerprint = candidate
-    ret.isPandaBlack = has_relay
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     if candidate == CAR.GOLF:
       # Set common MQB parameters that will apply globally
       ret.carName = "volkswagen"
+      ret.radarOffCan = True
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
-      ret.enableCruise = True # Stock ACC still controls acceleration and braking
-      ret.openpilotLongitudinalControl = False
-      ret.steerControlType = car.CarParams.SteerControlType.torque
 
       # Additional common MQB parameters that may be overridden per-vehicle
       ret.steerRateCost = 0.5
       ret.steerActuatorDelay = 0.05 # Hopefully all MQB racks are similar here
       ret.steerLimitTimer = 0.4
-      ret.steerMaxBP = [0.]  # m/s
-      ret.steerMaxV = [1.]
 
       # As a starting point for speed-adjusted lateral tuning, use the example
       # map speed breakpoints from a VW Tiguan (SSP 399 page 9). It's unclear
@@ -68,19 +60,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.enableCamera = True # Stock camera detection doesn't apply to VW
     ret.transmissionType = car.CarParams.TransmissionType.automatic
-    ret.steerRatioRear = 0.
-
-    # No support for OP longitudinal control on Volkswagen at this time.
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [0.]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.]
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -96,7 +75,6 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def update(self, c, can_strings):
     canMonoTimes = []
-    events = []
     buttonEvents = []
     params = Params()
 
@@ -124,17 +102,9 @@ class CarInterface(CarInterfaceBase):
         be.pressed = self.CS.buttonStates[button]
         buttonEvents.append(be)
 
+    events = self.create_common_events(ret, extra_gears=[GEAR.eco, GEAR.sport])
+
     # Vehicle operation safety checks and events
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.gearShifter == GEAR.reverse:
-      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if not ret.gearShifter in [GEAR.drive, GEAR.eco, GEAR.sport]:
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.stabilityControlDisabled:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.parkingBrakeSet:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
@@ -149,8 +119,6 @@ class CarInterface(CarInterfaceBase):
     if (ret.gasPressed and not self.gas_pressed_prev) or \
             (ret.brakePressed and (not self.brake_pressed_prev or not ret.standstill)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if ret.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # Engagement and longitudinal control using stock ACC. Make sure OP is
     # disengaged if stock ACC is disengaged.

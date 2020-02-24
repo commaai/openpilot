@@ -2,22 +2,11 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
-from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, get_hud_alerts, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-GearShifter = car.CarState.GearShifter
-ButtonType = car.CarState.ButtonEvent.Type
-
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController):
-    super().__init__(CP, CarController, CarState, get_can_parser, get_cam_can_parser=get_camera_parser)
-
-    self.idx = 0
-    self.lanes = 0
-    self.lkas_request = 0
-    self.low_speed_alert = False
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -25,15 +14,11 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-
-    ret = car.CarParams.new_message()
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.carName = "hyundai"
-    ret.carFingerprint = candidate
-    ret.isPandaBlack = has_relay
-    ret.radarOffCan = True
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
-    ret.enableCruise = True  # stock acc
+    ret.radarOffCan = True
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
@@ -94,14 +79,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
 
-    ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
-
     ret.centerToFront = ret.wheelbase * 0.4
 
     # TODO: get actual value, for now starting with reasonable value for
@@ -113,24 +90,7 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-
-    # no rear steering, at least on the listed cars above
-    ret.steerRatioRear = 0.
-    ret.steerControlType = car.CarParams.SteerControlType.torque
-
-    # steer, gas, brake limitations VS speed
-    ret.steerMaxBP = [0.]
-    ret.steerMaxV = [1.0]
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [1.]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [1.]
-
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
-    ret.openpilotLongitudinalControl = False
-
-    ret.stoppingControl = False
-    ret.startAccel = 0.0
 
     return ret
 
@@ -139,33 +99,12 @@ class CarInterface(CarInterfaceBase):
     self.cp_cam.update_strings(can_strings)
 
     ret = self.CS.update(self.cp, self.cp_cam)
-
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
     # TODO: button presses
     ret.buttonEvents = []
 
-    # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
-      self.low_speed_alert = True
-    if ret.vEgo > (self.CP.minSteerSpeed + 4.):
-      self.low_speed_alert = False
-
-    events = []
-    if not ret.gearShifter == GearShifter.drive:
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if self.CS.esp_disabled:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not ret.cruiseState.available:
-      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-    if ret.gearShifter == GearShifter.reverse:
-      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if self.CS.steer_error:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+    events = self.create_common_events(ret)
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
@@ -177,9 +116,11 @@ class CarInterface(CarInterfaceBase):
       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-
+    # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
+    if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
+      self.low_speed_alert = True
+    if ret.vEgo > (self.CP.minSteerSpeed + 4.):
+      self.low_speed_alert = False
     if self.low_speed_alert:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 

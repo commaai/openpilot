@@ -6,124 +6,6 @@ from selfdrive.config import Conversions as CV
 
 GearShifter = car.CarState.GearShifter
 
-def get_can_parser(CP):
-
-  signals = [
-    # sig_name, sig_address, default
-    ("WHL_SPD_FL", "WHL_SPD11", 0),
-    ("WHL_SPD_FR", "WHL_SPD11", 0),
-    ("WHL_SPD_RL", "WHL_SPD11", 0),
-    ("WHL_SPD_RR", "WHL_SPD11", 0),
-
-    ("YAW_RATE", "ESP12", 0),
-
-    ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
-
-    ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
-    ("CF_Gway_TSigLHSw", "CGW1", 0),
-    ("CF_Gway_TurnSigLh", "CGW1", 0),
-    ("CF_Gway_TSigRHSw", "CGW1", 0),
-    ("CF_Gway_TurnSigRh", "CGW1", 0),
-    ("CF_Gway_ParkBrakeSw", "CGW1", 0),
-
-    ("BRAKE_ACT", "EMS12", 0),
-    ("PV_AV_CAN", "EMS12", 0),
-    ("TPS", "EMS12", 0),
-
-    ("CYL_PRES", "ESP12", 0),
-
-    ("CF_Clu_CruiseSwState", "CLU11", 0),
-    ("CF_Clu_CruiseSwMain", "CLU11", 0),
-    ("CF_Clu_SldMainSW", "CLU11", 0),
-    ("CF_Clu_ParityBit1", "CLU11", 0),
-    ("CF_Clu_VanzDecimal" , "CLU11", 0),
-    ("CF_Clu_Vanz", "CLU11", 0),
-    ("CF_Clu_SPEED_UNIT", "CLU11", 0),
-    ("CF_Clu_DetentOut", "CLU11", 0),
-    ("CF_Clu_RheostatLevel", "CLU11", 0),
-    ("CF_Clu_CluInfo", "CLU11", 0),
-    ("CF_Clu_AmpInfo", "CLU11", 0),
-    ("CF_Clu_AliveCnt1", "CLU11", 0),
-
-    ("CF_Clu_InhibitD", "CLU15", 0),
-    ("CF_Clu_InhibitP", "CLU15", 0),
-    ("CF_Clu_InhibitN", "CLU15", 0),
-    ("CF_Clu_InhibitR", "CLU15", 0),
-
-    ("CF_Lvr_Gear", "LVR12",0),
-    ("CUR_GR", "TCU12",0),
-
-    ("ACCEnable", "TCS13", 0),
-    ("ACC_REQ", "TCS13", 0),
-    ("DriverBraking", "TCS13", 0),
-    ("DriverOverride", "TCS13", 0),
-
-    ("ESC_Off_Step", "TCS15", 0),
-
-    ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
-
-    ("CR_Mdps_DrvTq", "MDPS11", 0),
-
-    ("CR_Mdps_StrColTq", "MDPS12", 0),
-    ("CF_Mdps_ToiActive", "MDPS12", 0),
-    ("CF_Mdps_ToiUnavail", "MDPS12", 0),
-    ("CF_Mdps_FailStat", "MDPS12", 0),
-    ("CR_Mdps_OutTq", "MDPS12", 0),
-
-    ("VSetDis", "SCC11", 0),
-    ("SCCInfoDisplay", "SCC11", 0),
-    ("ACCMode", "SCC12", 1),
-
-    ("SAS_Angle", "SAS11", 0),
-    ("SAS_Speed", "SAS11", 0),
-  ]
-
-  checks = [
-    # address, frequency
-    ("MDPS12", 50),
-    ("MDPS11", 100),
-    ("TCS15", 10),
-    ("TCS13", 50),
-    ("CLU11", 50),
-    ("ESP12", 100),
-    ("EMS12", 100),
-    ("CGW1", 10),
-    ("CGW4", 5),
-    ("WHL_SPD11", 50),
-    ("SCC11", 50),
-    ("SCC12", 50),
-    ("SAS11", 100)
-  ]
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
-
-
-def get_camera_parser(CP):
-
-  signals = [
-    # sig_name, sig_address, default
-    ("CF_Lkas_LdwsSysState", "LKAS11", 0),
-    ("CF_Lkas_SysWarning", "LKAS11", 0),
-    ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
-    ("CF_Lkas_LdwsRHWarning", "LKAS11", 0),
-    ("CF_Lkas_HbaLamp", "LKAS11", 0),
-    ("CF_Lkas_FcwBasReq", "LKAS11", 0),
-    ("CF_Lkas_ToiFlt", "LKAS11", 0),
-    ("CF_Lkas_HbaSysState", "LKAS11", 0),
-    ("CF_Lkas_FcwOpt", "LKAS11", 0),
-    ("CF_Lkas_HbaOpt", "LKAS11", 0),
-    ("CF_Lkas_FcwSysState", "LKAS11", 0),
-    ("CF_Lkas_FcwCollisionWarning", "LKAS11", 0),
-    ("CF_Lkas_FusionState", "LKAS11", 0),
-    ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
-    ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
-  ]
-
-  checks = []
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
-
-
 class CarState(CarStateBase):
 
   def update(self, cp, cp_cam):
@@ -164,12 +46,9 @@ class CarState(CarStateBase):
     ret.brake = 0  # FIXME
     ret.brakePressed = cp.vl["TCS13"]['DriverBraking'] != 0
     ret.brakeLights = ret.brakePressed
-    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
-      pedal_gas = 0
-    else:
-      pedal_gas = cp.vl["EMS12"]['TPS']
-    ret.gasPressed = pedal_gas > 1e-3
-    ret.gas = cp.vl["EMS12"]['TPS']
+    ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100
+    ret.gasPressed = cp.vl["EMS16"]["CF_Ems_AclAct"] != 0
+    ret.espDisabled = cp.vl["TCS15"]['ESC_Off_Step'] != 0
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
@@ -218,10 +97,126 @@ class CarState(CarStateBase):
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
-    self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
-    self.steer_error = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
+    self.steer_warning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
     self.brake_error = 0
 
     return ret
+
+  @staticmethod
+  def get_can_parser(CP):
+
+    signals = [
+      # sig_name, sig_address, default
+      ("WHL_SPD_FL", "WHL_SPD11", 0),
+      ("WHL_SPD_FR", "WHL_SPD11", 0),
+      ("WHL_SPD_RL", "WHL_SPD11", 0),
+      ("WHL_SPD_RR", "WHL_SPD11", 0),
+
+      ("YAW_RATE", "ESP12", 0),
+
+      ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
+
+      ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
+      ("CF_Gway_TSigLHSw", "CGW1", 0),
+      ("CF_Gway_TurnSigLh", "CGW1", 0),
+      ("CF_Gway_TSigRHSw", "CGW1", 0),
+      ("CF_Gway_TurnSigRh", "CGW1", 0),
+      ("CF_Gway_ParkBrakeSw", "CGW1", 0),
+
+      ("BRAKE_ACT", "EMS12", 0),
+      ("PV_AV_CAN", "EMS12", 0),
+      ("CF_Ems_AclAct", "EMS16", 0),
+
+      ("CYL_PRES", "ESP12", 0),
+
+      ("CF_Clu_CruiseSwState", "CLU11", 0),
+      ("CF_Clu_CruiseSwMain", "CLU11", 0),
+      ("CF_Clu_SldMainSW", "CLU11", 0),
+      ("CF_Clu_ParityBit1", "CLU11", 0),
+      ("CF_Clu_VanzDecimal" , "CLU11", 0),
+      ("CF_Clu_Vanz", "CLU11", 0),
+      ("CF_Clu_SPEED_UNIT", "CLU11", 0),
+      ("CF_Clu_DetentOut", "CLU11", 0),
+      ("CF_Clu_RheostatLevel", "CLU11", 0),
+      ("CF_Clu_CluInfo", "CLU11", 0),
+      ("CF_Clu_AmpInfo", "CLU11", 0),
+      ("CF_Clu_AliveCnt1", "CLU11", 0),
+
+      ("CF_Clu_InhibitD", "CLU15", 0),
+      ("CF_Clu_InhibitP", "CLU15", 0),
+      ("CF_Clu_InhibitN", "CLU15", 0),
+      ("CF_Clu_InhibitR", "CLU15", 0),
+
+      ("CF_Lvr_Gear", "LVR12",0),
+      ("CUR_GR", "TCU12",0),
+
+      ("ACCEnable", "TCS13", 0),
+      ("DriverBraking", "TCS13", 0),
+
+      ("ESC_Off_Step", "TCS15", 0),
+
+      ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
+
+      ("CR_Mdps_DrvTq", "MDPS11", 0),
+
+      ("CR_Mdps_StrColTq", "MDPS12", 0),
+      ("CF_Mdps_ToiActive", "MDPS12", 0),
+      ("CF_Mdps_ToiUnavail", "MDPS12", 0),
+      ("CF_Mdps_FailStat", "MDPS12", 0),
+      ("CR_Mdps_OutTq", "MDPS12", 0),
+
+      ("VSetDis", "SCC11", 0),
+      ("SCCInfoDisplay", "SCC11", 0),
+      ("ACCMode", "SCC12", 1),
+
+      ("SAS_Angle", "SAS11", 0),
+      ("SAS_Speed", "SAS11", 0),
+    ]
+
+    checks = [
+      # address, frequency
+      ("MDPS12", 50),
+      ("MDPS11", 100),
+      ("TCS15", 10),
+      ("TCS13", 50),
+      ("CLU11", 50),
+      ("ESP12", 100),
+      ("EMS12", 100),
+      ("EMS16", 100),
+      ("CGW1", 10),
+      ("CGW4", 5),
+      ("WHL_SPD11", 50),
+      ("SCC11", 50),
+      ("SCC12", 50),
+      ("SAS11", 100)
+    ]
+
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+
+  @staticmethod
+  def get_cam_can_parser(CP):
+
+    signals = [
+      # sig_name, sig_address, default
+      ("CF_Lkas_LdwsSysState", "LKAS11", 0),
+      ("CF_Lkas_SysWarning", "LKAS11", 0),
+      ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
+      ("CF_Lkas_LdwsRHWarning", "LKAS11", 0),
+      ("CF_Lkas_HbaLamp", "LKAS11", 0),
+      ("CF_Lkas_FcwBasReq", "LKAS11", 0),
+      ("CF_Lkas_ToiFlt", "LKAS11", 0),
+      ("CF_Lkas_HbaSysState", "LKAS11", 0),
+      ("CF_Lkas_FcwOpt", "LKAS11", 0),
+      ("CF_Lkas_HbaOpt", "LKAS11", 0),
+      ("CF_Lkas_FcwSysState", "LKAS11", 0),
+      ("CF_Lkas_FcwCollisionWarning", "LKAS11", 0),
+      ("CF_Lkas_FusionState", "LKAS11", 0),
+      ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
+      ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
+    ]
+
+    checks = []
+
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)

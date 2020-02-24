@@ -2,19 +2,14 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
-from selfdrive.car.gm.values import CAR, Ecu, ECU_FINGERPRINT, \
+from selfdrive.car.gm.values import CAR, Ecu, ECU_FINGERPRINT, CruiseButtons, \
                                     SUPERCRUISE_CARS, AccState, FINGERPRINTS
-from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController):
-    super().__init__(CP, CarController, CarState, get_powertrain_can_parser)
-
-    self.acc_active_prev = 0
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -22,13 +17,11 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-    ret = car.CarParams.new_message()
-
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "gm"
-    ret.carFingerprint = candidate
-    ret.isPandaBlack = has_relay
+    ret.safetyModel = car.CarParams.SafetyModel.gm  # default to gm
+    ret.enableCruise = False  # stock cruise control is kept off
 
-    ret.enableCruise = False
     # GM port is considered a community feature, since it disables AEB;
     # TODO: make a port that uses a car harness and it only intercepts the camera
     ret.communityFeature = True
@@ -48,9 +41,6 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
-
-    # default to gm
-    ret.safetyModel = car.CarParams.SafetyModel.gm
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -113,7 +103,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0. # TODO: there is RAS on this car!
       ret.centerToFront = ret.wheelbase * 0.465
 
-
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
@@ -123,26 +112,16 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    ret.steerMaxBP = [0.]  # m/s
-    ret.steerMaxV = [1.]
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [.5]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [1.]
-
     ret.longitudinalTuning.kpBP = [5., 35.]
     ret.longitudinalTuning.kpV = [2.4, 1.5]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
 
     ret.stoppingControl = True
     ret.startAccel = 0.8
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
-    ret.steerControlType = car.CarParams.SteerControlType.torque
 
     return ret
 
@@ -180,29 +159,16 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = buttonEvents
 
-    events = []
-    if self.CS.steer_not_allowed:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if ret.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    events = self.create_common_events(ret)
 
     if self.CS.car_fingerprint in SUPERCRUISE_CARS:
-      if self.CS.acc_active and not self.acc_active_prev:
+      if ret.cruiseState.enabled and not self.cruise_enabled_prev:
         events.append(create_event('pcmEnable', [ET.ENABLE]))
-      if not self.CS.acc_active:
+      if not ret.cruiseState.enabled:
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     else:
-      if ret.gearShifter != car.CarState.GearShifter.drive:
-        events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if self.CS.esp_disabled:
-        events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-      if not ret.cruiseState.available:
-        events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if ret.gearShifter == car.CarState.GearShifter.reverse:
-        events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      # TODO: why is this only not supercruise? ignore supercruise?
       if ret.vEgo < self.CP.minEnableSpeed:
         events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if self.CS.park_brake:
@@ -211,8 +177,6 @@ class CarInterface(CarInterfaceBase):
       if (ret.gasPressed and not self.gas_pressed_prev) or \
         (ret.brakePressed): # and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
         events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-      if ret.gasPressed:
-        events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
       if ret.cruiseState.standstill:
         events.append(create_event('resumeRequired', [ET.WARNING]))
       if self.CS.pcm_acc_status == AccState.FAULTED:
@@ -230,7 +194,7 @@ class CarInterface(CarInterfaceBase):
     ret.events = events
 
     # update previous brake/gas pressed
-    self.acc_active_prev = self.CS.acc_active
+    self.cruise_enabled_prev = ret.cruiseState.enabled
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
 
