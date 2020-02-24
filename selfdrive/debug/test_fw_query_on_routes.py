@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import traceback
-import sys
 from tqdm import tqdm
 from tools.lib.logreader import LogReader
 from selfdrive.car.fw_versions import match_fw_to_car
@@ -13,14 +13,15 @@ from selfdrive.car.honda.values import FINGERPRINTS as HONDA_FINGERPRINTS
 
 
 if __name__ == "__main__":
-  if len(sys.argv) < 2:
-    print("Usage: ./test_fw_query_on_routes.py <route_list>/<route>")
-    sys.exit(1)
+  parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
+  parser.add_argument('route', help='Route or file with list of routes')
+  parser.add_argument('--car', help='Force comparison fingerprint to known car')
+  args = parser.parse_args()
 
-  if os.path.exists(sys.argv[1]):
-    routes = list(open(sys.argv[1]))
+  if os.path.exists(args.route):
+    routes = list(open(args.route))
   else:
-    routes = [sys.argv[1]]
+    routes = [args.route]
 
   wrong = 0
   good = 0
@@ -50,6 +51,9 @@ if __name__ == "__main__":
 
           dongles.append(dongle_id)
           live_fingerprint = msg.carParams.carFingerprint
+
+          if args.car is not None:
+            live_fingerprint = args.car
 
           if live_fingerprint not in list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()):
             continue
