@@ -80,6 +80,7 @@ def fingerprint(logcan, sendcan, has_relay):
       vin = cached_params.carVin
       car_fw = list(cached_params.carFw)
     else:
+      cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
       car_fw = get_fw_versions(logcan, sendcan, bus)
 
