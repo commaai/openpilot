@@ -4,11 +4,11 @@ from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, CAR, AccState, \
+from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
                                     CruiseButtons, is_eps_status_ok, \
                                     STEER_THRESHOLD, SUPERCRUISE_CARS
 
-def get_powertrain_can_parser(CP, canbus):
+def get_powertrain_can_parser(CP):
   # this function generates lists for signal, messages and initial values
   signals = [
     # sig_name, sig_address, default
@@ -48,7 +48,7 @@ def get_powertrain_can_parser(CP, canbus):
       ("CruiseState", "AcceleratorPedal2", 0),
     ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], canbus.powertrain)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], CanBus.POWERTRAIN)
 
 
 class CarState(CarStateBase):

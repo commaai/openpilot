@@ -76,14 +76,12 @@ def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_
 
 
 class CarController():
-  def __init__(self, dbc_name, car_fingerprint, enable_camera, enable_dsu, enable_apg):
+  def __init__(self, dbc_name, CP, VM):
     self.braking = False
-    # redundant safety check with the board
-    self.controls_allowed = True
     self.last_steer = 0
     self.last_angle = 0
     self.accel_steady = 0.
-    self.car_fingerprint = car_fingerprint
+    self.car_fingerprint = CP.carFingerprint
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -95,9 +93,9 @@ class CarController():
     self.steer_rate_limited = False
 
     self.fake_ecus = set()
-    if enable_camera: self.fake_ecus.add(Ecu.fwdCamera)
-    if enable_dsu: self.fake_ecus.add(Ecu.dsu)
-    if enable_apg: self.fake_ecus.add(Ecu.apgs)
+    if CP.enableCamera: self.fake_ecus.add(Ecu.fwdCamera)
+    if CP.enableDsu: self.fake_ecus.add(Ecu.dsu)
+    if CP.enableApgs: self.fake_ecus.add(Ecu.apgs)
 
     self.packer = CANPacker(dbc_name)
 

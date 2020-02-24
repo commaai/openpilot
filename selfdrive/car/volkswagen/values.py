@@ -18,6 +18,10 @@ class CarControllerParams:
   STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1        # from dbc
 
+class CANBUS:
+  pt = 0
+  cam = 2
+
 BUTTON_STATES = {
   "accelCruise": False,
   "decelCruise": False,

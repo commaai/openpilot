@@ -2,7 +2,6 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
-from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, get_hud_alerts, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
@@ -13,25 +12,12 @@ ButtonType = car.CarState.ButtonEvent.Type
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
-    self.CP = CP
-    self.VM = VehicleModel(CP)
+    super().__init__(CP, CarController, CarState, get_can_parser, get_cam_can_parser=get_camera_parser)
+
     self.idx = 0
     self.lanes = 0
     self.lkas_request = 0
-
-    self.gas_pressed_prev = False
-    self.brake_pressed_prev = False
-    self.cruise_enabled_prev = False
     self.low_speed_alert = False
-
-    # *** init the major players ***
-    self.CS = CarState(CP)
-    self.cp = get_can_parser(CP)
-    self.cp_cam = get_camera_parser(CP)
-
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(self.cp.dbc_name, CP.carFingerprint)
 
   @staticmethod
   def compute_gb(accel, speed):
