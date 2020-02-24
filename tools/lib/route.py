@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
 
-from tools.lib.auth import get_token
+from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 
 SEGMENT_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}--[0-9]+'
@@ -39,6 +39,7 @@ class Route(object):
   def _get_segments_remote(self):
     api = CommaApi(get_token())
     route_files = api.get('v1/route/' + self.route_name + '/files')
+
     segments = {}
     for url in chain.from_iterable(route_files.values()):
       _, _, dongle_id, time_str, segment_num, fn = urlparse(url).path.split('/')

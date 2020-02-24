@@ -1,6 +1,7 @@
+import sys
 import os
 import requests
-
+from tools.lib.auth_config import clear_token
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
 class CommaApi():
@@ -14,7 +15,11 @@ class CommaApi():
     resp = self.session.request(method, API_HOST + '/' + endpoint, **kwargs)
     resp_json = resp.json()
     if isinstance(resp_json, dict) and resp_json.get('error'):
-      e = APIError(resp_json['error'])
+      if resp.status_code == 401:
+        clear_token()
+        raise UnauthorizedError('Unauthorized. Authenticate with tools/lib/auth.py')
+
+      e = APIError(str(resp.status_code) + ":" + resp_json.get('description', str(resp_json['error'])))
       e.status_code = resp.status_code
       raise e
     return resp_json
@@ -26,4 +31,7 @@ class CommaApi():
     return self.request('POST', endpoint, **kwargs)
 
 class APIError(Exception):
+  pass
+
+class UnauthorizedError(Exception):
   pass

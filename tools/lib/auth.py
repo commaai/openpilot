@@ -2,29 +2,13 @@
 
 import json
 import os
+import sys
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlencode, parse_qs
 from common.file_helpers import mkdirs_exists_ok
 from tools.lib.api import CommaApi, APIError
-
-CONFIG_DIR = os.path.expanduser('~/.comma')
-mkdirs_exists_ok(CONFIG_DIR)
-
-def get_token():
-  try:
-    with open(os.path.join(CONFIG_DIR, 'auth.json')) as f:
-      auth = json.load(f)
-      return auth['access_token']
-  except:
-    raise MissingAuthConfigError('Login with tools/lib/auth.py')
-
-def set_token(token):
-  with open(os.path.join(CONFIG_DIR, 'auth.json'), 'w') as f:
-    json.dump({'access_token': token}, f)
-
-class MissingAuthConfigError(Exception):
-  pass
+from tools.lib.auth_config import set_token
 
 class ClientRedirectServer(HTTPServer):
   query_params = {}
@@ -60,7 +44,7 @@ def auth_redirect_link(port):
 
   return (redirect_uri, 'https://accounts.google.com/o/oauth2/auth?' + urlencode(params))
 
-if __name__ == '__main__':
+def login():
   port = 9090
   redirect_uri, oauth_uri = auth_redirect_link(port)
 
@@ -75,7 +59,7 @@ if __name__ == '__main__':
     elif 'error' in web_server.query_params:
       print('Authentication Error: "%s". Description: "%s" ' % (
         web_server.query_params['error'],
-        web_server.query_params.get('error_description')))
+        web_server.query_params.get('error_description')), file=sys.stderr)
       break
 
   try:
@@ -83,4 +67,7 @@ if __name__ == '__main__':
     set_token(auth_resp['access_token'])
     print('Authenticated')
   except APIError as e:
-    print(f'Login error: {e}')
+    print(f'Authentication Error: {e}', file=sys.stderr)
+
+if __name__ == '__main__':
+  login()
