@@ -10,19 +10,10 @@ def calc_checksum(data):
 
   jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf
   """
-  end_index = len(data)
-  index = 0
   checksum = 0xFF
-  temp_chk = 0
-  bit_sum = 0
-  if(end_index <= index):
-    return False
-  for index in range(0, end_index):
+  for curr in data:
     shift = 0x80
-    curr = data[index]
-    iterate = 8
-    while(iterate > 0):
-      iterate -= 1
+    for i in range(0, 8):
       bit_sum = curr & shift
       temp_chk = checksum & 0x80
       if (bit_sum != 0):
