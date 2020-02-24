@@ -6,9 +6,12 @@ GearShifter = car.CarState.GearShifter
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def calc_checksum(data):
-  # jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf
+  """This function does not want the checksum byte in the input data.
+
+  jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf
+  """
   checksum = 0xFF
-  for curr in data[:-1]:  # remove last byte
+  for curr in data:
     shift = 0x80
     for i in range(0, 8):
       bit_sum = curr & shift
@@ -72,6 +75,7 @@ def create_lkas_command(packer, apply_steer, moving_fast, frame):
   }
 
   dat = packer.make_can_msg("LKAS_COMMAND", 0, values)[2]
+  dat = dat[:-1]
   checksum = calc_checksum(dat)
 
   values["CHECKSUM"] = checksum
