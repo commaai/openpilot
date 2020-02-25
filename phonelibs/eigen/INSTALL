@@ -1,0 +1,35 @@
+Installation instructions for Eigen
+***********************************
+
+Explanation before starting
+***************************
+
+Eigen consists only of header files, hence there is nothing to compile
+before you can use it. Moreover, these header files do not depend on your
+platform, they are the same for everybody.
+
+Method 1. Installing without using CMake
+****************************************
+
+You can use right away the headers in the Eigen/ subdirectory. In order
+to install, just copy this Eigen/ subdirectory to your favorite location.
+If you also want the unsupported features, copy the unsupported/
+subdirectory too.
+
+Method 2. Installing using CMake
+********************************
+
+Let's call this directory 'source_dir' (where this INSTALL file is).
+Before starting, create another directory which we will call 'build_dir'.
+
+Do:
+
+  cd build_dir
+  cmake source_dir
+  make install
+
+The "make install" step may require administrator privileges.
+
+You can adjust the installation destination (the "prefix")
+by passing the -DCMAKE_INSTALL_PREFIX=myprefix option to cmake, as is
+explained in the message that cmake prints at the end.
