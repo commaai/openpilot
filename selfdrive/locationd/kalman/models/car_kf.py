@@ -4,6 +4,8 @@ import math
 import numpy as np
 import sympy as sp
 
+from common.numpy_fast import clip
+
 from selfdrive.locationd.kalman.helpers import ObservationKind
 from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.kalman.models.loc_kf import parse_pr, parse_prr
@@ -118,7 +120,7 @@ class CarKalman():
     B[1, 0] = (cF * aF) / j / sR
 
     x = sp.Matrix([v, r])  # lateral velocity, yaw rate
-    x_dot = A * x + B * (sa + angle_offset + angle_offset_fast)
+    x_dot = A * x + B * (sa - angle_offset - angle_offset_fast)
 
     dt = sp.Symbol('dt')
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
@@ -149,7 +151,6 @@ class CarKalman():
 
   def __init__(self):
     self.dim_state = self.x_initial.shape[0]
-
 
     # init filter
     self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds)
@@ -188,7 +189,10 @@ class CarKalman():
   def predict_and_observe(self, t, kind, data):
     if len(data) > 0:
       data = np.atleast_2d(data)
-    return self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
+    self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
+
+    self.filter.x[States.STEER_RATIO, 0] = clip(self.filter.x[States.STEER_RATIO, 0], 10, 20)
+    self.filter.x[States.STIFFNESS, 0] = clip(self.filter.x[States.STIFFNESS, 0], 0.5, 2)
 
 
 if __name__ == "__main__":
