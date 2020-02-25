@@ -25,10 +25,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tools.lib.cache import cache_path_for_file_path
 from tools.lib.exceptions import DataUnreadableError
-try:
-  from xx.chffr.lib.filereader import FileReader
-except ImportError:
-  from tools.lib.filereader import FileReader
+from tools.lib.filereader import FileReader
 from tools.lib.file_helpers import atomic_write_in_dir
 from tools.lib.mkvparse import mkvindex
 from tools.lib.route import Route

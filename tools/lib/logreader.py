@@ -11,10 +11,7 @@ import capnp
 import numpy as np
 
 from tools.lib.exceptions import DataUnreadableError
-try:
-  from xx.chffr.lib.filereader import FileReader
-except ImportError:
-  from tools.lib.filereader import FileReader
+from tools.lib.filereader import FileReader
 from cereal import log as capnp_log
 
 OP_PATH = os.path.dirname(os.path.dirname(capnp_log.__file__))
