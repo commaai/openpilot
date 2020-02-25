@@ -49,6 +49,7 @@ def login():
   redirect_uri, oauth_uri = auth_redirect_link(port)
 
   web_server = ClientRedirectServer(('localhost', port), ClientRedirectHandler)
+  print(f'To sign in, use your browser and navigate to {oauth_uri}')
   webbrowser.open(oauth_uri, new=2)
 
   while True:
