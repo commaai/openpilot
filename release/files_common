@@ -1,29 +1,15 @@
 README.md
-
-launch_openpilot.sh
 SAFETY.md
-
-.travis.yml
-.pylintrc
-run_docker_tests.sh
-Dockerfile.openpilot
-phonelibs/install_capnp.sh
-check_code_quality.sh
-
-Pipfile
-Pipfile.lock
 
 .gitignore
 LICENSE
-Makefile
 launch_chffrplus.sh
+launch_openpilot.sh
 
 CONTRIBUTING.md
 RELEASES.md
 
 SConstruct
-
-.github/**
 
 apk/ai.comma*.apk
 
@@ -42,7 +28,6 @@ common/profiler.py
 common/testing.py
 common/basedir.py
 common/filter_simple.py
-common/sympy_helpers.py
 common/stat_live.py
 common/spinner.py
 common/cython_hacks.py
@@ -63,7 +48,7 @@ common/transformations/orientation.py
 common/api/__init__.py
 
 models/supercombo.dlc
-models/monitoring_model_q.dlc
+models/dmonitoring_model_q.dlc
 
 selfdrive/version.py
 
@@ -208,6 +193,7 @@ selfdrive/controls/tests/*
 selfdrive/controls/controlsd.py
 selfdrive/controls/plannerd.py
 selfdrive/controls/radard.py
+selfdrive/controls/dmonitoringd.py
 selfdrive/controls/lib/__init__.py
 selfdrive/controls/lib/alertmanager.py
 selfdrive/controls/lib/alerts.py
@@ -256,6 +242,15 @@ selfdrive/locationd/ubloxd_test.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
 selfdrive/locationd/test/*.py
+
+selfdrive/locationd/locationd.py
+selfdrive/locationd/kalman/.gitignore
+selfdrive/locationd/kalman/__init__.py
+selfdrive/locationd/kalman/README.md
+selfdrive/locationd/kalman/SConscript
+selfdrive/locationd/kalman/templates/*
+selfdrive/locationd/kalman/helpers/*
+selfdrive/locationd/kalman/models/live_kf.py
 
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py
@@ -312,7 +307,6 @@ selfdrive/test/process_replay/update_refs.py
 selfdrive/test/process_replay/ref_commit
 selfdrive/test/process_replay/README.md
 
-selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.c
 selfdrive/ui/*.cc
@@ -343,17 +337,17 @@ selfdrive/camerad/transforms/rgb_to_yuv_test.cc
 
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
-selfdrive/modeld/monitoringd.cc
+selfdrive/modeld/dmonitoringmodeld.cc
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
-selfdrive/modeld/monitoringd
+selfdrive/modeld/dmonitoringmodeld
 
 selfdrive/modeld/models/commonmodel.c
 selfdrive/modeld/models/commonmodel.h
 selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
-selfdrive/modeld/models/monitoring.cc
-selfdrive/modeld/models/monitoring.h
+selfdrive/modeld/models/dmonitoring.cc
+selfdrive/modeld/models/dmonitoring.h
 
 selfdrive/modeld/transforms/loadyuv.[c,h]
 selfdrive/modeld/transforms/loadyuv.cl
@@ -372,15 +366,8 @@ phonelibs/SConscript
 
 phonelibs/eigen/**
 
-phonelibs/yaml-cpp/include/**
-phonelibs/yaml-cpp/lib/**
-phonelibs/yaml-cpp/x64/**
-phonelibs/yaml-cpp/LICENSE
-
 phonelibs/nanovg/*.c
 phonelibs/nanovg/*.h
-
-phonelibs/zmq/x64/**
 
 phonelibs/libgralloc/**
 phonelibs/linux/**
@@ -399,9 +386,14 @@ phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
 
 phonelibs/qpoases/**
-phonelibs/libyuv/**
-phonelibs/snpe/**
-phonelibs/fastcv/**
+
+phonelibs/libyuv/include/**
+phonelibs/libyuv/lib/**
+
+phonelibs/snpe/include/**
+phonelibs/snpe/aarch64-android-clang3.8/**
+
+phonelibs/fastcv/aarch64/**
 
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**

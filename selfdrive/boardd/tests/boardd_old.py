@@ -232,7 +232,7 @@ def boardd_proxy_loop(rate=100, address="192.168.2.251"):
 
     rk.keep_time()
 
-def main(gctx=None):
+def main():
   if os.getenv("MOCK") is not None:
     boardd_mock_loop()
   elif os.getenv("PROXY") is not None:

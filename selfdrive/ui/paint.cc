@@ -108,9 +108,23 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgRestore(s->vg);
 }
 
-static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
-  const UIScene *scene = &s->scene;
+static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
+    // Draw lead car indicator
+    float fillAlpha = 0;
+    float speedBuff = 10.;
+    float leadBuff = 40.;
+    if (d_rel < leadBuff) {
+      fillAlpha = 255*(1.0-(d_rel/leadBuff));
+      if (v_rel < 0) {
+        fillAlpha += 255*(-1*(v_rel/speedBuff));
+      }
+      fillAlpha = (int)(fmin(fillAlpha, 255));
+    }
+    draw_chevron(s, d_rel, y_rel, 25,
+                 nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
+}
 
+static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
   nvgSave(s->vg);
   nvgTranslate(s->vg, 240.0f, 0.0); // rgb-box space
   nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2); // zoom 2x
@@ -204,7 +218,7 @@ static void update_all_track_data(UIState *s) {
 
 
 static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
-const UIScene *scene = &s->scene;
+  const UIScene *scene = &s->scene;
   const PathData path = scene->model.path;
   const float *mpc_x_coords = &scene->mpc_x[0];
   const float *mpc_y_coords = &scene->mpc_y[0];
@@ -390,19 +404,10 @@ static void ui_draw_world(UIState *s) {
   ui_draw_vision_lanes(s);
 
   if (scene->lead_status) {
-    // Draw lead car indicator
-    float fillAlpha = 0;
-    float speedBuff = 10.;
-    float leadBuff = 40.;
-    if (scene->lead_d_rel < leadBuff) {
-      fillAlpha = 255*(1.0-(scene->lead_d_rel/leadBuff));
-      if (scene->lead_v_rel < 0) {
-        fillAlpha += 255*(-1*(scene->lead_v_rel/speedBuff));
-      }
-      fillAlpha = (int)(fmin(fillAlpha, 255));
-    }
-    draw_chevron(s, scene->lead_d_rel+2.7, scene->lead_y_rel, 25,
-                  nvgRGBA(201, 34, 49, fillAlpha), nvgRGBA(218, 202, 37, 255));
+    draw_lead(s, scene->lead_d_rel, scene->lead_v_rel, scene->lead_y_rel);
+  }
+  if ((scene->lead_status2) && (fabs(scene->lead_d_rel - scene->lead_d_rel2) > 3.0)) {
+    draw_lead(s, scene->lead_d_rel2, scene->lead_v_rel2, scene->lead_y_rel2);
   }
 }
 
@@ -890,6 +895,28 @@ void ui_draw(UIState *s) {
   }
 }
 
+#ifdef NANOVG_GL3_IMPLEMENTATION
+static const char frame_vertex_shader[] =
+  "#version 150 core\n"
+  "in vec4 aPosition;\n"
+  "in vec4 aTexCoord;\n"
+  "uniform mat4 uTransform;\n"
+  "out vec4 vTexCoord;\n"
+  "void main() {\n"
+  "  gl_Position = uTransform * aPosition;\n"
+  "  vTexCoord = aTexCoord;\n"
+  "}\n";
+
+static const char frame_fragment_shader[] =
+  "#version 150 core\n"
+  "precision mediump float;\n"
+  "uniform sampler2D uTexture;\n"
+  "out vec4 vTexCoord;\n"
+  "out vec4 outColor;\n"
+  "void main() {\n"
+  "  outColor = texture(uTexture, vTexCoord.xy);\n"
+  "}\n";
+#else
 static const char frame_vertex_shader[] =
   "attribute vec4 aPosition;\n"
   "attribute vec4 aTexCoord;\n"
@@ -907,24 +934,7 @@ static const char frame_fragment_shader[] =
   "void main() {\n"
   "  gl_FragColor = texture2D(uTexture, vTexCoord.xy);\n"
   "}\n";
-
-static const char line_vertex_shader[] =
-  "attribute vec4 aPosition;\n"
-  "attribute vec4 aColor;\n"
-  "uniform mat4 uTransform;\n"
-  "varying vec4 vColor;\n"
-  "void main() {\n"
-  "  gl_Position = uTransform * aPosition;\n"
-  "  vColor = aColor;\n"
-  "}\n";
-
-static const char line_fragment_shader[] =
-  "precision mediump float;\n"
-  "uniform sampler2D uTexture;\n"
-  "varying vec4 vColor;\n"
-  "void main() {\n"
-  "  gl_FragColor = vColor;\n"
-  "}\n";
+#endif
 
 static const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
@@ -951,7 +961,7 @@ static const mat4 full_to_wide_frame_transform = {{
 
 void ui_nvg_init(UIState *s) {
   // init drawing
-  s->vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+  s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
 
   s->font_courbd = nvgCreateFont(s->vg, "courbd", "../assets/fonts/courbd.ttf");
@@ -984,13 +994,6 @@ void ui_nvg_init(UIState *s) {
 
   s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
   s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
-
-  s->line_program = load_program(line_vertex_shader, line_fragment_shader);
-  assert(s->line_program);
-
-  s->line_pos_loc = glGetAttribLocation(s->line_program, "aPosition");
-  s->line_color_loc = glGetAttribLocation(s->line_program, "aColor");
-  s->line_transform_loc = glGetUniformLocation(s->line_program, "uTransform");
 
   glViewport(0, 0, s->fb_w, s->fb_h);
 

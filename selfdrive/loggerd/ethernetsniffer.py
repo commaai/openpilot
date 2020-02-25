@@ -4,7 +4,7 @@ import cereal.messaging as messaging
 from cereal.services import service_list
 import pcap
 
-def main(gctx=None):
+def main():
   ethernetData = messaging.pub_sock('ethernetData')
 
   for ts, pkt in pcap.pcap('eth0'):

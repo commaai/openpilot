@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import shutil
 import time
 import os
 import sys
@@ -39,23 +38,26 @@ def wait_for_sockets(socks, timeout=10.0):
         recvd.append(s)
   return recvd
 
-def get_route_logs(route_name):
-  for log_f in ["rlog.bz2", "fcamera.hevc"]:
-    log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), log_f))
+def get_route_log(route_name):
+  log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), "rlog.bz2"))
 
-    if not os.path.isfile(log_path):
-      log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), log_f)
-      r = requests.get(log_url)
+  if not os.path.isfile(log_path):
+    log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), "rlog.bz2")
 
-      if r.status_code == 200:
-        with open(log_path, "wb") as f:
-          f.write(r.content)
-      else:
-        print("failed to download test log %s" % route_name)
-        sys.exit(-1)
+    # if request fails, try again once and let it throw exception if fails again
+    try:
+      r = requests.get(log_url, timeout=15)
+    except:
+      r = requests.get(log_url, timeout=15)
+
+    if r.status_code == 200:
+      with open(log_path, "wb") as f:
+        f.write(r.content)
+    else:
+      print("failed to download test log %s" % route_name)
+      sys.exit(-1)
 
 routes = {
-
   "975b26878285314d|2018-12-25--14-42-13": {
     'carFingerprint': CHRYSLER.PACIFICA_2018_HYBRID,
     'enableCamera': True,
@@ -65,6 +67,10 @@ routes = {
     'enableCamera': True,
   },
   "0607d2516fc2148f|2019-02-13--23-03-16": {
+    'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
+    'enableCamera': True,
+  },
+  "8190c7275a24557b|2020-01-29--08-33-58": {  # 2020 model year
     'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
     'enableCamera': True,
   },
@@ -182,14 +188,18 @@ routes = {
     'carFingerprint': HONDA.ACCORD_15,
     'enableCamera': True,
   },
-  # TODO: This doesnt fingerprint because the fingerprint overlaps with the Insight
-  # "690c4c9f9f2354c7|2018-09-15--17-36-05": {
-  #   'carFingerprint': HONDA.ACCORDH,
-  #   'enableCamera': True,
-  # },
+  "690c4c9f9f2354c7|2018-09-15--17-36-05": {
+    'carFingerprint': HONDA.ACCORDH,
+    'enableCamera': True,
+  },
   "1632088eda5e6c4d|2018-06-07--08-03-18": {
     'carFingerprint': HONDA.CIVIC_BOSCH,
     'enableCamera': True,
+  },
+  "d83f36766f8012a5|2020-02-05--18-42-21": {
+    'carFingerprint': HONDA.CIVIC_BOSCH_DIESEL,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
   },
   #"18971a99f3f2b385|2018-11-14--19-09-31": {
   #  'carFingerprint': HONDA.INSIGHT,
@@ -283,6 +293,7 @@ routes = {
     "7e34a988419b5307|2019-12-18--19-13-30": {
     'carFingerprint': TOYOTA.RAV4H_TSS2,
     'enableCamera': True,
+    'fingerprintSource': 'fixed'
   },
   "e6a24be49a6cd46e|2019-10-29--10-52-42": {
     'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
@@ -299,10 +310,29 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+    "886fcd8408d570e9|2020-01-29--05-11-22": {
+      'carFingerprint': TOYOTA.LEXUS_RX,
+      'enableCamera': True,
+      'enableDsu': True,
+    },
+    "886fcd8408d570e9|2020-01-29--02-18-55": {
+      'carFingerprint': TOYOTA.LEXUS_RX,
+      'enableCamera': True,
+      'enableDsu': False,
+    },
   "b0f5a01cf604185c|2018-02-01--21-12-28": {
     'carFingerprint': TOYOTA.LEXUS_RXH,
     'enableCamera': True,
     'enableDsu': True,
+  },
+    "01b22eb2ed121565|2020-02-02--11-25-51": {
+    'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
+    'enableCamera': True,
+  },
+  "ec429c0f37564e3c|2020-02-01--17-28-12": {
+    'carFingerprint': TOYOTA.LEXUS_NXH,
+    'enableCamera': True,
+    'enableDsu': False,
   },
   #FIXME: This works sometimes locally, but never in CI. Timing issue?
   #"b0f5a01cf604185c|2018-01-31--20-11-39": {
@@ -347,6 +377,11 @@ routes = {
   #   'enableDsu': False,
   # },
   # TODO: missingsome combos for highlander
+  "0a302ffddbb3e3d3|2020-02-08--16-19-08": {
+    'carFingerprint': TOYOTA.HIGHLANDER_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   "aa659debdd1a7b54|2018-08-31--11-12-01": {
     'carFingerprint': TOYOTA.HIGHLANDER,
     'enableCamera': False,
@@ -412,7 +447,6 @@ forced_dashcam_routes = [
 ]
 
 # TODO: replace all these with public routes
-# TODO: add routes for untested cars: HONDA ACCORD 2018 HYBRID TOURING and CHRYSLER PACIFICA 2018
 non_public_routes = [
   "0607d2516fc2148f|2019-02-13--23-03-16",  # CHRYSLER PACIFICA HYBRID 2019
   "3e9592a1c78a3d63|2018-02-08--20-28-24",  # HONDA PILOT 2017 TOURING
@@ -449,16 +483,23 @@ non_public_routes = [
   "fbd011384db5e669|2018-07-26--20-51-48",  # TOYOTA CAMRY HYBRID 2018
 ]
 
+# TODO: add routes for these cars
+non_tested_cars = [TOYOTA.LEXUS_CTH, CHRYSLER.PACIFICA_2018]
+
 if __name__ == "__main__":
 
   tested_procs = ["controlsd", "radard", "plannerd"]
   tested_socks = ["radarState", "controlsState", "carState", "plan"]
 
-  # TODO: add routes for untested cars and fail test if we have an untested car
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
     if car_model not in tested_cars:
       print("***** WARNING: %s not tested *****" % car_model)
+
+      # TODO: skip these for now, but make sure any new ports get routes
+      if car_model not in non_tested_cars:
+        print("TEST FAILED: Missing route for car '%s'" % car_model)
+        sys.exit(1)
 
   print("Preparing processes")
   for p in tested_procs:
@@ -467,16 +508,23 @@ if __name__ == "__main__":
   results = {}
   for route, checks in routes.items():
     if route not in non_public_routes:
-      get_route_logs(route)
+      print("GETTING ROUTE LOGS")
+      get_route_log(route)
+      print("DONE GETTING ROUTE LOGS")
     elif "UNLOGGER_PATH" not in os.environ:
       continue
 
-    shutil.rmtree('/data/params')
     params = Params()
+    params.clear_all()
     params.manager_start()
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
     params.put("Passive", "1" if route in passive_routes else "0")
+
+    if checks.get('fingerprintSource', None) == 'fixed':
+      os.environ['FINGERPRINT'] = checks['carFingerprint']
+    else:
+      os.environ['FINGERPRINT'] = ""
 
     print("testing ", route, " ", checks['carFingerprint'])
     print("Starting processes")
@@ -489,7 +537,7 @@ if __name__ == "__main__":
       unlogger_cmd = [os.path.join(BASEDIR, os.environ['UNLOGGER_PATH']), route]
     else:
       unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
-    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
+    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
 
     print("Check sockets")
     extra_socks = []

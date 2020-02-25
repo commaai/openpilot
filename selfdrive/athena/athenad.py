@@ -19,6 +19,7 @@ from selfdrive.loggerd.config import ROOT
 
 import cereal.messaging as messaging
 from common import android
+from common.basedir import PERSIST
 from common.api import Api
 from common.params import Params
 from cereal.services import service_list
@@ -188,10 +189,10 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
 @dispatcher.add_method
 def getPublicKey():
-  if not os.path.isfile('/persist/comma/id_rsa.pub'):
+  if not os.path.isfile(PERSIST+'/comma/id_rsa.pub'):
     return None
 
-  with open('/persist/comma/id_rsa.pub', 'r') as f:
+  with open(PERSIST+'/comma/id_rsa.pub', 'r') as f:
     return f.read()
 
 @dispatcher.add_method
@@ -293,7 +294,7 @@ def ws_send(ws, end_event):
 def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
-def main(gctx=None):
+def main():
   params = Params()
   dongle_id = params.get("DongleId").decode('utf-8')
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id

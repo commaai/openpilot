@@ -14,6 +14,7 @@ class CAR:
 SUPERCRUISE_CARS = [CAR.CADILLAC_CT6]
 
 class CruiseButtons:
+  INIT        = 0
   UNPRESS     = 1
   RES_ACCEL   = 2
   DECEL_SET   = 3
@@ -26,6 +27,12 @@ class AccState:
   FAULTED    = 3
   STANDSTILL = 4
 
+class CanBus:
+  POWERTRAIN = 0
+  OBSTACLE   = 1
+  CHASSIS    = 2
+  SW_GMLAN   = 3
+
 def is_eps_status_ok(eps_status, car_fingerprint):
   valid_eps_status = []
   if car_fingerprint in SUPERCRUISE_CARS:
@@ -33,18 +40,6 @@ def is_eps_status_ok(eps_status, car_fingerprint):
   else:
     valid_eps_status += [0, 1]
   return eps_status in valid_eps_status
-
-def parse_gear_shifter(can_gear):
-  if can_gear == 0:
-    return car.CarState.GearShifter.park
-  elif can_gear == 1:
-    return car.CarState.GearShifter.neutral
-  elif can_gear == 2:
-    return car.CarState.GearShifter.drive
-  elif can_gear == 3:
-    return car.CarState.GearShifter.reverse
-  else:
-    return car.CarState.GearShifter.unknown
 
 FINGERPRINTS = {
   # Astra BK MY17, ASCM unplugged

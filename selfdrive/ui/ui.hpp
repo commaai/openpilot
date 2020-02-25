@@ -1,13 +1,24 @@
 #ifndef _UI_H
 #define _UI_H
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#define NANOVG_GL3_IMPLEMENTATION
+#define nvgCreate nvgCreateGL3
+#else
 #include <GLES3/gl3.h>
 #include <EGL/egl.h>
+#define NANOVG_GLES3_IMPLEMENTATION
+#define nvgCreate nvgCreateGLES3
+#endif
+
+#include <pthread.h>
 
 #include "nanovg.h"
 
 #include "common/mat.h"
 #include "common/visionipc.h"
+#include "common/visionimg.h"
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "messaging.hpp"
@@ -104,6 +115,9 @@ typedef struct UIScene {
 
   int lead_status;
   float lead_d_rel, lead_y_rel, lead_v_rel;
+  
+  int lead_status2;
+  float lead_d_rel2, lead_y_rel2, lead_v_rel2;
 
   int front_box_x, front_box_y, front_box_width, front_box_height;
 
@@ -141,8 +155,6 @@ typedef struct UIState {
   // framebuffer
   FramebufferState *fb;
   int fb_w, fb_h;
-  EGLDisplay display;
-  EGLSurface surface;
 
   // NVG
   NVGcontext *vg;
@@ -189,10 +201,6 @@ typedef struct UIState {
 
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
-
-  GLuint line_program;
-  GLint line_pos_loc, line_color_loc;
-  GLint line_transform_loc;
 
   int rgb_width, rgb_height, rgb_stride;
   size_t rgb_buf_len;

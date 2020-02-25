@@ -117,7 +117,7 @@ std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, in
   return ret;
 }
 
-void SNPEModel::execute(float *net_input_buf) {
+void SNPEModel::execute(float *net_input_buf, int buf_size) {
   assert(inputBuffer->setBufferAddress(net_input_buf));
   if (!snpe->execute(inputMap, outputMap)) {
     PrintErrorStringAndExit();

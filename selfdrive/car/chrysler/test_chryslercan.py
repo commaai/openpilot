@@ -12,8 +12,8 @@ GearShifter = car.CarState.GearShifter
 class TestChryslerCan(unittest.TestCase):
 
   def test_checksum(self):
-    self.assertEqual(0x75, chryslercan.calc_checksum(b"\x01\x20"))
-    self.assertEqual(0xcc, chryslercan.calc_checksum(b"\x14\x00\x00\x00\x20"))
+    self.assertEqual(0x75, chryslercan.calc_checksum(b"\x01\x20\x00"))
+    self.assertEqual(0xcc, chryslercan.calc_checksum(b"\x14\x00\x00\x00\x20\x00"))
 
   def test_hud(self):
     packer = CANPacker('chrysler_pacifica_2017_hybrid')

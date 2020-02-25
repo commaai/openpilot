@@ -7,9 +7,9 @@
 
 
 #define PATH_IDX 0
-#define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2
-#define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 1
-#define LEAD_IDX RL_IDX + MODEL_PATH_DISTANCE*2 + 1
+#define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2 + 1
+#define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 2
+#define LEAD_IDX RL_IDX + MODEL_PATH_DISTANCE*2 + 2
 #define LONG_X_IDX LEAD_IDX + MDN_GROUP_SIZE*LEAD_MDN_N + SELECTION 
 #define LONG_V_IDX LONG_X_IDX + TIME_DISTANCE*2
 #define LONG_A_IDX LONG_V_IDX + TIME_DISTANCE*2
@@ -70,7 +70,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   float *new_frame_buf = frame_prepare(&s->frame, q, yuv_cl, width, height, transform);
   memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
   memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
-  s->m->execute(s->input_frames);
+  s->m->execute(s->input_frames, MODEL_FRAME_SIZE*2);
 
   #ifdef DUMP_YUV
     FILE *dump_yuv_file = fopen("/sdcard/dump.yuv", "wb");
@@ -133,13 +133,20 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   float poly_arr[POLYFIT_DEGREE];
   float std;
   float prob;
+  float valid_len;
 
+  valid_len =  data[MODEL_PATH_DISTANCE*2];
   for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
     points_arr[i] = data[i] + offset;
-    stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
+    // Always do at least 5 points
+    if (i < 5 || i < valid_len) {
+      stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
+    } else {
+      stds_arr[i] = 1.0e3; 
+    }
   }
   if (has_prob) {
-    prob =  sigmoid(data[MODEL_PATH_DISTANCE*2]);
+    prob =  sigmoid(data[MODEL_PATH_DISTANCE*2 + 1]);
   } else {
     prob = 1.0;
   }
@@ -160,11 +167,11 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   path.setStd(std);
 }
 
-void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, int mdn_max_idx) {
+void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, int mdn_max_idx, int t_offset) {
   const double x_scale = 10.0;
   const double y_scale = 10.0;
  
-  lead.setProb(sigmoid(data[LEAD_MDN_N*MDN_GROUP_SIZE]));
+  lead.setProb(sigmoid(data[LEAD_MDN_N*MDN_GROUP_SIZE + t_offset]));
   lead.setDist(x_scale * data[mdn_max_idx*MDN_GROUP_SIZE]);
   lead.setStd(x_scale * softplus(data[mdn_max_idx*MDN_GROUP_SIZE + MDN_VALS]));
   lead.setRelY(y_scale * data[mdn_max_idx*MDN_GROUP_SIZE + 1]);
@@ -221,22 +228,24 @@ void model_publish(PubSocket *sock, uint32_t frame_id,
 
     // Find the distribution that corresponds to the current lead
     int mdn_max_idx = 0;
+    int t_offset = 0;
     for (int i=1; i<LEAD_MDN_N; i++) {
-      if (net_outputs.lead[i*MDN_GROUP_SIZE + 8] > net_outputs.lead[mdn_max_idx*MDN_GROUP_SIZE + 8]) {
+      if (net_outputs.lead[i*MDN_GROUP_SIZE + 8 + t_offset] > net_outputs.lead[mdn_max_idx*MDN_GROUP_SIZE + 8 + t_offset]) {
         mdn_max_idx = i;
       }
     }
     auto lead = framed.initLead();
-    fill_lead(lead, net_outputs.lead, mdn_max_idx);
+    fill_lead(lead, net_outputs.lead, mdn_max_idx, t_offset);
     // Find the distribution that corresponds to the lead in 2s
     mdn_max_idx = 0;
+    t_offset = 1;
     for (int i=1; i<LEAD_MDN_N; i++) {
-      if (net_outputs.lead[i*MDN_GROUP_SIZE + 9] > net_outputs.lead[mdn_max_idx*MDN_GROUP_SIZE + 9]) {
+      if (net_outputs.lead[i*MDN_GROUP_SIZE + 8 + t_offset] > net_outputs.lead[mdn_max_idx*MDN_GROUP_SIZE + 8 + t_offset]) {
         mdn_max_idx = i;
       }
     }
     auto lead_future = framed.initLeadFuture();
-    fill_lead(lead_future, net_outputs.lead, mdn_max_idx);
+    fill_lead(lead_future, net_outputs.lead, mdn_max_idx, t_offset);
 
 
     auto meta = framed.initMeta();

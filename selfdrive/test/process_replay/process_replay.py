@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
+import sys
 import threading
 import importlib
-import shutil
 
 if "CI" in os.environ:
   tqdm = lambda x: x
@@ -21,7 +21,12 @@ ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', '
 
 def wait_for_event(evt):
   if not evt.wait(15):
-    raise Exception("Timeout reached. Thread likely crashed.")
+    if threading.currentThread().getName() == "MainThread":
+      # tested process likely died. don't let test just hang
+      raise Exception("Timeout reached. Tested process likely crashed.")
+    else:
+      # done testing this process, let it die
+      sys.exit(0)
 
 class FakeSocket:
   def __init__(self, wait=True):
@@ -192,7 +197,7 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "thermal": [], "health": [], "liveCalibration": [], "driverMonitoring": [], "plan": [], "pathPlan": [], "gpsLocation": [],
+      "thermal": [], "health": [], "liveCalibration": [], "dMonitoringState": [], "plan": [], "pathPlan": [], "gpsLocation": [],
       "model": [],
     },
     ignore=[("logMonoTime", 0), ("valid", True), ("controlsState.startMonoTime", 0), ("controlsState.cumLagMs", 0)],
@@ -228,6 +233,16 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
   ),
+  ProcessConfig(
+    proc_name="dmonitoringd",
+    pub_sub={
+      "driverState": ["dMonitoringState"],
+      "liveCalibration": [], "carState": [], "model": [], "gpsLocation": [],
+    },
+    ignore=[("logMonoTime", 0), ("valid", True)],
+    init_callback=get_car_params,
+    should_recv_callback=None,
+  ),
 ]
 
 def replay_process(cfg, lr):
@@ -244,8 +259,8 @@ def replay_process(cfg, lr):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  shutil.rmtree('/data/params', ignore_errors=True)
   params = Params()
+  params.clear_all()
   params.manager_start()
   params.put("OpenpilotEnabledToggle", "1")
   params.put("Passive", "0")
