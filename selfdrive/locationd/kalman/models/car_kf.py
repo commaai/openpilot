@@ -38,8 +38,8 @@ class CarKalman():
   name = 'car'
 
   x_initial = np.array([
-    0.5,
-    12.0,
+    1.0,
+    15.0,
     0.0,
     0.0,
 
@@ -50,8 +50,8 @@ class CarKalman():
 
   # state covariance
   P_initial = np.diag([
-    5**2,
-    10**2,
+    .1**2,
+    1**2,
     math.radians(5.0)**2,
     math.radians(5.0)**2,
 
@@ -62,7 +62,7 @@ class CarKalman():
 
   # process noise
   Q = np.diag([
-    (.05/100)**2,
+    (.05/10)**2,
     .01**2,
     math.radians(0.01)**2,
     math.radians(0.2)**2,
@@ -77,6 +77,8 @@ class CarKalman():
     ObservationKind.CAL_DEVICE_FRAME_YAW_RATE: np.atleast_2d(math.radians(0.1)**2),
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.1)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(5.0)**2),
+    ObservationKind.STEER_RATIO: np.atleast_2d(50.0**2),
+    ObservationKind.STIFFNESS: np.atleast_2d(50.0**2),
   }
 
   maha_test_kinds = []
@@ -134,17 +136,13 @@ class CarKalman():
     #
     # Observation functions
     #
-    h_yaw_rate = sp.Matrix([r])
-    # h_velocity = sp.Matrix([u, v])
-    h_velocity = sp.Matrix([u, v])
-    h_steer_angle = sp.Matrix([sa])
-    h_fast_angle_offset = sp.Matrix([angle_offset_fast])
-
     obs_eqs = [
-      [h_yaw_rate, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, None],
-      [h_velocity, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, None],
-      [h_steer_angle, ObservationKind.STEER_ANGLE, None],
-      [h_fast_angle_offset, ObservationKind.ANGLE_OFFSET_FAST, None],
+      [sp.Matrix([r]), ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, None],
+      [sp.Matrix([u, v]), ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, None],
+      [sp.Matrix([sa]), ObservationKind.STEER_ANGLE, None],
+      [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
+      [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],
+      [sp.Matrix([x]), ObservationKind.STIFFNESS, None],
     ]
 
     gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)
@@ -190,9 +188,6 @@ class CarKalman():
     if len(data) > 0:
       data = np.atleast_2d(data)
     self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
-
-    self.filter.x[States.STEER_RATIO, 0] = clip(self.filter.x[States.STEER_RATIO, 0], 10, 20)
-    self.filter.x[States.STIFFNESS, 0] = clip(self.filter.x[States.STIFFNESS, 0], 0.5, 2)
 
 
 if __name__ == "__main__":

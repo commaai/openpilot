@@ -60,6 +60,8 @@ class ObservationKind():
   CAL_DEVICE_FRAME_YAW_RATE = 25  # [rad/s]
   STEER_ANGLE = 26  # [rad]
   ANGLE_OFFSET_FAST = 27  # [rad]
+  STIFFNESS = 28  # [-]
+  STEER_RATIO = 29  # [-]
 
   names = [
     'Unknown',
@@ -89,6 +91,8 @@ class ObservationKind():
     'Calibrated Device Frame yaw rate',
     'Steer Angle',
     'Fast Angle Offset',
+    'Stiffness',
+    'Steer Ratio',
   ]
 
   @classmethod

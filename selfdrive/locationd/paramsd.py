@@ -12,10 +12,6 @@ class ParamsLearner:
     self.active = False
 
   def handle_log(self, t, which, msg):
-    if self.kf.filter.filter_time is None or t < self.kf.filter.filter_time - 10.0:
-      print("Resetting time")
-      self.kf.filter_filter_time = t
-
     if which == 'liveLocation':
       yaw_rate = -msg.gyro[2]
       roll, pitch, yaw = math.radians(msg.roll), math.radians(msg.pitch), math.radians(-msg.heading)
@@ -26,6 +22,15 @@ class ParamsLearner:
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, [yaw_rate])
         self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, [[v_device[0], -v_device[1]]])
+
+        # Clamp values
+        x = self.kf.x
+        if not (10 < x[States.STEER_RATIO] < 25):
+          self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, [15.0])
+
+        if not (0.5 < x[States.STIFFNESS] < 2.0):
+          self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, [1.0])
+
       else:
         self.kf.filter.filter_time = t
 
