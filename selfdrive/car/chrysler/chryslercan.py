@@ -10,19 +10,10 @@ def calc_checksum(data):
 
   jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf
   """
-  end_index = len(data)
-  index = 0
   checksum = 0xFF
-  temp_chk = 0
-  bit_sum = 0
-  if(end_index <= index):
-    return False
-  for index in range(0, end_index):
+  for curr in data[:-1]:
     shift = 0x80
-    curr = data[index]
-    iterate = 8
-    while(iterate > 0):
-      iterate -= 1
+    for i in range(0, 8):
       bit_sum = curr & shift
       temp_chk = checksum & 0x80
       if (bit_sum != 0):
@@ -84,7 +75,6 @@ def create_lkas_command(packer, apply_steer, moving_fast, frame):
   }
 
   dat = packer.make_can_msg("LKAS_COMMAND", 0, values)[2]
-  dat = dat[:-1]
   checksum = calc_checksum(dat)
 
   values["CHECKSUM"] = checksum
@@ -95,6 +85,6 @@ def create_wheel_buttons(frame):
   # WHEEL_BUTTONS (571) Message sent to cancel ACC.
   start = b"\x01"  # acc cancel set
   counter = (frame % 10) << 4
-  dat = start + counter.to_bytes(1, 'little')
-  dat = dat + calc_checksum(dat).to_bytes(1, 'little')
+  dat = start + counter.to_bytes(1, 'little') + b"\x00"
+  dat = dat[:-1] + calc_checksum(dat).to_bytes(1, 'little')
   return make_can_msg(0x23b, dat, 0)
