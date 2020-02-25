@@ -1,18 +1,26 @@
 import os
 import re
+from urllib.parse import urlparse
 from collections import defaultdict
+from itertools import chain
+
+from tools.lib.auth_config import get_token
+from tools.lib.api import CommaApi
 
 SEGMENT_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}--[0-9]+'
 EXPLORER_FILE_RE = r'^({})--([a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
 OP_SEGMENT_DIR_RE = r'^({})$'.format(SEGMENT_NAME_RE)
 
-LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2', 'log2.gz', 'ilog.7z']
-CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc', 'acamera', 'icamera']
+LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2']
+CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 
 class Route(object):
-  def __init__(self, route_name, data_dir):
+  def __init__(self, route_name, data_dir=None):
     self.route_name = route_name.replace('_', '|')
-    self._segments = self._get_segments(data_dir)
+    if data_dir is not None:
+      self._segments = self._get_segments_local(data_dir)
+    else:
+      self._segments = self._get_segments_remote()
 
   @property
   def segments(self):
@@ -28,7 +36,30 @@ class Route(object):
     camera_path_by_seg_num = {s.canonical_name.segment_num: s.camera_path for s in self._segments}
     return [camera_path_by_seg_num.get(i, None) for i in range(max_seg_number+1)]
 
-  def _get_segments(self, data_dir):
+  def _get_segments_remote(self):
+    api = CommaApi(get_token())
+    route_files = api.get('v1/route/' + self.route_name + '/files')
+
+    segments = {}
+    for url in chain.from_iterable(route_files.values()):
+      _, _, dongle_id, time_str, segment_num, fn = urlparse(url).path.split('/')
+      segment_name = f'{dongle_id}|{time_str}--{segment_num}'
+      if segments.get(segment_name):
+        segments[segment_name] = RouteSegment(
+          segment_name,
+          url if fn in LOG_FILENAMES else segments[segment_name].log_path,
+          url if fn in CAMERA_FILENAMES else segments[segment_name].camera_path
+        )
+      else:
+        segments[segment_name] = RouteSegment(
+          segment_name,
+          url if fn in LOG_FILENAMES else None,
+          url if fn in CAMERA_FILENAMES else None
+        )
+
+    return sorted(segments.values(), key=lambda seg: seg.canonical_name.segment_num)
+
+  def _get_segments_local(self, data_dir):
     files = os.listdir(data_dir)
     segment_files = defaultdict(list)
 

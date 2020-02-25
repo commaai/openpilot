@@ -191,9 +191,21 @@ Replay driving data
 
 `unlogger.py` replays data collected with [chffrplus](https://github.com/commaai/chffrplus) or [openpilot](https://github.com/commaai/openpilot).
 
-You'll need to download log and camera files into a local directory. Download these from the footer of the comma [explorer](https://my.comma.ai) or SCP from your device.
+Usage (Remote data):
+```
+# Log in via browser
+python lib/auth.py
 
-Usage:
+# Start unlogger
+python replay/unlogger.py <route-name>
+#Example:
+#python replay/unlogger.py '99c94dc769b5d96e|2018-11-14--13-31-42'
+
+# In another terminal you can run a debug visualizer:
+python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
+```
+
+Usage (Local data downloaded from device or https://my.comma.ai):
 
 ```
 python replay/unlogger.py <route-name> <path-to-data-directory>
@@ -206,9 +218,6 @@ python replay/unlogger.py <route-name> <path-to-data-directory>
 #  99c94dc769b5d96e|2018-11-14--13-31-42--0--fcamera.hevc
 #  99c94dc769b5d96e|2018-11-14--13-31-42--0--rlog.bz2
 #  ...
-
-# In another terminal you can run a debug visualizer:
-python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
 ```
 ![Imgur](https://i.imgur.com/Yppe0h2.png)
 

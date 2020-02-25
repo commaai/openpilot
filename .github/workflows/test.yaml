@@ -81,6 +81,7 @@ jobs:
           $RUN "$UNIT_TEST selfdrive/car"
           $RUN "$UNIT_TEST selfdrive/locationd"
           $RUN "$UNIT_TEST selfdrive/athena"
+          $RUN "$UNIT_TEST tools/lib/tests"
 
   process_replay:
     name: process replay
