@@ -59,7 +59,7 @@ class CarKalman():
   # process noise
   Q = np.diag([
     (.05/10)**2,
-    .01**2,
+    .001**2,
     math.radians(0.01)**2,
     math.radians(0.2)**2,
 
