@@ -78,7 +78,7 @@ def main(sm=None, pm=None):
       msg.logMonoTime = sm.logMonoTime['carState']
 
       msg.init('liveParameters')
-      msg.liveParameters.valid = bool(learner.active)
+      msg.liveParameters.valid = True  # TODO: Check if learned values are sane
       msg.liveParameters.posenetValid = True
       msg.liveParameters.sensorValid = True
 
