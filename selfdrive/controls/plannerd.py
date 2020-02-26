@@ -8,8 +8,6 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.pathplanner import PathPlanner
-from selfdrive.car.honda.interface import CarInterface
-from selfdrive.car.honda.values import CAR
 import cereal.messaging as messaging
 
 
@@ -26,10 +24,7 @@ def plannerd_thread(sm=None, pm=None):
   PL = Planner(CP)
   PP = PathPlanner(CP)
 
-  # TODO: Use mass/lengths from carParams in Kalman filter
-  # For now always use civic params
-  CP_CIVIC = CarInterface.get_params(CAR.CIVIC)
-  VM = VehicleModel(CP_CIVIC)
+  VM = VehicleModel(CP)
 
   if sm is None:
     sm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'model', 'liveParameters'])
