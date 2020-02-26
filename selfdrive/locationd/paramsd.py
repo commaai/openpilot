@@ -5,6 +5,8 @@ import cereal.messaging as messaging
 import common.transformations.orientation as orient
 from selfdrive.locationd.kalman.models.car_kf import CarKalman, ObservationKind, States
 
+CARSTATE_DECIMATION = 5
+
 
 class ParamsLearner:
   def __init__(self):
@@ -13,6 +15,7 @@ class ParamsLearner:
 
     self.speed = 0
     self.steering_angle = 0
+    self.carstate_counter = 0
 
   def update_active(self):
     self.active = abs(self.steering_angle) < 90 and self.speed > 5
@@ -40,14 +43,16 @@ class ParamsLearner:
         self.kf.filter.filter_time = t - 1
 
     elif which == 'carState':
-      self.steering_angle = msg.steeringAngle
+      self.carstate_counter += 1
+      if self.carstate_counter % CARSTATE_DECIMATION == 0:
+        self.steering_angle = msg.steeringAngle
 
-      self.update_active()
-      if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, [math.radians(msg.steeringAngle)])
-        self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, [0])
-      else:
-        self.kf.filter.filter_time = t - 1
+        self.update_active()
+        if self.active:
+          self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, [math.radians(msg.steeringAngle)])
+          self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, [0])
+        else:
+          self.kf.filter.filter_time = t - 1
 
 
 def main(sm=None, pm=None):
