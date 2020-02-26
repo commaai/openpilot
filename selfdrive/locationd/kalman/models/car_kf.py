@@ -52,8 +52,8 @@ class CarKalman():
   P_initial = np.diag([
     .1**2,
     1**2,
-    math.radians(5.0)**2,
-    math.radians(5.0)**2,
+    math.radians(0.1)**2,
+    math.radians(0.1)**2,
 
     10**2, 10**2,
     1**2,

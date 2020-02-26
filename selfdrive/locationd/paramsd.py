@@ -11,16 +11,21 @@ class ParamsLearner:
     self.kf = CarKalman()
     self.active = False
 
+    self.speed = 0
+    self.steering_angle = 0
+
+  def update_active(self):
+    self.active = abs(self.steering_angle) < 90 and self.speed > 5
+
   def handle_log(self, t, which, msg):
     if which == 'liveLocation':
-      yaw_rate = -msg.gyro[2]
-      roll, pitch, yaw = math.radians(msg.roll), math.radians(msg.pitch), math.radians(-msg.heading)
-      v_device = orient.rot_from_euler([roll, pitch, yaw]).dot(msg.vNED)
+      roll, pitch, yaw = math.radians(msg.roll), math.radians(msg.pitch), math.radians(msg.heading)
+      v_device = orient.rot_from_euler([roll, pitch, yaw]).T.dot(msg.vNED)
+      self.speed = v_device[0]
 
-      self.active = v_device[0] > 5
-
+      self.update_active()
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, [yaw_rate])
+        self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, [-msg.gyro[2]])
         self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, [[v_device[0], -v_device[1]]])
 
         # Clamp values
@@ -32,14 +37,17 @@ class ParamsLearner:
           self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, [1.0])
 
       else:
-        self.kf.filter.filter_time = t
+        self.kf.filter.filter_time = t - 1
 
     elif which == 'carState':
+      self.steering_angle = msg.steeringAngle
+
+      self.update_active()
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, [math.radians(msg.steeringAngle)])
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, [0])
       else:
-        self.kf.filter.filter_time = t
+        self.kf.filter.filter_time = t - 1
 
 
 def main(sm=None, pm=None):
@@ -77,6 +85,13 @@ def main(sm=None, pm=None):
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       msg.liveParameters.angleOffsetAverage = math.degrees(x[States.ANGLE_OFFSET])
       msg.liveParameters.angleOffset = math.degrees(x[States.ANGLE_OFFSET_FAST])
+
+      # P = learner.kf.P
+      # print()
+      # print("sR", float(x[States.STEER_RATIO]), float(P[States.STEER_RATIO, States.STEER_RATIO])**0.5)
+      # print("x ", float(x[States.STIFFNESS]), float(P[States.STIFFNESS, States.STIFFNESS])**0.5)
+      # print("ao avg ", math.degrees(x[States.ANGLE_OFFSET]), math.degrees(P[States.ANGLE_OFFSET, States.ANGLE_OFFSET])**0.5)
+      # print("ao ", math.degrees(x[States.ANGLE_OFFSET_FAST]), math.degrees(P[States.ANGLE_OFFSET_FAST, States.ANGLE_OFFSET_FAST])**0.5)
 
       pm.send('liveParameters', msg)
 
