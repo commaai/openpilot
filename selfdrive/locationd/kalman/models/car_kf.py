@@ -47,7 +47,7 @@ class CarKalman():
   # state covariance
   P_initial = np.diag([
     .1**2,
-    1**2,
+    .1**2,
     math.radians(0.1)**2,
     math.radians(0.1)**2,
 
@@ -59,7 +59,7 @@ class CarKalman():
   # process noise
   Q = np.diag([
     (.05/10)**2,
-    .001**2,
+    .0001**2,
     math.radians(0.01)**2,
     math.radians(0.2)**2,
 
@@ -77,7 +77,7 @@ class CarKalman():
     ObservationKind.STIFFNESS: np.atleast_2d(50.0**2),
   }
 
-  maha_test_kinds = []
+  maha_test_kinds = [ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED]
 
   @staticmethod
   def generate_code():
