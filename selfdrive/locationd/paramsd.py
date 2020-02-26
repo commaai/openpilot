@@ -33,7 +33,7 @@ class ParamsLearner:
         if not (10 < x[States.STEER_RATIO] < 25):
           self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, [15.0])
 
-        if not (0.5 < x[States.STIFFNESS] < 2.0):
+        if not (0.5 < x[States.STIFFNESS] < 3.0):
           self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, [1.0])
 
       else:
