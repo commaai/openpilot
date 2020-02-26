@@ -14,11 +14,12 @@ class ParamsLearner:
     self.active = False
 
     self.speed = 0
+    self.steering_pressed = False
     self.steering_angle = 0
     self.carstate_counter = 0
 
   def update_active(self):
-    self.active = abs(self.steering_angle) < 90 and self.speed > 5
+    self.active = (abs(self.steering_angle) < 45 or not self.steering_pressed) and self.speed > 5
 
   def handle_log(self, t, which, msg):
     if which == 'liveLocation':
@@ -40,19 +41,20 @@ class ParamsLearner:
           self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, [1.0])
 
       else:
-        self.kf.filter.filter_time = t - 1
+        self.kf.filter.filter_time = t - 0.1
 
     elif which == 'carState':
       self.carstate_counter += 1
       if self.carstate_counter % CARSTATE_DECIMATION == 0:
         self.steering_angle = msg.steeringAngle
+        self.steering_pressed = msg.steeringPressed
 
         self.update_active()
         if self.active:
           self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, [math.radians(msg.steeringAngle)])
           self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, [0])
         else:
-          self.kf.filter.filter_time = t - 1
+          self.kf.filter.filter_time = t - 0.1
 
 
 def main(sm=None, pm=None):

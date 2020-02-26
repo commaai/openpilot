@@ -77,7 +77,7 @@ class CarKalman():
     ObservationKind.STIFFNESS: np.atleast_2d(50.0**2),
   }
 
-  maha_test_kinds = [ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED]
+  maha_test_kinds = []  # [ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED]
 
   @staticmethod
   def generate_code():
