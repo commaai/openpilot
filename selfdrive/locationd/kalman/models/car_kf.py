@@ -4,15 +4,13 @@ import math
 import numpy as np
 import sympy as sp
 
-from common.numpy_fast import clip
-
 from selfdrive.locationd.kalman.helpers import ObservationKind
 from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
-from selfdrive.locationd.kalman.models.loc_kf import parse_pr, parse_prr
 
 from selfdrive.car import CivicParams
 
 i = 0
+
 
 def _slice(n):
   global i

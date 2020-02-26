@@ -70,6 +70,8 @@ def main(sm=None, pm=None):
     # TODO: set valid to false when locationd stops sending
     # TODO: make sure controlsd knows when there is no gyro
     # TODO: move posenetValid somewhere else to show the model uncertainty alert
+    # TODO: Save and resume values from param
+    # TODO: Change KF to allow mass, etc to be inputs in predict step
 
     if sm.updated['carState']:
       msg = messaging.new_message()
