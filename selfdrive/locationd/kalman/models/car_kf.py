@@ -7,8 +7,6 @@ import sympy as sp
 from selfdrive.locationd.kalman.helpers import ObservationKind
 from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
 
-from selfdrive.car import CivicParams
-
 i = 0
 
 
@@ -92,15 +90,23 @@ class CarKalman():
     state_sym = sp.MatrixSymbol('state', dim_state, 1)
     state = sp.Matrix(state_sym)
 
-    # Vehicle model
-    m = CivicParams.MASS
-    j = CivicParams.ROTATIONAL_INERTIA
-    aF = CivicParams.CENTER_TO_FRONT
-    aR = CivicParams.CENTER_TO_REAR
+    # Vehicle model constants
+    # TODO: Read from car params at runtime
+    from selfdrive.controls.lib.vehicle_model import VehicleModel
+    from selfdrive.car.toyota.interface import CarInterface
+    from selfdrive.car.toyota.values import CAR
+
+    CP = CarInterface.get_params(CAR.COROLLA_TSS2)
+    VM = VehicleModel(CP)
+
+    m = VM.m
+    j = VM.j
+    aF = VM.aF
+    aR = VM.aR
 
     x = state[States.STIFFNESS, :][0, 0]
 
-    cF, cR = x * CivicParams.TIRE_STIFFNESS_FRONT, x * CivicParams.TIRE_STIFFNESS_REAR
+    cF, cR = x * VM.cF, x * VM.cR
     angle_offset = state[States.ANGLE_OFFSET, :][0, 0]
     angle_offset_fast = state[States.ANGLE_OFFSET_FAST, :][0, 0]
     sa = state[States.STEER_ANGLE, :][0, 0]
