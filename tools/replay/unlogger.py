@@ -330,7 +330,7 @@ def keyboard_controller_thread(q, route_start_time):
       q.send_pyobj(TogglePause())
     elif c=="\n":
       try:
-        seek_time_input = raw_input('time: ')
+        seek_time_input = input('time: ')
         seek_time = absolute_time_str(seek_time_input, route_start_time)
 
         q.send_pyobj(SeekAbsoluteTime(seek_time))
