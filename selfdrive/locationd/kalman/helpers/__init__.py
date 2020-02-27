@@ -56,28 +56,44 @@ class ObservationKind():
   PSEUDORANGE = 22
   PSEUDORANGE_RATE = 23
 
-  names = ['Unknown',
-           'No observation',
-           'GPS NED',
-           'Odometric speed',
-           'Phone gyro',
-           'GPS velocity',
-           'GPS pseudorange',
-           'GPS pseudorange rate',
-           'Speed',
-           'No rotation',
-           'Phone acceleration',
-           'ORB point',
-           'ECEF pos',
-           'camera odometric translation',
-           'camera odometric rotation',
-           'ORB features',
-           'MSCKF test',
-           'Feature track test',
-           'Lane ecef point',
-           'imu frame eulers',
-           'GLONASS pseudorange',
-           'GLONASS pseudorange rate']
+  CAL_DEVICE_FRAME_XY_SPEED = 24  # (x, y) [m/s]
+  CAL_DEVICE_FRAME_YAW_RATE = 25  # [rad/s]
+  STEER_ANGLE = 26  # [rad]
+  ANGLE_OFFSET_FAST = 27  # [rad]
+  STIFFNESS = 28  # [-]
+  STEER_RATIO = 29  # [-]
+
+  names = [
+    'Unknown',
+    'No observation',
+    'GPS NED',
+    'Odometric speed',
+    'Phone gyro',
+    'GPS velocity',
+    'GPS pseudorange',
+    'GPS pseudorange rate',
+    'Speed',
+    'No rotation',
+    'Phone acceleration',
+    'ORB point',
+    'ECEF pos',
+    'camera odometric translation',
+    'camera odometric rotation',
+    'ORB features',
+    'MSCKF test',
+    'Feature track test',
+    'Lane ecef point',
+    'imu frame eulers',
+    'GLONASS pseudorange',
+    'GLONASS pseudorange rate',
+
+    'Calibrated Device Frame x,y speed',
+    'Calibrated Device Frame yaw rate',
+    'Steer Angle',
+    'Fast Angle Offset',
+    'Stiffness',
+    'Steer Ratio',
+  ]
 
   @classmethod
   def to_string(cls, kind):

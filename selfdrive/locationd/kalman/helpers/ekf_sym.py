@@ -74,8 +74,13 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
 
   # linearize with jacobians
   F_sym = f_err_sym.jacobian(x_err_sym)
-  for sym in x_err_sym:
-    F_sym = F_sym.subs(sym, 0)
+
+  if eskf_params:
+    for sym in x_err_sym:
+      F_sym = F_sym.subs(sym, 0)
+
+  assert dt_sym in F_sym.free_symbols
+
   for i in range(len(obs_eqs)):
     obs_eqs[i].append(obs_eqs[i][0].jacobian(x_sym))
     if msckf and obs_eqs[i][1] in feature_track_kinds:
@@ -335,6 +340,17 @@ class EKF_sym():
     self.rewind_t = self.rewind_t[-REWIND_TO_KEEP:]
     self.rewind_states = self.rewind_states[-REWIND_TO_KEEP:]
     self.rewind_obscache = self.rewind_obscache[-REWIND_TO_KEEP:]
+
+  def predict(self, t):
+    # initialize time
+    if self.filter_time is None:
+      self.filter_time = t
+
+    # predict
+    dt = t - self.filter_time
+    assert dt >= 0
+    self.x, self.P = self._predict(self.x, self.P, dt)
+    self.filter_time = t
 
   def predict_and_update_batch(self, t, kind, z, R, extra_args=[[]], augment=False):
     # TODO handle rewinding at this level"
