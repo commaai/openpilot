@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
   # sync process replay routes
   for s in replay_segments:
-    route_name, _ = s.rsplit('--', 1)
+    route_name, _ = s[1].rsplit('--', 1)
     if not sync_to_ci_public(route_name):
       failed_routes.append(route_name)
 
