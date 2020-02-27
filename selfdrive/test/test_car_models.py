@@ -201,10 +201,11 @@ routes = {
     'enableCamera': True,
     'fingerprintSource': 'fixed',
   },
-  #"18971a99f3f2b385|2018-11-14--19-09-31": {
-  #  'carFingerprint': HONDA.INSIGHT,
-  #  'enableCamera': True,
-  #},
+  "fb51d190ddfd8a90|2020-02-25--14-43-43": {
+    'carFingerprint': HONDA.INSIGHT,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
+  },
   "38bfd238edecbcd7|2018-08-22--09-45-44": {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': False,
