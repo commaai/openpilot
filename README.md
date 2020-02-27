@@ -83,6 +83,7 @@ Supported Cars
 | Honda     | Pilot 2016-18                 | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph             |
 | Honda     | Pilot 2019                    | All               | openpilot        | 25mph<sup>6</sup>  | 12mph             |
 | Honda     | Ridgeline 2017-19             | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph             |
+| Honda     | Insight 2019                  | Honda Sensing     | Stock            | 0mph               | 3mph             |
 | Hyundai   | Elantra 2017-19<sup>1</sup>   | SCC + LKAS        | Stock            | 19mph              | 34mph             |
 | Hyundai   | Genesis 2018<sup>1</sup>      | All               | Stock            | 19mph              | 34mph             |
 | Hyundai   | Santa Fe 2019<sup>1</sup>     | All               | Stock            | 0mph               | 0mph              |
