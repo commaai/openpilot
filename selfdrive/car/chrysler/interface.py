@@ -79,7 +79,8 @@ class CarInterface(CarInterfaceBase):
 
     # disable on gas pedal and speed isn't zero. Gas pedal is used to resume ACC
     # from a 3+ second stop.
-    if (ret.gasPressed and (not self.gas_pressed_prev) and ret.vEgo > 2.0):
+    if (ret.gasPressed and (not self.gas_pressed_prev) and ret.vEgo > 2.0) or \
+       (ret.brakePressed and (not self.brake_pressed_prev or not ret.standstill)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     if ret.vEgo < self.CP.minSteerSpeed:
