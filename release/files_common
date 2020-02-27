@@ -244,6 +244,7 @@ selfdrive/locationd/ublox_msg.h
 selfdrive/locationd/test/*.py
 
 selfdrive/locationd/locationd.py
+selfdrive/locationd/paramsd.py
 selfdrive/locationd/kalman/.gitignore
 selfdrive/locationd/kalman/__init__.py
 selfdrive/locationd/kalman/README.md
@@ -251,6 +252,7 @@ selfdrive/locationd/kalman/SConscript
 selfdrive/locationd/kalman/templates/*
 selfdrive/locationd/kalman/helpers/*
 selfdrive/locationd/kalman/models/live_kf.py
+selfdrive/locationd/kalman/models/car_kf.py
 
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py
