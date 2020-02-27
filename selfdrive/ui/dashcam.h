@@ -1,12 +1,13 @@
 #include <time.h>
+#include <dirent.h>
 
 #define CAPTURE_STATE_NONE 0
 #define CAPTURE_STATE_CAPTURING 1
 #define CAPTURE_STATE_NOT_CAPTURING 2
 #define CAPTURE_STATE_PAUSED 3
 #define CLICK_TIME 0.2
-#define RECORD_INTERVAL 420 // Time in seconds to rotate recordings; Max for screenrecord is 7 minutes
-#define RECORD_FILES 15 // Number of files to create before looping over
+#define RECORD_INTERVAL 180 // Time in seconds to rotate recordings; Max for screenrecord is 3 minutes
+#define RECORD_FILES 40 // Number of files to create before looping over
 
 typedef struct dashcam_element {
   int pos_x;
@@ -336,8 +337,10 @@ void dashcam( UIState *s, int touch_x, int touch_y ) {
     // Assume car is not in drive so stop recording
     stop_capture();
   }
-  if (s->scene.v_ego > 2) {
+  if (s->scene.v_ego > 2.1 && captureState == CAPTURE_STATE_NOT_CAPTURING) {
     start_capture();
+  } else if (s->scene.v_ego < 1.5 && !s->scene.engaged) {
+    stop_capture();
   }
   s->scene.recording = (captureState != CAPTURE_STATE_NOT_CAPTURING);
 }
