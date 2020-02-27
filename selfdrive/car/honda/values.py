@@ -39,6 +39,7 @@ class CAR:
   PILOT = "HONDA PILOT 2017 TOURING"
   PILOT_2019 = "HONDA PILOT 2019 ELITE"
   RIDGELINE = "HONDA RIDGELINE 2017 BLACK EDITION"
+  INSIGHT = "HONDA INSIGHT 2019 TOURING"
 
 # diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
 DIAG_MSGS = {1600: 5, 1601: 8}
@@ -631,6 +632,20 @@ FW_VERSIONS = {
       b'57114-T6Z-A130\x00\x00',
     ],
   },
+  CAR.INSIGHT: {
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TXM-A040\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36802-TXM-A070\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'36161-TXM-A050\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TXM-A230\x00\x00',
+    ],
+  },
 }
 
 DBC = {
@@ -651,6 +666,7 @@ DBC = {
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated.dbc', None),
 }
 
 STEER_THRESHOLD = {
@@ -671,6 +687,7 @@ STEER_THRESHOLD = {
   CAR.PILOT: 1200,
   CAR.PILOT_2019: 1200,
   CAR.RIDGELINE: 1200,
+  CAR.INSIGHT: 1200,
 }
 
 SPEED_FACTOR = {
@@ -691,6 +708,7 @@ SPEED_FACTOR = {
   CAR.PILOT: 1.,
   CAR.PILOT_2019: 1.,
   CAR.RIDGELINE: 1.,
+  CAR.INSIGHT: 1.,
 }
 
 # msgs sent for steering controller by camera module on can 0.
@@ -699,4 +717,4 @@ ECU_FINGERPRINT = {
   Ecu.fwdCamera: [0xE4, 0x194],   # steer torque cmd
 }
 
-HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID]
+HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT]
