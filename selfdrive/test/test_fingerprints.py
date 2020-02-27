@@ -2,6 +2,7 @@
 import os
 import sys
 from common.basedir import BASEDIR
+from selfdrive.car.fingerprints import IGNORED_FINGERPRINTS
 
 # messages reserved for CAN based ignition (see can_ignition_hook function in panda/board/drivers/can)
 # (addr, len)
@@ -65,6 +66,9 @@ car_names = []
 brand_names = []
 for brand in fingerprints:
   for car in fingerprints[brand]:
+    if car in IGNORED_FINGERPRINTS:
+      continue
+
     fingerprints_flat += fingerprints[brand][car]
     for i in range(len(fingerprints[brand][car])):
       car_names.append(car)
