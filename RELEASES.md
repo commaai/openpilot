@@ -1,3 +1,7 @@
+Version 0.7.4 (2020-xx-xx)
+========================
+ * Support for Honda Insight thanks to theantihero!
+
 Version 0.7.3 (2020-02-21)
 ========================
  * Support for 2020 Highlander thanks to che220!
