@@ -267,7 +267,7 @@ FINGERPRINTS = {
 }
 
 # Don't use theses fingerprints for fingerprinting, they are still needed for ECU detection
-IGNORED_FINGERPRINTS = [CAR.RAV4H_TSS2]
+IGNORED_FINGERPRINTS = []
 
 FW_VERSIONS = {
   CAR.AVALON: {
