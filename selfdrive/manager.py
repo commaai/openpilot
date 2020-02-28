@@ -127,6 +127,7 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
 from common import android
 from common.apk import update_apks, pm_apply_packages, start_frame
+from common.manager_helpers import print_cpu_usage
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
@@ -453,9 +454,6 @@ def manager_thread():
     if os.getenv("GET_CPU_USAGE"):
       dt = time.time() - start_t
 
-      def cputime_total(ct):
-        return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
-
       # Get first sample
       if dt > 30 and first_proc is None:
         first_proc = messaging.recv_sock(proc_sock)
@@ -464,50 +462,7 @@ def manager_thread():
       if dt > 90:
         first_proc = first_proc
         last_proc = messaging.recv_sock(proc_sock, wait=True)
-
-        # Stop everything
-        logger_dead = False
-        for p in reversed(car_started_processes):
-          kill_managed_process(p)
-
-        procs = [
-            "selfdrive.thermald",
-            "selfdrive.controls.controlsd",
-            "selfdrive.controls.plannerd",
-            "selfdrive.controls.radard",
-            "selfdrive.controls.dmonitoringd",
-            "./ubloxd",
-            "./loggerd",
-            "selfdrive.logmessaged",
-            "selfdrive.locationd.locationd",
-            "selfdrive.tombstoned",
-            "./logcatd",
-            "./proclogd",
-            "./boardd",
-            "./_ui",
-            "selfdrive.locationd.calibrationd",
-            "./paramsd",
-            "./camerad",
-            "./_sensord",
-            "./clocksd",
-            "./_gpsd",
-            "selfdrive.updated",
-            "./_dmonitoringmodeld",
-            "./_modeld",
-        ]
-
-        dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
-        print("------------------------------------------------")
-        for proc_name in procs:
-          try:
-            first = [p for p in first_proc.procLog.procs if proc_name in p.cmdline][0]
-            last = [p for p in last_proc.procLog.procs if proc_name in p.cmdline][0]
-            cpu_time = cputime_total(last) - cputime_total(first)
-            cpu_usage = cpu_time / dt * 100.
-            print(f"{proc_name.ljust(35)}  {cpu_usage:.2f}%")
-          except IndexError:
-            print(f"{proc_name.ljust(35)}  NO METRICS FOUND")
-        print("------------------------------------------------")
+        print_cpu_usage(first_proc, last_proc)
         break
 
 def manager_prepare(spinner=None):
