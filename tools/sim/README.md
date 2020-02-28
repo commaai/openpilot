@@ -21,8 +21,7 @@ pipenv install
   
 # == 4. Download and unpack CARLA ==
 // curl seems to randomly stop when getting big files, so we suggest downloading  
-// [CARLA](http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/CARLA_0.9.5.tar.gz)  
-// to ~/openpilot/tools/sim with a browser first then continue  
+// [CARLA](http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/CARLA_0.9.5.tar.gz) to ~/openpilot/tools/sim with a browser first then continue  
 cd ~/openpilot/tools/sim  
 ./get_carla_095.sh  
   
