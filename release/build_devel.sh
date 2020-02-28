@@ -3,6 +3,10 @@
 mkdir -p /dev/shm
 chmod 777 /dev/shm
 
+# Write cpuset
+echo $$ > /dev/cpuset/app/tasks
+echo $PPID > /dev/cpuset/app/tasks
+
 
 add_subtree() {
   echo "[-] adding $2 subtree T=$SECONDS"

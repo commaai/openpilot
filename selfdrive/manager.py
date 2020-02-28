@@ -499,9 +499,7 @@ def manager_thread():
         dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
         print("------------------------")
         print("CPU USAGE: ")
-
         for proc_name in procs:
-
           try:
             first = [p for p in first_proc.procLog.procs if proc_name in p.cmdline][0]
             last = [p for p in last_proc.procLog.procs if proc_name in p.cmdline][0]
@@ -510,9 +508,7 @@ def manager_thread():
             print(f"{proc_name.ljust(35)} - {cpu_usage:.2f}%")
           except IndexError:
             print(f"{proc_name.ljust(35)} - NO METRICS FOUND")
-
         print("------------------------")
-
         break
 
 def manager_prepare(spinner=None):
