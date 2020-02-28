@@ -56,7 +56,10 @@ def unblock_stdout():
       except (OSError, IOError, UnicodeDecodeError):
         pass
 
-    os._exit(os.wait()[1])
+    # os.wait() returns a tuple with the pid and a 16 bit value
+    # whose low byte is the signal number and whose high byte is the exit satus
+    exit_status = os.wait()[1] >> 8
+    os._exit(exit_status)
 
 
 if __name__ == "__main__":
@@ -542,11 +545,11 @@ def main():
 
   try:
     manager_thread()
+  except SystemExit:
+    raise
   except Exception:
     traceback.print_exc()
     crash.capture_exception()
-  except SystemExit:
-    raise
   finally:
     cleanup_all_processes(None, None)
 
