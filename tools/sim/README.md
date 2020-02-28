@@ -10,7 +10,7 @@ cd ~/
 git clone -b sim https://github.com/commaai/openpilot.git
 
 # == 2. Build openpilot ==
-// capnproto and capnpc-c needed for this step, see instruction [HERE](https://github.com/commaai/openpilot/tree/master/tools)  
+// capnproto and capnpc-c needed for this step, see instruction [HERE](https://github.com/commaai/openpilot/tree/master/tools) (2.Install Cap'n Proto)  
 cd ~/openpilot  
 scons  
 sudo cp ./phonelibs/capnp-c/x64/lib/libcapnp_c.so.0 /usr/lib  
