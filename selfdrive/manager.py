@@ -462,8 +462,9 @@ def manager_thread():
       if dt > 90:
         first_proc = first_proc
         last_proc = messaging.recv_sock(proc_sock, wait=True)
-        print_cpu_usage(first_proc, last_proc)
-        break
+
+        cleanup_all_processes(None, None)
+        sys.exit(print_cpu_usage(first_proc, last_proc))
 
 def manager_prepare(spinner=None):
   # build all processes
