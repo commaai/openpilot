@@ -4,29 +4,30 @@ def cputime_total(ct):
 
 def print_cpu_usage(first_proc, last_proc):
     procs = [
-        "selfdrive.thermald",
         "selfdrive.controls.controlsd",
+        "./_modeld",
+        "./loggerd",
         "selfdrive.controls.plannerd",
         "selfdrive.controls.radard",
-        "selfdrive.controls.dmonitoringd",
-        "./ubloxd",
-        "./loggerd",
-        "selfdrive.logmessaged",
+        "./camerad",
+        "./_ui",
         "selfdrive.locationd.locationd",
+        "selfdrive.controls.dmonitoringd",
+        "./_dmonitoringmodeld",
+        "./boardd",
+        "./ubloxd",
+        "./paramsd",
+        "selfdrive.locationd.calibrationd",
+
+        "selfdrive.thermald",
+        "selfdrive.logmessaged",
         "selfdrive.tombstoned",
         "./logcatd",
         "./proclogd",
-        "./boardd",
-        "./_ui",
-        "selfdrive.locationd.calibrationd",
-        "./paramsd",
-        "./camerad",
         "./_sensord",
         "./clocksd",
         "./_gpsd",
         "selfdrive.updated",
-        "./_dmonitoringmodeld",
-        "./_modeld",
     ]
 
     dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
