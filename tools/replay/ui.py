@@ -29,8 +29,9 @@ from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, BLACK, BLUE, GREEN,
 
 os.environ['BASEDIR'] = BASEDIR
 
-ANGLE_SCALE = 5.0
+ANGLE_SCALE = 25.0
 HOR = os.getenv("HORIZONTAL") is not None
+NO_FLIP = os.getenv("NO_FLIP") is not None
 
 
 def ui_thread(addr, frame_address):
@@ -126,12 +127,16 @@ def ui_thread(addr, frame_address):
     if fpkt.frame.transform:
       img_transform = np.array(fpkt.frame.transform).reshape(3,3)
     else:
-      # assume frame is flipped
-      img_transform = np.array([
-        [-1.0,  0.0, FULL_FRAME_SIZE[0]-1],
-        [ 0.0, -1.0, FULL_FRAME_SIZE[1]-1],
-        [ 0.0,  0.0, 1.0]
-      ])
+      if not NO_FLIP:
+        img_transform = np.array([
+          [ -1.0, 0.0, FULL_FRAME_SIZE[0]-1],
+          [ 0.0, -1.0, FULL_FRAME_SIZE[1]-1],
+          [ 0.0,  0.0, 1.0]
+        ])
+      else:
+        img_transform = np.array([
+          [ 1.0, 0.0, 0],
+          [ 0.0, 1.0, 0]])
 
 
     if rgb_img_raw and len(rgb_img_raw) == FULL_FRAME_SIZE[0] * FULL_FRAME_SIZE[1] * 3:
