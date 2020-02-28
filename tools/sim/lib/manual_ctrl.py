@@ -174,22 +174,22 @@ def wheel_poll_thread():
         _ = socket.recv()
 
     if mtype & 0x01: # buttons
-      if number == 0: # X
+      if number in [0,19]: # X
         if value == 1: # press down
           socket.send_string(str("cruise_down"))
           _ = socket.recv()
 
-      if number == 3: # triangle
+      if number in [3,18]: # triangle
         if value == 1: # press down
           socket.send_string(str("cruise_up"))
           _ = socket.recv()
 
-      if number == 1: # square
+      if number in [1,6]: # square
         if value == 1: # press down
           socket.send_string(str("cruise_cancel"))
           _ = socket.recv()
 
-      if number == 10: # R3
+      if number in [10,21]: # R3
         if value == 1: # press down
           socket.send_string(str("reverse_switch"))
           _ = socket.recv()

@@ -10,9 +10,10 @@ cd ~/
 git clone -b sim https://github.com/commaai/openpilot.git
 
 # == 2. Build openpilot ==
-// [capnproto](https://capnproto.org/install.html) and capnpc-c may be needed for this step  
+// capnproto and capnpc-c needed for this step, see instruction [HERE](https://github.com/commaai/openpilot/tree/master/tools)  
 cd ~/openpilot  
 scons  
+sudo cp ./phonelibs/capnp-c/x64/lib/libcapnp_c.so.0 /usr/lib  
 
 # == 3. Install environment from pipfile ==
 (if have pipenv already, skip this step) pip install pipenv  
@@ -35,6 +36,7 @@ cd ~/openpilot/tools/sim
 pipenv shell  
 cd ~/openpilot/selfdrive/  
 CUDA_VISIBLE_DEVICES='' PASSIVE=0 NOBOARD=1 ./manager.py  
+// you may need to comment out L47-54 in ./thermald.py, may need not  
   
 # == 5c. Start bridge (in terminal tap 3) ==
 // links carla to openpilot, will "start the car" according to manager  
