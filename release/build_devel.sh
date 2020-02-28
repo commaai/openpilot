@@ -1,4 +1,5 @@
-#!/data/data/com.termux/files/usr/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 mkdir -p /dev/shm
 chmod 777 /dev/shm
@@ -109,7 +110,7 @@ echo -n "1" > /data/params/d/HasCompletedSetup
 echo -n "1" > /data/params/d/CommunityFeaturesToggle
 
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
-PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" GET_CPU_USAGE=1 python selfdrive/manager.py
+PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" GET_CPU_USAGE=1 selfdrive/manager.py
 
 echo "[-] testing panda build T=$SECONDS"
 pushd panda/board/
