@@ -464,7 +464,7 @@ def manager_thread():
         last_proc = messaging.recv_sock(proc_sock, wait=True)
 
         cleanup_all_processes(None, None)
-        os._exit(print_cpu_usage(first_proc, last_proc))
+        sys.exit(print_cpu_usage(first_proc, last_proc))
 
 def manager_prepare(spinner=None):
   # build all processes
@@ -545,6 +545,8 @@ def main():
   except Exception:
     traceback.print_exc()
     crash.capture_exception()
+  except SystemExit:
+    raise
   finally:
     cleanup_all_processes(None, None)
 
