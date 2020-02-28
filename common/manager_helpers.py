@@ -5,7 +5,7 @@ def cputime_total(ct):
 def print_cpu_usage(first_proc, last_proc):
   r = 0
   procs = [
-      ("selfdrive.controls.controlsd", 49.46),
+      ("selfdrive.controls.controlsd", 59.46),
       ("./_modeld", 48.94),
       ("./loggerd", 28.49),
       ("selfdrive.controls.plannerd", 19.77),
