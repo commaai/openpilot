@@ -100,6 +100,7 @@ SCONS_CACHE=1 scons -j3
 
 echo "[-] testing openpilot T=$SECONDS"
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
+PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" GET_CPU_USAGE=1 python selfdrive/manager.py
 
 echo "[-] testing panda build T=$SECONDS"
 pushd panda/board/
