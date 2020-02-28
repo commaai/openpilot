@@ -106,6 +106,8 @@ echo "[-] testing openpilot T=$SECONDS"
 echo -n "0" > /data/params/d/Passive
 echo -n "0.2.0" > /data/params/d/CompletedTrainingVersion
 echo -n "1" > /data/params/d/HasCompletedSetup
+echo -n "1" > /data/params/d/CommunityFeaturesToggle
+
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" GET_CPU_USAGE=1 python selfdrive/manager.py
 
