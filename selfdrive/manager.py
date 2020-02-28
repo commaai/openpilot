@@ -464,7 +464,7 @@ def manager_thread():
         last_proc = messaging.recv_sock(proc_sock, wait=True)
 
         cleanup_all_processes(None, None)
-        sys.exit(print_cpu_usage(first_proc, last_proc))
+        os._exit(print_cpu_usage(first_proc, last_proc))
 
 def manager_prepare(spinner=None):
   # build all processes
