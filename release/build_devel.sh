@@ -99,6 +99,7 @@ git commit -a -m "openpilot v$VERSION release"
 SCONS_CACHE=1 scons -j3
 
 echo "[-] testing openpilot T=$SECONDS"
+echo -n "0" > /data/params/d/Passive
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" GET_CPU_USAGE=1 python selfdrive/manager.py
 
