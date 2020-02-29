@@ -51,7 +51,9 @@ pip install pipenv==2018.11.26
 cd ../
 pipenv install --system --deploy
 
-# TODO: add openpilot to PYTHONPATH
+# TODO: add openpilot to PYTHONPATH and external to PATH
 # export PYTHONPATH="$HOME/openpilot"
+# export PATH="$PATH:$HOME/openpilot/external/capnp/bin"
 
+# TODO: run external/capnp/build.sh ... needed?
 
