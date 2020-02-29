@@ -12,24 +12,16 @@ def getch():
     termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
   return ch
 
-def keyboard_poll_thread():
-  import zmq
-  context = zmq.Context()
-  socket = context.socket(zmq.REQ) # block on send
-  socket.bind('tcp://127.0.0.1:4444')
-
+def keyboard_poll_thread(q):
   while True:
     c = getch()
     print("got %s" % c)
     if c == '1':
-      socket.send_string(str("cruise_up"))
-      _ = socket.recv()
+      q.put(str("cruise_up"))
     if c == '2':
-      socket.send_string(str("cruise_down"))
-      _ = socket.recv()
+      q.put(str("cruise_down"))
     if c == '3':
-      socket.send_string(str("cruise_cancel"))
-      _ = socket.recv()
+      q.put(str("cruise_cancel"))
     if c == 'q':
       exit(0)
 

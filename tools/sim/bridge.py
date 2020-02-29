@@ -9,7 +9,6 @@ import threading
 import random
 import cereal.messaging as messaging
 import argparse
-import zmq
 import queue
 from common.params import Params
 from common.realtime import Ratekeeper
@@ -80,7 +79,7 @@ def fake_driver_monitoring():
     pm.send('driverState', dat)
     time.sleep(0.1)
 
-def go():
+def go(q):
   threading.Thread(target=health_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
 
@@ -156,28 +155,21 @@ def go():
   is_openpilot_engaged = False
   in_reverse = False
 
-  # zmq receiver for input thread
-  context = zmq.Context()
-  socket = context.socket(zmq.REP)
-  socket.connect("tcp://127.0.0.1:4444")
-
   throttle_out = 0
   brake_out = 0
   steer_angle_out = 0
 
   while 1:
-    vel = vehicle.get_velocity()
-    speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
+    t0 = time.time()
 
     cruise_button = 0
 
-    try:
-      #check for a input message, this will not block
-      message = socket.recv(flags=zmq.NOBLOCK)
-      socket.send(b"good")
-      print(message.decode('UTF-8'))
+    # check for a input message, this will not block
+    if not q.empty():
+      print("here")
+      message = q.get()
 
-      m = message.decode('UTF-8').split('_')
+      m = message.split('_')
       if m[0] == "steer":
         steer_angle_out = float(m[1])
         fake_wheel.set_angle(steer_angle_out) # touching the wheel overrides fake wheel angle
@@ -207,11 +199,13 @@ def go():
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
 
-    except zmq.Again as e:
-      #skip if no message
-      pass
+    t1 = time.time()
 
+    vel = vehicle.get_velocity()
+    speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
     can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button)
+
+    t2 = time.time()
 
     if rk.frame%1 == 0: # 20Hz?
       throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
@@ -225,6 +219,15 @@ def go():
       # print(steer_angle_out)
       vc = carla.VehicleControl(throttle=throttle_out, steer=steer_angle_out / 3.14, brake=brake_out, reverse=in_reverse)
       vehicle.apply_control(vc)
+
+    t3 = time.time()
+
+    # huh?
+    tt0 = (t1-t0)*1000.0
+    tt1 = (t2-t1)*1000.0
+    tt2 = (t3-t2)*1000.0
+    if tt0 > 1 or tt1 > 1 or tt2 > 1:
+      print(tt0, tt1, tt2)
 
     rk.keep_time()
 
@@ -245,16 +248,18 @@ if __name__ == "__main__":
     while 1:
       time.sleep(1)
     
-  from multiprocessing import Process
-  p = Process(target=go)
+  from multiprocessing import Process, Queue
+  q = Queue()
+  p = Process(target=go, args=(q,))
+  p.daemon = True
   p.start()
 
   if args.joystick:
     # start input poll for joystick
     from lib.manual_ctrl import wheel_poll_thread
-    wheel_poll_thread()
+    wheel_poll_thread(q)
   else:
     # start input poll for keyboard
     from lib.keyboard_ctrl import keyboard_poll_thread
-    keyboard_poll_thread()
+    keyboard_poll_thread(q)
 
