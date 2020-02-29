@@ -79,3 +79,7 @@ pip install -r tools/requirements.txt
 # to make modeld work on PC with nvidia GPU
 pip install tensorflow-gpu==2.0
 
+# for loggerd to work on ubuntu
+sudo mkdir -p /data/media/0/realdata
+sudo chown $USER /data/media/0/realdata
+
