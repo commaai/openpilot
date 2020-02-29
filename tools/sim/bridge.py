@@ -233,6 +233,7 @@ if __name__ == "__main__":
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
   params.put("CommunityFeaturesToggle", "1")
+  params.put("CalibrationParams", '{"vanishing_point": [582.06, 442.78], "valid_blocks": 20}')
 
   threading.Thread(target=health_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
