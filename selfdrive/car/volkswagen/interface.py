@@ -126,10 +126,8 @@ class CarInterface(CarInterfaceBase):
 
     # Per the Comma safety model, disable on pedals rising edge or when brake
     # is pressed and speed isn't zero.
-
-    ## Disabled cancelation on Gas pedal press, only Brakes
-    # if (ret.gasPressed and not self.gas_pressed_prev) or \
-    if (ret.brakePressed and (not self.brake_pressed_prev or not ret.standstill)):
+    if (ret.gasPressed and not self.gas_pressed_prev) or \
+            (ret.brakePressed and (not self.brake_pressed_prev or not ret.standstill)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     # Engagement and longitudinal control using stock ACC. Make sure OP is
