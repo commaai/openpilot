@@ -113,8 +113,11 @@ def go(q):
 
   # make tires less slippery
   wheel_control = carla.WheelPhysicsControl(tire_friction=5)
-  physics_control = carla.VehiclePhysicsControl(mass=1326, wheels=[wheel_control]*4, \
-                                                torque_curve=[[20.0, 500.0], [5000.0, 500.0]], gear_switch_time=0)
+  physics_control = vehicle.get_physics_control()
+  physics_control.mass = 1326
+  physics_control.wheels = [wheel_control]*4
+  physics_control.torque_curve = [[20.0, 500.0], [5000.0, 500.0]]
+  physics_control.gear_switch_time = 0.0
   vehicle.apply_physics_control(physics_control)
 
   if args.autopilot:
