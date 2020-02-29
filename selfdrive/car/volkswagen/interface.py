@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
 from common.params import Params
@@ -24,8 +23,7 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
-    # Updated all the values from jyoung's repo, indeed they are much better now
-    # but might still need a bit of tuning
+    # Updated to latest values from jyoung's repo, on his recommendation. 
 
     if candidate in [CAR.VW_GOLF, CAR.SKODA_SUPERB_B8]:
       
@@ -79,7 +77,6 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
     return ret
 
   # returns a car.CarState
