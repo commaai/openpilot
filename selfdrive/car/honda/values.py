@@ -297,6 +297,7 @@ FW_VERSIONS = {
       b'37805-5BA-A510\x00\x00',
       b'37805-5BA-L940\x00\x00',
       b'37805-5BA-L960\x00\x00',
+      b'37805-5AN-AH20\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-5CG-A040\x00\x00',
