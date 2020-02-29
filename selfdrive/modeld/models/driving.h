@@ -52,6 +52,7 @@ struct ModelDataRaw {
     float *long_x;
     float *long_v;
     float *long_a;
+    float *desire_state;
     float *meta;
     float *pose;
   };
