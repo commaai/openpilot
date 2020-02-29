@@ -9,17 +9,16 @@ import threading
 import random
 import cereal.messaging as messaging
 import argparse
-import zmq
 import queue
 from common.params import Params
 from common.realtime import Ratekeeper
 from lib.can import can_function, sendcan_function
 from lib.helpers import FakeSteeringWheel
-from lib.manual_ctrl import wheel_poll_thread
 from selfdrive.car.honda.values import CruiseButtons
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--autopilot', action='store_true')
+parser.add_argument('--joystick', action='store_true')
 args = parser.parse_args()
 
 pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
@@ -80,7 +79,10 @@ def fake_driver_monitoring():
     pm.send('driverState', dat)
     time.sleep(0.1)
 
-def go():
+def go(q):
+  threading.Thread(target=health_function).start()
+  threading.Thread(target=fake_driver_monitoring).start()
+
   import carla
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(5.0)
@@ -111,8 +113,11 @@ def go():
 
   # make tires less slippery
   wheel_control = carla.WheelPhysicsControl(tire_friction=5)
-  physics_control = carla.VehiclePhysicsControl(mass=1326, wheels=[wheel_control]*4, \
-                                                torque_curve=[[20.0, 500.0], [5000.0, 500.0]], gear_switch_time=0)
+  physics_control = vehicle.get_physics_control()
+  physics_control.mass = 1326
+  physics_control.wheels = [wheel_control]*4
+  physics_control.torque_curve = [[20.0, 500.0], [5000.0, 500.0]]
+  physics_control.gear_switch_time = 0.0
   vehicle.apply_physics_control(physics_control)
 
   if args.autopilot:
@@ -143,7 +148,7 @@ def go():
 
   # can loop
   sendcan = messaging.sub_sock('sendcan')
-  rk = Ratekeeper(100)
+  rk = Ratekeeper(100, print_delay_threshold=0.05)
 
   # init
   A_throttle = 2.
@@ -153,31 +158,19 @@ def go():
   is_openpilot_engaged = False
   in_reverse = False
 
-  # start input poll
-  from multiprocessing import Process
-  p = Process(target=wheel_poll_thread)
-  p.start()
-
-  # zmq receiver for input thread
-  context = zmq.Context()
-  socket = context.socket(zmq.REP)
-  socket.connect("tcp://127.0.0.1:4444")
-
   throttle_out = 0
   brake_out = 0
   steer_angle_out = 0
 
   while 1:
-    vel = vehicle.get_velocity()
-    speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
+    cruise_button = 0
 
-    try:
-      #check for a input message, this will not block
-      message = socket.recv(flags=zmq.NOBLOCK)
-      socket.send(b"good")
-      # print(message.decode('UTF-8'))
+    # check for a input message, this will not block
+    if not q.empty():
+      print("here")
+      message = q.get()
 
-      m = message.decode('UTF-8').split('_')
+      m = message.split('_')
       if m[0] == "steer":
         steer_angle_out = float(m[1])
         fake_wheel.set_angle(steer_angle_out) # touching the wheel overrides fake wheel angle
@@ -185,33 +178,32 @@ def go():
       if m[0] == "throttle":
         throttle_out = float(m[1]) / 100.
         if throttle_out > 0.3:
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
       if m[0] == "brake":
         brake_out = float(m[1]) / 100.
         if brake_out > 0.3:
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
       if m[0] == "reverse":
         in_reverse = not in_reverse
-        can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+        cruise_button = CruiseButtons.CANCEL
         is_openpilot_engaged = False
       if m[0] == "cruise":
         if m[1] == "down":
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.DECEL_SET)
+          cruise_button = CruiseButtons.DECEL_SET
           is_openpilot_engaged = True
         if m[1] == "up":
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.RES_ACCEL)
+          cruise_button = CruiseButtons.RES_ACCEL
           is_openpilot_engaged = True
         if m[1] == "cancel":
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
 
-    except zmq.Again as e:
-      #skip if no message
-      pass
+    vel = vehicle.get_velocity()
+    speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
+    can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button)
 
-    can_function(pm, speed, fake_wheel.angle, rk.frame)
     if rk.frame%1 == 0: # 20Hz?
       throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
       # print(" === torq, ",steer_torque_op, " ===")
@@ -234,9 +226,7 @@ if __name__ == "__main__":
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
   params.put("CommunityFeaturesToggle", "1")
-
-  threading.Thread(target=health_function).start()
-  threading.Thread(target=fake_driver_monitoring).start()
+  params.put("CalibrationParams", '{"vanishing_point": [582.06, 442.78], "valid_blocks": 20}')
 
   # no carla, still run
   try:
@@ -246,5 +236,18 @@ if __name__ == "__main__":
     while 1:
       time.sleep(1)
     
-  go()
+  from multiprocessing import Process, Queue
+  q = Queue()
+  p = Process(target=go, args=(q,))
+  p.daemon = True
+  p.start()
+
+  if args.joystick:
+    # start input poll for joystick
+    from lib.manual_ctrl import wheel_poll_thread
+    wheel_poll_thread(q)
+  else:
+    # start input poll for keyboard
+    from lib.keyboard_ctrl import keyboard_poll_thread
+    keyboard_poll_thread(q)
 

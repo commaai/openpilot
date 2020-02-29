@@ -26,7 +26,7 @@ class FakeSteeringWheel():
     # print(" ========== ")
     # print("angle,", self.angle)
     # print("omega,", self.omega)
-    print("torque,", exerted_torque)
+    # print("torque,", exerted_torque)
     # print("centering torque,", centering_torque)
     # print("damping torque,", damping_torque)
     # print(" ========== ")

@@ -88,7 +88,7 @@ button_names = {
 axis_map = []
 button_map = []
 
-def wheel_poll_thread():
+def wheel_poll_thread(q):
   # Open the joystick device.
   fn = '/dev/input/js0'
   print('Opening %s...' % fn)
@@ -139,12 +139,6 @@ def wheel_poll_thread():
   val = 24000
   evtdev.write(ecodes.EV_FF, ecodes.FF_AUTOCENTER, val)
 
-  # Set up zmq sock
-  import zmq
-  context = zmq.Context()
-  socket = context.socket(zmq.REQ) # block on send
-  socket.bind('tcp://127.0.0.1:4444')
-
   while True:
     evbuf = jsdev.read(8)
     time, value, mtype, number = struct.unpack('IhBB', evbuf)
@@ -156,43 +150,36 @@ def wheel_poll_thread():
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        socket.send_string(str("throttle_%f" % normalized))
-        _ = socket.recv()
+        q.put(str("throttle_%f" % normalized))
 
       if axis == "rz": # brake
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        socket.send_string(str("brake_%f" % normalized))
-        _ = socket.recv()
+        q.put(str("brake_%f" % normalized))
 
       if axis == "x": # steer angle
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = fvalue
-        socket.send_string(str("steer_%f" % normalized))
-        _ = socket.recv()
+        q.put(str("steer_%f" % normalized))
 
     if mtype & 0x01: # buttons
       if number in [0,19]: # X
         if value == 1: # press down
-          socket.send_string(str("cruise_down"))
-          _ = socket.recv()
+          q.put(str("cruise_down"))
 
       if number in [3,18]: # triangle
         if value == 1: # press down
-          socket.send_string(str("cruise_up"))
-          _ = socket.recv()
+          q.put(str("cruise_up"))
 
       if number in [1,6]: # square
         if value == 1: # press down
-          socket.send_string(str("cruise_cancel"))
-          _ = socket.recv()
+          q.put(str("cruise_cancel"))
 
       if number in [10,21]: # R3
         if value == 1: # press down
-          socket.send_string(str("reverse_switch"))
-          _ = socket.recv()
+          q.put(str("reverse_switch"))
 
 if __name__ == '__main__':
   from multiprocessing import Process

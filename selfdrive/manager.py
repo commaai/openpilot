@@ -407,6 +407,10 @@ def manager_thread():
   if os.getenv("NOBOARD") is None:
     start_managed_process("pandad")
 
+  if os.getenv("BLOCK") is not None:
+    for k in os.getenv("BLOCK").split(","):
+      del managed_processes[k]
+
   logger_dead = False
 
   while 1:
