@@ -119,14 +119,10 @@ class PathPlanner():
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
         elif torque_applied:
-          self.lane_change_state = LaneChangeState.laneChangeStarting
-
-      # starting
-      elif self.lane_change_state == LaneChangeState.laneChangeStarting and lane_change_prob > 0.5:
-        self.lane_change_state = LaneChangeState.laneChangeFinishing
+          self.lane_change_state = LaneChangeState.laneChangeFinishing
 
       # finishing
-      elif self.lane_change_state == LaneChangeState.laneChangeFinishing and lane_change_prob < 0.2:
+      elif self.lane_change_state == LaneChangeState.laneChangeFinishing and lane_change_prob < 0.5:
         if one_blinker:
           self.lane_change_state = LaneChangeState.preLaneChange
         else:

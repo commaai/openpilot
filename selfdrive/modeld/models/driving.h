@@ -65,6 +65,7 @@ typedef struct ModelState {
   RunModel *m;
 #ifdef DESIRE
   float *desire;
+  float *pulse_desire;
 #endif
 } ModelState;
 

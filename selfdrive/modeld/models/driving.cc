@@ -44,7 +44,9 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 #ifdef DESIRE
   s->desire = (float*)malloc(DESIRE_SIZE * sizeof(float));
   for (int i = 0; i < DESIRE_SIZE; i++) s->desire[i] = 0.0;
-  s->m->addDesire(s->desire, DESIRE_SIZE);
+  s->pulse_desire = (float*)malloc(DESIRE_SIZE * sizeof(float));
+  for (int i = 0; i < DESIRE_SIZE; i++) s->pulse_desire[i] = 0.0;
+  s->m->addDesire(s->pulse_desire, DESIRE_SIZE);
 #endif
 
   // Build Vandermonde matrix
@@ -62,7 +64,14 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            mat3 transform, void* sock, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
-    for (int i = 0; i < DESIRE_SIZE; i++) s->desire[i] = desire_in[i];
+    for (int i = 0; i < DESIRE_SIZE; i++) {
+      if ((desire_in[i] > 0.5) && (s->desire[i] < 0.5)) {
+        s->pulse_desire[i] = desire_in[i];
+      } else {
+        s->pulse_desire[i] = 0.0;
+      }
+      s->desire[i] = desire_in[i];
+    }
   }
 #endif
 
