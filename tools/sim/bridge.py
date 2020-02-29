@@ -34,8 +34,9 @@ def cam_callback(image):
   dat = messaging.new_message()
   dat.init('frame')
   dat.frame = {
-    # "frameId": image.frame,
+    "frameId": image.frame,
     "image": img.tostring(),
+    "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
   pm.send('frame', dat)
 
@@ -127,14 +128,14 @@ def go():
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
   camera.listen(cam_callback)
 
-  # TODO: wait for carla 0.9.7
-  # imu_bp = blueprint_library.find('sensor.other.imu')
-  # imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
-  # imu.listen(imu_callback)
+  # reenable IMU
+  imu_bp = blueprint_library.find('sensor.other.imu')
+  imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
+  imu.listen(imu_callback)
 
   def destroy():
     print("clean exit")
-    # imu.destroy()
+    imu.destroy()
     camera.destroy()
     vehicle.destroy()
     print("done")
