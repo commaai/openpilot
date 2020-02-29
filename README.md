@@ -100,6 +100,7 @@ Supported Cars
 | Lexus     | RX 2016-17                    | All               | Stock<sup>5</sup>| 0mph               | 0mph              |
 | Lexus     | RX 2020                       | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>5</sup>| 0mph               | 0mph              |
+| Skoda     | Superb B8 2015-19<sup>3</sup> | Driver Assistance | Stock            | 0mph               | 0mph              |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph              |
 | Subaru    | Impreza 2019-20               | EyeSight          | Stock            | 0mph               | 0mph              |
 | Toyota    | Avalon 2016                   | TSS-P             | Stock<sup>5</sup>| 20mph<sup>6</sup>  | 0mph              |
