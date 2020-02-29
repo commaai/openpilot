@@ -28,7 +28,7 @@ openpilot-tools and the following setup steps are developed and tested on Ubuntu
 
 Setup
 ============
-TODO: Some of these instructions conflict/overlap with ubuntu_setup.sh setup instructions
+TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructions
 
 1. Install native dependencies (Mac and Ubuntu sections listed below)
 
