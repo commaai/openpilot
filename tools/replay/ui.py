@@ -127,10 +127,11 @@ def ui_thread(addr, frame_address):
       img_transform = np.array(fpkt.frame.transform).reshape(3,3)
     else:
       img_transform = np.array([
-        [ -1.0, 0.0, FULL_FRAME_SIZE[0]-1],
+        [-1.0, 0.0, FULL_FRAME_SIZE[0]-1],
         [ 0.0, -1.0, FULL_FRAME_SIZE[1]-1],
         [ 0.0,  0.0, 1.0]
       ])
+
 
     if rgb_img_raw and len(rgb_img_raw) == FULL_FRAME_SIZE[0] * FULL_FRAME_SIZE[1] * 3:
       imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3))
