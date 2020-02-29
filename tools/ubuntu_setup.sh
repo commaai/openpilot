@@ -22,6 +22,7 @@ sudo apt-get update && sudo apt-get install -y \
     libomp-dev \
     libopencv-dev \
     libssl-dev \
+    libstdc++-arm-none-eabi-newlib \
     libsqlite3-dev \
     libtool \
     libusb-1.0-0-dev \
@@ -54,6 +55,7 @@ pipenv install --system --deploy
 # TODO: add openpilot to PYTHONPATH and external to PATH
 # export PYTHONPATH="$HOME/openpilot"
 # export PATH="$PATH:$HOME/openpilot/external/capnp/bin"
+# export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openpilot/external/capnp/lib"
 
 # TODO: run external/capnp/build.sh ... needed?
 
