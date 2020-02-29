@@ -40,7 +40,15 @@ sudo apt-get update && sudo apt-get install -y \
     screen \
     sudo \
     vim \
-    wget
+    wget \
+    gcc-arm-none-eabi \
+    libgles2-mesa-dev \
+    libbz2-dev \
+    scons 
+    
+# Install scons for py2 and py3, Rest can be handled with pyenv
+pip install scons
+pip3 install scons
 
 # git lfs to pull models
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
@@ -61,7 +69,9 @@ fi
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
   echo "source $HOME/openpilot/tools/openpilot_env.sh" >> ~/.bashrc
+  
   source ~/.bashrc
+  exec bash
   echo "added openpilot_env to bashrc"
 fi
 
