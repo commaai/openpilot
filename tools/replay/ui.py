@@ -127,7 +127,7 @@ def ui_thread(addr, frame_address):
       img_transform = np.array(fpkt.frame.transform).reshape(3,3)
     else:
       img_transform = np.array([
-        [-1.0, 0.0, FULL_FRAME_SIZE[0]-1],
+        [-1.0,  0.0, FULL_FRAME_SIZE[0]-1],
         [ 0.0, -1.0, FULL_FRAME_SIZE[1]-1],
         [ 0.0,  0.0, 1.0]
       ])
