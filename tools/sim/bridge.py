@@ -160,8 +160,6 @@ def go(q):
   steer_angle_out = 0
 
   while 1:
-    t0 = time.time()
-
     cruise_button = 0
 
     # check for a input message, this will not block
@@ -199,13 +197,9 @@ def go(q):
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
 
-    t1 = time.time()
-
     vel = vehicle.get_velocity()
     speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
     can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button)
-
-    t2 = time.time()
 
     if rk.frame%1 == 0: # 20Hz?
       throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
@@ -219,15 +213,6 @@ def go(q):
       # print(steer_angle_out)
       vc = carla.VehicleControl(throttle=throttle_out, steer=steer_angle_out / 3.14, brake=brake_out, reverse=in_reverse)
       vehicle.apply_control(vc)
-
-    t3 = time.time()
-
-    # huh?
-    tt0 = (t1-t0)*1000.0
-    tt1 = (t2-t1)*1000.0
-    tt2 = (t3-t2)*1000.0
-    if tt0 > 1 or tt1 > 1 or tt2 > 1:
-      print(tt0, tt1, tt2)
 
     rk.keep_time()
 
