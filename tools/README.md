@@ -28,7 +28,7 @@ openpilot-tools and the following setup steps are developed and tested on Ubuntu
 
 Setup
 ============
-
+TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructions
 
 1. Install native dependencies (Mac and Ubuntu sections listed below)
 
@@ -156,9 +156,7 @@ Setup
 3. Clone tools within openpilot, and install dependencies
 
     ```bash
-    git clone https://github.com/commaai/openpilot-tools.git tools
     cd tools
-    git checkout <tag>  # the tag must match the openpilot version you are using (see https://github.com/commaai/openpilot-tools/tags)
     pip install -r requirements.txt # Install openpilot-tools dependencies in virtualenv
     ```
 
