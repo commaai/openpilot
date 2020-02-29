@@ -41,20 +41,17 @@ sudo apt-get update && sudo apt-get install -y \
     screen \
     sudo \
     vim \
-    wget
+    wget \
+    gcc-arm-none-eabi
 
-# git lfs to pull models
-curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-sudo apt-get install git-lfs
-
-# in the openpilot repo
-cd $HOME/openpilot
-git lfs pull
-git submodule init
-git submodule update
+# install git lfs
+if ! command -v "git-lfs" > /dev/null 2>&1; then
+  curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+  sudo apt-get install git-lfs
+fi
 
 # install pyenv
-if [ ! -d $HOME/.pyenv ]; then
+if ! command -v "pyenv" > /dev/null 2>&1; then
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 fi
 
@@ -66,26 +63,26 @@ if [ -z "$OPENPILOT_ENV" ]; then
   echo "added openpilot_env to bashrc"
 fi
 
-# install python 3.7.3 globally
+# in the openpilot repo
+cd $HOME/openpilot
+
+# do the rest of the git checkout
+git lfs pull
+git submodule init
+git submodule update
+
+# install python 3.7.3 globally (you should move to python3 anyway)
 pyenv install -s 3.7.3
 pyenv global 3.7.3
 pyenv rehash
+
+# **** in python env ****
 
 # install pipenv
 pip install pipenv==2018.11.26
 
 # pipenv setup (in openpilot dir)
 pipenv install --system --deploy
-
-# install capnp (not needed anymore)
-#cd external/capnp
-#if [ ! -d lib ]; then
-#  ./build.sh
-#  git checkout bin/*   # don't update these
-#fi
-#cd ../../
-
-# at this point, manager runs
 
 # to make tools work
 pip install -r tools/requirements.txt
