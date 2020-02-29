@@ -14,7 +14,7 @@ from common.android import ANDROID
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-TOTAL_SCONS_NODES = 1170
+TOTAL_SCONS_NODES = 1195
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 # Create folders needed for msgq
@@ -142,6 +142,7 @@ managed_processes = {
   "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
+  "locationd": "selfdrive.locationd.locationd",
   "tombstoned": "selfdrive.tombstoned",
   "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
@@ -204,6 +205,7 @@ car_started_processes = [
   'modeld',
   'proclogd',
   'ubloxd',
+  'locationd',
 ]
 if ANDROID:
   car_started_processes += [
@@ -289,6 +291,15 @@ def prepare_managed_process(p):
       subprocess.check_call(["make", "clean"], cwd=os.path.join(BASEDIR, proc[0]))
       subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, proc[0]))
 
+
+def join_process(process, timeout):
+  # Process().join(timeout) will hang due to a python 3 bug: https://bugs.python.org/issue28382
+  # We have to poll the exitcode instead
+  t = time.time()
+  while time.time() - t < timeout and process.exitcode is None:
+    time.sleep(0.001)
+
+
 def kill_managed_process(name):
   if name not in running or name not in managed_processes:
     return
@@ -302,18 +313,12 @@ def kill_managed_process(name):
     else:
       running[name].terminate()
 
-    # Process().join(timeout) will hang due to a python 3 bug: https://bugs.python.org/issue28382
-    # We have to poll the exitcode instead
-    # running[name].join(5.0)
-
-    t = time.time()
-    while time.time() - t < 5 and running[name].exitcode is None:
-      time.sleep(0.001)
+    join_process(running[name], 5)
 
     if running[name].exitcode is None:
       if name in unkillable_processes:
         cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
-        running[name].join(15.0)
+        join_process(running[name], 15)
         if running[name].exitcode is None:
           cloudlog.critical("FORCE REBOOTING PHONE!")
           os.system("date >> /sdcard/unkillable_reboot")
@@ -470,38 +475,29 @@ def main():
   params = Params()
   params.manager_start()
 
+  default_params = [
+    ("CommunityFeaturesToggle", "0"),
+    ("CompletedTrainingVersion", "0"),
+    ("IsMetric", "0"),
+    ("RecordFront", "0"),
+    ("HasAcceptedTerms", "0"),
+    ("HasCompletedSetup", "0"),
+    ("IsUploadRawEnabled", "1"),
+    ("IsLdwEnabled", "1"),
+    ("IsGeofenceEnabled", "-1"),
+    ("SpeedLimitOffset", "0"),
+    ("LongitudinalControl", "0"),
+    ("LimitSetSpeed", "0"),
+    ("LimitSetSpeedNeural", "0"),
+    ("LastUpdateTime", datetime.datetime.now().isoformat().encode('utf8')),
+    ("OpenpilotEnabledToggle", "1"),
+    ("LaneChangeEnabled", "1"),
+  ]
+
   # set unset params
-  if params.get("CommunityFeaturesToggle") is None:
-    params.put("CommunityFeaturesToggle", "0")
-  if params.get("CompletedTrainingVersion") is None:
-    params.put("CompletedTrainingVersion", "0")
-  if params.get("IsMetric") is None:
-    params.put("IsMetric", "0")
-  if params.get("RecordFront") is None:
-    params.put("RecordFront", "0")
-  if params.get("HasAcceptedTerms") is None:
-    params.put("HasAcceptedTerms", "0")
-  if params.get("HasCompletedSetup") is None:
-    params.put("HasCompletedSetup", "0")
-  if params.get("IsUploadRawEnabled") is None:
-    params.put("IsUploadRawEnabled", "1")
-  if params.get("IsLdwEnabled") is None:
-    params.put("IsLdwEnabled", "1")
-  if params.get("IsGeofenceEnabled") is None:
-    params.put("IsGeofenceEnabled", "-1")
-  if params.get("SpeedLimitOffset") is None:
-    params.put("SpeedLimitOffset", "0")
-  if params.get("LongitudinalControl") is None:
-    params.put("LongitudinalControl", "0")
-  if params.get("LimitSetSpeed") is None:
-    params.put("LimitSetSpeed", "0")
-  if params.get("LimitSetSpeedNeural") is None:
-    params.put("LimitSetSpeedNeural", "0")
-  if params.get("LastUpdateTime") is None:
-    t = datetime.datetime.now().isoformat()
-    params.put("LastUpdateTime", t.encode('utf8'))
-  if params.get("OpenpilotEnabledToggle") is None:
-    params.put("OpenpilotEnabledToggle", "1")
+  for k, v in default_params:
+    if params.get(k) is None:
+      params.put(k, v)
 
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:

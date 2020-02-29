@@ -11,7 +11,7 @@ def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
   return packer.make_can_msg("ASCMLKASteeringCmd", bus, values)
 
-def create_steering_control_ct6(packer, canbus, apply_steer, v_ego, idx, enabled):
+def create_steering_control_ct6(packer, CanBus, apply_steer, v_ego, idx, enabled):
 
   values = {
     "LKASteeringCmdActive": 1 if enabled else 0,
@@ -31,10 +31,10 @@ def create_steering_control_ct6(packer, canbus, apply_steer, v_ego, idx, enabled
   # pack again with checksum
   dat = packer.make_can_msg("ASCMLKASteeringCmd", 0, values)[2]
 
-  return [0x152, 0, dat, canbus.powertrain], \
-         [0x154, 0, dat, canbus.powertrain], \
-         [0x151, 0, dat, canbus.chassis], \
-         [0x153, 0, dat, canbus.chassis]
+  return [0x152, 0, dat, CanBus.POWERTRAIN], \
+         [0x154, 0, dat, CanBus.POWERTRAIN], \
+         [0x151, 0, dat, CanBus.CHASSIS], \
+         [0x153, 0, dat, CanBus.CHASSIS]
 
 
 def create_adas_keepalive(bus):
@@ -67,8 +67,8 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
   else:
     mode = 0xa
 
-    if at_full_stop:
-      mode = 0xd
+  if at_full_stop:
+    mode = 0xd
     # TODO: this is to have GM bringing the car to complete stop,
     # but currently it conflicts with OP controls, so turned off.
     #elif near_stop:

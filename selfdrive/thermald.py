@@ -4,7 +4,6 @@ import json
 import copy
 import datetime
 import psutil
-import subprocess
 from smbus2 import SMBus
 from cereal import log
 from common.android import ANDROID, get_network_type
@@ -32,6 +31,9 @@ with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
   OFFROAD_ALERTS = json.load(json_file)
 
 def read_tz(x, clip=True):
+  if not ANDROID:
+    # we don't monitor thermal on PC
+    return 0
   try:
     with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
       ret = int(f.read())
@@ -130,7 +132,7 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
 
 
 def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
-  new_speed = int(interp(max_cpu_temp, [40.0, 80.0], [0, 100]))
+  new_speed = int(interp(max_cpu_temp, [40.0, 80.0], [0, 80]))
 
   if not ignition:
     new_speed = min(30, new_speed)
@@ -192,10 +194,12 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
-    try:
-      network_type = get_network_type()
-    except subprocess.CalledProcessError:
-      pass
+    # get_network_type is an expensive call. update every 10s
+    if (count % int(10. / DT_TRML)) == 0:
+      try:
+        network_type = get_network_type()
+      except Exception:
+        pass
 
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
@@ -272,13 +276,16 @@ def thermald_thread():
       last_update = now
     dt = now - last_update
 
-    if dt.days > DAYS_NO_CONNECTIVITY_MAX:
+    update_failed_count = params.get("UpdateFailedCount")
+    update_failed_count = 0 if update_failed_count is None else int(update_failed_count)
+
+    if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
       if current_connectivity_alert != "expired":
         current_connectivity_alert = "expired"
         params.delete("Offroad_ConnectivityNeededPrompt")
         params.put("Offroad_ConnectivityNeeded", json.dumps(OFFROAD_ALERTS["Offroad_ConnectivityNeeded"]))
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
-      remaining_time = str(DAYS_NO_CONNECTIVITY_MAX - dt.days)
+      remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
       if current_connectivity_alert != "prompt" + remaining_time:
         current_connectivity_alert = "prompt" + remaining_time
         alert_connectivity_prompt = copy.copy(OFFROAD_ALERTS["Offroad_ConnectivityNeededPrompt"])
@@ -388,7 +395,7 @@ def thermald_thread():
     count += 1
 
 
-def main(gctx=None):
+def main():
   thermald_thread()
 
 if __name__ == "__main__":

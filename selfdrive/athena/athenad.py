@@ -294,7 +294,7 @@ def ws_send(ws, end_event):
 def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
-def main(gctx=None):
+def main():
   params = Params()
   dongle_id = params.get("DongleId").decode('utf-8')
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
