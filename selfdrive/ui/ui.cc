@@ -86,6 +86,19 @@ static void navigate_to_home(UIState *s) {
 #endif
 }
 
+static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
+  if (!s->scene.uilayout_sidebarcollapsed && touch_x <= sbr_w) {
+    if (touch_x >= settings_btn_x && touch_x < (settings_btn_x + settings_btn_w)
+      && touch_y >= settings_btn_y && touch_y < (settings_btn_y + settings_btn_h)) {
+      navigate_to_settings(s);
+    }
+    if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
+      && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
+      navigate_to_home(s);
+    }
+  }
+}
+
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
@@ -897,6 +910,9 @@ int main(int argc, char* argv[]) {
   s->volume_timeout = 5 * UI_FREQ;
   int draws = 0;
 
+  int touch_x_last;
+  int touch_y_last;
+
   while (!do_exit) {
     bool should_swap = false;
     if (!s->vision_connected) {
@@ -914,39 +930,32 @@ int main(int argc, char* argv[]) {
     if (smooth_brightness > 255) smooth_brightness = 255;
     set_brightness(s, (int)smooth_brightness);
 
-    zmq_pollitem_t polls[1] = {{0}};
-    polls[0].fd = s->touch_fd;
-    polls[0].events = ZMQ_POLLIN;
-    int touch_p = zmq_poll(polls, 1, 0);
+    if (!s->vision_connected) {
+      check_messages(s);
+      zmq_pollitem_t polls[1] = {{0}};
+      polls[0].fd = s->touch_fd;
+      polls[0].events = ZMQ_POLLIN;
+      int touch_p = zmq_poll(polls, 1, 0);
 
-    if (touch_p < 0) {
-      if (errno == EINTR) continue;
-      LOGW("poll failed (%d)", touch_p);
-    } else if (touch_p > 0) {
-      int touch_x = -1, touch_y = -1;
-      int touched = touch_read(&touch, &touch_x, &touch_y);
-      if (touched == 1) {
-        if (!s->vision_connected) {
-          // awake on any touch
-          set_awake(s, true);
-        }
-
-        // handle sidebar touch events
-        if (!s->scene.uilayout_sidebarcollapsed) {
-          if (touch_x >= settings_btn_x && touch_x < settings_btn_x + settings_btn_w
-            && touch_y >= settings_btn_y && touch_y < settings_btn_y + settings_btn_h) {
-              navigate_to_settings(s);
+      if (touch_p < 0) {
+        if (errno == EINTR) continue;
+        LOGW("poll failed (%d)", touch_p);
+      } else if (touch_p > 0) {
+        int touch_x = -1, touch_y = -1;
+        int touched = touch_read(&touch, &touch_x, &touch_y);
+        if (touched == 1) {
+          if (!s->vision_connected) {
+            // awake on any touch
+            set_awake(s, true);
           }
-          if (touch_x >= home_btn_x && touch_x < home_btn_x + home_btn_w
-            && touch_y >= home_btn_y && touch_y < home_btn_y + home_btn_h) {
-              navigate_to_home(s);
+
+          if (touch_x != touch_x_last && touch_y != touch_y_last) {
+            handle_sidebar_touch(s, touch_x, touch_y);
+            touch_x_last = touch_x;
+            touch_y_last = touch_y;
           }
         }
       }
-    }
-
-    if (!s->vision_connected) {
-      check_messages(s);
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
       }
