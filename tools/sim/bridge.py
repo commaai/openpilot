@@ -153,7 +153,6 @@ def go():
   is_openpilot_engaged = False
   in_reverse = False
 
-
   # zmq receiver for input thread
   context = zmq.Context()
   socket = context.socket(zmq.REP)

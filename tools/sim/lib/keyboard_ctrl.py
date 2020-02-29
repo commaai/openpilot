@@ -23,10 +23,13 @@ def keyboard_poll_thread():
     print("got %s" % c)
     if c == '1':
       socket.send_string(str("cruise_up"))
+      _ = socket.recv()
     if c == '2':
       socket.send_string(str("cruise_down"))
+      _ = socket.recv()
     if c == '3':
       socket.send_string(str("cruise_cancel"))
+      _ = socket.recv()
     if c == 'q':
       exit(0)
 
