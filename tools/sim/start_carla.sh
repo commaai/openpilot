@@ -9,7 +9,7 @@ if [ ! -d carla ]; then
   mkdir -p carla_tmp
   cd carla_tmp
   tar xvf ../$FILE
-  easy_install PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg
+  easy_install PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true
   cd ../
   mv carla_tmp carla
 fi
