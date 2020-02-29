@@ -81,6 +81,9 @@ def fake_driver_monitoring():
     time.sleep(0.1)
 
 def go():
+  threading.Thread(target=health_function).start()
+  threading.Thread(target=fake_driver_monitoring).start()
+
   import carla
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(5.0)
@@ -143,7 +146,7 @@ def go():
 
   # can loop
   sendcan = messaging.sub_sock('sendcan')
-  rk = Ratekeeper(100, print_delay_threshold=10.0)
+  rk = Ratekeeper(100, print_delay_threshold=0.05)
 
   # init
   A_throttle = 2.
@@ -233,9 +236,6 @@ if __name__ == "__main__":
   params.put("CompletedTrainingVersion", training_version)
   params.put("CommunityFeaturesToggle", "1")
   params.put("CalibrationParams", '{"vanishing_point": [582.06, 442.78], "valid_blocks": 20}')
-
-  threading.Thread(target=health_function).start()
-  threading.Thread(target=fake_driver_monitoring).start()
 
   # no carla, still run
   try:

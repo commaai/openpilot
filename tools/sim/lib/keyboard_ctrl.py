@@ -1,7 +1,16 @@
 import time
 import sys
 import tty, termios
-import readchar
+
+def getch():
+  fd = sys.stdin.fileno()
+  old_settings = termios.tcgetattr(fd)
+  try:
+    tty.setraw(sys.stdin.fileno())
+    ch = sys.stdin.read(1)
+  finally:
+    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+  return ch
 
 def keyboard_poll_thread():
   import zmq
@@ -10,7 +19,7 @@ def keyboard_poll_thread():
   socket.bind('tcp://127.0.0.1:4444')
 
   while True:
-    c = readchar.readchar()
+    c = getch()
     print("got %s" % c)
     if c == '1':
       socket.send_string(str("cruise_up"))
@@ -26,3 +35,4 @@ def keyboard_poll_thread():
 
 if __name__ == '__main__':
   keyboard_poll_thread()
+
