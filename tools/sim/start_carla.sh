@@ -15,5 +15,5 @@ if [ ! -d carla ]; then
 fi
 
 cd carla
-./CarlaUE4.sh
+./CarlaUE4.sh Town04
 
