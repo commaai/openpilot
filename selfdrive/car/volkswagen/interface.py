@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
 from common.params import Params
