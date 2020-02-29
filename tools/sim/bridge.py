@@ -15,11 +15,11 @@ from common.params import Params
 from common.realtime import Ratekeeper
 from lib.can import can_function, sendcan_function
 from lib.helpers import FakeSteeringWheel
-from lib.manual_ctrl import wheel_poll_thread
 from selfdrive.car.honda.values import CruiseButtons
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--autopilot', action='store_true')
+parser.add_argument('--joystick', action='store_true')
 args = parser.parse_args()
 
 pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
@@ -143,7 +143,7 @@ def go():
 
   # can loop
   sendcan = messaging.sub_sock('sendcan')
-  rk = Ratekeeper(100)
+  rk = Ratekeeper(100, print_delay_threshold=10.0)
 
   # init
   A_throttle = 2.
@@ -153,10 +153,6 @@ def go():
   is_openpilot_engaged = False
   in_reverse = False
 
-  # start input poll
-  from multiprocessing import Process
-  p = Process(target=wheel_poll_thread)
-  p.start()
 
   # zmq receiver for input thread
   context = zmq.Context()
@@ -171,11 +167,13 @@ def go():
     vel = vehicle.get_velocity()
     speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
 
+    cruise_button = 0
+
     try:
       #check for a input message, this will not block
       message = socket.recv(flags=zmq.NOBLOCK)
       socket.send(b"good")
-      # print(message.decode('UTF-8'))
+      print(message.decode('UTF-8'))
 
       m = message.decode('UTF-8').split('_')
       if m[0] == "steer":
@@ -185,33 +183,34 @@ def go():
       if m[0] == "throttle":
         throttle_out = float(m[1]) / 100.
         if throttle_out > 0.3:
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
       if m[0] == "brake":
         brake_out = float(m[1]) / 100.
         if brake_out > 0.3:
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
       if m[0] == "reverse":
         in_reverse = not in_reverse
-        can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+        cruise_button = CruiseButtons.CANCEL
         is_openpilot_engaged = False
       if m[0] == "cruise":
         if m[1] == "down":
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.DECEL_SET)
+          cruise_button = CruiseButtons.DECEL_SET
           is_openpilot_engaged = True
         if m[1] == "up":
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.RES_ACCEL)
+          cruise_button = CruiseButtons.RES_ACCEL
           is_openpilot_engaged = True
         if m[1] == "cancel":
-          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
 
     except zmq.Again as e:
       #skip if no message
       pass
 
-    can_function(pm, speed, fake_wheel.angle, rk.frame)
+    can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button)
+
     if rk.frame%1 == 0: # 20Hz?
       throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
       # print(" === torq, ",steer_torque_op, " ===")
@@ -246,5 +245,16 @@ if __name__ == "__main__":
     while 1:
       time.sleep(1)
     
-  go()
+  from multiprocessing import Process
+  p = Process(target=go)
+  p.start()
+
+  if args.joystick:
+    # start input poll for joystick
+    from lib.manual_ctrl import wheel_poll_thread
+    wheel_poll_thread()
+  else:
+    # start input poll for keyboard
+    from lib.keyboard_ctrl import keyboard_poll_thread
+    keyboard_poll_thread()
 
