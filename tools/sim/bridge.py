@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+import carla
 import os
-import time
+import time, termios, tty, sys
 import math
 import atexit
 import numpy as np
@@ -8,10 +9,14 @@ import threading
 import random
 import cereal.messaging as messaging
 import argparse
+import zmq
+import queue
 from common.params import Params
 from common.realtime import Ratekeeper
 from lib.can import can_function, sendcan_function
-import queue
+from lib.helpers import FakeSteeringWheel
+from lib.manual_ctrl import wheel_poll_thread
+from selfdrive.car.honda.values import CruiseButtons
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--autopilot', action='store_true')
@@ -31,6 +36,7 @@ def cam_callback(image):
   dat.frame = {
     "frameId": image.frame,
     "image": img.tostring(),
+    "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
   pm.send('frame', dat)
 
@@ -78,19 +84,18 @@ def go():
   import carla
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(5.0)
-  world = client.load_world('Town03')
-
+  world = client.load_world('Town04')
   settings = world.get_settings()
   settings.fixed_delta_seconds = 0.05
   world.apply_settings(settings)
 
   weather = carla.WeatherParameters(
-      cloudyness=0.0,
+      cloudyness=0.1,
       precipitation=0.0,
       precipitation_deposits=0.0,
       wind_intensity=0.0,
-      sun_azimuth_angle=0.0,
-      sun_altitude_angle=0.0)
+      sun_azimuth_angle=15.0,
+      sun_altitude_angle=75.0)
   world.set_weather(weather)
 
   blueprint_library = world.get_blueprint_library()
@@ -101,12 +106,18 @@ def go():
   """
 
   world_map = world.get_map()
+  vehicle_bp = random.choice(blueprint_library.filter('vehicle.tesla.*'))
+  vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
 
-  vehicle_bp = random.choice(blueprint_library.filter('vehicle.bmw.*'))
-  vehicle = world.spawn_actor(vehicle_bp, random.choice(world_map.get_spawn_points()))
+  # make tires less slippery
+  wheel_control = carla.WheelPhysicsControl(tire_friction=5)
+  physics_control = carla.VehiclePhysicsControl(mass=1326, wheels=[wheel_control]*4, \
+                                                torque_curve=[[20.0, 500.0], [5000.0, 500.0]], gear_switch_time=0)
+  vehicle.apply_physics_control(physics_control)
 
   if args.autopilot:
     vehicle.set_autopilot(True)
+  # print(vehicle.get_speed_limit())
 
   blueprint = blueprint_library.find('sensor.camera.rgb')
   blueprint.set_attribute('image_size_x', str(W))
@@ -117,7 +128,7 @@ def go():
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
   camera.listen(cam_callback)
 
-  # TODO: wait for carla 0.9.7
+  # reenable IMU
   imu_bp = blueprint_library.find('sensor.other.imu')
   imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
   imu.listen(imu_callback)
@@ -133,18 +144,86 @@ def go():
   # can loop
   sendcan = messaging.sub_sock('sendcan')
   rk = Ratekeeper(100)
-  steer_angle = 0
+
+  # init
+  A_throttle = 2.
+  A_brake = 2.
+  A_steer_torque = 1.
+  fake_wheel = FakeSteeringWheel()
+  is_openpilot_engaged = False
+  in_reverse = False
+
+  # start input poll
+  from multiprocessing import Process
+  p = Process(target=wheel_poll_thread)
+  p.start()
+
+  # zmq receiver for input thread
+  context = zmq.Context()
+  socket = context.socket(zmq.REP)
+  socket.connect("tcp://127.0.0.1:4444")
+
+  throttle_out = 0
+  brake_out = 0
+  steer_angle_out = 0
+
   while 1:
     vel = vehicle.get_velocity()
-    speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
+    speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
 
-    can_function(pm, speed, steer_angle, rk.frame, rk.frame%500 == 499)
-    if rk.frame%5 == 0:
-      throttle, brake, steer = sendcan_function(sendcan)
-      steer_angle += steer/10000.0 # torque
-      vc = carla.VehicleControl(throttle=throttle, steer=steer_angle, brake=brake)
+    try:
+      #check for a input message, this will not block
+      message = socket.recv(flags=zmq.NOBLOCK)
+      socket.send(b"good")
+      # print(message.decode('UTF-8'))
+
+      m = message.decode('UTF-8').split('_')
+      if m[0] == "steer":
+        steer_angle_out = float(m[1])
+        fake_wheel.set_angle(steer_angle_out) # touching the wheel overrides fake wheel angle
+        # print(" === steering overriden === ")
+      if m[0] == "throttle":
+        throttle_out = float(m[1]) / 100.
+        if throttle_out > 0.3:
+          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          is_openpilot_engaged = False
+      if m[0] == "brake":
+        brake_out = float(m[1]) / 100.
+        if brake_out > 0.3:
+          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          is_openpilot_engaged = False
+      if m[0] == "reverse":
+        in_reverse = not in_reverse
+        can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+        is_openpilot_engaged = False
+      if m[0] == "cruise":
+        if m[1] == "down":
+          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.DECEL_SET)
+          is_openpilot_engaged = True
+        if m[1] == "up":
+          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.RES_ACCEL)
+          is_openpilot_engaged = True
+        if m[1] == "cancel":
+          can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=CruiseButtons.CANCEL)
+          is_openpilot_engaged = False
+
+    except zmq.Again as e:
+      #skip if no message
+      pass
+
+    can_function(pm, speed, fake_wheel.angle, rk.frame)
+    if rk.frame%1 == 0: # 20Hz?
+      throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
+      # print(" === torq, ",steer_torque_op, " ===")
+      if is_openpilot_engaged:
+        fake_wheel.response(steer_torque_op * A_steer_torque, speed)
+        throttle_out = throttle_op * A_throttle
+        brake_out = brake_op * A_brake
+        steer_angle_out = fake_wheel.angle
+        # print(steer_torque_op)
+      # print(steer_angle_out)
+      vc = carla.VehicleControl(throttle=throttle_out, steer=steer_angle_out / 3.14, brake=brake_out, reverse=in_reverse)
       vehicle.apply_control(vc)
-      print(speed, steer_angle, vc)
 
     rk.keep_time()
 
