@@ -11,6 +11,7 @@ sudo apt-get update && sudo apt-get install -y \
     curl \
     ffmpeg \
     git \
+    libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev \
     libarchive-dev \
     libbz2-dev \
     libcurl4-openssl-dev \
@@ -76,26 +77,24 @@ pip install pipenv==2018.11.26
 # pipenv setup (in openpilot dir)
 pipenv install --system --deploy
 
-# install capnp
-cd external/capnp
-if [ ! -d lib ]; then
-  # TODO: commit the lib instead
-  ./build.sh
-  git checkout bin/*   # don't update these
-fi
-cd ../../
+# install capnp (not needed anymore)
+#cd external/capnp
+#if [ ! -d lib ]; then
+#  ./build.sh
+#  git checkout bin/*   # don't update these
+#fi
+#cd ../../
 
 # at this point, manager runs
 
 # to make tools work
-sudo apt install -y ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev
-
 pip install -r tools/requirements.txt
 
 # to make modeld work on PC with nvidia GPU
 pip install tensorflow-gpu==2.0
 
 # for loggerd to work on ubuntu
+# TODO: PC should log somewhere else
 #sudo mkdir -p /data/media/0/realdata
 #sudo chown $USER /data/media/0/realdata
 
