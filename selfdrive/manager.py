@@ -200,7 +200,7 @@ car_started_processes = [
   'radard',
   'dmonitoringd',
   'calibrationd',
-  #'paramsd',
+  'paramsd',
   'camerad',
   'modeld',
   'proclogd',

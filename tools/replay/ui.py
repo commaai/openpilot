@@ -29,7 +29,7 @@ from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, BLACK, BLUE, GREEN,
 
 os.environ['BASEDIR'] = BASEDIR
 
-ANGLE_SCALE = 25.0
+ANGLE_SCALE = 5.0
 HOR = os.getenv("HORIZONTAL") is not None
 NO_FLIP = os.getenv("NO_FLIP") is not None
 
