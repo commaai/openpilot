@@ -1,4 +1,8 @@
 #!/bin/bash -e
+
+# NOTE: ubuntu_setup.sh doesn't run! only for reading now
+exit 0
+
 sudo apt-get update && sudo apt-get install -y \
     autoconf \
     build-essential \
@@ -41,6 +45,11 @@ sudo apt-get update && sudo apt-get install -y \
 
 curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 
+# git lfs to pull models
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt-get install git-lfs
+# in the openpilot repo -- git lfs pull
+
 # TODO: add pyenv to .bashrc
 pyenv install 3.7.3
 pyenv global 3.7.3
@@ -66,4 +75,7 @@ pipenv install --system --deploy
 sudo apt install ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev
 
 pip install -r tools/requirements.txt
+
+# to make modeld work on PC with nvidia GPU
+pip install tensorflow-gpu==2.0
 
