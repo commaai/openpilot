@@ -1,7 +1,6 @@
 #!/bin/bash -e
 
 # NOTE: ubuntu_setup.sh doesn't run! only for reading now
-exit 0
 
 sudo apt-get update && sudo apt-get install -y \
     autoconf \
@@ -43,36 +42,53 @@ sudo apt-get update && sudo apt-get install -y \
     vim \
     wget
 
-curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-
 # git lfs to pull models
 curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
 sudo apt-get install git-lfs
-# in the openpilot repo -- git lfs pull
 
-# TODO: add pyenv to .bashrc
-pyenv install 3.7.3
+# in the openpilot repo
+cd $HOME/openpilot
+git lfs pull
+git submodule init
+git submodule update
+
+# install pyenv
+if [ ! -d $HOME/.pyenv ]; then
+  curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+fi
+
+# install bashrc
+source ~/.bashrc
+if [ -z "$OPENPILOT_ENV" ]; then
+  echo "source $HOME/openpilot/tools/openpilot_env.sh" >> ~/.bashrc
+  source ~/.bashrc
+  echo "added openpilot_env to bashrc"
+fi
+
+# install python 3.7.3 globally
+pyenv install -s 3.7.3
 pyenv global 3.7.3
 pyenv rehash
 
 # install pipenv
 pip install pipenv==2018.11.26
 
-# pipenv setup
-cd ../
+# pipenv setup (in openpilot dir)
 pipenv install --system --deploy
 
-# TODO: add openpilot to PYTHONPATH and external to PATH, this should be in bashrc
-# export PYTHONPATH="$HOME/openpilot"
-# export PATH="$PATH:$HOME/openpilot/external/capnp/bin"
-# export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openpilot/external/capnp/lib"
-
-# TODO: run external/capnp/build.sh ... needed?
+# install capnp
+cd external/capnp
+if [ ! -d lib ]; then
+  # TODO: commit the lib instead
+  ./build.sh
+  git checkout bin/*   # don't update these
+fi
+cd ../../
 
 # at this point, manager runs
 
 # to make tools work
-sudo apt install ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev
+sudo apt install -y ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev
 
 pip install -r tools/requirements.txt
 
@@ -80,6 +96,6 @@ pip install -r tools/requirements.txt
 pip install tensorflow-gpu==2.0
 
 # for loggerd to work on ubuntu
-sudo mkdir -p /data/media/0/realdata
-sudo chown $USER /data/media/0/realdata
+#sudo mkdir -p /data/media/0/realdata
+#sudo chown $USER /data/media/0/realdata
 
