@@ -31,6 +31,9 @@ with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
   OFFROAD_ALERTS = json.load(json_file)
 
 def read_tz(x, clip=True):
+  if not ANDROID:
+    # we don't monitor thermal on PC
+    return 0
   try:
     with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
       ret = int(f.read())
