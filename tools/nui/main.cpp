@@ -239,7 +239,6 @@ int main(int argc, char *argv[]) {
   QString route(argv[1]);
   
   int use_api = QString::compare(QString("use_api"), route, Qt::CaseInsensitive);
-  qDebug("%d", use_api);
   int seek = QString(argv[2]).toInt();
   printf("seek: %d\n", seek);
   route = route.replace("|", "/");

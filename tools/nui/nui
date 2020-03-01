@@ -4,7 +4,7 @@ if [ $# -gt 0 ]; then
     if [ "$2" = use_api ]; then
         python get_files_comma_api.py $1 && ./_nui use_api
     else
-        echo hi && ./_nui "$1"
+        ./_nui "$1"
     fi
 else
     echo "Please Enter a Route"
