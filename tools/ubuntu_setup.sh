@@ -42,7 +42,6 @@ sudo apt-get update && sudo apt-get install -y \
     sudo \
     vim \
     wget \
-<<<<<<< HEAD
     gcc-arm-none-eabi \
     libgles2-mesa-dev \
     libbz2-dev \
@@ -51,9 +50,6 @@ sudo apt-get update && sudo apt-get install -y \
 # Install scons for py2 and py3, Rest can be handled with pyenv
 pip install scons
 pip3 install scons
-=======
-    gcc-arm-none-eabi
->>>>>>> 2a199f867d23c08de5923a5c07fede0ac74d83be
 
 # install git lfs
 if ! command -v "git-lfs" > /dev/null 2>&1; then
