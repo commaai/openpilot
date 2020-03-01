@@ -1,3 +1,7 @@
 #!/bin/sh
-python get_files_comma_api.py "3533c53bb29502d1|2019-12-10--01-13-27"; ./_nui "3533c53bb29502d1|2019-12-10--01-13-27"
-
+if [ $# -gt 0 ]; then
+    python get_files_comma_api.py $1 && ./_nui \"$1\"
+else
+    echo "Please Enter a Route"
+fi
+ 
