@@ -65,7 +65,9 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 0; i < DESIRE_SIZE; i++) {
-      if ((desire_in[i] > 0.5) && (s->desire[i] < 0.5)) {
+      // Model decides when action is completed
+      // so desire input is just a pulse triggered on rising edge
+      if (desire_in[i] - s->desire[i] == 1) {
         s->pulse_desire[i] = desire_in[i];
       } else {
         s->pulse_desire[i] = 0.0;
