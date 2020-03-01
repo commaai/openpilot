@@ -5,4 +5,5 @@ _nui
 moc_*
 .qmake.stash
 nui.app/*
+routes.json
 

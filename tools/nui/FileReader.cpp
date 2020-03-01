@@ -8,7 +8,6 @@ FileReader::FileReader(const QString& file_) : file(file_) {
 
 void FileReader::process() {
   timer.start();
-  // TODO: Support reading files from the API
   QString str = file.simplified();
   str.replace(" ", "");
   startRequest(QUrl(str));

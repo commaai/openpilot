@@ -22,10 +22,11 @@
 
 class Window : public QWidget {
   public:
-    Window(QString route_, int seek);
+    Window(QString route_, int seek, int use_api);
     bool addSegment(int i);
     QJsonArray camera_paths;
     QJsonArray log_paths;
+    int use_api;
   protected:
     void keyPressEvent(QKeyEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
@@ -52,7 +53,7 @@ class Window : public QWidget {
     QLineEdit *timeLE;
 };
 
-Window::Window(QString route_, int seek) : route(route_) {
+Window::Window(QString route_, int seek, int use_api_) : route(route_), use_api(use_api_) {
   timeLE = new QLineEdit(this);
   timeLE->setPlaceholderText("Placeholder Text");
   timeLE->move(50, 650);
@@ -64,22 +65,21 @@ Window::Window(QString route_, int seek) : route(route_) {
   connect(unlogger, SIGNAL (elapsed()), this, SLOT (update()));
   thread->start();
 
-  QString settings;
-  QFile file;
-  file.setFileName("routes.json");
-  file.open(QIODevice::ReadOnly | QIODevice::Text);
-  settings = file.readAll();
-  file.close();
-    
-  QJsonDocument sd = QJsonDocument::fromJson(settings.toUtf8());
-  qWarning() << sd.isNull(); // <- print false :)
-  QJsonObject sett2 = sd.object();
+  if (use_api != 0){
+    QString settings;
+    QFile file;
+    file.setFileName("routes.json");
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    settings = file.readAll();
+    file.close();
+      
+    QJsonDocument sd = QJsonDocument::fromJson(settings.toUtf8());
+    qWarning() << sd.isNull(); // <- print false :)
+    QJsonObject sett2 = sd.object();
 
-  QJsonArray camera_paths = sett2.value("camera").toArray();
-  QJsonArray log_paths = sett2.value("logs").toArray();
-  
-  this->camera_paths = camera_paths;
-  this->log_paths = log_paths;
+    this->camera_paths = sett2.value("camera").toArray();
+    this->log_paths = sett2.value("logs").toArray();
+  }
 
   this->setFocusPolicy(Qt::StrongFocus);
 
@@ -89,21 +89,33 @@ Window::Window(QString route_, int seek) : route(route_) {
 
 bool Window::addSegment(int i) {
   if (lrs.find(i) == lrs.end()) {
-    QString fn = QString("%1/%2/rlog.bz2").arg(route).arg(i);
-    QString camera_fn = this->camera_paths.at(i).toString();
-    QString log_fn = this->log_paths.at(i).toString();
+    QString fn = QString("http://data.comma.life/%1/%2/rlog.bz2").arg(route).arg(i);
 
-    qDebug() << camera_fn;
 
     QThread* thread = new QThread;
-    lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
+    if (use_api != 0)
+      lrs.insert(i, new LogReader(fn, &events, &events_lock, &unlogger->eidx));  
+    else {
+      QString log_fn = this->log_paths.at(i).toString();
+      lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));  
+
+    }
+
     lrs[i]->moveToThread(thread);
     connect(thread, SIGNAL (started()), lrs[i], SLOT (process()));
     thread->start();
     //connect(lrs[i], SIGNAL (finished()), this, SLOT (update()));
 
-    QString frn = QString("%1/%2/fcamera.hevc").arg(route).arg(i);
-    frs.insert(i, new FrameReader(qPrintable(camera_fn)));
+    QString frn = QString("http://data.comma.life/%1/%2/fcamera.hevc").arg(route).arg(i);
+
+    if (use_api != 0)
+      frs.insert(i, new FrameReader(qPrintable(frn)));
+    else{
+      QString camera_fn = this->camera_paths.at(i).toString();
+      frs.insert(i, new FrameReader(qPrintable(camera_fn)));
+    }
+    
+    
     return true;
   }
   return false;
@@ -224,9 +236,10 @@ void Window::paintEvent(QPaintEvent *event) {
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
 
-  
-
   QString route(argv[1]);
+  
+  int use_api = QString::compare(QString("use_api"), route, Qt::CaseInsensitive);
+  qDebug("%d", use_api);
   int seek = QString(argv[2]).toInt();
   printf("seek: %d\n", seek);
   route = route.replace("|", "/");
@@ -238,7 +251,7 @@ int main(int argc, char *argv[]) {
     //route = "02ec6bea180a4d36/2019-10-25--10-18-09";
   }
 
-  Window window(route, seek);
+  Window window(route, seek, use_api);
   
   window.resize(1920, 800);
   window.setWindowTitle("nui unlogger");
