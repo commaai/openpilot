@@ -66,7 +66,7 @@ Window::Window(QString route_, int seek) : route(route_) {
 
   QString settings;
   QFile file;
-  file.setFileName("/home/sal-smallboi-2/openpilot/tools/nui/routes.json");
+  file.setFileName("routes.json");
   file.open(QIODevice::ReadOnly | QIODevice::Text);
   settings = file.readAll();
   file.close();
