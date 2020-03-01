@@ -9,6 +9,12 @@
 #include <QMouseEvent>
 #include <QReadWriteLock>
 #include <QLineEdit>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QDebug>
+#include <stdlib.h>
+#include <QTextStream>
 
 #include "FileReader.hpp"
 #include "Unlogger.hpp"
@@ -18,6 +24,8 @@ class Window : public QWidget {
   public:
     Window(QString route_, int seek);
     bool addSegment(int i);
+    QJsonArray camera_paths;
+    QJsonArray log_paths;
   protected:
     void keyPressEvent(QKeyEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
@@ -35,6 +43,7 @@ class Window : public QWidget {
 
     QMap<int, LogReader*> lrs;
     QMap<int, FrameReader*> frs;
+    
 
     // cache the bar
     QPixmap *px = NULL;
@@ -55,6 +64,23 @@ Window::Window(QString route_, int seek) : route(route_) {
   connect(unlogger, SIGNAL (elapsed()), this, SLOT (update()));
   thread->start();
 
+  QString settings;
+  QFile file;
+  file.setFileName("/home/sal-smallboi-2/openpilot/tools/nui/routes.json");
+  file.open(QIODevice::ReadOnly | QIODevice::Text);
+  settings = file.readAll();
+  file.close();
+    
+  QJsonDocument sd = QJsonDocument::fromJson(settings.toUtf8());
+  qWarning() << sd.isNull(); // <- print false :)
+  QJsonObject sett2 = sd.object();
+
+  QJsonArray camera_paths = sett2.value("camera").toArray();
+  QJsonArray log_paths = sett2.value("logs").toArray();
+  
+  this->camera_paths = camera_paths;
+  this->log_paths = log_paths;
+
   this->setFocusPolicy(Qt::StrongFocus);
 
   // add the first segment
@@ -64,16 +90,20 @@ Window::Window(QString route_, int seek) : route(route_) {
 bool Window::addSegment(int i) {
   if (lrs.find(i) == lrs.end()) {
     QString fn = QString("%1/%2/rlog.bz2").arg(route).arg(i);
+    QString camera_fn = this->camera_paths.at(i).toString();
+    QString log_fn = this->log_paths.at(i).toString();
+
+    qDebug() << camera_fn;
 
     QThread* thread = new QThread;
-    lrs.insert(i, new LogReader(fn, &events, &events_lock, &unlogger->eidx));
+    lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
     lrs[i]->moveToThread(thread);
     connect(thread, SIGNAL (started()), lrs[i], SLOT (process()));
     thread->start();
     //connect(lrs[i], SIGNAL (finished()), this, SLOT (update()));
 
     QString frn = QString("%1/%2/fcamera.hevc").arg(route).arg(i);
-    frs.insert(i, new FrameReader(qPrintable(frn)));
+    frs.insert(i, new FrameReader(qPrintable(camera_fn)));
     return true;
   }
   return false;
@@ -194,6 +224,8 @@ void Window::paintEvent(QPaintEvent *event) {
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
 
+  
+
   QString route(argv[1]);
   int seek = QString(argv[2]).toInt();
   printf("seek: %d\n", seek);
@@ -207,6 +239,7 @@ int main(int argc, char *argv[]) {
   }
 
   Window window(route, seek);
+  
   window.resize(1920, 800);
   window.setWindowTitle("nui unlogger");
   window.show();
