@@ -1,10 +1,10 @@
 #!/bin/sh
 
 if [ $# -gt 0 ]; then
-    if [ "$2" = use_api ]; then
-        python get_files_comma_api.py $1 && ./_nui use_api
-    else
+    if [ "$INTERNAL" = 1 ]; then
         ./_nui "$1"
+    else
+        python get_files_comma_api.py $1 && ./_nui use_api
     fi
 else
     echo "Please Enter a Route"
