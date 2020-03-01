@@ -48,8 +48,8 @@ sudo apt-get update && sudo apt-get install -y \
     scons 
     
 # Install scons for py2 and py3, Rest can be handled with pyenv
-pip install scons
-pip3 install scons
+pip install --user scons
+pip3 install --user scons
 
 # install git lfs
 if ! command -v "git-lfs" > /dev/null 2>&1; then
@@ -66,9 +66,7 @@ fi
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
   echo "source $HOME/openpilot/tools/openpilot_env.sh" >> ~/.bashrc
-  
   source ~/.bashrc
-  exec bash
   echo "added openpilot_env to bashrc"
 fi
 
@@ -88,19 +86,18 @@ pyenv rehash
 # **** in python env ****
 
 # install pipenv
-pip install pipenv==2018.11.26
+pip install --user pipenv==2018.11.26
 
 # pipenv setup (in openpilot dir)
 pipenv install --system --deploy
 
 # to make tools work
-pip install -r tools/requirements.txt
+pip install --user -r tools/requirements.txt
 
 # to make modeld work on PC with nvidia GPU
-pip install tensorflow-gpu==2.0
+pip install --user tensorflow-gpu==2.0
 
 # for loggerd to work on ubuntu
 # TODO: PC should log somewhere else
 #sudo mkdir -p /data/media/0/realdata
 #sudo chown $USER /data/media/0/realdata
-
