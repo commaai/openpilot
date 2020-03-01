@@ -86,10 +86,13 @@ function launch {
 
   # start manager
   cd selfdrive
-  ./manager.py
+  ./manager.py > runtime.log
 
-  # if broken, keep on screen error
-  while true; do sleep 1; done
+  # restore openpilot.bak if manager fails to run
+  mv runtime.log /data/openpilot/runtime.log
+  mv /data/openpilot /data/openpilot-failed-$(date +"%F-%H-%M")
+  cp -r /data/openpilot.bak /data/openpilot
+  reboot
 }
 
 launch
