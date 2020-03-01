@@ -42,7 +42,8 @@ sudo apt-get update && sudo apt-get install -y \
     sudo \
     vim \
     wget \
-    gcc-arm-none-eabi 
+    gcc-arm-none-eabi
+
 # install git lfs
 if ! command -v "git-lfs" > /dev/null 2>&1; then
   curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
@@ -93,4 +94,3 @@ pip install tensorflow-gpu==2.0
 # TODO: PC should log somewhere else
 #sudo mkdir -p /data/media/0/realdata
 #sudo chown $USER /data/media/0/realdata
-
