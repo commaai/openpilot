@@ -94,4 +94,3 @@ pip install tensorflow-gpu==2.0
 # TODO: PC should log somewhere else
 #sudo mkdir -p /data/media/0/realdata
 #sudo chown $USER /data/media/0/realdata
-
