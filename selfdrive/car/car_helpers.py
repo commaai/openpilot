@@ -76,7 +76,7 @@ def fingerprint(logcan, sendcan, has_relay):
       if cached_params.carName == "mock":
         cached_params = None
 
-    if cached_params is not None:
+    if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
       vin = cached_params.carVin
       car_fw = list(cached_params.carFw)
