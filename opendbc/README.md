@@ -16,6 +16,9 @@ Wondering what's the DBC file format? [Here](http://www.socialledge.com/sjsu/ind
 
 Use [panda](https://github.com/commaai/panda) to connect your car to a computer.
 
+### How to use reverse engineered DBC
+To create custom CAN simulations or send reverse engineered signals back to the car you can use [CANdevStudio](https://github.com/GENIVI/CANdevStudio) project.
+
 ### DBC file preprocessor
 
 DBC files for different models of the same brand have a lot of overlap. Therefore, we wrote a preprocessor to create DBC files from a brand DBC file and a model specific DBC file. The source DBC files can be found in the generator folder. After changing one of the files run the generator.py script to regenerate the output files. These output files will be placed in the root of the opendbc repository and are suffixed by _generated.

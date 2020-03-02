@@ -429,5 +429,5 @@ CM_ SG_ 625 SPEED "zero on non-acc drives";
 CM_ SG_ 625 ACCEL_PERHAPS "set to 7767 on non-ACC drives. ACC drive 40k is constant speed, 42k is accelerating";
 CM_ SG_ 268 BRAKE_PERHAPS "triggers only on ACC braking";
 CM_ SG_ 384 NEW_SIGNAL_1 "set in ACC gas driving. not set in electric human. not sure about gas human driving.";
-VAL_ 746 PRNDL 5 "Low" 4 "Drive" 3 "Neutral" 2 "Reverse" 1 "Park" ;
+VAL_ 746 PRNDL 5 "L" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 792 TURN_SIGNALS 2 "Right" 1 "Left" ;

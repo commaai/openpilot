@@ -58,10 +58,8 @@ int spin(int argc, char** argv) {
 
   // spinner
   int fb_w, fb_h;
-  EGLDisplay display;
-  EGLSurface surface;
   FramebufferState *fb = framebuffer_init("spinner", 0x00001000, false,
-                     &display, &surface, &fb_w, &fb_h);
+                                          &fb_w, &fb_h);
   assert(fb);
 
   NVGcontext *vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
@@ -176,7 +174,7 @@ int spin(int argc, char** argv) {
     }
 
     nvgEndFrame(vg);
-    eglSwapBuffers(display, surface);
+    framebuffer_swap(fb);
     assert(glGetError() == GL_NO_ERROR);
   }
 

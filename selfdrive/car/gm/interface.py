@@ -3,7 +3,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.gm.values import DBC, CAR, ECU, ECU_FINGERPRINT, \
+from selfdrive.car.gm.values import DBC, CAR, Ecu, ECU_FINGERPRINT, \
                                     SUPERCRUISE_CARS, AccState, FINGERPRINTS
 from selfdrive.car.gm.carstate import CarState, CruiseButtons, get_powertrain_can_parser
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
 
     # *** init the major players ***
     canbus = CanBus()
-    self.CS = CarState(CP, canbus)
+    self.CS = CarState(CP)
     self.VM = VehicleModel(CP)
     self.pt_cp = get_powertrain_can_parser(CP, canbus)
     self.ch_cp_dbc_name = DBC[CP.carFingerprint]['chassis']
@@ -58,11 +58,18 @@ class CarInterface(CarInterfaceBase):
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or \
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or \
                        has_relay or \
                        candidate == CAR.CADILLAC_CT6
     ret.openpilotLongitudinalControl = ret.enableCamera
     tire_stiffness_factor = 0.444  # not optimized yet
+
+    # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
+    ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+    ret.steerRateCost = 1.0
+    ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -141,11 +148,6 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    # same tuning for Volt and CT6 for now
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
-    ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
-
     ret.steerMaxBP = [0.]  # m/s
     ret.steerMaxV = [1.]
     ret.gasMaxBP = [0.]
@@ -163,8 +165,6 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = True
     ret.startAccel = 0.8
 
-    ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
-    ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
     ret.steerControlType = car.CarParams.SteerControlType.torque
@@ -237,7 +237,7 @@ class CarInterface(CarInterfaceBase):
       be.pressed = self.CS.right_blinker_on
       buttonEvents.append(be)
 
-    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
+    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = car.CarState.ButtonEvent.new_message()
       be.type = ButtonType.unknown
       if self.CS.cruise_buttons != CruiseButtons.UNPRESS:

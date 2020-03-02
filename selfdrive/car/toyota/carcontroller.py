@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_ipas_steer_command, create_accel_command, \
                                            create_acc_cancel_command, create_fcw_command
-from selfdrive.car.toyota.values import CAR, ECU, STATIC_MSGS, SteerLimitParams
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, SteerLimitParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -22,12 +22,6 @@ ANGLE_MAX_V = [510., 300.]
 ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
-
-TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
-              0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
-              0x373, 0x374, 0x375, 0x380, 0x381, 0x382,
-              0x383]
-
 
 def accel_hysteresis(accel, accel_steady, enabled):
 
@@ -101,9 +95,9 @@ class CarController():
     self.steer_rate_limited = False
 
     self.fake_ecus = set()
-    if enable_camera: self.fake_ecus.add(ECU.CAM)
-    if enable_dsu: self.fake_ecus.add(ECU.DSU)
-    if enable_apg: self.fake_ecus.add(ECU.APGS)
+    if enable_camera: self.fake_ecus.add(Ecu.fwdCamera)
+    if enable_dsu: self.fake_ecus.add(Ecu.dsu)
+    if enable_apg: self.fake_ecus.add(Ecu.apgs)
 
     self.packer = CANPacker(dbc_name)
 
@@ -186,7 +180,7 @@ class CarController():
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
-    if ECU.CAM in self.fake_ecus:
+    if Ecu.fwdCamera in self.fake_ecus:
       if self.angle_control:
         can_sends.append(create_steer_command(self.packer, 0., 0, frame))
       else:
@@ -194,12 +188,12 @@ class CarController():
 
     if self.angle_control:
       can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
-                                                 ECU.APGS in self.fake_ecus))
-    elif ECU.APGS in self.fake_ecus:
+                                                 Ecu.apgs in self.fake_ecus))
+    elif Ecu.apgs in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
 
     # we can spam can to cancel the system even if we are using lat only control
-    if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
+    if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
       lead = lead or CS.v_ego < 12.    # at low speed we always assume the lead is present do ACC can be engaged
 
       # Lexus IS uses a different cancellation message
@@ -232,10 +226,10 @@ class CarController():
     if pcm_cancel_cmd:
       send_ui = True
 
-    if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
+    if (frame % 100 == 0 or send_ui) and Ecu.fwdCamera in self.fake_ecus:
       can_sends.append(create_ui_command(self.packer, steer, pcm_cancel_cmd, left_line, right_line, left_lane_depart, right_lane_depart))
 
-    if frame % 100 == 0 and ECU.DSU in self.fake_ecus:
+    if frame % 100 == 0 and Ecu.dsu in self.fake_ecus:
       can_sends.append(create_fcw_command(self.packer, fcw))
 
     #*** static msgs ***

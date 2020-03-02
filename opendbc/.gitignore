@@ -3,6 +3,8 @@
 *.tmp
 *.dylib
 .*.swp
+.DS_Store
+
 can/*.so
 can/build/
 can/obj/

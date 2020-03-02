@@ -1445,5 +1445,4 @@ BO_ 905 SCC14: 8 SCC
  SG_ SCCMode : 32|3@1+ (1,0) [0|7] ""  ESC
 
 BO_ 882 ELECT_GEAR: 8 XXX
- SG_ Elect_Gear_Shifter : 16|3@1+ (1,0) [0|255] ""  CLU
-
+ SG_ Elect_Gear_Shifter : 16|3@1+ (1,0) [0|7] ""  CLU
