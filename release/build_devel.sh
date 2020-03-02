@@ -1,7 +1,12 @@
-#!/data/data/com.termux/files/usr/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 mkdir -p /dev/shm
 chmod 777 /dev/shm
+
+# Write cpuset
+echo $$ > /dev/cpuset/app/tasks
+echo $PPID > /dev/cpuset/app/tasks
 
 
 add_subtree() {
@@ -99,7 +104,13 @@ git commit -a -m "openpilot v$VERSION release"
 SCONS_CACHE=1 scons -j3
 
 echo "[-] testing openpilot T=$SECONDS"
+echo -n "0" > /data/params/d/Passive
+echo -n "0.2.0" > /data/params/d/CompletedTrainingVersion
+echo -n "1" > /data/params/d/HasCompletedSetup
+echo -n "1" > /data/params/d/CommunityFeaturesToggle
+
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
+PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" GET_CPU_USAGE=1 selfdrive/manager.py
 
 echo "[-] testing panda build T=$SECONDS"
 pushd panda/board/

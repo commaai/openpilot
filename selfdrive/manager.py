@@ -56,7 +56,10 @@ def unblock_stdout():
       except (OSError, IOError, UnicodeDecodeError):
         pass
 
-    os._exit(os.wait()[1])
+    # os.wait() returns a tuple with the pid and a 16 bit value
+    # whose low byte is the signal number and whose high byte is the exit satus
+    exit_status = os.wait()[1] >> 8
+    os._exit(exit_status)
 
 
 if __name__ == "__main__":
@@ -127,6 +130,7 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
 from common import android
 from common.apk import update_apks, pm_apply_packages, start_frame
+from common.manager_helpers import print_cpu_usage
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
@@ -383,6 +387,9 @@ def manager_thread():
   # now loop
   thermal_sock = messaging.sub_sock('thermal')
 
+  if os.getenv("GET_CPU_USAGE"):
+    proc_sock = messaging.sub_sock('procLog', conflate=True)
+
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
@@ -412,6 +419,9 @@ def manager_thread():
       del managed_processes[k]
 
   logger_dead = False
+
+  start_t = time.time()
+  first_proc = None
 
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
@@ -447,6 +457,21 @@ def manager_thread():
     # Exit main loop when uninstall is needed
     if params.get("DoUninstall", encoding='utf8') == "1":
       break
+
+    if os.getenv("GET_CPU_USAGE"):
+      dt = time.time() - start_t
+
+      # Get first sample
+      if dt > 30 and first_proc is None:
+        first_proc = messaging.recv_sock(proc_sock)
+
+      # Get last sample and exit
+      if dt > 90:
+        first_proc = first_proc
+        last_proc = messaging.recv_sock(proc_sock, wait=True)
+
+        cleanup_all_processes(None, None)
+        sys.exit(print_cpu_usage(first_proc, last_proc))
 
 def manager_prepare(spinner=None):
   # build all processes
@@ -524,6 +549,8 @@ def main():
 
   try:
     manager_thread()
+  except SystemExit:
+    raise
   except Exception:
     traceback.print_exc()
     crash.capture_exception()
