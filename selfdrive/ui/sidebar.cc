@@ -217,18 +217,26 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
   char panda_message_str[32];
   const int panda_y_offset = (148 + 32) * 2;
 
-  // todo: handle no panda case
-  // panda_severity = 2;
-  // snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO PANDA");
-  if (s->scene.satelliteCount == -1) {
+  if (s->scene.hwType == HARDWARETYPE_UNKNOWN) {
+    panda_severity = 2;
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO PANDA");
+  } else if (s->scene.hwType == HARDWARETYPE_WHITEPANDA) {
     panda_severity = 0;
     snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA ACTIVE");
-  } else if (s->scene.satelliteCount < 6) {
-    panda_severity = 1;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nNO GPS");
-  } else if (s->scene.satelliteCount >= 6) {
-    panda_severity = 0;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA GOOD GPS");
+  } else if (
+      (s->scene.hwType == HARDWARETYPE_GREYPANDA) ||
+      (s->scene.hwType == HARDWARETYPE_BLACKPANDA) ||
+      (s->scene.hwType == HARDWARETYPE_UNO)) {
+      if (s->scene.satelliteCount == -1) {
+        panda_severity = 0;
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA ACTIVE");
+      } else if (s->scene.satelliteCount < 6) {
+        panda_severity = 1;
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nNO GPS");
+      } else if (s->scene.satelliteCount >= 6) {
+        panda_severity = 0;
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA GOOD GPS");
+      }
   }
 
   ui_draw_sidebar_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message_str);

@@ -50,6 +50,13 @@
 #define THERMALSTATUS_RED 2
 #define THERMALSTATUS_DANGER 3
 
+#define HARDWARETYPE_UNKNOWN 0
+#define HARDWARETYPE_WHITEPANDA 1
+#define HARDWARETYPE_GREYPANDA 2
+#define HARDWARETYPE_BLACKPANDA 3
+#define HARDWARETYPE_PEDAL 4
+#define HARDWARETYPE_UNO 5
+
 #define ACTIVEAPP_HOME 0
 #define ACTIVEAPP_SETTINGS 3
 
@@ -158,6 +165,7 @@ typedef struct UIScene {
   float freeSpace;
   uint8_t thermalStatus;
   int paTemp;
+  int hwType;
   int satelliteCount;
 } UIScene;
 
@@ -211,8 +219,10 @@ typedef struct UIState {
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
   SubSocket *thermal_sock;
+  SubSocket *health_sock;
   SubSocket *ubloxgnss_sock;
   Poller * poller;
+  Poller * ublox_poller;
 
   int active_app;
 
@@ -258,6 +268,7 @@ typedef struct UIState {
   int is_metric_timeout;
   int longitudinal_control_timeout;
   int limit_set_speed_timeout;
+  int hardware_timeout;
 
   bool controls_seen;
 

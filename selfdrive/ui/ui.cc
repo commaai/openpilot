@@ -153,6 +153,7 @@ static void ui_init(UIState *s) {
   s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
   s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
   s->thermal_sock = SubSocket::create(s->ctx, "thermal");
+  s->health_sock = SubSocket::create(s->ctx, "health");
   s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
 
   assert(s->model_sock != NULL);
@@ -161,6 +162,7 @@ static void ui_init(UIState *s) {
   assert(s->livecalibration_sock != NULL);
   assert(s->radarstate_sock != NULL);
   assert(s->thermal_sock != NULL);
+  assert(s->health_sock != NULL);
   assert(s->ubloxgnss_sock != NULL);
 
   s->poller = Poller::create({
@@ -170,6 +172,7 @@ static void ui_init(UIState *s) {
                               s->livecalibration_sock,
                               s->radarstate_sock,
                               s->thermal_sock,
+                              s->health_sock,
                               s->ubloxgnss_sock
                              });
 
@@ -494,6 +497,12 @@ void handle_message(UIState *s, Message * msg) {
     cereal_read_UbloxGnss_MeasurementReport(&reportdatad, datad.measurementReport);
 
     s->scene.satelliteCount = reportdatad.numMeas;
+  } else if (eventd.which == cereal_Event_health) {
+    struct cereal_HealthData datad;
+    cereal_read_HealthData(&datad, eventd.health);
+
+    s->scene.hwType = datad.hwType;
+    s->hardware_timeout = 5*30; // 5 seconds at 30 fps
   }
   capn_free(&ctx);
 }
@@ -503,7 +512,7 @@ static void check_messages(UIState *s) {
     auto polls = s->poller->poll(0);
 
     if (polls.size() == 0)
-      return;
+      break;
 
     for (auto sock : polls){
       Message * msg = sock->receive();
@@ -910,6 +919,8 @@ int main(int argc, char* argv[]) {
   s->volume_timeout = 5 * UI_FREQ;
   int draws = 0;
 
+  s->scene.satelliteCount = -1;
+
   int touch_x_last;
   int touch_y_last;
 
@@ -931,7 +942,6 @@ int main(int argc, char* argv[]) {
     set_brightness(s, (int)smooth_brightness);
 
     if (!s->vision_connected) {
-      check_messages(s);
       zmq_pollitem_t polls[1] = {{0}};
       polls[0].fd = s->touch_fd;
       polls[0].events = ZMQ_POLLIN;
@@ -944,10 +954,8 @@ int main(int argc, char* argv[]) {
         int touch_x = -1, touch_y = -1;
         int touched = touch_read(&touch, &touch_x, &touch_y);
         if (touched == 1) {
-          if (!s->vision_connected) {
-            // awake on any touch
-            set_awake(s, true);
-          }
+          // awake on any touch
+          set_awake(s, true);
 
           if (touch_x != touch_x_last && touch_y != touch_y_last) {
             handle_sidebar_touch(s, touch_x, touch_y);
@@ -959,6 +967,7 @@ int main(int argc, char* argv[]) {
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
       }
+      check_messages(s);
     } else {
       if (s->status == STATUS_STOPPED) {
         update_status(s, STATUS_DISENGAGED);
@@ -967,6 +976,7 @@ int main(int argc, char* argv[]) {
       ui_update(s);
       if(!s->vision_connected) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
+        s->scene.satelliteCount = -1;
         ui_draw(s);
         glFinish();
         should_swap = true;
@@ -980,11 +990,19 @@ int main(int argc, char* argv[]) {
       set_awake(s, false);
     }
 
+
     // manage touch
     if (s->touch_timeout > 0) {
       s->touch_timeout--;
     } else {
       s->touch_enabled = true;
+    }
+
+    // manage hardware disconnect
+    if (s->hardware_timeout > 0) {
+      s->hardware_timeout--;
+    } else {
+      s->scene.hwType = HARDWARETYPE_UNKNOWN;
     }
 
     // Don't waste resources on drawing in case screen is off
