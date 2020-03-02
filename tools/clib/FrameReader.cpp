@@ -46,7 +46,7 @@ FrameReader::FrameReader(const char *fn) {
   avformat_network_init();
   av_register_all();
 
-  snprintf(url, sizeof(url)-1, "http://data.comma.life/%s", fn);
+  snprintf(url, sizeof(url)-1,"%s",fn);
   t = new std::thread([&]() { this->loaderThread(); });
 }
 
