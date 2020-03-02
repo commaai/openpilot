@@ -151,6 +151,7 @@ typedef struct UIScene {
   float angleSteersDes;
   float pa0;
   float freeSpace;
+  float gpsAccuracy;
 
 } UIScene;
 
@@ -200,6 +201,8 @@ typedef struct UIState {
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
   SubSocket *carstate_sock;
+  SubSocket *gpslocation_sock;
+  SubSocket *gpslocationexternal_sock;
   SubSocket *livempc_sock;
   Poller * poller;
 
