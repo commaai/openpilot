@@ -8,8 +8,9 @@ FileReader::FileReader(const QString& file_) : file(file_) {
 
 void FileReader::process() {
   timer.start();
-  // TODO: Support reading files from the API
-  startRequest(QUrl("http://data.comma.life/"+file));
+  QString str = file.simplified();
+  str.replace(" ", "");
+  startRequest(QUrl(str));
 }
 
 void FileReader::startRequest(const QUrl &url) {

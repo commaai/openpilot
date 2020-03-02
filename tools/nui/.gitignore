@@ -1,8 +1,9 @@
 Makefile
 .*.swp
 *.o
-nui
+_nui
 moc_*
 .qmake.stash
 nui.app/*
+routes.json
 
