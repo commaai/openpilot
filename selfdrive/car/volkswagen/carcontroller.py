@@ -1,20 +1,17 @@
 from cereal import car
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
-from selfdrive.car.volkswagen.values import DBC, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams
+from selfdrive.car.volkswagen.values import DBC, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController():
-  def __init__(self, canbus, car_fingerprint):
+  def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
-    self.car_fingerprint = car_fingerprint
 
-    # Setup detection helper. Routes commands to an appropriate CAN bus number.
-    self.canbus = canbus
-    self.packer_pt = CANPacker(DBC[car_fingerprint]['pt'])
+    self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
@@ -32,7 +29,6 @@ class CarController():
 
     # Send CAN commands.
     can_sends = []
-    canbus = self.canbus
 
     #--------------------------------------------------------------------------
     #                                                                         #
@@ -49,14 +45,14 @@ class CarController():
 
       # FAULT AVOIDANCE: HCA must not be enabled at standstill. Also stop
       # commanding HCA if there's a fault, so the steering rack recovers.
-      if enabled and not (CS.standstill or CS.steeringFault):
+      if enabled and not (CS.out.standstill or CS.steeringFault):
 
         # FAULT AVOIDANCE: Requested HCA torque must not exceed 3.0 Nm. This
         # is inherently handled by scaling to STEER_MAX. The rack doesn't seem
         # to care about up/down rate, but we have some evidence it may do its
         # own rate limiting, and matching OP helps for accurate tuning.
         new_steer = int(round(actuators.steer * P.STEER_MAX))
-        apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.steeringTorque, P)
+        apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
         self.steer_rate_limited = new_steer != apply_steer
 
         # FAULT AVOIDANCE: HCA must not be enabled for >360 seconds. Sending
@@ -102,7 +98,7 @@ class CarController():
 
       self.apply_steer_last = apply_steer
       idx = (frame / P.HCA_STEP) % 16
-      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, canbus.pt, apply_steer,
+      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer,
                                                                  idx, hcaEnabled))
 
     #--------------------------------------------------------------------------
@@ -116,15 +112,15 @@ class CarController():
     # filters LDW_02 from the factory camera and OP emits LDW_02 at 10Hz.
 
     if frame % P.LDW_STEP == 0:
-      hcaEnabled = True if enabled and not CS.standstill else False
+      hcaEnabled = True if enabled and not CS.out.standstill else False
 
       if visual_alert == VisualAlert.steerRequired:
         hud_alert = MQB_LDW_MESSAGES["laneAssistTakeOverSilent"]
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]
 
-      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, canbus.pt, hcaEnabled,
-                                                            CS.steeringPressed, hud_alert, leftLaneVisible,
+      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, hcaEnabled,
+                                                            CS.out.steeringPressed, hud_alert, leftLaneVisible,
                                                             rightLaneVisible))
 
     #--------------------------------------------------------------------------
@@ -140,11 +136,11 @@ class CarController():
     # stock ACC with OP disengagement, or to auto-resume from stop.
 
     if frame > self.graMsgStartFramePrev + P.GRA_VBP_STEP:
-      if not enabled and CS.accEnabled:
+      if not enabled and CS.out.cruiseState.enabled:
         # Cancel ACC if it's engaged with OP disengaged.
         self.graButtonStatesToSend = BUTTON_STATES.copy()
         self.graButtonStatesToSend["cancel"] = True
-      elif enabled and CS.standstill:
+      elif enabled and CS.out.standstill:
         # Blip the Resume button if we're engaged at standstill.
         # FIXME: This is a naive implementation, improve with visiond or radar input.
         # A subset of MQBs like to "creep" too aggressively with this implementation.
@@ -182,7 +178,7 @@ class CarController():
         if self.graMsgSentCount == 0:
           self.graMsgStartFramePrev = frame
         idx = (CS.graMsgBusCounter + 1) % 16
-        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, canbus.pt, self.graButtonStatesToSend, CS, idx))
+        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, CANBUS.pt, self.graButtonStatesToSend, CS, idx))
         self.graMsgSentCount += 1
         if self.graMsgSentCount >= P.GRA_VBP_COUNT:
           self.graButtonStatesToSend = None

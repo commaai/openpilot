@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import math
-from bisect import bisect_right
 
 import numpy as np
 
@@ -11,13 +10,12 @@ from common.transformations.orientation import (ecef_euler_from_ned,
                                                 ned_euler_from_ecef,
                                                 quat2euler,
                                                 rotations_from_quats)
-from selfdrive.locationd.kalman.kalman_helpers import ObservationKind, KalmanError
-from selfdrive.locationd.kalman.live_kf import (LiveKalman, initial_P_diag,
-                                                initial_x)
-from selfdrive.locationd.kalman.live_model import States
+from selfdrive.locationd.kalman.helpers import ObservationKind, KalmanError
+from selfdrive.locationd.kalman.models.live_kf import LiveKalman, States
 from selfdrive.swaglog import cloudlog
 
-SENSOR_DECIMATION = 1  # No decimation
+VISION_DECIMATION = 2
+SENSOR_DECIMATION = 10
 
 
 class Localizer():
@@ -48,43 +46,48 @@ class Localizer():
     fix.gyro = [float(predicted_state[10]), float(predicted_state[11]), float(predicted_state[12])]
     fix.accel = [float(predicted_state[19]), float(predicted_state[20]), float(predicted_state[21])]
 
-    local_vel = rotations_from_quats(predicted_state[States.ECEF_ORIENTATION]).T.dot(predicted_state[States.ECEF_VELOCITY])
-    fix.pitchCalibration = math.degrees(math.arctan2(local_vel[2], local_vel[0]))
-    fix.yawCalibration = math.degrees(math.arctan2(local_vel[1], local_vel[0]))
+    ned_vel = self.converter.ecef2ned(predicted_state[States.ECEF_POS] + predicted_state[States.ECEF_VELOCITY]) - self.converter.ecef2ned(predicted_state[States.ECEF_POS])
+    fix.vNED = [float(ned_vel[0]), float(ned_vel[1]), float(ned_vel[2])]
+    fix.source = 'kalman'
 
-    #fix.imuFrame = [(180/np.pi)*float(predicted_state[23]), (180/np.pi)*float(predicted_state[24]), (180/np.pi)*float(predicted_state[25])]
+    #local_vel = rotations_from_quats(predicted_state[States.ECEF_ORIENTATION]).T.dot(predicted_state[States.ECEF_VELOCITY])
+    #fix.pitchCalibration = math.degrees(math.atan2(local_vel[2], local_vel[0]))
+    #fix.yawCalibration = math.degrees(math.atan2(local_vel[1], local_vel[0]))
+
+    imu_frame = predicted_state[States.IMU_OFFSET]
+    fix.imuFrame = [math.degrees(imu_frame[0]), math.degrees(imu_frame[1]), math.degrees(imu_frame[2])]
     return fix
 
   def update_kalman(self, time, kind, meas):
-    idx = bisect_right([x[0] for x in self.observation_buffer], time)
-    self.observation_buffer.insert(idx, (time, kind, meas))
-    while self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
-      if self.filter_ready:
-        try:
-          self.kf.predict_and_observe(*self.observation_buffer.pop(0))
-        except KalmanError:
-          cloudlog.error("Error in predict and observe, kalman reset")
-          self.reset_kalman()
-      else:
-        self.observation_buffer.pop(0)
+    if self.filter_ready:
+      try:
+        self.kf.predict_and_observe(time, kind, meas)
+      except KalmanError:
+        cloudlog.error("Error in predict and observe, kalman reset")
+        self.reset_kalman()
+    #idx = bisect_right([x[0] for x in self.observation_buffer], time)
+    #self.observation_buffer.insert(idx, (time, kind, meas))
+    #while len(self.observation_buffer) > 0 and self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
+    #  else:
+    #    self.observation_buffer.pop(0)
 
-  def handle_gps(self, log, current_time):
-    converter = coord.LocalCoord.from_geodetic([log.gpsLocationExternal.latitude, log.gpsLocationExternal.longitude, log.gpsLocationExternal.altitude])
-    fix_ecef = converter.ned2ecef([0, 0, 0])
+  def handle_gps(self, current_time, log):
+    self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
+    fix_ecef = self.converter.ned2ecef([0, 0, 0])
 
     # TODO initing with bad bearing not allowed, maybe not bad?
-    if not self.filter_ready and log.gpsLocationExternal.speed > 5:
+    if not self.filter_ready and log.speed > 5:
       self.filter_ready = True
       initial_ecef = fix_ecef
-      gps_bearing = math.radians(log.gpsLocationExternal.bearing)
+      gps_bearing = math.radians(log.bearing)
       initial_pose_ecef = ecef_euler_from_ned(initial_ecef, [0, 0, gps_bearing])
       initial_pose_ecef_quat = euler2quat(initial_pose_ecef)
-      gps_speed = log.gpsLocationExternal.speed
+      gps_speed = log.speed
       quat_uncertainty = 0.2**2
       initial_pose_ecef_quat = euler2quat(initial_pose_ecef)
 
-      initial_state = initial_x
-      initial_covs_diag = initial_P_diag
+      initial_state = LiveKalman.initial_x
+      initial_covs_diag = LiveKalman.initial_P_diag
 
       initial_state[States.ECEF_POS] = initial_ecef
       initial_state[States.ECEF_ORIENTATION] = initial_pose_ecef_quat
@@ -95,7 +98,6 @@ class Localizer():
       initial_covs_diag[States.ECEF_VELOCITY_ERR] = 1**2
       self.kf.init_state(initial_state, covs=np.diag(initial_covs_diag), filter_time=current_time)
       cloudlog.info("Filter initialized")
-
     elif self.filter_ready:
       self.update_kalman(current_time, ObservationKind.ECEF_POS, fix_ecef)
       gps_est_error = np.sqrt((self.kf.x[0] - fix_ecef[0])**2 +
@@ -105,25 +107,28 @@ class Localizer():
         cloudlog.error("Locationd vs ubloxLocation difference too large, kalman reset")
         self.reset_kalman()
 
-  def handle_car_state(self, log, current_time):
+  def handle_car_state(self, current_time, log):
     self.speed_counter += 1
 
     if self.speed_counter % SENSOR_DECIMATION == 0:
-      self.update_kalman(current_time, ObservationKind.ODOMETRIC_SPEED, log.carState.vEgo)
-      if log.carState.vEgo == 0:
+      self.update_kalman(current_time, ObservationKind.ODOMETRIC_SPEED, [log.vEgo])
+      if log.vEgo == 0:
         self.update_kalman(current_time, ObservationKind.NO_ROT, [0, 0, 0])
 
-  def handle_cam_odo(self, log, current_time):
-    self.update_kalman(current_time,
-                       ObservationKind.CAMERA_ODO_ROTATION,
-                       np.concatenate([log.cameraOdometry.rot, log.cameraOdometry.rotStd]))
-    self.update_kalman(current_time,
-                       ObservationKind.CAMERA_ODO_TRANSLATION,
-                       np.concatenate([log.cameraOdometry.trans, log.cameraOdometry.transStd]))
+  def handle_cam_odo(self, current_time, log):
+    self.cam_counter += 1
 
-  def handle_sensors(self, log, current_time):
+    if self.cam_counter % VISION_DECIMATION == 0:
+      self.update_kalman(current_time,
+                         ObservationKind.CAMERA_ODO_ROTATION,
+                         np.concatenate([log.rot, log.rotStd]))
+      self.update_kalman(current_time,
+                         ObservationKind.CAMERA_ODO_TRANSLATION,
+                         np.concatenate([log.trans, log.transStd]))
+
+  def handle_sensors(self, current_time, log):
     # TODO does not yet account for double sensor readings in the log
-    for sensor_reading in log.sensorEvents:
+    for sensor_reading in log:
       # Gyro Uncalibrated
       if sensor_reading.sensor == 5 and sensor_reading.type == 16:
         self.gyro_counter += 1
@@ -142,23 +147,6 @@ class Localizer():
           v = sensor_reading.acceleration.v
           self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
 
-  def handle_log(self, log):
-    current_time = 1e-9 * log.logMonoTime
-
-    typ = log.which
-
-    if typ in self.disabled_logs:
-      return
-
-    if typ == "sensorEvents":
-      self.handle_sensors(log, current_time)
-    elif typ == "gpsLocationExternal":
-      self.handle_gps(log, current_time)
-    elif typ == "carState":
-      self.handle_car_state(log, current_time)
-    elif typ == "cameraOdometry":
-      self.handle_cam_odo(log, current_time)
-
   def reset_kalman(self):
     self.filter_time = None
     self.filter_ready = False
@@ -167,11 +155,12 @@ class Localizer():
     self.gyro_counter = 0
     self.acc_counter = 0
     self.speed_counter = 0
+    self.cam_counter = 0
 
 
 def locationd_thread(sm, pm, disabled_logs=[]):
   if sm is None:
-    sm = messaging.SubMaster(['carState', 'gpsLocationExternal', 'sensorEvents', 'cameraOdometry'])
+    sm = messaging.SubMaster(['gpsLocationExternal', 'sensorEvents', 'cameraOdometry'])
   if pm is None:
     pm = messaging.PubMaster(['liveLocation'])
 
@@ -182,7 +171,15 @@ def locationd_thread(sm, pm, disabled_logs=[]):
 
     for sock, updated in sm.updated.items():
       if updated:
-        localizer.handle_log(sm[sock])
+        t = sm.logMonoTime[sock] * 1e-9
+        if sock == "sensorEvents":
+          localizer.handle_sensors(t, sm[sock])
+        elif sock == "gpsLocationExternal":
+          localizer.handle_gps(t, sm[sock])
+        elif sock == "carState":
+          localizer.handle_car_state(t, sm[sock])
+        elif sock == "cameraOdometry":
+          localizer.handle_cam_odo(t, sm[sock])
 
     if localizer.filter_ready and sm.updated['gpsLocationExternal']:
       t = sm.logMonoTime['gpsLocationExternal']

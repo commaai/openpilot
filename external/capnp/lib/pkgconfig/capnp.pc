@@ -1,0 +1,12 @@
+prefix=/home/batman/openpilot/external/capnp
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Cap'n Proto
+Description: Insanely fast serialization system
+Version: 0.6.1
+Libs: -L${libdir} -lcapnp -pthread  -lpthread 
+Libs.private:  -lpthread 
+Requires: kj = 0.6.1
+Cflags: -I${includedir} -pthread  

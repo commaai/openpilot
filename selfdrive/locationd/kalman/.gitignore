@@ -1,4 +1,1 @@
-lane.cpp
-gnss.cpp
-loc*.cpp
-pos_computer*.cpp
+generated/
