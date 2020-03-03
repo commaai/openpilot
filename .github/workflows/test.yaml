@@ -163,5 +163,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
       - name: carla tests
         run: $RUN "cd /tmp/openpilot/tools/sim/ && ./runsimci.sh"
