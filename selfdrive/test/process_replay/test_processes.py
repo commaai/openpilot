@@ -10,6 +10,8 @@ from selfdrive.test.process_replay.compare_logs import compare_logs
 from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
 from tools.lib.logreader import LogReader
 
+INJECT_MODEL = 0
+
 segments = [
   ("HONDA", "0375fdf7b1ce594d|2019-06-13--08-32-25--3"),      # HONDA.ACCORD
   ("HONDA", "99c94dc769b5d96e|2019-08-03--14-19-59--2"),      # HONDA.CIVIC
@@ -114,6 +116,8 @@ if __name__ == "__main__":
                         help="Extra fields or msgs to ignore (e.g. carState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                         help="Msgs to ignore (e.g. carEvents)")
+  parser.add_argument("--inject-model", action='store_true', default=False,
+                        help="gen new model packets")
   args = parser.parse_args()
 
   cars_whitelisted = len(args.whitelist_cars) > 0
@@ -146,6 +150,10 @@ if __name__ == "__main__":
 
     rlog_fn = get_segment(segment)
     lr = LogReader(rlog_fn)
+
+    if args.inject_model:
+      from inject_model import inject_model
+      lr = inject_model(lr, segment)
 
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \

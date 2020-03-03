@@ -7,42 +7,20 @@ import time
 from tqdm import tqdm
 from cereal.messaging import PubMaster, recv_one, sub_sock
 from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
 import subprocess
 
 
+def rreplace(s, old, new, occurrence):
+  li = s.rsplit(old, occurrence)
+  return new.join(li)
 
-def inject_model(segment_name):
-  frame_reader = FrameReader('cd:/'+segment_name.replace("|", "/") + "/fcamera.hevc")
-  msgs = list(LogReader('cd:/'+segment_name.replace("|", "/") + "/rlog.bz2"))
 
-  import selfdrive.camerad
-  dir_path = os.path.dirname(selfdrive.camerad.__file__)
-  os.chdir(dir_path)
-  camerad_thread = subprocess.Popen('exec ./camerad', shell=True)
-  time.sleep(2)
-  import selfdrive.modeld
-  dir_path = os.path.dirname(selfdrive.modeld.__file__)
-  os.chdir(dir_path)
-  modeld_thread = subprocess.Popen('exec ./modeld', shell=True)
-  # TODO do better than just wait for modeld to boot
-  time.sleep(5)
-
-  pm = PubMaster(['liveCalibration', 'frame'])
-  model_sock = sub_sock('model')
-  frame_id_lookup = {}
-
-  # Read encodeIdx
-  for msg in msgs:
-    if msg.which() == 'encodeIdx':
-      frame_id_lookup[msg.encodeIdx.frameId] = (msg.encodeIdx.segmentNum, msg.encodeIdx.segmentId)
-
+def regen_model(msgs, pm, frame_reader, model_sock):
   # Send some livecalibration messages to initalize visiond
   for msg in msgs:
     if msg.which() == 'liveCalibration':
       pm.send('liveCalibration', msg.as_builder())
 
-  time.sleep(1.0)
 
   out_msgs = []
   fidx = 0
@@ -60,20 +38,58 @@ def inject_model(segment_name):
       pm.send(w, msg)
       model = recv_one(model_sock)
       fidx += 1
-
-      model = model.as_builder()
-      model.logMonoTime = msg.logMonoTime
-      model = model.as_reader()
       out_msgs.append(model)
     elif w == 'liveCalibration':
       pm.send(w, msg.as_builder())
-      out_msgs.append(msg)
-    else:
-      out_msgs.append(msg)
+
+  return out_msgs
+
+
+def inject_model(msgs, segment_name):
+  if segment_name.count('--') == 2:
+    segment_name = rreplace(segment_name, '--', '/', 1)
+  frame_reader = FrameReader('cd:/'+segment_name.replace("|", "/") + "/fcamera.hevc")
+  import selfdrive.camerad
+  dir_path = os.path.dirname(selfdrive.camerad.__file__)
+  os.chdir(dir_path)
+  camerad_thread = subprocess.Popen('exec ./camerad', shell=True)
+  time.sleep(2)
+  import selfdrive.modeld
+  dir_path = os.path.dirname(selfdrive.modeld.__file__)
+  os.chdir(dir_path)
+  modeld_thread = subprocess.Popen('exec ./modeld', shell=True)
+  # TODO do better than just wait for modeld to boot
+  time.sleep(5)
+
+  pm = PubMaster(['liveCalibration', 'frame'])
+  model_sock = sub_sock('model')
+  try:
+    out_msgs = regen_model(msgs, pm, frame_reader, model_sock)
+  except (KeyboardInterrupt, SystemExit, Exception) as e:
+    modeld_thread.kill()
+    time.sleep(1)
+    camerad_thread.kill()
+    raise e
+
   modeld_thread.kill()
   time.sleep(1)
   camerad_thread.kill()
-  return out_msgs
+
+
+  new_msgs = []
+  midx = 0
+  for msg in msgs:
+    if msg.which() == 'model':
+      model = out_msgs[midx].as_builder()
+      model.logMonoTime = msg.logMonoTime
+      model = model.as_reader()
+      new_msgs.append(model)
+      midx += 1
+    else:
+      new_msgs.append(msg)
+
+
+  return new_msgs
 
 
 
