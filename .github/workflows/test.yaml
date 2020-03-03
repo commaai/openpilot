@@ -154,16 +154,3 @@ jobs:
         run: $LOAD
       - name: Test car models
         run: $RUN "mkdir -p /data/params && cd /tmp/openpilot/selfdrive/test/ && ./test_car_models.py"
-  
-  simtests:
-    name: test the simulator 
-    runs-on: [ubuntu-16.04]
-    needs: build
-    steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: tmppilot.tar.gz
-      - name: carla tests
-        run: $RUN "cd /tmp/openpilot/tools/sim/ && ./runsimci.sh"
-         
-        
