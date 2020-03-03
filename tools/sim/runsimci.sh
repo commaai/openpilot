@@ -16,4 +16,4 @@ fi
 '
 easy_install carla/PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true
 
-./tests/carla_test.py
+./carla_test.py
