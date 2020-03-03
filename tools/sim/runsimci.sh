@@ -1,5 +1,5 @@
 #!/bin/bash -e
-pip3 install --user pynput
+pip3 install --user pyautogui
 FILE=CARLA_0.9.7.tar.gz
 if [ ! -f $FILE ]; then
   curl -O http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/$FILE

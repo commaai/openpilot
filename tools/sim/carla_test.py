@@ -13,6 +13,7 @@ import random
 import cereal.messaging as messaging
 import argparse
 import queue
+import pyautogui
 from common.params import Params
 from common.realtime import Ratekeeper
 from lib.can import can_function, sendcan_function
@@ -266,36 +267,21 @@ def run_carla():
 
 
 def test_carla(q):
-  counter = 0
-  # Loading sm to see messages 
   sm = messaging.SubMaster(['frame', 'sensorEvents', 'can'])
-  while counter < 10:
-    # This should give us 10 messages
-    print(counter)
-    keyboard = Controller()
-    keyboard.press("s")
-    c = getch()
-    counter += 1
-    print("got %s" % c)
-    if c == "":
-      continue
-    if c == '1':
-      q.put(str("cruise_up"))
-    if c == '2':
-      q.put(str("cruise_down"))
-    if c == '3':
-      q.put(str("cruise_cancel"))
-    if c == 'q':
-      exit(0)
-    
-    # Actual testing starts here
+  counter = 0  
+  while counter < 5:
+    q.put(str("cruise_up"))
+    time.sleep(1) 
     sm.update()
     message = sm['sensorEvents']
     if message != "":
-    	print(sm['sensorEvents'])
-  if message != "":
-     print("Everything successful. Sim works")
+      print(sm['sensorEvents'])
+    counter += 1 
  
+  if message != "":
+    print("Everything successful. Sim works")
+
+
 if __name__ == "__main__":
   run_carla()
   params = Params()
