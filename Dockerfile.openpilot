@@ -83,7 +83,7 @@ COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./panda /tmp/openpilot/panda
 COPY ./selfdrive /tmp/openpilot/selfdrive
-
+COPY ./tools /tmp/openpilot/tools
 COPY SConstruct /tmp/openpilot/SConstruct
 
 RUN mkdir -p /tmp/openpilot/selfdrive/test/out
