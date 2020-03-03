@@ -130,7 +130,7 @@ FINGERPRINTS = {
 }
 
 # Don't use theses fingerprints for fingerprinting, they are still needed for ECU detection
-IGNORED_FINGERPRINTS = [CAR.INSIGHT]
+IGNORED_FINGERPRINTS = [CAR.INSIGHT, CAR.CIVIC_BOSCH_DIESEL]
 
 # add DIAG_MSGS to fingerprints
 for c in FINGERPRINTS:
