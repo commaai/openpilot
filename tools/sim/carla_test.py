@@ -2,7 +2,6 @@
 import os
 import time
 import subprocess
-import datetime 
 import carla
 import os
 import time, termios, tty, sys
