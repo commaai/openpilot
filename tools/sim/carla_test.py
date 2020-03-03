@@ -2,7 +2,7 @@
 import os
 import time
 import subprocess
-
+import datetime 
 import carla
 import os
 import time, termios, tty, sys
@@ -19,6 +19,10 @@ from common.realtime import Ratekeeper
 from lib.can import can_function, sendcan_function
 from lib.helpers import FakeSteeringWheel
 from selfdrive.car.honda.values import CruiseButtons
+import sys
+import termios
+from termios import *
+from pynput.keyboard import Key, Controller
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--autopilot', action='store_true')
 parser.add_argument('--joystick', action='store_true')
@@ -28,6 +32,35 @@ pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
 
 W,H = 1164, 874
 
+IFLAG = 0
+OFLAG = 1
+CFLAG = 2
+LFLAG = 3
+ISPEED = 4
+OSPEED = 5
+CC = 6
+
+def getch():
+  fd = sys.stdin.fileno()
+  old_settings = termios.tcgetattr(fd)
+  try:
+    # set
+    mode = termios.tcgetattr(fd)
+    mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
+    #mode[OFLAG] = mode[OFLAG] & ~(OPOST)
+    mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
+    mode[CFLAG] = mode[CFLAG] | CS8
+    mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
+    mode[CC][VMIN] = 1
+    mode[CC][VTIME] = 0
+    termios.tcsetattr(fd, termios.TCSAFLUSH, mode)
+
+    ch = sys.stdin.read(1)
+  finally:
+    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+  return ch
+
+   
 def cam_callback(image):
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
   img = np.reshape(img, (H, W, 4))
@@ -226,30 +259,58 @@ def run_carla():
 	if not os.path.isfile("./carla/CarlaUE4.sh"):
 		raise Exception("Carla  not found")	
 	# Run carla with rendering disabled 
-	comm = subprocess.Popen(["carla/CarlaUE4.sh -disable-rendering"],stdout=subprocess.PIPE, shell=True)
+	comm = subprocess.Popen(["DISPLAY= ./carla/CarlaUE4.sh -opengl"],stdout=subprocess.PIPE, shell=True)
 	print("******* Successfully started carla ********")
 	# Give carla time to start up (10 seconds)
 	time.sleep(10)
 	pass
 
-def run_bridge():
-	params = Params()
-	params.delete("Offroad_ConnectivityNeeded")
-	from selfdrive.version import terms_version, training_version
-	params.put("HasAcceptedTerms", terms_version)
-	params.put("CompletedTrainingVersion", training_version)
-	params.put("CommunityFeaturesToggle", "1")
-	params.put("CalibrationParams", '{"vanishing_point": [582.06, 442.78], "valid_blocks": 20}')
+
+def test_carla(q):
+  counter = 0
+  # Loading sm to see messages 
+  sm = messaging.SubMaster(['frame', 'sensorEvents', 'can'])
+  while counter < 10:
+    # This should give us 10 messages
+    print(counter)
+    keyboard = Controller()
+    keyboard.press("s")
+    c = getch()
+    counter += 1
+    print("got %s" % c)
+    if c == "":
+      continue
+    if c == '1':
+      q.put(str("cruise_up"))
+    if c == '2':
+      q.put(str("cruise_down"))
+    if c == '3':
+      q.put(str("cruise_cancel"))
+    if c == 'q':
+      exit(0)
+    
+    # Actual testing starts here
+    sm.update()
+    message = sm['sensorEvents']
+    if message != "":
+    	print(sm['sensorEvents'])
+  if message != "":
+     print("Everything successful. Sim works")
+ 
+if __name__ == "__main__":
+  run_carla()
+  params = Params()
+  params.delete("Offroad_ConnectivityNeeded")
+  from selfdrive.version import terms_version, training_version
+  params.put("HasAcceptedTerms", terms_version)
+  params.put("CompletedTrainingVersion", training_version)
+  params.put("CommunityFeaturesToggle", "1")
+  params.put("CalibrationParams", '{"vanishing_point": [582.06, 442.78], "valid_blocks": 20}')
    
-	from multiprocessing import Process, Queue
-	q = Queue()
-	p = Process(target=go, args=(q,))
-	p.daemon = True
-	p.start()
-def run_tests():
-	# Now at this point everything should be running
-	pass	
-run_carla()
-run_bridge()
-
-
+  from multiprocessing import Process, Queue
+  q = Queue()
+  p = Process(target=go, args=(q,))
+  p.daemon = True
+  p.start()
+  test_carla(q)
+   
