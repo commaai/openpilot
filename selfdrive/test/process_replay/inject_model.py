@@ -78,7 +78,7 @@ def inject_model(msgs, segment_name):
 
   new_msgs = []
   midx = 0
-  for msg in msgs:
+  for msg in list(msgs)[:len(out_msgs)]:
     if msg.which() == 'model':
       model = out_msgs[midx].as_builder()
       model.logMonoTime = msg.logMonoTime
