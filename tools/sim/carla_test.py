@@ -21,7 +21,6 @@ from selfdrive.car.honda.values import CruiseButtons
 import sys
 import termios
 from termios import *
-from pynput.keyboard import Key, Controller
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--autopilot', action='store_true')
 parser.add_argument('--joystick', action='store_true')
