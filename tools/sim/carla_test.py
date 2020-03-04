@@ -260,7 +260,7 @@ def run_carla():
 	comm = subprocess.Popen(["DISPLAY= ./carla/CarlaUE4.sh -opengl"],stdout=subprocess.PIPE, shell=True)
 	print("******* Successfully started carla ********")
 	# Give carla time to start up (10 seconds)
-	time.sleep(10)
+	time.sleep(50)
 	pass
 
 
