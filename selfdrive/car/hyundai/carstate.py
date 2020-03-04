@@ -21,6 +21,10 @@ def get_can_parser(CP):
     ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
 
     ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
+    ("CF_Gway_DrvDrSw", "CGW1", 0),
+    ("CF_Gway_AstDrSw", "CGW1", 0),
+    ("CF_Gway_RLDrSw", "CGW2", 0),
+    ("CF_Gway_RRDrSw", "CGW2", 0),
     ("CF_Gway_TSigLHSw", "CGW1", 0),
     ("CF_Gway_TurnSigLh", "CGW1", 0),
     ("CF_Gway_TSigRHSw", "CGW1", 0),
