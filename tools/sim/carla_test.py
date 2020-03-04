@@ -272,12 +272,9 @@ def test_carla(q):
     time.sleep(1) 
     sm.update()
     message = sm['sensorEvents']
-    if message != "":
-      print(sm['sensorEvents'])
     counter += 1 
- 
-  if message != "":
-    print("Everything successful. Sim works")
+  # If it didnt fail until then it works
+  print("Everything successful. Sim works")
 
 
 if __name__ == "__main__":
