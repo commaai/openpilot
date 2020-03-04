@@ -13,15 +13,6 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
-    self.left_blinker_on = False
-    self.prev_left_blinker_on = False
-    self.right_blinker_on = False
-    self.prev_right_blinker_on = False
-    self.steer_torque_driver = 0
-    self.steer_not_allowed = False
-    self.main_on = False
-
-    self.v_ego = 0.
 
   def update(self, cp, cp_adas, cp_cam):
     ret = car.CarState.new_message()
@@ -118,12 +109,12 @@ class CarState(CarStateBase):
     # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address, default
-      ("Des_Angle", "LKAS", 0),
+      ("DESIRED_ANGLE", "LKAS", 0),
       ("SET_0x80_2", "LKAS", 0),
-      ("NEW_SIGNAL_4", "LKAS", 0),
-      ("SET_X80", "LKAS", 0),
-      ("Counter", "LKAS", 0),
-      ("LKA_Active", "LKAS", 0),
+      ("MAX_TORQUE", "LKAS", 0),
+      ("SET_0x80", "LKAS", 0),
+      ("COUNTER", "LKAS", 0),
+      ("LKA_ACTIVE", "LKAS", 0),
     ]
 
     checks = [

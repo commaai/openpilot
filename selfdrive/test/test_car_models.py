@@ -435,7 +435,7 @@ routes = {
   #"bfa17080b080f3ec|2018-06-28--23-27-47": {
   #  'carFingerprint': MOCK.MOCK,
   #},
-  "fbbfa6af821552b9|2020-02-21--09-22-05--0": {
+  "fbbfa6af821552b9|2020-03-03--08-09-43--0": {
     'carFingerprint': NISSAN.XTRAIL,
     'enableCamera': True,
   },
