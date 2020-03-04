@@ -460,20 +460,7 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_ThermalData datad;
     cereal_read_ThermalData(&datad, eventd.thermal);
 
-    if (datad.networkType == cereal_ThermalData_NetworkType_none) {
-      s->scene.networkType = NETWORKTYPE_NONE;
-    } else if (datad.networkType == cereal_ThermalData_NetworkType_wifi) {
-      s->scene.networkType = NETWORKTYPE_WIFI;
-    } else if (datad.networkType == cereal_ThermalData_NetworkType_cell2G) {
-      s->scene.networkType = NETWORKTYPE_CELL2G;
-    } else if (datad.networkType == cereal_ThermalData_NetworkType_cell3G) {
-      s->scene.networkType = NETWORKTYPE_CELL3G;
-    } else if (datad.networkType == cereal_ThermalData_NetworkType_cell4G) {
-      s->scene.networkType = NETWORKTYPE_CELL4G;
-    } else if (datad.networkType == cereal_ThermalData_NetworkType_cell5G) {
-      s->scene.networkType = NETWORKTYPE_CELL5G;
-    }
-
+    s->scene.networkType = datad.networkType;
     s->scene.batteryPercent = datad.batteryPercent;
     snprintf(s->scene.batteryStatus, sizeof(s->scene.batteryStatus), "%s", datad.batteryStatus.str);
     s->scene.freeSpace = datad.freeSpace;
@@ -506,10 +493,6 @@ static void check_messages(UIState *s) {
     for (auto sock : polls){
       Message * msg = sock->receive();
       if (msg == NULL) continue;
-
-      if (s->vision_connected) {
-        set_awake(s, true);
-      }
 
       handle_message(s, msg);
 
@@ -928,14 +911,15 @@ int main(int argc, char* argv[]) {
     if (smooth_brightness > 255) smooth_brightness = 255;
     set_brightness(s, (int)smooth_brightness);
 
+    // resize vision for collapsing sidebar
     const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-    s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + bdr_s * 2);
+    s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
     s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
     s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
 
     // poll for touch events
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, 15);
+    int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
     if (touched == 1) {
       set_awake(s, true);
       handle_sidebar_touch(s, touch_x, touch_y);
@@ -948,6 +932,7 @@ int main(int argc, char* argv[]) {
       }
       check_messages(s);
     } else {
+      set_awake(s, true);
       if (s->status == STATUS_STOPPED) {
         update_status(s, STATUS_DISENGAGED);
       }
@@ -974,7 +959,7 @@ int main(int argc, char* argv[]) {
     if (s->hardware_timeout > 0) {
       s->hardware_timeout--;
     } else {
-      s->scene.hwType = HARDWARETYPE_UNKNOWN;
+      s->scene.hwType = cereal_HealthData_HwType_unknown;
     }
 
     // Don't waste resources on drawing in case screen is off
