@@ -75,16 +75,20 @@ class PowerMonitoring:
     current_power = 0
     if get_battery_status() == 'Discharging':
       # If the battery is discharging, we can use this measurement
+      # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
       current_power = ((get_battery_voltage() / 1000000)  * (get_battery_current() / 1000000))
     elif (health.health.hwType in [log.HealthData.HwType.whitePanda, log.HealthData.HwType.greyPanda]) and (health.health.current > 1):
       # If white/grey panda, use the integrated current measurements if the measurement is not 0
       # If the measurement is 0, the current is 400mA or greater, and out of the measurement range of the panda
+      # This seems to be accurate to about 5%
       current_power = (PANDA_OUTPUT_VOLTAGE * panda_current_to_actual_current(health.health.current))
     elif (self.next_pulsed_measurement_time != None) and (self.next_pulsed_measurement_time <= now):
-      # Turn off charging for 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
+      # TODO: Figure out why this is off by a factor of 1/2.4???
+
+      # Turn off charging for about 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
       def perform_pulse_measurement(now):
         set_battery_charging(False)
-        time.sleep(1)
+        time.sleep(5)
         
         # Measure for a few sec to get a good average
         voltages = []
