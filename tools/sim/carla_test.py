@@ -119,7 +119,7 @@ def go(q):
 
   import carla
   client = carla.Client("127.0.0.1", 2000)
-  client.set_timeout(5.0)
+  client.set_timeout(15.0)
   world = client.load_world('Town04')
   settings = world.get_settings()
   settings.fixed_delta_seconds = 0.05
