@@ -59,13 +59,8 @@ static void set_awake(UIState *s, bool awake) {
 
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
-  if (s->touch_enabled && s->active_app != ACTIVEAPP_SETTINGS) {
-    s->touch_enabled = false;
-    s->active_app = ACTIVEAPP_SETTINGS;
-    s->touch_timeout = 0.5*30; // 0.5sec at 30fps
-
-    system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
-  }
+  s->active_app = ACTIVEAPP_SETTINGS;
+  system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
 #else
   // computer UI doesn't have offroad settings
 #endif
@@ -73,13 +68,8 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
-  if (s->touch_enabled && s->active_app != ACTIVEAPP_HOME) {
-    s->touch_enabled = false;
-    s->active_app = ACTIVEAPP_HOME;
-    s->touch_timeout = 0.5*30; // 0.5sec at 30fps
-
-    system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
-  }
+  s->active_app = ACTIVEAPP_HOME;
+  system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
 #else
   // computer UI doesn't have offroad home
 #endif
@@ -94,7 +84,16 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
     if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
       && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
       navigate_to_home(s);
+      if (s->vision_connected) {
+        s->scene.uilayout_sidebarcollapsed = true;
+      }
     }
+  }
+}
+
+static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
+  if (s->vision_connected && touch_x >= s->scene.ui_viz_rx - bdr_s && s->active_app != ACTIVEAPP_SETTINGS) {
+    s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
   }
 }
 
@@ -453,20 +452,6 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_UiLayoutState datad;
     cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
     s->active_app = datad.activeApp;
-    s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
-    s->scene.uilayout_mapenabled = datad.mapEnabled;
-
-    bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-    bool mapEnabled = s->scene.uilayout_mapenabled;
-    if (mapEnabled) {
-      s->scene.ui_viz_rx = hasSidebar ? (box_x+nav_w) : (box_x+nav_w-(bdr_s*4));
-      s->scene.ui_viz_rw = hasSidebar ? (box_w-nav_w) : (box_w-nav_w+(bdr_s*4));
-      s->scene.ui_viz_ro = -(sbr_w + 4*bdr_s);
-    } else {
-      s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x-sbr_w+bdr_s*2);
-      s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w+sbr_w-(bdr_s*2));
-      s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6*bdr_s) : 0;
-    }
   } else if (eventd.which == cereal_Event_liveMapData) {
     struct cereal_LiveMapData datad;
     cereal_read_LiveMapData(&datad, eventd.liveMapData);
@@ -540,6 +525,7 @@ static void ui_update(UIState *s) {
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
 
+    navigate_to_home(s);
     s->scene.uilayout_sidebarcollapsed = true;
 
     for (int i=0; i<UI_BUF_COUNT; i++) {
@@ -925,9 +911,6 @@ int main(int argc, char* argv[]) {
 
   s->scene.satelliteCount = -1;
 
-  int touch_x_last;
-  int touch_y_last;
-
   while (!do_exit) {
     bool should_swap = false;
     if (!s->vision_connected) {
@@ -945,29 +928,21 @@ int main(int argc, char* argv[]) {
     if (smooth_brightness > 255) smooth_brightness = 255;
     set_brightness(s, (int)smooth_brightness);
 
+    const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
+    s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + bdr_s * 2);
+    s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
+    s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
+
+    // poll for touch events
+    int touch_x = -1, touch_y = -1;
+    int touched = touch_poll(&touch, &touch_x, &touch_y, 15);
+    if (touched == 1) {
+      set_awake(s, true);
+      handle_sidebar_touch(s, touch_x, touch_y);
+      handle_vision_touch(s, touch_x, touch_y);
+    }
+
     if (!s->vision_connected) {
-      zmq_pollitem_t polls[1] = {{0}};
-      polls[0].fd = s->touch_fd;
-      polls[0].events = ZMQ_POLLIN;
-      int touch_p = zmq_poll(polls, 1, 0);
-
-      if (touch_p < 0) {
-        if (errno == EINTR) continue;
-        LOGW("poll failed (%d)", touch_p);
-      } else if (touch_p > 0) {
-        int touch_x = -1, touch_y = -1;
-        int touched = touch_read(&touch, &touch_x, &touch_y);
-        if (touched == 1) {
-          // awake on any touch
-          set_awake(s, true);
-
-          if (touch_x != touch_x_last && touch_y != touch_y_last) {
-            handle_sidebar_touch(s, touch_x, touch_y);
-            touch_x_last = touch_x;
-            touch_y_last = touch_y;
-          }
-        }
-      }
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
       }
@@ -978,9 +953,10 @@ int main(int argc, char* argv[]) {
       }
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
       ui_update(s);
-      if(!s->vision_connected) {
+      if (!s->vision_connected) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
         s->scene.satelliteCount = -1;
+        s->scene.uilayout_sidebarcollapsed = false;
         ui_draw(s);
         glFinish();
         should_swap = true;
@@ -992,14 +968,6 @@ int main(int argc, char* argv[]) {
       s->awake_timeout--;
     } else {
       set_awake(s, false);
-    }
-
-
-    // manage touch
-    if (s->touch_timeout > 0) {
-      s->touch_timeout--;
-    } else {
-      s->touch_enabled = true;
     }
 
     // manage hardware disconnect

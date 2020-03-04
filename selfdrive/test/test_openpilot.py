@@ -2,7 +2,7 @@
 import os
 os.environ['FAKEUPLOAD'] = "1"
 
-from common.apk import update_apks, start_frame, pm_apply_packages, android_packages
+from common.apk import update_apks, start_offroad, pm_apply_packages, android_packages
 from common.params import Params
 from common.testing import phone_only
 from selfdrive.manager import manager_init, manager_prepare
@@ -57,7 +57,7 @@ def with_apks():
 
       update_apks()
       pm_apply_packages('enable')
-      start_frame()
+      start_offroad()
 
       func()
 
