@@ -3,6 +3,7 @@ on: [push, pull_request]
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
+  USERRUN: docker run --shm-size 1G --user 1000 --rm tmppilot /bin/sh -c
   LOAD: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
   UNIT_TEST: cd /tmp/openpilot && python -m unittest discover
 
@@ -165,5 +166,7 @@ jobs:
           name: tmppilot.tar.gz
       - name: Load image
         run: $LOAD
-      - name: carla tests
-        run: $RUN "cd /tmp/openpilot/tools/sim/ && ./runsimci.sh"
+      - name: add carla user
+        run: $RUN "adduser -D carla && "
+      - name: test carla
+        run: $USERRUN "cd /tmp/openpilot/tools/sim/ && ./runsimci.sh"
