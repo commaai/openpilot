@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import math
-from bisect import bisect_right
 
 import numpy as np
 

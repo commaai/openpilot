@@ -4,7 +4,6 @@ import json
 import copy
 import datetime
 import psutil
-import subprocess
 from smbus2 import SMBus
 from cereal import log
 from common.android import ANDROID, get_network_type
@@ -32,6 +31,9 @@ with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
   OFFROAD_ALERTS = json.load(json_file)
 
 def read_tz(x, clip=True):
+  if not ANDROID:
+    # we don't monitor thermal on PC
+    return 0
   try:
     with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
       ret = int(f.read())
@@ -192,10 +194,12 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
-    try:
-      network_type = get_network_type()
-    except subprocess.CalledProcessError:
-      pass
+    # get_network_type is an expensive call. update every 10s
+    if (count % int(10. / DT_TRML)) == 0:
+      try:
+        network_type = get_network_type()
+      except Exception:
+        pass
 
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
@@ -391,7 +395,7 @@ def thermald_thread():
     count += 1
 
 
-def main(gctx=None):
+def main():
   thermald_thread()
 
 if __name__ == "__main__":
