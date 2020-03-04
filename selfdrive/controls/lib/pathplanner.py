@@ -22,19 +22,16 @@ DESIRES = {
   LaneChangeDirection.none: {
     LaneChangeState.off: log.PathPlan.Desire.none,
     LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.none,
     LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.none,
   },
   LaneChangeDirection.left: {
     LaneChangeState.off: log.PathPlan.Desire.none,
     LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.laneChangeLeft,
     LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.laneChangeLeft,
   },
   LaneChangeDirection.right: {
     LaneChangeState.off: log.PathPlan.Desire.none,
     LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.laneChangeRight,
     LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.laneChangeRight,
   },
 }
