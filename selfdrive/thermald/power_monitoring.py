@@ -81,23 +81,29 @@ class PowerMonitoring:
       # If the measurement is 0, the current is 400mA or greater, and out of the measurement range of the panda
       current_power = (PANDA_OUTPUT_VOLTAGE * panda_current_to_actual_current(health.health.current))
     elif (self.next_pulsed_measurement_time != None) and (self.next_pulsed_measurement_time <= now):
-      # Turn off charging for 10 sec in a thread that does not get killed on SIGINT
-      def charging_temp_disable():
+      # Turn off charging for 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
+      def perform_pulse_measurement(now):
         set_battery_charging(False)
-        time.sleep(10)
-        set_battery_charging(True)
-      threading.Thread(target=charging_temp_disable).start()
-      time.sleep(1)
-
-      # Measure for a few sec to get a good average
-      voltages = []
-      currents = []
-      for i in range(6):
-        voltages.append(get_battery_voltage())
-        currents.append(get_battery_current())
         time.sleep(1)
-      current_power = ((mean(voltages) / 1000000)  * (mean(currents) / 1000000))
+        
+        # Measure for a few sec to get a good average
+        voltages = []
+        currents = []
+        for i in range(6):
+          voltages.append(get_battery_voltage())
+          currents.append(get_battery_current())
+          time.sleep(1)
+        current_power = ((mean(voltages) / 1000000)  * (mean(currents) / 1000000))
+        self._perform_integration(now, current_power)
+
+        # Enable charging again
+        set_battery_charging(True)
+      
+      # Start pulsed measurement and return
+      threading.Thread(target=perform_pulse_measurement, args=(now,)).start()
       self.next_pulsed_measurement_time = None
+      return
+      
     elif self.next_pulsed_measurement_time == None:
       # On a charging EON with black panda, or drawing more than 400mA out of a white/grey one
       # Only way to get the power draw is to turn off charging for a few sec and check what the discharging rate is
@@ -109,9 +115,12 @@ class PowerMonitoring:
       return
 
     # Do the integration
-    integration_time_h = (now - self.last_measurement_time) / 3600
+    self._perform_integration(now, current_power)
+
+  def _perform_integration(self, t, current_power):
+    integration_time_h = (t - self.last_measurement_time) / 3600
     self.power_used_uWh += (current_power * 1000000) * integration_time_h
-    self.last_measurement_time = now
+    self.last_measurement_time = t
 
   # Get the power usage
   def get_power_used(self):
