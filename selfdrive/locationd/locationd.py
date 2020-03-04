@@ -29,14 +29,16 @@ class Localizer():
     fix = messaging.log.LiveLocationData.new_message()
 
     predicted_state = self.kf.x
+    predicted_std = np.diagonal(self.kf.P)
 
     fix_ecef = predicted_state[States.ECEF_POS]
-    fix_pos_geo = coord.ecef2geodetic(fix_ecef)
-    fix.lat = float(fix_pos_geo[0])
-    fix.lon = float(fix_pos_geo[1])
-    fix.alt = float(fix_pos_geo[2])
+    fix_ecef_std = predicted_std[States.ECEF_POS_ERR]
 
-    fix.speed = float(np.linalg.norm(predicted_state[States.ECEF_VELOCITY]))
+    fix_pos_geo = coord.ecef2geodetic(fix_ecef)
+    fix.positionGeodetic.val = [float(fix_pos_geo[0]), float(fix_pos_geo[1]), float(fix_pos_geo[2])]
+    fix.positionECEF.val = [float(fix_ecef[0]), float(fix_ecef[1]), float(fix_ecef[2])]
+    fix.positionECEF.std = [float(fix_ecef_std[0]), float(fix_ecef_std[1]), float(fix_ecef_std[2])]
+
 
     orientation_ned_euler = ned_euler_from_ecef(fix_ecef, quat2euler(predicted_state[States.ECEF_ORIENTATION]))
     fix.roll = math.degrees(orientation_ned_euler[0])
@@ -162,7 +164,7 @@ def locationd_thread(sm, pm, disabled_logs=[]):
   if sm is None:
     sm = messaging.SubMaster(['gpsLocationExternal', 'sensorEvents', 'cameraOdometry'])
   if pm is None:
-    pm = messaging.PubMaster(['liveLocation'])
+    pm = messaging.PubMaster(['liveLocationKalman'])
 
   localizer = Localizer(disabled_logs=disabled_logs)
 
@@ -186,10 +188,10 @@ def locationd_thread(sm, pm, disabled_logs=[]):
       msg = messaging.new_message()
       msg.logMonoTime = t
 
-      msg.init('liveLocation')
+      msg.init('liveLocationKalman')
       msg.liveLocation = localizer.liveLocationMsg(t * 1e-9)
 
-      pm.send('liveLocation', msg)
+      pm.send('liveLocationKalman', msg)
 
 
 def main(sm=None, pm=None):
