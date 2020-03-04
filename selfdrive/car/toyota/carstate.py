@@ -90,7 +90,6 @@ class CarState(CarStateBase):
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
     self.steer_warning = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
-    self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
 
     return ret
 
@@ -121,7 +120,6 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
       ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
       ("LKA_STATE", "EPS_STATUS", 0),
-      ("IPAS_STATE", "EPS_STATUS", 1),
       ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
     ]
