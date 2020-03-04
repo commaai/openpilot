@@ -14,6 +14,7 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["GEAR_PACKET"]['GEAR']
     self.angle_offset = 0.
     self.init_angle_offset = False
+    self.acurate_steer_angle_seen = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -40,18 +41,23 @@ class CarState(CarStateBase):
 
     ret.standstill = ret.vEgoRaw < 0.001
 
-    if self.CP.carFingerprint in TSS2_CAR:
-      ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
-    elif self.CP.carFingerprint in NO_DSU_CAR:
-      # cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] is zeroed to where the steering angle is at start.
-      # need to apply an offset as soon as the steering angle measurements are both received
-      ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
-      angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
-      if abs(angle_wheel) > 1e-3 and abs(ret.steeringAngle) > 1e-3 and not self.init_angle_offset:
-        self.init_angle_offset = True
-        self.angle_offset = ret.steeringAngle - angle_wheel
-    else:
+    # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero
+    if abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']) > 1e-3:
+      self.acurate_steer_angle_seen = True
+
+    if not self.acurate_steer_angle_seen:
       ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+    else:
+      ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
+
+      if self.CP.carFingerprint in NO_DSU_CAR and not self.init_angle_offset:
+        # cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] is zeroed to where the steering angle is at start.
+        # need to apply an offset as soon as the steering angle measurements are both received
+        angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+        if abs(angle_wheel) > 1e-3 and abs(ret.steeringAngle) > 1e-3:
+          self.init_angle_offset = True
+          self.angle_offset = ret.steeringAngle - angle_wheel
+
     ret.steeringRate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
