@@ -162,14 +162,16 @@ class SubMaster():
   def __getitem__(self, s):
     return self.data[s]
 
-  def update(self, timeout=1000):
+  def update(self, wait_for=None):
     msgs = []
-    for sock in self.poller.poll(timeout):
-      msgs.append(recv_one_or_none(sock))
+    for s in self.sock:
+      if wait_for is not None and s in wait_for:
+        msgs.append(recv_one(self.sock[s]))
+      else:
+        msgs.append(recv_one_or_none(self.sock[s]))
     self.update_msgs(sec_since_boot(), msgs)
 
   def update_msgs(self, cur_time, msgs):
-    # TODO: add optional input that specify the service to wait for
     self.frame += 1
     self.updated = dict.fromkeys(self.updated, False)
     for msg in msgs:
