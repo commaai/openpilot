@@ -16,4 +16,4 @@ fi
 easy_install carla/PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true
 
 chmod 600 carla/
-chmod 600 /usr/bin/python3 
+chmod 600 /usr/bin/env/python3 
