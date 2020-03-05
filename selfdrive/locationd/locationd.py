@@ -68,44 +68,44 @@ class Localizer():
     fix.positionGeodetic.value = to_float(fix_pos_geo)
     fix.positionGeodetic.std = to_float(fix_pos_geo_std)
     fix.positionGeodetic.valid = True
-    fix.positionECEF.val = to_float(fix_ecef)
+    fix.positionECEF.value = to_float(fix_ecef)
     fix.positionECEF.std = to_float(fix_ecef_std)
     fix.positionECEF.valid = True
-    fix.velocityECEF.val = to_float(vel_ecef)
+    fix.velocityECEF.value = to_float(vel_ecef)
     fix.velocityECEF.std = to_float(vel_ecef_std)
     fix.velocityECEF.valid = True
-    fix.velocityNED.val = to_float(ned_vel)
+    fix.velocityNED.value = to_float(ned_vel)
     fix.velocityNED.std = to_float(ned_vel_std)
     fix.velocityNED.valid = True
-    fix.velocityDevice.val = to_float(vel_device)
+    fix.velocityDevice.value = to_float(vel_device)
     fix.velocityDevice.std = to_float(vel_device_std)
     fix.velocityDevice.valid = True
-    fix.accelerationDevice.val = to_float(predicted_state[States.ACCELERATION])
+    fix.accelerationDevice.value = to_float(predicted_state[States.ACCELERATION])
     fix.accelerationDevice.std = to_float(predicted_std[States.ACCELERATION_ERR])
     fix.accelerationDevice.valid = True
 
-    fix.orientationECEF.val = to_float(orientation_ecef)
+    fix.orientationECEF.value = to_float(orientation_ecef)
     fix.orientationECEF.std = to_float(orientation_ecef_std)
     fix.orientationECEF.valid = True
-    fix.orientationNED.val = to_float(orientation_ned)
+    fix.orientationNED.value = to_float(orientation_ned)
     fix.orientationNED.std = to_float(orientation_ned_std)
     fix.orientationNED.valid = True
-    fix.angularVelocityDevice.val = to_float(predicted_state[States.ANGULAR_VELOCITY])
+    fix.angularVelocityDevice.value = to_float(predicted_state[States.ANGULAR_VELOCITY])
     fix.angularVelocityDevice.std = to_float(predicted_std[States.ANGULAR_VELOCITY_ERR])
     fix.angularVelocityDevice.valid = True
 
-    fix.velocityCalib.val = to_float(vel_calib)
-    fix.velocityCalib.std = to_float(vel_calib_std)
-    fix.velocityCalib.valid = True
-    fix.angularVelocityCalib.val = to_float(ang_vel_calib)
-    fix.angularVelocityCalib.std = to_float(ang_vel_calib_std)
-    fix.angularVelocityCalib.valid = True
-    fix.accelerationCalib.val = to_float(acc_calib)
-    fix.accelerationCalib.std = to_float(acc_calib_std)
-    fix.accelerationCalib.valid = True
+    fix.velocityCalibrated.value = to_float(vel_calib)
+    fix.velocityCalibrated.std = to_float(vel_calib_std)
+    fix.velocityCalibrated.valid = True
+    fix.angularVelocityCalibrated.value = to_float(ang_vel_calib)
+    fix.angularVelocityCalibrated.std = to_float(ang_vel_calib_std)
+    fix.angularVelocityCalibrated.valid = True
+    fix.accelerationCalibrated.value = to_float(acc_calib)
+    fix.accelerationCalibrated.std = to_float(acc_calib_std)
+    fix.accelerationCalibrated.valid = True
 
     fix.gpsWeek = self.time.week
-    fix.tow = self.time.tow
+    fix.gpsTimeOfWeek = self.time.tow
 
     if self.filter_ready and self.calibrated:
       fix.status = 'valid'
@@ -184,7 +184,7 @@ class Localizer():
                          ObservationKind.CAMERA_ODO_ROTATION,
                          np.concatenate([rot_device, rot_device_std]))
       trans_device = self.device_from_calib.dot(log.trans)
-      trans_device_std = self.device_from_calib.dot(log.trans_std)
+      trans_device_std = self.device_from_calib.dot(log.transStd)
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_TRANSLATION,
                          np.concatenate([trans_device, trans_device_std]))
@@ -239,6 +239,7 @@ def locationd_thread(sm, pm, disabled_logs=[]):
     sm.update()
 
     for sock, updated in sm.updated.items():
+      print(sock)
       if updated:
         t = sm.logMonoTime[sock] * 1e-9
         if sock == "sensorEvents":
@@ -258,8 +259,7 @@ def locationd_thread(sm, pm, disabled_logs=[]):
       msg.logMonoTime = t
 
       msg.init('liveLocationKalman')
-      msg.liveLocation = localizer.liveLocationMsg(t * 1e-9)
-
+      msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
       pm.send('liveLocationKalman', msg)
 
 
