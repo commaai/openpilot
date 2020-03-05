@@ -22,19 +22,16 @@ DESIRES = {
   LaneChangeDirection.none: {
     LaneChangeState.off: log.PathPlan.Desire.none,
     LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.none,
     LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.none,
   },
   LaneChangeDirection.left: {
     LaneChangeState.off: log.PathPlan.Desire.none,
     LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.laneChangeLeft,
     LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.laneChangeLeft,
   },
   LaneChangeDirection.right: {
     LaneChangeState.off: log.PathPlan.Desire.none,
     LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.laneChangeRight,
     LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.laneChangeRight,
   },
 }
@@ -119,14 +116,10 @@ class PathPlanner():
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
         elif torque_applied:
-          self.lane_change_state = LaneChangeState.laneChangeStarting
-
-      # starting
-      elif self.lane_change_state == LaneChangeState.laneChangeStarting and lane_change_prob > 0.5:
-        self.lane_change_state = LaneChangeState.laneChangeFinishing
+          self.lane_change_state = LaneChangeState.laneChangeFinishing
 
       # finishing
-      elif self.lane_change_state == LaneChangeState.laneChangeFinishing and lane_change_prob < 0.2:
+      elif self.lane_change_state == LaneChangeState.laneChangeFinishing and lane_change_prob < 0.5:
         if one_blinker:
           self.lane_change_state = LaneChangeState.preLaneChange
         else:
