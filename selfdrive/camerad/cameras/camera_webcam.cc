@@ -67,6 +67,8 @@ void run_webcam(DualCameraState *s) {
   cv::VideoCapture* vcap[2] = {&cap_rear, &cap_front};
   uint32_t frame_id[2] = {0, 0};
 
+  TBuffer* tb[2] = {&cameras[0]->camera_tb, &cameras[1]->camera_tb};
+
   while (!do_exit) {
     for (int i=0; i<2; i++) {
       cv::Mat frame_mat;
@@ -75,14 +77,15 @@ void run_webcam(DualCameraState *s) {
 
       frame_id[i] += 1;
 
-      //if (i==1) {cv::resize(frame_mat, frame_mat, cv::Size(480, 360));}
+      // needs this because over videocapture size limit
+      if (i==0) {cv::resize(frame_mat, frame_mat, cv::Size(1164, 874));}
 
       int frame_size = frame_mat.total() * frame_mat.elemSize();
 
       // printf("C%d: %d,%d\n", i+1, frame_id[i], frame_size);
 
-      auto *tb = &cameras[i]->camera_tb;
-      const int buf_idx = tbuffer_select(tb);
+
+      const int buf_idx = tbuffer_select(tb[i]);
       cameras[i]->camera_bufs_metadata[buf_idx] = {
         .frame_id = frame_id[i],
       };
@@ -101,7 +104,7 @@ void run_webcam(DualCameraState *s) {
       clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
       clWaitForEvents(1, &map_event);
       clReleaseEvent(map_event);
-      tbuffer_dispatch(tb, buf_idx);
+      tbuffer_dispatch(tb[i], buf_idx);
 
       frame_mat.release();
     }

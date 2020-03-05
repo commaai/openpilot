@@ -20,7 +20,7 @@ SR = 7.5
 def angle_to_sangle(angle):
   return - math.degrees(angle) * SR
 
-def can_function(pm, speed, angle, idx, cruise_button=0):
+def can_function(pm, speed, angle, idx, cruise_button=0, is_engaged=False):
   msg = []
   msg.append(packer.make_can_msg("ENGINE_DATA", 0, {"XMISSION_SPEED": speed}, idx))
   msg.append(packer.make_can_msg("WHEEL_SPEEDS", 0,
@@ -50,6 +50,7 @@ def can_function(pm, speed, angle, idx, cruise_button=0):
   msg.append(packer.make_can_msg("CRUISE_PARAMS", 0, {}, idx))
   msg.append(packer.make_can_msg("CRUISE", 0, {}, idx))
   msg.append(packer.make_can_msg("SCM_FEEDBACK", 0, {"MAIN_ON": 1}, idx))
+  msg.append(packer.make_can_msg("POWERTRAIN_DATA", 0, {"ACC_STATUS": int(is_engaged)}, idx))
   #print(msg)
 
   # cam bus

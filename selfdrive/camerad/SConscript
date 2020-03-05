@@ -11,6 +11,7 @@ else:
     cameras = ['cameras/camera_webcam.cc']
     env = env.Clone()
     env.Append(CXXFLAGS = '-DWEBCAM')
+    env.Append(CFLAGS = '-DWEBCAM')
   else:
     libs += []
     cameras = ['cameras/camera_frame_stream.cc']
