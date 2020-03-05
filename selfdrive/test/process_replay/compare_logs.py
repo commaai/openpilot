@@ -14,7 +14,7 @@ from tools.lib.logreader import LogReader
 
 def save_log(dest, log_msgs):
   dat = b""
-  for msg in log_msgs:
+  for msg in tqdm(log_msgs):
     dat += msg.as_builder().to_bytes()
   dat = bz2.compress(dat)
 
