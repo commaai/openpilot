@@ -34,6 +34,8 @@ def run_loop(m):
 
 if __name__ == "__main__":
   print(tf.__version__, file=sys.stderr)
+  if "dmonitoring" in sys.argv[1]:
+    sys.argv[1] = sys.argv[1].split('_q')[0] + '.keras' # keras model is non quantized
   m = load_model(sys.argv[1])
   print(m, file=sys.stderr)
   bs = [int(np.product(ii.shape[1:])) for ii in m.inputs]

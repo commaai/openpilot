@@ -83,6 +83,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   // yuvframe2tensor, normalize
   for (int r = 0; r < MODEL_HEIGHT/2; r++) {
     for (int c = 0; c < MODEL_WIDTH/2; c++) {
+      #ifdef QCOM
       // Y_ul
       net_input_buf[(c*MODEL_HEIGHT/2) + r] = (resized_buf[(2*r*resized_width) + (2*c)] - 128.f) * 0.0078125f;
       // Y_ur
@@ -95,16 +96,31 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
       net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c] - 128.f) * 0.0078125f;
       // V
       net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c] - 128.f) * 0.0078125f;
+      #else // for non SNPE running platforms, assume keras model has lambda layer
+      // Y_ul
+      net_input_buf[(c*MODEL_HEIGHT/2) + r] = (resized_buf[(2*r*resized_width) + (2*c)]);
+      // Y_ur
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width) + (2*c+1)]);
+      // Y_dl
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width+1) + (2*c)]);
+      // Y_dr
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width+1) + (2*c+1)]);
+      // U
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c]);
+      // V
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c]);
+      #endif
     }
   }
 
-  // FILE *dump_yuv_file = fopen("/sdcard/rawdump.yuv", "wb");
-  // fwrite(raw_buf, height*width*3/2, sizeof(uint8_t), dump_yuv_file);
-  // fclose(dump_yuv_file);
+  //printf("preprocess completed. %d \n", yuv_buf_len);
+  //FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
+  //fwrite(raw_buf, height*width*3/2, sizeof(uint8_t), dump_yuv_file);
+  //fclose(dump_yuv_file);
 
-  // FILE *dump_yuv_file2 = fopen("/sdcard/inputdump.yuv", "wb");
-  // fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
-  // fclose(dump_yuv_file2);
+  //FILE *dump_yuv_file2 = fopen("/tmp/inputdump.yuv", "wb");
+  //fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
+  //fclose(dump_yuv_file2);
 
   delete[] cropped_buf;
   delete[] resized_buf;

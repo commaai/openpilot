@@ -91,8 +91,12 @@ void TFModel::addDesire(float *state, int state_size) {
 void TFModel::execute(float *net_input_buf, int buf_size) {
   // order must be this
   pwrite(net_input_buf, buf_size);
-  pwrite(desire_input_buf, desire_state_size);
-  pwrite(rnn_input_buf, rnn_state_size);
+  if (desire_input_buf != NULL) {
+    pwrite(desire_input_buf, desire_state_size);
+  }
+  if (rnn_input_buf != NULL) {
+    pwrite(rnn_input_buf, rnn_state_size);
+  }
   pread(output, output_size);
 }
 
