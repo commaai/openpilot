@@ -289,13 +289,15 @@ class CarState():
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
     self.left_blinker_on = 0
+    self.left_blinker_on_cnt = 0
     self.left_blinker_flash = 0
-    self.left_blinker_cnt = 0
+    self.left_blinker_flash_cnt = 0
     self.right_blinker_on = 0
+    self.right_blinker_on_cnt = 0
     self.right_blinker_flash = 0
-    self.right_blinker_cnt = 0
+    self.right_blinker_flash_cnt = 0
     self.lca_left = 0
-    self.lca_left = 0
+    self.lca_right = 0
     self.no_radar = CP.sccBus == -1
     self.mdps_bus = CP.mdpsBus
     self.sas_bus = CP.sasBus
@@ -358,18 +360,26 @@ class CarState():
     self.angle_steers = cp_sas.vl["SAS11"]['SAS_Angle']
     self.angle_steers_rate = cp_sas.vl["SAS11"]['SAS_Speed']
     self.yaw_rate = cp.vl["ESP12"]['YAW_RATE']
-    self.left_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigLHSw']
-    self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigRHSw']
 
+    self.left_blinker_on_cnt = 50 if cp.vl["CGW1"]['CF_Gway_TSigLHSw'] else max(self.left_blinker_on_cnt - 1, 0)
+    self.left_blinker_on = self.left_blinker_on_cnt > 0
+    self.right_blinker_on_cnt = 50 if cp.vl["CGW1"]['CF_Gway_TSigRHSw'] else max(self.right_blinker_on_cnt - 1, 0)
+    self.right_blinker_on = self.right_blinker_on_cnt > 0
     # make blinker flash to be continuous
-    if self.v_ego > 17.5:
-      self.left_blinker_cnt = 400 if cp.vl["CGW1"]['CF_Gway_TurnSigLh'] else max(self.left_blinker_cnt - 1, 0)
-      self.left_blinker_flash = self.left_blinker_cnt > 0
+    if self.v_ego > 17.5 and not self.left_blinker_on:
+      self.left_blinker_flash_cnt = 300 if cp.vl["CGW1"]['CF_Gway_TurnSigLh'] else max(self.left_blinker_flash_cnt - 1, 0)
+      self.left_blinker_flash = self.left_blinker_flash_cnt > 0
+    elif self.v_ego > 17.5 and self.left_blinker_on:
+     self.left_blinker_flash_cnt = 50 if cp.vl["CGW1"]['CF_Gway_TurnSigLh'] else max(self.left_blinker_flash_cnt - 1, 0)
+     self.left_blinker_flash = self.left_blinker_flash_cnt > 0
     else:
       self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
-    if self.v_ego > 17.5:
-      self.right_blinker_cnt = 400 if cp.vl["CGW1"]['CF_Gway_TurnSigRh'] else max(self.right_blinker_cnt - 1, 0)
-      self.right_blinker_flash = self.right_blinker_cnt > 0
+    if self.v_ego > 17.5 and not self.right_blinker_on:
+      self.right_blinker_flash_cnt = 300 if cp.vl["CGW1"]['CF_Gway_TurnSigRh'] else max(self.right_blinker_flash_cnt - 1, 0)
+      self.right_blinker_flash = self.right_blinker_flash_cnt > 0
+    elif self.v_ego > 17.5 and self.right_blinker_on:
+      self.right_blinker_flash_cnt = 50 if cp.vl["CGW1"]['CF_Gway_TurnSigRh'] else max(self.right_blinker_flash_cnt - 1, 0)
+      self.right_blinker_flash = self.right_blinker_flash_cnt > 0
     else:
       self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
 
