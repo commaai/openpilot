@@ -106,6 +106,7 @@ class Localizer():
 
     fix.gpsWeek = self.time.week
     fix.gpsTimeOfWeek = self.time.tow
+    fix.unixTimestampMillis = self.unix_timestamp_millis
 
     if self.filter_ready and self.calibrated:
       fix.status = 'valid'
@@ -133,6 +134,7 @@ class Localizer():
     fix_ecef = self.converter.ned2ecef([0, 0, 0])
 
     self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
+    self.unix_timestamp_millis = log.timestamp
 
     # TODO initing with bad bearing not allowed, maybe not bad?
     if not self.filter_ready and log.speed > 5:
