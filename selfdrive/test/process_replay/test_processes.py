@@ -22,11 +22,14 @@ segments = [
   ("HYUNDAI", "38bfd238edecbcd7|2018-08-29--22-02-15--4"),    # HYUNDAI.SANTA_FE
   #("CHRYSLER", "b6e1317e1bfbefa6|2020-03-04--13-11-40"),   # CHRYSLER.JEEP_CHEROKEE
   ("SUBARU", "7873afaf022d36e2|2019-07-03--18-46-44--0"),     # SUBARU.IMPREZA
-  ("VOLKSWAGEN", "b0c9d2329ad1606b|2020-02-19--16-29-36--7"),  # VW.GOLF
+  ("VOLKSWAGEN", "b0c9d2329ad1606b|2020-02-19--16-29-36--7"), # VW.GOLF
+
+  # Enable when port is tested and dascamOnly is no longer set
+  # ("NISSAN", "fbbfa6af821552b9|2020-03-03--08-09-43--0"),     # NISSAN.XTRAIL
 ]
 
 # ford doesn't need to be tested until a full port is done
-excluded_interfaces = ["mock", "ford"]
+excluded_interfaces = ["mock", "ford", "nissan"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 

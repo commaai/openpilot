@@ -20,6 +20,7 @@ from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.subaru.values import CAR as SUBARU
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
+from selfdrive.car.nissan.values import CAR as NISSAN
 from selfdrive.car.mock.values import CAR as MOCK
 
 
@@ -434,6 +435,10 @@ routes = {
   #"bfa17080b080f3ec|2018-06-28--23-27-47": {
   #  'carFingerprint': MOCK.MOCK,
   #},
+  "fbbfa6af821552b9|2020-03-03--08-09-43": {
+    'carFingerprint': NISSAN.XTRAIL,
+    'enableCamera': True,
+  },
 }
 
 passive_routes = [
@@ -445,6 +450,9 @@ forced_dashcam_routes = [
   # Ford fusion
   "f1b4c567731f4a1b|2018-04-18--11-29-37",
   "f1b4c567731f4a1b|2018-04-30--10-15-35",
+
+  # Nissan
+  "fbbfa6af821552b9|2020-03-03--08-09-43",
 ]
 
 # TODO: replace all these with public routes
