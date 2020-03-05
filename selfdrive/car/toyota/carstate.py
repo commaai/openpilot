@@ -18,7 +18,7 @@ class CarState(CarStateBase):
     # Only learn angle offset in non TSS2 cars without DSU
     learn_angle_offset = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
     self.init_angle_offset = not learn_angle_offset
-    self.acurate_steer_angle_seen = False
+    self.accurate_steer_angle_seen = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -47,9 +47,9 @@ class CarState(CarStateBase):
 
     # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero
     if abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']) > 1e-3:
-      self.acurate_steer_angle_seen = True
+      self.accurate_steer_angle_seen = True
 
-    if not self.acurate_steer_angle_seen:
+    if not self.accurate_steer_angle_seen:
       ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     else:
       ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
