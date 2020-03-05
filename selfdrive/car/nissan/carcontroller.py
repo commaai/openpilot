@@ -31,7 +31,7 @@ class CarController():
     cruise_throttle_msg = CS.cruise_throttle_msg
     apply_angle = actuators.steerAngle
 
-    if acc_active:
+    if enabled:
       # # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
         angle_rate_lim = interp(CS.out.vEgo, ANGLE_DELTA_BP, ANGLE_DELTA_V)
