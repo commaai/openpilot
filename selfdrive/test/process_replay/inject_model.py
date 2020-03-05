@@ -8,6 +8,7 @@ from tqdm import tqdm
 from cereal.messaging import PubMaster, recv_one, sub_sock
 from tools.lib.framereader import FrameReader
 import subprocess
+import selfdrive.manager as manager
 
 
 def rreplace(s, old, new, occurrence):
@@ -26,7 +27,6 @@ def regen_model(msgs, pm, frame_reader, model_sock):
   fidx = 0
   for msg in tqdm(msgs):
     w = msg.which()
-
 
     if w == 'frame':
       msg = msg.as_builder()
@@ -49,15 +49,9 @@ def inject_model(msgs, segment_name):
   if segment_name.count('--') == 2:
     segment_name = rreplace(segment_name, '--', '/', 1)
   frame_reader = FrameReader('cd:/'+segment_name.replace("|", "/") + "/fcamera.hevc")
-  import selfdrive.camerad
-  dir_path = os.path.dirname(selfdrive.camerad.__file__)
-  os.chdir(dir_path)
-  camerad_thread = subprocess.Popen('exec ./camerad', shell=True)
-  time.sleep(2)
-  import selfdrive.modeld
-  dir_path = os.path.dirname(selfdrive.modeld.__file__)
-  os.chdir(dir_path)
-  modeld_thread = subprocess.Popen('exec ./modeld', shell=True)
+
+  manager.start_managed_process('camerad')
+  manager.start_managed_process('modeld')
   # TODO do better than just wait for modeld to boot
   time.sleep(5)
 
@@ -66,20 +60,19 @@ def inject_model(msgs, segment_name):
   try:
     out_msgs = regen_model(msgs, pm, frame_reader, model_sock)
   except (KeyboardInterrupt, SystemExit, Exception) as e:
-    modeld_thread.kill()
-    time.sleep(1)
-    camerad_thread.kill()
+    manager.kill_managed_process('modeld')
+    time.sleep(2)
+    manager.kill_managed_process('camerad')
     raise e
-
-  modeld_thread.kill()
-  time.sleep(1)
-  camerad_thread.kill()
+  manager.kill_managed_process('modeld')
+  time.sleep(2)
+  manager.kill_managed_process('camerad')
 
 
   new_msgs = []
   midx = 0
-  for msg in list(msgs)[:len(out_msgs)]:
-    if msg.which() == 'model':
+  for msg in msgs:
+    if (msg.which() == 'model') and (midx < len(out_msgs)):
       model = out_msgs[midx].as_builder()
       model.logMonoTime = msg.logMonoTime
       model = model.as_reader()
@@ -88,6 +81,8 @@ def inject_model(msgs, segment_name):
     else:
       new_msgs.append(msg)
 
+  print(len(new_msgs), len(list(msgs)))
+  assert abs(len(new_msgs) - len(list(msgs))) < 2
 
   return new_msgs
 
