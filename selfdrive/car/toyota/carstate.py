@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_DSU_CAR, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_DSU_CAR, TSS2_CAR, NO_STOP_TIMER_CAR
 
 
 class CarState(CarStateBase):
@@ -12,8 +12,12 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["GEAR_PACKET"]['GEAR']
+
     self.angle_offset = 0.
-    self.init_angle_offset = False
+
+    # Only learn angle offset in non TSS2 cars without DSU
+    learn_angle_offset = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
+    self.init_angle_offset = not learn_angle_offset
     self.acurate_steer_angle_seen = False
 
   def update(self, cp, cp_cam):
@@ -50,7 +54,7 @@ class CarState(CarStateBase):
     else:
       ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
 
-      if self.CP.carFingerprint in NO_DSU_CAR and not self.init_angle_offset:
+      if not self.init_angle_offset:
         # cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] is zeroed to where the steering angle is at start.
         # need to apply an offset as soon as the steering angle measurements are both received
         angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
