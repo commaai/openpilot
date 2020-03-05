@@ -273,7 +273,8 @@ selfdrive/proclogd/proclogd.cc
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder.[c,h]
 selfdrive/loggerd/frame_logger.h
-selfdrive/loggerd/logger.[c,h]
+selfdrive/loggerd/logger.cc
+selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
 selfdrive/loggerd/raw_logger.cc
 selfdrive/loggerd/raw_logger.h
