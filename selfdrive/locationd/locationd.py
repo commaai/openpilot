@@ -241,7 +241,6 @@ def locationd_thread(sm, pm, disabled_logs=[]):
     sm.update()
 
     for sock, updated in sm.updated.items():
-      print(sock)
       if updated:
         t = sm.logMonoTime[sock] * 1e-9
         if sock == "sensorEvents":
