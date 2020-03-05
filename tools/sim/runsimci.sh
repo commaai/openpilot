@@ -15,4 +15,4 @@ if [ ! -d carla ]; then
 fi
 easy_install carla/PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true
 
-./carla_test.py
+chmod 600 carla/
