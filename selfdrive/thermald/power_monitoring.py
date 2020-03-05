@@ -83,7 +83,8 @@ class PowerMonitoring:
       # This seems to be accurate to about 5%
       current_power = (PANDA_OUTPUT_VOLTAGE * panda_current_to_actual_current(health.health.current))
     elif (self.next_pulsed_measurement_time != None) and (self.next_pulsed_measurement_time <= now):
-      # TODO: Figure out why this is off by a factor of 1/2.4???
+      # TODO: Figure out why this is off by a factor of 3/4???
+      FUDGE_FACTOR = 1.33
 
       # Turn off charging for about 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
       def perform_pulse_measurement(now):
@@ -98,7 +99,7 @@ class PowerMonitoring:
           currents.append(get_battery_current())
           time.sleep(1)
         current_power = ((mean(voltages) / 1000000)  * (mean(currents) / 1000000))
-        self._perform_integration(now, current_power)
+        self._perform_integration(now, current_power * FUDGE_FACTOR)
 
         # Enable charging again
         set_battery_charging(True)
