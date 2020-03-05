@@ -44,7 +44,7 @@ typedef struct LoggerState {
 void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog);
 int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
-                            int* out_part, bool is_start_of_route);
+                            int* out_part);
 LoggerHandle* logger_get_handle(LoggerState *s);
 void logger_close(LoggerState *s);
 void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);

@@ -129,7 +129,6 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
 
   pthread_mutex_init(&h->lock, NULL);
   h->refcnt++;
-
   return h;
 fail:
   LOGE("logger failed to open files");
@@ -140,8 +139,9 @@ fail:
 
 int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
-                            int* out_part, bool is_start_of_route) {
-  log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_SEGMENT);
+                            int* out_part) {
+  bool is_start_of_route = !s->cur_handle;
+  if (!is_start_of_route) log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_SEGMENT);
 
   pthread_mutex_lock(&s->lock);
   s->part++;

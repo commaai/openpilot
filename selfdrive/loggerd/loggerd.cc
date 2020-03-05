@@ -533,7 +533,7 @@ static void bootlog() {
     logger_init(&s.logger, "bootlog", bytes.begin(), bytes.size(), false);
   }
 
-  err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment, true);
+  err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
   assert(err == 0);
   LOGW("bootlog to %s", s.segment_path);
 
@@ -623,7 +623,7 @@ int main(int argc, char** argv) {
   }
 
   if (is_logging) {
-    err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment, true);
+    err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
     assert(err == 0);
     LOGW("logging to %s", s.segment_path);
   }
@@ -696,7 +696,7 @@ int main(int argc, char** argv) {
       s.rotate_last_frame_id = s.last_frame_id;
 
       if (is_logging) {
-        err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment, false);
+        err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
         assert(err == 0);
         LOGW("rotated to %s", s.segment_path);
       }
