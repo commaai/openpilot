@@ -37,8 +37,6 @@ class Localizer():
     self.calibrated = 0
 
   def liveLocationMsg(self, time):
-    fix = messaging.log.LiveLocationKalman.new_message()
-
     predicted_state = self.kf.x
     predicted_std = np.diagonal(self.kf.P)
 
@@ -65,6 +63,7 @@ class Localizer():
     ang_vel_calib_std = self.calib_from_device.dot(predicted_std[States.ANGULAR_VELOCITY_ERR])
 
 
+    fix = messaging.log.LiveLocationKalman.new_message()
     fix.positionGeodetic.value = to_float(fix_pos_geo)
     fix.positionGeodetic.std = to_float(fix_pos_geo_std)
     fix.positionGeodetic.valid = True
