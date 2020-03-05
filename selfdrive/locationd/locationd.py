@@ -2,7 +2,6 @@
 import math
 
 import numpy as np
-from datetime import datetime
 
 import cereal.messaging as messaging
 import common.transformations.coordinates as coord
@@ -14,7 +13,8 @@ from common.transformations.orientation import (ecef_euler_from_ned,
 from selfdrive.locationd.kalman.helpers import ObservationKind, KalmanError
 from selfdrive.locationd.kalman.models.live_kf import LiveKalman, States
 from selfdrive.swaglog import cloudlog
-from laika.gps_time import GPSTime
+#from datetime import datetime
+#from laika.gps_time import GPSTime
 
 
 VISION_DECIMATION = 2
@@ -103,8 +103,8 @@ class Localizer():
     fix.accelerationCalibrated.std = to_float(acc_calib_std)
     fix.accelerationCalibrated.valid = True
 
-    fix.gpsWeek = self.time.week
-    fix.gpsTimeOfWeek = self.time.tow
+    #fix.gpsWeek = self.time.week
+    #fix.gpsTimeOfWeek = self.time.tow
     fix.unixTimestampMillis = self.unix_timestamp_millis
 
     if self.filter_ready and self.calibrated:
@@ -132,7 +132,7 @@ class Localizer():
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
     fix_ecef = self.converter.ned2ecef([0, 0, 0])
 
-    self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
+    #self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
     self.unix_timestamp_millis = log.timestamp
 
     # TODO initing with bad bearing not allowed, maybe not bad?
