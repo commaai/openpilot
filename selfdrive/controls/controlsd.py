@@ -61,6 +61,8 @@ def events_to_bytes(events):
   for e in events:
     if isinstance(e, capnp.lib.capnp._DynamicStructReader):
       e = e.as_builder()
+    if not e.is_root:
+      e = e.copy()
     ret.append(e.to_bytes())
   return ret
 

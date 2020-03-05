@@ -6,19 +6,23 @@ import sys
 import tempfile
 
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.test.process_replay.compare_logs import compare_logs
 from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
+from selfdrive.test.process_replay.compare_logs import compare_logs
 from tools.lib.logreader import LogReader
+
+
+INJECT_MODEL = 0
 
 segments = [
   ("HONDA", "0375fdf7b1ce594d|2019-06-13--08-32-25--3"),      # HONDA.ACCORD
   ("HONDA", "99c94dc769b5d96e|2019-08-03--14-19-59--2"),      # HONDA.CIVIC
-  ("TOYOTA", "cce908f7eb8db67d|2019-08-02--15-09-51--3"),     # TOYOTA.COROLLA_TSS2
-  ("GM", "7ad88f53d406b787|2019-07-09--10-18-56--8"),         # GM.VOLT
-  ("HYUNDAI", "704b2230eb5190d6|2019-07-06--19-29-10--0"),    # HYUNDAI.KIA_SORENTO
-  ("CHRYSLER", "b6e1317e1bfbefa6|2019-07-06--04-05-26--5"),   # CHRYSLER.JEEP_CHEROKEE
+  ("TOYOTA", "77611a1fac303767|2020-02-29--13-29-33--3"),     # TOYOTA.COROLLA_TSS2
+  ("GM", "7cc2a8365b4dd8a9|2018-12-02--12-10-44--2"),         # GM.ACADIA
+  ("CHRYSLER", "b6849f5cf2c926b1|2020-02-28--07-29-48--13"),   # CHRYSLER.PACIFICA
+  ("HYUNDAI", "38bfd238edecbcd7|2018-08-29--22-02-15--4"),    # HYUNDAI.SANTA_FE
+  #("CHRYSLER", "b6e1317e1bfbefa6|2020-03-04--13-11-40"),   # CHRYSLER.JEEP_CHEROKEE
   ("SUBARU", "7873afaf022d36e2|2019-07-03--18-46-44--0"),     # SUBARU.IMPREZA
-  ("VOLKSWAGEN", "b0c9d2329ad1606b|2020-02-19--16-29-36--7"), # VW.GOLF
+  ("VOLKSWAGEN", "b0c9d2329ad1606b|2020-02-19--16-29-36--7"),  # VW.GOLF
 ]
 
 # ford doesn't need to be tested until a full port is done
@@ -29,9 +33,14 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 # run the full test (including checks) when no args given
 FULL_TEST = len(sys.argv) <= 1
 
-def get_segment(segment_name):
+def get_segment(segment_name, original=True):
   route_name, segment_num = segment_name.rsplit("--", 1)
-  rlog_url = BASE_URL + "%s/%s/rlog.bz2" % (route_name.replace("|", "/"), segment_num)
+  if original:
+    rlog_url = BASE_URL + "%s/%s/rlog.bz2" % (route_name.replace("|", "/"), segment_num)
+  else:
+    process_replay_dir = os.path.dirname(os.path.abspath(__file__))
+    model_ref_commit = open(os.path.join(process_replay_dir, "model_ref_commit")).read().strip()
+    rlog_url = BASE_URL + "%s/%s/rlog_%s.bz2" % (route_name.replace("|", "/"), segment_num, model_ref_commit)
   req = requests.get(rlog_url)
   assert req.status_code == 200, ("Failed to download log for %s" % segment_name)
 
