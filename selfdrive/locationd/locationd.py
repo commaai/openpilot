@@ -6,10 +6,10 @@ import numpy as np
 import cereal.messaging as messaging
 import common.transformations.coordinates as coord
 from common.transformations.orientation import (ecef_euler_from_ned,
-                                                euler2quat,
+                                                euler_from_quat,
                                                 ned_euler_from_ecef,
-                                                quat2euler,
-                                                rot_from_quat)
+                                                quat_from_euler,
+                                                rot_from_quat, rot_from_euler)
 from selfdrive.locationd.kalman.helpers import ObservationKind, KalmanError
 from selfdrive.locationd.kalman.models.live_kf import LiveKalman, States
 from selfdrive.swaglog import cloudlog
@@ -28,6 +28,10 @@ class Localizer():
     self.reset_kalman()
     self.max_age = .2  # seconds
     self.disabled_logs = disabled_logs
+    self.calib = np.zeros(3)
+    self.device_from_calib = np.eye(3)
+    self.calib_from_device = np.eye(3)
+    self.calibrated = 0
 
   def liveLocationMsg(self, time):
     fix = messaging.log.LiveLocationKalman.new_message()
@@ -46,6 +50,17 @@ class Localizer():
     device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
     vel_device = device_from_ecef.dot(vel_ecef)
     vel_device_std = device_from_ecef.dot(vel_ecef_std)
+    orientation_ecef = euler_from_quat(predicted_state[States.ECEF_ORIENTATION])
+    orientation_ecef_std = predicted_std[States.ECEF_ORIENTATION_ERR]
+    orientation_ned = ned_euler_from_ecef(fix_ecef, orientation_ecef)
+    orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
+    vel_calib = self.calib_from_device.dot(vel_device)
+    vel_calib_std = self.calib_from_device.dot(vel_device_std)
+    acc_calib = self.calib_from_device.dot(predicted_state[States.ACCELERATION])
+    acc_calib_std = self.calib_from_device.dot(predicted_std[States.ACCELERATION_ERR])
+    ang_vel_calib = self.calib_from_device.dot(predicted_state[States.ANGULAR_VELOCITY])
+    ang_vel_calib_std = self.calib_from_device.dot(predicted_std[States.ANGULAR_VELOCITY_ERR])
+
 
     fix.positionGeodetic.value = to_float(fix_pos_geo)
     fix.positionGeodetic.std = to_float(fix_pos_geo_std)
@@ -62,28 +77,36 @@ class Localizer():
     fix.velocityDevice.val = to_float(vel_device)
     fix.velocityDevice.std = to_float(vel_device_std)
     fix.velocityDevice.valid = True
-    fix.accelerationDevice.val = to_float(predicted_std[States.ACCELERATION])
+    fix.accelerationDevice.val = to_float(predicted_state[States.ACCELERATION])
     fix.accelerationDevice.std = to_float(predicted_std[States.ACCELERATION_ERR])
     fix.accelerationDevice.valid = True
 
+    fix.orientationECEF.val = to_float(orientation_ecef)
+    fix.orientationECEF.std = to_float(orientation_ecef_std)
+    fix.orientationECEF.valid = True
+    fix.orientationNED.val = to_float(orientation_ned)
+    fix.orientationNED.std = to_float(orientation_ned_std)
+    fix.orientationNED.valid = True
+    fix.angularVelocityDevice.val = to_float(predicted_state[States.ANGULAR_VELOCITY])
+    fix.angularVelocityDevice.std = to_float(predicted_std[States.ANGULAR_VELOCITY_ERR])
+    fix.angularVelocityDevice.valid = True
 
-    orientation_ned_euler = ned_euler_from_ecef(fix_ecef, quat2euler(predicted_state[States.ECEF_ORIENTATION]))
+    fix.velocityCalib.val = to_float(vel_calib)
+    fix.velocityCalib.std = to_float(vel_calib_std)
+    fix.velocityCalib.valid = True
+    fix.angularVelocityCalib.val = to_float(ang_vel_calib)
+    fix.angularVelocityCalib.std = to_float(ang_vel_calib_std)
+    fix.angularVelocityCalib.valid = True
+    fix.accelerationCalib.val = to_float(acc_calib)
+    fix.accelerationCalib.std = to_float(acc_calib_std)
+    fix.accelerationCalib.valid = True
 
-    fix.roll = math.degrees(orientation_ned_euler[0])
-    fix.pitch = math.degrees(orientation_ned_euler[1])
-    fix.heading = math.degrees(orientation_ned_euler[2])
-
-    fix.gyro = [float(predicted_state[10]), float(predicted_state[11]), float(predicted_state[12])]
-    fix.accel = [float(predicted_state[19]), float(predicted_state[20]), float(predicted_state[21])]
-
-    fix.source = 'kalman'
-
-    #local_vel = rotations_from_quats(predicted_state[States.ECEF_ORIENTATION]).T.dot(predicted_state[States.ECEF_VELOCITY])
-    #fix.pitchCalibration = math.degrees(math.atan2(local_vel[2], local_vel[0]))
-    #fix.yawCalibration = math.degrees(math.atan2(local_vel[1], local_vel[0]))
-
-    imu_frame = predicted_state[States.IMU_OFFSET]
-    fix.imuFrame = [math.degrees(imu_frame[0]), math.degrees(imu_frame[1]), math.degrees(imu_frame[2])]
+    if self.filter_ready and self.calibrated:
+      fix.status = 'valid'
+    elif self.filter_ready:
+      fix.status = 'uncalibrated'
+    else:
+      fix.status = 'uninitialized'
     return fix
 
   def update_kalman(self, time, kind, meas):
@@ -109,17 +132,17 @@ class Localizer():
       initial_ecef = fix_ecef
       gps_bearing = math.radians(log.bearing)
       initial_pose_ecef = ecef_euler_from_ned(initial_ecef, [0, 0, gps_bearing])
-      initial_pose_ecef_quat = euler2quat(initial_pose_ecef)
+      initial_pose_ecef_quat = quat_from_euler(initial_pose_ecef)
       gps_speed = log.speed
       quat_uncertainty = 0.2**2
-      initial_pose_ecef_quat = euler2quat(initial_pose_ecef)
+      initial_pose_ecef_quat = quat_from_euler(initial_pose_ecef)
 
       initial_state = LiveKalman.initial_x
       initial_covs_diag = LiveKalman.initial_P_diag
 
       initial_state[States.ECEF_POS] = initial_ecef
       initial_state[States.ECEF_ORIENTATION] = initial_pose_ecef_quat
-      initial_state[States.ECEF_VELOCITY] = rotations_from_quats(initial_pose_ecef_quat).dot(np.array([gps_speed, 0, 0]))
+      initial_state[States.ECEF_VELOCITY] = rot_from_quat(initial_pose_ecef_quat).dot(np.array([gps_speed, 0, 0]))
 
       initial_covs_diag[States.ECEF_POS_ERR] = 10**2
       initial_covs_diag[States.ECEF_ORIENTATION_ERR] = quat_uncertainty
@@ -147,12 +170,16 @@ class Localizer():
     self.cam_counter += 1
 
     if self.cam_counter % VISION_DECIMATION == 0:
+      rot_device = self.device_from_calib.dot(log.rot)
+      rot_device_std = self.device_from_calib.dot(log.rotStd)
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_ROTATION,
-                         np.concatenate([log.rot, log.rotStd]))
+                         np.concatenate([rot_device, rot_device_std]))
+      trans_device = self.device_from_calib.dot(log.trans)
+      trans_device_std = self.device_from_calib.dot(log.trans_std)
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_TRANSLATION,
-                         np.concatenate([log.trans, log.transStd]))
+                         np.concatenate([trans_device, trans_device_std]))
 
   def handle_sensors(self, current_time, log):
     # TODO does not yet account for double sensor readings in the log
@@ -175,6 +202,12 @@ class Localizer():
           v = sensor_reading.acceleration.v
           self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
 
+  def handle_live_calib(self, current_time, log):
+    self.calib = log.rpyCalib
+    self.device_from_calib = rot_from_euler(self.calib)
+    self.calib_from_device = self.device_from_calib.T
+    self.calibrated = log.calStatus == 1
+
   def reset_kalman(self):
     self.filter_time = None
     self.filter_ready = False
@@ -188,7 +221,7 @@ class Localizer():
 
 def locationd_thread(sm, pm, disabled_logs=[]):
   if sm is None:
-    sm = messaging.SubMaster(['gpsLocationExternal', 'sensorEvents', 'cameraOdometry'])
+    sm = messaging.SubMaster(['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration'])
   if pm is None:
     pm = messaging.PubMaster(['liveLocationKalman'])
 
@@ -208,6 +241,8 @@ def locationd_thread(sm, pm, disabled_logs=[]):
           localizer.handle_car_state(t, sm[sock])
         elif sock == "cameraOdometry":
           localizer.handle_cam_odo(t, sm[sock])
+        elif sock == "liveCalibration":
+          localizer.handle_live_calib(t, sm[sock])
 
     if localizer.filter_ready and sm.updated['gpsLocationExternal']:
       t = sm.logMonoTime['gpsLocationExternal']
