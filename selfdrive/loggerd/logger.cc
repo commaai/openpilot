@@ -147,8 +147,6 @@ int logger_next(LoggerState *s, const char* root_path,
   s->part++;
 
   LoggerHandle* next_h = logger_open(s, root_path);
-  log_sentinel(s, is_start_of_route ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
-
   if (!next_h) {
     pthread_mutex_unlock(&s->lock);
     return -1;
@@ -167,6 +165,8 @@ int logger_next(LoggerState *s, const char* root_path,
   }
 
   pthread_mutex_unlock(&s->lock);
+
+  log_sentinel(s, is_start_of_route ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
   return 0;
 }
 
