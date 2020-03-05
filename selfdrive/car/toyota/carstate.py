@@ -51,9 +51,7 @@ class CarState(CarStateBase):
     if abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']) > 1e-3:
       self.accurate_steer_angle_seen = True
 
-    if not self.accurate_steer_angle_seen:
-      ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
-    else:
+    if self.accurate_steer_angle_seen:
       ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
 
       if self.needs_angle_offset:
@@ -61,6 +59,8 @@ class CarState(CarStateBase):
         if abs(angle_wheel) > 1e-3 and abs(ret.steeringAngle) > 1e-3:
           self.needs_angle_offset = False
           self.angle_offset = ret.steeringAngle - angle_wheel
+    else:
+      ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
 
     ret.steeringRate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
