@@ -165,8 +165,6 @@ jobs:
         with:
           name: tmppilot.tar.gz
       - name: Load image
-        run: $LOAD
-      - name: add carla user
-        run: $RUN "adduser -D carla && "
+        run: $LOAD 
       - name: test carla
         run: $USERRUN "cd /tmp/openpilot/tools/sim/ && ./runsimci.sh"
