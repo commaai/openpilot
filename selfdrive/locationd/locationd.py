@@ -9,13 +9,17 @@ from common.transformations.orientation import (ecef_euler_from_ned,
                                                 euler2quat,
                                                 ned_euler_from_ecef,
                                                 quat2euler,
-                                                rotations_from_quats)
+                                                rot_from_quat)
 from selfdrive.locationd.kalman.helpers import ObservationKind, KalmanError
 from selfdrive.locationd.kalman.models.live_kf import LiveKalman, States
 from selfdrive.swaglog import cloudlog
 
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
+
+
+def to_float(arr):
+  return([float(arr[0]), float(arr[1]), float(arr[2])])
 
 
 class Localizer():
@@ -26,21 +30,45 @@ class Localizer():
     self.disabled_logs = disabled_logs
 
   def liveLocationMsg(self, time):
-    fix = messaging.log.LiveLocationData.new_message()
+    fix = messaging.log.LiveLocationKalman.new_message()
 
     predicted_state = self.kf.x
     predicted_std = np.diagonal(self.kf.P)
 
     fix_ecef = predicted_state[States.ECEF_POS]
     fix_ecef_std = predicted_std[States.ECEF_POS_ERR]
-
+    vel_ecef = predicted_state[States.ECEF_VELOCITY]
+    vel_ecef_std = predicted_std[States.ECEF_VELOCITY_ERR]
     fix_pos_geo = coord.ecef2geodetic(fix_ecef)
-    fix.positionGeodetic.val = [float(fix_pos_geo[0]), float(fix_pos_geo[1]), float(fix_pos_geo[2])]
-    fix.positionECEF.val = [float(fix_ecef[0]), float(fix_ecef[1]), float(fix_ecef[2])]
-    fix.positionECEF.std = [float(fix_ecef_std[0]), float(fix_ecef_std[1]), float(fix_ecef_std[2])]
+    fix_pos_geo_std = coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo
+    ned_vel = self.converter.ecef2ned(fix_ecef + vel_ecef) - self.converter.ecef2ned(fix_ecef)
+    ned_vel_std = self.converter.ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter.ecef2ned(fix_ecef + vel_ecef)
+    device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
+    vel_device = device_from_ecef.dot(vel_ecef)
+    vel_device_std = device_from_ecef.dot(vel_ecef_std)
+
+    fix.positionGeodetic.value = to_float(fix_pos_geo)
+    fix.positionGeodetic.std = to_float(fix_pos_geo_std)
+    fix.positionGeodetic.valid = True
+    fix.positionECEF.val = to_float(fix_ecef)
+    fix.positionECEF.std = to_float(fix_ecef_std)
+    fix.positionECEF.valid = True
+    fix.velocityECEF.val = to_float(vel_ecef)
+    fix.velocityECEF.std = to_float(vel_ecef_std)
+    fix.velocityECEF.valid = True
+    fix.velocityNED.val = to_float(ned_vel)
+    fix.velocityNED.std = to_float(ned_vel_std)
+    fix.velocityNED.valid = True
+    fix.velocityDevice.val = to_float(vel_device)
+    fix.velocityDevice.std = to_float(vel_device_std)
+    fix.velocityDevice.valid = True
+    fix.accelerationDevice.val = to_float(predicted_std[States.ACCELERATION])
+    fix.accelerationDevice.std = to_float(predicted_std[States.ACCELERATION_ERR])
+    fix.accelerationDevice.valid = True
 
 
     orientation_ned_euler = ned_euler_from_ecef(fix_ecef, quat2euler(predicted_state[States.ECEF_ORIENTATION]))
+
     fix.roll = math.degrees(orientation_ned_euler[0])
     fix.pitch = math.degrees(orientation_ned_euler[1])
     fix.heading = math.degrees(orientation_ned_euler[2])
@@ -48,8 +76,6 @@ class Localizer():
     fix.gyro = [float(predicted_state[10]), float(predicted_state[11]), float(predicted_state[12])]
     fix.accel = [float(predicted_state[19]), float(predicted_state[20]), float(predicted_state[21])]
 
-    ned_vel = self.converter.ecef2ned(predicted_state[States.ECEF_POS] + predicted_state[States.ECEF_VELOCITY]) - self.converter.ecef2ned(predicted_state[States.ECEF_POS])
-    fix.vNED = [float(ned_vel[0]), float(ned_vel[1]), float(ned_vel[2])]
     fix.source = 'kalman'
 
     #local_vel = rotations_from_quats(predicted_state[States.ECEF_ORIENTATION]).T.dot(predicted_state[States.ECEF_VELOCITY])
