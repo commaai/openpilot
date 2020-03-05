@@ -104,7 +104,8 @@ class Calibrator():
         self.block_idx += 1
         self.valid_blocks = max(self.block_idx, self.valid_blocks)
         self.block_idx = self.block_idx % INPUTS_WANTED
-      self.vp = np.mean(self.vps[:max(1, self.valid_blocks)], axis=0)
+      if self.valid_blocks > 0:
+        self.vp = np.mean(self.vps[:self.valid_blocks], axis=0)
       self.update_status()
 
       if self.param_put and ((self.idx == 0 and self.block_idx == 0) or self.just_calibrated):
