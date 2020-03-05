@@ -59,6 +59,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.]
 
+    ret.radarOffCan = True
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
