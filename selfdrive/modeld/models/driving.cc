@@ -10,10 +10,11 @@
 #define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2 + 1
 #define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 2
 #define LEAD_IDX RL_IDX + MODEL_PATH_DISTANCE*2 + 2
-#define LONG_X_IDX LEAD_IDX + MDN_GROUP_SIZE*LEAD_MDN_N + SELECTION 
+#define LONG_X_IDX LEAD_IDX + MDN_GROUP_SIZE*LEAD_MDN_N + SELECTION
 #define LONG_V_IDX LONG_X_IDX + TIME_DISTANCE*2
 #define LONG_A_IDX LONG_V_IDX + TIME_DISTANCE*2
-#define META_IDX LONG_A_IDX + TIME_DISTANCE*2
+#define DESIRE_STATE_IDX LONG_A_IDX + TIME_DISTANCE*2
+#define META_IDX DESIRE_STATE_IDX + DESIRE_LEN
 #define POSE_IDX META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE
 #define OUTPUT_SIZE  POSE_IDX + POSE_SIZE
 #ifdef TEMPORAL
@@ -43,7 +44,9 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 #ifdef DESIRE
   s->desire = (float*)malloc(DESIRE_SIZE * sizeof(float));
   for (int i = 0; i < DESIRE_SIZE; i++) s->desire[i] = 0.0;
-  s->m->addDesire(s->desire, DESIRE_SIZE);
+  s->pulse_desire = (float*)malloc(DESIRE_SIZE * sizeof(float));
+  for (int i = 0; i < DESIRE_SIZE; i++) s->pulse_desire[i] = 0.0;
+  s->m->addDesire(s->pulse_desire, DESIRE_SIZE);
 #endif
 
   // Build Vandermonde matrix
@@ -61,7 +64,16 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            mat3 transform, void* sock, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
-    for (int i = 0; i < DESIRE_SIZE; i++) s->desire[i] = desire_in[i];
+    for (int i = 0; i < DESIRE_SIZE; i++) {
+      // Model decides when action is completed
+      // so desire input is just a pulse triggered on rising edge
+      if (desire_in[i] - s->desire[i] == 1) {
+        s->pulse_desire[i] = desire_in[i];
+      } else {
+        s->pulse_desire[i] = 0.0;
+      }
+      s->desire[i] = desire_in[i];
+    }
   }
 #endif
 
@@ -88,7 +100,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   net_outputs.long_x = &s->output[LONG_X_IDX];
   net_outputs.long_v = &s->output[LONG_V_IDX];
   net_outputs.long_a = &s->output[LONG_A_IDX];
-  net_outputs.meta = &s->output[META_IDX];
+  net_outputs.meta = &s->output[DESIRE_STATE_IDX];
   net_outputs.pose = &s->output[POSE_IDX];
   return net_outputs;
 }
@@ -183,11 +195,13 @@ void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, in
 }
 
 void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_data) {
-  meta.setEngagedProb(meta_data[0]);
-  meta.setGasDisengageProb(meta_data[1]);
-  meta.setBrakeDisengageProb(meta_data[2]);
-  meta.setSteerOverrideProb(meta_data[3]);
-  kj::ArrayPtr<const float> desire_pred(&meta_data[OTHER_META_SIZE], DESIRE_PRED_SIZE);
+  kj::ArrayPtr<const float> desire_state(&meta_data[0], DESIRE_LEN);
+  meta.setDesireState(desire_state);
+  meta.setEngagedProb(meta_data[DESIRE_LEN]);
+  meta.setGasDisengageProb(meta_data[DESIRE_LEN + 1]);
+  meta.setBrakeDisengageProb(meta_data[DESIRE_LEN + 2]);
+  meta.setSteerOverrideProb(meta_data[DESIRE_LEN + 3]);
+  kj::ArrayPtr<const float> desire_pred(&meta_data[DESIRE_LEN + OTHER_META_SIZE], DESIRE_PRED_SIZE);
   meta.setDesirePrediction(desire_pred);
 }
 
