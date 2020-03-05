@@ -59,8 +59,9 @@ static void set_awake(UIState *s, bool awake) {
 
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
-  s->active_app = ACTIVEAPP_SETTINGS;
-  system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
+  if (s->active_app != cereal_UiLayoutState_App_settings) {
+    system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
+  }
 #else
   // computer UI doesn't have offroad settings
 #endif
@@ -68,8 +69,9 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
-  s->active_app = ACTIVEAPP_HOME;
-  system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
+  if (s->active_app != cereal_UiLayoutState_App_home) {
+    system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
+  }
 #else
   // computer UI doesn't have offroad home
 #endif
@@ -92,7 +94,8 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->vision_connected && touch_x >= s->scene.ui_viz_rx - bdr_s && s->active_app != ACTIVEAPP_SETTINGS) {
+  if (s->vision_connected && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+    && (s->active_app != cereal_UiLayoutState_App_settings)) {
     s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
   }
 }
@@ -452,6 +455,7 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_UiLayoutState datad;
     cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
     s->active_app = datad.activeApp;
+    s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
   } else if (eventd.which == cereal_Event_liveMapData) {
     struct cereal_LiveMapData datad;
     cereal_read_LiveMapData(&datad, eventd.liveMapData);
