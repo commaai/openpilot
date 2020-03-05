@@ -166,5 +166,7 @@ jobs:
           name: tmppilot.tar.gz
       - name: Load image
         run: $LOAD 
+      - name: install carla
+        run: $RUN "cd /tmp/openpilot/tools/sim/ && ./runsimci.sh"
       - name: test carla
-        run: $USERRUN "cd /tmp/openpilot/tools/sim/ && ./runsimci.sh"
+        run: $USERRUN "cd /tmp/openpilot/tools/sim/ && ./carla_test.py"
