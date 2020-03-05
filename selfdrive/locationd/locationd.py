@@ -22,7 +22,7 @@ SENSOR_DECIMATION = 10
 
 
 def to_float(arr):
-  return([float(arr[0]), float(arr[1]), float(arr[2])])
+  return [float(arr[0]), float(arr[1]), float(arr[2])]
 
 
 class Localizer():
