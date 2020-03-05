@@ -1,6 +1,5 @@
 Version 0.7.4 (2020-xx-xx)
 ========================
- * Support for 2017 Nissan X-trail (dashcam only) thanks to avolmensky!
  * Support for Honda Insight thanks to theantihero!
 
 Version 0.7.3 (2020-02-21)
