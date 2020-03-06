@@ -14,6 +14,7 @@ from xx.chffr.lib.storage import _DATA_ACCOUNT_PRODUCTION, _DATA_ACCOUNT_CI, _DA
 SOURCES = [
   (_DATA_ACCOUNT_PRODUCTION, _DATA_BUCKET_PRODUCTION),
   (_DATA_ACCOUNT_PRODUCTION, "preserve"),
+  (_DATA_ACCOUNT_CI, "commadataci"),
 ]
 
 DEST_KEY = azureutil.get_user_token(_DATA_ACCOUNT_CI, "openpilotci")

@@ -84,6 +84,10 @@ routes = {
     'carFingerprint': GM.ACADIA,
     'enableCamera': True,
   },
+  "aa20e335f61ba898|2019-02-05--16-59-04": {	
+    'carFingerprint': GM.BUICK_REGAL,	
+    'enableCamera': True,	
+  },
   "7d44af5b7a1b2c8e|2017-09-16--01-50-07": {
     'carFingerprint': HONDA.CIVIC,
     'enableCamera': True,
@@ -327,7 +331,6 @@ non_tested_cars = [
   CHRYSLER.PACIFICA_2017_HYBRID,
   CHRYSLER.PACIFICA_2018,
   CHRYSLER.PACIFICA_2018_HYBRID,
-  GM.BUICK_REGAL,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
