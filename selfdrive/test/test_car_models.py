@@ -186,6 +186,12 @@ routes = {
     'enableDsu': True,
     'enableGasInterceptor': True,
   },
+  "32a7df20486b0f70|2020-02-06--16-06-50": {
+    'carFingerprint': TOYOTA.RAV4H,
+    'enableCamera': True,
+    'enableDsu': True,
+    'enableGasInterceptor': False,
+  },
   "cdf2f7de565d40ae|2019-04-25--03-53-41": {
     'carFingerprint': TOYOTA.RAV4_TSS2,
     'enableCamera': True,
@@ -323,7 +329,6 @@ non_tested_cars = [
   TOYOTA.CHRH,
   TOYOTA.HIGHLANDERH,
   TOYOTA.LEXUS_CTH,
-  TOYOTA.RAV4H,
 ]
 
 if __name__ == "__main__":
