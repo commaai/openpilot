@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR, NO_DSU_CAR, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR, NO_STOP_TIMER_CAR
 
 
 class CarState(CarStateBase):
@@ -12,8 +12,15 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["GEAR_PACKET"]['GEAR']
+
+    # All TSS2 car have the accurate sensor
+    self.accurate_steer_angle_seen = CP.carFingerprint in TSS2_CAR
+
+    # On NO_DSU cars but not TSS2 cars the cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
+    # is zeroed to where the steering angle is at start.
+    # Need to apply an offset as soon as the steering angle measurements are both received
+    self.needs_angle_offset = CP.carFingerprint not in TSS2_CAR
     self.angle_offset = 0.
-    self.init_angle_offset = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -40,18 +47,21 @@ class CarState(CarStateBase):
 
     ret.standstill = ret.vEgoRaw < 0.001
 
-    if self.CP.carFingerprint in TSS2_CAR:
-      ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
-    elif self.CP.carFingerprint in NO_DSU_CAR:
-      # cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] is zeroed to where the steering angle is at start.
-      # need to apply an offset as soon as the steering angle measurements are both received
+    # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero
+    if abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']) > 1e-3:
+      self.accurate_steer_angle_seen = True
+
+    if self.accurate_steer_angle_seen:
       ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
-      angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
-      if abs(angle_wheel) > 1e-3 and abs(ret.steeringAngle) > 1e-3 and not self.init_angle_offset:
-        self.init_angle_offset = True
-        self.angle_offset = ret.steeringAngle - angle_wheel
+
+      if self.needs_angle_offset:
+        angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+        if abs(angle_wheel) > 1e-3 and abs(ret.steeringAngle) > 1e-3:
+          self.needs_angle_offset = False
+          self.angle_offset = ret.steeringAngle - angle_wheel
     else:
       ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+
     ret.steeringRate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
@@ -118,6 +128,7 @@ class CarState(CarStateBase):
       ("CRUISE_STATE", "PCM_CRUISE", 0),
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
       ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
+      ("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0),
       ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
       ("LKA_STATE", "EPS_STATUS", 0),
       ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
@@ -144,8 +155,6 @@ class CarState(CarStateBase):
       signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
       checks.append(("PCM_CRUISE_2", 33))
 
-    if CP.carFingerprint in NO_DSU_CAR:
-      signals += [("STEER_ANGLE", "STEER_TORQUE_SENSOR", 0)]
 
     if CP.carFingerprint == CAR.PRIUS:
       signals += [("STATE", "AUTOPARK_STATUS", 0)]
