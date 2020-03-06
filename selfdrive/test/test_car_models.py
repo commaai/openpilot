@@ -151,6 +151,11 @@ routes = {
     'enableCamera': False,
     'enableDsu': False,
   },
+  "6cdecc4728d4af37|2020-02-23--15-44-18": {
+    'carFingerprint': TOYOTA.CAMRY,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   "f7b6be73e3dfd36c|2019-05-11--22-34-20": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': True,
@@ -218,6 +223,11 @@ routes = {
     'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
     'enableCamera': True,
     'enableDsu': False,
+  },
+  "25057fa6a5a63dfb|2020-03-04--08-44-23": {
+    'carFingerprint': TOYOTA.LEXUS_CTH,
+    'enableCamera': True,
+    'enableDsu': True,
   },
   "f49e8041283f2939|2019-05-29--13-48-33": {
     'carFingerprint': TOYOTA.LEXUS_ESH_TSS2,
@@ -332,12 +342,10 @@ non_tested_cars = [
   HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_SORENTO,
   HYUNDAI.KIA_STINGER,
-  TOYOTA.CAMRY,
   TOYOTA.CAMRYH,
   TOYOTA.CHR,
   TOYOTA.CHRH,
   TOYOTA.HIGHLANDERH,
-  TOYOTA.LEXUS_CTH,
 ]
 
 if __name__ == "__main__":
