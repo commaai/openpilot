@@ -13,22 +13,24 @@ static void ui_draw_sidebar_background(UIState *s, bool hasSidebar) {
 }
 
 static void ui_draw_sidebar_settings_button(UIState *s, bool hasSidebar) {
+  bool settingsActive = s->active_app == cereal_UiLayoutState_App_settings;
   const int settings_btn_xr = hasSidebar ? settings_btn_x : -(sbr_w);
 
   nvgBeginPath(s->vg);
   NVGpaint imgPaint = nvgImagePattern(s->vg, settings_btn_xr, settings_btn_y,
-    settings_btn_w, settings_btn_h, 0, s->img_button_settings, 1.0f);
+    settings_btn_w, settings_btn_h, 0, s->img_button_settings, settingsActive ? 1.0f : 0.65f);
   nvgRect(s->vg, settings_btn_xr, settings_btn_y, settings_btn_w, settings_btn_h);
   nvgFillPaint(s->vg, imgPaint);
   nvgFill(s->vg);
 }
 
 static void ui_draw_sidebar_home_button(UIState *s, bool hasSidebar) {
+  bool homeActive = s->active_app == cereal_UiLayoutState_App_home;
   const int home_btn_xr = hasSidebar ? home_btn_x : -(sbr_w);
 
   nvgBeginPath(s->vg);
   NVGpaint imgPaint = nvgImagePattern(s->vg, home_btn_xr, home_btn_y,
-    home_btn_w, home_btn_h, 0, s->img_button_home, 1.0f);
+    home_btn_w, home_btn_h, 0, s->img_button_home, homeActive ? 1.0f : 0.65f);
   nvgRect(s->vg, home_btn_xr, home_btn_y, home_btn_w, home_btn_h);
   nvgFillPaint(s->vg, imgPaint);
   nvgFill(s->vg);

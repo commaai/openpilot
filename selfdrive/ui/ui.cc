@@ -59,9 +59,7 @@ static void set_awake(UIState *s, bool awake) {
 
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
-  if (s->active_app != cereal_UiLayoutState_App_settings) {
-    system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
-  }
+  system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
 #else
   // computer UI doesn't have offroad settings
 #endif
@@ -69,9 +67,7 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
-  if (s->active_app != cereal_UiLayoutState_App_home) {
-    system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
-  }
+  system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
 #else
   // computer UI doesn't have offroad home
 #endif
@@ -512,9 +508,6 @@ static void ui_update(UIState *s) {
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
 
-    navigate_to_home(s);
-    s->scene.uilayout_sidebarcollapsed = true;
-
     for (int i=0; i<UI_BUF_COUNT; i++) {
       if(s->khr[i] != NULL) {
         visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
@@ -577,7 +570,7 @@ static void ui_update(UIState *s) {
 
     assert(glGetError() == GL_NO_ERROR);
 
-    // Default UI Measurements (Assumes sidebar collapsed)
+    s->scene.uilayout_sidebarcollapsed = true;
     s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
     s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
     s->scene.ui_viz_ro = 0;
