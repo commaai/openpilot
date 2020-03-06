@@ -39,7 +39,7 @@ class TestCarParam(unittest.TestCase):
       radar_interface = RadarInterface(car_params)
       assert radar_interface
 
-      # Run car interface once
+      # Run radar interface once
       radar_interface.update([])
       if hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
         radar_interface._update([radar_interface.trigger_msg])
