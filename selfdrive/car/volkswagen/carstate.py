@@ -61,7 +61,7 @@ class CarState(CarStateBase):
     self.displayMetricUnits = not pt_cp.vl["Einheiten_01"]["KBI_MFA_v_Einheit_02"]
 
     # Update ACC radar status.
-    accStatus = pt_cp.vl["ACC_06"]['ACC_Status_ACC']
+    accStatus = pt_cp.vl["TSK_06"]['TSK_Status']
     if accStatus == 2:
       # ACC okay and enabled, but not currently engaged
       ret.cruiseState.available = True
@@ -148,6 +148,7 @@ class CarState(CarStateBase):
       ("ESP_Tastung_passiv", "ESP_21", 0),          # Stability control disabled
       ("KBI_MFA_v_Einheit_02", "Einheiten_01", 0),  # MPH vs KMH speed display
       ("KBI_Handbremse", "Kombi_01", 0),            # Manual handbrake applied
+      ("TSK_Status", "TSK_06", 0),                  # ACC engagement status from drivetrain coordinator
       ("TSK_Fahrzeugmasse_02", "Motor_16", 0),      # Estimated vehicle mass from drivetrain coordinator
       ("ACC_Status_ACC", "ACC_06", 0),              # ACC engagement status
       ("ACC_Typ", "ACC_06", 0),                     # ACC type (follow to stop, stop&go)
@@ -174,6 +175,7 @@ class CarState(CarStateBase):
       ("ESP_21", 50),       # From J104 ABS/ESP controller
       ("ACC_06", 50),       # From J428 ACC radar control module
       ("Motor_20", 50),     # From J623 Engine control module
+      ("TSK_06", 50),       # From J623 Engine control module
       ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
       ("ACC_02", 17),       # From J428 ACC radar control module
       ("Getriebe_11", 20),  # From J743 Auto transmission control module
