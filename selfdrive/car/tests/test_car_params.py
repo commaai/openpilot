@@ -26,7 +26,7 @@ class TestCarParam(unittest.TestCase):
 
       for has_relay in [True, False]:
         car_params = CarInterface.get_params(car_name, fingerprints, has_relay, car_fw)
-        car_interface, _ = CarInterface(car_params, CarController, CarState), car_params
+        car_interface = CarInterface(car_params, CarController, CarState)
         assert car_params
         assert car_interface
 
