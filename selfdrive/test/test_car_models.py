@@ -116,6 +116,10 @@ routes = {
     'carFingerprint': HONDA.ACCORDH,
     'enableCamera': True,
   },
+  "0a96f86fcfe35964|2020-02-05--07-25-51": {
+    'carFingerprint': HONDA.ODYSSEY,
+    'enableCamera': True,
+  },
   "d83f36766f8012a5|2020-02-05--18-42-21": {
     'carFingerprint': HONDA.CIVIC_BOSCH_DIESEL,
     'enableCamera': True,
@@ -314,7 +318,6 @@ non_tested_cars = [
   HONDA.CIVIC_BOSCH,
   HONDA.CRV,
   HONDA.CRV_5G,
-  HONDA.ODYSSEY,
   HONDA.PILOT,
   HONDA.PILOT_2019,
   HONDA.RIDGELINE,
