@@ -20,16 +20,11 @@ class CarInterface(CarInterfaceBase):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.dashcamOnly = True
-
     ret.carName = "nissan"
-    ret.carFingerprint = candidate
-    ret.isPandaBlack = has_relay
     ret.safetyModel = car.CarParams.SafetyModel.nissan
 
     ret.steerLimitAlert = False
-
     ret.enableCamera = True
-
     ret.steerRateCost = 0.5
 
     if candidate in [CAR.XTRAIL]:
@@ -45,21 +40,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerMaxV = [1.]
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
-    ret.steerRatioRear = 0.
-    # testing tuning
-
-    # No long control in nissan
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [0.]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.]
-
     ret.radarOffCan = True
 
     # TODO: get actual value, for now starting with reasonable value for
