@@ -9,8 +9,7 @@ def mock():
   traffic_events = messaging.pub_sock('uiNavigationEvent')
 
   while 1:
-    m = messaging.new_message()
-    m.init('uiNavigationEvent')
+    m = messaging.new_message('uiNavigationEvent')
     m.uiNavigationEvent.type = log.UiNavigationEvent.Type.mergeRight
     m.uiNavigationEvent.status = log.UiNavigationEvent.Status.active
     m.uiNavigationEvent.distanceTo = 100.

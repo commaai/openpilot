@@ -28,8 +28,7 @@ def cycle_alerts(duration_millis, alerts=None):
             last_pop_millis = now_millis()
             print('sending {}'.format(str(alert)))
 
-        dat = messaging.new_message()
-        dat.init('controlsState')
+        dat = messaging.new_message('controlsState')
 
         dat.controlsState.alertType = alert.alert_type
         dat.controlsState.alertText1 = alert.alert_text_1

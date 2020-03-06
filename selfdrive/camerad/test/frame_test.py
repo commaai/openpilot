@@ -25,8 +25,7 @@ if __name__ == "__main__":
   idx = 0
   while 1:
     print("send %d" % idx)
-    dat = messaging.new_message()
-    dat.init('frame')
+    dat = messaging.new_message('frame')
     dat.valid = True
     dat.frame = {
       "frameId": idx,

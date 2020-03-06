@@ -11,8 +11,7 @@ if __name__ == '__main__':
     gpsLocationExternal = messaging.pub_sock('gpsLocationExternal')
 
     while True:
-        dat = messaging.new_message()
-        dat.init('gpsLocationExternal')
+        dat = messaging.new_message('gpsLocationExternal')
         dat.gpsLocationExternal.latitude = 37.6513687
         dat.gpsLocationExternal.longitude = -122.4535056
         dat.gpsLocationExternal.speed = 28.2

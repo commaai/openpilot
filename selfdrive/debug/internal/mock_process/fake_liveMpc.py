@@ -9,9 +9,8 @@ from cereal import log
 def mock_x():
   liveMpc = messaging.pub_sock('liveMpc')
   while 1:
-    m = messaging.new_message()
+    m = messaging.new_message('liveMpc')
     mx = []
-    m.init('liveMpc')
     for x in range(0, 100):
         mx.append(x*1.0)
         m.liveMpc.x = mx

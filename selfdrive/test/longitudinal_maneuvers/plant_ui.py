@@ -65,8 +65,7 @@ if __name__ == "__main__":
     else:
       cruise_buttons = 0
 
-    md = messaging.new_message()
-    md.init('model')
+    md = messaging.new_message('model')
     md.model.frameId = 0
     for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
       x.points = [0.0]*50
