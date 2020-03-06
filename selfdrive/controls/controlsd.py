@@ -347,8 +347,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
   force_decel = sm['dMonitoringState'].awarenessStatus < 0.
 
   # controlsState
-  dat = messaging.new_message()
-  dat.init('controlsState')
+  dat = messaging.new_message('controlsState')
   dat.valid = CS.canValid
   dat.controlsState = {
     "alertText1": AM.alert_text_1,
@@ -400,8 +399,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
   pm.send('controlsState', dat)
 
   # carState
-  cs_send = messaging.new_message()
-  cs_send.init('carState')
+  cs_send = messaging.new_message('carState')
   cs_send.valid = CS.canValid
   cs_send.carState = CS
   cs_send.carState.events = events
@@ -410,21 +408,18 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
   # carEvents - logged every second or on change
   events_bytes = events_to_bytes(events)
   if (sm.frame % int(1. / DT_CTRL) == 0) or (events_bytes != events_prev):
-    ce_send = messaging.new_message()
-    ce_send.init('carEvents', len(events))
+    ce_send = messaging.new_message('carEvents', len(events))
     ce_send.carEvents = events
     pm.send('carEvents', ce_send)
 
   # carParams - logged every 50 seconds (> 1 per segment)
   if (sm.frame % int(50. / DT_CTRL) == 0):
-    cp_send = messaging.new_message()
-    cp_send.init('carParams')
+    cp_send = messaging.new_message('carParams')
     cp_send.carParams = CP
     pm.send('carParams', cp_send)
 
   # carControl
-  cc_send = messaging.new_message()
-  cc_send.init('carControl')
+  cc_send = messaging.new_message('carControl')
   cc_send.valid = CS.canValid
   cc_send.carControl = CC
   pm.send('carControl', cc_send)

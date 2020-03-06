@@ -357,8 +357,7 @@ class Plant():
 
 
     # Fake sockets that controlsd subscribes to
-    live_parameters = messaging.new_message()
-    live_parameters.init('liveParameters')
+    live_parameters = messaging.new_message('liveParameters')
     live_parameters.liveParameters.valid = True
     live_parameters.liveParameters.sensorValid = True
     live_parameters.liveParameters.posenetValid = True
@@ -366,19 +365,16 @@ class Plant():
     live_parameters.liveParameters.stiffnessFactor = 1.0
     Plant.live_params.send(live_parameters.to_bytes())
 
-    driver_state = messaging.new_message()
-    driver_state.init('driverState')
+    driver_state = messaging.new_message('driverState')
     driver_state.driverState.faceOrientation = [0.] * 3
     driver_state.driverState.facePosition = [0.] * 2
     Plant.driverState.send(driver_state.to_bytes())
 
-    health = messaging.new_message()
-    health.init('health')
+    health = messaging.new_message('health')
     health.health.controlsAllowed = True
     Plant.health.send(health.to_bytes())
 
-    thermal = messaging.new_message()
-    thermal.init('thermal')
+    thermal = messaging.new_message('thermal')
     thermal.thermal.freeSpace = 1.
     thermal.thermal.batteryPercent = 100
     Plant.thermal.send(thermal.to_bytes())
@@ -386,10 +382,8 @@ class Plant():
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     if publish_model and self.frame % 5 == 0:
-      md = messaging.new_message()
-      cal = messaging.new_message()
-      md.init('model')
-      cal.init('liveCalibration')
+      md = messaging.new_message('model')
+      cal = messaging.new_message('liveCalibration')
       md.model.frameId = 0
       for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
         x.points = [0.0]*50

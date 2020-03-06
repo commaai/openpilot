@@ -29,8 +29,7 @@ if __name__ == '__main__':
 
     for point in cycle(path_stopped_5s_then_moving):
         print('sending gpsLocation from point: {}'.format(str(point)))
-        dat = messaging.new_message()
-        dat.init('gpsLocation')
+        dat = messaging.new_message('gpsLocation')
         dat.gpsLocation.latitude = point['lat']
         dat.gpsLocation.longitude = point['lng']
         dat.gpsLocation.speed = point['speed']

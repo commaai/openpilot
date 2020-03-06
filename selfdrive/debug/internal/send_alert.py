@@ -10,8 +10,7 @@ if __name__ == "__main__":
   controls_state = messaging.pub_sock('controlsState')
 
   while 1:
-    dat = messaging.new_message()
-    dat.init('controlsState')
+    dat = messaging.new_message('controlsState')
 
     dat.controlsState.alertText1 = "alert text 1"
     dat.controlsState.alertText2 = "alert text 2"

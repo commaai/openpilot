@@ -283,8 +283,7 @@ def gps_planner_point_selection():
 
     cur_pos = log.ECEFPoint.new_message()
     cur_pos.x, cur_pos.y, cur_pos.z = map(float, cur_ecef)
-    m = messaging.new_message()
-    m.init('gpsPlannerPoints')
+    m = messaging.new_message('gpsPlannerPoints')
     m.gpsPlannerPoints.curPos = cur_pos
     m.gpsPlannerPoints.points = convert_ecef_to_capnp(active_points)
     m.gpsPlannerPoints.valid = len(active_points) > 10
@@ -293,8 +292,7 @@ def gps_planner_point_selection():
     m.gpsPlannerPoints.accelTarget = 0. if cur_track is None else float(cur_track['accel'])
     gps_planner_points.send(m.to_bytes())
 
-    m = messaging.new_message()
-    m.init('uiNavigationEvent')
+    m = messaging.new_message('uiNavigationEvent')
     m.uiNavigationEvent.status = state
     m.uiNavigationEvent.type = "none" if instruction is None else instruction['type']
     m.uiNavigationEvent.distanceTo = 0. if instruction is None else float(instruction['distance'])
@@ -345,8 +343,7 @@ def gps_planner_plan():
 
     valid = points.valid
 
-    m = messaging.new_message()
-    m.init('gpsPlannerPlan')
+    m = messaging.new_message('gpsPlannerPlan')
     m.gpsPlannerPlan.valid = valid
     m.gpsPlannerPlan.poly = poly
     m.gpsPlannerPlan.trackName = points.trackName

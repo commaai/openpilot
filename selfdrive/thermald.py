@@ -45,8 +45,7 @@ def read_tz(x, clip=True):
   return ret
 
 def read_thermal():
-  dat = messaging.new_message()
-  dat.init('thermal')
+  dat = messaging.new_message('thermal')
   dat.thermal.cpu0 = read_tz(5)
   dat.thermal.cpu1 = read_tz(7)
   dat.thermal.cpu2 = read_tz(10)
