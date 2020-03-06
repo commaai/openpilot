@@ -163,8 +163,7 @@ class RadarD():
         self.tracks[idens[idx]].reset_a_lead(aLeadK, aLeadTau)
 
     # *** publish radarState ***
-    dat = messaging.new_message()
-    dat.init('radarState')
+    dat = messaging.new_message('radarState')
     dat.valid = sm.all_alive_and_valid(service_list=['controlsState', 'model'])
     dat.radarState.mdMonoTime = self.last_md_ts
     dat.radarState.canMonoTimes = list(rr.canMonoTimes)
@@ -223,8 +222,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
     # *** publish tracks for UI debugging (keep last) ***
     tracks = RD.tracks
-    dat = messaging.new_message()
-    dat.init('liveTracks', len(tracks))
+    dat = messaging.new_message('liveTracks', len(tracks))
 
     for cnt, ids in enumerate(sorted(tracks.keys())):
       dat.liveTracks[cnt] = {

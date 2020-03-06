@@ -81,10 +81,9 @@ def main(sm=None, pm=None):
     # TODO: Change KF to allow mass, etc to be inputs in predict step
 
     if sm.updated['carState']:
-      msg = messaging.new_message()
+      msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']
 
-      msg.init('liveParameters')
       msg.liveParameters.valid = True  # TODO: Check if learned values are sane
       msg.liveParameters.posenetValid = True
       msg.liveParameters.sensorValid = True
