@@ -342,6 +342,14 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x750, 0xf): [b'8821FF404100    '],
     (Ecu.fwdCamera, 0x750, 0x6d): [b'8646FF404000    '],
   },
+  CAR.CHRH: {
+    (Ecu.engine, 0x700, None): [b'\x0289663F431000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00'],
+    (Ecu.esp, 0x7b0, None): [b'F152610040\x00\x00\x00\x00\x00\x00'],
+    (Ecu.dsu, 0x791, None): [b'8821FF407100    '],
+    (Ecu.eps, 0x7a1, None): [b'8965B10050\x00\x00\x00\x00\x00\x00'],
+    (Ecu.fwdRadar, 0x750, 0xf): [b'8821FF407100    '],
+    (Ecu.fwdCamera, 0x750, 0x6d): [b'8646FF407000    '],
+  },
   CAR.COROLLA: {
     (Ecu.engine, 0x7e0, None): [
       b'\x01896630E88000\x00\x00\x00\x00',
