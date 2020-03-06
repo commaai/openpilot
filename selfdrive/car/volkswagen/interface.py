@@ -104,13 +104,9 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret, extra_gears=[GEAR.eco, GEAR.sport])
 
-    # Vehicle operation safety checks and events
+    # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
-
-    # Vehicle health safety checks and events
-    if self.CS.accFault:
-      events.append(create_event('radarFault', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steeringFault:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
@@ -140,7 +136,7 @@ class CarInterface(CarInterfaceBase):
     self.buttonStatesPrev = self.CS.buttonStates.copy()
 
     self.CS.out = ret.as_reader()
-    return  self.CS.out
+    return self.CS.out
 
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
