@@ -84,14 +84,12 @@ def steer_thread():
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))
 
     # broadcast carState
-    cs_send = messaging.new_message()
-    cs_send.init('carState')
+    cs_send = messaging.new_message('carState')
     cs_send.carState = copy(CS)
     carstate.send(cs_send.to_bytes())
 
     # broadcast carControl
-    cc_send = messaging.new_message()
-    cc_send.init('carControl')
+    cc_send = messaging.new_message('carControl')
     cc_send.carControl = copy(CC)
     carcontrol.send(cc_send.to_bytes())
 
