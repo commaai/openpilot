@@ -130,6 +130,14 @@ routes = {
     'enableCamera': True,
     'fingerprintSource': 'fixed',
   },
+  "07d37d27996096b6|2020-03-04--21-57-27": {
+    'carFingerprint': HONDA.PILOT,
+    'enableCamera': True,
+  },
+  "0a78dfbacc8504ef|2020-03-04--13-29-55": {
+    'carFingerprint': HONDA.CIVIC_BOSCH,
+    'enableCamera': True,
+  },
   "38bfd238edecbcd7|2018-08-22--09-45-44": {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': False,
@@ -315,10 +323,8 @@ non_tested_cars = [
   GM.MALIBU,
   HONDA.ACCORD_15,
   HONDA.ACURA_RDX,
-  HONDA.CIVIC_BOSCH,
   HONDA.CRV,
   HONDA.CRV_5G,
-  HONDA.PILOT,
   HONDA.PILOT_2019,
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
