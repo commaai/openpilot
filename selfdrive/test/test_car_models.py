@@ -58,6 +58,10 @@ def get_route_log(route_name):
       sys.exit(-1)
 
 routes = {
+  "420a8e183f1aed48|2020-03-05--07-15-29": {
+    'carFingerprint': CHRYSLER.PACIFICA_2017_HYBRID,
+    'enableCamera': True,
+  },
   "8190c7275a24557b|2020-01-29--08-33-58": {  # 2020 model year
     'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
     'enableCamera': True,
@@ -84,9 +88,9 @@ routes = {
     'carFingerprint': GM.ACADIA,
     'enableCamera': True,
   },
-  "aa20e335f61ba898|2019-02-05--16-59-04": {	
-    'carFingerprint': GM.BUICK_REGAL,	
-    'enableCamera': True,	
+  "aa20e335f61ba898|2019-02-05--16-59-04": {
+    'carFingerprint': GM.BUICK_REGAL,
+    'enableCamera': True,
   },
   "7d44af5b7a1b2c8e|2017-09-16--01-50-07": {
     'carFingerprint': HONDA.CIVIC,
@@ -328,7 +332,6 @@ forced_dashcam_routes = [
 non_tested_cars = [
   CHRYSLER.JEEP_CHEROKEE,
   CHRYSLER.JEEP_CHEROKEE_2019,
-  CHRYSLER.PACIFICA_2017_HYBRID,
   CHRYSLER.PACIFICA_2018,
   CHRYSLER.PACIFICA_2018_HYBRID,
   GM.CADILLAC_ATS,
