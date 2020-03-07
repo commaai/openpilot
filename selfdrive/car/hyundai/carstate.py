@@ -20,6 +20,10 @@ def get_can_parser(CP):
     ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
 
     ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
+    ("CF_Gway_DrvDrSw", "CGW1", 0),       # Driver Door
+    ("CF_Gway_AstDrSw", "CGW1", 0),       # Passenger door
+    ("CF_Gway_RLDrSw", "CGW2", 0),        # Rear reft door
+    ("CF_Gway_RRDrSw", "CGW2", 0),        # Rear right door
     ("CF_Gway_TSigLHSw", "CGW1", 0),
     ("CF_Gway_TurnSigLh", "CGW1", 0),
     ("CF_Gway_TSigRHSw", "CGW1", 0),
@@ -155,7 +159,8 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    ret.doorOpen = False  # FIXME
+    ret.doorOpen = not any([cp.vl["CGW1"]['CF_Gway_DrvDrSw'],cp.vl["CGW1"]['CF_Gway_AstDrSw'],
+                                   cp.vl["CGW2"]['CF_Gway_RLDrSw'], cp.vl["CGW2"]['CF_Gway_RRDrSw']])
     ret.seatbeltUnlatched = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw'] == 0
 
     ret.wheelSpeeds.fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS
