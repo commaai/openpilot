@@ -104,7 +104,8 @@ class Calibrator():
         self.block_idx += 1
         self.valid_blocks = max(self.block_idx, self.valid_blocks)
         self.block_idx = self.block_idx % INPUTS_WANTED
-      self.vp = np.mean(self.vps[:max(1, self.valid_blocks)], axis=0)
+      if self.valid_blocks > 0:
+        self.vp = np.mean(self.vps[:self.valid_blocks], axis=0)
       self.update_status()
 
       if self.param_put and ((self.idx == 0 and self.block_idx == 0) or self.just_calibrated):
@@ -119,8 +120,7 @@ class Calibrator():
     calib = get_calib_from_vp(self.vp)
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
 
-    cal_send = messaging.new_message()
-    cal_send.init('liveCalibration')
+    cal_send = messaging.new_message('liveCalibration')
     cal_send.liveCalibration.calStatus = self.cal_status
     cal_send.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
     cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]

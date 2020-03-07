@@ -34,9 +34,9 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
   return hud_alert, lane_visible, left_lane_warning, right_lane_warning
 
 class CarController():
-  def __init__(self, dbc_name, car_fingerprint):
+  def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
-    self.car_fingerprint = car_fingerprint
+    self.car_fingerprint = CP.carFingerprint
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
     self.resume_cnt = 0

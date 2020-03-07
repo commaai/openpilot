@@ -3,6 +3,8 @@ import os
 import sys
 import argparse
 import struct
+from collections import deque
+from statistics import mean
 
 from cereal import log
 import cereal.messaging as messaging
@@ -26,7 +28,7 @@ if __name__ == "__main__":
   start_v = 0
   max_v = 0
   max_t = 0
-  window = [0] * 10
+  window = deque(maxlen=10)
   avg = 0
   while 1:
     polld = poller.poll(1000)
@@ -49,8 +51,7 @@ if __name__ == "__main__":
         if item.address == 0x1ab and item.src == 0:
           motor_torque = ((item.dat[0] & 0x3) << 8) + item.dat[1]
           window.append(motor_torque)
-          window.pop(0)
-          avg = sum(window) / len(window)
+          avg = mean(window)
           #print(f'{evt.logMonoTime}: {avg}')
           if active and avg > max_v + 0.5:
             max_v = avg

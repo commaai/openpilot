@@ -230,8 +230,7 @@ def mapsd_thread():
 
       query_lock.release()
 
-    dat = messaging.new_message()
-    dat.init('liveMapData')
+    dat = messaging.new_message('liveMapData')
 
     if last_gps is not None:
       dat.liveMapData.lastGps = last_gps
@@ -273,7 +272,7 @@ def mapsd_thread():
     map_data_sock.send(dat.to_bytes())
 
 
-def main(gctx=None):
+def main():
   params = Params()
   dongle_id = params.get("DongleId")
   crash.bind_user(id=dongle_id)

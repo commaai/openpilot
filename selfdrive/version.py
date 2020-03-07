@@ -4,28 +4,28 @@ import subprocess
 from selfdrive.swaglog import cloudlog
 
 
-def get_git_commit():
+def get_git_commit(default=None):
   try:
     return subprocess.check_output(["git", "rev-parse", "HEAD"], encoding='utf8').strip()
   except subprocess.CalledProcessError:
-    return None
+    return default
 
 
-def get_git_branch():
+def get_git_branch(default=None):
   try:
     return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], encoding='utf8').strip()
   except subprocess.CalledProcessError:
-    return None
+    return default
 
 
-def get_git_full_branchname():
+def get_git_full_branchname(default=None):
   try:
     return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], encoding='utf8').strip()
   except subprocess.CalledProcessError:
-    return None
+    return default
 
 
-def get_git_remote():
+def get_git_remote(default=None):
   try:
     local_branch = subprocess.check_output(["git", "name-rev", "--name-only", "HEAD"], encoding='utf8').strip()
     tracking_remote = subprocess.check_output(["git", "config", "branch." + local_branch + ".remote"], encoding='utf8').strip()
@@ -36,7 +36,7 @@ def get_git_remote():
       # Not on a branch, fallback
       return subprocess.check_output(["git", "config", "--get", "remote.origin.url"], encoding='utf8').strip()
     except subprocess.CalledProcessError:
-      return None
+      return default
 
 
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:

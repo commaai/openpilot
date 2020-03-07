@@ -8,8 +8,8 @@ TARGET = test
 INCLUDEPATH += . ../
 
 # Input
-SOURCES += TestFrameReader.cpp ../FrameReader.cpp
-HEADERS = TestFrameReader.hpp ../FrameReader.hpp
+SOURCES += TestFrameReader.cpp ../../clib/FrameReader.cpp
+HEADERS = TestFrameReader.hpp ../../clib/FrameReader.hpp
 
 CONFIG += c++14
 

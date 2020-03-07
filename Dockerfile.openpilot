@@ -71,18 +71,18 @@ COPY ./flake8_openpilot.sh /tmp/openpilot/
 COPY ./pylint_openpilot.sh /tmp/openpilot/
 COPY ./.pylintrc /tmp/openpilot/
 
-COPY ./release /tmp/openpilot/release
-COPY ./common /tmp/openpilot/common
-COPY ./cereal /tmp/openpilot/cereal
-COPY ./opendbc /tmp/openpilot/opendbc
-COPY ./selfdrive /tmp/openpilot/selfdrive
-COPY ./phonelibs /tmp/openpilot/phonelibs
 COPY ./pyextra /tmp/openpilot/pyextra
-COPY ./panda /tmp/openpilot/panda
+COPY ./phonelibs /tmp/openpilot/phonelibs
 COPY ./external /tmp/openpilot/external
-COPY ./tools /tmp/openpilot/tools
 COPY ./laika /tmp/openpilot/laika
 COPY ./laika_repo /tmp/openpilot/laika_repo
+COPY ./tools /tmp/openpilot/tools
+COPY ./release /tmp/openpilot/release
+COPY ./common /tmp/openpilot/common
+COPY ./opendbc /tmp/openpilot/opendbc
+COPY ./cereal /tmp/openpilot/cereal
+COPY ./panda /tmp/openpilot/panda
+COPY ./selfdrive /tmp/openpilot/selfdrive
 
 COPY SConstruct /tmp/openpilot/SConstruct
 

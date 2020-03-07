@@ -16,8 +16,7 @@ candidate_cars = all_known_cars()
 
 
 for addr, l in fingerprint.items():
-    dat = messaging.new_message()
-    dat.init('can', 1)
+    dat = messaging.new_message('can', 1)
 
     msg = dat.can[0]
     msg.address = addr

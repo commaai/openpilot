@@ -12,8 +12,7 @@ if __name__ == "__main__":
 
   rk = Ratekeeper(100)
   while 1:
-    dat = messaging.new_message()
-    dat.init('controlsState')
+    dat = messaging.new_message('controlsState')
 
     dat.controlsState.vEgo = 25.
     dat.controlsState.enabled = True

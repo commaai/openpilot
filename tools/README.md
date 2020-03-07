@@ -28,7 +28,7 @@ openpilot-tools and the following setup steps are developed and tested on Ubuntu
 
 Setup
 ============
-
+TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructions
 
 1. Install native dependencies (Mac and Ubuntu sections listed below)
 
@@ -156,9 +156,7 @@ Setup
 3. Clone tools within openpilot, and install dependencies
 
     ```bash
-    git clone https://github.com/commaai/openpilot-tools.git tools
     cd tools
-    git checkout <tag>  # the tag must match the openpilot version you are using (see https://github.com/commaai/openpilot-tools/tags)
     pip install -r requirements.txt # Install openpilot-tools dependencies in virtualenv
     ```
 
@@ -191,9 +189,22 @@ Replay driving data
 
 `unlogger.py` replays data collected with [chffrplus](https://github.com/commaai/chffrplus) or [openpilot](https://github.com/commaai/openpilot).
 
-You'll need to download log and camera files into a local directory. Download these from the footer of the comma [explorer](https://my.comma.ai) or SCP from your device.
+Unlogger with remote data:
 
-Usage:
+```
+# Log in via browser
+python lib/auth.py
+
+# Start unlogger
+python replay/unlogger.py <route-name>
+#Example:
+#python replay/unlogger.py '3533c53bb29502d1|2019-12-10--01-13-27'
+
+# In another terminal you can run a debug visualizer:
+python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
+```
+
+Unlogger with local data downloaded from device or https://my.comma.ai:
 
 ```
 python replay/unlogger.py <route-name> <path-to-data-directory>
@@ -206,12 +217,19 @@ python replay/unlogger.py <route-name> <path-to-data-directory>
 #  99c94dc769b5d96e|2018-11-14--13-31-42--0--fcamera.hevc
 #  99c94dc769b5d96e|2018-11-14--13-31-42--0--rlog.bz2
 #  ...
-
-# In another terminal you can run a debug visualizer:
-python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
 ```
 ![Imgur](https://i.imgur.com/Yppe0h2.png)
 
+LogReader with remote data
+
+```python
+from tools.lib.logreader import LogReader
+from tools.lib.route import Route
+route = Route('3533c53bb29502d1|2019-12-10--01-13-27')
+log_paths = route.log_paths()
+events_seg0 = list(LogReader(log_paths[0]))
+print(len(events_seg0), 'events logged in first segment')
+```
 
 Debug car controls
 -------------

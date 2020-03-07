@@ -1,7 +1,7 @@
 set -e
 echo "Installing capnp"
 
-ONE=${HOME}/one
+ONE=${HOME}/openpilot
 VERSION=0.6.1
 wget https://capnproto.org/capnproto-c++-${VERSION}.tar.gz
 tar xvf capnproto-c++-${VERSION}.tar.gz
@@ -22,7 +22,7 @@ make -j4 install
 # --------
 echo "Installing c-capnp"
 
-git clone git@github.com:commaai/c-capnproto.git
+git clone https://github.com/commaai/c-capnproto.git
 cd c-capnproto
 git submodule update --init --recursive
 autoreconf -f -i -s

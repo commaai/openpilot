@@ -9,8 +9,7 @@ def mock():
   traffic_events = messaging.pub_sock('trafficEvents')
 
   while 1:
-    m = messaging.new_message()
-    m.init('trafficEvents', 1)
+    m = messaging.new_message('trafficEvents', 1)
     m.trafficEvents[0].type = log.TrafficEvent.Type.stopSign
     m.trafficEvents[0].resuming = False
     m.trafficEvents[0].distance = 100.
