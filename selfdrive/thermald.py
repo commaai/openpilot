@@ -207,6 +207,7 @@ def thermald_thread():
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
+    msg.thermal.networkStrength = network_strength
 
     try:
       with open("/sys/class/power_supply/battery/capacity") as f:
