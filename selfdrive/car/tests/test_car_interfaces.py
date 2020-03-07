@@ -8,8 +8,8 @@ from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
 from cereal import car
 
 
-class TestCarParam(unittest.TestCase):
-  def test_creating_car_params(self):
+class TestCarInterfaces(unittest.TestCase):
+  def test_car_interfaces(self):
     all_cars = all_known_cars()
 
     for car_name in all_cars:
@@ -33,6 +33,7 @@ class TestCarParam(unittest.TestCase):
         # Run car interface once
         CC = car.CarControl.new_message()
         car_interface.update(CC, [])
+        car_interface.apply(CC)
 
       # Test radar interface
       RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % car_params.carName).RadarInterface
