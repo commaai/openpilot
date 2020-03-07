@@ -6,7 +6,7 @@ import datetime
 import psutil
 from smbus2 import SMBus
 from cereal import log
-from common.android import ANDROID, get_network_type
+from common.android import ANDROID, get_network_type, get_network_strength
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import sec_since_boot, DT_TRML
@@ -22,6 +22,7 @@ FW_SIGNATURE = get_expected_signature()
 
 ThermalStatus = log.ThermalData.ThermalStatus
 NetworkType = log.ThermalData.NetworkType
+NetworkStrength = log.ThermalData.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
@@ -162,6 +163,7 @@ def thermald_thread():
   usb_power_prev = True
 
   network_type = NetworkType.none
+  network_strength = NetworkStrength.unknown
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   health_prev = None
@@ -197,13 +199,15 @@ def thermald_thread():
     if (count % int(10. / DT_TRML)) == 0:
       try:
         network_type = get_network_type()
+        network_strength = get_network_strength(network_type)
       except Exception:
-        pass
+        cloudlog.exception("Error getting network status")
 
     msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
+    msg.thermal.networkStrength = network_strength
 
     try:
       with open("/sys/class/power_supply/battery/capacity") as f:
