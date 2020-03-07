@@ -19,12 +19,16 @@ def get_can_parser(CP):
 
     ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
 
-    ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
+    ("CF_Gway_DrvSeatBeltSw", "CGW1", 0), # Driver Seatbelt
+    ("CF_Gway_DrvDrSw", "CGW1", 0),       # Driver Door is open
+    ("CF_Gway_AstDrSw", "CGW1", 0),       # Passenger door is open
+    ("CF_Gway_RLDrSw", "CGW2", 0),        # Rear reft door is open
+    ("CF_Gway_RRDrSw", "CGW2", 0),        # Rear right door is open
     ("CF_Gway_TSigLHSw", "CGW1", 0),
     ("CF_Gway_TurnSigLh", "CGW1", 0),
     ("CF_Gway_TSigRHSw", "CGW1", 0),
     ("CF_Gway_TurnSigRh", "CGW1", 0),
-    ("CF_Gway_ParkBrakeSw", "CGW1", 0),
+    ("CF_Gway_ParkBrakeSw", "CGW1", 0),   # Parking Brake
 
     ("BRAKE_ACT", "EMS12", 0),
     ("PV_AV_CAN", "EMS12", 0),
@@ -298,8 +302,9 @@ class CarState(CarStateBase):
     # update prevs, update must run once per Loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
-
-    self.door_all_closed = True
+    
+    self.door_all_closed = not any([cp.vl["CGW1"]['CF_Gway_DrvDrSw'],cp.vl["CGW1"]['CF_Gway_AstDrSw'],
+                                   cp.vl["CGW2"]['CF_Gway_RLDrSw'], cp.vl["CGW2"]['CF_Gway_RRDrSw']])
     self.seatbelt = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw']
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
