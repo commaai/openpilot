@@ -124,6 +124,10 @@ routes = {
     'carFingerprint': HONDA.ACCORDH,
     'enableCamera': True,
   },
+  "1ad763dd22ef1a0e|2020-02-29--18-37-03": {
+    'carFingerprint': HONDA.CRV_5G,
+    'enableCamera': True,
+  },
   "0a96f86fcfe35964|2020-02-05--07-25-51": {
     'carFingerprint': HONDA.ODYSSEY,
     'enableCamera': True,
@@ -152,6 +156,10 @@ routes = {
   },
   "38bfd238edecbcd7|2018-08-29--22-02-15": {
     'carFingerprint': HYUNDAI.SANTA_FE,
+    'enableCamera': True,
+  },
+  "7653b2bce7bcfdaa|2020-03-04--15-34-32": {
+    'carFingerprint': HYUNDAI.KIA_OPTIMA,
     'enableCamera': True,
   },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
@@ -340,12 +348,10 @@ non_tested_cars = [
   HONDA.ACCORD_15,
   HONDA.ACURA_RDX,
   HONDA.CRV,
-  HONDA.CRV_5G,
   HONDA.PILOT_2019,
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
   HYUNDAI.GENESIS,
-  HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_SORENTO,
   HYUNDAI.KIA_STINGER,
   TOYOTA.CAMRYH,
