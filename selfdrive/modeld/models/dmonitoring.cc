@@ -11,7 +11,12 @@
 #define FULL_W 426
 
 void dmonitoring_init(DMonitoringModelState* s) {
-  s->m = new DefaultRunModel("../../models/dmonitoring_model_q.dlc", (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
+#ifdef QCOM
+  const char* model_path = "../../models/dmonitoring_model_q.dlc";
+#else
+  const char* model_path = "../../models/dmonitoring_model.dlc";
+#endif
+  s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
@@ -83,33 +88,18 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   // yuvframe2tensor, normalize
   for (int r = 0; r < MODEL_HEIGHT/2; r++) {
     for (int c = 0; c < MODEL_WIDTH/2; c++) {
-      #ifdef QCOM
       // Y_ul
-      net_input_buf[(c*MODEL_HEIGHT/2) + r] = (resized_buf[(2*r*resized_width) + (2*c)] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r] = input_lambda(resized_buf[(2*r*resized_width) + (2*c)]);
       // Y_ur
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width) + (2*c+1)] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width) + (2*c+1)]);
       // Y_dl
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width+1) + (2*c)] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width+1) + (2*c)]);
       // Y_dr
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width+1) + (2*c+1)] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width+1) + (2*c+1)]);
       // U
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c]);
       // V
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c] - 128.f) * 0.0078125f;
-      #else // for non SNPE running platforms, assume keras model has lambda layer
-      // Y_ul
-      net_input_buf[(c*MODEL_HEIGHT/2) + r] = (resized_buf[(2*r*resized_width) + (2*c)]);
-      // Y_ur
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width) + (2*c+1)]);
-      // Y_dl
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width+1) + (2*c)]);
-      // Y_dr
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width+1) + (2*c+1)]);
-      // U
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c]);
-      // V
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c]);
-      #endif
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c]);
     }
   }
 

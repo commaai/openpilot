@@ -13,6 +13,7 @@ extern "C" {
 
 float softplus(float input);
 float sigmoid(float input);
+float input_lambda(float input);
 
 typedef struct ModelFrame {
   cl_device_id device_id;
