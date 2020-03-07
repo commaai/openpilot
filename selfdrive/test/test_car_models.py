@@ -116,6 +116,10 @@ routes = {
     'carFingerprint': HONDA.ODYSSEY_CHN,
     'enableCamera': True,
   },
+  "08a3deb07573f157|2020-03-06--16-11-19": {
+    'carFingerprint': HONDA.ACCORD_15,
+    'enableCamera': True,
+  },
   "f1b4c567731f4a1b|2018-06-06--14-43-46": {
     'carFingerprint': HONDA.ACCORD,
     'enableCamera': True,
@@ -345,7 +349,6 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  HONDA.ACCORD_15,
   HONDA.ACURA_RDX,
   HONDA.CRV,
   HONDA.PILOT_2019,
