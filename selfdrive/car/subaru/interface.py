@@ -63,7 +63,6 @@ class CarInterface(CarInterfaceBase):
     be.type = car.CarState.ButtonEvent.Type.accelCruise
     buttonEvents.append(be)
 
-    # TODO: add gearShifter to carState
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.unknown])
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
@@ -72,12 +71,14 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # disable on gas pedal rising edge
-    if (ret.gasPressed and not self.gas_pressed_prev):
+    if (ret.gasPressed and not self.gas_pressed_prev) or \
+       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     ret.events = events
 
     self.gas_pressed_prev = ret.gasPressed
+    self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
 
     self.CS.out = ret.as_reader()
