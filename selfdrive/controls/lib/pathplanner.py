@@ -80,6 +80,10 @@ class PathPlanner():
 
     angle_offset = sm['liveParameters'].angleOffset
 
+    # Update LCA toggle status every 50 sec
+    if (sm.frame % 5000 == 0):
+      self.lane_change_enabled = Params().get('LaneChangeEnabled') == b'1'
+
     # Run MPC
     self.angle_steers_des_prev = self.angle_steers_des_mpc
     VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
