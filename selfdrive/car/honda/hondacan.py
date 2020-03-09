@@ -44,7 +44,24 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, has_relay, stock_hud):
+def create_steering_control_2(packer, stock_0xe5, lkas_active, car_fingerprint, idx, has_relay):
+  # base idle params after ign-on init (from 2017 civic hatcback)
+  # TODO: Find values for the other cars or default to the above values
+  b0 = 0x04
+  b1 = 0x00
+  b2 = 0x80
+  b3 = 0x10
+  values = {
+    "BYTE_0": b0 if lkas_active else stock_0xe5["BYTE_0"],
+    "BYTE_1": b1 if lkas_active else stock_0xe5["BYTE_1"],
+    "BYTE_2": b2 if lkas_active else stock_0xe5["BYTE_2"],
+    "BYTE_3": b3 if lkas_active else stock_0xe5["BYTE_3"],
+  }
+  bus = get_lkas_cmd_bus(car_fingerprint, has_relay)
+  return packer.make_can_msg("STEERING_CONTROL_2", bus, values, idx)
+
+
+def create_ui_commands(packer, pcm_speed, hud, enabled, car_fingerprint, is_metric, idx, has_relay, stock_acc_hud, stock_lkas_hud):
   commands = []
   bus_pt = get_pt_bus(car_fingerprint, has_relay)
   bus_lkas = get_lkas_cmd_bus(car_fingerprint, has_relay)
@@ -60,19 +77,24 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
       'IMPERIAL_UNIT': int(not is_metric),
       'SET_ME_X01_2': 1,
       'SET_ME_X01': 1,
-      "FCM_OFF": stock_hud["FCM_OFF"],
-      "FCM_OFF_2": stock_hud["FCM_OFF_2"],
-      "FCM_PROBLEM": stock_hud["FCM_PROBLEM"],
-      "ICONS": stock_hud["ICONS"],
+      "FCM_OFF": stock_acc_hud["FCM_OFF"],
+      "FCM_OFF_2": stock_acc_hud["FCM_OFF_2"],
+      "FCM_PROBLEM": stock_acc_hud["FCM_PROBLEM"],
+      "ICONS": stock_acc_hud["ICONS"],
     }
     commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values, idx))
 
   lkas_hud_values = {
-    'SET_ME_X41': 0x41,
-    'SET_ME_X48': 0x48,
+    'RDM_OFF': stock_lkas_hud["RDM_OFF"],
+    'RDM_ON_0': stock_lkas_hud["RDM_ON_0"],
+    'RDM_ON_1': stock_lkas_hud["RDM_ON_1"],
+    'RDM_ON_2': stock_lkas_hud["RDM_ON_2"],
+    'RDM_0': stock_lkas_hud["RDM_0"] if not enabled else 0,
+    'RDM_1': stock_lkas_hud["RDM_1"] or hud.ldw if not enabled else hud.ldw,
+    'BEEP': 0,  # can we get rid of this now?
+    # 'SET_ME_X1': 0x1,  # an init status bit? doesn't seem necessary on bosch
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
-    'BEEP': 0,
   }
   commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
 

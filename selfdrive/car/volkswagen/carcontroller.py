@@ -114,7 +114,7 @@ class CarController():
     if frame % P.LDW_STEP == 0:
       hcaEnabled = True if enabled and not CS.out.standstill else False
 
-      if visual_alert == VisualAlert.steerRequired:
+      if visual_alert == (VisualAlert.steerRequired or VisualAlert.ldw):
         hud_alert = MQB_LDW_MESSAGES["laneAssistTakeOverSilent"]
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]

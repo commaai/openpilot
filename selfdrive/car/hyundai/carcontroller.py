@@ -9,7 +9,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
                       right_lane, left_lane_depart, right_lane_depart):
-  sys_warning = (visual_alert == VisualAlert.steerRequired)
+  sys_warning = (visual_alert == VisualAlert.steerRequired or VisualAlert.ldw)
 
   # initialize to no line visible
   sys_state = 1

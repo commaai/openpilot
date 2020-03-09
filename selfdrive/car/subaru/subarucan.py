@@ -31,7 +31,7 @@ def create_es_distance(packer, es_distance_msg, pcm_cancel_cmd):
 def create_es_lkas(packer, es_lkas_msg, visual_alert, left_line, right_line):
 
   values = copy.copy(es_lkas_msg)
-  if visual_alert == VisualAlert.steerRequired:
+  if visual_alert == (VisualAlert.steerRequired or VisualAlert.ldw):
     values["Keep_Hands_On_Wheel"] = 1
 
   values["LKAS_Left_Line_Visible"] = int(left_line)

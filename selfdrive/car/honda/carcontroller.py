@@ -58,21 +58,24 @@ def process_hud_alert(hud_alert):
   fcw_display = 0
   steer_required = 0
   acc_alert = 0
+  ldw = 0
 
   # priority is: FCW, steer required, all others
   if hud_alert == VisualAlert.fcw:
     fcw_display = VISUAL_HUD[hud_alert.raw]
   elif hud_alert == VisualAlert.steerRequired:
     steer_required = VISUAL_HUD[hud_alert.raw]
+  elif hud_alert == VisualAlert.ldw:
+    ldw = VISUAL_HUD[hud_alert.raw]
   else:
     acc_alert = VISUAL_HUD[hud_alert.raw]
 
-  return fcw_display, steer_required, acc_alert
+  return fcw_display, steer_required, acc_alert, ldw
 
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise",  "car",
-                     "lanes", "fcw", "acc_alert", "steer_required"])
+                     "lanes", "fcw", "acc_alert", "steer_required", "ldw"])
 
 class CarControllerParams():
   def __init__(self, CP):
@@ -127,10 +130,10 @@ class CarController():
     else:
       hud_car = 0
 
-    fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
+    fcw_display, steer_required, acc_alert, ldw = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
-                  hud_lanes, fcw_display, acc_alert, steer_required)
+                  hud_lanes, fcw_display, acc_alert, steer_required, ldw)
 
     # **** process the car messages ****
 
@@ -152,9 +155,12 @@ class CarController():
     # Send dashboard UI commands.
     if (frame % 10) == 0:
       idx = (frame//10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.is_metric, idx, CS.CP.isPandaBlack, CS.stock_hud))
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, enabled, CS.CP.carFingerprint, CS.is_metric, idx, CS.CP.isPandaBlack, CS.stock_acc_hud, CS.stock_lkas_hud))
 
     if CS.CP.radarOffCan:
+      if (frame % 2) == 0:
+      	can_sends.append(hondacan.create_steering_control_2(self.packer, CS.stock_0xe5,
+        	lkas_active, CS.CP.carFingerprint, idx, CS.CP.isPandaBlack))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))

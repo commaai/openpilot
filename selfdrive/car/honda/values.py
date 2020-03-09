@@ -19,7 +19,8 @@ VISUAL_HUD = {
   VisualAlert.brakePressed: 10,
   VisualAlert.wrongGear: 6,
   VisualAlert.seatbeltUnbuckled: 5,
-  VisualAlert.speedTooHigh: 8}
+  VisualAlert.speedTooHigh: 8,
+  VisualAlert.ldw: 1}
 
 class CAR:
   ACCORD = "HONDA ACCORD 2018 SPORT 2T"

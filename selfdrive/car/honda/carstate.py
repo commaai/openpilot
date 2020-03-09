@@ -307,11 +307,14 @@ class CarState(CarStateBase):
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      self.stock_hud = False
+      self.stock_acc_hud = False
       ret.stockFcw = False
+      self.stock_lkas_hud = cp_cam.vl["LKAS_HUD"]
+      self.stock_0xe5 = cp_cam.vl["STEERING_CONTROL_2"]
     else:
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
-      self.stock_hud = cp_cam.vl["ACC_HUD"]
+      self.stock_acc_hud = cp_cam.vl["ACC_HUD"]
+      self.stock_lkas_hud = cp_cam.vl["LKAS_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
 
     return ret
@@ -324,11 +327,20 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = []
+    signals = [("LDW_OFF", "LKAS_HUD", 0),
+               ("LDW_ON_0", "LKAS_HUD", 0),
+               ("LDW_ON_1", "LKAS_HUD", 0),
+               ("LDW_ON_2", "LKAS_HUD", 0),
+               ("LDW_HUD_WARNING", "LKAS_HUD", 0),
+               ("LDW_WOBBLING", "LKAS_HUD", 0)]
 
     if CP.carFingerprint in HONDA_BOSCH:
       signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
-                  ("AEB_STATUS", "ACC_CONTROL", 0)]
+                  ("AEB_STATUS", "ACC_CONTROL", 0),
+                  ("BYTE_0", "STEERING_CONTROL_2", 0),
+                  ("BYTE_1", "STEERING_CONTROL_2", 0),
+                  ("BYTE_2", "STEERING_CONTROL_2", 0),
+                  ("BYTE_3", "STEERING_CONTROL_2", 0)]
     else:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
                   ("AEB_REQ_1", "BRAKE_COMMAND", 0),
@@ -339,11 +351,10 @@ class CarState(CarStateBase):
                   ("FCM_PROBLEM", "ACC_HUD", 0),
                   ("ICONS", "ACC_HUD", 0)]
 
-
     # all hondas except CRV, RDX and 2019 Odyssey@China use 0xe4 for steering
     checks = [(0xe4, 100)]
     if CP.carFingerprint in [CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
       checks = [(0x194, 100)]
 
-    bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH  and not CP.isPandaBlack else 2
+    bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH and not CP.isPandaBlack else 2
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_cam)
