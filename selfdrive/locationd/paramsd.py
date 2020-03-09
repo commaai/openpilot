@@ -23,17 +23,17 @@ class ParamsLearner:
   def handle_log(self, t, which, msg):
     if which == 'liveLocationKalman':
 
-      v_device = msg.velocityDevice.value
-      # v_device_std = msg.velocityDevice.std
-      self.speed = v_device[0]
+      v_calibrated = msg.velocityCalibrated.value
+      # v_calibrated_std = msg.velocityCalibrated.std
+      self.speed = v_calibrated[0]
 
-      yaw_rate = msg.angularVelocityDevice.value[2]
-      # yaw_rate_std = msg.angularVelocityDevice.std[2]
+      yaw_rate = msg.angularVelocityCalibrated.value[2]
+      # yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
       self.update_active()
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_YAW_RATE, [-yaw_rate])
-        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_XY_SPEED, [[v_device[0], -v_device[1]]])
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_XY_SPEED, [[v_calibrated[0], -v_calibrated[1]]])
 
         # Clamp values
         x = self.kf.x
