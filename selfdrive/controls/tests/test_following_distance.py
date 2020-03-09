@@ -46,8 +46,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
                                         dt)
 
     # Setup CarState
-    CS = messaging.new_message()
-    CS.init('carState')
+    CS = messaging.new_message('carState')
     CS.carState.vEgo = v_ego
     CS.carState.aEgo = a_ego
 

@@ -255,10 +255,9 @@ def locationd_thread(sm, pm, disabled_logs=[]):
 
     if localizer.filter_ready and sm.updated['gpsLocationExternal']:
       t = sm.logMonoTime['gpsLocationExternal']
-      msg = messaging.new_message()
+      msg = messaging.new_message('liveLocationKalman')
       msg.logMonoTime = t
 
-      msg.init('liveLocationKalman')
       msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
       pm.send('liveLocationKalman', msg)
 

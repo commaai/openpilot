@@ -61,8 +61,7 @@ class FakeSocket:
 class DumbSocket:
   def __init__(self, s=None):
     if s is not None:
-      dat = messaging.new_message()
-      dat.init(s)
+      dat = messaging.new_message(s)
       self.data = dat.to_bytes()
 
   def receive(self, non_blocking=False):
@@ -108,11 +107,10 @@ class FakePubMaster(messaging.PubMaster):
     self.sock = {}
     self.last_updated = None
     for s in services:
-      data = messaging.new_message()
       try:
-        data.init(s)
+        data = messaging.new_message(s)
       except:
-        data.init(s, 0)
+        data = messaging.new_message(s, 0)
       self.data[s] = data.as_reader()
       self.sock[s] = DumbSocket()
     self.send_called = threading.Event()
