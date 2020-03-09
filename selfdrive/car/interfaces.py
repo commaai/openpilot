@@ -81,7 +81,7 @@ class CarInterfaceBase():
   def apply(self, c):
     raise NotImplementedError
 
-  def create_common_events(self, cs_out, extra_gears=[]):
+  def create_common_events(self, cs_out, extra_gears=[], gas_resume_speed=-1):
     events = []
 
     if cs_out.doorOpen:
@@ -104,6 +104,13 @@ class CarInterfaceBase():
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     elif getattr(self.CS, "steer_warning", False):
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+
+    # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
+    # Optionally allow to press gas at zero speed to resume.
+    # e.g. Chrysler does not spam the resume button yet, so resuming with gas is handy. FIXME!
+    if (cs_out.gasPressed and (not self.gas_pressed_prev) and cs_out.vEgo > gas_resume_speed) or \
+       (cs_out.brakePressed and (not self.brake_pressed_prev or not cs_out.standstill)):
+      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     return events
 

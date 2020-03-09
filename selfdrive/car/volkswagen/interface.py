@@ -110,12 +110,6 @@ class CarInterface(CarInterfaceBase):
     if self.CS.steeringFault:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
-    # Per the Comma safety model, disable on pedals rising edge or when brake
-    # is pressed and speed isn't zero.
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-            (ret.brakePressed and (not self.brake_pressed_prev or not ret.standstill)):
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-
     # Engagement and longitudinal control using stock ACC. Make sure OP is
     # disengaged if stock ACC is disengaged.
     if not ret.cruiseState.enabled:
