@@ -69,15 +69,15 @@ class CarKalman():
   ])
 
   obs_noise = {
-    ObservationKind.CAL_DEVICE_FRAME_XY_SPEED: np.diag([0.1**2, 0.1**2]),
-    ObservationKind.CAL_DEVICE_FRAME_YAW_RATE: np.atleast_2d(math.radians(0.1)**2),
+    ObservationKind.ROAD_FRAME_XY_SPEED: np.diag([0.1**2, 0.1**2]),
+    ObservationKind.ROAD_FRAME_YAW_RATE: np.atleast_2d(math.radians(0.1)**2),
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.1)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(5.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(50.0**2),
     ObservationKind.STIFFNESS: np.atleast_2d(50.0**2),
   }
 
-  maha_test_kinds = []  # [ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED]
+  maha_test_kinds = []  # [ObservationKind.ROAD_FRAME_YAW_RATE, ObservationKind.ROAD_FRAME_XY_SPEED]
 
   @staticmethod
   def generate_code():
@@ -141,8 +141,8 @@ class CarKalman():
     # Observation functions
     #
     obs_eqs = [
-      [sp.Matrix([r]), ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, None],
-      [sp.Matrix([u, v]), ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, None],
+      [sp.Matrix([r]), ObservationKind.ROAD_FRAME_YAW_RATE, None],
+      [sp.Matrix([u, v]), ObservationKind.ROAD_FRAME_XY_SPEED, None],
       [sp.Matrix([sa]), ObservationKind.STEER_ANGLE, None],
       [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
       [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],
