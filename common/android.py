@@ -237,10 +237,9 @@ def get_network_strength(network_type):
     for line in out.split('\n'):
       signal_str = "SignalStrength: "
       if signal_str in line:
-        arr = list(line)
         lvl_idx_start = line.find(signal_str) + len(signal_str)
         lvl_idx_end = line.find(']', lvl_idx_start)
-        lvl = int(''.join(arr[lvl_idx_start : lvl_idx_end]))
+        lvl = int(line[lvl_idx_start : lvl_idx_end])
         if lvl >= -50:
           network_strength = NetworkStrength.great
         elif lvl >= -60:
