@@ -50,21 +50,26 @@ void run_webcam(DualCameraState *s) {
   CameraState* cameras[2] = {&s->rear, &s->front};
 
   cv::VideoCapture cap_rear(0); // road
-  cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, cameras[0]->ci.frame_width);
-  cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, cameras[0]->ci.frame_height);
+  cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+  cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
   cap_rear.set(cv::CAP_PROP_FPS, cameras[0]->fps);
-  cap_rear.set(cv::CAP_PROP_FOCUS, 0);
+  cap_rear.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
+  cap_rear.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
+  cv::Rect roi_rear(160, 0, 960, 720);
 
   cv::VideoCapture cap_front(1); // driver
-  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, cameras[1]->ci.frame_width);
-  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, cameras[1]->ci.frame_height);
+  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
   cap_front.set(cv::CAP_PROP_FPS, cameras[1]->fps);
+  cv::Rect roi_front(320, 0, 960, 720);
 
   if (!cap_rear.isOpened() || !cap_front.isOpened()) {
     err = 1;
   }
 
   cv::VideoCapture* vcap[2] = {&cap_rear, &cap_front};
+  cv::Rect* rois[2] = {&roi_rear, &roi_front};
+
   uint32_t frame_id[2] = {0, 0};
 
   TBuffer* tb[2] = {&cameras[0]->camera_tb, &cameras[1]->camera_tb};
@@ -75,10 +80,14 @@ void run_webcam(DualCameraState *s) {
 
       (*vcap[i]) >> frame_mat;
 
+      // int rows = frame_mat.rows;
+      // int cols = frame_mat.cols;
+      // printf("D%d, R=%d, C=%d\n", i, rows, cols);
+
       frame_id[i] += 1;
 
-      // needs this because over videocapture size limit
-      if (i==0) {cv::resize(frame_mat, frame_mat, cv::Size(1164, 874));}
+      cv::Mat cropped_mat = frame_mat(*rois[i]);
+      cv::resize(cropped_mat, frame_mat, cv::Size(cameras[i]->ci.frame_width, cameras[i]->ci.frame_height));
 
       int frame_size = frame_mat.total() * frame_mat.elemSize();
 
@@ -128,9 +137,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
   // driver facing
   [CAMERA_ID_LGC270] = {
-      .frame_width = 960,
-      .frame_height = 720,
-      .frame_stride = 960*3,
+      .frame_width = FRAME_WIDTH,
+      .frame_height = FRAME_HEIGHT,
+      .frame_stride = FRAME_WIDTH*3,
       .bayer = false,
       .bayer_flip = false,
   },
