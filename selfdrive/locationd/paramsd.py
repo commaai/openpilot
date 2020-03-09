@@ -32,8 +32,8 @@ class ParamsLearner:
 
       self.update_active()
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, [-yaw_rate])
-        self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, [[v_device[0], -v_device[1]]])
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_YAW_RATE, [-yaw_rate])
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_XY_SPEED, [[v_device[0], -v_device[1]]])
 
         # Clamp values
         x = self.kf.x
