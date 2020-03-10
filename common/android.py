@@ -235,9 +235,11 @@ def get_network_strength(network_type):
     out = subprocess.check_output('dumpsys connectivity', shell=True).decode('ascii')
     network_strength = NetworkStrength.unknown
     for line in out.split('\n'):
-      if "SignalStrength" in line:
-        arr = line.split(' ')
-        lvl = int(arr[53][:-2])
+      signal_str = "SignalStrength: "
+      if signal_str in line:
+        lvl_idx_start = line.find(signal_str) + len(signal_str)
+        lvl_idx_end = line.find(']', lvl_idx_start)
+        lvl = int(line[lvl_idx_start : lvl_idx_end])
         if lvl >= -50:
           network_strength = NetworkStrength.great
         elif lvl >= -60:
