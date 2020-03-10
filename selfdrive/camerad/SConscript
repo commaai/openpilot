@@ -12,6 +12,7 @@ else:
     env = env.Clone()
     env.Append(CXXFLAGS = '-DWEBCAM')
     env.Append(CFLAGS = '-DWEBCAM')
+    env.Append(CPPPATH = '/usr/local/include/opencv4')
   else:
     libs += []
     cameras = ['cameras/camera_frame_stream.cc']
