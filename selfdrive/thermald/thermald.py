@@ -209,6 +209,7 @@ def thermald_thread():
     msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
+    msg.thermal.networkStrength = network_strength
     msg.thermal.batteryPercent = get_battery_capacity()
     msg.thermal.batteryStatus = get_battery_status()
     msg.thermal.batteryCurrent = get_battery_current()
