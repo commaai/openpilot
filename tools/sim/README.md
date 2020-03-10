@@ -1,4 +1,4 @@
-Openpiltot Simulator
+openpilot in simulator
 =====================
 Needs Ubuntu 16.04
 
@@ -29,9 +29,9 @@ cd ~/openpilot/tools/sim
 ## Controls 
 Now you can control the simulator with the keys: 
 
-1: Cruise up 5 mp/h
+1: Cruise up 5 mph
 
-2: Cruise down 5 mp/h
+2: Cruise down 5 mph
 
 3: Cruise cancel
 
