@@ -2,7 +2,6 @@
 import math
 
 import cereal.messaging as messaging
-import common.transformations.orientation as orient
 from selfdrive.locationd.kalman.models.car_kf import CarKalman, ObservationKind, States
 
 CARSTATE_DECIMATION = 5
@@ -22,15 +21,19 @@ class ParamsLearner:
     self.active = (abs(self.steering_angle) < 45 or not self.steering_pressed) and self.speed > 5
 
   def handle_log(self, t, which, msg):
-    if which == 'liveLocation':
-      roll, pitch, yaw = math.radians(msg.roll), math.radians(msg.pitch), math.radians(msg.heading)
-      v_device = orient.rot_from_euler([roll, pitch, yaw]).T.dot(msg.vNED)
-      self.speed = v_device[0]
+    if which == 'liveLocationKalman':
+
+      v_calibrated = msg.velocityCalibrated.value
+      # v_calibrated_std = msg.velocityCalibrated.std
+      self.speed = v_calibrated[0]
+
+      yaw_rate = msg.angularVelocityCalibrated.value[2]
+      # yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
       self.update_active()
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, [-msg.gyro[2]])
-        self.kf.predict_and_observe(t, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, [[v_device[0], -v_device[1]]])
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_YAW_RATE, [-yaw_rate])
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_XY_SPEED, [[v_calibrated[0], -v_calibrated[1]]])
 
         # Clamp values
         x = self.kf.x
@@ -59,7 +62,7 @@ class ParamsLearner:
 
 def main(sm=None, pm=None):
   if sm is None:
-    sm = messaging.SubMaster(['liveLocation', 'carState'])
+    sm = messaging.SubMaster(['liveLocationKalman', 'carState'])
   if pm is None:
     pm = messaging.PubMaster(['liveParameters'])
 
