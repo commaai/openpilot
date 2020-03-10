@@ -54,77 +54,80 @@ class PowerMonitoring:
 
   # Calculation tick
   def calculate(self, health):
-    now = time.time()
+    try:
+      now = time.time()
 
-    # Check that time is valid
-    if datetime.datetime.fromtimestamp(now).year < 2019:
-      return
+      # Check that time is valid
+      if datetime.datetime.fromtimestamp(now).year < 2019:
+        return
 
-    # Only integrate when there is no ignition
-    # If health is None, we're probably not in a car, so we don't care
-    if health == None or (health.health.ignitionLine or health.health.ignitionCan):
-      self.last_measurement_time = None
-      self.power_used_uWh = 0
-      return
+      # Only integrate when there is no ignition
+      # If health is None, we're probably not in a car, so we don't care
+      if health == None or (health.health.ignitionLine or health.health.ignitionCan):
+        self.last_measurement_time = None
+        self.power_used_uWh = 0
+        return
 
-    # First measurement, set integration time
-    if self.last_measurement_time == None:
-      self.last_measurement_time = now
-      return
+      # First measurement, set integration time
+      if self.last_measurement_time == None:
+        self.last_measurement_time = now
+        return
 
-    # Get current power draw somehow
-    current_power = 0
-    if get_battery_status() == 'Discharging':
-      # If the battery is discharging, we can use this measurement
-      # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
-      current_power = ((get_battery_voltage() / 1000000)  * (get_battery_current() / 1000000))
-    elif (health.health.hwType in [log.HealthData.HwType.whitePanda, log.HealthData.HwType.greyPanda]) and (health.health.current > 1):
-      # If white/grey panda, use the integrated current measurements if the measurement is not 0
-      # If the measurement is 0, the current is 400mA or greater, and out of the measurement range of the panda
-      # This seems to be accurate to about 5%
-      current_power = (PANDA_OUTPUT_VOLTAGE * panda_current_to_actual_current(health.health.current))
-    elif (self.next_pulsed_measurement_time != None) and (self.next_pulsed_measurement_time <= now):
-      # TODO: Figure out why this is off by a factor of 3/4???
-      FUDGE_FACTOR = 1.33
+      # Get current power draw somehow
+      current_power = 0
+      if get_battery_status() == 'Discharging':
+        # If the battery is discharging, we can use this measurement
+        # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
+        current_power = ((get_battery_voltage() / 1000000)  * (get_battery_current() / 1000000))
+      elif (health.health.hwType in [log.HealthData.HwType.whitePanda, log.HealthData.HwType.greyPanda]) and (health.health.current > 1):
+        # If white/grey panda, use the integrated current measurements if the measurement is not 0
+        # If the measurement is 0, the current is 400mA or greater, and out of the measurement range of the panda
+        # This seems to be accurate to about 5%
+        current_power = (PANDA_OUTPUT_VOLTAGE * panda_current_to_actual_current(health.health.current))
+      elif (self.next_pulsed_measurement_time != None) and (self.next_pulsed_measurement_time <= now):
+        # TODO: Figure out why this is off by a factor of 3/4???
+        FUDGE_FACTOR = 1.33
 
-      # Turn off charging for about 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
-      def perform_pulse_measurement(now):
-        try:
-          set_battery_charging(False)
-          time.sleep(5)
-          
-          # Measure for a few sec to get a good average
-          voltages = []
-          currents = []
-          for i in range(6):
-            voltages.append(get_battery_voltage())
-            currents.append(get_battery_current())
-            time.sleep(1)
-          current_power = ((mean(voltages) / 1000000)  * (mean(currents) / 1000000))
-          self._perform_integration(now, current_power * FUDGE_FACTOR)
+        # Turn off charging for about 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
+        def perform_pulse_measurement(now):
+          try:
+            set_battery_charging(False)
+            time.sleep(5)
+            
+            # Measure for a few sec to get a good average
+            voltages = []
+            currents = []
+            for i in range(6):
+              voltages.append(get_battery_voltage())
+              currents.append(get_battery_current())
+              time.sleep(1)
+            current_power = ((mean(voltages) / 1000000)  * (mean(currents) / 1000000))
+            self._perform_integration(now, current_power * FUDGE_FACTOR)
 
-          # Enable charging again
-          set_battery_charging(True)
-        except Exception as e:
-          print("Pulsed power measurement failed:", str(e))
-      
-      # Start pulsed measurement and return
-      threading.Thread(target=perform_pulse_measurement, args=(now,)).start()
-      self.next_pulsed_measurement_time = None
-      return
-      
-    elif self.next_pulsed_measurement_time == None:
-      # On a charging EON with black panda, or drawing more than 400mA out of a white/grey one
-      # Only way to get the power draw is to turn off charging for a few sec and check what the discharging rate is
-      # We shouldn't do this very often, so make sure it has been some long-ish random time interval
-      self.next_pulsed_measurement_time = now + random.randint(120, 180)
-      return
-    else:
-      # Do nothing
-      return
+            # Enable charging again
+            set_battery_charging(True)
+          except Exception as e:
+            print("Pulsed power measurement failed:", str(e))
+        
+        # Start pulsed measurement and return
+        threading.Thread(target=perform_pulse_measurement, args=(now,)).start()
+        self.next_pulsed_measurement_time = None
+        return
+        
+      elif self.next_pulsed_measurement_time == None:
+        # On a charging EON with black panda, or drawing more than 400mA out of a white/grey one
+        # Only way to get the power draw is to turn off charging for a few sec and check what the discharging rate is
+        # We shouldn't do this very often, so make sure it has been some long-ish random time interval
+        self.next_pulsed_measurement_time = now + random.randint(120, 180)
+        return
+      else:
+        # Do nothing
+        return
 
-    # Do the integration
-    self._perform_integration(now, current_power)
+      # Do the integration
+      self._perform_integration(now, current_power)
+    except Exception as e:
+      print("Power monitoring calculation failed:", str(e))
 
   def _perform_integration(self, t, current_power):
     self.integration_lock.acquire()
