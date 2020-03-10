@@ -21,6 +21,7 @@ class CarControllerParams:
 class CANBUS:
   pt = 0
   cam = 2
+  
 BUTTON_STATES = {
   "accelCruise": False,
   "decelCruise": False,
