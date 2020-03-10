@@ -461,6 +461,7 @@ void handle_message(UIState *s, Message * msg) {
     cereal_read_ThermalData(&datad, eventd.thermal);
 
     s->scene.networkType = datad.networkType;
+    s->scene.networkStrength = datad.networkStrength;
     s->scene.batteryPercent = datad.batteryPercent;
     snprintf(s->scene.batteryStatus, sizeof(s->scene.batteryStatus), "%s", datad.batteryStatus.str);
     s->scene.freeSpace = datad.freeSpace;

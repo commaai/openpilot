@@ -147,6 +147,7 @@ typedef struct UIScene {
   bool gps_planner_active;
 
   uint8_t networkType;
+  uint8_t networkStrength;
   int batteryPercent;
   char batteryStatus[64];
   float freeSpace;

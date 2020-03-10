@@ -41,7 +41,8 @@ static void ui_draw_sidebar_network_strength(UIState *s, bool hasSidebar) {
   const int network_img_w = 176;
   const int network_img_x = hasSidebar ? 58 : -(sbr_w);
   const int network_img_y = 196;
-  const int network_img = s->img_network[0];
+  const int network_img = s->scene.networkType == cereal_ThermalData_NetworkType_none ?
+                          s->img_network[0] : s->img_network[s->scene.networkStrength + 1];
 
   nvgBeginPath(s->vg);
   NVGpaint imgPaint = nvgImagePattern(s->vg, network_img_x, network_img_y,
