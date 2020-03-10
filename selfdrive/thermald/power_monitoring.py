@@ -38,7 +38,7 @@ def _read_param(path, parser, default=0):
   try:
     with open(path) as f:
       return parser(f.read())
-  except FileNotFoundError:
+  except Exception:
     return default
 
 def panda_current_to_actual_current(panda_current):
@@ -50,6 +50,7 @@ class PowerMonitoring:
     self.last_measurement_time = None           # Used for integration delta
     self.power_used_uWh = 0                     # Integrated power usage in uWh since going into offroad
     self.next_pulsed_measurement_time = None
+    self.integration_lock = threading.Lock()
 
   # Calculation tick
   def calculate(self, health):
@@ -88,21 +89,24 @@ class PowerMonitoring:
 
       # Turn off charging for about 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
       def perform_pulse_measurement(now):
-        set_battery_charging(False)
-        time.sleep(5)
-        
-        # Measure for a few sec to get a good average
-        voltages = []
-        currents = []
-        for i in range(6):
-          voltages.append(get_battery_voltage())
-          currents.append(get_battery_current())
-          time.sleep(1)
-        current_power = ((mean(voltages) / 1000000)  * (mean(currents) / 1000000))
-        self._perform_integration(now, current_power * FUDGE_FACTOR)
+        try:
+          set_battery_charging(False)
+          time.sleep(5)
+          
+          # Measure for a few sec to get a good average
+          voltages = []
+          currents = []
+          for i in range(6):
+            voltages.append(get_battery_voltage())
+            currents.append(get_battery_current())
+            time.sleep(1)
+          current_power = ((mean(voltages) / 1000000)  * (mean(currents) / 1000000))
+          self._perform_integration(now, current_power * FUDGE_FACTOR)
 
-        # Enable charging again
-        set_battery_charging(True)
+          # Enable charging again
+          set_battery_charging(True)
+        except Exception as e:
+          print("Pulsed power measurement failed:", str(e))
       
       # Start pulsed measurement and return
       threading.Thread(target=perform_pulse_measurement, args=(now,)).start()
@@ -123,9 +127,11 @@ class PowerMonitoring:
     self._perform_integration(now, current_power)
 
   def _perform_integration(self, t, current_power):
+    self.integration_lock.acquire()
     integration_time_h = (t - self.last_measurement_time) / 3600
     self.power_used_uWh += (current_power * 1000000) * integration_time_h
     self.last_measurement_time = t
+    self.integration_lock.release()
 
   # Get the power usage
   def get_power_used(self):
