@@ -129,7 +129,7 @@ from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
 from common import android
-from common.apk import update_apks, pm_apply_packages, start_frame
+from common.apk import update_apks, pm_apply_packages, start_offroad
 from common.manager_helpers import print_cpu_usage
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
@@ -406,10 +406,10 @@ def manager_thread():
   for p in persistent_processes:
     start_managed_process(p)
 
-  # start frame
+  # start offroad
   if ANDROID:
     pm_apply_packages('enable')
-    start_frame()
+    start_offroad()
 
   if os.getenv("NOBOARD") is None:
     start_managed_process("pandad")

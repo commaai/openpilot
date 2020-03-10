@@ -877,6 +877,7 @@ static void ui_draw_blank(UIState *s) {
 }
 
 void ui_draw(UIState *s) {
+  ui_draw_sidebar(s);
   if (s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
     ui_draw_vision(s);
   } else {
@@ -984,6 +985,25 @@ void ui_nvg_init(UIState *s) {
 
   assert(s->img_map >= 0);
   s->img_map = nvgCreateImage(s->vg, "../assets/img_map.png", 1);
+
+  assert(s->img_button_settings >= 0);
+  s->img_button_settings = nvgCreateImage(s->vg, "../assets/images/button_settings.png", 1);
+
+  assert(s->img_button_home >= 0);
+  s->img_button_home = nvgCreateImage(s->vg, "../assets/images/button_home.png", 1);
+
+  assert(s->img_battery >= 0);
+  s->img_battery = nvgCreateImage(s->vg, "../assets/images/battery.png", 1);
+
+  assert(s->img_battery_charging >= 0);
+  s->img_battery_charging = nvgCreateImage(s->vg, "../assets/images/battery_charging.png", 1);
+
+  for(int i=0;i<=5;++i) {
+    assert(s->img_network[i] >= 0);
+    char network_asset[32];
+    snprintf(network_asset, sizeof(network_asset), "../assets/images/network_%d.png", i);
+    s->img_network[i] = nvgCreateImage(s->vg, network_asset, 1);
+  }
 
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
