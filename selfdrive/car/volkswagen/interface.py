@@ -23,7 +23,8 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
-    # Updated to latest values from jyoung's repo, on his recommendation. 
+    # Updated to latest values from jyoung's repo, on his recommendation.
+    # Refactored the code to allow for multiple candidates
 
     if candidate in [CAR.VW_GOLF, CAR.SKODA_SUPERB_B8]:
       
@@ -36,32 +37,26 @@ class CarInterface(CarInterfaceBase):
       ret.steerRateCost = 1.0
       ret.steerActuatorDelay = 0.1
       ret.steerLimitTimer = 0.4
+      ret.steerRatio = 15.6
+      tire_stiffness_factor = 1.0
+      ret.centerToFront = ret.wheelbase * 0.45
 
-      # Radical change from jyoung's repo
+      # Radical changes from jyoung's repo
       ret.lateralTuning.pid.kpBP = [0.]
       ret.lateralTuning.pid.kiBP = [0.]
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.kpV = [0.6]
+      ret.lateralTuning.pid.kiV = [0.2]
 
     if candidate == CAR.VW_GOLF:
 
       ret.mass = 1500 + STD_CARGO_KG
       ret.wheelbase = 2.64
-      ret.centerToFront = ret.wheelbase * 0.45
-      ret.steerRatio = 15.6
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.2]
-      tire_stiffness_factor = 1.0
 
     elif candidate == CAR.SKODA_SUPERB_B8:
 
       ret.mass = 1700 + STD_CARGO_KG
       ret.wheelbase = 2.85
-      ret.centerToFront = ret.wheelbase * 0.45
-      ret.steerRatio = 15.6
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.2]
-      tire_stiffness_factor = 1.0
       
     else:
       raise ValueError("Unsupported car %s" % candidate)
