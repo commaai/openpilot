@@ -11,7 +11,7 @@
 #define CAMERA_ID_IMX298_FLIPPED 4
 #define CAMERA_ID_OV10640 5
 #define CAMERA_ID_LGC920 6
-#define CAMERA_ID_LGC270 7
+#define CAMERA_ID_LGC615 7
 #define CAMERA_ID_MAX 8
 
 #ifdef __cplusplus

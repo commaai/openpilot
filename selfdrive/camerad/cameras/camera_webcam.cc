@@ -180,7 +180,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
       .bayer_flip = false,
   },
   // driver facing
-  [CAMERA_ID_LGC270] = {
+  [CAMERA_ID_LGC615] = {
       .frame_width = FRAME_WIDTH,
       .frame_height = FRAME_HEIGHT,
       .frame_stride = FRAME_WIDTH*3,
@@ -199,7 +199,7 @@ void cameras_init(DualCameraState *s) {
     0.0, 0.0, 1.0,
   }};
 
-  camera_init(&s->front, CAMERA_ID_LGC270, 10);
+  camera_init(&s->front, CAMERA_ID_LGC615, 10);
   s->front.transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
