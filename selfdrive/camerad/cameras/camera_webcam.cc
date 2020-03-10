@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "common/util.h"
 #include "common/timing.h"
@@ -44,82 +45,125 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps) {
   tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", camera_release_buffer, s);
 }
 
-void run_webcam(DualCameraState *s) {
+static void* rear_thread(void *arg) {
   int err;
 
-  CameraState* cameras[2] = {&s->rear, &s->front};
+  set_thread_name("webcam_rear_thread");
+  CameraState* s = (CameraState*)arg;
 
   cv::VideoCapture cap_rear(0); // road
   cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
   cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
-  cap_rear.set(cv::CAP_PROP_FPS, cameras[0]->fps);
+  cap_rear.set(cv::CAP_PROP_FPS, s->fps);
   cap_rear.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
   cap_rear.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
   cv::Rect roi_rear(160, 0, 960, 720);
 
-  cv::VideoCapture cap_front(1); // driver
-  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
-  cap_front.set(cv::CAP_PROP_FPS, cameras[1]->fps);
-  cv::Rect roi_front(320, 0, 960, 720);
-
-  if (!cap_rear.isOpened() || !cap_front.isOpened()) {
+  if (!cap_rear.isOpened()) {
     err = 1;
   }
 
-  cv::VideoCapture* vcap[2] = {&cap_rear, &cap_front};
-  cv::Rect* rois[2] = {&roi_rear, &roi_front};
-
-  uint32_t frame_id[2] = {0, 0};
-
-  TBuffer* tb[2] = {&cameras[0]->camera_tb, &cameras[1]->camera_tb};
+  uint32_t frame_id = 0;
+  TBuffer* tb = &s->camera_tb;
 
   while (!do_exit) {
-    for (int i=0; i<2; i++) {
-      cv::Mat frame_mat;
+    cv::Mat frame_mat;
 
-      (*vcap[i]) >> frame_mat;
+    cap_rear >> frame_mat;
 
-      // int rows = frame_mat.rows;
-      // int cols = frame_mat.cols;
-      // printf("D%d, R=%d, C=%d\n", i, rows, cols);
+    // int rows = frame_mat.rows;
+    // int cols = frame_mat.cols;
+    // printf("Raw Rear, R=%d, C=%d\n", rows, cols);
 
-      frame_id[i] += 1;
+    cv::Mat cropped_mat = frame_mat(roi_rear);
+    cv::resize(cropped_mat, frame_mat, cv::Size(s->ci.frame_width, s->ci.frame_height));
 
-      cv::Mat cropped_mat = frame_mat(*rois[i]);
-      cv::resize(cropped_mat, frame_mat, cv::Size(cameras[i]->ci.frame_width, cameras[i]->ci.frame_height));
+    int frame_size = frame_mat.total() * frame_mat.elemSize();
 
-      int frame_size = frame_mat.total() * frame_mat.elemSize();
+    const int buf_idx = tbuffer_select(tb);
+    s->camera_bufs_metadata[buf_idx] = {
+      .frame_id = frame_id,
+    };
 
-      // printf("C%d: %d,%d\n", i+1, frame_id[i], frame_size);
+    cl_command_queue q = s->camera_bufs[buf_idx].copy_q;
+    cl_mem yuv_cl = s->camera_bufs[buf_idx].buf_cl;
+    cl_event map_event;
+    void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
+                                                CL_MAP_WRITE, 0, frame_size,
+                                                0, NULL, &map_event, &err);
+    assert(err == 0);
+    clWaitForEvents(1, &map_event);
+    clReleaseEvent(map_event);
+    memcpy(yuv_buf, frame_mat.data, frame_size);
 
+    clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
+    clWaitForEvents(1, &map_event);
+    clReleaseEvent(map_event);
+    tbuffer_dispatch(tb, buf_idx);
 
-      const int buf_idx = tbuffer_select(tb[i]);
-      cameras[i]->camera_bufs_metadata[buf_idx] = {
-        .frame_id = frame_id[i],
-      };
-
-      cl_command_queue q = cameras[i]->camera_bufs[buf_idx].copy_q;
-      cl_mem yuv_cl = cameras[i]->camera_bufs[buf_idx].buf_cl;
-      cl_event map_event;
-      void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
-                                                  CL_MAP_WRITE, 0, frame_size,
-                                                  0, NULL, &map_event, &err);
-      assert(err == 0);
-      clWaitForEvents(1, &map_event);
-      clReleaseEvent(map_event);
-      memcpy(yuv_buf, frame_mat.data, frame_size);
-
-      clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
-      clWaitForEvents(1, &map_event);
-      clReleaseEvent(map_event);
-      tbuffer_dispatch(tb[i], buf_idx);
-
-      frame_mat.release();
-    }
+    frame_id += 1;
+    frame_mat.release();
   }
 
   cap_rear.release();
+  return NULL;
+}
+
+void front_thread(CameraState *s) {
+  int err;
+
+  cv::VideoCapture cap_front(1); // driver
+  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+  cap_front.set(cv::CAP_PROP_FPS, s->fps);
+  cv::Rect roi_front(320, 0, 960, 720);
+
+  if (!cap_front.isOpened()) {
+    err = 1;
+  }
+
+  uint32_t frame_id = 0;
+  TBuffer* tb = &s->camera_tb;
+
+  while (!do_exit) {
+    cv::Mat frame_mat;
+
+    cap_front >> frame_mat;
+
+    // int rows = frame_mat.rows;
+    // int cols = frame_mat.cols;
+    // printf("Raw Front, R=%d, C=%d\n", rows, cols);
+
+    cv::Mat cropped_mat = frame_mat(roi_front);
+    cv::resize(cropped_mat, frame_mat, cv::Size(s->ci.frame_width, s->ci.frame_height));
+
+    int frame_size = frame_mat.total() * frame_mat.elemSize();
+
+    const int buf_idx = tbuffer_select(tb);
+    s->camera_bufs_metadata[buf_idx] = {
+      .frame_id = frame_id,
+    };
+
+    cl_command_queue q = s->camera_bufs[buf_idx].copy_q;
+    cl_mem yuv_cl = s->camera_bufs[buf_idx].buf_cl;
+    cl_event map_event;
+    void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
+                                                CL_MAP_WRITE, 0, frame_size,
+                                                0, NULL, &map_event, &err);
+    assert(err == 0);
+    clWaitForEvents(1, &map_event);
+    clReleaseEvent(map_event);
+    memcpy(yuv_buf, frame_mat.data, frame_size);
+
+    clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
+    clWaitForEvents(1, &map_event);
+    clReleaseEvent(map_event);
+    tbuffer_dispatch(tb, buf_idx);
+
+    frame_id += 1;
+    frame_mat.release();
+  }
+
   cap_front.release();
   return;
 }
@@ -186,6 +230,16 @@ void cameras_close(DualCameraState *s) {
 
 void cameras_run(DualCameraState *s) {
   set_thread_name("webcam_thread");
-  run_webcam(s);
+
+  int err;
+  pthread_t rear_thread_handle;
+  err = pthread_create(&rear_thread_handle, NULL,
+                        rear_thread, &s->rear);
+  assert(err == 0);
+
+  front_thread(&s->front);
+
+  err = pthread_join(rear_thread_handle, NULL);
+  assert(err == 0);
   cameras_close(s);
 }
