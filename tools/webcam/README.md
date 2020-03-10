@@ -6,7 +6,7 @@ What's needed:
 - GPU (recommended)  
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)  
 - [Car harness](https://comma.ai/shop/products/comma-car-harness) w/ black panda (or the outdated grey panda/giraffe combo) to connect to your car  
-- [Panda paw](https://comma.ai/shop/products/panda-paw) to connect panda to your computer  
+- [Panda paw](https://comma.ai/shop/products/panda-paw) (or USB-A to USB-A cable) to connect panda to your computer  
 - Tape, Charger, ...  
 That's it!  
 
