@@ -17,6 +17,7 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
+from selfdrive.thermald.power_monitoring import PowerMonitoring, get_battery_capacity, get_battery_status, get_battery_current, get_battery_voltage, get_usb_present
 
 FW_SIGNATURE = get_expected_signature()
 
@@ -180,6 +181,7 @@ def thermald_thread():
     handle_fan = handle_fan_eon
 
   params = Params()
+  pm = PowerMonitoring()
 
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
@@ -208,20 +210,11 @@ def thermald_thread():
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
     msg.thermal.networkStrength = network_strength
-
-    try:
-      with open("/sys/class/power_supply/battery/capacity") as f:
-        msg.thermal.batteryPercent = int(f.read())
-      with open("/sys/class/power_supply/battery/status") as f:
-        msg.thermal.batteryStatus = f.read().strip()
-      with open("/sys/class/power_supply/battery/current_now") as f:
-        msg.thermal.batteryCurrent = int(f.read())
-      with open("/sys/class/power_supply/battery/voltage_now") as f:
-        msg.thermal.batteryVoltage = int(f.read())
-      with open("/sys/class/power_supply/usb/present") as f:
-        msg.thermal.usbOnline = bool(int(f.read()))
-    except FileNotFoundError:
-      pass
+    msg.thermal.batteryPercent = get_battery_capacity()
+    msg.thermal.batteryStatus = get_battery_status()
+    msg.thermal.batteryCurrent = get_battery_current()
+    msg.thermal.batteryVoltage = get_battery_voltage()
+    msg.thermal.usbOnline = get_usb_present()
 
     # Fake battery levels on uno for frame
     if is_uno:
@@ -367,6 +360,10 @@ def thermald_thread():
       if msg.thermal.batteryPercent < BATT_PERC_OFF and msg.thermal.batteryStatus == "Discharging" and \
          started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
+
+    # Offroad power monitoring
+    pm.calculate(health)
+    msg.thermal.offroadPowerUsage = pm.get_power_used()
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
