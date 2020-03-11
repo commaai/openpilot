@@ -34,5 +34,27 @@ def create_acc_cancel_cmd(packer, cruise_throttle_msg, frame):
   values["RES_BUTTON"] = 0
   values["FOLLOW_DISTANCE_BUTTON"] = 0
   values["COUNTER"] = (frame % 4)
-  
+
   return packer.make_can_msg("CruiseThrottle", 2, values)
+
+
+def create_lkas_hud_msg(packer, lkas_hud_msg, enabled, left_line, right_line, left_lane_depart, right_lane_depart):
+  values = lkas_hud_msg
+
+  values["RIGHT_LANE_YELLOW_FLASH"] = 1 if right_lane_depart else 0
+  values["LEFT_LANE_YELLOW_FLASH"] = 1 if left_lane_depart else 0
+
+  values["LARGE_STEERING_WHEEL_ICON"] = 2 if enabled else 0
+  values["RIGHT_LANE_GREEN"] = 1 if right_line and enabled else 0
+  values["LEFT_LANE_GREEN"] = 1 if left_line and enabled else 0
+
+  return packer.make_can_msg("PROPILOT_HUD", 0, values)
+
+
+def create_lkas_hud_info_msg(packer, lkas_hud_info_msg, steer_hud_alert):
+  values = lkas_hud_info_msg
+
+  if steer_hud_alert:
+    values["HANDS_ON_WHEEL_WARNING"] = 1
+
+  return packer.make_can_msg("PROPILOT_HUD_INFO_MSG", 0, values)
