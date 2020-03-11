@@ -470,10 +470,11 @@ void handle_message(UIState *s, Message * msg) {
   } else if (eventd.which == cereal_Event_ubloxGnss) {
     struct cereal_UbloxGnss datad;
     cereal_read_UbloxGnss(&datad, eventd.ubloxGnss);
-    struct cereal_UbloxGnss_MeasurementReport reportdatad;
-    cereal_read_UbloxGnss_MeasurementReport(&reportdatad, datad.measurementReport);
-
-    s->scene.satelliteCount = reportdatad.numMeas;
+    if (datad.which == cereal_UbloxGnss_measurementReport) {
+      struct cereal_UbloxGnss_MeasurementReport reportdatad;
+      cereal_read_UbloxGnss_MeasurementReport(&reportdatad, datad.measurementReport);
+      s->scene.satelliteCount = reportdatad.numMeas;
+    }
   } else if (eventd.which == cereal_Event_health) {
     struct cereal_HealthData datad;
     cereal_read_HealthData(&datad, eventd.health);
