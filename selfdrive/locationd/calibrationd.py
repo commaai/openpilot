@@ -14,13 +14,13 @@ from common.transformations.camera import view_frame_from_device_frame, get_view
 
 MPH_TO_MS = 0.44704
 MIN_SPEED_FILTER = 15 * MPH_TO_MS
-MAX_SPEED_STD = 1.5
+MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
 # This is all 20Hz, blocks needed for efficiency
 BLOCK_SIZE = 100
 INPUTS_NEEDED = 5   # allow to update VP every so many frames
-INPUTS_WANTED = 20   # We want a little bit more than we need for stability
+INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 WRITE_CYCLES = 10  # write every 1000 cycles
 VP_INIT = np.array([W/2., H/2.])
 
@@ -89,9 +89,10 @@ class Calibrator():
       self.just_calibrated = True
 
   def handle_cam_odom(self, trans, rot, trans_std, rot_std):
-    if ((trans[0] > MIN_SPEED_FILTER) and
-        (trans_std[0] < MAX_SPEED_STD) and
-         (abs(rot[2]) < MAX_YAW_RATE_FILTER)):
+    straight_and_fast = ((trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
+    certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < MAX_VEL_ANGLE_STD) or
+                        (self.valid_blocks < INPUTS_NEEDED))
+    if straight_and_fast and certain_if_calib:
       # intrinsics are not eon intrinsics, since this is calibrated frame
       intrinsics = intrinsics_from_vp(self.vp)
       new_vp = intrinsics.dot(view_frame_from_device_frame.dot(trans))
