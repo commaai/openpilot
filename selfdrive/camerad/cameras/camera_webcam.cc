@@ -59,7 +59,7 @@ static void* rear_thread(void *arg) {
   cap_rear.set(cv::CAP_PROP_FPS, s->fps);
   cap_rear.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
   cap_rear.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
-  cv::Rect roi_rear(160, 0, 960, 720);
+  // cv::Rect roi_rear(160, 0, 960, 720);
 
   cv::Size size;
   size.height = s->ci.frame_height;
@@ -129,7 +129,7 @@ void front_thread(CameraState *s) {
   cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
   cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
   cap_front.set(cv::CAP_PROP_FPS, s->fps);
-  cv::Rect roi_front(320, 0, 960, 720);
+  // cv::Rect roi_front(320, 0, 960, 720);
 
   cv::Size size;
   size.height = s->ci.frame_height;
