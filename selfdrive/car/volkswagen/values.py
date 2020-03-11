@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from selfdrive.car import dbc_dict
 
 class CarControllerParams:
@@ -21,7 +22,7 @@ class CarControllerParams:
 class CANBUS:
   pt = 0
   cam = 2
-  
+
 BUTTON_STATES = {
   "accelCruise": False,
   "decelCruise": False,

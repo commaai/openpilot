@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from cereal import car
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
