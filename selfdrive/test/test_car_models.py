@@ -150,6 +150,10 @@ routes = {
     'carFingerprint': HONDA.PILOT,
     'enableCamera': True,
   },
+  "22affd6c545d985e|2020-03-08--01-08-09": {
+    'carFingerprint': HONDA.PILOT_2019,
+    'enableCamera': True,
+  },
   "0a78dfbacc8504ef|2020-03-04--13-29-55": {
     'carFingerprint': HONDA.CIVIC_BOSCH,
     'enableCamera': True,
@@ -351,7 +355,6 @@ non_tested_cars = [
   GM.MALIBU,
   HONDA.ACURA_RDX,
   HONDA.CRV,
-  HONDA.PILOT_2019,
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
   HYUNDAI.GENESIS,
