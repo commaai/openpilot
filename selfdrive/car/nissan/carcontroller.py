@@ -1,3 +1,4 @@
+from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car.nissan import nissancan
 from opendbc.can.packer import CANPacker
@@ -10,6 +11,7 @@ ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 LKAS_MAX_TORQUE = 100             # A value of 100 is easy to overpower
 
+VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -20,7 +22,8 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, enabled, CS, frame, actuators, cruise_cancel):
+  def update(self, enabled, CS, frame, actuators, cruise_cancel, hud_alert,
+             left_line, right_line, left_lane_depart, right_lane_depart):
     """ Controls thread """
 
     # Send CAN commands.
@@ -29,7 +32,11 @@ class CarController():
     ### STEER ###
     acc_active = bool(CS.out.cruiseState.enabled)
     cruise_throttle_msg = CS.cruise_throttle_msg
+    lkas_hud_msg = CS.lkas_hud_msg
+    lkas_hud_info_msg = CS.lkas_hud_info_msg
     apply_angle = actuators.steerAngle
+
+    steer_hud_alert = 1 if hud_alert == VisualAlert.steerRequired else 0
 
     if enabled:
       # # windup slower
@@ -69,5 +76,14 @@ class CarController():
 
     can_sends.append(nissancan.create_steering_control(
         self.packer, self.car_fingerprint, apply_angle, frame, acc_active, self.lkas_max_torque))
+
+    if frame % 2 == 0:
+      can_sends.append(nissancan.create_lkas_hud_msg(
+        self.packer, lkas_hud_msg, enabled, left_line, right_line, left_lane_depart, right_lane_depart))
+
+    if frame % 50 == 0:
+      can_sends.append(nissancan.create_lkas_hud_info_msg(
+        self.packer, lkas_hud_info_msg, steer_hud_alert
+      ))
 
     return can_sends
