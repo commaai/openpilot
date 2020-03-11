@@ -15,7 +15,7 @@ webcam_intrinsics = np.array([
   [  0.,  webcam_focal_length,  720/2.],
   [  0.,    0.,     1.]])
 
-cam_id = 1
+cam_id = 2
 
 if __name__ == "__main__":
   import cv2
