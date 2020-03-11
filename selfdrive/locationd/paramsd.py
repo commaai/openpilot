@@ -11,12 +11,12 @@ class ParamsLearner:
   def __init__(self, CP):
     self.kf = CarKalman()
 
-    self.kf.filter.set_mass(CP.mass)
-    self.kf.filter.set_rotational_inertia(CP.rotationalInertia)
-    self.kf.filter.set_center_to_front(CP.centerToFront)
-    self.kf.filter.set_center_to_rear(CP.wheelbase - CP.centerToFront)
-    self.kf.filter.set_stiffness_front(CP.tireStiffnessFront)
-    self.kf.filter.set_stiffness_rear(CP.tireStiffnessRear)
+    self.kf.filter.set_mass(CP.mass)  # pylint: disable=no-member
+    self.kf.filter.set_rotational_inertia(CP.rotationalInertia)  # pylint: disable=no-member
+    self.kf.filter.set_center_to_front(CP.centerToFront)  # pylint: disable=no-member
+    self.kf.filter.set_center_to_rear(CP.wheelbase - CP.centerToFront)  # pylint: disable=no-member
+    self.kf.filter.set_stiffness_front(CP.tireStiffnessFront)  # pylint: disable=no-member
+    self.kf.filter.set_stiffness_rear(CP.tireStiffnessRear)  # pylint: disable=no-member
 
     self.active = False
 
