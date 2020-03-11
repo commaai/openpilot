@@ -23,6 +23,7 @@ git clone https://github.com/commaai/openpilot.git
 ```
 cd ~/openpilot
 scons use_webcam=1
+touch prebuilt
 ```
 ## Connect the hardwares 
 ```
