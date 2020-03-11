@@ -19,6 +19,8 @@ extern volatile sig_atomic_t do_exit;
 
 #define FRAME_WIDTH  1164
 #define FRAME_HEIGHT 874
+#define FRAME_WIDTH_FRONT  1152
+#define FRAME_HEIGHT_FRONT 864
 
 namespace {
 void camera_open(CameraState *s, VisionBuf *camera_bufs, bool rear) {
@@ -51,13 +53,23 @@ static void* rear_thread(void *arg) {
   set_thread_name("webcam_rear_thread");
   CameraState* s = (CameraState*)arg;
 
-  cv::VideoCapture cap_rear(0); // road
+  cv::VideoCapture cap_rear(1); // road
   cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
   cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
   cap_rear.set(cv::CAP_PROP_FPS, s->fps);
   cap_rear.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
   cap_rear.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
   cv::Rect roi_rear(160, 0, 960, 720);
+
+  cv::Size size;
+  size.height = s->ci.frame_height;
+  size.width = s->ci.frame_width;
+
+  // transforms calculation see tools/webcam/warp_vis.py
+  float ts[9] = {1.00220264, 0.0, -59.40969163, 
+                  0.0, 1.00220264, 76.20704846, 
+                  0.0, 0.0, 1.0};
+  const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
   if (!cap_rear.isOpened()) {
     err = 1;
@@ -68,6 +80,7 @@ static void* rear_thread(void *arg) {
 
   while (!do_exit) {
     cv::Mat frame_mat;
+    cv::Mat transformed_mat;
 
     cap_rear >> frame_mat;
 
@@ -75,10 +88,9 @@ static void* rear_thread(void *arg) {
     // int cols = frame_mat.cols;
     // printf("Raw Rear, R=%d, C=%d\n", rows, cols);
 
-    cv::Mat cropped_mat = frame_mat(roi_rear);
-    cv::resize(cropped_mat, frame_mat, cv::Size(s->ci.frame_width, s->ci.frame_height));
+    cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
 
-    int frame_size = frame_mat.total() * frame_mat.elemSize();
+    int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
 
     const int buf_idx = tbuffer_select(tb);
     s->camera_bufs_metadata[buf_idx] = {
@@ -89,12 +101,12 @@ static void* rear_thread(void *arg) {
     cl_mem yuv_cl = s->camera_bufs[buf_idx].buf_cl;
     cl_event map_event;
     void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
-                                                CL_MAP_WRITE, 0, frame_size,
+                                                CL_MAP_WRITE, 0, transformed_size,
                                                 0, NULL, &map_event, &err);
     assert(err == 0);
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
-    memcpy(yuv_buf, frame_mat.data, frame_size);
+    memcpy(yuv_buf, transformed_mat.data, transformed_size);
 
     clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
     clWaitForEvents(1, &map_event);
@@ -103,6 +115,7 @@ static void* rear_thread(void *arg) {
 
     frame_id += 1;
     frame_mat.release();
+    transformed_mat.release();
   }
 
   cap_rear.release();
@@ -112,11 +125,21 @@ static void* rear_thread(void *arg) {
 void front_thread(CameraState *s) {
   int err;
 
-  cv::VideoCapture cap_front(1); // driver
+  cv::VideoCapture cap_front(2); // driver
   cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
   cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
   cap_front.set(cv::CAP_PROP_FPS, s->fps);
   cv::Rect roi_front(320, 0, 960, 720);
+
+  cv::Size size;
+  size.height = s->ci.frame_height;
+  size.width = s->ci.frame_width;
+
+  // transforms calculation see tools/webcam/warp_vis.py
+  float ts[9] = {0.94713656, 0.0, -30.16740088, 
+                  0.0, 0.94713656, 91.030837, 
+                  0.0, 0.0, 1.0};
+  const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
   if (!cap_front.isOpened()) {
     err = 1;
@@ -127,6 +150,7 @@ void front_thread(CameraState *s) {
 
   while (!do_exit) {
     cv::Mat frame_mat;
+    cv::Mat transformed_mat;
 
     cap_front >> frame_mat;
 
@@ -134,10 +158,9 @@ void front_thread(CameraState *s) {
     // int cols = frame_mat.cols;
     // printf("Raw Front, R=%d, C=%d\n", rows, cols);
 
-    cv::Mat cropped_mat = frame_mat(roi_front);
-    cv::resize(cropped_mat, frame_mat, cv::Size(s->ci.frame_width, s->ci.frame_height));
+    cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
 
-    int frame_size = frame_mat.total() * frame_mat.elemSize();
+    int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
 
     const int buf_idx = tbuffer_select(tb);
     s->camera_bufs_metadata[buf_idx] = {
@@ -148,12 +171,12 @@ void front_thread(CameraState *s) {
     cl_mem yuv_cl = s->camera_bufs[buf_idx].buf_cl;
     cl_event map_event;
     void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
-                                                CL_MAP_WRITE, 0, frame_size,
+                                                CL_MAP_WRITE, 0, transformed_size,
                                                 0, NULL, &map_event, &err);
     assert(err == 0);
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
-    memcpy(yuv_buf, frame_mat.data, frame_size);
+    memcpy(yuv_buf, transformed_mat.data, transformed_size);
 
     clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
     clWaitForEvents(1, &map_event);
@@ -162,6 +185,7 @@ void front_thread(CameraState *s) {
 
     frame_id += 1;
     frame_mat.release();
+    transformed_mat.release();
   }
 
   cap_front.release();
@@ -181,9 +205,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
   // driver facing
   [CAMERA_ID_LGC615] = {
-      .frame_width = FRAME_WIDTH,
-      .frame_height = FRAME_HEIGHT,
-      .frame_stride = FRAME_WIDTH*3,
+      .frame_width = FRAME_WIDTH_FRONT,
+      .frame_height = FRAME_HEIGHT_FRONT,
+      .frame_stride = FRAME_WIDTH_FRONT*3,
       .bayer = false,
       .bayer_flip = false,
   },
