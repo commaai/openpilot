@@ -28,9 +28,13 @@ CURRENT_TAU = 15.   # 15s time constant
 DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 
+LEON = False
+last_eon_fan_val = None
+
 
 with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
   OFFROAD_ALERTS = json.load(json_file)
+
 
 def read_tz(x, clip=True):
   if not ANDROID:
@@ -46,6 +50,7 @@ def read_tz(x, clip=True):
 
   return ret
 
+
 def read_thermal():
   dat = messaging.new_message('thermal')
   dat.thermal.cpu0 = read_tz(5)
@@ -58,7 +63,7 @@ def read_thermal():
   dat.thermal.pa0 = read_tz(25)
   return dat
 
-LEON = False
+
 def setup_eon_fan():
   global LEON
 
@@ -72,11 +77,10 @@ def setup_eon_fan():
     bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
   except IOError:
     print("LEON detected")
-    #os.system("echo 1 > /sys/devices/soc/6a00000.ssusb/power_supply/usb/usb_otg")
     LEON = True
   bus.close()
 
-last_eon_fan_val = None
+
 def set_eon_fan(val):
   global LEON, last_eon_fan_val
 
@@ -101,6 +105,7 @@ def set_eon_fan(val):
       bus.write_byte_data(0x21, 0x04, 0x4)
     bus.close()
     last_eon_fan_val = val
+
 
 # temp thresholds to control fan speed - high hysteresis
 _TEMP_THRS_H = [50., 65., 80., 10000]
@@ -127,7 +132,7 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
     # no max fan speed unless battery is hot
     fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
 
-  set_eon_fan(fan_speed//16384)
+  set_eon_fan(fan_speed // 16384)
 
   return fan_speed
 
@@ -139,6 +144,7 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
     new_speed = min(30, new_speed)
 
   return new_speed
+
 
 def thermald_thread():
   # prevent LEECO from undervoltage
@@ -227,7 +233,7 @@ def thermald_thread():
     max_cpu_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
                        msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
-    bat_temp = msg.thermal.bat/1000.
+    bat_temp = msg.thermal.bat / 1000.
 
     fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
     msg.thermal.fanSpeed = fan_speed
@@ -236,7 +242,7 @@ def thermald_thread():
     if max_cpu_temp > 107. or bat_temp >= 63.:
       # onroad not allowed
       thermal_status = ThermalStatus.danger
-    elif max_comp_temp > 92.5 or bat_temp > 60.: # CPU throttling starts around ~90C
+    elif max_comp_temp > 92.5 or bat_temp > 60.:  # CPU throttling starts around ~90C
       # hysteresis between onroad not allowed and engage not allowed
       thermal_status = clip(thermal_status, ThermalStatus.red, ThermalStatus.danger)
     elif max_cpu_temp > 87.5:
@@ -382,21 +388,20 @@ def thermald_thread():
     fw_version_match_prev = fw_version_match
     should_start_prev = should_start
 
-    #print(msg)
-
     # report to server once per minute
     if (count % int(60. / DT_TRML)) == 0:
       cloudlog.event("STATUS_PACKET",
-        count=count,
-        health=(health.to_dict() if health else None),
-        location=(location.to_dict() if location else None),
-        thermal=msg.to_dict())
+                     count=count,
+                     health=(health.to_dict() if health else None),
+                     location=(location.to_dict() if location else None),
+                     thermal=msg.to_dict())
 
     count += 1
 
 
 def main():
   thermald_thread()
+
 
 if __name__ == "__main__":
   main()
