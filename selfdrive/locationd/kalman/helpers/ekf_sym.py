@@ -27,7 +27,7 @@ def null(H, eps=1e-12):
   return np.transpose(null_space)
 
 
-def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=None, msckf_params=None, maha_test_kinds=[]):
+def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=None, msckf_params=None, maha_test_kinds=[], global_vars=None):
   # optional state transition matrix, H modifier
   # and err_function if an error-state kalman filter (ESKF)
   # is desired. Best described in "Quaternion kinematics
@@ -110,7 +110,7 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
       sympy_functions.append(('He_%d' % kind, He_sym, [x_sym, ea_sym]))
 
   # Generate and wrap all th c code
-  header, code = sympy_into_c(sympy_functions)
+  header, code = sympy_into_c(sympy_functions, global_vars)
   extra_header = "#define DIM %d\n" % dim_x
   extra_header += "#define EDIM %d\n" % dim_err
   extra_header += "#define MEDIM %d\n" % dim_main_err
@@ -140,6 +140,17 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
   code += '\nextern "C"{\n' + extra_header + "\n}\n"
   code += "\n" + open(os.path.join(TEMPLATE_DIR, "ekf_c.c")).read()
   code += '\nextern "C"{\n' + extra_post + "\n}\n"
+
+  if global_vars is not None:
+    global_code = '\nextern "C"{\n'
+    for var in global_vars:
+      global_code += f"\ndouble {var.name};\n"
+      global_code += f"\nvoid set_{var.name}(double x){{ {var.name} = x;}}\n"
+      extra_header += f"\nvoid set_{var.name}(double x);\n"
+
+    global_code += '\n}\n'
+    code = global_code + code
+
   header += "\n" + extra_header
 
   write_code(name, code, header)
@@ -147,7 +158,7 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
 
 class EKF_sym():
   def __init__(self, name, Q, x_initial, P_initial, dim_main, dim_main_err,
-               N=0, dim_augment=0, dim_augment_err=0, maha_test_kinds=[]):
+               N=0, dim_augment=0, dim_augment_err=0, maha_test_kinds=[], global_vars=None):
     """Generates process function and all observation functions for the kalman filter."""
     self.msckf = N > 0
     self.N = N
@@ -167,6 +178,8 @@ class EKF_sym():
     # kinds that should get mahalanobis distance
     # tested for outlier rejection
     self.maha_test_kinds = maha_test_kinds
+
+    self.global_vars = global_vars
 
     # process noise
     self.Q = Q
@@ -225,6 +238,11 @@ class EKF_sym():
       self.Hs[kind] = wrap_2lists("H_%d" % kind)
       if self.msckf and kind in self.feature_track_kinds:
         self.Hes[kind] = wrap_2lists("He_%d" % kind)
+
+    if self.global_vars is not None:
+      for var in self.global_vars:
+        fun_name = f"set_{var.name}"
+        setattr(self, fun_name, getattr(lib, fun_name))
 
     # wrap the C++ predict function
     def _predict_blas(x, P, dt):
