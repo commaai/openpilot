@@ -437,6 +437,12 @@ void* processing_thread(void *arg) {
       framed.setLensErr(frame_data.lens_err);
       framed.setLensTruePos(frame_data.lens_true_pos);
       framed.setGainFrac(frame_data.gain_frac);
+#ifdef QCOM
+      kj::ArrayPtr<const int16_t> focus_vals(&s->cameras.front.focus[0], NUM_FOCUS);
+      kj::ArrayPtr<const uint8_t> focus_confs(&s->cameras.front.confidence[0], NUM_FOCUS);
+      framed.setFocusVal(focus_vals);
+      framed.setFocusConf(focus_confs);
+#endif
 
 #ifndef QCOM
       framed.setImage(kj::arrayPtr((const uint8_t*)s->yuv_ion[yuv_idx].addr, s->yuv_buf_size));
