@@ -8,8 +8,16 @@ CARSTATE_DECIMATION = 5
 
 
 class ParamsLearner:
-  def __init__(self):
+  def __init__(self, CP):
     self.kf = CarKalman()
+
+    self.kf.filter.set_mass(CP.mass)  # pylint: disable=no-member
+    self.kf.filter.set_rotational_inertia(CP.rotationalInertia)  # pylint: disable=no-member
+    self.kf.filter.set_center_to_front(CP.centerToFront)  # pylint: disable=no-member
+    self.kf.filter.set_center_to_rear(CP.wheelbase - CP.centerToFront)  # pylint: disable=no-member
+    self.kf.filter.set_stiffness_front(CP.tireStiffnessFront)  # pylint: disable=no-member
+    self.kf.filter.set_stiffness_rear(CP.tireStiffnessRear)  # pylint: disable=no-member
+
     self.active = False
 
     self.speed = 0
@@ -66,7 +74,12 @@ def main(sm=None, pm=None):
   if pm is None:
     pm = messaging.PubMaster(['liveParameters'])
 
-  learner = ParamsLearner()
+  # TODO: Read from car params at runtime
+  from selfdrive.car.toyota.interface import CarInterface
+  from selfdrive.car.toyota.values import CAR
+
+  CP = CarInterface.get_params(CAR.COROLLA_TSS2)
+  learner = ParamsLearner(CP)
 
   while True:
     sm.update()
