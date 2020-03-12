@@ -1,19 +1,24 @@
-Import('env')
+Import('env', 'arch')
 
 templates = Glob('templates/*')
 sympy_helpers = "helpers/sympy_helpers.py"
 ekf_sym = "helpers/ekf_sym.py"
 
 to_build = {
-    'pos_computer_4': 'helpers/lst_sq_computer.py',
-    'pos_computer_5': 'helpers/lst_sq_computer.py',
-    'feature_handler_5': 'helpers/feature_handler.py',
     'car': 'models/car_kf.py',
-    'gnss': 'models/gnss_kf.py',
-    'loc_4': 'models/loc_kf.py',
     'live': 'models/live_kf.py',
-    'lane': '#xx/pipeline/lib/ekf/lane_kf.py',
 }
+
+
+if arch != "aarch64":
+    to_build.update({
+        'lane': '#xx/pipeline/lib/ekf/lane_kf.py',
+        'pos_computer_4': 'helpers/lst_sq_computer.py',
+        'pos_computer_5': 'helpers/lst_sq_computer.py',
+        'feature_handler_5': 'helpers/feature_handler.py',
+        'loc_4': 'models/loc_kf.py',
+        'gnss': 'models/gnss_kf.py',
+    })
 
 found = {}
 
