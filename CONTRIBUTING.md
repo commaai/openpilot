@@ -14,7 +14,7 @@ Most open source development activity is coordinated through our [Discord](https
 
 ### Local Testing
 
-You can test your changes on your machine by running `run_docker_tests.sh`. This will run some automated tests in docker against your code. 
+You can test your changes on your machine by running `run_docker_tests.sh`. This will run some automated tests in docker against your code.
 
 ### Automated Testing
 
@@ -22,7 +22,7 @@ All PRs are automatically checked by travis. Check out `.travis.yml` for what tr
 
 ### Code Style and Linting
 
-Code is automatically check for style by travis as part of the automated tests. You can also run these yourself by running `check_code_quality.sh`. 
+Code is automatically checked for style by travis as part of the automated tests. You can also run these tests yourself by running `pylint_openpilot.sh` and `flake8_openpilot.sh`.
 
 ## Car Ports (openpilot)
 
