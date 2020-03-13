@@ -66,11 +66,3 @@ float sigmoid(float input) {
 float softplus(float input) {
   return log1p(expf(input));
 }
-
-float input_lambda(float input) {
-#ifdef QCOM
-  return (input - 128.f) * 0.0078125f;
-#else
-  return input; // for non SNPE running platforms, assume keras model instead has lambda layer
-#endif
-}
