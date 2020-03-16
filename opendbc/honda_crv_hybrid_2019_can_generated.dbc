@@ -164,6 +164,82 @@ BO_ 545 XXX_16: 6 SCM
  SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" BDY
  SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" BDY
 
+BO_ 576 LEFT_LANE_LINE_1: 8 CAM
+ SG_ LINE_DISTANCE_VISIBLE : 39|9@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_PROBABILITY : 46|6@0+ (0.015625,0) [0|1] "" XXX
+ SG_ LINE_OFFSET : 23|12@0+ (0.004,-8.192) [0|1] "Meters" XXX
+ SG_ LINE_ANGLE : 7|12@0+ (0.0005,-1.024) [0|1] "" XXX
+ SG_ FRAME_INDEX : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 577 LEFT_LANE_LINE_2: 8 CAM
+ SG_ LINE_FAR_EDGE_POSITION : 55|8@0+ (1,-128) [0|1] "" XXX
+ SG_ LINE_SOLID : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_DASHED : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_CURVATURE : 23|12@0+ (0.00001,-0.02048) [0|1] "" XXX
+ SG_ LINE_PARAMETER : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ FRAME_INDEX : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+ 
+BO_ 579 RIGHT_LANE_LINE_1: 8 CAM
+ SG_ LINE_DISTANCE_VISIBLE : 39|9@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_PROBABILITY : 46|6@0+ (0.015625,0) [0|1] "" XXX
+ SG_ LINE_OFFSET : 23|12@0+ (0.004,-8.192) [0|1] "Meters" XXX
+ SG_ LINE_ANGLE : 7|12@0+ (0.0005,-1.024) [0|1] "" XXX
+ SG_ FRAME_INDEX : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 580 RIGHT_LANE_LINE_2: 8 CAM
+ SG_ LINE_FAR_EDGE_POSITION : 55|8@0+ (1,-128) [0|1] "" XXX
+ SG_ LINE_SOLID : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_DASHED : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_CURVATURE : 23|12@0+ (0.00001,-0.02048) [0|1] "" XXX
+ SG_ LINE_PARAMETER : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ FRAME_INDEX : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 582 ADJACENT_LEFT_LANE_LINE_1: 8 CAM
+ SG_ LINE_DISTANCE_VISIBLE : 39|9@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_PROBABILITY : 46|6@0+ (0.015625,0) [0|1] "" XXX
+ SG_ LINE_OFFSET : 23|12@0+ (0.004,-8.192) [0|1] "Meters" XXX
+ SG_ LINE_ANGLE : 7|12@0+ (0.0005,-1.024) [0|1] "" XXX
+ SG_ FRAME_INDEX : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 583 ADJACENT_LEFT_LANE_LINE_2: 8 CAM
+ SG_ LINE_FAR_EDGE_POSITION : 55|8@0+ (1,-128) [0|1] "" XXX
+ SG_ LINE_SOLID : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_DASHED : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_CURVATURE : 23|12@0+ (0.00001,-0.02048) [0|1] "" XXX
+ SG_ LINE_PARAMETER : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ FRAME_INDEX : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 585 ADJACENT_RIGHT_LANE_LINE_1: 8 CAM
+ SG_ LINE_DISTANCE_VISIBLE : 39|9@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_PROBABILITY : 46|6@0+ (0.015625,0) [0|1] "" XXX
+ SG_ LINE_OFFSET : 23|12@0+ (0.004,-8.192) [0|1] "Meters" XXX
+ SG_ LINE_ANGLE : 7|12@0+ (0.0005,-1.024) [0|1] "" XXX
+ SG_ FRAME_INDEX : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 586 ADJACENT_RIGHT_LANE_LINE_2: 8 CAM
+ SG_ LINE_FAR_EDGE_POSITION : 55|8@0+ (1,-128) [0|1] "" XXX
+ SG_ LINE_SOLID : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_DASHED : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_CURVATURE : 23|12@0+ (0.00001,-0.02048) [0|1] "" XXX
+ SG_ LINE_PARAMETER : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ FRAME_INDEX : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
 BO_ 597 ROUGH_WHEEL_SPEED: 8 VSA
  SG_ WHEEL_SPEED_FL : 7|8@0+ (1,0) [0|255] "mph" EON
  SG_ WHEEL_SPEED_FR : 15|8@0+ (1,0) [0|255] "mph" EON
@@ -288,7 +364,11 @@ BO_ 891 STALK_STATUS_2: 8 XXX
 CM_ SG_ 479 AEB_STATUS "set for the duration of AEB event";
 CM_ SG_ 479 AEB_BRAKING "set when braking is commanded during AEB event";
 CM_ SG_ 479 AEB_PREPARE "set 1s before AEB";
-
+CM_ SG_ 576 LINE_DISTANCE_VISIBLE "Length of line visible, undecoded";
+CM_ SG_ 577 LINE_FAR_EDGE_POSITION "Appears to be a measure of line thickness, indicates location of the portion of the line furthest from the car, undecoded";
+CM_ SG_ 577 LINE_PARAMETER "Unclear if this is low quality line curvature rate or if this is something else, but it is correlated with line curvature, undecoded";
+CM_ SG_ 577 LINE_DASHED "1 = line is dashed";
+CM_ SG_ 577 LINE_SOLID "1 = line is solid";
 VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
 
 CM_ "honda_crv_hybrid_2019_can.dbc starts here"
