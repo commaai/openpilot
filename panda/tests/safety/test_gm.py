@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from panda import Panda
 from panda.tests.safety import libpandasafety_py
-from panda.tests.safety.common import test_relay_malfunction, make_msg, test_manually_enable_controls_allowed, test_spam_can_buses
+from panda.tests.safety.common import StdTest, make_msg
 
 MAX_RATE_UP = 7
 MAX_RATE_DOWN = 17
@@ -90,10 +90,10 @@ class TestGmSafety(unittest.TestCase):
     return to_send
 
   def test_spam_can_buses(self):
-    test_spam_can_buses(self, TX_MSGS)
+    StdTest.test_spam_can_buses(self, TX_MSGS)
 
   def test_relay_malfunction(self):
-    test_relay_malfunction(self, 384)
+    StdTest.test_relay_malfunction(self, 384)
 
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
@@ -116,29 +116,9 @@ class TestGmSafety(unittest.TestCase):
     self.safety.safety_rx_hook(self._button_msg(CANCEL_BTN))
     self.assertFalse(self.safety.get_controls_allowed())
 
-  def test_disengage_on_brake(self):
-    self.safety.set_controls_allowed(1)
-    self.safety.safety_rx_hook(self._brake_msg(True))
-    self.assertFalse(self.safety.get_controls_allowed())
-
-  def test_allow_brake_at_zero_speed(self):
-    # Brake was already pressed
-    self.safety.safety_rx_hook(self._brake_msg(True))
-    self.safety.set_controls_allowed(1)
-
-    self.safety.safety_rx_hook(self._brake_msg(True))
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.safety_rx_hook(self._brake_msg(False))
-
-  def test_not_allow_brake_when_moving(self):
-    # Brake was already pressed
-    self.safety.safety_rx_hook(self._brake_msg(True))
-    self.safety.safety_rx_hook(self._speed_msg(100))
-    self.safety.set_controls_allowed(1)
-
-    self.safety.safety_rx_hook(self._brake_msg(True))
-    self.assertFalse(self.safety.get_controls_allowed())
-    self.safety.safety_rx_hook(self._brake_msg(False))
+  def test_brake_disengage(self):
+    StdTest.test_allow_brake_at_zero_speed(self)
+    StdTest.test_not_allow_brake_when_moving(self, 0)
 
   def test_disengage_on_gas(self):
     self.safety.set_controls_allowed(1)
@@ -182,7 +162,7 @@ class TestGmSafety(unittest.TestCase):
           self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
 
   def test_manually_enable_controls_allowed(self):
-    test_manually_enable_controls_allowed(self)
+    StdTest.test_manually_enable_controls_allowed(self)
 
   def test_non_realtime_limit_up(self):
     self.safety.set_gm_torque_driver(0, 0)

@@ -49,6 +49,7 @@ bool driver_limit_check(int val, int val_last, struct sample_t *val_driver,
   const int MAX_ALLOWANCE, const int DRIVER_FACTOR);
 bool rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA);
 float interpolate(struct lookup_t xy, float x);
+void gen_crc_lookup_table(uint8_t poly, uint8_t crc_lut[]);
 bool msg_allowed(int addr, int bus, const AddrBus addr_list[], int len);
 int get_addr_check_index(CAN_FIFOMailBox_TypeDef *to_push, AddrCheckStruct addr_list[], const int len);
 void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter);
@@ -84,6 +85,8 @@ bool controls_allowed = false;
 bool relay_malfunction = false;
 bool gas_interceptor_detected = false;
 int gas_interceptor_prev = 0;
+bool gas_pressed_prev = false;
+bool brake_pressed_prev = false;
 
 // time since safety mode has been changed
 uint32_t safety_mode_cnt = 0U;

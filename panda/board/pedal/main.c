@@ -19,6 +19,7 @@
 #include "drivers/timer.h"
 
 #include "gpio.h"
+#include "crc.h"
 
 #define CAN CAN1
 
@@ -105,26 +106,6 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
 
 #endif
 
-// ***************************** pedal can checksum *****************************
-
-uint8_t pedal_checksum(uint8_t *dat, int len) {
-  uint8_t crc = 0xFF;
-  uint8_t poly = 0xD5; // standard crc8
-  int i, j;
-  for (i = len - 1; i >= 0; i--) {
-    crc ^= dat[i];
-    for (j = 0; j < 8; j++) {
-      if ((crc & 0x80U) != 0U) {
-        crc = (uint8_t)((crc << 1) ^ poly);
-      }
-      else {
-        crc <<= 1;
-      }
-    }
-  }
-  return crc;
-}
-
 // ***************************** can port *****************************
 
 // addresses to be used on CAN
@@ -155,6 +136,8 @@ uint32_t current_index = 0;
 #define FAULT_INVALID 6U
 uint8_t state = FAULT_STARTUP;
 
+const uint8_t crc_poly = 0xD5;  // standard crc8
+
 void CAN1_RX0_IRQ_Handler(void) {
   while ((CAN->RF0R & CAN_RF0R_FMP0) != 0) {
     #ifdef DEBUG
@@ -184,7 +167,7 @@ void CAN1_RX0_IRQ_Handler(void) {
       uint16_t value_1 = (dat[2] << 8) | dat[3];
       bool enable = ((dat[4] >> 7) & 1U) != 0U;
       uint8_t index = dat[4] & COUNTER_CYCLE;
-      if (pedal_checksum(dat, CAN_GAS_SIZE - 1) == dat[5]) {
+      if (crc_checksum(dat, CAN_GAS_SIZE - 1, crc_poly) == dat[5]) {
         if (((current_index + 1U) & COUNTER_CYCLE) == index) {
           #ifdef DEBUG
             puts("setting gas ");
@@ -247,7 +230,7 @@ void TIM3_IRQ_Handler(void) {
     dat[2] = (pdl1 >> 8) & 0xFFU;
     dat[3] = (pdl1 >> 0) & 0xFFU;
     dat[4] = ((state & 0xFU) << 4) | pkt_idx;
-    dat[5] = pedal_checksum(dat, CAN_GAS_SIZE - 1);
+    dat[5] = crc_checksum(dat, CAN_GAS_SIZE - 1, crc_poly);
     CAN->sTxMailBox[0].TDLR = dat[0] | (dat[1] << 8) | (dat[2] << 16) | (dat[3] << 24);
     CAN->sTxMailBox[0].TDHR = dat[4] | (dat[5] << 8);
     CAN->sTxMailBox[0].TDTR = 6;  // len of packet is 5

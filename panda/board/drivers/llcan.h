@@ -52,7 +52,7 @@ bool llcan_set_speed(CAN_TypeDef *CAN_obj, uint32_t speed, bool loopback, bool s
 void llcan_init(CAN_TypeDef *CAN_obj) {
   // Enter init mode
   register_set_bits(&(CAN_obj->FMR), CAN_FMR_FINIT);
-  
+
   // Wait for INAK bit to be set
   while(((CAN_obj->MSR & CAN_MSR_INAK) == CAN_MSR_INAK)) {}
 
