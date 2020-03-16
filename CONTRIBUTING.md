@@ -18,11 +18,11 @@ You can test your changes on your machine by running `run_docker_tests.sh`. This
 
 ### Automated Testing
 
-All PRs are automatically checked by travis. Check out `.travis.yml` for what travis runs. Any new tests sould be added to travis.
+All PRs are automatically checked by Github Actions. Check out `.github/workflows/` for what Github Actions runs. Any new tests sould be added to Github Actions.
 
 ### Code Style and Linting
 
-Code is automatically checked for style by travis as part of the automated tests. You can also run these tests yourself by running `pylint_openpilot.sh` and `flake8_openpilot.sh`.
+Code is automatically checked for style by Github Actions as part of the automated tests. You can also run these tests yourself by running `pylint_openpilot.sh` and `flake8_openpilot.sh`.
 
 ## Car Ports (openpilot)
 
@@ -41,7 +41,7 @@ Or alternatively, when on the master branch:
 git submodule init
 git submodule update
 ```
-The reasons for having submodules on a dedicated repository and our new development philosophy can be found in our [post about externalization](https://medium.com/@comma_ai/a-2020-theme-externalization-13b33326d8b3). 
+The reasons for having submodules on a dedicated repository and our new development philosophy can be found in our [post about externalization](https://medium.com/@comma_ai/a-2020-theme-externalization-13b33326d8b3).
 Modules that are in seperate repositories include:
 * apks
 * cereal
