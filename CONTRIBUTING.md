@@ -32,9 +32,19 @@ If you port openpilot to a substantially new car brand, see this more generic [B
 
 ## Pull Requests
 
-Pull requests should be against the master branch. Before running master on in-car hardware, you'll need to run
+Pull requests should be against the master branch. Before running master on in-car hardware, you'll need to clone the submodules too. That can be done by recursively cloning the repository:
+```
+git clone https://github.com/commaai/openpilot.git --recursive
+```
+Or alternatively, when on the master branch:
 ```
 git submodule init
 git submodule update
 ```
-in order to pull down the submodules, such as `panda` and `opendbc`.
+The reasons for having submodules on a dedicated repository and our new development philosophy can be found in our [post about externalization](https://medium.com/@comma_ai/a-2020-theme-externalization-13b33326d8b3). 
+Modules that are in seperate repositories include:
+* apks
+* cereal
+* laika
+* opendbc
+* panda
