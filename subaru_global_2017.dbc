@@ -120,6 +120,8 @@ BO_ 312 Brake_Pressure_L_R: 8 XXX
  SG_ Brake_1 : 48|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 313 Brake_Pedal: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Brake_Pedal_On : 34|1@1+ (1,0) [0|7] "" XXX
  SG_ Brake_Pedal : 36|12@1+ (1,0) [0|65535] "" XXX
 
