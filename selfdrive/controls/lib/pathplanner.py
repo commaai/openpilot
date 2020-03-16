@@ -59,6 +59,7 @@ class PathPlanner():
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
+    self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
 
   def setup_mpc(self):
@@ -127,8 +128,8 @@ class PathPlanner():
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
         # fade out lanelines over 1s
         self.lane_change_ll_prob = max(self.lane_change_ll_prob - DT_MDL, 0.0)
-        # 95% certainty
-        if lane_change_prob < 0.05:
+        # 99% certainty
+        if lane_change_prob < 0.01:
           self.lane_change_ll_prob = 0
           self.lane_change_state = LaneChangeState.laneChangeFinishing
 
@@ -138,7 +139,7 @@ class PathPlanner():
         self.lane_change_ll_prob = min(self.lane_change_ll_prob + DT_MDL, 1.0)
         if one_blinker and self.lane_change_ll_prob >= 1.0:
           self.lane_change_state = LaneChangeState.preLaneChange
-        elif self.lane_change_ll_prob >= 0.0:
+        elif self.lane_change_ll_prob >= 1.0:
           self.lane_change_state = LaneChangeState.off
 
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
@@ -152,8 +153,8 @@ class PathPlanner():
 
     # Turn off lanes during lane change
     if desire == log.PathPlan.Desire.laneChangeRight or desire == log.PathPlan.Desire.laneChangeLeft:
-      self.LP.l_prob = self.lane_change_ll_prob
-      self.LP.r_prob = self.lane_change_ll_prob
+      self.LP.l_prob *= self.lane_change_ll_prob
+      self.LP.r_prob *= self.lane_change_ll_prob
       self.libmpc.init_weights(MPC_COST_LAT.PATH / 10.0, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, self.steer_rate_cost)
     else:
       self.libmpc.init_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, self.steer_rate_cost)
