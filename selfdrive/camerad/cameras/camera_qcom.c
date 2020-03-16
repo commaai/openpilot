@@ -2117,7 +2117,10 @@ void cameras_run(DualCameraState *s) {
 
     int ret = poll(fds, ARRAYSIZE(fds), 1000);
     if (ret <= 0) {
-      if (errno == EINTR) continue;
+      if (errno == EINTR){
+        LOGW("poll EINTR");
+        continue;
+      }
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
