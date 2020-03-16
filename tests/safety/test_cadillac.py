@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from panda import Panda
 from panda.tests.safety import libpandasafety_py
-from panda.tests.safety.common import make_msg, test_manually_enable_controls_allowed, test_spam_can_buses
+from panda.tests.safety.common import make_msg, StdTest
 
 
 MAX_RATE_UP = 2
@@ -56,13 +56,13 @@ class TestCadillacSafety(unittest.TestCase):
     return to_send
 
   def test_spam_can_buses(self):
-    test_spam_can_buses(self, TX_MSGS)
+    StdTest.test_spam_can_buses(self, TX_MSGS)
 
   def test_default_controls_not_allowed(self):
     self.assertFalse(self.safety.get_controls_allowed())
 
   def test_manually_enable_controls_allowed(self):
-    test_manually_enable_controls_allowed(self)
+    StdTest.test_manually_enable_controls_allowed(self)
 
   def test_enable_control_allowed_from_cruise(self):
     to_push = make_msg(0, 0x370)

@@ -7,8 +7,6 @@
 //      brake rising edge
 //      brake > 0mph
 
-int ford_brake_prev = 0;
-int ford_gas_prev = 0;
 bool ford_moving = false;
 
 static int ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -39,20 +37,20 @@ static int ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // exit controls on rising edge of brake press or on brake press when
   // speed > 0
   if (addr == 0x165) {
-    int brake = GET_BYTE(to_push, 0) & 0x20;
-    if (brake && (!(ford_brake_prev) || ford_moving)) {
+    int brake_pressed = GET_BYTE(to_push, 0) & 0x20;
+    if (brake_pressed && (!brake_pressed_prev || ford_moving)) {
       controls_allowed = 0;
     }
-    ford_brake_prev = brake;
+    brake_pressed_prev = brake_pressed;
   }
 
   // exit controls on rising edge of gas press
   if (addr == 0x204) {
-    int gas = (GET_BYTE(to_push, 0) & 0x03) | GET_BYTE(to_push, 1);
-    if (gas && !(ford_gas_prev)) {
+    bool gas_pressed = ((GET_BYTE(to_push, 0) & 0x03) | GET_BYTE(to_push, 1)) != 0;
+    if (gas_pressed && !gas_pressed_prev) {
       controls_allowed = 0;
     }
-    ford_gas_prev = gas;
+    gas_pressed_prev = gas_pressed;
   }
 
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 0x3CA)) {
@@ -74,7 +72,7 @@ static int ford_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = ford_gas_prev || (ford_brake_prev && ford_moving);
+  int pedal_pressed = gas_pressed_prev || (brake_pressed_prev && ford_moving);
   bool current_controls_allowed = controls_allowed && !(pedal_pressed);
 
   if (relay_malfunction) {
