@@ -19,10 +19,15 @@ except ImportError:
 
 context = Context()
 
-def new_message():
+def new_message(service=None, size=None):
   dat = log.Event.new_message()
   dat.logMonoTime = int(sec_since_boot() * 1e9)
   dat.valid = True
+  if service is not None:
+    if size is None:
+      dat.init(service)
+    else:
+      dat.init(service, size)
   return dat
 
 def pub_sock(endpoint):
@@ -148,12 +153,11 @@ class SubMaster():
         self.sock[s] = sub_sock(s, poller=self.poller, addr=addr, conflate=True)
       self.freq[s] = service_list[s].frequency
 
-      data = new_message()
       try:
-        data.init(s)
+        data = new_message(s)
       except capnp.lib.capnp.KjException:
         # lists
-        data.init(s, 0)
+        data = new_message(s, 0)
 
       self.data[s] = getattr(data, s)
       self.logMonoTime[s] = 0

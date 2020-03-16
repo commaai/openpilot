@@ -127,6 +127,8 @@ struct FrameData {
   lensTruePos @14 :Float32;
   image @6 :Data;
   gainFrac @15 :Float32;
+  focusVal @16 :List(Int16);
+  focusConf @17 :List(UInt8);
 
   frameType @7 :FrameType;
   timestampSof @8 :UInt64;
@@ -281,6 +283,7 @@ struct ThermalData {
   usbOnline @12 :Bool;
   networkType @22 :NetworkType;
   offroadPowerUsage @23 :UInt32;  # Power usage since going offroad in uWh
+  networkStrength @24 :NetworkStrength;
 
   fanSpeed @10 :UInt16;
   started @11 :Bool;
@@ -307,6 +310,14 @@ struct ThermalData {
     cell3G @3;
     cell4G @4;
     cell5G @5;
+  }
+
+  enum NetworkStrength {
+    unknown @0;
+    poor @1;
+    moderate @2;
+    good @3;
+    great @4;
   }
 }
 
@@ -626,9 +637,11 @@ struct ModelData {
     brakeDisengageProb @2 :Float32;
     gasDisengageProb @3 :Float32;
     steerOverrideProb @4 :Float32;
+    desireState @5 :List(Float32);
   }
 
   struct LongitudinalData {
+    distances @2 :List(Float32);
     speeds @0 :List(Float32);
     accelerations @1 :List(Float32);
   }
@@ -787,6 +800,52 @@ struct PathPlan {
     none @0;
     left @1;
     right @2;
+  }
+}
+
+struct LiveLocationKalman {
+
+  # More info on reference frames: 
+  # https://github.com/commaai/openpilot/tree/master/common/transformations
+
+  positionECEF @0 : Measurement;
+  positionGeodetic @1 : Measurement;
+  velocityECEF @2 : Measurement;
+  velocityNED @3 : Measurement;
+  velocityDevice @4 : Measurement;
+  accelerationDevice @5: Measurement;
+
+
+  # These angles are all eulers and roll, pitch, yaw
+  # orientationECEF transforms to rot matrix: ecef_from_device
+  orientationECEF @6 : Measurement;
+  orientationNED @7 : Measurement;
+  angularVelocityDevice @8 : Measurement;
+  
+  # orientationNEDCalibrated transforms to rot matrix: NED_from_calibrated
+  orientationNEDCalibrated @9 : Measurement;
+  
+  # Calibrated frame is simply device frame
+  # aligned with the vehicle
+  velocityCalibrated @10 : Measurement;
+  accelerationCalibrated @11 : Measurement;
+  angularVelocityCalibrated @12 : Measurement;
+
+  gpsWeek @13 :Int32;
+  gpsTimeOfWeek @14 :Float64;
+  status @15 :Status;
+  unixTimestampMillis @16 :Int64;
+  
+  enum Status {
+    uninitialized @0;
+    uncalibrated @1;
+    valid @2;
+  }
+
+  struct Measurement {
+    value @0 : List(Float64);
+    std @1 : List(Float64);
+    valid @2 : Bool;
   }
 }
 
@@ -1877,6 +1936,16 @@ struct KalmanOdometry {
   rotStd @3 :List(Float32); # std rad/s in device frame
 }
 
+struct Sentinel {
+  enum SentinelType {
+    endOfSegment @0;
+    endOfRoute @1;
+    startOfSegment @2;
+    startOfRoute @3;
+  }
+  type @0 :SentinelType;
+}
+
 struct Event {
   # in nanoseconds?
   logMonoTime @0 :UInt64;
@@ -1933,7 +2002,7 @@ struct Event {
     gpsLocationExternal @48 :GpsLocationData;
     location @49 :LiveLocationData;
     uiNavigationEvent @50 :UiNavigationEvent;
-    liveLocationKalman @51 :LiveLocationData;
+    liveLocationKalmanDEPRECATED @51 :LiveLocationData;
     testJoystick @52 :Joystick;
     orbOdometry @53 :OrbOdometry;
     orbFeatures @54 :OrbFeatures;
@@ -1953,5 +2022,7 @@ struct Event {
     carParams @69: Car.CarParams;
     frontFrame @70: FrameData;
     dMonitoringState @71: DMonitoringState;
+    liveLocationKalman @72 :LiveLocationKalman;
+    sentinel @73 :Sentinel;
   }
 }
