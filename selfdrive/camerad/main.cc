@@ -605,7 +605,7 @@ void* visionserver_client_thread(void* arg) {
     int ret = zmq_poll(polls, num_polls, -1);
     if (ret < 0) {
       if (errno == EINTR) continue;
-      LOGE("poll failed (%d)", ret);
+      LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
     if (polls[0].revents) {
