@@ -125,9 +125,8 @@ class PathPlanner():
 
       # starting
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
-        # fade out lanelines over 0.5s
-        self.lane_change_ll_prob -= 2*DT_MDL
-        self.lane_change_ll_prob = max(self.lane_change_ll_prob, 0.0)
+        # fade out lanelines over 1s
+        self.lane_change_ll_prob = max(self.lane_change_ll_prob - DT_MDL, 0.0)
         # 95% certainty
         if lane_change_prob < 0.05:
           self.lane_change_ll_prob = 0
@@ -136,11 +135,10 @@ class PathPlanner():
       # finishing
       elif self.lane_change_state == LaneChangeState.laneChangeFinishing:
         # fade in laneline over 1s
-        self.lane_change_end_timer += DT_MDL
-        self.lane_change_ll_prob = min(self.lane_change_ll_prob, 1.0)
-        if one_blinker and self.lane_change_end_timer >= 1.0:
+        self.lane_change_ll_prob = min(self.lane_change_ll_prob + DT_MDL, 1.0)
+        if one_blinker and self.lane_change_ll_prob >= 1.0:
           self.lane_change_state = LaneChangeState.preLaneChange
-        elif self.lane_change_end_timer <= 0.0:
+        elif self.lane_change_ll_prob >= 0.0:
           self.lane_change_state = LaneChangeState.off
 
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
