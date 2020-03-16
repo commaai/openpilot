@@ -22,6 +22,8 @@ file in place without messing with <params_dir>/d.
 """
 import time
 import os
+import string
+import binascii
 import errno
 import sys
 import shutil
@@ -59,6 +61,7 @@ keys = {
   "CommunityFeaturesToggle": [TxType.PERSISTENT],
   "CompletedTrainingVersion": [TxType.PERSISTENT],
   "ControlsParams": [TxType.PERSISTENT],
+  "DisablePowerDown": [TxType.PERSISTENT],
   "DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
   "DongleId": [TxType.PERSISTENT],
   "GitBranch": [TxType.PERSISTENT],
@@ -407,10 +410,10 @@ if __name__ == "__main__":
       pp = params.get(k)
       if pp is None:
         print("%s is None" % k)
-      elif all(ord(c) < 128 and ord(c) >= 32 for c in pp):
+      elif all(chr(c) in string.printable for c in pp):
         print("%s = %s" % (k, pp))
       else:
-        print("%s = %s" % (k, pp.encode("hex")))
+        print("%s = %s" % (k, binascii.hexlify(pp)))
 
   # Test multiprocess:
   # seq 0 100000 | xargs -P20 -I{} python common/params.py DongleId {} && sleep 0.05

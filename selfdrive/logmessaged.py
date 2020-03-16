@@ -3,7 +3,7 @@ import zmq
 from logentries import LogentriesHandler
 import cereal.messaging as messaging
 
-def main(gctx=None):
+def main():
   # setup logentries. we forward log messages to it
   le_token = "e8549616-0798-4d7e-a2ca-2513ae81fa17"
   le_handler = LogentriesHandler(le_token, use_tls=False, verbose=False)

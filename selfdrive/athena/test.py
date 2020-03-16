@@ -41,8 +41,7 @@ class TestAthenadMethods(unittest.TestCase):
       start = time.time()
 
       while time.time() - start < 1:
-        msg = messaging.new_message()
-        msg.init('thermal')
+        msg = messaging.new_message('thermal')
         pub_sock.send(msg.to_bytes())
         time.sleep(0.01)
 
