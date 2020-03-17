@@ -114,7 +114,7 @@ void start_capture() {
   if (stat(videos_dir, &st) == -1) {
     mkdir(videos_dir,0700);
   }
-  if (captureNum == 0 && files_created == 0) {
+  /*if (captureNum == 0 && files_created == 0) {
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir ("/storage/emulated/0/videos")) != NULL) {
@@ -124,7 +124,7 @@ void start_capture() {
       captureNum = files_created;
       closedir (dir);
     }
-  }
+  }*/
 
   if (strlen(filenames[captureNum]) && files_created >= RECORD_FILES) {
     if (locked_files[captureNum] > 0) {
