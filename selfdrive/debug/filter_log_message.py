@@ -39,4 +39,4 @@ if __name__ == "__main__":
       log = json.loads(evt.logMessage)
 
       if log['levelnum'] >= min_level:
-        print(f"{log['filename']}:{log.get('lineno', '')} - {log.get('funcname', '')}: {log['msg']}")
+        print(f"[{evt.logMonoTime / 1e9:.6f}] {log['filename']}:{log.get('lineno', '')} - {log.get('funcname', '')}: {log['msg']}")
