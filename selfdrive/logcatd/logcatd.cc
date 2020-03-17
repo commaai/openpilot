@@ -25,8 +25,8 @@ int main() {
   assert(system_logger);
   struct logger *crash_logger = android_logger_open(logger_list, LOG_ID_CRASH);
   assert(crash_logger);
-//  struct logger *kernel_logger = android_logger_open(logger_list, LOG_ID_KERNEL);
-//  assert(kernel_logger);
+  struct logger *kernel_logger = android_logger_open(logger_list, (log_id_t)5); // LOG_ID_KERNEL
+  assert(kernel_logger);
 
   Context * c = Context::create();
   PubSocket * androidLog = PubSocket::create(c, "androidLog");
