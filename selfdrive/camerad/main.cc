@@ -604,10 +604,7 @@ void* visionserver_client_thread(void* arg) {
     }
     int ret = zmq_poll(polls, num_polls, -1);
     if (ret < 0) {
-      if (errno == EINTR){
-        LOGW("poll EINTR");
-        continue;
-      }
+      if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
@@ -799,7 +796,7 @@ void* visionserver_thread(void* arg) {
 
     int ret = zmq_poll(polls, ARRAYSIZE(polls), -1);
     if (ret < 0) {
-      if (errno == EINTR) continue;
+      if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
