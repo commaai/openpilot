@@ -35,7 +35,9 @@ cl_kernel clCreateKernel(cl_program program, const char *kernel_name, cl_int *er
 }
 
 
+uint64_t start_time = 0;
 int cnt = 0;
+
 cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
  	cl_kernel kernel,
  	cl_uint work_dim,
@@ -51,6 +53,10 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     cl_uint, const cl_event *, cl_event *) = NULL;
   my_clEnqueueNDRangeKernel = dlsym(RTLD_NEXT, "REAL_clEnqueueNDRangeKernel");
 
+  if (start_time == 0) {
+    start_time = nanos_since_boot();
+  }
+
   // get kernel name
   const char *name = NULL;
   for (int i = 0; i < k_index; i++) {
@@ -60,20 +66,18 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     }
   }
 
-
-
   uint64_t tb = nanos_since_boot();
   cl_int ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
     global_work_offset, global_work_size, local_work_size,
     num_events_in_wait_list, event_wait_list, event);
   uint64_t te = nanos_since_boot();
 
-  printf("run%8d in %5ld us command_queue:%p kernel:%s work_dim:%d event:%p  ", cnt++, (te-tb)/1000,
-    command_queue, name, work_dim, event);
+  printf("%10lu run%8d in %5ld us command_queue:%p work_dim:%d event:%p  ", (tb-start_time)/1000, cnt++, (te-tb)/1000,
+    command_queue, work_dim, event);
   for (int i = 0; i < work_dim; i++) {
     printf("%4zu ", global_work_size[i]);
   }
-  printf("\n");
+  printf("%s\n", name);
   return ret;
 }
 
