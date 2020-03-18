@@ -16,8 +16,10 @@ class Spinner():
   def __enter__(self):
     return self
 
-  def update(self, spinner_text):
+  def update(self, spinner_text, spinner_status=None):
     if self.spinner_proc is not None:
+      if spinner_status is not None:
+        spinner_text += ",{}".format(spinner_status)
       self.spinner_proc.stdin.write(spinner_text.encode('utf8') + b"\n")
       try:
         self.spinner_proc.stdin.flush()
