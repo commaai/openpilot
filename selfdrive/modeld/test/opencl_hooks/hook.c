@@ -1,6 +1,15 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <dlfcn.h>
 #include <CL/cl.h>
+#include <stdint.h>
+#include <time.h>
+
+static inline uint64_t nanos_since_boot() {
+  struct timespec t;
+  clock_gettime(CLOCK_BOOTTIME, &t);
+  return t.tv_sec * 1000000000ULL + t.tv_nsec;
+}
 
 struct kernel {
   cl_kernel k;
@@ -51,16 +60,21 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     }
   }
 
-  printf("hook %8d clEnqueueNDRangeKernel command_queue:%p kernel:%s work_dim:%d event:%p  ", cnt++,
-    command_queue, name, work_dim, event);
-  for (int i = 0; i < work_dim; i++) {
-    printf("%zu ", global_work_size[i]);
-  }
-  printf("\n");
 
-  return my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
+
+  uint64_t tb = nanos_since_boot();
+  cl_int ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
     global_work_offset, global_work_size, local_work_size,
     num_events_in_wait_list, event_wait_list, event);
+  uint64_t te = nanos_since_boot();
+
+  printf("run%8d in %5ld us command_queue:%p kernel:%s work_dim:%d event:%p  ", cnt++, (te-tb)/1000,
+    command_queue, name, work_dim, event);
+  for (int i = 0; i < work_dim; i++) {
+    printf("%4zu ", global_work_size[i]);
+  }
+  printf("\n");
+  return ret;
 }
 
 void *dlsym(void *handle, const char *symbol) {
