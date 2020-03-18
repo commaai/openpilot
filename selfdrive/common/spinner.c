@@ -181,7 +181,7 @@ int spin(int argc, char** argv) {
       // message
       nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
       if (has_extra) {
-        nvgFontSize(vg, 86.0f);
+        nvgFontSize(vg, 78.0f);
         nvgText(vg, fb_w/2, (fb_h*2/3)+24+96, spinstatus, NULL);
       } else {
         nvgFontSize(vg, 96.0f);
