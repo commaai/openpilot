@@ -1,0 +1,34 @@
+Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc')
+lenv = env.Clone()
+
+libs = [messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
+
+common_src = [
+  "models/commonmodel.c",
+  "runners/snpemodel.cc",
+  "transforms/loadyuv.c",
+  "transforms/transform.c"]
+
+if arch == "aarch64":
+  libs += ['gsl', 'CB', 'gnustl_shared']
+else:
+  libs += ['symphony-cpu', 'pthread']
+
+  # for tensorflow support
+  common_src += ['runners/tfmodel.cc']
+  # tell runners to use it
+  lenv['CFLAGS'].append("-DUSE_TF_MODEL")
+  lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
+
+common = lenv.Object(common_src)
+
+lenv.Program('_dmonitoringmodeld', [
+    "dmonitoringmodeld.cc",
+    "models/dmonitoring.cc",
+  ]+common, LIBS=libs)
+
+lenv.Program('_modeld', [
+    "modeld.cc",
+    "models/driving.cc",
+  ]+common, LIBS=libs)
+

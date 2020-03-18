@@ -1,0 +1,19 @@
+Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc', 'cereal')
+
+libs = ['m', 'pthread', common, 'jpeg', 'json', cereal, 'OpenCL', messaging, 'czmq', 'zmq', 'capnp', 'kj', 'capnp_c', visionipc, gpucommon]
+
+if arch == "aarch64":
+  libs += ['gsl', 'CB', 'adreno_utils', 'EGL', 'GLESv3', 'cutils', 'ui']
+  cameras = ['cameras/camera_qcom.c']
+else:
+  libs += []
+  cameras = ['cameras/camera_frame_stream.cc']
+
+env.SharedLibrary('snapshot/visionipc',
+  ["#selfdrive/common/visionipc.c", "#selfdrive/common/ipc.c"])
+
+env.Program('camerad', [
+    'main.cc',
+    'transforms/rgb_to_yuv.c',
+    cameras,
+  ], LIBS=libs)

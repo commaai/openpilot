@@ -1,0 +1,369 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX X
+
+
+BO_ 2 Steering: 8 XXX
+ SG_ Counter : 25|3@1+ (1,0) [0|7] "" XXX
+ SG_ Checksum : 32|8@1+ (1,0) [0|255] "" XXX
+ SG_ Steering_Angle : 7|16@0- (0.1,0) [0|65535] "" XXX
+
+BO_ 64 Throttle: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Off_Accel : 60|4@1+ (1,0) [0|7] "" XXX
+ SG_ NEW_SIGNAL_3 : 56|4@1+ (1,0) [0|255] "" XXX
+ SG_ Throttle_Cruise : 40|8@1+ (1,0) [0|255] "" XXX
+ SG_ Throttle_Combo : 55|8@1+ (1,0) [0|255] "" XXX
+ SG_ Throttle_Pedal : 32|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 48|7@1+ (1,0) [0|1] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|255] "" XXX
+ SG_ Engine_RPM : 16|12@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 12|4@1+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_4 : 28|5@1+ (1,0) [0|1] "" XXX
+
+BO_ 65 NEW_MSG_1: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_4 : 32|12@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 16|12@1+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_5 : 31|1@0+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_6 : 48|8@1+ (1,0) [0|63] "" XXX
+ SG_ NEW_SIGNAL_7 : 59|2@0+ (1,0) [0|255] "" XXX
+
+BO_ 72 NEW_MSG_2: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 40|16@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 38|3@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_5 : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 316 NEW_MSG_3: 8 XXX
+
+BO_ 326 Cruise_Buttons: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Signal1 : 12|30@1+ (1,0) [0|1073741823] "" XXX
+ SG_ Main : 42|1@1+ (1,0) [0|1] "" XXX
+ SG_ set : 43|1@1+ (1,0) [0|1] "" XXX
+ SG_ Resume : 44|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal2 : 45|19@1+ (1,0) [0|524287] "" XXX
+
+BO_ 315 G_Sensor: 8 XXX
+ SG_ longitudinal : 63|8@0- (1,0) [0|255] "" XXX
+ SG_ Latitudinal : 48|8@1- (1,0) [0|255] "" XXX
+
+BO_ 314 Wheel_Speeds: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ FR : 12|13@1+ (0.057,0) [0|255] "kph" XXX
+ SG_ RR : 25|13@1+ (0.057,0) [0|255] "kph" XXX
+ SG_ FL : 51|13@1+ (0.057,0) [0|255] "kph" XXX
+ SG_ RL : 38|13@1+ (0.057,0) [0|255] "kph" XXX
+
+BO_ 73 NEW_MSG_5: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 32|8@1+ (1,0) [0|4095] "" XXX
+ SG_ NEW_SIGNAL_2 : 24|8@1+ (1,0) [0|127] "" XXX
+
+BO_ 280 NEW_MSG_6: 8 XXX
+ SG_ NEW_SIGNAL_1 : 12|12@1- (1,0) [0|4095] "" XXX
+ SG_ NEW_SIGNAL_2 : 48|8@1- (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 61|1@1+ (1,0) [0|7] "" XXX
+ SG_ NEW_SIGNAL_4 : 40|4@1+ (1,0) [0|255] "" XXX
+
+BO_ 281 Steering_Torque: 8 XXX
+ SG_ checksum : 0|8@1+ (1,0) [0|3] "" XXX
+ SG_ counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Steer_Torque_Sensor : 16|11@1- (-1,0) [0|3] "" XXX
+ SG_ Steering_Angle : 32|16@1- (-0.0217,0) [0|255] "" X
+ SG_ Steer_Torque_Output : 48|11@1- (-1,0) [0|31] "" XXX
+
+BO_ 312 Brake_Pressure_L_R: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|31] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|3] "" XXX
+ SG_ Brake_2 : 56|8@1+ (1,0) [0|255] "" XXX
+ SG_ Brake_1 : 48|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 313 Brake_Pedal: 8 XXX
+ SG_ Brake_Pedal_On : 34|1@1+ (1,0) [0|7] "" XXX
+ SG_ Brake_Pedal : 36|12@1+ (1,0) [0|65535] "" XXX
+
+BO_ 290 ES_LKAS: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ LKAS_Output : 16|13@1- (-1,0) [0|3] "" XXX
+ SG_ LKAS_Request : 29|1@0+ (1,0) [0|3] "" XXX
+ SG_ SET_1 : 12|1@0+ (1,0) [0|3] "" XXX
+
+BO_ 722 NEW_MSG_10: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_1 : 27|3@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 56|2@1+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_5 : 45|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 544 ES_Brake: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Brake_Pressure : 16|16@1+ (1,0) [0|255] "" XXX
+ SG_ __Status : 36|4@1+ (1,0) [0|63] "" XXX
+
+BO_ 545 ES_Distance: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Signal1 : 12|20@1+ (1,0) [0|15] "" XXX
+ SG_ Signal2 : 32|24@1+ (1,0) [0|15] "" XXX
+ SG_ ACC_Cancel : 56|1@1+ (1,0) [0|1] "" XXX
+ SG_ ACC_Set : 57|1@1+ (1,0) [0|1] "" XXX
+ SG_ ACC_Resume : 58|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal3 : 59|5@1+ (1,0) [0|1] "" XXX
+
+BO_ 546 ES_Status: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ RPM : 16|12@1+ (1,0) [0|255] "" XXX
+ SG_ Cruise_Activated : 29|1@0+ (1,0) [0|3] "" XXX
+ SG_ Cruise_Brake : 30|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 554 ES_Blank: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ SET_65535 : 39|16@1+ (1,0) [0|16777215] "" XXX
+ SG_ SET_1 : 13|1@1+ (1,0) [0|7] "" XXX
+
+BO_ 557 NEW_MSG_14: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 576 CruiseControl: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_5 : 42|1@1+ (1,0) [0|3] "" XXX
+ SG_ Cruise_On : 40|1@1+ (1,0) [0|3] "" XXX
+ SG_ Cruise_Activated : 41|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 577 NEW_MSG_16: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_1 : 16|12@1+ (1,0) [0|255] "" XXX
+
+BO_ 552 NEW_MSG_17: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_1 : 48|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 912 Dashlights: 8 XXX
+ SG_ NEW_SIGNAL_1 : 32|1@1+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_2 : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ RIGHT_BLINKER : 51|1@1+ (1,0) [0|1] "" XXX
+ SG_ LEFT_BLINKER : 50|1@1+ (1,0) [0|3] "" XXX
+ SG_ SEATBELT_FL : 48|1@1+ (1,0) [0|1] "" XXX
+
+BO_ 940 BodyInfo: 8 XXX
+ SG_ DASH_BTN_LIGHTS : 56|1@0+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_FL : 32|1@1+ (1,0) [0|255] "" XXX
+ SG_ DOOR_OPEN_FR : 33|1@1+ (1,0) [0|3] "" XXX
+ SG_ DOOR_OPEN_RL : 34|1@1+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_RR : 35|1@1+ (1,0) [0|1] "" XXX
+ SG_ DOOR_OPEN_TRUNK : 36|1@0+ (1,0) [0|1] "" XXX
+ SG_ FOG_LIGHTS2 : 60|1@1+ (1,0) [0|1] "" XXX
+ SG_ Highbeam : 58|1@1+ (1,0) [0|1] "" XXX
+ SG_ Lowbeam : 57|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 801 ES_DashStatus: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|7] "" XXX
+ SG_ NEW_SIGNAL_10 : 49|2@1+ (1,0) [0|3] "" XXX
+ SG_ Brake_Pedal : 51|1@1+ (1,0) [0|3] "" XXX
+ SG_ Cruise_Set_Speed : 40|8@1+ (1,0) [0|255] "" XXX
+ SG_ Cruise_Activated : 36|1@1+ (1,0) [0|3] "" XXX
+ SG_ Cruise_Disengaged : 35|1@1+ (1,0) [0|3] "" XXX
+ SG_ Far_Distance : 56|4@1+ (1,0) [0|15] "" XXX
+ SG_ Car_Follow : 52|1@1+ (1,0) [0|3] "" XXX
+ SG_ ACC_Distance : 28|3@1+ (1,0) [0|3] "" XXX
+ SG_ ACC_Hold : 60|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 802 ES_LKAS_State: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Keep_Hands_On_Wheel : 12|1@1+ (1,0) [0|1] "" XXX
+ SG_ Empty_Box : 13|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal1 : 14|3@1+ (1,0) [0|7] "" XXX
+ SG_ LKAS_ACTIVE : 17|1@1+ (1,0) [0|3] "" XXX
+ SG_ Signal2 : 18|5@1+ (1,0) [0|7] "" XXX
+ SG_ Backward_Speed_Limit_Menu : 23|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKAS_ENABLE_3 : 24|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal3 : 25|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKAS_ENABLE_2 : 26|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal4 : 27|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKAS_Left_Line_Visible : 28|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal6 : 29|1@1+ (1,0) [0|1] "" XXX
+ SG_ LKAS_Right_Line_Visible : 30|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal7 : 31|1@1+ (1,0) [0|1] "" XXX
+ SG_ FCW_Cont_Beep : 32|1@1+ (1,0) [0|1] "" XXX
+ SG_ FCW_Repeated_Beep : 33|1@1+ (1,0) [0|1] "" XXX
+ SG_ Throttle_Management_Activated : 34|1@1+ (1,0) [0|1] "" XXX
+ SG_ Right_Depart : 36|1@1+ (1,0) [0|3] "" XXX
+ SG_ Signal5 : 37|27@1+ (1,0) [0|1] "" XXX
+ SG_ Vehicle_In_Front_Has_Moved : 35|1@1+ (1,0) [0|1] "" XXX
+
+BO_ 805 ES_NEW_MSG_22: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 22|2@1+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_1 : 14|1@1+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_4 : 15|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 808 NEW_MSG_23: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 837 NEW_MSG_24: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 40|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 32|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_5 : 24|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 838 NEW_MSG_25: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 40|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 842 NEW_MSG_26: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 32|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 915 NEW_MSG_27: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 32|9@1+ (1,0) [0|255] "" XXX
+
+BO_ 1788 NEW_MSG_28: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 40|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_4 : 48|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_5 : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 816 NEW_MSG_29: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 826 NEW_MSG_30: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 839 NEW_MSG_31: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 2015 NEW_MSG_32: 8 XXX
+ SG_ NEW_SIGNAL_2 : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 2024 NEW_MSG_33: 8 XXX
+ SG_ NEW_SIGNAL_1 : 24|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 0|3@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 32|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 1614 NEW_MSG_34: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 1617 NEW_MSG_35: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 1632 NEW_MSG_36: 8 XXX
+ SG_ NEW_SIGNAL_1 : 55|16@0+ (1,0) [0|255] "" XXX
+
+BO_ 1650 NEW_MSG_37: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 1657 NEW_MSG_38: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 1658 NEW_MSG_39: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 33|1@1+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_4 : 31|1@0+ (1,0) [0|3] "" XXX
+
+BO_ 1677 Dash_State: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_3 : 16|4@1+ (1,0) [0|15] "" XXX
+ SG_ Units : 29|3@1+ (1,0) [0|7] "" XXX
+
+BO_ 1743 NEW_MSG_41: 8 XXX
+ SG_ Checksum : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 1785 NEW_MSG_42: 8 XXX
+ SG_ NEW_SIGNAL_1 : 0|4@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 21|1@1+ (1,0) [0|31] "" XXX
+ SG_ NEW_SIGNAL_3 : 17|1@1+ (1,0) [0|7] "" XXX
+
+BO_ 1759 NEW_MSG_43: 8 XXX
+ SG_ NEW_SIGNAL_1 : 17|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 1786 NEW_MSG_44: 8 XXX
+ SG_ NEW_SIGNAL_1 : 0|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_2 : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 8|8@1+ (1,0) [0|15] "" XXX
+
+BO_ 1787 NEW_MSG_45: 8 XXX
+ SG_ NEW_SIGNAL_1 : 0|4@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_2 : 8|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 16|8@1+ (1,0) [0|255] "" XXX
+
+
+
+
+CM_ SG_ 940 FOG_LIGHTS2 "yellow fog light in the dash";
+CM_ SG_ 940 Highbeam "01 = low beam, 11 = high beam";
+CM_ SG_ 801 ACC_Hold "0 = No Hold, 3 = Hold";
+CM_ SG_ 802 Vehicle_In_Front_Has_Moved "Crosstrek 2018 = car in front has moved";
+CM_ SG_ 805 NEW_SIGNAL_3 "always 3";
+CM_ SG_ 805 NEW_SIGNAL_4 "always 1";
+CM_ SG_ 1677 Units "1 = imperial, 6 = metric";

@@ -1,0 +1,14 @@
+BO_ 1014 BSM: 8 XXX
+ SG_ L_ADJACENT : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ L_APPROACHING : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ R_ADJACENT : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ R_APPROACHING : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ ADJACENT_ENABLED : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ APPROACHING_ENABLED : 15|1@0+ (1,0) [0|1] "" XXX
+
+CM_ SG_ 1014 L_ADJACENT "vehicle adjacent left side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
+CM_ SG_ 1014 L_APPROACHING "vehicle approaching from left side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
+CM_ SG_ 1014 R_ADJACENT "vehicle adjacent right side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
+CM_ SG_ 1014 R_APPROACHING "vehicle approaching from right side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
+CM_ SG_ 1014 ADJACENT_ENABLED "when BSM is enabled in settings, this is on along with APPROACHING_ENABLED. this controls bsm alert visibility";
+CM_ SG_ 1014 APPROACHING_ENABLED "when BSM is enabled in settings, this is on along with ADJACENT_ENABLED. this controls bsm alert visibility";

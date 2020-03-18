@@ -1,0 +1,24 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-16.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          set -e
+          docker build -t opendbc .
+        name: "Build"
+      - run: |
+          docker run opendbc bash -c "python -m unittest discover opendbc"
+        name: "Unit tests"
+      - run: |
+          docker run opendbc bash -c "cd opendbc/can/tests/linter_python; PYTHONPATH=/ ./flake8_opendbc.sh"
+          docker run opendbc bash -c "cd opendbc/can/tests/linter_python; PYTHONPATH=/ ./pylint_opendbc.sh"
+        name: "Python linter"
+      - run: |
+          docker run opendbc bash -c "cd opendbc/can/tests/; PYTHONPATH=/ ./test_generator.sh"
+        name: "Generator test"

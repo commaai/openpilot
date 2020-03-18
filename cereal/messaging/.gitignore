@@ -1,0 +1,10 @@
+demo
+bridge
+test_runner
+*.o
+*.os
+*.d
+*.a
+*.so
+messaging_pyx.cpp
+build/
