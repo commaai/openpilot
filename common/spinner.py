@@ -49,7 +49,7 @@ class FakeSpinner():
   def __enter__(self):
     return self
 
-  def update(self, _):
+  def update(self, _, __):
     pass
 
   def __exit__(self, type, value, traceback):
