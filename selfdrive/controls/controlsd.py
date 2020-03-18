@@ -443,6 +443,10 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
   passive = passive or not openpilot_enabled_toggle
 
+  # Passive if internet needed
+  internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
+  passive = passive or internet_needed
+
   # Pub/Sub Sockets
   if pm is None:
     pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
@@ -517,7 +521,6 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   # controlsd is driven by can recv, expected at 100Hz
   rk = Ratekeeper(100, print_delay_threshold=None)
 
-  internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
 
   prof = Profiler(False)  # off by default
 
