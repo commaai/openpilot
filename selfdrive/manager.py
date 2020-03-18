@@ -74,7 +74,7 @@ from multiprocessing import Process
 
 # Run scons
 spinner = Spinner()
-spinner.update("0", 'starting openpilot')
+spinner.update("0", 'starting openpilot...')
 
 if not prebuilt:
   for retry in [True, False]:
@@ -117,7 +117,7 @@ if not prebuilt:
       else:
         raise RuntimeError("scons build failed")
     else:
-      spinner.update("%d" % scons_finished_progress, "finished compiling")
+      spinner.update("%d" % scons_finished_progress, "compiling: done")
       break
 
 import cereal
