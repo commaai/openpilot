@@ -38,7 +38,7 @@ class Localizer():
 
   def liveLocationMsg(self, time):
     predicted_state = self.kf.x
-    predicted_std = np.diagonal(self.kf.P)
+    predicted_std = np.sqrt(np.diagonal(self.kf.P))
 
     fix_ecef = predicted_state[States.ECEF_POS]
     fix_ecef_std = predicted_std[States.ECEF_POS_ERR]
