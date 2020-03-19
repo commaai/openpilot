@@ -127,11 +127,16 @@ class Uploader():
         continue
 
       for name in sorted(names, key=self.get_upload_sort):
-        # skip files already uploaded
-        if getxattr(name, UPLOAD_ATTR_NAME):
-          continue
         key = os.path.join(logname, name)
         fn = os.path.join(path, name)
+        # skip files already uploaded
+        try:
+          is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME)
+        except OSError:
+          cloudlog.event("uploader_getxattr_failed", exc=self.last_exc, key=key, fn=fn)
+          is_uploaded = True # deleter could have deleted
+        if is_uploaded:
+          continue
 
         yield (name, key, fn)
 
@@ -199,16 +204,22 @@ class Uploader():
     cloudlog.info("checking %r with size %r", key, sz)
 
     if sz == 0:
-      # tag files of 0 size as uploaded
-      setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
+      try:
+        # tag files of 0 size as uploaded
+        setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
+      except OSError:
+        cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
       success = True
     else:
       cloudlog.info("uploading %r", fn)
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201):
         cloudlog.event("upload_success", key=key, fn=fn, sz=sz)
-        # tag file as uploaded
-        setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
+        try:
+          # tag file as uploaded
+          setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
+        except OSError:
+          cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
         success = True
       else:
         cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
