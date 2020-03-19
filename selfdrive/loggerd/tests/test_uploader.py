@@ -7,7 +7,6 @@ import json
 from selfdrive.swaglog import cloudlog
 import selfdrive.loggerd.uploader as uploader
 
-from common.timeout import Timeout
 from common.xattr import getxattr
 
 from selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
