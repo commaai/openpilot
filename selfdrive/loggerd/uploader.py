@@ -17,6 +17,10 @@ from selfdrive.loggerd.config import ROOT
 from common import android
 from common.params import Params
 from common.api import Api
+from common.xattr import getxattr, setxattr
+
+UPLOAD_ATTR_NAME = 'user.upload'
+UPLOAD_ATTR_VALUE = b'1'
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
@@ -72,7 +76,7 @@ def is_on_wifi():
     if result is None:
       return True
     return 'WIFI' in result
-  except Exception:
+  except BaseException:
     cloudlog.exception("is_on_wifi failed")
     return False
 
@@ -86,7 +90,7 @@ def is_on_hotspot():
     is_entune = result.startswith('10.0.2.')
 
     return (is_android or is_ios or is_entune)
-  except:
+  except BaseException:
     return False
 
 class Uploader():
@@ -102,16 +106,6 @@ class Uploader():
 
     self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
     self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2}
-
-  def clean_dirs(self):
-    try:
-      for logname in os.listdir(self.root):
-        path = os.path.join(self.root, logname)
-        # remove empty directories
-        if not os.listdir(path):
-          os.rmdir(path)
-    except OSError:
-      cloudlog.exception("clean_dirs failed")
 
   def get_upload_sort(self, name):
     if name in self.immediate_priority:
@@ -133,6 +127,9 @@ class Uploader():
         continue
 
       for name in sorted(names, key=self.get_upload_sort):
+        # skip files already uploaded
+        if getxattr(name, UPLOAD_ATTR_NAME):
+          continue
         key = os.path.join(logname, name)
         fn = os.path.join(path, name)
 
@@ -175,7 +172,7 @@ class Uploader():
       else:
         with open(fn, "rb") as f:
           self.last_resp = requests.put(url, data=f, headers=headers, timeout=10)
-    except Exception as e:
+    except BaseException as e:
       self.last_exc = (e, traceback.format_exc())
       raise
 
@@ -185,7 +182,7 @@ class Uploader():
 
     try:
       self.do_upload(key, fn)
-    except Exception:
+    except BaseException:
       pass
 
     return self.last_resp
@@ -202,27 +199,20 @@ class Uploader():
     cloudlog.info("checking %r with size %r", key, sz)
 
     if sz == 0:
-      # can't upload files of 0 size
-      os.unlink(fn) # delete the file
+      # tag files of 0 size as uploaded
+      setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
       success = True
     else:
       cloudlog.info("uploading %r", fn)
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201):
         cloudlog.event("upload_success", key=key, fn=fn, sz=sz)
-
-        # delete the file
-        try:
-          os.unlink(fn)
-        except OSError:
-          cloudlog.event("delete_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
-
+        # tag file as uploaded
+        setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
         success = True
       else:
         cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
         success = False
-
-    self.clean_dirs()
 
     return success
 
