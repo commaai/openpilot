@@ -32,7 +32,7 @@ if __name__ == "__main__":
   parser.add_argument("socket", type=str, nargs='*', help="socket name")
   args = parser.parse_args()
 
-  sm = messaging.SubMaster(['logMessage', 'androidLogEntry'], addr=args.addr)
+  sm = messaging.SubMaster(['logMessage', 'androidLog'], addr=args.addr)
 
   min_level = LEVELS[args.level]
 
@@ -48,8 +48,8 @@ if __name__ == "__main__":
       except json.decoder.JSONDecodeError:
         print(f"[{t / 1e9:.6f}] decode error: {sm['logMessage']}")
 
-    if sm.updated['androidLogEntry']:
-      t = sm.logMonoTime['androidLogEntry']
-      m = sm['androidLogEntry']
+    if sm.updated['androidLog']:
+      t = sm.logMonoTime['androidLog']
+      m = sm['androidLog']
       source = ANDROID_LOG_SOURCE[m.id]
       print(f"[{t / 1e9:.6f}] {source} {m.pid} {m.tag} - {m.message}")
