@@ -32,9 +32,13 @@ if __name__ == "__main__":
 
     if sm.updated['logMessage']:
       t = sm.logMonoTime['logMessage']
-      log = json.loads(sm['logMessage'])
-      if log['levelnum'] >= min_level:
-        print(f"[{t / 1e9:.6f}] {log['filename']}:{log.get('lineno', '')} - {log.get('funcname', '')}: {log['msg']}")
+      try:
+        log = json.loads(sm['logMessage'])
+        if log['levelnum'] >= min_level:
+          print(f"[{t / 1e9:.6f}] {log['filename']}:{log.get('lineno', '')} - {log.get('funcname', '')}: {log['msg']}")
+      except json.decoder.JSONDecodeError:
+        print(f"[{t / 1e9:.6f}] decode error: {sm['logMessage']}")
+
     if sm.updated['androidLogEntry']:
       t = sm.logMonoTime['androidLogEntry']
       print(f"[{t / 1e9:.6f}] - ")
