@@ -141,36 +141,12 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
   }
 }
 
-static void ui_draw_sidebar_storage_metric(UIState *s, bool hasSidebar) {
-  int storage_severity;
-  char storage_label_str[32];
-  char storage_value_str[32];
-  char storage_value_unit[32];
-  const int storage_y_offset = 0;
-  const float storage_pct = ceilf((1.0 - s->scene.freeSpace) * 100);
-
-  if (storage_pct < 75.0) {
-    storage_severity = 0;
-  } else if (storage_pct >= 75.0 && storage_pct < 87.0) {
-    storage_severity = 1;
-  } else if (storage_pct >= 87.0) {
-    storage_severity = 2;
-  }
-
-  snprintf(storage_value_str, sizeof(storage_value_str), "%d", (int)storage_pct);
-  snprintf(storage_value_unit, sizeof(storage_value_unit), "%s", "%");
-  snprintf(storage_label_str, sizeof(storage_label_str), "%s", "STORAGE");
-  strcat(storage_value_str, storage_value_unit);
-
-  ui_draw_sidebar_metric(s, storage_label_str, storage_value_str, storage_severity, storage_y_offset, NULL, hasSidebar);
-}
-
 static void ui_draw_sidebar_temp_metric(UIState *s, bool hasSidebar) {
   int temp_severity;
   char temp_label_str[32];
   char temp_value_str[32];
   char temp_value_unit[32];
-  const int temp_y_offset = 148 + 32;
+  const int temp_y_offset = 0;
 
   if (s->scene.thermalStatus == cereal_ThermalData_ThermalStatus_green) {
     temp_severity = 0;
@@ -193,7 +169,7 @@ static void ui_draw_sidebar_temp_metric(UIState *s, bool hasSidebar) {
 static void ui_draw_sidebar_panda_metric(UIState *s, bool hasSidebar) {
   int panda_severity;
   char panda_message_str[32];
-  const int panda_y_offset = (148 + 32) * 2;
+  const int panda_y_offset = 32 + 148;
 
   if (s->scene.hwType == cereal_HealthData_HwType_unknown) {
     panda_severity = 2;
@@ -228,7 +204,6 @@ void ui_draw_sidebar(UIState *s) {
   ui_draw_sidebar_network_strength(s, hasSidebar);
   ui_draw_sidebar_battery_icon(s, hasSidebar);
   ui_draw_sidebar_network_type(s, hasSidebar);
-  ui_draw_sidebar_storage_metric(s, hasSidebar);
   ui_draw_sidebar_temp_metric(s, hasSidebar);
   ui_draw_sidebar_panda_metric(s, hasSidebar);
 }
