@@ -14,6 +14,15 @@ LEVELS = {
   "CRITICAL": 50,
 }
 
+ANDROID_LOG_SOURCE = {
+  0: "MAIN",
+  1: "RADIO",
+  2: "EVENTS",
+  3: "SYSTEM",
+  4: "CRASH",
+  5: "KERNEL",
+}
+
 
 if __name__ == "__main__":
 
@@ -41,5 +50,6 @@ if __name__ == "__main__":
 
     if sm.updated['androidLogEntry']:
       t = sm.logMonoTime['androidLogEntry']
-      print(f"[{t / 1e9:.6f}] - ")
-      print(sm['androidLogEntry'])
+      m = sm['androidLogEntry']
+      source = ANDROID_LOG_SOURCE[m.id]
+      print(f"[{t / 1e9:.6f}] {source} {m.pid} {m.tag} - {m.message}")
