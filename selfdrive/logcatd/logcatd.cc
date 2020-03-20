@@ -29,7 +29,7 @@ int main() {
   assert(kernel_logger);
 
   Context * c = Context::create();
-  PubSocket * androidLog = PubSocket::create(c, "androidLog");
+  PubSocket * androidLog = PubSocket::create(c, "androidLogEntry");
   assert(androidLog != NULL);
 
   while (1) {
