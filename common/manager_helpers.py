@@ -6,7 +6,7 @@ def print_cpu_usage(first_proc, last_proc):
   r = 0
   procs = [
       ("selfdrive.controls.controlsd", 59.46),
-      ("./_modeld", 48.94),
+      ("./_modeld", 61.07),
       ("./loggerd", 28.49),
       ("selfdrive.controls.plannerd", 19.77),
       ("selfdrive.controls.radard", 9.54),
