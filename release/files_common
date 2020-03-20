@@ -24,6 +24,7 @@ common/file_helpers.py
 common/logging_extra.py
 common/numpy_fast.py
 common/params.py
+common/xattr.py
 common/profiler.py
 common/testing.py
 common/basedir.py
