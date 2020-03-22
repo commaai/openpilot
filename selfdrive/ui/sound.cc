@@ -17,12 +17,12 @@ int last_volume = 0;
 
 void set_volume(int volume) {
   if (last_volume != volume) {
-      char volume_change_cmd[64];
-      sprintf(volume_change_cmd, "service call audio 3 i32 3 i32 %d i32 1 &", volume);
+    char volume_change_cmd[64];
+    sprintf(volume_change_cmd, "service call audio 3 i32 3 i32 %d i32 1 &", volume);
 
-      // 5 second timeout at 60fps
-      int volume_changed = system(volume_change_cmd);
-      last_volume = volume;
+    // 5 second timeout at 60fps
+    int volume_changed = system(volume_change_cmd);
+    last_volume = volume;
   }
 }
 
