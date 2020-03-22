@@ -111,7 +111,7 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
 
   nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, metric_x, metric_y, metric_w, metric_h, 20);
-  nvgStrokeColor(s->vg, severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA);
+  nvgStrokeColor(s->vg, severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA_85);
   nvgStrokeWidth(s->vg, 2);
   nvgStroke(s->vg);
 
