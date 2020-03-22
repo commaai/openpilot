@@ -6,8 +6,7 @@ import cereal.messaging as messaging
 def init_message_bench(N=100000):
     t = time.time()
     for _ in range(N):
-        dat = messaging.new_message()
-        dat.init('controlsState')
+        dat = messaging.new_message('controlsState')
 
     dt = time.time() - t
     print("Init message %d its, %f s" % (N, dt))

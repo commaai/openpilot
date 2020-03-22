@@ -230,8 +230,7 @@ def mapsd_thread():
 
       query_lock.release()
 
-    dat = messaging.new_message()
-    dat.init('liveMapData')
+    dat = messaging.new_message('liveMapData')
 
     if last_gps is not None:
       dat.liveMapData.lastGps = last_gps

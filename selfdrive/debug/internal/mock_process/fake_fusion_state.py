@@ -15,8 +15,7 @@ def leadRange(start, end, step):
 def mock_lead():
   radarState = messaging.pub_sock('radarState')
   while 1:
-    m = messaging.new_message()
-    m.init('radarState')
+    m = messaging.new_message('radarState')
     m.radarState.leadOne.status = True
     for x in leadRange(3.0, 65.0, 0.005):
         m.radarState.leadOne.dRel = x

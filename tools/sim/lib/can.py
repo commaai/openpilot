@@ -6,6 +6,7 @@ from opendbc.can.packer import CANPacker
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
 from selfdrive.car.honda.values import FINGERPRINTS, CAR
 from selfdrive.car import crc8_pedal
+import math
 
 from selfdrive.test.longitudinal_maneuvers.plant import get_car_can_parser
 cp = get_car_can_parser()
@@ -14,7 +15,12 @@ cp = get_car_can_parser()
 packer = CANPacker("honda_civic_touring_2016_can_generated")
 rpacker = CANPacker("acura_ilx_2016_nidec")
 
-def can_function(pm, speed, angle, idx, engage):
+SR = 7.5
+
+def angle_to_sangle(angle):
+  return - math.degrees(angle) * SR
+
+def can_function(pm, speed, angle, idx, cruise_button=0):
   msg = []
   msg.append(packer.make_can_msg("ENGINE_DATA", 0, {"XMISSION_SPEED": speed}, idx))
   msg.append(packer.make_can_msg("WHEEL_SPEEDS", 0,
@@ -23,10 +29,7 @@ def can_function(pm, speed, angle, idx, engage):
      "WHEEL_SPEED_RL": speed,
      "WHEEL_SPEED_RR": speed}, -1))
 
-  if engage:
-    msg.append(packer.make_can_msg("SCM_BUTTONS", 0, {"CRUISE_BUTTONS": 3}, idx))
-  else:
-    msg.append(packer.make_can_msg("SCM_BUTTONS", 0, {"CRUISE_BUTTONS": 0}, idx))
+  msg.append(packer.make_can_msg("SCM_BUTTONS", 0, {"CRUISE_BUTTONS": cruise_button}, idx))
 
   values = {"COUNTER_PEDAL": idx&0xF}
   checksum = crc8_pedal(packer.make_can_msg("GAS_SENSOR", 0, {"COUNTER_PEDAL": idx&0xF}, -1)[2][:-1])
@@ -37,7 +40,7 @@ def can_function(pm, speed, angle, idx, engage):
   msg.append(packer.make_can_msg("GAS_PEDAL_2", 0, {}, idx))
   msg.append(packer.make_can_msg("SEATBELT_STATUS", 0, {"SEATBELT_DRIVER_LATCHED": 1}, idx))
   msg.append(packer.make_can_msg("STEER_STATUS", 0, {}, idx))
-  msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": angle}, idx))
+  msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE":angle_to_sangle(angle)}, idx))
   msg.append(packer.make_can_msg("POWERTRAIN_DATA", 0, {}, idx))
   msg.append(packer.make_can_msg("VSA_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("STANDSTILL", 0, {}, idx))

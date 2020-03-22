@@ -55,8 +55,7 @@ def joystick_thread():
     for b in range(joystick.get_numbuttons()):
       buttons.append(bool(joystick.get_button(b)))
 
-    dat = messaging.new_message()
-    dat.init('testJoystick')
+    dat = messaging.new_message('testJoystick')
     dat.testJoystick.axes = axes
     dat.testJoystick.buttons = buttons
     joystick_sock.send(dat.to_bytes())

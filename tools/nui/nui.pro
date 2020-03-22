@@ -3,7 +3,7 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = nui
+TARGET = _nui
 INCLUDEPATH += .
 
 # Input

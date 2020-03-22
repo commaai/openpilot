@@ -56,7 +56,8 @@ def _get_interface_names():
 
 
 # imports from directory selfdrive/car/<name>/
-interfaces = load_interfaces(_get_interface_names())
+interface_names = _get_interface_names()
+interfaces = load_interfaces(interface_names)
 
 
 def only_toyota_left(candidate_cars):
@@ -71,11 +72,16 @@ def fingerprint(logcan, sendcan, has_relay):
 
     cached_params = Params().get("CarParamsCache")
     if cached_params is not None:
+      cached_params = car.CarParams.from_bytes(cached_params)
+      if cached_params.carName == "mock":
+        cached_params = None
+
+    if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
-      CP = car.CarParams.from_bytes(cached_params)
-      vin = CP.carVin
-      car_fw = list(CP.carFw)
+      vin = cached_params.carVin
+      car_fw = list(cached_params.carFw)
     else:
+      cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
       car_fw = get_fw_versions(logcan, sendcan, bus)
 

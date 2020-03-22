@@ -27,9 +27,11 @@ class CAR:
   ACCORDH = "HONDA ACCORD 2018 HYBRID TOURING"
   CIVIC = "HONDA CIVIC 2016 TOURING"
   CIVIC_BOSCH = "HONDA CIVIC HATCHBACK 2017 SEDAN/COUPE 2019"
+  CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL"
   ACURA_ILX = "ACURA ILX 2016 ACURAWATCH PLUS"
   CRV = "HONDA CR-V 2016 TOURING"
   CRV_5G = "HONDA CR-V 2017 EX"
+  CRV_EU = "HONDA CR-V 2016 EXECUTIVE"
   CRV_HYBRID = "HONDA CR-V 2019 HYBRID"
   FIT = "HONDA FIT 2018 EX"
   ODYSSEY = "HONDA ODYSSEY 2018 EX-L"
@@ -38,6 +40,7 @@ class CAR:
   PILOT = "HONDA PILOT 2017 TOURING"
   PILOT_2019 = "HONDA PILOT 2019 ELITE"
   RIDGELINE = "HONDA RIDGELINE 2017 BLACK EDITION"
+  INSIGHT = "HONDA INSIGHT 2019 TOURING"
 
 # diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
 DIAG_MSGS = {1600: 5, 1601: 8}
@@ -69,16 +72,20 @@ FINGERPRINTS = {
   # 2017 Civic Hatchback LX
   {
     57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 423: 2, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 470: 2, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 506: 8, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 815: 8, 825: 4, 829: 5, 846: 8, 862: 8, 881: 8, 882: 4, 884: 8, 888: 8, 891: 8, 892: 8, 918: 7, 927: 8, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1092: 1, 1108: 8, 1125: 8, 1127: 2, 1296: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1633: 8
-  },
-  # 2019 Civic Hatchback EX
-  {
-    57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 470: 2, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 506: 8, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 892: 8, 927: 8, 929: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1108: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1633: 8
+  }],
+  CAR.CIVIC_BOSCH_DIESEL: [{
+  # 2019 Civic Sedan 1.6 i-dtec Diesel European
+    57: 3, 148: 8, 228: 5, 308: 5, 316: 8, 330: 8, 344: 8, 380: 8, 399: 7, 419: 8, 420: 8, 426: 8, 427: 3, 432: 7, 441: 5, 450: 8, 464: 8, 470: 2, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 506: 8, 507: 1, 545: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 801: 3, 804: 8, 806: 8, 808: 8, 815: 8, 824: 8, 825: 4, 829: 5, 837: 5, 862: 8, 881: 8, 882: 4, 884: 8, 887: 8, 888: 8, 891: 8, 902: 8, 918: 7, 927: 8, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1092: 1, 1108: 8, 1115: 2, 1125: 8, 1296: 8, 1302: 8, 1322: 5, 1337: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8
   }],
   CAR.CRV: [{
     57: 3, 145: 8, 316: 8, 340: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 6, 401: 8, 404: 4, 420: 8, 422: 8, 426: 8, 432: 7, 464: 8, 474: 5, 476: 4, 487: 4, 490: 8, 493: 3, 506: 8, 507: 1, 512: 6, 513: 6, 542: 7, 545: 4, 597: 8, 660: 8, 661: 4, 773: 7, 777: 8, 780: 8, 800: 8, 804: 8, 808: 8, 829: 5, 882: 2, 884: 7, 888: 8, 891: 8, 892: 8, 923: 2, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1033: 5, 1036: 8, 1039: 8, 1057: 5, 1064: 7, 1108: 8, 1125: 8, 1296: 8, 1365: 5, 1424: 5, 1600: 5, 1601: 8,
   }],
   CAR.CRV_5G: [{
     57: 3, 148: 8, 199: 4, 228: 5, 231: 5, 232: 7, 304: 8, 330: 8, 340: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 423: 2, 427: 3, 428: 8, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 467: 2, 469: 3, 470: 2, 474: 8, 476: 7, 477: 8, 479: 8, 490: 8, 493: 5, 495: 8, 507: 1, 545: 6, 597: 8, 661: 4, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 814: 4, 815: 8, 817: 4, 825: 4, 829: 5, 862: 8, 881: 8, 882: 4, 884: 8, 888: 8, 891: 8, 927: 8, 918: 7, 929: 8, 983: 8, 985: 3, 1024: 5, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1108: 8, 1092: 1, 1115: 2, 1125: 8, 1127: 2, 1296: 8, 1302: 8, 1322: 5, 1361: 5, 1365: 5, 1424: 5, 1600: 5, 1601: 8, 1618: 5, 1633: 8, 1670: 5
+  }],
+  # 1057: 5 1024: 5 are also on the OBD2 bus. their lengths differ from the camera's f-can bus. re-fingerprint after obd2 connection is split in panda firmware from bus 1.
+  CAR.CRV_EU: [{
+    57: 3, 145: 8, 308: 5, 316: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 6, 404: 4, 419: 8, 420: 8, 422: 8, 426: 8, 432: 7, 464: 8, 474: 5, 476: 4, 487: 4, 490: 8, 493: 3, 506: 8, 507: 1, 510: 3, 538: 3, 542: 7, 545: 4, 597: 8, 660: 8, 661: 4, 768: 8, 769: 8, 773: 7, 777: 8, 780: 8, 800: 8, 801: 3, 803: 8, 804: 8, 808: 8, 824: 8, 829: 5, 837: 5, 862: 8, 882: 2, 884: 7, 888: 8, 891: 8, 892: 8, 923: 2, 927: 8, 929: 8, 930: 8, 931: 8, 983: 8, 1024: 8, 1027: 5, 1029: 8, 1033: 5, 1036: 8, 1039: 8, 1040: 8, 1041: 8, 1042: 8, 1043: 8, 1044: 8, 1045: 8, 1046: 8, 1047: 8, 1056: 8, 1057: 8, 1058: 8, 1059: 8, 1060: 8, 1064: 7, 1072: 8, 1073: 8, 1074: 8, 1075: 8, 1076: 8, 1077: 8, 1078: 8, 1079: 8, 1080: 8, 1081: 8, 1088: 8, 1089: 8, 1090: 8, 1091: 8, 1092: 8, 1093: 8, 1108: 8, 1125: 8, 1279: 8, 1280: 8, 1296: 8, 1297: 8, 1365: 5, 1424: 5, 1600: 5, 1601: 8,
   }],
   CAR.CRV_HYBRID: [{
     57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 408: 6, 415: 6, 419: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 477: 8, 479: 8, 490: 8, 495: 8, 525: 8, 531: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 814: 4, 829: 5, 833: 6, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 930: 8, 931: 8, 1302: 8, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1626: 5, 1627: 5
@@ -116,8 +123,15 @@ FINGERPRINTS = {
   # 2019 Ridgeline
   {
     57: 3, 145: 8, 228: 5, 229: 4, 308: 5, 316: 8, 339: 7, 342: 6, 344: 8, 380: 8, 392: 6, 399: 7, 419: 8, 420: 8, 422:8, 425: 8, 426: 8, 427: 3, 432: 7, 464: 8, 476: 4, 490: 8, 545: 5, 546: 3, 597: 8, 660: 8, 773: 7, 777: 8, 795: 8, 800: 8, 804: 8, 808: 8, 819: 7, 821: 5, 871: 8, 882: 2, 884: 7, 892: 8, 923: 2, 929: 8, 963: 8, 965: 8, 966: 8, 967: 8, 983: 8, 985: 3, 1027: 5, 1029: 8, 1036: 8, 1039: 8, 1064: 7, 1088: 8, 1089: 8, 1092: 1, 1108: 8, 1125: 8, 1296: 8, 1365: 5, 424: 5, 1613: 5, 1616: 5, 1618: 5, 1623: 5, 1668: 5
+  }],
+  # 2019 Insight
+  CAR.INSIGHT: [{
+    57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 419: 8, 420: 8, 427: 3, 432: 7, 441: 5, 450: 8, 464: 8, 476: 8, 477: 8, 479: 8, 490: 8, 495: 8, 507: 1, 525: 8, 531: 8, 545: 6, 547: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 804: 8, 806: 8, 808: 8, 814: 4, 815: 8, 829: 5, 832: 3, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 954: 2, 985: 3, 1029: 8, 1093: 4, 1115: 2, 1302: 8, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1652: 8, 2015: 3
   }]
 }
+
+# Don't use theses fingerprints for fingerprinting, they are still needed for ECU detection
+IGNORED_FINGERPRINTS = [CAR.INSIGHT, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_EU]
 
 # add DIAG_MSGS to fingerprints
 for c in FINGERPRINTS:
@@ -346,6 +360,7 @@ FW_VERSIONS = {
       b'37805-5AN-LJ20\x00\x00',
       b'37805-5AZ-E850\x00\x00',
       b'37805-5BB-L640\x00\x00',
+      b'37805-5AN-AH20\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-5CG-A920\x00\x00',
@@ -410,6 +425,16 @@ FW_VERSIONS = {
       b'38897-TBA-A020\x00\x00',
     ],
   },
+  CAR.CIVIC_BOSCH_DIESEL: {
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [b'37805-59N-G830\x00\x00'],
+    (Ecu.transmission, 0x18da1ef1, None): [b'28101-59Y-G620\x00\x00'],
+    (Ecu.vsa, 0x18da28f1, None): [b'57114-TGN-E320\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TFK-G020\x00\x00'],
+    (Ecu.srs, 0x18da53f1, None): [b'77959-TFK-G210\x00\x00'],
+    (Ecu.combinationMeter, 0x18da60f1, None): [b'78109-TFK-G020\x00\x00'],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [b'36802-TFK-G130\x00\x00'],
+    (Ecu.shiftByWire, 0x18da0bf1, None): [b'54008-TGN-E010\x00\x00'],
+  },
   CAR.CRV_5G: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-5PA-3080\x00\x00',
@@ -471,6 +496,15 @@ FW_VERSIONS = {
       b'77959-TLA-A250\x00\x00',
       b'77959-TLA-A320\x00\x00',
     ],
+  },
+  CAR.CRV_EU: {
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [b'37805-R5Z-G740\x00\x00'],
+    (Ecu.vsa, 0x18da28f1, None): [b'57114-T1V-G920\x00\x00'],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [b'36161-T1V-G520\x00\x00'],
+    (Ecu.shiftByWire, 0x18da0bf1, None): [b'54008-T1V-G010\x00\x00'],
+    (Ecu.transmission, 0x18da1ef1, None): [b'28101-5LH-E120\x00\x00'],
+    (Ecu.combinationMeter, 0x18da60f1, None): [b'78109-T1V-G020\x00\x00'],
+    (Ecu.srs, 0x18da53f1, None): [b'77959-T1G-G940\x00\x00'],
   },
   CAR.CRV_HYBRID: {
     (Ecu.vsa, 0x18da28f1, None): [
@@ -534,6 +568,7 @@ FW_VERSIONS = {
       b'28102-5MX-A001\x00\x00',
       b'28102-5MX-A610\x00\x00',
       b'28102-5MX-A710\x00\x00',
+      b'28102-5MX-A900\x00\x00',
       b'28102-5MX-A910\x00\x00',
       b'28102-5MX-C001\x00\x00',
       b'28103-5NZ-A300\x00\x00',
@@ -616,6 +651,20 @@ FW_VERSIONS = {
       b'57114-T6Z-A130\x00\x00',
     ],
   },
+  CAR.INSIGHT: {
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TXM-A040\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36802-TXM-A070\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'36161-TXM-A050\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TXM-A230\x00\x00',
+    ],
+  },
 }
 
 DBC = {
@@ -626,8 +675,10 @@ DBC = {
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CIVIC: dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CIVIC_BOSCH: dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
+  CAR.CIVIC_BOSCH_DIESEL: dbc_dict('honda_civic_sedan_16_diesel_2019_can_generated', None),
   CAR.CRV: dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CRV_5G: dbc_dict('honda_crv_ex_2017_can_generated', None),
+  CAR.CRV_EU: dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CRV_HYBRID: dbc_dict('honda_crv_hybrid_2019_can_generated', None),
   CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
@@ -635,6 +686,7 @@ DBC = {
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
 }
 
 STEER_THRESHOLD = {
@@ -645,8 +697,10 @@ STEER_THRESHOLD = {
   CAR.ACURA_RDX: 400,
   CAR.CIVIC: 1200,
   CAR.CIVIC_BOSCH: 1200,
+  CAR.CIVIC_BOSCH_DIESEL: 1200,
   CAR.CRV: 1200,
   CAR.CRV_5G: 1200,
+  CAR.CRV_EU: 400,
   CAR.CRV_HYBRID: 1200,
   CAR.FIT: 1200,
   CAR.ODYSSEY: 1200,
@@ -654,6 +708,7 @@ STEER_THRESHOLD = {
   CAR.PILOT: 1200,
   CAR.PILOT_2019: 1200,
   CAR.RIDGELINE: 1200,
+  CAR.INSIGHT: 1200,
 }
 
 SPEED_FACTOR = {
@@ -664,8 +719,10 @@ SPEED_FACTOR = {
   CAR.ACURA_RDX: 1.,
   CAR.CIVIC: 1.,
   CAR.CIVIC_BOSCH: 1.,
+  CAR.CIVIC_BOSCH_DIESEL: 1.,
   CAR.CRV: 1.025,
   CAR.CRV_5G: 1.025,
+  CAR.CRV_EU: 1.025,
   CAR.CRV_HYBRID: 1.025,
   CAR.FIT: 1.,
   CAR.ODYSSEY: 1.,
@@ -673,6 +730,7 @@ SPEED_FACTOR = {
   CAR.PILOT: 1.,
   CAR.PILOT_2019: 1.,
   CAR.RIDGELINE: 1.,
+  CAR.INSIGHT: 1.,
 }
 
 # msgs sent for steering controller by camera module on can 0.
@@ -681,4 +739,4 @@ ECU_FINGERPRINT = {
   Ecu.fwdCamera: [0xE4, 0x194],   # steer torque cmd
 }
 
-HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_5G, CAR.CRV_HYBRID]
+HONDA_BOSCH = [CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT]

@@ -175,7 +175,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.54, 0.36]
 
-    elif candidate == CAR.CIVIC_BOSCH:
+    elif candidate in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL):
       stop_and_go = True
       ret.mass = CivicParams.MASS
       ret.wheelbase = CivicParams.WHEELBASE
@@ -219,7 +219,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
 
-    elif candidate == CAR.CRV:
+    elif candidate in (CAR.CRV, CAR.CRV_EU):
       stop_and_go = False
       ret.mass = 3572. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.62
@@ -354,6 +354,21 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
 
+    elif candidate == CAR.INSIGHT:
+      stop_and_go = True
+      ret.mass = 2987. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 15.0  # 12.58 is spec end-to-end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.82
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
+
+
     else:
       raise ValueError("unsupported car %s" % candidate)
 
@@ -449,14 +464,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
-
-    # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
-
-    if ret.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low

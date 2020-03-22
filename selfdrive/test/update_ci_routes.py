@@ -5,7 +5,7 @@ import subprocess
 from common.basedir import BASEDIR
 from azure.storage.blob import BlockBlobService
 
-from selfdrive.test.test_car_models import routes as test_car_models_routes, non_public_routes
+from selfdrive.test.test_car_models import routes as test_car_models_routes
 from selfdrive.test.process_replay.test_processes import segments as replay_segments
 from xx.chffr.lib import azureutil
 from xx.chffr.lib.storage import upload_dir_serial, download_dir_tpe
@@ -14,6 +14,7 @@ from xx.chffr.lib.storage import _DATA_ACCOUNT_PRODUCTION, _DATA_ACCOUNT_CI, _DA
 SOURCES = [
   (_DATA_ACCOUNT_PRODUCTION, _DATA_BUCKET_PRODUCTION),
   (_DATA_ACCOUNT_PRODUCTION, "preserve"),
+  (_DATA_ACCOUNT_CI, "commadataci"),
 ]
 
 DEST_KEY = azureutil.get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
@@ -58,15 +59,14 @@ if __name__ == "__main__":
 
   # sync process replay routes
   for s in replay_segments:
-    route_name, _ = s.rsplit('--', 1)
+    route_name, _ = s[1].rsplit('--', 1)
     if not sync_to_ci_public(route_name):
       failed_routes.append(route_name)
 
   # sync test_car_models routes
   for r in list(test_car_models_routes.keys()):
-    if r not in non_public_routes:
-      if not sync_to_ci_public(r):
-        failed_routes.append(r)
+    if not sync_to_ci_public(r):
+      failed_routes.append(r)
 
 
   if len(failed_routes):

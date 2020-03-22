@@ -14,9 +14,24 @@ def cputime_busy(ct):
   return ct.user + ct.nice + ct.system + ct.irq + ct.softirq
 
 
+def proc_cputime_total(ct):
+  return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
+
+
+def proc_name(proc):
+  name = proc.name
+  if len(proc.cmdline):
+    name = proc.cmdline[0]
+  if len(proc.exe):
+    name = proc.exe + " - " + name
+
+  return name
+
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--mem', action='store_true')
+  parser.add_argument('--cpu', action='store_true')
   args = parser.parse_args()
 
   sm = SubMaster(['thermal', 'procLog'])
@@ -25,6 +40,9 @@ if __name__ == "__main__":
   last_mem = 0.0
   total_times = [0., 0., 0., 0.]
   busy_times = [0., 0., 0.0, 0.]
+
+  prev_proclog = None
+  prev_proclog_t = None
 
   while True:
     sm.update()
@@ -36,7 +54,6 @@ if __name__ == "__main__":
 
     if sm.updated['procLog']:
       m = sm['procLog']
-
 
       cores = [0., 0., 0., 0.]
       total_times_new = [0., 0., 0., 0.]
@@ -57,16 +74,33 @@ if __name__ == "__main__":
 
       print("CPU %.2f%% - RAM: %.2f - Temp %.2f" % (100. * np.mean(cores), last_mem, last_temp))
 
+      if args.cpu and prev_proclog is not None:
+        procs = {}
+        dt = (sm.logMonoTime['procLog'] - prev_proclog_t) / 1e9
+        for proc in m.procs:
+          try:
+            name = proc_name(proc)
+            prev_proc = [p for p in prev_proclog.procs if proc.pid == p.pid][0]
+            cpu_time = proc_cputime_total(proc) - proc_cputime_total(prev_proc)
+            cpu_usage = cpu_time / dt * 100.
+            procs[name] = cpu_usage
+          except IndexError:
+            pass
+
+        print("Top CPU usage:")
+        for k, v in sorted(procs.items(), key=lambda item: item[1], reverse=True)[:10]:
+          print(f"{k.rjust(70)}   {v:.2f} %")
+        print()
+
       if args.mem:
         mems = {}
         for proc in m.procs:
-          name = proc.name
-          if len(proc.cmdline):
-            name = proc.cmdline[0]
-          if len(proc.exe):
-            name = proc.exe + " - " + name
+          name = proc_name(proc)
           mems[name] = float(proc.memRss) / 1e6
         print("Top memory usage:")
         for k, v in sorted(mems.items(), key=lambda item: item[1], reverse=True)[:10]:
           print(f"{k.rjust(70)}   {v:.2f} MB")
         print()
+
+      prev_proclog = m
+      prev_proclog_t = sm.logMonoTime['procLog']
