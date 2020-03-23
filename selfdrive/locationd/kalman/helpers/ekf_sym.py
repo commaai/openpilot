@@ -291,6 +291,11 @@ class EKF_sym():
     self.rewind_t = []
     self.rewind_states = []
 
+  def reset_rewind(self):
+    self.rewind_obscache = []
+    self.rewind_t = []
+    self.rewind_states = []
+
   def augment(self):
     # TODO this is not a generalized way of doing this and implies that the augmented states
     # are simply the first (dim_augment_state) elements of the main state.
