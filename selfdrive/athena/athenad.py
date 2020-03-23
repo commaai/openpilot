@@ -12,6 +12,7 @@ import base64
 import requests
 import queue
 from collections import namedtuple
+from datetime import datetime
 from functools import partial
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException, ABNF
@@ -307,7 +308,7 @@ def main():
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True)
-      params.put("AthenadConnectedAt", datetime.datetime.utcnow().isoformat().encode('utf8'))
+      params.put("AthenadConnectedAt", datetime.utcnow().isoformat().encode('utf8'))
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       ws.settimeout(1)
       conn_retries = 0
