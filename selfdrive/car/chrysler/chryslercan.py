@@ -13,7 +13,7 @@ def calc_checksum(data):
   checksum = 0xFF
   for curr in data[:-1]:
     shift = 0x80
-    for i in range(0, 8):
+    for _ in range(0, 8):
       bit_sum = curr & shift
       temp_chk = checksum & 0x80
       if (bit_sum != 0):
