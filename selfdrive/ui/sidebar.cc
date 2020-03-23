@@ -98,7 +98,8 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
   const int metric_x = hasSidebar ? 30 : -(sbr_w);
   const int metric_y = 338 + y_offset;
   const int metric_w = 240;
-  const int metric_h = message_str ? strlen(message_str) > 8 ? 124 : 100 : 148;
+  const int metric_h = message_str ? strchr(message_str, '\n') ? 124 : 100 : 148;
+
   NVGcolor status_color;
 
   if (severity == 0) {
@@ -137,7 +138,7 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
     nvgFontSize(s->vg, 48);
     nvgFontFace(s->vg, "sans-bold");
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, metric_x + 35, metric_y + (strlen(message_str) > 8 ? 40 : 50), metric_w - 50, message_str, NULL);
+    nvgTextBox(s->vg, metric_x + 35, metric_y + (strchr(message_str, '\n') ? 40 : 50), metric_w - 50, message_str, NULL);
   }
 }
 
@@ -173,23 +174,23 @@ static void ui_draw_sidebar_panda_metric(UIState *s, bool hasSidebar) {
 
   if (s->scene.hwType == cereal_HealthData_HwType_unknown) {
     panda_severity = 2;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO PANDA");
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO\nPANDA");
   } else if (s->scene.hwType == cereal_HealthData_HwType_whitePanda) {
     panda_severity = 0;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA ACTIVE");
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nACTIVE");
   } else if (
       (s->scene.hwType == cereal_HealthData_HwType_greyPanda) ||
       (s->scene.hwType == cereal_HealthData_HwType_blackPanda) ||
       (s->scene.hwType == cereal_HealthData_HwType_uno)) {
       if (s->scene.satelliteCount == -1) {
         panda_severity = 0;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA ACTIVE");
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nACTIVE");
       } else if (s->scene.satelliteCount < 6) {
         panda_severity = 1;
         snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nNO GPS");
       } else if (s->scene.satelliteCount >= 6) {
         panda_severity = 0;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA GOOD GPS");
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nGOOD GPS");
       }
   }
 
