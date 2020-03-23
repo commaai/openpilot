@@ -885,7 +885,8 @@ int main(int argc, char* argv[]) {
   assert(err == 0);
 #endif
 
-  enable_event_processing(false);
+  // vision starts disconnected
+  enable_event_processing(true);
 
   TouchState touch = {0};
   touch_init(&touch);
