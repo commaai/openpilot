@@ -14,6 +14,7 @@ import requests
 import signal
 import subprocess
 import time
+from datetime import datetime, timedelta
 
 DID_INIT = False
 
@@ -108,6 +109,7 @@ def test_uploader():
 @phone_only
 def test_athena():
   print("ATHENA")
+  start = datetime.utcnow()
   start_daemon_process("manage_athenad")
   params = Params()
   manage_athenad_pid = params.get("AthenadPid")
@@ -155,7 +157,7 @@ def test_athena():
         else:
           print(f'athena_post failed {e}. retrying...')
 
-  def expect_athena_registers():
+  def expect_athena_registers(test_t0):
     resp = athena_post({
       "method": "echo",
       "params": ["hello"],
@@ -163,6 +165,11 @@ def test_athena():
       "jsonrpc": "2.0"
     }, max_retries=12, wait=5)
     assert resp.get('result') == "hello", f'Athena failed to register ({resp})'
+
+    connected_at_isofmt = params.get("AthenadConnectedAt", encoding='utf8')
+    assert connected_at_isofmt, connected_at_isofmt
+    connected_at = datetime.fromisoformat(connected_at_isofmt)
+    assert connected_at - test_t0 < (datetime.utcnow() - test_t0)
 
   try:
     athenad_pid = expect_athena_starts()
@@ -174,7 +181,7 @@ def test_athena():
       print('WARNING: COMMA_JWT env not set, will not test requests to athena.comma.ai')
       return
 
-    expect_athena_registers()
+    expect_athena_registers(start)
 
     print("ATHENA: getSimInfo")
     resp = athena_post({

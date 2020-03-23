@@ -307,6 +307,7 @@ def main():
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True)
+      params.put("AthenadConnectedAt", datetime.datetime.utcnow().isoformat().encode('utf8'))
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       ws.settimeout(1)
       conn_retries = 0
@@ -316,6 +317,8 @@ def main():
     except Exception:
       cloudlog.exception("athenad.main.exception")
       conn_retries += 1
+    finally:
+      params.delete("AthenadConnectedAt")
 
     time.sleep(backoff(conn_retries))
 
