@@ -58,11 +58,12 @@ def panda_current_to_actual_current(panda_current):
 
 
 class PowerMonitoring:
-  def __init__(self):
+  def __init__(self, is_uno):
     self.last_measurement_time = None           # Used for integration delta
     self.power_used_uWh = 0                     # Integrated power usage in uWh since going into offroad
     self.next_pulsed_measurement_time = None
     self.integration_lock = threading.Lock()
+    self.is_uno = is_uno
 
   # Calculation tick
   def calculate(self, health):
@@ -129,7 +130,7 @@ class PowerMonitoring:
         self.next_pulsed_measurement_time = None
         return
 
-      elif self.next_pulsed_measurement_time is None:
+      elif self.next_pulsed_measurement_time is None and not self.is_uno:
         # On a charging EON with black panda, or drawing more than 400mA out of a white/grey one
         # Only way to get the power draw is to turn off charging for a few sec and check what the discharging rate is
         # We shouldn't do this very often, so make sure it has been some long-ish random time interval
