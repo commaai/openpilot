@@ -746,13 +746,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x750, 0xf): [b'\x018821F3301200\x00\x00\x00\x00'],
     (Ecu.fwdCamera, 0x750, 0x6d): [b'\x028646F3303200\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00'],
   },
-  CAR.LEXUS_IS: {
-    (Ecu.engine, 0x700, None): [b'\x018966353Q2300\x00\x00\x00\x00'],
-    (Ecu.dsu, 0x791, None): [b'881515306400\x00\x00\x00\x00'],
-    (Ecu.eps, 0x7a1, None): [b'8965B53271\x00\x00\x00\x00\x00\x00'],
-    (Ecu.fwdRadar, 0x750, 0xf): [b'8821F4702300\x00\x00\x00\x00'],
-    (Ecu.fwdCamera, 0x750, 0x6d): [b'8646F5301400\x00\x00\x00\x00'],
-  },
   CAR.SIENNA: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630832100\x00\x00\x00\x00',
