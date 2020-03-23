@@ -77,8 +77,10 @@ class PowerMonitoring:
       # Only integrate when there is no ignition
       # If health is None, we're probably not in a car, so we don't care
       if health is None or (health.health.ignitionLine or health.health.ignitionCan):
+        self.integration_lock.acquire()
         self.last_measurement_time = None
         self.power_used_uWh = 0
+        self.integration_lock.release()
         return
 
       # First measurement, set integration time
@@ -150,9 +152,10 @@ class PowerMonitoring:
 
   def _perform_integration(self, t, current_power):
     self.integration_lock.acquire()
-    integration_time_h = (t - self.last_measurement_time) / 3600
-    self.power_used_uWh += (current_power * 1000000) * integration_time_h
-    self.last_measurement_time = t
+    if self.last_measurement_time:
+      integration_time_h = (t - self.last_measurement_time) / 3600
+      self.power_used_uWh += (current_power * 1000000) * integration_time_h
+      self.last_measurement_time = t
     self.integration_lock.release()
 
   # Get the power usage
