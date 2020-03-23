@@ -77,17 +77,17 @@ class PowerMonitoring:
       # Only integrate when there is no ignition
       # If health is None, we're probably not in a car, so we don't care
       if health is None or (health.health.ignitionLine or health.health.ignitionCan):
-        self.integration_lock.acquire()
-        self.last_measurement_time = None
-        self.next_pulsed_measurement_time = None
-        self.power_used_uWh = 0
-        self.integration_lock.release()
+        with self.integration_lock:
+          self.last_measurement_time = None
+          self.next_pulsed_measurement_time = None
+          self.power_used_uWh = 0
         return
 
       # First measurement, set integration time
-      if self.last_measurement_time is None:
-        self.last_measurement_time = now
-        return
+      with self.integration_lock:
+        if self.last_measurement_time is None:
+          self.last_measurement_time = now
+          return
 
       # Get current power draw somehow
       current_power = 0
@@ -119,16 +119,12 @@ class PowerMonitoring:
               time.sleep(1)
             current_power = ((mean(voltages) / 1000000) * (mean(currents) / 1000000))
 
-            self.integration_lock.acquire()
             self._perform_integration(now, current_power * FUDGE_FACTOR)
 
             # Enable charging again
             set_battery_charging(True)
           except Exception:
             cloudlog.exception("Pulsed power measurement failed")
-          finally:
-            if self.integration_lock.locked():
-              self.integration_lock.release()
 
         # Start pulsed measurement and return
         threading.Thread(target=perform_pulse_measurement, args=(now,)).start()
@@ -146,19 +142,19 @@ class PowerMonitoring:
         return
 
       # Do the integration
-      self.integration_lock.acquire()
       self._perform_integration(now, current_power)
     except Exception:
       cloudlog.exception("Power monitoring calculation failed")
-    finally:
-      if self.integration_lock.locked():
-        self.integration_lock.release()
 
   def _perform_integration(self, t, current_power):
-    if self.last_measurement_time:
-      integration_time_h = (t - self.last_measurement_time) / 3600
-      self.power_used_uWh += (current_power * 1000000) * integration_time_h
-      self.last_measurement_time = t
+    with self.integration_lock:
+      try:
+        if self.last_measurement_time:
+          integration_time_h = (t - self.last_measurement_time) / 3600
+          self.power_used_uWh += (current_power * 1000000) * integration_time_h
+          self.last_measurement_time = t
+      except Exception:
+        cloudlog.exception("Integration failed")
 
   # Get the power usage
   def get_power_used(self):
