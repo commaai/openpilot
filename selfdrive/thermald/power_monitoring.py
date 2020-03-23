@@ -120,6 +120,9 @@ class PowerMonitoring:
             set_battery_charging(True)
           except Exception:
             cloudlog.exception("Pulsed power measurement failed")
+          finally:
+            if self.integration_lock.locked():
+              self.integration_lock.release()
 
         # Start pulsed measurement and return
         threading.Thread(target=perform_pulse_measurement, args=(now,)).start()
@@ -139,7 +142,10 @@ class PowerMonitoring:
       # Do the integration
       self._perform_integration(now, current_power)
     except Exception:
-      cloudlog.exception("Power monitoring calculation failed:")
+      cloudlog.exception("Power monitoring calculation failed")
+    finally:
+      if self.integration_lock.locked():
+        self.integration_lock.release()
 
   def _perform_integration(self, t, current_power):
     self.integration_lock.acquire()
