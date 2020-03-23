@@ -79,6 +79,7 @@ class PowerMonitoring:
       if health is None or (health.health.ignitionLine or health.health.ignitionCan):
         self.integration_lock.acquire()
         self.last_measurement_time = None
+        self.next_pulsed_measurement_time = None
         self.power_used_uWh = 0
         self.integration_lock.release()
         return
