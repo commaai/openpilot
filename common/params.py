@@ -52,7 +52,7 @@ class UnknownKeyName(Exception):
 
 
 keys = {
-  "AccessToken": [TxType.PERSISTENT],
+  "AccessToken": [TxType.CLEAR_ON_MANAGER_START],
   "AthenadPid": [TxType.PERSISTENT],
   "CalibrationParams": [TxType.PERSISTENT],
   "CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
