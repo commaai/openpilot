@@ -118,6 +118,8 @@ class PowerMonitoring:
               currents.append(get_battery_current())
               time.sleep(1)
             current_power = ((mean(voltages) / 1000000) * (mean(currents) / 1000000))
+
+            self.integration_lock.acquire()
             self._perform_integration(now, current_power * FUDGE_FACTOR)
 
             # Enable charging again
@@ -144,6 +146,7 @@ class PowerMonitoring:
         return
 
       # Do the integration
+      self.integration_lock.acquire()
       self._perform_integration(now, current_power)
     except Exception:
       cloudlog.exception("Power monitoring calculation failed")
@@ -152,12 +155,10 @@ class PowerMonitoring:
         self.integration_lock.release()
 
   def _perform_integration(self, t, current_power):
-    self.integration_lock.acquire()
     if self.last_measurement_time:
       integration_time_h = (t - self.last_measurement_time) / 3600
       self.power_used_uWh += (current_power * 1000000) * integration_time_h
       self.last_measurement_time = t
-    self.integration_lock.release()
 
   # Get the power usage
   def get_power_used(self):
