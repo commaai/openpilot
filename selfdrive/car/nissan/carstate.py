@@ -49,7 +49,7 @@ class CarState(CarStateBase):
                         cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
 
     ret.steeringPressed = bool(cp.vl["STEER_TORQUE_SENSOR2"]["STEERING_PRESSED"])
-    ret.steeringTorque = cp.vl["STEER_TORUQE_SENSOR"]["STEER_TORQUE_DRIVER"]
+    ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
     ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
@@ -70,6 +70,8 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS_REAR", 0),
       ("WHEEL_SPEED_RR", "WHEEL_SPEEDS_REAR", 0),
 
+      ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
+
       ("DOOR_OPEN_FR", "DOORS_LIGHTS", 1),
       ("DOOR_OPEN_FL", "DOORS_LIGHTS", 1),
       ("DOOR_OPEN_RR", "DOORS_LIGHTS", 1),
@@ -77,10 +79,12 @@ class CarState(CarStateBase):
 
       ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
       ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
+
       ("GAS_PEDAL", "GAS_PEDAL", 0),
 
-      ("STEER_TORQUE_DRIVER", "STEER_TORUQE_SENSOR", 0),
+      ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
       ("STEERING_PRESSED", "STEER_TORQUE_SENSOR2", 0),
+
       ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
 
       ("RIGHT_BLINKER", "LIGHTS", 0),
@@ -89,15 +93,16 @@ class CarState(CarStateBase):
       ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
       ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
       ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE", 0),
-      ("unsure2", "CRUISE_THROTTLE", 0),
       ("SET_BUTTON", "CRUISE_THROTTLE", 0),
       ("RES_BUTTON", "CRUISE_THROTTLE", 0),
       ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE", 0),
       ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
       ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
+      ("unsure1", "CRUISE_THROTTLE", 0),
+      ("unsure2", "CRUISE_THROTTLE", 0),
       ("unsure3", "CRUISE_THROTTLE", 0),
-      ("unsure", "CRUISE_THROTTLE", 0),
-      ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
+      # TODO: why are USER_BRAKE_PRESSED, NEW_SIGNAL_2 and GAS_PRESSED_INVERTED  not forwarded
+
       ("ESP_DISABLED", "ESP", 0),
       ("GEAR_SHIFTER", "GEARBOX", 0),
     ]
@@ -109,6 +114,7 @@ class CarState(CarStateBase):
       ("DOORS_LIGHTS", 10),
     ]
 
+    print("b")
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
   @staticmethod
@@ -197,6 +203,7 @@ class CarState(CarStateBase):
       # sig_address, frequency
     ]
 
+    print("a")
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
   @staticmethod
