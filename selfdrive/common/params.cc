@@ -292,9 +292,6 @@ int read_db_all(const char* params_path, std::map<std::string, std::string> *par
   while ((de = readdir(d))) {
     if (!isalnum(de->d_name[0])) continue;
     std::string key = std::string(de->d_name);
-
-    if (key == "AccessToken") continue;
-
     std::string value = util::read_file(util::string_format("%s/%s", key_path.c_str(), key.c_str()));
 
     (*params)[key] = value;
