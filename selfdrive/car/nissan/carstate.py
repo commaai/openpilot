@@ -114,7 +114,6 @@ class CarState(CarStateBase):
       ("DOORS_LIGHTS", 10),
     ]
 
-    print("b")
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
   @staticmethod
@@ -203,7 +202,6 @@ class CarState(CarStateBase):
       # sig_address, frequency
     ]
 
-    print("a")
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
   @staticmethod
