@@ -58,11 +58,12 @@ def panda_current_to_actual_current(panda_current):
 
 
 class PowerMonitoring:
-  def __init__(self):
+  def __init__(self, is_uno):
     self.last_measurement_time = None           # Used for integration delta
     self.power_used_uWh = 0                     # Integrated power usage in uWh since going into offroad
     self.next_pulsed_measurement_time = None
     self.integration_lock = threading.Lock()
+    self.is_uno = is_uno
 
   # Calculation tick
   def calculate(self, health):
@@ -76,14 +77,17 @@ class PowerMonitoring:
       # Only integrate when there is no ignition
       # If health is None, we're probably not in a car, so we don't care
       if health is None or (health.health.ignitionLine or health.health.ignitionCan):
-        self.last_measurement_time = None
-        self.power_used_uWh = 0
+        with self.integration_lock:
+          self.last_measurement_time = None
+          self.next_pulsed_measurement_time = None
+          self.power_used_uWh = 0
         return
 
       # First measurement, set integration time
-      if self.last_measurement_time is None:
-        self.last_measurement_time = now
-        return
+      with self.integration_lock:
+        if self.last_measurement_time is None:
+          self.last_measurement_time = now
+          return
 
       # Get current power draw somehow
       current_power = 0
@@ -114,6 +118,7 @@ class PowerMonitoring:
               currents.append(get_battery_current())
               time.sleep(1)
             current_power = ((mean(voltages) / 1000000) * (mean(currents) / 1000000))
+
             self._perform_integration(now, current_power * FUDGE_FACTOR)
 
             # Enable charging again
@@ -126,7 +131,7 @@ class PowerMonitoring:
         self.next_pulsed_measurement_time = None
         return
 
-      elif self.next_pulsed_measurement_time is None:
+      elif self.next_pulsed_measurement_time is None and not self.is_uno:
         # On a charging EON with black panda, or drawing more than 400mA out of a white/grey one
         # Only way to get the power draw is to turn off charging for a few sec and check what the discharging rate is
         # We shouldn't do this very often, so make sure it has been some long-ish random time interval
@@ -139,14 +144,17 @@ class PowerMonitoring:
       # Do the integration
       self._perform_integration(now, current_power)
     except Exception:
-      cloudlog.exception("Power monitoring calculation failed:")
+      cloudlog.exception("Power monitoring calculation failed")
 
   def _perform_integration(self, t, current_power):
-    self.integration_lock.acquire()
-    integration_time_h = (t - self.last_measurement_time) / 3600
-    self.power_used_uWh += (current_power * 1000000) * integration_time_h
-    self.last_measurement_time = t
-    self.integration_lock.release()
+    with self.integration_lock:
+      try:
+        if self.last_measurement_time:
+          integration_time_h = (t - self.last_measurement_time) / 3600
+          self.power_used_uWh += (current_power * 1000000) * integration_time_h
+          self.last_measurement_time = t
+      except Exception:
+        cloudlog.exception("Integration failed")
 
   # Get the power usage
   def get_power_used(self):
