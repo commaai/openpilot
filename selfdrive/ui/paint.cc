@@ -260,7 +260,7 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
   } else {
     // Draw white vision track
     track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
-      COLOR_WHITE, nvgRGBA(255, 255, 255, 0));
+      COLOR_WHITE, COLOR_WHITE_ALPHA(0));
   }
 
   nvgFillPaint(s->vg, track_bg);
@@ -456,7 +456,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   if (is_set_over_limit) {
     nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 180));
   } else {
-    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 100));
+    nvgFillColor(s->vg, COLOR_BLACK_ALPHA(100));
   }
   nvgFill(s->vg);
 
@@ -468,9 +468,9 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   } else if (is_speedlim_valid && !s->is_ego_over_limit) {
     nvgStrokeColor(s->vg, COLOR_WHITE);
   } else if (is_speedlim_valid && s->is_ego_over_limit) {
-    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA_20);
+    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(20));
   } else {
-    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA_100);
+    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(100));
   }
   nvgStrokeWidth(s->vg, 10);
   nvgStroke(s->vg);
@@ -480,9 +480,9 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 26*2.5);
   if (is_cruise_set) {
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA_200);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
   } else {
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA_100);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
   }
   nvgText(s->vg, viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 148, "MAX", NULL);
 
@@ -496,7 +496,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   } else {
     nvgFontFace(s->vg, "sans-semibold");
     nvgFontSize(s->vg, 42*2.5);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA_100);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
     nvgText(s->vg, viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 242, "N/A", NULL);
   }
 
@@ -541,7 +541,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   } else if (is_speedlim_valid) {
     nvgFillColor(s->vg, COLOR_WHITE);
   } else {
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA_100);
+    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
   }
   nvgFill(s->vg);
 
@@ -562,7 +562,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   nvgFontFace(s->vg, "sans-semibold");
   nvgFontSize(s->vg, 50);
-  nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 255));
+  nvgFillColor(s->vg, COLOR_BLACK);
   if (is_speedlim_valid && s->is_ego_over_limit) {
     nvgFillColor(s->vg, COLOR_WHITE);
   }
@@ -575,7 +575,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   if (s->is_ego_over_limit) {
     nvgFillColor(s->vg, COLOR_WHITE);
   } else {
-    nvgFillColor(s->vg, nvgRGBA(0, 0, 0, 255));
+    nvgFillColor(s->vg, COLOR_BLACK);
   }
   if (is_speedlim_valid) {
     snprintf(speedlim_str, sizeof(speedlim_str), "%d", speedlim_calc);
@@ -613,7 +613,7 @@ static void ui_draw_vision_speed(UIState *s) {
 
   nvgFontFace(s->vg, "sans-regular");
   nvgFontSize(s->vg, 36*2.5);
-  nvgFillColor(s->vg, COLOR_WHITE_ALPHA_200);
+  nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
 
   if (s->is_metric) {
     nvgText(s->vg, viz_speed_x+viz_speed_w/2, 320, "kph", NULL);
