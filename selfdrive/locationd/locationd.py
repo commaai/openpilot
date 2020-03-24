@@ -67,7 +67,7 @@ class Localizer():
     vel_ecef = predicted_state[States.ECEF_VELOCITY]
     vel_ecef_std = predicted_std[States.ECEF_VELOCITY_ERR]
     fix_pos_geo = coord.ecef2geodetic(fix_ecef)
-    fix_pos_geo_std = coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo
+    #fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
     orientation_ecef = euler_from_quat(predicted_state[States.ECEF_ORIENTATION])
     orientation_ecef_std = predicted_std[States.ECEF_ORIENTATION_ERR]
 
@@ -102,8 +102,8 @@ class Localizer():
 
     fix = messaging.log.LiveLocationKalman.new_message()
     fix.positionGeodetic.value = to_float(fix_pos_geo)
-    fix.positionGeodetic.std = to_float(fix_pos_geo_std)
-    fix.positionGeodetic.valid = True
+    #fix.positionGeodetic.std = to_float(fix_pos_geo_std)
+    #fix.positionGeodetic.valid = True
     fix.positionECEF.value = to_float(fix_ecef)
     fix.positionECEF.std = to_float(fix_ecef_std)
     fix.positionECEF.valid = True
