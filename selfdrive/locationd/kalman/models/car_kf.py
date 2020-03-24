@@ -46,22 +46,22 @@ class CarKalman():
 
   # state covariance
   P_initial = np.diag([
-    .1**2,
-    .1**2,
+    0.1**2,
+    0.1**2,
     math.radians(0.1)**2,
     math.radians(0.1)**2,
 
     10**2, 10**2,
-    1**2,
-    1**2,
+    1.0**2,
+    1.0**2,
   ])
 
   # process noise
   Q = np.diag([
-    (.05/10)**2,
+    (.05/100)**2,
     .0001**2,
-    math.radians(0.01)**2,
-    math.radians(0.2)**2,
+    math.radians(0.001)**2,
+    math.radians(0.05)**2,
 
     .1**2, .1**2,
     math.radians(0.1)**2,
