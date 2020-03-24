@@ -30,12 +30,19 @@ class TestCarInterfaces(unittest.TestCase):
         assert car_params
         assert car_interface
 
-        # Run car interface once
+        # Run car interface
         CC = car.CarControl.new_message()
-        car_interface.update(CC, [])
-        car_interface.apply(CC)
+        for _ in range(10):
+          car_interface.update(CC, [])
+          car_interface.apply(CC)
+          car_interface.apply(CC)
+
+        CC = car.CarControl.new_message()
         CC.enabled = True
-        car_interface.apply(CC)
+        for _ in range(10):
+          car_interface.update(CC, [])
+          car_interface.apply(CC)
+          car_interface.apply(CC)
 
       # Test radar interface
       RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % car_params.carName).RadarInterface
