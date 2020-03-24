@@ -19,7 +19,7 @@ def create_steering_control(packer, car_fingerprint, apply_steer, frame, steer_o
 
     dat = packer.make_can_msg("LKAS", 0, values)[2]
 
-    values["CRC"] = nissan_checksum(dat[:7])
+    values["CHECKSUM"] = nissan_checksum(dat[:7])
 
   return packer.make_can_msg("LKAS", 0, values)
 
@@ -35,7 +35,7 @@ def create_acc_cancel_cmd(packer, cruise_throttle_msg, frame):
   values["FOLLOW_DISTANCE_BUTTON"] = 0
   values["COUNTER"] = (frame % 4)
 
-  return packer.make_can_msg("CruiseThrottle", 2, values)
+  return packer.make_can_msg("CRUISE_THROTTLE", 2, values)
 
 
 def create_lkas_hud_msg(packer, lkas_hud_msg, enabled, left_line, right_line, left_lane_depart, right_lane_depart):
