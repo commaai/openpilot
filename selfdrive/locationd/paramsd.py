@@ -52,17 +52,17 @@ class ParamsLearner:
         self.kf.predict_and_observe(t,
                                     ObservationKind.ROAD_FRAME_XY_SPEED,
                                     np.array([[[v_calibrated[0], -v_calibrated[1]]]]),
-                                    np.array([np.diag([v_calibrated_std[0]**2, v_calibrated_std[1]**2])]))
+                                    np.array([np.diag([v_calibrated_std[0]**2, 1e6*v_calibrated_std[1]**2])]))
 
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[[0]]]))
 
         # Clamp values
-        x = self.kf.x
-        if not (10 < x[States.STEER_RATIO] < 25):
-          self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[[15.0]]]))
+        # x = self.kf.x
+        # if not (10 < x[States.STEER_RATIO] < 25):
+        #   self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[[15.0]]]))
 
-        if not (0.5 < x[States.STIFFNESS] < 3.0):
-          self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[[1.0]]]))
+        # if not (0.5 < x[States.STIFFNESS] < 3.0):
+        #   self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[[1.0]]]))
 
     elif which == 'carState':
       self.carstate_counter += 1
@@ -136,7 +136,7 @@ def main(sm=None, pm=None):
       msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       msg.liveParameters.angleOffsetAverage = math.degrees(x[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffset = math.degrees(x[States.ANGLE_OFFSET_FAST])
+      msg.liveParameters.angleOffset = msg.liveParameters.angleOffsetAverage + math.degrees(x[States.ANGLE_OFFSET_FAST])
 
       i += 1
       if i % 6000 == 0:   # once a minute
