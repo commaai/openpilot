@@ -187,7 +187,7 @@ def thermald_thread():
     handle_fan = handle_fan_eon
 
   params = Params()
-  pm = PowerMonitoring()
+  pm = PowerMonitoring(is_uno)
 
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
