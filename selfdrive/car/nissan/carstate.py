@@ -13,19 +13,18 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
-
   def update(self, cp, cp_adas, cp_cam):
     ret = car.CarState.new_message()
 
-    ret.gas = cp.vl["Throttle"]["ThrottlePedal"]
+    ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
     ret.gasPressed = bool(ret.gas)
-    ret.brakePressed = bool(cp.vl["DoorsLights"]["USER_BRAKE_PRESSED"])
-    ret.brakeLights = bool(cp.vl["DoorsLights"]["BRAKE_LIGHT"])
+    ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
+    ret.brakeLights = bool(cp.vl["DOORS_LIGHTS"]["BRAKE_LIGHT"])
 
-    ret.wheelSpeeds.fl = cp.vl["WheelspeedFront"]["FL"] * CV.KPH_TO_MS
-    ret.wheelSpeeds.fr = cp.vl["WheelspeedFront"]["FR"] * CV.KPH_TO_MS
-    ret.wheelSpeeds.rl = cp.vl["WheelspeedRear"]["RL"] * CV.KPH_TO_MS
-    ret.wheelSpeeds.rr = cp.vl["WheelspeedRear"]["RR"] * CV.KPH_TO_MS
+    ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"] * CV.KPH_TO_MS
+    ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RR"] * CV.KPH_TO_MS
 
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
 
@@ -36,25 +35,26 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    ret.leftBlinker = bool(cp.vl["Lights"]["LEFT_BLINKER"])
-    ret.rightBlinker = bool(cp.vl["Lights"]["RIGHT_BLINKER"])
+    # Don't see this in the drive
+    ret.leftBlinker = bool(cp.vl["LIGHTS"]["LEFT_BLINKER"])
+    ret.rightBlinker = bool(cp.vl["LIGHTS"]["RIGHT_BLINKER"])
 
-    ret.seatbeltUnlatched = cp.vl["_SEATBELT"]["DRIVERS_SEATBELT"] == 0
-    ret.cruiseState.enabled = bool(cp_cam.vl["ProPilot"]["CRUISE_ACTIVATED"])
-    ret.cruiseState.available = bool(cp_cam.vl["ProPilot"]["CRUISE_ON"])
+    ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_UNLATCHED"] == 0
+    ret.cruiseState.enabled = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ACTIVATED"])
+    ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
 
-    ret.doorOpen = any([cp.vl["DoorsLights"]["DOOR_OPEN_RR"],
-      cp.vl["DoorsLights"]["DOOR_OPEN_RL"],
-      cp.vl["DoorsLights"]["DOOR_OPEN_FR"],
-      cp.vl["DoorsLights"]["DOOR_OPEN_FL"]])
+    ret.doorOpen = any([cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RR"],
+                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RL"],
+                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
+                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
 
-    ret.steeringPressed = bool(cp.vl["STEER_TORQUE"]["DriverTouchingWheel"])
-    ret.steeringTorque = cp.vl["Steering"]["DriverTorque"]
-    ret.steeringAngle = cp.vl["SteeringWheel"]["Steering_Angle"]
+    ret.steeringPressed = bool(cp.vl["STEER_TORQUE_SENSOR2"]["STEERING_PRESSED"])
+    ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
+    ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
-    ret.espDisabled = bool(cp.vl["_ESP"]["ESP_DISABLED"])
+    ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
 
-    self.cruise_throttle_msg = copy.copy(cp.vl["CruiseThrottle"])
+    self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
     self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
     self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
 
@@ -65,43 +65,53 @@ class CarState(CarStateBase):
     # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address, default
-      ("FL", "WheelspeedFront", 0),
-      ("FR", "WheelspeedFront", 0),
-      ("RL", "WheelspeedRear", 0),
-      ("RR", "WheelspeedRear", 0),
-      ("DOOR_OPEN_FR", "DoorsLights", 1),
-      ("DOOR_OPEN_FL", "DoorsLights", 1),
-      ("DOOR_OPEN_RR", "DoorsLights", 1),
-      ("DOOR_OPEN_RL", "DoorsLights", 1),
-      ("USER_BRAKE_PRESSED", "DoorsLights", 1),
-      ("BRAKE_LIGHT", "DoorsLights", 1),
-      ("DriverTorque", "Steering", 0),
-      ("DriverTouchingWheel", "STEER_TORQUE", 0),
-      ("ThrottlePedal", "Throttle", 0),
-      ("Steering_Angle", "SteeringWheel", 0),
-      ("RIGHT_BLINKER", "Lights", 0),
-      ("LEFT_BLINKER", "Lights", 0),
-      ("PROPILOT_BUTTON", "CruiseThrottle", 0),
-      ("CANCEL_BUTTON", "CruiseThrottle", 0),
-      ("GAS_PEDAL_INVERTED", "CruiseThrottle", 0),
-      ("unsure2", "CruiseThrottle", 0),
-      ("SET_BUTTON", "CruiseThrottle", 0),
-      ("RES_BUTTON", "CruiseThrottle", 0),
-      ("FOLLOW_DISTANCE_BUTTON", "CruiseThrottle", 0),
-      ("NO_BUTTON_PRESSED", "CruiseThrottle", 0),
-      ("GAS_PEDAL", "CruiseThrottle", 0),
-      ("unsure3", "CruiseThrottle", 0),
-      ("unsure", "CruiseThrottle", 0),
-      ("DRIVERS_SEATBELT", "_SEATBELT", 0),
-      ("ESP_DISABLED", "_ESP", 0),
+      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS_FRONT", 0),
+      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS_FRONT", 0),
+      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS_REAR", 0),
+      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS_REAR", 0),
+
+      ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
+
+      ("DOOR_OPEN_FR", "DOORS_LIGHTS", 1),
+      ("DOOR_OPEN_FL", "DOORS_LIGHTS", 1),
+      ("DOOR_OPEN_RR", "DOORS_LIGHTS", 1),
+      ("DOOR_OPEN_RL", "DOORS_LIGHTS", 1),
+
+      ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
+      ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
+
+      ("GAS_PEDAL", "GAS_PEDAL", 0),
+
+      ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
+      ("STEERING_PRESSED", "STEER_TORQUE_SENSOR2", 0),
+
+      ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
+
+      ("RIGHT_BLINKER", "LIGHTS", 0),
+      ("LEFT_BLINKER", "LIGHTS", 0),
+
+      ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
+      ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
+      ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE", 0),
+      ("SET_BUTTON", "CRUISE_THROTTLE", 0),
+      ("RES_BUTTON", "CRUISE_THROTTLE", 0),
+      ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE", 0),
+      ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
+      ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
+      ("unsure1", "CRUISE_THROTTLE", 0),
+      ("unsure2", "CRUISE_THROTTLE", 0),
+      ("unsure3", "CRUISE_THROTTLE", 0),
+      # TODO: why are USER_BRAKE_PRESSED, NEW_SIGNAL_2 and GAS_PRESSED_INVERTED  not forwarded
+
+      ("ESP_DISABLED", "ESP", 0),
       ("GEAR_SHIFTER", "GEARBOX", 0),
     ]
 
     checks = [
       # sig_address, frequency
-      ("WheelspeedRear", 50),
-      ("WheelspeedFront", 50),
-      ("DoorsLights", 10),
+      ("WHEEL_SPEEDS_REAR", 50),
+      ("WHEEL_SPEEDS_FRONT", 50),
+      ("DOORS_LIGHTS", 10),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -117,6 +127,7 @@ class CarState(CarStateBase):
       ("SET_0x80", "LKAS", 0),
       ("COUNTER", "LKAS", 0),
       ("LKA_ACTIVE", "LKAS", 0),
+
       # Below are the HUD messages. We copy the stock message and modify
       ("LARGE_WARNING_FLASHING", "PROPILOT_HUD", 0),
       ("SIDE_RADAR_ERROR_FLASHING1", "PROPILOT_HUD", 0),
@@ -141,9 +152,10 @@ class CarState(CarStateBase):
       ("unknown31", "PROPILOT_HUD", 0),
       ("unknown39", "PROPILOT_HUD", 0),
       ("unknown43", "PROPILOT_HUD", 0),
-      ("unknown8", "PROPILOT_HUD", 0),
+      ("unknown08", "PROPILOT_HUD", 0),
       ("unknown05", "PROPILOT_HUD", 0),
       ("unknown02", "PROPILOT_HUD", 0),
+
       ("NA_HIGH_ACCEL_TEMP", "PROPILOT_HUD_INFO_MSG", 0),
       ("SIDE_RADAR_NA_HIGH_CABIN_TEMP", "PROPILOT_HUD_INFO_MSG", 0),
       ("SIDE_RADAR_MALFUNCTION", "PROPILOT_HUD_INFO_MSG", 0),
@@ -195,9 +207,9 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     signals = [
-      ("CRUISE_ON", "ProPilot", 0),
-      ("CRUISE_ACTIVATED", "ProPilot", 0),
-      ("STEER_STATUS", "ProPilot", 0),
+      ("CRUISE_ON", "PRO_PILOT", 0),
+      ("CRUISE_ACTIVATED", "PRO_PILOT", 0),
+      ("STEER_STATUS", "PRO_PILOT", 0),
     ]
 
     checks = [
