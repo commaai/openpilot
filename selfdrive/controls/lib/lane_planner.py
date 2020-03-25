@@ -19,8 +19,15 @@ def model_polyfit(points, path_pinv):
 def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width):
   # This will improve behaviour when lanes suddenly widen
   lane_width = min(4.0, lane_width)
-  l_prob = l_prob * interp(abs(l_poly[3]), [2, 2.5], [1.0, 0.0])
-  r_prob = r_prob * interp(abs(r_poly[3]), [2, 2.5], [1.0, 0.0])
+  width_0m = l_poly[3] - r_poly[3]
+  width_50m = ((l_poly[3] + l_poly[2]*50 + l_poly[1]*50**2 + l_poly[0]*50**3) -
+               (r_poly[3] + r_poly[2]*50 + r_poly[1]*50**2 + r_poly[0]*50**3))
+  width_0m_mod = interp(width_0m, [4.0, 5.0], [1.0, 0.0])
+  width_50m_mod = interp(width_50m, [4.0, 5.0], [1.0, 0.0])
+  mod = min(width_0m_mod, width_50m_mod)
+
+  l_prob = l_prob * mod
+  r_prob = r_prob * mod
 
   path_from_left_lane = l_poly.copy()
   path_from_left_lane[3] -= lane_width / 2.0
