@@ -39,13 +39,11 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
-    # TODO: can we use CRUISE_STATE.CRUISE_ENABLED for both cars?
+    ret.cruiseState.enabled = bool(cp_adas.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
     if self.CP.carFingerprint == CAR.XTRAIL:
       ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
-      ret.cruiseState.enabled = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ACTIVATED"])
     elif self.CP.carFingerprint == CAR.LEAF:
       ret.cruiseState.available = bool(cp.vl["GAS_PEDAL"]["CRUISE_AVAILABLE"])
-      ret.cruiseState.enabled = bool(cp_adas.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
 
@@ -156,6 +154,8 @@ class CarState(CarStateBase):
     # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address, default
+      ("CRUISE_ENABLED", "CRUISE_STATE", 0),
+
       ("DESIRED_ANGLE", "LKAS", 0),
       ("SET_0x80_2", "LKAS", 0),
       ("MAX_TORQUE", "LKAS", 0),
@@ -233,16 +233,8 @@ class CarState(CarStateBase):
     ]
 
     checks = [
+      ("CRUISE_STATE", 50),
     ]
-
-    if CP.carFingerprint == CAR.LEAF:
-      signals += [
-        ("CRUISE_ENABLED", "CRUISE_STATE", 0),
-      ]
-      checks += [
-        ("CRUISE_STATE", 50),
-      ]
-
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
@@ -252,7 +244,6 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.XTRAIL:
       signals += [
         ("CRUISE_ON", "PRO_PILOT", 0),
-        ("CRUISE_ACTIVATED", "PRO_PILOT", 0),
       ]
 
     checks = [
