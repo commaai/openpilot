@@ -344,9 +344,6 @@ forced_dashcam_routes = [
   # Ford fusion
   "f1b4c567731f4a1b|2018-04-18--11-29-37",
   "f1b4c567731f4a1b|2018-04-30--10-15-35",
-
-  # Nissan
-  "fbbfa6af821552b9|2020-03-03--08-09-43",
 ]
 
 # TODO: add routes for these cars
@@ -369,6 +366,7 @@ non_tested_cars = [
   TOYOTA.CHR,
   TOYOTA.CHRH,
   TOYOTA.HIGHLANDERH,
+  NISSAN.LEAF,
 ]
 
 if __name__ == "__main__":
