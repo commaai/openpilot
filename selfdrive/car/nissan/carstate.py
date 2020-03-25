@@ -24,8 +24,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint == CAR.XTRAIL:
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
     elif self.CP.carFingerprint == CAR.LEAF:
-      # Look at brake pressure
-      pass
+      ret.brakePressed = bool(cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL"])
 
     if self.CP.carFingerprint == CAR.XTRAIL:
       ret.brakeLights = bool(cp.vl["DOORS_LIGHTS"]["BRAKE_LIGHT"])
@@ -96,6 +95,7 @@ class CarState(CarStateBase):
       # sig_address, frequency
       ("WHEEL_SPEEDS_REAR", 50),
       ("WHEEL_SPEEDS_FRONT", 50),
+      ("STEER_ANGLE_SENSOR", 50),
     ]
 
     if CP.carFingerprint == CAR.XTRAIL:
@@ -138,9 +138,10 @@ class CarState(CarStateBase):
       ]
     elif CP.carFingerprint == CAR.LEAF:
       signals += [
-
+        ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
       ]
       checks += [
+        ("BRAKE_PEDAL", 50),
       ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
