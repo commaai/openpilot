@@ -206,11 +206,13 @@ FW_VERSIONS = {
       b'37805-6A0-A740\x00\x00',
       b'37805-6A0-A840\x00\x00',
       b'37805-6A0-A850\x00\x00',
+      b'37805-6A1-H650\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-6A7-A220\x00\x00',
       b'28101-6A7-A320\x00\x00',
       b'28101-6A7-A510\x00\x00',
+      b'28101-6A9-H140\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TVA-A230\x00\x00',
@@ -219,6 +221,7 @@ FW_VERSIONS = {
       b'46114-TVA-A050\x00\x00',
       b'46114-TVA-A060\x00\x00',
       b'46114-TVA-A120\x00\x00',
+      b'46114-TVE-H550\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TVA-A010\x00\x00',
@@ -226,29 +229,35 @@ FW_VERSIONS = {
       b'78109-TVA-A220\x00\x00',
       b'78109-TVA-A310\x00\x00',
       b'78109-TWA-A210\x00\x00',
+      b'78109-TVE-H610\x00\x00',
     ],
     (Ecu.hud, 0x18da61f1, None): [
       b'78209-TVA-A010\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TVA-A060\x00\x00',
+      b'36161-TVE-H050\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TVA-A460\x00\x00',
+      b'77959-TVA-H230\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TVA-B050\x00\x00',
       b'57114-TVA-B040\x00\x00',
+      b'57114-TVE-H250\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TVA-A150\x00\x00',
       b'36802-TVA-A160\x00\x00',
       b'36802-TVA-A170\x00\x00',
+      b'36802-TVE-H070\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TVA-A140\x00\x00',
       b'39990-TVA-A150\x00\x00',  # Are these two different steerRatio?
       b'39990-TVA-A160\x00\x00',  # Sport, Sport 2.0T and Touring 2.0T have different ratios
+      b'39990-TVE-H130\x00\x00',
     ],
   },
   CAR.ACCORDH: {
