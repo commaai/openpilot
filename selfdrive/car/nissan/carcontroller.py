@@ -34,7 +34,6 @@ class CarController():
 
     ### STEER ###
     acc_active = bool(CS.out.cruiseState.enabled)
-    cruise_throttle_msg = CS.cruise_throttle_msg
     lkas_hud_msg = CS.lkas_hud_msg
     lkas_hud_info_msg = CS.lkas_hud_info_msg
     apply_angle = actuators.steerAngle
@@ -77,7 +76,7 @@ class CarController():
     if self.CP.carFingerprint == CAR.XTRAIL:
       if cruise_cancel:
         can_sends.append(nissancan.create_acc_cancel_cmd(
-            self.packer, cruise_throttle_msg, frame))
+            self.packer, CS.cruise_throttle_msg, frame))
 
     can_sends.append(nissancan.create_steering_control(
         self.packer, self.car_fingerprint, apply_angle, frame, acc_active, self.lkas_max_torque))

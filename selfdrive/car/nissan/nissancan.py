@@ -6,21 +6,19 @@ nissan_checksum = crcmod.mkCrcFun(0x11d, initCrc=0x00, rev=False, xorOut=0xff)
 
 
 def create_steering_control(packer, car_fingerprint, apply_steer, frame, steer_on, lkas_max_torque):
-  if car_fingerprint == CAR.XTRAIL:
-    idx = (frame % 16)
-    values = {
-      "DESIRED_ANGLE": apply_steer,
-      "SET_0x80_2": 0x80,
-      "SET_0x80": 0x80,
-      "MAX_TORQUE": lkas_max_torque if steer_on else 0,
-      "COUNTER": idx,
-      "LKA_ACTIVE": steer_on,
-    }
+  idx = (frame % 16)
+  values = {
+    "DESIRED_ANGLE": apply_steer,
+    "SET_0x80_2": 0x80,
+    "SET_0x80": 0x80,
+    "MAX_TORQUE": lkas_max_torque if steer_on else 0,
+    "COUNTER": idx,
+    "LKA_ACTIVE": steer_on,
+  }
 
-    dat = packer.make_can_msg("LKAS", 0, values)[2]
+  dat = packer.make_can_msg("LKAS", 0, values)[2]
 
-    values["CHECKSUM"] = nissan_checksum(dat[:7])
-
+  values["CHECKSUM"] = nissan_checksum(dat[:7])
   return packer.make_can_msg("LKAS", 0, values)
 
 

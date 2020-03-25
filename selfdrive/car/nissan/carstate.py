@@ -19,12 +19,12 @@ class CarState(CarStateBase):
     ret = car.CarState.new_message()
 
     ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
-    ret.gasPressed = bool(ret.gas)
+    ret.gasPressed = bool(ret.gas > 3)
 
     if self.CP.carFingerprint == CAR.XTRAIL:
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
     elif self.CP.carFingerprint == CAR.LEAF:
-      ret.brakePressed = bool(cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL"])
+      ret.brakePressed = bool(cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL"] > 3)
 
     if self.CP.carFingerprint == CAR.XTRAIL:
       ret.brakeLights = bool(cp.vl["DOORS_LIGHTS"]["BRAKE_LIGHT"])
@@ -39,8 +39,13 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
-    ret.cruiseState.enabled = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ACTIVATED"])
-    ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
+    # TODO: can we use CRUISE_STATE.CRUISE_ENABLED for both cars?
+    if self.CP.carFingerprint == CAR.XTRAIL:
+      ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
+      ret.cruiseState.enabled = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ACTIVATED"])
+    elif self.CP.carFingerprint == CAR.LEAF:
+      ret.cruiseState.available = bool(cp.vl["GAS_PEDAL"]["CRUISE_AVAILABLE"])
+      ret.cruiseState.enabled = bool(cp_adas.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
 
@@ -53,6 +58,7 @@ class CarState(CarStateBase):
     ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
     if self.CP.carFingerprint == CAR.XTRAIL:
+
       can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
@@ -66,7 +72,6 @@ class CarState(CarStateBase):
                           cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
                           cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
       self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
-
     elif self.CP.carFingerprint == CAR.LEAF:
       ret.gearShifter = 'drive'
 
@@ -118,7 +123,6 @@ class CarState(CarStateBase):
         ("unsure2", "CRUISE_THROTTLE", 0),
         ("unsure3", "CRUISE_THROTTLE", 0),
 
-        # TODO: define for leaf
         ("RIGHT_BLINKER", "LIGHTS", 0),
         ("LEFT_BLINKER", "LIGHTS", 0),
 
@@ -139,6 +143,7 @@ class CarState(CarStateBase):
     elif CP.carFingerprint == CAR.LEAF:
       signals += [
         ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
+        ("CRUISE_AVAILABLE", "GAS_PEDAL", 0),
       ]
       checks += [
         ("BRAKE_PEDAL", 50),
@@ -225,22 +230,30 @@ class CarState(CarStateBase):
       ("unknown61", "PROPILOT_HUD_INFO_MSG", 0),
       ("unknown55", "PROPILOT_HUD_INFO_MSG", 0),
       ("unknown50", "PROPILOT_HUD_INFO_MSG", 0),
-
     ]
 
     checks = [
-      # sig_address, frequency
     ]
+
+    if CP.carFingerprint == CAR.LEAF:
+      signals += [
+        ("CRUISE_ENABLED", "CRUISE_STATE", 0),
+      ]
+      checks += [
+        ("CRUISE_STATE", 50),
+      ]
+
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [
-      ("CRUISE_ON", "PRO_PILOT", 0),
-      ("CRUISE_ACTIVATED", "PRO_PILOT", 0),
-      ("STEER_STATUS", "PRO_PILOT", 0),
-    ]
+    signals = []
+    if CP.carFingerprint == CAR.XTRAIL:
+      signals += [
+        ("CRUISE_ON", "PRO_PILOT", 0),
+        ("CRUISE_ACTIVATED", "PRO_PILOT", 0),
+      ]
 
     checks = [
     ]
