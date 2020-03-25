@@ -4,6 +4,7 @@ from cereal import log
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
 
+
 def compute_path_pinv(l=50):
   deg = 3
   x = np.arange(l*1.0)
@@ -16,18 +17,22 @@ def model_polyfit(points, path_pinv):
   return np.dot(path_pinv, [float(x) for x in points])
 
 
-def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width):
-  # This will improve behaviour when lanes suddenly widen
-  lane_width = min(4.0, lane_width)
-  width_0m = l_poly[3] - r_poly[3]
-  width_50m = ((l_poly[3] + l_poly[2]*50 + l_poly[1]*50**2 + l_poly[0]*50**3) -
-               (r_poly[3] + r_poly[2]*50 + r_poly[1]*50**2 + r_poly[0]*50**3))
-  width_0m_mod = interp(width_0m, [4.0, 5.0], [1.0, 0.0])
-  width_50m_mod = interp(width_50m, [4.0, 5.0], [1.0, 0.0])
-  mod = min(width_0m_mod, width_50m_mod)
+def eval_poly(poly, x):
+  return poly[3] + poly[2]*x + poly[1]*x**2 + poly[0]*x**3
 
-  l_prob = l_prob * mod
-  r_prob = r_prob * mod
+
+def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego):
+  # This will improve behaviour when lanes suddenly widen
+  # these numbers were tested on 2000segments and found to work well
+  lane_width = min(4.0, lane_width)
+  width_poly = l_poly - r_poly
+  prob_mods = []
+  for t_check in [0.0, 1.5, 3.0]:
+    width_at_t = eval_poly(width_poly, t_check * (v_ego + 7))
+    prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
+  mod = min(prob_mods)
+  l_prob = mod * l_prob
+  r_prob = mod * r_prob
 
   path_from_left_lane = l_poly.copy()
   path_from_left_lane[3] -= lane_width / 2.0
@@ -89,7 +94,7 @@ class LanePlanner():
     self.lane_width = self.lane_width_certainty * self.lane_width_estimate + \
                       (1 - self.lane_width_certainty) * speed_lane_width
 
-    self.d_poly = calc_d_poly(self.l_poly, self.r_poly, self.p_poly, self.l_prob, self.r_prob, self.lane_width)
+    self.d_poly = calc_d_poly(self.l_poly, self.r_poly, self.p_poly, self.l_prob, self.r_prob, self.lane_width, v_ego)
 
   def update(self, v_ego, md):
     self.parse_model(md)
