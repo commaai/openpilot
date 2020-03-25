@@ -2,6 +2,7 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car.nissan import nissancan
 from opendbc.can.packer import CANPacker
+from selfdrive.car.nissan.values import CAR
 
 # Steer angle limits
 ANGLE_MAX_BP = [1.3, 10., 30.]
@@ -13,8 +14,10 @@ LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.CP = CP
     self.car_fingerprint = CP.carFingerprint
 
     self.lkas_max_torque = 0
@@ -70,9 +73,11 @@ class CarController():
       # send acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       cruise_cancel = 1
 
-    if cruise_cancel:
-      can_sends.append(nissancan.create_acc_cancel_cmd(
-          self.packer, cruise_throttle_msg, frame))
+    # TODO: find cancel message
+    if self.CP.carFingerprint == CAR.XTRAIL:
+      if cruise_cancel:
+        can_sends.append(nissancan.create_acc_cancel_cmd(
+            self.packer, cruise_throttle_msg, frame))
 
     can_sends.append(nissancan.create_steering_control(
         self.packer, self.car_fingerprint, apply_angle, frame, acc_active, self.lkas_max_torque))

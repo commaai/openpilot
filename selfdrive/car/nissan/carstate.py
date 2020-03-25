@@ -4,22 +4,31 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.config import Conversions as CV
 from opendbc.can.parser import CANParser
-from selfdrive.car.nissan.values import DBC
+from selfdrive.car.nissan.values import CAR, DBC, STEER_THRESHOLD
 
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
+
+    if CP.carFingerprint == CAR.XTRAIL:
+      self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
   def update(self, cp, cp_adas, cp_cam):
     ret = car.CarState.new_message()
 
     ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
     ret.gasPressed = bool(ret.gas)
-    ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
-    ret.brakeLights = bool(cp.vl["DOORS_LIGHTS"]["BRAKE_LIGHT"])
+
+    if self.CP.carFingerprint == CAR.XTRAIL:
+      ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
+    elif self.CP.carFingerprint == CAR.LEAF:
+      # Look at brake pressure
+      pass
+
+    if self.CP.carFingerprint == CAR.XTRAIL:
+      ret.brakeLights = bool(cp.vl["DOORS_LIGHTS"]["BRAKE_LIGHT"])
 
     ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"] * CV.KPH_TO_MS
@@ -28,33 +37,40 @@ class CarState(CarStateBase):
 
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
 
-    # Kalman filter, even though Subaru raw wheel speed is heaviliy filtered by default
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
-    can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
-
-    # Don't see this in the drive
-    ret.leftBlinker = bool(cp.vl["LIGHTS"]["LEFT_BLINKER"])
-    ret.rightBlinker = bool(cp.vl["LIGHTS"]["RIGHT_BLINKER"])
-
-    ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_UNLATCHED"] == 0
     ret.cruiseState.enabled = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ACTIVATED"])
     ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
 
-    ret.doorOpen = any([cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RR"],
-                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RL"],
-                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
-                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
-
-    ret.steeringPressed = bool(cp.vl["STEER_TORQUE_SENSOR2"]["STEERING_PRESSED"])
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
+
+    # TODO: Use user torque for both cars
+    if self.CP.carFingerprint == CAR.XTRAIL:
+      ret.steeringPressed = bool(cp.vl["STEER_TORQUE_SENSOR2"]["STEERING_PRESSED"])
+    elif self.CP.carFingerprint == CAR.LEAF:
+      ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+
     ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
-    ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
+    if self.CP.carFingerprint == CAR.XTRAIL:
+      can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
+      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
+      ret.leftBlinker = bool(cp.vl["LIGHTS"]["LEFT_BLINKER"])
+      ret.rightBlinker = bool(cp.vl["LIGHTS"]["RIGHT_BLINKER"])
+
+      ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_UNLATCHED"] == 0
+      ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
+      ret.doorOpen = any([cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RR"],
+                          cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RL"],
+                          cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
+                          cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
+      self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
+
+    elif self.CP.carFingerprint == CAR.LEAF:
+      ret.gearShifter = 'drive'
+
     self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
     self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
 
@@ -70,49 +86,62 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS_REAR", 0),
       ("WHEEL_SPEED_RR", "WHEEL_SPEEDS_REAR", 0),
 
-      ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
-
-      ("DOOR_OPEN_FR", "DOORS_LIGHTS", 1),
-      ("DOOR_OPEN_FL", "DOORS_LIGHTS", 1),
-      ("DOOR_OPEN_RR", "DOORS_LIGHTS", 1),
-      ("DOOR_OPEN_RL", "DOORS_LIGHTS", 1),
-
-      ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
-      ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
-
       ("GAS_PEDAL", "GAS_PEDAL", 0),
 
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
-      ("STEERING_PRESSED", "STEER_TORQUE_SENSOR2", 0),
-
       ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
-
-      ("RIGHT_BLINKER", "LIGHTS", 0),
-      ("LEFT_BLINKER", "LIGHTS", 0),
-
-      ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
-      ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
-      ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE", 0),
-      ("SET_BUTTON", "CRUISE_THROTTLE", 0),
-      ("RES_BUTTON", "CRUISE_THROTTLE", 0),
-      ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE", 0),
-      ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
-      ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
-      ("unsure1", "CRUISE_THROTTLE", 0),
-      ("unsure2", "CRUISE_THROTTLE", 0),
-      ("unsure3", "CRUISE_THROTTLE", 0),
-      # TODO: why are USER_BRAKE_PRESSED, NEW_SIGNAL_2 and GAS_PRESSED_INVERTED  not forwarded
-
-      ("ESP_DISABLED", "ESP", 0),
-      ("GEAR_SHIFTER", "GEARBOX", 0),
     ]
 
     checks = [
       # sig_address, frequency
       ("WHEEL_SPEEDS_REAR", 50),
       ("WHEEL_SPEEDS_FRONT", 50),
-      ("DOORS_LIGHTS", 10),
     ]
+
+    if CP.carFingerprint == CAR.XTRAIL:
+      signals += [
+        ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
+        ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
+
+        ("STEERING_PRESSED", "STEER_TORQUE_SENSOR2", 0),
+
+        # TODO: why are USER_BRAKE_PRESSED, NEW_SIGNAL_2 and GAS_PRESSED_INVERTED  not forwarded
+        ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
+        ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
+        ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE", 0),
+        ("SET_BUTTON", "CRUISE_THROTTLE", 0),
+        ("RES_BUTTON", "CRUISE_THROTTLE", 0),
+        ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE", 0),
+        ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
+        ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
+        ("unsure1", "CRUISE_THROTTLE", 0),
+        ("unsure2", "CRUISE_THROTTLE", 0),
+        ("unsure3", "CRUISE_THROTTLE", 0),
+
+        # TODO: define for leaf
+        ("RIGHT_BLINKER", "LIGHTS", 0),
+        ("LEFT_BLINKER", "LIGHTS", 0),
+
+        ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
+
+        ("DOOR_OPEN_FR", "DOORS_LIGHTS", 1),
+        ("DOOR_OPEN_FL", "DOORS_LIGHTS", 1),
+        ("DOOR_OPEN_RR", "DOORS_LIGHTS", 1),
+        ("DOOR_OPEN_RL", "DOORS_LIGHTS", 1),
+
+        ("ESP_DISABLED", "ESP", 0),
+        ("GEAR_SHIFTER", "GEARBOX", 0),
+      ]
+
+      checks += [
+        ("DOORS_LIGHTS", 10),
+      ]
+    elif CP.carFingerprint == CAR.LEAF:
+      signals += [
+
+      ]
+      checks += [
+      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
