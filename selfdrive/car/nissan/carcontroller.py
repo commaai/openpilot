@@ -72,11 +72,9 @@ class CarController():
       # send acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       cruise_cancel = 1
 
-    # TODO: find cancel message
-    if self.CP.carFingerprint == CAR.XTRAIL:
-      if cruise_cancel:
-        can_sends.append(nissancan.create_acc_cancel_cmd(
-            self.packer, CS.cruise_throttle_msg, frame))
+    if cruise_cancel:
+      can_sends.append(nissancan.create_acc_cancel_cmd(
+          self.packer, CS.cruise_throttle_msg, frame))
 
     can_sends.append(nissancan.create_steering_control(
         self.packer, self.car_fingerprint, apply_angle, frame, acc_active, self.lkas_max_torque))

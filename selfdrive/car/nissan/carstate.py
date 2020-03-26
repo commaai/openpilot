@@ -17,7 +17,11 @@ class CarState(CarStateBase):
   def update(self, cp, cp_adas, cp_cam):
     ret = car.CarState.new_message()
 
-    ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
+    if self.CP.carFingerprint == CAR.XTRAIL:
+      ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
+    elif self.CP.carFingerprint == CAR.LEAF:
+      ret.gas = cp.vl["CRUISE_THROTTLE"]["GAS_PEDAL"]
+
     ret.gasPressed = bool(ret.gas > 3)
 
     if self.CP.carFingerprint == CAR.XTRAIL:
@@ -42,7 +46,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint == CAR.XTRAIL:
       ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
     elif self.CP.carFingerprint == CAR.LEAF:
-      ret.cruiseState.available = bool(cp.vl["GAS_PEDAL"]["CRUISE_AVAILABLE"])
+      ret.cruiseState.available = bool(cp.vl["CRUISE_THROTTLE"]["CRUISE_AVAILABLE"])
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
 
@@ -69,8 +73,7 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    if self.CP.carFingerprint == CAR.XTRAIL:
-      self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
+    self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
 
     self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
     self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
@@ -87,7 +90,6 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS_REAR", 0),
       ("WHEEL_SPEED_RR", "WHEEL_SPEEDS_REAR", 0),
 
-      ("GAS_PEDAL", "GAS_PEDAL", 0),
 
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
       ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
@@ -113,7 +115,6 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS_FRONT", 50),
       ("STEER_TORQUE_SENSOR", 100),
       ("STEER_ANGLE_SENSOR", 100),
-      ("GAS_PEDAL", 50),
       ("DOORS_LIGHTS", 10),
     ]
 
@@ -122,9 +123,10 @@ class CarState(CarStateBase):
         ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
         ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
 
+        ("GAS_PEDAL", "GAS_PEDAL", 0),
+
         ("STEERING_PRESSED", "STEER_TORQUE_SENSOR2", 0),
 
-        # TODO: why are USER_BRAKE_PRESSED, NEW_SIGNAL_2 and GAS_PRESSED_INVERTED  not forwarded
         ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
         ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
         ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE", 0),
@@ -133,21 +135,45 @@ class CarState(CarStateBase):
         ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE", 0),
         ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
         ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
+        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE", 0),
+        ("NEW_SIGNAL_2", "CRUISE_THROTTLE", 0),
+        ("GAS_PRESSED_INVERTED", "CRUISE_THROTTLE", 0),
         ("unsure1", "CRUISE_THROTTLE", 0),
         ("unsure2", "CRUISE_THROTTLE", 0),
         ("unsure3", "CRUISE_THROTTLE", 0),
       ]
 
       checks += [
+        ("GAS_PEDAL", 50),
       ]
 
     elif CP.carFingerprint == CAR.LEAF:
       signals += [
         ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
-        ("CRUISE_AVAILABLE", "GAS_PEDAL", 0),
+
+        ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
+        ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE", 0),
+        ("CRUISE_AVAILABLE", "CRUISE_THROTTLE", 0),
+
+        ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
+        ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
+        ("SET_BUTTON", "CRUISE_THROTTLE", 0),
+        ("RES_BUTTON", "CRUISE_THROTTLE", 0),
+        ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE", 0),
+        ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
+        ("COUNTER", "CRUISE_THROTTLE", 0),
+
+        ("unsure1", "CRUISE_THROTTLE", 0),
+        ("unsure2", "CRUISE_THROTTLE", 0),
+        ("unsure3", "CRUISE_THROTTLE", 0),
+        ("unsure4", "CRUISE_THROTTLE", 0),
+        ("unsure5", "CRUISE_THROTTLE", 0),
+        ("unsure6", "CRUISE_THROTTLE", 0),
+        ("unsure7", "CRUISE_THROTTLE", 0),
       ]
       checks += [
         ("BRAKE_PEDAL", 100),
+        ("CRUISE_THROTTLE", 50),
       ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
