@@ -56,7 +56,6 @@ class CarState(CarStateBase):
     ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
     if self.CP.carFingerprint == CAR.XTRAIL:
-
       can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
@@ -70,6 +69,7 @@ class CarState(CarStateBase):
                           cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
                           cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
       self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
+
     elif self.CP.carFingerprint == CAR.LEAF:
       ret.gearShifter = 'drive'
 
@@ -98,7 +98,9 @@ class CarState(CarStateBase):
       # sig_address, frequency
       ("WHEEL_SPEEDS_REAR", 50),
       ("WHEEL_SPEEDS_FRONT", 50),
-      ("STEER_ANGLE_SENSOR", 50),
+      ("STEER_TORQUE_SENSOR", 100),
+      ("STEER_ANGLE_SENSOR", 100),
+      ("GAS_PEDAL", 50),
     ]
 
     if CP.carFingerprint == CAR.XTRAIL:
@@ -144,7 +146,7 @@ class CarState(CarStateBase):
         ("CRUISE_AVAILABLE", "GAS_PEDAL", 0),
       ]
       checks += [
-        ("BRAKE_PEDAL", 50),
+        ("BRAKE_PEDAL", 100),
       ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
