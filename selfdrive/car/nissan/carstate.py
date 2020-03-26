@@ -63,12 +63,12 @@ class CarState(CarStateBase):
                         cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
                         cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
 
+    ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_UNLATCHED"] == 0
+
     if self.CP.carFingerprint == CAR.XTRAIL:
       can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-
-      ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_UNLATCHED"] == 0
       ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
       self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
 
@@ -102,6 +102,8 @@ class CarState(CarStateBase):
 
       ("RIGHT_BLINKER", "LIGHTS", 0),
       ("LEFT_BLINKER", "LIGHTS", 0),
+
+      ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
     ]
 
     checks = [
@@ -117,7 +119,6 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.XTRAIL:
       signals += [
         ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
-
         ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
 
         ("STEERING_PRESSED", "STEER_TORQUE_SENSOR2", 0),
@@ -134,9 +135,6 @@ class CarState(CarStateBase):
         ("unsure1", "CRUISE_THROTTLE", 0),
         ("unsure2", "CRUISE_THROTTLE", 0),
         ("unsure3", "CRUISE_THROTTLE", 0),
-
-        ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
-
 
         ("ESP_DISABLED", "ESP", 0),
         ("GEAR_SHIFTER", "GEARBOX", 0),
