@@ -153,7 +153,7 @@ Although it's not upstream, there's a community of people getting openpilot to r
 
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
 
-To promote a car from community maintained, it must meet a few requirements. We must own one from the brand, there must be a path forward for longitudinal control, it must have AEB still enabled, and it must support fingerprinting 2.0
+To promote a car from community maintained, it must meet a few requirements. We must own one from the brand, we must sell the harness for it, there must be a path forward for longitudinal control, it must have AEB still enabled, and it must support fingerprinting 2.0
 
 Installation Instructions
 ------
