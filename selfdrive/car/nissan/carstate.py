@@ -92,6 +92,11 @@ class CarState(CarStateBase):
 
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
       ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
+
+      ("DOOR_OPEN_FR", "DOORS_LIGHTS", 1),
+      ("DOOR_OPEN_FL", "DOORS_LIGHTS", 1),
+      ("DOOR_OPEN_RR", "DOORS_LIGHTS", 1),
+      ("DOOR_OPEN_RL", "DOORS_LIGHTS", 1),
     ]
 
     checks = [
@@ -101,11 +106,13 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 100),
       ("STEER_ANGLE_SENSOR", 100),
       ("GAS_PEDAL", 50),
+      ("DOORS_LIGHTS", 10),
     ]
 
     if CP.carFingerprint == CAR.XTRAIL:
       signals += [
         ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
+
         ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
 
         ("STEERING_PRESSED", "STEER_TORQUE_SENSOR2", 0),
@@ -128,18 +135,14 @@ class CarState(CarStateBase):
 
         ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
 
-        ("DOOR_OPEN_FR", "DOORS_LIGHTS", 1),
-        ("DOOR_OPEN_FL", "DOORS_LIGHTS", 1),
-        ("DOOR_OPEN_RR", "DOORS_LIGHTS", 1),
-        ("DOOR_OPEN_RL", "DOORS_LIGHTS", 1),
 
         ("ESP_DISABLED", "ESP", 0),
         ("GEAR_SHIFTER", "GEARBOX", 0),
       ]
 
       checks += [
-        ("DOORS_LIGHTS", 10),
       ]
+
     elif CP.carFingerprint == CAR.LEAF:
       signals += [
         ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
