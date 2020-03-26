@@ -55,19 +55,21 @@ class CarState(CarStateBase):
 
     ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
+    ret.leftBlinker = bool(cp.vl["LIGHTS"]["LEFT_BLINKER"])
+    ret.rightBlinker = bool(cp.vl["LIGHTS"]["RIGHT_BLINKER"])
+
+    ret.doorOpen = any([cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RR"],
+                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RL"],
+                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
+                        cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
+
     if self.CP.carFingerprint == CAR.XTRAIL:
       can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-      ret.leftBlinker = bool(cp.vl["LIGHTS"]["LEFT_BLINKER"])
-      ret.rightBlinker = bool(cp.vl["LIGHTS"]["RIGHT_BLINKER"])
 
       ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_UNLATCHED"] == 0
       ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
-      ret.doorOpen = any([cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RR"],
-                          cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_RL"],
-                          cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
-                          cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
       self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
 
     elif self.CP.carFingerprint == CAR.LEAF:
@@ -97,6 +99,9 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_FL", "DOORS_LIGHTS", 1),
       ("DOOR_OPEN_RR", "DOORS_LIGHTS", 1),
       ("DOOR_OPEN_RL", "DOORS_LIGHTS", 1),
+
+      ("RIGHT_BLINKER", "LIGHTS", 0),
+      ("LEFT_BLINKER", "LIGHTS", 0),
     ]
 
     checks = [
@@ -129,9 +134,6 @@ class CarState(CarStateBase):
         ("unsure1", "CRUISE_THROTTLE", 0),
         ("unsure2", "CRUISE_THROTTLE", 0),
         ("unsure3", "CRUISE_THROTTLE", 0),
-
-        ("RIGHT_BLINKER", "LIGHTS", 0),
-        ("LEFT_BLINKER", "LIGHTS", 0),
 
         ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
 
