@@ -12,7 +12,7 @@ to_build = {
 
 if arch != "aarch64":
     to_build.update({
-        'lane': '#xx/pipeline/lib/ekf/lane_kf.py',
+        'lane': '../../../xx/pipeline/lib/ekf/lane_kf.py',
         'pos_computer_4': 'helpers/lst_sq_computer.py',
         'pos_computer_5': 'helpers/lst_sq_computer.py',
         'feature_handler_5': 'helpers/feature_handler.py',
