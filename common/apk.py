@@ -6,7 +6,9 @@ import shutil
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
-android_packages = ("ai.comma.plus.offroad",)
+AI_COMMA_PLUS_OFFROAD = "ai.comma.plus.offroad"
+
+android_packages = (AI_COMMA_PLUS_OFFROAD,)
 
 def get_installed_apks():
   dat = subprocess.check_output(["pm", "list", "packages", "-f"], encoding='utf8').strip().split("\n")
@@ -31,11 +33,11 @@ def start_offroad():
   system("am start -n ai.comma.plus.offroad/.MainActivity")
 
 def set_package_permissions():
-  pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
-  pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
-  pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
-  appops_set("ai.comma.plus.offroad", "SU", "allow")
-  appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
+  pm_grant(AI_COMMA_PLUS_OFFROAD, "android.permission.ACCESS_FINE_LOCATION")
+  pm_grant(AI_COMMA_PLUS_OFFROAD, "android.permission.READ_PHONE_STATE")
+  pm_grant(AI_COMMA_PLUS_OFFROAD, "android.permission.READ_EXTERNAL_STORAGE")
+  appops_set(AI_COMMA_PLUS_OFFROAD, "SU", "allow")
+  appops_set(AI_COMMA_PLUS_OFFROAD, "WIFI_SCAN", "allow")
 
 def appops_set(package, op, mode):
   system(f"LD_LIBRARY_PATH= appops set {package} {op} {mode}")
