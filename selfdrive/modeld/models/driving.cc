@@ -205,14 +205,18 @@ void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_dat
   meta.setDesirePrediction(desire_pred);
 }
 
-void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float * long_v_data, const float * long_a_data) {
+void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float * long_x_data, const float * long_v_data, const float * long_a_data) {
   // just doing 10 vals, 1 every sec for now
+  float dist_arr[TIME_DISTANCE/10];
   float speed_arr[TIME_DISTANCE/10];
   float accel_arr[TIME_DISTANCE/10];
   for (int i=0; i<TIME_DISTANCE/10; i++) {
+    dist_arr[i] = long_x_data[i*10];
     speed_arr[i] = long_v_data[i*10];
     accel_arr[i] = long_a_data[i*10];
   }
+  kj::ArrayPtr<const float> dist(&dist_arr[0], ARRAYSIZE(dist_arr));
+  longi.setDistances(dist);
   kj::ArrayPtr<const float> speed(&speed_arr[0], ARRAYSIZE(speed_arr));
   longi.setSpeeds(speed);
   kj::ArrayPtr<const float> accel(&accel_arr[0], ARRAYSIZE(accel_arr));
@@ -237,7 +241,7 @@ void model_publish(PubSocket *sock, uint32_t frame_id,
     auto right_lane = framed.initRightLane();
     fill_path(right_lane, net_outputs.right_lane, true, -1.8);
     auto longi = framed.initLongitudinal();
-    fill_longi(longi, net_outputs.long_v, net_outputs.long_a);
+    fill_longi(longi, net_outputs.long_x, net_outputs.long_v, net_outputs.long_a);
 
 
     // Find the distribution that corresponds to the current lead
