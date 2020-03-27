@@ -40,7 +40,7 @@ def create_cancel_msg(packer, cancel_msg, cruise_cancel):
   values = copy.copy(cancel_msg)
 
   if cruise_cancel:
-    values["CANCEL"] = 1
+    values["CANCEL_SEATBELT"] = 1
 
   return packer.make_can_msg("CANCEL_MSG", 2, values)
 

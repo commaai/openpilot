@@ -158,7 +158,7 @@ class CarState(CarStateBase):
         ("SPEED_MPH", "HUD_SETTINGS", 0),
 
         # Copy other values, we use this to cancel
-        ("CANCEL", "CANCEL_MSG", 0),
+        ("CANCEL_SEATBELT", "CANCEL_MSG", 0),
         ("NEW_SIGNAL_1", "CANCEL_MSG", 0),
         ("NEW_SIGNAL_2", "CANCEL_MSG", 0),
         ("NEW_SIGNAL_3", "CANCEL_MSG", 0),
