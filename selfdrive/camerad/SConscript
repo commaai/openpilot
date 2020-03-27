@@ -1,4 +1,4 @@
-Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc', 'cereal')
+Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc', 'cereal', 'webcam')
 
 libs = ['m', 'pthread', common, 'jpeg', 'json', cereal, 'OpenCL', messaging, 'czmq', 'zmq', 'capnp', 'kj', 'capnp_c', visionipc, gpucommon]
 
@@ -6,8 +6,16 @@ if arch == "aarch64":
   libs += ['gsl', 'CB', 'adreno_utils', 'EGL', 'GLESv3', 'cutils', 'ui']
   cameras = ['cameras/camera_qcom.c']
 else:
-  libs += []
-  cameras = ['cameras/camera_frame_stream.cc']
+  if webcam:
+    libs += ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_videoio']
+    cameras = ['cameras/camera_webcam.cc']
+    env = env.Clone()
+    env.Append(CXXFLAGS = '-DWEBCAM')
+    env.Append(CFLAGS = '-DWEBCAM')
+    env.Append(CPPPATH = '/usr/local/include/opencv4')
+  else:
+    libs += []
+    cameras = ['cameras/camera_frame_stream.cc']
 
 env.SharedLibrary('snapshot/visionipc',
   ["#selfdrive/common/visionipc.c", "#selfdrive/common/ipc.c"])
