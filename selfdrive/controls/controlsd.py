@@ -27,6 +27,7 @@ from selfdrive.controls.lib.planner import LON_MPC_STEP
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
 LANE_DEPARTURE_THRESHOLD = 0.1
+STEER_ANGLE_SATURATION_THRESHOLD = 2.0  # Degrees
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
@@ -266,8 +267,12 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CS.steeringRateLimited, CP, path_plan)
 
+  # Check for difference between desired angle and angle for angle based control
+  angle_control_saturated = CP.steerControlType == car.CarParams.SteerControlType.angle and \
+    abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
+
   # Send a "steering required alert" if saturation count has reached the limit
-  if lac_log.saturated and not CS.steeringPressed:
+  if active and (lac_log.saturated or angle_control_saturated) and not CS.steeringPressed:
     # Check if we deviated from the path
     left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
     right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
