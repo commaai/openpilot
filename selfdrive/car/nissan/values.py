@@ -1,6 +1,6 @@
 from selfdrive.car import dbc_dict
 
-STEER_THRESHOLD = 10
+STEER_THRESHOLD = 1.0
 
 class CAR:
   XTRAIL = "NISSAN X-TRAIL 2017"

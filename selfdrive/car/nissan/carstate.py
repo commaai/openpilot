@@ -49,12 +49,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = bool(cp.vl["CRUISE_THROTTLE"]["CRUISE_AVAILABLE"])
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
-
-    # TODO: Use user torque for both cars
-    if self.CP.carFingerprint == CAR.XTRAIL:
-      ret.steeringPressed = bool(cp.vl["STEER_TORQUE_SENSOR2"]["STEERING_PRESSED"])
-    elif self.CP.carFingerprint == CAR.LEAF:
-      ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
     ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
@@ -124,8 +119,6 @@ class CarState(CarStateBase):
         ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
 
         ("GAS_PEDAL", "GAS_PEDAL", 0),
-
-        ("STEERING_PRESSED", "STEER_TORQUE_SENSOR2", 0),
 
         ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
         ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
