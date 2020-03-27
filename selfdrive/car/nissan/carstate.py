@@ -76,6 +76,8 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
+    self.lkas_enabled = bool(cp_adas.vl["LKAS_SETTINGS"]["LKAS_ENABLED"])
+
     self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
     self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
 
@@ -175,6 +177,8 @@ class CarState(CarStateBase):
     # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address, default
+      ("LKAS_ENABLED", "LKAS_SETTINGS", 0),
+
       ("CRUISE_ENABLED", "CRUISE_STATE", 0),
 
       ("DESIRED_ANGLE", "LKAS", 0),
