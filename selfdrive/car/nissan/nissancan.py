@@ -36,14 +36,13 @@ def create_acc_cancel_cmd(packer, cruise_throttle_msg, frame):
   return packer.make_can_msg("CRUISE_THROTTLE", 2, values)
 
 
-def create_seatbelt_msg(packer, seatbelt_msg, cruise_cancel):
-  values = copy.copy(seatbelt_msg)
+def create_cancel_msg(packer, cancel_msg, cruise_cancel):
+  values = copy.copy(cancel_msg)
 
   if cruise_cancel:
-    values["SEATBELT_DRIVER_UNLATCHED"] = 1
-    values["SEATBELT_DRIVER_LATCHED"] = 0
+    values["CANCEL"] = 1
 
-  return packer.make_can_msg("SEATBELT", 2, values)
+  return packer.make_can_msg("CANCEL_MSG", 2, values)
 
 
 def create_lkas_hud_msg(packer, lkas_hud_msg, enabled, left_line, right_line, left_lane_depart, right_lane_depart):

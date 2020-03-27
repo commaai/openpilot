@@ -77,7 +77,7 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
-    self.seatbelt_msg = copy.copy(cp.vl["SEATBELT"])
+    self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
 
     self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
     self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
@@ -158,11 +158,10 @@ class CarState(CarStateBase):
         ("SPEED_MPH", "HUD_SETTINGS", 0),
 
         # Copy other values, we use this to cancel
-        ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
-        ("unknown1", "SEATBELT", 0),
-        ("unknown2", "SEATBELT", 0),
-        ("unknown3", "SEATBELT", 0),
-        ("unknown4", "SEATBELT", 0),
+        ("CANCEL", "CANCEL_MSG", 0),
+        ("NEW_SIGNAL_1", "CANCEL_MSG", 0),
+        ("NEW_SIGNAL_2", "CANCEL_MSG", 0),
+        ("NEW_SIGNAL_3", "CANCEL_MSG", 0),
       ]
       checks += [
         ("BRAKE_PEDAL", 100),
