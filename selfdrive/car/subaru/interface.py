@@ -20,6 +20,9 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = True
     ret.safetyModel = car.CarParams.SafetyModel.subaru
 
+    # Subaru port is a community feature, since we don't own one to test
+    ret.communityFeature = True
+
     # force openpilot to fake the stock camera, since car harness is not supported yet and old style giraffe (with switches)
     # was never released
     ret.enableCamera = True

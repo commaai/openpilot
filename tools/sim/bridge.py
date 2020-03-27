@@ -19,6 +19,7 @@ from selfdrive.car.honda.values import CruiseButtons
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--autopilot', action='store_true')
 parser.add_argument('--joystick', action='store_true')
+parser.add_argument('--realmonitoring', action='store_true')
 args = parser.parse_args()
 
 pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
@@ -68,6 +69,8 @@ def health_function():
     rk.keep_time()
 
 def fake_driver_monitoring():
+  if args.realmonitoring:
+    return
   pm = messaging.PubMaster(['driverState'])
   while 1:
     dat = messaging.new_message('driverState')
@@ -198,7 +201,7 @@ def go(q):
 
     vel = vehicle.get_velocity()
     speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
-    can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button)
+    can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button, is_engaged=is_openpilot_engaged)
 
     if rk.frame%1 == 0: # 20Hz?
       throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)

@@ -38,11 +38,13 @@
 #define ALERTSIZE_MID 2
 #define ALERTSIZE_FULL 3
 
-#define COLOR_BLACK_ALPHA nvgRGBA(0, 0, 0, 85)
+#define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
+#define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
 #define COLOR_WHITE nvgRGBA(255, 255, 255, 255)
-#define COLOR_WHITE_ALPHA nvgRGBA(255, 255, 255, 85)
+#define COLOR_WHITE_ALPHA(x) nvgRGBA(255, 255, 255, x)
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
+#define COLOR_OCHRE nvgRGBA(218, 111, 37, 255)
 
 #ifndef QCOM
   #define UI_60FPS

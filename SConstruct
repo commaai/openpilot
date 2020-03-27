@@ -17,6 +17,8 @@ if platform.system() == "Darwin":
 if not os.path.isdir("/system"):
   arch = "larch64"
 
+webcam = bool(ARGUMENTS.get("use_webcam", 0))
+
 if arch == "aarch64" or arch == "larch64":
   lenv = {
     "LD_LIBRARY_PATH": '/data/data/com.termux/files/usr/lib',
@@ -131,7 +133,7 @@ env = Environment(
     "#phonelibs/json11",
     "#phonelibs/eigen",
     "#phonelibs/curl/include",
-    "#phonelibs/opencv/include",
+    #"#phonelibs/opencv/include", # use opencv4 instead
     "#phonelibs/libgralloc/include",
     "#phonelibs/android_frameworks_native/include",
     "#phonelibs/android_hardware_libhardware/include",
@@ -194,7 +196,7 @@ if arch == 'larch64':
   zmq = 'zmq'
 else:
   zmq = FindFile("libzmq.a", libpath)
-Export('env', 'arch', 'zmq', 'SHARED')
+Export('env', 'arch', 'zmq', 'SHARED', 'webcam')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -231,6 +233,7 @@ if arch != "Darwin":
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
+SConscript(['selfdrive/controls/lib/longitudinal_mpc_model/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
