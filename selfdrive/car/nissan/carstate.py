@@ -48,6 +48,13 @@ class CarState(CarStateBase):
     elif self.CP.carFingerprint == CAR.LEAF:
       ret.cruiseState.available = bool(cp.vl["CRUISE_THROTTLE"]["CRUISE_AVAILABLE"])
 
+    # TODO: Find mph/kph bit on XTRAIL
+    if self.CP.carFingerprint == CAR.LEAF:
+      speed = cp_adas.vl["PROPILOT_HUD"]["SET_SPEED"]
+      if speed != 255:
+        conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
+        ret.cruiseState.speed = speed * conversion
+
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
@@ -72,6 +79,7 @@ class CarState(CarStateBase):
 
     self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
     self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
+
 
     return ret
 
@@ -156,6 +164,8 @@ class CarState(CarStateBase):
         ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
         ("COUNTER", "CRUISE_THROTTLE", 0),
 
+        ("SPEED_MPH", "HUD_SETTINGS", 0),
+
         ("unsure1", "CRUISE_THROTTLE", 0),
         ("unsure2", "CRUISE_THROTTLE", 0),
         ("unsure3", "CRUISE_THROTTLE", 0),
@@ -207,7 +217,7 @@ class CarState(CarStateBase):
       ("unknown26", "PROPILOT_HUD", 0),
       ("unknown28", "PROPILOT_HUD", 0),
       ("unknown31", "PROPILOT_HUD", 0),
-      ("unknown39", "PROPILOT_HUD", 0),
+      ("SET_SPEED", "PROPILOT_HUD", 0),
       ("unknown43", "PROPILOT_HUD", 0),
       ("unknown08", "PROPILOT_HUD", 0),
       ("unknown05", "PROPILOT_HUD", 0),
