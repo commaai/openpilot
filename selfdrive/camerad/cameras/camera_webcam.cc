@@ -54,8 +54,8 @@ static void* rear_thread(void *arg) {
   CameraState* s = (CameraState*)arg;
 
   cv::VideoCapture cap_rear(1); // road
-  cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-  cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+  cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 853);
+  cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
   cap_rear.set(cv::CAP_PROP_FPS, s->fps);
   cap_rear.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
   cap_rear.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
@@ -66,9 +66,13 @@ static void* rear_thread(void *arg) {
   size.width = s->ci.frame_width;
 
   // transforms calculation see tools/webcam/warp_vis.py
-  float ts[9] = {1.00220264, 0.0, -59.40969163, 
-                  0.0, 1.00220264, 76.20704846, 
+  float ts[9] = {1.50330396, 0.0, -59.40969163,
+                  0.0, 1.50330396, 76.20704846,
                   0.0, 0.0, 1.0};
+  // if camera upside down:
+  // float ts[9] = {-1.50330396, 0.0, 1223.4,
+  //                 0.0, -1.50330396, 797.8,
+  //                 0.0, 0.0, 1.0};
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
   if (!cap_rear.isOpened()) {
@@ -126,8 +130,8 @@ void front_thread(CameraState *s) {
   int err;
 
   cv::VideoCapture cap_front(2); // driver
-  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 853);
+  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
   cap_front.set(cv::CAP_PROP_FPS, s->fps);
   // cv::Rect roi_front(320, 0, 960, 720);
 
@@ -136,9 +140,13 @@ void front_thread(CameraState *s) {
   size.width = s->ci.frame_width;
 
   // transforms calculation see tools/webcam/warp_vis.py
-  float ts[9] = {0.94713656, 0.0, -30.16740088, 
-                  0.0, 0.94713656, 91.030837, 
+  float ts[9] = {1.42070485, 0.0, -30.16740088,
+                  0.0, 1.42070485, 91.030837,
                   0.0, 0.0, 1.0};
+  // if camera upside down:
+  // float ts[9] = {-1.42070485, 0.0, 1182.2,
+  //                 0.0, -1.42070485, 773.0,
+  //                 0.0, 0.0, 1.0};
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
   if (!cap_front.isOpened()) {

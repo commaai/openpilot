@@ -23,14 +23,15 @@ git clone https://github.com/commaai/openpilot.git
 ```
 ## Build openpilot for webcam
 ```
-cd ~/openpilot
-scons use_webcam=1
+cd ~/openpilot 
+# check out selfdrive/camerad/cameras/camera_webcam.cc line72&146 if any camera is upside down 
+scons use_webcam=1 
 touch prebuilt
 ```
 ## Connect the hardwares 
 ```
 # Connect the road facing camera first, then the driver facing camera 
-# (default indexes are 1 and 2; can be modified in selfdrive/camerad/cameras/camera_webcam.cc)
+# (default indexes are 1 and 2; can be modified in selfdrive/camerad/cameras/camera_webcam.cc) 
 # Connect your computer to panda
 ```
 ## GO 
