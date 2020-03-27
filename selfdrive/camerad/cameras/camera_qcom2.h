@@ -28,14 +28,27 @@ typedef struct CameraState {
   float digital_gain;
   mat3 transform;
 
-  int camera_num;
-} CameraState;
+  int device_iommu;
+  int cdm_iommu;
 
+  int video0_fd;
+  int video1_fd;
+  int isp_fd;
+
+  int sensor_fd;
+  int csiphy_fd;
+
+  int camera_num;
+
+  VisionBuf *bufs;
+} CameraState;
 
 typedef struct DualCameraState {
   int device;
 
-  int ispif_fd;
+  int video0_fd;
+  int video1_fd;
+  int isp_fd;
 
   CameraState rear;
   CameraState front;
