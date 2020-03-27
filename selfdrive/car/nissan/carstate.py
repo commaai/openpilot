@@ -52,6 +52,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint == CAR.LEAF:
       speed = cp_adas.vl["PROPILOT_HUD"]["SET_SPEED"]
       if speed != 255:
+        speed -= 1  # Speed on HUD is always 1 lower than actually sent on can bus
         conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
         ret.cruiseState.speed = speed * conversion
 
