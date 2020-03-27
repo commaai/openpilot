@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -19,6 +21,8 @@
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
 #define FRAME_STRIDE 1936
+
+extern volatile sig_atomic_t do_exit;
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_AR0231] = {
@@ -126,11 +130,11 @@ void cameras_init(DualCameraState *s) {
 void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
   int ret;
 
-  LOGD("\n-- Opening devices\n");
+  LOG("-- Opening devices");
   // video0 is the target of many ioctls
   s->video0_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
   assert(s->video0_fd >= 0);
-  LOGD("opened video0\n");
+  LOGD("opened video0");
   s->rear.video0_fd = s->front.video0_fd = s->wide.video0_fd = s->video0_fd;
 
   // video1 is the target of some ioctls
@@ -145,7 +149,7 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *ca
   s->rear.isp_fd = s->front.isp_fd = s->wide.isp_fd = s->isp_fd;
 
   // query icp for MMU handles
-  printf("\n-- Query ICP for MMU handles\n");
+  LOG("-- Query ICP for MMU handles");
   static struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
   static struct cam_query_cap_cmd query_cap_cmd = {0};
   query_cap_cmd.handle_type = 1;
@@ -165,11 +169,21 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *ca
   // TODO: add bufs for camera wide
 }
 
+static void camera_close(CameraState *s) {
+  tbuffer_stop(&s->camera_tb);
+}
+
 static void cameras_close(DualCameraState *s) {
+  camera_close(&s->rear);
+  camera_close(&s->front);
+  camera_close(&s->wide);
 }
 
 void cameras_run(DualCameraState *s) {
-  // TODO: loop
+  while (!do_exit) {
+    sleep(1);
+  }
+
   LOG(" ************** STOPPING **************");
   cameras_close(s);
 }
