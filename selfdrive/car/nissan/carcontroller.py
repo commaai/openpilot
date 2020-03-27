@@ -5,8 +5,6 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car.nissan.values import CAR
 
 # Steer angle limits
-ANGLE_MAX_BP = [1.3, 10., 30.]
-ANGLE_MAX_V = [540., 120., 23.]
 ANGLE_DELTA_BP = [0., 5., 15.]
 ANGLE_DELTA_V = [5., .8, .15]     # windup limit
 ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
@@ -47,12 +45,7 @@ class CarController():
       else:
         angle_rate_lim = interp(CS.out.vEgo, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
 
-      apply_angle = clip(apply_angle, self.last_angle -
-                         angle_rate_lim, self.last_angle + angle_rate_lim)
-
-      # steer angle
-      angle_lim = interp(CS.out.vEgo, ANGLE_MAX_BP, ANGLE_MAX_V)
-      apply_angle = clip(apply_angle, -angle_lim, angle_lim)
+      apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
 
       # Max torque from driver before EPS will give up and not apply torque
       if not bool(CS.out.steeringPressed):
