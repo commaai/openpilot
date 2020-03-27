@@ -643,21 +643,26 @@ FW_VERSIONS = {
   CAR.RIDGELINE: {
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-T6Z-A020\x00\x00',
+      b'39990-T6Z-A030\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab0f1, None): [
       b'36161-T6Z-A310\x00\x00',
+      b'36161-T6Z-A520\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-T6Z-A010\x00\x00',
+      b'38897-T6Z-A110\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-T6Z-A420\x00\x00',
+      b'78109-T6Z-A510\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-T6Z-A020\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-T6Z-A130\x00\x00',
+      b'57114-T6Z-A520\x00\x00',
     ],
   },
   CAR.INSIGHT: {
