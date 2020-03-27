@@ -4,6 +4,8 @@
 
 #ifdef QCOM
 #include "cameras/camera_qcom.h"
+#elif QCOM2
+#include "cameras/camera_qcom2.h"
 #else
 #include "cameras/camera_frame_stream.h"
 #endif

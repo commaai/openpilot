@@ -14,18 +14,24 @@ AddOption('--asan',
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
+if not os.path.isdir("/system"):
+  arch = "larch64"
 
-if arch == "aarch64":
+if arch == "aarch64" or arch == "larch64":
   lenv = {
     "LD_LIBRARY_PATH": '/data/data/com.termux/files/usr/lib',
     "PATH": os.environ['PATH'],
-    "ANDROID_DATA": os.environ['ANDROID_DATA'],
-    "ANDROID_ROOT": os.environ['ANDROID_ROOT'],
   }
+
+  if arch == "aarch64":
+    # android
+    lenv["ANDROID_DATA"] = os.environ['ANDROID_DATA']
+    lenv["ANDROID_ROOT"] = os.environ['ANDROID_ROOT']
 
   cpppath = [
     "#phonelibs/opencl/include",
   ]
+
   libpath = [
     "#phonelibs/snpe/aarch64-android-clang3.8",
     "/usr/lib",
@@ -36,8 +42,14 @@ if arch == "aarch64":
     "#phonelibs/libyuv/lib",
   ]
 
-  cflags = ["-DQCOM", "-mcpu=cortex-a57"]
-  cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
+  if arch == "larch64":
+    cpppath += ["#phonelibs/capnp-cpp/include", "#phonelibs/capnp-c/include"]
+    libpath += ["#external/capnparm/lib", "/usr/lib/aarch64-linux-gnu"]
+    cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+    cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+  else:
+    cflags = ["-DQCOM", "-mcpu=cortex-a57"]
+    cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
 
   rpath = ["/system/vendor/lib64"]
 else:
@@ -175,9 +187,11 @@ def abspath(x):
     # rpath works elsewhere
     return x[0].path.rsplit("/", 1)[1][:-3]
 
-#zmq = 'zmq'
 # still needed for apks
-zmq = FindFile("libzmq.a", libpath)
+if arch == 'larch64':
+  zmq = 'zmq'
+else:
+  zmq = FindFile("libzmq.a", libpath)
 Export('env', 'arch', 'zmq', 'SHARED')
 
 # cereal and messaging are shared with the system
