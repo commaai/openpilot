@@ -189,8 +189,13 @@ persistent_processes = [
   'thermald',
   'logmessaged',
   'ui',
-  'uploader',
 ]
+
+if not WEBCAM:
+  persistent_processes += [
+    'uploader',
+  ]
+
 if ANDROID:
   persistent_processes += [
     'logcatd',
@@ -201,7 +206,6 @@ if ANDROID:
 car_started_processes = [
   'controlsd',
   'plannerd',
-  'loggerd',
   'radard',
   'dmonitoringd',
   'calibrationd',
@@ -209,13 +213,19 @@ car_started_processes = [
   'camerad',
   'modeld',
   'proclogd',
-  'ubloxd',
   'locationd',
 ]
-if WEBCAM:
+
+if not WEBCAM:
+  car_started_processes += [
+    'loggerd',
+    'ubloxd',
+  ]
+else:
   car_started_processes += [
     'dmonitoringmodeld',
   ]
+
 if ANDROID:
   car_started_processes += [
     'sensord',
