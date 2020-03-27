@@ -46,22 +46,22 @@ class CarKalman():
 
   # state covariance
   P_initial = np.diag([
-    .1**2,
-    .1**2,
+    0.1**2,
+    0.1**2,
     math.radians(0.1)**2,
     math.radians(0.1)**2,
 
     10**2, 10**2,
-    1**2,
-    1**2,
+    1.0**2,
+    1.0**2,
   ])
 
   # process noise
   Q = np.diag([
-    (.05/10)**2,
+    (.05/100)**2,
     .0001**2,
-    math.radians(0.01)**2,
-    math.radians(0.2)**2,
+    math.radians(0.001)**2,
+    math.radians(0.05)**2,
 
     .1**2, .1**2,
     math.radians(0.1)**2,
@@ -69,15 +69,21 @@ class CarKalman():
   ])
 
   obs_noise = {
-    ObservationKind.CAL_DEVICE_FRAME_XY_SPEED: np.diag([0.1**2, 0.1**2]),
-    ObservationKind.CAL_DEVICE_FRAME_YAW_RATE: np.atleast_2d(math.radians(0.1)**2),
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.1)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(5.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(50.0**2),
     ObservationKind.STIFFNESS: np.atleast_2d(50.0**2),
   }
 
-  maha_test_kinds = []  # [ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, ObservationKind.CAL_DEVICE_FRAME_XY_SPEED]
+  maha_test_kinds = []  # [ObservationKind.ROAD_FRAME_YAW_RATE, ObservationKind.ROAD_FRAME_XY_SPEED]
+  global_vars = [
+    sp.Symbol('mass'),
+    sp.Symbol('rotational_inertia'),
+    sp.Symbol('center_to_front'),
+    sp.Symbol('center_to_rear'),
+    sp.Symbol('stiffness_front'),
+    sp.Symbol('stiffness_rear'),
+  ]
 
   @staticmethod
   def generate_code():
@@ -85,28 +91,18 @@ class CarKalman():
     name = CarKalman.name
     maha_test_kinds = CarKalman.maha_test_kinds
 
+    # globals
+    m, j, aF, aR, cF_orig, cR_orig = CarKalman.global_vars
+
     # make functions and jacobians with sympy
     # state variables
     state_sym = sp.MatrixSymbol('state', dim_state, 1)
     state = sp.Matrix(state_sym)
 
     # Vehicle model constants
-    # TODO: Read from car params at runtime
-    from selfdrive.controls.lib.vehicle_model import VehicleModel
-    from selfdrive.car.toyota.interface import CarInterface
-    from selfdrive.car.toyota.values import CAR
-
-    CP = CarInterface.get_params(CAR.COROLLA_TSS2)
-    VM = VehicleModel(CP)
-
-    m = VM.m
-    j = VM.j
-    aF = VM.aF
-    aR = VM.aR
-
     x = state[States.STIFFNESS, :][0, 0]
 
-    cF, cR = x * VM.cF, x * VM.cR
+    cF, cR = x * cF_orig, x * cR_orig
     angle_offset = state[States.ANGLE_OFFSET, :][0, 0]
     angle_offset_fast = state[States.ANGLE_OFFSET_FAST, :][0, 0]
     sa = state[States.STEER_ANGLE, :][0, 0]
@@ -141,21 +137,25 @@ class CarKalman():
     # Observation functions
     #
     obs_eqs = [
-      [sp.Matrix([r]), ObservationKind.CAL_DEVICE_FRAME_YAW_RATE, None],
-      [sp.Matrix([u, v]), ObservationKind.CAL_DEVICE_FRAME_XY_SPEED, None],
+      [sp.Matrix([r]), ObservationKind.ROAD_FRAME_YAW_RATE, None],
+      [sp.Matrix([u, v]), ObservationKind.ROAD_FRAME_XY_SPEED, None],
       [sp.Matrix([sa]), ObservationKind.STEER_ANGLE, None],
       [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
       [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],
       [sp.Matrix([x]), ObservationKind.STIFFNESS, None],
     ]
 
-    gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)
+    gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds, global_vars=CarKalman.global_vars)
 
-  def __init__(self):
+  def __init__(self, steer_ratio=15, stiffness_factor=1, angle_offset=0):
     self.dim_state = self.x_initial.shape[0]
+    x_init = self.x_initial
+    x_init[States.STEER_RATIO] = steer_ratio
+    x_init[States.STIFFNESS] = stiffness_factor
+    x_init[States.ANGLE_OFFSET] = angle_offset
 
     # init filter
-    self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds)
+    self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds, global_vars=self.global_vars)
 
   @property
   def x(self):
@@ -188,10 +188,14 @@ class CarKalman():
       P = self.filter.covs()
     self.filter.init_state(state, P, filter_time)
 
-  def predict_and_observe(self, t, kind, data):
+  def predict_and_observe(self, t, kind, data, R=None):
     if len(data) > 0:
       data = np.atleast_2d(data)
-    self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
+
+    if R is None:
+      R = self.get_R(kind, len(data))
+
+    self.filter.predict_and_update_batch(t, kind, data, R)
 
 
 if __name__ == "__main__":

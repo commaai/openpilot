@@ -14,13 +14,13 @@ from common.transformations.camera import view_frame_from_device_frame, get_view
 
 MPH_TO_MS = 0.44704
 MIN_SPEED_FILTER = 15 * MPH_TO_MS
-MAX_SPEED_STD = 1.5
+MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
 # This is all 20Hz, blocks needed for efficiency
 BLOCK_SIZE = 100
 INPUTS_NEEDED = 5   # allow to update VP every so many frames
-INPUTS_WANTED = 20   # We want a little bit more than we need for stability
+INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 WRITE_CYCLES = 10  # write every 1000 cycles
 VP_INIT = np.array([W/2., H/2.])
 
@@ -89,9 +89,10 @@ class Calibrator():
       self.just_calibrated = True
 
   def handle_cam_odom(self, trans, rot, trans_std, rot_std):
-    if ((trans[0] > MIN_SPEED_FILTER) and
-        (trans_std[0] < MAX_SPEED_STD) and
-         (abs(rot[2]) < MAX_YAW_RATE_FILTER)):
+    straight_and_fast = ((trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
+    certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < MAX_VEL_ANGLE_STD) or
+                        (self.valid_blocks < INPUTS_NEEDED))
+    if straight_and_fast and certain_if_calib:
       # intrinsics are not eon intrinsics, since this is calibrated frame
       intrinsics = intrinsics_from_vp(self.vp)
       new_vp = intrinsics.dot(view_frame_from_device_frame.dot(trans))
@@ -104,7 +105,8 @@ class Calibrator():
         self.block_idx += 1
         self.valid_blocks = max(self.block_idx, self.valid_blocks)
         self.block_idx = self.block_idx % INPUTS_WANTED
-      self.vp = np.mean(self.vps[:max(1, self.valid_blocks)], axis=0)
+      if self.valid_blocks > 0:
+        self.vp = np.mean(self.vps[:self.valid_blocks], axis=0)
       self.update_status()
 
       if self.param_put and ((self.idx == 0 and self.block_idx == 0) or self.just_calibrated):
@@ -119,8 +121,7 @@ class Calibrator():
     calib = get_calib_from_vp(self.vp)
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
 
-    cal_send = messaging.new_message()
-    cal_send.init('liveCalibration')
+    cal_send = messaging.new_message('liveCalibration')
     cal_send.liveCalibration.calStatus = self.cal_status
     cal_send.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
     cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]

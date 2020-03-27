@@ -31,8 +31,7 @@ def cam_callback(image):
   img = np.reshape(img, (H, W, 4))
   img = img[:, :, [0,1,2]].copy()
 
-  dat = messaging.new_message()
-  dat.init('frame')
+  dat = messaging.new_message('frame')
   dat.frame = {
     "frameId": image.frame,
     "image": img.tostring(),
@@ -43,8 +42,7 @@ def cam_callback(image):
 def imu_callback(imu):
   #print(imu, imu.accelerometer)
 
-  dat = messaging.new_message()
-  dat.init('sensorEvents', 2)
+  dat = messaging.new_message('sensorEvents', 2)
   dat.sensorEvents[0].sensor = 4
   dat.sensorEvents[0].type = 0x10
   dat.sensorEvents[0].init('acceleration')
@@ -60,8 +58,7 @@ def health_function():
   pm = messaging.PubMaster(['health'])
   rk = Ratekeeper(1.0)
   while 1:
-    dat = messaging.new_message()
-    dat.init('health')
+    dat = messaging.new_message('health')
     dat.valid = True
     dat.health = {
       'ignitionLine': True,
@@ -76,8 +73,7 @@ def fake_driver_monitoring():
     return
   pm = messaging.PubMaster(['driverState'])
   while 1:
-    dat = messaging.new_message()
-    dat.init('driverState')
+    dat = messaging.new_message('driverState')
     dat.driverState.faceProb = 1.0
     pm.send('driverState', dat)
     time.sleep(0.1)

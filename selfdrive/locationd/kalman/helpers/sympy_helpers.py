@@ -46,11 +46,11 @@ def quat_matrix_r(p):
                     [p[3],  p[2], -p[1],  p[0]]])
 
 
-def sympy_into_c(sympy_functions):
+def sympy_into_c(sympy_functions, global_vars=None):
   from sympy.utilities import codegen
   routines = []
   for name, expr, args in sympy_functions:
-    r = codegen.make_routine(name, expr, language="C99")
+    r = codegen.make_routine(name, expr, language="C99", global_vars=global_vars)
 
     # argument ordering input to sympy is broken with function with output arguments
     nargs = []

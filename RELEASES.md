@@ -1,6 +1,13 @@
-Version 0.7.4 (2020-xx-xx)
+Version 0.7.4 (2020-03-20)
 ========================
+ * New driving model: improved lane changes and lead car detection
+ * Improved driver monitoring model: improve eye detection
+ * Improved calibration stability
+ * Improved lateral control on some 2019 and 2020 Toyota Prius
+ * Improved lateral control on VW Golf: 20% more steering torque
+ * Fixed bug where some 2017 and 2018 Toyota C-HR would use the wrong steering angle sensor
  * Support for Honda Insight thanks to theantihero!
+ * Code cleanup in car abstraction layers and ui
 
 Version 0.7.3 (2020-02-21)
 ========================

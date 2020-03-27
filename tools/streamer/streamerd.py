@@ -67,8 +67,7 @@ def receiver_thread():
     #print 'ms to make yuv:', (t1-t2)*1000
     #print 'tsEof:', ts
 
-    dat = messaging.new_message()
-    dat.init('frame')
+    dat = messaging.new_message('frame')
     dat.frame.image = yuv_img
     dat.frame.timestampEof = ts
     dat.frame.transform = map(float, list(np.eye(3).flatten()))

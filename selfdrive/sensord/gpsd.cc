@@ -24,8 +24,6 @@
 
 #include "cereal/gen/cpp/log.capnp.h"
 
-#include "rawgps.h"
-
 volatile sig_atomic_t do_exit = 0;
 
 namespace {
@@ -171,13 +169,6 @@ void gps_destroy() {
   gGpsInterface->cleanup();
 }
 
-
-int64_t arm_cntpct() {
-  int64_t v;
-  asm volatile("mrs %0, cntpct_el0" : "=r"(v));
-  return v;
-}
-
 }
 
 int main() {
@@ -189,11 +180,7 @@ int main() {
 
   gps_init();
 
-  rawgps_init();
-
   while(!do_exit) pause();
-
-  rawgps_destroy();
 
   gps_destroy();
 

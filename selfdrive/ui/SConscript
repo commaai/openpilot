@@ -1,6 +1,6 @@
 Import('env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
 
-src = ['ui.cc', 'paint.cc', '#phonelibs/nanovg/nanovg.c']
+src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
 libs = [common, 'zmq', 'czmq', 'capnp', 'capnp_c', 'm', cereal, messaging, gpucommon, visionipc]
 
 if arch == "aarch64":

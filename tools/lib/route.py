@@ -42,7 +42,7 @@ class Route(object):
 
     segments = {}
     for url in chain.from_iterable(route_files.values()):
-      _, _, dongle_id, time_str, segment_num, fn = urlparse(url).path.split('/')
+      _, dongle_id, time_str, segment_num, fn = urlparse(url).path.rsplit('/', maxsplit=4)
       segment_name = f'{dongle_id}|{time_str}--{segment_num}'
       if segments.get(segment_name):
         segments[segment_name] = RouteSegment(
