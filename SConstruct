@@ -15,6 +15,8 @@ arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
 
+webcam = bool(ARGUMENTS.get("use_webcam", 0))
+
 if arch == "aarch64":
   lenv = {
     "LD_LIBRARY_PATH": '/data/data/com.termux/files/usr/lib',
@@ -117,7 +119,7 @@ env = Environment(
     "#phonelibs/json11",
     "#phonelibs/eigen",
     "#phonelibs/curl/include",
-    "#phonelibs/opencv/include",
+    #"#phonelibs/opencv/include", # use opencv4 instead
     "#phonelibs/libgralloc/include",
     "#phonelibs/android_frameworks_native/include",
     "#phonelibs/android_hardware_libhardware/include",
@@ -178,7 +180,7 @@ def abspath(x):
 #zmq = 'zmq'
 # still needed for apks
 zmq = FindFile("libzmq.a", libpath)
-Export('env', 'arch', 'zmq', 'SHARED')
+Export('env', 'arch', 'zmq', 'SHARED', 'webcam')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
