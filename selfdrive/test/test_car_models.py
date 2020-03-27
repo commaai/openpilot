@@ -57,6 +57,7 @@ def get_route_log(route_name):
       print("failed to download test log %s" % route_name)
       sys.exit(-1)
 
+
 routes = {
   "420a8e183f1aed48|2020-03-05--07-15-29": {
     'carFingerprint': CHRYSLER.PACIFICA_2017_HYBRID,
@@ -335,6 +336,10 @@ routes = {
     'carFingerprint': NISSAN.XTRAIL,
     'enableCamera': True,
   },
+  "5b7c365c50084530|2020-03-25--22-10-13": {
+    'carFingerprint': NISSAN.LEAF,
+    'enableCamera': True,
+  },
 }
 
 passive_routes = [
@@ -366,7 +371,6 @@ non_tested_cars = [
   TOYOTA.CHR,
   TOYOTA.CHRH,
   TOYOTA.HIGHLANDERH,
-  NISSAN.LEAF,
 ]
 
 if __name__ == "__main__":
