@@ -77,6 +77,7 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
+    self.seatbelt_msg = copy.copy(cp.vl["SEATBELT"])
 
     self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
     self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
@@ -153,26 +154,15 @@ class CarState(CarStateBase):
         ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
 
         ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
-        ("GAS_PEDAL_INVERTED", "CRUISE_THROTTLE", 0),
         ("CRUISE_AVAILABLE", "CRUISE_THROTTLE", 0),
-
-        ("PROPILOT_BUTTON", "CRUISE_THROTTLE", 0),
-        ("CANCEL_BUTTON", "CRUISE_THROTTLE", 0),
-        ("SET_BUTTON", "CRUISE_THROTTLE", 0),
-        ("RES_BUTTON", "CRUISE_THROTTLE", 0),
-        ("FOLLOW_DISTANCE_BUTTON", "CRUISE_THROTTLE", 0),
-        ("NO_BUTTON_PRESSED", "CRUISE_THROTTLE", 0),
-        ("COUNTER", "CRUISE_THROTTLE", 0),
-
         ("SPEED_MPH", "HUD_SETTINGS", 0),
 
-        ("unsure1", "CRUISE_THROTTLE", 0),
-        ("unsure2", "CRUISE_THROTTLE", 0),
-        ("unsure3", "CRUISE_THROTTLE", 0),
-        ("unsure4", "CRUISE_THROTTLE", 0),
-        ("unsure5", "CRUISE_THROTTLE", 0),
-        ("unsure6", "CRUISE_THROTTLE", 0),
-        ("unsure7", "CRUISE_THROTTLE", 0),
+        # Copy other values, we use this to cancel
+        ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT", 0),
+        ("unknown1", "SEATBELT", 0),
+        ("unknown2", "SEATBELT", 0),
+        ("unknown3", "SEATBELT", 0),
+        ("unknown4", "SEATBELT", 0),
       ]
       checks += [
         ("BRAKE_PEDAL", 100),
