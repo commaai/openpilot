@@ -11,6 +11,8 @@
 
 #include "camera_common.h"
 
+#include "media/cam_req_mgr.h"
+
 #define FRAME_BUF_COUNT 4
 #define METADATA_BUF_COUNT 4
 
@@ -41,6 +43,16 @@ typedef struct CameraState {
   int camera_num;
 
   VisionBuf *bufs;
+
+  uint32_t session_handle;
+
+  uint32_t sensor_dev_handle;
+  uint32_t isp_dev_handle;
+  uint32_t csiphy_dev_handle;
+
+  int32_t link_handle;
+
+  struct cam_req_mgr_session_info req_mgr_session_info;
 } CameraState;
 
 typedef struct DualCameraState {
