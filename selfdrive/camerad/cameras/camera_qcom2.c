@@ -1,3 +1,4 @@
+#include "camera_qcom2.h"
 
 void cameras_init(DualCameraState *s) {
 }

@@ -33,21 +33,23 @@ if arch == "aarch64" or arch == "larch64":
   ]
 
   libpath = [
-    "#phonelibs/snpe/aarch64-android-clang3.8",
     "/usr/lib",
     "/data/data/com.termux/files/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
     "#phonelibs/nanovg",
-    "#phonelibs/libyuv/lib",
   ]
 
   if arch == "larch64":
     cpppath += ["#phonelibs/capnp-cpp/include", "#phonelibs/capnp-c/include"]
+    libpath += ["#phonelibs/snpe/larch64"]
+    libpath += ["#phonelibs/libyuv/larch64/lib"]
     libpath += ["#external/capnparm/lib", "/usr/lib/aarch64-linux-gnu"]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   else:
+    libpath += ["#phonelibs/snpe/aarch64-android-clang3.8"]
+    libpath += ["#phonelibs/libyuv/lib"]
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
 
