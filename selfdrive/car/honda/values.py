@@ -638,6 +638,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x18dab0f1, None): [
       b'36161-T6Z-A310\x00\x00',
+      b'36161-T6Z-A520\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-T6Z-A010\x00\x00',
