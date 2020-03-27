@@ -475,7 +475,6 @@ def manager_thread():
 
       # Get last sample and exit
       if dt > 90:
-        first_proc = first_proc
         last_proc = messaging.recv_sock(proc_sock, wait=True)
 
         cleanup_all_processes(None, None)
