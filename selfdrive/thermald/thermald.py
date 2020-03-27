@@ -261,7 +261,7 @@ def thermald_thread():
     # **** starting logic ****
 
     # Check for last update time and display alerts if needed
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
 
     # show invalid date/time alert
     time_valid = now.year >= 2019

@@ -80,7 +80,7 @@ Supported Cars
 | Honda     | Passport 2019                 | All               | openpilot        | 25mph<sup>6</sup>  | 12mph             |
 | Honda     | Pilot 2016-18                 | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph             |
 | Honda     | Pilot 2019                    | All               | openpilot        | 25mph<sup>6</sup>  | 12mph             |
-| Honda     | Ridgeline 2017-19             | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph             |
+| Honda     | Ridgeline 2017-20             | Honda Sensing     | openpilot        | 25mph<sup>6</sup>  | 12mph             |
 | Lexus     | CT Hybrid 2017-18             | All               | Stock<sup>5</sup>| 0mph               | 0mph              |
 | Lexus     | ES 2019                       | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |

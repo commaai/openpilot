@@ -4,6 +4,8 @@
 
 #ifdef QCOM
 #include "cameras/camera_qcom.h"
+#elif WEBCAM
+#include "cameras/camera_webcam.h"
 #else
 #include "cameras/camera_frame_stream.h"
 #endif
@@ -160,31 +162,37 @@ void* frontview_thread(void *arg) {
     }
 
     int ui_idx = tbuffer_select(&s->ui_front_tb);
+    int rgb_idx = ui_idx;
     FrameMetadata frame_data = s->cameras.front.camera_bufs_metadata[buf_idx];
 
     double t1 = millis_since_boot();
 
-    err = clSetKernelArg(s->krnl_debayer_front, 0, sizeof(cl_mem), &s->front_camera_bufs_cl[buf_idx]);
-    assert(err == 0);
-    err = clSetKernelArg(s->krnl_debayer_front, 1, sizeof(cl_mem), &s->rgb_front_bufs_cl[ui_idx]);
-    assert(err == 0);
-    float digital_gain = 1.0;
-    err = clSetKernelArg(s->krnl_debayer_front, 2, sizeof(float), &digital_gain);
-    assert(err == 0);
-
     cl_event debayer_event;
-    const size_t debayer_work_size = s->rgb_front_height;
-    const size_t debayer_local_work_size = 128;
-    err = clEnqueueNDRangeKernel(q, s->krnl_debayer_front, 1, NULL,
-                                 &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event);
-    assert(err == 0);
+    if (s->cameras.front.ci.bayer) {
+      err = clSetKernelArg(s->krnl_debayer_front, 0, sizeof(cl_mem), &s->front_camera_bufs_cl[buf_idx]);
+      cl_check_error(err);
+      err = clSetKernelArg(s->krnl_debayer_front, 1, sizeof(cl_mem), &s->rgb_front_bufs_cl[rgb_idx]);
+      cl_check_error(err);
+      float digital_gain = 1.0;
+      err = clSetKernelArg(s->krnl_debayer_front, 2, sizeof(float), &digital_gain);
+      assert(err == 0);
+
+      const size_t debayer_work_size = s->rgb_front_height; // doesn't divide evenly, is this okay?
+      const size_t debayer_local_work_size = 128;
+      err = clEnqueueNDRangeKernel(q, s->krnl_debayer_front, 1, NULL,
+                                   &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event);
+      assert(err == 0);
+    } else {
+      assert(s->rgb_front_buf_size >= s->cameras.front.frame_size);
+      assert(s->rgb_front_stride == s->cameras.front.ci.frame_stride);
+      err = clEnqueueCopyBuffer(q, s->front_camera_bufs_cl[buf_idx], s->rgb_front_bufs_cl[rgb_idx],
+                                0, 0, s->rgb_front_buf_size, 0, 0, &debayer_event);
+      assert(err == 0);
+    }
     clWaitForEvents(1, &debayer_event);
     clReleaseEvent(debayer_event);
-
     tbuffer_release(&s->cameras.front.camera_tb, buf_idx);
-
     visionbuf_sync(&s->rgb_front_bufs[ui_idx], VISIONBUF_SYNC_FROM_DEVICE);
-
     // set front camera metering target
     Message *msg = monitoring_sock->receive(true);
     if (msg != NULL) {
@@ -288,27 +296,29 @@ void* frontview_thread(void *arg) {
 
     // send frame event
     {
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
+      if (s->front_frame_sock != NULL) {
+        capnp::MallocMessageBuilder msg;
+        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+        event.setLogMonoTime(nanos_since_boot());
 
-      auto framed = event.initFrontFrame();
-      framed.setFrameId(frame_data.frame_id);
-      framed.setEncodeId(cnt);
-      framed.setTimestampEof(frame_data.timestamp_eof);
-      framed.setFrameLength(frame_data.frame_length);
-      framed.setIntegLines(frame_data.integ_lines);
-      framed.setGlobalGain(frame_data.global_gain);
-      framed.setLensPos(frame_data.lens_pos);
-      framed.setLensSag(frame_data.lens_sag);
-      framed.setLensErr(frame_data.lens_err);
-      framed.setLensTruePos(frame_data.lens_true_pos);
-      framed.setGainFrac(frame_data.gain_frac);
-      framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+        auto framed = event.initFrontFrame();
+        framed.setFrameId(frame_data.frame_id);
+        framed.setEncodeId(cnt);
+        framed.setTimestampEof(frame_data.timestamp_eof);
+        framed.setFrameLength(frame_data.frame_length);
+        framed.setIntegLines(frame_data.integ_lines);
+        framed.setGlobalGain(frame_data.global_gain);
+        framed.setLensPos(frame_data.lens_pos);
+        framed.setLensSag(frame_data.lens_sag);
+        framed.setLensErr(frame_data.lens_err);
+        framed.setLensTruePos(frame_data.lens_true_pos);
+        framed.setGainFrac(frame_data.gain_frac);
+        framed.setFrameType(cereal::FrameData::FrameType::FRONT);
 
-      auto words = capnp::messageToFlatArray(msg);
-      auto bytes = words.asBytes();
-      s->front_frame_sock->send((char*)bytes.begin(), bytes.size());
+        auto words = capnp::messageToFlatArray(msg);
+        auto bytes = words.asBytes();
+        s->front_frame_sock->send((char*)bytes.begin(), bytes.size());
+      }
     }
 
     /*FILE *f = fopen("/tmp/test2", "wb");
@@ -421,37 +431,38 @@ void* processing_thread(void *arg) {
 
     // send frame event
     {
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
+      if (s->frame_sock != NULL) {
+        capnp::MallocMessageBuilder msg;
+        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+        event.setLogMonoTime(nanos_since_boot());
 
-      auto framed = event.initFrame();
-      framed.setFrameId(frame_data.frame_id);
-      framed.setEncodeId(cnt);
-      framed.setTimestampEof(frame_data.timestamp_eof);
-      framed.setFrameLength(frame_data.frame_length);
-      framed.setIntegLines(frame_data.integ_lines);
-      framed.setGlobalGain(frame_data.global_gain);
-      framed.setLensPos(frame_data.lens_pos);
-      framed.setLensSag(frame_data.lens_sag);
-      framed.setLensErr(frame_data.lens_err);
-      framed.setLensTruePos(frame_data.lens_true_pos);
-      framed.setGainFrac(frame_data.gain_frac);
+        auto framed = event.initFrame();
+        framed.setFrameId(frame_data.frame_id);
+        framed.setEncodeId(cnt);
+        framed.setTimestampEof(frame_data.timestamp_eof);
+        framed.setFrameLength(frame_data.frame_length);
+        framed.setIntegLines(frame_data.integ_lines);
+        framed.setGlobalGain(frame_data.global_gain);
+        framed.setLensPos(frame_data.lens_pos);
+        framed.setLensSag(frame_data.lens_sag);
+        framed.setLensErr(frame_data.lens_err);
+        framed.setLensTruePos(frame_data.lens_true_pos);
+        framed.setGainFrac(frame_data.gain_frac);
+
 #ifdef QCOM
-      kj::ArrayPtr<const int16_t> focus_vals(&s->cameras.rear.focus[0], NUM_FOCUS);
-      kj::ArrayPtr<const uint8_t> focus_confs(&s->cameras.rear.confidence[0], NUM_FOCUS);
-      framed.setFocusVal(focus_vals);
-      framed.setFocusConf(focus_confs);
+        kj::ArrayPtr<const int16_t> focus_vals(&s->cameras.rear.focus[0], NUM_FOCUS);
+        kj::ArrayPtr<const uint8_t> focus_confs(&s->cameras.rear.confidence[0], NUM_FOCUS);
+        framed.setFocusVal(focus_vals);
+        framed.setFocusConf(focus_confs);
 #endif
 
 #ifndef QCOM
-      framed.setImage(kj::arrayPtr((const uint8_t*)s->yuv_ion[yuv_idx].addr, s->yuv_buf_size));
+        framed.setImage(kj::arrayPtr((const uint8_t*)s->yuv_ion[yuv_idx].addr, s->yuv_buf_size));
 #endif
 
-      kj::ArrayPtr<const float> transform_vs(&s->yuv_transform.v[0], 9);
-      framed.setTransform(transform_vs);
+        kj::ArrayPtr<const float> transform_vs(&s->yuv_transform.v[0], 9);
+        framed.setTransform(transform_vs);
 
-      if (s->frame_sock != NULL) {
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
         s->frame_sock->send((char*)bytes.begin(), bytes.size());
@@ -939,8 +950,14 @@ void init_buffers(VisionState *s) {
   tbuffer_init(&s->ui_tb, UI_BUF_COUNT, "rgb");
 
   //assert(s->cameras.front.ci.bayer);
-  s->rgb_front_width = s->cameras.front.ci.frame_width/2;
-  s->rgb_front_height = s->cameras.front.ci.frame_height/2;
+  if (s->cameras.front.ci.bayer) {
+    s->rgb_front_width = s->cameras.front.ci.frame_width/2;
+    s->rgb_front_height = s->cameras.front.ci.frame_height/2;
+  } else {
+    s->rgb_front_width = s->cameras.front.ci.frame_width;
+    s->rgb_front_height = s->cameras.front.ci.frame_height;
+  }
+  
 
   for (int i=0; i<UI_BUF_COUNT; i++) {
     VisionImg img = visionimg_alloc_rgb24(s->rgb_front_width, s->rgb_front_height, &s->rgb_front_bufs[i]);

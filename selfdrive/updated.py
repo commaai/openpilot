@@ -112,7 +112,7 @@ def set_consistent_flag():
 def set_update_available_params(new_version=False):
   params = Params()
 
-  t = datetime.datetime.now().isoformat()
+  t = datetime.datetime.utcnow().isoformat()
   params.put("LastUpdateTime", t.encode('utf8'))
 
   if new_version:
@@ -314,7 +314,7 @@ def main():
 
   while True:
     update_failed_count += 1
-    time_wrong = datetime.datetime.now().year < 2019
+    time_wrong = datetime.datetime.utcnow().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
 
     # Wait until we have a valid datetime to initialize the overlay
