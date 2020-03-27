@@ -31,6 +31,7 @@ def create_acc_cancel_cmd(packer, cruise_throttle_msg, frame):
   values["SET_BUTTON"] = 0
   values["RES_BUTTON"] = 0
   values["FOLLOW_DISTANCE_BUTTON"] = 0
+  values["COUNTER"] = (frame % 4)
 
   return packer.make_can_msg("CRUISE_THROTTLE", 2, values)
 
