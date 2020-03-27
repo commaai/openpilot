@@ -10,37 +10,40 @@ What's needed:
 - Tape, Charger, ...  
 That's it!  
 
-## Clone openpilot and install the requirements 
+## Clone openpilot and install the requirements  
 ```
-cd ~
-git clone https://github.com/commaai/openpilot.git 
-# Follow [this readme](https://github.com/commaai/openpilot/tree/master/tools) to install the requirements 
-# Add line "export PYTHONPATH=$HOME/openpilot" to your ~/.bashrc 
-# You also need to install tensorflow-gpu 2.0.0 and nvidia drivers: nvidia-xxx/cuda10.0/cudnn7.6.5 
-# Install [OpenCL Driver](https://www.codeproject.com/Articles/1230011/OpenCL-Drivers-and-Runtimes-for-Intel-Architectu) 
-# (Note: the code assumes cl platforms order to be 0.GPU/1.CPU when running clinfo; if reverse, change the -1 to -2 in selfdrive/modeld/modeld.cc#L130; helping us refactor this mess is encouraged) 
-# Install [OpenCV4](https://www.pyimagesearch.com/2018/08/15/how-to-install-opencv-4-on-ubuntu/) 
+cd ~  
+git clone https://github.com/commaai/openpilot.git  
 ```
-## Build openpilot for webcam
+- Follow [this readme](https://github.com/commaai/openpilot/tree/master/tools) to install the requirements  
+- Add line "export PYTHONPATH=$HOME/openpilot" to your ~/.bashrc  
+- You also need to install tensorflow-gpu 2.0.0 and nvidia drivers: nvidia-xxx/cuda10.0/cudnn7.6.5  
+- Install [OpenCL Driver](https://www.codeproject.com/Articles/1230011/OpenCL-Drivers-and-Runtimes-for-Intel-Architectu)  
+- (Note: the code assumes cl platforms order to be 0.GPU/1.CPU when running clinfo; if reverse, change the -1 to -2 in selfdrive/modeld/modeld.cc#L130; helping us refactor this mess is encouraged)  
+- Install [OpenCV4](https://www.pyimagesearch.com/2018/08/15/how-to-install-opencv-4-on-ubuntu/)  
+
+## Build openpilot for webcam  
 ```
-cd ~/openpilot 
-# check out selfdrive/camerad/cameras/camera_webcam.cc line72&146 if any camera is upside down 
-scons use_webcam=1 
-touch prebuilt
+cd ~/openpilot  
 ```
-## Connect the hardwares 
+- check out selfdrive/camerad/cameras/camera_webcam.cc line72&146 before building if any camera is upside down  
 ```
-# Connect the road facing camera first, then the driver facing camera 
-# (default indexes are 1 and 2; can be modified in selfdrive/camerad/cameras/camera_webcam.cc) 
-# Connect your computer to panda
+scons use_webcam=1  
+touch prebuilt  
 ```
-## GO 
+
+## Connect the hardwares  
+- Connect the road facing camera first, then the driver facing camera  
+- (default indexes are 1 and 2; can be modified in selfdrive/camerad/cameras/camera_webcam.cc)  
+- Connect your computer to panda  
+
+## GO  
 ```
-cd ~/openpilot/tools/webcam 
-./accept_terms.py # accept the user terms so that thermald can detect the car started 
-cd ~/openpilot/selfdrive 
-PASSIVE=0 NOSENSOR=1 WEBCAM=1 ./manager.py 
-# Start the car, then the UI should show the road webcam's view 
-# Adjust and secure the webcams (you can run tools/webcam/front_mount_helper.py to help mount the driver camera)
-# Finish calibration and engage!
+cd ~/openpilot/tools/webcam  
+./accept_terms.py # accept the user terms so that thermald can detect the car started  
+cd ~/openpilot/selfdrive  
+PASSIVE=0 NOSENSOR=1 WEBCAM=1 ./manager.py  
 ```
+- Start the car, then the UI should show the road webcam's view  
+- Adjust and secure the webcams (you can run tools/webcam/front_mount_helper.py to help mount the driver camera)  
+- Finish calibration and engage!  
