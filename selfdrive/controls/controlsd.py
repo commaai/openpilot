@@ -275,6 +275,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
     abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
 
   # Send a "steering required alert" if saturation count has reached the limit
+  # TODO: add a minimum duration, now a warning will show every time the path changes briefly
   if (active_count > SATURATION_TIMEOUT_ON_ENGAGE) and (lac_log.saturated or angle_control_saturated) and not CS.steeringPressed:
     # Check if we deviated from the path
     left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
@@ -462,7 +463,6 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   if sm is None:
     sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', \
                               'model'])
-
 
   if can_sock is None:
     can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100

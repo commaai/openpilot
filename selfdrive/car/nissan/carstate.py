@@ -79,7 +79,9 @@ class CarState(CarStateBase):
     self.lkas_enabled = bool(cp_adas.vl["LKAS_SETTINGS"]["LKAS_ENABLED"])
 
     self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
-    self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
+
+    if self.CP.carFingerprint == CAR.LEAF:
+      self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
 
     self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
     self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
