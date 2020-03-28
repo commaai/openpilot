@@ -2,7 +2,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
-from common.params import Params
+from common.params import put_nonblocking
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -79,7 +79,6 @@ class CarInterface(CarInterfaceBase):
   def update(self, c, can_strings):
     canMonoTimes = []
     buttonEvents = []
-    params = Params()
 
     # Process the most recent CAN message traffic, and check for validity
     # The camera CAN has no signals we use at this time, but we process it
@@ -94,7 +93,7 @@ class CarInterface(CarInterfaceBase):
     # Update the EON metric configuration to match the car at first startup,
     # or if there's been a change.
     if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
-      params.put("IsMetric", "1" if self.CS.displayMetricUnits else "0")
+      put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
 
     # Check for and process state-change events (button press or release) from
     # the turn stalk switch or ACC steering wheel/control stalk buttons.
