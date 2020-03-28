@@ -35,18 +35,14 @@ class LongitudinalMpcModel():
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
-  def update(self, CS, model):
-    v_ego = CS.vEgo
-
-    longitudinal = model.longitudinal
-
-    if len(longitudinal.distances) == 0:
+  def update(self, v_ego, a_ego, poss, speeds, accels):
+    if len(poss) == 0:
       self.valid = False
       return
 
-    x_poly = list(map(float, np.polyfit(self.ts, longitudinal.distances, 3)))
-    v_poly = list(map(float, np.polyfit(self.ts, longitudinal.speeds, 3)))
-    a_poly = list(map(float, np.polyfit(self.ts, longitudinal.accelerations, 3)))
+    x_poly = list(map(float, np.polyfit(self.ts, poss, 3)))
+    v_poly = list(map(float, np.polyfit(self.ts, speeds, 3)))
+    a_poly = list(map(float, np.polyfit(self.ts, accels, 3)))
 
     # Calculate mpc
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution, x_poly, v_poly, a_poly)
@@ -73,5 +69,5 @@ class LongitudinalMpcModel():
       self.cur_state[0].a_ego = 0.0
 
       self.v_mpc = v_ego
-      self.a_mpc = CS.aEgo
+      self.a_mpc = a_ego
       self.valid = False
