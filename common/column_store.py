@@ -135,16 +135,16 @@ class ColumnStoreWriter():
   def __exit__(self, type, value, traceback): self.close()
 
 
-def _save_dict_as_column_store(values, writer):
+def _save_dict_as_column_store(values, writer, compression):
   for k, v in values.items():
     if isinstance(v, collections.Mapping):
-      _save_dict_as_column_store(v, writer.add_group(k))
+      _save_dict_as_column_store(v, writer.add_group(k), compression)
     else:
-      writer.add_column(k, v)
+      writer.add_column(k, v, compression=compression)
 
 
-def save_dict_as_column_store(values, output_path):
+def save_dict_as_column_store(values, output_path, compression=False):
   with ColumnStoreWriter(output_path) as writer:
-    _save_dict_as_column_store(values, writer)
+    _save_dict_as_column_store(values, writer, compression)
 
 
