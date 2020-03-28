@@ -724,6 +724,13 @@ ALERTS = [
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 
   Alert(
+      "invalidLkasSettingPermanent",
+      "Stock LKAS is turned on",
+      "Turn off stock LKAS to engage",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+
+  Alert(
       "internetConnectivityNeededPermanent",
       "Please connect to Internet",
       "An Update Check Is Required to Engage",

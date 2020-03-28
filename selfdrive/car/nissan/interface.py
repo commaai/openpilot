@@ -19,7 +19,6 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
-    ret.dashcamOnly = True
     ret.carName = "nissan"
     ret.safetyModel = car.CarParams.SafetyModel.nissan
 
@@ -27,17 +26,23 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = True
     ret.steerRateCost = 0.5
 
-    if candidate in [CAR.XTRAIL]:
+    ret.steerActuatorDelay = 0.1
+    ret.lateralTuning.pid.kf = 0.00006
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.0], [0.0]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]
+    ret.steerMaxBP = [0.] # m/s
+    ret.steerMaxV = [1.]
+
+    if candidate == CAR.XTRAIL:
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
       ret.steerRatio = 17
-      ret.steerActuatorDelay = 0.1
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.0], [0.0]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]
-      ret.steerMaxBP = [0.] # m/s
-      ret.steerMaxV = [1.]
+    elif candidate == CAR.LEAF:
+      ret.mass = 1610 + STD_CARGO_KG
+      ret.wheelbase = 2.705
+      ret.centerToFront = ret.wheelbase * 0.44
+      ret.steerRatio = 17
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarOffCan = True
@@ -75,12 +80,16 @@ class CarInterface(CarInterfaceBase):
     if not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
+    if self.CS.lkas_enabled:
+      events.append(create_event('invalidLkasSetting', [ET.PERMANENT]))
+
     ret.events = events
 
     # update previous brake/gas pressed
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
+
 
     self.CS.out = ret.as_reader()
     return self.CS.out
