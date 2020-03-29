@@ -30,7 +30,6 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING")
   VM = VehicleModel(CP)
 
-  v_ref = v_ref
   curvature_factor = VM.curvature_factor(v_ref)
 
   l_poly = libmpc_py.ffi.new("double[4]", list(map(float, p_l)))
