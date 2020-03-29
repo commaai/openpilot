@@ -50,15 +50,14 @@ class CarState(CarStateBase):
 
     # TODO: Find mph/kph bit on XTRAIL until then, assume xtrail is kph.
     # Unable to change kph to mph on the xtrail, need a rogue to test it on
-    if self.CP.carFingerprint == CAR.LEAF or self.CP.carFingerprint == CAR.XTRAIL:
-      speed = cp_adas.vl["PROPILOT_HUD"]["SET_SPEED"]
-      if speed != 255:
-        if self.CP.carFingerprint == CAR.XTRAIL:
-          conversion = CV.KPH_TO_MS
-        else:
-          conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
-        speed -= 1  # Speed on HUD is always 1 lower than actually sent on can bus
-        ret.cruiseState.speed = speed * conversion
+    speed = cp_adas.vl["PROPILOT_HUD"]["SET_SPEED"]
+    if speed != 255:
+      if self.CP.carFingerprint == CAR.XTRAIL:
+        conversion = CV.KPH_TO_MS
+      else:
+        conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
+      speed -= 1  # Speed on HUD is always 1 lower than actually sent on can bus
+      ret.cruiseState.speed = speed * conversion
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
