@@ -76,7 +76,7 @@ class CarController():
         can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, cruise_cancel))
 
     can_sends.append(nissancan.create_steering_control(
-        self.packer, self.car_fingerprint, apply_angle, frame, acc_active, self.lkas_max_torque))
+        self.packer, self.car_fingerprint, apply_angle, frame, enabled, self.lkas_max_torque))
 
     if frame % 2 == 0:
       can_sends.append(nissancan.create_lkas_hud_msg(
