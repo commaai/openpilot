@@ -721,7 +721,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
     mem_mgr_map_cmd.flags = 1;
     mem_mgr_map_cmd.fd = s->bufs[i].fd;
     ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-    LOGD("map buf req: %d", ret);
+    LOGD("map buf req: (fd: %d) %d", s->bufs[i].fd, ret);
 
     // push the buffer
     config_isp(s, mem_mgr_map_cmd.out.buf_handle, sync_create.sync_obj, request_id, buf0_handle, 65632*(i+1));

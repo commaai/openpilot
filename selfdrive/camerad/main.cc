@@ -921,9 +921,11 @@ void init_buffers(VisionState *s) {
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
     s->camera_bufs[i] = visionbuf_allocate_cl(s->frame_size, s->device_id, s->context,
                                               &s->camera_bufs_cl[i]);
-    // TODO: make lengths correct
-    s->focus_bufs[i] = visionbuf_allocate(0xb80);
-    s->stats_bufs[i] = visionbuf_allocate(0xb80);
+    #ifndef QCOM2
+      // TODO: make lengths correct
+      s->focus_bufs[i] = visionbuf_allocate(0xb80);
+      s->stats_bufs[i] = visionbuf_allocate(0xb80);
+    #endif
   }
 
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
