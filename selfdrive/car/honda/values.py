@@ -402,7 +402,6 @@ FW_VERSIONS = {
       b'77959-TBA-A060\x00\x00',
       b'77959-TGG-A020\x00\x00',
       b'77959-TGG-G010\x00\x00',
-      b'77959-TGG-A020\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TBA-A910\x00\x00',
@@ -428,7 +427,6 @@ FW_VERSIONS = {
     ],
     (Ecu.unknown, 0x18daeff1, None): [
       b'38897-TBA-A110\x00\x00',
-      b'38897-TBA-A020\x00\x00',
       b'38897-TBA-A020\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
