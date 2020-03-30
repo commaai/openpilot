@@ -55,6 +55,14 @@ int cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
+int device_control(int fd, int op_code, int session_handle, int dev_handle) {
+  // start stop and release are all the same
+  static struct cam_release_dev_cmd release_dev_cmd;
+  release_dev_cmd.session_handle = session_handle;
+  release_dev_cmd.dev_handle = dev_handle;
+  return cam_control(fd, op_code, &release_dev_cmd, sizeof(release_dev_cmd));
+}
+
 void *alloc_w_mmu_hdl(int video0_fd, int len, int align, int flags, uint32_t *handle, int mmu_hdl, int mmu_hdl2) {
   int ret;
 
@@ -259,7 +267,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->power_settings[2].power_seq_type = 3;
   power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
 
-  printf("probe\n");
+  LOGD("probing the sensor");
   int ret = cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)cam_packet_handle, 0);
   assert(ret == 0);
 
@@ -365,7 +373,17 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   struct cam_isp_in_port_info *in_port_info = malloc(isp_resource.length);
   isp_resource.res_hdl = (uint64_t)in_port_info;
 
-  in_port_info->res_type = CAM_ISP_IFE_IN_RES_PHY_0;
+  switch (s->camera_num) {
+    case 0:
+      in_port_info->res_type = CAM_ISP_IFE_IN_RES_PHY_0;
+      break;
+    case 1:
+      in_port_info->res_type = CAM_ISP_IFE_IN_RES_PHY_1;
+      break;
+    case 2:
+      in_port_info->res_type = CAM_ISP_IFE_IN_RES_PHY_2;
+      break;
+  }
 
   in_port_info->lane_type = CAM_ISP_LANE_TYPE_DPHY;
   in_port_info->lane_num = 4;
@@ -471,7 +489,7 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *ca
   s->rear.cdm_iommu = s->front.cdm_iommu = s->wide.cdm_iommu = cdm_iommu;
 
   // subscribe  
-  printf("-- Subscribing");
+  LOG("-- Subscribing");
   static struct v4l2_event_subscription sub = {0};
   sub.type = 0x8000000;
   sub.id = 0;
@@ -507,7 +525,7 @@ static void camera_close(CameraState *s) {
 static void cameras_close(DualCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
-  camera_close(&s->wide);
+  //camera_close(&s->wide);
 }
 
 void cameras_run(DualCameraState *s) {
