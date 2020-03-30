@@ -76,7 +76,7 @@ def is_on_wifi():
     if result is None:
       return True
     return 'WIFI' in result
-  except BaseException:
+  except Exception:
     cloudlog.exception("is_on_wifi failed")
     return False
 
@@ -90,7 +90,7 @@ def is_on_hotspot():
     is_entune = result.startswith('10.0.2.')
 
     return (is_android or is_ios or is_entune)
-  except BaseException:
+  except Exception:
     return False
 
 class Uploader():
@@ -177,7 +177,7 @@ class Uploader():
       else:
         with open(fn, "rb") as f:
           self.last_resp = requests.put(url, data=f, headers=headers, timeout=10)
-    except BaseException as e:
+    except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
 
@@ -187,7 +187,7 @@ class Uploader():
 
     try:
       self.do_upload(key, fn)
-    except BaseException:
+    except Exception:
       pass
 
     return self.last_resp
