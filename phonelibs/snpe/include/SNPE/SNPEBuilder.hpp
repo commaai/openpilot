@@ -1,6 +1,6 @@
 //==============================================================================
 //
-//  Copyright (c) 2017 Qualcomm Technologies, Inc.
+//  Copyright (c) 2017-2019 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -15,6 +15,7 @@
 #include "DlSystem/DlOptional.hpp"
 #include "DlSystem/TensorShapeMap.hpp"
 #include "DlSystem/PlatformConfig.hpp"
+#include "DlSystem/RuntimeList.hpp"
 
 namespace zdl {
    namespace DlContainer
@@ -55,6 +56,9 @@ public:
    ~SNPEBuilder();
 
    /**
+    * NOTE: DEPRECATED, MAY BE REMOVED IN THE FUTURE. Please use
+    *       setRuntimeProcessorOrder()
+    *
     * @brief Sets the runtime processor.
     *
     * @param[in] targetRuntimeProcessor The target runtime.
@@ -73,6 +77,17 @@ public:
     */
    SNPEBuilder& setPerformanceProfile(
       zdl::DlSystem::PerformanceProfile_t performanceProfile);
+
+   /**
+    * @brief Sets the profiling level. Default profiling level for
+    *        SNPEBuilder is off. Off and basic only applies to DSP runtime.
+    *
+    * @param[in] profilingLevel The target profiling level.
+    *
+    * @return The current instance of SNPEBuilder.
+    */
+   SNPEBuilder& setProfilingLevel(
+      zdl::DlSystem::ProfilingLevel_t profilingLevel);
 
     /**
      * @brief Sets a preference for execution priority.
@@ -103,6 +118,20 @@ public:
     */
    SNPEBuilder& setOutputLayers(
       const zdl::DlSystem::StringList& outputLayerNames);
+
+   /**
+   * @brief Sets the output tensor names.
+   *
+   * @param[in] outputTensorNames List of tensor names to
+   *                             output. An empty list will
+   *                             result in producing output for the final
+   *                             output tensor of the model.
+   *                             The list will be copied.
+   *
+   * @return The current instance of SNPEBuilder.
+   */
+   SNPEBuilder& setOutputTensors(
+      const zdl::DlSystem::StringList& outputTensorNames);
 
    /**
     * @brief Passes in a User-defined layer.
@@ -144,6 +173,9 @@ public:
       bool debugMode);
 
    /**
+    * NOTE: DEPRECATED, MAY BE REMOVED IN THE FUTURE. Please use
+    *       setRuntimeProcessorOrder()
+    *
     * @brief Sets the mode of CPU fallback functionality.
     *
     * @param[in] mode   This flag enables/disables the functionality
@@ -186,6 +218,22 @@ public:
    SNPEBuilder& setInputDimensions(const zdl::DlSystem::TensorShapeMap& inputDimensionsMap);
 
    /**
+    * @brief Sets the mode of init caching functionality.
+    *
+    * @param[in] mode   This flag enables/disables the functionality of init caching.
+    *                   When init caching functionality is enabled, a set of init caches
+    *                   will be created during network building/initialization process
+    *                   and will be added to DLC container. If such DLC container is saved
+    *                   by the user, in subsequent network building/initialization processes
+    *                   these init caches will be loaded from the DLC so as to reduce initialization time.
+    *                   In disable mode, no init caches will be added to DLC container.
+    *
+    * @return The current instance of SNPEBuilder.
+    */
+   SNPEBuilder& setInitCacheMode(
+      bool cacheMode);
+
+   /**
     * @brief Returns an instance of SNPE based on the current parameters.
     *
     * @return A new instance of a SNPE object that can be used
@@ -201,6 +249,31 @@ public:
     * @return The current instance of SNPEBuilder.
     */
    SNPEBuilder& setPlatformConfig(const zdl::DlSystem::PlatformConfig& platformConfig);
+
+   /**
+    * @brief Sets network's runtime order of precedence. Example:
+    *        CPU_FLOAT32, GPU_FLOAT16, AIP_FIXED8_TF
+    *        Note:- setRuntimeProcessor() or setCPUFallbackMode() will be silently ignored when
+    *        setRuntimeProcessorOrder() is invoked
+    *
+    * @param[in] runtimeList The list of runtime in order of precedence
+    *
+    * @return The current instance of SNPEBuilder.
+    */
+   SNPEBuilder& setRuntimeProcessorOrder(const zdl::DlSystem::RuntimeList& runtimeList);
+
+    /**
+    * @brief Sets the unconsumed tensors as output
+    *
+    * @param[in] setOutput This enables unconsumed tensors (i.e)
+    *                      outputs which are not inputs to any
+    *                      layer (basically dead ends) to be marked
+    *                      for output
+    *
+    * @return The current instance of SNPEBuilder.
+    */
+   SNPEBuilder& setUnconsumedTensorsAsOutputs(
+      bool setOutput);
 
 };
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */

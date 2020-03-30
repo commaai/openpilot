@@ -84,6 +84,14 @@ public:
       getOutputTensorNames() const noexcept;
 
    /**
+    * @brief Gets the name of output tensor from the input layer name
+    *
+    * @return Output tensor name.
+    */
+   zdl::DlSystem::StringList
+      getOutputTensorNamesByLayerName(const char *name) const noexcept;
+
+   /**
     * @brief Processes the input data and returns the output
     *
     * @param[in] A map of tensors that contains the input data for
