@@ -17,7 +17,7 @@ old_library='libcapnp.a'
 inherited_linker_flags=' -pthread'
 
 # Libraries that this one depends upon.
-dependency_libs=' /home/comma/openpilot/external/capnp/lib/libkj.la -lpthread'
+dependency_libs=' /home/comma/openpilot/external/capnparm/lib/libkj.la -lpthread'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/home/comma/openpilot/external/capnp/lib'
+libdir='/home/comma/openpilot/external/capnparm/lib'

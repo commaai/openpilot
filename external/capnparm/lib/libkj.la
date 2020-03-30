@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/home/comma/openpilot/external/capnp/lib'
+libdir='/home/comma/openpilot/external/capnparm/lib'

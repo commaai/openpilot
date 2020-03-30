@@ -6,7 +6,7 @@ VERSION=0.6.1
 wget https://capnproto.org/capnproto-c++-${VERSION}.tar.gz
 tar xvf capnproto-c++-${VERSION}.tar.gz
 cd capnproto-c++-${VERSION}
-CXXFLAGS="-fPIC" ./configure --prefix=${ONE}/external/capnp
+CXXFLAGS="-fPIC" ./configure --prefix=${ONE}/external/capnparm
 make -j9
 
 # manually build binaries statically
@@ -26,7 +26,7 @@ git clone https://github.com/commaai/c-capnproto.git
 cd c-capnproto
 git submodule update --init --recursive
 autoreconf -f -i -s
-CFLAGS="-fPIC" ./configure --prefix=${ONE}/external/capnp
+CFLAGS="-fPIC" ./configure --prefix=${ONE}/external/capnparm
 make -j4
 
 # manually build binaries statically
