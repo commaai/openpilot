@@ -1072,10 +1072,10 @@ void party(VisionState *s) {
                        processing_thread, s);
   assert(err == 0);
 
-  pthread_t frontview_thread_handle;
+  /*pthread_t frontview_thread_handle;
   err = pthread_create(&frontview_thread_handle, NULL,
                        frontview_thread, s);
-  assert(err == 0);
+  assert(err == 0);*/
 
   // priority for cameras
   err = set_realtime_priority(1);
@@ -1090,9 +1090,9 @@ void party(VisionState *s) {
 
   zsock_signal(s->terminate_pub, 0);
 
-  LOG("joining frontview_thread");
+  /*LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
-  assert(err == 0);
+  assert(err == 0);*/
 
   LOG("joining visionserver_thread");
   err = pthread_join(visionserver_thread_handle, NULL);

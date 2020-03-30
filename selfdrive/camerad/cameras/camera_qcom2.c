@@ -342,7 +342,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   LOGD("opened csiphy");
 
   // probe the sensor
-  LOGD("-- Probing sensor");
+  LOGD("-- Probing sensor %d", s->camera_num);
   sensors_init(s->video0_fd, s->sensor_fd, s->camera_num);
 
   memset(&s->req_mgr_session_info, 0, sizeof(s->req_mgr_session_info));
@@ -446,8 +446,8 @@ static void camera_open(CameraState *s, VisionBuf* b) {
 
 void cameras_init(DualCameraState *s) {
   camera_init(&s->rear, CAMERA_ID_AR0231, 0, 20);
-  camera_init(&s->wide, CAMERA_ID_AR0231, 1, 20);
-  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
+  //camera_init(&s->wide, CAMERA_ID_AR0231, 1, 20);
+  //camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
 }
 
 void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
@@ -524,7 +524,7 @@ static void camera_close(CameraState *s) {
 
 static void cameras_close(DualCameraState *s) {
   camera_close(&s->rear);
-  camera_close(&s->front);
+  //camera_close(&s->front);
   //camera_close(&s->wide);
 }
 
