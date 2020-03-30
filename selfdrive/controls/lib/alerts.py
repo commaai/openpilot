@@ -794,6 +794,13 @@ ALERTS = [
       AlertStatus.normal, AlertSize.small,
       Priority.LOWEST, VisualAlert.steerRequired, AudibleAlert.none, .0, .0, .1),
 
+  Alert(
+      "speedTooHighPermanent",
+      "Speed Too High: Slow down to engage",
+      "",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+
   # offroad alerts
   Alert(
       "ldwPermanent",
