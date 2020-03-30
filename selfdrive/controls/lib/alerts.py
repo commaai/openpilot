@@ -439,6 +439,13 @@ ALERTS = [
       AlertStatus.critical, AlertSize.full,
       Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
 
+  Alert(
+      "speedTooHigh",
+      "TAKE CONTROL IMMEDIATELY",
+      "Speed Too High",
+      AlertStatus.critical, AlertSize.full,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+
   # Cancellation alerts causing immediate disabling
   Alert(
       "controlsFailed",
@@ -502,6 +509,7 @@ ALERTS = [
       "Planner Solution Error",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+
 
   # not loud cancellations (user is in control)
   Alert(
@@ -686,6 +694,13 @@ ALERTS = [
       "Low Memory: Reboot Your Device",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+
+  Alert(
+      "speedTooHighNoEntry",
+      "Speed To High: Slow down to engage",
+      "",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   # permanent alerts
   Alert(
