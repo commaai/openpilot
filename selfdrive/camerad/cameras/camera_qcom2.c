@@ -19,6 +19,8 @@
 #include "media/cam_sensor.h"
 #include "media/cam_sync.h"
 
+#include "sensor2_i2c.h"
+
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
 #define FRAME_STRIDE 1936
@@ -108,6 +110,42 @@ void release(int video0_fd, uint32_t handle) {
 }
 
 // ************** high level camera helpers ****************
+
+void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int len, int op_code) {
+  LOGD("sensors_i2c: %d", len);
+  uint32_t cam_packet_handle = 0;
+  int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
+  struct cam_packet *pkt = alloc(s->video0_fd, size, 8,
+    CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
+  pkt->num_cmd_buf = 1;
+  pkt->kmd_cmd_buf_index = -1;
+  pkt->header.size = size;
+  pkt->header.op_code = op_code;
+  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
+
+  buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_cmd_i2c_random_wr) + (len-1)*sizeof(struct i2c_random_wr_payload);
+  buf_desc[0].type = CAM_CMD_BUF_I2C;
+  struct cam_cmd_power *power = alloc(s->video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_random_wr *i2c_random_wr = (void*)power;
+  i2c_random_wr->header.count = len;
+  i2c_random_wr->header.op_code = 1;
+  i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
+  i2c_random_wr->header.data_type = CAMERA_SENSOR_I2C_TYPE_WORD;
+  i2c_random_wr->header.addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
+  memcpy(i2c_random_wr->random_wr_payload, dat, len*sizeof(struct i2c_random_wr_payload));
+
+  static struct cam_config_dev_cmd config_dev_cmd = {};
+  config_dev_cmd.session_handle = s->session_handle;
+  config_dev_cmd.dev_handle = s->sensor_dev_handle;
+  config_dev_cmd.offset = 0;
+  config_dev_cmd.packet_handle = cam_packet_handle;
+
+  int ret = cam_control(s->sensor_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
+  assert(ret == 0);
+
+  release(s->video0_fd, buf_desc[0].mem_handle);
+  release(s->video0_fd, cam_packet_handle);
+}
 
 void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   uint32_t cam_packet_handle = 0;
@@ -276,6 +314,117 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   release(video0_fd, cam_packet_handle);
 }
 
+void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
+  uint32_t cam_packet_handle = 0;
+  int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
+  if (io_mem_handle != 0) {
+    size += sizeof(struct cam_buf_io_cfg);
+  }
+  struct cam_packet *pkt = alloc(s->video0_fd, size, 8,
+    CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
+  pkt->num_cmd_buf = 2;
+  pkt->kmd_cmd_buf_index = 0;
+
+  if (io_mem_handle != 0) {
+    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*2;
+    pkt->num_io_configs = 1;
+  }
+
+  if (io_mem_handle != 0) {
+    pkt->header.op_code = 0xf000001;
+    pkt->header.request_id = request_id;
+  } else {
+    pkt->header.op_code = 0xf000000;
+  }
+  pkt->header.size = size;
+  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
+  struct cam_buf_io_cfg *io_cfg = (void*)&pkt->payload + pkt->io_configs_offset;
+
+  // TODO: support MMU
+  buf_desc[0].size = 65624;
+  buf_desc[0].length = 0;
+  buf_desc[0].type = CAM_CMD_BUF_DIRECT;
+  buf_desc[0].meta_data = 3;
+  buf_desc[0].mem_handle = buf0_mem_handle;
+  buf_desc[0].offset = buf0_offset;
+
+  buf_desc[1].size = 324;
+	if (io_mem_handle != 0) {
+    buf_desc[1].length = 228; // 0 works here too
+    buf_desc[1].offset = 0x60;
+	} else {
+    buf_desc[1].length = 324;
+  }
+  buf_desc[1].type = CAM_CMD_BUF_GENERIC;
+  buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
+  uint32_t *buf2 = alloc(s->video0_fd, buf_desc[1].size, 0x20, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &buf_desc[1].mem_handle);
+
+  // cam_isp_packet_generic_blob_handler
+  uint32_t tmp[] = {
+    // size is 0x20, type is 0(CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG)
+    0x2000,
+    0x1, 0x0, CAM_ISP_IFE_OUT_RES_RDI_0, 0x1, 0x0, 0x1, 0x0, 0x0, // 1 port, CAM_ISP_IFE_OUT_RES_RDI_0
+    // size is 0x38, type is 1(CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG), clocks
+    0x3801,
+    0x1, 0x4, // Dual mode, 4 RDI wires
+    0x18148d00, 0x0, 0x18148d00, 0x0, 0x18148d00, 0x0, // rdi clock
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0,  // junk?
+    // offset 0x60
+    // size is 0xe0, type is 2(CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG), bandwidth
+    0xe002,
+    0x1, 0x4, // 4 RDI
+    0x0, 0x0, 0x1ad27480, 0x0, 0x1ad27480, 0x0, // left_pix_vote
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // right_pix_vote
+    0x0, 0x0, 0x6ee11c0, 0x2, 0x6ee11c0, 0x2,  // rdi_vote
+    0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}; 
+  memcpy(buf2, tmp, sizeof(tmp));
+
+  if (io_mem_handle != 0) {
+    io_cfg[0].mem_handle[0] = io_mem_handle;
+		io_cfg[0].planes[0] = (struct cam_plane_cfg){
+		 .width = FRAME_WIDTH,
+		 .height = FRAME_HEIGHT,
+		 .plane_stride = FRAME_STRIDE,
+		 .slice_height = FRAME_HEIGHT,
+		 .meta_stride = 0x0,
+		 .meta_size = 0x0,
+		 .meta_offset = 0x0,
+		 .packer_config = 0x0,
+		 .mode_config = 0x0,
+		 .tile_config = 0x0,
+		 .h_init = 0x0,
+		 .v_init = 0x0,
+		};
+    io_cfg[0].format = 0x3;
+    io_cfg[0].color_pattern = 0x5;
+    io_cfg[0].bpp = 0xc;
+    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;
+    io_cfg[0].fence = fence;
+    io_cfg[0].direction = 0x2;
+    io_cfg[0].subsample_pattern = 0x1;
+    io_cfg[0].framedrop_pattern = 0x1;
+  }
+
+  static struct cam_config_dev_cmd config_dev_cmd = {};
+  config_dev_cmd.session_handle = s->session_handle;
+  config_dev_cmd.dev_handle = s->isp_dev_handle;
+  config_dev_cmd.offset = 0;
+  config_dev_cmd.packet_handle = cam_packet_handle;
+
+  int ret = cam_control(s->isp_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
+  if (ret != 0) {
+    printf("ISP CONFIG FAILED\n");
+  }
+
+  release(s->video0_fd, buf_desc[1].mem_handle);
+  //release(s->video0_fd, buf_desc[0].mem_handle);
+  release(s->video0_fd, cam_packet_handle);
+}
+
 
 // ******************* camera *******************
 
@@ -442,6 +591,54 @@ static void camera_open(CameraState *s, VisionBuf* b) {
 
   // acquires done
 
+  // config ISP
+  int buf0_handle;
+  void *buf0 = alloc_w_mmu_hdl(s->video0_fd, 984480, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &buf0_handle, s->device_iommu, s->cdm_iommu);
+  config_isp(s, 0, 0, 1, buf0_handle, 0);
+
+  LOG("-- Configuring sensor");
+  sensors_i2c(s, init_array_ar0231, sizeof(init_array_ar0231)/sizeof(struct i2c_random_wr_payload),
+    CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(s, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
+    CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
+  sensors_i2c(s, stop_reg_array, sizeof(stop_reg_array)/sizeof(struct i2c_random_wr_payload), 
+    CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
+
+  // config csiphy
+  LOG("-- Config CSI PHY");
+  {
+    uint32_t cam_packet_handle = 0;
+    struct cam_packet *pkt = alloc(s->video0_fd, sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1, 8,
+      CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
+    pkt->num_cmd_buf = 1;
+    pkt->kmd_cmd_buf_index = -1;
+    struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
+
+    buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_csiphy_info);
+    buf_desc[0].type = CAM_CMD_BUF_GENERIC;
+    struct cam_csiphy_info *csiphy_info = alloc(s->video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &buf_desc[0].mem_handle);
+
+    csiphy_info->lane_mask = 0x1f;
+    csiphy_info->lane_assign = 0x3210;// skip clk. How is this 16 bit for 5 channels??
+    csiphy_info->csiphy_3phase = 0x0; // no 3 phase, only 2 conductors per lane
+    csiphy_info->combo_mode = 0x0;
+    csiphy_info->lane_cnt = 0x4;
+    csiphy_info->secure_mode = 0x0;
+    csiphy_info->settle_time = 2800000000;
+    csiphy_info->data_rate = 44000000;
+
+    static struct cam_config_dev_cmd config_dev_cmd = {};
+    config_dev_cmd.session_handle = s->session_handle;
+    config_dev_cmd.dev_handle = s->csiphy_dev_handle;
+    config_dev_cmd.offset = 0;
+    config_dev_cmd.packet_handle = cam_packet_handle;
+
+    int ret = cam_control(s->csiphy_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
+    assert(ret == 0);
+
+    release(s->video0_fd, buf_desc[0].mem_handle);
+    release(s->video0_fd, cam_packet_handle);
+  }
 }
 
 void cameras_init(DualCameraState *s) {
