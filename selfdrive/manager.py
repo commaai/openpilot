@@ -14,7 +14,7 @@ from common.android import ANDROID
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-TOTAL_SCONS_NODES = 1140
+TOTAL_SCONS_NODES = 1195
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 # Create folders needed for msgq
@@ -74,7 +74,7 @@ from multiprocessing import Process
 
 # Run scons
 spinner = Spinner()
-spinner.update("0", 'starting openpilot...')
+spinner.update("0")
 
 if not prebuilt:
   for retry in [True, False]:
@@ -86,7 +86,6 @@ if not prebuilt:
     nproc = os.cpu_count()
     j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
     scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
-    scons_finished_progress = 70.0
 
     # Read progress from stderr and update spinner
     while scons.poll() is None:
@@ -100,7 +99,7 @@ if not prebuilt:
         if line.startswith(prefix):
           i = int(line[len(prefix):])
           if spinner is not None:
-            spinner.update("%d" % (scons_finished_progress * (i / TOTAL_SCONS_NODES)), 'compiling: {} of {}'.format(i, TOTAL_SCONS_NODES))
+            spinner.update("%d" % (50.0 * (i / TOTAL_SCONS_NODES)))
         elif len(line):
           print(line.decode('utf8'))
       except Exception:
@@ -117,7 +116,6 @@ if not prebuilt:
       else:
         raise RuntimeError("scons build failed")
     else:
-      spinner.update("%d" % scons_finished_progress, "compiling: done")
       break
 
 import cereal
@@ -480,17 +478,11 @@ def manager_prepare(spinner=None):
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
   # Spinner has to start from 70 here
-  total = 100.0 if prebuilt else 100 - scons_finished_progress
-  preimporting = [p for p in managed_processes if isinstance(managed_processes[p], str)]
+  total = 100.0 if prebuilt else 50.0
 
-  i = 0
-  for p in managed_processes:
+  for i, p in enumerate(managed_processes):
     if spinner is not None:
-      spinner_status = 'building {}...'.format(p)
-      if p in preimporting:  # is python file
-        spinner_status = 'preimporting {}...'.format(p)
-        i += 1
-      spinner.update("%d" % ((100.0 - total) + total * i / len(preimporting),), spinner_status)
+      spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
     prepare_managed_process(p)
 
 def uninstall():
