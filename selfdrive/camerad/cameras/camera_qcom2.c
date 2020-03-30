@@ -111,6 +111,30 @@ void release(int video0_fd, uint32_t handle) {
 
 // ************** high level camera helpers ****************
 
+void sensors_poke(struct CameraState *s, int request_id) {
+  uint32_t cam_packet_handle = 0;
+  int size = sizeof(struct cam_packet);
+  struct cam_packet *pkt = alloc(s->video0_fd, size, 8,
+    CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
+  pkt->num_cmd_buf = 1;
+  pkt->kmd_cmd_buf_index = -1;
+  pkt->header.size = size;
+  pkt->header.op_code = 0x7f;
+  pkt->header.request_id = request_id;
+  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
+
+  static struct cam_config_dev_cmd config_dev_cmd = {};
+  config_dev_cmd.session_handle = s->session_handle;
+  config_dev_cmd.dev_handle = s->sensor_dev_handle;
+  config_dev_cmd.offset = 0;
+  config_dev_cmd.packet_handle = cam_packet_handle;
+
+  int ret = cam_control(s->sensor_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
+  assert(ret == 0);
+
+  release(s->video0_fd, cam_packet_handle);
+}
+
 void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int len, int op_code) {
   LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
@@ -668,6 +692,40 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   ret = device_control(s->sensor_fd, CAM_START_DEV, s->session_handle, s->sensor_dev_handle);
   LOGD("start sensor: %d", ret);
 
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    LOG("-- Initting buffer %d", i);
+    int request_id = i+1;
+
+    // do stuff
+    static struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
+    req_mgr_sched_request.session_hdl = s->session_handle;
+    req_mgr_sched_request.link_hdl = s->link_handle;
+    req_mgr_sched_request.req_id = request_id;
+    ret = cam_control(s->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
+    LOGD("sched req: %d", ret);
+
+    // poke sensor
+    sensors_poke(s, request_id);
+    LOGD("Poked sensor");
+
+    // create output fench
+    static struct cam_sync_info sync_create = {0};
+    strcpy(sync_create.name, "NodeOutputPortFence");
+    ret = cam_control(s->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+    LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+
+    // configure ISP to put the image in place
+    static struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
+    mem_mgr_map_cmd.mmu_hdls[0] = s->device_iommu;
+    mem_mgr_map_cmd.num_hdl = 1;
+    mem_mgr_map_cmd.flags = 1;
+    mem_mgr_map_cmd.fd = s->bufs[i].fd;
+    ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    LOGD("map buf req: %d", ret);
+
+    // push the buffer
+    config_isp(s, mem_mgr_map_cmd.out.buf_handle, sync_create.sync_obj, request_id, buf0_handle, 65632*(i+1));
+  }
 }
 
 void cameras_init(DualCameraState *s) {
