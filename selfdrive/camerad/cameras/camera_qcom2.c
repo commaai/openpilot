@@ -446,8 +446,8 @@ static void camera_open(CameraState *s, VisionBuf* b) {
 
 void cameras_init(DualCameraState *s) {
   camera_init(&s->rear, CAMERA_ID_AR0231, 0, 20);
-  //camera_init(&s->wide, CAMERA_ID_AR0231, 1, 20);
-  //camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
+  camera_init(&s->wide, CAMERA_ID_AR0231, 1, 20);
+  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
 }
 
 void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
@@ -500,7 +500,7 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *ca
   LOGD("isp subscribe: %d", ret);
 
   camera_open(&s->rear, camera_bufs_rear);
-  camera_open(&s->front, camera_bufs_front);
+  //camera_open(&s->front, camera_bufs_front);
   // TODO: add bufs for camera wide
 }
 
