@@ -24,7 +24,7 @@ class TestLogHandler(logging.Handler):
       j = json.loads(record.message)
       if j["event"] == "upload_success":
         self.upload_order.append(j["key"])
-    except BaseException:
+    except Exception:
       pass
 
 log_handler = TestLogHandler()
