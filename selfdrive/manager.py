@@ -113,9 +113,8 @@ if not prebuilt:
           print(line)
           if any([err in line for err in ['error: ', 'not found, needed by target']]):
             build_error = True
-            for _ in range(10):
-              spinner.update("%d" % progress, format_spinner_error(line))
-              time.sleep(1)
+            spinner.update("%d" % progress, format_spinner_error(line))
+            time.sleep(10)
             break
       except Exception:
         pass
