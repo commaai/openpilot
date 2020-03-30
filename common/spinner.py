@@ -16,10 +16,10 @@ class Spinner():
   def __enter__(self):
     return self
 
-  def update(self, spinner_text, spinner_status=None):
+  def update(self, spinner_text, spinner_extra=None):
     if self.spinner_proc is not None:
-      if spinner_status is not None:
-        spinner_text += ",{}".format(spinner_status)
+      if spinner_extra is not None:
+        spinner_text += ",{}".format(spinner_extra)
       self.spinner_proc.stdin.write(spinner_text.encode('utf8') + b"\n")
       try:
         self.spinner_proc.stdin.flush()
@@ -49,7 +49,7 @@ class FakeSpinner():
   def __enter__(self):
     return self
 
-  def update(self, _, __):
+  def update(self, _, __=None):
     pass
 
   def __exit__(self, type, value, traceback):

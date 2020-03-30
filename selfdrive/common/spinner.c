@@ -18,7 +18,7 @@
 #include "framebuffer.h"
 #include "spinner.h"
 
-#define SPINTEXT_LENGTH 128
+#define SPINTEXT_LENGTH 192
 
 // external resources linked in
 extern const unsigned char _binary_opensans_semibold_ttf_start[];
@@ -46,8 +46,12 @@ int spin(int argc, char** argv) {
   int err;
 
   bool draw_progress = false;
+  bool has_extra = false;
+  bool err_msg = false;
   float progress_val = 0.0;
 
+  char *spinstatus;
+  char *spinerr;
   char spintext[SPINTEXT_LENGTH];
   spintext[0] = 0;
 
@@ -83,6 +87,17 @@ int spin(int argc, char** argv) {
     if (stdin_input_available()){
       fgets(spintext, SPINTEXT_LENGTH, stdin);
       spintext[strcspn(spintext, "\n")] = 0;
+
+      // Get current status
+      has_extra = strchr(spintext, ',') != NULL;
+      if (has_extra) {
+        spinstatus = strchr(spintext, ',');  // split spintext and error message
+        *spinstatus++ = '\0';
+        err_msg = strstr(spinstatus, "ERR,") != NULL;
+        if (err_msg) {
+          spinerr = spinstatus + 4;
+        }
+      }
 
       // Check if number (update progress bar)
       size_t len = strlen(spintext);
@@ -166,11 +181,29 @@ int spin(int argc, char** argv) {
           bar_pos, progress_height-2, 12);
       nvgFillPaint(vg, paint);
       nvgFill(vg);
-    } else {
+    }
+
+    if (!draw_progress) {
       // message
       nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
       nvgFontSize(vg, 96.0f);
       nvgText(vg, fb_w/2, (fb_h*2/3)+24, spintext, NULL);
+    } else if (has_extra) {
+      nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+      if (err_msg) {
+        int break_row_width = 1300;
+        int y_offset = strlen(spinerr) > 160 ? 76 : 96;
+        // need smaller font for longer error msg
+        int fontsize = strlen(spinerr) > 50 ? 68.0f : 72.0f;
+        fontsize = strlen(spinerr) > 70 ? 62.0f : fontsize;
+        fontsize = strlen(spinerr) > 120 ? 59.0f : fontsize;
+
+        nvgFontSize(vg, fontsize);
+        nvgTextBox(vg, (fb_w/2)-(break_row_width/2), (fb_h*2/3)+24+y_offset, break_row_width, spinerr, NULL);
+      } else {
+        nvgFontSize(vg, 78.0f);
+        nvgText(vg, fb_w/2, (fb_h*2/3)+24+96, spinstatus, NULL);
+      }
     }
 
     nvgEndFrame(vg);

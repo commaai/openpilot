@@ -14,7 +14,7 @@ from common.android import ANDROID
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-TOTAL_SCONS_NODES = 1195
+TOTAL_SCONS_NODES = 1140
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 # Create folders needed for msgq
@@ -61,6 +61,12 @@ def unblock_stdout():
     exit_status = os.wait()[1] >> 8
     os._exit(exit_status)
 
+def format_spinner_error(err):
+  if len(err) > 192 - 8:
+    err = err[:184].strip() + '...'
+  print(err)
+  return err
+
 
 if __name__ == "__main__":
   unblock_stdout()
@@ -86,6 +92,8 @@ if not prebuilt:
     nproc = os.cpu_count()
     j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
     scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    progress = 0
+    build_error = False
 
     # Read progress from stderr and update spinner
     while scons.poll() is None:
@@ -97,20 +105,30 @@ if not prebuilt:
         line = line.rstrip()
         prefix = b'progress: '
         if line.startswith(prefix):
-          i = int(line[len(prefix):])
+          progress = 70.0 * (int(line[len(prefix):]) / TOTAL_SCONS_NODES)
           if spinner is not None:
-            spinner.update("%d" % (50.0 * (i / TOTAL_SCONS_NODES)))
-        elif len(line):
-          print(line.decode('utf8'))
+            spinner.update("%d" % progress)
+
+        if len(line) and not line.startswith(prefix):
+          line = line.decode('utf8')
+          print(line)
+          if any([err in line for err in ['error: ', 'not found, needed by target']]):
+            build_error = True
+            for _ in range(10):
+              spinner.update("%d" % progress, format_spinner_error(line))
+              time.sleep(1)
+            break
       except Exception:
         pass
 
-    if scons.returncode != 0:
+    if scons.returncode != 0 or build_error:
       if retry:
         print("scons build failed, cleaning in")
-        for i in range(3,-1,-1):
-          print("....%d" % i)
+        for i in range(5):
+          print(5 - i)
+          spinner.update("%d" % progress, "scons build failed, cleaning in {}...".format(5 - i))
           time.sleep(1)
+        spinner.update("%d" % progress, "scons build failed, cleaning...")
         subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
         shutil.rmtree("/tmp/scons_cache")
       else:
@@ -283,7 +301,10 @@ def prepare_managed_process(p):
   if isinstance(proc, str):
     # import this python
     cloudlog.info("preimporting %s" % proc)
-    importlib.import_module(proc)
+    try:
+      importlib.import_module(proc)
+    except Exception as e:
+      return e
   elif os.path.isfile(os.path.join(BASEDIR, proc[0], "Makefile")):
     # build this process
     cloudlog.info("building %s" % (proc,))
@@ -294,6 +315,7 @@ def prepare_managed_process(p):
       cloudlog.warning("building %s failed, make clean" % (proc, ))
       subprocess.check_call(["make", "clean"], cwd=os.path.join(BASEDIR, proc[0]))
       subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, proc[0]))
+  return None
 
 
 def join_process(process, timeout):
@@ -478,12 +500,40 @@ def manager_prepare(spinner=None):
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
   # Spinner has to start from 70 here
-  total = 100.0 if prebuilt else 50.0
+  total = 100.0 if prebuilt else 70.0
 
-  for i, p in enumerate(managed_processes):
-    if spinner is not None:
-      spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
-    prepare_managed_process(p)
+  for retry in [True, False]:
+    progress = total
+    prep_failed = False
+    for i, p in enumerate(managed_processes):
+      e = prepare_managed_process(p)
+      progress = (100.0 - total) + total * (i + 1) / len(managed_processes)
+      if spinner is not None:
+        if e is None:
+          spinner.update("%d" % progress)
+        else:
+          prep_failed = True
+          for _ in range(10):
+            spinner.update("%d" % progress, format_spinner_error(str(e)))
+            time.sleep(1)
+          break
+
+    if prep_failed:
+      if retry:
+        print("preparation failed, hard resetting in")
+        for i in range(5):
+          print(5 - i)
+          spinner.update("%d" % progress, "preparation failed, hard resetting in {}...".format(5 - i))
+          time.sleep(1)
+
+        subprocess.check_output(["git", "fetch"], cwd="/data/openpilot", stderr=subprocess.STDOUT, encoding='utf8')
+        r = subprocess.check_output(["git", "reset", "--hard", "@{u}"], cwd="/data/openpilot", stderr=subprocess.STDOUT,
+                                    encoding='utf8')
+        reset_msg = "reset success" if "HEAD is now at" in r else "reset failed"
+        spinner.update("%d" % progress, reset_msg)
+        time.sleep(2)
+      else:
+        raise RuntimeError("preperation failed")
 
 def uninstall():
   cloudlog.warning("uninstalling")
