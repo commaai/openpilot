@@ -504,24 +504,18 @@ def manager_prepare(spinner=None):
 
   # Spinner has to start from 70 here
   total = 100.0 if prebuilt else 70.0
-
-  progress = total
-  prep_failed = False
   for i, p in enumerate(managed_processes):
     e = prepare_managed_process(p)
     progress = (100.0 - total) + total * (i + 1) / len(managed_processes)
-    if spinner is not None:
-      if e is None:
+    if e is None:
+      if spinner is not None:
         spinner.update("%d" % progress)
-      else:
-        prep_failed = True
+    else:
+      if spinner is not None:
         for _ in range(10):
           spinner.update("%d" % progress, format_spinner_error(str(e)))
           time.sleep(1)
-        break
-
-  if prep_failed:
-    raise RuntimeError("preperation failed")
+      raise e
 
 def uninstall():
   cloudlog.warning("uninstalling")
