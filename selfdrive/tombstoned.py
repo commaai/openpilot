@@ -22,6 +22,7 @@ def report_tombstone(fn, client):
   f_size = os.path.getsize(fn)
   if f_size > MAX_SIZE:
     cloudlog.error(f"Tombstone {fn} too big, {f_size}. Skipping...")
+    return
 
   with open(fn, encoding='ISO-8859-1') as f:
     contents = f.read()
@@ -56,8 +57,11 @@ def main():
     now_tombstones = set(get_tombstones())
 
     for fn, ctime in (now_tombstones - initial_tombstones):
-      cloudlog.info(f"reporting new tombstone {fn}")
-      report_tombstone(fn, client)
+      try:
+        cloudlog.info(f"reporting new tombstone {fn}")
+        report_tombstone(fn, client)
+      except Exception:
+        cloudlog.exception(f"Error reporting tombstone {fn}")
 
     initial_tombstones = now_tombstones
     time.sleep(5)
