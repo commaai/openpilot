@@ -26,7 +26,7 @@
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
 //#define FRAME_STRIDE 1936 // for 8 bit output
-#define FRAME_STRIDE 0xaac  // for 10 bit output
+#define FRAME_STRIDE 2416  // for 10 bit output
 
 static void hexdump(uint8_t *data, int len) {
   for (int i = 0; i < len; i++) {
@@ -927,6 +927,12 @@ void cameras_run(DualCameraState *s) {
             if (s->rear.request_ids[j] == event_data->frame_id) {
               uint8_t *dat = (uint8_t *)s->rear.bufs[j].addr;
               hexdump(dat, 0x100);
+              if (j == 0) {
+                FILE *f = fopen("/tmp/img.tmp", "wb");
+                fwrite(dat, 1, s->rear.bufs[j].len, f);
+                fclose(f);
+                rename("/tmp/img.tmp", "/tmp/img");
+              }
               // TODO: support more than rear camera
               tbuffer_dispatch(&s->rear.camera_tb, j);
               break;
