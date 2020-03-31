@@ -8,6 +8,7 @@ import signal
 import shutil
 import subprocess
 import datetime
+import textwrap
 
 from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
@@ -62,18 +63,10 @@ def unblock_stdout():
     os._exit(exit_status)
 
 def format_spinner_error(err):
-  err_list = [[]]
-  max_line_length = 50
-  for ch in err:
-    if len(err_list[-1]) > max_line_length and ch == ' ':
-      err_list.append([])
-    err_list[-1].append(ch)
-
-  err_list = [''.join(line).strip() for line in err_list]
+  err_list = textwrap.wrap(err, 65)
   err = 'ERR,' + chr(31).join(err_list[:4])  # unit seperator
   if len(err_list) > 4:
     err += '...'
-
   if len(err) > 256 - 8:
     err = err[:256 - 8].strip() + '...'
   return err
