@@ -50,7 +50,7 @@ if arch == "aarch64" or arch == "larch64":
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   else:
-    libpath += ["#phonelibs/snpe/aarch64-android-clang3.8"]
+    libpath += ["#phonelibs/snpe/aarch64"]
     libpath += ["#phonelibs/libyuv/lib"]
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
