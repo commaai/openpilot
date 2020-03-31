@@ -12,7 +12,7 @@ MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
 
 
 def get_tombstones():
-  """Returns list of (c_time, filename) for all tombstones in /data/tombstones"""
+  """Returns list of (filename, ctime) for all tombstones in /data/tombstones"""
   DIR_DATA = "/data/tombstones/"
   return [(DIR_DATA + fn, int(os.stat(DIR_DATA + fn).st_ctime))
           for fn in os.listdir(DIR_DATA) if fn.startswith("tombstone")]
