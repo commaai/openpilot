@@ -49,7 +49,7 @@ class DistractedType():
   BAD_POSE = 1
   BAD_BLINK = 2
 
-def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
+def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
 
@@ -67,7 +67,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
 
   # no calib for roll
   pitch -= rpy_calib[1]
-  yaw -= rpy_calib[2] * (1 - 2 * int(self.is_rhd_region)) # lhd -> -=, rhd -> +=
+  yaw -= rpy_calib[2] * (1 - 2 * int(is_rhd)) # lhd -> -=, rhd -> +=
   return roll, pitch, yaw
 
 class DriverPose():
@@ -174,7 +174,7 @@ class DriverStatus():
     if len(driver_state.faceOrientation) == 0 or len(driver_state.facePosition) == 0 or len(driver_state.faceOrientationStd) == 0 or len(driver_state.facePositionStd) == 0:
       return
 
-    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy)
+    self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy, self.is_rhd_region)
     self.pose.pitch_std = driver_state.faceOrientationStd[0]
     self.pose.yaw_std = driver_state.faceOrientationStd[1]
     # self.pose.roll_std = driver_state.faceOrientationStd[2]
