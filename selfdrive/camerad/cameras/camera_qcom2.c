@@ -1,12 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <signal.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <poll.h>
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -24,6 +26,15 @@
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
 #define FRAME_STRIDE 1936
+
+static void hexdump(uint8_t *data, int len) {
+  for (int i = 0; i < len; i++) {
+    if (i!=0&&i%0x10==0) printf("\n");
+    printf("%02X ", data[i]);
+  }
+  printf("\n");
+}
+
 
 extern volatile sig_atomic_t do_exit;
 
@@ -453,11 +464,20 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
 // ******************* camera *******************
 
 static void camera_release_buffer(void* cookie, int buf_idx) {
+  int ret;
   CameraState *s = cookie;
 
   // printf("camera_release_buffer %d\n", buf_idx);
   /*s->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
   ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]);*/
+
+  // do stuff
+  static struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
+  req_mgr_sched_request.session_hdl = s->session_handle;
+  req_mgr_sched_request.link_hdl = s->link_handle;
+  req_mgr_sched_request.req_id = buf_idx+1;
+  ret = cam_control(s->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
+  LOGD("sched req: %d", ret);
 }
 
 static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps) {
@@ -839,9 +859,51 @@ static void cameras_close(DualCameraState *s) {
   //camera_close(&s->wide);
 }
 
+struct video_event_data {
+  int32_t   session_hdl;
+  int32_t   link_hdl;
+  int32_t   frame_id;
+  int32_t   reserved;
+  uint64_t  tv_sec;
+  uint64_t  tv_usec;
+};
+
 void cameras_run(DualCameraState *s) {
+  LOG("-- Dequeueing Video events");
+
   while (!do_exit) {
-    sleep(1);
+    struct pollfd fds[2] = {{0}};
+
+    fds[0].fd = s->video0_fd;
+    fds[0].events = POLLPRI;
+
+    fds[1].fd = s->video1_fd;
+    fds[1].events = POLLPRI;
+
+    int ret = poll(fds, ARRAYSIZE(fds), 1000);
+    if (ret <= 0) {
+      if (errno == EINTR || errno == EAGAIN) continue;
+      LOGE("poll failed (%d - %d)", ret, errno);
+      break;
+    }
+
+    for (int i=0; i<2; i++) {
+      if (!fds[i].revents) continue;
+      static struct v4l2_event ev = {0};
+      ret = ioctl(fds[i].fd, VIDIOC_DQEVENT, &ev);
+      struct video_event_data *event_data = (struct video_event_data *)ev.u.data;
+      uint64_t timestamp = (event_data->tv_sec*1000000000ULL
+                            + event_data->tv_usec*1000);
+      LOGD("video%d dqevent: %d type:0x%x frame_id:%d timestamp: %llu", i, ret, ev.type, event_data->frame_id, timestamp);
+
+      if (event_data->frame_id != 0) {
+        // TODO: support more than rear camera
+        //tbuffer_dispatch(&s->rear.camera_tb, event_data->frame_id-1);
+      }
+
+      /*printf("**dump %d**\n", i);
+      hexdump(ev.u.data, 0x40);*/
+    }
   }
 
   LOG(" ************** STOPPING **************");
