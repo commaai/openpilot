@@ -14,7 +14,7 @@ AddOption('--asan',
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-if not os.path.isdir("/system"):
+if arch == "aarch64" and not os.path.isdir("/system"):
   arch = "larch64"
 
 webcam = bool(ARGUMENTS.get("use_webcam", 0))
