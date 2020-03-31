@@ -458,7 +458,7 @@ void* processing_thread(void *arg) {
         framed.setFocusConf(focus_confs);
 #endif
 
-#ifndef QCOM
+#if !defined(QCOM) && !defined(QCOM2)
         framed.setImage(kj::arrayPtr((const uint8_t*)s->yuv_ion[yuv_idx].addr, s->yuv_buf_size));
 #endif
 
@@ -1130,7 +1130,7 @@ int main(int argc, char *argv[]) {
 
   init_buffers(s);
 
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
   s->msg_context = Context::create();
   s->frame_sock = PubSocket::create(s->msg_context, "frame");
   s->front_frame_sock = PubSocket::create(s->msg_context, "frontFrame");
@@ -1144,7 +1144,7 @@ int main(int argc, char *argv[]) {
 
   party(s);
 
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
   delete s->frame_sock;
   delete s->front_frame_sock;
   delete s->thumbnail_sock;

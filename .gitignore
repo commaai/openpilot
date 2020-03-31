@@ -21,6 +21,7 @@ a.out
 *.tmp
 *.o
 *.os
+*.os-*
 *.so
 *.a
 *.clb

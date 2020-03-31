@@ -468,7 +468,7 @@ void enqueue_buffer(struct CameraState *s, int i) {
   if (s->buf_handle[i]) {
     release(s->video0_fd, s->buf_handle[i]);
 
-    // create output fence
+    // destroy old output fence
     static struct cam_sync_info sync_destroy = {0};
     strcpy(sync_destroy.name, "NodeOutputPortFence");
     sync_destroy.sync_obj = s->sync_objs[i];
