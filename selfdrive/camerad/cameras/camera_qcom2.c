@@ -461,13 +461,55 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   release(s->video0_fd, cam_packet_handle);
 }
 
+void enqueue_buffer(struct CameraState *s, int i) {
+  int ret;
+  int request_id = (++s->sched_request_id);
+  s->request_ids[i] = request_id;
+
+  if (s->buf_handle[i]) {
+    release(s->video0_fd, s->buf_handle[i]);
+  }
+
+  // do stuff
+  static struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
+  req_mgr_sched_request.session_hdl = s->session_handle;
+  req_mgr_sched_request.link_hdl = s->link_handle;
+  req_mgr_sched_request.req_id = request_id;
+  ret = cam_control(s->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
+  LOGD("sched req: %d %d", ret, request_id);
+
+  // poke sensor
+  sensors_poke(s, request_id);
+  LOGD("Poked sensor");
+
+  // create output fence
+  static struct cam_sync_info sync_create = {0};
+  strcpy(sync_create.name, "NodeOutputPortFence");
+  ret = cam_control(s->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+
+  // configure ISP to put the image in place
+  static struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
+  mem_mgr_map_cmd.mmu_hdls[0] = s->device_iommu;
+  mem_mgr_map_cmd.num_hdl = 1;
+  mem_mgr_map_cmd.flags = 1;
+  mem_mgr_map_cmd.fd = s->bufs[i].fd;
+  ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+  LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+  s->buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+
+  // push the buffer
+  config_isp(s, s->buf_handle[i], sync_create.sync_obj, request_id, s->buf0_handle, 65632*(i+1));
+}
+
 
 // ******************* camera *******************
 
 static void camera_release_buffer(void* cookie, int i) {
   int ret;
   CameraState *s = cookie;
-  int request_id = i+1;
+
+  enqueue_buffer(s, i);
 
   // printf("camera_release_buffer %d\n", buf_idx);
   /*s->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
@@ -715,37 +757,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
 
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     LOG("-- Initting buffer %d", i);
-    int request_id = i+1;
-
-    // do stuff
-    static struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
-    req_mgr_sched_request.session_hdl = s->session_handle;
-    req_mgr_sched_request.link_hdl = s->link_handle;
-    req_mgr_sched_request.req_id = request_id;
-    ret = cam_control(s->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
-    LOGD("sched req: %d", ret);
-
-    // poke sensor
-    sensors_poke(s, request_id);
-    LOGD("Poked sensor");
-
-    // create output fench
-    static struct cam_sync_info sync_create = {0};
-    strcpy(sync_create.name, "NodeOutputPortFence");
-    ret = cam_control(s->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-    LOGD("fence req: %d %d", ret, sync_create.sync_obj);
-
-    // configure ISP to put the image in place
-    static struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-    mem_mgr_map_cmd.mmu_hdls[0] = s->device_iommu;
-    mem_mgr_map_cmd.num_hdl = 1;
-    mem_mgr_map_cmd.flags = 1;
-    mem_mgr_map_cmd.fd = s->bufs[i].fd;
-    ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-    LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
-
-    // push the buffer
-    config_isp(s, mem_mgr_map_cmd.out.buf_handle, sync_create.sync_obj, request_id, s->buf0_handle, 65632*(i+1));
+    enqueue_buffer(s, i);
   }
 }
 
@@ -897,9 +909,15 @@ void cameras_run(DualCameraState *s) {
                             + event_data->tv_usec*1000);
       LOGD("video%d dqevent: %d type:0x%x frame_id:%d timestamp: %llu", i, ret, ev.type, event_data->frame_id, timestamp);
 
+
       if (event_data->frame_id != 0) {
-        // TODO: support more than rear camera
-        tbuffer_dispatch(&s->rear.camera_tb, event_data->frame_id-1);
+        for (int j = 0; j < FRAME_BUF_COUNT; j++) {
+          if (s->rear.request_ids[j] == event_data->frame_id) {
+            // TODO: support more than rear camera
+            tbuffer_dispatch(&s->rear.camera_tb, j);
+            break;
+          }
+        }
       }
 
       /*printf("**dump %d**\n", i);

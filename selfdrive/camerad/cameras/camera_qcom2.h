@@ -53,6 +53,9 @@ typedef struct CameraState {
   int32_t link_handle;
 
   int buf0_handle;
+  int buf_handle[FRAME_BUF_COUNT];
+  int sched_request_id;
+  int request_ids[FRAME_BUF_COUNT];
 
   struct cam_req_mgr_session_info req_mgr_session_info;
 } CameraState;
