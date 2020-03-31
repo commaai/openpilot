@@ -110,7 +110,7 @@ if not prebuilt:
         prefix = b'progress: '
         if line.startswith(prefix):
           progress = 70.0 * (int(line[len(prefix):]) / TOTAL_SCONS_NODES)
-          if spinner is not None:
+          if spinner is not None and not build_error:
             spinner.update("%d" % progress)
 
         if len(line) and not line.startswith(prefix):
@@ -120,7 +120,6 @@ if not prebuilt:
             build_error = True
             spinner.update("%d" % progress, format_spinner_error(line))
             time.sleep(10)
-            break
       except Exception:
         pass
 
