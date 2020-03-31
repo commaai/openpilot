@@ -549,6 +549,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0,
   }};
+  s->digital_gain = 1.0;
 }
 
 static void camera_open(CameraState *s, VisionBuf* b) {
@@ -921,27 +922,15 @@ void cameras_run(DualCameraState *s) {
                               + event_data->tv_usec*1000);
         LOGD("video%d dqevent: %d type:0x%x frame_id:%d timestamp: %llu", i, ret, ev.type, event_data->frame_id, timestamp);
 
-
         if (event_data->frame_id != 0) {
           for (int j = 0; j < FRAME_BUF_COUNT; j++) {
             if (s->rear.request_ids[j] == event_data->frame_id) {
-              uint8_t *dat = (uint8_t *)s->rear.bufs[j].addr;
-              hexdump(dat, 0x100);
-              if (j == 0) {
-                FILE *f = fopen("/tmp/img.tmp", "wb");
-                fwrite(dat, 1, s->rear.bufs[j].len, f);
-                fclose(f);
-                rename("/tmp/img.tmp", "/tmp/img");
-              }
               // TODO: support more than rear camera
               tbuffer_dispatch(&s->rear.camera_tb, j);
               break;
             }
           }
         }
-
-        /*printf("**dump %d**\n", i);
-        hexdump(ev.u.data, 0x40);*/
       }
     }
   }
