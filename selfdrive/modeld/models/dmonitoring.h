@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #define OUTPUT_SIZE 33
+#define RHD_CHECK_INTERVAL 200
 
 typedef struct DMonitoringResult {
   float face_orientation[3];

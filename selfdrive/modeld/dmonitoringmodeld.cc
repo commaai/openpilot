@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
     LOGW("connected with buffer size: %d", buf_info.buf_len);
 
     double last = 0;
+    int chk_counter = 0;
     while (!do_exit) {
       VIPCBuf *buf;
       VIPCBufExtra extra;
@@ -58,15 +59,18 @@ int main(int argc, char **argv) {
         break;
       }
       //printf("frame_id: %d %dx%d\n", extra.frame_id, buf_info.width, buf_info.height);
-      Message *msg = dmonstate_sock->receive(true);
-      if (msg != NULL) {
-        auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-        memcpy(amsg.begin(), msg->getData(), msg->getSize());
+      if (chk_counter >= RHD_CHECK_INTERVAL) {
+        Message *msg = dmonstate_sock->receive(true);
+        if (msg != NULL) {
+          auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+          memcpy(amsg.begin(), msg->getData(), msg->getSize());
 
-        capnp::FlatArrayMessageReader cmsg(amsg);
-        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+          capnp::FlatArrayMessageReader cmsg(amsg);
+          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-        is_rhd = event.getDMonitoringState().getIsRHD();
+          is_rhd = event.getDMonitoringState().getIsRHD();
+        }
+        chk_counter = 0;
       }
 
       double t1 = millis_since_boot();
@@ -80,6 +84,7 @@ int main(int argc, char **argv) {
 
       LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
+      chk_counter += 1;
     }
 
   }
