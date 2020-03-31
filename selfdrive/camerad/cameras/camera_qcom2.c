@@ -25,7 +25,8 @@
 
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
-#define FRAME_STRIDE 1936
+//#define FRAME_STRIDE 1936 // for 8 bit output
+#define FRAME_STRIDE 0xaac  // for 10 bit output
 
 static void hexdump(uint8_t *data, int len) {
   for (int i = 0; i < len; i++) {
@@ -633,8 +634,11 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   in_port_info->lane_cfg = 0x3210;
 
   in_port_info->vc = 0x0;
-  in_port_info->dt = 0x2C; //CSI_RAW12
-  in_port_info->format = CAM_FORMAT_MIPI_RAW_12;
+  //in_port_info->dt = 0x2C; //CSI_RAW12
+  //in_port_info->format = CAM_FORMAT_MIPI_RAW_12;
+
+  in_port_info->dt = 0x2B; //CSI_RAW10
+  in_port_info->format = CAM_FORMAT_MIPI_RAW_10;
 
   in_port_info->test_pattern = 0x2; // 0x3?
   in_port_info->usage_type = 0x0;
@@ -660,7 +664,8 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   in_port_info->num_out_res = 0x1;
   in_port_info->data[0] = (struct cam_isp_out_port_info){
     .res_type = CAM_ISP_IFE_OUT_RES_RDI_0, 
-    .format = CAM_FORMAT_MIPI_RAW_12,
+    //.format = CAM_FORMAT_MIPI_RAW_12,
+    .format = CAM_FORMAT_MIPI_RAW_10,
     .width = FRAME_WIDTH, 
     .height = FRAME_HEIGHT,
     .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
@@ -920,6 +925,8 @@ void cameras_run(DualCameraState *s) {
         if (event_data->frame_id != 0) {
           for (int j = 0; j < FRAME_BUF_COUNT; j++) {
             if (s->rear.request_ids[j] == event_data->frame_id) {
+              uint8_t *dat = (uint8_t *)s->rear.bufs[j].addr;
+              hexdump(dat, 0x100);
               // TODO: support more than rear camera
               tbuffer_dispatch(&s->rear.camera_tb, j);
               break;
