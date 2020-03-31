@@ -521,7 +521,7 @@ ALERTS = [
 
   Alert(
       "speedTooHigh",
-      "Speed too high",
+      "Speed Too High",
       "Slow down to resume operation",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
@@ -697,7 +697,7 @@ ALERTS = [
 
   Alert(
       "speedTooHighNoEntry",
-      "Speed To High",
+      "Speed Too High",
       "Slow down to engage",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
