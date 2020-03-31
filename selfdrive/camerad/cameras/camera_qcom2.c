@@ -464,21 +464,22 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
 
 // ******************* camera *******************
 
-static void camera_release_buffer(void* cookie, int buf_idx) {
+static void camera_release_buffer(void* cookie, int i) {
   int ret;
   CameraState *s = cookie;
+  int request_id = i+1;
 
   // printf("camera_release_buffer %d\n", buf_idx);
   /*s->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
   ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]);*/
 
   // do stuff
-  static struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
+  /*static struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
   req_mgr_sched_request.session_hdl = s->session_handle;
   req_mgr_sched_request.link_hdl = s->link_handle;
   req_mgr_sched_request.req_id = buf_idx+1;
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
-  LOGD("sched req: %d", ret);
+  LOGD("sched req: %d", ret);*/
 }
 
 static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps) {
@@ -637,9 +638,8 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   // acquires done
 
   // config ISP
-  int buf0_handle;
-  void *buf0 = alloc_w_mmu_hdl(s->video0_fd, 984480, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &buf0_handle, s->device_iommu, s->cdm_iommu);
-  config_isp(s, 0, 0, 1, buf0_handle, 0);
+  void *buf0 = alloc_w_mmu_hdl(s->video0_fd, 984480, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &s->buf0_handle, s->device_iommu, s->cdm_iommu);
+  config_isp(s, 0, 0, 1, s->buf0_handle, 0);
 
   LOG("-- Configuring sensor");
   sensors_i2c(s, init_array_ar0231, sizeof(init_array_ar0231)/sizeof(struct i2c_random_wr_payload),
@@ -742,10 +742,10 @@ static void camera_open(CameraState *s, VisionBuf* b) {
     mem_mgr_map_cmd.flags = 1;
     mem_mgr_map_cmd.fd = s->bufs[i].fd;
     ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-    LOGD("map buf req: (fd: %d) %d", s->bufs[i].fd, ret);
+    LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
 
     // push the buffer
-    config_isp(s, mem_mgr_map_cmd.out.buf_handle, sync_create.sync_obj, request_id, buf0_handle, 65632*(i+1));
+    config_isp(s, mem_mgr_map_cmd.out.buf_handle, sync_create.sync_obj, request_id, s->buf0_handle, 65632*(i+1));
   }
 }
 
