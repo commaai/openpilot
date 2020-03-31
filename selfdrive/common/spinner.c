@@ -18,7 +18,7 @@
 #include "framebuffer.h"
 #include "spinner.h"
 
-#define SPINTEXT_LENGTH 192
+#define SPINTEXT_LENGTH 256
 
 // external resources linked in
 extern const unsigned char _binary_opensans_semibold_ttf_start[];
@@ -86,7 +86,16 @@ int spin(int argc, char** argv) {
     // Check stdin for new text
     if (stdin_input_available()){
       fgets(spintext, SPINTEXT_LENGTH, stdin);
-      spintext[strcspn(spintext, "\n")] = 0;
+
+      for (int i = 0; i < strlen(spintext); i++) {
+        if (spintext[i] == '\x1f') {  // unit separator
+          spintext[i] = '\n';
+        }
+      }
+
+      if (spintext[strlen(spintext)] == '\0' && spintext[strlen(spintext) - 1] == '\n') {
+        spintext[strlen(spintext) - 1] = 0;  // removes last \n
+      }
 
       // Get current status
       has_extra = strchr(spintext, ',') != NULL;
@@ -191,7 +200,7 @@ int spin(int argc, char** argv) {
     } else if (has_extra) {
       nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
       if (err_msg) {
-        int break_row_width = 1300;
+        int break_row_width = 1600;  // generally unused
         int y_offset = strlen(spinerr) > 160 ? 76 : 96;
         // need smaller font for longer error msg
         int fontsize = strlen(spinerr) > 50 ? 68.0f : 72.0f;
