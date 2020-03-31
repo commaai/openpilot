@@ -46,7 +46,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_stride = FRAME_STRIDE,
     .bayer = true,
     .bayer_flip = 0,
-    .hdr = true
+    .hdr = false
   },
 };
 

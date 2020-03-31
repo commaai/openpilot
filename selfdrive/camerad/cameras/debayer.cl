@@ -81,17 +81,26 @@ __kernel void debayer10(__global uchar const * const in,
 
       float4 p = convert_float4(pint);
 
+#if NEW == 1
+      // now it's 0x2a
+      const float black_level = 42.0f;
+#else
       // 64 is the black level of the sensor, remove
       // (changed to 56 for HDR)
       const float black_level = 56.0f;
-      p = (p - black_level);
+#endif
 
+      // max on black level
+      p = max(0.0, p - black_level);
+
+#if NEW == 0
       // correct vignetting (no pow function?)
       // see https://www.eecis.udel.edu/~jye/lab_research/09/JiUp.pdf the A (4th order)
       const float r = ((oy - RGB_HEIGHT/2)*(oy - RGB_HEIGHT/2) + (ox - RGB_WIDTH/2)*(ox - RGB_WIDTH/2));
       const float fake_f = 700.0f;    // should be 910, but this fits...
       const float lil_a = (1.0f + r/(fake_f*fake_f));
       p = p * lil_a * lil_a;
+#endif
 
       // rescale to 1.0
 #if HDR

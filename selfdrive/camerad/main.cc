@@ -40,6 +40,14 @@ extern "C" {
 volatile sig_atomic_t do_exit = 0;
 }
 
+static void hexdump(uint8_t *data, int len) {
+  for (int i = 0; i < len; i++) {
+    if (i!=0&&i%0x10==0) printf("\n");
+    printf("%02X ", data[i]);
+  }
+  printf("\n");
+}
+
 void set_do_exit(int sig) {
   do_exit = 1;
 }
@@ -375,6 +383,9 @@ void* processing_thread(void *arg) {
       continue;
     }
 
+    //hexdump(((uint8_t *)s->cameras.rear.bufs[buf_idx].addr) + 2416*100, 0x10);
+    //hexdump(((uint8_t *)s->cameras.rear.bufs[buf_idx].addr) + 2416*101, 0x10);
+
     int ui_idx = tbuffer_select(&s->ui_tb);
     int rgb_idx = ui_idx;
 
@@ -411,6 +422,7 @@ void* processing_thread(void *arg) {
     double t2 = millis_since_boot();
 
     uint8_t *bgr_ptr = (uint8_t*)s->rgb_bufs[rgb_idx].addr;
+    //hexdump(bgr_ptr, 0x40);
 
     double yt1 = millis_since_boot();
 
@@ -877,15 +889,21 @@ cl_program build_debayer_program(VisionState *s,
   assert(rgb_width == frame_width/2);
   assert(rgb_height == frame_height/2);
 
+  #ifdef QCOM2
+    int dnew = 1;
+  #else
+    int dnew = 0;
+  #endif
+
   char args[4096];
   snprintf(args, sizeof(args),
           "-cl-fast-relaxed-math -cl-denorms-are-zero "
           "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
-            "-DBAYER_FLIP=%d -DHDR=%d",
+            "-DBAYER_FLIP=%d -DHDR=%d -DNEW=%d",
           frame_width, frame_height, frame_stride,
           rgb_width, rgb_height, rgb_stride,
-          bayer_flip, hdr);
+          bayer_flip, hdr, dnew);
   return CLU_LOAD_FROM_FILE(s->context, s->device_id, "cameras/debayer.cl", args);
 }
 
