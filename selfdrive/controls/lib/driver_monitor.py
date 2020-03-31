@@ -67,7 +67,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
 
   # no calib for roll
   pitch -= rpy_calib[1]
-  yaw -= rpy_calib[2]
+  yaw -= rpy_calib[2] * (1 - 2 * int(self.is_rhd_region)) # lhd -> -=, rhd -> +=
   return roll, pitch, yaw
 
 class DriverPose():
@@ -183,8 +183,7 @@ class DriverStatus():
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb>_EYE_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb>_EYE_THRESHOLD)
     self.face_detected = driver_state.faceProb > _FACE_THRESHOLD and \
-                          abs(driver_state.facePosition[0]) <= 0.4 and abs(driver_state.facePosition[1]) <= 0.45 and \
-                          not self.is_rhd_region
+                          abs(driver_state.facePosition[0]) <= 0.4 and abs(driver_state.facePosition[1]) <= 0.45
 
     self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0
     # first order filters
