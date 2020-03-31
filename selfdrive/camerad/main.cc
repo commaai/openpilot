@@ -4,6 +4,8 @@
 
 #ifdef QCOM
 #include "cameras/camera_qcom.h"
+#elif QCOM2
+#include "cameras/camera_qcom2.h"
 #elif WEBCAM
 #include "cameras/camera_webcam.h"
 #else
@@ -456,6 +458,8 @@ void* processing_thread(void *arg) {
         framed.setFocusConf(focus_confs);
 #endif
 
+// TODO: add this back
+//#if !defined(QCOM) && !defined(QCOM2)
 #ifndef QCOM
         framed.setImage(kj::arrayPtr((const uint8_t*)s->yuv_ion[yuv_idx].addr, s->yuv_buf_size));
 #endif
@@ -469,6 +473,8 @@ void* processing_thread(void *arg) {
       }
     }
 
+#ifndef QCOM2
+    // TODO: fix on QCOM2, giving scanline error
     // one thumbnail per 5 seconds (instead of %5 == 0 posenet)
     if (cnt % 100 == 3) {
       uint8_t* thumbnail_buffer = NULL;
@@ -532,6 +538,7 @@ void* processing_thread(void *arg) {
 
       free(thumbnail_buffer);
     }
+#endif
 
     tbuffer_dispatch(&s->ui_tb, ui_idx);
 
@@ -873,15 +880,21 @@ cl_program build_debayer_program(VisionState *s,
   assert(rgb_width == frame_width/2);
   assert(rgb_height == frame_height/2);
 
+  #ifdef QCOM2
+    int dnew = 1;
+  #else
+    int dnew = 0;
+  #endif
+
   char args[4096];
   snprintf(args, sizeof(args),
           "-cl-fast-relaxed-math -cl-denorms-are-zero "
           "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
-            "-DBAYER_FLIP=%d -DHDR=%d",
+            "-DBAYER_FLIP=%d -DHDR=%d -DNEW=%d",
           frame_width, frame_height, frame_stride,
           rgb_width, rgb_height, rgb_stride,
-          bayer_flip, hdr);
+          bayer_flip, hdr, dnew);
   return CLU_LOAD_FROM_FILE(s->context, s->device_id, "cameras/debayer.cl", args);
 }
 
@@ -919,9 +932,11 @@ void init_buffers(VisionState *s) {
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
     s->camera_bufs[i] = visionbuf_allocate_cl(s->frame_size, s->device_id, s->context,
                                               &s->camera_bufs_cl[i]);
-    // TODO: make lengths correct
-    s->focus_bufs[i] = visionbuf_allocate(0xb80);
-    s->stats_bufs[i] = visionbuf_allocate(0xb80);
+    #ifndef QCOM2
+      // TODO: make lengths correct
+      s->focus_bufs[i] = visionbuf_allocate(0xb80);
+      s->stats_bufs[i] = visionbuf_allocate(0xb80);
+    #endif
   }
 
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
@@ -1070,10 +1085,13 @@ void party(VisionState *s) {
                        processing_thread, s);
   assert(err == 0);
 
+#ifndef QCOM2
+  // TODO: fix front camera on qcom2
   pthread_t frontview_thread_handle;
   err = pthread_create(&frontview_thread_handle, NULL,
                        frontview_thread, s);
   assert(err == 0);
+#endif
 
   // priority for cameras
   err = set_realtime_priority(1);
@@ -1088,9 +1106,11 @@ void party(VisionState *s) {
 
   zsock_signal(s->terminate_pub, 0);
 
+#ifndef QCOM2
   LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
   assert(err == 0);
+#endif
 
   LOG("joining visionserver_thread");
   err = pthread_join(visionserver_thread_handle, NULL);
@@ -1126,7 +1146,7 @@ int main(int argc, char *argv[]) {
 
   init_buffers(s);
 
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
   s->msg_context = Context::create();
   s->frame_sock = PubSocket::create(s->msg_context, "frame");
   s->front_frame_sock = PubSocket::create(s->msg_context, "frontFrame");
@@ -1140,7 +1160,7 @@ int main(int argc, char *argv[]) {
 
   party(s);
 
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
   delete s->frame_sock;
   delete s->front_frame_sock;
   delete s->thumbnail_sock;
