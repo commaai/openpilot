@@ -486,7 +486,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
   # Write CarParams for radard and boardd safety mode
   cp_bytes = CP.to_bytes()
-  put_nonblocking("CarParams", cp_bytes)
+  params.put("CarParams", cp_bytes)
   put_nonblocking("CarParamsCache", cp_bytes)
   put_nonblocking("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
 

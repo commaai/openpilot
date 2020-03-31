@@ -1,5 +1,5 @@
 import os
-from common.params import Params, put_nonblocking
+from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
@@ -91,7 +91,7 @@ def fingerprint(logcan, sendcan, has_relay):
     fw_candidates, car_fw = set(), []
 
   cloudlog.warning("VIN %s", vin)
-  put_nonblocking("CarVin", vin)
+  Params().put("CarVin", vin)
 
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_known_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1

@@ -6,19 +6,20 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.version import version, terms_version, training_version, get_git_commit, get_git_branch, get_git_remote
 from common.android import get_imei, get_serial, get_subscriber_info
 from common.api import api_get
-from common.params import Params, put_nonblocking
+from common.params import Params
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
 
 def register():
-  put_nonblocking("Version", version)
-  put_nonblocking("TermsVersion", terms_version)
-  put_nonblocking("TrainingVersion", training_version)
+  params = Params()
+  params.put("Version", version)
+  params.put("TermsVersion", terms_version)
+  params.put("TrainingVersion", training_version)
 
-  put_nonblocking("GitCommit", get_git_commit(default=""))
-  put_nonblocking("GitBranch", get_git_branch(default=""))
-  put_nonblocking("GitRemote", get_git_remote(default=""))
-  put_nonblocking("SubscriberInfo", get_subscriber_info())
+  params.put("GitCommit", get_git_commit(default=""))
+  params.put("GitBranch", get_git_branch(default=""))
+  params.put("GitRemote", get_git_remote(default=""))
+  params.put("SubscriberInfo", get_subscriber_info())
 
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
@@ -35,7 +36,7 @@ def register():
   os.chmod(PERSIST+'/comma/', 0o755)
   os.chmod(PERSIST+'/comma/id_rsa', 0o744)
 
-  dongle_id = Params().get("DongleId", encoding='utf8')
+  dongle_id = params.get("DongleId", encoding='utf8')
   public_key = open(PERSIST+"/comma/id_rsa.pub").read()
 
   # create registration token
@@ -53,7 +54,7 @@ def register():
     dongleauth = json.loads(resp.text)
     dongle_id = dongleauth["dongle_id"]
 
-    put_nonblocking("DongleId", dongle_id)
+    params.put("DongleId", dongle_id)
     return dongle_id
   except Exception:
     cloudlog.exception("failed to authenticate")

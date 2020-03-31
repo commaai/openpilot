@@ -35,7 +35,7 @@ import threading
 from cffi import FFI
 
 from common.basedir import BASEDIR
-from common.params import Params, put_nonblocking
+from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 STAGING_ROOT = "/data/safe_staging"
@@ -110,18 +110,20 @@ def set_consistent_flag():
 
 
 def set_update_available_params(new_version=False):
+  params = Params()
+
   t = datetime.datetime.utcnow().isoformat()
-  put_nonblocking("LastUpdateTime", t.encode('utf8'))
+  params.put("LastUpdateTime", t.encode('utf8'))
 
   if new_version:
     try:
       with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
         r = f.read()
       r = r[:r.find(b'\n\n')]  # Slice latest release notes
-      put_nonblocking("ReleaseNotes", r + b"\n")
+      params.put("ReleaseNotes", r + b"\n")
     except Exception:
-      put_nonblocking("ReleaseNotes", "")
-    put_nonblocking("UpdateAvailable", "1")
+      params.put("ReleaseNotes", "")
+    params.put("UpdateAvailable", "1")
 
 
 def dismount_ovfs():
@@ -132,7 +134,7 @@ def dismount_ovfs():
 
 def init_ovfs():
   cloudlog.info("preparing new safe staging area")
-  put_nonblocking("UpdateAvailable", "0")
+  Params().put("UpdateAvailable", "0")
 
   remove_consistent_flag()
 
@@ -350,7 +352,7 @@ def main():
       except Exception:
         cloudlog.exception("uncaught updated exception, shouldn't happen")
 
-    put_nonblocking("UpdateFailedCount", str(update_failed_count))
+    params.put("UpdateFailedCount", str(update_failed_count))
     wait_between_updates(wait_helper.ready_event)
     if wait_helper.shutdown:
       break

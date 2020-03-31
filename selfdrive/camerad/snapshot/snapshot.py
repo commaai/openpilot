@@ -6,7 +6,7 @@ import subprocess
 import time
 from PIL import Image
 from common.basedir import BASEDIR
-from common.params import Params, put_nonblocking
+from common.params import Params
 from selfdrive.camerad.snapshot.visionipc import VisionIPC
 
 with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
@@ -33,7 +33,7 @@ def snapshot():
   ps = subprocess.Popen("ps | grep camerad", shell=True, stdout=subprocess.PIPE)
   ret = list(filter(lambda x: 'grep ' not in x, ps.communicate()[0].decode('utf-8').strip().split("\n")))
   if len(ret) > 0:
-    put_nonblocking("IsTakingSnapshot", "0")
+    params.put("IsTakingSnapshot", "0")
     params.delete("Offroad_IsTakingSnapshot")
     return None
 
@@ -63,7 +63,7 @@ def snapshot():
   proc.send_signal(signal.SIGINT)
   proc.communicate()
 
-  put_nonblocking("IsTakingSnapshot", "0")
+  params.put("IsTakingSnapshot", "0")
   params.delete("Offroad_IsTakingSnapshot")
   return ret
 
