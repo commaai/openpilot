@@ -84,14 +84,16 @@ __kernel void debayer10(__global uchar const * const in,
 #if NEW == 1
       // now it's 0x2a
       const float black_level = 42.0f;
+      // max on black level
+      p = max(0.0, p - black_level);
 #else
       // 64 is the black level of the sensor, remove
       // (changed to 56 for HDR)
       const float black_level = 56.0f;
+      // TODO: switch to max here?
+      p = (p - black_level);
 #endif
 
-      // max on black level
-      p = max(0.0, p - black_level);
 
 #if NEW == 0
       // correct vignetting (no pow function?)
