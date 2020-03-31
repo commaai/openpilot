@@ -40,11 +40,12 @@ extern volatile sig_atomic_t do_exit;
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_AR0231] = {
-      .frame_width = FRAME_WIDTH,
-      .frame_height = FRAME_HEIGHT,
-      .frame_stride = FRAME_STRIDE,
-      .bayer = false,
-      .bayer_flip = false,
+    .frame_width = FRAME_WIDTH,
+    .frame_height = FRAME_HEIGHT,
+    .frame_stride = FRAME_STRIDE,
+    .bayer = true,
+    .bayer_flip = 0,
+    .hdr = true
   },
 };
 
@@ -898,7 +899,7 @@ void cameras_run(DualCameraState *s) {
 
       if (event_data->frame_id != 0) {
         // TODO: support more than rear camera
-        //tbuffer_dispatch(&s->rear.camera_tb, event_data->frame_id-1);
+        tbuffer_dispatch(&s->rear.camera_tb, event_data->frame_id-1);
       }
 
       /*printf("**dump %d**\n", i);
