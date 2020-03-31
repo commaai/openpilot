@@ -362,14 +362,15 @@ FW_VERSIONS = {
       b'37805-5AA-L950\x00\x00',
       b'37805-5AN-A750\x00\x00',
       b'37805-5AN-A830\x00\x00',
+      b'37805-5AN-A840\x00\x00',
       b'37805-5AN-A930\x00\x00',
       b'37805-5AN-A950\x00\x00',
+      b'37805-5AN-AH20\x00\x00',
       b'37805-5AN-L940\x00\x00',
       b'37805-5AN-LH20\x00\x00',
       b'37805-5AN-LJ20\x00\x00',
       b'37805-5AZ-E850\x00\x00',
       b'37805-5BB-L640\x00\x00',
-      b'37805-5AN-AH20\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-5CG-A920\x00\x00',
@@ -379,6 +380,7 @@ FW_VERSIONS = {
       b'28101-5CK-A140\x00\x00',
       b'28101-5CK-A150\x00\x00',
       b'28101-5CK-C130\x00\x00',
+      b'28101-5CK-C140\x00\x00',
       b'28101-5DJ-A710\x00\x00',
       b'28101-5DV-E330\x00\x00',
     ],
@@ -400,7 +402,6 @@ FW_VERSIONS = {
       b'77959-TBA-A060\x00\x00',
       b'77959-TGG-A020\x00\x00',
       b'77959-TGG-G010\x00\x00',
-      b'77959-TGG-A020\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TBA-A910\x00\x00',
@@ -426,7 +427,6 @@ FW_VERSIONS = {
     ],
     (Ecu.unknown, 0x18daeff1, None): [
       b'38897-TBA-A110\x00\x00',
-      b'38897-TBA-A020\x00\x00',
       b'38897-TBA-A020\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [

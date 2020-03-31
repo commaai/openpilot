@@ -405,7 +405,7 @@ phonelibs/libyuv/include/**
 phonelibs/libyuv/lib/**
 
 phonelibs/snpe/include/**
-phonelibs/snpe/aarch64-android-clang3.8/**
+phonelibs/snpe/aarch64**
 
 phonelibs/fastcv/aarch64/**
 

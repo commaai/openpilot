@@ -1,6 +1,6 @@
 //==============================================================================
 //
-// Copyright (c) 2017 Qualcomm Technologies, Inc.
+// Copyright (c) 2017-2019 Qualcomm Technologies, Inc.
 // All Rights Reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -20,7 +20,6 @@ namespace zdl {
 
 namespace zdl {
 namespace DlSystem {
-
 
 /**
  * @brief IBufferAttributes returns a buffer's dimension and alignment
@@ -64,6 +63,15 @@ public:
       *         number of elements
      */
     virtual const TensorShape getAlignments() const noexcept = 0;
+
+    /**
+      * @brief Gets the buffer encoding returned from the network responsible
+      * for generating this buffer. Depending on the encoding type, this will
+      * be an instance of an encoding type specific derived class.
+      *
+      * @return Derived user buffer encoding object.
+     */
+    virtual zdl::DlSystem::UserBufferEncoding* getEncoding() const noexcept = 0;
 
     virtual ~IBufferAttributes() {}
 };

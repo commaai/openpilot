@@ -503,6 +503,7 @@ ALERTS = [
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
 
+
   # not loud cancellations (user is in control)
   Alert(
       "noTarget",
@@ -515,6 +516,13 @@ ALERTS = [
       "speedTooLow",
       "openpilot Canceled",
       "Speed too low",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.HIGH, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+
+  Alert(
+      "speedTooHigh",
+      "Speed Too High",
+      "Slow down to resume operation",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
 
@@ -687,6 +695,13 @@ ALERTS = [
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
 
+  Alert(
+      "speedTooHighNoEntry",
+      "Speed Too High",
+      "Slow down to engage",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+
   # permanent alerts
   Alert(
       "steerUnavailablePermanent",
@@ -720,6 +735,13 @@ ALERTS = [
       "invalidGiraffeToyotaPermanent",
       "Unsupported Giraffe Configuration",
       "Visit comma.ai/tg",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+
+  Alert(
+      "invalidLkasSettingPermanent",
+      "Stock LKAS is turned on",
+      "Turn off stock LKAS to engage",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 

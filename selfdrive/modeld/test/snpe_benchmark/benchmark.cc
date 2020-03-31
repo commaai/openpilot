@@ -83,7 +83,7 @@ void test(char *filename) {
 
   struct timespec start, end;
   cout << "**** starting benchmark ****" << endl;
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 50; i++) {
     clock_gettime(CLOCK_MONOTONIC, &start);
     assert(snpe->execute(inputTensorMap, outputTensorMap));
     clock_gettime(CLOCK_MONOTONIC, &end);
