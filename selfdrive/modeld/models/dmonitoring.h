@@ -33,7 +33,7 @@ typedef struct DMonitoringModelState {
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, bool mirrored);
 void dmonitoring_publish(PubSocket *sock, uint32_t frame_id, const DMonitoringResult res);
 void dmonitoring_free(DMonitoringModelState* s);
 

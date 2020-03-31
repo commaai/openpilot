@@ -25,7 +25,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
   s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
 }
 
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, bool mirrored) {
 
   uint8_t *raw_buf = (uint8_t*) stream_buf;
   uint8_t *raw_y_buf = raw_buf;
@@ -43,7 +43,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   uint8_t *cropped_u_buf = cropped_y_buf + (cropped_width * cropped_height);
   uint8_t *cropped_v_buf = cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
 
-  if (true) {
+  if (!mirrored) {
     for (int r = 0; r < height/2; r++) {
       memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + 2*r*width + (width - cropped_width), cropped_width);
       memcpy(cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r+1)*width + (width - cropped_width), cropped_width);

@@ -28,10 +28,13 @@ int main(int argc, char **argv) {
   // messaging
   Context *msg_context = Context::create();
   PubSocket *dmonitoring_sock = PubSocket::create(msg_context, "driverState");
+  SubSocket *dmonstate_sock = SubSocket::create(msg_context, "dMonitoringState", "127.0.0.1", true);
+  assert(dmonstate_sock != NULL);
 
   // init the models
   DMonitoringModelState dmonitoringmodel;
   dmonitoring_init(&dmonitoringmodel);
+  bool is_rhd = false;
 
   // loop
   VisionStream stream;
@@ -55,10 +58,20 @@ int main(int argc, char **argv) {
         break;
       }
       //printf("frame_id: %d %dx%d\n", extra.frame_id, buf_info.width, buf_info.height);
+      Message *msg = dmonstate_sock->receive(true);
+      if (msg != NULL) {
+        auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+        memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+        capnp::FlatArrayMessageReader cmsg(amsg);
+        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
+        is_rhd = event.getDMonitoringState().getIsRHD();
+      }
 
       double t1 = millis_since_boot();
 
-      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf_info.width, buf_info.height);
+      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf_info.width, buf_info.height, is_rhd);
 
       double t2 = millis_since_boot();
 
