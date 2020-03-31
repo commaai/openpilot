@@ -6,7 +6,7 @@ from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
-from common.params import Params
+from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -490,8 +490,8 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   # Write CarParams for radard and boardd safety mode
   cp_bytes = CP.to_bytes()
   params.put("CarParams", cp_bytes)
-  params.put("CarParamsCache", cp_bytes)
-  params.put("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
+  put_nonblocking("CarParamsCache", cp_bytes)
+  put_nonblocking("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
 
   CC = car.CarControl.new_message()
   AM = AlertManager()
