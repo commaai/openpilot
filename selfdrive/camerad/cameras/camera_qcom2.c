@@ -121,6 +121,13 @@ void release(int video0_fd, uint32_t handle) {
   assert(ret == 0);
 }
 
+
+void release_fd(int video0_fd, uint32_t handle) {
+  // handle to fd
+  close(handle>>16);
+  release(video0_fd, handle);
+}
+
 // ************** high level camera helpers ****************
 
 void sensors_poke(struct CameraState *s, int request_id) {
@@ -144,7 +151,7 @@ void sensors_poke(struct CameraState *s, int request_id) {
   int ret = cam_control(s->sensor_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
   assert(ret == 0);
 
-  release(s->video0_fd, cam_packet_handle);
+  release_fd(s->video0_fd, cam_packet_handle);
 }
 
 void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int len, int op_code) {
@@ -179,8 +186,8 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   int ret = cam_control(s->sensor_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
   assert(ret == 0);
 
-  release(s->video0_fd, buf_desc[0].mem_handle);
-  release(s->video0_fd, cam_packet_handle);
+  release_fd(s->video0_fd, buf_desc[0].mem_handle);
+  release_fd(s->video0_fd, cam_packet_handle);
 }
 
 void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
@@ -345,9 +352,9 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   int ret = cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)cam_packet_handle, 0);
   assert(ret == 0);
 
-  release(video0_fd, buf_desc[0].mem_handle);
-  release(video0_fd, buf_desc[1].mem_handle);
-  release(video0_fd, cam_packet_handle);
+  release_fd(video0_fd, buf_desc[0].mem_handle);
+  release_fd(video0_fd, buf_desc[1].mem_handle);
+  release_fd(video0_fd, cam_packet_handle);
 }
 
 void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
@@ -456,16 +463,18 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
     printf("ISP CONFIG FAILED\n");
   }
 
-  release(s->video0_fd, buf_desc[1].mem_handle);
+  release_fd(s->video0_fd, buf_desc[1].mem_handle);
   //release(s->video0_fd, buf_desc[0].mem_handle);
-  release(s->video0_fd, cam_packet_handle);
+  release_fd(s->video0_fd, cam_packet_handle);
 }
 
 void enqueue_buffer(struct CameraState *s, int i) {
   int ret;
   int request_id = (++s->sched_request_id);
+  bool first = true;
 
   if (s->buf_handle[i]) {
+    first = false;
     release(s->video0_fd, s->buf_handle[i]);
 
     // destroy old output fence

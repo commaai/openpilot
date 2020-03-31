@@ -458,7 +458,9 @@ void* processing_thread(void *arg) {
         framed.setFocusConf(focus_confs);
 #endif
 
-#if !defined(QCOM) && !defined(QCOM2)
+// TODO: add this back
+//#if !defined(QCOM) && !defined(QCOM2)
+#ifndef QCOM
         framed.setImage(kj::arrayPtr((const uint8_t*)s->yuv_ion[yuv_idx].addr, s->yuv_buf_size));
 #endif
 
