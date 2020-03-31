@@ -123,8 +123,12 @@ __kernel void debayer10(__global uchar const * const in,
       float3 c1 = (float3)(p.s0, (p.s1+p.s2)/2.0f, p.s3);
 #endif
 
+#if NEW
+      // TODO: new color correction
+#else
       // color correction
       c1 = color_correct(c1);
+#endif
 
 #if HDR
       // srgb gamma isn't right for YUV, so it's disabled for now
