@@ -204,6 +204,9 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
     err = OMX_GetHandle(&s->handle, (OMX_STRING)"OMX.qcom.video.encoder.avc",
                         s, &omx_callbacks);
   }
+  if (err != OMX_ErrorNone) {
+    LOGE("error getting codec: %x", err);
+  }
   assert(err == OMX_ErrorNone);
   // printf("handle: %p\n", s->handle);
 
