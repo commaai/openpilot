@@ -895,6 +895,7 @@ struct video_event_data {
 
 void cameras_run(DualCameraState *s) {
   LOG("-- Dequeueing Video events");
+  int frame_id = 1;
 
   while (!do_exit) {
     struct pollfd fds[2] = {{0}};
@@ -927,6 +928,7 @@ void cameras_run(DualCameraState *s) {
             if (s->rear.request_ids[j] == event_data->frame_id) {
               // TODO: support more than rear camera
               tbuffer_dispatch(&s->rear.camera_tb, j);
+              s->rear.camera_bufs_metadata[j].frame_id = frame_id++;
               break;
             }
           }

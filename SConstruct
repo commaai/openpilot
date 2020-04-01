@@ -49,13 +49,14 @@ if arch == "aarch64" or arch == "larch64":
     libpath += ["#external/capnparm/lib", "/usr/lib/aarch64-linux-gnu"]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+    rpath = ["/usr/local/lib"]
   else:
     libpath += ["#phonelibs/snpe/aarch64"]
     libpath += ["#phonelibs/libyuv/lib"]
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
+    rpath = ["/system/vendor/lib64"]
 
-  rpath = ["/system/vendor/lib64"]
 else:
   lenv = {
     "PATH": "#external/bin:" + os.environ['PATH'],

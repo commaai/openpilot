@@ -8,5 +8,10 @@ libs = ['zmq', 'czmq', 'capnp', 'kj', 'z',
 if arch == "aarch64":
   src += ['encoder.c', 'raw_logger.cc']
   libs += ['OmxVenc', 'OmxCore', 'cutils']
+elif arch == "larch64":
+  src += ['encoder.c', 'raw_logger.cc']
+  libs += ['OmxVenc', 'OmxCore', 'pthread']
+else:
+  libs += ['pthread']
 
 env.Program(src, LIBS=libs)
