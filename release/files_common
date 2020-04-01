@@ -31,6 +31,7 @@ common/basedir.py
 common/filter_simple.py
 common/stat_live.py
 common/spinner.py
+common/text_window.py
 common/cython_hacks.py
 common/apk.py
 common/SConscript
@@ -330,6 +331,10 @@ selfdrive/ui/ui
 selfdrive/ui/spinner/Makefile
 selfdrive/ui/spinner/spinner
 selfdrive/ui/spinner/spinner.c
+
+selfdrive/ui/text/Makefile
+selfdrive/ui/text/text
+selfdrive/ui/text/text.c
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
