@@ -25,6 +25,7 @@ ThermalStatus = log.ThermalData.ThermalStatus
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
+CPU_TEMP_TAU = 5.   # 5s time constant
 DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 
@@ -173,6 +174,7 @@ def thermald_thread():
   network_strength = NetworkStrength.unknown
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
+  cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
   health_prev = None
   fw_version_match_prev = True
   current_connectivity_alert = None
@@ -230,8 +232,12 @@ def thermald_thread():
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
 
     # TODO: add car battery voltage check
-    max_cpu_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
-                       msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
+    max_cpu_temp = cpu_temp_filter.update(
+      max(msg.thermal.cpu0,
+          msg.thermal.cpu1,
+          msg.thermal.cpu2,
+          msg.thermal.cpu3) / 10.0)
+
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat / 1000.
 
