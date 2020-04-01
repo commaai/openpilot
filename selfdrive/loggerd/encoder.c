@@ -286,20 +286,22 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   assert(err == OMX_ErrorNone);
 
   if (h265) {
-    // setup HEVC
-    OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
-    hecv_type.nSize = sizeof(hecv_type);
-    hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
-    err = OMX_GetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
-                           (OMX_PTR) &hecv_type);
-    assert(err == OMX_ErrorNone);
+    #ifndef QCOM2
+      // setup HEVC
+      OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
+      hecv_type.nSize = sizeof(hecv_type);
+      hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
+      err = OMX_GetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
+                             (OMX_PTR) &hecv_type);
+      assert(err == OMX_ErrorNone);
 
-    hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
-    hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
+      hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
+      hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
 
-    err = OMX_SetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
-                           (OMX_PTR) &hecv_type);
-    assert(err == OMX_ErrorNone);
+      err = OMX_SetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
+                             (OMX_PTR) &hecv_type);
+      assert(err == OMX_ErrorNone);
+    #endif
   } else {
     // setup h264
     OMX_VIDEO_PARAM_AVCTYPE avc = { 0 };
@@ -555,6 +557,7 @@ void encoder_open(EncoderState *s, const char* path) {
   pthread_mutex_lock(&s->lock);
 
   snprintf(s->vid_path, sizeof(s->vid_path), "%s/%s", path, s->filename);
+  LOGD("encoder_open %s remuxing:%d", s->vid_path, s->remuxing);
 
   if (s->remuxing) {
     avformat_alloc_output_context2(&s->ofmt_ctx, NULL, NULL, s->vid_path);

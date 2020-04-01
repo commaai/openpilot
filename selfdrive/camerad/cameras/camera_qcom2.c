@@ -895,7 +895,7 @@ struct video_event_data {
 
 void cameras_run(DualCameraState *s) {
   LOG("-- Dequeueing Video events");
-  int frame_id = 0;
+  int frame_id = 1;
 
   while (!do_exit) {
     struct pollfd fds[2] = {{0}};

@@ -41,7 +41,7 @@
 #include "messaging.hpp"
 #include "services.h"
 
-#ifdef defined(QCOM) || defined(QCOM2)
+#if !(defined(QCOM) || defined(QCOM2))
 // no encoder on PC
 #define DISABLE_ENCODER
 #endif
