@@ -15,7 +15,7 @@
 
 #include <libyuv.h>
 
-#include <android/log.h>
+//#include <android/log.h>
 
 #include <msm_media_info.h>
 
@@ -24,7 +24,7 @@
 
 #include "encoder.h"
 
-#define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
+//#define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
 
 // encoder: lossey codec using hardware hevc
 static void wait_for_state(EncoderState *s, OMX_STATETYPE state) {
