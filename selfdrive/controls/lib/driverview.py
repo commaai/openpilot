@@ -7,7 +7,7 @@ def send_controls_packet():
   pm = messaging.PubMaster(['controlsState'])
   dat = messaging.new_message('controlsState')
   dat.controlsState = {
-    "rearViewCam": True;
+    "rearViewCam": True,
   }
   pm.send('controlsState', dat)
 
