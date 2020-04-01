@@ -17,7 +17,7 @@ class TextWindow():
   def get_status(self):
     if self.text_proc is not None:
       self.text_proc.poll()
-      return s.text_proc.returncode
+      return self.text_proc.returncode
 
     return None
 
