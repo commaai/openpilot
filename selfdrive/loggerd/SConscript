@@ -11,5 +11,7 @@ if arch == "aarch64":
 elif arch == "larch64":
   src += ['encoder.c', 'raw_logger.cc']
   libs += ['OmxVenc', 'OmxCore', 'pthread']
+else:
+  libs += ['pthread']
 
 env.Program(src, LIBS=libs)
