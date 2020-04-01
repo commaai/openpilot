@@ -4,13 +4,13 @@ import subprocess
 from common.basedir import BASEDIR
 
 
-class Text():
+class TextWindow():
   def __init__(self, s):
     try:
       self.text_proc = subprocess.Popen(["./text", s],
-                                     stdin=subprocess.PIPE,
-                                     cwd=os.path.join(BASEDIR, "selfdrive", "ui", "text"),
-                                     close_fds=True)
+                                        stdin=subprocess.PIPE,
+                                        cwd=os.path.join(BASEDIR, "selfdrive", "ui", "text"),
+                                        close_fds=True)
     except OSError:
       self.text_proc = None
 
@@ -20,7 +20,6 @@ class Text():
       return s.text_proc.returncode
 
     return None
-
 
   def __enter__(self):
     return self
@@ -37,7 +36,7 @@ class Text():
     self.close()
 
 
-class FakeText():
+class FakeTextWindow():
   def __init__(self):
     pass
 
@@ -66,7 +65,7 @@ if __name__ == "__main__":
 ZeroDivisionError: division by zero"""
   print(text)
 
-  with Text(text) as s:
+  with TextWindow(text) as s:
     for _ in range(100):
       if s.get_status() == 1:
         print("Got exit button")

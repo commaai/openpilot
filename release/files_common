@@ -31,7 +31,7 @@ common/basedir.py
 common/filter_simple.py
 common/stat_live.py
 common/spinner.py
-common/text.py
+common/text_window.py
 common/cython_hacks.py
 common/apk.py
 common/SConscript
