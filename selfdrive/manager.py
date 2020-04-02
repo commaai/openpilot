@@ -89,12 +89,16 @@ if not prebuilt:
     j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
     scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
+    compile_output = b""
+
     # Read progress from stderr and update spinner
     while scons.poll() is None:
       try:
         line = scons.stderr.readline()
         if line is None:
           continue
+
+        compile_output += line
 
         line = line.rstrip()
         prefix = b'progress: '
@@ -103,11 +107,16 @@ if not prebuilt:
           if spinner is not None:
             spinner.update("%d" % (50.0 * (i / TOTAL_SCONS_NODES)))
         elif len(line):
-          print(line.decode('utf8'))
+          print(line.decode('utf8', 'replace'))
       except Exception:
         pass
 
     if scons.returncode != 0:
+      # Read remaining output
+      line = scons.stderr.readline()
+      if line is not None:
+        compile_output += line
+
       if retry:
         print("scons build failed, cleaning in")
         for i in range(3,-1,-1):
@@ -116,7 +125,15 @@ if not prebuilt:
         subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
         shutil.rmtree("/tmp/scons_cache")
       else:
-        raise RuntimeError("scons build failed")
+        # Build failed log errors
+        errors = [line.decode('utf8', 'replace') for line in compile_output.split(b'\n')
+                  if any([err in line for err in [b'error: ', b'not found, needed by target']])]
+        errors = "\n".join(errors)
+        add_logentries_handler(cloudlog)
+        cloudlog.error("scons build failed\n" + errors)
+
+        # TODO: Show errors in TextWindow
+        exit(1)
     else:
       break
 
