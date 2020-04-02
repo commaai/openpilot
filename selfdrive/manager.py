@@ -112,9 +112,8 @@ if not prebuilt:
 
     if scons.returncode != 0:
       # Read remaining output
-      line = scons.stderr.readline()
-      if line is not None:
-        compile_output.append(line)
+      r = scons.stderr.read().split(b'\n')
+      compile_output += r
 
       if retry:
         print("scons build failed, cleaning in")
