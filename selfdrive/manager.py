@@ -89,7 +89,7 @@ if not prebuilt:
     j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
     scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
-    compile_output = b""
+    compile_output = []
 
     # Read progress from stderr and update spinner
     while scons.poll() is None:
@@ -97,16 +97,15 @@ if not prebuilt:
         line = scons.stderr.readline()
         if line is None:
           continue
-
-        compile_output += line
-
         line = line.rstrip()
+
         prefix = b'progress: '
         if line.startswith(prefix):
           i = int(line[len(prefix):])
           if spinner is not None:
             spinner.update("%d" % (50.0 * (i / TOTAL_SCONS_NODES)))
         elif len(line):
+          compile_output.append(line)
           print(line.decode('utf8', 'replace'))
       except Exception:
         pass
@@ -126,7 +125,7 @@ if not prebuilt:
         shutil.rmtree("/tmp/scons_cache")
       else:
         # Build failed log errors
-        errors = [line.decode('utf8', 'replace') for line in compile_output.split(b'\n')
+        errors = [line.decode('utf8', 'replace') for line in compile_output
                   if any([err in line for err in [b'error: ', b'not found, needed by target']])]
         errors = "\n".join(errors)
         add_logentries_handler(cloudlog)
