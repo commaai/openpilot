@@ -460,10 +460,8 @@ def manager_thread():
         kill_managed_process(p)
       # this is ugly
       if "driverview" not in running and params.get("IsDriverViewEnabled") == b"1":
-        start_managed_process("camerad")
         start_managed_process("driverview")
       elif "driverview" in running and params.get("IsDriverViewEnabled") == b"0":
-        kill_managed_process("camerad")
         kill_managed_process("driverview")
 
     # check the status of all processes, did any of them die?
