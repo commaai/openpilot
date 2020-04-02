@@ -8,6 +8,7 @@ import signal
 import shutil
 import subprocess
 import datetime
+from selfdrive.swaglog import cloudlog, add_logentries_handler
 
 from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
@@ -124,7 +125,6 @@ import cereal.messaging as messaging
 
 from common.params import Params
 import selfdrive.crash as crash
-from selfdrive.swaglog import cloudlog
 from selfdrive.registration import register
 from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
@@ -567,7 +567,16 @@ def main():
   if params.get("DoUninstall", encoding='utf8') == "1":
     uninstall()
 
+
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except Exception:
+    add_logentries_handler(cloudlog)
+    cloudlog.exception("Manager failed to start")
+    # TODO: Show exception using TextWindow
+
+    raise
+
   # manual exit because we are forked
   sys.exit(0)
