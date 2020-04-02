@@ -8,7 +8,7 @@ from smbus2 import SMBus
 from cereal import log
 from common.android import ANDROID, get_network_type, get_network_strength
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params, put_nonblocking
 from common.realtime import sec_since_boot, DT_TRML
 from common.numpy_fast import clip, interp
 from common.filter_simple import FirstOrderFilter
@@ -25,6 +25,7 @@ ThermalStatus = log.ThermalData.ThermalStatus
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
+CPU_TEMP_TAU = 5.   # 5s time constant
 DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 
@@ -173,6 +174,7 @@ def thermald_thread():
   network_strength = NetworkStrength.unknown
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
+  cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
   health_prev = None
   fw_version_match_prev = True
   current_connectivity_alert = None
@@ -187,7 +189,7 @@ def thermald_thread():
     handle_fan = handle_fan_eon
 
   params = Params()
-  pm = PowerMonitoring()
+  pm = PowerMonitoring(is_uno)
 
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
@@ -230,8 +232,12 @@ def thermald_thread():
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
 
     # TODO: add car battery voltage check
-    max_cpu_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
-                       msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
+    max_cpu_temp = cpu_temp_filter.update(
+      max(msg.thermal.cpu0,
+          msg.thermal.cpu1,
+          msg.thermal.cpu2,
+          msg.thermal.cpu3) / 10.0)
+
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat / 1000.
 
@@ -261,14 +267,14 @@ def thermald_thread():
     # **** starting logic ****
 
     # Check for last update time and display alerts if needed
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
 
     # show invalid date/time alert
     time_valid = now.year >= 2019
     if time_valid and not time_valid_prev:
       params.delete("Offroad_InvalidTime")
     if not time_valid and time_valid_prev:
-      params.put("Offroad_InvalidTime", json.dumps(OFFROAD_ALERTS["Offroad_InvalidTime"]))
+      put_nonblocking("Offroad_InvalidTime", json.dumps(OFFROAD_ALERTS["Offroad_InvalidTime"]))
     time_valid_prev = time_valid
 
     # Show update prompt
@@ -285,7 +291,7 @@ def thermald_thread():
       if current_connectivity_alert != "expired":
         current_connectivity_alert = "expired"
         params.delete("Offroad_ConnectivityNeededPrompt")
-        params.put("Offroad_ConnectivityNeeded", json.dumps(OFFROAD_ALERTS["Offroad_ConnectivityNeeded"]))
+        put_nonblocking("Offroad_ConnectivityNeeded", json.dumps(OFFROAD_ALERTS["Offroad_ConnectivityNeeded"]))
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
       remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
       if current_connectivity_alert != "prompt" + remaining_time:
@@ -293,7 +299,7 @@ def thermald_thread():
         alert_connectivity_prompt = copy.copy(OFFROAD_ALERTS["Offroad_ConnectivityNeededPrompt"])
         alert_connectivity_prompt["text"] += remaining_time + " days."
         params.delete("Offroad_ConnectivityNeeded")
-        params.put("Offroad_ConnectivityNeededPrompt", json.dumps(alert_connectivity_prompt))
+        put_nonblocking("Offroad_ConnectivityNeededPrompt", json.dumps(alert_connectivity_prompt))
     elif current_connectivity_alert is not None:
       current_connectivity_alert = None
       params.delete("Offroad_ConnectivityNeeded")
@@ -331,14 +337,14 @@ def thermald_thread():
     if fw_version_match and not fw_version_match_prev:
       params.delete("Offroad_PandaFirmwareMismatch")
     if not fw_version_match and fw_version_match_prev:
-      params.put("Offroad_PandaFirmwareMismatch", json.dumps(OFFROAD_ALERTS["Offroad_PandaFirmwareMismatch"]))
+      put_nonblocking("Offroad_PandaFirmwareMismatch", json.dumps(OFFROAD_ALERTS["Offroad_PandaFirmwareMismatch"]))
 
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
     if thermal_status >= ThermalStatus.danger:
       should_start = False
       if thermal_status_prev < ThermalStatus.danger:
-        params.put("Offroad_TemperatureTooHigh", json.dumps(OFFROAD_ALERTS["Offroad_TemperatureTooHigh"]))
+        put_nonblocking("Offroad_TemperatureTooHigh", json.dumps(OFFROAD_ALERTS["Offroad_TemperatureTooHigh"]))
     else:
       if thermal_status_prev >= ThermalStatus.danger:
         params.delete("Offroad_TemperatureTooHigh")
@@ -354,7 +360,7 @@ def thermald_thread():
         os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
     else:
       if should_start_prev or (count == 0):
-        params.put("IsOffroad", "1")
+        put_nonblocking("IsOffroad", "1")
 
       started_ts = None
       if off_ts is None:
@@ -379,7 +385,7 @@ def thermald_thread():
     thermal_sock.send(msg.to_bytes())
 
     if usb_power_prev and not usb_power:
-      params.put("Offroad_ChargeDisabled", json.dumps(OFFROAD_ALERTS["Offroad_ChargeDisabled"]))
+      put_nonblocking("Offroad_ChargeDisabled", json.dumps(OFFROAD_ALERTS["Offroad_ChargeDisabled"]))
     elif usb_power and not usb_power_prev:
       params.delete("Offroad_ChargeDisabled")
 

@@ -41,7 +41,7 @@
 #include "messaging.hpp"
 #include "services.h"
 
-#ifndef QCOM
+#if !(defined(QCOM) || defined(QCOM2))
 // no encoder on PC
 #define DISABLE_ENCODER
 #endif
@@ -137,10 +137,14 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
       encoder_init(&encoder, front ? "dcamera.hevc" : "fcamera.hevc", buf_info.width, buf_info.height, CAMERA_FPS, front ? 2500000 : 5000000, true, false);
+
+      #ifndef QCOM2
+      // TODO: fix qcamera on tici
       if (!front) {
         encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
         has_encoder_alt = true;
       }
+      #endif
       encoder_inited = true;
       if (is_streaming) {
         encoder.zmq_ctx = zmq_ctx_new();

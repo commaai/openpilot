@@ -8,6 +8,7 @@
 void rgb_to_yuv_init(RGBToYUVState* s, cl_context ctx, cl_device_id device_id, int width, int height, int rgb_stride) {
   int err = 0;
   memset(s, 0, sizeof(*s));
+  printf("width %d, height %d, rgb_stride %d\n", width, height, rgb_stride);
   assert(width % 2 == 0);
   assert(height % 2 == 0);
   s->width = width;

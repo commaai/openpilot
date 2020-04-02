@@ -8,7 +8,7 @@ static void ui_draw_sidebar_background(UIState *s) {
 
   nvgBeginPath(s->vg);
   nvgRect(s->vg, sbr_x, 0, sbr_w, vwp_h);
-  nvgFillColor(s->vg, COLOR_BLACK_ALPHA);
+  nvgFillColor(s->vg, COLOR_BLACK_ALPHA(85));
   nvgFill(s->vg);
 }
 
@@ -89,7 +89,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
 
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);
-  nvgFontFace(s->vg, "sans-regular");
+  nvgFontFaceId(s->vg, s->font_sans_regular);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
   nvgTextBox(s->vg, network_x, network_y, network_w, network_type_str, NULL);
 }
@@ -98,7 +98,8 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
   const int metric_x = !s->scene.uilayout_sidebarcollapsed ? 30 : -(sbr_w);
   const int metric_y = 338 + y_offset;
   const int metric_w = 240;
-  const int metric_h = message_str ? strlen(message_str) > 8 ? 124 : 100 : 148;
+  const int metric_h = message_str ? strchr(message_str, '\n') ? 124 : 100 : 148;
+
   NVGcolor status_color;
 
   if (severity == 0) {
@@ -111,7 +112,7 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
 
   nvgBeginPath(s->vg);
   nvgRoundedRect(s->vg, metric_x, metric_y, metric_w, metric_h, 20);
-  nvgStrokeColor(s->vg, severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA);
+  nvgStrokeColor(s->vg, severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85));
   nvgStrokeWidth(s->vg, 2);
   nvgStroke(s->vg);
 
@@ -123,21 +124,21 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
   if (!message_str) {
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 78);
-    nvgFontFace(s->vg, "sans-bold");
+    nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     nvgTextBox(s->vg, metric_x + 50, metric_y + 50, metric_w - 60, value_str, NULL);
 
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 48);
-    nvgFontFace(s->vg, "sans-regular");
+    nvgFontFaceId(s->vg, s->font_sans_regular);
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     nvgTextBox(s->vg, metric_x + 50, metric_y + 50 + 66, metric_w - 60, label_str, NULL);
   } else {
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 48);
-    nvgFontFace(s->vg, "sans-bold");
+    nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, metric_x + 35, metric_y + (strlen(message_str) > 8 ? 40 : 50), metric_w - 50, message_str, NULL);
+    nvgTextBox(s->vg, metric_x + 35, metric_y + (strchr(message_str, '\n') ? 40 : 50), metric_w - 50, message_str, NULL);
   }
 }
 
@@ -173,23 +174,23 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
 
   if (s->scene.hwType == cereal_HealthData_HwType_unknown) {
     panda_severity = 2;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO PANDA");
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO\nPANDA");
   } else if (s->scene.hwType == cereal_HealthData_HwType_whitePanda) {
     panda_severity = 0;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA ACTIVE");
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nACTIVE");
   } else if (
       (s->scene.hwType == cereal_HealthData_HwType_greyPanda) ||
       (s->scene.hwType == cereal_HealthData_HwType_blackPanda) ||
       (s->scene.hwType == cereal_HealthData_HwType_uno)) {
       if (s->scene.satelliteCount == -1) {
         panda_severity = 0;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA ACTIVE");
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nACTIVE");
       } else if (s->scene.satelliteCount < 6) {
         panda_severity = 1;
         snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nNO GPS");
       } else if (s->scene.satelliteCount >= 6) {
         panda_severity = 0;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA GOOD GPS");
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nGOOD GPS");
       }
   }
 

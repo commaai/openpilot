@@ -42,12 +42,10 @@ static void set_awake(UIState *s, bool awake) {
     // TODO: replace command_awake and command_sleep with direct calls to android
     if (awake) {
       LOGW("awake normal");
-      system("service call window 18 i32 1");  // enable event processing
       framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
     } else {
       LOGW("awake off");
       set_brightness(s, 0);
-      system("service call window 18 i32 0");  // disable event processing
       framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
     }
   }
@@ -57,8 +55,20 @@ static void set_awake(UIState *s, bool awake) {
 #endif
 }
 
+int event_processing_enabled = -1;
+static void enable_event_processing(bool yes) {
+  if (event_processing_enabled != 1 && yes) {
+    system("service call window 18 i32 1");  // enable event processing
+    event_processing_enabled = 1;
+  } else if (event_processing_enabled != 0 && !yes) {
+    system("service call window 18 i32 0");  // disable event processing
+    event_processing_enabled = 0;
+  }
+}
+
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
+  enable_event_processing(true);
   system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
 #else
   // computer UI doesn't have offroad settings
@@ -67,6 +77,9 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
+  if (s->vision_connected) {
+    enable_event_processing(false);
+  }
   system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
 #else
   // computer UI doesn't have offroad home
@@ -722,6 +735,7 @@ static void* vision_connect_thread(void *args) {
 
     s->vision_connected = true;
     s->vision_connect_firstrun = true;
+    enable_event_processing(false);
 
     // Drain sockets
     while (true){
@@ -926,6 +940,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (!s->vision_connected) {
+      // always process events offroad
+      enable_event_processing(true);
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
       }

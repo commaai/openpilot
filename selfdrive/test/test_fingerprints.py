@@ -8,7 +8,7 @@ from selfdrive.car.fingerprints import IGNORED_FINGERPRINTS
 # (addr, len)
 CAN_IGNITION_MSGS = {
   'gm': [(0x1F1, 8), (0x160, 5)],
-  'tesla' : [(0x348, 8)],
+  #'tesla' : [(0x348, 8)],
 }
 
 def _get_fingerprints():
