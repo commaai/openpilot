@@ -67,6 +67,8 @@ def unblock_stdout():
 
 if __name__ == "__main__":
   unblock_stdout()
+
+if __name__ == "__main__" and ANDROID:
   from common.spinner import Spinner
   from common.text_window import TextWindow
 else:
