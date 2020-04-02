@@ -47,6 +47,4 @@ log.setLevel(logging.DEBUG)
 
 outhandler = logging.StreamHandler()
 log.addHandler(outhandler)
-
-
 log.addHandler(LogMessageHandler(SwagFormatter(log)))

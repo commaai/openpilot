@@ -12,7 +12,6 @@ def get_le_handler():
 
 def main():
   le_handler = get_le_handler()
-
   le_level = 20  # logging.INFO
 
   ctx = zmq.Context().instance()
