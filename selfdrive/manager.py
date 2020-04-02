@@ -8,6 +8,7 @@ import signal
 import shutil
 import subprocess
 import datetime
+import textwrap
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 
 from common.basedir import BASEDIR, PARAMS
@@ -128,10 +129,13 @@ if not prebuilt:
         # Build failed log errors
         errors = [line.decode('utf8', 'replace') for line in compile_output
                   if any([err in line for err in [b'error: ', b'not found, needed by target']])]
-        errors = "\n".join(errors)
+        error_s = "\n".join(errors)
         add_logentries_handler(cloudlog)
-        cloudlog.error("scons build failed\n" + errors)
-        with TextWindow("Openpilot failed to build:\n\n" + errors) as t:
+        cloudlog.error("scons build failed\n" + error_s)
+
+        # Show TextWindow
+        error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
+        with TextWindow("Openpilot failed to build\n \n" + error_s) as t:
           t.wait_for_exit()
 
         exit(1)
@@ -593,13 +597,10 @@ if __name__ == "__main__":
     add_logentries_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
 
-    # Show last 8 lines of traceback
-    error = traceback.format_exc().split("\n")
-    if len(error) > 8:
-      error = ["..."] + error[-8:]
-    error = "\n".join(error)
+    # Show last 3 lines of traceback
+    error = traceback.format_exc(3)
 
-    error = "Manager failed to start:\n\n" + error
+    error = "Manager failed to start\n \n" + error
     with TextWindow(error) as t:
       t.wait_for_exit()
 
