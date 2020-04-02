@@ -205,8 +205,8 @@ int main(int argc, char **argv) {
 
       double mt1 = 0, mt2 = 0;
       if (run_model_this_iter) {
-        float vec_desire[DESIRE_SIZE] = {0};
-        if (desire >= 0 && desire < DESIRE_SIZE) {
+        float vec_desire[DESIRE_LEN] = {0};
+        if (desire >= 0 && desire < DESIRE_LEN) {
           vec_desire[desire] = 1.0;
         }
 
@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
 
         ModelDataRaw model_buf =
             model_eval_frame(&model, q, yuv_cl, buf_info.width, buf_info.height,
-                             model_transform, NULL, vec_desire);
+                             model_transform, NULL, vec_desire, NULL);
         mt2 = millis_since_boot();
 
         model_publish(model_sock, extra.frame_id, model_buf, extra.timestamp_eof);
