@@ -592,6 +592,7 @@ if __name__ == "__main__":
     add_logentries_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
     # TODO: Show exception using TextWindow
+    # error = traceback.format_exc()
 
     raise
 
