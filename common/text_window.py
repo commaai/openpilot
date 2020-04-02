@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import time
 import subprocess
 from common.basedir import BASEDIR
 
@@ -29,6 +30,12 @@ class TextWindow():
       self.text_proc.terminate()
       self.text_proc = None
 
+  def wait_for_exit(self):
+    while True:
+      if self.get_status() == 1:
+        return
+      time.sleep(0.1)
+
   def __del__(self):
     self.close()
 
@@ -41,7 +48,10 @@ class FakeTextWindow():
     pass
 
   def get_status(self):
-    return None
+    return 1
+
+  def wait_for_exit(self):
+    return
 
   def __enter__(self):
     return self

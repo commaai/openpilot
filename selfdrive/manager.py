@@ -67,8 +67,10 @@ def unblock_stdout():
 if __name__ == "__main__":
   unblock_stdout()
   from common.spinner import Spinner
+  from common.text_window import TextWindow
 else:
   from common.spinner import FakeSpinner as Spinner
+  from common.text_window import FakeTextWindow as TextWindow
 
 import importlib
 import traceback
@@ -129,8 +131,9 @@ if not prebuilt:
         errors = "\n".join(errors)
         add_logentries_handler(cloudlog)
         cloudlog.error("scons build failed\n" + errors)
+        with TextWindow("Openpilot failed to build:\n\n" + errors) as t:
+          t.wait_for_exit()
 
-        # TODO: Show errors in TextWindow
         exit(1)
     else:
       break
@@ -589,8 +592,10 @@ if __name__ == "__main__":
   except Exception:
     add_logentries_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
-    # TODO: Show exception using TextWindow
-    # error = traceback.format_exc()
+
+    error = "Manager failed to start\n\n" + traceback.format_exc()
+    with TextWindow(error) as t:
+      t.wait_for_exit()
 
     raise
 
