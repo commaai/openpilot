@@ -593,7 +593,13 @@ if __name__ == "__main__":
     add_logentries_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
 
-    error = "Manager failed to start\n\n" + traceback.format_exc()
+    # Show last 10 lines of traceback
+    error = traceback.format_exc().split("\n")
+    if len(error) > 10:
+      error = ["..."] + error[:-10]
+    error = "\n".join(error)
+
+    error = "Manager failed to start:\n\n" + error
     with TextWindow(error) as t:
       t.wait_for_exit()
 
