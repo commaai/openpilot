@@ -26,6 +26,8 @@ def main():
 
   signal.signal(signal.SIGTERM, terminate)
 
+  os.system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'"); # auto switch to home to not get stuck
+
   while True:
     send_controls_packet(pm)
 
