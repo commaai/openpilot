@@ -44,7 +44,7 @@ class TextWindow():
 
 
 class FakeTextWindow():
-  def __init__(self):
+  def __init__(self, s):
     pass
 
   def get_status(self):
@@ -64,7 +64,6 @@ class FakeTextWindow():
 
 
 if __name__ == "__main__":
-  import time
   text = """Traceback (most recent call last):
   File "./controlsd.py", line 608, in <module>
     main()
