@@ -12,7 +12,6 @@ import base64
 import requests
 import queue
 from collections import namedtuple
-from datetime import datetime
 from functools import partial
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import create_connection, WebSocketTimeoutException, ABNF
@@ -23,6 +22,7 @@ from common import android
 from common.basedir import PERSIST
 from common.api import Api
 from common.params import Params
+from common.realtime import sec_since_boot
 from cereal.services import service_list
 from selfdrive.swaglog import cloudlog
 
@@ -273,8 +273,13 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
 def ws_recv(ws, end_event):
   while not end_event.is_set():
     try:
-      data = ws.recv()
-      payload_queue.put_nowait(data)
+      opcode, data = ws.recv_data(control_frame=True)
+      if opcode in (ABNF.OPCODE_TEXT, ABNF.OPCODE_BINARY):
+        if opcode == ABNF.OPCODE_TEXT:
+          data = data.decode("utf-8")
+        payload_queue.put_nowait(data)
+      elif opcode == ABNF.OPCODE_PING:
+        Params().put("LastAthenaPingTime", str(int(sec_since_boot()*1e9)))
     except WebSocketTimeoutException:
       pass
     except Exception:
@@ -308,7 +313,6 @@ def main():
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True)
-      params.put("AthenadConnectedAt", datetime.utcnow().isoformat().encode('utf8'))
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       ws.settimeout(1)
       conn_retries = 0
@@ -318,8 +322,7 @@ def main():
     except Exception:
       cloudlog.exception("athenad.main.exception")
       conn_retries += 1
-    finally:
-      params.delete("AthenadConnectedAt")
+      params.delete("LastAthenaPingTime")
 
     time.sleep(backoff(conn_retries))
 
