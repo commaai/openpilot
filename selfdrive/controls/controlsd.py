@@ -278,7 +278,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   saturated_count = saturated_count + 1 if angle_control_saturated and not CS.steeringPressed and active else 0
 
   # Send a "steering required alert" if saturation count has reached the limit
-  if (saturated_count > STEER_ANGLE_SATURATION_TIMEOUT) and (lac_log.saturated or angle_control_saturated) and not CS.steeringPressed:
+  if (lac_log.saturated and not CS.steeringPressed) or (saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
     # Check if we deviated from the path
     left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
     right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
