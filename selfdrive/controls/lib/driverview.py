@@ -26,6 +26,7 @@ def send_dmon_packet(pm, d):
   pm.send('dMonitoringState', dat)
 
 def main():
+  params = Params()
   proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
   proc_mon = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/modeld/dmonitoringmodeld"), cwd=os.path.join(BASEDIR, "selfdrive/modeld"))
   proc_gps = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/sensord/gpsd"), cwd=os.path.join(BASEDIR, "selfdrive/sensord"))
@@ -47,6 +48,7 @@ def main():
   signal.signal(signal.SIGTERM, terminate)
 
   os.system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'"); # auto switch to home to not get stuck
+  start_time = time.time()
 
   while True:
     send_controls_packet(pm)
@@ -58,7 +60,7 @@ def main():
       is_rhd = is_rhd_region(sm['gpsLocation'].latitude, sm['gpsLocation'].longitude)
       is_rhd_checked = True
 
-    if sm.updated['uiLayoutState']:
+    if sm.updated['uiLayoutState'] and time.time() - start_time > 5:
       params.put("IsDriverViewEnabled", "0")
 
 if __name__ == '__main__':
