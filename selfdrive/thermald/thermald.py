@@ -309,6 +309,8 @@ def thermald_thread():
     panda_signature = params.get("PandaFirmware")
     fw_version_match = (panda_signature is None) or (panda_signature == FW_SIGNATURE)   # don't show alert is no panda is connected (None)
 
+    is_viewing_driver = params.get("IsDriverViewEnabled") == b"1"
+
     should_start = ignition
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
@@ -323,11 +325,13 @@ def thermald_thread():
     # check if system time is valid
     should_start = should_start and time_valid
 
+    # check if is in preview dcam mode
+    should_start = should_start and (not is_viewing_driver)
+
     # don't start while taking snapshot
     if not should_start_prev:
       is_taking_snapshot = params.get("IsTakingSnapshot") == b"1"
-      is_viewing_driver = params.get("IsDriverViewEnabled") == b"1"
-      should_start = should_start and (not is_taking_snapshot) and (not is_viewing_driver)
+      should_start = should_start and (not is_taking_snapshot)
 
     if fw_version_match and not fw_version_match_prev:
       params.delete("Offroad_PandaFirmwareMismatch")
