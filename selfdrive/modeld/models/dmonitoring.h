@@ -31,6 +31,7 @@ typedef struct DMonitoringResult {
 typedef struct DMonitoringModelState {
   RunModel *m;
   bool is_rhd;
+  bool is_rhd_checked;
   float output[OUTPUT_SIZE];
 } DMonitoringModelState;
 
