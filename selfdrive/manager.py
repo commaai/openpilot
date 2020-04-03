@@ -8,6 +8,8 @@ import signal
 import shutil
 import subprocess
 import datetime
+import textwrap
+from selfdrive.swaglog import cloudlog, add_logentries_handler
 
 from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
@@ -65,9 +67,13 @@ def unblock_stdout():
 
 if __name__ == "__main__":
   unblock_stdout()
+
+if __name__ == "__main__" and ANDROID:
   from common.spinner import Spinner
+  from common.text_window import TextWindow
 else:
   from common.spinner import FakeSpinner as Spinner
+  from common.text_window import FakeTextWindow as TextWindow
 
 import importlib
 import traceback
@@ -88,25 +94,32 @@ if not prebuilt:
     j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
     scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
+    compile_output = []
+
     # Read progress from stderr and update spinner
     while scons.poll() is None:
       try:
         line = scons.stderr.readline()
         if line is None:
           continue
-
         line = line.rstrip()
+
         prefix = b'progress: '
         if line.startswith(prefix):
           i = int(line[len(prefix):])
           if spinner is not None:
             spinner.update("%d" % (50.0 * (i / TOTAL_SCONS_NODES)))
         elif len(line):
-          print(line.decode('utf8'))
+          compile_output.append(line)
+          print(line.decode('utf8', 'replace'))
       except Exception:
         pass
 
     if scons.returncode != 0:
+      # Read remaining output
+      r = scons.stderr.read().split(b'\n')
+      compile_output += r
+
       if retry:
         print("scons build failed, cleaning in")
         for i in range(3,-1,-1):
@@ -115,7 +128,19 @@ if not prebuilt:
         subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
         shutil.rmtree("/tmp/scons_cache")
       else:
-        raise RuntimeError("scons build failed")
+        # Build failed log errors
+        errors = [line.decode('utf8', 'replace') for line in compile_output
+                  if any([err in line for err in [b'error: ', b'not found, needed by target']])]
+        error_s = "\n".join(errors)
+        add_logentries_handler(cloudlog)
+        cloudlog.error("scons build failed\n" + error_s)
+
+        # Show TextWindow
+        error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
+        with TextWindow("Openpilot failed to build\n \n" + error_s) as t:
+          t.wait_for_exit()
+
+        exit(1)
     else:
       break
 
@@ -124,7 +149,6 @@ import cereal.messaging as messaging
 
 from common.params import Params
 import selfdrive.crash as crash
-from selfdrive.swaglog import cloudlog
 from selfdrive.registration import register
 from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
@@ -567,7 +591,22 @@ def main():
   if params.get("DoUninstall", encoding='utf8') == "1":
     uninstall()
 
+
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except Exception:
+    add_logentries_handler(cloudlog)
+    cloudlog.exception("Manager failed to start")
+
+    # Show last 3 lines of traceback
+    error = traceback.format_exc(3)
+
+    error = "Manager failed to start\n \n" + error
+    with TextWindow(error) as t:
+      t.wait_for_exit()
+
+    raise
+
   # manual exit because we are forked
   sys.exit(0)
