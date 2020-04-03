@@ -4,6 +4,7 @@ os.environ['FAKEUPLOAD'] = "1"
 
 from common.apk import update_apks, start_offroad, pm_apply_packages, android_packages
 from common.params import Params
+from common.realtime import sec_since_boot
 from common.testing import phone_only
 from selfdrive.manager import manager_init, manager_prepare
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
@@ -109,7 +110,7 @@ def test_uploader():
 @phone_only
 def test_athena():
   print("ATHENA")
-  start = datetime.utcnow()
+  start = sec_since_boot()
   start_daemon_process("manage_athenad")
   params = Params()
   manage_athenad_pid = params.get("AthenadPid")
@@ -166,10 +167,9 @@ def test_athena():
     }, max_retries=12, wait=5)
     assert resp.get('result') == "hello", f'Athena failed to register ({resp})'
 
-    connected_at_isofmt = params.get("AthenadConnectedAt", encoding='utf8')
-    assert connected_at_isofmt, connected_at_isofmt
-    connected_at = datetime.fromisoformat(connected_at_isofmt)
-    assert connected_at - test_t0 < (datetime.utcnow() - test_t0)
+    last_pingtime = params.get("LastAthenaPingTime", encoding='utf8')
+    assert last_pingtime, last_pingtime
+    assert ((int(last_pingtime)/1e9) - test_t0) < (sec_since_boot() - test_t0)
 
   try:
     athenad_pid = expect_athena_starts()
