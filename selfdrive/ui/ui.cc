@@ -102,10 +102,20 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   }
 }
 
+static void handle_driver_view_touch() {
+  ;
+}
+
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
   if (s->vision_connected && (touch_x >= s->scene.ui_viz_rx - bdr_s)
     && (s->active_app != cereal_UiLayoutState_App_settings)) {
-    s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
+    if (!s->scene.frontview) {
+      s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
+    } else {
+      s->scene.uilayout_sidebarcollapsed = false;
+      handle_driver_view_touch();
+    }
+    
   }
 }
 
@@ -165,6 +175,8 @@ static void ui_init(UIState *s) {
   s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->health_sock = SubSocket::create(s->ctx, "health");
   s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
+  s->driverstate_sock = SubSocket::create(s->ctx, "driverState");
+  s->dmonitoring_sock = SubSocket::create(s->ctx, "dMonitoringState");
 
   assert(s->model_sock != NULL);
   assert(s->controlsstate_sock != NULL);
@@ -174,6 +186,8 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock != NULL);
   assert(s->health_sock != NULL);
   assert(s->ubloxgnss_sock != NULL);
+  assert(s->driverstate_sock != NULL);
+  assert(s->dmonitoring_sock != NULL);
 
   s->poller = Poller::create({
                               s->model_sock,
@@ -183,7 +197,9 @@ static void ui_init(UIState *s) {
                               s->radarstate_sock,
                               s->thermal_sock,
                               s->health_sock,
-                              s->ubloxgnss_sock
+                              s->ubloxgnss_sock,
+                              s->driverstate_sock,
+                              s->dmonitoring_sock
                              });
 
 #ifdef SHOW_SPEEDLIMIT
@@ -494,6 +510,22 @@ void handle_message(UIState *s, Message * msg) {
 
     s->scene.hwType = datad.hwType;
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
+  } else if (eventd.which == cereal_Event_driverState) {
+    struct cereal_DriverState datad;
+    cereal_read_DriverState(&datad, eventd.driverState);
+
+    s->scene.face_prob = datad.faceProb;
+
+    capn_list32 fxy_list = datad.facePosition;
+    capn_resolve(&fxy_list.p);
+    s->scene.face_x = capn_to_f32(capn_get32(fxy_list, 0));
+    s->scene.face_y = capn_to_f32(capn_get32(fxy_list, 1));
+  } else if (eventd.which == cereal_Event_dMonitoringState) {
+    struct cereal_DMonitoringState datad;
+    cereal_read_DMonitoringState(&datad, eventd.dMonitoringState);
+
+    s->scene.is_rhd = datad.isRHD;
+    s->scene.is_rhd_checked = datad.rhdChecked;
   }
   capn_free(&ctx);
 }
@@ -1004,7 +1036,8 @@ int main(int argc, char* argv[]) {
 
       // if visiond is still running and controlsState times out, display an alert
       // TODO: refactor this to not be here
-      if (s->controls_seen && s->vision_connected && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
+      if (s->controls_seen && s->vision_connected && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0 &&
+          !s->scene.frontview) {
         s->scene.alert_size = ALERTSIZE_FULL;
         if (s->status != STATUS_STOPPED) {
           update_status(s, STATUS_ALERT);

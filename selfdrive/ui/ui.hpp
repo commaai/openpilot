@@ -65,6 +65,7 @@ const int box_y = bdr_s;
 const int box_w = vwp_w-sbr_w-(bdr_s*2);
 const int box_h = vwp_h-(bdr_s*2);
 const int viz_w = vwp_w-(bdr_s*2);
+const int ff_xoffset = 32;
 const int header_h = 420;
 const int footer_h = 280;
 const int footer_y = vwp_h-bdr_s-footer_h;
@@ -134,6 +135,11 @@ typedef struct UIScene {
 
   int lead_status2;
   float lead_d_rel2, lead_y_rel2, lead_v_rel2;
+
+  float face_prob;
+  bool is_rhd;
+  bool is_rhd_checked;
+  float face_x, face_y;
 
   int front_box_x, front_box_y, front_box_width, front_box_height;
 
@@ -211,6 +217,8 @@ typedef struct UIState {
   SubSocket *thermal_sock;
   SubSocket *health_sock;
   SubSocket *ubloxgnss_sock;
+  SubSocket *driverstate_sock;
+  SubSocket *dmonitoring_sock;
   Poller * poller;
   Poller * ublox_poller;
 

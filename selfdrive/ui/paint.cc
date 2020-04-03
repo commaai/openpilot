@@ -281,7 +281,6 @@ static void draw_steering(UIState *s, float curvature) {
 static void draw_frame(UIState *s) {
   const UIScene *scene = &s->scene;
 
-  float x1, x2, y1, y2;
   if (s->scene.frontview) {
     glBindVertexArray(s->frame_vao[1]);
   } else {
@@ -728,6 +727,55 @@ static void ui_draw_vision_face(UIState *s) {
   nvgFill(s->vg);
 }
 
+static void ui_draw_driver_view(UIState *s) {
+  const UIScene *scene = &s->scene;
+  const int frame_x = scene->ui_viz_rx;
+  const int frame_w = scene->ui_viz_rw;
+  const int valid_frame_w = 4 * box_h / 3;
+  const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
+  int dmask_x;
+  if (!scene->is_rhd) {
+      dmask_x = valid_frame_x + box_h / 2;
+    } else {
+      dmask_x = valid_frame_x;
+    }
+  int dmask_y = box_y;
+  int dmask_w = valid_frame_w - box_h / 2;
+  int dmask_h = box_h;
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, dmask_x, dmask_y, dmask_w, dmask_h);
+  nvgFillColor(s->vg, COLOR_BLACK_ALPHA(144));
+  nvgFill(s->vg);
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h);
+  nvgFillColor(s->vg, nvgRGBA(0,0,0,255));
+  nvgFill(s->vg);
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h);
+  nvgFillColor(s->vg, nvgRGBA(0,0,0,255));
+  nvgFill(s->vg);
+
+  // draw face box
+  if (scene->face_prob > 0.4) {
+    int fbox_x;
+    int fbox_y = box_y + (scene->face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
+    if (!scene->is_rhd) {
+      fbox_x = valid_frame_x + (1 - (scene->face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
+    } else {
+      fbox_x = valid_frame_x + dmask_w + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
+    }
+    nvgBeginPath(s->vg);
+    nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
+    nvgStrokeColor(s->vg, nvgRGBA(0,192,0,144));
+    nvgStrokeWidth(s->vg, 10);
+    nvgStroke(s->vg);
+  } else {
+    ;
+  }
+}
+
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -856,14 +904,18 @@ static void ui_draw_vision(UIState *s) {
   nvgRestore(s->vg);
 
   // Set Speed, Current Speed, Status/Events
-  ui_draw_vision_header(s);
+  if (!scene->frontview) {
+    ui_draw_vision_header(s);
+  } else {
+    ui_draw_driver_view(s);
+  }
 
   if (s->scene.alert_size != ALERTSIZE_NONE) {
     // Controls Alerts
     ui_draw_vision_alert(s, s->scene.alert_size, s->status,
                             s->scene.alert_text1, s->scene.alert_text2);
   } else {
-    ui_draw_vision_footer(s);
+    if (!scene->frontview){ui_draw_vision_footer(s);}
   }
 
 
