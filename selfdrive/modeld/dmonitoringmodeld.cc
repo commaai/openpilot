@@ -34,7 +34,6 @@ int main(int argc, char **argv) {
   // init the models
   DMonitoringModelState dmonitoringmodel;
   dmonitoring_init(&dmonitoringmodel);
-  bool is_rhd = false;
 
   // loop
   VisionStream stream;
@@ -68,14 +67,14 @@ int main(int argc, char **argv) {
           capnp::FlatArrayMessageReader cmsg(amsg);
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-          is_rhd = event.getDMonitoringState().getIsRHD();
+          dmonitoringmodel.is_rhd = event.getDMonitoringState().getIsRHD();
         }
         chk_counter = 0;
       }
 
       double t1 = millis_since_boot();
 
-      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf_info.width, buf_info.height, is_rhd);
+      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf_info.width, buf_info.height);
 
       double t2 = millis_since_boot();
 

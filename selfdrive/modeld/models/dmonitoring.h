@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #define OUTPUT_SIZE 33
-#define RHD_CHECK_INTERVAL 200
+#define RHD_CHECK_INTERVAL 10
 
 typedef struct DMonitoringResult {
   float face_orientation[3];
@@ -30,11 +30,12 @@ typedef struct DMonitoringResult {
 
 typedef struct DMonitoringModelState {
   RunModel *m;
+  bool is_rhd;
   float output[OUTPUT_SIZE];
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height, bool mirrored);
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
 void dmonitoring_publish(PubSocket *sock, uint32_t frame_id, const DMonitoringResult res);
 void dmonitoring_free(DMonitoringModelState* s);
 
