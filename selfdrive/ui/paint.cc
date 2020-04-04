@@ -729,37 +729,45 @@ static void ui_draw_vision_face(UIState *s) {
 
 static void ui_draw_driver_view(UIState *s) {
   const UIScene *scene = &s->scene;
+  s->scene.uilayout_sidebarcollapsed = true;
   const int frame_x = scene->ui_viz_rx;
   const int frame_w = scene->ui_viz_rw;
   const int valid_frame_w = 4 * box_h / 3;
   const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
-  int dmask_x;
+
+  // blackout
   if (!scene->is_rhd) {
-      dmask_x = valid_frame_x + box_h / 2;
-    } else {
-      dmask_x = valid_frame_x;
-    }
-  int dmask_y = box_y;
-  int dmask_w = valid_frame_w - box_h / 2;
-  int dmask_h = box_h;
+    nvgBeginPath(s->vg);
+    NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x + valid_frame_w,
+                          box_y,
+                          valid_frame_x + box_h / 2, box_y,
+                          nvgRGBAf(0,0,0,1), nvgRGBAf(0,0,0,0));
+    nvgFillPaint(s->vg, gradient);
+    nvgRect(s->vg, valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h);
+    nvgFill(s->vg);
+  } else {
+    nvgBeginPath(s->vg);
+    NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x,
+                          box_y,
+                          valid_frame_w - box_h / 2, box_y,
+                          nvgRGBAf(0,0,0,1), nvgRGBAf(0,0,0,0));
+    nvgFillPaint(s->vg, gradient);
+    nvgRect(s->vg, valid_frame_x, box_y, valid_frame_w - box_h / 2, box_h);
+    nvgFill(s->vg);
+  }
   nvgBeginPath(s->vg);
-  nvgRect(s->vg, dmask_x, dmask_y, dmask_w, dmask_h);
+  nvgRect(s->vg, scene->is_rhd ? valid_frame_x:valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h);
   nvgFillColor(s->vg, COLOR_BLACK_ALPHA(144));
   nvgFill(s->vg);
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, valid_frame_x + 8, box_y + 8, box_h / 2 - 16, box_h - 16);
-  nvgStrokeColor(s->vg, nvgRGBA(0,224,0,144));
-  nvgStrokeWidth(s->vg, 15);
-  nvgStroke(s->vg);
 
+  // borders
   nvgBeginPath(s->vg);
   nvgRect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h);
-  nvgFillColor(s->vg, nvgRGBA(0,0,0,255));
+  nvgFillColor(s->vg, nvgRGBA(23,51,73,255));
   nvgFill(s->vg);
-
   nvgBeginPath(s->vg);
   nvgRect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h);
-  nvgFillColor(s->vg, nvgRGBA(0,0,0,255));
+  nvgFillColor(s->vg, nvgRGBA(23,51,73,255));
   nvgFill(s->vg);
 
   // draw face box
@@ -769,59 +777,71 @@ static void ui_draw_driver_view(UIState *s) {
     if (!scene->is_rhd) {
       fbox_x = valid_frame_x + (1 - (scene->face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     } else {
-      fbox_x = valid_frame_x + dmask_w + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
+      fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     }
     if (abs(scene->face_x) <= 0.35 && abs(scene->face_y) <= 0.4) {
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
-      nvgStrokeColor(s->vg, nvgRGBA(0,224,0,144));
+      nvgStrokeColor(s->vg, nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((abs(scene->face_x) > abs(scene->face_y) ? abs(scene->face_x):abs(scene->face_y))) * 0.6 / 0.375));
       nvgStrokeWidth(s->vg, 10);
       nvgStroke(s->vg);
-      nvgFontFaceId(s->vg,  s->font_sans_regular);
-      nvgFontSize(s->vg, 80);
-      nvgFillColor(s->vg, nvgRGBA(0,224,0,144));
-      nvgText(s->vg, dmask_x + 276, 550, "Looks Good!", NULL);
     } else {
       nvgBeginPath(s->vg);
       nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
-      nvgStrokeColor(s->vg, nvgRGBA(224,224,0,144));
+      nvgStrokeColor(s->vg, nvgRGBAf(1.0, 1.0, 1.0, 0.2));
       nvgStrokeWidth(s->vg, 10);
       nvgStroke(s->vg);
-      nvgFontFaceId(s->vg,  s->font_sans_regular);
-      nvgFontSize(s->vg, 80);
-      nvgFillColor(s->vg, nvgRGBA(224,224,0,144));
-      nvgText(s->vg, dmask_x + 56, 550, "Place Face Near the Center", NULL);
     }
   } else {
-    nvgFontFaceId(s->vg,  s->font_sans_regular);
-    nvgFontSize(s->vg, 80);
-    nvgFillColor(s->vg, nvgRGBA(224,224,0,144));
-    nvgText(s->vg, dmask_x + 48, 550, "Place Face In the Green Box", NULL);
+    ;
   }
+
+  // draw face icon
+  const int face_size = 85;
+  const int face_x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
+  const int face_y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
+  const int face_img_size = (face_size * 1.5);
+  const int face_img_x = (face_x - (face_img_size / 2));
+  const int face_img_y = (face_y - (face_size / 4));
+  float face_img_alpha = scene->face_prob > 0.4 ? 1.0f : 0.15f;
+  float face_bg_alpha = scene->face_prob > 0.4 ? 0.3f : 0.1f;
+  NVGcolor face_bg = nvgRGBA(0, 0, 0, (255 * face_bg_alpha));
+  NVGpaint face_img = nvgImagePattern(s->vg, face_img_x, face_img_y,
+    face_img_size, face_img_size, 0, s->img_face, face_img_alpha);
+
+  nvgBeginPath(s->vg);
+  nvgCircle(s->vg, face_x, (face_y + (bdr_s * 1.5)), face_size);
+  nvgFillColor(s->vg, face_bg);
+  nvgFill(s->vg);
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, face_img_x, face_img_y, face_img_size, face_img_size);
+  nvgFillPaint(s->vg, face_img);
+  nvgFill(s->vg);
 
   // RHD info
-  if (!scene->is_rhd_checked) {
-    nvgFontFaceId(s->vg,  s->font_sans_regular);
-    nvgFontSize(s->vg, 64);
-    nvgFillColor(s->vg, nvgRGBA(224,224,0,144));
-    nvgText(s->vg, dmask_x + 48, 108, "Waiting for GPS...", NULL);
-  } else {
-    nvgFontFaceId(s->vg,  s->font_sans_regular);
-    nvgFontSize(s->vg, 64);
-    nvgFillColor(s->vg, nvgRGBA(0,224,0,144));
-    nvgText(s->vg, dmask_x + 48, 108, "GPS Check Completed", NULL);
-  }
+  const int map_size = 85;
+  const int map_x = (face_x + map_size + (bdr_s * 4.5));
+  const int map_y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
+  const int map_img_size = (map_size * 1.5);
+  const int map_img_x = (map_x - (map_img_size / 2));
+  const int map_img_y = (map_y - (map_size / 4));
+  float map_img_alpha = scene->is_rhd_checked ? 1.0f : 0.15f;
+  float map_bg_alpha = scene->is_rhd_checked ? 0.3f : 0.1f;
+  NVGcolor map_bg = nvgRGBA(0, 0, 0, (255 * map_bg_alpha));
+  NVGpaint map_img = nvgImagePattern(s->vg, map_img_x, map_img_y,
+    map_img_size, map_img_size, 0, s->img_map, map_img_alpha);
 
-  nvgFontFaceId(s->vg,  s->font_sans_regular);
-  nvgFontSize(s->vg, 64);
-  nvgFillColor(s->vg, nvgRGBA(0,224,0,144));
-  if (!scene->is_rhd) {
-    nvgText(s->vg, dmask_x + 48, 172, "DM Mode: LHD", NULL);
-  } else {
-    nvgText(s->vg, dmask_x + 48, 172, "DM Mode: RHD", NULL);
-  }
+  nvgBeginPath(s->vg);
+  nvgCircle(s->vg, map_x, (map_y + (bdr_s * 1.5)), map_size);
+  nvgFillColor(s->vg, map_bg);
+  nvgFill(s->vg);
 
-
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, map_img_x, map_img_y, map_img_size, map_img_size);
+  nvgFillPaint(s->vg, map_img);
+  nvgFill(s->vg);
+  
 }
 
 static void ui_draw_vision_header(UIState *s) {

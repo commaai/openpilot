@@ -102,8 +102,8 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   }
 }
 
-static void handle_driver_view_touch() {
-  ;
+static void handle_driver_view_touch(UIState *s, int touch_x, int touch_y) {
+  int err = write_db_value(NULL, "IsDriverViewEnabled", "0", 1);
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
@@ -112,8 +112,7 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
     } else {
-      s->scene.uilayout_sidebarcollapsed = false;
-      handle_driver_view_touch();
+      handle_driver_view_touch(s, touch_x, touch_y);
     }
     
   }
