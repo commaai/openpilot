@@ -38,9 +38,11 @@ LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 
 
-def add_lane_change_event(events, path_plan):
+def add_lane_change_event(events, path_plan, blind_spot):
   if path_plan.laneChangeState == LaneChangeState.preLaneChange:
-    if path_plan.laneChangeDirection == LaneChangeDirection.left:
+    if blind_spot:
+      events.append(create_event('laneChangeBlocked', [ET.WARNING]))
+    elif path_plan.laneChangeDirection == LaneChangeDirection.left:
       events.append(create_event('preLaneChangeLeft', [ET.WARNING]))
     else:
       events.append(create_event('preLaneChangeRight', [ET.WARNING]))
@@ -80,7 +82,7 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
 
   events = list(CS.events)
   events += list(sm['dMonitoringState'].events)
-  add_lane_change_event(events, sm['pathPlan'])
+  add_lane_change_event(events, sm['pathPlan'], CS.leftBlindspot or CS.rightBlindspot)
   enabled = isEnabled(state)
 
   # Check for CAN timeout
