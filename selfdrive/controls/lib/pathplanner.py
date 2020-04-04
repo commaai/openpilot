@@ -108,7 +108,7 @@ class PathPlanner():
       torque_applied = sm['carState'].steeringPressed and \
                        ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or \
                         (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
-
+      blindspot_detected = sm['carState'].leftBlindspot or sm['carState'].rightBlindspot
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
 
       # State transitions
@@ -121,7 +121,7 @@ class PathPlanner():
       elif self.lane_change_state == LaneChangeState.preLaneChange:
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
-        elif torque_applied:
+        elif torque_applied and not blindspot_detected:
           self.lane_change_state = LaneChangeState.laneChangeStarting
 
       # starting
