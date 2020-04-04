@@ -233,6 +233,14 @@ ALERTS = [
       "",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, .1, .1),
+  
+  Alert(
+      "laneChangeBlocked",
+      "Car Detected in Blindspot, Please Wait!",
+      "Monitor Other Vehicles",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .0, .1, .1, alert_rate=0.75),
+  
   Alert(
       "preLaneChangeLeft",
       "Steer Left to Start Lane Change",
