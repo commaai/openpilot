@@ -746,6 +746,11 @@ static void ui_draw_driver_view(UIState *s) {
   nvgRect(s->vg, dmask_x, dmask_y, dmask_w, dmask_h);
   nvgFillColor(s->vg, COLOR_BLACK_ALPHA(144));
   nvgFill(s->vg);
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, valid_frame_x + 8, box_y + 8, box_h / 2 - 16, box_h - 16);
+  nvgStrokeColor(s->vg, nvgRGBA(0,224,0,144));
+  nvgStrokeWidth(s->vg, 15);
+  nvgStroke(s->vg);
 
   nvgBeginPath(s->vg);
   nvgRect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h);
@@ -766,14 +771,57 @@ static void ui_draw_driver_view(UIState *s) {
     } else {
       fbox_x = valid_frame_x + dmask_w + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     }
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
-    nvgStrokeColor(s->vg, nvgRGBA(0,192,0,144));
-    nvgStrokeWidth(s->vg, 10);
-    nvgStroke(s->vg);
+    if (abs(scene->face_x) <= 0.35 && abs(scene->face_y) <= 0.4) {
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
+      nvgStrokeColor(s->vg, nvgRGBA(0,224,0,144));
+      nvgStrokeWidth(s->vg, 10);
+      nvgStroke(s->vg);
+      nvgFontFaceId(s->vg,  s->font_sans_regular);
+      nvgFontSize(s->vg, 80);
+      nvgFillColor(s->vg, nvgRGBA(0,224,0,144));
+      nvgText(s->vg, dmask_x + 276, 550, "Looks Good!", NULL);
+    } else {
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
+      nvgStrokeColor(s->vg, nvgRGBA(224,224,0,144));
+      nvgStrokeWidth(s->vg, 10);
+      nvgStroke(s->vg);
+      nvgFontFaceId(s->vg,  s->font_sans_regular);
+      nvgFontSize(s->vg, 80);
+      nvgFillColor(s->vg, nvgRGBA(224,224,0,144));
+      nvgText(s->vg, dmask_x + 56, 550, "Place Face Near the Center", NULL);
+    }
   } else {
-    ;
+    nvgFontFaceId(s->vg,  s->font_sans_regular);
+    nvgFontSize(s->vg, 80);
+    nvgFillColor(s->vg, nvgRGBA(224,224,0,144));
+    nvgText(s->vg, dmask_x + 48, 550, "Place Face In the Green Box", NULL);
   }
+
+  // RHD info
+  if (!scene->is_rhd_checked) {
+    nvgFontFaceId(s->vg,  s->font_sans_regular);
+    nvgFontSize(s->vg, 64);
+    nvgFillColor(s->vg, nvgRGBA(224,224,0,144));
+    nvgText(s->vg, dmask_x + 48, 108, "Waiting for GPS...", NULL);
+  } else {
+    nvgFontFaceId(s->vg,  s->font_sans_regular);
+    nvgFontSize(s->vg, 64);
+    nvgFillColor(s->vg, nvgRGBA(0,224,0,144));
+    nvgText(s->vg, dmask_x + 48, 108, "GPS Check Completed", NULL);
+  }
+
+  nvgFontFaceId(s->vg,  s->font_sans_regular);
+  nvgFontSize(s->vg, 64);
+  nvgFillColor(s->vg, nvgRGBA(0,224,0,144));
+  if (!scene->is_rhd) {
+    nvgText(s->vg, dmask_x + 48, 172, "DM Mode: LHD", NULL);
+  } else {
+    nvgText(s->vg, dmask_x + 48, 172, "DM Mode: RHD", NULL);
+  }
+
+
 }
 
 static void ui_draw_vision_header(UIState *s) {
