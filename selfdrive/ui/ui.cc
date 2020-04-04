@@ -342,7 +342,8 @@ void handle_message(UIState *s, Message * msg) {
     cereal_read_ControlsState(&datad, eventd.controlsState);
 
     s->controls_timeout = 1 * UI_FREQ;
-    s->controls_seen = true;
+    s->scene.frontview = datad.rearViewCam;
+    if (!s->scene.frontview){s->controls_seen = true;}
 
     if (datad.vCruise != s->scene.v_cruise) {
       s->scene.v_cruise_update_ts = eventd.logMonoTime;
@@ -354,8 +355,6 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.engageable = datad.engageable;
     s->scene.gps_planner_active = datad.gpsPlannerActive;
     s->scene.monitoring_active = datad.driverMonitoringOn;
-
-    s->scene.frontview = datad.rearViewCam;
 
     s->scene.decel_for_model = datad.decelForModel;
 
@@ -1035,8 +1034,7 @@ int main(int argc, char* argv[]) {
 
       // if visiond is still running and controlsState times out, display an alert
       // TODO: refactor this to not be here
-      if (s->controls_seen && s->vision_connected && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0 &&
-          !s->scene.frontview) {
+      if (s->controls_seen && s->vision_connected && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
         s->scene.alert_size = ALERTSIZE_FULL;
         if (s->status != STATUS_STOPPED) {
           update_status(s, STATUS_ALERT);
