@@ -67,6 +67,7 @@ static void enable_event_processing(bool yes) {
 }
 
 static void navigate_to_settings(UIState *s) {
+  s->offroad_sock->send((char*)bytes.begin(), bytes.size());
 #ifdef QCOM
   enable_event_processing(true);
   system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
@@ -165,6 +166,7 @@ static void ui_init(UIState *s) {
   s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->health_sock = SubSocket::create(s->ctx, "health");
   s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
+  s->offroad_sock = PubSocket::create(s->ctx, "offroadLayout");
 
   assert(s->model_sock != NULL);
   assert(s->controlsstate_sock != NULL);
@@ -174,6 +176,7 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock != NULL);
   assert(s->health_sock != NULL);
   assert(s->ubloxgnss_sock != NULL);
+  assert(s->offroad_sock != NULL);
 
   s->poller = Poller::create({
                               s->model_sock,
