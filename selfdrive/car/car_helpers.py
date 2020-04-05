@@ -92,8 +92,13 @@ def fingerprint(logcan, sendcan, has_relay):
 
     fw_candidates = match_fw_to_car(car_fw)
   else:
+    bus = 0
     vin = VIN_UNKNOWN
-    fw_candidates, car_fw = set(), []
+    car_fw = get_fw_versions(logcan, sendcan, bus)
+    if car_fw is None:
+      fw_candidates, car_fw = set(), []
+    else:
+      fw_candidates = match_fw_to_car(car_fw)
 
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
