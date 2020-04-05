@@ -1,8 +1,8 @@
 from cereal import car
 from common.realtime import DT_CTRL
-from common.numpy_fast import interp
+from common.numpy_fast import interp, clip
 from selfdrive.config import Conversions as CV
-from selfdrive.car import apply_std_steer_torque_limits
+from selfdrive.car import apply_std_steer_torque_limits, create_gas_command
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, SUPERCRUISE_CARS, NO_ASCM_CARS, CanBus
 from opendbc.can.packer import CANPacker
@@ -121,7 +121,6 @@ class CarController():
           CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
     ### GAS/BRAKE ###
-
     if self.car_fingerprint not in SUPERCRUISE_CARS:
       # no output if not enabled, but keep sending keepalive messages
       # treat pedals as one
@@ -149,6 +148,17 @@ class CarController():
 
           at_full_stop = enabled and CS.out.standstill
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
+      else:
+        #it would appear that we expect the dbc to scale the value between 0 and 1
+        apply_gas = clip(actuators.gas, 0., 1.)
+
+
+        if (frame % 2) == 0:
+          idx = (frame // 2) % 2
+          if CS.CP.enableGasInterceptor:
+            # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
+            # This prevents unexpected pedal range rescaling
+            can_sends.append(create_gas_command(self.packer_pt, apply_gas, idx))
 
       # Send dashboard UI commands (ACC status), 25hz
       if (frame % 4) == 0:

@@ -41,6 +41,7 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+    ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -174,8 +175,9 @@ class CarInterface(CarInterfaceBase):
           be.type = ButtonType.accelCruise # Suppress resume button if we're resuming from stop so we don't adjust speed.
       elif but == CruiseButtons.DECEL_SET:
         be.type = ButtonType.decelCruise
-      elif but == CruiseButtons.CANCEL:
-        be.type = ButtonType.cancel
+      #disabling cancel button for testing
+      #elif but == CruiseButtons.CANCEL:
+      #  be.type = ButtonType.cancel
       elif but == CruiseButtons.MAIN:
         be.type = ButtonType.altButton3
       buttonEvents.append(be)

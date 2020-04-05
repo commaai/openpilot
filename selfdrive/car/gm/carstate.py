@@ -18,6 +18,8 @@ class CarState(CarStateBase):
   def update(self, pt_cp):
     ret = car.CarState.new_message()
 
+    self.pedal_gas = pt_cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
+
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]['ACCButtons']
 
@@ -36,8 +38,25 @@ class CarState(CarStateBase):
     if ret.brake < 10/0xd0:
       ret.brake = 0.
 
-    ret.gas = pt_cp.vl["AcceleratorPedal"]['AcceleratorPedal'] / 254.
-    ret.gasPressed = ret.gas > 1e-5
+
+    # TODO: need a better way to identify cars without ACC
+    # TODO: this assumes the Pedal is present. If it isn't, this won't work...
+    if self.CP.carFingerprint in (CAR.BOLT):
+      ret.gas = self.pedal_gas / 256.
+    else:
+      ret.gas = pt_cp.vl["AcceleratorPedal"]['AcceleratorPedal'] / 254.
+
+    # this is a hack for the interceptor. This is now only used in the simulation
+    # TODO: Replace tests by toyota so this can go away
+    if self.CP.enableGasInterceptor:
+      self.user_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
+      self.user_gas_pressed = self.user_gas > 1e-5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
+      ret.gasPressed = self.user_gas_pressed
+    else:
+      ret.gasPressed = self.pedal_gas > 1e-5
+
+
+    #ret.gasPressed = ret.gas > 1e-5
 
     ret.steeringTorque = pt_cp.vl["PSCMStatus"]['LKADriverAppldTrq']
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
@@ -104,6 +123,7 @@ class CarState(CarStateBase):
       ("PRNDL", "ECMPRDNL", 0),
       ("LKADriverAppldTrq", "PSCMStatus", 0),
       ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
+      ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
     ]
 
     if CP.carFingerprint == CAR.VOLT or CP.carFingerprint == CAR.BOLT:
