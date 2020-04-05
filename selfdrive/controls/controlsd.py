@@ -27,7 +27,7 @@ from selfdrive.controls.lib.planner import LON_MPC_STEP
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
 LANE_DEPARTURE_THRESHOLD = 0.1
-SATURATION_TIMEOUT_ON_ENGAGE = 2.0 / DT_CTRL
+STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 ThermalStatus = log.ThermalData.ThermalStatus
@@ -223,15 +223,13 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
 
 def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
-                  AM, rk, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, active_count):
+                  AM, rk, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, saturated_count):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
 
   enabled = isEnabled(state)
   active = isActive(state)
-
-  active_count = active_count + 1 if active else 0
 
   if CS.leftBlinker or CS.rightBlinker:
     last_blinker_frame = frame
@@ -277,9 +275,10 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   angle_control_saturated = CP.steerControlType == car.CarParams.SteerControlType.angle and \
     abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
 
+  saturated_count = saturated_count + 1 if angle_control_saturated and not CS.steeringPressed and active else 0
+
   # Send a "steering required alert" if saturation count has reached the limit
-  # TODO: add a minimum duration, now a warning will show every time the path changes briefly
-  if (active_count > SATURATION_TIMEOUT_ON_ENGAGE) and (lac_log.saturated or angle_control_saturated) and not CS.steeringPressed:
+  if (lac_log.saturated and not CS.steeringPressed) or (saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
     # Check if we deviated from the path
     left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
     right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
@@ -298,7 +297,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
     AM.add(frame, str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
-  return actuators, v_cruise_kph, v_acc_sol, a_acc_sol, lac_log, last_blinker_frame, active_count
+  return actuators, v_cruise_kph, v_acc_sol, a_acc_sol, lac_log, last_blinker_frame, saturated_count
 
 
 def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, AM,
@@ -516,7 +515,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   mismatch_counter = 0
   can_error_counter = 0
   last_blinker_frame = 0
-  active_count = 0
+  saturated_count = 0
   events_prev = []
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
@@ -583,9 +582,9 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
       prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
-    actuators, v_cruise_kph, v_acc, a_acc, lac_log, last_blinker_frame, active_count = \
+    actuators, v_cruise_kph, v_acc, a_acc, lac_log, last_blinker_frame, saturated_count = \
       state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                    LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, active_count)
+                    LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, saturated_count)
 
     prof.checkpoint("State Control")
 
