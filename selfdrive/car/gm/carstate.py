@@ -49,7 +49,7 @@ class CarState(CarStateBase):
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
-      self.user_gas = (pt_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
+      self.user_gas = (pt_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + pt_cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
       self.user_gas_pressed = self.user_gas > 1e-5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
       ret.gasPressed = self.user_gas_pressed
     else:
