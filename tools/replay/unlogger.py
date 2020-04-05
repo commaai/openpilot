@@ -114,7 +114,6 @@ class UnloggerWorker(object):
           print("FRAME(%d) LAG -- %.2f ms" % (frame_id, fr_time*1000.0))
 
         if img is not None:
-          img = img[:, :, ::-1] # Convert RGB to BGR, which is what the camera outputs
           img = img.flatten()
           smsg.frame.image = img.tobytes()
 
