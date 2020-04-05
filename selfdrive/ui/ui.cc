@@ -1049,7 +1049,7 @@ int main(int argc, char* argv[]) {
     int param_read = read_param_uint64_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
     if (param_read != 0) {
       s->scene.athenaStatus = NET_DISCONNECTED;
-    } else if (nanos_since_boot() - s->last_athena_ping < 120e9) {
+    } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
       s->scene.athenaStatus = NET_CONNECTED;
     } else {
       s->scene.athenaStatus = NET_ERROR;
