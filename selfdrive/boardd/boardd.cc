@@ -358,6 +358,11 @@ void can_health(PubSocket *publisher) {
     uint8_t power_save_enabled;
   } health;
 
+  // create message
+  capnp::MallocMessageBuilder msg;
+  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto healthData = event.initHealth();
 
   bool received = false;
 
@@ -370,17 +375,10 @@ void can_health(PubSocket *publisher) {
     received = (cnt == sizeof(health));
   }
 
+  // No panda connected, send empty health packet
   if (!received){
-    // create message
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto healthData = event.initHealth();
-
-    // set fields
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
 
-    // send to health
     auto words = capnp::messageToFlatArray(msg);
     auto bytes = words.asBytes();
     publisher->send((char*)bytes.begin(), bytes.size());
@@ -495,12 +493,6 @@ void can_health(PubSocket *publisher) {
 
   ignition_last = ignition;
 
-  // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto healthData = event.initHealth();
-
   // set fields
   healthData.setUptime(health.uptime);
   healthData.setVoltage(health.voltage);
@@ -526,11 +518,9 @@ void can_health(PubSocket *publisher) {
   auto bytes = words.asBytes();
   publisher->send((char*)bytes.begin(), bytes.size());
 
-  pthread_mutex_lock(&usb_lock);
-
   // send heartbeat back to panda
+  pthread_mutex_lock(&usb_lock);
   libusb_control_transfer(dev_handle, 0x40, 0xf3, 1, 0, NULL, 0, TIMEOUT);
-
   pthread_mutex_unlock(&usb_lock);
 }
 
