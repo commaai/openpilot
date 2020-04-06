@@ -198,12 +198,14 @@ def thermald_thread():
     msg = read_thermal()
 
     # clear car params when panda gets disconnected
-    if health is None and health_prev is not None:
-      params.panda_disconnect()
-    health_prev = health
+    if health is not None and health_prev is not None:
+      if health.health.hwType == log.HealthData.HwType.unknown and \
+         health_prev.health.hwType != log.HealthData.HwType.unknown:
+        params.panda_disconnect()
 
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
+      health_prev = health
 
     # get_network_type is an expensive call. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
