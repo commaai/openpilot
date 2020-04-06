@@ -56,7 +56,7 @@ struct __attribute__((packed)) timestamp_t {
 };
 
 libusb_context *ctx = NULL;
-libusb_device_handle *dev_handle;
+libusb_device_handle *dev_handle = NULL;
 pthread_mutex_t usb_lock;
 
 bool spoofing_started = false;
@@ -358,15 +358,34 @@ void can_health(PubSocket *publisher) {
     uint8_t power_save_enabled;
   } health;
 
+
+  bool received = false;
+
   // recv from board
-  pthread_mutex_lock(&usb_lock);
-  do {
-    cnt = libusb_control_transfer(dev_handle, 0xc0, 0xd2, 0, 0, (unsigned char*)&health, sizeof(health), TIMEOUT);
-    if (cnt != sizeof(health)) {
-      handle_usb_issue(cnt, __func__);
-    }
-  } while(cnt != sizeof(health));
-  pthread_mutex_unlock(&usb_lock);
+  if (dev_handle != NULL) {
+    pthread_mutex_lock(&usb_lock);
+    cnt = libusb_control_transfer(dev_handle, 0xc0, 0xd2, 0, 0, (unsigned char*)&health, sizeof(health), 10);
+    pthread_mutex_unlock(&usb_lock);
+
+    received = (cnt == sizeof(health));
+  }
+
+  if (!received){
+    // create message
+    capnp::MallocMessageBuilder msg;
+    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+    event.setLogMonoTime(nanos_since_boot());
+    auto healthData = event.initHealth();
+
+    // set fields
+    healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
+
+    // send to health
+    auto words = capnp::messageToFlatArray(msg);
+    auto bytes = words.asBytes();
+    publisher->send((char*)bytes.begin(), bytes.size());
+    return;
+  }
 
   if (spoofing_started) {
     health.ignition_line = 1;
@@ -796,7 +815,7 @@ void pigeon_init() {
   usleep(100*1000);
 
   // init from ubloxd
-  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py 
+  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py
   pigeon_send("\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F");
   pigeon_send("\xB5\x62\x06\x3E\x00\x00\x44\xD2");
   pigeon_send("\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35");
@@ -905,16 +924,16 @@ int main() {
   assert(err == 0);
   libusb_set_debug(ctx, 3);
 
-  // connect to the board
-  usb_retry_connect();
-
-
-  // create threads
   pthread_t can_health_thread_handle;
   err = pthread_create(&can_health_thread_handle, NULL,
                        can_health_thread, NULL);
   assert(err == 0);
 
+  // connect to the board
+  usb_retry_connect();
+
+
+  // create threads
   pthread_t can_send_thread_handle;
   err = pthread_create(&can_send_thread_handle, NULL,
                        can_send_thread, NULL);
