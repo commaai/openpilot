@@ -42,12 +42,12 @@ class CarControllerParams():
     self.CAMERA_KEEPALIVE_STEP = 100
 
     # pedal lookups, only for Volt
-    MAX_GAS = 3072              # Only a safety limit
-    ZERO_GAS = 2048
+    self.MAX_GAS = 3072              # Only a safety limit
+    self.ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
     self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
     self.GAS_LOOKUP_BP = [-0.25, 0., 0.5]
-    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
     self.BRAKE_LOOKUP_BP = [-1., -0.25]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
 
@@ -150,7 +150,11 @@ class CarController():
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
       else:
         #it would appear that we expect the dbc to scale the value between 0 and 1
-        apply_gas = clip(actuators.gas, 0., 1.)
+
+        #Adjust scaling to be btw 0 and 1
+        pedal_gas = clip((apply_gas - P.ZERO_GAS) / (P.MAX_GAS - P.ZERO_GAS),0.,1.)
+
+        #apply_gas = clip(actuators.gas, 0., 1.)
 
 
         if (frame % 2) == 0:
@@ -158,7 +162,7 @@ class CarController():
           if CS.CP.enableGasInterceptor:
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
-            can_sends.append(create_gas_command(self.packer_pt, apply_gas, idx))
+            can_sends.append(create_gas_command(self.packer_pt, pedal_gas, idx))
 
       # Send dashboard UI commands (ACC status), 25hz
       if (frame % 4) == 0:

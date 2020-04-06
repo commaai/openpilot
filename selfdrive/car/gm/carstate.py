@@ -18,8 +18,6 @@ class CarState(CarStateBase):
   def update(self, pt_cp):
     ret = car.CarState.new_message()
 
-    self.pedal_gas = pt_cp.vl["POWERTRAIN_DATA"]['PEDAL_GAS']
-
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]['ACCButtons']
 
@@ -39,12 +37,12 @@ class CarState(CarStateBase):
       ret.brake = 0.
 
 
-    # TODO: need a better way to identify cars without ACC
-    # TODO: this assumes the Pedal is present. If it isn't, this won't work...
-    if self.CP.carFingerprint in (CAR.BOLT):
-      ret.gas = self.pedal_gas / 256.
-    else:
-      ret.gas = pt_cp.vl["AcceleratorPedal"]['AcceleratorPedal'] / 254.
+    # # TODO: need a better way to identify cars without ACC
+    # # TODO: this assumes the Pedal is present. If it isn't, this won't work...
+    # if self.CP.carFingerprint in (CAR.BOLT):
+    #   ret.gas = self.pedal_gas / 256.
+    # else:
+    ret.gas = pt_cp.vl["AcceleratorPedal"]['AcceleratorPedal'] / 254.
 
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
@@ -53,7 +51,7 @@ class CarState(CarStateBase):
       self.user_gas_pressed = self.user_gas > 1e-5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
       ret.gasPressed = self.user_gas_pressed
     else:
-      ret.gasPressed = self.pedal_gas > 1e-5
+      ret.gasPressed = self.gas > 1e-5
 
 
     #ret.gasPressed = ret.gas > 1e-5
@@ -123,7 +121,6 @@ class CarState(CarStateBase):
       ("PRNDL", "ECMPRDNL", 0),
       ("LKADriverAppldTrq", "PSCMStatus", 0),
       ("LKATorqueDeliveredStatus", "PSCMStatus", 0),
-      ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
     ]
 
     if CP.carFingerprint == CAR.VOLT or CP.carFingerprint == CAR.BOLT:
@@ -141,5 +138,11 @@ class CarState(CarStateBase):
         ("CruiseMainOn", "ECMEngineStatus", 0),
         ("CruiseState", "AcceleratorPedal2", 0),
       ]
+
+    # add gas interceptor reading if we are using it
+    if CP.enableGasInterceptor:
+      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+      signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
+      #checks.append(("GAS_SENSOR", 50))
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], CanBus.POWERTRAIN)
