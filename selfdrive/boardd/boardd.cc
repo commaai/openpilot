@@ -104,6 +104,7 @@ void *safety_setter_thread(void *s) {
     usleep(100*1000);
   }
   LOGW("got CarVin %s", value_vin);
+  free(value_vin);
 
   // VIN query done, stop listening to OBDII
   pthread_mutex_lock(&usb_lock);
