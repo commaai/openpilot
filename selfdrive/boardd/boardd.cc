@@ -370,7 +370,7 @@ void can_health(PubSocket *publisher) {
   // recv from board
   if (dev_handle != NULL) {
     pthread_mutex_lock(&usb_lock);
-    cnt = libusb_control_transfer(dev_handle, 0xc0, 0xd2, 0, 0, (unsigned char*)&health, sizeof(health), 10);
+    cnt = libusb_control_transfer(dev_handle, 0xc0, 0xd2, 0, 0, (unsigned char*)&health, sizeof(health), TIMEOUT);
     pthread_mutex_unlock(&usb_lock);
 
     received = (cnt == sizeof(health));
