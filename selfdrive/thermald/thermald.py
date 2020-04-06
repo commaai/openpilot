@@ -305,8 +305,9 @@ def thermald_thread():
       params.delete("Offroad_ConnectivityNeeded")
       params.delete("Offroad_ConnectivityNeededPrompt")
 
-    # start constellation of processes when the car starts
-    ignition = health is not None and (health.health.ignitionLine or health.health.ignitionCan)
+    # Remember previous ignition value if health times out
+    if health is not None:
+      ignition = health.health.ignitionLine or health.health.ignitionCan
 
     do_uninstall = params.get("DoUninstall") == b"1"
     accepted_terms = params.get("HasAcceptedTerms") == terms_version
