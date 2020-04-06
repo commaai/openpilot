@@ -260,6 +260,7 @@ fail:
   return false;
 }
 
+// must be called before threads or with mutex
 void usb_retry_connect() {
   LOG("attempting to connect");
   while (!usb_connect()) { usleep(100*1000); }
@@ -920,8 +921,9 @@ int main() {
   assert(err == 0);
 
   // connect to the board
+  pthread_mutex_lock(&usb_lock);
   usb_retry_connect();
-
+  pthread_mutex_unlock(&usb_lock);
 
   // create threads
   pthread_t can_send_thread_handle;
