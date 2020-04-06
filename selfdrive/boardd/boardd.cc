@@ -1,3 +1,6 @@
+// TODO: REMOVE
+#define QCOM2
+
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
@@ -13,6 +16,10 @@
 
 #include <assert.h>
 #include <pthread.h>
+
+#include <fcntl.h>
+#include <errno.h>
+#include <termios.h>
 
 #include <libusb-1.0/libusb.h>
 
@@ -79,6 +86,9 @@ bool pigeon_thread_initialized = false;
 pthread_t pigeon_thread_handle;
 
 bool pigeon_needs_init;
+
+int pigeon_tty_fd = -1;
+struct termios pigeon_tty;
 
 void pigeon_init();
 void *pigeon_thread(void *crap);
@@ -279,6 +289,10 @@ void handle_usb_issue(int err, const char func[]) {
     usb_retry_connect();
   }
   // TODO: check other errors, is simply retrying okay?
+}
+
+void handle_tty_issue(int err, const char func[]) {
+  LOGE_100("tty error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
 }
 
 void can_recv(PubSocket *publisher) {
@@ -782,6 +796,22 @@ void hexdump(unsigned char *d, int l) {
   printf("\n");
 }
 
+#ifdef QCOM2
+void _pigeon_send(const char *dat, int len) {
+  int err = write(pigeon_tty_fd, dat, len);
+  if(err < 0)
+    handle_tty_issue(err, __func__);
+}
+
+void pigeon_set_power(int power) {
+  // TODO: Implement
+}
+
+void pigeon_set_baud(int baud) {
+  cfsetispeed(&pigeon_tty, baud); // input speed
+  cfsetospeed(&pigeon_tty, baud); // output speed
+}
+#else
 void _pigeon_send(const char *dat, int len) {
   int sent;
   unsigned char a[0x20];
@@ -816,10 +846,37 @@ void pigeon_set_baud(int baud) {
   if (err < 0) { handle_usb_issue(err, __func__); }
   pthread_mutex_unlock(&usb_lock);
 }
+#endif
 
 void pigeon_init() {
   usleep(1000*1000);
-  LOGW("panda GPS start");
+  LOGW("GPS start");
+
+  #ifdef QCOM2
+    // open pigeon tty
+    if(pigeon_tty_fd < 0){
+      pigeon_tty_fd = open("/dev/ttyHS0", O_RDWR);
+      assert(pigeon_tty_fd >= 0);
+    }
+    assert(tcgetattr(pigeon_tty_fd, &pigeon_tty) == 0);
+
+    // configure tty
+    pigeon_tty.c_cflag &= ~PARENB;                                            // disable parity
+    pigeon_tty.c_cflag &= ~CSTOPB;                                            // single stop bit
+    pigeon_tty.c_cflag |= CS8;                                                // 8 bits per byte
+    pigeon_tty.c_cflag &= ~CRTSCTS;                                           // no RTS/CTS flow control
+    pigeon_tty.c_cflag |= CREAD | CLOCAL;                                     // turn on READ & ignore ctrl lines
+    pigeon_tty.c_lflag &= ~ICANON;                                            // disable canonical mode
+    pigeon_tty.c_lflag &= ~ISIG;                                              // disable interpretation of INTR, QUIT and SUSP
+    pigeon_tty.c_iflag &= ~(IXON | IXOFF | IXANY);                            // turn off software flow ctrl
+    pigeon_tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);   // disable any special handling of received bytes
+    pigeon_tty.c_oflag &= ~OPOST;                                             // prevent special interpretation of output bytes
+    pigeon_tty.c_oflag &= ~ONLCR;                                             // prevent conversion of newline to carriage return/line feed
+
+    // configure blocking behavior
+    pigeon_tty.c_cc[VTIME] = 0; // max blocking time in s/10 (0=inf)
+    pigeon_tty.c_cc[VMIN] = 1;  // min amount of characters returned 
+  #endif
 
   // power off pigeon
   pigeon_set_power(0);
@@ -862,7 +919,7 @@ void pigeon_init() {
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C");
   pigeon_send("\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70");
 
-  LOGW("panda GPS on");
+  LOGW("GPS on");
 }
 
 static void pigeon_publish_raw(PubSocket *publisher, unsigned char *dat, int alen) {
@@ -886,6 +943,8 @@ void *pigeon_thread(void *crap) {
   PubSocket * publisher = PubSocket::create(context, "ubloxRaw");
   assert(publisher != NULL);
 
+  printf("Pigeon thread started\n");
+
   // run at ~100hz
   unsigned char dat[0x1000];
   uint64_t cnt = 0;
@@ -896,11 +955,25 @@ void *pigeon_thread(void *crap) {
     }
     int alen = 0;
     while (alen < 0xfc0) {
-      pthread_mutex_lock(&usb_lock);
-      int len = libusb_control_transfer(dev_handle, 0xc0, 0xe0, 1, 0, dat+alen, 0x40, TIMEOUT);
-      if (len < 0) { handle_usb_issue(len, __func__); }
-      pthread_mutex_unlock(&usb_lock);
-      if (len <= 0) break;
+      #ifdef QCOM2
+        // read from tty
+        // max len is 0x40, to stay similar to usb
+        // TODO: refactor that
+        int len = read(pigeon_tty_fd, dat+alen, 0x40);
+        if(len < 0) { 
+          handle_tty_issue(len, __func__); 
+          break;
+        } else if (len == 0) {
+          break;
+        }
+      #else
+        // read through panda
+        pthread_mutex_lock(&usb_lock);
+        int len = libusb_control_transfer(dev_handle, 0xc0, 0xe0, 1, 0, dat+alen, 0x40, TIMEOUT);
+        if (len < 0) { handle_usb_issue(len, __func__); }
+        pthread_mutex_unlock(&usb_lock);
+        if (len <= 0) break;
+      #endif
 
       //printf("got %d\n", len);
       alen += len;
@@ -953,6 +1026,14 @@ int main() {
   // init libusb
   err = libusb_init(&ctx);
   assert(err == 0);
+<<<<<<< 2ae2c40b2943c502c4c66a44ac6ae5cb773c208b
+=======
+  libusb_set_debug(ctx, 3);
+
+  // connect to the board
+  //TODO: re-enable
+  // usb_retry_connect();
+>>>>>>> WIP: tici pigeon tty
 
 #if LIBUSB_API_VERSION >= 0x01000106
   libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
@@ -960,6 +1041,7 @@ int main() {
   libusb_set_debug(ctx, 3);
 #endif
 
+<<<<<<< 2ae2c40b2943c502c4c66a44ac6ae5cb773c208b
   pthread_t can_health_thread_handle;
   err = pthread_create(&can_health_thread_handle, NULL,
                        can_health_thread, NULL);
@@ -975,27 +1057,53 @@ int main() {
   err = pthread_create(&can_send_thread_handle, NULL,
                        can_send_thread, NULL);
   assert(err == 0);
+=======
+  // // create threads
+  // pthread_t can_health_thread_handle;
+  // err = pthread_create(&can_health_thread_handle, NULL,
+  //                      can_health_thread, NULL);
+  // assert(err == 0);
 
-  pthread_t can_recv_thread_handle;
-  err = pthread_create(&can_recv_thread_handle, NULL,
-                       can_recv_thread, NULL);
-  assert(err == 0);
+  // pthread_t can_send_thread_handle;
+  // err = pthread_create(&can_send_thread_handle, NULL,
+  //                      can_send_thread, NULL);
+  // assert(err == 0);
+>>>>>>> WIP: tici pigeon tty
 
-  pthread_t hardware_control_thread_handle;
-  err = pthread_create(&hardware_control_thread_handle, NULL,
-                       hardware_control_thread, NULL);
-  assert(err == 0);
+  // pthread_t can_recv_thread_handle;
+  // err = pthread_create(&can_recv_thread_handle, NULL,
+  //                      can_recv_thread, NULL);
+  // assert(err == 0);
+
+  // pthread_t hardware_control_thread_handle;
+  // err = pthread_create(&hardware_control_thread_handle, NULL,
+  //                      hardware_control_thread, NULL);
+  // assert(err == 0);
+
+  #ifdef QCOM2
+    pigeon_needs_init = true;
+    if (!pigeon_thread_initialized) {
+      err = pthread_create(&pigeon_thread_handle, NULL, pigeon_thread, NULL);
+      assert(err == 0);
+      pigeon_thread_initialized = true;
+    }
+  #endif
 
   // join threads
 
-  err = pthread_join(can_recv_thread_handle, NULL);
-  assert(err == 0);
+  // err = pthread_join(can_recv_thread_handle, NULL);
+  // assert(err == 0);
 
-  err = pthread_join(can_send_thread_handle, NULL);
-  assert(err == 0);
+  // err = pthread_join(can_send_thread_handle, NULL);
+  // assert(err == 0);
 
-  err = pthread_join(can_health_thread_handle, NULL);
-  assert(err == 0);
+  // err = pthread_join(can_health_thread_handle, NULL);
+  // assert(err == 0);
+
+  #ifdef QCOM2
+    err = pthread_join(pigeon_thread_handle, NULL);
+    assert(err == 0);
+  #endif
 
   //while (!do_exit) usleep(1000);
 
@@ -1003,4 +1111,8 @@ int main() {
 
   libusb_close(dev_handle);
   libusb_exit(ctx);
+
+  #ifdef QCOM2
+    close(pigeon_tty_fd);
+  #endif
 }
