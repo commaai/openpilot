@@ -1,6 +1,3 @@
-// TODO: REMOVE
-#define QCOM2
-
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
@@ -1031,9 +1028,13 @@ int main() {
   libusb_set_debug(ctx, 3);
 
   // connect to the board
+<<<<<<< 3ece71bc11b8098c1ae9a1e5ff733ab1a0110e09
   //TODO: re-enable
   // usb_retry_connect();
 >>>>>>> WIP: tici pigeon tty
+=======
+  usb_retry_connect();
+>>>>>>> cleanup dev additions
 
 #if LIBUSB_API_VERSION >= 0x01000106
   libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
@@ -1041,11 +1042,16 @@ int main() {
   libusb_set_debug(ctx, 3);
 #endif
 
+<<<<<<< 3ece71bc11b8098c1ae9a1e5ff733ab1a0110e09
 <<<<<<< 2ae2c40b2943c502c4c66a44ac6ae5cb773c208b
+=======
+  // create threads
+>>>>>>> cleanup dev additions
   pthread_t can_health_thread_handle;
   err = pthread_create(&can_health_thread_handle, NULL,
                        can_health_thread, NULL);
   assert(err == 0);
+<<<<<<< 3ece71bc11b8098c1ae9a1e5ff733ab1a0110e09
 
   // connect to the board
   pthread_mutex_lock(&usb_lock);
@@ -1053,32 +1059,25 @@ int main() {
   pthread_mutex_unlock(&usb_lock);
 
   // create threads
+  pthread_t can_health_thread_handle;
+  err = pthread_create(&can_health_thread_handle, NULL,
+                       can_health_thread_handle, NULL);
+  assert(err == 0);
+
   pthread_t can_send_thread_handle;
   err = pthread_create(&can_send_thread_handle, NULL,
                        can_send_thread, NULL);
   assert(err == 0);
-=======
-  // // create threads
-  // pthread_t can_health_thread_handle;
-  // err = pthread_create(&can_health_thread_handle, NULL,
-  //                      can_health_thread, NULL);
-  // assert(err == 0);
 
-  // pthread_t can_send_thread_handle;
-  // err = pthread_create(&can_send_thread_handle, NULL,
-  //                      can_send_thread, NULL);
-  // assert(err == 0);
->>>>>>> WIP: tici pigeon tty
+  pthread_t can_recv_thread_handle;
+  err = pthread_create(&can_recv_thread_handle, NULL,
+                       can_recv_thread, NULL);
+  assert(err == 0);
 
-  // pthread_t can_recv_thread_handle;
-  // err = pthread_create(&can_recv_thread_handle, NULL,
-  //                      can_recv_thread, NULL);
-  // assert(err == 0);
-
-  // pthread_t hardware_control_thread_handle;
-  // err = pthread_create(&hardware_control_thread_handle, NULL,
-  //                      hardware_control_thread, NULL);
-  // assert(err == 0);
+  pthread_t hardware_control_thread_handle;
+  err = pthread_create(&hardware_control_thread_handle, NULL,
+                       hardware_control_thread, NULL);
+  assert(err == 0);
 
   #ifdef QCOM2
     pigeon_needs_init = true;
@@ -1091,14 +1090,14 @@ int main() {
 
   // join threads
 
-  // err = pthread_join(can_recv_thread_handle, NULL);
-  // assert(err == 0);
+  err = pthread_join(can_recv_thread_handle, NULL);
+  assert(err == 0);
 
-  // err = pthread_join(can_send_thread_handle, NULL);
-  // assert(err == 0);
+  err = pthread_join(can_send_thread_handle, NULL);
+  assert(err == 0);
 
-  // err = pthread_join(can_health_thread_handle, NULL);
-  // assert(err == 0);
+  err = pthread_join(can_health_thread_handle, NULL);
+  assert(err == 0);
 
   #ifdef QCOM2
     err = pthread_join(pigeon_thread_handle, NULL);
