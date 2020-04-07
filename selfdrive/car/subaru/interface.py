@@ -66,7 +66,7 @@ class CarInterface(CarInterfaceBase):
     be.type = car.CarState.ButtonEvent.Type.accelCruise
     buttonEvents.append(be)
 
-    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.unknown])
+    events = self.create_common_events(ret)
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
