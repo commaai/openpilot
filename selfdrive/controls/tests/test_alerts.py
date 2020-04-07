@@ -21,7 +21,7 @@ FONT_SIZE_SCALE = 1.85 # factor to scale from nanovg units to PIL
 class TestAlerts(unittest.TestCase):
 
   # ensure alert text doesn't exceed allowed width
-  def test_alert_length(self):
+  def test_alert_text_length(self):
     draw = ImageDraw.Draw(Image.new('RGB', (0, 0)))
 
     fonts = {
