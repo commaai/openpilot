@@ -82,7 +82,7 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
 
   events = list(CS.events)
   events += list(sm['dMonitoringState'].events)
-  add_lane_change_event(events, sm['pathPlan'], CS.leftBlindspot or CS.rightBlindspot)
+  add_lane_change_event(events, sm['pathPlan'], (CS.leftBlindspot and CS.leftBlinker) or (CS.rightBlindspot and CS.rightBlinker))
   enabled = isEnabled(state)
 
   # Check for CAN timeout
