@@ -97,6 +97,7 @@ keys = {
   "SubscriberInfo": [TxType.PERSISTENT],
   "TermsVersion": [TxType.PERSISTENT],
   "TrainingVersion": [TxType.PERSISTENT],
+  "UpdateApks": [TxType.PERSISTENT],
   "UpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
   "UpdateFailedCount": [TxType.CLEAR_ON_MANAGER_START],
   "Version": [TxType.PERSISTENT],
