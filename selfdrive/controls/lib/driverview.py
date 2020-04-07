@@ -7,7 +7,8 @@ import signal
 import cereal.messaging as messaging
 
 from common.basedir import BASEDIR
-from selfdrive.controls.lib.gps_helpers import is_rhd_region
+# from selfdrive.controls.lib.gps_helpers import is_rhd_region
+from common.geocode.reverse import is_lht
 
 def send_controls_packet(pm):
   while True:
@@ -57,7 +58,7 @@ def main():
     sm.update()
 
     if not is_rhd_checked and sm.updated['gpsLocation']:
-      is_rhd = is_rhd_region(sm['gpsLocation'].latitude, sm['gpsLocation'].longitude)
+      is_rhd = is_lht(sm['gpsLocation'].latitude, sm['gpsLocation'].longitude)
       is_rhd_checked = True
 
 if __name__ == '__main__':
