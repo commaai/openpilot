@@ -22,22 +22,19 @@ class TestAlerts(unittest.TestCase):
 
   # ensure alert text doesn't exceed allowed width
   def test_alert_length(self):
-    img = Image.new('RGB', (1920, 1080), (255, 255, 255))
-    draw = ImageDraw.Draw(img)
+    draw = ImageDraw.Draw(Image.new('RGB', (0, 0)))
 
     fonts = {
             AlertSize.small: [ImageFont.truetype(SEMIBOLD_FONT_PATH, int(40*FONT_SIZE_SCALE))],
             AlertSize.mid: [ImageFont.truetype(BOLD_FONT_PATH, int(48*FONT_SIZE_SCALE)),
                               ImageFont.truetype(REGULAR_FONT_PATH, int(36*FONT_SIZE_SCALE))],
-            AlertSize.full: [ImageFont.truetype(BOLD_FONT_PATH, int(96*FONT_SIZE_SCALE)),
-                              ImageFont.truetype(REGULAR_FONT_PATH, int(48*FONT_SIZE_SCALE))],
             }
 
     for alert in ALERTS:
-      # TODO: test full size alerts
+      # for full size alerts, both text fields wrap the text,
+      # so it's unlikely that they  would go past the max width
       if alert.alert_size in [AlertSize.none, AlertSize.full]:
         continue
-
 
       for i, txt in enumerate([alert.alert_text_1, alert.alert_text_2]):
         if i >= len(fonts[alert.alert_size]): break
