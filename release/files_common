@@ -49,6 +49,8 @@ common/transformations/orientation.py
 
 common/api/__init__.py
 
+common/geocode/*
+
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
 
