@@ -148,21 +148,13 @@ class CarController():
 
           at_full_stop = enabled and CS.out.standstill
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
-      else:
-        #it would appear that we expect the dbc to scale the value between 0 and 1
-
-        #Adjust scaling to be btw 0 and 1
-        pedal_gas = clip((apply_gas - P.ZERO_GAS) / (P.MAX_GAS - P.ZERO_GAS),0.,1.)
-
-        #apply_gas = clip(actuators.gas, 0., 1.)
-
-
+      elif CS.CP.enableGasInterceptor:
+        pedal_gas = clip(actuators.gas, 0., 1.)
         if (frame % 2) == 0:
           idx = (frame // 2) % 2
-          if CS.CP.enableGasInterceptor:
-            # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
-            # This prevents unexpected pedal range rescaling
-            can_sends.append(create_gas_command(self.packer_pt, pedal_gas, idx))
+          # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
+          # This prevents unexpected pedal range rescaling
+          can_sends.append(create_gas_command(self.packer_pt, pedal_gas, idx))
 
       # Send dashboard UI commands (ACC status), 25hz
       if (frame % 4) == 0:

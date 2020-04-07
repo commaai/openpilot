@@ -141,8 +141,10 @@ class CarState(CarStateBase):
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
-      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
-      signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
+      signals += [
+        ("INTERCEPTOR_GAS", "GAS_SENSOR", 0),
+        ("INTERCEPTOR_GAS2", "GAS_SENSOR", 0)
+      ]
       #checks.append(("GAS_SENSOR", 50))
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], CanBus.POWERTRAIN)
