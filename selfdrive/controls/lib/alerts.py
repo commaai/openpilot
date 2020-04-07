@@ -236,7 +236,7 @@ ALERTS = [
   
   Alert(
       "laneChangeBlocked",
-      "Car Detected in Blindspot, Please Wait!",
+      "Car Detected in Blindspot",
       "Monitor Other Vehicles",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .0, .1, .1, alert_rate=0.75),
