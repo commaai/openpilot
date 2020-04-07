@@ -11,7 +11,7 @@ __kernel void loadys(__global uchar8 const * const Y,
     const uchar8 ys = Y[gid];
 
     // y = (x - 128) / 128
-    const float8 ysf = (convert_float8(ys) - 128.f) * 0.0078125f;
+    const float8 ysf = convert_float8(ys);
 
     // 02
     // 13
@@ -38,6 +38,6 @@ __kernel void loaduv(__global uchar8 const * const in,
   const uchar8 inv = in[gid];
 
   // y = (x - 128) / 128
-  const float8 outv  = (convert_float8(inv) - 128.f) * 0.0078125f;
+  const float8 outv  = convert_float8(inv);
   out[gid + out_offset / 8] = outv;
 }
