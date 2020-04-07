@@ -887,8 +887,8 @@ void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
   int ui_viz_rw = scene->ui_viz_rw;
-  bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-  bool mapEnabled = s->scene.uilayout_mapenabled;
+  const bool hasSidebar = !scene->uilayout_sidebarcollapsed;
+  const bool mapEnabled = scene->uilayout_mapenabled;
   bool longAlert1 = strlen(va_text1) > 15;
 
   const uint8_t *color = alert_colors[va_color];
@@ -996,12 +996,26 @@ static void ui_draw_blank(UIState *s) {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
+static void ui_draw_background(UIState *s) {
+  int bg_status = s->status;
+  assert(bg_status < ARRAYSIZE(bg_colors));
+  const uint8_t *color = bg_colors[bg_status];
+
+  glClearColor(color[0]/256.0, color[1]/256.0, color[2]/256.0, 1.0);
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+}
+
 void ui_draw(UIState *s) {
+#ifdef QCOM
+  // TODO: once offroad can become transparent, we can remove bg_thread and this
+  ui_draw_blank(s);
+#else
+  ui_draw_background(s);
+#endif
   if (s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
     ui_draw_sidebar(s);
     ui_draw_vision(s);
   } else {
-    ui_draw_blank(s);
     if (!s->scene.uilayout_sidebarcollapsed) {
       ui_draw_sidebar(s);
     }

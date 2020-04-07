@@ -57,7 +57,7 @@ openpilot should preserve all other vehicle's stock features, including, but are
 Supported Hardware
 ------
 
-At the moment, openpilot supports the [EON DevKit](https://comma.ai/shop/products/eon-dashcam-devkit) and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. In the future, we'd like to support other platforms as well, like gaming PCs.
+At the moment, openpilot supports the [EON DevKit](https://comma.ai/shop/products/eon-dashcam-devkit) and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. For experimental purposes, openpilot can also run on an Ubuntu computer with external [webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
 
 Supported Cars
 ------
@@ -108,7 +108,7 @@ Supported Cars
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>5</sup>| 0mph               | 0mph              |
 | Toyota    | Rav4 2016                     | TSS-P             | Stock<sup>5</sup>| 20mph<sup>6</sup>  | 0mph              |
 | Toyota    | Rav4 2017-18                  | All               | Stock<sup>5</sup>| 20mph<sup>6</sup>  | 0mph              |
-| Toyota    | Rav4 2019                     | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Rav4 2019-20                  | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Rav4 Hybrid 2016              | TSS-P             | Stock<sup>5</sup>| 0mph               | 0mph              |
 | Toyota    | Rav4 Hybrid 2017-18           | All               | Stock<sup>5</sup>| 0mph               | 0mph              |
 | Toyota    | Rav4 Hybrid 2019-20           | All               | openpilot        | 0mph               | 0mph              |
@@ -129,6 +129,7 @@ Community Maintained Cars and Features
 | Chevrolet | Malibu 2017<sup>7</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chevrolet | Volt 2017-18<sup>7</sup>      | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chrysler  | Pacifica 2017-18              | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
+| Chrysler  | Pacifica 2020                 | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2019-20       | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | GMC       | Acadia Denali 2018<sup>7</sup>| Adaptive Cruise   | openpilot        | 0mph               | 7mph         |

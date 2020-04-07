@@ -5,6 +5,9 @@ libs = ['m', 'pthread', common, 'jpeg', 'json', cereal, 'OpenCL', messaging, 'cz
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'adreno_utils', 'EGL', 'GLESv3', 'cutils', 'ui']
   cameras = ['cameras/camera_qcom.c']
+elif arch == "larch64":
+  libs += []
+  cameras = ['cameras/camera_qcom2.c']
 else:
   if webcam:
     libs += ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_videoio']

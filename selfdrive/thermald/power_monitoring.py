@@ -76,7 +76,8 @@ class PowerMonitoring:
 
       # Only integrate when there is no ignition
       # If health is None, we're probably not in a car, so we don't care
-      if health is None or (health.health.ignitionLine or health.health.ignitionCan):
+      if health is None or (health.health.ignitionLine or health.health.ignitionCan) or \
+         health.health.hwType == log.HealthData.HwType.unknown:
         with self.integration_lock:
           self.last_measurement_time = None
           self.next_pulsed_measurement_time = None

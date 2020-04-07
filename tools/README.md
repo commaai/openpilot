@@ -1,7 +1,7 @@
-openpilot-tools
+openpilot tools
 ============
 
-Repo which contains tools to facilitate development and debugging of [openpilot](openpilot.comma.ai).
+tools to facilitate development and debugging of openpilot
 
 ![Imgur](https://i.imgur.com/IdfBgwK.jpg)
 
@@ -24,7 +24,7 @@ Table of Contents
 Requirements
 ============
 
-openpilot-tools and the following setup steps are developed and tested on Ubuntu 16.04, MacOS 10.14.2 and Python 3.7.3.
+openpilot tools and the following setup steps are developed and tested on Ubuntu 16.04, MacOS 10.14.2 and Python 3.7.3.
 
 Setup
 ============
@@ -130,9 +130,6 @@ TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructio
     sudo make install
     ```
 
-
-
-
 2. Clone openpilot if you haven't already
 
     ```bash
@@ -153,11 +150,11 @@ TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructio
     make
     ```
 
-3. Clone tools within openpilot, and install dependencies
+3. Install tools dependencies
 
     ```bash
     cd tools
-    pip install -r requirements.txt # Install openpilot-tools dependencies in virtualenv
+    pip install -r requirements.txt # Install tools dependencies in virtualenv
     ```
 
 4. Add openpilot to your `PYTHONPATH`.
