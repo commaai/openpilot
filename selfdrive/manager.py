@@ -544,6 +544,7 @@ def main():
   default_params = [
     ("CommunityFeaturesToggle", "0"),
     ("CompletedTrainingVersion", "0"),
+    ("IsRHD", "0"),
     ("IsMetric", "0"),
     ("RecordFront", "0"),
     ("HasAcceptedTerms", "0"),

@@ -7,8 +7,6 @@ import signal
 import cereal.messaging as messaging
 
 from common.basedir import BASEDIR
-# from selfdrive.controls.lib.gps_helpers import is_rhd_region
-from common.geocode.reverse import is_lht
 
 def send_controls_packet(pm):
   while True:
@@ -28,14 +26,12 @@ def send_dmon_packet(pm, d):
 
 def main():
   pm = messaging.PubMaster(['controlsState', 'dMonitoringState'])
-  sm = messaging.SubMaster(['gpsLocation'])
   controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm])
   controls_sender.start()
 
   proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
   proc_mon = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/modeld/dmonitoringmodeld"), cwd=os.path.join(BASEDIR, "selfdrive/modeld"))
-  proc_gps = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/sensord/gpsd"), cwd=os.path.join(BASEDIR, "selfdrive/sensord"))
-  
+
   is_rhd = False
   is_rhd_checked = False
 
@@ -43,7 +39,6 @@ def main():
     print('got SIGTERM, exiting..')
     proc_cam.send_signal(signal.SIGINT)
     proc_mon.send_signal(signal.SIGINT)
-    proc_gps.send_signal(signal.SIGINT)
     while proc_cam.poll() is None:
       continue
     controls_sender.terminate()
@@ -55,10 +50,9 @@ def main():
 
   while True:
     send_dmon_packet(pm, [is_rhd, is_rhd_checked])
-    sm.update()
 
-    if not is_rhd_checked and sm.updated['gpsLocation']:
-      is_rhd = is_lht(sm['gpsLocation'].latitude, sm['gpsLocation'].longitude)
+    if not is_rhd_checked:
+      is_rhd = params.get("IsRHD") == b"1"
       is_rhd_checked = True
 
 if __name__ == '__main__':
