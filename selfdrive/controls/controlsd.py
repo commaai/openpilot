@@ -381,7 +381,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     "curvature": VM.calc_curvature((CS.steeringAngle - sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
     "steerOverride": CS.steeringPressed,
     "state": state,
-    "engageable": not bool(has_event(events, [ET.NO_ENTRY])),
+    "engageable": not has_event(events, [ET.NO_ENTRY]),
     "longControlState": LoC.long_control_state,
     "vPid": float(LoC.v_pid),
     "vCruise": float(v_cruise_kph),
