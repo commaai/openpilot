@@ -819,29 +819,6 @@ static void ui_draw_driver_view(UIState *s) {
   nvgFillPaint(s->vg, face_img);
   nvgFill(s->vg);
 
-  // RHD info
-  const int map_size = 85;
-  const int map_x = (face_x + map_size + (bdr_s * 4.5));
-  const int map_y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  const int map_img_size = (map_size * 1.5);
-  const int map_img_x = (map_x - (map_img_size / 2));
-  const int map_img_y = (map_y - (map_size / 4));
-  float map_img_alpha = scene->is_rhd_checked ? 1.0f : 0.15f;
-  float map_bg_alpha = scene->is_rhd_checked ? 0.3f : 0.1f;
-  NVGcolor map_bg = nvgRGBA(0, 0, 0, (255 * map_bg_alpha));
-  NVGpaint map_img = nvgImagePattern(s->vg, map_img_x, map_img_y,
-    map_img_size, map_img_size, 0, s->img_map, map_img_alpha);
-
-  nvgBeginPath(s->vg);
-  nvgCircle(s->vg, map_x, (map_y + (bdr_s * 1.5)), map_size);
-  nvgFillColor(s->vg, map_bg);
-  nvgFill(s->vg);
-
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, map_img_x, map_img_y, map_img_size, map_img_size);
-  nvgFillPaint(s->vg, map_img);
-  nvgFill(s->vg);
-  
 }
 
 static void ui_draw_vision_header(UIState *s) {

@@ -543,7 +543,6 @@ void handle_message(UIState *s, Message * msg) {
     cereal_read_DMonitoringState(&datad, eventd.dMonitoringState);
 
     s->scene.is_rhd = datad.isRHD;
-    s->scene.is_rhd_checked = datad.rhdChecked;
   }
   capn_free(&ctx);
 }
