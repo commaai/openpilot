@@ -5,7 +5,7 @@ import hashlib
 import shutil
 import json
 from common.basedir import BASEDIR
-from common.params import Params, put_nonblocking
+from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 android_packages = ("ai.comma.plus.offroad",)
