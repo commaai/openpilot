@@ -9,8 +9,14 @@ from selfdrive.controls.lib.alerts import ALERTS
 
 AlertSize = log.ControlsState.AlertSize
 
-MAX_TEXT_WIDTH = 1920 - 300 # full screen width is useable, minus sidebar
 FONT_PATH = os.path.join(BASEDIR, "selfdrive/assets/fonts")
+REGULAR_FONT_PATH = os.path.join(FONT_PATH, "opensans_semibold.ttf")
+BOLD_FONT_PATH = os.path.join(FONT_PATH, "opensans_semibold.ttf")
+SEMIBOLD_FONT_PATH = os.path.join(FONT_PATH, "opensans_semibold.ttf")
+
+MAX_TEXT_WIDTH = 1920 - 300 # full screen width is useable, minus sidebar
+# TODO: get exact scale factor. found this empirically, works well enough
+FONT_SIZE_SCALE = 1.85 # factor to scale from nanovg units to PIL
 
 class TestAlerts(unittest.TestCase):
 
@@ -19,31 +25,27 @@ class TestAlerts(unittest.TestCase):
     img = Image.new('RGB', (1920, 1080), (255, 255, 255))
     draw = ImageDraw.Draw(img)
 
-    # TODO: nanovg units are display units. PIL uses points
     fonts = {
-            AlertSize.small: [ImageFont.truetype(FONT_PATH + "/opensans_semibold.ttf", 40)],
-            AlertSize.mid: [ImageFont.truetype(FONT_PATH + "/opensans_bold.ttf", 48),
-                              ImageFont.truetype(FONT_PATH + "/opensans_regular.ttf", 36)],
-            AlertSize.full: [ImageFont.truetype(FONT_PATH + "/opensans_bold.ttf", 96),
-                              ImageFont.truetype(FONT_PATH + "/opensans_regular.ttf", 48)],
+            AlertSize.small: [ImageFont.truetype(SEMIBOLD_FONT_PATH, int(40*FONT_SIZE_SCALE))],
+            AlertSize.mid: [ImageFont.truetype(BOLD_FONT_PATH, int(48*FONT_SIZE_SCALE)),
+                              ImageFont.truetype(REGULAR_FONT_PATH, int(36*FONT_SIZE_SCALE))],
+            AlertSize.full: [ImageFont.truetype(BOLD_FONT_PATH, int(96*FONT_SIZE_SCALE)),
+                              ImageFont.truetype(REGULAR_FONT_PATH, int(48*FONT_SIZE_SCALE))],
             }
 
     for alert in ALERTS:
-      if alert.alert_size == AlertSize.none:
+      # TODO: test full size alerts
+      if alert.alert_size in [AlertSize.none, AlertSize.full]:
         continue
 
-      font = fonts[alert.alert_size][0]
-      if alert.alert_size == AlertSize.full and len(alert.alert_text_1) > 15:
-        font = ImageFont.truetype(FONT_PATH + "/opensans_bold.ttf", 72)
 
-      w, h = draw.textsize(alert.alert_text_1, font)
-      #print(alert.alert_type, w)
-      self.assertLessEqual(w, MAX_TEXT_WIDTH, msg=alert.alert_text_1)
+      for i, txt in enumerate([alert.alert_text_1, alert.alert_text_2]):
+        if i >= len(fonts[alert.alert_size]): break
 
-      if alert.alert_size != AlertSize.small:
-        font = fonts[alert.alert_size][1]
-        w, h = draw.textsize(alert.alert_text_2, font)
-        self.assertLessEqual(w, MAX_TEXT_WIDTH, msg=alert.alert_text_2)
+        font = fonts[alert.alert_size][i]
+        w, h = draw.textsize(txt, font)
+        msg = "type: %s msg: %s" % (alert.alert_type, txt)
+        self.assertLessEqual(w, MAX_TEXT_WIDTH, msg=msg)
 
 if __name__ == "__main__":
   unittest.main()
