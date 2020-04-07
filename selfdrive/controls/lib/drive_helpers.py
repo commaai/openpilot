@@ -50,6 +50,12 @@ def get_events(events, types):
         out.append(e.name)
   return out
 
+def has_event(events, types):
+  for e in events:
+    for t in types:
+      if getattr(e, t):
+        return True
+  return False
 
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)

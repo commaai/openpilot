@@ -13,6 +13,7 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_alert
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import get_events, \
+                                                 has_event, \
                                                  create_event, \
                                                  EventTypes as ET, \
                                                  update_v_cruise, \
@@ -153,13 +154,13 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
   # DISABLED
   if state == State.disabled:
-    if get_events(events, [ET.ENABLE]):
-      if get_events(events, [ET.NO_ENTRY]):
+    if has_event(events, [ET.ENABLE]):
+      if has_event(events, [ET.NO_ENTRY]):
         for e in get_events(events, [ET.NO_ENTRY]):
           AM.add(frame, str(e) + "NoEntry", enabled)
 
       else:
-        if get_events(events, [ET.PRE_ENABLE]):
+        if has_event(events, [ET.PRE_ENABLE]):
           state = State.preEnabled
         else:
           state = State.enabled
@@ -168,16 +169,16 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
   # ENABLED
   elif state == State.enabled:
-    if get_events(events, [ET.USER_DISABLE]):
+    if has_event(events, [ET.USER_DISABLE]):
       state = State.disabled
       AM.add(frame, "disable", enabled)
 
-    elif get_events(events, [ET.IMMEDIATE_DISABLE]):
+    elif has_event(events, [ET.IMMEDIATE_DISABLE]):
       state = State.disabled
       for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
         AM.add(frame, e, enabled)
 
-    elif get_events(events, [ET.SOFT_DISABLE]):
+    elif has_event(events, [ET.SOFT_DISABLE]):
       state = State.softDisabling
       soft_disable_timer = 300   # 3s
       for e in get_events(events, [ET.SOFT_DISABLE]):
@@ -185,20 +186,20 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
   # SOFT DISABLING
   elif state == State.softDisabling:
-    if get_events(events, [ET.USER_DISABLE]):
+    if has_event(events, [ET.USER_DISABLE]):
       state = State.disabled
       AM.add(frame, "disable", enabled)
 
-    elif get_events(events, [ET.IMMEDIATE_DISABLE]):
+    elif has_event(events, [ET.IMMEDIATE_DISABLE]):
       state = State.disabled
       for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
         AM.add(frame, e, enabled)
 
-    elif not get_events(events, [ET.SOFT_DISABLE]):
+    elif not has_event(events, [ET.SOFT_DISABLE]):
       # no more soft disabling condition, so go back to ENABLED
       state = State.enabled
 
-    elif get_events(events, [ET.SOFT_DISABLE]) and soft_disable_timer > 0:
+    elif has_event(events, [ET.SOFT_DISABLE]) and soft_disable_timer > 0:
       for e in get_events(events, [ET.SOFT_DISABLE]):
         AM.add(frame, e, enabled)
 
@@ -207,16 +208,16 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
   # PRE ENABLING
   elif state == State.preEnabled:
-    if get_events(events, [ET.USER_DISABLE]):
+    if has_event(events, [ET.USER_DISABLE]):
       state = State.disabled
       AM.add(frame, "disable", enabled)
 
-    elif get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
+    elif has_event(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
       state = State.disabled
       for e in get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
         AM.add(frame, e, enabled)
 
-    elif not get_events(events, [ET.PRE_ENABLE]):
+    elif not has_event(events, [ET.PRE_ENABLE]):
       state = State.enabled
 
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
@@ -380,7 +381,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     "curvature": VM.calc_curvature((CS.steeringAngle - sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
     "steerOverride": CS.steeringPressed,
     "state": state,
-    "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
+    "engageable": not bool(has_event(events, [ET.NO_ENTRY])),
     "longControlState": LoC.long_control_state,
     "vPid": float(LoC.v_pid),
     "vCruise": float(v_cruise_kph),
