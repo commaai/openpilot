@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import gc
 from common.realtime import set_realtime_priority
-from common.params import Params, put_nonblocking
+from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION

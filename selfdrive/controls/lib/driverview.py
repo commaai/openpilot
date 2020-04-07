@@ -5,6 +5,7 @@ import multiprocessing
 import signal
 
 import cereal.messaging as messaging
+from common.params import Params
 
 from common.basedir import BASEDIR
 
@@ -32,6 +33,7 @@ def main():
   proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
   proc_mon = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/modeld/dmonitoringmodeld"), cwd=os.path.join(BASEDIR, "selfdrive/modeld"))
 
+  params = Params()
   is_rhd = False
   is_rhd_checked = False
 
