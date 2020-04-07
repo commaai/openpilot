@@ -76,7 +76,7 @@ def update_apks():
     if app not in installed:
       installed[app] = None
 
-  cloudlog.info("installed apks %s" % (str(installed),))
+  cloudlog.info("installed apks %s" % (str(installed), ))
 
   for app in installed.keys():
     apk_path = os.path.join(BASEDIR, "apk/"+app+".apk")
@@ -127,6 +127,7 @@ def update_apks():
         success = install_apk(apk_path)
 
       assert success
+
   if dirty:
     params.put("UpdateApks", json.dumps(updateApks))
 
