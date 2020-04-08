@@ -236,7 +236,9 @@ class CarInterface(CarInterfaceBase):
 
     # For Openpilot, "enabled" includes pre-enable.
     # In GM, PCM faults out if ACC command overlaps user gas.
-    enabled = c.enabled and not self.CS.out.gasPressed
+    # jjs disabling for now as we have no ACC
+    # enabled = c.enabled and not self.CS.out.gasPressed
+    enabled = c.enabled
 
     can_sends = self.CC.update(enabled, self.CS, self.frame, \
                                c.actuators,
