@@ -8,7 +8,6 @@
 
 #include <czmq.h>
 
-#include "cereal/gen/cpp/log.capnp.h"
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
@@ -67,23 +66,35 @@ static void enable_event_processing(bool yes) {
   }
 }
 
-static void update_offroad_layout_state(UIState *s, cereal::UiLayoutState::App app) {
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
+static void update_offroad_layout_state(UIState *s, cereal_UiLayoutState_App app) {
+  struct capn rc;
+  capn_init_malloc(&rc);
+  struct capn_segment *cs = capn_root(&rc).seg;
 
-  auto layout = event.initUiLayoutState();
-  layout.setActiveApp(app);
+  cereal_UiLayoutState_ptr layoutp = cereal_new_UiLayoutState(cs);
+  struct cereal_UiLayoutState layoutd = {
+    .activeApp = app
+  };
+  cereal_write_UiLayoutState(&layoutd, layoutp);
 
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  s->offroad_sock->send((char*)bytes.begin(), bytes.size());
-  s->active_app = static_cast<int>(app);
+  cereal_Event_ptr eventp = cereal_new_Event(cs);
+  struct cereal_Event event = {
+    .logMonoTime = nanos_since_boot(),
+    .which = cereal_Event_uiLayoutState,
+    .uiLayoutState = layoutp,
+  };
+  cereal_write_Event(&event, eventp);
+  capn_setp(capn_root(&rc), 0, eventp.p);
+  uint8_t buf[4096];
+  ssize_t rs = capn_write_mem(&rc, buf, sizeof(buf), 0);
+  s->offroad_sock->send((char*)buf, rs);
+  capn_free(&rc);
+  s->active_app = app;
 }
 
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
-  update_offroad_layout_state(s, cereal::UiLayoutState::App::SETTINGS);
+  update_offroad_layout_state(s, cereal_UiLayoutState_App_settings);
   enable_event_processing(true);
 #else
   // computer UI doesn't have offroad settings
@@ -93,10 +104,10 @@ static void navigate_to_settings(UIState *s) {
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
   if (s->vision_connected) {
-    update_offroad_layout_state(s, cereal::UiLayoutState::App::NONE);
+    update_offroad_layout_state(s, cereal_UiLayoutState_App_none);
     enable_event_processing(false);
   } else {
-    update_offroad_layout_state(s, cereal::UiLayoutState::App::HOME);
+    update_offroad_layout_state(s, cereal_UiLayoutState_App_home);
   }
 #else
   // computer UI doesn't have offroad home
@@ -985,14 +996,14 @@ int main(int argc, char* argv[]) {
       enable_event_processing(true);
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
-        update_offroad_layout_state(s, cereal::UiLayoutState::App::HOME);
+        update_offroad_layout_state(s, cereal_UiLayoutState_App_home);
       }
       check_messages(s);
     } else {
       set_awake(s, true);
       if (s->status == STATUS_STOPPED) {
         update_status(s, STATUS_DISENGAGED);
-        update_offroad_layout_state(s, cereal::UiLayoutState::App::NONE);
+        update_offroad_layout_state(s, cereal_UiLayoutState_App_none);
       }
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
       ui_update(s);
