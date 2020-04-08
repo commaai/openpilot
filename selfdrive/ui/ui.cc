@@ -1025,7 +1025,6 @@ int main(int argc, char* argv[]) {
 
     // Vision disconnect alert
     if (s->status != STATUS_STOPPED && !s->vision_connected && s->vision_seen) {
-      // Add alert that vision disconnected unexpectedly
       LOGE("Vision disconnected unexpectedly");
 
       if (strcmp(s->scene.alert_text2, "Camera Unresponsive") != 0) {
@@ -1051,7 +1050,7 @@ int main(int argc, char* argv[]) {
       s->controls_timeout--;
     } else {
       // TODO: refactor this to not be here
-      if (s->controls_seen && s->started && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
+      if (s->status != STATUS_STOPPED && s->controls_seen && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
         s->scene.alert_size = ALERTSIZE_FULL;
         if (s->status != STATUS_STOPPED) {
           update_status(s, STATUS_ALERT);
