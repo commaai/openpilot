@@ -200,8 +200,10 @@ def thermald_thread():
         is_uno = health.health.hwType == log.HealthData.HwType.uno
 
         if is_uno or not ANDROID:
+          cloudlog.info("Setting up UNO fan handler")
           handle_fan = handle_fan_uno
         else:
+          cloudlog.info("Setting up EON fan handler")
           setup_eon_fan()
           handle_fan = handle_fan_eon
 
