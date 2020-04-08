@@ -892,7 +892,10 @@ void ui_draw(UIState *s) {
 #endif
   if (s->started && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
     ui_draw_sidebar(s);
-    ui_draw_vision(s);
+
+    if (s->vision_seen){
+      ui_draw_vision(s);
+    }
   } else {
     if (!s->scene.uilayout_sidebarcollapsed) {
       ui_draw_sidebar(s);
