@@ -132,14 +132,6 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   return h;
 fail:
   LOGE("logger failed to open files");
-  if (h->qlog_file) {
-    fclose(h->qlog_file);
-    h->qlog_file = NULL;
-  }
-  if (h->log_file) {
-    fclose(h->log_file);
-    h->log_file = NULL;
-  }
   if (h->bz_file) {
     BZ2_bzWriteClose(&bzerror, h->bz_file, 0, NULL, NULL);
     h->bz_file = NULL;
@@ -147,6 +139,14 @@ fail:
   if (h->bz_qlog) {
     BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
     h->bz_qlog = NULL;
+  }
+  if (h->qlog_file) {
+    fclose(h->qlog_file);
+    h->qlog_file = NULL;
+  }
+  if (h->log_file) {
+    fclose(h->log_file);
+    h->log_file = NULL;
   }
   return NULL;
 }
