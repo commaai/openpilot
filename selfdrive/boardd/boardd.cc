@@ -56,7 +56,7 @@ struct __attribute__((packed)) timestamp_t {
 };
 
 libusb_context *ctx = NULL;
-libusb_device_handle *dev_handle;
+libusb_device_handle *dev_handle = NULL;
 pthread_mutex_t usb_lock;
 
 bool spoofing_started = false;
@@ -104,6 +104,7 @@ void *safety_setter_thread(void *s) {
     usleep(100*1000);
   }
   LOGW("got CarVin %s", value_vin);
+  free(value_vin);
 
   // VIN query done, stop listening to OBDII
   pthread_mutex_lock(&usb_lock);
@@ -259,6 +260,7 @@ fail:
   return false;
 }
 
+// must be called before threads or with mutex
 void usb_retry_connect() {
   LOG("attempting to connect");
   while (!usb_connect()) { usleep(100*1000); }
@@ -357,15 +359,32 @@ void can_health(PubSocket *publisher) {
     uint8_t power_save_enabled;
   } health;
 
+  // create message
+  capnp::MallocMessageBuilder msg;
+  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto healthData = event.initHealth();
+
+  bool received = false;
+
   // recv from board
-  pthread_mutex_lock(&usb_lock);
-  do {
+  if (dev_handle != NULL) {
+    pthread_mutex_lock(&usb_lock);
     cnt = libusb_control_transfer(dev_handle, 0xc0, 0xd2, 0, 0, (unsigned char*)&health, sizeof(health), TIMEOUT);
-    if (cnt != sizeof(health)) {
-      handle_usb_issue(cnt, __func__);
-    }
-  } while(cnt != sizeof(health));
-  pthread_mutex_unlock(&usb_lock);
+    pthread_mutex_unlock(&usb_lock);
+
+    received = (cnt == sizeof(health));
+  }
+
+  // No panda connected, send empty health packet
+  if (!received){
+    healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
+
+    auto words = capnp::messageToFlatArray(msg);
+    auto bytes = words.asBytes();
+    publisher->send((char*)bytes.begin(), bytes.size());
+    return;
+  }
 
   if (spoofing_started) {
     health.ignition_line = 1;
@@ -475,12 +494,6 @@ void can_health(PubSocket *publisher) {
 
   ignition_last = ignition;
 
-  // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto healthData = event.initHealth();
-
   // set fields
   healthData.setUptime(health.uptime);
   healthData.setVoltage(health.voltage);
@@ -506,11 +519,9 @@ void can_health(PubSocket *publisher) {
   auto bytes = words.asBytes();
   publisher->send((char*)bytes.begin(), bytes.size());
 
-  pthread_mutex_lock(&usb_lock);
-
   // send heartbeat back to panda
+  pthread_mutex_lock(&usb_lock);
   libusb_control_transfer(dev_handle, 0x40, 0xf3, 1, 0, NULL, 0, TIMEOUT);
-
   pthread_mutex_unlock(&usb_lock);
 }
 
@@ -557,10 +568,19 @@ void can_send(SubSocket *subscriber) {
   int sent;
   pthread_mutex_lock(&usb_lock);
 
+
   if (!fake_send) {
     do {
-      err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)send, msg_count*0x10, &sent, TIMEOUT);
-      if (err != 0 || msg_count*0x10 != sent) { handle_usb_issue(err, __func__); }
+      // Try sending can messages. If the receive buffer on the panda is full it will NAK
+      // and libusb will try again. After 5ms, it will time out. We will drop the messages.
+      err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)send, msg_count*0x10, &sent, 5);
+      if (err == LIBUSB_ERROR_TIMEOUT) {
+        LOGW("Transmit buffer full");
+        break;
+      } else if (err != 0 || msg_count*0x10 != sent) {
+        LOGW("Error");
+        handle_usb_issue(err, __func__);
+      }
     } while(err != 0);
   }
 
@@ -795,7 +815,7 @@ void pigeon_init() {
   usleep(100*1000);
 
   // init from ubloxd
-  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py 
+  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py
   pigeon_send("\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F");
   pigeon_send("\xB5\x62\x06\x3E\x00\x00\x44\xD2");
   pigeon_send("\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35");
@@ -904,16 +924,17 @@ int main() {
   assert(err == 0);
   libusb_set_debug(ctx, 3);
 
-  // connect to the board
-  usb_retry_connect();
-
-
-  // create threads
   pthread_t can_health_thread_handle;
   err = pthread_create(&can_health_thread_handle, NULL,
                        can_health_thread, NULL);
   assert(err == 0);
 
+  // connect to the board
+  pthread_mutex_lock(&usb_lock);
+  usb_retry_connect();
+  pthread_mutex_unlock(&usb_lock);
+
+  // create threads
   pthread_t can_send_thread_handle;
   err = pthread_create(&can_send_thread_handle, NULL,
                        can_send_thread, NULL);
