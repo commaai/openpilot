@@ -87,7 +87,6 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
     nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
     nvgLineTo(s->vg, x, y-g_xo);
     nvgLineTo(s->vg, x-(sz*1.35)-g_xo, y+sz+g_yo);
-    nvgLineTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
     nvgClosePath(s->vg);
   }
   nvgFillColor(s->vg, glowColor);
@@ -99,7 +98,6 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
     nvgMoveTo(s->vg, x+(sz*1.25), y+sz);
     nvgLineTo(s->vg, x, y);
     nvgLineTo(s->vg, x-(sz*1.25), y+sz);
-    nvgLineTo(s->vg, x+(sz*1.25), y+sz);
     nvgClosePath(s->vg);
   }
   nvgFillColor(s->vg, fillColor);
