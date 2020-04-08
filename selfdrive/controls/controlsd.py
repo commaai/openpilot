@@ -355,7 +355,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     can_sends = CI.apply(CC)
     pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-  force_decel = sm['dMonitoringState'].awarenessStatus < 0.
+  force_decel = (sm['dMonitoringState'].awarenessStatus < 0.) or (state == State.softDisabling)
 
   # controlsState
   dat = messaging.new_message('controlsState')
