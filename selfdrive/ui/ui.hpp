@@ -12,6 +12,7 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 
+#include <capnp/serialize.h>
 #include <pthread.h>
 
 #include "nanovg.h"
@@ -22,8 +23,8 @@
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "messaging.hpp"
-#include <capnp/serialize.h>
 #include "cereal/gen/c/log.capnp.h"
+#include "cereal/gen/cpp/log.capnp.h"
 
 #include "sound.hpp"
 
