@@ -128,6 +128,7 @@ typedef struct UIScene {
 
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
+  bool uilayout_mockengaged;
   // responsive layout
   int ui_viz_rx;
   int ui_viz_rw;

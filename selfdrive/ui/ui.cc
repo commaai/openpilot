@@ -521,6 +521,10 @@ void handle_message(UIState *s, Message * msg) {
     cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
     s->active_app = datad.activeApp;
     s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
+    if (datad.mockEngaged != s->scene.uilayout_mockengaged) {
+      s->scene.uilayout_mockengaged = datad.mockEngaged;
+      pthread_cond_signal(&s->bg_cond);
+    }
   } else if (eventd.which == cereal_Event_liveMapData) {
     struct cereal_LiveMapData datad;
     cereal_read_LiveMapData(&datad, eventd.liveMapData);
@@ -884,6 +888,9 @@ static void* bg_thread(void* args) {
 
     assert(bg_status < ARRAYSIZE(bg_colors));
     const uint8_t *color = bg_colors[bg_status];
+    if (s->scene.uilayout_mockengaged) {
+      color = bg_colors[STATUS_ENGAGED];
+    }
 
     glClearColor(color[0]/256.0, color[1]/256.0, color[2]/256.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
