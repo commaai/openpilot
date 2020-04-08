@@ -14,6 +14,7 @@
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
+#include "cereal/gen/cpp/log.capnp.h"
 
 #include "ui.hpp"
 #include "sound.hpp"
@@ -66,11 +67,24 @@ static void enable_event_processing(bool yes) {
   }
 }
 
-static void navigate_to_settings(UIState *s) {
+static void update_offroad_layout_state(UIState *s, cereal::UiLayoutState::App app) {
+  capnp::MallocMessageBuilder msg;
+  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+
+  auto layout = event.initUiLayoutState();
+  layout.setActiveApp(app);
+
+  auto words = capnp::messageToFlatArray(msg);
+  auto bytes = words.asBytes();
   s->offroad_sock->send((char*)bytes.begin(), bytes.size());
+}
+
+static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
+  update_offroad_layout_state(s, cereal::UiLayoutState::App::SETTINGS);
+  s->active_app = cereal_UiLayoutState_App_settings;
   enable_event_processing(true);
-  system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
 #else
   // computer UI doesn't have offroad settings
 #endif
@@ -78,10 +92,11 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
+  update_offroad_layout_state(s, cereal::UiLayoutState::App::HOME);
+  s->active_app = cereal_UiLayoutState_App_home;
   if (s->vision_connected) {
     enable_event_processing(false);
   }
-  system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
 #else
   // computer UI doesn't have offroad home
 #endif
@@ -133,6 +148,16 @@ static void read_param_float(float* param, const char* param_name) {
   }
 }
 
+static int read_param_uint64(uint64_t* dest, const char* param_name) {
+  char *s;
+  const int result = read_db_value(NULL, param_name, &s, NULL);
+  if (result == 0) {
+    *dest = strtoull(s, NULL, 0);
+    free(s);
+  }
+  return result;
+}
+
 static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout) {
   if (*timeout > 0){
     (*timeout)--;
@@ -147,6 +172,16 @@ static void read_param_float_timeout(float* param, const char* param_name, int* 
     (*timeout)--;
   } else {
     read_param_float(param, param_name);
+    *timeout = 2 * UI_FREQ; // 0.5Hz
+  }
+}
+
+static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int* timeout) {
+  if (*timeout > 0){
+    (*timeout)--;
+    return 0;
+  } else {
+    return read_param_uint64(dest, param_name);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
 }
@@ -1029,7 +1064,14 @@ int main(int argc, char* argv[]) {
     read_param_bool_timeout(&s->longitudinal_control, "LongitudinalControl", &s->longitudinal_control_timeout);
     read_param_bool_timeout(&s->limit_set_speed, "LimitSetSpeed", &s->limit_set_speed_timeout);
     read_param_float_timeout(&s->speed_lim_off, "SpeedLimitOffset", &s->limit_set_speed_timeout);
-
+    int param_read = read_param_uint64_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
+    if (param_read != 0) {
+      s->scene.athenaStatus = NET_DISCONNECTED;
+    } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
+      s->scene.athenaStatus = NET_CONNECTED;
+    } else {
+      s->scene.athenaStatus = NET_ERROR;
+    }
     pthread_mutex_unlock(&s->lock);
 
     // the bg thread needs to be scheduled, so the main thread needs time without the lock
