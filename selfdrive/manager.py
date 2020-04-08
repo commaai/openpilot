@@ -509,7 +509,7 @@ def manager_prepare(spinner=None):
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
   # Spinner has to start from 70 here
-  total = 100.0 if prebuilt else 70.0
+  total = 100.0 if prebuilt else 30.0
 
   for i, p in enumerate(managed_processes):
     if spinner is not None:
