@@ -980,10 +980,8 @@ int main(int argc, char* argv[]) {
       check_messages(s);
     } else {
       set_awake(s, true);
-      // Car started, fetch a new rgb image from ipc and peek for zmq events.
-      if (s->vision_connected){
-        ui_update(s);
-      };
+      // Car started, fetch a new rgb image from ipc and draw
+      ui_update(s);
 
       check_messages(s);
 
