@@ -42,6 +42,9 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
+    #TODO: these should be case based
+    ret.radarOffCan = False
+    ret.openpilotLongitudinalControl = True
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)

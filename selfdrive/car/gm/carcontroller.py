@@ -141,11 +141,9 @@ class CarController():
         # Gas/regen and brakes - all at 25Hz
         if (frame % 4) == 0:
           idx = (frame // 4) % 4
-
           at_full_stop = enabled and CS.out.standstill
           near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
           can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, apply_brake, idx, near_stop, at_full_stop))
-
           at_full_stop = enabled and CS.out.standstill
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
       elif CS.CP.enableGasInterceptor:
