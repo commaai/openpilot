@@ -698,8 +698,6 @@ static void ui_update(UIState *s) {
     }
     break;
   }
-  // peek and consume all events in the zmq queue, then return.
-  check_messages(s);
 }
 
 static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
@@ -983,9 +981,14 @@ int main(int argc, char* argv[]) {
     } else {
       set_awake(s, true);
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
-      ui_update(s);
+      if (s->vision_connected){
+        ui_update(s);
+      };
+
+      check_messages(s);
+
+      // Visiond process is just stopped, force a redraw to make screen blank again.
       if (!s->started) {
-        // Visiond process is just stopped, force a redraw to make screen blank again.
         s->scene.satelliteCount = -1;
         s->scene.uilayout_sidebarcollapsed = false;
         ui_draw(s);
