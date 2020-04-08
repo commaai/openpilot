@@ -78,12 +78,12 @@ static void update_offroad_layout_state(UIState *s, cereal::UiLayoutState::App a
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
   s->offroad_sock->send((char*)bytes.begin(), bytes.size());
+  s->active_app = static_cast<int>(app);
 }
 
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
   update_offroad_layout_state(s, cereal::UiLayoutState::App::SETTINGS);
-  s->active_app = cereal_UiLayoutState_App_settings;
   enable_event_processing(true);
 #else
   // computer UI doesn't have offroad settings
@@ -94,11 +94,9 @@ static void navigate_to_home(UIState *s) {
 #ifdef QCOM
   if (s->vision_connected) {
     update_offroad_layout_state(s, cereal::UiLayoutState::App::NONE);
-    s->active_app = cereal_UiLayoutState_App_none;
     enable_event_processing(false);
   } else {
     update_offroad_layout_state(s, cereal::UiLayoutState::App::HOME);
-    s->active_app = cereal_UiLayoutState_App_home;
   }
 #else
   // computer UI doesn't have offroad home
@@ -990,6 +988,7 @@ int main(int argc, char* argv[]) {
     } else {
       set_awake(s, true);
       if (s->status == STATUS_STOPPED) {
+        update_offroad_layout_state(s, cereal::UiLayoutState::App::NONE);
         update_status(s, STATUS_DISENGAGED);
       }
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
