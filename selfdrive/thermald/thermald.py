@@ -180,16 +180,11 @@ def thermald_thread():
   current_connectivity_alert = None
   time_valid_prev = True
   should_start_prev = False
-
-  is_uno = (read_tz(29, clip=False) < -1000)
-  if is_uno or not ANDROID:
-    handle_fan = handle_fan_uno
-  else:
-    setup_eon_fan()
-    handle_fan = handle_fan_eon
+  handle_fan = None
+  is_uno = False
 
   params = Params()
-  pm = PowerMonitoring(is_uno)
+  pm = PowerMonitoring()
 
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
@@ -197,13 +192,28 @@ def thermald_thread():
     location = location.gpsLocation if location else None
     msg = read_thermal()
 
-    # clear car params when panda gets disconnected
-    if health is None and health_prev is not None:
-      params.panda_disconnect()
-    health_prev = health
-
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
+      ignition = health.health.ignitionLine or health.health.ignitionCan
+
+      # Setup fan handler on first connect to panda
+      if handle_fan is None and health.health.hwType != log.HealthData.HwType.unknown:
+        is_uno = health.health.hwType == log.HealthData.HwType.uno
+
+        if is_uno or not ANDROID:
+          cloudlog.info("Setting up UNO fan handler")
+          handle_fan = handle_fan_uno
+        else:
+          cloudlog.info("Setting up EON fan handler")
+          setup_eon_fan()
+          handle_fan = handle_fan_eon
+
+      # Handle disconnect
+      if health_prev is not None:
+        if health.health.hwType == log.HealthData.HwType.unknown and \
+          health_prev.health.hwType != log.HealthData.HwType.unknown:
+          params.panda_disconnect()
+      health_prev = health
 
     # get_network_type is an expensive call. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
@@ -241,8 +251,9 @@ def thermald_thread():
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat / 1000.
 
-    fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
-    msg.thermal.fanSpeed = fan_speed
+    if handle_fan is not None:
+      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
+      msg.thermal.fanSpeed = fan_speed
 
     # thermal logic with hysterisis
     if max_cpu_temp > 107. or bat_temp >= 63.:
@@ -304,9 +315,6 @@ def thermald_thread():
       current_connectivity_alert = None
       params.delete("Offroad_ConnectivityNeeded")
       params.delete("Offroad_ConnectivityNeededPrompt")
-
-    # start constellation of processes when the car starts
-    ignition = health is not None and (health.health.ignitionLine or health.health.ignitionCan)
 
     do_uninstall = params.get("DoUninstall") == b"1"
     accepted_terms = params.get("HasAcceptedTerms") == terms_version

@@ -58,12 +58,11 @@ def panda_current_to_actual_current(panda_current):
 
 
 class PowerMonitoring:
-  def __init__(self, is_uno):
+  def __init__(self):
     self.last_measurement_time = None           # Used for integration delta
     self.power_used_uWh = 0                     # Integrated power usage in uWh since going into offroad
     self.next_pulsed_measurement_time = None
     self.integration_lock = threading.Lock()
-    self.is_uno = is_uno
 
   # Calculation tick
   def calculate(self, health):
@@ -76,7 +75,8 @@ class PowerMonitoring:
 
       # Only integrate when there is no ignition
       # If health is None, we're probably not in a car, so we don't care
-      if health is None or (health.health.ignitionLine or health.health.ignitionCan):
+      if health is None or (health.health.ignitionLine or health.health.ignitionCan) or \
+         health.health.hwType == log.HealthData.HwType.unknown:
         with self.integration_lock:
           self.last_measurement_time = None
           self.next_pulsed_measurement_time = None
@@ -89,6 +89,7 @@ class PowerMonitoring:
           self.last_measurement_time = now
           return
 
+      is_uno = health.health.hwType == log.HealthData.HwType.uno
       # Get current power draw somehow
       current_power = 0
       if get_battery_status() == 'Discharging':
@@ -131,7 +132,7 @@ class PowerMonitoring:
         self.next_pulsed_measurement_time = None
         return
 
-      elif self.next_pulsed_measurement_time is None and not self.is_uno:
+      elif self.next_pulsed_measurement_time is None and not is_uno:
         # On a charging EON with black panda, or drawing more than 400mA out of a white/grey one
         # Only way to get the power draw is to turn off charging for a few sec and check what the discharging rate is
         # We shouldn't do this very often, so make sure it has been some long-ish random time interval
