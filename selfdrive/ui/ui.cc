@@ -92,10 +92,13 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
-  update_offroad_layout_state(s, cereal::UiLayoutState::App::HOME);
-  s->active_app = cereal_UiLayoutState_App_home;
   if (s->vision_connected) {
+    update_offroad_layout_state(s, cereal::UiLayoutState::App::NONE);
+    s->active_app = cereal_UiLayoutState_App_none;
     enable_event_processing(false);
+  } else {
+    update_offroad_layout_state(s, cereal::UiLayoutState::App::HOME);
+    s->active_app = cereal_UiLayoutState_App_home;
   }
 #else
   // computer UI doesn't have offroad home
