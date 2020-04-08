@@ -66,14 +66,14 @@ static void enable_event_processing(bool yes) {
   }
 }
 
-static void update_offroad_layout_state(UIState *s, cereal_UiLayoutState_App app) {
+static void update_offroad_layout_state(UIState *s) {
   struct capn rc;
   capn_init_malloc(&rc);
   struct capn_segment *cs = capn_root(&rc).seg;
 
   cereal_UiLayoutState_ptr layoutp = cereal_new_UiLayoutState(cs);
   struct cereal_UiLayoutState layoutd = {
-    .activeApp = app,
+    .activeApp = (cereal_UiLayoutState_App)s->active_app,
     .sidebarCollapsed = s->scene.uilayout_sidebarcollapsed,
   };
   cereal_write_UiLayoutState(&layoutd, layoutp);
@@ -90,13 +90,12 @@ static void update_offroad_layout_state(UIState *s, cereal_UiLayoutState_App app
   ssize_t rs = capn_write_mem(&rc, buf, sizeof(buf), 0);
   s->offroad_sock->send((char*)buf, rs);
   capn_free(&rc);
-
-  s->active_app = app;
 }
 
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
-  update_offroad_layout_state(s, cereal_UiLayoutState_App_settings);
+  s->active_app = cereal_UiLayoutState_App_settings;
+  update_offroad_layout_state(s);
   enable_event_processing(true);
 #else
   // computer UI doesn't have offroad settings
@@ -106,10 +105,13 @@ static void navigate_to_settings(UIState *s) {
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
   if (s->vision_connected) {
-    update_offroad_layout_state(s, cereal_UiLayoutState_App_none);
-    enable_event_processing(false);
+    s->active_app = cereal_UiLayoutState_App_none;
   } else {
-    update_offroad_layout_state(s, cereal_UiLayoutState_App_home);
+    s->active_app = cereal_UiLayoutState_App_home;
+  }
+  update_offroad_layout_state(s);
+  if (s->vision_connected) {
+    enable_event_processing(false);
   }
 #else
   // computer UI doesn't have offroad home
@@ -127,6 +129,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
       navigate_to_home(s);
       if (s->vision_connected) {
         s->scene.uilayout_sidebarcollapsed = true;
+        update_offroad_layout_state(s);
       }
     }
   }
@@ -136,6 +139,7 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
   if (s->vision_connected && (touch_x >= s->scene.ui_viz_rx - bdr_s)
     && (s->active_app != cereal_UiLayoutState_App_settings)) {
     s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
+    update_offroad_layout_state(s);
   }
 }
 
@@ -638,6 +642,7 @@ static void ui_update(UIState *s) {
     assert(glGetError() == GL_NO_ERROR);
 
     s->scene.uilayout_sidebarcollapsed = true;
+    update_offroad_layout_state(s);
     s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
     s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
     s->scene.ui_viz_ro = 0;
@@ -996,14 +1001,16 @@ int main(int argc, char* argv[]) {
       enable_event_processing(true);
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
-        update_offroad_layout_state(s, cereal_UiLayoutState_App_home);
+        s->active_app = cereal_UiLayoutState_App_home;
+        update_offroad_layout_state(s);
       }
       check_messages(s);
     } else {
       set_awake(s, true);
       if (s->status == STATUS_STOPPED) {
         update_status(s, STATUS_DISENGAGED);
-        update_offroad_layout_state(s, cereal_UiLayoutState_App_none);
+        s->active_app = cereal_UiLayoutState_App_none;
+        update_offroad_layout_state(s);
       }
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
       ui_update(s);
@@ -1011,6 +1018,7 @@ int main(int argc, char* argv[]) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
         s->scene.satelliteCount = -1;
         s->scene.uilayout_sidebarcollapsed = false;
+        update_offroad_layout_state(s);
         ui_draw(s);
         glFinish();
         should_swap = true;
