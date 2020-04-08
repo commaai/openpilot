@@ -89,6 +89,7 @@ static void update_offroad_layout_state(UIState *s, cereal_UiLayoutState_App app
   ssize_t rs = capn_write_mem(&rc, buf, sizeof(buf), 0);
   s->offroad_sock->send((char*)buf, rs);
   capn_free(&rc);
+
   s->active_app = app;
 }
 
@@ -514,9 +515,7 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_UiLayoutState datad;
     cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
     s->active_app = datad.activeApp;
-    if (!s->vision_connected) {
-      s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
-    }
+    s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
   } else if (eventd.which == cereal_Event_liveMapData) {
     struct cereal_LiveMapData datad;
     cereal_read_LiveMapData(&datad, eventd.liveMapData);
