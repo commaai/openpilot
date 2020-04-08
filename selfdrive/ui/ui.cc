@@ -500,6 +500,13 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.freeSpace = datad.freeSpace;
     s->scene.thermalStatus = datad.thermalStatus;
     s->scene.paTemp = datad.pa0;
+
+    // Handle onroad/offroad transition
+    if (!datad.started) {
+      update_status(s, STATUS_STOPPED);
+    } else if (s->status == STATUS_STOPPED) {
+      update_status(s, STATUS_DISENGAGED);
+    }
   } else if (eventd.which == cereal_Event_ubloxGnss) {
     struct cereal_UbloxGnss datad;
     cereal_read_UbloxGnss(&datad, eventd.ubloxGnss);
@@ -962,15 +969,15 @@ int main(int argc, char* argv[]) {
     if (!s->vision_connected) {
       // always process events offroad
       enable_event_processing(true);
+
       if (s->status != STATUS_STOPPED) {
-        update_status(s, STATUS_STOPPED);
+        // Add alert that vision disconnected unexpectedly
+        LOGE("Vision disconnected unexpectedly");
       }
+
       check_messages(s);
     } else {
       set_awake(s, true);
-      if (s->status == STATUS_STOPPED) {
-        update_status(s, STATUS_DISENGAGED);
-      }
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
       ui_update(s);
       if (!s->vision_connected) {
