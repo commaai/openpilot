@@ -110,7 +110,7 @@ ALERTS = [
 
   Alert(
       "preDriverDistracted",
-      "KEEP EYES ON ROAD: Driver Appears Distracted",
+      "KEEP EYES ON ROAD: Driver Distracted",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
@@ -187,7 +187,7 @@ ALERTS = [
 
   Alert(
       "startupNoCar",
-      "Dashcam mode with unsupported car",
+      "Dashcam mode for unsupported car",
       "Always keep hands on wheel and eyes on road",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
@@ -272,7 +272,7 @@ ALERTS = [
   Alert(
       "dataNeededNoEntry",
       "openpilot Unavailable",
-      "Data Needed for Calibration. Upload Drive, Try Again",
+      "Calibration Needs Data. Upload Drive, Try Again",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 0., 3.),
 
@@ -544,7 +544,7 @@ ALERTS = [
   Alert(
       "calibrationInvalidNoEntry",
       "openpilot Unavailable",
-      "Calibration Invalid: Reposition Device and Recalibrate",
+      "Calibration Invalid: Reposition Device & Recalibrate",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
