@@ -501,7 +501,7 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.thermalStatus = datad.thermalStatus;
     s->scene.paTemp = datad.pa0;
 
-    s->scene.started = datad.started;
+    s->started = datad.started;
 
     // Handle onroad/offroad transition
     if (!datad.started) {
@@ -935,7 +935,7 @@ int main(int argc, char* argv[]) {
   int draws = 0;
 
   s->scene.satelliteCount = -1;
-  s->scene.started = false;
+  s->started = false;
 
   while (!do_exit) {
     bool should_swap = false;
@@ -1029,12 +1029,6 @@ int main(int argc, char* argv[]) {
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      // stop playing alert sound
-      if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
-            s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
-        stop_alert_sound(s->alert_sound);
-        s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
-      }
 
       // TODO: refactor this to not be here
       if (s->controls_seen && s->started && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
@@ -1055,6 +1049,13 @@ int main(int argc, char* argv[]) {
 
       s->alert_sound_timeout--;
       s->controls_seen = false;
+    }
+
+    // stop playing alert sound
+    if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
+        s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+      stop_alert_sound(s->alert_sound);
+      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
     }
 
     read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
