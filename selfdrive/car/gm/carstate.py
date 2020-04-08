@@ -14,6 +14,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
+    self.user_gas, self.user_gas_pressed = 0., 0
 
   def update(self, pt_cp):
     ret = car.CarState.new_message()
@@ -51,7 +52,7 @@ class CarState(CarStateBase):
       self.user_gas_pressed = self.user_gas > 1e-5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
       ret.gasPressed = self.user_gas_pressed
     else:
-      ret.gasPressed = self.gas > 1e-5
+      ret.gasPressed = ret.gas > 1e-5
 
 
     #ret.gasPressed = ret.gas > 1e-5
