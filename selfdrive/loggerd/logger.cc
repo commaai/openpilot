@@ -134,6 +134,8 @@ fail:
   LOGE("logger failed to open files");
   if (h->qlog_file) fclose(h->qlog_file);
   if (h->log_file) fclose(h->log_file);
+  if (h->bz_file) BZ2_bzWriteClose(&bzerror, h->bz_file, 0, NULL, NULL);
+  if (h->bz_qlog) BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
   return NULL;
 }
 
