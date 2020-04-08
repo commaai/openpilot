@@ -973,11 +973,6 @@ int main(int argc, char* argv[]) {
       // always process events offroad
       enable_event_processing(true);
 
-      if (s->status != STATUS_STOPPED) {
-        // Add alert that vision disconnected unexpectedly
-        LOGE("Vision disconnected unexpectedly");
-      }
-
       check_messages(s);
     } else {
       set_awake(s, true);
@@ -1022,6 +1017,15 @@ int main(int argc, char* argv[]) {
       s->volume_timeout = 5 * UI_FREQ;
     }
 
+
+    // Vision disconnect alert
+    if (s->status != STATUS_STOPPED) {
+      // Add alert that vision disconnected unexpectedly
+      LOGE("Vision disconnected unexpectedly");
+    }
+
+
+    // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
@@ -1032,7 +1036,6 @@ int main(int argc, char* argv[]) {
         s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
       }
 
-      // if visiond is still running and controlsState times out, display an alert
       // TODO: refactor this to not be here
       if (s->controls_seen && s->started && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
         s->scene.alert_size = ALERTSIZE_FULL;
@@ -1048,6 +1051,8 @@ int main(int argc, char* argv[]) {
         s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat;
         play_alert_sound(s->alert_sound);
       }
+
+
       s->alert_sound_timeout--;
       s->controls_seen = false;
     }
