@@ -77,7 +77,7 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
-  if (s->vision_connected) {
+  if (s->started) {
     enable_event_processing(false);
   }
   system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
@@ -95,7 +95,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
     if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
       && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
       navigate_to_home(s);
-      if (s->vision_connected) {
+      if (s->started) {
         s->scene.uilayout_sidebarcollapsed = true;
       }
     }
@@ -103,7 +103,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->vision_connected && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+  if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
     && (s->active_app != cereal_UiLayoutState_App_settings)) {
     s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
   }
@@ -500,6 +500,8 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.freeSpace = datad.freeSpace;
     s->scene.thermalStatus = datad.thermalStatus;
     s->scene.paTemp = datad.pa0;
+
+    s->scene.started = datad.started;
 
     // Handle onroad/offroad transition
     if (!datad.started) {
@@ -933,10 +935,11 @@ int main(int argc, char* argv[]) {
   int draws = 0;
 
   s->scene.satelliteCount = -1;
+  s->scene.started = false;
 
   while (!do_exit) {
     bool should_swap = false;
-    if (!s->vision_connected) {
+    if (!s->started) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
       // Don't hold the lock while sleeping, so that vision_connect_thread have chances to get the lock.
       usleep(30 * 1000);
@@ -966,7 +969,7 @@ int main(int argc, char* argv[]) {
       handle_vision_touch(s, touch_x, touch_y);
     }
 
-    if (!s->vision_connected) {
+    if (!s->started) {
       // always process events offroad
       enable_event_processing(true);
 
@@ -980,7 +983,7 @@ int main(int argc, char* argv[]) {
       set_awake(s, true);
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
       ui_update(s);
-      if (!s->vision_connected) {
+      if (!s->started) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
         s->scene.satelliteCount = -1;
         s->scene.uilayout_sidebarcollapsed = false;
@@ -1023,7 +1026,7 @@ int main(int argc, char* argv[]) {
       s->controls_timeout--;
     } else {
       // stop playing alert sound
-      if ((!s->vision_connected || (s->vision_connected && s->alert_sound_timeout == 0)) &&
+      if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
             s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
         stop_alert_sound(s->alert_sound);
         s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
@@ -1031,7 +1034,7 @@ int main(int argc, char* argv[]) {
 
       // if visiond is still running and controlsState times out, display an alert
       // TODO: refactor this to not be here
-      if (s->controls_seen && s->vision_connected && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
+      if (s->controls_seen && s->started && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
         s->scene.alert_size = ALERTSIZE_FULL;
         if (s->status != STATUS_STOPPED) {
           update_status(s, STATUS_ALERT);
