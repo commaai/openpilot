@@ -181,6 +181,7 @@ def thermald_thread():
   time_valid_prev = True
   should_start_prev = False
   handle_fan = None
+  is_uno = False
 
   params = Params()
   pm = PowerMonitoring()
