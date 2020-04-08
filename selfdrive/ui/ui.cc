@@ -364,72 +364,75 @@ void handle_message(UIState *s, Message * msg) {
 
     s->scene.decel_for_model = datad.decelForModel;
 
-    if (datad.alertSound != cereal_CarControl_HUDControl_AudibleAlert_none && datad.alertSound != s->alert_sound) {
-      if (s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
-        stop_alert_sound(s->alert_sound);
-      }
-      play_alert_sound(datad.alertSound);
-
-      s->alert_sound = datad.alertSound;
-      snprintf(s->alert_type, sizeof(s->alert_type), "%s", datad.alertType.str);
-    } else if ((!datad.alertSound || datad.alertSound == cereal_CarControl_HUDControl_AudibleAlert_none)
-                  && s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
-      stop_alert_sound(s->alert_sound);
-      s->alert_type[0] = '\0';
-      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
-    }
-
-    if (datad.alertText1.str) {
-      snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", datad.alertText1.str);
-    } else {
-      s->scene.alert_text1[0] = '\0';
-    }
-    if (datad.alertText2.str) {
-      snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", datad.alertText2.str);
-    } else {
-      s->scene.alert_text2[0] = '\0';
-    }
-    s->scene.awareness_status = datad.awarenessStatus;
-
-    s->scene.alert_ts = eventd.logMonoTime;
-
-    s->scene.alert_size = datad.alertSize;
-    if (datad.alertSize == cereal_ControlsState_AlertSize_none) {
-      s->alert_size = ALERTSIZE_NONE;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_small) {
-      s->alert_size = ALERTSIZE_SMALL;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_mid) {
-      s->alert_size = ALERTSIZE_MID;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_full) {
-      s->alert_size = ALERTSIZE_FULL;
-    }
-
-    if (s->status != STATUS_STOPPED) {
-      if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
-        update_status(s, STATUS_WARNING);
-      } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
-        update_status(s, STATUS_ALERT);
-      } else if (datad.enabled) {
-        update_status(s, STATUS_ENGAGED);
-      } else {
-        update_status(s, STATUS_DISENGAGED);
-      }
-    }
-
-    s->scene.alert_blinkingrate = datad.alertBlinkingRate;
-    if (datad.alertBlinkingRate > 0.) {
-      if (s->alert_blinked) {
-        if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
-          s->alert_blinking_alpha += (0.05*datad.alertBlinkingRate);
-        } else {
-          s->alert_blinked = false;
+    // Only process alerts if not overriding for camera or controls disconnected
+    if (!s->alert_override){
+      if (datad.alertSound != cereal_CarControl_HUDControl_AudibleAlert_none && datad.alertSound != s->alert_sound) {
+        if (s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+          stop_alert_sound(s->alert_sound);
         }
+        play_alert_sound(datad.alertSound);
+
+        s->alert_sound = datad.alertSound;
+        snprintf(s->alert_type, sizeof(s->alert_type), "%s", datad.alertType.str);
+      } else if ((!datad.alertSound || datad.alertSound == cereal_CarControl_HUDControl_AudibleAlert_none)
+                    && s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+        stop_alert_sound(s->alert_sound);
+        s->alert_type[0] = '\0';
+        s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
+      }
+
+      if (datad.alertText1.str) {
+        snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", datad.alertText1.str);
       } else {
-        if (s->alert_blinking_alpha > 0.25) {
-          s->alert_blinking_alpha -= (0.05*datad.alertBlinkingRate);
+        s->scene.alert_text1[0] = '\0';
+      }
+      if (datad.alertText2.str) {
+        snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", datad.alertText2.str);
+      } else {
+        s->scene.alert_text2[0] = '\0';
+      }
+      s->scene.awareness_status = datad.awarenessStatus;
+
+      s->scene.alert_ts = eventd.logMonoTime;
+
+      s->scene.alert_size = datad.alertSize;
+      if (datad.alertSize == cereal_ControlsState_AlertSize_none) {
+        s->alert_size = ALERTSIZE_NONE;
+      } else if (datad.alertSize == cereal_ControlsState_AlertSize_small) {
+        s->alert_size = ALERTSIZE_SMALL;
+      } else if (datad.alertSize == cereal_ControlsState_AlertSize_mid) {
+        s->alert_size = ALERTSIZE_MID;
+      } else if (datad.alertSize == cereal_ControlsState_AlertSize_full) {
+        s->alert_size = ALERTSIZE_FULL;
+      }
+
+      if (s->status != STATUS_STOPPED) {
+        if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
+          update_status(s, STATUS_WARNING);
+        } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
+          update_status(s, STATUS_ALERT);
+        } else if (datad.enabled) {
+          update_status(s, STATUS_ENGAGED);
         } else {
-          s->alert_blinking_alpha += 0.25;
-          s->alert_blinked = true;
+          update_status(s, STATUS_DISENGAGED);
+        }
+      }
+
+      s->scene.alert_blinkingrate = datad.alertBlinkingRate;
+      if (datad.alertBlinkingRate > 0.) {
+        if (s->alert_blinked) {
+          if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
+            s->alert_blinking_alpha += (0.05*datad.alertBlinkingRate);
+          } else {
+            s->alert_blinked = false;
+          }
+        } else {
+          if (s->alert_blinking_alpha > 0.25) {
+            s->alert_blinking_alpha -= (0.05*datad.alertBlinkingRate);
+          } else {
+            s->alert_blinking_alpha += 0.25;
+            s->alert_blinked = true;
+          }
         }
       }
     }
@@ -506,6 +509,7 @@ void handle_message(UIState *s, Message * msg) {
     // Handle onroad/offroad transition
     if (!datad.started) {
       update_status(s, STATUS_STOPPED);
+      s->vision_seen = false;
     } else if (s->status == STATUS_STOPPED) {
       update_status(s, STATUS_DISENGAGED);
     }
@@ -763,6 +767,7 @@ static void* vision_connect_thread(void *args) {
                    front_rp.d.stream_bufs, front_rp.num_fds, front_rp.fds);
 
     s->vision_connected = true;
+    s->vision_seen = true;
     s->vision_connect_firstrun = true;
     enable_event_processing(false);
 
@@ -936,6 +941,7 @@ int main(int argc, char* argv[]) {
 
   s->scene.satelliteCount = -1;
   s->started = false;
+  s->vision_seen = false;
 
   while (!do_exit) {
     bool should_swap = false;
@@ -1017,19 +1023,33 @@ int main(int argc, char* argv[]) {
       s->volume_timeout = 5 * UI_FREQ;
     }
 
-
     // Vision disconnect alert
-    if (s->status != STATUS_STOPPED) {
+    if (s->status != STATUS_STOPPED && !s->vision_connected && s->vision_seen) {
       // Add alert that vision disconnected unexpectedly
       LOGE("Vision disconnected unexpectedly");
-    }
 
+      if (strcmp(s->scene.alert_text2, "Camera Unresponsive") != 0) {
+        s->scene.alert_size = ALERTSIZE_FULL;
+        if (s->status != STATUS_STOPPED) {
+          update_status(s, STATUS_ALERT);
+        }
+        snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", "TAKE CONTROL IMMEDIATELY");
+        snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", "Camera Unresponsive");
+        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1, s->scene.alert_text2);
+
+        s->alert_sound_timeout = 2 * UI_FREQ;
+        s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat;
+        play_alert_sound(s->alert_sound);
+        s->alert_override = true;
+      }
+    } else {
+      s->alert_sound_timeout--;
+    }
 
     // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-
       // TODO: refactor this to not be here
       if (s->controls_seen && s->started && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
         s->scene.alert_size = ALERTSIZE_FULL;
@@ -1041,21 +1061,21 @@ int main(int argc, char* argv[]) {
         ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1, s->scene.alert_text2);
 
         s->alert_sound_timeout = 2 * UI_FREQ;
-
         s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat;
         play_alert_sound(s->alert_sound);
+        s->alert_override = true;
       }
-
 
       s->alert_sound_timeout--;
       s->controls_seen = false;
     }
 
-    // stop playing alert sound
+    // stop playing alert override sound
     if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
         s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
       stop_alert_sound(s->alert_sound);
       s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
+      s->alert_override = false;
     }
 
     read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);

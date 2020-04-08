@@ -279,6 +279,8 @@ typedef struct UIState {
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
+  bool alert_override;
+  bool vision_seen;
 
   float light_sensor;
 
