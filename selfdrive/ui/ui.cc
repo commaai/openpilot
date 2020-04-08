@@ -983,13 +983,14 @@ int main(int argc, char* argv[]) {
       enable_event_processing(true);
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
+        update_offroad_layout_state(s, cereal::UiLayoutState::App::HOME);
       }
       check_messages(s);
     } else {
       set_awake(s, true);
       if (s->status == STATUS_STOPPED) {
-        update_offroad_layout_state(s, cereal::UiLayoutState::App::NONE);
         update_status(s, STATUS_DISENGAGED);
+        update_offroad_layout_state(s, cereal::UiLayoutState::App::NONE);
       }
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
       ui_update(s);
