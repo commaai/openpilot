@@ -8,6 +8,7 @@
 
 #include <czmq.h>
 
+#include "cereal/gen/cpp/log.capnp.h"
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
@@ -502,7 +503,9 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_UiLayoutState datad;
     cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
     s->active_app = datad.activeApp;
-    s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
+    if (!s->vision_connected) {
+      s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
+    }
   } else if (eventd.which == cereal_Event_liveMapData) {
     struct cereal_LiveMapData datad;
     cereal_read_LiveMapData(&datad, eventd.liveMapData);
