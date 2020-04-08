@@ -73,7 +73,8 @@ static void update_offroad_layout_state(UIState *s, cereal_UiLayoutState_App app
 
   cereal_UiLayoutState_ptr layoutp = cereal_new_UiLayoutState(cs);
   struct cereal_UiLayoutState layoutd = {
-    .activeApp = app
+    .activeApp = app,
+    .sidebarCollapsed = s->scene.uilayout_sidebarcollapsed,
   };
   cereal_write_UiLayoutState(&layoutd, layoutp);
 
