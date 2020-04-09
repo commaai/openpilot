@@ -33,7 +33,6 @@ class EventTypes:
   IMMEDIATE_DISABLE = 'immediateDisable'
   PERMANENT = 'permanent'
 
-
 def create_event(name, types):
   event = car.CarEvent.new_message()
   event.name = name
@@ -41,6 +40,11 @@ def create_event(name, types):
     setattr(event, t, True)
   return event
 
+def get_events_type_set(events):
+  types = (EventTypes.ENABLE, EventTypes.PRE_ENABLE, EventTypes.NO_ENTRY,
+    EventTypes.WARNING, EventTypes.USER_DISABLE, EventTypes.SOFT_DISABLE,
+    EventTypes.IMMEDIATE_DISABLE, EventTypes.PERMANENT)
+  return set(t for e in events for t in types if getattr(e, t))
 
 def get_events(events, types):
   out = []
@@ -49,7 +53,7 @@ def get_events(events, types):
       if getattr(e, t):
         out.append(e.name)
   return out
-
+  
 def has_event(events, types):
   for e in events:
     for t in types:
