@@ -29,6 +29,7 @@
 #include "messaging.hpp"
 
 #include <algorithm>
+#include <bitset>
 
 // double the FIFO size
 #define RECV_SIZE (0x1000)
@@ -514,6 +515,18 @@ void can_health(PubSocket *publisher) {
   healthData.setFaultStatus(cereal::HealthData::FaultStatus(health.fault_status));
   healthData.setPowerSaveEnabled((bool)(health.power_save_enabled));
 
+  // Convert faults bitset to capnp list
+  std::bitset<32> fault_bits(health.faults);
+  auto faults = healthData.initFaults(fault_bits.count());
+
+  size_t i = 0;
+  for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
+       f <= size_t(cereal::HealthData::FaultType::REGISTER_DIVERGENT); f++){
+    if (fault_bits.test(f)) {
+      faults.set(i, cereal::HealthData::FaultType(f));
+      i++;
+    }
+  }
   // send to health
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
