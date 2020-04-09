@@ -346,6 +346,7 @@ class Way:
       if pnts is None:
         pnts = new_pnts
       else:
+        new_pnts = np.delete(new_pnts,[0,0,0], axis=0)
         pnts = np.vstack([pnts, new_pnts])
 
       # Check current lookahead distance
