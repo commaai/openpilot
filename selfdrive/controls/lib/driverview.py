@@ -3,11 +3,14 @@ import os
 import subprocess
 import multiprocessing
 import signal
+import time
 
 import cereal.messaging as messaging
 from common.params import Params
 
 from common.basedir import BASEDIR
+
+KILL_TIMEOUT = 15
 
 def send_controls_packet(pm):
   while True:
@@ -30,6 +33,7 @@ def main():
   controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm])
   controls_sender.start()
 
+  # TODO: refactor with manager start/kill
   proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
   proc_mon = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/modeld/dmonitoringmodeld"), cwd=os.path.join(BASEDIR, "selfdrive/modeld"))
 
@@ -41,13 +45,21 @@ def main():
     print('got SIGTERM, exiting..')
     proc_cam.send_signal(signal.SIGINT)
     proc_mon.send_signal(signal.SIGINT)
+    kill_start = time.time()
     while proc_cam.poll() is None:
+      if time.time() - kill_start > KILL_TIMEOUT:
+        from selfdrive.swaglog import cloudlog
+        cloudlog.critical("FORCE REBOOTING PHONE!")
+        os.system("date >> /sdcard/unkillable_reboot")
+        os.system("reboot")
+        raise RuntimeError
       continue
     controls_sender.terminate()
     exit()
 
   signal.signal(signal.SIGTERM, terminate)
 
+  # TODO: refactor with new ui api
   os.system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'"); # auto switch to home to not get stuck
 
   while True:
