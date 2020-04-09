@@ -516,7 +516,7 @@ void can_health(PubSocket *publisher) {
   healthData.setPowerSaveEnabled((bool)(health.power_save_enabled));
 
   // Convert faults bitset to capnp list
-  std::bitset<32> fault_bits(health.faults);
+  std::bitset<sizeof(health.faults) * 8> fault_bits(health.faults);
   auto faults = healthData.initFaults(fault_bits.count());
 
   size_t i = 0;
