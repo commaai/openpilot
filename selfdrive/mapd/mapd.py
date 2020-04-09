@@ -175,7 +175,7 @@ def mapsd_thread():
 
         xs = pnts[:, 0]
         ys = pnts[:, 1]
-        road_points = [float(x) for x in xs], [float(y) for y in ys]
+        road_points = list(map(float, xs)), list(map(float, ys))
 
         if speed < 10:
           curvature_valid = False
@@ -264,8 +264,8 @@ def mapsd_thread():
       if road_points is not None:
         dat.liveMapData.roadX, dat.liveMapData.roadY = road_points
       if curvature is not None:
-        dat.liveMapData.roadCurvatureX = [float(x) for x in dists]
-        dat.liveMapData.roadCurvature = [float(x) for x in curvature]
+        dat.liveMapData.roadCurvatureX = list(map(float, dists))
+        dat.liveMapData.roadCurvature = list(map(float, curvature))
 
     dat.liveMapData.mapValid = map_valid
 

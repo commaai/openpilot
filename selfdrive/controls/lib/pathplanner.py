@@ -200,10 +200,10 @@ class PathPlanner():
     plan_send = messaging.new_message('pathPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'model'])
     plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.pathPlan.dPoly = [float(x) for x in self.LP.d_poly]
-    plan_send.pathPlan.lPoly = [float(x) for x in self.LP.l_poly]
+    plan_send.pathPlan.dPoly = list(map(float, self.LP.d_poly))
+    plan_send.pathPlan.lPoly = list(map(float, self.LP.l_poly))
     plan_send.pathPlan.lProb = float(self.LP.l_prob)
-    plan_send.pathPlan.rPoly = [float(x) for x in self.LP.r_poly]
+    plan_send.pathPlan.rPoly = list(map(float, self.LP.r_poly))
     plan_send.pathPlan.rProb = float(self.LP.r_prob)
 
     plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)

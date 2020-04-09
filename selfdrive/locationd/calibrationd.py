@@ -124,8 +124,8 @@ class Calibrator():
     cal_send = messaging.new_message('liveCalibration')
     cal_send.liveCalibration.calStatus = self.cal_status
     cal_send.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
-    cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
-    cal_send.liveCalibration.rpyCalib = [float(x) for x in calib]
+    cal_send.liveCalibration.extrinsicMatrix = list(map(float, extrinsic_matrix.flatten()))
+    cal_send.liveCalibration.rpyCalib = list(map(float, calib))
 
     pm.send('liveCalibration', cal_send)
 

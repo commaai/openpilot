@@ -150,7 +150,7 @@ class Planner():
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop:
-      accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
+      accel_limits = list(map(float, calc_cruise_accel_limits(v_ego, following)))
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
 
