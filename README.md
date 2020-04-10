@@ -114,10 +114,10 @@ Supported Cars
 | Toyota    | Rav4 Hybrid 2019-20           | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Sienna 2018                   | All               | Stock<sup>5</sup>| 0mph               | 0mph              |
 
-<sup>1</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and open sourced [Hyundai giraffe](https://github.com/commaai/neo/tree/master/giraffe/hyundai), designed for the 2019 Sante Fe; pinout may differ for other Hyundai and Kia models. <br />
 <sup>2</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
-<sup>3</sup>Requires a [custom connector](https://community.comma.ai/wiki/index.php/Volkswagen#Integration_at_R242_Camera) for the [car harness](https://comma.ai/shop/products/car-harness) <br />
 <sup>4</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
+<sup>5</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
+<sup>6</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
 
 Community Maintained Cars and Features
 ------
@@ -148,8 +148,8 @@ Community Maintained Cars and Features
 | Subaru    | Impreza 2019-20               | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2016-19<sup>3</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 
-<sup>5</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
-<sup>6</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
+<sup>1</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and open sourced [Hyundai giraffe](https://github.com/commaai/neo/tree/master/giraffe/hyundai), designed for the 2019 Sante Fe; pinout may differ for other Hyundai and Kia models. <br />
+<sup>3</sup>Requires a [custom connector](https://community.comma.ai/wiki/index.php/Volkswagen#Integration_at_R242_Camera) for the [car harness](https://comma.ai/shop/products/car-harness) <br />
 <sup>7</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 
 Although it's not upstream, there's a community of people getting openpilot to run on Tesla's [here](https://tinkla.us/)
@@ -161,9 +161,9 @@ To promote a car from community maintained, it must meet a few requirements. We 
 Installation Instructions
 ------
 
-Install openpilot on a EON by entering ``https://openpilot.comma.ai`` during the installer setup.
+Install openpilot on an EON or comma two by entering ``https://openpilot.comma.ai`` during the installer setup.
 
-Follow this [video instructions](https://youtu.be/3nlkomHathI) to properly mount the EON on the windshield. Note: openpilot features an automatic pose calibration routine and openpilot performance should not be affected by small pitch and yaw misalignments caused by imprecise EON mounting.
+Follow these [video instructions](https://youtu.be/3nlkomHathI) to properly mount the device on the windshield. Note: openpilot features an automatic pose calibration routine and openpilot performance should not be affected by small pitch and yaw misalignments caused by imprecise device mounting.
 
 Before placing the device on your windshield, check the state and local laws and ordinances where you drive. Some state laws prohibit or restrict the placement of objects on the windshield of a motor vehicle.
 
@@ -181,7 +181,7 @@ Many factors can impact the performance of openpilot ALC and openpilot LDW, caus
 * Poor visibility (heavy rain, snow, fog, etc.) or weather conditions that may interfere with sensor operation.
 * The road facing camera is obstructed, covered or damaged by mud, ice, snow, etc.
 * Obstruction caused by applying excessive paint or adhesive products (such as wraps, stickers, rubber coating, etc.) onto the vehicle.
-* The EON is mounted incorrectly.
+* The device is mounted incorrectly.
 * When in sharp curves, like on-off ramps, intersections etc...; openpilot is designed to be limited in the amount of steering torque it can produce.
 * In the presence of restricted lanes or construction zones.
 * When driving on highly banked roads or in presence of strong cross-wind.
@@ -201,7 +201,7 @@ Many factors can impact the performance of openpilot ACC and openpilot FCW, caus
 * Poor visibility (heavy rain, snow, fog, etc.) or weather conditions that may interfere with sensor operation.
 * The road facing camera or radar are obstructed, covered, or damaged by mud, ice, snow, etc.
 * Obstruction caused by applying excessive paint or adhesive products (such as wraps, stickers, rubber coating, etc.) onto the vehicle.
-* The EON is mounted incorrectly.
+* The device is mounted incorrectly.
 * Approaching a toll booth, a bridge or a large metal plate.
 * When driving on roads with pedestrians, cyclists, etc...
 * In presence of traffic signs or stop lights, which are not detected by openpilot at this time.
@@ -219,13 +219,13 @@ The list above does not represent an exhaustive list of situations that may inte
 Limitations of openpilot DM
 ------
 
-openpilot DM should not be considered an exact measurements of the status of alertness of the driver.
+openpilot DM should not be considered an exact measurement of the alertness of the driver.
 
 Many factors can impact the performance of openpilot DM, causing it to be unable to function as intended. These include, but are not limited to:
 
 * Low light conditions, such as driving at night or in dark tunnels.
 * Bright light (due to oncoming headlights, direct sunlight, etc.).
-* The driver face is partially or completely outside field of view of the driver facing camera.
+* The driver's face is partially or completely outside field of view of the driver facing camera.
 * Right hand driving vehicles.
 * The driver facing camera is obstructed, covered, or damaged.
 
@@ -247,7 +247,7 @@ Safety and Testing
 ----
 
 * openpilot observes ISO26262 guidelines, see [SAFETY.md](SAFETY.md) for more detail.
-* openpilot has software in the loop [tests](run_docker_tests.sh) that run on every commit.
+* openpilot has software in the loop [tests](.github/workflows/test.yaml) that run on every commit.
 * The safety model code lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
 * panda has software in the loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
 * Internally, we have a hardware in the loop Jenkins test suite that builds and unit tests the various processes.
@@ -274,15 +274,15 @@ Directory Structure
 ------
     .
     ├── apk                 # The apk files used for the UI
-    ├── cereal              # The messaging spec and libs used for all logs on EON
+    ├── cereal              # The messaging spec and libs used for all logs
     ├── common              # Library like functionality we've developed here
     ├── installer/updater   # Manages auto-updates of openpilot
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
-    ├── phonelibs           # Libraries used on EON
-    ├── pyextra             # Libraries used on EON
+    ├── phonelibs           # Libraries used on NEOS devices
+    ├── pyextra             # Libraries used on NEOS devices
     └── selfdrive           # Code needed to drive the car
-        ├── assets          # Fonts and images for UI
+        ├── assets          # Fonts, images, and sounds for UI
         ├── athena          # Allows communication with the app
         ├── boardd          # Daemon to talk to the board
         ├── camerad         # Driver to capture images from the camera sensors
@@ -296,7 +296,7 @@ Directory Structure
         ├── modeld          # Driving and monitoring model runners
         ├── proclogd        # Logs information from proc
         ├── sensord         # IMU / GPS interface code
-        ├── tests           # Unit tests, system tests and a car simulator
+        ├── test            # Unit tests, system tests and a car simulator
         └── ui              # The UI
 
 To understand how the services interact, see `cereal/service_list.yaml`.
