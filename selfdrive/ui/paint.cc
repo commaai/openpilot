@@ -824,9 +824,6 @@ static void ui_draw_vision(UIState *s) {
   int ui_viz_rw = scene->ui_viz_rw;
   int ui_viz_ro = scene->ui_viz_ro;
 
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
   glViewport(ui_viz_rx+ui_viz_ro, s->fb_h-(box_y+box_h), viz_w, box_h);
@@ -869,11 +866,6 @@ static void ui_draw_vision(UIState *s) {
   glDisable(GL_BLEND);
 }
 
-static void ui_draw_blank(UIState *s) {
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-}
-
 static void ui_draw_background(UIState *s) {
   int bg_status = s->status;
   assert(bg_status < ARRAYSIZE(bg_colors));
@@ -884,12 +876,7 @@ static void ui_draw_background(UIState *s) {
 }
 
 void ui_draw(UIState *s) {
-#ifdef QCOM
-  // TODO: once offroad can become transparent, we can remove bg_thread and this
-  ui_draw_blank(s);
-#else
   ui_draw_background(s);
-#endif
   if (s->vision_connected && s->active_app == cereal_UiLayoutState_App_none && s->status != STATUS_STOPPED) {
     ui_draw_sidebar(s);
     ui_draw_vision(s);
