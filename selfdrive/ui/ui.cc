@@ -30,6 +30,17 @@ static void set_brightness(UIState *s, int brightness) {
   }
 }
 
+int event_processing_enabled = -1;
+static void enable_event_processing(bool yes) {
+  if (event_processing_enabled != 1 && yes) {
+    system("service call window 18 i32 1");  // enable event processing
+    event_processing_enabled = 1;
+  } else if (event_processing_enabled != 0 && !yes) {
+    system("service call window 18 i32 0");  // disable event processing
+    event_processing_enabled = 0;
+  }
+}
+
 static void set_awake(UIState *s, bool awake) {
 #ifdef QCOM
   if (awake) {
@@ -43,27 +54,18 @@ static void set_awake(UIState *s, bool awake) {
     if (awake) {
       LOGW("awake normal");
       framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
+      enable_event_processing(true);
     } else {
       LOGW("awake off");
       set_brightness(s, 0);
       framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
+      enable_event_processing(false);
     }
   }
 #else
   // computer UI doesn't sleep
   s->awake = true;
 #endif
-}
-
-int event_processing_enabled = -1;
-static void enable_event_processing(bool yes) {
-  if (event_processing_enabled != 1 && yes) {
-    system("service call window 18 i32 1");  // enable event processing
-    event_processing_enabled = 1;
-  } else if (event_processing_enabled != 0 && !yes) {
-    system("service call window 18 i32 0");  // disable event processing
-    event_processing_enabled = 0;
-  }
 }
 
 static void update_offroad_layout_state(UIState *s) {
@@ -96,7 +98,6 @@ static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
   s->active_app = cereal_UiLayoutState_App_settings;
   update_offroad_layout_state(s);
-  enable_event_processing(true);
 #else
   // computer UI doesn't have offroad settings
 #endif
@@ -110,9 +111,6 @@ static void navigate_to_home(UIState *s) {
     s->active_app = cereal_UiLayoutState_App_home;
   }
   update_offroad_layout_state(s);
-  if (s->vision_connected) {
-    enable_event_processing(false);
-  }
 #else
   // computer UI doesn't have offroad home
 #endif
@@ -796,7 +794,6 @@ static void* vision_connect_thread(void *args) {
 
     s->vision_connected = true;
     s->vision_connect_firstrun = true;
-    enable_event_processing(false);
 
     // Drain sockets
     while (true){
@@ -1005,7 +1002,6 @@ int main(int argc, char* argv[]) {
 
     if (!s->vision_connected) {
       // always process events offroad
-      enable_event_processing(true);
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
         s->active_app = cereal_UiLayoutState_App_home;
