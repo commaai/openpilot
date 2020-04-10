@@ -542,6 +542,7 @@ void handle_message(UIState *s, Message * msg) {
     if (!datad.started) {
       if (s->status != STATUS_STOPPED) {
         update_status(s, STATUS_STOPPED);
+        s->alert_sound_timeout = 0;
         s->vision_seen = false;
         s->active_app = cereal_UiLayoutState_App_home;
         update_offroad_layout_state(s);
@@ -1045,9 +1046,8 @@ int main(int argc, char* argv[]) {
       if (s->status != STATUS_STOPPED && s->controls_seen && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
         LOGE("Controls unresponsive");
         s->scene.alert_size = ALERTSIZE_FULL;
-        if (s->status != STATUS_STOPPED) {
-          update_status(s, STATUS_ALERT);
-        }
+        update_status(s, STATUS_ALERT);
+
         snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", "TAKE CONTROL IMMEDIATELY");
         snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", "Controls Unresponsive");
         ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1, s->scene.alert_text2);
