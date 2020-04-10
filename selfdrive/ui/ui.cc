@@ -1041,14 +1041,7 @@ int main(int argc, char* argv[]) {
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      // stop playing alert sound
-      if ((!s->vision_connected || (s->vision_connected && s->alert_sound_timeout == 0)) &&
-          s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
-        stop_alert_sound(s->alert_sound);
-        s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
-      }
-
-      if (s->status != STATUS_STOPPED && s->controls_seen && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
+      if (s->started && s->controls_seen && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
         LOGE("Controls unresponsive");
         s->scene.alert_size = ALERTSIZE_FULL;
         update_status(s, STATUS_ALERT);
@@ -1064,6 +1057,13 @@ int main(int argc, char* argv[]) {
 
       s->alert_sound_timeout--;
       s->controls_seen = false;
+    }
+
+    // stop playing alert sound
+    if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
+        s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+      stop_alert_sound(s->alert_sound);
+      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
     }
 
     read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
