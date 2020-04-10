@@ -117,7 +117,7 @@ class CarInterface(CarInterfaceBase):
     if not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
     # Attempt OP engagement only on rising edge of stock ACC engagement.
-    elif not self.cruise_enabled_prev:
+    elif not self.CS.out.cruiseState.enabled:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
 
     ret.events = events
@@ -125,9 +125,6 @@ class CarInterface(CarInterfaceBase):
     ret.canMonoTimes = canMonoTimes
 
     # update previous car states
-    self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
-    self.cruise_enabled_prev = ret.cruiseState.enabled
     self.displayMetricUnitsPrev = self.CS.displayMetricUnits
     self.buttonStatesPrev = self.CS.buttonStates.copy()
 

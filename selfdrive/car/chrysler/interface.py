@@ -75,7 +75,7 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low], gas_resume_speed = 2.)
 
-    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+    if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     elif not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
@@ -84,10 +84,6 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
-
-    self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
-    self.cruise_enabled_prev = ret.cruiseState.enabled
 
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()

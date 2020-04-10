@@ -506,10 +506,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events
 
-    # update previous brake/gas pressed
-    self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
-
     self.CS.out = ret.as_reader()
     return self.CS.out
 

@@ -162,7 +162,7 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret)
 
     if self.CS.car_fingerprint in SUPERCRUISE_CARS:
-      if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+      if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
         events.append(create_event('pcmEnable', [ET.ENABLE]))
       if not ret.cruiseState.enabled:
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
@@ -188,11 +188,6 @@ class CarInterface(CarInterfaceBase):
           events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
 
     ret.events = events
-
-    # update previous brake/gas pressed
-    self.cruise_enabled_prev = ret.cruiseState.enabled
-    self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
 
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()
