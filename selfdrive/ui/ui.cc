@@ -540,11 +540,12 @@ void handle_message(UIState *s, Message * msg) {
 
     // Handle onroad/offroad transition
     if (!datad.started) {
-      update_status(s, STATUS_STOPPED);
-      s->vision_seen = false;
-
-      s->active_app = cereal_UiLayoutState_App_home;
-      update_offroad_layout_state(s);
+      if (s->status != STATUS_STOPPED) {
+        update_status(s, STATUS_STOPPED);
+        s->vision_seen = false;
+        s->active_app = cereal_UiLayoutState_App_home;
+        update_offroad_layout_state(s);
+      }
     } else if (s->status == STATUS_STOPPED) {
       update_status(s, STATUS_DISENGAGED);
 
