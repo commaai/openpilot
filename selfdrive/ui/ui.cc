@@ -379,6 +379,7 @@ void handle_message(UIState *s, Message * msg) {
     cereal_read_ControlsState(&datad, eventd.controlsState);
 
     s->controls_timeout = 1 * UI_FREQ;
+    s->controls_seen = true;
 
     if (datad.vCruise != s->scene.v_cruise) {
       s->scene.v_cruise_update_ts = eventd.logMonoTime;
