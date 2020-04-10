@@ -170,7 +170,10 @@ class Planner():
 
     self.mpc1.update(pm, sm['carState'], lead_1, v_cruise_setpoint)
     self.mpc2.update(pm, sm['carState'], lead_2, v_cruise_setpoint)
-    self.mpc_model.update(sm['carState'], sm['model'])
+    self.mpc_model.update(sm['carState'].vEgo, sm['carState'].vEgo,
+                          sm['model'].longitudinal.distances,
+                          sm['model'].longitudinal.speeds,
+                          sm['model'].longitudinal.accelerations)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
