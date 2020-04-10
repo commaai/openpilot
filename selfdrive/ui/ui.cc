@@ -374,7 +374,7 @@ void handle_message(UIState *s, Message * msg) {
   struct cereal_Event eventd;
   cereal_read_Event(&eventd, eventp);
 
-  if (eventd.which == cereal_Event_controlsState) {
+  if (eventd.which == cereal_Event_controlsState && s->started) {
     struct cereal_ControlsState datad;
     cereal_read_ControlsState(&datad, eventd.controlsState);
 
