@@ -794,6 +794,14 @@ FW_VERSIONS = {
       b'\x028646F3304100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
     ],
   },
+  CAR.LEXUS_RX: {
+    (Ecu.engine, 0x700, None): [b'\x01896630E41200\x00\x00\x00\x00'],
+    (Ecu.esp, 0x7b0, None): [b'F152648473\x00\x00\x00\x00\x00\x00'],
+    (Ecu.dsu, 0x791, None): [b'881514810500\x00\x00\x00\x00'],
+    (Ecu.eps, 0x7a1, None): [b'8965B0E012\x00\x00\x00\x00\x00\x00'],
+    (Ecu.fwdRadar, 0x750, 0xf): [b'8821F4701100\x00\x00\x00\x00'],
+    (Ecu.fwdCamera, 0x750, 0x6d): [b'8646F4802001\x00\x00\x00\x00'],
+  },
   CAR.LEXUS_RXH: {
     (Ecu.engine, 0x7e0, None): [
       b'\x02348Q4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
