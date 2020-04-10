@@ -79,6 +79,7 @@ static void update_offroad_layout_state(UIState *s) {
     .sidebarCollapsed = s->scene.uilayout_sidebarcollapsed,
   };
   cereal_write_UiLayoutState(&layoutd, layoutp);
+  LOGD("setting active app to %d with sidebar %d", layoutd.activeApp, layoutd.sidebarCollapsed);
 
   cereal_Event_ptr eventp = cereal_new_Event(cs);
   struct cereal_Event event = {
