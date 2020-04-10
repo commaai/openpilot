@@ -29,19 +29,6 @@ def accel_hysteresis(accel, accel_steady, enabled):
   return accel, accel_steady
 
 
-def process_hud_alert(hud_alert):
-  # initialize to no alert
-  steer = 0
-  fcw = 0
-
-  if hud_alert == VisualAlert.fcw:
-    fcw = 1
-  elif hud_alert == VisualAlert.steerRequired:
-    steer = 1
-
-  return steer, fcw
-
-
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.braking = False
@@ -142,11 +129,11 @@ class CarController():
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display
     # - there is something to stop displaying
-    alert_out = process_hud_alert(hud_alert)
-    steer, fcw = alert_out
+    fcw_alert = hud_alert == VisualAlert.fcw
+    steer_alert = hud_alert == VisualAlert.steerRequired
 
-    if (any(alert_out) and not self.alert_active) or \
-       (not any(alert_out) and self.alert_active):
+    if ((fcw_alert or steer_alert) and not self.alert_active) or \
+       (not (fcw_alert or steer_alert) and self.alert_active):
       send_ui = True
       self.alert_active = not self.alert_active
     else:
@@ -157,10 +144,10 @@ class CarController():
       send_ui = True
 
     if (frame % 100 == 0 or send_ui) and Ecu.fwdCamera in self.fake_ecus:
-      can_sends.append(create_ui_command(self.packer, steer, pcm_cancel_cmd, left_line, right_line, left_lane_depart, right_lane_depart))
+      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, left_line, right_line, left_lane_depart, right_lane_depart))
 
     if frame % 100 == 0 and Ecu.dsu in self.fake_ecus:
-      can_sends.append(create_fcw_command(self.packer, fcw))
+      can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     #*** static msgs ***
 
