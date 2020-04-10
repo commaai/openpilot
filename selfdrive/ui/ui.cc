@@ -79,6 +79,7 @@ static void update_offroad_layout_state(UIState *s) {
     .sidebarCollapsed = s->scene.uilayout_sidebarcollapsed,
   };
   cereal_write_UiLayoutState(&layoutd, layoutp);
+  LOGD("setting active app to %d with sidebar %d", layoutd.activeApp, layoutd.sidebarCollapsed);
 
   cereal_Event_ptr eventp = cereal_new_Event(cs);
   struct cereal_Event event = {
@@ -206,7 +207,6 @@ static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
 
   pthread_mutex_init(&s->lock, NULL);
-  pthread_cond_init(&s->bg_cond, NULL);
 
   s->ctx = Context::create();
   s->model_sock = SubSocket::create(s->ctx, "model");
@@ -249,7 +249,7 @@ static void ui_init(UIState *s) {
   s->ipc_fd = -1;
 
   // init display
-  s->fb = framebuffer_init("ui", 0x00010000, true, &s->fb_w, &s->fb_h);
+  s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
 
   set_awake(s, true);
@@ -361,8 +361,6 @@ static ModelData read_model(cereal_ModelData_ptr modelp) {
 static void update_status(UIState *s, int status) {
   if (s->status != status) {
     s->status = status;
-    // wake up bg thread to change
-    pthread_cond_signal(&s->bg_cond);
   }
 }
 
@@ -521,7 +519,6 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
     if (datad.mockEngaged != s->scene.uilayout_mockengaged) {
       s->scene.uilayout_mockengaged = datad.mockEngaged;
-      pthread_cond_signal(&s->bg_cond);
     }
   } else if (eventd.which == cereal_Event_liveMapData) {
     struct cereal_LiveMapData datad;
@@ -866,38 +863,6 @@ fail:
   return NULL;
 }
 
-static void* bg_thread(void* args) {
-  UIState *s = (UIState*)args;
-  set_thread_name("bg");
-
-  FramebufferState *bg_fb = framebuffer_init("bg", 0x00001000, false, NULL, NULL);
-  assert(bg_fb);
-
-  int bg_status = -1;
-  while(!do_exit) {
-    pthread_mutex_lock(&s->lock);
-    if (bg_status == s->status) {
-      // will always be signaled if it changes?
-      pthread_cond_wait(&s->bg_cond, &s->lock);
-    }
-    bg_status = s->status;
-    pthread_mutex_unlock(&s->lock);
-
-    assert(bg_status < ARRAYSIZE(bg_colors));
-    const uint8_t *color = bg_colors[bg_status];
-    if (s->scene.uilayout_mockengaged) {
-      color = bg_colors[STATUS_ENGAGED];
-    }
-
-    glClearColor(color[0]/256.0, color[1]/256.0, color[2]/256.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    framebuffer_swap(bg_fb);
-  }
-
-  return NULL;
-}
-
 #endif
 
 int is_leon() {
@@ -939,11 +904,6 @@ int main(int argc, char* argv[]) {
   pthread_t light_sensor_thread_handle;
   err = pthread_create(&light_sensor_thread_handle, NULL,
                        light_sensor_thread, s);
-  assert(err == 0);
-
-  pthread_t bg_thread_handle;
-  err = pthread_create(&bg_thread_handle, NULL,
-                       bg_thread, s);
   assert(err == 0);
 #endif
 
@@ -1120,14 +1080,10 @@ int main(int argc, char* argv[]) {
 
   // wake up bg thread to exit
   pthread_mutex_lock(&s->lock);
-  pthread_cond_signal(&s->bg_cond);
   pthread_mutex_unlock(&s->lock);
 
 #ifdef QCOM
   // join light_sensor_thread?
-
-  err = pthread_join(bg_thread_handle, NULL);
-  assert(err == 0);
 #endif
 
   err = pthread_join(connect_thread_handle, NULL);
