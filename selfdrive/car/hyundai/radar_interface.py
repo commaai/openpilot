@@ -15,7 +15,7 @@ def get_radar_can_parser(CP):
     ("ACC_ObjRelSpd", "SCC11", 0),
   ]
   checks = []
-  bus = 0  # If sccBus can be defined, in interface.py, should use that. Most wiring configs are using bus zero (LKAS).
+  bus = 0  # If sccBus can be defined, in interface.py, should use that. Most wiring configs are using bus zero (cp.vl).
            # Alternately you can get it out of the fingerprint in here but I am not sure how I could test if that works.
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus)
 
@@ -29,10 +29,11 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages = set()
     self.trigger_msg = 0x420
     self.track_id = 0
-    self.no_radar = CP.no_radar
+    self.radar_off_can = CP.radarOffCan
+
 
   def update(self, can_strings):
-    if self.no_radar:
+    if self.radar_off_can:
       if 'NO_RADAR_SLEEP' not in os.environ:
         time.sleep(0.05)  # radard runs on RI updates
 
