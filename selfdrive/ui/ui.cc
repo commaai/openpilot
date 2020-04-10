@@ -544,6 +544,7 @@ void handle_message(UIState *s, Message * msg) {
         update_status(s, STATUS_STOPPED);
         s->alert_sound_timeout = 0;
         s->vision_seen = false;
+        s->controls_seen = false;
         s->active_app = cereal_UiLayoutState_App_home;
         update_offroad_layout_state(s);
       }
