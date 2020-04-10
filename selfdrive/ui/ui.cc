@@ -378,6 +378,7 @@ void handle_message(UIState *s, Message * msg) {
 
   if (eventd.which == cereal_Event_controlsState) {
     if (s->status == STATUS_STOPPED) {
+      capn_free(&ctx);
       return;
     }
 
