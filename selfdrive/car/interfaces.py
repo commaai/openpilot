@@ -23,9 +23,6 @@ class CarInterfaceBase():
     self.cp = self.CS.get_can_parser(CP)
     self.cp_cam = self.CS.get_cam_can_parser(CP)
 
-    # used to check prev states
-    self.CS.out = car.CarState.new_message()
-
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
@@ -133,6 +130,7 @@ class CarStateBase:
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.cruise_buttons = 0
+    self.out = car.CarState.new_message()
 
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
