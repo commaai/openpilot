@@ -374,15 +374,17 @@ void handle_message(UIState *s, Message * msg) {
   struct cereal_Event eventd;
   cereal_read_Event(&eventd, eventp);
 
+
+
   if (eventd.which == cereal_Event_controlsState) {
+    if (s->status == STATUS_STOPPED) {
+      return;
+    }
+
     struct cereal_ControlsState datad;
     cereal_read_ControlsState(&datad, eventd.controlsState);
 
     s->controls_timeout = 1 * UI_FREQ;
-
-    if (s->status != STATUS_STOPPED) {
-      s->controls_seen = true;
-    }
 
     if (datad.vCruise != s->scene.v_cruise) {
       s->scene.v_cruise_update_ts = eventd.logMonoTime;
@@ -439,16 +441,14 @@ void handle_message(UIState *s, Message * msg) {
       s->alert_size = ALERTSIZE_FULL;
     }
 
-    if (s->status != STATUS_STOPPED) {
-      if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
-        update_status(s, STATUS_WARNING);
-      } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
-        update_status(s, STATUS_ALERT);
-      } else if (datad.enabled) {
-        update_status(s, STATUS_ENGAGED);
-      } else {
-        update_status(s, STATUS_DISENGAGED);
-      }
+    if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
+      update_status(s, STATUS_WARNING);
+    } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
+      update_status(s, STATUS_ALERT);
+    } else if (datad.enabled) {
+      update_status(s, STATUS_ENGAGED);
+    } else {
+      update_status(s, STATUS_DISENGAGED);
     }
 
     s->scene.alert_blinkingrate = datad.alertBlinkingRate;
