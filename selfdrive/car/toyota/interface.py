@@ -310,12 +310,6 @@ class CarInterface(CarInterfaceBase):
         # while in standstill, send a user alert
         events.append(create_event('manualRestart', [ET.WARNING]))
 
-    # enable request in prius is simple, as we activate when Toyota is active (rising edge)
-    if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-    elif not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-
     ret.events = events
 
     self.CS.out = ret.as_reader()

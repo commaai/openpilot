@@ -31,10 +31,8 @@ def accel_hysteresis(accel, accel_steady, enabled):
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
-    self.braking = False
     self.last_steer = 0
     self.accel_steady = 0.
-    self.car_fingerprint = CP.carFingerprint
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -132,15 +130,13 @@ class CarController():
     fcw_alert = hud_alert == VisualAlert.fcw
     steer_alert = hud_alert == VisualAlert.steerRequired
 
+    send_ui = False
     if ((fcw_alert or steer_alert) and not self.alert_active) or \
        (not (fcw_alert or steer_alert) and self.alert_active):
       send_ui = True
       self.alert_active = not self.alert_active
-    else:
-      send_ui = False
-
-    # disengage msg causes a bad fault sound so play a good sound instead
-    if pcm_cancel_cmd:
+    elif pcm_cancel_cmd:
+      # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
       send_ui = True
 
     if (frame % 100 == 0 or send_ui) and Ecu.fwdCamera in self.fake_ecus:
@@ -152,7 +148,7 @@ class CarController():
     #*** static msgs ***
 
     for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
-      if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars:
+      if frame % fr_step == 0 and ecu in self.fake_ecus and CS.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     return can_sends

@@ -75,11 +75,6 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret)
 
-    if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-    if not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-
     if self.CS.lkas_enabled:
       events.append(create_event('invalidLkasSetting', [ET.PERMANENT]))
 

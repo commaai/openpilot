@@ -159,15 +159,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = buttonEvents
 
-    events = self.create_common_events(ret)
+    supercruise = self.CS.car_fingerprint in SUPERCRUISE_CARS
+    events = self.create_common_events(ret, pcm_enable=supercruise)
 
-    if self.CS.car_fingerprint in SUPERCRUISE_CARS:
-      if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
-        events.append(create_event('pcmEnable', [ET.ENABLE]))
-      if not ret.cruiseState.enabled:
-        events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-
-    else:
+    if not supercruise:
       # TODO: why is this only not supercruise? ignore supercruise?
       if ret.vEgo < self.CP.minEnableSpeed:
         events.append(create_event('speedTooLow', [ET.NO_ENTRY]))

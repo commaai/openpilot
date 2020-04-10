@@ -66,14 +66,7 @@ class CarInterface(CarInterfaceBase):
     be.type = car.CarState.ButtonEvent.Type.accelCruise
     buttonEvents.append(be)
 
-    events = self.create_common_events(ret)
-
-    if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-    if not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-
-    ret.events = events
+    ret.events = self.create_common_events(ret)
 
     self.CS.out = ret.as_reader()
     return self.CS.out
