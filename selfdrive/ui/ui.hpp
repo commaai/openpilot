@@ -12,6 +12,7 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 
+#include <capnp/serialize.h>
 #include <pthread.h>
 
 #include "nanovg.h"
@@ -22,7 +23,6 @@
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "messaging.hpp"
-
 #include "cereal/gen/c/log.capnp.h"
 
 #include "sound.hpp"
@@ -128,6 +128,7 @@ typedef struct UIScene {
 
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
+  bool uilayout_mockengaged;
   // responsive layout
   int ui_viz_rx;
   int ui_viz_rw;
@@ -216,6 +217,7 @@ typedef struct UIState {
   SubSocket *thermal_sock;
   SubSocket *health_sock;
   SubSocket *ubloxgnss_sock;
+  PubSocket *offroad_sock;
   Poller * poller;
   Poller * ublox_poller;
 

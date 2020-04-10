@@ -890,7 +890,7 @@ void ui_draw(UIState *s) {
 #else
   ui_draw_background(s);
 #endif
-  if (s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
+  if (s->vision_connected && s->active_app == cereal_UiLayoutState_App_none && s->status != STATUS_STOPPED) {
     ui_draw_sidebar(s);
     ui_draw_vision(s);
   } else {
