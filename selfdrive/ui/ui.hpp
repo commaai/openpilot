@@ -182,7 +182,6 @@ typedef struct {
 
 typedef struct UIState {
   pthread_mutex_t lock;
-  pthread_cond_t bg_cond;
 
   // framebuffer
   FramebufferState *fb;
