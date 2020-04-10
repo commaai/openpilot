@@ -374,14 +374,7 @@ void handle_message(UIState *s, Message * msg) {
   struct cereal_Event eventd;
   cereal_read_Event(&eventd, eventp);
 
-
-
   if (eventd.which == cereal_Event_controlsState) {
-    if (s->status == STATUS_STOPPED) {
-      capn_free(&ctx);
-      return;
-    }
-
     struct cereal_ControlsState datad;
     cereal_read_ControlsState(&datad, eventd.controlsState);
 
