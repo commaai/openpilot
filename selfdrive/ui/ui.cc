@@ -106,7 +106,7 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
-  if (s->vision_connected) {
+  if (s->started) {
     s->active_app = cereal_UiLayoutState_App_none;
   } else {
     s->active_app = cereal_UiLayoutState_App_home;
@@ -126,7 +126,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
     if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
       && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
       navigate_to_home(s);
-      if (s->vision_connected) {
+      if (s->started) {
         s->scene.uilayout_sidebarcollapsed = true;
         update_offroad_layout_state(s);
       }
@@ -135,7 +135,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->vision_connected && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+  if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
     && (s->active_app != cereal_UiLayoutState_App_settings)) {
     s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
     update_offroad_layout_state(s);
@@ -374,7 +374,7 @@ void handle_message(UIState *s, Message * msg) {
   struct cereal_Event eventd;
   cereal_read_Event(&eventd, eventp);
 
-  if (eventd.which == cereal_Event_controlsState) {
+  if (eventd.which == cereal_Event_controlsState && s->started) {
     struct cereal_ControlsState datad;
     cereal_read_ControlsState(&datad, eventd.controlsState);
 
@@ -436,16 +436,14 @@ void handle_message(UIState *s, Message * msg) {
       s->alert_size = ALERTSIZE_FULL;
     }
 
-    if (s->status != STATUS_STOPPED) {
-      if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
-        update_status(s, STATUS_WARNING);
-      } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
-        update_status(s, STATUS_ALERT);
-      } else if (datad.enabled) {
-        update_status(s, STATUS_ENGAGED);
-      } else {
-        update_status(s, STATUS_DISENGAGED);
-      }
+    if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
+      update_status(s, STATUS_WARNING);
+    } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
+      update_status(s, STATUS_ALERT);
+    } else if (datad.enabled) {
+      update_status(s, STATUS_ENGAGED);
+    } else {
+      update_status(s, STATUS_DISENGAGED);
     }
 
     s->scene.alert_blinkingrate = datad.alertBlinkingRate;
@@ -535,6 +533,25 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.freeSpace = datad.freeSpace;
     s->scene.thermalStatus = datad.thermalStatus;
     s->scene.paTemp = datad.pa0;
+
+    s->started = datad.started;
+
+    // Handle onroad/offroad transition
+    if (!datad.started) {
+      if (s->status != STATUS_STOPPED) {
+        update_status(s, STATUS_STOPPED);
+        s->alert_sound_timeout = 0;
+        s->vision_seen = false;
+        s->controls_seen = false;
+        s->active_app = cereal_UiLayoutState_App_home;
+        update_offroad_layout_state(s);
+      }
+    } else if (s->status == STATUS_STOPPED) {
+      update_status(s, STATUS_DISENGAGED);
+
+      s->active_app = cereal_UiLayoutState_App_none;
+      update_offroad_layout_state(s);
+    }
   } else if (eventd.which == cereal_Event_ubloxGnss) {
     struct cereal_UbloxGnss datad;
     cereal_read_UbloxGnss(&datad, eventd.ubloxGnss);
@@ -721,8 +738,6 @@ static void ui_update(UIState *s) {
     }
     break;
   }
-  // peek and consume all events in the zmq queue, then return.
-  check_messages(s);
 }
 
 static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
@@ -790,6 +805,7 @@ static void* vision_connect_thread(void *args) {
                    front_rp.d.stream_bufs, front_rp.num_fds, front_rp.fds);
 
     s->vision_connected = true;
+    s->vision_seen = true;
     s->vision_connect_firstrun = true;
 
     // Drain sockets
@@ -928,10 +944,12 @@ int main(int argc, char* argv[]) {
   int draws = 0;
 
   s->scene.satelliteCount = -1;
+  s->started = false;
+  s->vision_seen = false;
 
   while (!do_exit) {
     bool should_swap = false;
-    if (!s->vision_connected) {
+    if (!s->started) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
       // Don't hold the lock while sleeping, so that vision_connect_thread have chances to get the lock.
       usleep(30 * 1000);
@@ -961,25 +979,20 @@ int main(int argc, char* argv[]) {
       handle_vision_touch(s, touch_x, touch_y);
     }
 
-    if (!s->vision_connected) {
+    if (!s->started) {
       // always process events offroad
-      if (s->status != STATUS_STOPPED) {
-        update_status(s, STATUS_STOPPED);
-        s->active_app = cereal_UiLayoutState_App_home;
-        update_offroad_layout_state(s);
-      }
       check_messages(s);
     } else {
       set_awake(s, true);
-      if (s->status == STATUS_STOPPED) {
-        update_status(s, STATUS_DISENGAGED);
-        s->active_app = cereal_UiLayoutState_App_none;
-        update_offroad_layout_state(s);
+      // Car started, fetch a new rgb image from ipc
+      if (s->vision_connected){
+        ui_update(s);
       }
-      // Car started, fetch a new rgb image from ipc and peek for zmq events.
-      ui_update(s);
-      if (!s->vision_connected) {
-        // Visiond process is just stopped, force a redraw to make screen blank again.
+
+      check_messages(s);
+
+      // Visiond process is just stopped, force a redraw to make screen blank again.
+      if (!s->started) {
         s->scene.satelliteCount = -1;
         s->scene.uilayout_sidebarcollapsed = false;
         update_offroad_layout_state(s);
@@ -1018,34 +1031,33 @@ int main(int argc, char* argv[]) {
       s->volume_timeout = 5 * UI_FREQ;
     }
 
+    // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      // stop playing alert sound
-      if ((!s->vision_connected || (s->vision_connected && s->alert_sound_timeout == 0)) &&
-            s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
-        stop_alert_sound(s->alert_sound);
-        s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
-      }
-
-      // if visiond is still running and controlsState times out, display an alert
-      // TODO: refactor this to not be here
-      if (s->controls_seen && s->vision_connected && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
+      if (s->started && s->controls_seen && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
+        LOGE("Controls unresponsive");
         s->scene.alert_size = ALERTSIZE_FULL;
-        if (s->status != STATUS_STOPPED) {
-          update_status(s, STATUS_ALERT);
-        }
+        update_status(s, STATUS_ALERT);
+
         snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", "TAKE CONTROL IMMEDIATELY");
         snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", "Controls Unresponsive");
         ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1, s->scene.alert_text2);
 
         s->alert_sound_timeout = 2 * UI_FREQ;
-
         s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat;
         play_alert_sound(s->alert_sound);
       }
+
       s->alert_sound_timeout--;
       s->controls_seen = false;
+    }
+
+    // stop playing alert sound
+    if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
+        s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+      stop_alert_sound(s->alert_sound);
+      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
     }
 
     read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
