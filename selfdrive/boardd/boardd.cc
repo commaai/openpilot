@@ -161,6 +161,11 @@ bool usb_connect() {
 
   ignition_last = false;
 
+  if (dev_handle != NULL){
+    libusb_close(dev_handle);
+    dev_handle = NULL;
+  }
+
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
   if (dev_handle == NULL) { goto fail; }
 
