@@ -128,6 +128,7 @@ extern "C" FramebufferState* framebuffer_init(
   int brightness_fd = open(BACKLIGHT_CONTROL, O_RDWR);
   const char brightness_level[] = BACKLIGHT_LEVEL;
   write(brightness_fd, brightness_level, strlen(brightness_level));
+  close(brightness_fd);
 
   if (out_w) *out_w = w;
   if (out_h) *out_h = h;
