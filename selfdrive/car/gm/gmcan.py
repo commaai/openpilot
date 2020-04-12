@@ -11,32 +11,6 @@ def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
   return packer.make_can_msg("ASCMLKASteeringCmd", bus, values)
 
-def create_steering_control_ct6(packer, CanBus, apply_steer, v_ego, idx, enabled):
-
-  values = {
-    "LKASteeringCmdActive": 1 if enabled else 0,
-    "LKASteeringCmd": apply_steer,
-    "RollingCounter": idx,
-    "SetMe1": 1,
-    "LKASVehicleSpeed": abs(v_ego * 3.6),
-    "LKASMode": 2 if enabled else 0,
-    "LKASteeringCmdChecksum": 0  # assume zero and then manually compute it
-  }
-
-  dat = packer.make_can_msg("ASCMLKASteeringCmd", 0, values)[2]
-  # the checksum logic is weird
-  values['LKASteeringCmdChecksum'] = (0x2a +
-                                      sum(dat[:4]) +
-                                      values['LKASMode']) & 0x3ff
-  # pack again with checksum
-  dat = packer.make_can_msg("ASCMLKASteeringCmd", 0, values)[2]
-
-  return [0x152, 0, dat, CanBus.POWERTRAIN], \
-         [0x154, 0, dat, CanBus.POWERTRAIN], \
-         [0x151, 0, dat, CanBus.CHASSIS], \
-         [0x153, 0, dat, CanBus.CHASSIS]
-
-
 def create_adas_keepalive(bus):
   dat = b"\x00\x00\x00\x00\x00\x00\x00"
   return [make_can_msg(0x409, dat, bus), make_can_msg(0x40a, dat, bus)]
@@ -147,47 +121,3 @@ def create_lka_icon_command(bus, active, critical, steer):
     dat = b"\x00\x00\x00"
   return make_can_msg(0x104c006c, dat, bus)
 
-# TODO: WIP
-'''
-def create_friction_brake_command_ct6(packer, bus, apply_brake, idx, near_stop, at_full_stop):
-
-  # counters loops across [0, 29, 42, 55] but checksum only considers 0, 1, 2, 3
-  cntrs = [0, 29, 42, 55]
-  if apply_brake == 0:
-    mode = 0x1
-  else:
-    mode = 0xa
-
-    if at_full_stop:
-      mode = 0xd
-    elif near_stop:
-      mode = 0xb
-
-  brake = (0x1000 - apply_brake) & 0xfff
-  checksum = (0x10000 - (mode << 12) - brake - idx) & 0xffff
-
-  values = {
-    "RollingCounter" : cntrs[idx],
-    "FrictionBrakeMode" : mode,
-    "FrictionBrakeChecksum": checksum,
-    "FrictionBrakeCmd" : -apply_brake
-  }
-
-  dat = packer.make_can_msg("EBCMFrictionBrakeCmd", 0, values)[2]
-  # msg is 0x315 but we are doing the panda forwarding
-  return make_can_msg(0x314, dat, 2)
-
-def create_gas_regen_command_ct6(bus, throttle, idx, acc_engaged, at_full_stop):
-  cntrs = [0, 7, 10, 13]
-  eng_bit = 1 if acc_engaged else 0
-  gas_high = (throttle >> 8) | 0x80
-  gas_low = (throttle) & 0xff
-  full_stop = 0x20 if at_full_stop else 0
-
-  chk1 = (0x100 - gas_high - 1) & 0xff
-  chk2 = (0x100 - gas_low - idx) & 0xff
-  dat = [(idx << 6) | eng_bit, 0xc2 | full_stop, gas_high, gas_low,
-         (1 - eng_bit) | (cntrs[idx] << 1), 0x5d - full_stop, chk1, chk2]
-  return make_can_msg(0x2cb, "".join(map(chr, dat)), bus)
-
-'''
