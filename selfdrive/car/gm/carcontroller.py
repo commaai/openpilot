@@ -90,7 +90,7 @@ class CarController():
       idx = (frame // P.STEER_STEP) % 4
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt,
-        CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))v
+        CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
     ### GAS/BRAKE ###
 
