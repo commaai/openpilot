@@ -203,6 +203,15 @@ static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int
   }
 }
 
+static void update_offroad_layout_timeout(UIState *s, int* timeout) {
+  if (*timeout > 0) {
+    (*timeout)--;
+  } else {
+    update_offroad_layout_state(s);
+    *timeout = 2 * UI_FREQ;
+  }
+}
+
 static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
 
@@ -1072,6 +1081,8 @@ int main(int argc, char* argv[]) {
     } else {
       s->scene.athenaStatus = NET_ERROR;
     }
+    update_offroad_layout_timeout(s, &s->offroad_layout_timeout);
+
     pthread_mutex_unlock(&s->lock);
 
     // the bg thread needs to be scheduled, so the main thread needs time without the lock
