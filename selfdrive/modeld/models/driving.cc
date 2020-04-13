@@ -42,8 +42,8 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 #endif
 
 #ifdef DESIRE
-  s->desire = (float*)malloc(DESIRE_LEN * sizeof(float));
-  for (int i = 0; i < DESIRE_LEN; i++) s->desire[i] = 0.0;
+  s->prev_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
+  for (int i = 0; i < DESIRE_LEN; i++) s->prev_desire[i] = 0.0;
   s->pulse_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
   for (int i = 0; i < DESIRE_LEN; i++) s->pulse_desire[i] = 0.0;
   s->m->addDesire(s->pulse_desire, DESIRE_LEN);
@@ -68,18 +68,18 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
                            mat3 transform, void* sock,
-                           float *traffic_convention_in, float *desire_in) {
+                           float *desire_in, float *traffic_convention_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 0; i < DESIRE_LEN; i++) {
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
-      if (desire_in[i] - s->desire[i] == 1) {
+      if (desire_in[i] - s->prev_desire[i] > .99) {
         s->pulse_desire[i] = desire_in[i];
       } else {
         s->pulse_desire[i] = 0.0;
       }
-      s->desire[i] = desire_in[i];
+      s->prev_desire[i] = desire_in[i];
     }
   }
 #endif

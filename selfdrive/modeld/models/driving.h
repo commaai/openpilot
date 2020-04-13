@@ -62,7 +62,7 @@ typedef struct ModelState {
   float *input_frames;
   RunModel *m;
 #ifdef DESIRE
-  float *desire;
+  float *prev_desire;
   float *pulse_desire;
 #endif
 #ifdef TRAFFIC_CONVENTION
