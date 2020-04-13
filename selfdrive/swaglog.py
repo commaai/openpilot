@@ -43,7 +43,6 @@ class LogMessageHandler(logging.Handler):
 def add_logentries_handler(log):
   """Function to add the logentries handler to swaglog.
   This can be used to send logs when logmessaged is not running."""
-  from selfdrive.logmessaged import get_le_handler
   handler = get_le_handler()
   handler.setFormatter(SwagFormatter(log))
   log.addHandler(handler)
