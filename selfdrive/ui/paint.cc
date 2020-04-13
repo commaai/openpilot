@@ -631,15 +631,7 @@ static void ui_draw_vision_event(UIState *s) {
   if (s->scene.decel_for_model && s->scene.engaged) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
-    const int img_turn_x = viz_event_x-(img_turn_size/4);
-    const int img_turn_y = viz_event_y+bdr_s-25;
-    float img_turn_alpha = 1.0f;
-    nvgBeginPath(s->vg);
-    NVGpaint imgPaint = nvgImagePattern(s->vg, img_turn_x, img_turn_y,
-      img_turn_size, img_turn_size, 0, s->img_turn, img_turn_alpha);
-    nvgRect(s->vg, img_turn_x, img_turn_y, img_turn_size, img_turn_size);
-    nvgFillPaint(s->vg, imgPaint);
-    nvgFill(s->vg);
+    ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size, s->img_turn, 1.0f);
   } else {
     // draw steering wheel
     const int bg_wheel_size = 96;
@@ -665,12 +657,7 @@ static void ui_draw_vision_event(UIState *s) {
       nvgFill(s->vg);
       img_wheel_alpha = 1.0f;
     }
-    nvgBeginPath(s->vg);
-    NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
-      img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
-    nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
-    nvgFillPaint(s->vg, imgPaint);
-    nvgFill(s->vg);
+    ui_draw_image(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size, s->img_wheel, img_wheel_alpha);
   }
 }
 
@@ -687,18 +674,13 @@ static void ui_draw_vision_map(UIState *s) {
   float map_img_alpha = map_valid ? 1.0f : 0.15f;
   float map_bg_alpha = map_valid ? 0.3f : 0.1f;
   NVGcolor map_bg = nvgRGBA(0, 0, 0, (255 * map_bg_alpha));
-  NVGpaint map_img = nvgImagePattern(s->vg, map_img_x, map_img_y,
-    map_img_size, map_img_size, 0, s->img_map, map_img_alpha);
 
   nvgBeginPath(s->vg);
   nvgCircle(s->vg, map_x, (map_y + (bdr_s * 1.5)), map_size);
   nvgFillColor(s->vg, map_bg);
   nvgFill(s->vg);
 
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, map_img_x, map_img_y, map_img_size, map_img_size);
-  nvgFillPaint(s->vg, map_img);
-  nvgFill(s->vg);
+  ui_draw_image(s->vg, map_img_x, map_img_y, map_img_size, map_img_size, s->img_map, map_img_alpha);
 }
 
 static void ui_draw_vision_face(UIState *s) {
@@ -712,18 +694,13 @@ static void ui_draw_vision_face(UIState *s) {
   float face_img_alpha = scene->monitoring_active ? 1.0f : 0.15f;
   float face_bg_alpha = scene->monitoring_active ? 0.3f : 0.1f;
   NVGcolor face_bg = nvgRGBA(0, 0, 0, (255 * face_bg_alpha));
-  NVGpaint face_img = nvgImagePattern(s->vg, face_img_x, face_img_y,
-    face_img_size, face_img_size, 0, s->img_face, face_img_alpha);
 
   nvgBeginPath(s->vg);
   nvgCircle(s->vg, face_x, (face_y + (bdr_s * 1.5)), face_size);
   nvgFillColor(s->vg, face_bg);
   nvgFill(s->vg);
 
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, face_img_x, face_img_y, face_img_size, face_img_size);
-  nvgFillPaint(s->vg, face_img);
-  nvgFill(s->vg);
+  ui_draw_image(s->vg, face_img_x, face_img_y, face_img_size, face_img_size, s->img_face, face_img_alpha);
 }
 
 static void ui_draw_vision_header(UIState *s) {
@@ -899,6 +876,14 @@ void ui_draw(UIState *s) {
     nvgEndFrame(s->vg);
     glDisable(GL_BLEND);
   }
+}
+
+void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha){
+  nvgBeginPath(vg);
+  NVGpaint imgPaint = nvgImagePattern(vg, x, y, w, h, 0, image, alpha);
+  nvgRect(vg, x, y, w, h);
+  nvgFillPaint(vg, imgPaint);
+  nvgFill(vg);
 }
 
 #ifdef NANOVG_GL3_IMPLEMENTATION
