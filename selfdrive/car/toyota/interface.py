@@ -231,7 +231,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
 
-    elif candidate == CAR.LEXUS_UXH:
+    elif candidate == CAR.LEXUS_UXH_TSS2:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.640
