@@ -111,7 +111,6 @@ class CarState(CarStateBase):
       ("Main", "ES_Distance", 0),
       ("Signal3", "ES_Distance", 0),
 
-      ("Checksum", "ES_LKAS_State", 0),
       ("Counter", "ES_LKAS_State", 0),
       ("Keep_Hands_On_Wheel", "ES_LKAS_State", 0),
       ("Empty_Box", "ES_LKAS_State", 0),
