@@ -4,10 +4,7 @@
 // gate this here
 #define TEMPORAL
 #define DESIRE
-
-#ifdef DESIRE
-  #define DESIRE_SIZE 8
-#endif
+#define TRAFFIC_CONVENTION
 
 #ifdef QCOM
 #include <eigen3/Eigen/Dense>
@@ -35,6 +32,7 @@
 #define POLYFIT_DEGREE 4
 #define SPEED_PERCENTILES 10
 #define DESIRE_LEN 8
+#define TRAFFIC_CONVENTION_LEN 2
 #define DESIRE_PRED_SIZE 32
 #define OTHER_META_SIZE 4
 #define LEAD_MDN_N 5 // probs for 5 groups
@@ -64,8 +62,11 @@ typedef struct ModelState {
   float *input_frames;
   RunModel *m;
 #ifdef DESIRE
-  float *desire;
+  float *prev_desire;
   float *pulse_desire;
+#endif
+#ifdef TRAFFIC_CONVENTION
+  float *traffic_convention;
 #endif
 } ModelState;
 
@@ -73,7 +74,7 @@ void model_init(ModelState* s, cl_device_id device_id,
                 cl_context context, int temporal);
 ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
-                           mat3 transform, void* sock, float *desire_in);
+                           mat3 transform, void* sock, float *desire_in, float *traffic_convention_in);
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 
