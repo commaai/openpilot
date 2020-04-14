@@ -18,6 +18,7 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
   values["CF_Lkas_Chksum"] = 0
 
   # LFA
+  # TODO: check if 0x4A7 is present instead of harcoding
   if car_fingerprint == CAR.SONATA:
     values["CF_Lkas_LdwsActivemode"] = 3
     values["CF_Lkas_FcwOpt_USM"] = 2
