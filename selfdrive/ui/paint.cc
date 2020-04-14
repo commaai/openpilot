@@ -964,35 +964,28 @@ void ui_nvg_init(UIState *s) {
   s->font_sans_bold = nvgCreateFont(s->vg, "sans-bold", "../assets/fonts/opensans_bold.ttf");
   assert(s->font_sans_bold >= 0);
 
-  assert(s->img_wheel >= 0);
   s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
-
-  assert(s->img_turn >= 0);
+  assert(s->img_wheel != 0);
   s->img_turn = nvgCreateImage(s->vg, "../assets/img_trafficSign_turn.png", 1);
-
-  assert(s->img_face >= 0);
+  assert(s->img_turn != 0);
   s->img_face = nvgCreateImage(s->vg, "../assets/img_driver_face.png", 1);
-
-  assert(s->img_map >= 0);
+  assert(s->img_face != 0);
   s->img_map = nvgCreateImage(s->vg, "../assets/img_map.png", 1);
-
-  assert(s->img_button_settings >= 0);
+  assert(s->img_map != 0);
   s->img_button_settings = nvgCreateImage(s->vg, "../assets/images/button_settings.png", 1);
-
-  assert(s->img_button_home >= 0);
+  assert(s->img_button_settings != 0);
   s->img_button_home = nvgCreateImage(s->vg, "../assets/images/button_home.png", 1);
-
-  assert(s->img_battery >= 0);
+  assert(s->img_button_home != 0);
   s->img_battery = nvgCreateImage(s->vg, "../assets/images/battery.png", 1);
-
-  assert(s->img_battery_charging >= 0);
+  assert(s->img_battery != 0);
   s->img_battery_charging = nvgCreateImage(s->vg, "../assets/images/battery_charging.png", 1);
+  assert(s->img_battery_charging != 0);
 
   for(int i=0;i<=5;++i) {
-    assert(s->img_network[i] >= 0);
     char network_asset[32];
     snprintf(network_asset, sizeof(network_asset), "../assets/images/network_%d.png", i);
     s->img_network[i] = nvgCreateImage(s->vg, network_asset, 1);
+    assert(s->img_network[i] != 0);
   }
 
   // init gl
