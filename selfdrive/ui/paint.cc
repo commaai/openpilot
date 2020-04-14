@@ -809,7 +809,6 @@ static void ui_draw_vision(UIState *s) {
     ui_draw_vision_footer(s);
   }
 
-
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
