@@ -29,9 +29,9 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
   left_lane_warning = 0
   right_lane_warning = 0
   if left_lane_depart:
-    left_lane_warning = 1 if fingerprint in [CAR.GENESIS, CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
+    left_lane_warning = 1 if fingerprint in [CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
   if right_lane_depart:
-    right_lane_warning = 1 if fingerprint in [CAR.GENESIS, CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
+    right_lane_warning = 1 if fingerprint in [CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
 
   return hud_alert, lane_visible, left_lane_warning, right_lane_warning
 
@@ -55,8 +55,9 @@ class CarController():
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models
     lkas_active = enabled and abs(CS.angle_steers) < 90.
+
     # fix for Genesis hard fault at low speed
-    if CS.v_ego < 16.7 and self.car_fingerprint == CAR.GENESIS:
+    if CS.v_ego < 16.7 and self.car_fingerprint in [CAR.GENESIS_G90, CAR.GENESIS_G80]:
       lkas_active = 0
 
     if not lkas_active:
