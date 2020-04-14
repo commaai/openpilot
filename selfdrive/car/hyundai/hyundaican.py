@@ -17,6 +17,11 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
   values["CF_Lkas_MsgCount"] = cnt
   values["CF_Lkas_Chksum"] = 0
 
+  # LFA
+  if car_fingerprint == CAR.SONATA:
+    values["CF_Lkas_LdwsActivemode"] = 3
+    values["CF_Lkas_FcwOpt_USM"] = 2
+
   # This field is actually LdwsActivemode
   # Genesis and Optima fault when forwarding while engaged
   if car_fingerprint == CAR.HYUNDAI_GENESIS:
