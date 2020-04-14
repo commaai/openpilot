@@ -59,6 +59,7 @@ class Calibrator():
     self.valid_blocks = 0
     self.cal_status = Calibration.UNCALIBRATED
     self.just_calibrated = False
+    self.v_ego = 0
 
     # Read calibration
     calibration_params = Params().get("CalibrationParams")
@@ -88,8 +89,11 @@ class Calibrator():
     if start_status == Calibration.UNCALIBRATED and end_status == Calibration.CALIBRATED:
       self.just_calibrated = True
 
+  def handle_v_ego(self, v_ego):
+    self.v_ego = v_ego
+
   def handle_cam_odom(self, trans, rot, trans_std, rot_std):
-    straight_and_fast = ((trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
+    straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
     certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < MAX_VEL_ANGLE_STD) or
                         (self.valid_blocks < INPUTS_NEEDED))
     if straight_and_fast and certain_if_calib:
@@ -132,7 +136,7 @@ class Calibrator():
 
 def calibrationd_thread(sm=None, pm=None):
   if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry'])
+    sm = messaging.SubMaster(['cameraOdometry', 'carState'])
 
   if pm is None:
     pm = messaging.PubMaster(['liveCalibration'])
@@ -143,18 +147,22 @@ def calibrationd_thread(sm=None, pm=None):
   while 1:
     sm.update()
 
+    if sm.updated['carState']:
+      calibrator.handle_v_ego(sm['carState'].vEgo)
+
     if sm.updated['cameraOdometry']:
       new_vp = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                           sm['cameraOdometry'].rot,
                                           sm['cameraOdometry'].transStd,
                                           sm['cameraOdometry'].rotStd)
-    if DEBUG and new_vp is not None:
-      print('got new vp', new_vp)
 
-    # decimate outputs for efficiency
-    if (send_counter % 5) == 0:
-      calibrator.send_data(pm)
-    send_counter += 1
+      if DEBUG and new_vp is not None:
+        print('got new vp', new_vp)
+
+      # decimate outputs for efficiency
+      if (send_counter % 5) == 0:
+        calibrator.send_data(pm)
+      send_counter += 1
 
 
 def main(sm=None, pm=None):
