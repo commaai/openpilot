@@ -64,7 +64,6 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
 
   float x = p_full_frame.v[0];
   float y = p_full_frame.v[1];
-
   if (x < 0 || y < 0.){
     return;
   }
@@ -85,7 +84,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgFillColor(s->vg, glowColor);
   nvgFill(s->vg);
 
-    // chevron
+  // chevron
   nvgBeginPath(s->vg);
   nvgMoveTo(s->vg, x+(sz*1.25), y+sz);
   nvgLineTo(s->vg, x, y);
@@ -96,24 +95,22 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
 }
 
 static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
-    // Draw lead car indicator
-    float fillAlpha = 0;
-    float speedBuff = 10.;
-    float leadBuff = 40.;
-    if (d_rel < leadBuff) {
-      fillAlpha = 255*(1.0-(d_rel/leadBuff));
-      if (v_rel < 0) {
-        fillAlpha += 255*(-1*(v_rel/speedBuff));
-      }
-      fillAlpha = (int)(fmin(fillAlpha, 255));
+  // Draw lead car indicator
+  float fillAlpha = 0;
+  float speedBuff = 10.;
+  float leadBuff = 40.;
+  if (d_rel < leadBuff) {
+    fillAlpha = 255*(1.0-(d_rel/leadBuff));
+    if (v_rel < 0) {
+      fillAlpha += 255*(-1*(v_rel/speedBuff));
     }
-    draw_chevron(s, d_rel, y_rel, 25,
-                 nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+    fillAlpha = (int)(fmin(fillAlpha, 255));
+  }
+  draw_chevron(s, d_rel, y_rel, 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
   nvgBeginPath(s->vg);
-
   bool started = false;
   for (int i=0; i<pvd->cnt; i++) {
     float x = pvd->v[i].x;
@@ -128,7 +125,6 @@ static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, N
       nvgLineTo(s->vg, x, y);
     }
   }
-
   nvgClosePath(s->vg);
   nvgFillColor(s->vg, color);
   nvgFill(s->vg);
@@ -202,7 +198,6 @@ static void update_all_track_data(UIState *s) {
 
 static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
   nvgBeginPath(s->vg);
-
   bool started = false;
   for(int i = 0;i < pvd->cnt;i++) {
     float x = pvd->v[i].x;
@@ -217,7 +212,6 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
       nvgLineTo(s->vg, x, y);
     }
   }
-
   nvgClosePath(s->vg);
 
   NVGpaint track_bg;
@@ -232,7 +226,6 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
     track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
       COLOR_WHITE, COLOR_WHITE_ALPHA(0));
   }
-  
   nvgFillPaint(s->vg, track_bg);
   nvgFill(s->vg);
 }
