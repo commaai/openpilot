@@ -148,8 +148,8 @@ class CarController():
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
       elif CS.CP.enableGasInterceptor:
         pedal_gas = clip(actuators.gas, 0., 1.)
-        if (frame % 2) == 0:
-          idx = (frame // 2) % 2
+        if (frame % 4) == 0:
+          idx = (frame // 4) % 4
           # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
           # This prevents unexpected pedal range rescaling
           can_sends.append(create_gas_command(self.packer_pt, pedal_gas, idx))
