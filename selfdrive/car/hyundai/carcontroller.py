@@ -57,7 +57,7 @@ class CarController():
     lkas_active = enabled and abs(CS.angle_steers) < 90.
 
     # fix for Genesis hard fault at low speed
-    if CS.v_ego < 16.7 and self.car_fingerprint in [CAR.GENESIS_G90, CAR.GENESIS_G80]:
+    if CS.v_ego < 16.7 and self.car_fingerprint == CAR.HYUNDAI_GENESIS:
       lkas_active = 0
 
     if not lkas_active:

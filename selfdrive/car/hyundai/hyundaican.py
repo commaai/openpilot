@@ -18,7 +18,7 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
   values["CF_Lkas_Chksum"] = 0
 
   # TODO: Why can't we copy from stock?
-  if car_fingerprint in [CAR.GENESIS_G90, CAR.GENESIS_G80]:
+  if car_fingerprint in == CAR.HYUNDAI_GENESIS:
     values["CF_Lkas_Bca_R"] = 2
   if car_fingerprint == CAR.KIA_OPTIMA:
     values["CF_Lkas_Bca_R"] = 0
