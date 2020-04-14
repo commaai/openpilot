@@ -62,7 +62,7 @@ class CarState(CarStateBase):
       pedal_gas = cp.vl["EMS12"]['TPS']
 
     ret.gasPressed = pedal_gas > 1e-3
-    ret.gas = cp.vl["EMS12"]['TPS']
+    ret.gas = pedal_gas
 
     # TODO: refactor gear parsing in function
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
@@ -188,6 +188,8 @@ class CarState(CarStateBase):
       ("SCCInfoDisplay", "SCC11", 0),
       ("ACC_ObjDist", "SCC11", 0),
       ("ACCMode", "SCC12", 1),
+
+      ("TPS", "EMS12", 0),
     ]
 
     checks = [
@@ -203,30 +205,23 @@ class CarState(CarStateBase):
       ("SAS11", 100),
       ("SCC11", 50),
       ("SCC12", 50),
+      ("EMS12", 100),
     ]
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
       signals += [
-        ("BRAKE_ACT", "EMS12", 0),
-        ("PV_AV_CAN", "EMS12", 0),
-        ("TPS", "EMS12", 0),
         ("CF_Clu_InhibitD", "CLU15", 0),
         ("CF_Clu_InhibitP", "CLU15", 0),
         ("CF_Clu_InhibitN", "CLU15", 0),
         ("CF_Clu_InhibitR", "CLU15", 0),
       ]
       checks += [
-        ("EMS12", 100),
         ("CLU15", 5)
       ]
     elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
       signals += [
-        ("BRAKE_ACT", "EMS12", 0),
-        ("PV_AV_CAN", "EMS12", 0),
-        ("TPS", "EMS12", 0),
         ("CUR_GR", "TCU12",0)
       ]
       checks += [
-        ("EMS12", 100),
         ("TCU12", 100)
       ]
     elif CP.carFingerprint in FEATURES["use_elect_gears"]:
@@ -234,13 +229,9 @@ class CarState(CarStateBase):
       checks += [("ELECT_GEAR", 20)]
     else:
       signals += [
-        ("BRAKE_ACT", "EMS12", 0),
-        ("PV_AV_CAN", "EMS12", 0),
-        ("TPS", "EMS12", 0),
         ("CF_Lvr_Gear","LVR12",0)
       ]
       checks += [
-        ("EMS12", 100),
         ("LVR12", 100)
       ]
 
