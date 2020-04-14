@@ -17,7 +17,8 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
   values["CF_Lkas_MsgCount"] = cnt
   values["CF_Lkas_Chksum"] = 0
 
-  # These cars fault if BCA is forwarded while torque is applied
+  # This field is actually LdwsActivemode
+  # Genesis and Optima fault when forwarding while engaged
   if car_fingerprint == CAR.HYUNDAI_GENESIS:
     values["CF_Lkas_Bca_R"] = 2
   if car_fingerprint == CAR.KIA_OPTIMA:
