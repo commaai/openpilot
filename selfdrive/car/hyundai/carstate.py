@@ -6,13 +6,14 @@ from selfdrive.config import Conversions as CV
 
 GearShifter = car.CarState.GearShifter
 
-class CarState(CarStateBase):
 
+class CarState(CarStateBase):
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
     ret.doorOpen = not any([cp.vl["CGW1"]['CF_Gway_DrvDrSw'],cp.vl["CGW1"]['CF_Gway_AstDrSw'],
-                                   cp.vl["CGW2"]['CF_Gway_RLDrSw'], cp.vl["CGW2"]['CF_Gway_RRDrSw']])
+                            cp.vl["CGW2"]['CF_Gway_RLDrSw'], cp.vl["CGW2"]['CF_Gway_RRDrSw']])
+
     ret.seatbeltUnlatched = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw'] == 0
 
     ret.wheelSpeeds.fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS
@@ -34,9 +35,10 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
     # cruise state
-    ret.cruiseState.enabled = cp.vl["SCC12"]['ACCMode'] != 0
     ret.cruiseState.available = True
+    ret.cruiseState.enabled = cp.vl["SCC12"]['ACCMode'] != 0
     ret.cruiseState.standstill = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+
     if ret.cruiseState.enabled:
       is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
       speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
@@ -44,17 +46,23 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.speed = 0
 
-    ret.brake = 0  # FIXME
+    # TODO: Find brake pressure
+    ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]['DriverBraking'] != 0
+
+    # TODO: Check this
     ret.brakeLights = bool(cp.vl["TCS13"]['BrakeLight'] or self.brake_pressed)
+
+    #TODO: find pedal signal for EV/HYBRID Cars
     if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
       pedal_gas = 0
     else:
       pedal_gas = cp.vl["EMS12"]['TPS']
+
     ret.gasPressed = pedal_gas > 1e-3
     ret.gas = cp.vl["EMS12"]['TPS']
-    #TODO: find pedal signal for EV/HYBRID Cars
 
+    # TODO: refactor gear parsing in function
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
     if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
@@ -111,14 +119,12 @@ class CarState(CarStateBase):
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_warning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
-    self.brake_error = 0
     self.lead_distance = cp.vl["SCC11"]['ACC_ObjDist']
 
     return ret
 
   @staticmethod
   def get_can_parser(CP):
-
     signals = [
       # sig_name, sig_address, default
       ("WHL_SPD_FL", "WHL_SPD11", 0),
@@ -250,7 +256,6 @@ class CarState(CarStateBase):
       ("CF_Lkas_LdwsRHWarning", "LKAS11", 0),
       ("CF_Lkas_HbaLamp", "LKAS11", 0),
       ("CF_Lkas_FcwBasReq", "LKAS11", 0),
-      ("CF_Lkas_ToiFlt", "LKAS11", 0),
       ("CF_Lkas_HbaSysState", "LKAS11", 0),
       ("CF_Lkas_FcwOpt", "LKAS11", 0),
       ("CF_Lkas_HbaOpt", "LKAS11", 0),
