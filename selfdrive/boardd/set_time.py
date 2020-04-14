@@ -12,19 +12,22 @@ def set_time():
   if sys_time > MIN_DATE:
     return
 
-  ctx = usb1.USBContext()
-  dev = ctx.openByVendorIDAndProductID(0xbbaa, 0xddcc)
-  if dev is None:
-    print("No panda found")
-    exit()
+  try:
+    ctx = usb1.USBContext()
+    dev = ctx.openByVendorIDAndProductID(0xbbaa, 0xddcc)
+    if dev is None:
+      print("No panda found")
+      exit()
 
-  # Set system time from panda RTC time
-  dat = dev.controlRead(REQUEST_IN, 0xa0, 0, 0, 8)
-  a = struct.unpack("HBBBBBB", dat)
-  panda_time = datetime.datetime(a[0], a[1], a[2], a[4], a[5], a[6])
-  if panda_time > MIN_DATE:
-    print(f"adjusting time from '{sys_time}' to '{panda_time}'")
-    os.system(f"TZ=UTC date -s '{panda_time}'")
+    # Set system time from panda RTC time
+    dat = dev.controlRead(REQUEST_IN, 0xa0, 0, 0, 8)
+    a = struct.unpack("HBBBBBB", dat)
+    panda_time = datetime.datetime(a[0], a[1], a[2], a[4], a[5], a[6])
+    if panda_time > MIN_DATE:
+      print(f"adjusting time from '{sys_time}' to '{panda_time}'")
+      os.system(f"TZ=UTC date -s '{panda_time}'")
+  except Exception:
+    pass
 
 if __name__ == "__main__":
   set_time()
