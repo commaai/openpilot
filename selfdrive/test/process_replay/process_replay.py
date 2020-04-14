@@ -225,7 +225,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="calibrationd",
     pub_sub={
-      "cameraOdometry": ["liveCalibration"]
+      "cameraOdometry": ["liveCalibration"], "carState": []
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
