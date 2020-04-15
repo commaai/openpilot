@@ -339,8 +339,9 @@ def thermald_thread():
 
     # don't start while taking snapshot
     if not should_start_prev:
+      is_viewing_driver = params.get("IsDriverViewEnabled") == b"1"
       is_taking_snapshot = params.get("IsTakingSnapshot") == b"1"
-      should_start = should_start and (not is_taking_snapshot)
+      should_start = should_start and (not is_taking_snapshot) and (not is_viewing_driver)
 
     if fw_version_match and not fw_version_match_prev:
       params.delete("Offroad_PandaFirmwareMismatch")

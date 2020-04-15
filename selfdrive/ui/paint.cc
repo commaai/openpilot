@@ -279,7 +279,6 @@ static void draw_steering(UIState *s, float curvature) {
 static void draw_frame(UIState *s) {
   const UIScene *scene = &s->scene;
 
-  float x1, x2, y1, y2;
   if (s->scene.frontview) {
     glBindVertexArray(s->frame_vao[1]);
   } else {
@@ -703,6 +702,100 @@ static void ui_draw_vision_face(UIState *s) {
   ui_draw_image(s->vg, face_img_x, face_img_y, face_img_size, face_img_size, s->img_face, face_img_alpha);
 }
 
+static void ui_draw_driver_view(UIState *s) {
+  const UIScene *scene = &s->scene;
+  s->scene.uilayout_sidebarcollapsed = true;
+  const int frame_x = scene->ui_viz_rx;
+  const int frame_w = scene->ui_viz_rw;
+  const int valid_frame_w = 4 * box_h / 3;
+  const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
+
+  // blackout
+  if (!scene->is_rhd) {
+    nvgBeginPath(s->vg);
+    NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x + valid_frame_w,
+                          box_y,
+                          valid_frame_x + box_h / 2, box_y,
+                          nvgRGBAf(0,0,0,1), nvgRGBAf(0,0,0,0));
+    nvgFillPaint(s->vg, gradient);
+    nvgRect(s->vg, valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h);
+    nvgFill(s->vg);
+  } else {
+    nvgBeginPath(s->vg);
+    NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x,
+                          box_y,
+                          valid_frame_w - box_h / 2, box_y,
+                          nvgRGBAf(0,0,0,1), nvgRGBAf(0,0,0,0));
+    nvgFillPaint(s->vg, gradient);
+    nvgRect(s->vg, valid_frame_x, box_y, valid_frame_w - box_h / 2, box_h);
+    nvgFill(s->vg);
+  }
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, scene->is_rhd ? valid_frame_x:valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h);
+  nvgFillColor(s->vg, COLOR_BLACK_ALPHA(144));
+  nvgFill(s->vg);
+
+  // borders
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h);
+  nvgFillColor(s->vg, nvgRGBA(23,51,73,255));
+  nvgFill(s->vg);
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h);
+  nvgFillColor(s->vg, nvgRGBA(23,51,73,255));
+  nvgFill(s->vg);
+
+  // draw face box
+  if (scene->face_prob > 0.4) {
+    int fbox_x;
+    int fbox_y = box_y + (scene->face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
+    if (!scene->is_rhd) {
+      fbox_x = valid_frame_x + (1 - (scene->face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
+    } else {
+      fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
+    }
+    if (abs(scene->face_x) <= 0.35 && abs(scene->face_y) <= 0.4) {
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
+      nvgStrokeColor(s->vg, nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((abs(scene->face_x) > abs(scene->face_y) ? abs(scene->face_x):abs(scene->face_y))) * 0.6 / 0.375));
+      nvgStrokeWidth(s->vg, 10);
+      nvgStroke(s->vg);
+    } else {
+      nvgBeginPath(s->vg);
+      nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
+      nvgStrokeColor(s->vg, nvgRGBAf(1.0, 1.0, 1.0, 0.2));
+      nvgStrokeWidth(s->vg, 10);
+      nvgStroke(s->vg);
+    }
+  } else {
+    ;
+  }
+
+  // draw face icon
+  const int face_size = 85;
+  const int face_x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
+  const int face_y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
+  const int face_img_size = (face_size * 1.5);
+  const int face_img_x = (face_x - (face_img_size / 2));
+  const int face_img_y = (face_y - (face_size / 4));
+  float face_img_alpha = scene->face_prob > 0.4 ? 1.0f : 0.15f;
+  float face_bg_alpha = scene->face_prob > 0.4 ? 0.3f : 0.1f;
+  NVGcolor face_bg = nvgRGBA(0, 0, 0, (255 * face_bg_alpha));
+  NVGpaint face_img = nvgImagePattern(s->vg, face_img_x, face_img_y,
+    face_img_size, face_img_size, 0, s->img_face, face_img_alpha);
+
+  nvgBeginPath(s->vg);
+  nvgCircle(s->vg, face_x, (face_y + (bdr_s * 1.5)), face_size);
+  nvgFillColor(s->vg, face_bg);
+  nvgFill(s->vg);
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, face_img_x, face_img_y, face_img_size, face_img_size);
+  nvgFillPaint(s->vg, face_img);
+  nvgFill(s->vg);
+
+}
+
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -828,14 +921,18 @@ static void ui_draw_vision(UIState *s) {
   nvgRestore(s->vg);
 
   // Set Speed, Current Speed, Status/Events
-  ui_draw_vision_header(s);
+  if (!scene->frontview) {
+    ui_draw_vision_header(s);
+  } else {
+    ui_draw_driver_view(s);
+  }
 
   if (s->scene.alert_size != ALERTSIZE_NONE) {
     // Controls Alerts
     ui_draw_vision_alert(s, s->scene.alert_size, s->status,
                             s->scene.alert_text1, s->scene.alert_text2);
   } else {
-    ui_draw_vision_footer(s);
+    if (!scene->frontview){ui_draw_vision_footer(s);}
   }
 
 
