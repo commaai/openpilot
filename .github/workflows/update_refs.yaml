@@ -1,0 +1,62 @@
+name: process replay update
+
+on:
+  issue_comment:
+    types: [created]
+
+env:
+  RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
+  LOAD: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
+
+jobs:
+
+  build:
+    name: build
+    runs-on: ubuntu-16.04
+    if: contains(github.event.comment.body, '/update_refs')
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout submodules
+      run: |
+        git submodule update --init
+    - name: Build docker image
+      run: |
+        docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+        docker pull docker.io/commaai/openpilot:latest || true
+
+        docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
+        docker save tmppilot:latest | gzip > tmppilot.tar.gz
+    - uses: actions/upload-artifact@v1
+      with:
+        name: tmppilot.tar.gz
+        path: tmppilot.tar.gz
+
+  update_refs:
+    name: update refs
+    runs-on: ubuntu-16.04
+    needs: build
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: tmppilot.tar.gz
+      - name: Load image
+        run: $LOAD
+      - name: Update refs
+        run: |
+          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
+          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./update_refs.py"
+          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/ref_commit openpilot/selfdrive/test/process_replay/ref_commit
+      - name: Push ref commit
+        run: |
+          git diff
+          git config --local user.name "comma tester"
+          git add selfdrive/test/process_replay/ref_commit
+          git commit -m "update ref_commit"
+      - name: Git push
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          repository: ${{ github.repository }}
+
