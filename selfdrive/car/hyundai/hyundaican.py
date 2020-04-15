@@ -4,7 +4,7 @@ from selfdrive.car.hyundai.values import CAR, CHECKSUM
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 
-def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert,
+def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, lkas11, hud_alert,
                   lane_visible, left_lane_depart, right_lane_depart):
   values = lkas11
   values["CF_Lkas_LdwsSysState"] = lane_visible

@@ -63,21 +63,19 @@ class CarController():
     if not lkas_active:
       apply_steer = 0
 
-    steer_req = 1 if apply_steer else 0
-
     self.apply_steer_last = apply_steer
 
     hud_alert, lane_visible, left_lane_warning, right_lane_warning =\
       process_hud_alert(enabled, self.car_fingerprint, visual_alert,
-                        left_line, right_line,left_lane_depart, right_lane_depart)
+                        left_line, right_line, left_lane_depart, right_lane_depart)
 
     can_sends = []
 
     lkas11_cnt = frame % 0x10
     clu11_cnt = frame % 0x10
 
-    can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, lkas11_cnt, lkas_active,
-                                   CS.lkas11, hud_alert, lane_visible, left_lane_depart, right_lane_depart))
+    can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, lkas_active, lkas11_cnt,
+                                   CS.lkas11, hud_alert, lane_visible, left_lane_warning, right_lane_warning))
 
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, clu11_cnt))
