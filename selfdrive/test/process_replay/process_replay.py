@@ -194,7 +194,6 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
     if (fsm.cs_counter % 25) == 0:
       recv_socks = ["liveCalibration"]
     fsm.cs_counter += 1
-  print(msg.which(), fsm.cs_counter, recv_socks)
   return recv_socks, True
 
 
