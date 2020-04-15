@@ -134,10 +134,18 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   }
 }
 
+static void handle_driver_view_touch(UIState *s, int touch_x, int touch_y) {
+  int err = write_db_value(NULL, "IsDriverViewEnabled", "0", 1);
+}
+
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
   if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
     && (s->active_app != cereal_UiLayoutState_App_settings)) {
-    s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
+    if (!s->scene.frontview) {
+      s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
+    } else {
+      handle_driver_view_touch(s, touch_x, touch_y);
+    }
     update_offroad_layout_state(s);
   }
 }
@@ -226,6 +234,8 @@ static void ui_init(UIState *s) {
   s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->health_sock = SubSocket::create(s->ctx, "health");
   s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
+  s->driverstate_sock = SubSocket::create(s->ctx, "driverState");
+  s->dmonitoring_sock = SubSocket::create(s->ctx, "dMonitoringState");
   s->offroad_sock = PubSocket::create(s->ctx, "offroadLayout");
 
   assert(s->model_sock != NULL);
@@ -236,6 +246,8 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock != NULL);
   assert(s->health_sock != NULL);
   assert(s->ubloxgnss_sock != NULL);
+  assert(s->driverstate_sock != NULL);
+  assert(s->dmonitoring_sock != NULL);
   assert(s->offroad_sock != NULL);
 
   s->poller = Poller::create({
@@ -246,7 +258,9 @@ static void ui_init(UIState *s) {
                               s->radarstate_sock,
                               s->thermal_sock,
                               s->health_sock,
-                              s->ubloxgnss_sock
+                              s->ubloxgnss_sock,
+                              s->driverstate_sock,
+                              s->dmonitoring_sock
                              });
 
 #ifdef SHOW_SPEEDLIMIT
@@ -388,7 +402,8 @@ void handle_message(UIState *s, Message * msg) {
     cereal_read_ControlsState(&datad, eventd.controlsState);
 
     s->controls_timeout = 1 * UI_FREQ;
-    s->controls_seen = true;
+    s->scene.frontview = datad.rearViewCam;
+    if (!s->scene.frontview){s->controls_seen = true;}
 
     if (datad.vCruise != s->scene.v_cruise) {
       s->scene.v_cruise_update_ts = eventd.logMonoTime;
@@ -400,8 +415,6 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.engageable = datad.engageable;
     s->scene.gps_planner_active = datad.gpsPlannerActive;
     s->scene.monitoring_active = datad.driverMonitoringOn;
-
-    s->scene.frontview = datad.rearViewCam;
 
     s->scene.decel_for_model = datad.decelForModel;
 
@@ -430,7 +443,6 @@ void handle_message(UIState *s, Message * msg) {
     } else {
       s->scene.alert_text2[0] = '\0';
     }
-    s->scene.awareness_status = datad.awarenessStatus;
 
     s->scene.alert_ts = eventd.logMonoTime;
 
@@ -543,24 +555,8 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.thermalStatus = datad.thermalStatus;
     s->scene.paTemp = datad.pa0;
 
-    s->started = datad.started;
+    s->thermal_started = datad.started;
 
-    // Handle onroad/offroad transition
-    if (!datad.started) {
-      if (s->status != STATUS_STOPPED) {
-        update_status(s, STATUS_STOPPED);
-        s->alert_sound_timeout = 0;
-        s->vision_seen = false;
-        s->controls_seen = false;
-        s->active_app = cereal_UiLayoutState_App_home;
-        update_offroad_layout_state(s);
-      }
-    } else if (s->status == STATUS_STOPPED) {
-      update_status(s, STATUS_DISENGAGED);
-
-      s->active_app = cereal_UiLayoutState_App_none;
-      update_offroad_layout_state(s);
-    }
   } else if (eventd.which == cereal_Event_ubloxGnss) {
     struct cereal_UbloxGnss datad;
     cereal_read_UbloxGnss(&datad, eventd.ubloxGnss);
@@ -575,7 +571,43 @@ void handle_message(UIState *s, Message * msg) {
 
     s->scene.hwType = datad.hwType;
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
+  } else if (eventd.which == cereal_Event_driverState) {
+    struct cereal_DriverState datad;
+    cereal_read_DriverState(&datad, eventd.driverState);
+
+    s->scene.face_prob = datad.faceProb;
+
+    capn_list32 fxy_list = datad.facePosition;
+    capn_resolve(&fxy_list.p);
+    s->scene.face_x = capn_to_f32(capn_get32(fxy_list, 0));
+    s->scene.face_y = capn_to_f32(capn_get32(fxy_list, 1));
+  } else if (eventd.which == cereal_Event_dMonitoringState) {
+    struct cereal_DMonitoringState datad;
+    cereal_read_DMonitoringState(&datad, eventd.dMonitoringState);
+
+    s->scene.is_rhd = datad.isRHD;
+    s->scene.awareness_status = datad.awarenessStatus;
+    s->preview_started = datad.isPreview;
   }
+
+  s->started = s->thermal_started || s->preview_started ;
+  // Handle onroad/offroad transition
+  if (!s->started) {
+    if (s->status != STATUS_STOPPED) {
+      update_status(s, STATUS_STOPPED);
+      s->alert_sound_timeout = 0;
+      s->vision_seen = false;
+      s->controls_seen = false;
+      s->active_app = cereal_UiLayoutState_App_home;
+      update_offroad_layout_state(s);
+    }
+  } else if (s->status == STATUS_STOPPED) {
+    update_status(s, STATUS_DISENGAGED);
+
+    s->active_app = cereal_UiLayoutState_App_none;
+    update_offroad_layout_state(s);
+  }
+
   capn_free(&ctx);
 }
 

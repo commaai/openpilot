@@ -23,6 +23,8 @@ void dmonitoring_init(DMonitoringModelState* s) {
   const char* model_path = "../../models/dmonitoring_model.dlc";
 #endif
   s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
+  s->is_rhd = false;
+  s->is_rhd_checked = false;
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
@@ -43,7 +45,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   uint8_t *cropped_u_buf = cropped_y_buf + (cropped_width * cropped_height);
   uint8_t *cropped_v_buf = cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
 
-  if (true) {
+  if (!s->is_rhd) {
     for (int r = 0; r < height/2; r++) {
       memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + 2*r*width + (width - cropped_width), cropped_width);
       memcpy(cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r+1)*width + (width - cropped_width), cropped_width);

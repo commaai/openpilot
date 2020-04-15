@@ -114,6 +114,8 @@ struct VisionState {
   int rgb_front_width, rgb_front_height, rgb_front_stride;
   VisionBuf rgb_front_bufs[UI_BUF_COUNT];
   cl_mem rgb_front_bufs_cl[UI_BUF_COUNT];
+  bool rhd_front;
+  bool rhd_front_checked;
   int front_meteringbox_xmin, front_meteringbox_xmax;
   int front_meteringbox_ymin, front_meteringbox_ymax;
 
@@ -152,7 +154,9 @@ void* frontview_thread(void *arg) {
   // TODO: the loop is bad, ideally models shouldn't affect sensors
   Context *msg_context = Context::create();
   SubSocket *monitoring_sock = SubSocket::create(msg_context, "driverState", "127.0.0.1", true);
+  SubSocket *dmonstate_sock = SubSocket::create(msg_context, "dMonitoringState", "127.0.0.1", true);
   assert(monitoring_sock != NULL);
+  assert(dmonstate_sock != NULL);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -195,7 +199,24 @@ void* frontview_thread(void *arg) {
     clReleaseEvent(debayer_event);
     tbuffer_release(&s->cameras.front.camera_tb, buf_idx);
     visionbuf_sync(&s->rgb_front_bufs[ui_idx], VISIONBUF_SYNC_FROM_DEVICE);
-    // set front camera metering target
+
+    // no more check after gps check
+    if (!s->rhd_front_checked) {
+      Message *msg_dmon = dmonstate_sock->receive(true);
+      if (msg_dmon != NULL) {
+        auto amsg = kj::heapArray<capnp::word>((msg_dmon->getSize() / sizeof(capnp::word)) + 1);
+        memcpy(amsg.begin(), msg_dmon->getData(), msg_dmon->getSize());
+
+        capnp::FlatArrayMessageReader cmsg(amsg);
+        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
+        s->rhd_front = event.getDMonitoringState().getIsRHD();
+        s->rhd_front_checked = event.getDMonitoringState().getRhdChecked();
+
+        delete msg_dmon;
+      }
+    }
+
     Message *msg = monitoring_sock->receive(true);
     if (msg != NULL) {
       auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
@@ -212,7 +233,7 @@ void* frontview_thread(void *arg) {
       // set front camera metering target
       if (face_prob > 0.4)
       {
-        int x_offset = s->rgb_front_width - 0.5 * s->rgb_front_height;
+        int x_offset = s->rhd_front ? 0:s->rgb_front_width - 0.5 * s->rgb_front_height;
         s->front_meteringbox_xmin = x_offset + (face_position[0] + 0.5) * (0.5 * s->rgb_front_height) - 72;
         s->front_meteringbox_xmax = x_offset + (face_position[0] + 0.5) * (0.5 * s->rgb_front_height) + 72;
         s->front_meteringbox_ymin = (face_position[1] + 0.5) * (s->rgb_front_height) - 72;
@@ -222,8 +243,8 @@ void* frontview_thread(void *arg) {
       {
         s->front_meteringbox_ymin = s->rgb_front_height * 1 / 3;
         s->front_meteringbox_ymax = s->rgb_front_height * 1;
-        s->front_meteringbox_xmin = s->rgb_front_width * 3 / 5;
-        s->front_meteringbox_xmax = s->rgb_front_width;
+        s->front_meteringbox_xmin = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
+        s->front_meteringbox_xmax = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
 
       delete msg;
@@ -252,8 +273,8 @@ void* frontview_thread(void *arg) {
       {
         y_start = s->rgb_front_height * 1 / 3;
         y_end = s->rgb_front_height * 1;
-        x_start = s->rgb_front_width * 3 / 5;
-        x_end = s->rgb_front_width;
+        x_start = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
+        x_end = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
 
       uint32_t lum_binning[256] = {0,};
@@ -336,6 +357,7 @@ void* frontview_thread(void *arg) {
   }
 
   delete monitoring_sock;
+  delete dmonstate_sock;
 
   return NULL;
 }

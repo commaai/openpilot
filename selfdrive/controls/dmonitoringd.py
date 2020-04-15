@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import gc
 from common.realtime import set_realtime_priority
-from common.params import Params, put_nonblocking
+from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
 from selfdrive.locationd.calibration_helpers import Calibration
-from selfdrive.controls.lib.gps_helpers import is_rhd_region
 
 def dmonitoringd_thread(sm=None, pm=None):
   gc.disable()
@@ -21,12 +20,13 @@ def dmonitoringd_thread(sm=None, pm=None):
     pm = messaging.PubMaster(['dMonitoringState'])
 
   if sm is None:
-    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model', 'gpsLocation'], ignore_alive=['gpsLocation'])
+    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model'])
 
   driver_status = DriverStatus()
   is_rhd = params.get("IsRHD")
   if is_rhd is not None:
     driver_status.is_rhd_region = bool(int(is_rhd))
+    driver_status.is_rhd_region_checked = True
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
   sm['carState'].vEgo = 0.
@@ -43,13 +43,6 @@ def dmonitoringd_thread(sm=None, pm=None):
   # 10Hz <- dmonitoringmodeld
   while True:
     sm.update()
-
-    # GPS coords RHD parsing, once every restart
-    if not driver_status.is_rhd_region_checked and sm.updated['gpsLocation']:
-      is_rhd = is_rhd_region(sm['gpsLocation'].latitude, sm['gpsLocation'].longitude)
-      driver_status.is_rhd_region = is_rhd
-      driver_status.is_rhd_region_checked = True
-      put_nonblocking("IsRHD", "1" if is_rhd else "0")
 
     # Handle calibration
     if sm.updated['liveCalibration']:
@@ -99,6 +92,7 @@ def dmonitoringd_thread(sm=None, pm=None):
         "awarenessPassive": driver_status.awareness_passive,
         "isLowStd": driver_status.pose.low_std,
         "hiStdCount": driver_status.hi_stds,
+        "isPreview": False,
       }
       pm.send('dMonitoringState', dat)
 
