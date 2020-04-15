@@ -21,7 +21,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11
   # TODO: check if 0x4A7 is present instead of harcoding
   if car_fingerprint == CAR.SONATA:
     values["CF_Lkas_Bca_R"] = 3
-    values["CF_Lkas_FcwOpt_USM"] = 2
+    values["CF_Lkas_LdwsOpt_USM"] = 2
 
   # This field is actually LdwsActivemode
   # Genesis and Optima fault when forwarding while engaged
