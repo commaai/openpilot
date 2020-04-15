@@ -149,6 +149,9 @@ def calibrationd_thread(sm=None, pm=None):
 
     if sm.updated['carState']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
+      if send_counter % 25 == 0:
+        calibrator.send_data(pm)
+      send_counter += 1
 
     if sm.updated['cameraOdometry']:
       new_vp = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
@@ -160,9 +163,6 @@ def calibrationd_thread(sm=None, pm=None):
         print('got new vp', new_vp)
 
       # decimate outputs for efficiency
-      if (send_counter % 5) == 0:
-        calibrator.send_data(pm)
-      send_counter += 1
 
 
 def main(sm=None, pm=None):
