@@ -44,21 +44,23 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
-def create_steering_control_2(packer, stock_0xe5, lkas_active, car_fingerprint, idx, has_relay):
+def create_bosch_supplemental(packer, stock_0xe5, lkas_active, stock_lkas_hud, car_fingerprint, idx, has_relay):
   # base idle params after ign-on init (from 2017 civic hatcback)
   # TODO: Find values for the other cars or default to the above values
+  # TODO: Does this disable AEB?
   b0 = 0x04
   b1 = 0x00
   b2 = 0x80
   b3 = 0x10
+
   values = {
-    "BYTE_0": b0 if lkas_active else stock_0xe5["BYTE_0"],
-    "BYTE_1": b1 if lkas_active else stock_0xe5["BYTE_1"],
-    "BYTE_2": b2 if lkas_active else stock_0xe5["BYTE_2"],
-    "BYTE_3": b3 if lkas_active else stock_0xe5["BYTE_3"],
+    "BYTE_0": b0,
+    "BYTE_1": b1,
+    "BYTE_2": b2,
+    "BYTE_3": b3,
   }
   bus = get_lkas_cmd_bus(car_fingerprint, has_relay)
-  return packer.make_can_msg("STEERING_CONTROL_2", bus, values, idx)
+  return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)
 
 
 def create_ui_commands(packer, pcm_speed, hud, enabled, car_fingerprint, is_metric, idx, has_relay, stock_acc_hud, stock_lkas_hud):
@@ -84,15 +86,14 @@ def create_ui_commands(packer, pcm_speed, hud, enabled, car_fingerprint, is_metr
     }
     commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values, idx))
 
+  # Only passthrough RDM hud if it's enabled at the physical switch. Stock LKAS activates RDM without notifying the user
   lkas_hud_values = {
     'RDM_OFF': stock_lkas_hud["RDM_OFF"],
     'RDM_ON_0': stock_lkas_hud["RDM_ON_0"],
-    'RDM_ON_1': stock_lkas_hud["RDM_ON_1"],
-    'RDM_ON_2': stock_lkas_hud["RDM_ON_2"],
-    'RDM_0': stock_lkas_hud["RDM_0"] if not enabled else 0,
-    'RDM_1': stock_lkas_hud["RDM_1"] or hud.ldw if not enabled else hud.ldw,
-    'BEEP': 0,  # can we get rid of this now?
-    # 'SET_ME_X1': 0x1,  # an init status bit? doesn't seem necessary on bosch
+    'RDM_ON_1': stock_lkas_hud["RDM_ON_1"],  # reflects system state only after button press on nidec
+    'RDM_HUD': stock_lkas_hud["RDM_HUD"] or hud.ldw if stock_lkas_hud["RDM_ON_0"] else hud.ldw,  # this triggers the hud warning
+    'RDM_HUD2': stock_lkas_hud["RDM_HUD2"] if stock_lkas_hud["RDM_ON_0"] else 0,  # when is this active? It's not consistent with the previous signal ^^^.
+    'LKAS_READY': 1,
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
   }

@@ -159,8 +159,8 @@ class CarController():
 
     if CS.CP.radarOffCan:
       if (frame % 2) == 0:
-      	can_sends.append(hondacan.create_steering_control_2(self.packer, CS.stock_0xe5,
-        	lkas_active, CS.CP.carFingerprint, idx, CS.CP.isPandaBlack))
+      	can_sends.append(hondacan.create_bosch_supplemental(self.packer, CS.stock_0xe5,
+        	lkas_active, CS.stock_lkas_hud, CS.CP.carFingerprint, idx, CS.CP.isPandaBlack))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
       if pcm_cancel_cmd:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack))

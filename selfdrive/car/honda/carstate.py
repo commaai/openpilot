@@ -310,7 +310,7 @@ class CarState(CarStateBase):
       self.stock_acc_hud = False
       ret.stockFcw = False
       self.stock_lkas_hud = cp_cam.vl["LKAS_HUD"]
-      self.stock_0xe5 = cp_cam.vl["STEERING_CONTROL_2"]
+      self.stock_0xe5 = cp_cam.vl["BOSCH_SUPPLEMENTAL_1"]
     else:
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
       self.stock_acc_hud = cp_cam.vl["ACC_HUD"]
@@ -327,20 +327,21 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [("LDW_OFF", "LKAS_HUD", 0),
-               ("LDW_ON_0", "LKAS_HUD", 0),
-               ("LDW_ON_1", "LKAS_HUD", 0),
-               ("LDW_ON_2", "LKAS_HUD", 0),
-               ("LDW_HUD_WARNING", "LKAS_HUD", 0),
-               ("LDW_WOBBLING", "LKAS_HUD", 0)]
+    ## TODO: set these in the nidec dbcs
+    signals = [("RDM_OFF", "LKAS_HUD", 0),
+               ("RDM_ON_0", "LKAS_HUD", 0),
+               ("RDM_ON_1", "LKAS_HUD", 0),
+               ("RDM_HUD", "LKAS_HUD", 0),
+               ("RDM_HUD2", "LKAS_HUD", 0),
+               ("LKAS_READY", "LKAS_HUD", 0)]
 
     if CP.carFingerprint in HONDA_BOSCH:
       signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
                   ("AEB_STATUS", "ACC_CONTROL", 0),
-                  ("BYTE_0", "STEERING_CONTROL_2", 0),
-                  ("BYTE_1", "STEERING_CONTROL_2", 0),
-                  ("BYTE_2", "STEERING_CONTROL_2", 0),
-                  ("BYTE_3", "STEERING_CONTROL_2", 0)]
+                  ("BYTE_0", "BOSCH_SUPPLEMENTAL_1", 0),
+                  ("BYTE_1", "BOSCH_SUPPLEMENTAL_1", 0),
+                  ("BYTE_2", "BOSCH_SUPPLEMENTAL_1", 0),
+                  ("BYTE_3", "BOSCH_SUPPLEMENTAL_1", 0)]
     else:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
                   ("AEB_REQ_1", "BRAKE_COMMAND", 0),
