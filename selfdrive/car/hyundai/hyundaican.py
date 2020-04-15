@@ -8,7 +8,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11
                   lane_visible, left_lane_depart, right_lane_depart):
   values = lkas11
   values["CF_Lkas_LdwsSysState"] = lane_visible
-  values["CF_Lkas_SysWarning"] = hud_alert
+  values["CF_Lkas_SysWarning"] = 3 if hud_alert else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
   values["CR_Lkas_StrToqReq"] = apply_steer
@@ -17,11 +17,12 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11
   values["CF_Lkas_MsgCount"] = frame % 0x10
   values["CF_Lkas_Chksum"] = 0
 
-  # LFA
-  # TODO: check if 0x4A7 is present instead of harcoding
+
   if car_fingerprint == CAR.SONATA:
     # LdwSysState doesn't seem to do anything on the Sonota
+    # TODO: what does the stock system send? Can we forward it?
 
+    # TODO: use CF_Lkas_BCA_R to send lane lines. 1 = left, 2, = right, 3 = both
     values["CF_Lkas_Bca_R"] = 3
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -33,12 +34,17 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11
     # FcwOpt_USM 0 = No car + lanes
     values["CF_Lkas_FcwOpt_USM"] = 2 if steer_req else 0
 
+    # 4 is keep hands on wheel
+    # 5 is keep hands on wheel (red)
+    # 6 is keep hands on wheel (red) + beep
+    values["CF_Lkas_SysWarning"] = 4 if hud_alert else 0
+
     # TODO: LFA stuff (steering wheel) is in 0x485
     # Make sure there is no dash error when pressing LFA button on wheel
 
-  # This field is actually LdwsActivemode
-  # Genesis and Optima fault when forwarding while engaged
   elif car_fingerprint == CAR.HYUNDAI_GENESIS:
+    # This field is actually LdwsActivemode
+    # Genesis and Optima fault when forwarding while engaged
     values["CF_Lkas_Bca_R"] = 2
   elif car_fingerprint == CAR.KIA_OPTIMA:
     values["CF_Lkas_Bca_R"] = 0
