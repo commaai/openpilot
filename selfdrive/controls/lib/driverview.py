@@ -25,7 +25,7 @@ def send_dmon_packet(pm, d):
   dat.dMonitoringState = {
     "isRHD": d[0],
     "rhdChecked": d[1],
-    "isPreview": True,
+    "isPreview": d[2],
   }
   pm.send('dMonitoringState', dat)
 
@@ -41,9 +41,11 @@ def main():
   params = Params()
   is_rhd = False
   is_rhd_checked = False
+  should_exit = False
 
   def terminate(signalNumber, frame):
     print('got SIGTERM, exiting..')
+    should_exit = True
     proc_cam.send_signal(signal.SIGINT)
     proc_mon.send_signal(signal.SIGINT)
     kill_start = time.time()
@@ -64,7 +66,7 @@ def main():
   # os.system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'"); # auto switch to home to not get stuck
 
   while True:
-    send_dmon_packet(pm, [is_rhd, is_rhd_checked])
+    send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
 
     if not is_rhd_checked:
       is_rhd = params.get("IsRHD") == b"1"
