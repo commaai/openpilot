@@ -20,14 +20,27 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11
   # LFA
   # TODO: check if 0x4A7 is present instead of harcoding
   if car_fingerprint == CAR.SONATA:
+    # LdwSysState doesn't seem to do anything on the Sonota
+
     values["CF_Lkas_Bca_R"] = 3
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
+    # FcwOpt_USM 5 = Orange blinking car + lanes
+    # FcwOpt_USM 4 = Orange car + lanes
+    # FcwOpt_USM 3 = Green blinking car + lanes
+    # FcwOpt_USM 2 = Green car + lanes
+    # FcwOpt_USM 1 = White car + lanes
+    # FcwOpt_USM 0 = No car + lanes
+    values["CF_Lkas_FcwOpt_USM"] = 2 if steer_req else 0
+
+    # TODO: LFA stuff (steering wheel) is in 0x485
+    # Make sure there is no dash error when pressing LFA button on wheel
+
   # This field is actually LdwsActivemode
   # Genesis and Optima fault when forwarding while engaged
-  if car_fingerprint == CAR.HYUNDAI_GENESIS:
+  elif car_fingerprint == CAR.HYUNDAI_GENESIS:
     values["CF_Lkas_Bca_R"] = 2
-  if car_fingerprint == CAR.KIA_OPTIMA:
+  elif car_fingerprint == CAR.KIA_OPTIMA:
     values["CF_Lkas_Bca_R"] = 0
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
