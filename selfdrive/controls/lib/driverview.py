@@ -46,6 +46,7 @@ def main():
   def terminate(signalNumber, frame):
     print('got SIGTERM, exiting..')
     should_exit = True
+    send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
     proc_cam.send_signal(signal.SIGINT)
     proc_mon.send_signal(signal.SIGINT)
     kill_start = time.time()
