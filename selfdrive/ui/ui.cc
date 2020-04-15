@@ -185,6 +185,7 @@ static void ui_init(UIState *s) {
   s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->health_sock = SubSocket::create(s->ctx, "health");
   s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
+  s->frame_sock = SubSocket::create(s->ctx, "frame");
 
   assert(s->model_sock != NULL);
   assert(s->controlsstate_sock != NULL);
@@ -194,6 +195,7 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock != NULL);
   assert(s->health_sock != NULL);
   assert(s->ubloxgnss_sock != NULL);
+  assert(s->frame_sock != NULL);
 
   s->poller = Poller::create({
                               s->model_sock,
@@ -203,7 +205,8 @@ static void ui_init(UIState *s) {
                               s->radarstate_sock,
                               s->thermal_sock,
                               s->health_sock,
-                              s->ubloxgnss_sock
+                              s->ubloxgnss_sock,
+                              s->frame_sock
                              });
 
 #ifdef SHOW_SPEEDLIMIT
@@ -514,6 +517,11 @@ void handle_message(UIState *s, Message * msg) {
 
     s->scene.hwType = datad.hwType;
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
+  } else if (eventd.which == cereal_Event_frame) {
+    struct cereal_FrameData datad;
+    cereal_read_FrameData(&datad, eventd.frame);
+
+    s->scene.blurryaf = datad.isBlur;
   }
   capn_free(&ctx);
 }

@@ -618,6 +618,10 @@ static void ui_draw_vision_speed(UIState *s) {
   } else {
     nvgText(s->vg, viz_speed_x+viz_speed_w/2, 320, "mph", NULL);
   }
+
+  if (scene->blurryaf) {
+    nvgText(s->vg, viz_speed_x+viz_speed_w/2, 640, "BLURRY AF", NULL);
+  }
 }
 
 static void ui_draw_vision_event(UIState *s) {

@@ -101,6 +101,7 @@ const uint8_t bg_colors[][4] = {
 typedef struct UIScene {
   int frontview;
   int fullview;
+  bool blurryaf;
 
   int transformed_width, transformed_height;
 
@@ -216,6 +217,7 @@ typedef struct UIState {
   SubSocket *thermal_sock;
   SubSocket *health_sock;
   SubSocket *ubloxgnss_sock;
+  SubSocket *frame_sock;
   Poller * poller;
   Poller * ublox_poller;
 
