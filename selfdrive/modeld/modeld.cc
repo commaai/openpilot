@@ -85,6 +85,7 @@ void* live_thread(void *arg) {
     }
 
   }
+  
   delete live_calibration_sock;
   delete poller;
   delete c;
