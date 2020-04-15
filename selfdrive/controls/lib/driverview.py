@@ -62,9 +62,6 @@ def main():
 
   signal.signal(signal.SIGTERM, terminate)
 
-  # TODO: refactor with new ui api
-  # os.system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'"); # auto switch to home to not get stuck
-
   while True:
     send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
 
