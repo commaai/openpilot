@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
   visionstream_destroy(&stream);
 
   delete dmonitoring_sock;
+  delete msg_context;
   dmonitoring_free(&dmonitoringmodel);
 
   return 0;
