@@ -28,6 +28,7 @@ openpilot tools and the following setup steps are developed and tested on Ubuntu
 
 Setup
 ============
+<!-- 
 TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructions
 
 1. Install native dependencies (Mac and Ubuntu sections listed below)
@@ -164,15 +165,20 @@ TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructio
     echo 'export PYTHONPATH="$PYTHONPATH:<path-to-openpilot>"' >> ~/.bashrc
     source ~/.bashrc
     ```
+-->
+1. Run ubuntu_setup.sh, make sure everything completed correctly
 
-5. Add some folders to root
+2. Compile openpilot by running ```scons``` in the openpilot directory
+
+3. Add some folders to root
     ```bash
     sudo mkdir /data
     sudo mkdir /data/params
     sudo chown $USER /data/params
     ```
+    
 
-6. Try out some tools!
+4. Try out some tools!
 
 
 Tool examples

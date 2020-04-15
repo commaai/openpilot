@@ -180,16 +180,11 @@ def thermald_thread():
   current_connectivity_alert = None
   time_valid_prev = True
   should_start_prev = False
-
-  is_uno = (read_tz(29, clip=False) < -1000)
-  if is_uno or not ANDROID:
-    handle_fan = handle_fan_uno
-  else:
-    setup_eon_fan()
-    handle_fan = handle_fan_eon
+  handle_fan = None
+  is_uno = False
 
   params = Params()
-  pm = PowerMonitoring(is_uno)
+  pm = PowerMonitoring()
 
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
@@ -200,6 +195,18 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
       ignition = health.health.ignitionLine or health.health.ignitionCan
+
+      # Setup fan handler on first connect to panda
+      if handle_fan is None and health.health.hwType != log.HealthData.HwType.unknown:
+        is_uno = health.health.hwType == log.HealthData.HwType.uno
+
+        if is_uno or not ANDROID:
+          cloudlog.info("Setting up UNO fan handler")
+          handle_fan = handle_fan_uno
+        else:
+          cloudlog.info("Setting up EON fan handler")
+          setup_eon_fan()
+          handle_fan = handle_fan_eon
 
       # Handle disconnect
       if health_prev is not None:
@@ -244,8 +251,9 @@ def thermald_thread():
     max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
     bat_temp = msg.thermal.bat / 1000.
 
-    fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
-    msg.thermal.fanSpeed = fan_speed
+    if handle_fan is not None:
+      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
+      msg.thermal.fanSpeed = fan_speed
 
     # thermal logic with hysterisis
     if max_cpu_temp > 107. or bat_temp >= 63.:

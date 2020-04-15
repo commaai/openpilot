@@ -454,7 +454,7 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     # events
-    events = self.create_common_events(ret)
+    events = self.create_common_events(ret, pcm_enable=False)
     if self.CS.brake_error:
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if self.CS.brake_hold and self.CS.CP.carFingerprint not in HONDA_BOSCH:
@@ -505,10 +505,6 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('buttonEnable', [ET.ENABLE]))
 
     ret.events = events
-
-    # update previous brake/gas pressed
-    self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
 
     self.CS.out = ret.as_reader()
     return self.CS.out

@@ -109,11 +109,6 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret)
 
-    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-    elif not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
@@ -123,10 +118,6 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
-
-    self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
-    self.cruise_enabled_prev = ret.cruiseState.enabled
 
     self.CS.out = ret.as_reader()
     return self.CS.out

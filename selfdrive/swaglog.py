@@ -1,9 +1,16 @@
 import os
 import logging
 
+from logentries import LogentriesHandler
 import zmq
 
 from common.logging_extra import SwagLogger, SwagFormatter
+
+
+def get_le_handler():
+  # setup logentries. we forward log messages to it
+  le_token = "e8549616-0798-4d7e-a2ca-2513ae81fa17"
+  return LogentriesHandler(le_token, use_tls=False, verbose=False)
 
 
 class LogMessageHandler(logging.Handler):
@@ -36,7 +43,6 @@ class LogMessageHandler(logging.Handler):
 def add_logentries_handler(log):
   """Function to add the logentries handler to swaglog.
   This can be used to send logs when logmessaged is not running."""
-  from selfdrive.logmessaged import get_le_handler
   handler = get_le_handler()
   handler.setFormatter(SwagFormatter(log))
   log.addHandler(handler)

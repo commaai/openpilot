@@ -4,6 +4,7 @@ import sys
 import time
 import signal
 import traceback
+import usb1
 from panda import Panda
 from multiprocessing import Pool
 
@@ -36,7 +37,11 @@ def send_thread(sender_serial):
       tsc = messaging.recv_one(can_sock)
       snd = can_capnp_to_can_list(tsc.can)
       snd = list(filter(lambda x: x[-1] <= 2, snd))
-      sender.can_send_many(snd)
+
+      try:
+        sender.can_send_many(snd)
+      except usb1.USBErrorTimeout:
+        print("Can TX overflow", sender_serial)
 
       # Drain panda message buffer
       sender.can_recv()

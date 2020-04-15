@@ -29,6 +29,7 @@
 #include "messaging.hpp"
 
 #include <algorithm>
+#include <bitset>
 
 // double the FIFO size
 #define RECV_SIZE (0x1000)
@@ -159,6 +160,11 @@ bool usb_connect() {
   int serial_sz = 0;
 
   ignition_last = false;
+
+  if (dev_handle != NULL){
+    libusb_close(dev_handle);
+    dev_handle = NULL;
+  }
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
   if (dev_handle == NULL) { goto fail; }
@@ -514,6 +520,18 @@ void can_health(PubSocket *publisher) {
   healthData.setFaultStatus(cereal::HealthData::FaultStatus(health.fault_status));
   healthData.setPowerSaveEnabled((bool)(health.power_save_enabled));
 
+  // Convert faults bitset to capnp list
+  std::bitset<sizeof(health.faults) * 8> fault_bits(health.faults);
+  auto faults = healthData.initFaults(fault_bits.count());
+
+  size_t i = 0;
+  for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
+       f <= size_t(cereal::HealthData::FaultType::REGISTER_DIVERGENT); f++){
+    if (fault_bits.test(f)) {
+      faults.set(i, cereal::HealthData::FaultType(f));
+      i++;
+    }
+  }
   // send to health
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
@@ -918,6 +936,9 @@ int main() {
   if (getenv("BOARDD_LOOPBACK")){
     loopback_can = true;
   }
+
+  err = pthread_mutex_init(&usb_lock, NULL);
+  assert(err == 0);
 
   // init libusb
   err = libusb_init(&ctx);
