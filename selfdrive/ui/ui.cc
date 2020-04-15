@@ -397,9 +397,6 @@ void handle_message(UIState *s, Message * msg) {
   struct cereal_Event eventd;
   cereal_read_Event(&eventd, eventp);
 
-  bool thermal_started = false;
-  bool preview_started = false;
-
   if (eventd.which == cereal_Event_controlsState && s->started) {
     struct cereal_ControlsState datad;
     cereal_read_ControlsState(&datad, eventd.controlsState);
@@ -558,7 +555,7 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.thermalStatus = datad.thermalStatus;
     s->scene.paTemp = datad.pa0;
 
-    thermal_started = datad.started;
+    s->thermal_started = datad.started;
 
   } else if (eventd.which == cereal_Event_ubloxGnss) {
     struct cereal_UbloxGnss datad;
@@ -590,26 +587,26 @@ void handle_message(UIState *s, Message * msg) {
 
     s->scene.is_rhd = datad.isRHD;
     s->scene.awareness_status = datad.awarenessStatus;
-    preview_started = datad.isPreview;
+    s->preview_started = datad.isPreview;
   }
 
-  s->started = thermal_started || preview_started;
+  s->started = s->thermal_started || s->preview_started ;
   // Handle onroad/offroad transition
-    if (!datad.started) {
-      if (s->status != STATUS_STOPPED) {
-        update_status(s, STATUS_STOPPED);
-        s->alert_sound_timeout = 0;
-        s->vision_seen = false;
-        s->controls_seen = false;
-        s->active_app = cereal_UiLayoutState_App_home;
-        update_offroad_layout_state(s);
-      }
-    } else if (s->status == STATUS_STOPPED) {
-      update_status(s, STATUS_DISENGAGED);
-
-      s->active_app = cereal_UiLayoutState_App_none;
+  if (s->started) {
+    if (s->status != STATUS_STOPPED) {
+      update_status(s, STATUS_STOPPED);
+      s->alert_sound_timeout = 0;
+      s->vision_seen = false;
+      s->controls_seen = false;
+      s->active_app = cereal_UiLayoutState_App_home;
       update_offroad_layout_state(s);
     }
+  } else if (s->status == STATUS_STOPPED) {
+    update_status(s, STATUS_DISENGAGED);
+
+    s->active_app = cereal_UiLayoutState_App_none;
+    update_offroad_layout_state(s);
+  }
 
   capn_free(&ctx);
 }
