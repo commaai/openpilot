@@ -46,7 +46,7 @@ jobs:
         run: |
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
           docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./update_refs.py"
-          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/ref_commit openpilot/selfdrive/test/process_replay/ref_commit
+          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/ref_commit selfdrive/test/process_replay/ref_commit
       - name: Push ref commit
         run: |
           git diff
