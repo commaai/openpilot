@@ -592,7 +592,7 @@ void handle_message(UIState *s, Message * msg) {
 
   s->started = s->thermal_started || s->preview_started ;
   // Handle onroad/offroad transition
-  if (s->started) {
+  if (!s->started) {
     if (s->status != STATUS_STOPPED) {
       update_status(s, STATUS_STOPPED);
       s->alert_sound_timeout = 0;
