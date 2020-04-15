@@ -187,14 +187,14 @@ def radar_rcv_callback(msg, CP, cfg, fsm):
 def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
-  recv_socks = []
   if msg.which() == 'carState':
-    if not hasattr(fsm, 'cs_counter'):
-      fsm.cs_counter = 0
-    if (fsm.cs_counter % 25) == 0:
+    if ((fsm.frame +1)% 25) == 0:
       recv_socks = ["liveCalibration"]
-    fsm.cs_counter += 1
-  return recv_socks, True
+    else:
+      recv_socks = []
+    return recv_socks, True
+  else:
+    return [], False
 
 
 CONFIGS = [
