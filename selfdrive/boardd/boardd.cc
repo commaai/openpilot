@@ -632,6 +632,7 @@ void *can_send_thread(void *crap) {
   while (!do_exit) {
     can_send(subscriber);
   }
+  
   delete subscriber;
   delete context;
   return NULL;
