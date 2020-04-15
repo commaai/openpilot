@@ -58,8 +58,6 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
     break;
   }
 
-  pthread_mutex_unlock(&s->state_lock);
-
   return OMX_ErrorNone;
 }
 
