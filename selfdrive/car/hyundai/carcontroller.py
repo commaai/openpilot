@@ -7,21 +7,21 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
-                      right_line, left_lane_depart, right_lane_depart):
-  hud_alert = (visual_alert == VisualAlert.steerRequired)
+def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
+                      right_lane, left_lane_depart, right_lane_depart):
+  sys_warning = (visual_alert == VisualAlert.steerRequired)
 
   # initialize to no line visible
-  lane_visible = 1
-  if left_line and right_line or hud_alert:  #HUD alert only display when LKAS status is active
-    if enabled or hud_alert:
-      lane_visible = 3
+  sys_state = 1
+  if left_lane and right_lane or sys_warning:  #HUD alert only display when LKAS status is active
+    if enabled or sys_warning:
+      sys_state = 3
     else:
-      lane_visible = 4
-  elif left_line:
-    lane_visible = 5
-  elif right_line:
-    lane_visible = 6
+      sys_state = 4
+  elif left_lane:
+    sys_state = 5
+  elif right_lane:
+    sys_state = 6
 
   # initialize to no warnings
   left_lane_warning = 0
@@ -31,7 +31,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_line,
   if right_lane_depart:
     right_lane_warning = 1 if fingerprint in [CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
 
-  return hud_alert, lane_visible, left_lane_warning, right_lane_warning
+  return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
 class CarController():
@@ -45,7 +45,7 @@ class CarController():
     self.last_lead_distance = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
-             left_line, right_line, left_lane_depart, right_lane_depart):
+             left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, SteerLimitParams)
@@ -63,13 +63,15 @@ class CarController():
 
     self.apply_steer_last = apply_steer
 
-    hud_alert, lane_visible, left_lane_warning, right_lane_warning =\
+    sys_warning, sys_state, left_lane_warning, right_lane_warning =\
       process_hud_alert(enabled, self.car_fingerprint, visual_alert,
-                        left_line, right_line, left_lane_depart, right_lane_depart)
+                        left_lane, right_lane, left_lane_depart, right_lane_depart)
 
     can_sends = []
     can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
-                                   CS.lkas11, hud_alert, lane_visible, left_lane_warning, right_lane_warning))
+                                   CS.lkas11, sys_warning, sys_state,
+                                   left_lane, right_lane,
+                                   left_lane_warning, right_lane_warning))
 
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))

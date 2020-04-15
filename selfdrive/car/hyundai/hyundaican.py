@@ -4,11 +4,13 @@ from selfdrive.car.hyundai.values import CAR, CHECKSUM
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 
-def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11, hud_alert,
-                  lane_visible, left_lane_depart, right_lane_depart):
+def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
+                  lkas11, sys_warning, sys_state,
+                  left_lane, right_lane,
+                  left_lane_depart, right_lane_depart):
   values = lkas11
-  values["CF_Lkas_LdwsSysState"] = lane_visible
-  values["CF_Lkas_SysWarning"] = 3 if hud_alert else 0
+  values["CF_Lkas_LdwsSysState"] = sys_state
+  values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
   values["CR_Lkas_StrToqReq"] = apply_steer
@@ -17,13 +19,8 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11
   values["CF_Lkas_MsgCount"] = frame % 0x10
   values["CF_Lkas_Chksum"] = 0
 
-
   if car_fingerprint == CAR.SONATA:
-    # LdwSysState doesn't seem to do anything on the Sonota
-    # TODO: what does the stock system send? Can we forward it?
-
-    # TODO: use CF_Lkas_BCA_R to send lane lines. 1 = left, 2, = right, 3 = both
-    values["CF_Lkas_Bca_R"] = 3
+    values["CF_Lkas_Bca_R"] = int(left_lane) + int(right_lane) << 1
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
     # FcwOpt_USM 5 = Orange blinking car + lanes
@@ -37,7 +34,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11
     # 4 is keep hands on wheel
     # 5 is keep hands on wheel (red)
     # 6 is keep hands on wheel (red) + beep
-    values["CF_Lkas_SysWarning"] = 4 if hud_alert else 0
+    values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
     # TODO: LFA stuff (steering wheel) is in 0x485
     # Make sure there is no dash error when pressing LFA button on wheel
