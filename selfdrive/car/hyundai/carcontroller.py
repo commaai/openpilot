@@ -70,15 +70,11 @@ class CarController():
                         left_line, right_line, left_lane_depart, right_lane_depart)
 
     can_sends = []
-
-    lkas11_cnt = frame % 0x10
-    clu11_cnt = frame % 0x10
-
-    can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, lkas_active, lkas11_cnt,
+    can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
                                    CS.lkas11, hud_alert, lane_visible, left_lane_warning, right_lane_warning))
 
     if pcm_cancel_cmd:
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, clu11_cnt))
+      can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
 
     elif CS.out.cruiseState.standstill:
       # run only first time when the car stopped
@@ -88,7 +84,7 @@ class CarController():
         self.resume_cnt = 0
       # when lead car starts moving, create 6 RES msgs
       elif CS.lead_distance != self.last_lead_distance and (frame - self.last_resume_frame) > 5:
-        can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, clu11_cnt))
+        can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL))
         self.resume_cnt += 1
         # interval after 6 msgs
         if self.resume_cnt > 5:

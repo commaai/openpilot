@@ -4,7 +4,7 @@ from selfdrive.car.hyundai.values import CAR, CHECKSUM
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 
-def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, lkas11, hud_alert,
+def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req, lkas11, hud_alert,
                   lane_visible, left_lane_depart, right_lane_depart):
   values = lkas11
   values["CF_Lkas_LdwsSysState"] = lane_visible
@@ -14,13 +14,13 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, lkas11, 
   values["CR_Lkas_StrToqReq"] = apply_steer
   values["CF_Lkas_ActToi"] = steer_req
   values["CF_Lkas_ToiFlt"] = 0
-  values["CF_Lkas_MsgCount"] = cnt
+  values["CF_Lkas_MsgCount"] = frame % 0x10
   values["CF_Lkas_Chksum"] = 0
 
   # LFA
   # TODO: check if 0x4A7 is present instead of harcoding
   if car_fingerprint == CAR.SONATA:
-    values["CF_Lkas_LdwsActivemode"] = 3
+    values["CF_Lkas_Bca_R"] = 3
     values["CF_Lkas_FcwOpt_USM"] = 2
 
   # This field is actually LdwsActivemode
@@ -48,8 +48,8 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, lkas11, 
   return packer.make_can_msg("LKAS11", 0, values)
 
 
-def create_clu11(packer, clu11, button, cnt):
+def create_clu11(packer, frame, clu11, button):
   values = clu11
   values["CF_Clu_CruiseSwState"] = button
-  values["CF_Clu_CruiseSwState"] = cnt
+  values["CF_Clu_CruiseSwState"] = frame % 0x10
   return packer.make_can_msg("CLU11", 0, values)
