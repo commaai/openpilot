@@ -20,7 +20,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CF_Lkas_Chksum"] = 0
 
   if car_fingerprint == CAR.SONATA:
-    values["CF_Lkas_Bca_R"] = int(left_lane) + int(right_lane) << 1
+    values["CF_Lkas_Bca_R"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
     # FcwOpt_USM 5 = Orange blinking car + lanes
@@ -29,7 +29,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # FcwOpt_USM 2 = Green car + lanes
     # FcwOpt_USM 1 = White car + lanes
     # FcwOpt_USM 0 = No car + lanes
-    values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 0
+    values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
 
     # 4 is keep hands on wheel
     # 5 is keep hands on wheel (red)
@@ -70,7 +70,7 @@ def create_clu11(packer, frame, clu11, button):
 
 def create_lfa_mfa(packer, frame, enabled):
   values = {
-    "LFA_ACTIVE": enabled,
+    "ACTIVE": enabled,
   }
 
   # ACTIVE 1 = Green steering wheel icon
