@@ -5,7 +5,7 @@ hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
-                  lkas11, sys_warning, sys_state,
+                  lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart):
   values = lkas11
@@ -29,15 +29,12 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # FcwOpt_USM 2 = Green car + lanes
     # FcwOpt_USM 1 = White car + lanes
     # FcwOpt_USM 0 = No car + lanes
-    values["CF_Lkas_FcwOpt_USM"] = 2 if steer_req else 0
+    values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 0
 
     # 4 is keep hands on wheel
     # 5 is keep hands on wheel (red)
     # 6 is keep hands on wheel (red) + beep
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
-
-    # TODO: LFA stuff (steering wheel) is in 0x485
-    # Make sure there is no dash error when pressing LFA button on wheel
 
   elif car_fingerprint == CAR.HYUNDAI_GENESIS:
     # This field is actually LdwsActivemode
@@ -69,3 +66,23 @@ def create_clu11(packer, frame, clu11, button):
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_CruiseSwState"] = frame % 0x10
   return packer.make_can_msg("CLU11", 0, values)
+
+
+def create_lfa_mfa(packer, frame, enabled):
+  values = {
+    "LFA_ACTIVE": enabled,
+  }
+
+  # ACTIVE 1 = Green steering wheel icon
+
+  # LFA_USM 2 & 3 = LFA cancelled, fast loud beeping
+  # LFA_USM 0 & 1 = No mesage
+
+  # LFA_SysWarning 1 = "Switching to HDA", short beep
+  # LFA_SysWarning 2 = "Switching to Smart Cruise control", short beep
+  # LFA_SysWarning 3 =  LFA error
+
+  # ACTIVE2: nothing
+  # HDA_USM: nothing
+
+  return packer.make_can_msg("LFAHDA_MFC", 0, values)
