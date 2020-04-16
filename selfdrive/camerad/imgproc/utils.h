@@ -6,8 +6,8 @@
 #define NUM_SEGMENTS_X 8
 #define NUM_SEGMENTS_Y 6
 
-#define ROI_X_MIN 2
-#define ROI_X_MAX NUM_SEGMENTS_X - 3
+#define ROI_X_MIN 0
+#define ROI_X_MAX NUM_SEGMENTS_X - 1
 #define ROI_Y_MIN 2
 #define ROI_Y_MAX 3
 
