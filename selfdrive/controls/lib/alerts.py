@@ -709,6 +709,13 @@ ALERTS = [
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
+  Alert(
+      "canErrorNoEntry",
+      "openpilot Unavailable",
+      "Harness Malfunction",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+
   # permanent alerts
   Alert(
       "steerUnavailablePermanent",
