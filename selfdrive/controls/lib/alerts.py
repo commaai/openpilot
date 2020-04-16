@@ -503,6 +503,13 @@ ALERTS = [
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
 
+  Alert(
+      "relayMalfunction",
+      "TAKE CONTROL IMMEDIATELY",
+      "Harness Malfunction",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+
 
   # not loud cancellations (user is in control)
   Alert(
@@ -789,8 +796,8 @@ ALERTS = [
 
   Alert(
       "relayMalfunctionPermanent",
-      "Relay in harness did not open",
-      "Please check hardware",
+      "Harness Malfunction",
+      "Please Check Hardware",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 
