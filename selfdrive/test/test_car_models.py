@@ -172,6 +172,10 @@ routes = {
     'carFingerprint': HYUNDAI.KIA_OPTIMA,
     'enableCamera': True,
   },
+  "5b7c365c50084530|2020-04-15--16-13-24": {
+    'carFingerprint': HYUNDAI.SONATA,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -336,6 +340,7 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
+
 }
 
 passive_routes = [
@@ -374,7 +379,6 @@ non_tested_cars = [
   HYUNDAI.KIA_STINGER,
   HYUNDAI.KONA,
   HYUNDAI.KONA_EV,
-  HYUNDAI.SONATA,
   TOYOTA.CAMRYH,
   TOYOTA.CHR,
   TOYOTA.CHRH,
