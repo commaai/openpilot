@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
 
         ModelDataRaw model_buf =
             model_eval_frame(&model, q, yuv_cl, buf_info.width, buf_info.height,
-                             model_transform, NULL, vec_desire, NULL);
+                             model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
         model_publish(model_sock, extra.frame_id, model_buf, extra.timestamp_eof);
