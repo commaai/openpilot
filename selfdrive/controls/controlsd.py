@@ -570,6 +570,9 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
       events.append(create_event('communityFeatureDisallowed', [ET.PERMANENT]))
     if read_only and not passive:
       events.append(create_event('carUnrecognized', [ET.PERMANENT]))
+    if log.HealthData.FaultType.relayMalfunction in sm['health'].faults:
+      events.append(create_event('relayMalfunction', [ET.NO_ENTRY, ET.PERMANENT, ET.IMMEDIATE_DISABLE]))
+
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
