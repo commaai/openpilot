@@ -710,7 +710,7 @@ ALERTS = [
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
   Alert(
-      "canErrorNoEntry",
+      "relayMalfunctionNoEntry",
       "openpilot Unavailable",
       "Harness Malfunction",
       AlertStatus.normal, AlertSize.mid,
