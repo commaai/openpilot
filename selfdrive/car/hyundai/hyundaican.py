@@ -1,31 +1,47 @@
 import crcmod
-from selfdrive.car.hyundai.values import CHECKSUM
+from selfdrive.car.hyundai.values import CAR, CHECKSUM
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
-def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, keep_stock=False):
-  values = {
-    "CF_Lkas_Bca_R": 3 if enabled else 0,
-    "CF_Lkas_LdwsSysState": 3 if steer_req else 1,
-    "CF_Lkas_SysWarning": hud_alert,
-    "CF_Lkas_LdwsLHWarning": lkas11["CF_Lkas_LdwsLHWarning"] if keep_stock else 0,
-    "CF_Lkas_LdwsRHWarning": lkas11["CF_Lkas_LdwsRHWarning"] if keep_stock else 0,
-    "CF_Lkas_HbaLamp": lkas11["CF_Lkas_HbaLamp"] if keep_stock else 0,
-    "CF_Lkas_FcwBasReq": lkas11["CF_Lkas_FcwBasReq"] if keep_stock else 0,
-    "CR_Lkas_StrToqReq": apply_steer,
-    "CF_Lkas_ActToi": steer_req,
-    "CF_Lkas_ToiFlt": 0,
-    "CF_Lkas_HbaSysState": lkas11["CF_Lkas_HbaSysState"] if keep_stock else 1,
-    "CF_Lkas_FcwOpt": lkas11["CF_Lkas_FcwOpt"] if keep_stock else 0,
-    "CF_Lkas_HbaOpt": lkas11["CF_Lkas_HbaOpt"] if keep_stock else 3,
-    "CF_Lkas_MsgCount": cnt,
-    "CF_Lkas_FcwSysState": lkas11["CF_Lkas_FcwSysState"] if keep_stock else 0,
-    "CF_Lkas_FcwCollisionWarning": lkas11["CF_Lkas_FcwCollisionWarning"] if keep_stock else 0,
-    "CF_Lkas_FusionState": lkas11["CF_Lkas_FusionState"] if keep_stock else 0,
-    "CF_Lkas_Chksum": 0,
-    "CF_Lkas_FcwOpt_USM": 2 if enabled else 1,
-    "CF_Lkas_LdwsOpt_USM": lkas11["CF_Lkas_LdwsOpt_USM"] if keep_stock else 3,
-  }
+
+def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
+                  lkas11, sys_warning, sys_state, enabled,
+                  left_lane, right_lane,
+                  left_lane_depart, right_lane_depart):
+  values = lkas11
+  values["CF_Lkas_LdwsSysState"] = sys_state
+  values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
+  values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
+  values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
+  values["CR_Lkas_StrToqReq"] = apply_steer
+  values["CF_Lkas_ActToi"] = steer_req
+  values["CF_Lkas_ToiFlt"] = 0
+  values["CF_Lkas_MsgCount"] = frame % 0x10
+  values["CF_Lkas_Chksum"] = 0
+
+  if car_fingerprint == CAR.SONATA:
+    values["CF_Lkas_Bca_R"] = int(left_lane) + (int(right_lane) << 1)
+    values["CF_Lkas_LdwsOpt_USM"] = 2
+
+    # FcwOpt_USM 5 = Orange blinking car + lanes
+    # FcwOpt_USM 4 = Orange car + lanes
+    # FcwOpt_USM 3 = Green blinking car + lanes
+    # FcwOpt_USM 2 = Green car + lanes
+    # FcwOpt_USM 1 = White car + lanes
+    # FcwOpt_USM 0 = No car + lanes
+    values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
+
+    # 4 is keep hands on wheel
+    # 5 is keep hands on wheel (red)
+    # 6 is keep hands on wheel (red) + beep
+    values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
+
+  elif car_fingerprint == CAR.HYUNDAI_GENESIS:
+    # This field is actually LdwsActivemode
+    # Genesis and Optima fault when forwarding while engaged
+    values["CF_Lkas_Bca_R"] = 2
+  elif car_fingerprint == CAR.KIA_OPTIMA:
+    values["CF_Lkas_Bca_R"] = 0
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
@@ -36,7 +52,7 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
   elif car_fingerprint in CHECKSUM["6B"]:
     # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
     checksum = sum(dat[:6]) % 256
-  elif car_fingerprint in CHECKSUM["7B"]:
+  else:
     # Checksum of first 6 Bytes and last Byte as seen on 2018 Kia Stinger
     checksum = (sum(dat[:6]) + dat[7]) % 256
 
@@ -44,20 +60,29 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
 
   return packer.make_can_msg("LKAS11", 0, values)
 
-def create_clu11(packer, clu11, button):
+
+def create_clu11(packer, frame, clu11, button):
+  values = clu11
+  values["CF_Clu_CruiseSwState"] = button
+  values["CF_Clu_CruiseSwState"] = frame % 0x10
+  return packer.make_can_msg("CLU11", 0, values)
+
+
+def create_lfa_mfa(packer, frame, enabled):
   values = {
-    "CF_Clu_CruiseSwState": button,
-    "CF_Clu_CruiseSwMain": clu11["CF_Clu_CruiseSwMain"],
-    "CF_Clu_SldMainSW": clu11["CF_Clu_SldMainSW"],
-    "CF_Clu_ParityBit1": clu11["CF_Clu_ParityBit1"],
-    "CF_Clu_VanzDecimal": clu11["CF_Clu_VanzDecimal"],
-    "CF_Clu_Vanz": clu11["CF_Clu_Vanz"],
-    "CF_Clu_SPEED_UNIT": clu11["CF_Clu_SPEED_UNIT"],
-    "CF_Clu_DetentOut": clu11["CF_Clu_DetentOut"],
-    "CF_Clu_RheostatLevel": clu11["CF_Clu_RheostatLevel"],
-    "CF_Clu_CluInfo": clu11["CF_Clu_CluInfo"],
-    "CF_Clu_AmpInfo": clu11["CF_Clu_AmpInfo"],
-    "CF_Clu_AliveCnt1": 0,
+    "ACTIVE": enabled,
   }
 
-  return packer.make_can_msg("CLU11", 0, values)
+  # ACTIVE 1 = Green steering wheel icon
+
+  # LFA_USM 2 & 3 = LFA cancelled, fast loud beeping
+  # LFA_USM 0 & 1 = No mesage
+
+  # LFA_SysWarning 1 = "Switching to HDA", short beep
+  # LFA_SysWarning 2 = "Switching to Smart Cruise control", short beep
+  # LFA_SysWarning 3 =  LFA error
+
+  # ACTIVE2: nothing
+  # HDA_USM: nothing
+
+  return packer.make_can_msg("LFAHDA_MFC", 0, values)
