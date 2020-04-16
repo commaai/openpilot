@@ -683,6 +683,23 @@ FW_VERSIONS = {
       b'77959-TXM-A230\x00\x00',
     ],
   },
+  CAR.HRV: {
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-T7A-A010\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-THX-A020\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-T7A-A240\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-T7A-A230\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-THX-A210\x00\x00',
+    ],
+  },
 }
 
 DBC = {
