@@ -172,6 +172,10 @@ routes = {
     'carFingerprint': HYUNDAI.KIA_OPTIMA,
     'enableCamera': True,
   },
+  "5b7c365c50084530|2020-04-15--16-13-24": {
+    'carFingerprint': HYUNDAI.SONATA,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -336,6 +340,7 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
+
 }
 
 passive_routes = [
@@ -352,8 +357,8 @@ non_tested_cars = [
   CHRYSLER.JEEP_CHEROKEE,
   CHRYSLER.JEEP_CHEROKEE_2019,
   CHRYSLER.PACIFICA_2018,
-  CHRYSLER.PACIFICA_2020,
   CHRYSLER.PACIFICA_2018_HYBRID,
+  CHRYSLER.PACIFICA_2020,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
@@ -361,9 +366,19 @@ non_tested_cars = [
   HONDA.CRV,
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
-  HYUNDAI.GENESIS,
+  HYUNDAI.ELANTRA_GT_I30,
+  HYUNDAI.GENESIS_G80,
+  HYUNDAI.GENESIS_G90,
+  HYUNDAI.HYUNDAI_GENESIS,
+  HYUNDAI.IONIQ,
+  HYUNDAI.IONIQ_EV_LTD,
+  HYUNDAI.KIA_FORTE,
+  HYUNDAI.KIA_OPTIMA,
+  HYUNDAI.KIA_OPTIMA_H,
   HYUNDAI.KIA_SORENTO,
   HYUNDAI.KIA_STINGER,
+  HYUNDAI.KONA,
+  HYUNDAI.KONA_EV,
   TOYOTA.CAMRYH,
   TOYOTA.CHR,
   TOYOTA.CHRH,
