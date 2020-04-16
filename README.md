@@ -70,7 +70,7 @@ Supported Cars
 | Honda     | Accord Hybrid 2018-19         | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Civic Hatchback 2017-19       | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | Civic Sedan/Coupe 2016-18     | Honda Sensing     | openpilot        | 0mph               | 12mph             |
-| Honda     | Civic Sedan/Coupe 2019        | Honda Sensing     | Stock            | 0mph               | 2mph<sup>2</sup>  |
+| Honda     | Civic Sedan/Coupe 2019-20     | Honda Sensing     | Stock            | 0mph               | 2mph<sup>2</sup>  |
 | Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | CR-V 2017-19                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
@@ -92,7 +92,7 @@ Supported Cars
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Avalon 2016                   | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Avalon 2017-18                | All               | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
-| Toyota    | Camry 2018-19                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
+| Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry Hybrid 2018-19          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | C-HR 2017-19                  | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | C-HR Hybrid 2017-19           | All               | Stock            | 0mph               | 0mph              |
