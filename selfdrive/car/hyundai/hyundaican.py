@@ -31,9 +31,10 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # FcwOpt_USM 0 = No car + lanes
     values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
 
-    # 4 is keep hands on wheel
-    # 5 is keep hands on wheel (red)
-    # 6 is keep hands on wheel (red) + beep
+    # SysWarning 4 = keep hands on wheel
+    # SysWarning 5 = keep hands on wheel (red)
+    # SysWarning 6 = keep hands on wheel (red) + beep
+    # Note: the warning is hidden while the blinkers are on
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
   elif car_fingerprint == CAR.HYUNDAI_GENESIS:
