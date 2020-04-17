@@ -176,6 +176,10 @@ routes = {
     'carFingerprint': HYUNDAI.SONATA,
     'enableCamera': True,
   },
+  "9c917ba0d42ffe78|2020-04-17--12-43-19": {
+    'carFingerprint': HYUNDAI.PALISADE,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
