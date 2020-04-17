@@ -232,7 +232,7 @@ def get_network_strength(network_type):
   if network_type == NetworkType.none:
     return network_strength
   if network_type == NetworkType.wifi:
-    out = subprocess.check_output('dumpsys connectivity', shell=True).decode('ascii')
+    out = subprocess.check_output('dumpsys connectivity', shell=True).decode('utf-8')
     network_strength = NetworkStrength.unknown
     for line in out.split('\n'):
       signal_str = "SignalStrength: "
@@ -251,7 +251,7 @@ def get_network_strength(network_type):
     return network_strength
   else:
     # check cell strength
-    out = subprocess.check_output('dumpsys telephony.registry', shell=True).decode('ascii')
+    out = subprocess.check_output('dumpsys telephony.registry', shell=True).decode('utf-8')
     for line in out.split('\n'):
       if "mSignalStrength" in line:
         arr = line.split(' ')
