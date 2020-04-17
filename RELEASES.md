@@ -1,4 +1,4 @@
-Version 0.7.5 (2020-xx-xx)
+Version 0.7.5 (2020-04-23)
 ========================
 * Right-Hand Drive support for both driving and driver monitoring!
 * New driver monitoring model: overall improvement on comma two
