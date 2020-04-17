@@ -159,6 +159,9 @@ def calibrationd_thread(sm=None, pm=None):
                                           sm['cameraOdometry'].transStd,
                                           sm['cameraOdometry'].rotStd)
 
+    if not sm.updated['carState'] and not sm.updated['cameraOdometry']:
+      calibrator.send_data(pm)
+
       if DEBUG and new_vp is not None:
         print('got new vp', new_vp)
 
