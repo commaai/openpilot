@@ -232,7 +232,7 @@ def get_network_strength(network_type):
   if network_type == NetworkType.none:
     return network_strength
   if network_type == NetworkType.wifi:
-    out = subprocess.check_output('dumpsys connectivity', shell=True).decode('ascii')
+    out = subprocess.check_output('dumpsys connectivity', shell=True).decode('utf8')
     network_strength = NetworkStrength.unknown
     for line in out.split('\n'):
       signal_str = "SignalStrength: "
