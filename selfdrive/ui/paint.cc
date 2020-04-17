@@ -59,94 +59,75 @@ static float lerp(float v0, float v1, float t) {
 
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
-  const UIScene *scene = &s->scene;
-
-  nvgSave(s->vg);
-
-  nvgTranslate(s->vg, 240.0f, 0.0);
-  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
-  nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
-
   const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
   const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+
+  float x = p_full_frame.v[0];
+  float y = p_full_frame.v[1];
+  if (x < 0 || y < 0.){
+    return;
+  }
 
   sz *= 30;
   sz /= (x_in / 3 + 30);
   if (sz > 30) sz = 30;
   if (sz < 15) sz = 15;
-
-  float x = p_full_frame.v[0];
-  float y = p_full_frame.v[1];
-
+  
   // glow
-  nvgBeginPath(s->vg);
   float g_xo = sz/5;
   float g_yo = sz/10;
-  if (x >= 0 && y >= 0.) {
-    nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
-    nvgLineTo(s->vg, x, y-g_xo);
-    nvgLineTo(s->vg, x-(sz*1.35)-g_xo, y+sz+g_yo);
-    nvgClosePath(s->vg);
-  }
+  nvgBeginPath(s->vg);
+  nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
+  nvgLineTo(s->vg, x, y-g_xo);
+  nvgLineTo(s->vg, x-(sz*1.35)-g_xo, y+sz+g_yo);
+  nvgClosePath(s->vg);
   nvgFillColor(s->vg, glowColor);
   nvgFill(s->vg);
 
   // chevron
   nvgBeginPath(s->vg);
-  if (x >= 0 && y >= 0.) {
-    nvgMoveTo(s->vg, x+(sz*1.25), y+sz);
-    nvgLineTo(s->vg, x, y);
-    nvgLineTo(s->vg, x-(sz*1.25), y+sz);
-    nvgClosePath(s->vg);
-  }
+  nvgMoveTo(s->vg, x+(sz*1.25), y+sz);
+  nvgLineTo(s->vg, x, y);
+  nvgLineTo(s->vg, x-(sz*1.25), y+sz);
+  nvgClosePath(s->vg);
   nvgFillColor(s->vg, fillColor);
   nvgFill(s->vg);
-
-  nvgRestore(s->vg);
 }
 
 static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
-    // Draw lead car indicator
-    float fillAlpha = 0;
-    float speedBuff = 10.;
-    float leadBuff = 40.;
-    if (d_rel < leadBuff) {
-      fillAlpha = 255*(1.0-(d_rel/leadBuff));
-      if (v_rel < 0) {
-        fillAlpha += 255*(-1*(v_rel/speedBuff));
-      }
-      fillAlpha = (int)(fmin(fillAlpha, 255));
+  // Draw lead car indicator
+  float fillAlpha = 0;
+  float speedBuff = 10.;
+  float leadBuff = 40.;
+  if (d_rel < leadBuff) {
+    fillAlpha = 255*(1.0-(d_rel/leadBuff));
+    if (v_rel < 0) {
+      fillAlpha += 255*(-1*(v_rel/speedBuff));
     }
-    draw_chevron(s, d_rel, y_rel, 25,
-                 nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+    fillAlpha = (int)(fmin(fillAlpha, 255));
+  }
+  draw_chevron(s, d_rel, y_rel, 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
-  nvgSave(s->vg);
-  nvgTranslate(s->vg, 240.0f, 0.0); // rgb-box space
-  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2); // zoom 2x
-  nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
   nvgBeginPath(s->vg);
-
   bool started = false;
   for (int i=0; i<pvd->cnt; i++) {
-    if (pvd->v[i].x < 0 || pvd->v[i].y < 0.) {
+    float x = pvd->v[i].x;
+    float y = pvd->v[i].y;
+    if (x < 0 || y < 0.) {
       continue;
     }
     if (!started) {
-      nvgMoveTo(s->vg, pvd->v[i].x, pvd->v[i].y);
+      nvgMoveTo(s->vg, x, y);
       started = true;
     } else {
-      nvgLineTo(s->vg, pvd->v[i].x, pvd->v[i].y);
+      nvgLineTo(s->vg, x, y);
     }
   }
-
   nvgClosePath(s->vg);
   nvgFillColor(s->vg, color);
   nvgFill(s->vg);
-  nvgRestore(s->vg);
 }
 
 static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd) {
@@ -216,37 +197,21 @@ static void update_all_track_data(UIState *s) {
 
 
 static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
-  const UIScene *scene = &s->scene;
-  const PathData path = scene->model.path;
-  const float *mpc_x_coords = &scene->mpc_x[0];
-  const float *mpc_y_coords = &scene->mpc_y[0];
-
-  nvgSave(s->vg);
-  nvgTranslate(s->vg, 240.0f, 0.0); // rgb-box space
-  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2); // zoom 2x
-  nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
   nvgBeginPath(s->vg);
-
   bool started = false;
-  float off = is_mpc?0.3:0.5;
-  float lead_d = scene->lead_d_rel*2.;
-  float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
-                            :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
-  int vi = 0;
   for(int i = 0;i < pvd->cnt;i++) {
-    if (pvd->v[i].x < 0 || pvd->v[i].y < 0) {
+    float x = pvd->v[i].x;
+    float y = pvd->v[i].y;
+    if (x < 0 || y < 0) {
       continue;
     }
-
     if (!started) {
-      nvgMoveTo(s->vg, pvd->v[i].x, pvd->v[i].y);
+      nvgMoveTo(s->vg, x, y);
       started = true;
     } else {
-      nvgLineTo(s->vg, pvd->v[i].x, pvd->v[i].y);
+      nvgLineTo(s->vg, x, y);
     }
   }
-
   nvgClosePath(s->vg);
 
   NVGpaint track_bg;
@@ -260,10 +225,8 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
     track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
       COLOR_WHITE, COLOR_WHITE_ALPHA(0));
   }
-
   nvgFillPaint(s->vg, track_bg);
   nvgFill(s->vg);
-  nvgRestore(s->vg);
 }
 
 static void draw_steering(UIState *s, float curvature) {
@@ -397,6 +360,21 @@ static void ui_draw_world(UIState *s) {
     return;
   }
 
+  const int inner_height = viz_w*9/16;
+  const int ui_viz_rx = scene->ui_viz_rx;
+  const int ui_viz_rw = scene->ui_viz_rw;
+  const int ui_viz_ro = scene->ui_viz_ro;
+
+  nvgSave(s->vg);
+  nvgScissor(s->vg, ui_viz_rx, box_y, ui_viz_rw, box_h);
+  
+  nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
+  nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
+  nvgTranslate(s->vg, 240.0f, 0.0);
+  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+  nvgScale(s->vg, 2.0, 2.0);
+  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
 
@@ -406,6 +384,7 @@ static void ui_draw_world(UIState *s) {
   if ((scene->lead_status2) && (fabs(scene->lead_d_rel - scene->lead_d_rel2) > 3.0)) {
     draw_lead(s, scene->lead_d_rel2, scene->lead_v_rel2, scene->lead_y_rel2);
   }
+  nvgRestore(s->vg);
 }
 
 static void ui_draw_vision_maxspeed(UIState *s) {
@@ -907,18 +886,10 @@ static void ui_draw_vision(UIState *s) {
   glClear(GL_STENCIL_BUFFER_BIT);
 
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-  nvgSave(s->vg);
-
   // Draw augmented elements
-  const int inner_height = viz_w*9/16;
-  nvgScissor(s->vg, ui_viz_rx, box_y, ui_viz_rw, box_h);
-  nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
-  nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
   if (!scene->frontview && !scene->fullview) {
     ui_draw_world(s);
   }
-
-  nvgRestore(s->vg);
 
   // Set Speed, Current Speed, Status/Events
   if (!scene->frontview) {
@@ -927,14 +898,13 @@ static void ui_draw_vision(UIState *s) {
     ui_draw_driver_view(s);
   }
 
-  if (s->scene.alert_size != ALERTSIZE_NONE) {
+  if (scene->alert_size != ALERTSIZE_NONE) {
     // Controls Alerts
-    ui_draw_vision_alert(s, s->scene.alert_size, s->status,
-                            s->scene.alert_text1, s->scene.alert_text2);
+    ui_draw_vision_alert(s, scene->alert_size, s->status,
+                            scene->alert_text1, scene->alert_text2);
   } else {
     if (!scene->frontview){ui_draw_vision_footer(s);}
   }
-
 
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
