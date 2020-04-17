@@ -85,7 +85,10 @@ void* live_thread(void *arg) {
     }
 
   }
-
+  
+  delete live_calibration_sock;
+  delete poller;
+  delete c;
 
   return NULL;
 }
@@ -236,7 +239,10 @@ int main(int argc, char **argv) {
   visionstream_destroy(&stream);
 
   delete model_sock;
-  
+  delete posenet_sock;
+  delete pathplan_sock;
+  delete msg_context;
+
   model_free(&model);
 
   LOG("joining live_thread");
