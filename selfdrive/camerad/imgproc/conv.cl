@@ -4,9 +4,9 @@
 // convert input rgb image to single channel then conv
 __kernel void rgb2gray_conv2d(
   const __global uchar * input, 
-  __global char * output,
-  __constant char * filter,
-  __local char3 * cached
+  __global short * output,
+  __constant short * filter,
+  __local uchar3 * cached
 )
 {
   const int rowOffset = get_global_id(1) * IMAGE_W;
@@ -17,9 +17,9 @@ __kernel void rgb2gray_conv2d(
   const int myLocal = localRowOffset + get_local_id(0) + HALF_FILTER_SIZE;
 
   // cache local pixels
-  cached[ myLocal ].x = convert_char_rte(input[ my * 3 ]/2); // r
-  cached[ myLocal ].y = convert_char_rte(input[ my * 3 + 1]/2); // g
-  cached[ myLocal ].z = convert_char_rte(input[ my * 3 + 2]/2); // b
+  cached[ myLocal ].x = input[ my * 3 ]; // r
+  cached[ myLocal ].y = input[ my * 3 + 1]; // g
+  cached[ myLocal ].z = input[ my * 3 + 2]; // b
 
   // pad
   if (
@@ -43,44 +43,44 @@ __kernel void rgb2gray_conv2d(
       localColOffset = get_local_id(0);
       globalColOffset = -HALF_FILTER_SIZE;
 
-      cached[ localRowOffset + get_local_id(0) ].x = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE * 3 ]/2);
-      cached[ localRowOffset + get_local_id(0) ].y = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE * 3 + 1]/2);
-      cached[ localRowOffset + get_local_id(0) ].z = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE * 3 + 2]/2);
+      cached[ localRowOffset + get_local_id(0) ].x = input[ my * 3 - HALF_FILTER_SIZE * 3 ];
+      cached[ localRowOffset + get_local_id(0) ].y = input[ my * 3 - HALF_FILTER_SIZE * 3 + 1];
+      cached[ localRowOffset + get_local_id(0) ].z = input[ my * 3 - HALF_FILTER_SIZE * 3 + 2];
     }
     else if ( get_local_id(0) >= get_local_size(0) - HALF_FILTER_SIZE )
     {
       localColOffset = get_local_id(0) + TWICE_HALF_FILTER_SIZE;
       globalColOffset = HALF_FILTER_SIZE;
       
-      cached[ myLocal + HALF_FILTER_SIZE ].x = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE * 3 ]/2);
-      cached[ myLocal + HALF_FILTER_SIZE ].y = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE * 3 + 1]/2);
-      cached[ myLocal + HALF_FILTER_SIZE ].z = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE * 3 + 2]/2);
+      cached[ myLocal + HALF_FILTER_SIZE ].x = input[ my * 3 + HALF_FILTER_SIZE * 3 ];
+      cached[ myLocal + HALF_FILTER_SIZE ].y = input[ my * 3 + HALF_FILTER_SIZE * 3 + 1];
+      cached[ myLocal + HALF_FILTER_SIZE ].z = input[ my * 3 + HALF_FILTER_SIZE * 3 + 2];
     }
 
 
     if ( get_local_id(1) < HALF_FILTER_SIZE )
     {
-      cached[ get_local_id(1) * localRowLen + get_local_id(0) + HALF_FILTER_SIZE ].x = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 ]/2);
-      cached[ get_local_id(1) * localRowLen + get_local_id(0) + HALF_FILTER_SIZE ].y = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + 1]/2);
-      cached[ get_local_id(1) * localRowLen + get_local_id(0) + HALF_FILTER_SIZE ].z = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + 2]/2);
+      cached[ get_local_id(1) * localRowLen + get_local_id(0) + HALF_FILTER_SIZE ].x = input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 ];
+      cached[ get_local_id(1) * localRowLen + get_local_id(0) + HALF_FILTER_SIZE ].y = input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + 1];
+      cached[ get_local_id(1) * localRowLen + get_local_id(0) + HALF_FILTER_SIZE ].z = input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + 2];
       if (localColOffset > 0)
       {
-        cached[ get_local_id(1) * localRowLen + localColOffset ].x = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3]/2);
-        cached[ get_local_id(1) * localRowLen + localColOffset ].y = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3 + 1]/2);
-        cached[ get_local_id(1) * localRowLen + localColOffset ].z = convert_char_rte(input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3 + 2]/2);
+        cached[ get_local_id(1) * localRowLen + localColOffset ].x = input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3];
+        cached[ get_local_id(1) * localRowLen + localColOffset ].y = input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3 + 1];
+        cached[ get_local_id(1) * localRowLen + localColOffset ].z = input[ my * 3 - HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3 + 2];
       }
     }
     else if ( get_local_id(1) >= get_local_size(1) -HALF_FILTER_SIZE )
     {
       int offset = ( get_local_id(1) + TWICE_HALF_FILTER_SIZE ) * localRowLen;
-      cached[ offset + get_local_id(0) + HALF_FILTER_SIZE ].x = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 ]/2);
-      cached[ offset + get_local_id(0) + HALF_FILTER_SIZE ].y = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + 1]/2);
-      cached[ offset + get_local_id(0) + HALF_FILTER_SIZE ].z = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + 2]/2);
+      cached[ offset + get_local_id(0) + HALF_FILTER_SIZE ].x = input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 ];
+      cached[ offset + get_local_id(0) + HALF_FILTER_SIZE ].y = input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + 1];
+      cached[ offset + get_local_id(0) + HALF_FILTER_SIZE ].z = input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + 2];
       if (localColOffset > 0)
       {
-        cached[ offset + localColOffset ].x = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3]/2);
-        cached[ offset + localColOffset ].y = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3 + 1]/2);
-        cached[ offset + localColOffset ].z = convert_char_rte(input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3 + 2]/2);
+        cached[ offset + localColOffset ].x = input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3];
+        cached[ offset + localColOffset ].y = input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3 + 1];
+        cached[ offset + localColOffset ].z = input[ my * 3 + HALF_FILTER_SIZE_IMAGE_W * 3 + globalColOffset * 3 + 2];
       }
     }
 
@@ -89,7 +89,7 @@ __kernel void rgb2gray_conv2d(
 
     // perform convolution
     int fIndex = 0;
-    char sum = 0;
+    short sum = 0;
 
     for (int r = -HALF_FILTER_SIZE; r <= HALF_FILTER_SIZE; r++)
     {
@@ -98,10 +98,10 @@ __kernel void rgb2gray_conv2d(
       {
         if (!FLIP_RB){
           // sum += dot(rgb_weights, cached[ myLocal + curRow + c ]) * filter[ fIndex ];
-          sum += (cached[ myLocal + curRow + c ].x / 3 + cached[ myLocal + curRow + c ].y / 2 + cached[ myLocal + curRow + c ].z / 9) / 4 * filter[ fIndex ];
+          sum += (cached[ myLocal + curRow + c ].x / 3 + cached[ myLocal + curRow + c ].y / 2 + cached[ myLocal + curRow + c ].z / 9) * filter[ fIndex ];
         } else {
           // sum += dot(bgr_weights, cached[ myLocal + curRow + c ]) * filter[ fIndex ];
-          sum += (cached[ myLocal + curRow + c ].x / 9 + cached[ myLocal + curRow + c ].y / 2 + cached[ myLocal + curRow + c ].z / 3) / 4 * filter[ fIndex ];
+          sum += (cached[ myLocal + curRow + c ].x / 9 + cached[ myLocal + curRow + c ].y / 2 + cached[ myLocal + curRow + c ].z / 3) * filter[ fIndex ];
         }
       }
     }

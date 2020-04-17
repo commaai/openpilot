@@ -32,33 +32,3 @@ __kernel void var_pool(
 
   output[(xidx-ROI_X_MIN)+(yidx-ROI_Y_MIN)*(ROI_X_MAX-ROI_X_MIN+1)] = convert_ushort_rte(5 * fvar + convert_float_rte(max));
 }
-
-__kernel void var_pool_one(
-  const __global char * input, 
-  __global ushort * output
-)
-{
-  const int xidx = get_global_id(0);
-  const int yidx = get_global_id(1);
-
-  const int size = X_PITCH * Y_PITCH;
-
-  float fsum = 0;
-  char mean, max;
-  
-  for (int i = 0; i < size; i++) {
-    fsum += input[xidx + yidx*X_PITCH];
-    max = input[xidx + yidx*X_PITCH]>max ? input[xidx + yidx*X_PITCH]:max;
-  }
-
-  mean = convert_char_rte(fsum / size);
-
-  float fvar = 0;
-  for (int i = 0; i < size; i++) {
-    fvar += (input[xidx + yidx*X_PITCH] - mean) * (input[xidx + yidx*X_PITCH] - mean);
-  }
-
-  fvar = fvar / size;
-
-  output[0] = convert_ushort_rte(5 * fvar + convert_float_rte(max));
-}

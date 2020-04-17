@@ -80,8 +80,6 @@ struct VisionState {
 
   cl_program prg_rgb_laplacian;
   cl_kernel krnl_rgb_laplacian;
-  cl_program prg_lap_pool;
-  cl_kernel krnl_lap_pool;
 
   int conv_cl_localMemSize;
   size_t conv_cl_globalWorkSize[2];
@@ -121,7 +119,6 @@ struct VisionState {
   VisionBuf rgb_bufs[UI_BUF_COUNT];
   cl_mem rgb_bufs_cl[UI_BUF_COUNT];
   cl_mem rgb_conv_roi_cl, rgb_conv_result_cl, rgb_conv_filter_cl;
-  cl_mem lap_pool_result_cl;
   uint16_t lapres[(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)];
 
   size_t rgb_front_buf_size;
@@ -421,11 +418,12 @@ void* processing_thread(void *arg) {
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
-    // FILE *dump_rgb_file = fopen("/tmp/process_dump.rgb", "wb");
-    // fwrite(s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, sizeof(uint8_t), dump_rgb_file);
-    // fclose(dump_rgb_file);
-    // printf("ORIGINAL SAVED!!\n");
-    // 3x896x1280
+    /*FILE *dump_rgb_file = fopen("/tmp/process_dump.rgb", "wb");
+    fwrite(s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, sizeof(uint8_t), dump_rgb_file);
+    fclose(dump_rgb_file);
+    printf("ORIGINAL SAVED!!\n");*/
+
+    double t10 = millis_since_boot();
 
     uint8_t *rgb_roi_buf = new uint8_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3];
     int roi_id = cnt % ((ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1));
@@ -433,14 +431,19 @@ void* processing_thread(void *arg) {
     int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
 
     for (int r=0;r<(s->rgb_height/NUM_SEGMENTS_Y);r++) {
-      memcpy(rgb_roi_buf + r * (s->rgb_width/NUM_SEGMENTS_X) * 3, 
-              s->rgb_bufs[rgb_idx].addr + (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 \
-                + (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3, 
+      memcpy(rgb_roi_buf + r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
+              (uint8_t *) s->rgb_bufs[rgb_idx].addr + (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 \
+                + (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
               s->rgb_width/NUM_SEGMENTS_X * 3);
     }
 
     err = clEnqueueWriteBuffer (q, s->rgb_conv_roi_cl, true, 0,
         s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), rgb_roi_buf, 0, 0, 0);
+    assert(err == 0);
+
+    double t11 = millis_since_boot();
+    printf("cache time: %f ms\n", t11 - t10);
+    t10 = millis_since_boot();
 
     err = clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *) &s->rgb_conv_roi_cl);
     err = clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *) &s->rgb_conv_result_cl);
@@ -457,36 +460,30 @@ void* processing_thread(void *arg) {
     clWaitForEvents(1, &conv_event);
     clReleaseEvent(conv_event);
 
-    err = clSetKernelArg(s->krnl_lap_pool, 0, sizeof(cl_mem), (void *) &s->rgb_conv_result_cl); // reuse buffer
-    err = clSetKernelArg(s->krnl_lap_pool, 1, sizeof(cl_mem), (void *) &s->lap_pool_result_cl);
-    cl_check_error(err);
+    int16_t *conv_result = new int16_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)];
+    err = clEnqueueReadBuffer(q, s->rgb_conv_result_cl, true, 0,
+       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), conv_result, 0, 0, 0);
 
-    cl_event pool_event;
-    err = clEnqueueNDRangeKernel(q, s->krnl_lap_pool, 2, NULL,
-                                   s->pool_cl_globalWorkSize, NULL, 0, 0, &pool_event);
-    assert(err == 0);
-    clWaitForEvents(1, &pool_event);
-    clReleaseEvent(pool_event);
+    t11 = millis_since_boot();
+    printf("conv time: %f ms\n", t11 - t10);
+    t10 = millis_since_boot();
 
-    uint16_t *roi_lap_result;
-    err = clEnqueueReadBuffer(q, s->lap_pool_result_cl, true, 0, 
-       1 * sizeof(uint16_t), roi_lap_result, 0, 0, 0);
-    assert(err == 0);
+    get_lapmap_one(conv_result, &s->lapres[roi_id], s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y);
 
-    // FILE *dump_lap_file = fopen("/tmp/lap_dump.rgb", "wb");
-    // fwrite(results, (totalSize / 3), sizeof(float), dump_lap_file);
-    // fclose(dump_lap_file);
-    // printf("DUMMMMMMMMMPPPED!!\n");
+    t11 = millis_since_boot();
+    printf("pool time: %f ms\n", t11 - t10);
+    t10 = millis_since_boot();
 
-    s->lapres[roi_id] = *roi_lap_result;
-    //int8_t *lapmap = new int8_t[(ROI_X_MAX - ROI_X_MIN + 1) * (ROI_Y_MAX - ROI_Y_MIN + 1)];
-    //get_lapmap(lap_result, lapmap, s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y);
     bool amiblur;
-    amiblur = is_blur(&s->lapres);
+    amiblur = is_blur((uint16_t *)&s->lapres);
     // printf("AF %f\n", amiblur);
 
     delete [] rgb_roi_buf;
-    //delete [] lapmap;
+    delete [] conv_result;
+
+    t11 = millis_since_boot();
+    printf("process time: %f ms\n ----- \n", t11 - t10);
+    t10 = millis_since_boot();
 
     double t2 = millis_since_boot();
 
@@ -1163,26 +1160,15 @@ void init_buffers(VisionState *s) {
   s->rgb_conv_roi_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, NULL);
   s->rgb_conv_result_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
-      s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int8_t), NULL, NULL);
+      s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, NULL);
   s->rgb_conv_filter_cl = clCreateBuffer(s->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-      9 * sizeof(int8_t), (void*)&lapl_conv_krnl, NULL);
+      9 * sizeof(int16_t), (void*)&lapl_conv_krnl, NULL);
   s->conv_cl_localMemSize = ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) ) * ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) );
-  s->conv_cl_localMemSize *= 3 * sizeof(int8_t);
+  s->conv_cl_localMemSize *= 3 * sizeof(uint8_t);
   s->conv_cl_globalWorkSize[0] = s->rgb_width/NUM_SEGMENTS_X;
   s->conv_cl_globalWorkSize[1] = s->rgb_height/NUM_SEGMENTS_Y;
   s->conv_cl_localWorkSize[0] = CONV_LOCAL_WORKSIZE;
   s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
-
-  s->prg_lap_pool = build_pool_program(s, FULL_STRIDE_X,
-                                      s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y,
-                                      ROI_X_MIN, ROI_X_MAX,
-                                      ROI_Y_MIN, ROI_Y_MAX);
-  s->krnl_lap_pool = clCreateKernel(s->prg_lap_pool, "var_pool_one", &err);
-  assert(err == 0);
-  s->lap_pool_result_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
-      1 * sizeof(uint16_t), NULL, NULL);
-  s->pool_cl_globalWorkSize[0] = s->rgb_width/NUM_SEGMENTS_X;
-  s->pool_cl_globalWorkSize[1] = s->rgb_height/NUM_SEGMENTS_Y;
 
   for (int i=0; i<(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1); i++) {s->lapres[i] = 1024;}
 
