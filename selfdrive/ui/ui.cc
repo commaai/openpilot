@@ -911,7 +911,7 @@ static void* light_sensor_thread(void *args) {
       s->light_sensor = buffer[0].light;
     }
   }
-
+  sensors_close(device);
   return NULL;
 
 fail:
