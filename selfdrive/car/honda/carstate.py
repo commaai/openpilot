@@ -108,7 +108,7 @@ def get_can_signals(CP):
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
   elif CP.carFingerprint == CAR.HRV:
-=    signals += [("WHEELS_MOVING", "STANDSTILL", 1)]
+    signals += [("WHEELS_MOVING", "STANDSTILL", 1)]
   else:
     signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
                 ("DOOR_OPEN_FR", "DOORS_STATUS", 1),
