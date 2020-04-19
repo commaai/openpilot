@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 from panda import Panda
 from panda.tests.safety import libpandasafety_py
-from panda.tests.safety.common import StdTest, make_msg
+import panda.tests.safety.common as common
+from panda.tests.safety.common import CANPackerPanda
 
 MAX_RATE_UP = 3
 MAX_RATE_DOWN = 7
@@ -12,75 +13,57 @@ MAX_STEER = 255
 MAX_RT_DELTA = 112
 RT_INTERVAL = 250000
 
-DRIVER_TORQUE_ALLOWANCE = 50;
-DRIVER_TORQUE_FACTOR = 2;
+DRIVER_TORQUE_ALLOWANCE = 50
+DRIVER_TORQUE_FACTOR = 2
 
-SPEED_THRESHOLD = 30  # ~1kph
 
-TX_MSGS = [[832, 0], [1265, 0]]
+class TestHyundaiSafety(common.PandaSafetyTest):
+  TX_MSGS = [[832, 0], [1265, 0], [1157, 0]]
+  STANDSTILL_THRESHOLD = 30  # ~1kph
+  RELAY_MALFUNCTION_ADDR = 832
+  RELAY_MALFUNCTION_BUS = 0
+  FWD_BLACKLISTED_ADDRS = {2: [832, 1157]}
+  FWD_BUS_LOOKUP = {0: 2, 2: 0}
 
-def twos_comp(val, bits):
-  if val >= 0:
-    return val
-  else:
-    return (2**bits) + val
-
-def sign(a):
-  if a > 0:
-    return 1
-  else:
-    return -1
-
-class TestHyundaiSafety(unittest.TestCase):
-  @classmethod
-  def setUp(cls):
-    cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, 0)
-    cls.safety.init_tests_hyundai()
+  def setUp(self):
+    self.packer = CANPackerPanda("hyundai_kia_generic")
+    self.safety = libpandasafety_py.libpandasafety
+    self.safety.set_safety_hooks(Panda.SAFETY_HYUNDAI, 0)
+    self.safety.init_tests_hyundai()
 
   def _button_msg(self, buttons):
-    to_send = make_msg(0, 1265)
-    to_send[0].RDLR = buttons
-    return to_send
+    values = {"CF_Clu_CruiseSwState": buttons}
+    return self.packer.make_can_msg_panda("CLU11", 0, values)
 
   def _gas_msg(self, val):
-    to_send = make_msg(0, 608)
-    to_send[0].RDHR = (val & 0x3) << 30;
-    return to_send
+    values = {"CF_Ems_AclAct": val}
+    return self.packer.make_can_msg_panda("EMS16", 0, values)
 
   def _brake_msg(self, brake):
-    to_send = make_msg(0, 916)
-    to_send[0].RDHR = brake << 23;
-    return to_send
+    values = {"DriverBraking": brake}
+    return self.packer.make_can_msg_panda("TCS13", 0, values)
 
   def _speed_msg(self, speed):
-    to_send = make_msg(0, 902)
-    to_send[0].RDLR = speed & 0x3FFF;
-    to_send[0].RDHR = (speed & 0x3FFF) << 16;
-    return to_send
+    # panda safety doesn't scale, so undo the scaling
+    values = {"WHL_SPD_%s"%s: speed*0.03125 for s in ["FL", "FR", "RL", "RR"]}
+    return self.packer.make_can_msg_panda("WHL_SPD11", 0, values)
+
+  def _pcm_status_msg(self, enabled):
+    values = {"ACCMode": enabled}
+    return self.packer.make_can_msg_panda("SCC12", 0, values)
 
   def _set_prev_torque(self, t):
     self.safety.set_hyundai_desired_torque_last(t)
     self.safety.set_hyundai_rt_torque_last(t)
 
+  # TODO: this is unused
   def _torque_driver_msg(self, torque):
-    to_send = make_msg(0, 897)
-    to_send[0].RDLR = (torque + 2048) << 11
-    return to_send
+    values = {"CR_Mdps_StrColTq": torque}
+    return self.packer.make_can_msg_panda("MDPS12", 0, values)
 
   def _torque_msg(self, torque):
-    to_send = make_msg(0, 832)
-    to_send[0].RDLR = (torque + 1024) << 16
-    return to_send
-
-  def test_spam_can_buses(self):
-    StdTest.test_spam_can_buses(self, TX_MSGS)
-
-  def test_relay_malfunction(self):
-    StdTest.test_relay_malfunction(self, 832)
-
-  def test_default_controls_not_allowed(self):
-    self.assertFalse(self.safety.get_controls_allowed())
+    values = {"CR_Lkas_StrToqReq": torque}
+    return self.packer.make_can_msg_panda("LKAS11", 0, values)
 
   def test_steer_safety_check(self):
     for enabled in [0, 1]:
@@ -91,32 +74,6 @@ class TestHyundaiSafety(unittest.TestCase):
           self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(t)))
         else:
           self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
-
-  def test_manually_enable_controls_allowed(self):
-    StdTest.test_manually_enable_controls_allowed(self)
-
-  def test_enable_control_allowed_from_cruise(self):
-    to_push = make_msg(0, 1057)
-    to_push[0].RDLR = 1 << 13
-    self.safety.safety_rx_hook(to_push)
-    self.assertTrue(self.safety.get_controls_allowed())
-
-  def test_disable_control_allowed_from_cruise(self):
-    to_push = make_msg(0, 1057)
-    self.safety.set_controls_allowed(1)
-    self.safety.safety_rx_hook(to_push)
-    self.assertFalse(self.safety.get_controls_allowed())
-
-  def test_disengage_on_gas(self):
-    self.safety.set_controls_allowed(True)
-    self.safety.safety_rx_hook(self._gas_msg(0))
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.safety_rx_hook(self._gas_msg(1))
-    self.assertFalse(self.safety.get_controls_allowed())
-
-  def test_brake_disengage(self):
-    StdTest.test_allow_brake_at_zero_speed(self)
-    StdTest.test_not_allow_brake_when_moving(self, SPEED_THRESHOLD)
 
   def test_non_realtime_limit_up(self):
     self.safety.set_hyundai_torque_driver(0, 0)
@@ -207,24 +164,6 @@ class TestHyundaiSafety(unittest.TestCase):
     # do not block resume if we are engaged already
     self.safety.set_controls_allowed(1)
     self.assertTrue(self.safety.safety_tx_hook(self._button_msg(RESUME_BTN)))
-
-  def test_fwd_hook(self):
-
-    buss = list(range(0x0, 0x3))
-    msgs = list(range(0x1, 0x800))
-
-    blocked_msgs = [832]
-    for b in buss:
-      for m in msgs:
-        if b == 0:
-          fwd_bus = 2
-        elif b == 1:
-          fwd_bus = -1
-        elif b == 2:
-          fwd_bus = -1 if m in blocked_msgs else 0
-
-        # assume len 8
-        self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(b, make_msg(b, m, 8)))
 
 
 if __name__ == "__main__":

@@ -30,6 +30,26 @@ AddrCheckStruct volkswagen_mqb_rx_checks[] = {
 };
 const int VOLKSWAGEN_MQB_RX_CHECKS_LEN = sizeof(volkswagen_mqb_rx_checks) / sizeof(volkswagen_mqb_rx_checks[0]);
 
+// Safety-relevant CAN messages for the Volkswagen PQ35/PQ46/NMS platforms
+#define MSG_LENKHILFE_3 0x0D0   // RX from EPS, for steering angle and driver steering torque
+#define MSG_HCA_1       0x0D2   // TX by OP, Heading Control Assist steering torque
+#define MSG_MOTOR_2     0x288   // RX from ECU, for CC state and brake switch state
+#define MSG_MOTOR_3     0x380   // RX from ECU, for driver throttle input
+#define MSG_GRA_NEU     0x38A   // TX by OP, ACC control buttons for cancel/resume
+#define MSG_BREMSE_3    0x4A0   // RX from ABS, for wheel speeds
+#define MSG_LDW_1       0x5BE   // TX by OP, Lane line recognition and text alerts
+
+// Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
+const AddrBus VOLKSWAGEN_PQ_TX_MSGS[] = {{MSG_HCA_1, 0}, {MSG_GRA_NEU, 0}, {MSG_GRA_NEU, 2}, {MSG_LDW_1, 0}};
+const int VOLKSWAGEN_PQ_TX_MSGS_LEN = sizeof(VOLKSWAGEN_PQ_TX_MSGS) / sizeof(VOLKSWAGEN_PQ_TX_MSGS[0]);
+
+AddrCheckStruct volkswagen_pq_rx_checks[] = {
+  {.addr = {MSG_LENKHILFE_3}, .bus = 0, .check_checksum = true,  .max_counter = 15U, .expected_timestep = 10000U},
+  {.addr = {MSG_MOTOR_2},     .bus = 0, .check_checksum = false, .max_counter = 0U,  .expected_timestep = 20000U},
+  {.addr = {MSG_MOTOR_3},     .bus = 0, .check_checksum = false, .max_counter = 0U,  .expected_timestep = 10000U},
+  {.addr = {MSG_BREMSE_3},    .bus = 0, .check_checksum = false, .max_counter = 0U,  .expected_timestep = 10000U},
+};
+const int VOLKSWAGEN_PQ_RX_CHECKS_LEN = sizeof(volkswagen_pq_rx_checks) / sizeof(volkswagen_pq_rx_checks[0]);
 
 struct sample_t volkswagen_torque_driver; // Last few driver torques measured
 int volkswagen_rt_torque_last = 0;
@@ -45,8 +65,15 @@ static uint8_t volkswagen_get_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
   return (uint8_t)GET_BYTE(to_push, 0);
 }
 
-static uint8_t volkswagen_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t volkswagen_mqb_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
+  // MQB message counters are consistently found at LSB 8.
   return (uint8_t)GET_BYTE(to_push, 1) & 0xFU;
+}
+
+static uint8_t volkswagen_pq_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
+  // Few PQ messages have counters, and their offsets are inconsistent. This
+  // function works only for Lenkhilfe_3 at this time.
+  return (uint8_t)(GET_BYTE(to_push, 1) & 0xF0U) >> 4;
 }
 
 static uint8_t volkswagen_mqb_compute_crc(CAN_FIFOMailBox_TypeDef *to_push) {
@@ -62,7 +89,7 @@ static uint8_t volkswagen_mqb_compute_crc(CAN_FIFOMailBox_TypeDef *to_push) {
     crc = volkswagen_crc8_lut_8h2f[crc];
   }
 
-  uint8_t counter = volkswagen_get_counter(to_push);
+  uint8_t counter = volkswagen_mqb_get_counter(to_push);
   switch(addr) {
     case MSG_EPS_01:
       crc ^= (uint8_t[]){0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5}[counter];
@@ -84,20 +111,40 @@ static uint8_t volkswagen_mqb_compute_crc(CAN_FIFOMailBox_TypeDef *to_push) {
   return crc ^ 0xFFU;
 }
 
+static uint8_t volkswagen_pq_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
+  int len = GET_LEN(to_push);
+  uint8_t checksum = 0U;
+
+  for (int i = 1; i < len; i++) {
+    checksum ^= (uint8_t)GET_BYTE(to_push, i);
+  }
+
+  return checksum;
+}
+
 static void volkswagen_mqb_init(int16_t param) {
   UNUSED(param);
 
   controls_allowed = false;
-  relay_malfunction = false;
+  relay_malfunction_reset();
   volkswagen_torque_msg = MSG_HCA_01;
   volkswagen_lane_msg = MSG_LDW_02;
   gen_crc_lookup_table(0x2F, volkswagen_crc8_lut_8h2f);
 }
 
+static void volkswagen_pq_init(int16_t param) {
+  UNUSED(param);
+
+  controls_allowed = false;
+  relay_malfunction_reset();
+  volkswagen_torque_msg = MSG_HCA_1;
+  volkswagen_lane_msg = MSG_LDW_1;
+}
+
 static int volkswagen_mqb_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   bool valid = addr_safety_check(to_push, volkswagen_mqb_rx_checks, VOLKSWAGEN_MQB_RX_CHECKS_LEN,
-                                 volkswagen_get_checksum, volkswagen_mqb_compute_crc, volkswagen_get_counter);
+                                 volkswagen_get_checksum, volkswagen_mqb_compute_crc, volkswagen_mqb_get_counter);
 
   if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
@@ -136,7 +183,7 @@ static int volkswagen_mqb_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // Signal: Motor_20.MO_Fahrpedalrohwert_01
     if (addr == MSG_MOTOR_20) {
       bool gas_pressed = ((GET_BYTES_04(to_push) >> 12) & 0xFF) != 0;
-      if (gas_pressed && !gas_pressed_prev) {
+      if (gas_pressed && !gas_pressed_prev && !(unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS)) {
         controls_allowed = 0;
       }
       gas_pressed_prev = gas_pressed;
@@ -154,7 +201,74 @@ static int volkswagen_mqb_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     // If there are HCA messages on bus 0 not sent by OP, there's a relay problem
     if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (addr == MSG_HCA_01)) {
-      relay_malfunction = true;
+      relay_malfunction_set();
+    }
+  }
+  return valid;
+}
+
+static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+
+  bool valid = addr_safety_check(to_push, volkswagen_pq_rx_checks, VOLKSWAGEN_PQ_RX_CHECKS_LEN,
+                                volkswagen_get_checksum, volkswagen_pq_compute_checksum, volkswagen_pq_get_counter);
+
+  if (valid) {
+    int bus = GET_BUS(to_push);
+    int addr = GET_ADDR(to_push);
+
+    // Update in-motion state by sampling front wheel speeds
+    // Signal: Bremse_3.Radgeschw__VL_4_1 (front left)
+    // Signal: Bremse_3.Radgeschw__VR_4_1 (front right)
+    if ((bus == 0) && (addr == MSG_BREMSE_3)) {
+      int wheel_speed_fl = (GET_BYTE(to_push, 0) | (GET_BYTE(to_push, 1) << 8)) >> 1;
+      int wheel_speed_fr = (GET_BYTE(to_push, 2) | (GET_BYTE(to_push, 3) << 8)) >> 1;
+      // Check for average front speed in excess of 0.3m/s, 1.08km/h
+      // DBC speed scale 0.01: 0.3m/s = 108, sum both wheels to compare
+      volkswagen_moving = (wheel_speed_fl + wheel_speed_fr) > 216;
+    }
+
+    // Update driver input torque samples
+    // Signal: Lenkhilfe_3.LH3_LM (absolute torque)
+    // Signal: Lenkhilfe_3.LH3_LMSign (direction)
+    if ((bus == 0) && (addr == MSG_LENKHILFE_3)) {
+      int torque_driver_new = GET_BYTE(to_push, 2) | ((GET_BYTE(to_push, 3) & 0x3) << 8);
+      int sign = (GET_BYTE(to_push, 3) & 0x4) >> 2;
+      if (sign == 1) {
+        torque_driver_new *= -1;
+      }
+      update_sample(&volkswagen_torque_driver, torque_driver_new);
+    }
+
+    // Update ACC status from ECU for controls-allowed state
+    // Signal: Motor_2.GRA_Status
+    if ((bus == 0) && (addr == MSG_MOTOR_2)) {
+      int acc_status = (GET_BYTE(to_push, 2) & 0xC0) >> 6;
+      controls_allowed = ((acc_status == 1) || (acc_status == 2)) ? 1 : 0;
+    }
+
+    // Exit controls on rising edge of gas press
+    // Signal: Motor_3.Fahrpedal_Rohsignal
+    if ((bus == 0) && (addr == MSG_MOTOR_3)) {
+      int gas_pressed = (GET_BYTE(to_push, 2));
+      if (gas_pressed && !gas_pressed_prev && !(unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS)) {
+        controls_allowed = 0;
+      }
+      gas_pressed_prev = gas_pressed;
+    }
+
+    // Exit controls on rising edge of brake press
+    // Signal: Motor_2.Bremslichtschalter
+    if ((bus == 0) && (addr == MSG_MOTOR_2)) {
+      bool brake_pressed = (GET_BYTE(to_push, 2) & 0x1);
+      if (brake_pressed && (!(brake_pressed_prev) || volkswagen_moving)) {
+        controls_allowed = 0;
+      }
+      brake_pressed_prev = brake_pressed;
+    }
+
+    // If there are HCA messages on bus 0 not sent by OP, there's a relay problem
+    if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == MSG_HCA_1)) {
+      relay_malfunction_set();
     }
   }
   return valid;
@@ -237,6 +351,44 @@ static int volkswagen_mqb_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return tx;
 }
 
+static int volkswagen_pq_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+  int addr = GET_ADDR(to_send);
+  int bus = GET_BUS(to_send);
+  int tx = 1;
+
+  if (!msg_allowed(addr, bus, VOLKSWAGEN_PQ_TX_MSGS, VOLKSWAGEN_PQ_TX_MSGS_LEN) || relay_malfunction) {
+    tx = 0;
+  }
+
+  // Safety check for HCA_1 Heading Control Assist torque
+  // Signal: HCA_1.LM_Offset (absolute torque)
+  // Signal: HCA_1.LM_Offsign (direction)
+  if (addr == MSG_HCA_1) {
+    int desired_torque = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x7F) << 8);
+    desired_torque = desired_torque / 32;  // DBC scale from PQ network to centi-Nm
+    int sign = (GET_BYTE(to_send, 3) & 0x80) >> 7;
+    if (sign == 1) {
+      desired_torque *= -1;
+    }
+
+    if (volkswagen_steering_check(desired_torque)) {
+      tx = 0;
+    }
+  }
+
+  // FORCE CANCEL: ensuring that only the cancel button press is sent when controls are off.
+  // This avoids unintended engagements while still allowing resume spam
+  if ((addr == MSG_GRA_NEU) && !controls_allowed) {
+    // disallow resume and set: bits 16 and 17
+    if ((GET_BYTE(to_send, 2) & 0x3) != 0) {
+      tx = 0;
+    }
+  }
+
+  // 1 allows the message through
+  return tx;
+}
+
 static int volkswagen_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   int addr = GET_ADDR(to_fwd);
   int bus_fwd = -1;
@@ -274,4 +426,15 @@ const safety_hooks volkswagen_mqb_hooks = {
   .fwd = volkswagen_fwd_hook,
   .addr_check = volkswagen_mqb_rx_checks,
   .addr_check_len = sizeof(volkswagen_mqb_rx_checks) / sizeof(volkswagen_mqb_rx_checks[0]),
+};
+
+// Volkswagen PQ35/PQ46/NMS platforms
+const safety_hooks volkswagen_pq_hooks = {
+  .init = volkswagen_pq_init,
+  .rx = volkswagen_pq_rx_hook,
+  .tx = volkswagen_pq_tx_hook,
+  .tx_lin = nooutput_tx_lin_hook,
+  .fwd = volkswagen_fwd_hook,
+  .addr_check = volkswagen_pq_rx_checks,
+  .addr_check_len = sizeof(volkswagen_pq_rx_checks) / sizeof(volkswagen_pq_rx_checks[0]),
 };

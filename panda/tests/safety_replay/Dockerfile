@@ -1,6 +1,21 @@
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y make clang python python-pip git libarchive-dev libusb-1.0-0 locales curl zlib1g-dev libffi-dev bzip2 libssl-dev libbz2-dev
+RUN apt-get update && apt-get install -y \
+    bzip2 \
+    clang \
+    curl \
+    git \
+    libarchive-dev \
+    libbz2-dev \
+    libcurl4-openssl-dev \
+    libffi-dev \
+    libssl-dev \
+    libusb-1.0-0 \
+    locales \
+    make \
+    python \
+    python-pip \
+    zlib1g-dev
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
@@ -21,15 +36,11 @@ RUN pip install -r requirements_extra.txt
 COPY tests/safety_replay/install_capnp.sh install_capnp.sh
 RUN ./install_capnp.sh
 
-RUN mkdir /openpilot
+RUN git clone https://github.com/commaai/openpilot.git || true
 WORKDIR /openpilot
-RUN git clone https://github.com/commaai/cereal.git || true
-WORKDIR /openpilot/cereal
-RUN git pull
-RUN git checkout bb2cc7572de99becce1bfbae63f3b38d5464e162
+RUN git pull && git checkout f9257fc75f68c673f9e433985fbe739f23310bb4
+RUN git submodule update --init cereal
+
 COPY . /openpilot/panda
 
 WORKDIR /openpilot/panda/tests/safety_replay
-RUN git clone https://github.com/commaai/openpilot-tools.git tools || true
-WORKDIR tools
-RUN git checkout d69c6bc85f221766305ec53956e9a1d3bf283160

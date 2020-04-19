@@ -55,7 +55,7 @@ static int mazda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // if we see wheel speed msgs on MAZDA_CAM bus then relay is closed
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == MAZDA_CAM) && (addr == MAZDA_WHEEL_SPEED)) {
-    relay_malfunction = true;
+    relay_malfunction_set();
   }
   return 1;
 }

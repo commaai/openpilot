@@ -13,6 +13,7 @@ static int ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   int addr = GET_ADDR(to_push);
   int bus = GET_BUS(to_push);
+  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
 
   if (addr == 0x217) {
     // wheel speeds are 14 bits every 16
@@ -47,14 +48,14 @@ static int ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // exit controls on rising edge of gas press
   if (addr == 0x204) {
     bool gas_pressed = ((GET_BYTE(to_push, 0) & 0x03) | GET_BYTE(to_push, 1)) != 0;
-    if (gas_pressed && !gas_pressed_prev) {
+    if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev) {
       controls_allowed = 0;
     }
     gas_pressed_prev = gas_pressed;
   }
 
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == 0x3CA)) {
-    relay_malfunction = true;
+    relay_malfunction_set();
   }
   return 1;
 }
@@ -72,7 +73,11 @@ static int ford_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = gas_pressed_prev || (brake_pressed_prev && ford_moving);
+  int pedal_pressed = brake_pressed_prev && ford_moving;
+  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
+  if (!unsafe_allow_gas) {
+    pedal_pressed = pedal_pressed || gas_pressed_prev;
+  }
   bool current_controls_allowed = controls_allowed && !(pedal_pressed);
 
   if (relay_malfunction) {
