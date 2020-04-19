@@ -6,7 +6,7 @@ from opendbc.can.packer import CANPacker
 
 
 class CarControllerParams():
-  def __init__(self, car_fingerprint):
+  def __init__(self):
     self.STEER_MAX = 2047              # max_steer 4095
     self.STEER_STEP = 2                # how often we update the steer cmd
     self.STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
@@ -27,7 +27,7 @@ class CarController():
 
     # Setup detection helper. Routes commands to
     # an appropriate CAN bus number.
-    self.params = CarControllerParams(CP.carFingerprint)
+    self.params = CarControllerParams()
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line):
@@ -56,7 +56,7 @@ class CarController():
       if not lkas_enabled:
         apply_steer = 0
 
-      can_sends.append(subarucan.create_steering_control(self.packer, CS.CP.carFingerprint, apply_steer, frame, P.STEER_STEP))
+      can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, frame, P.STEER_STEP))
 
       self.apply_steer_last = apply_steer
 

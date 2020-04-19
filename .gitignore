@@ -20,7 +20,9 @@ a.out
 .*.un~
 *.tmp
 *.o
+*.o-*
 *.os
+*.os-*
 *.so
 *.a
 *.clb

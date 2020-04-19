@@ -10,7 +10,10 @@
 #define CAMERA_ID_OV8865 3
 #define CAMERA_ID_IMX298_FLIPPED 4
 #define CAMERA_ID_OV10640 5
-#define CAMERA_ID_MAX 6
+#define CAMERA_ID_LGC920 6
+#define CAMERA_ID_LGC615 7
+#define CAMERA_ID_AR0231 8
+#define CAMERA_ID_MAX 9
 
 #ifdef __cplusplus
 extern "C" {

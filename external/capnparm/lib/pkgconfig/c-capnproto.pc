@@ -1,0 +1,12 @@
+prefix=/home/comma/openpilot/external/capnparm
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+bindir=${exec_prefix}/bin
+includedir=${prefix}/include
+codegen=${bindir}/capnpc-c
+
+Name: c-capnproto
+Description: Cap'n Proto C bindings
+Version: 0.2
+Libs: -L${libdir} -lcapnp_c
+Cflags: -I${includedir}

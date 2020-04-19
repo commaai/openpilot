@@ -29,6 +29,7 @@
 #include "messaging.hpp"
 
 #include <algorithm>
+#include <bitset>
 
 // double the FIFO size
 #define RECV_SIZE (0x1000)
@@ -56,7 +57,7 @@ struct __attribute__((packed)) timestamp_t {
 };
 
 libusb_context *ctx = NULL;
-libusb_device_handle *dev_handle;
+libusb_device_handle *dev_handle = NULL;
 pthread_mutex_t usb_lock;
 
 bool spoofing_started = false;
@@ -104,6 +105,7 @@ void *safety_setter_thread(void *s) {
     usleep(100*1000);
   }
   LOGW("got CarVin %s", value_vin);
+  free(value_vin);
 
   // VIN query done, stop listening to OBDII
   pthread_mutex_lock(&usb_lock);
@@ -158,6 +160,11 @@ bool usb_connect() {
   int serial_sz = 0;
 
   ignition_last = false;
+
+  if (dev_handle != NULL){
+    libusb_close(dev_handle);
+    dev_handle = NULL;
+  }
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
   if (dev_handle == NULL) { goto fail; }
@@ -259,6 +266,7 @@ fail:
   return false;
 }
 
+// must be called before threads or with mutex
 void usb_retry_connect() {
   LOG("attempting to connect");
   while (!usb_connect()) { usleep(100*1000); }
@@ -357,15 +365,32 @@ void can_health(PubSocket *publisher) {
     uint8_t power_save_enabled;
   } health;
 
+  // create message
+  capnp::MallocMessageBuilder msg;
+  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto healthData = event.initHealth();
+
+  bool received = false;
+
   // recv from board
-  pthread_mutex_lock(&usb_lock);
-  do {
+  if (dev_handle != NULL) {
+    pthread_mutex_lock(&usb_lock);
     cnt = libusb_control_transfer(dev_handle, 0xc0, 0xd2, 0, 0, (unsigned char*)&health, sizeof(health), TIMEOUT);
-    if (cnt != sizeof(health)) {
-      handle_usb_issue(cnt, __func__);
-    }
-  } while(cnt != sizeof(health));
-  pthread_mutex_unlock(&usb_lock);
+    pthread_mutex_unlock(&usb_lock);
+
+    received = (cnt == sizeof(health));
+  }
+
+  // No panda connected, send empty health packet
+  if (!received){
+    healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
+
+    auto words = capnp::messageToFlatArray(msg);
+    auto bytes = words.asBytes();
+    publisher->send((char*)bytes.begin(), bytes.size());
+    return;
+  }
 
   if (spoofing_started) {
     health.ignition_line = 1;
@@ -475,12 +500,6 @@ void can_health(PubSocket *publisher) {
 
   ignition_last = ignition;
 
-  // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto healthData = event.initHealth();
-
   // set fields
   healthData.setUptime(health.uptime);
   healthData.setVoltage(health.voltage);
@@ -501,16 +520,26 @@ void can_health(PubSocket *publisher) {
   healthData.setFaultStatus(cereal::HealthData::FaultStatus(health.fault_status));
   healthData.setPowerSaveEnabled((bool)(health.power_save_enabled));
 
+  // Convert faults bitset to capnp list
+  std::bitset<sizeof(health.faults) * 8> fault_bits(health.faults);
+  auto faults = healthData.initFaults(fault_bits.count());
+
+  size_t i = 0;
+  for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
+       f <= size_t(cereal::HealthData::FaultType::REGISTER_DIVERGENT); f++){
+    if (fault_bits.test(f)) {
+      faults.set(i, cereal::HealthData::FaultType(f));
+      i++;
+    }
+  }
   // send to health
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
   publisher->send((char*)bytes.begin(), bytes.size());
 
-  pthread_mutex_lock(&usb_lock);
-
   // send heartbeat back to panda
+  pthread_mutex_lock(&usb_lock);
   libusb_control_transfer(dev_handle, 0x40, 0xf3, 1, 0, NULL, 0, TIMEOUT);
-
   pthread_mutex_unlock(&usb_lock);
 }
 
@@ -557,10 +586,19 @@ void can_send(SubSocket *subscriber) {
   int sent;
   pthread_mutex_lock(&usb_lock);
 
+
   if (!fake_send) {
     do {
-      err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)send, msg_count*0x10, &sent, TIMEOUT);
-      if (err != 0 || msg_count*0x10 != sent) { handle_usb_issue(err, __func__); }
+      // Try sending can messages. If the receive buffer on the panda is full it will NAK
+      // and libusb will try again. After 5ms, it will time out. We will drop the messages.
+      err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)send, msg_count*0x10, &sent, 5);
+      if (err == LIBUSB_ERROR_TIMEOUT) {
+        LOGW("Transmit buffer full");
+        break;
+      } else if (err != 0 || msg_count*0x10 != sent) {
+        LOGW("Error");
+        handle_usb_issue(err, __func__);
+      }
     } while(err != 0);
   }
 
@@ -594,6 +632,9 @@ void *can_send_thread(void *crap) {
   while (!do_exit) {
     can_send(subscriber);
   }
+  
+  delete subscriber;
+  delete context;
   return NULL;
 }
 
@@ -624,6 +665,9 @@ void *can_recv_thread(void *crap) {
 
     next_frame_time += dt;
   }
+
+  delete publisher;
+  delete c;
   return NULL;
 }
 
@@ -639,6 +683,9 @@ void *can_health_thread(void *crap) {
     can_health(publisher);
     usleep(500*1000);
   }
+
+  delete publisher;
+  delete c;
   return NULL;
 }
 
@@ -795,7 +842,7 @@ void pigeon_init() {
   usleep(100*1000);
 
   // init from ubloxd
-  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py 
+  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py
   pigeon_send("\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F");
   pigeon_send("\xB5\x62\x06\x3E\x00\x00\x44\xD2");
   pigeon_send("\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35");
@@ -873,6 +920,8 @@ void *pigeon_thread(void *crap) {
     cnt++;
   }
 
+  delete publisher;
+  delete context;
   return NULL;
 }
 
@@ -899,21 +948,30 @@ int main() {
     loopback_can = true;
   }
 
+  err = pthread_mutex_init(&usb_lock, NULL);
+  assert(err == 0);
+
   // init libusb
   err = libusb_init(&ctx);
   assert(err == 0);
+
+#if LIBUSB_API_VERSION >= 0x01000106
+  libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+#else
   libusb_set_debug(ctx, 3);
+#endif
 
-  // connect to the board
-  usb_retry_connect();
-
-
-  // create threads
   pthread_t can_health_thread_handle;
   err = pthread_create(&can_health_thread_handle, NULL,
                        can_health_thread, NULL);
   assert(err == 0);
 
+  // connect to the board
+  pthread_mutex_lock(&usb_lock);
+  usb_retry_connect();
+  pthread_mutex_unlock(&usb_lock);
+
+  // create threads
   pthread_t can_send_thread_handle;
   err = pthread_create(&can_send_thread_handle, NULL,
                        can_send_thread, NULL);

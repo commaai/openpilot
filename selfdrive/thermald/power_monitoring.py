@@ -75,16 +75,21 @@ class PowerMonitoring:
 
       # Only integrate when there is no ignition
       # If health is None, we're probably not in a car, so we don't care
-      if health is None or (health.health.ignitionLine or health.health.ignitionCan):
-        self.last_measurement_time = None
-        self.power_used_uWh = 0
+      if health is None or (health.health.ignitionLine or health.health.ignitionCan) or \
+         health.health.hwType == log.HealthData.HwType.unknown:
+        with self.integration_lock:
+          self.last_measurement_time = None
+          self.next_pulsed_measurement_time = None
+          self.power_used_uWh = 0
         return
 
       # First measurement, set integration time
-      if self.last_measurement_time is None:
-        self.last_measurement_time = now
-        return
+      with self.integration_lock:
+        if self.last_measurement_time is None:
+          self.last_measurement_time = now
+          return
 
+      is_uno = health.health.hwType == log.HealthData.HwType.uno
       # Get current power draw somehow
       current_power = 0
       if get_battery_status() == 'Discharging':
@@ -114,6 +119,7 @@ class PowerMonitoring:
               currents.append(get_battery_current())
               time.sleep(1)
             current_power = ((mean(voltages) / 1000000) * (mean(currents) / 1000000))
+
             self._perform_integration(now, current_power * FUDGE_FACTOR)
 
             # Enable charging again
@@ -126,7 +132,7 @@ class PowerMonitoring:
         self.next_pulsed_measurement_time = None
         return
 
-      elif self.next_pulsed_measurement_time is None:
+      elif self.next_pulsed_measurement_time is None and not is_uno:
         # On a charging EON with black panda, or drawing more than 400mA out of a white/grey one
         # Only way to get the power draw is to turn off charging for a few sec and check what the discharging rate is
         # We shouldn't do this very often, so make sure it has been some long-ish random time interval
@@ -139,14 +145,20 @@ class PowerMonitoring:
       # Do the integration
       self._perform_integration(now, current_power)
     except Exception:
-      cloudlog.exception("Power monitoring calculation failed:")
+      cloudlog.exception("Power monitoring calculation failed")
 
   def _perform_integration(self, t, current_power):
-    self.integration_lock.acquire()
-    integration_time_h = (t - self.last_measurement_time) / 3600
-    self.power_used_uWh += (current_power * 1000000) * integration_time_h
-    self.last_measurement_time = t
-    self.integration_lock.release()
+    with self.integration_lock:
+      try:
+        if self.last_measurement_time:
+          integration_time_h = (t - self.last_measurement_time) / 3600
+          power_used = (current_power * 1000000) * integration_time_h
+          if power_used < 0:
+            raise ValueError(f"Negative power used! Integration time: {integration_time_h} h Current Power: {power_used} uWh")
+          self.power_used_uWh += power_used
+          self.last_measurement_time = t
+      except Exception:
+        cloudlog.exception("Integration failed")
 
   # Get the power usage
   def get_power_used(self):

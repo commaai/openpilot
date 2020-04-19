@@ -25,12 +25,11 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
   p_p = poly_p.copy()
   p_p[3] += poly_shift
 
-  d_poly = calc_d_poly(p_l, p_r, p_p, l_prob, r_prob, lane_width)
+  d_poly = calc_d_poly(p_l, p_r, p_p, l_prob, r_prob, lane_width, v_ref)
 
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING")
   VM = VehicleModel(CP)
 
-  v_ref = v_ref
   curvature_factor = VM.curvature_factor(v_ref)
 
   l_poly = libmpc_py.ffi.new("double[4]", list(map(float, p_l)))
