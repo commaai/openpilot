@@ -18,8 +18,19 @@ unsigned int toyota_checksum(unsigned int address, uint64_t d, int l) {
   d >>= 8; // remove checksum
 
   unsigned int s = l;
-  while (address) { s += address & 0xff; address >>= 8; }
-  while (d) { s += d & 0xff; d >>= 8; }
+  while (address) { s += address & 0xFF; address >>= 8; }
+  while (d) { s += d & 0xFF; d >>= 8; }
+
+  return s & 0xFF;
+}
+
+unsigned int subaru_checksum(unsigned int address, uint64_t d, int l) {
+  d >>= ((8-l)*8); // remove padding
+
+  unsigned int s = 0;
+  while (address) { s += address & 0xFF; address >>= 8; }
+  l -= 1; // checksum is first byte
+  while (l) { s += d & 0xFF; d >>= 8; l -= 1; }
 
   return s & 0xFF;
 }
@@ -105,6 +116,9 @@ unsigned int volkswagen_crc(unsigned int address, uint64_t d, int l) {
       break;
     case 0x30C: // ACC_02 Automatic Cruise Control
       crc ^= (uint8_t[]){0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F}[counter];
+      break;
+    case 0x30F: // SWA_01 Lane Change Assist (SpurWechselAssistent)
+      crc ^= (uint8_t[]){0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C}[counter];
       break;
     case 0x3C0: // Klemmen_Status_01 ignition and starting status
       crc ^= (uint8_t[]){0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3}[counter];
