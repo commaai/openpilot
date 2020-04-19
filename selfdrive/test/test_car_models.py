@@ -106,6 +106,10 @@ routes = {
     'carFingerprint': HONDA.FIT,
     'enableCamera': True,
   },
+  "03be5f2fd5c508d1|2020-04-17--15-17-27": {
+    'carFingerprint': HONDA.HRV,
+    'enableCamera': True,
+  },
   "2ac95059f70d76eb|2018-02-05--15-03-29": {
     'carFingerprint': HONDA.ACURA_ILX,
     'enableCamera': True,
