@@ -51,10 +51,10 @@ BO_ 118 RPM_RELATED: 8 XXX
  SG_ NEW_SIGNAL_2 : 19|12@0+ (1,0) [0|4095] "" XXX
 
 BO_ 514 ENGINE_DATA: 8 XXX
- SG_ PEDAL_GAS : 39|12@0+ (0.002778,0) [0|255] "%" XXX
  SG_ CHKSUM : 63|8@0+ (1,0) [0|127] "" XXX
  SG_ RPM : 7|16@0+ (0.25,0) [0|8500] "rpm" XXX
  SG_ SPEED : 23|16@0+ (0.01,0) [0|32767] "kph" XXX
+ SG_ PEDAL_GAS : 39|12@0+ (1,0) [0|255] "%" XXX
 
 BO_ 357 PEDALS: 8 XXX
  SG_ NEW_SIGNAL_6 : 31|4@0+ (1,0) [0|1] "" XXX
@@ -64,11 +64,11 @@ BO_ 357 PEDALS: 8 XXX
  SG_ CHKSUM : 63|8@0+ (1,0) [0|15] "" XXX
  SG_ STANDSTILL : 26|1@0+ (1,0) [0|16777215] "" XXX
  SG_ NEW_SIGNAL_3 : 23|8@0+ (1,0) [0|3] "" XXX
- SG_ GEAR : 48|5@1+ (1,0) [0|255] "" XXX
  SG_ BRAKE_ON : 4|1@0+ (1,0) [0|1] "" XXX
  SG_ NO_BRAKE : 6|1@0+ (1,0) [0|7] "" XXX
  SG_ BRAKE_ON_2 : 7|1@1+ (1,0) [0|255] "" XXX
  SG_ NO_BRAKE_2 : 15|1@0+ (1,0) [0|7] "" XXX
+ SG_ GEAR : 48|5@1+ (1,0) [0|255] "" XXX
 
 BO_ 533 WHEEL_SPEEDS: 8 XXX
  SG_ FL : 7|16@0+ (0.01,-100) [0|16383] "kph" XXX
@@ -111,6 +111,7 @@ BO_ 582 CAM_LANEMAYBE: 8 XXX
  SG_ NEW_SIGNAL_1 : 31|16@0- (1,0) [0|65535] "" XXX
  SG_ NEW_SIGNAL_2 : 55|16@0+ (1,0) [0|65535] "" XXX
  SG_ CTR : 7|2@0+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_3 : 15|16@0+ (1,0) [0|65535] "" XXX
 
 BO_ 541 CAM_EMPTY: 8 XXX
 
@@ -139,11 +140,12 @@ BO_ 579 CAM_LKAS: 8 XXX
  SG_ ERR_BIT_1 : 16|1@0+ (1,0) [0|1] "" XXX
  SG_ CHKSUM : 63|8@0+ (1,0) [0|15] "" XXX
  SG_ LINE_NOT_VISIBLE : 19|1@0+ (1,0) [0|1] "" XXX
- SG_ BIT_2 : 33|1@0+ (1,0) [0|1] "" XXX
- SG_ ERR_BIT_2 : 30|1@0+ (1,0) [0|1] "" XXX
  SG_ BIT_1 : 29|1@0+ (1,0) [0|1] "" XXX
  SG_ LDW : 23|1@0+ (1,0) [0|1] "" XXX
  SG_ LKAS_REQUEST : 3|12@0+ (1,-2048) [0|2048] "" XXX
+ SG_ ERR_BIT_2 : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ LKAS_ANGLE : 33|12@0+ (0.022,-45.06) [0|1] "" XXX
+ SG_ BIT2 : 52|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 580 CAM_DISTANCE: 8 XXX
  SG_ S1 : 0|8@1+ (1,0) [0|127] "" XXX
@@ -165,14 +167,15 @@ BO_ 581 CAM_IDK3: 8 XXX
  SG_ S8 : 48|8@1+ (1,0) [0|255] "" XXX
  SG_ S9 : 56|8@1+ (1,0) [0|255] "" XXX
 
-BO_ 863 CAM_STATUS: 8 XXX
- SG_ NEW_SIGNAL_1 : 32|1@0+ (1,0) [0|32767] "" XXX
- SG_ NEW_SIGNAL_5 : 4|2@0+ (1,0) [0|32767] "" XXX
- SG_ NEW_SIGNAL_4 : 15|4@0+ (1,0) [0|15] "" XXX
+BO_ 863 CAM_TRAFFIC_SIGNS: 8 XXX
  SG_ STOP_SIGN : 31|4@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_3 : 55|1@0+ (1,0) [0|127] "" XXX
- SG_ NEW_SIGNAL_6 : 0|3@1+ (1,0) [0|7] "" XXX
  SG_ FORWARD_COLLISION : 40|8@1+ (1,0) [0|7] "" XXX
+ SG_ SPEED_SIGN : 4|7@0+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_2 : 52|5@0+ (1,0) [0|31] "" XXX
+ SG_ NEW_SIGNAL_4 : 33|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_1 : 13|2@0+ (1,0) [0|3] "" XXX
+ SG_ SPEED_SIGN_CAM : 32|1@0+ (1,0) [0|32767] "" XXX
 
 BO_ 1157 CAM_SETTINGS: 8 XXX
  SG_ NEW_SIGNAL_2 : 14|1@0+ (1,0) [0|1] "" XXX
@@ -193,7 +196,7 @@ BO_ 1088 CAM_LANEINFO: 8 XXX
  SG_ BIT3 : 62|1@0+ (1,0) [0|3] "" XXX
  SG_ HANDS_ON_STEER_WARN_2 : 59|1@0+ (1,0) [0|1] "" XXX
  SG_ HANDS_ON_STEER_WARN : 56|1@0+ (1,0) [0|3] "" XXX
- SG_ S1_NOT : 54|1@0+ (1,0) [0|31] "" XXX
+ SG_ S1_HBEAM : 54|1@0+ (1,0) [0|31] "" XXX
  SG_ S1 : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ HANDS_WARN_3_BITS : 51|3@0+ (1,0) [0|7] "" XXX
  SG_ ERR_BIT : 40|1@0+ (1,0) [0|1] "" XXX
@@ -545,7 +548,7 @@ BO_ 535 CURVE_CTRS: 8 XXX
  SG_ CTR_C_2 : 23|3@0+ (1,0) [0|255] "" XXX
  SG_ CTR_D_2 : 31|3@0+ (1,0) [0|7] "" XXX
  SG_ CTR_D_1 : 28|3@0+ (1,0) [0|7] "" XXX
- SG_ CURVE : 39|16@0+ (1,0) [0|7] "" XXX
+ SG_ SPEED : 39|16@0+ (0.01,0) [0|7] "kph" XXX
  SG_ CTR : 55|8@0+ (1,0) [0|255] "" XXX
  SG_ CHK_MAYBE : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_1 : 0|1@0+ (1,0) [0|1] "" XXX
@@ -570,6 +573,9 @@ BO_ 540 CRZ_CTRL: 8 XXX
  SG_ CRZ_ACTIVE : 3|1@0+ (1,0) [0|1] "" XXX
  SG_ HANDS_OFF_STEERING : 48|1@0+ (1,0) [0|1] "" XXX
  SG_ HANDS_ON_STEER_WARN : 59|4@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 52|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_2 : 45|3@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_8 : 0|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 539 CRZ_INFO: 8 XXX
  SG_ NEW_SIGNAL_1 : 17|1@0+ (1,0) [0|255] "" XXX
@@ -614,14 +620,14 @@ BO_ 1179 2017_7: 8 XXX
 
 BO_ 1435 2017_8: 8 XXX
 
-BO_ 253 NEW_MSG_7: 8 XXX
+BO_ 253 GAS: 8 XXX
  SG_ NEW_SIGNAL_1 : 16|1@0+ (1,0) [0|65535] "" XXX
  SG_ CTR : 23|4@0+ (1,0) [0|15] "" XXX
  SG_ NEW_SIGNAL_2 : 41|1@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_3 : 55|8@0+ (1,0) [0|255] "" XXX
  SG_ CRZ_NOT_ACTIVE : 61|1@0+ (1,0) [0|255] "" XXX
+ SG_ GAS_CMD : 55|8@0+ (1,0) [0|255] "" XXX
 
-BO_ 359 NEW_MSG_11: 8 XXX
+BO_ 359 MORE_GAS: 8 XXX
  SG_ NEW_SIGNAL_1 : 15|1@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_2 : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ CTR : 31|4@0+ (1,0) [0|255] "" XXX
@@ -700,6 +706,7 @@ BO_ 1143 BSM: 8 XXX
  SG_ RIGHT_BS1 : 14|1@0+ (1,0) [0|63] "" XXX
  SG_ RIGHT_BS_DISTANCE : 35|3@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_1 : 32|1@0+ (1,0) [0|1] "" XXX
+ SG_ REAR_CT_ALERT : 23|5@0+ (1,0) [0|63] "" XXX
 
 BO_ 1361 KEY_POSITION: 8 XXX
 
@@ -744,8 +751,11 @@ BO_ 1248 MOB4: 8 XXX
 
 
 
+CM_ SG_ 357 GEAR "13P, 26R, 13N, 24D";
 CM_ SG_ 605 PED_BRAKE "3: no brake, 4: brake";
 CM_ SG_ 605 BRAKE_WARNING "Flashing brake warning and audible alert for potential forward collision";
+CM_ SG_ 863 SPEED_SIGN "speed limit in MPH";
+CM_ SG_ 863 SPEED_SIGN_CAM "1: The speed limit is recognized by the camera. 0: speed limit is map based or is not available";
 CM_ SG_ 1157 SBS_WARNING_DISTANCE "1 far, 2 mid, 3 near";
 CM_ SG_ 1157 SBS_SCBC "1 off, 2 on";
 CM_ SG_ 1157 LKAS_ASSIT_TIMING "1 at, 0 before";
@@ -758,3 +768,4 @@ CM_ SG_ 157 CAN_OFF "Disengage Cruise if enabled, if already disabled  TURN it O
 CM_ SG_ 552 GEAR "0 P/N, 12 R, 2 D M1, 4 M2, 14 Shift";
 CM_ SG_ 552 MORE_GEAR "";
 CM_ SG_ 540 HANDS_ON_STEER_WARN "0 no warning, b warning";
+CM_ SG_ 1143 REAR_CT_ALERT "Rear Cross Traffic Alert";

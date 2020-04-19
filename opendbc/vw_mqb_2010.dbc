@@ -1254,9 +1254,26 @@ BO_ 695 RCTA_01: 8 XXX
  SG_ RCTA_01_BZ : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ RCTA_01_CRC : 0|8@1+ (1,0) [0|255] "" XXX
 
-BO_ 783 SWA_01: 8 XXX
- SG_ SWA_01_BZ : 8|4@1+ (1,0) [0|15] "" XXX
- SG_ SWA_01_CRC : 0|8@1+ (1,0) [0|255] "" XXX
+BO_ 783 SWA_01: 8 Gateway_MQB
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] ""  Vector__XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] ""  Vector__XXX
+ SG_ SWA_Anzeigen : 12|4@1+ (1,0) [0|15] ""  Kombi_D4
+ SG_ SWA_Blindheit_erkannt : 16|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_rel_Nichtverf : 17|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_rel_Fehler : 18|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Sta_aktiv : 19|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Sta_passiv : 20|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Standziele_li : 24|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Kolonne_li : 25|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Infostufe_SWA_li : 26|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Warnung_SWA_li : 27|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Kolonne_mi : 33|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Standziele_re : 40|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Kolonne_re : 41|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Infostufe_SWA_re : 42|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Warnung_SWA_re : 43|1@1+ (1,0) [0|1] ""  Vector__XXX
+ SG_ SWA_Gischtzaehler : 48|7@1+ (1,0) [0|100] "Unit_PerCent"  Vector__XXX
+ SG_ SWA_KD_Fehler : 59|1@1+ (1,0) [0|1] ""  Vector__XXX
 
 BO_ 804 ACC_04: 8 XXX
  SG_ ACC_04_CRC : 0|8@1+ (1,0) [0|255] "" XXX

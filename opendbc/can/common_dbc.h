@@ -38,6 +38,7 @@ enum SignalType {
   PEDAL_COUNTER,
   VOLKSWAGEN_CHECKSUM,
   VOLKSWAGEN_COUNTER,
+  SUBARU_CHECKSUM,
 };
 
 struct Signal {
