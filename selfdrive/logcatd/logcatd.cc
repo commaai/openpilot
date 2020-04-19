@@ -48,7 +48,7 @@ int main() {
     capnp::MallocMessageBuilder msg;
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(nanos_since_boot());
-    auto androidEntry = event.initAndroidLogEntry();
+    auto androidEntry = event.initAndroidLog();
     androidEntry.setId(log_msg.id());
     androidEntry.setTs(entry.tv_sec * 1000000000ULL + entry.tv_nsec);
     androidEntry.setPriority(entry.priority);

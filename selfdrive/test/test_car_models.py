@@ -57,6 +57,7 @@ def get_route_log(route_name):
       print("failed to download test log %s" % route_name)
       sys.exit(-1)
 
+
 routes = {
   "420a8e183f1aed48|2020-03-05--07-15-29": {
     'carFingerprint': CHRYSLER.PACIFICA_2017_HYBRID,
@@ -73,10 +74,6 @@ routes = {
   },
   "f1b4c567731f4a1b|2018-04-30--10-15-35": {
     'carFingerprint': FORD.FUSION,
-    'enableCamera': True,
-  },
-  "7ed9cdf8d0c5f43e|2018-05-17--09-31-36": {
-    'carFingerprint': GM.CADILLAC_CT6,
     'enableCamera': True,
   },
   "c950e28c26b5b168|2018-05-30--22-03-41": {
@@ -173,6 +170,14 @@ routes = {
   },
   "7653b2bce7bcfdaa|2020-03-04--15-34-32": {
     'carFingerprint': HYUNDAI.KIA_OPTIMA,
+    'enableCamera': True,
+  },
+  "5b7c365c50084530|2020-04-15--16-13-24": {
+    'carFingerprint': HYUNDAI.SONATA,
+    'enableCamera': True,
+  },
+  "9c917ba0d42ffe78|2020-04-17--12-43-19": {
+    'carFingerprint': HYUNDAI.PALISADE,
     'enableCamera': True,
   },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
@@ -335,6 +340,11 @@ routes = {
     'carFingerprint': NISSAN.XTRAIL,
     'enableCamera': True,
   },
+  "5b7c365c50084530|2020-03-25--22-10-13": {
+    'carFingerprint': NISSAN.LEAF,
+    'enableCamera': True,
+  },
+
 }
 
 passive_routes = [
@@ -344,9 +354,6 @@ forced_dashcam_routes = [
   # Ford fusion
   "f1b4c567731f4a1b|2018-04-18--11-29-37",
   "f1b4c567731f4a1b|2018-04-30--10-15-35",
-
-  # Nissan
-  "fbbfa6af821552b9|2020-03-03--08-09-43",
 ]
 
 # TODO: add routes for these cars
@@ -355,6 +362,7 @@ non_tested_cars = [
   CHRYSLER.JEEP_CHEROKEE_2019,
   CHRYSLER.PACIFICA_2018,
   CHRYSLER.PACIFICA_2018_HYBRID,
+  CHRYSLER.PACIFICA_2020,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
@@ -362,9 +370,19 @@ non_tested_cars = [
   HONDA.CRV,
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
-  HYUNDAI.GENESIS,
+  HYUNDAI.ELANTRA_GT_I30,
+  HYUNDAI.GENESIS_G80,
+  HYUNDAI.GENESIS_G90,
+  HYUNDAI.HYUNDAI_GENESIS,
+  HYUNDAI.IONIQ,
+  HYUNDAI.IONIQ_EV_LTD,
+  HYUNDAI.KIA_FORTE,
+  HYUNDAI.KIA_OPTIMA,
+  HYUNDAI.KIA_OPTIMA_H,
   HYUNDAI.KIA_SORENTO,
   HYUNDAI.KIA_STINGER,
+  HYUNDAI.KONA,
+  HYUNDAI.KONA_EV,
   TOYOTA.CAMRYH,
   TOYOTA.CHR,
   TOYOTA.CHRH,

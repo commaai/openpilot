@@ -2,7 +2,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
-from common.params import Params
+from common.params import put_nonblocking
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -22,6 +22,9 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
+
+    # VW port is a community feature, since we don't own one to test
+    ret.communityFeature = True
 
     if candidate == CAR.GOLF:
       # Set common MQB parameters that will apply globally
@@ -76,7 +79,6 @@ class CarInterface(CarInterfaceBase):
   def update(self, c, can_strings):
     canMonoTimes = []
     buttonEvents = []
-    params = Params()
 
     # Process the most recent CAN message traffic, and check for validity
     # The camera CAN has no signals we use at this time, but we process it
@@ -91,7 +93,7 @@ class CarInterface(CarInterfaceBase):
     # Update the EON metric configuration to match the car at first startup,
     # or if there's been a change.
     if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
-      params.put("IsMetric", "1" if self.CS.displayMetricUnits else "0")
+      put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
 
     # Check for and process state-change events (button press or release) from
     # the turn stalk switch or ACC steering wheel/control stalk buttons.
@@ -110,22 +112,11 @@ class CarInterface(CarInterfaceBase):
     if self.CS.steeringFault:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
-    # Engagement and longitudinal control using stock ACC. Make sure OP is
-    # disengaged if stock ACC is disengaged.
-    if not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-    # Attempt OP engagement only on rising edge of stock ACC engagement.
-    elif not self.cruise_enabled_prev:
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-
     ret.events = events
     ret.buttonEvents = buttonEvents
     ret.canMonoTimes = canMonoTimes
 
     # update previous car states
-    self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
-    self.cruise_enabled_prev = ret.cruiseState.enabled
     self.displayMetricUnitsPrev = self.CS.displayMetricUnits
     self.buttonStatesPrev = self.CS.buttonStates.copy()
 

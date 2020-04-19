@@ -24,6 +24,12 @@ if arch == "aarch64":
     'visionbuf_ion.c',
   ]
   _gpu_libs = ['gui', 'adreno_utils']
+elif arch == "larch64":
+  defines = {"CLU_NO_CACHE": None}
+  files += [
+    'visionbuf_ion.c',
+  ]
+  _gpu_libs = ['GL']
 else:
   defines = {"CLU_NO_CACHE": None}
   files += [

@@ -6,5 +6,4 @@ class FirstOrderFilter():
 
   def update(self, x):
     self.x = (1. - self.k) * self.x + self.k * x
-
-
+    return self.x

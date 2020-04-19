@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 import math
 
+import json
+import numpy as np
+
 import cereal.messaging as messaging
-from selfdrive.locationd.kalman.models.car_kf import CarKalman, ObservationKind, States
+from cereal import car
+from common.params import Params, put_nonblocking
+from selfdrive.locationd.kalman.models.car_kf import (CarKalman,
+                                                      ObservationKind, States)
+from selfdrive.swaglog import cloudlog
 
 CARSTATE_DECIMATION = 5
 
 
 class ParamsLearner:
-  def __init__(self, CP):
-    self.kf = CarKalman()
+  def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset):
+    self.kf = CarKalman(steer_ratio, stiffness_factor, angle_offset)
 
     self.kf.filter.set_mass(CP.mass)  # pylint: disable=no-member
     self.kf.filter.set_rotational_inertia(CP.rotationalInertia)  # pylint: disable=no-member
@@ -25,34 +32,37 @@ class ParamsLearner:
     self.steering_angle = 0
     self.carstate_counter = 0
 
-  def update_active(self):
-    self.active = (abs(self.steering_angle) < 45 or not self.steering_pressed) and self.speed > 5
-
   def handle_log(self, t, which, msg):
     if which == 'liveLocationKalman':
 
       v_calibrated = msg.velocityCalibrated.value
-      # v_calibrated_std = msg.velocityCalibrated.std
-      self.speed = v_calibrated[0]
+      v_calibrated_std = msg.velocityCalibrated.std
 
       yaw_rate = msg.angularVelocityCalibrated.value[2]
-      # yaw_rate_std = msg.angularVelocityCalibrated.std[2]
+      yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
-      self.update_active()
-      if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_YAW_RATE, [-yaw_rate])
-        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_XY_SPEED, [[v_calibrated[0], -v_calibrated[1]]])
+      self.active = v_calibrated[0] > 5
+      in_linear_region = abs(self.steering_angle) < 45 or not self.steering_pressed
+
+      if self.active and in_linear_region:
+        self.kf.predict_and_observe(t,
+                                    ObservationKind.ROAD_FRAME_YAW_RATE,
+                                    np.array([[[-yaw_rate]]]),
+                                    np.array([np.atleast_2d(yaw_rate_std**2)]))
+        self.kf.predict_and_observe(t,
+                                    ObservationKind.ROAD_FRAME_XY_SPEED,
+                                    np.array([[[v_calibrated[0], -v_calibrated[1]]]]),
+                                    np.array([np.diag([v_calibrated_std[0]**2, 1e6*v_calibrated_std[1]**2])]))
+
+        self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[[0]]]))
 
         # Clamp values
-        x = self.kf.x
-        if not (10 < x[States.STEER_RATIO] < 25):
-          self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, [15.0])
+        # x = self.kf.x
+        # if not (10 < x[States.STEER_RATIO] < 25):
+        #   self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[[15.0]]]))
 
-        if not (0.5 < x[States.STIFFNESS] < 3.0):
-          self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, [1.0])
-
-      else:
-        self.kf.filter.filter_time = t - 0.1
+        # if not (0.5 < x[States.STIFFNESS] < 3.0):
+        #   self.kf.predict_and_observe(t, ObservationKind.STIFFNESS, np.array([[[1.0]]]))
 
     elif which == 'carState':
       self.carstate_counter += 1
@@ -60,12 +70,13 @@ class ParamsLearner:
         self.steering_angle = msg.steeringAngle
         self.steering_pressed = msg.steeringPressed
 
-        self.update_active()
         if self.active:
-          self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, [math.radians(msg.steeringAngle)])
-          self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, [0])
-        else:
-          self.kf.filter.filter_time = t - 0.1
+          self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[[math.radians(msg.steeringAngle)]]]))
+
+    if not self.active:
+      # Reset time when stopped so uncertainty doesn't grow
+      self.kf.filter.filter_time = t
+      self.kf.filter.reset_rewind()
 
 
 def main(sm=None, pm=None):
@@ -74,13 +85,33 @@ def main(sm=None, pm=None):
   if pm is None:
     pm = messaging.PubMaster(['liveParameters'])
 
-  # TODO: Read from car params at runtime
-  from selfdrive.car.toyota.interface import CarInterface
-  from selfdrive.car.toyota.values import CAR
+  params_reader = Params()
+  # wait for stats about the car to come in from controls
+  cloudlog.info("paramsd is waiting for CarParams")
+  CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
+  cloudlog.info("paramsd got CarParams")
 
-  CP = CarInterface.get_params(CAR.COROLLA_TSS2)
-  learner = ParamsLearner(CP)
+  params = params_reader.get("LiveParameters")
 
+  # Check if car model matches
+  if params is not None:
+    params = json.loads(params)
+    if params.get('carFingerprint', None) != CP.carFingerprint:
+      cloudlog.info("Parameter learner found parameters for wrong car.")
+      params = None
+
+  if params is None:
+    params = {
+      'carFingerprint': CP.carFingerprint,
+      'steerRatio': CP.steerRatio,
+      'stiffnessFactor': 1.0,
+      'angleOffsetAverage': 0.0,
+    }
+    cloudlog.info("Parameter learner resetting to default values")
+
+  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverage']))
+
+  i = 0
   while True:
     sm.update()
 
@@ -92,9 +123,6 @@ def main(sm=None, pm=None):
 
     # TODO: set valid to false when locationd stops sending
     # TODO: make sure controlsd knows when there is no gyro
-    # TODO: move posenetValid somewhere else to show the model uncertainty alert
-    # TODO: Save and resume values from param
-    # TODO: Change KF to allow mass, etc to be inputs in predict step
 
     if sm.updated['carState']:
       msg = messaging.new_message('liveParameters')
@@ -108,7 +136,17 @@ def main(sm=None, pm=None):
       msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       msg.liveParameters.angleOffsetAverage = math.degrees(x[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffset = math.degrees(x[States.ANGLE_OFFSET_FAST])
+      msg.liveParameters.angleOffset = msg.liveParameters.angleOffsetAverage + math.degrees(x[States.ANGLE_OFFSET_FAST])
+
+      i += 1
+      if i % 6000 == 0:   # once a minute
+        params = {
+          'carFingerprint': CP.carFingerprint,
+          'steerRatio': msg.liveParameters.steerRatio,
+          'stiffnessFactor': msg.liveParameters.stiffnessFactor,
+          'angleOffsetAverage': msg.liveParameters.angleOffsetAverage,
+        }
+        put_nonblocking("LiveParameters", json.dumps(params))
 
       # P = learner.kf.P
       # print()

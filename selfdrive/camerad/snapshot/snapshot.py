@@ -22,6 +22,9 @@ def snapshot():
   params = Params()
   front_camera_allowed = int(params.get("RecordFront"))
 
+  if params.get("IsTakingSnapshot") == b"1":
+    return None
+
   params.put("IsTakingSnapshot", "1")
   params.put("Offroad_IsTakingSnapshot", json.dumps(OFFROAD_ALERTS["Offroad_IsTakingSnapshot"]))
   time.sleep(2.0)  # Give thermald time to read the param, or if just started give camerad time to start

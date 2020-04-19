@@ -67,6 +67,6 @@ int main() {
 
   close(timerfd);
   delete clock_publisher;
-
+  delete context;
   return 0;
 }
