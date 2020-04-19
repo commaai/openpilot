@@ -108,7 +108,6 @@ def get_can_signals(CP):
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
   elif CP.carFingerprint == CAR.FIT:
-    # Do NOT call DOORS_STATUS signal.  It will cause can_valid in params.cc to be False
     signals += [("WHEELS_MOVING", "STANDSTILL", 1)]
   else:
     signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
