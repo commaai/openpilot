@@ -184,6 +184,7 @@ int main(int argc, char **argv) {
       buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
         printf("visionstream get failed\n");
+        visionstream_destroy(&stream);
         break;
       }
 
