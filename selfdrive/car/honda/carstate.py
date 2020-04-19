@@ -185,7 +185,7 @@ class CarState(CarStateBase):
       ret.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]['DRIVERS_DOOR_OPEN'])
     elif self.CP.carFingerprint == CAR.HRV:
-      # Door signal is not identified in F-CAN.  Defaulting to seatbeltUnlached for diengagement
+      # Door signal is not identified in F-CAN.  seatbeltUnlached is disengagement safety default
       ret.doorOpen = False
     else:
       ret.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
