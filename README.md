@@ -81,8 +81,6 @@ Supported Cars
 | Honda     | Pilot 2016-18                 | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Pilot 2019                    | All               | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Ridgeline 2017-20             | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Hyundai   | Sonata 2020                   | All               | Stock            | 0mph               | 0mph              |
-| Hyundai   | Palisade 2020                 | All               | Stock            | 0mph               | 0mph              |
 | Lexus     | CT Hybrid 2017-18             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | ES 2019                       | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
@@ -144,7 +142,9 @@ Community Maintained Cars and Features
 | Hyundai   | Ioniq 2019 EV<sup>2</sup>     | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Hyundai   | Kona 2017-19<sup>2</sup>      | SCC + LKAS        | Stock            | 22mph              | 0mph         |
 | Hyundai   | Kona 2019 EV<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Palisade 2020                 | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019<sup>2</sup>     | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata 2020                   | All               | Stock            | 0mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019           | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Kia       | Forte 2018<sup>2</sup>        | SCC + LKAS        | Stock            | 0mph               | 0mph         |
