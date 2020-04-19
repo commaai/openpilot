@@ -106,7 +106,7 @@ routes = {
     'carFingerprint': HONDA.FIT,
     'enableCamera': True,
   },
-  "03be5f2fd5c508d1|2020-04-17--15-17-27": {
+  "03be5f2fd5c508d1|2020-04-19--18-44-15": {
     'carFingerprint': HONDA.HRV,
     'enableCamera': True,
   },
@@ -346,10 +346,6 @@ routes = {
   },
   "5b7c365c50084530|2020-03-25--22-10-13": {
     'carFingerprint': NISSAN.LEAF,
-    'enableCamera': True,
-  },
-  "03be5f2fd5c508d1|2020-04-19--18-44-15": {
-    'carFingerprint': HONDA.HRV,
     'enableCamera': True,
   },
 }
