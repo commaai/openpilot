@@ -85,7 +85,7 @@ void* live_thread(void *arg) {
     }
 
   }
-  
+
   delete live_calibration_sock;
   delete poller;
   delete c;
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 
     err = clGetPlatformIDs(sizeof(platform_id)/sizeof(cl_platform_id), platform_id, &num_platforms);
     assert(err == 0);
-    
+
     #ifdef QCOM
       int clPlatform = 0;
     #else
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
     VisionStreamBufs buf_info;
     err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
     if (err) {
-      printf("visionstream connect fail\n");
+      LOGW("visionstream connect failed");
       usleep(100000);
       continue;
     }
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
       VIPCBufExtra extra;
       buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
-        printf("visionstream get failed\n");
+        LOGW("visionstream get failed");
         visionstream_destroy(&stream);
         break;
       }
