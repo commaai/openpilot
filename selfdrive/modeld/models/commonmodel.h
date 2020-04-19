@@ -1,6 +1,7 @@
 #ifndef COMMONMODEL_H
 #define COMMONMODEL_H
 
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #include <CL/cl.h>
 
 #include "common/mat.h"
