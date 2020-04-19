@@ -1,6 +1,20 @@
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y clang make python python-pip git curl locales zlib1g-dev libffi-dev bzip2 libssl-dev libbz2-dev libusb-1.0-0
+RUN apt-get update && apt-get install -y \
+    autoconf \
+    clang \
+    curl \
+    git \
+    libtool \
+    libssl-dev \
+    libusb-1.0-0 \
+    libzmq3-dev \
+    locales \
+    make \
+    python \
+    python-pip \
+    wget \
+    zlib1g-dev
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
@@ -17,4 +31,20 @@ RUN pyenv rehash
 COPY requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
-COPY . /panda
+WORKDIR /openpilot
+RUN git clone https://github.com/commaai/opendbc.git || true
+WORKDIR /openpilot/opendbc
+RUN git pull && git checkout a57e7ddbd72c92241d5d6442da9d47c55e95a8cf
+WORKDIR /openpilot
+RUN git clone https://github.com/commaai/cereal.git
+WORKDIR /openpilot/cereal
+RUN git pull && git checkout e370f79522ff7fc0b16f33f4fef420be48061206
+RUN /openpilot/cereal/install_capnp.sh
+
+RUN pip install -r /openpilot/opendbc/requirements.txt
+
+WORKDIR /openpilot
+RUN cp /openpilot/opendbc/SConstruct /openpilot
+COPY . /openpilot/panda
+
+RUN scons -c && scons -j$(nproc)

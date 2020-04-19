@@ -117,7 +117,6 @@ class Panda(object):
   SAFETY_GM = 4
   SAFETY_HONDA_BOSCH_GIRAFFE = 5
   SAFETY_FORD = 6
-  SAFETY_CADILLAC = 7
   SAFETY_HYUNDAI = 8
   SAFETY_CHRYSLER = 9
   SAFETY_TESLA = 10
@@ -129,6 +128,7 @@ class Panda(object):
   SAFETY_GM_ASCM = 18
   SAFETY_NOOUTPUT = 19
   SAFETY_HONDA_BOSCH_HARNESS = 20
+  SAFETY_VOLKSWAGEN_PQ = 21
   SAFETY_SUBARU_LEGACY = 22
 
   SERIAL_DEBUG = 0
@@ -187,6 +187,7 @@ class Panda(object):
                 self.bootstub = device.getProductID() == 0xddee
                 self.legacy = (device.getbcdDevice() != 0x2300)
                 self._handle = device.open()
+                self._handle.setAutoDetachKernelDriver(True)
                 if claim:
                   self._handle.claimInterface(0)
                   #self._handle.setInterfaceAltSetting(0, 0) #Issue in USB stack
@@ -296,6 +297,7 @@ class Panda(object):
       self.reconnect()
 
   def recover(self, timeout=None):
+    self.reset(enter_bootstub=True)
     self.reset(enter_bootloader=True)
     t_start = time.time()
     while len(PandaDFU.list()) == 0:
@@ -476,7 +478,12 @@ class Panda(object):
 
   # ******************* can *******************
 
-  def can_send_many(self, arr):
+  # The panda will NAK CAN writes when there is CAN congestion.
+  # libusb will try to send it again, with a max timeout.
+  # Timeout is in ms. If set to 0, the timeout is infinite.
+  CAN_SEND_TIMEOUT_MS = 10
+
+  def can_send_many(self, arr, timeout=CAN_SEND_TIMEOUT_MS):
     snds = []
     transmit = 1
     extended = 4
@@ -499,13 +506,13 @@ class Panda(object):
           for s in snds:
             self._handle.bulkWrite(3, s)
         else:
-          self._handle.bulkWrite(3, b''.join(snds))
+          self._handle.bulkWrite(3, b''.join(snds), timeout=timeout)
         break
       except (usb1.USBErrorIO, usb1.USBErrorOverflow):
         print("CAN: BAD SEND MANY, RETRYING")
 
-  def can_send(self, addr, dat, bus):
-    self.can_send_many([[addr, None, dat, bus]])
+  def can_send(self, addr, dat, bus, timeout=CAN_SEND_TIMEOUT_MS):
+    self.can_send_many([[addr, None, dat, bus]], timeout=timeout)
 
   def can_recv(self):
     dat = bytearray()

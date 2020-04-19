@@ -44,6 +44,8 @@ static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   bool valid = addr_safety_check(to_push, gm_rx_checks, GM_RX_CHECK_LEN,
                                  NULL, NULL, NULL);
 
+  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
+
   if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
 
@@ -91,7 +93,7 @@ static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // exit controls on rising edge of gas press
     if (addr == 417) {
       bool gas_pressed = GET_BYTE(to_push, 6) != 0;
-      if (gas_pressed && !gas_pressed_prev) {
+      if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev) {
         controls_allowed = 0;
       }
       gas_pressed_prev = gas_pressed;
@@ -110,7 +112,7 @@ static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // 384 = ASCMLKASteeringCmd
     // 715 = ASCMGasRegenCmd
     if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && ((addr == 384) || (addr == 715))) {
-      relay_malfunction = true;
+      relay_malfunction_set();
     }
   }
   return valid;
@@ -138,7 +140,11 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = gas_pressed_prev || (brake_pressed_prev && gm_moving);
+  int pedal_pressed = brake_pressed_prev && gm_moving;
+  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
+  if (!unsafe_allow_gas) {
+    pedal_pressed = pedal_pressed || gas_pressed_prev;
+  }
   bool current_controls_allowed = controls_allowed && !pedal_pressed;
 
   // BRAKE: safety check

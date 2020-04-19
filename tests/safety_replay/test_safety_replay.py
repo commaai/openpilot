@@ -15,11 +15,12 @@ logs = [
   ("38bfd238edecbcd7|2019-06-07--10-15-25.bz2", Panda.SAFETY_TOYOTA, 66), # TOYOTA.PRIUS
   ("f89c604cf653e2bf|2018-09-29--13-46-50.bz2", Panda.SAFETY_GM, 0), # GM.VOLT
   ("0375fdf7b1ce594d|2019-05-21--20-10-33.bz2", Panda.SAFETY_HONDA_BOSCH_GIRAFFE, 1), # HONDA.ACCORD
-  ("02ec6bea180a4d36|2019-04-17--11-21-35.bz2", Panda.SAFETY_HYUNDAI, 0), # HYUNDAI.SANTA_FE
   ("6fb4948a7ebe670e|2019-11-12--00-35-53.bz2", Panda.SAFETY_CHRYSLER, 0), # CHRYSLER.PACIFICA_2018_HYBRID
   ("791340bc01ed993d|2019-04-08--10-26-00.bz2", Panda.SAFETY_SUBARU, 0), # SUBARU.IMPREZA
-  ("76b83eb0245de90e|2020-03-05--19-16-05.bz2", Panda.SAFETY_VOLKSWAGEN_MQB, 0), # VOLKSWAGEN.GOLF
+  ("76b83eb0245de90e|2020-03-05--19-16-05.bz2", Panda.SAFETY_VOLKSWAGEN_MQB, 0), # VOLKSWAGEN.GOLF (MK7)
+  ("d12cd943127f267b|2020-03-27--15-57-18.bz2", Panda.SAFETY_VOLKSWAGEN_PQ, 0), # 2009 VW Passat R36 (B6), supporting OP port not yet upstreamed
   ("fbbfa6af821552b9|2020-03-03--08-09-43.bz2", Panda.SAFETY_NISSAN, 0), # NISSAN.XTRAIL
+  ("5b7c365c50084530_2020-04-15--16-13-24--3--rlog.bz2", Panda.SAFETY_HYUNDAI, 0), # HYUNDAI.SONATA
 ]
 
 if __name__ == "__main__":
@@ -39,4 +40,3 @@ if __name__ == "__main__":
     for f in failed:
       print("\n**** failed on %s ****" % f)
     assert len(failed) == 0, "\nfailed on %d logs" % len(failed)
-

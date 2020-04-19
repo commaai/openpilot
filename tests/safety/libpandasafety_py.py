@@ -32,6 +32,8 @@ typedef struct
 
 void set_controls_allowed(bool c);
 bool get_controls_allowed(void);
+void set_unsafe_mode(int mode);
+int get_unsafe_mode(void);
 void set_relay_malfunction(bool c);
 bool get_relay_malfunction(void);
 void set_gas_interceptor_detected(bool c);
@@ -59,11 +61,6 @@ bool get_honda_moving(void);
 void set_honda_fwd_brake(bool);
 void set_honda_alt_brake_msg(bool);
 int get_honda_hw(void);
-
-void init_tests_cadillac(void);
-void set_cadillac_desired_torque_last(int t);
-void set_cadillac_rt_torque_last(int t);
-void set_cadillac_torque_driver(int min, int max);
 
 void init_tests_gm(void);
 void set_gm_desired_torque_last(int t);

@@ -24,7 +24,6 @@ typedef struct
 } TIM_TypeDef;
 
 struct sample_t toyota_torque_meas;
-struct sample_t cadillac_torque_driver;
 struct sample_t gm_torque_driver;
 struct sample_t hyundai_torque_driver;
 struct sample_t chrysler_torque_meas;
@@ -62,6 +61,13 @@ uint8_t hw_type = HW_TYPE_UNKNOWN;
  ({ __typeof__ (a) _a = (a);                    \
    (_a > 0) ? _a : (-_a); })
 
+// from faults.h
+#define FAULT_RELAY_MALFUNCTION         (1U << 0)
+void fault_occurred(uint32_t fault) {
+}
+void fault_recovered(uint32_t fault) {
+}
+
 // from llcan.h
 #define GET_BUS(msg) (((msg)->RDTR >> 4) & 0xFF)
 #define GET_LEN(msg) ((msg)->RDTR & 0xf)
@@ -72,13 +78,19 @@ uint8_t hw_type = HW_TYPE_UNKNOWN;
 
 #define UNUSED(x) (void)(x)
 
+#ifndef PANDA
 #define PANDA
+#endif
 #define NULL ((void*)0)
 #define static
 #include "safety.h"
 
 void set_controls_allowed(bool c){
   controls_allowed = c;
+}
+
+void set_unsafe_mode(int mode){
+  unsafe_mode = mode;
 }
 
 void set_relay_malfunction(bool c){
@@ -91,6 +103,10 @@ void set_gas_interceptor_detected(bool c){
 
 bool get_controls_allowed(void){
   return controls_allowed;
+}
+
+int get_unsafe_mode(void){
+  return unsafe_mode;
 }
 
 bool get_relay_malfunction(void){
@@ -128,11 +144,6 @@ void set_timer(uint32_t t){
 void set_toyota_torque_meas(int min, int max){
   toyota_torque_meas.min = min;
   toyota_torque_meas.max = max;
-}
-
-void set_cadillac_torque_driver(int min, int max){
-  cadillac_torque_driver.min = min;
-  cadillac_torque_driver.max = max;
 }
 
 void set_gm_torque_driver(int min, int max){
@@ -183,10 +194,6 @@ void set_toyota_rt_torque_last(int t){
   toyota_rt_torque_last = t;
 }
 
-void set_cadillac_rt_torque_last(int t){
-  cadillac_rt_torque_last = t;
-}
-
 void set_gm_rt_torque_last(int t){
   gm_rt_torque_last = t;
 }
@@ -209,10 +216,6 @@ void set_volkswagen_rt_torque_last(int t){
 
 void set_toyota_desired_torque_last(int t){
   toyota_desired_torque_last = t;
-}
-
-void set_cadillac_desired_torque_last(int t){
-  for (int i = 0; i < 4; i++) cadillac_desired_torque_last[i] = t;
 }
 
 void set_gm_desired_torque_last(int t){
@@ -265,6 +268,7 @@ void init_tests(void){
   safety_mode_cnt = 2U;  // avoid ignoring relay_malfunction logic
   gas_pressed_prev = false;
   brake_pressed_prev = false;
+  unsafe_mode = 0;
 }
 
 void init_tests_toyota(void){
@@ -274,16 +278,6 @@ void init_tests_toyota(void){
   toyota_desired_torque_last = 0;
   toyota_rt_torque_last = 0;
   toyota_ts_last = 0;
-  set_timer(0);
-}
-
-void init_tests_cadillac(void){
-  init_tests();
-  cadillac_torque_driver.min = 0;
-  cadillac_torque_driver.max = 0;
-  for (int i = 0; i < 4; i++) cadillac_desired_torque_last[i] = 0;
-  cadillac_rt_torque_last = 0;
-  cadillac_ts_last = 0;
   set_timer(0);
 }
 

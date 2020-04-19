@@ -67,6 +67,8 @@ static int subaru_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
                               NULL, NULL, NULL);
   }
 
+  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
+
   if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
     if (((addr == 0x119) && subaru_global) ||
@@ -116,7 +118,7 @@ static int subaru_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         ((addr == 0x140) && !subaru_global)) {
       int byte = subaru_global ? 4 : 0;
       bool gas_pressed = GET_BYTE(to_push, byte) != 0;
-      if (gas_pressed && !gas_pressed_prev) {
+      if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev) {
         controls_allowed = 0;
       }
       gas_pressed_prev = gas_pressed;
@@ -124,7 +126,7 @@ static int subaru_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) &&
         (((addr == 0x122) && subaru_global) || ((addr == 0x164) && !subaru_global))) {
-      relay_malfunction = true;
+      relay_malfunction_set();
     }
   }
   return valid;
@@ -226,14 +228,14 @@ static int subaru_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 static void subaru_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
-  relay_malfunction = false;
+  relay_malfunction_reset();
   subaru_global = true;
 }
 
 static void subaru_legacy_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
-  relay_malfunction = false;
+  relay_malfunction_reset();
   subaru_global = false;
 }
 

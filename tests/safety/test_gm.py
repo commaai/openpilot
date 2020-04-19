@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 from panda import Panda
 from panda.tests.safety import libpandasafety_py
-from panda.tests.safety.common import StdTest, make_msg
+import panda.tests.safety.common as common
+from panda.tests.safety.common import CANPackerPanda, UNSAFE_MODE
 
 MAX_RATE_UP = 7
 MAX_RATE_DOWN = 17
@@ -15,88 +16,67 @@ MAX_REGEN = 1404
 MAX_RT_DELTA = 128
 RT_INTERVAL = 250000
 
-DRIVER_TORQUE_ALLOWANCE = 50;
-DRIVER_TORQUE_FACTOR = 4;
+DRIVER_TORQUE_ALLOWANCE = 50
+DRIVER_TORQUE_FACTOR = 4
 
-TX_MSGS = [[384, 0], [1033, 0], [1034, 0], [715, 0], [880, 0],  # pt bus
-           [161, 1], [774, 1], [776, 1], [784, 1],  # obs bus
-           [789, 2],  # ch bus
-           [0x104c006c, 3], [0x10400060]]  # gmlan
+class TestGmSafety(common.PandaSafetyTest):
+  TX_MSGS = [[384, 0], [1033, 0], [1034, 0], [715, 0], [880, 0],  # pt bus
+             [161, 1], [774, 1], [776, 1], [784, 1],  # obs bus
+             [789, 2],  # ch bus
+             [0x104c006c, 3], [0x10400060]]  # gmlan
+  STANDSTILL_THRESHOLD = 0
+  RELAY_MALFUNCTION_ADDR = 384
+  RELAY_MALFUNCTION_BUS = 0
+  FWD_BLACKLISTED_ADDRS = {}
+  FWD_BUS_LOOKUP = {}
 
-def twos_comp(val, bits):
-  if val >= 0:
-    return val
-  else:
-    return (2**bits) + val
+  def setUp(self):
+    self.packer = CANPackerPanda("gm_global_a_powertrain")
+    self.packer_chassis = CANPackerPanda("gm_global_a_chassis")
+    self.safety = libpandasafety_py.libpandasafety
+    self.safety.set_safety_hooks(Panda.SAFETY_GM, 0)
+    self.safety.init_tests_gm()
 
-def sign(a):
-  if a > 0:
-    return 1
-  else:
-    return -1
-
-class TestGmSafety(unittest.TestCase):
-  @classmethod
-  def setUp(cls):
-    cls.safety = libpandasafety_py.libpandasafety
-    cls.safety.set_safety_hooks(Panda.SAFETY_GM, 0)
-    cls.safety.init_tests_gm()
+  # override these tests from PandaSafetyTest, GM uses button enable
+  def test_disable_control_allowed_from_cruise(self): pass
+  def test_enable_control_allowed_from_cruise(self): pass
 
   def _speed_msg(self, speed):
-    to_send = make_msg(0, 842)
-    to_send[0].RDLR = speed
-    return to_send
+    values = {"%sWheelSpd"%s: speed for s in ["RL", "RR"]}
+    return self.packer.make_can_msg_panda("EBCMWheelSpdRear", 0, values)
 
   def _button_msg(self, buttons):
-    to_send = make_msg(0, 481)
-    to_send[0].RDHR = buttons << 12
-    return to_send
+    values = {"ACCButtons": buttons}
+    return self.packer.make_can_msg_panda("ASCMSteeringButton", 0, values)
 
   def _brake_msg(self, brake):
-    to_send = make_msg(0, 241)
-    to_send[0].RDLR = 0xa00 if brake else 0x900
-    return to_send
+    # GM safety has a brake threshold of 10
+    values = {"BrakePedalPosition": 10 if brake else 0}
+    return self.packer.make_can_msg_panda("EBCMBrakePedalPosition", 0, values)
 
   def _gas_msg(self, gas):
-    to_send = make_msg(0, 417)
-    to_send[0].RDHR = (1 << 16) if gas else 0
-    return to_send
+    values = {"AcceleratorPedal": 1 if gas else 0}
+    return self.packer.make_can_msg_panda("AcceleratorPedal", 0, values)
 
   def _send_brake_msg(self, brake):
-    to_send = make_msg(2, 789)
-    brake = (-brake) & 0xfff
-    to_send[0].RDLR = (brake >> 8) | ((brake &0xff) << 8)
-    return to_send
+    values = {"FrictionBrakeCmd": -brake}
+    return self.packer_chassis.make_can_msg_panda("EBCMFrictionBrakeCmd", 2, values)
 
   def _send_gas_msg(self, gas):
-    to_send = make_msg(0, 715)
-    to_send[0].RDLR = ((gas & 0x1f) << 27) | ((gas & 0xfe0) << 11)
-    return to_send
+    values = {"GasRegenCmd": gas}
+    return self.packer.make_can_msg_panda("ASCMGasRegenCmd", 0, values)
 
   def _set_prev_torque(self, t):
     self.safety.set_gm_desired_torque_last(t)
     self.safety.set_gm_rt_torque_last(t)
 
   def _torque_driver_msg(self, torque):
-    t = twos_comp(torque, 11)
-    to_send = make_msg(0, 388)
-    to_send[0].RDHR = (((t >> 8) & 0x7) << 16) | ((t & 0xFF) << 24)
-    return to_send
+    values = {"LKADriverAppldTrq": torque}
+    return self.packer.make_can_msg_panda("PSCMStatus", 0, values)
 
   def _torque_msg(self, torque):
-    t = twos_comp(torque, 11)
-    to_send = make_msg(0, 384)
-    to_send[0].RDLR = ((t >> 8) & 0x7) | ((t & 0xFF) << 8)
-    return to_send
-
-  def test_spam_can_buses(self):
-    StdTest.test_spam_can_buses(self, TX_MSGS)
-
-  def test_relay_malfunction(self):
-    StdTest.test_relay_malfunction(self, 384)
-
-  def test_default_controls_not_allowed(self):
-    self.assertFalse(self.safety.get_controls_allowed())
+    values = {"LKASteeringCmd": torque}
+    return self.packer.make_can_msg_panda("ASCMLKASteeringCmd", 0, values)
 
   def test_resume_button(self):
     RESUME_BTN = 2
@@ -115,23 +95,6 @@ class TestGmSafety(unittest.TestCase):
     self.safety.set_controls_allowed(1)
     self.safety.safety_rx_hook(self._button_msg(CANCEL_BTN))
     self.assertFalse(self.safety.get_controls_allowed())
-
-  def test_brake_disengage(self):
-    StdTest.test_allow_brake_at_zero_speed(self)
-    StdTest.test_not_allow_brake_when_moving(self, 0)
-
-  def test_disengage_on_gas(self):
-    self.safety.set_controls_allowed(1)
-    self.safety.safety_rx_hook(self._gas_msg(True))
-    self.assertFalse(self.safety.get_controls_allowed())
-    self.safety.safety_rx_hook(self._gas_msg(False))
-
-  def test_allow_engage_with_gas_pressed(self):
-    self.safety.safety_rx_hook(self._gas_msg(True))
-    self.safety.set_controls_allowed(1)
-    self.safety.safety_rx_hook(self._gas_msg(True))
-    self.assertTrue(self.safety.get_controls_allowed())
-    self.safety.safety_rx_hook(self._gas_msg(False))
 
   def test_brake_safety_check(self):
     for enabled in [0, 1]:
@@ -160,9 +123,6 @@ class TestGmSafety(unittest.TestCase):
           self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(t)))
         else:
           self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(t)))
-
-  def test_manually_enable_controls_allowed(self):
-    StdTest.test_manually_enable_controls_allowed(self)
 
   def test_non_realtime_limit_up(self):
     self.safety.set_gm_torque_driver(0, 0)
@@ -242,16 +202,59 @@ class TestGmSafety(unittest.TestCase):
       self.assertTrue(self.safety.safety_tx_hook(self._torque_msg(sign * (MAX_RT_DELTA + 1))))
 
 
-  def test_fwd_hook(self):
-    # nothing allowed
-    buss = list(range(0x0, 0x3))
-    msgs = list(range(0x1, 0x800))
+  def test_tx_hook_on_pedal_pressed(self):
+    for pedal in ['brake', 'gas']:
+      if pedal == 'brake':
+        # brake_pressed_prev and honda_moving
+        self.safety.safety_rx_hook(self._speed_msg(100))
+        self.safety.safety_rx_hook(self._brake_msg(MAX_BRAKE))
+      elif pedal == 'gas':
+        # gas_pressed_prev
+        self.safety.safety_rx_hook(self._gas_msg(MAX_GAS))
 
-    for b in buss:
-      for m in msgs:
-        # assume len 8
-        self.assertEqual(-1, self.safety.safety_fwd_hook(b, make_msg(b, m, 8)))
+      self.safety.set_controls_allowed(1)
+      self.assertFalse(self.safety.safety_tx_hook(self._send_brake_msg(MAX_BRAKE)))
+      self.assertFalse(self.safety.safety_tx_hook(self._torque_msg(MAX_RATE_UP)))
+      self.assertFalse(self.safety.safety_tx_hook(self._send_gas_msg(MAX_GAS)))
 
+      # reset status
+      self.safety.set_controls_allowed(0)
+      self.safety.safety_tx_hook(self._send_brake_msg(0))
+      self.safety.safety_tx_hook(self._torque_msg(0))
+      if pedal == 'brake':
+        self.safety.safety_rx_hook(self._speed_msg(0))
+        self.safety.safety_rx_hook(self._brake_msg(0))
+      elif pedal == 'gas':
+        self.safety.safety_rx_hook(self._gas_msg(0))
+
+  def test_tx_hook_on_pedal_pressed_on_unsafe_gas_mode(self):
+    for pedal in ['brake', 'gas']:
+      self.safety.set_unsafe_mode(UNSAFE_MODE.DISABLE_DISENGAGE_ON_GAS)
+      if pedal == 'brake':
+        # brake_pressed_prev and honda_moving
+        self.safety.safety_rx_hook(self._speed_msg(100))
+        self.safety.safety_rx_hook(self._brake_msg(MAX_BRAKE))
+        allow_ctrl = False
+      elif pedal == 'gas':
+        # gas_pressed_prev
+        self.safety.safety_rx_hook(self._gas_msg(MAX_GAS))
+        allow_ctrl = True
+
+      self.safety.set_controls_allowed(1)
+      self.assertEqual(allow_ctrl, self.safety.safety_tx_hook(self._send_brake_msg(MAX_BRAKE)))
+      self.assertEqual(allow_ctrl, self.safety.safety_tx_hook(self._torque_msg(MAX_RATE_UP)))
+      self.assertEqual(allow_ctrl, self.safety.safety_tx_hook(self._send_gas_msg(MAX_GAS)))
+
+      # reset status
+      self.safety.set_controls_allowed(0)
+      self.safety.set_unsafe_mode(UNSAFE_MODE.DEFAULT)
+      self.safety.safety_tx_hook(self._send_brake_msg(0))
+      self.safety.safety_tx_hook(self._torque_msg(0))
+      if pedal == 'brake':
+        self.safety.safety_rx_hook(self._speed_msg(0))
+        self.safety.safety_rx_hook(self._brake_msg(0))
+      elif pedal == 'gas':
+        self.safety.safety_rx_hook(self._gas_msg(0))
 
 if __name__ == "__main__":
   unittest.main()
