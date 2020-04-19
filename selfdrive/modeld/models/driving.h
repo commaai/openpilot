@@ -74,7 +74,7 @@ void model_init(ModelState* s, cl_device_id device_id,
                 cl_context context, int temporal);
 ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
-                           mat3 transform, void* sock, float *desire_in, float *traffic_convention_in);
+                           mat3 transform, void* sock, float *desire_in);
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 
