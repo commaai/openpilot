@@ -445,6 +445,8 @@ FW_VERSIONS = {
   (Ecu.srs, 0x18da53f1, None): [b'77959-TFK-G210\x00\x00'],
   (Ecu.fwdRadar, 0x18dab0f1, None): [b'36802-TFK-G130\x00\x00'],
   (Ecu.combinationMeter, 0x18da60f1, None): [b'78109-TFK-G020\x00\x00'],
+  (Ecu.fwdCamera, 0x18dab5f1, None): [b'36161-TFK-G130\x00\x00'],
+  (Ecu.gateway, 0x18daeff1, None): [b'38897-TBA-A020\x00\x00'],
   },
   CAR.CRV_5G: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
