@@ -348,7 +348,10 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
-
+  "03be5f2fd5c508d1|2020-04-19--18-44-15": {
+    'carFingerprint': HONDA.HRV,
+    'enableCamera': True,
+  },
 }
 
 passive_routes = [
