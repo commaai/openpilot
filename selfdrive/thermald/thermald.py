@@ -201,6 +201,8 @@ def thermald_thread():
       if health.health.hwType == log.HealthData.HwType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
+          if ignition:
+            cloudlog.error("Lost panda connection while onroad")
           ignition = False
       else:
         no_panda_cnt = 0
