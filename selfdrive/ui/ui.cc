@@ -525,7 +525,7 @@ void handle_message(UIState *s, Message * msg) {
     capn_resolve(&ss_list.p);
 
     for (int i = 0; i < 12; i++) {
-      s->scene.sharps[i] = capn_get32(ss_list, i);
+      s->scene.sharps[i] = capn_get16(ss_list, i);
     }
   }
   capn_free(&ctx);
