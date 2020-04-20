@@ -107,6 +107,9 @@ def get_can_signals(CP):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
+  elif CP.carFingerprint == CAR.HRV:
+    signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1),
+                ("WHEELS_MOVING", "STANDSTILL", 1)]
   else:
     signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
                 ("DOOR_OPEN_FR", "DOORS_STATUS", 1),
@@ -125,7 +128,7 @@ def get_can_signals(CP):
                 ("MAIN_ON", "SCM_BUTTONS", 0)]
   elif CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.PILOT_2019, CAR.RIDGELINE):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
-  elif CP.carFingerprint == CAR.FIT:
+  elif CP.carFingerprint in (CAR.FIT, CAR.HRV):
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_BUTTONS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
@@ -181,6 +184,8 @@ class CarState(CarStateBase):
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN'])
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
       ret.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
+      ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]['DRIVERS_DOOR_OPEN'])
+    elif self.CP.carFingerprint == CAR.HRV:
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]['DRIVERS_DOOR_OPEN'])
     else:
       ret.standstill = not cp.vl["STANDSTILL"]['WHEELS_MOVING']
