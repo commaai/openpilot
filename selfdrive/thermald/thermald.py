@@ -197,7 +197,7 @@ def thermald_thread():
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
-      # If we loose connection to the panda, wait 10 seconds before going offroad
+      # If we lose connection to the panda, wait 10 seconds before going offroad
       if health.health.hwType == log.HealthData.HwType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
