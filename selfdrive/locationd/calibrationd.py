@@ -62,7 +62,10 @@ class Calibrator():
     self.v_ego = 0
 
     # Read calibration
-    calibration_params = Params().get("CalibrationParams")
+    if param_put:
+      calibration_params = None
+    else:
+      calibration_params = Params().get("CalibrationParams")
     if calibration_params:
       try:
         calibration_params = json.loads(calibration_params)
