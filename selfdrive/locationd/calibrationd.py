@@ -63,9 +63,9 @@ class Calibrator():
 
     # Read calibration
     if param_put:
-      calibration_params = None
-    else:
       calibration_params = Params().get("CalibrationParams")
+    else:
+      calibration_params = None
     if calibration_params:
       try:
         calibration_params = json.loads(calibration_params)
