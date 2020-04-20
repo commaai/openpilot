@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
 
             dmonitoringmodel.is_rhd = event.getDMonitoringState().getIsRHD();
             dmonitoringmodel.is_rhd_checked = event.getDMonitoringState().getRhdChecked();
+            delete msg;
           }
           chk_counter = 0;
         }
