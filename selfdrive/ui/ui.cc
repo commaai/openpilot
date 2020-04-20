@@ -521,7 +521,12 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_FrameData datad;
     cereal_read_FrameData(&datad, eventd.frame);
 
-    s->scene.blurryaf = datad.isBlur;
+    capn_list16 ss_list = datad.sharpnessScore;
+    capn_resolve(&ss_list.p);
+
+    for (int i = 0; i < 12; i++) {
+      s->scene.sharps[i] = capn_get32(ss_list, i);
+    }
   }
   capn_free(&ctx);
 }

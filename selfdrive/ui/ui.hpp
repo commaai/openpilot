@@ -101,7 +101,7 @@ const uint8_t bg_colors[][4] = {
 typedef struct UIScene {
   int frontview;
   int fullview;
-  bool blurryaf;
+  int sharps[12];
 
   int transformed_width, transformed_height;
 

@@ -104,7 +104,7 @@ bool is_blur(uint16_t *lapmap) {
   int n_roi = (ROI_X_MAX - ROI_X_MIN + 1) * (ROI_Y_MAX - ROI_Y_MIN + 1);
   float bad_sum = 0;
   for (int i = 0; i < n_roi; i++) {
-    printf("%d- %d\n", i, *(lapmap + i));
+    // printf("%d- %d\n", i, *(lapmap + i));
     if (*(lapmap + i) < LM_THRESH) {
       bad_sum += 1/(float)n_roi;
     }

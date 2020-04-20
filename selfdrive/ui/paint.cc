@@ -619,8 +619,11 @@ static void ui_draw_vision_speed(UIState *s) {
     nvgText(s->vg, viz_speed_x+viz_speed_w/2, 320, "mph", NULL);
   }
 
-  if (scene->blurryaf) {
-    nvgText(s->vg, viz_speed_x+viz_speed_w/2, 640, "BLURRY AF", NULL);
+  // remove this
+  for (int i = 0; i < 12; i++){
+    char ss_str[32];
+    snprintf(ss_str, sizeof(ss_str), "%d", scene->sharps[i]);
+    nvgText(s->vg, viz_speed_x + viz_speed_w/2 + ((i%6) - 2.5) * 160, 320 + (i/6) * 160, ss_str, NULL);
   }
 }
 

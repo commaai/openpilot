@@ -418,6 +418,7 @@ void* processing_thread(void *arg) {
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
+#ifdef QCOM
     /*FILE *dump_rgb_file = fopen("/tmp/process_dump.rgb", "wb");
     fwrite(s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, sizeof(uint8_t), dump_rgb_file);
     fclose(dump_rgb_file);
@@ -474,16 +475,13 @@ void* processing_thread(void *arg) {
     printf("pool time: %f ms\n", t11 - t10);
     t10 = millis_since_boot();
 
-    bool amiblur;
-    amiblur = is_blur((uint16_t *)&s->lapres);
-    // printf("AF %f\n", amiblur);
-
     delete [] rgb_roi_buf;
     delete [] conv_result;
 
     t11 = millis_since_boot();
     printf("process time: %f ms\n ----- \n", t11 - t10);
     t10 = millis_since_boot();
+#endif
 
     double t2 = millis_since_boot();
 
@@ -527,13 +525,14 @@ void* processing_thread(void *arg) {
         framed.setLensErr(frame_data.lens_err);
         framed.setLensTruePos(frame_data.lens_true_pos);
         framed.setGainFrac(frame_data.gain_frac);
-        framed.setIsBlur(amiblur);
 
 #ifdef QCOM
         kj::ArrayPtr<const int16_t> focus_vals(&s->cameras.rear.focus[0], NUM_FOCUS);
         kj::ArrayPtr<const uint8_t> focus_confs(&s->cameras.rear.confidence[0], NUM_FOCUS);
         framed.setFocusVal(focus_vals);
         framed.setFocusConf(focus_confs);
+        kj::ArrayPtr<const uint16_t> sharpness_score(&s->lapres[0], (ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1));
+        framed.setSharpnessScore(sharpness_score);
 #endif
 
 // TODO: add this back
@@ -1170,7 +1169,7 @@ void init_buffers(VisionState *s) {
   s->conv_cl_localWorkSize[0] = CONV_LOCAL_WORKSIZE;
   s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
 
-  for (int i=0; i<(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1); i++) {s->lapres[i] = 1024;}
+  for (int i=0; i<(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1); i++) {s->lapres[i] = 16160;}
 
   rgb_to_yuv_init(&s->rgb_to_yuv_state, s->context, s->device_id, s->yuv_width, s->yuv_height, s->rgb_stride);
   rgb_to_yuv_init(&s->front_rgb_to_yuv_state, s->context, s->device_id, s->yuv_front_width, s->yuv_front_height, s->rgb_front_stride);
