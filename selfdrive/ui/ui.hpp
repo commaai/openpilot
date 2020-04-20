@@ -168,6 +168,7 @@ typedef struct UIScene {
   int hwType;
   int satelliteCount;
   uint8_t athenaStatus;
+  int gear;
 } UIScene;
 
 typedef struct {
@@ -213,6 +214,7 @@ typedef struct UIState {
   // sockets
   Context *ctx;
   SubSocket *model_sock;
+  SubSocket *carstate_sock;
   SubSocket *controlsstate_sock;
   SubSocket *livecalibration_sock;
   SubSocket *radarstate_sock;
