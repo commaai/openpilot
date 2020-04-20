@@ -89,7 +89,7 @@ typedef struct CameraState {
 
   camera_apply_exposure_func apply_exposure;
 
-  int16_t focus[NUM_FOCUS];
+  int16_t focus[NUM_FOCUS*2];
   uint8_t confidence[NUM_FOCUS];
 
   float focus_err;

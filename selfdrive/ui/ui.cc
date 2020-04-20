@@ -521,6 +521,20 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_FrameData datad;
     cereal_read_FrameData(&datad, eventd.frame);
 
+    capn_list16 fv_list = datad.focusVal;
+    capn_resolve(&fv_list.p);
+
+    for (int i = 0; i < 16; i++) {
+      s->scene.focusdat[i] = capn_get16(fv_list, i);
+    }
+
+    capn_list8 fc_list = datad.focusConf;
+    capn_resolve(&fc_list.p);
+
+    for (int i = 0; i < 8; i++) {
+      s->scene.focusconf[i] = capn_get8(fc_list, i);
+    }
+
     capn_list16 ss_list = datad.sharpnessScore;
     capn_resolve(&ss_list.p);
 

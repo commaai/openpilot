@@ -625,6 +625,18 @@ static void ui_draw_vision_speed(UIState *s) {
     snprintf(ss_str, sizeof(ss_str), "%d", scene->sharps[i]);
     nvgText(s->vg, viz_speed_x + viz_speed_w/2 + ((i%6) - 2.5) * 270, 480 + (i/6) * 320, ss_str, NULL);
   }
+  nvgFontSize(s->vg, 36);
+  nvgFillColor(s->vg, nvgRGBA(220, 37, 37, 200));
+
+  for (int i = 0; i < 8; i++){
+    char f_str[32];
+    snprintf(f_str, sizeof(f_str), "%d", scene->focusconf[i]);
+    nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (i - 3.5) * 160, 880, ss_str, NULL);
+    snprintf(f_str, sizeof(f_str), "%d", scene->focusdat[2*i]);
+    nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (i - 3.5) * 160, 960, ss_str, NULL);
+    snprintf(f_str, sizeof(f_str), "%d", scene->focusdat[2*i+1]);
+    nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (i - 3.5) * 160, 1040, ss_str, NULL);
+  }
 }
 
 static void ui_draw_vision_event(UIState *s) {

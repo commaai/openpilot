@@ -1720,8 +1720,10 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
     int doff = i*5+5;
     s->confidence[i] = d[doff];
     int16_t focus_t = (d[doff+1] << 3) | (d[doff+2] >> 5);
+    s->focus[2*i] = d[doff+1];
+    s->focus[2*i+1] = d[doff+2];
     if (focus_t >= 1024) focus_t = -(2048-focus_t);
-    s->focus[i] = focus_t;
+    // s->focus[i] = focus_t;
     //printf("%x->%d ", d[doff], focus_t);
     if (s->confidence[i] > 0x20) {
       good_count++;
