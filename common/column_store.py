@@ -36,7 +36,12 @@ class ColumnStoreReader():
     if self._is_dict:
       if not self._np_data:
         self._np_data = self._load(os.path.join(self._path, 'columnstore'))
-      return self._np_data.keys()
+      # return top level keys by matching on prefix and splitting on '/'
+      return {
+        k[len(self._prefix):].split('/')[0]
+        for k in self._np_data.keys()
+        if k.startswith(self._prefix)
+      }
 
     return list(self._keys)
 
