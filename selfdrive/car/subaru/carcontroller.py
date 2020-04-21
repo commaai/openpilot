@@ -8,7 +8,7 @@ class CarControllerParams():
   def __init__(self, car_fingerprint):
     self.STEER_MAX = 2047                # max_steer 2047
     self.STEER_STEP = 2                  # how often we update the steer cmd
-    self.STEER_DELTA_UP = 60             # torque increase per refresh, 0.68s to max
+    self.STEER_DELTA_UP = 50             # torque increase per refresh, 0.8s to max
     self.STEER_DELTA_DOWN = 70           # torque decrease per refresh
     if car_fingerprint == CAR.IMPREZA:
       self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
