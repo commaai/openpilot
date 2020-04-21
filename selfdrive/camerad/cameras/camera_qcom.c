@@ -2067,7 +2067,7 @@ static void* ops_thread(void* arg) {
         if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
           if (cmsg.camera_num == 0) {
             do_autoexposure(&s->rear, cmsg.grey_frac);
-            do_autofocus(&s->rear);
+            // do_autofocus(&s->rear);
           } else {
             do_autoexposure(&s->front, cmsg.grey_frac);
           }

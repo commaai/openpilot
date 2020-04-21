@@ -424,7 +424,7 @@ void* processing_thread(void *arg) {
     fclose(dump_rgb_file);
     printf("ORIGINAL SAVED!!\n");*/
 
-    double t10 = millis_since_boot();
+    /*double t10 = millis_since_boot();*/
 
     uint8_t *rgb_roi_buf = new uint8_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3];
     int roi_id = cnt % ((ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1));
@@ -442,9 +442,9 @@ void* processing_thread(void *arg) {
         s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), rgb_roi_buf, 0, 0, 0);
     assert(err == 0);
 
-    double t11 = millis_since_boot();
+    /*double t11 = millis_since_boot();
     printf("cache time: %f ms\n", t11 - t10);
-    t10 = millis_since_boot();
+    t10 = millis_since_boot();*/
 
     err = clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *) &s->rgb_conv_roi_cl);
     err = clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *) &s->rgb_conv_result_cl);
@@ -465,22 +465,22 @@ void* processing_thread(void *arg) {
     err = clEnqueueReadBuffer(q, s->rgb_conv_result_cl, true, 0,
        s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), conv_result, 0, 0, 0);
 
-    t11 = millis_since_boot();
+    /*t11 = millis_since_boot();
     printf("conv time: %f ms\n", t11 - t10);
-    t10 = millis_since_boot();
+    t10 = millis_since_boot();*/
 
     get_lapmap_one(conv_result, &s->lapres[roi_id], s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y);
 
-    t11 = millis_since_boot();
+    /*t11 = millis_since_boot();
     printf("pool time: %f ms\n", t11 - t10);
-    t10 = millis_since_boot();
+    t10 = millis_since_boot();*/
 
     delete [] rgb_roi_buf;
     delete [] conv_result;
 
-    t11 = millis_since_boot();
+    /*t11 = millis_since_boot();
     printf("process time: %f ms\n ----- \n", t11 - t10);
-    t10 = millis_since_boot();
+    t10 = millis_since_boot();*/
 #endif
 
     double t2 = millis_since_boot();

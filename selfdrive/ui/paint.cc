@@ -12,6 +12,17 @@ extern "C"{
 #include "common/glutil.h"
 }
 
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x80 ? '1' : '0'), \
+  (byte & 0x40 ? '1' : '0'), \
+  (byte & 0x20 ? '1' : '0'), \
+  (byte & 0x10 ? '1' : '0'), \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0') 
+
 // TODO: this is also hardcoded in common/transformations/camera.py
 const mat3 intrinsic_matrix = (mat3){{
   910., 0., 582.,
@@ -625,21 +636,24 @@ static void ui_draw_vision_speed(UIState *s) {
     snprintf(ss_str, sizeof(ss_str), "%d", scene->sharps[i]);
     nvgText(s->vg, viz_speed_x + viz_speed_w/2 + ((i%6) - 2.5) * 270, 480 + (i/6) * 320, ss_str, NULL);
   }
-  nvgFontSize(s->vg, 64);
+  nvgFontSize(s->vg, 44);
   nvgFillColor(s->vg, nvgRGBA(37, 220, 37, 220));
 
   
   nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (-4) * 180, 880, "conf", NULL);
-  nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (-4) * 180, 960, "1st", NULL);
-  nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (-4) * 180, 1010, "2nd", NULL);
+  nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (-4) * 180, 960, "1st byte", NULL);
+  nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (-4) * 180, 1010, "1+2 10-bit", NULL);
 
   char f_str[32];
   for (int i = 0; i < 8; i++){
+    // snprintf(f_str, sizeof(f_str), BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(scene->focusconf[i]));
     snprintf(f_str, sizeof(f_str), "%d", scene->focusconf[i]);
     nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (i - 3) * 180, 880, f_str, NULL);
-    snprintf(f_str, sizeof(f_str), "%d", scene->focusdat[2*i]);
+    // snprintf(f_str, sizeof(f_str), BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(scene->focusdat[2*i]));
+    snprintf(f_str, sizeof(f_str), "%d", (int8_t)scene->focusdat[2*i]);
     nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (i - 3) * 180, 960, f_str, NULL);
-    snprintf(f_str, sizeof(f_str), "%d", scene->focusdat[2*i+1]);
+    // snprintf(f_str, sizeof(f_str), BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(scene->focusdat[2*i+1]));
+    snprintf(f_str, sizeof(f_str), "%d", ((uint8_t)scene->focusdat[2*i+1])/64 + ((int8_t)scene->focusdat[2*i])*4);
     nvgText(s->vg, viz_speed_x + viz_speed_w/2 + (i - 3) * 180, 1010, f_str, NULL);
   }
 }
