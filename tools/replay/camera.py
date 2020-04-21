@@ -3,7 +3,7 @@ import os
 
 from common.basedir import BASEDIR
 os.environ['BASEDIR'] = BASEDIR
-SCALE = 1
+SCALE = float(os.getenv("SCALE", 1.0))
 
 import argparse
 import zmq
@@ -39,7 +39,8 @@ def ui_thread(addr, frame_address):
   pygame.font.init()
   assert pygame_modules_have_loaded()
 
-  size = (_FULL_FRAME_SIZE[0] * SCALE, _FULL_FRAME_SIZE[1] * SCALE)
+  size = (int(_FULL_FRAME_SIZE[0] * SCALE), int(_FULL_FRAME_SIZE[1] * SCALE))
+  print(size)
   pygame.display.set_caption("comma one debug UI")
   screen = pygame.display.set_mode(size, pygame.DOUBLEBUF)
 
@@ -81,7 +82,7 @@ def ui_thread(addr, frame_address):
 
     height, width = img.shape[:2]
     img_resized = cv2.resize(
-      img, (SCALE * width, SCALE * height), interpolation=cv2.INTER_CUBIC)
+      img, (int(SCALE * width), int(SCALE * height)), interpolation=cv2.INTER_CUBIC)
     # *** blits ***
     pygame.surfarray.blit_array(camera_surface, img_resized.swapaxes(0, 1))
     screen.blit(camera_surface, (0, 0))
