@@ -1727,8 +1727,8 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
     //printf("%x->%d ", d[doff], focus_t);
     if (s->confidence[i] > 0x20) {
       good_count++;
-      max_focus = max(max_focus, s->focus[i]);
-      avg_focus += s->focus[i];
+      max_focus = max(max_focus, focus_t);
+      avg_focus += focus_t;
     }
   }
 
