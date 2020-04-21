@@ -5,7 +5,7 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
 import math
 
 libmpc = libmpc_py.libmpc
-libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, 1.)
+libmpc.init(MPC_COST_LAT.PATH, 5.)
 
 cur_state = libmpc_py.ffi.new("state_t *")
 cur_state[0].x = 0.0
@@ -42,8 +42,7 @@ p_prob = 1.0
 
 for i in range(1):
   cur_state[0].delta = math.radians(510. / 13.)
-  libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob,
-                 curvature_factor, v_ref, LANE_WIDTH)
+  libmpc.run_mpc(cur_state, mpc_solution, p_poly, curvature_factor, v_ref)
 
 timesi = []
 ct = 0

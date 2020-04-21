@@ -18,6 +18,9 @@ points_l = np.array([1.1049711, 1.1053879, 1.1073375, 1.1096942, 1.1124474, 1.11
 points_r = np.array([-2.4442139, -2.4449506, -2.4448867, -2.44377, -2.4422617, -2.4393811, -2.4374201, -2.4334245, -2.4286852, -2.4238286, -2.4177458, -2.4094386, -2.3994849, -2.3904033, -2.380136, -2.3699453, -2.3594661, -2.3474073, -2.3342307, -2.3194637, -2.3046403, -2.2881098, -2.2706163, -2.2530098, -2.235604, -2.2160542, -2.1967411, -2.1758952, -2.1544619, -2.1325269, -2.1091819, -2.0850561, -2.0621953, -2.0364127, -2.0119917, -1.9851667, -1.9590458, -1.9306552, -1.9024918, -1.8745357, -1.8432863, -1.8131843, -1.7822732, -1.7507075, -1.7180918, -1.6845931, -1.650871, -1.6157099, -1.5787286, -1.5418037])
 
 
+PATH_COST = 0.5
+STEER_RATE_COST = 5
+
 points_c = (points_l + points_r) / 2.0
 
 def compute_path_pinv():
@@ -30,7 +33,7 @@ def compute_path_pinv():
 
 def model_polyfit(points):
   path_pinv = compute_path_pinv()
-  return np.dot(path_pinv, map(float, points))
+  return np.dot(path_pinv, list(map(float, points)))
 
 
 xx = []
@@ -47,9 +50,9 @@ curvature_factor = VM.curvature_factor(v_ref)
 print(curvature_factor)
 
 LANE_WIDTH = 3.9
-p_l = map(float, model_polyfit(points_l))
-p_r = map(float, model_polyfit(points_r))
-p_p = map(float, model_polyfit(points_c))
+p_l = list(map(float, model_polyfit(points_l)))
+p_r = list(map(float, model_polyfit(points_r)))
+p_p = list(map(float, model_polyfit(points_c)))
 
 l_poly = libmpc_py.ffi.new("double[4]", p_l)
 r_poly = libmpc_py.ffi.new("double[4]", p_r)
@@ -78,8 +81,6 @@ ys = []
 deltas = []
 titles = [
   'Steer rate cost',
-  'Heading cost',
-  'Lane cost',
   'Path cost',
 ]
 
@@ -87,73 +88,37 @@ titles = [
 sol_x = OrderedDict()
 sol_y = OrderedDict()
 delta = OrderedDict()
-for cost in np.logspace(-1, 1.0, 5):
-  libmpc.init(1.0, 3.0, 1.0, cost)
+for cost in list(np.logspace(-1, 1.0, 5)) + [STEER_RATE_COST]:
+  libmpc.init(PATH_COST, cost)
   for _ in range(10):
-    libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob,
-                  curvature_factor, v_ref, LANE_WIDTH)
-  sol_x[cost] = map(float, list(mpc_solution[0].x))
-  sol_y[cost] = map(float, list(mpc_solution[0].y))
-  delta[cost] = map(float, list(mpc_solution[0].delta))
+    libmpc.run_mpc(cur_state, mpc_solution, p_poly, curvature_factor, v_ref)
+  sol_x[cost] = list(map(float, list(mpc_solution[0].x)))
+  sol_y[cost] = list(map(float, list(mpc_solution[0].y)))
+  delta[cost] = list(map(float, list(mpc_solution[0].delta)))
 xs.append(sol_x)
 ys.append(sol_y)
 deltas.append(delta)
-
-# Heading cost
-sol_x = OrderedDict()
-sol_y = OrderedDict()
-delta = OrderedDict()
-for cost in np.logspace(-1, 1.0, 5):
-  libmpc.init(1.0, 3.0, cost, 1.0)
-  for _ in range(10):
-    libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob,
-                  curvature_factor, v_ref, LANE_WIDTH)
-  sol_x[cost] = map(float, list(mpc_solution[0].x))
-  sol_y[cost] = map(float, list(mpc_solution[0].y))
-  delta[cost] = map(float, list(mpc_solution[0].delta))
-xs.append(sol_x)
-ys.append(sol_y)
-deltas.append(delta)
-
-# Lane cost
-sol_x = OrderedDict()
-sol_y = OrderedDict()
-delta = OrderedDict()
-for cost in np.logspace(-1, 2.0, 5):
-  libmpc.init(1.0, cost, 1.0, 1.0)
-  for _ in range(10):
-    libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob,
-                  curvature_factor, v_ref, LANE_WIDTH)
-  sol_x[cost] = map(float, list(mpc_solution[0].x))
-  sol_y[cost] = map(float, list(mpc_solution[0].y))
-  delta[cost] = map(float, list(mpc_solution[0].delta))
-xs.append(sol_x)
-ys.append(sol_y)
-deltas.append(delta)
-
 
 # Path cost
 sol_x = OrderedDict()
 sol_y = OrderedDict()
 delta = OrderedDict()
-for cost in np.logspace(-1, 1.0, 5):
-  libmpc.init(cost, 3.0, 1.0, 1.0)
+for cost in list(np.logspace(-1, 1.0, 5)) + [PATH_COST]:
+  libmpc.init(cost, STEER_RATE_COST)
   for _ in range(10):
-    libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob,
-                  curvature_factor, v_ref, LANE_WIDTH)
-  sol_x[cost] = map(float, list(mpc_solution[0].x))
-  sol_y[cost] = map(float, list(mpc_solution[0].y))
-  delta[cost] = map(float, list(mpc_solution[0].delta))
+    libmpc.run_mpc(cur_state, mpc_solution, p_poly, curvature_factor, v_ref)
+  sol_x[cost] = list(map(float, list(mpc_solution[0].x)))
+  sol_y[cost] = list(map(float, list(mpc_solution[0].y)))
+  delta[cost] = list(map(float, list(mpc_solution[0].delta)))
 xs.append(sol_x)
 ys.append(sol_y)
 deltas.append(delta)
 
 
-
 plt.figure()
 
 for i in range(len(xs)):
-  ax = plt.subplot(2, 2, i + 1)
+  ax = plt.subplot(2, 1, i + 1)
   sol_x = xs[i]
   sol_y = ys[i]
   for cost in sol_x.keys():
@@ -165,7 +130,7 @@ for i in range(len(xs)):
   plt.plot(mpc_x_points, points_poly_l, 'b')
   plt.plot(mpc_x_points, points_poly_r, 'b')
   plt.plot(mpc_x_points, (points_poly_l + points_poly_r) / 2.0, 'g')
-  plt.legend(map(lambda x: str(round(x, 2)), sol_x.keys()) + ['right', 'left', 'center'], loc=3)
+  plt.legend(list(map(lambda x: str(round(x, 2)), sol_x.keys())) + ['right', 'left', 'center'], loc=3)
   plt.title(titles[i])
   plt.grid(True)
   # ax.set_aspect('equal', 'datalim')
@@ -173,7 +138,7 @@ for i in range(len(xs)):
 
 plt.figure()
 for i in range(len(xs)):
-  plt.subplot(2, 2, i + 1)
+  plt.subplot(2, 1, i + 1)
   sol_x = xs[i]
   delta = deltas[i]
 
