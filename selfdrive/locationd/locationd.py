@@ -57,10 +57,9 @@ class Localizer():
     self.calibrated = 0
     self.H = get_H()
 
-  def liveLocationMsg(self, time):
-    predicted_state = self.kf.x
-    predicted_cov = self.kf.P
-    predicted_std = np.sqrt(np.diagonal(self.kf.P))
+  @staticmethod
+  def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov):
+    predicted_std = np.sqrt(np.diagonal(predicted_cov))
 
     fix_ecef = predicted_state[States.ECEF_POS]
     fix_ecef_std = predicted_std[States.ECEF_POS_ERR]
@@ -71,34 +70,32 @@ class Localizer():
     orientation_ecef = euler_from_quat(predicted_state[States.ECEF_ORIENTATION])
     orientation_ecef_std = predicted_std[States.ECEF_ORIENTATION_ERR]
 
-    acc_calib = self.calib_from_device.dot(predicted_state[States.ACCELERATION])
-    acc_calib_std = np.sqrt(np.diagonal(self.calib_from_device.dot(
-                                                 predicted_cov[States.ACCELERATION_ERR, States.ACCELERATION_ERR]).dot(
-                                                 self.calib_from_device.T)))
-    ang_vel_calib = self.calib_from_device.dot(predicted_state[States.ANGULAR_VELOCITY])
-    ang_vel_calib_std = np.sqrt(np.diagonal(self.calib_from_device.dot(
-                                                 predicted_cov[States.ANGULAR_VELOCITY_ERR, States.ANGULAR_VELOCITY_ERR]).dot(
-                                                 self.calib_from_device.T)))
+    acc_calib = calib_from_device.dot(predicted_state[States.ACCELERATION])
+    acc_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
+      predicted_cov[States.ACCELERATION_ERR, States.ACCELERATION_ERR]).dot(
+        calib_from_device.T)))
+    ang_vel_calib = calib_from_device.dot(predicted_state[States.ANGULAR_VELOCITY])
+    ang_vel_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
+      predicted_cov[States.ANGULAR_VELOCITY_ERR, States.ANGULAR_VELOCITY_ERR]).dot(
+        calib_from_device.T)))
 
     device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
     vel_device = device_from_ecef.dot(vel_ecef)
     device_from_ecef_eul = euler_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
     idxs = list(range(States.ECEF_ORIENTATION_ERR.start, States.ECEF_ORIENTATION_ERR.stop)) + list(range(States.ECEF_VELOCITY_ERR.start, States.ECEF_VELOCITY_ERR.stop))
     condensed_cov = predicted_cov[idxs][:,idxs]
-    H = self.H(*list(np.concatenate([device_from_ecef_eul, vel_ecef])))
-    vel_device_cov = H.dot(condensed_cov).dot(H.T)
+    HH = H(*list(np.concatenate([device_from_ecef_eul, vel_ecef])))
+    vel_device_cov = HH.dot(condensed_cov).dot(HH.T)
     vel_device_std = np.sqrt(np.diagonal(vel_device_cov))
 
-    vel_calib = self.calib_from_device.dot(vel_device)
-    vel_calib_std = np.sqrt(np.diagonal(self.calib_from_device.dot(
-                                                 vel_device_cov).dot(
-                                                 self.calib_from_device.T)))
+    vel_calib = calib_from_device.dot(vel_device)
+    vel_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
+      vel_device_cov).dot(calib_from_device.T)))
 
     orientation_ned = ned_euler_from_ecef(fix_ecef, orientation_ecef)
     #orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
-    ned_vel = self.converter.ecef2ned(fix_ecef + vel_ecef) - self.converter.ecef2ned(fix_ecef)
+    ned_vel = converter.ecef2ned(fix_ecef + vel_ecef) - converter.ecef2ned(fix_ecef)
     #ned_vel_std = self.converter.ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter.ecef2ned(fix_ecef + vel_ecef)
-
 
     fix = messaging.log.LiveLocationKalman.new_message()
     fix.positionGeodetic.value = to_float(fix_pos_geo)
@@ -139,6 +136,10 @@ class Localizer():
     fix.accelerationCalibrated.value = to_float(acc_calib)
     fix.accelerationCalibrated.std = to_float(acc_calib_std)
     fix.accelerationCalibrated.valid = True
+    return fix
+
+  def liveLocationMsg(self, time):
+    fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P)
 
     #fix.gpsWeek = self.time.week
     #fix.gpsTimeOfWeek = self.time.tow
