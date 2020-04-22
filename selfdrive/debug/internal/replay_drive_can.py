@@ -16,8 +16,8 @@ for i in range(2):
 
 
 # Replay
-sendcan = messaging.pub_sock('sendcan')
+can = messaging.pub_sock('can')
 while True:
   for m in can_msgs:
-    sendcan.send(m.as_builder().to_bytes())
+    can.send(m.as_builder().to_bytes())
     time.sleep(0.01)  # 100 Hz
