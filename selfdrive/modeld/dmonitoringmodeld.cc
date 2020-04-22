@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
       buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
         printf("visionstream get failed\n");
+        visionstream_destroy(&stream);
         break;
       }
       //printf("frame_id: %d %dx%d\n", extra.frame_id, buf_info.width, buf_info.height);
@@ -70,6 +71,7 @@ int main(int argc, char **argv) {
 
             dmonitoringmodel.is_rhd = event.getDMonitoringState().getIsRHD();
             dmonitoringmodel.is_rhd_checked = event.getDMonitoringState().getRhdChecked();
+            delete msg;
           }
           chk_counter = 0;
         }
