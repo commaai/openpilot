@@ -2,14 +2,20 @@
 
 # Question: Can a human drive from this data?
 
+import os
 import cv2
 import numpy as np
 import cereal.messaging as messaging
 from common.window import Window
-from common.transformations.model import MEDMODEL_INPUT_SIZE
+if os.getenv("BIG") is not None:
+  from common.transformations.model import BIGMODEL_INPUT_SIZE as MEDMODEL_INPUT_SIZE
+  from common.transformations.model import get_camera_frame_from_bigmodel_frame as get_camera_frame_from_medmodel_frame
+else:
+  from common.transformations.model import MEDMODEL_INPUT_SIZE
+  from common.transformations.model import get_camera_frame_from_medmodel_frame
+
 from common.transformations.camera import FULL_FRAME_SIZE, eon_intrinsics
 
-from common.transformations.model import get_camera_frame_from_medmodel_frame
 from tools.replay.lib.ui_helpers import CalibrationTransformsForWarpMatrix
 
 if __name__ == "__main__":
