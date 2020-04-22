@@ -154,24 +154,15 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
 
   if (s->scene.hwType == cereal_HealthData_HwType_unknown) {
     panda_severity = 2;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO\nPANDA");
-  } else if (s->scene.hwType == cereal_HealthData_HwType_whitePanda) {
-    panda_severity = 0;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nACTIVE");
-  } else if (
-      (s->scene.hwType == cereal_HealthData_HwType_greyPanda) ||
-      (s->scene.hwType == cereal_HealthData_HwType_blackPanda) ||
-      (s->scene.hwType == cereal_HealthData_HwType_uno)) {
-      if (s->scene.satelliteCount == -1) {
-        panda_severity = 0;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nACTIVE");
-      } else if (s->scene.satelliteCount < 6) {
-        panda_severity = 1;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nNO GPS");
-      } else if (s->scene.satelliteCount >= 6) {
-        panda_severity = 0;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "PANDA\nGOOD GPS");
-      }
+    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO\nVEHICLE");
+  } else {
+    if (s->scene.satelliteCount < 6) {
+      panda_severity = 1;
+      snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nNO GPS");
+    } else if (s->scene.satelliteCount >= 6) {
+      panda_severity = 0;
+      snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nGOOD GPS");
+    }
   }
 
   ui_draw_sidebar_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message_str);
