@@ -5,7 +5,7 @@ import time
 import signal
 import traceback
 import usb1
-from panda import Panda
+from panda import Panda, PandaDFU
 from multiprocessing import Pool
 
 jungle = "JUNGLE" in os.environ
@@ -22,31 +22,31 @@ def initializer():
 
 def send_thread(sender_serial):
   global jungle
-  try:
-    if jungle:
-      sender = PandaJungle(sender_serial)
-    else:
-      sender = Panda(sender_serial)
-      sender.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
-    sender.set_can_loopback(False)
+  while True:
+    try:
+      if jungle:
+        sender = PandaJungle(sender_serial)
+      else:
+        sender = Panda(sender_serial)
+        sender.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
 
-    can_sock = messaging.sub_sock('can')
+      sender.set_can_loopback(False)
+      can_sock = messaging.sub_sock('can')
 
-    while True:
-      # Send messages one bus 0 and 1
-      tsc = messaging.recv_one(can_sock)
-      snd = can_capnp_to_can_list(tsc.can)
-      snd = list(filter(lambda x: x[-1] <= 2, snd))
+      while True:
+        tsc = messaging.recv_one(can_sock)
+        snd = can_capnp_to_can_list(tsc.can)
 
-      try:
-        sender.can_send_many(snd)
-      except usb1.USBErrorTimeout:
-        print("Can TX overflow", sender_serial)
+        try:
+          sender.can_send_many(snd)
+        except usb1.USBErrorTimeout:
+          pass
 
-      # Drain panda message buffer
-      sender.can_recv()
-  except Exception:
-    traceback.print_exc()
+        # Drain panda message buffer
+        sender.can_recv()
+    except Exception:
+      traceback.print_exc()
+      time.sleep(1)
 
 if __name__ == "__main__":
   if jungle:
@@ -55,11 +55,21 @@ if __name__ == "__main__":
     serials = Panda.list()
   num_senders = len(serials)
 
+
   if num_senders == 0:
     print("No senders found. Exiting")
     sys.exit(1)
   else:
     print("%d senders found. Starting broadcast" % num_senders)
+
+  if "FLASH" in os.environ:
+    for s in PandaDFU.list():
+      PandaDFU(s).recover()
+
+    time.sleep(1)
+    for s in serials:
+      Panda(s).recover()
+      Panda(s).flash()
 
   pool = Pool(num_senders, initializer=initializer)
   pool.map_async(send_thread, serials)
