@@ -254,7 +254,7 @@ def uploader_fn(exit_event):
     if d is None:
       time.sleep(5)
       
-      while not exit_event.is_set() and params.get("IsOffroad") == b"1":
+      while params.get("IsOffroad") == b"1" and not exit_event.is_set():
         time.sleep(10)
 
       continue
