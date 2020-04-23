@@ -147,29 +147,13 @@ def pretransform_from_calib(calib):
   camera_frame_from_calib_frame = get_camera_frame_from_calib_frame(camera_frame_from_road_frame)
   return np.linalg.inv(camera_frame_from_calib_frame)
 
-
-def transform_img(base_img,
-                 augment_trans=np.array([0,0,0]),
-                 augment_eulers=np.array([0,0,0]),
-                 from_intr=eon_intrinsics,
-                 to_intr=eon_intrinsics,
-                 output_size=None,
-                 pretransform=None,
-                 top_hacks=False,
-                 yuv=False,
-                 alpha=1.0,
-                 beta=0,
-                 blur=0):
+def transform_img_M(size,
+                   augment_trans=np.array([0,0,0]),
+                   augment_eulers=np.array([0,0,0]),
+                   from_intr=eon_intrinsics,
+                   to_intr=eon_intrinsics,
+                   pretransform=None):
   import cv2  # pylint: disable=import-error
-  cv2.setNumThreads(1)
-
-  if yuv:
-    base_img = cv2.cvtColor(base_img, cv2.COLOR_YUV2RGB_I420)
-
-  size = base_img.shape[:2]
-  if not output_size:
-    output_size = size[::-1]
-
   cy = from_intr[1,2]
   def get_M(h=1.22):
     quadrangle = np.array([[0, cy + 20],
@@ -192,14 +176,31 @@ def transform_img(base_img,
   M = get_M()
   if pretransform is not None:
     M = M.dot(pretransform)
-  augmented_rgb = cv2.warpPerspective(base_img, M, output_size, borderMode=cv2.BORDER_REPLICATE)
+  return M
 
-  if top_hacks:
-    cyy = int(math.ceil(to_intr[1,2]))
-    M = get_M(1000)
-    if pretransform is not None:
-      M = M.dot(pretransform)
-    augmented_rgb[:cyy] = cv2.warpPerspective(base_img, M, (output_size[0], cyy), borderMode=cv2.BORDER_REPLICATE)
+def transform_img(base_img,
+                 augment_trans=np.array([0,0,0]),
+                 augment_eulers=np.array([0,0,0]),
+                 from_intr=eon_intrinsics,
+                 to_intr=eon_intrinsics,
+                 output_size=None,
+                 pretransform=None,
+                 yuv=False,
+                 alpha=1.0,
+                 beta=0,
+                 blur=0):
+  import cv2  # pylint: disable=import-error
+  cv2.setNumThreads(1)
+
+  if yuv:
+    base_img = cv2.cvtColor(base_img, cv2.COLOR_YUV2RGB_I420)
+
+  size = base_img.shape[:2]
+  if not output_size:
+    output_size = size[::-1]
+
+  M = transform_img_M(size, augment_trans, augment_eulers, from_intr, to_intr, pretransform)
+  augmented_rgb = cv2.warpPerspective(base_img, M, output_size, borderMode=cv2.BORDER_REPLICATE)
 
   # brightness and contrast augment
   augmented_rgb = np.clip((float(alpha)*augmented_rgb + beta), 0, 255).astype(np.uint8)
