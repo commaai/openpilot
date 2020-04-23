@@ -106,6 +106,10 @@ pylint = "*"
 pillow = "*"
 scons = "*"
 cysignals = "*"
+pycryptodome = "*"  
+"Jinja2" = "*"  
+PyJWT = "*" 
+
 
 [requires]
 python_version = "3.7.3"
