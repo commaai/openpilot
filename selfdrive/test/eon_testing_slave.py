@@ -5,6 +5,7 @@ import json
 import base64
 import requests
 import subprocess
+from common.timeout import Timeout
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from os.path import expanduser
 from threading import Thread
@@ -64,7 +65,8 @@ def heartbeat():
     }
 
     try:
-      requests.post('http://%s/eon/heartbeat/' % MASTER_HOST, json=msg, timeout=10.0)
+      with Timeout(10):
+        requests.post('http://%s/eon/heartbeat/' % MASTER_HOST, json=msg, timeout=5.0)
     except:
       print("Unable to reach master")
 
@@ -138,13 +140,8 @@ def control_server(server_class=HTTPServer, handler_class=HTTPHandler, port=8080
 
 
 if __name__ == "__main__":
-  heartbeat_thread = Thread(target=heartbeat)
-  heartbeat_thread.daemon = True
-  heartbeat_thread.start()
-
   control_thread = Thread(target=control_server)
   control_thread.daemon = True
   control_thread.start()
 
-  while True:
-    time.sleep(1)
+  heartbeat()
