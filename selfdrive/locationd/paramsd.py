@@ -35,24 +35,14 @@ class ParamsLearner:
   def handle_log(self, t, which, msg):
     if which == 'liveLocationKalman':
 
-      v_calibrated = msg.velocityCalibrated.value
-      v_calibrated_std = msg.velocityCalibrated.std
-
       yaw_rate = msg.angularVelocityCalibrated.value[2]
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
-      self.active = v_calibrated[0] > 5
-      in_linear_region = abs(self.steering_angle) < 45 or not self.steering_pressed
-
-      if self.active and in_linear_region:
+      if self.active:
         self.kf.predict_and_observe(t,
                                     ObservationKind.ROAD_FRAME_YAW_RATE,
                                     np.array([[[-yaw_rate]]]),
                                     np.array([np.atleast_2d(yaw_rate_std**2)]))
-        self.kf.predict_and_observe(t,
-                                    ObservationKind.ROAD_FRAME_XY_SPEED,
-                                    np.array([[[v_calibrated[0], -v_calibrated[1]]]]),
-                                    np.array([np.diag([v_calibrated_std[0]**2, 1e6*v_calibrated_std[1]**2])]))
 
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[[0]]]))
 
@@ -69,9 +59,14 @@ class ParamsLearner:
       if self.carstate_counter % CARSTATE_DECIMATION == 0:
         self.steering_angle = msg.steeringAngle
         self.steering_pressed = msg.steeringPressed
+        self.speed = msg.vEgo
+
+        in_linear_region = abs(self.steering_angle) < 45 or not self.steering_pressed
+        self.active = self.speed > 5 and in_linear_region
 
         if self.active:
           self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[[math.radians(msg.steeringAngle)]]]))
+          self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[[self.speed]]]))
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
