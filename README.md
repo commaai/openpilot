@@ -156,7 +156,7 @@ Community Maintained Cars and Features
 | Nissan    | Leaf 2019                     | Propilot          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2018                  | Propilot          | Stock            | 0mph               | 0mph         |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Impreza 2019-20               | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Impreza 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2016-19<sup>3</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
