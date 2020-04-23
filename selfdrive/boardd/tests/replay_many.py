@@ -36,6 +36,7 @@ def send_thread(sender_serial):
       while True:
         tsc = messaging.recv_one(can_sock)
         snd = can_capnp_to_can_list(tsc.can)
+        snd = list(filter(lambda x: x[-1] <= 2, snd))
 
         try:
           sender.can_send_many(snd)
