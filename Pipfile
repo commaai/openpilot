@@ -71,6 +71,7 @@ azure-cli-core = "*"
 paramiko = "*"
 aiohttp = "*"
 lru-dict = "*"
+scikit-image = "*"
 
 [packages]
 overpy = {git = "https://github.com/commaai/python-overpy.git",ref = "f86529af402d4642e1faeb146671c40284007323"}
