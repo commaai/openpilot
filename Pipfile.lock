@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "bb2541d715ed0455fefb8da54248c98d222877e6eff223323b4dd35cafa49a1d"
+            "sha256": "e04543fa9726acb4e2973c48c952a30eeb6310de963a7abc874f868072792680"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -507,6 +507,14 @@
             ],
             "index": "pypi",
             "version": "==2.4.4"
+        },
+        "pyserial": {
+            "hashes": [
+                "sha256:6e2d401fdee0eab996cf734e67773a0143b932772ca8b42451440cfed942c627",
+                "sha256:e0770fadba80c31013896c7e6ef703f72e7834965954a78e71a3049488d4d7d8"
+            ],
+            "index": "pypi",
+            "version": "==3.4"
         },
         "python-dateutil": {
             "hashes": [
@@ -1369,7 +1377,7 @@
                 "sha256:2a688cbaa90e0cc587f1df48bdc97a6eadccdcd9c35fb3f976a09e3b5016d90f",
                 "sha256:34513a8a0c4962bc66d35b359558fd8a5e10cd472d37aec5f66858addef32c1e"
             ],
-            "markers": "python_version == '3.7'",
+            "markers": "python_version < '3.8'",
             "version": "==1.6.0"
         },
         "ipykernel": {

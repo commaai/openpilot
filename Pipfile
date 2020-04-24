@@ -109,7 +109,7 @@ cysignals = "*"
 pycryptodome = "*"  
 "Jinja2" = "*"  
 PyJWT = "*" 
-
+pyserial = "*"
 
 [requires]
 python_version = "3.7.3"
