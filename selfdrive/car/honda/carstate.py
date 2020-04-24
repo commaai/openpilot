@@ -327,7 +327,6 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    ## TODO: set these in the nidec dbcs
     signals = [("RDM_OFF", "LKAS_HUD", 0),
                ("RDM_ON_0", "LKAS_HUD", 0),
                ("RDM_ON_1", "LKAS_HUD", 0),
