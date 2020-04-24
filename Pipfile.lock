@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e04543fa9726acb4e2973c48c952a30eeb6310de963a7abc874f868072792680"
+            "sha256": "6fdb9346af8e8ae40d536dca2833821d4afd0bc0d14e19264a3d9da794ab20da"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1588,6 +1588,13 @@
                 "sha256:f0c3319f032c4bfad68438ed1325c0fac86dac64582c7c25cddc87a0b658fa20"
             ],
             "version": "==1.5.1"
+        },
+        "lru-dict": {
+            "hashes": [
+                "sha256:365457660e3d05b76f1aba3e0f7fedbfcd6528e97c5115a351ddd0db488354cc"
+            ],
+            "index": "pypi",
+            "version": "==1.1.6"
         },
         "markdown": {
             "hashes": [
