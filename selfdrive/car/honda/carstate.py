@@ -336,11 +336,7 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in HONDA_BOSCH:
       signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
-                  ("AEB_STATUS", "ACC_CONTROL", 0),
-                  ("BYTE_0", "BOSCH_SUPPLEMENTAL_1", 0),
-                  ("BYTE_1", "BOSCH_SUPPLEMENTAL_1", 0),
-                  ("BYTE_2", "BOSCH_SUPPLEMENTAL_1", 0),
-                  ("BYTE_3", "BOSCH_SUPPLEMENTAL_1", 0)]
+                  ("AEB_STATUS", "ACC_CONTROL", 0)]
     else:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
                   ("AEB_REQ_1", "BRAKE_COMMAND", 0),
