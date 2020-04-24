@@ -82,6 +82,12 @@ int main( )
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
 
+  // Wind down 2x faster than wind up
+  // Aproximate sign function with atan
+  // auto sign_d = atan(10000.0 * delta) * 2 / PI;
+  // ocp.subjectTo( -2 <= sign_d * t / rate_limit <= 1);
+  // ocp.subjectTo( -2 <= t / rate_limit <= 2);
+
   ocp.subjectTo( -1 <= t / rate_limit <= 1);
   ocp.setNOD(7);
 
