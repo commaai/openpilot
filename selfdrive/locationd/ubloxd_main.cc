@@ -23,6 +23,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/alignedarray.h"
 
 #include "ublox_msg.h"
 
@@ -57,9 +58,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
     Message * msg = poll_func(poller);
     if (msg == NULL) continue;
 
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
+    auto amsg = AlignedArray(msg->getData(), msg->getSize());
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 

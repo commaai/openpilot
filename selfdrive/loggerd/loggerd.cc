@@ -36,6 +36,7 @@
 #include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
+#include "common/alignedarray.h"
 
 #include "logger.h"
 #include "messaging.hpp"
@@ -664,9 +665,7 @@ int main(int argc, char** argv) {
 
         if (sock == frame_sock) {
           // track camera frames to sync to encoder
-          auto amsg = kj::heapArray<capnp::word>((len / sizeof(capnp::word)) + 1);
-          memcpy(amsg.begin(), data, len);
-
+          auto amsg = AlignedArray((char*)data, len);
           capnp::FlatArrayMessageReader cmsg(amsg);
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
           if (event.isFrame()) {

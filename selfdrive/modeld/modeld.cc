@@ -6,6 +6,7 @@
 #include "common/swaglog.h"
 
 #include "models/driving.h"
+#include "common/alignedarray.h"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -50,9 +51,7 @@ void* live_thread(void *arg) {
     for (auto sock : poller->poll(10)){
       Message * msg = sock->receive();
 
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
+      auto amsg = AlignedArray(msg->getData(), msg->getSize());
       capnp::FlatArrayMessageReader cmsg(amsg);
       cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
@@ -196,9 +195,7 @@ int main(int argc, char **argv) {
       Message *msg = pathplan_sock->receive(true);
       if (msg != NULL) {
         // TODO: copy and pasted from camerad/main.cc
-        auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-        memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
+        auto amsg = AlignedArray(msg->getData(), msg->getSize());
         capnp::FlatArrayMessageReader cmsg(amsg);
         cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 

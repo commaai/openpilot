@@ -18,6 +18,7 @@
 #include "common/visionipc.h"
 #include "common/visionbuf.h"
 #include "common/visionimg.h"
+#include "common/alignedarray.h"
 
 #include "messaging.hpp"
 
@@ -204,9 +205,7 @@ void* frontview_thread(void *arg) {
     if (!s->rhd_front_checked) {
       Message *msg_dmon = dmonstate_sock->receive(true);
       if (msg_dmon != NULL) {
-        auto amsg = kj::heapArray<capnp::word>((msg_dmon->getSize() / sizeof(capnp::word)) + 1);
-        memcpy(amsg.begin(), msg_dmon->getData(), msg_dmon->getSize());
-
+        auto amsg = AlignedArray(msg_dmon->getData(), msg_dmon->getSize());
         capnp::FlatArrayMessageReader cmsg(amsg);
         cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
@@ -219,9 +218,7 @@ void* frontview_thread(void *arg) {
 
     Message *msg = monitoring_sock->receive(true);
     if (msg != NULL) {
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
+      auto amsg = AlignedArray(msg->getData(), msg->getSize());
       capnp::FlatArrayMessageReader cmsg(amsg);
       cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 

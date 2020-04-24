@@ -15,6 +15,7 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/alignedarray.h"
 #include "buffering.h"
 
 extern "C" {
@@ -63,9 +64,7 @@ void run_frame_stream(DualCameraState *s) {
   while (!do_exit) {
     Message * msg = recorder_sock->receive();
 
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
+    auto amsg = AlignedArray(msg->getData(), msg->getSize());
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto frame = event.getFrame();

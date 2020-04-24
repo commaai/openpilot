@@ -7,6 +7,7 @@
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
+#include "common/alignedarray.h"
 
 #include "models/dmonitoring.h"
 
@@ -63,9 +64,7 @@ int main(int argc, char **argv) {
         if (chk_counter >= RHD_CHECK_INTERVAL) {
           Message *msg = dmonstate_sock->receive(true);
           if (msg != NULL) {
-            auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-            memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
+            auto amsg = AlignedArray(msg->getData(), msg->getSize());
             capnp::FlatArrayMessageReader cmsg(amsg);
             cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
