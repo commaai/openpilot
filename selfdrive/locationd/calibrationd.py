@@ -69,7 +69,10 @@ class Calibrator():
     if calibration_params:
       try:
         calibration_params = json.loads(calibration_params)
-        self.vp = vp_from_rpy(calibration_params["calib_radians"])
+        if 'calib_radians' in calibration_params:
+          self.vp = vp_from_rpy(calibration_params["calib_radians"])
+        else:
+          self.vp = np.array(calibration_params["vanishing_point"])
         if not np.isfinite(self.vp).all():
           self.vp = copy.copy(VP_INIT)
         self.vps = np.tile(self.vp, (INPUTS_WANTED, 1))
