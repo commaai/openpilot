@@ -11,7 +11,7 @@ from cereal.services import service_list
 from tools.lib.logreader import LogReader
 from xx.chffr.lib.route import Route, RouteSegment
 from tools.lib.route_framereader import RouteFrameReader
-from common.column_store import save_dict_as_column_store
+from xx.uncommon.column_store import save_dict_as_column_store
 from xx.pipeline.lib.log_time_series import append_dict
 from selfdrive.test.process_replay.compare_logs import save_log
 
