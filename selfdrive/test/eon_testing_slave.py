@@ -2,7 +2,6 @@
 import re
 import time
 import json
-import base64
 import requests
 import subprocess
 from common.timeout import Timeout
@@ -40,35 +39,33 @@ def heartbeat():
   }
 
   while True:
-
-    with open(os.path.join(work_dir, "selfdrive", "common", "version.h")) as _versionf:
-      version = _versionf.read().split('"')[1]
-
-    # subprocess.check_output(["/system/bin/screencap", "-p", "/tmp/screen.png"], cwd=work_dir, env=env)
-    # screenshot = base64.b64encode(open('/tmp/screen.png').read())
-    tmux = ""
-
     try:
-      tmux = os.popen('tail -n 100 /tmp/tmux_out').read()
-    except:
-      pass
+      with open(os.path.join(work_dir, "selfdrive", "common", "version.h")) as _versionf:
+        version = _versionf.read().split('"')[1]
 
-    params = Params()
-    msg = {
-      'version': version,
-      'dongle_id': params.get("DongleId").rstrip().decode('utf8'),
-      'remote': subprocess.check_output(["git", "config", "--get", "remote.origin.url"], cwd=work_dir).decode('utf8').rstrip(),
-      'revision': subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=work_dir).decode('utf8').rstrip(),
-      'serial': subprocess.check_output(["getprop", "ro.boot.serialno"]).decode('utf8').rstrip(),
-      # 'screenshot': screenshot,
-      'tmux': tmux,
-    }
+      # subprocess.check_output(["/system/bin/screencap", "-p", "/tmp/screen.png"], cwd=work_dir, env=env)
+      # screenshot = base64.b64encode(open('/tmp/screen.png').read())
+      tmux = ""
 
-    try:
+      try:
+        tmux = os.popen('tail -n 100 /tmp/tmux_out').read()
+      except:
+        pass
+
+      params = Params()
+      msg = {
+        'version': version,
+        'dongle_id': params.get("DongleId").rstrip().decode('utf8'),
+        'remote': subprocess.check_output(["git", "config", "--get", "remote.origin.url"], cwd=work_dir).decode('utf8').rstrip(),
+        'revision': subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=work_dir).decode('utf8').rstrip(),
+        'serial': subprocess.check_output(["getprop", "ro.boot.serialno"]).decode('utf8').rstrip(),
+        # 'screenshot': screenshot,
+        'tmux': tmux,
+      }
       with Timeout(10):
         requests.post('http://%s/eon/heartbeat/' % MASTER_HOST, json=msg, timeout=5.0)
-    except:
-      print("Unable to reach master")
+    except Exception as e:
+      print("Unable to send heartbeat", e)
 
     time.sleep(5)
 
