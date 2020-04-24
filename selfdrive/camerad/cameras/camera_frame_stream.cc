@@ -15,7 +15,7 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "common/alignedarray.h"
+#include "common/alignedmessage.h"
 #include "buffering.h"
 
 extern "C" {
@@ -62,9 +62,9 @@ void run_frame_stream(DualCameraState *s) {
   auto *tb = &rear_camera->camera_tb;
 
   while (!do_exit) {
-    Message * msg = recorder_sock->receive();
-
-    auto amsg = AlignedArray(msg->getData(), msg->getSize());
+    AlignedMessage amsg = recorder_sock->receive();
+    if (!amsg) continue;
+    
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto frame = event.getFrame();
@@ -93,8 +93,6 @@ void run_frame_stream(DualCameraState *s) {
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     tbuffer_dispatch(tb, buf_idx);
-    delete msg;
-
   }
   delete recorder_sock;
   delete context;

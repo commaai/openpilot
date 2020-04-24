@@ -18,7 +18,7 @@
 #include "common/visionipc.h"
 #include "common/visionbuf.h"
 #include "common/visionimg.h"
-#include "common/alignedarray.h"
+#include "common/alignedmessage.h"
 
 #include "messaging.hpp"
 
@@ -203,22 +203,17 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      Message *msg_dmon = dmonstate_sock->receive(true);
-      if (msg_dmon != NULL) {
-        auto amsg = AlignedArray(msg_dmon->getData(), msg_dmon->getSize());
-        capnp::FlatArrayMessageReader cmsg(amsg);
+      AlignedMessage msg_dmon = dmonstate_sock->receive(true);
+      if (msg_dmon) {
+        capnp::FlatArrayMessageReader cmsg(msg_dmon);
         cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
         s->rhd_front = event.getDMonitoringState().getIsRHD();
         s->rhd_front_checked = event.getDMonitoringState().getRhdChecked();
-
-        delete msg_dmon;
       }
     }
 
-    Message *msg = monitoring_sock->receive(true);
-    if (msg != NULL) {
-      auto amsg = AlignedArray(msg->getData(), msg->getSize());
+    AlignedMessage amsg = monitoring_sock->receive(true);
+    if (amsg) {
       capnp::FlatArrayMessageReader cmsg(amsg);
       cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
@@ -243,8 +238,6 @@ void* frontview_thread(void *arg) {
         s->front_meteringbox_xmin = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
         s->front_meteringbox_xmax = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
-
-      delete msg;
     }
 
     // auto exposure

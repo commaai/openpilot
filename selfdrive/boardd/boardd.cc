@@ -22,7 +22,7 @@
 #include "cereal/gen/cpp/car.capnp.h"
 
 #include "common/util.h"
-#include "common/alignedarray.h"
+#include "common/alignedmessage.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -546,16 +546,14 @@ void can_health(PubSocket *publisher) {
 
 void can_send(SubSocket *subscriber) {
   int err;
-
   // recv from sendcan
-  Message * msg = subscriber->receive();
+  AlignedMessage amsg = subscriber->receive();
+  if (!amsg) return;
 
-  auto amsg = AlignedArray(msg->getData(), msg->getSize());
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
   if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
-    delete msg;
     return;
   }
   int msg_count = event.getSendcan().size();
@@ -576,9 +574,6 @@ void can_send(SubSocket *subscriber) {
     send[i*4+1] = cmsg.getDat().size() | (cmsg.getSrc() << 4);
     memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
   }
-
-  // release msg
-  delete msg;
 
   // send to board
   int sent;
@@ -714,13 +709,11 @@ void *hardware_control_thread(void *crap) {
   while (!do_exit) {
     cnt++;
     for (auto sock : poller->poll(1000)){
-      Message * msg = sock->receive();
-      if (msg == NULL) continue;
+      AlignedMessage amsg = sock->receive();
+      if (!amsg) continue;
 
-      auto amsg = AlignedArray(msg->getData(), msg->getSize());
       capnp::FlatArrayMessageReader cmsg(amsg);
       cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
       auto type = event.which();
       if(type == cereal::Event::THERMAL){
         uint16_t fan_speed = event.getThermal().getFanSpeed();
@@ -743,7 +736,6 @@ void *hardware_control_thread(void *crap) {
           ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
         }
       }
-      delete msg;
     }
 
     // Disable ir_pwr on front frame timeout

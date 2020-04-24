@@ -6,7 +6,7 @@
 #include "common/swaglog.h"
 
 #include "models/driving.h"
-#include "common/alignedarray.h"
+#include "common/alignedmessage.h"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -49,9 +49,9 @@ void* live_thread(void *arg) {
 
   while (!do_exit) {
     for (auto sock : poller->poll(10)){
-      Message * msg = sock->receive();
+      AlignedMessage amsg = sock->receive();
+      if (!amsg) continue;
 
-      auto amsg = AlignedArray(msg->getData(), msg->getSize());
       capnp::FlatArrayMessageReader cmsg(amsg);
       cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
@@ -79,8 +79,6 @@ void* live_thread(void *arg) {
         run_model = true;
         pthread_mutex_unlock(&transform_lock);
       }
-
-      delete msg;
     }
 
   }
@@ -192,16 +190,14 @@ int main(int argc, char **argv) {
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
-      Message *msg = pathplan_sock->receive(true);
-      if (msg != NULL) {
+      AlignedMessage amsg = pathplan_sock->receive(true);
+      if (amsg) {
         // TODO: copy and pasted from camerad/main.cc
-        auto amsg = AlignedArray(msg->getData(), msg->getSize());
         capnp::FlatArrayMessageReader cmsg(amsg);
         cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
         // TODO: path planner timeout?
         desire = ((int)event.getPathPlan().getDesire()) - 1;
-        delete msg;
       }
 
       double mt1 = 0, mt2 = 0;

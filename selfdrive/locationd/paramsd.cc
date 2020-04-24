@@ -12,7 +12,7 @@
 #include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/swaglog.h"
-#include "common/alignedarray.h"
+#include "common/alignedmessage.h"
 #include "common/params.h"
 #include "common/timing.h"
 
@@ -105,9 +105,9 @@ int main(int argc, char *argv[]) {
   int save_counter = 0;
   while (true){
     for (auto s : poller->poll(100)){
-      Message * msg = s->receive();
-
-      auto amsg = AlignedArray(msg->getData(), msg->getSize());
+      AlignedMessage amsg = s->receive();
+      if (!amsg) continue;
+      
       capnp::FlatArrayMessageReader capnp_msg(amsg);
       cereal::Event::Reader event = capnp_msg.getRoot<cereal::Event>();
 
@@ -170,7 +170,6 @@ int main(int argc, char *argv[]) {
                      });
         }
       }
-      delete msg;
     }
   }
 

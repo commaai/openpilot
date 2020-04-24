@@ -7,7 +7,7 @@
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
-#include "common/alignedarray.h"
+#include "common/alignedmessage.h"
 
 #include "models/dmonitoring.h"
 
@@ -62,15 +62,12 @@ int main(int argc, char **argv) {
       //printf("frame_id: %d %dx%d\n", extra.frame_id, buf_info.width, buf_info.height);
       if (!dmonitoringmodel.is_rhd_checked) {
         if (chk_counter >= RHD_CHECK_INTERVAL) {
-          Message *msg = dmonstate_sock->receive(true);
-          if (msg != NULL) {
-            auto amsg = AlignedArray(msg->getData(), msg->getSize());
+          AlignedMessage amsg = dmonstate_sock->receive(true);
+          if (amsg) {
             capnp::FlatArrayMessageReader cmsg(amsg);
             cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
             dmonitoringmodel.is_rhd = event.getDMonitoringState().getIsRHD();
             dmonitoringmodel.is_rhd_checked = event.getDMonitoringState().getRhdChecked();
-            delete msg;
           }
           chk_counter = 0;
         }

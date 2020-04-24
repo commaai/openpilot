@@ -36,7 +36,7 @@
 #include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
-#include "common/alignedarray.h"
+#include "common/alignedmessage.h"
 
 #include "logger.h"
 #include "messaging.hpp"
@@ -655,17 +655,13 @@ int main(int argc, char** argv) {
   while (!do_exit) {
     for (auto sock : poller->poll(100 * 1000)){
       while (true) {
-        Message * msg = sock->receive(true);
-        if (msg == NULL){
+        AlignedMessage amsg = sock->receive(true);
+        if (!amsg){
           break;
         }
 
-        uint8_t* data = (uint8_t*)msg->getData();
-        size_t len = msg->getSize();
-
-        if (sock == frame_sock) {
+        if (sock == frame_sock){
           // track camera frames to sync to encoder
-          auto amsg = AlignedArray((char*)data, len);
           capnp::FlatArrayMessageReader cmsg(amsg);
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
           if (event.isFrame()) {
@@ -676,8 +672,7 @@ int main(int argc, char** argv) {
           }
         }
 
-        logger_log(&s.logger, data, len, qlog_counter[sock] == 0);
-        delete msg;
+        logger_log(&s.logger, (uint8_t*)amsg.getData(), amsg.getSize(), qlog_counter[sock] == 0);
 
         if (qlog_counter[sock] != -1) {
           //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
@@ -685,7 +680,7 @@ int main(int argc, char** argv) {
           qlog_counter[sock] %= qlog_freqs[sock];
         }
 
-        bytes_count += len;
+        bytes_count += amsg.getSize();
         msg_count++;
       }
     }
