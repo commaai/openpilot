@@ -22,6 +22,7 @@ int main( )
   OnlineData curvature_factor;
   OnlineData v_ref; // m/s
   OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
+  OnlineData rate_limit;
 
   Control t;
 
@@ -80,7 +81,9 @@ int main( )
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  ocp.setNOD(6);
+
+  ocp.subjectTo( -1 <= t / rate_limit <= 1);
+  ocp.setNOD(7);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );

@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+import math
 import numpy as np
 from collections import OrderedDict
 import matplotlib.pyplot as plt
@@ -45,6 +46,9 @@ times = []
 CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING")
 VM = VehicleModel(CP)
 
+# 10 deg/s
+rate_limit = math.radians(10.0) / VM.sR
+
 v_ref = 32.00  # 45 mph
 curvature_factor = VM.curvature_factor(v_ref)
 print(curvature_factor)
@@ -79,6 +83,7 @@ cur_state[0].delta = 0.0
 xs = []
 ys = []
 deltas = []
+rates = []
 titles = [
   'Steer rate cost',
   'Path cost',
@@ -88,31 +93,40 @@ titles = [
 sol_x = OrderedDict()
 sol_y = OrderedDict()
 delta = OrderedDict()
-for cost in list(np.logspace(-1, 1.0, 5)) + [STEER_RATE_COST]:
+rate = OrderedDict()
+
+# for cost in list(np.logspace(-1, 1.0, 5)) + [STEER_RATE_COST]:
+for cost in [STEER_RATE_COST]:
   libmpc.init(PATH_COST, cost)
   for _ in range(10):
-    libmpc.run_mpc(cur_state, mpc_solution, p_poly, curvature_factor, v_ref)
+    libmpc.run_mpc(cur_state, mpc_solution, p_poly, curvature_factor, v_ref, rate_limit)
   sol_x[cost] = list(map(float, list(mpc_solution[0].x)))
   sol_y[cost] = list(map(float, list(mpc_solution[0].y)))
   delta[cost] = list(map(float, list(mpc_solution[0].delta)))
+  rate[cost] = list(map(float, list(mpc_solution[0].rate)))
 xs.append(sol_x)
 ys.append(sol_y)
 deltas.append(delta)
+rates.append(rate)
 
 # Path cost
 sol_x = OrderedDict()
 sol_y = OrderedDict()
 delta = OrderedDict()
-for cost in list(np.logspace(-1, 1.0, 5)) + [PATH_COST]:
+rate = OrderedDict()
+for cost in [PATH_COST]:
+# for cost in list(np.logspace(-1, 1.0, 5)) + [PATH_COST]:
   libmpc.init(cost, STEER_RATE_COST)
   for _ in range(10):
-    libmpc.run_mpc(cur_state, mpc_solution, p_poly, curvature_factor, v_ref)
+    libmpc.run_mpc(cur_state, mpc_solution, p_poly, curvature_factor, v_ref, rate_limit)
   sol_x[cost] = list(map(float, list(mpc_solution[0].x)))
   sol_y[cost] = list(map(float, list(mpc_solution[0].y)))
   delta[cost] = list(map(float, list(mpc_solution[0].delta)))
+  rate[cost] = list(map(float, list(mpc_solution[0].rate)))
 xs.append(sol_x)
 ys.append(sol_y)
 deltas.append(delta)
+rates.append(rate)
 
 
 plt.figure()
@@ -143,9 +157,28 @@ for i in range(len(xs)):
   delta = deltas[i]
 
   for cost in sol_x.keys():
-    plt.plot(delta[cost])
+    d = np.array(delta[cost])
+    sa = np.degrees(d * VM.sR)
+    plt.plot(sa)
   plt.title(titles[i])
   plt.legend(map(lambda x: str(round(x, 2)), sol_x.keys()), loc=3)
   plt.grid(True)
+  plt.ylabel('Steering angle [deg]')
+
+plt.figure()
+for i in range(len(xs)):
+  plt.subplot(2, 1, i + 1)
+  sol_x = xs[i]
+  rate = rates[i]
+
+  for cost in sol_x.keys():
+    d = np.array(rate[cost])
+    sa = np.degrees(d * VM.sR)
+    plt.plot(sa)
+  plt.title(titles[i])
+  plt.legend(map(lambda x: str(round(x, 2)), sol_x.keys()), loc=3)
+  plt.grid(True)
+  plt.ylabel('Steering rate [deg/s]')
+
 
 plt.show()

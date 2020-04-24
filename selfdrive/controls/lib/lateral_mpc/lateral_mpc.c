@@ -65,7 +65,7 @@ void init(double pathCost, double steerRateCost){
 }
 
 int run_mpc(state_t * x0, log_t * solution,
-            double d_poly[4], double curvature_factor, double v_ref){
+            double d_poly[4], double curvature_factor, double v_ref, double rate_limit){
 
   int    i;
 
@@ -77,6 +77,8 @@ int run_mpc(state_t * x0, log_t * solution,
     acadoVariables.od[i+3] = d_poly[1];
     acadoVariables.od[i+4] = d_poly[2];
     acadoVariables.od[i+5] = d_poly[3];
+
+    acadoVariables.od[i+6] = rate_limit;
   }
 
   acadoVariables.x0[0] = x0->x;

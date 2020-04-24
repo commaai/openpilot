@@ -25,7 +25,7 @@ void init(double pathCost, double steerRateCost);
 void init_weights(double pathCost, double steerRateCost);
 int run_mpc(state_t * x0, log_t * solution,
              double d_poly[4],
-             double curvature_factor, double v_ref);
+             double curvature_factor, double v_ref, double rate_limit);
 """)
 
 libmpc = ffi.dlopen(libmpc_fn)
