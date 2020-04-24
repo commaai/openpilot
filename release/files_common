@@ -216,7 +216,6 @@ selfdrive/controls/lib/speed_smoother.py
 selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
 selfdrive/controls/lib/long_mpc_model.py
-selfdrive/controls/lib/gps_helpers.py
 selfdrive/controls/lib/driverview.py
 
 selfdrive/controls/lib/cluster/*
