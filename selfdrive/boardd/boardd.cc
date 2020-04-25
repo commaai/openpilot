@@ -550,19 +550,16 @@ void can_send(SubSocket *subscriber) {
   AlignedMessage amsg = subscriber->receive();
   if (!amsg) return;
 
-  capnp::FlatArrayMessageReader cmsg(amsg);
-  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
+  if (nanos_since_boot() - amsg.getEvent().getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
     return;
   }
-  int msg_count = event.getSendcan().size();
-
+  int msg_count = amsg.getEvent().getSendcan().size();
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
-    auto cmsg = event.getSendcan()[i];
+    auto cmsg = amsg.getEvent().getSendcan()[i];
     if (cmsg.getAddress() >= 0x800) {
       // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
@@ -712,11 +709,9 @@ void *hardware_control_thread(void *crap) {
       AlignedMessage amsg = sock->receive();
       if (!amsg) continue;
 
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-      auto type = event.which();
+      auto type = amsg.getEvent().which();
       if(type == cereal::Event::THERMAL){
-        uint16_t fan_speed = event.getThermal().getFanSpeed();
+        uint16_t fan_speed = amsg.getEvent().getThermal().getFanSpeed();
         if (fan_speed != prev_fan_speed || cnt % 100 == 0){
           pthread_mutex_lock(&usb_lock);
           libusb_control_transfer(dev_handle, 0x40, 0xb1, fan_speed, 0, NULL, 0, TIMEOUT);
@@ -725,8 +720,8 @@ void *hardware_control_thread(void *crap) {
           prev_fan_speed = fan_speed;
         }
       } else if (type == cereal::Event::FRONT_FRAME){
-        float cur_front_gain = event.getFrontFrame().getGainFrac();
-        last_front_frame_t = event.getLogMonoTime();
+        float cur_front_gain = amsg.getEvent().getFrontFrame().getGainFrac();
+        last_front_frame_t = amsg.getEvent().getLogMonoTime();
 
         if (cur_front_gain <= CUTOFF_GAIN) {
           ir_pwr = 100.0 * MIN_IR_POWER;

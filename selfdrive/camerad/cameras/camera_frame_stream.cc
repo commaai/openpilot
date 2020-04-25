@@ -65,9 +65,7 @@ void run_frame_stream(DualCameraState *s) {
     AlignedMessage amsg = recorder_sock->receive();
     if (!amsg) continue;
     
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-    auto frame = event.getFrame();
+    auto frame = amsg.getEvent().getFrame();
 
     const int buf_idx = tbuffer_select(tb);
     rear_camera->camera_bufs_metadata[buf_idx] = {

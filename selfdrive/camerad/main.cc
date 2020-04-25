@@ -18,7 +18,6 @@
 #include "common/visionipc.h"
 #include "common/visionbuf.h"
 #include "common/visionimg.h"
-#include "common/alignedmessage.h"
 
 #include "messaging.hpp"
 
@@ -32,6 +31,7 @@
 #include <capnp/serialize.h>
 #include <jpeglib.h>
 #include "cereal/gen/cpp/log.capnp.h"
+#include "common/alignedmessage.h"
 
 #define UI_BUF_COUNT 4
 #define YUV_COUNT 40
@@ -205,22 +205,17 @@ void* frontview_thread(void *arg) {
     if (!s->rhd_front_checked) {
       AlignedMessage msg_dmon = dmonstate_sock->receive(true);
       if (msg_dmon) {
-        capnp::FlatArrayMessageReader cmsg(msg_dmon);
-        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-        s->rhd_front = event.getDMonitoringState().getIsRHD();
-        s->rhd_front_checked = event.getDMonitoringState().getRhdChecked();
+        s->rhd_front = msg_dmon.getEvent().getDMonitoringState().getIsRHD();
+        s->rhd_front_checked = msg_dmon.getEvent().getDMonitoringState().getRhdChecked();
       }
     }
 
     AlignedMessage amsg = monitoring_sock->receive(true);
     if (amsg) {
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-      float face_prob = event.getDriverState().getFaceProb();
+      float face_prob = amsg.getEvent().getDriverState().getFaceProb();
       float face_position[2];
-      face_position[0] = event.getDriverState().getFacePosition()[0];
-      face_position[1] = event.getDriverState().getFacePosition()[1];
+      face_position[0] = amsg.getEvent().getDriverState().getFacePosition()[0];
+      face_position[1] = amsg.getEvent().getDriverState().getFacePosition()[1];
 
       // set front camera metering target
       if (face_prob > 0.4)

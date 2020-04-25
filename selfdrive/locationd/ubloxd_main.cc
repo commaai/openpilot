@@ -58,11 +58,8 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
     AlignedMessage amsg = poll_func(poller);
     if (!amsg) continue;
 
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    const uint8_t *data = event.getUbloxRaw().begin();
-    size_t len = event.getUbloxRaw().size();
+    const uint8_t *data = amsg.getEvent().getUbloxRaw().begin();
+    size_t len = amsg.getEvent().getUbloxRaw().size();
     size_t bytes_consumed = 0;
     while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;

@@ -108,12 +108,8 @@ int main(int argc, char *argv[]) {
       AlignedMessage amsg = s->receive();
       if (!amsg) continue;
       
-      capnp::FlatArrayMessageReader capnp_msg(amsg);
-      cereal::Event::Reader event = capnp_msg.getRoot<cereal::Event>();
-
-      localizer.handle_log(event);
-
-      auto which = event.which();
+      localizer.handle_log(amsg.getEvent());
+      auto which = amsg.getEvent().which();
       // Throw vision failure if posenet and odometric speed too different
       if (which == cereal::Event::CAMERA_ODOMETRY){
         if (std::abs(localizer.posenet_speed - localizer.car_speed) > std::max(0.4 * localizer.car_speed, 5.0)) {

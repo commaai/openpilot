@@ -42,6 +42,7 @@
 #include "messaging.hpp"
 #include "services.h"
 
+
 #if !(defined(QCOM) || defined(QCOM2))
 // no encoder on PC
 #define DISABLE_ENCODER
@@ -662,11 +663,9 @@ int main(int argc, char** argv) {
 
         if (sock == frame_sock){
           // track camera frames to sync to encoder
-          capnp::FlatArrayMessageReader cmsg(amsg);
-          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-          if (event.isFrame()) {
+          if (amsg.getEvent().isFrame()) {
             std::unique_lock<std::mutex> lk(s.lock);
-            s.last_frame_id = event.getFrame().getFrameId();
+            s.last_frame_id = amsg.getEvent().getFrame().getFrameId();
             lk.unlock();
             s.cv.notify_all();
           }

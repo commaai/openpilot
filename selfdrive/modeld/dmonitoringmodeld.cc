@@ -7,9 +7,9 @@
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
-#include "common/alignedmessage.h"
 
 #include "models/dmonitoring.h"
+#include "common/alignedmessage.h"
 
 #ifndef PATH_MAX
 #include <linux/limits.h>
@@ -64,10 +64,8 @@ int main(int argc, char **argv) {
         if (chk_counter >= RHD_CHECK_INTERVAL) {
           AlignedMessage amsg = dmonstate_sock->receive(true);
           if (amsg) {
-            capnp::FlatArrayMessageReader cmsg(amsg);
-            cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-            dmonitoringmodel.is_rhd = event.getDMonitoringState().getIsRHD();
-            dmonitoringmodel.is_rhd_checked = event.getDMonitoringState().getRhdChecked();
+            dmonitoringmodel.is_rhd = amsg.getEvent().getDMonitoringState().getIsRHD();
+            dmonitoringmodel.is_rhd_checked = amsg.getEvent().getDMonitoringState().getRhdChecked();
           }
           chk_counter = 0;
         }
