@@ -44,35 +44,25 @@ class CarKalman():
     0.0,
   ])
 
-  # state covariance
-  P_initial = np.diag([
-    0.1**2,
-    0.1**2,
-    math.radians(0.1)**2,
-    math.radians(0.1)**2,
-
-    10**2, 10**2,
-    1.0**2,
-    1.0**2,
-  ])
-
   # process noise
   Q = np.diag([
     (.05/100)**2,
     .0001**2,
-    math.radians(0.001)**2,
-    math.radians(0.05)**2,
+    math.radians(0.0001)**2,
+    math.radians(0.1)**2,
 
-    .1**2, .1**2,
+    .1**2, .01**2,
     math.radians(0.1)**2,
     math.radians(0.1)**2,
   ])
+  P_initial = Q.copy()
 
   obs_noise = {
-    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.1)**2),
+    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(5.0)**2),
-    ObservationKind.STEER_RATIO: np.atleast_2d(50.0**2),
-    ObservationKind.STIFFNESS: np.atleast_2d(50.0**2),
+    ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
+    ObservationKind.STIFFNESS: np.atleast_2d(5.0**2),
+    ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
   }
 
   maha_test_kinds = []  # [ObservationKind.ROAD_FRAME_YAW_RATE, ObservationKind.ROAD_FRAME_XY_SPEED]
@@ -139,6 +129,7 @@ class CarKalman():
     obs_eqs = [
       [sp.Matrix([r]), ObservationKind.ROAD_FRAME_YAW_RATE, None],
       [sp.Matrix([u, v]), ObservationKind.ROAD_FRAME_XY_SPEED, None],
+      [sp.Matrix([u]), ObservationKind.ROAD_FRAME_X_SPEED, None],
       [sp.Matrix([sa]), ObservationKind.STEER_ANGLE, None],
       [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
       [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],

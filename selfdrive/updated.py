@@ -132,6 +132,35 @@ def dismount_ovfs():
     run(["umount", "-l", OVERLAY_MERGED])
 
 
+def setup_git_options(cwd):
+  # We sync FS object atimes (which EON doesn't use) and mtimes, but ctimes
+  # are outside user control. Make sure Git is set up to ignore system ctimes,
+  # because they change when we make hard links during finalize. Otherwise,
+  # there is a lot of unnecessary churn. This appears to be a common need on
+  # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
+  try:
+    trustctime = run(["git", "config", "--get", "core.trustctime"], cwd)
+    trustctime_set = (trustctime.strip() == "false")
+  except subprocess.CalledProcessError:
+    trustctime_set = False
+
+  if not trustctime_set:
+    cloudlog.info("Setting core.trustctime false")
+    run(["git", "config", "core.trustctime", "false"], cwd)
+
+  # We are temporarily using copytree to copy the directory, which also changes
+  # inode numbers. Ignore those changes too.
+  try:
+    checkstat = run(["git", "config", "--get", "core.checkStat"], cwd)
+    checkstat_set = (checkstat.strip() == "minimal")
+  except subprocess.CalledProcessError:
+    checkstat_set = False
+
+  if not checkstat_set:
+    cloudlog.info("Setting core.checkState minimal")
+    run(["git", "config", "core.checkStat", "minimal"], cwd)
+
+
 def init_ovfs():
   cloudlog.info("preparing new safe staging area")
   Params().put("UpdateAvailable", "0")
@@ -150,17 +179,6 @@ def init_ovfs():
   # Remove consistent flag from current BASEDIR so it's not copied over
   if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
     os.remove(os.path.join(BASEDIR, ".overlay_consistent"))
-
-  # We sync FS object atimes (which EON doesn't use) and mtimes, but ctimes
-  # are outside user control. Make sure Git is set up to ignore system ctimes,
-  # because they change when we make hard links during finalize. Otherwise,
-  # there is a lot of unnecessary churn. This appears to be a common need on
-  # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
-  run(["git", "config", "core.trustctime", "false"], BASEDIR)
-
-  # We are temporarily using copytree to copy the directory, which also changes
-  # inode numbers. Ignore those changes too.
-  run(["git", "config", "core.checkStat", "minimal"], BASEDIR)
 
   # Leave a timestamped canary in BASEDIR to check at startup. The EON clock
   # should be correct by the time we get here. If the init file disappears, or
@@ -252,6 +270,8 @@ def finalize_from_ovfs_copy():
 
 def attempt_update():
   cloudlog.info("attempting git update inside staging overlay")
+
+  setup_git_options(OVERLAY_MERGED)
 
   git_fetch_output = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
   cloudlog.info("git fetch success: %s", git_fetch_output)

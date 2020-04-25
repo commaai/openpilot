@@ -152,7 +152,10 @@ class PowerMonitoring:
       try:
         if self.last_measurement_time:
           integration_time_h = (t - self.last_measurement_time) / 3600
-          self.power_used_uWh += (current_power * 1000000) * integration_time_h
+          power_used = (current_power * 1000000) * integration_time_h
+          if power_used < 0:
+            raise ValueError(f"Negative power used! Integration time: {integration_time_h} h Current Power: {power_used} uWh")
+          self.power_used_uWh += power_used
           self.last_measurement_time = t
       except Exception:
         cloudlog.exception("Integration failed")

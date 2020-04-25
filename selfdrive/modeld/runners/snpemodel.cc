@@ -94,7 +94,11 @@ SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int ru
 }
 
 void SNPEModel::addRecurrent(float *state, int state_size) {
-  recurrentBuffer = this->addExtra(state, state_size, 2);
+  recurrentBuffer = this->addExtra(state, state_size, 3);
+}
+
+void SNPEModel::addTrafficConvention(float *state, int state_size) {
+  trafficConventionBuffer = this->addExtra(state, state_size, 2);
 }
 
 void SNPEModel::addDesire(float *state, int state_size) {

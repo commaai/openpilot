@@ -163,6 +163,10 @@ class Uploader():
   def do_upload(self, key, fn):
     try:
       url_resp = self.api.get("v1.3/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
+      if url_resp.status_code == 412:
+        self.last_resp = url_resp
+        return
+        
       url_resp_json = json.loads(url_resp.text)
       url = url_resp_json['url']
       headers = url_resp_json['headers']
@@ -213,8 +217,8 @@ class Uploader():
     else:
       cloudlog.info("uploading %r", fn)
       stat = self.normal_upload(key, fn)
-      if stat is not None and stat.status_code in (200, 201):
-        cloudlog.event("upload_success", key=key, fn=fn, sz=sz)
+      if stat is not None and stat.status_code in (200, 201, 412):
+        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz)
         try:
           # tag file as uploaded
           setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)

@@ -44,23 +44,14 @@ medmodel_intrinsics = np.array(
 
 # BIG model
 
-BIGMODEL_INPUT_SIZE = (864, 288)
+BIGMODEL_INPUT_SIZE = (1024, 512)
 BIGMODEL_YUV_SIZE = (BIGMODEL_INPUT_SIZE[0], BIGMODEL_INPUT_SIZE[1] * 3 // 2)
 
 bigmodel_zoom = 1.
 bigmodel_intrinsics = np.array(
   [[ eon_focal_length / bigmodel_zoom,    0. , 0.5 * BIGMODEL_INPUT_SIZE[0]],
-   [   0. ,  eon_focal_length / bigmodel_zoom,  0.2 * BIGMODEL_INPUT_SIZE[1]],
+   [   0. ,  eon_focal_length / bigmodel_zoom,  256+MEDMODEL_CY],
    [   0. ,                            0. ,   1.]])
-
-
-bigmodel_border = np.array([
-    [0,0,1],
-    [BIGMODEL_INPUT_SIZE[0], 0, 1],
-    [BIGMODEL_INPUT_SIZE[0], BIGMODEL_INPUT_SIZE[1], 1],
-    [0, BIGMODEL_INPUT_SIZE[1], 1],
-])
-
 
 model_frame_from_road_frame = np.dot(model_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
@@ -72,6 +63,7 @@ medmodel_frame_from_road_frame = np.dot(medmodel_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
 
 model_frame_from_bigmodel_frame = np.dot(model_intrinsics, np.linalg.inv(bigmodel_intrinsics))
+medmodel_frame_from_bigmodel_frame = np.dot(medmodel_intrinsics, np.linalg.inv(bigmodel_intrinsics))
 
 # 'camera from model camera'
 def get_model_height_transform(camera_frame_from_road_frame, height):

@@ -22,6 +22,9 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "nissan"
     ret.safetyModel = car.CarParams.SafetyModel.nissan
 
+    # Nissan port is a community feature, since we don't own one to test
+    ret.communityFeature = True
+
     ret.steerLimitAlert = False
     ret.enableCamera = True
     ret.steerRateCost = 0.5
@@ -75,21 +78,10 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret)
 
-    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-    if not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-
     if self.CS.lkas_enabled:
       events.append(create_event('invalidLkasSetting', [ET.PERMANENT]))
 
     ret.events = events
-
-    # update previous brake/gas pressed
-    self.gas_pressed_prev = ret.gasPressed
-    self.brake_pressed_prev = ret.brakePressed
-    self.cruise_enabled_prev = ret.cruiseState.enabled
-
 
     self.CS.out = ret.as_reader()
     return self.CS.out

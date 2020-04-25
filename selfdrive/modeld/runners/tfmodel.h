@@ -12,6 +12,7 @@ public:
 	~TFModel();
   void addRecurrent(float *state, int state_size);
   void addDesire(float *state, int state_size);
+  void addTrafficConvention(float *state, int state_size);
   void execute(float *net_input_buf, int buf_size);
 private:
   int proc_pid;
@@ -23,6 +24,8 @@ private:
   int rnn_state_size;
   float *desire_input_buf = NULL;
   int desire_state_size;
+  float *traffic_convention_input_buf = NULL;
+  int traffic_convention_size;
 
   // pipe to communicate to keras subprocess
   void pread(float *buf, int size);

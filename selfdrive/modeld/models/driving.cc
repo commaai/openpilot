@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "common/timing.h"
+#include "common/params.h"
 #include "driving.h"
 
 
@@ -18,7 +19,7 @@
 #define POSE_IDX META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE
 #define OUTPUT_SIZE  POSE_IDX + POSE_SIZE
 #ifdef TEMPORAL
-  #define TEMPORAL_SIZE 512
+  #define TEMPORAL_SIZE 1024
 #else
   #define TEMPORAL_SIZE 0
 #endif
@@ -42,11 +43,29 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 #endif
 
 #ifdef DESIRE
-  s->desire = (float*)malloc(DESIRE_SIZE * sizeof(float));
-  for (int i = 0; i < DESIRE_SIZE; i++) s->desire[i] = 0.0;
-  s->pulse_desire = (float*)malloc(DESIRE_SIZE * sizeof(float));
-  for (int i = 0; i < DESIRE_SIZE; i++) s->pulse_desire[i] = 0.0;
-  s->m->addDesire(s->pulse_desire, DESIRE_SIZE);
+  s->prev_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
+  for (int i = 0; i < DESIRE_LEN; i++) s->prev_desire[i] = 0.0;
+  s->pulse_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
+  for (int i = 0; i < DESIRE_LEN; i++) s->pulse_desire[i] = 0.0;
+  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
+#endif
+
+#ifdef TRAFFIC_CONVENTION
+  s->traffic_convention = (float*)malloc(TRAFFIC_CONVENTION_LEN * sizeof(float));
+  for (int i = 0; i < TRAFFIC_CONVENTION_LEN; i++) s->traffic_convention[i] = 0.0;
+  s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
+
+  char *string;
+  const int result = read_db_value(NULL, "IsRHD", &string, NULL);
+  if (result == 0) {
+    bool is_rhd = string[0] == '1';
+    free(string);
+    if (is_rhd) {
+      s->traffic_convention[1] = 1.0;
+    } else {
+      s->traffic_convention[0] = 1.0;
+    }
+  }
 #endif
 
   // Build Vandermonde matrix
@@ -61,21 +80,23 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 
 ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
-                           mat3 transform, void* sock, float *desire_in) {
+                           mat3 transform, void* sock,
+                           float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
-    for (int i = 0; i < DESIRE_SIZE; i++) {
+    for (int i = 0; i < DESIRE_LEN; i++) {
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
-      if (desire_in[i] - s->desire[i] == 1) {
+      if (desire_in[i] - s->prev_desire[i] > .99) {
         s->pulse_desire[i] = desire_in[i];
       } else {
         s->pulse_desire[i] = 0.0;
       }
-      s->desire[i] = desire_in[i];
+      s->prev_desire[i] = desire_in[i];
     }
   }
 #endif
+
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
@@ -90,6 +111,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
     fclose(dump_yuv_file);
     assert(1==2);
   #endif
+
+  clEnqueueUnmapMemObject(q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
 
   // net outputs
   ModelDataRaw net_outputs;

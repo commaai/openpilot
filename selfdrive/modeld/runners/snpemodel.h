@@ -24,6 +24,7 @@ public:
     if (model_data) free(model_data);
   }
   void addRecurrent(float *state, int state_size);
+  void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void execute(float *net_input_buf, int buf_size);
 private:
@@ -44,6 +45,7 @@ private:
   // recurrent and desire
   std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);
   std::unique_ptr<zdl::DlSystem::IUserBuffer> recurrentBuffer;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> trafficConventionBuffer;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
 };
 

@@ -168,6 +168,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
       VIPCBuf* buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
         LOG("visionstream get failed");
+        visionstream_destroy(&stream);
         break;
       }
 
@@ -731,7 +732,8 @@ int main(int argc, char** argv) {
   for (auto s : socks){
     delete s;
   }
-
+  
+  delete poller;
   delete s.ctx;
   return 0;
 }

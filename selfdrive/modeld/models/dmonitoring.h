@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #define OUTPUT_SIZE 33
+#define RHD_CHECK_INTERVAL 10
 
 typedef struct DMonitoringResult {
   float face_orientation[3];
@@ -29,6 +30,8 @@ typedef struct DMonitoringResult {
 
 typedef struct DMonitoringModelState {
   RunModel *m;
+  bool is_rhd;
+  bool is_rhd_checked;
   float output[OUTPUT_SIZE];
 } DMonitoringModelState;
 

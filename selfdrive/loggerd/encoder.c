@@ -58,8 +58,6 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
     break;
   }
 
-  pthread_mutex_unlock(&s->state_lock);
-
   return OMX_ErrorNone;
 }
 
@@ -637,6 +635,7 @@ void encoder_close(EncoderState *s) {
     if (s->remuxing) {
       av_write_trailer(s->ofmt_ctx);
       avio_closep(&s->ofmt_ctx->pb);
+      avcodec_free_context(&s->codec_ctx);
       avformat_free_context(s->ofmt_ctx);
     } else {
       fclose(s->of);

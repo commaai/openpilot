@@ -65,7 +65,7 @@ Window::Window(QString route_, int seek, int use_api_) : route(route_), use_api(
   connect(unlogger, SIGNAL (elapsed()), this, SLOT (update()));
   thread->start();
 
-  if (use_api != 0){
+  if (use_api) {
     QString settings;
     QFile file;
     file.setFileName("routes.json");
@@ -93,9 +93,9 @@ bool Window::addSegment(int i) {
 
 
     QThread* thread = new QThread;
-    if (use_api != 0)
-      lrs.insert(i, new LogReader(fn, &events, &events_lock, &unlogger->eidx));  
-    else {
+    if (!use_api) {
+      lrs.insert(i, new LogReader(fn, &events, &events_lock, &unlogger->eidx));
+    } else {
       QString log_fn = this->log_paths.at(i).toString();
       lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));  
 
@@ -108,9 +108,9 @@ bool Window::addSegment(int i) {
 
     QString frn = QString("http://data.comma.life/%1/%2/fcamera.hevc").arg(route).arg(i);
 
-    if (use_api != 0)
+    if (!use_api) {
       frs.insert(i, new FrameReader(qPrintable(frn)));
-    else{
+    } else {
       QString camera_fn = this->camera_paths.at(i).toString();
       frs.insert(i, new FrameReader(qPrintable(camera_fn)));
     }
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
 
   QString route(argv[1]);
   
-  int use_api = QString::compare(QString("use_api"), route, Qt::CaseInsensitive);
+  int use_api = QString::compare(QString("use_api"), route, Qt::CaseInsensitive) == 0;
   int seek = QString(argv[2]).toInt();
   printf("seek: %d\n", seek);
   route = route.replace("|", "/");
