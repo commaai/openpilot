@@ -1751,7 +1751,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
 
 static void do_autofocus(CameraState *s) {
   // params for focus PI controller
-  const float focus_kp = 0.005;
+  const float focus_kp = 0.1;
 
   float err = s->focus_err;
   float sag = (s->last_sag_acc_z/9.8) * 128;
@@ -2067,7 +2067,7 @@ static void* ops_thread(void* arg) {
         if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
           if (cmsg.camera_num == 0) {
             do_autoexposure(&s->rear, cmsg.grey_frac);
-            // do_autofocus(&s->rear);
+            do_autofocus(&s->rear);
           } else {
             do_autoexposure(&s->front, cmsg.grey_frac);
           }
