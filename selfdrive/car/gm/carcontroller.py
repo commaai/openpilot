@@ -129,7 +129,8 @@ class CarController():
       # *** apply pedal hysteresis ***
       final_brake, self.brake_steady = actuator_hystereses(
         final_pedal, self.pedal_steady)
-
+      final_pedal2 = final_pedal
+      
       if not enabled:
         # Stock ECU sends max regen when not enabled.
         apply_gas = P.MAX_ACC_REGEN
@@ -147,7 +148,12 @@ class CarController():
           at_full_stop = enabled and CS.out.standstill
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
       elif CS.CP.enableGasInterceptor:
-        pedal_gas = clip(actuators.gas, 0., 1.)
+        #final_pedal2
+        #use combined gas & brake, adjust for apparent pedal_pivot
+        #It seems in L mode, accel / decel point is around 1/5
+        final_pedal2 + 0.2
+        pedal_gas = clip(final_pedal2, 0., 1.)
+        #pedal_gas = clip(actuators.gas, 0., 1.)
         if (frame % 4) == 0:
           idx = (frame // 4) % 4
           # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
