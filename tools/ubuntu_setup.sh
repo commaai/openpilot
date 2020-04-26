@@ -1,7 +1,5 @@
 #!/bin/bash -e
 
-# NOTE: ubuntu_setup.sh doesn't run! only for reading now
-
 sudo apt-get update && sudo apt-get install -y \
     autoconf \
     build-essential \

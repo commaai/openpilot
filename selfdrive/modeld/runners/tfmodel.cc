@@ -102,6 +102,9 @@ void TFModel::execute(float *net_input_buf, int buf_size) {
   if (rnn_input_buf != NULL) {
     pwrite(rnn_input_buf, rnn_state_size);
   }
+  if (traffic_convention_input_buf != NULL) {
+    pwrite(traffic_convention_input_buf, traffic_convention_size);
+  }
   pread(output, output_size);
 }
 

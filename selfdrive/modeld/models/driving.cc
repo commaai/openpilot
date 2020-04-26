@@ -112,6 +112,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
     assert(1==2);
   #endif
 
+  clEnqueueUnmapMemObject(q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
+
   // net outputs
   ModelDataRaw net_outputs;
   net_outputs.path = &s->output[PATH_IDX];
