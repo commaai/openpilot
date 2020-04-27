@@ -73,13 +73,13 @@ class CarInterface(CarInterfaceBase):
     ret.aEgo = a
     ret.brakePressed = a < -0.5
 
-    self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
-    ret.yawRate = self.yaw_rate
     ret.standstill = self.speed < 0.01
     ret.wheelSpeeds.fl = self.speed
     ret.wheelSpeeds.fr = self.speed
     ret.wheelSpeeds.rl = self.speed
     ret.wheelSpeeds.rr = self.speed
+
+    self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
     curvature = self.yaw_rate / max(self.speed, 1.)
     ret.steeringAngle = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
 
