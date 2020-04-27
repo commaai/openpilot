@@ -28,7 +28,7 @@ openpilot tools and the following setup steps are developed and tested on Ubuntu
 
 Setup
 ============
-<!-- 
+<!--
 TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructions
 
 1. Install native dependencies (Mac and Ubuntu sections listed below)
@@ -176,7 +176,7 @@ TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructio
     sudo mkdir /data/params
     sudo chown $USER /data/params
     ```
-    
+
 
 4. Try out some tools!
 
@@ -243,15 +243,17 @@ Use the panda's OBD-II port to connect with your car and a usb cable to connect 
 Also, connect a joystick to your pc.
 
 `joystickd.py` runs a deamon that reads inputs from a joystick and publishes them over zmq.
-`boardd.py` sends the CAN messages from your pc to the panda.
+`boardd` sends the CAN messages from your pc to the panda.
 `debug_controls` is a mocked version of `controlsd.py` and uses input from a joystick to send controls to your car.
+
+Make sure the conditions are met in the panda to allow controls (e.g. cruise control engaged). You can also make a modification to the panda code to always allow controls.
 
 Usage:
 ```
 python carcontrols/joystickd.py
 
 # In another terminal:
-selfdrive/boardd/tests/boardd_old.py # Make sure the safety setting is hardcoded to ALL_OUTPUT
+PARAMS_PATH=persist/params selfdrive/boardd/boardd
 
 # In another terminal:
 python carcontrols/debug_controls.py
