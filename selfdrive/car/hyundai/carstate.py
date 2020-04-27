@@ -54,12 +54,9 @@ class CarState(CarStateBase):
     ret.brakeLights = bool(cp.vl["TCS13"]['BrakeLight'] or ret.brakePressed)
 
     #TODO: find pedal signal for EV/HYBRID Cars
-    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
-      pedal_gas = 0
-    else:
-      pedal_gas = cp.vl["EMS12"]['TPS']
+    pedal_gas = cp.vl["EMS12"]['TPS']
 
-    ret.gasPressed = pedal_gas > 1e-3
+    ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
     ret.gas = pedal_gas
 
     # TODO: refactor gear parsing in function
@@ -163,10 +160,8 @@ class CarState(CarStateBase):
       ("CF_Clu_AliveCnt1", "CLU11", 0),
 
       ("ACCEnable", "TCS13", 0),
-      ("ACC_REQ", "TCS13", 0),
       ("BrakeLight", "TCS13", 0),
       ("DriverBraking", "TCS13", 0),
-      ("DriverOverride", "TCS13", 0),
 
       ("ESC_Off_Step", "TCS15", 0),
 
@@ -188,6 +183,7 @@ class CarState(CarStateBase):
       ("ACCMode", "SCC12", 1),
 
       ("TPS", "EMS12", 0),
+      ("CF_Ems_AclAct", "EMS16", 0),
     ]
 
     checks = [
@@ -204,6 +200,7 @@ class CarState(CarStateBase):
       ("SCC11", 50),
       ("SCC12", 50),
       ("EMS12", 100),
+      ("EMS16", 100),
     ]
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
       signals += [
