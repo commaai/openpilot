@@ -69,7 +69,6 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_adas, self.cp_cam)
 
     ret.canValid = self.cp.can_valid and self.cp_adas.can_valid and self.cp_cam.can_valid
-    ret.yawRate = self.VM.yaw_rate(ret.steeringAngle * CV.DEG_TO_RAD, ret.vEgo)
 
     buttonEvents = []
     be = car.CarState.ButtonEvent.new_message()
