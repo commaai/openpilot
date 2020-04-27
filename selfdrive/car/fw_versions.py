@@ -3,7 +3,7 @@ import traceback
 import struct
 from tqdm import tqdm
 
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery, RX_OFFSET
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.toyota.values import CAR as TOYOTA
@@ -36,6 +36,11 @@ UDS_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
 UDS_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION)
 
+APPLICATION_DATA_IDENTIFICATION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+APPLICATION_DATA_IDENTIFICATION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+
 TOYOTA_VERSION_REQUEST = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE = b'\x5a\x88\x01'
 
@@ -43,24 +48,35 @@ OBD_VERSION_REQUEST = b'\x09\x04'
 OBD_VERSION_RESPONSE = b'\x49\x04'
 
 
+
 REQUESTS = [
   # Honda
   (
     [UDS_VERSION_REQUEST],
-   [UDS_VERSION_RESPONSE]
+    [UDS_VERSION_RESPONSE],
+    RX_OFFSET.DEFAULT
   ),
   # Toyota
   (
     [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
-    [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE]
+    [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
+    RX_OFFSET.DEFAULT,
   ),
   (
     [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
-    [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE]
+    [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
+    RX_OFFSET.DEFAULT
   ),
   (
     [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE]
+    [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
+    RX_OFFSET.DEFAULT
+  ),
+  # Volkswagen
+  (
+    [EXTENDED_DIAGNOSTIC_REQUEST, APPLICATION_DATA_IDENTIFICATION_REQUEST],
+    [EXTENDED_DIAGNOSTIC_RESPONSE, APPLICATION_DATA_IDENTIFICATION_RESPONSE],
+    RX_OFFSET.VOLKSWAGEN
   )
 ]
 
@@ -134,9 +150,9 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
   fw_versions = {}
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
-      for request, response in REQUESTS:
+      for request, response, response_offset in REQUESTS:
         try:
-          query = IsoTpParallelQuery(sendcan, logcan, bus, addr_chunk, request, response, debug=debug)
+          query = IsoTpParallelQuery(sendcan, logcan, bus, addr_chunk, request, response, response_offset, debug=debug)
           t = 2 * timeout if i == 0 else timeout
           fw_versions.update(query.get_data(t))
         except Exception:

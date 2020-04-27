@@ -44,15 +44,36 @@ MQB_LDW_MESSAGES = {
 }
 
 class CAR:
-  GOLF = "Volkswagen Golf"
+  VW_ATLAS_MK1 = "Volkswagen Atlas 1st Gen"
+  VW_GOLF_R_MK7 = "Volkswagen Golf R 7th Gen"
+  VW_TIGUAN_MK2 = "Volkswagen Tiguan 2nd Gen"
 
-FINGERPRINTS = {
-  CAR.GOLF: [
-  # 76b83eb0245de90e|2019-10-21--17-40-42 - jyoung8607 car
-  {64: 8, 134: 8, 159: 8, 173: 8, 178: 8, 253: 8, 257: 8, 260: 8, 262: 8, 264: 8, 278: 8, 279: 8, 283: 8, 286: 8, 288: 8, 289: 8, 290: 8, 294: 8, 299: 8, 302: 8, 346: 8, 385: 8, 418: 8, 427: 8, 668: 8, 679: 8, 681: 8, 695: 8, 779: 8, 780: 8, 783: 8, 792: 8, 795: 8, 804: 8, 806: 8, 807: 8, 808: 8, 809: 8, 870: 8, 896: 8, 897: 8, 898: 8, 901: 8, 917: 8, 919: 8, 949: 8, 958: 8, 960: 4, 981: 8, 987: 8, 988: 8, 991: 8, 997: 8, 1000: 8, 1019: 8, 1120: 8, 1122: 8, 1123: 8, 1124: 8, 1153: 8, 1162: 8, 1175: 8, 1312: 8, 1385: 8, 1413: 8, 1440: 5, 1514: 8, 1515: 8, 1520: 8, 1600: 8, 1601: 8, 1603: 8, 1605: 8, 1624: 8, 1626: 8, 1629: 8, 1631: 8, 1646: 8, 1648: 8, 1712: 6, 1714: 8, 1716: 8, 1717: 8, 1719: 8, 1720: 8, 1721: 8
-  }],
+MQB_CARS = {
+  CAR.VW_ATLAS_MK1,
+  CAR.VW_GOLF_R_MK7,
+  CAR.VW_TIGUAN_MK2
+}
+
+# Volkswagen port using FP 2.0 exclusively
+FINGERPRINTS = {}
+
+FW_VERSIONS = {
+  CAR.VW_ATLAS_MK1: {
+    # Mk1 2018-2020 and Mk1.5 facelift 2021
+    (Ecu.eps, 0x712, None): [b'\x0571B60924A1'],  # 2019 Atlas
+  },
+  CAR.VW_GOLF_R_MK7: {
+    # Mk7 2013-2017 and Mk7.5 facelift 2018-2020
+    (Ecu.eps, 0x712, None): [b'\x0571A0JA15A1'],  # 2018 Golf R
+  },
+  CAR.VW_TIGUAN_MK2: {
+    # Mk2 2018-2020
+    (Ecu.eps, 0x712, None): [b'\x0521A60804A1'],  # 2020 Tiguan SEL Premium R-Line
+  },
 }
 
 DBC = {
-  CAR.GOLF: dbc_dict('vw_mqb_2010', None),
+  CAR.VW_ATLAS_MK1: dbc_dict('vw_mqb_2010', None),
+  CAR.VW_GOLF_R_MK7: dbc_dict('vw_mqb_2010', None),
+  CAR.VW_TIGUAN_MK2: dbc_dict('vw_mqb_2010', None),
 }
