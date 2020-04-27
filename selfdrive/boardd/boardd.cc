@@ -547,19 +547,20 @@ void can_health(PubSocket *publisher) {
 void can_send(SubSocket *subscriber) {
   int err;
   // recv from sendcan
-  AlignedMessage amsg = subscriber->receive();
+  AlignedMessage amsg(subscriber->receive());
   if (!amsg) return;
 
-  if (nanos_since_boot() - amsg.getEvent().getLogMonoTime() > 1e9) {
+  cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
     return;
   }
-  int msg_count = amsg.getEvent().getSendcan().size();
+  int msg_count = event.getSendcan().size();
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
-    auto cmsg = amsg.getEvent().getSendcan()[i];
+    auto cmsg = event.getSendcan()[i];
     if (cmsg.getAddress() >= 0x800) {
       // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
@@ -706,12 +707,13 @@ void *hardware_control_thread(void *crap) {
   while (!do_exit) {
     cnt++;
     for (auto sock : poller->poll(1000)){
-      AlignedMessage amsg = sock->receive();
+      AlignedMessage amsg(sock->receive());
       if (!amsg) continue;
 
-      auto type = amsg.getEvent().which();
+      cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+      auto type = event.which();
       if(type == cereal::Event::THERMAL){
-        uint16_t fan_speed = amsg.getEvent().getThermal().getFanSpeed();
+        uint16_t fan_speed = event.getThermal().getFanSpeed();
         if (fan_speed != prev_fan_speed || cnt % 100 == 0){
           pthread_mutex_lock(&usb_lock);
           libusb_control_transfer(dev_handle, 0x40, 0xb1, fan_speed, 0, NULL, 0, TIMEOUT);
@@ -720,8 +722,8 @@ void *hardware_control_thread(void *crap) {
           prev_fan_speed = fan_speed;
         }
       } else if (type == cereal::Event::FRONT_FRAME){
-        float cur_front_gain = amsg.getEvent().getFrontFrame().getGainFrac();
-        last_front_frame_t = amsg.getEvent().getLogMonoTime();
+        float cur_front_gain = event.getFrontFrame().getGainFrac();
+        last_front_frame_t = event.getLogMonoTime();
 
         if (cur_front_gain <= CUTOFF_GAIN) {
           ir_pwr = 100.0 * MIN_IR_POWER;

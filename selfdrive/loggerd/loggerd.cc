@@ -656,16 +656,17 @@ int main(int argc, char** argv) {
   while (!do_exit) {
     for (auto sock : poller->poll(100 * 1000)){
       while (true) {
-        AlignedMessage amsg = sock->receive(true);
-        if (!amsg){
+        AlignedMessage amsg(sock->receive(true));
+        if (!amsg) {
           break;
         }
 
         if (sock == frame_sock){
+          cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
           // track camera frames to sync to encoder
-          if (amsg.getEvent().isFrame()) {
+          if (event.isFrame()) {
             std::unique_lock<std::mutex> lk(s.lock);
-            s.last_frame_id = amsg.getEvent().getFrame().getFrameId();
+            s.last_frame_id = event.getFrame().getFrameId();
             lk.unlock();
             s.cv.notify_all();
           }

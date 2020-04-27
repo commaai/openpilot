@@ -55,11 +55,12 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
 
   while (!do_exit) {
-    AlignedMessage amsg = poll_func(poller);
+    AlignedMessage amsg(poll_func(poller));
     if (!amsg) continue;
 
-    const uint8_t *data = amsg.getEvent().getUbloxRaw().begin();
-    size_t len = amsg.getEvent().getUbloxRaw().size();
+    cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+    const uint8_t *data = event.getUbloxRaw().begin();
+    size_t len = event.getUbloxRaw().size();
     size_t bytes_consumed = 0;
     while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;

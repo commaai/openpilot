@@ -105,11 +105,12 @@ int main(int argc, char *argv[]) {
   int save_counter = 0;
   while (true){
     for (auto s : poller->poll(100)){
-      AlignedMessage amsg = s->receive();
+      AlignedMessage amsg(s->receive());
       if (!amsg) continue;
-      
-      localizer.handle_log(amsg.getEvent());
-      auto which = amsg.getEvent().which();
+
+      cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+      localizer.handle_log(event);
+      auto which = event.which();
       // Throw vision failure if posenet and odometric speed too different
       if (which == cereal::Event::CAMERA_ODOMETRY){
         if (std::abs(localizer.posenet_speed - localizer.car_speed) > std::max(0.4 * localizer.car_speed, 5.0)) {

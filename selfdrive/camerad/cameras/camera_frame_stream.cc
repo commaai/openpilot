@@ -62,10 +62,11 @@ void run_frame_stream(DualCameraState *s) {
   auto *tb = &rear_camera->camera_tb;
 
   while (!do_exit) {
-    AlignedMessage amsg = recorder_sock->receive();
+    AlignedMessage amsg(recorder_sock->receive());
     if (!amsg) continue;
-    
-    auto frame = amsg.getEvent().getFrame();
+
+    cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+    auto frame = event.getFrame();
 
     const int buf_idx = tbuffer_select(tb);
     rear_camera->camera_bufs_metadata[buf_idx] = {

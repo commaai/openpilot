@@ -62,10 +62,11 @@ int main(int argc, char **argv) {
       //printf("frame_id: %d %dx%d\n", extra.frame_id, buf_info.width, buf_info.height);
       if (!dmonitoringmodel.is_rhd_checked) {
         if (chk_counter >= RHD_CHECK_INTERVAL) {
-          AlignedMessage amsg = dmonstate_sock->receive(true);
+          AlignedMessage amsg(dmonstate_sock->receive(true));
           if (amsg) {
-            dmonitoringmodel.is_rhd = amsg.getEvent().getDMonitoringState().getIsRHD();
-            dmonitoringmodel.is_rhd_checked = amsg.getEvent().getDMonitoringState().getRhdChecked();
+            cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+            dmonitoringmodel.is_rhd = event.getDMonitoringState().getIsRHD();
+            dmonitoringmodel.is_rhd_checked = event.getDMonitoringState().getRhdChecked();
           }
           chk_counter = 0;
         }

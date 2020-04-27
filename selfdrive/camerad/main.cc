@@ -203,19 +203,21 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      AlignedMessage msg_dmon = dmonstate_sock->receive(true);
+      AlignedMessage msg_dmon(dmonstate_sock->receive(true));
       if (msg_dmon) {
-        s->rhd_front = msg_dmon.getEvent().getDMonitoringState().getIsRHD();
-        s->rhd_front_checked = msg_dmon.getEvent().getDMonitoringState().getRhdChecked();
+        cereal::Event::Reader event = msg_dmon.getRoot<cereal::Event>();
+        s->rhd_front = event.getDMonitoringState().getIsRHD();
+        s->rhd_front_checked = event.getDMonitoringState().getRhdChecked();
       }
     }
 
-    AlignedMessage amsg = monitoring_sock->receive(true);
+    AlignedMessage amsg(monitoring_sock->receive(true));
     if (amsg) {
-      float face_prob = amsg.getEvent().getDriverState().getFaceProb();
+      cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+      float face_prob = event.getDriverState().getFaceProb();
       float face_position[2];
-      face_position[0] = amsg.getEvent().getDriverState().getFacePosition()[0];
-      face_position[1] = amsg.getEvent().getDriverState().getFacePosition()[1];
+      face_position[0] = event.getDriverState().getFacePosition()[0];
+      face_position[1] = event.getDriverState().getFacePosition()[1];
 
       // set front camera metering target
       if (face_prob > 0.4)

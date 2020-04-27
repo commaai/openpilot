@@ -49,13 +49,14 @@ void* live_thread(void *arg) {
 
   while (!do_exit) {
     for (auto sock : poller->poll(10)){
-      AlignedMessage amsg = sock->receive();
+      AlignedMessage amsg(sock->receive());
       if (!amsg) continue;
 
-      if (amsg.getEvent().isLiveCalibration()) {
+      cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+      if (event.isLiveCalibration()) {
         pthread_mutex_lock(&transform_lock);
 
-        auto extrinsic_matrix = amsg.getEvent().getLiveCalibration().getExtrinsicMatrix();
+        auto extrinsic_matrix = event.getLiveCalibration().getExtrinsicMatrix();
         Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
         for (int i = 0; i < 4*3; i++){
           extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
@@ -187,10 +188,11 @@ int main(int argc, char **argv) {
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
-      AlignedMessage amsg = pathplan_sock->receive(true);
+      AlignedMessage amsg(pathplan_sock->receive(true));
       if (amsg) {
         // TODO: path planner timeout?
-        desire = ((int)amsg.getEvent().getPathPlan().getDesire()) - 1;
+        cereal::Event::Reader event = amsg.getRoot<cereal::Event>();
+        desire = ((int)event.getPathPlan().getDesire()) - 1;
       }
 
       double mt1 = 0, mt2 = 0;
