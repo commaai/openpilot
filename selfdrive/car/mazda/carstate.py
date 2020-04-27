@@ -177,14 +177,15 @@ class CarState(CarStateBase):
     signals = [
       # sig_name, sig_address, default
 
-      ("LKAS_REQUEST",     "CAM_LKAS", 0),
+      ("LKAS_REQUEST",     "CAM_LKAS", 2048),
       ("CTR",              "CAM_LKAS", 0),
       ("ERR_BIT_1",        "CAM_LKAS", 0),
-      ("LDW",              "CAM_LKAS", 0),
       ("LINE_NOT_VISIBLE", "CAM_LKAS", 0),
-      ("BIT_1",            "CAM_LKAS", 0),
+      ("LDW",              "CAM_LKAS", 0),
+      ("BIT_1",            "CAM_LKAS", 1),
       ("ERR_BIT_2",        "CAM_LKAS", 0),
-      ("BIT_2",            "CAM_LKAS", 0),
+      ("LKAS_ANGLE",       "CAM_LKAS", 2048),
+      ("BIT2",             "CAM_LKAS", 0),
       ("CHKSUM",           "CAM_LKAS", 0),
     ]
 
