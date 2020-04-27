@@ -4,7 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-opencv-python= "==3.4.2.17"
+opencv-python= "*"
 PyQt5 = "*"
 ipython = "*"
 networkx = "==2.3"
@@ -37,7 +37,6 @@ pycurl = "*"
 git-pylint-commit-hook = "*"
 pymongo = "*"
 "pynmea2" = "*"
-pypolyline = "*"
 python-logstash = "*"
 redis = "*"
 "s2sphere" = "*"
@@ -57,7 +56,6 @@ Shapely = "*"
 SQLAlchemy = "*"
 scipy = "*"
 fastcluster = "*"
-pygame = "*"
 simplejson = "*"
 python-logstash-async = "*"
 seaborn = "*"
@@ -72,6 +70,7 @@ paramiko = "*"
 aiohttp = "*"
 lru-dict = "*"
 scikit-image = "*"
+pygame = "==2.0.0.dev6"
 
 [packages]
 overpy = {git = "https://github.com/commaai/python-overpy.git",ref = "f86529af402d4642e1faeb146671c40284007323"}
@@ -113,5 +112,6 @@ pycryptodome = "*"
 PyJWT = "*" 
 pyserial = "*"
 
+
 [requires]
-python_version = "3.7.3"
+python_version = "3.8.2"
