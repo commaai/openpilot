@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     ret.brakeLights = bool(cp.vl["TCS13"]['BrakeLight'] or ret.brakePressed)
 
     #TODO: find pedal signal for EV/HYBRID Cars
-    ret.gas = cp.vl["EMS12"]['TPS']
+    ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100
     ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 
     # TODO: refactor gear parsing in function
@@ -180,7 +180,7 @@ class CarState(CarStateBase):
       ("ACC_ObjDist", "SCC11", 0),
       ("ACCMode", "SCC12", 1),
 
-      ("TPS", "EMS12", 0),
+      ("PV_AV_CAN", "EMS12", 0),
       ("CF_Ems_AclAct", "EMS16", 0),
     ]
 
