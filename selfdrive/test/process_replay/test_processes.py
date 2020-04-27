@@ -25,6 +25,7 @@ segments = [
 
   # Enable when port is tested and dascamOnly is no longer set
   ("NISSAN", "fbbfa6af821552b9|2020-03-03--08-09-43--0"),     # NISSAN.XTRAIL
+  ("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
 ]
 
 # ford doesn't need to be tested until a full port is done

@@ -124,7 +124,7 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.low_speed_lockout:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
-      if ret.cruiseState.enabled  and not self.cruise_enabled_prev:
+      if ret.cruiseState.enabled:
         ret.cruiseState.enabled = False
 
     if self.low_speed_alert:
@@ -133,8 +133,10 @@ class CarInterface(CarInterfaceBase):
     if self.CS.steer_lkas.handsoff:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
-    if (ret.gasPressed and not self.gas_pressed_prev):
+    if ret.gasPressed and not self.gas_pressed_prev:
       ret.cruiseState.enabled = False
+
+    self.gas_pressed_prev = ret.gasPressed
 
     ret.events = events
 
