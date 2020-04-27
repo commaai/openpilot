@@ -8,10 +8,14 @@ from common.timeout import Timeout
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from os.path import expanduser
 from threading import Thread
+from selfdrive.manager import unblock_stdout
 
 from common.params import Params
 import os
 
+
+if __name__ == "__main__":
+  unblock_stdout()
 
 MASTER_HOST = "testing.comma.life"
 
