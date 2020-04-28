@@ -48,7 +48,6 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx, has_relay):
   # non-active params
   values = {
     "BYTE_0": 0x04,
-    "BYTE_1": 0x00,
     "BYTE_2": 0x80,
     "BYTE_3": 0x10,
   }
