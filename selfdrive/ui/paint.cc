@@ -460,7 +460,6 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   } else {
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
   }
-
   const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
   nvgText(s->vg, text_x, 148, "MAX", NULL);
 
@@ -586,7 +585,6 @@ static void ui_draw_vision_speed(UIState *s) {
   } else {
     snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2369363 + 0.5));
   }
-
   const int text_x = viz_speed_x + viz_speed_w / 2;
   nvgFontFaceId(s->vg, s->font_sans_bold);
   nvgFontSize(s->vg, 96*2.5);
