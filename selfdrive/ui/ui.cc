@@ -147,13 +147,14 @@ static void read_param_bool(bool* param, const char* param_name) {
   }
 }
 
-static void read_param_float(float* param, const char* param_name) {
+static int read_param_float(float* param, const char* param_name, const char* params_path = NULL) {
   char *s;
-  const int result = read_db_value(NULL, param_name, &s, NULL);
+  const int result = read_db_value(params_path, param_name, &s, NULL);
   if (result == 0) {
     *param = strtod(s, NULL);
     free(s);
   }
+  return result;
 }
 
 static int read_param_uint64(uint64_t* dest, const char* param_name) {
@@ -192,6 +193,14 @@ static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int
     return read_param_uint64(dest, param_name);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
+}
+
+static int write_param_float(float param, const char* param_name, const char* params_path = NULL) {
+  char s[16];
+  snprintf(s, sizeof(s), "%f", param);
+  const int result = write_db_value(params_path, param_name, s, sizeof(s));
+  free(s);
+  return result;
 }
 
 static void update_offroad_layout_timeout(UIState *s, int* timeout) {
@@ -885,10 +894,18 @@ int main(int argc, char* argv[]) {
   // light sensor scaling params
   const int LEON = is_leon();
 
-  const float BRIGHTNESS_B = LEON ? 10.0 : 5.0;
-  const float BRIGHTNESS_M = LEON ? 2.6 : 1.3;
+  float brightness_b, brightness_m;  
+  int result = read_param_float(&brightness_b, "BRIGHTNESS_B", PERSISTENT_PARAMS);
+  result += read_param_float(&brightness_m, "BRIGHTNESS_M", PERSISTENT_PARAMS);
 
-  float smooth_brightness = BRIGHTNESS_B;
+  if(result != 0){
+    brightness_b = LEON ? 10.0 : 5.0;
+    brightness_m = LEON ? 2.6 : 1.3;
+    write_param_float(brightness_b, "BRIGHTNESS_B", PERSISTENT_PARAMS);
+    write_param_float(brightness_m, "BRIGHTNESS_M", PERSISTENT_PARAMS);
+  }
+
+  float smooth_brightness = brightness_b;
 
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
@@ -912,7 +929,7 @@ int main(int argc, char* argv[]) {
     double u1 = millis_since_boot();
 
     // light sensor is only exposed on EONs
-    float clipped_brightness = (s->light_sensor*BRIGHTNESS_M) + BRIGHTNESS_B;
+    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
     if (clipped_brightness > 512) clipped_brightness = 512;
     smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
     if (smooth_brightness > 255) smooth_brightness = 255;
