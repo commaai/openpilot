@@ -197,10 +197,8 @@ static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int
 
 static int write_param_float(float param, const char* param_name, const char* params_path = NULL) {
   char s[16];
-  snprintf(s, sizeof(s), "%f", param);
-  const int result = write_db_value(params_path, param_name, s, sizeof(s));
-  free(s);
-  return result;
+  int size = snprintf(s, sizeof(s), "%f", param);
+  return write_db_value(params_path, param_name, s, MIN(size, sizeof(s)));
 }
 
 static void update_offroad_layout_timeout(UIState *s, int* timeout) {
@@ -862,6 +860,15 @@ int is_leon() {
   return strstr(str, "letv") != NULL;
 }
 
+<<<<<<< HEAD
+=======
+#ifdef QCOM
+  #define PERSISTENT_PARAMS "/persist/comma/params"
+#else
+  #define PERSISTENT_PARAMS NULL
+#endif
+
+>>>>>>> fix params writing
 int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);

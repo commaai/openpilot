@@ -57,6 +57,15 @@ static int fsync_dir(const char* path){
   }
 }
 
+static int ensure_dir_exists(const char* path) {
+  struct stat st;
+  if (stat(path, &st) == -1) {
+    printf("Creating folder: %s\n", path);
+    return mkdir(path, 0700);
+  }
+  return 0;
+}
+
 int write_db_value(const char* params_path, const char* key, const char* value,
                    size_t value_size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
@@ -75,6 +84,16 @@ int write_db_value(const char* params_path, const char* key, const char* value,
 
   if (params_path == NULL) {
     params_path = default_params_path;
+  }
+
+  // Make sure path exists
+  result = ensure_dir_exists(params_path);
+  result += snprintf(path, sizeof(path), "%s/d", params_path);
+  result += ensure_dir_exists(path);
+  if (result < 0) {
+    printf("Result: %d\n", result);
+    perror("error");
+    goto cleanup;
   }
 
   // Write value to temp.
@@ -96,7 +115,7 @@ int write_db_value(const char* params_path, const char* key, const char* value,
   if (result < 0) {
     goto cleanup;
   }
-  lock_fd = open(path, 0);
+  lock_fd = open(path, O_CREAT);
 
   // Build key path
   result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
@@ -167,7 +186,7 @@ int delete_db_value(const char* params_path, const char* key) {
   if (result < 0) {
     goto cleanup;
   }
-  lock_fd = open(path, 0);
+  lock_fd = open(path, O_CREAT);
 
   // Take lock.
   result = flock(lock_fd, LOCK_EX);
