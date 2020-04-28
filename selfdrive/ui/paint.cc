@@ -460,7 +460,8 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   } else {
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
   }
-  nvgText(s->vg, viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 148, "MAX", NULL);
+  const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
+  nvgText(s->vg, text_x, 148, "MAX", NULL);
 
   // Draw Speed Text
   nvgFontFaceId(s->vg, s->font_sans_bold);
@@ -468,12 +469,12 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   if (is_cruise_set) {
     snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", maxspeed_calc);
     nvgFillColor(s->vg, COLOR_WHITE);
-    nvgText(s->vg, viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 242, maxspeed_str, NULL);
+    nvgText(s->vg, text_x, 242, maxspeed_str, NULL);
   } else {
     nvgFontFaceId(s->vg, s->font_sans_semibold);
     nvgFontSize(s->vg, 42*2.5);
     nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
-    nvgText(s->vg, viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 242, "N/A", NULL);
+    nvgText(s->vg, text_x, 242, "N/A", NULL);
   }
 
 }
@@ -535,6 +536,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   }
 
   // Draw "Speed Limit" Text
+
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   nvgFontFaceId(s->vg, s->font_sans_semibold);
   nvgFontSize(s->vg, 50);
@@ -542,8 +544,9 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   if (is_speedlim_valid && s->is_ego_over_limit) {
     nvgFillColor(s->vg, COLOR_WHITE);
   }
-  nvgText(s->vg, viz_speedlim_x+viz_speedlim_w/2 + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 50 : 45), "SMART", NULL);
-  nvgText(s->vg, viz_speedlim_x+viz_speedlim_w/2 + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 90 : 85), "SPEED", NULL);
+  const int text_x = viz_speedlim_x + viz_speedlim_w / 2;
+  nvgText(s->vg, text_x + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 50 : 45), "SMART", NULL);
+  nvgText(s->vg, text_x + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 90 : 85), "SPEED", NULL);
 
   // Draw Speed Text
   nvgFontFaceId(s->vg, s->font_sans_bold);
@@ -555,11 +558,11 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   }
   if (is_speedlim_valid) {
     snprintf(speedlim_str, sizeof(speedlim_str), "%d", speedlim_calc);
-    nvgText(s->vg, viz_speedlim_x+viz_speedlim_w/2, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), speedlim_str, NULL);
+    nvgText(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), speedlim_str, NULL);
   } else {
     nvgFontFaceId(s->vg, s->font_sans_semibold);
     nvgFontSize(s->vg, 42*2.5);
-    nvgText(s->vg, viz_speedlim_x+viz_speedlim_w/2, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), "N/A", NULL);
+    nvgText(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), "N/A", NULL);
   }
 }
 
@@ -582,19 +585,20 @@ static void ui_draw_vision_speed(UIState *s) {
   } else {
     snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2369363 + 0.5));
   }
+  const int text_x = viz_speed_x + viz_speed_w / 2;
   nvgFontFaceId(s->vg, s->font_sans_bold);
   nvgFontSize(s->vg, 96*2.5);
   nvgFillColor(s->vg, COLOR_WHITE);
-  nvgText(s->vg, viz_speed_x+viz_speed_w/2, 240, speed_str, NULL);
+  nvgText(s->vg, text_x, 240, speed_str, NULL);
 
   nvgFontFaceId(s->vg,  s->font_sans_regular);
   nvgFontSize(s->vg, 36*2.5);
   nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
 
   if (s->is_metric) {
-    nvgText(s->vg, viz_speed_x+viz_speed_w/2, 320, "kph", NULL);
+    nvgText(s->vg, text_x, 320, "kph", NULL);
   } else {
-    nvgText(s->vg, viz_speed_x+viz_speed_w/2, 320, "mph", NULL);
+    nvgText(s->vg, text_x, 320, "mph", NULL);
   }
 }
 
