@@ -62,8 +62,8 @@ def replay(route, segment):
     lag -= dt
     time.sleep(dt)
 
-    if lag < -1 and i % 100 == 0:
-      print(f"{-lag} s behind")
+    if lag < -1.0 and i % 1000 == 0:
+      print(f"{-lag:.2f} s behind")
 
     if input_ready():
       key = sys.stdin.read(1)
@@ -80,7 +80,7 @@ def replay(route, segment):
       new_time = msgs[i].logMonoTime + dt * 1e9
       i = bisect.bisect_left(times, new_time)
 
-    i = (i + 1) % max_i
+    i = min(i + 1, max_i)
 
 
 if __name__ == "__main__":
