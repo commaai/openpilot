@@ -35,6 +35,11 @@ def report_tombstone(fn, client):
   if name_idx >= 0:
     message = message[name_idx:]
 
+  # Cut off fault addr
+  fault_idx = message.find(', fault addr')
+  if fault_idx >= 0:
+    message = message[:fault_idx]
+
   cloudlog.error({'tombstone': message})
   client.captureMessage(
     message=message,
