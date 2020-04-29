@@ -107,12 +107,8 @@ class Controls:
     if mem_low:
       self.events.append(create_event('lowMemory', [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.PERMANENT]))
 
-    if self.CS.stockAeb:
-      self.events.append(create_event('stockAeb', []))
-
     # Handle calibration
     cal_status = self.sm['liveCalibration'].calStatus
-
     if cal_status != Calibration.CALIBRATED:
       if cal_status == Calibration.UNCALIBRATED:
         self.events.append(create_event('calibrationIncomplete', [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.PERMANENT]))
@@ -442,18 +438,18 @@ class Controls:
     # start the loop
     set_realtime_priority(3)
 
-    self.params = Params()
+    params = Params()
 
-    self.is_metric = self.params.get("IsMetric", encoding='utf8') == "1"
-    self.is_ldw_enabled = self.params.get("IsLdwEnabled", encoding='utf8') == "1"
-    passive = self.params.get("Passive", encoding='utf8') == "1"
-    openpilot_enabled_toggle = self.params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
-    community_feature_toggle = self.params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
+    self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
+    self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
+    passive = params.get("Passive", encoding='utf8') == "1"
+    openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
+    community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
 
     passive = passive or not openpilot_enabled_toggle
 
     # Passive if internet needed
-    internet_needed = self.params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
+    internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
     passive = passive or internet_needed
 
     # Pub/Sub Sockets
@@ -489,7 +485,7 @@ class Controls:
 
     # Write CarParams for radard and boardd safety mode
     cp_bytes = self.CP.to_bytes()
-    self.params.put("CarParams", cp_bytes)
+    params.put("CarParams", cp_bytes)
     put_nonblocking("CarParamsCache", cp_bytes)
     put_nonblocking("LongitudinalControl", "1" if self.CP.openpilotLongitudinalControl else "0")
 

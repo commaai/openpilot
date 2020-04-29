@@ -95,6 +95,8 @@ class CarInterfaceBase():
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if cs_out.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+    if cs_out.stockAeb:
+      self.events.append(create_event('stockAeb', []))
 
     # TODO: move this stuff to the capnp strut
     if getattr(self.CS, "steer_error", False):
