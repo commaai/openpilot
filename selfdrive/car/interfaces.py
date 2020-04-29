@@ -4,6 +4,7 @@ from cereal import car
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
@@ -97,6 +98,8 @@ class CarInterfaceBase():
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
     if cs_out.stockAeb:
       self.events.append(create_event('stockAeb', []))
+    if cs_out.vEgo > 92 * CV.MPH_TO_MS:
+      self.events.append(create_event('speedTooHigh', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
     # TODO: move this stuff to the capnp strut
     if getattr(self.CS, "steer_error", False):
