@@ -1,7 +1,7 @@
 #include "commonmodel.h"
 
 #include <czmq.h>
-#include <stdlib.h>
+#include <math.h>
 #include <stdio.h>
 #include "cereal/gen/c/log.capnp.h"
 #include "common/mat.h"
@@ -73,8 +73,8 @@ bool allclose(float *arr1, float *arr2, int len, float rtol, float atol) {
   float max_err = 0;
   float max_rerr = 0;
   for (int i=0; i<len; i++) {
-    max_err = abs(arr1[i] - arr2[i])>max_err ? abs(arr1[i] - arr2[i]):max_err;
-    max_rerr = abs((arr1[i] - arr2[i])/(arr1[i] + 1e-6))>max_rerr ? abs((arr1[i] - arr2[i])/(arr1[i] + 1e-6)):max_rerr;
+    max_err = fabs(arr1[i] - arr2[i])>max_err ? fabs(arr1[i] - arr2[i]):max_err;
+    max_rerr = fabs((arr1[i] - arr2[i])/(arr1[i] + 1e-6))>max_rerr ? fabs((arr1[i] - arr2[i])/(arr1[i] + 1e-6)):max_rerr;
   }
   return (bool)(max_err < atol && max_rerr < rtol);
 }
