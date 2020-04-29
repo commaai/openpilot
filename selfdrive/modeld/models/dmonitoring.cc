@@ -1,4 +1,5 @@
 #include <string.h>
+#include <unistd.h>
 #include "dmonitoring.h"
 #include "common/mat.h"
 #include "common/timing.h"
@@ -181,13 +182,20 @@ void dmonitoring_selftest(DMonitoringModelState *s) {
   int input_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6;
   float *test_input = new float[input_buf_len];
   for (int i=0; i<input_buf_len; i++) {
-    test_input[i] = 1.0;
+    test_input[i] = 0.25;
   }
-  float *ref = new float[OUTPUT_SIZE];
-  f32_fromfile("../../models/dmonitoring_output_ref", ref, OUTPUT_SIZE);
-  DMonitoringResult dummy_res = dmonitoring_eval_frame(s, test_input, MODEL_WIDTH, MODEL_HEIGHT);
 
-  assert(allclose(ref, s->output, OUTPUT_SIZE, 0.05, 0.1));
+  assert(access("../../models/dmonitoring_output_ref", F_OK ) != -1 );
+  float *ref = new float[OUTPUT_SIZE];
+  f32_fromfile("../../models/dmonitoring_output_ref", &ref[0], OUTPUT_SIZE);
+
+  s->m->execute(test_input, input_buf_len);
+
+  // for (int i=0; i<OUTPUT_SIZE; i++) {
+  //   printf("%f, %f\n", s->output[i], ref[i]);
+  // }
+
+  assert(allclose(ref, s->output, OUTPUT_SIZE, 0.1, 0.1));
 
   delete[] test_input;
   delete[] ref;

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #include <cassert>
 
 #include "common/visionbuf.h"
@@ -36,8 +37,11 @@ int main(int argc, char **argv) {
   dmonitoring_init(&dmonitoringmodel);
 
   // compare with baseline outputs
-  dmonitoring_selftest(&dmonitoringmodel);
-
+  if (argc > 1) {
+    if (argv[1] == std::string("--selftest")) {
+      dmonitoring_selftest(&dmonitoringmodel);
+    }
+  }
   // loop
   VisionStream stream;
   while (!do_exit) {
