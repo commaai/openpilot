@@ -14,6 +14,8 @@ extern "C" {
 
 float softplus(float input);
 float sigmoid(float input);
+bool allclose(float *arr1, float *arr2, int len, float rtol, float atol);
+void f32_fromfile(const char* filepath, float *buf, int len);
 
 typedef struct ModelFrame {
   cl_device_id device_id;

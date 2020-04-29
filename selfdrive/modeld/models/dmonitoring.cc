@@ -176,3 +176,19 @@ void dmonitoring_publish(PubSocket* sock, uint32_t frame_id, const DMonitoringRe
 void dmonitoring_free(DMonitoringModelState* s) {
   delete s->m;
 }
+
+void dmonitoring_selftest(DMonitoringModelState *s) {
+  int input_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6;
+  float *test_input = new float[input_buf_len];
+  for (int i=0; i<input_buf_len; i++) {
+    test_input[i] = 1.0;
+  }
+  float *ref = new float[OUTPUT_SIZE];
+  f32_fromfile("../../models/dmonitoring_output_ref", ref, OUTPUT_SIZE);
+  DMonitoringResult dummy_res = dmonitoring_eval_frame(s, test_input, MODEL_WIDTH, MODEL_HEIGHT);
+
+  assert(allclose(ref, &s->output, OUTPUT_SIZE, 0.05, 0.1));
+
+  delete[] test_input;
+  delete[] ref;
+}

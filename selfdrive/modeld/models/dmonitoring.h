@@ -39,6 +39,7 @@ void dmonitoring_init(DMonitoringModelState* s);
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
 void dmonitoring_publish(PubSocket *sock, uint32_t frame_id, const DMonitoringResult res);
 void dmonitoring_free(DMonitoringModelState* s);
+void dmonitoring_selftest(DMonitoringModelState *s);
 
 #ifdef __cplusplus
 }

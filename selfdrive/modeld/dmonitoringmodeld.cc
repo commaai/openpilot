@@ -35,6 +35,9 @@ int main(int argc, char **argv) {
   DMonitoringModelState dmonitoringmodel;
   dmonitoring_init(&dmonitoringmodel);
 
+  // compare with baseline outputs
+  dmonitoring_selftest(&dmonitoringmodel);
+
   // loop
   VisionStream stream;
   while (!do_exit) {
