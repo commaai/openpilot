@@ -187,7 +187,7 @@ void dmonitoring_selftest(DMonitoringModelState *s) {
   f32_fromfile("../../models/dmonitoring_output_ref", ref, OUTPUT_SIZE);
   DMonitoringResult dummy_res = dmonitoring_eval_frame(s, test_input, MODEL_WIDTH, MODEL_HEIGHT);
 
-  assert(allclose(ref, &s->output, OUTPUT_SIZE, 0.05, 0.1));
+  assert(allclose(ref, s->output, OUTPUT_SIZE, 0.05, 0.1));
 
   delete[] test_input;
   delete[] ref;

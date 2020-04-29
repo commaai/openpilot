@@ -1,8 +1,8 @@
 #include "commonmodel.h"
 
-#include <fstream>
 #include <czmq.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "cereal/gen/c/log.capnp.h"
 #include "common/mat.h"
 #include "common/timing.h"
@@ -80,8 +80,10 @@ bool allclose(float *arr1, float *arr2, int len, float rtol, float atol) {
 }
 
 void f32_fromfile(const char* filepath, float *buf, int len) {
-  ifstream in(filepath);
+  FILE *stream;
+  stream = fopen(filepath, "r");
   for (int i=0; i<len; i++) {
-    in >> buf[i];
+    fscanf(stream, "%f", &buf[i]);
   }
+  fclose(stream);
 }
