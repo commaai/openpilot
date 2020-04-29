@@ -122,8 +122,7 @@ class Controls:
     if not enabled:
       self.mismatch_counter = 0
 
-    controls_allowed = self.sm['health'].controlsAllowed
-    if not controls_allowed and enabled:
+    if not self.sm['health'].controlsAllowed and enabled:
       self.mismatch_counter += 1
     if self.mismatch_counter >= 200:
       self.events.append(create_event('controlsMismatch', [ET.IMMEDIATE_DISABLE]))
@@ -352,46 +351,44 @@ class Controls:
     # controlsState
     dat = messaging.new_message('controlsState')
     dat.valid = self.CS.canValid
-    dat.controlsState = {
-      "alertText1": self.AM.alert_text_1,
-      "alertText2": self.AM.alert_text_2,
-      "alertSize": self.AM.alert_size,
-      "alertStatus": self.AM.alert_status,
-      "alertBlinkingRate": self.AM.alert_rate,
-      "alertType": self.AM.alert_type,
-      "alertSound": self.AM.audible_alert,
-      "driverMonitoringOn": self.sm['dMonitoringState'].faceDetected,
-      "canMonoTimes": list(self.CS.canMonoTimes),
-      "planMonoTime": self.sm.logMonoTime['plan'],
-      "pathPlanMonoTime": self.sm.logMonoTime['pathPlan'],
-      "enabled": isEnabled(self.state),
-      "active": isActive(self.state),
-      "vEgo": self.CS.vEgo,
-      "vEgoRaw": self.CS.vEgoRaw,
-      "angleSteers": self.CS.steeringAngle,
-      "curvature": self.VM.calc_curvature((self.CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, self.CS.vEgo),
-      "steerOverride": self.CS.steeringPressed,
-      "state": self.state,
-      "engageable": not bool(get_events(self.events, [ET.NO_ENTRY])),
-      "longControlState": self.LoC.long_control_state,
-      "vPid": float(self.LoC.v_pid),
-      "vCruise": float(self.v_cruise_kph),
-      "upAccelCmd": float(self.LoC.pid.p),
-      "uiAccelCmd": float(self.LoC.pid.i),
-      "ufAccelCmd": float(self.LoC.pid.f),
-      "angleSteersDes": float(self.LaC.angle_steers_des),
-      "vTargetLead": float(v_acc),
-      "aTarget": float(a_acc),
-      "jerkFactor": float(self.sm['plan'].jerkFactor),
-      "gpsPlannerActive": self.sm['plan'].gpsPlannerActive,
-      "vCurvature": self.sm['plan'].vCurvature,
-      "decelForModel": self.sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
-      "cumLagMs": -self.rk.remaining * 1000.,
-      "startMonoTime": int(self.start_time * 1e9),
-      "mapValid": self.sm['plan'].mapValid,
-      "forceDecel": bool(force_decel),
-      "canErrorCounter": self.can_error_counter,
-    }
+    dat.controlsState.alertText1 = self.AM.alert_text_1
+    dat.controlsState.alertText2 = self.AM.alert_text_2
+    dat.controlsState.alertSize = self.AM.alert_size
+    dat.controlsState.alertStatus = self.AM.alert_status
+    dat.controlsState.alertBlinkingRate = self.AM.alert_rate
+    dat.controlsState.alertType = self.AM.alert_type
+    dat.controlsState.alertSound = self.AM.audible_alert
+    dat.controlsState.driverMonitoringOn = self.sm['dMonitoringState'].faceDetected
+    dat.controlsState.canMonoTimes = list(self.CS.canMonoTimes)
+    dat.controlsState.planMonoTime = self.sm.logMonoTime['plan']
+    dat.controlsState.pathPlanMonoTime = self.sm.logMonoTime['pathPlan']
+    dat.controlsState.enabled = isEnabled(self.state)
+    dat.controlsState.active = isActive(self.state)
+    dat.controlsState.vEgo = self.CS.vEgo
+    dat.controlsState.vEgoRaw = self.CS.vEgoRaw
+    dat.controlsState.angleSteers = self.CS.steeringAngle
+    dat.controlsState.curvature = self.VM.calc_curvature((self.CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, self.CS.vEgo)
+    dat.controlsState.steerOverride = self.CS.steeringPressed
+    dat.controlsState.state = self.state
+    dat.controlsState.engageable = not bool(get_events(self.events, [ET.NO_ENTRY]))
+    dat.controlsState.longControlState = self.LoC.long_control_state
+    dat.controlsState.vPid = float(self.LoC.v_pid)
+    dat.controlsState.vCruise = float(self.v_cruise_kph)
+    dat.controlsState.upAccelCmd = float(self.LoC.pid.p)
+    dat.controlsState.uiAccelCmd = float(self.LoC.pid.i)
+    dat.controlsState.ufAccelCmd = float(self.LoC.pid.f)
+    dat.controlsState.angleSteersDes = float(self.LaC.angle_steers_des)
+    dat.controlsState.vTargetLead = float(v_acc)
+    dat.controlsState.aTarget = float(a_acc)
+    dat.controlsState.jerkFactor = float(self.sm['plan'].jerkFactor)
+    dat.controlsState.gpsPlannerActive = self.sm['plan'].gpsPlannerActive
+    dat.controlsState.vCurvature = self.sm['plan'].vCurvature
+    dat.controlsState.decelForModel = self.sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model
+    dat.controlsState.cumLagMs = -self.rk.remaining * 1000.
+    dat.controlsState.startMonoTime = int(self.start_time * 1e9)
+    dat.controlsState.mapValid = self.sm['plan'].mapValid
+    dat.controlsState.forceDecel = bool(force_decel)
+    dat.controlsState.canErrorCounter = self.can_error_counter
 
     if self.CP.lateralTuning.which() == 'pid':
       dat.controlsState.lateralControlState.pidState = lac_log
@@ -439,10 +436,10 @@ class Controls:
 
     self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
     self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
-    passive = params.get("Passive", encoding='utf8') == "1"
     openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
     community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
 
+    passive = params.get("Passive", encoding='utf8') == "1"
     passive = passive or not openpilot_enabled_toggle
 
     # Passive if internet needed
@@ -452,12 +449,13 @@ class Controls:
     # Pub/Sub Sockets
     self.pm = pm
     if self.pm is None:
-      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
+      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', \
+                                      'carEvents', 'carParams'])
 
     self.sm = sm
     if self.sm is None:
-      self.sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', \
-                                'model'])
+      self.sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'dMonitoringState', \
+                                      'plan', 'pathPlan', 'model'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -538,7 +536,7 @@ class Controls:
       prof.checkpoint("Sample")
 
       # Create alerts
-      if not self.sm.alive['plan'] and sm.alive['pathPlan']:  # only plan not being received: radar not communicating
+      if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:  # only plan not being received: radar not communicating
         self.events.append(create_event('radarCommIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
       elif not self.sm.all_alive_and_valid():
         self.events.append(create_event('commIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -591,8 +589,8 @@ class Controls:
 
 
 def main(sm=None, pm=None, logcan=None):
-  ctrl = Controls()
-  ctrl.controlsd_thread(sm, pm, logcan)
+  controls = Controls()
+  controls.controlsd_thread(sm, pm, logcan)
 
 
 if __name__ == "__main__":

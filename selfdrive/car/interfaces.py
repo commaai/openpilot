@@ -97,9 +97,9 @@ class CarInterfaceBase():
     if cs_out.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
     if cs_out.stockAeb:
-      self.events.append(create_event('stockAeb', []))
+      events.append(create_event('stockAeb', []))
     if cs_out.vEgo > 92 * CV.MPH_TO_MS:
-      self.events.append(create_event('speedTooHigh', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.append(create_event('speedTooHigh', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
     # TODO: move this stuff to the capnp strut
     if getattr(self.CS, "steer_error", False):
