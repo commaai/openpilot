@@ -109,10 +109,6 @@ def draw_lead_on(img, closest_x_m, closest_y_m, calibration, color, sz=10, img_o
   return u, v
 
 
-if platform.system() != 'Darwin':
-  matplotlib.use('QT4Agg')
-
-
 def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=False):
   color_palette = { "r": (1,0,0),
                     "g": (0,1,0),

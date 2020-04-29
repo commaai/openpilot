@@ -5,7 +5,6 @@ verify_ssl = true
 
 [dev-packages]
 opencv-python= "*"
-PyQt5 = "*"
 ipython = "*"
 networkx = "==2.3"
 azure-core = "*"
