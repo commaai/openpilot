@@ -2,8 +2,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.mazda.values import DBC, LKAS_LIMITS
-
+from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, CAR
 
 GearShifter = car.CarState.GearShifter
 
@@ -33,15 +32,24 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS"]['FR'] * CV.KPH_TO_MS
     ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS"]['RL'] * CV.KPH_TO_MS
     ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]['RR'] * CV.KPH_TO_MS
-
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
-    
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
-    ret.gearShifter = GearShifter.drive
-
     self.speed_kph =  ret.vEgoRaw  // CV.KPH_TO_MS
+
+    gear = int(cp.vl["GEAR"]['GEAR']) >> 1
+
+    if gear >= 1 & gear <= 5:
+      ret.gearShifter = GearShifter.drive
+    elif gear == 0:
+      ret.gearShifter = GearShifter.park
+    elif gear == 6:
+      ret.gearShifter = GearShifter.reverse
+    elif gear == 7:
+      ret.gearShifter = GearShifter.neutral
+    else:
+      ret.gearShifter = GearShifter.unknown
 
     ret.leftBlinker = cp.vl["BLINK_INFO"]['LEFT_BLINK'] == 1
     ret.rightBlinker = cp.vl["BLINK_INFO"]['RIGHT_BLINK'] == 1
@@ -53,20 +61,16 @@ class CarState(CarStateBase):
     self.steer_torque_motor = cp.vl["STEER_TORQUE"]['STEER_TORQUE_MOTOR']
     self.angle_steers_rate = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
 
-    # TODO: Find brake & brake pressure
-    ret.brake = 0
-    self.brake_pressed = False #cp.vl["PEDALS"]['BREAK_PEDAL_1'] == 1
+    ret.brakePressed = cp.vl["PEDALS"]['BRAKE_ON'] == 1
+    ret.brake = cp.vl["BRAKE"]['BRAKE_PRESSURE']
+    ret.brakeLights = ret.brakePressed
 
     ret.seatbeltUnlatched = cp.vl["SEATBELT"]['DRIVER_SEATBELT'] == 0
-    ret.doorOpen = any([cp.vl["DOORS"]['FL'],
-                        cp.vl["DOORS"]['FR'],
-                        cp.vl["DOORS"]['BL'],
-                        cp.vl["DOORS"]['BR']])
+    ret.doorOpen = any([cp.vl["DOORS"]['FL'], cp.vl["DOORS"]['FR'],
+                        cp.vl["DOORS"]['BL'], cp.vl["DOORS"]['BR']])
 
-    ret.gasPressed = cp.vl["ENGINE_DATA"]['PEDAL_GAS'] > 0.0001
-
-    #TODO get gear state
-    #ret.gearShifter
+    ret.gas = cp.vl["ENGINE_DATA"]['PEDAL_GAS']
+    ret.gasPressed = ret.gas > 1e-3
 
     # No steer if block signal is on
     self.steer_lkas.block = cp.vl["STEER_RATE"]['LKAS_BLOCK']
@@ -129,70 +133,82 @@ class CarState(CarStateBase):
       ("RIGHT_BLINK", "BLINK_INFO", 0),
       ("STEER_ANGLE", "STEER", 0),
       ("STEER_ANGLE_RATE", "STEER_RATE", 0),
-      ("LKAS_BLOCK", "STEER_RATE", 0),
-      ("LKAS_TRACK_STATE", "STEER_RATE", 0),
-      ("HANDS_OFF_5_SECONDS", "STEER_RATE", 0),
       ("STEER_TORQUE_SENSOR", "STEER_TORQUE", 0),
       ("STEER_TORQUE_MOTOR", "STEER_TORQUE", 0),
       ("FL", "WHEEL_SPEEDS", 0),
       ("FR", "WHEEL_SPEEDS", 0),
       ("RL", "WHEEL_SPEEDS", 0),
       ("RR", "WHEEL_SPEEDS", 0),
-      ("CRZ_ACTIVE", "CRZ_CTRL", 0),
-      ("STANDSTILL","PEDALS", 0),
-      ("BRAKE_ON","PEDALS", 0),
-      ("GEAR","GEAR", 0),
-      ("DRIVER_SEATBELT", "SEATBELT", 0),
-      ("FL", "DOORS", 0),
-      ("FR", "DOORS", 0),
-      ("BL", "DOORS", 0),
-      ("BR", "DOORS", 0),
-      ("PEDAL_GAS", "ENGINE_DATA", 0),
-      ("RES", "CRZ_BTNS", 0),
-      ("SET_P", "CRZ_BTNS", 0),
-      ("SET_M", "CRZ_BTNS", 0),
     ]
 
     checks = [
       # sig_address, frequency
-    ("BLINK_INFO", 10),
+      ("BLINK_INFO", 10),
       ("STEER", 67),
       ("STEER_RATE", 83),
       ("STEER_TORQUE", 83),
       ("WHEEL_SPEEDS", 100),
-      ("ENGINE_DATA", 100),
-      ("CRZ_CTRL", 50),
-      ("CRZ_BTNS", 10),
-      ("PEDALS", 50),
-      ("SEATBELT", 10),
-      ("DOORS", 10),
-      ("GEAR", 20),
     ]
+
+    if CP.carFingerprint == CAR.CX5:
+      signals += [
+        ("LKAS_BLOCK", "STEER_RATE", 0),
+        ("LKAS_TRACK_STATE", "STEER_RATE", 0),
+        ("HANDS_OFF_5_SECONDS", "STEER_RATE", 0),
+        ("CRZ_ACTIVE", "CRZ_CTRL", 0),
+        ("STANDSTILL","PEDALS", 0),
+        ("BRAKE_ON","PEDALS", 0),
+        ("BRAKE_PRESSURE","BRAKE", 0),
+        ("GEAR","GEAR", 0),
+        ("DRIVER_SEATBELT", "SEATBELT", 0),
+        ("FL", "DOORS", 0),
+        ("FR", "DOORS", 0),
+        ("BL", "DOORS", 0),
+        ("BR", "DOORS", 0),
+        ("PEDAL_GAS", "ENGINE_DATA", 0),
+        ("RES", "CRZ_BTNS", 0),
+        ("SET_P", "CRZ_BTNS", 0),
+        ("SET_M", "CRZ_BTNS", 0),
+      ]
+
+      checks += [
+        ("ENGINE_DATA", 100),
+        ("CRZ_CTRL", 50),
+        ("CRZ_BTNS", 10),
+        ("PEDALS", 50),
+        ("BRAKE", 50),
+        ("SEATBELT", 10),
+        ("DOORS", 10),
+        ("GEAR", 20),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [
-      # sig_name, sig_address, default
+    signals = [ ]
+    checks = [ ]
 
-      ("LKAS_REQUEST",     "CAM_LKAS", 2048),
-      ("CTR",              "CAM_LKAS", 0),
-      ("ERR_BIT_1",        "CAM_LKAS", 0),
-      ("LINE_NOT_VISIBLE", "CAM_LKAS", 0),
-      ("LDW",              "CAM_LKAS", 0),
-      ("BIT_1",            "CAM_LKAS", 1),
-      ("ERR_BIT_2",        "CAM_LKAS", 0),
-      ("LKAS_ANGLE",       "CAM_LKAS", 2048),
-      ("BIT2",             "CAM_LKAS", 0),
-      ("CHKSUM",           "CAM_LKAS", 0),
-    ]
+    if CP.carFingerprint == CAR.CX5:
+      signals += [
+        # sig_name, sig_address, default
+        ("LKAS_REQUEST",     "CAM_LKAS", 2048),
+        ("CTR",              "CAM_LKAS", 0),
+        ("ERR_BIT_1",        "CAM_LKAS", 0),
+        ("LINE_NOT_VISIBLE", "CAM_LKAS", 0),
+        ("LDW",              "CAM_LKAS", 0),
+        ("BIT_1",            "CAM_LKAS", 1),
+        ("ERR_BIT_2",        "CAM_LKAS", 0),
+        ("LKAS_ANGLE",       "CAM_LKAS", 2048),
+        ("BIT2",             "CAM_LKAS", 0),
+        ("CHKSUM",           "CAM_LKAS", 0),
+      ]
 
-    checks = [
-      # sig_address, frequency
-      ("CAM_LKAS",      16),
-    ]
+      checks += [
+        # sig_address, frequency
+        ("CAM_LKAS",      16),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
