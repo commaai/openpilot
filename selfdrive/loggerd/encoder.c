@@ -635,7 +635,6 @@ void encoder_close(EncoderState *s) {
     if (s->remuxing) {
       av_write_trailer(s->ofmt_ctx);
       avio_closep(&s->ofmt_ctx->pb);
-      avcodec_free_context(&s->codec_ctx);
       avformat_free_context(s->ofmt_ctx);
     } else {
       fclose(s->of);
