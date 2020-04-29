@@ -19,7 +19,6 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
 
-    self.gas_pressed_prev = False
     self.low_speed_alert = False
 
   @staticmethod
@@ -28,26 +27,23 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-    ret = car.CarParams.new_message()
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.carName = "mazda"
-    ret.radarOffCan = True
-    ret.carFingerprint = candidate
-
-    ret.isPandaBlack = has_relay
-
     ret.safetyModel = car.CarParams.SafetyModel.mazda
+    ret.radarOffCan = True
 
-    ret.enableCruise = True
+    # Mazda port is a community feature for now
+    ret.communityFeature = True
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
-
+    ret.steerActuatorDelay = 0.1
+    ret.steerRateCost = 1.0
+    ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 0.70   # not optimized yet
 
     if candidate in [CAR.CX5]:
       ret.mass =  3655 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.7
-      ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.5
 
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -55,48 +51,22 @@ class CarInterface(CarInterfaceBase):
 
       ret.lateralTuning.pid.kf = 0.00006
 
-
-    ret.steerLimitTimer = 0.8
-    ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 1.0
-    ret.steerRatioRear = 0.
-    ret.steerControlType = car.CarParams.SteerControlType.torque
-
-    # steer limitations VS speed
-    ret.steerMaxBP = [0.]  # m/s
-    ret.steerMaxV = [1.]
+      # No steer below 45kph
+      ret.minSteerSpeed = 45 * CV.KPH_TO_MS
 
 
-    # No long control in Mazda
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [0.]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.]
-
-    ret.openpilotLongitudinalControl = False
-    ret.stoppingControl = False
-    ret.startAccel = 0.0
-
-    ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
-
-    # no steer below 45kph
-    ret.minSteerSpeed = 45 * CV.KPH_TO_MS
+    ret.centerToFront = ret.wheelbase * 0.41
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
-
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
+
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
 
     return ret
 
@@ -132,11 +102,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.steer_lkas.handsoff:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-
-    if ret.gasPressed and not self.gas_pressed_prev:
-      ret.cruiseState.enabled = False
-
-    self.gas_pressed_prev = ret.gasPressed
 
     ret.events = events
 
