@@ -70,13 +70,13 @@ float softplus(float input) {
 }
 
 bool allclose(float *arr1, float *arr2, int len, float rtol, float atol) {
-  float max_err = 0;
-  float max_rerr = 0;
   for (int i=0; i<len; i++) {
-    max_err = fabs(arr1[i] - arr2[i])>max_err ? fabs(arr1[i] - arr2[i]):max_err;
-    max_rerr = fabs((arr1[i] - arr2[i])/(arr1[i] + 1e-6))>max_rerr ? fabs((arr1[i] - arr2[i])/(arr1[i] + 1e-6)):max_rerr;
+    // printf("FABSD:%f, FABS2:%f\n", fabs(arr1[i] - arr2[i]), fabs(arr2[i]));
+    if (fabs(arr1[i] - arr2[i]) > atol + rtol * fabs(arr2[i])) {
+      return false;
+    }
   }
-  return (bool)(max_err < atol && max_rerr < rtol);
+  return true;
 }
 
 void f32_fromfile(const char* filepath, float *buf, int len) {
