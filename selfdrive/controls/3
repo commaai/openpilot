@@ -112,6 +112,7 @@ class Controls:
 
     # Handle calibration
     cal_status = self.sm['liveCalibration'].calStatus
+    self.cal_perc = 
 
     if cal_status != Calibration.CALIBRATED:
       if cal_status == Calibration.UNCALIBRATED:
@@ -301,7 +302,7 @@ class Controls:
     return actuators, v_acc_sol, a_acc_sol, lac_log
 
 
-  def data_send(self, actuators, v_acc, a_acc, lac_log):
+  def data_send(self, actuators, start_time, v_acc, a_acc, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
     self.CC = car.CarControl.new_message()
@@ -394,7 +395,7 @@ class Controls:
       "vCurvature": self.sm['plan'].vCurvature,
       "decelForModel": self.sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
       "cumLagMs": -self.rk.remaining * 1000.,
-      "startMonoTime": int(self.start_time * 1e9),
+      "startMonoTime": int(start_time * 1e9),
       "mapValid": self.sm['plan'].mapValid,
       "forceDecel": bool(force_decel),
       "canErrorCounter": self.can_error_counter,
@@ -518,6 +519,7 @@ class Controls:
     self.last_blinker_frame = 0
     self.saturated_count = 0
     self.events_prev = []
+    self.events = []
 
     self.sm['liveCalibration'].calStatus = Calibration.INVALID
     self.sm['pathPlan'].sensorValid = True
@@ -537,7 +539,7 @@ class Controls:
     prof = Profiler(False)  # off by default
 
     while True:
-      self.start_time = sec_since_boot()
+      start_time = sec_since_boot()
       prof.checkpoint("Ratekeeper", ignore=True)
 
       # Sample data and compute car events
@@ -590,7 +592,7 @@ class Controls:
       prof.checkpoint("State Control")
 
       # Publish data
-      self.data_send(actuators, v_acc, a_acc, lac_log)
+      self.data_send(actuators, start_time, v_acc, a_acc, lac_log)
       prof.checkpoint("Sent")
 
       self.rk.monitor_time()
