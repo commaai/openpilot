@@ -23,9 +23,10 @@ OP_PATH = os.path.dirname(os.path.dirname(capnp_log.__file__))
 def index_log(fn):
   index_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "index_log")
   index_log = os.path.join(index_log_dir, "index_log")
-  phonelibs_dir = os.path.join(OP_PATH, 'phonelibs')
 
-  subprocess.check_call(["make", "PHONELIBS=" + phonelibs_dir], cwd=index_log_dir, stdout=subprocess.DEVNULL)
+  if not os.path.exists(index_log):
+    phonelibs_dir = os.path.join(OP_PATH, 'phonelibs')
+    subprocess.check_call(["make", "PHONELIBS=" + phonelibs_dir], cwd=index_log_dir, stdout=subprocess.DEVNULL)
 
   try:
     dat = subprocess.check_output([index_log, fn, "-"])
