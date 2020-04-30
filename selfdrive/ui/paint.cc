@@ -914,17 +914,14 @@ static void ui_draw_background(UIState *s) {
 
 void ui_draw(UIState *s) {
   ui_draw_background(s);
-  
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, s->fb_w, s->fb_h);
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-  if (!s->scene.uilayout_sidebarcollapsed) {
-    ui_draw_sidebar(s);
-  }
-  if (s->started && s->vision_seen && s->active_app == cereal_UiLayoutState_App_none && s->status != STATUS_STOPPED) {
-    ui_draw_vision(s);
-  }
+  ui_draw_sidebar(s);
+  if (s->started && s->active_app == cereal_UiLayoutState_App_none && s->status != STATUS_STOPPED && s->vision_seen) {
+      ui_draw_vision(s);
+  } 
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
