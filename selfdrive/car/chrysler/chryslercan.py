@@ -73,18 +73,13 @@ def create_lkas_command(packer, apply_steer, moving_fast, frame):
     "LKAS_HIGH_TORQUE": int(moving_fast),
     "COUNTER": frame % 0x10,
   }
-
-  dat = packer.make_can_msg("LKAS_COMMAND", 0, values)[2]
-  checksum = calc_checksum(dat)
-
-  values["CHECKSUM"] = checksum
   return packer.make_can_msg("LKAS_COMMAND", 0, values)
 
 
-def create_wheel_buttons(frame):
+def create_wheel_buttons(packer, frame, cancel=False):
   # WHEEL_BUTTONS (571) Message sent to cancel ACC.
-  start = b"\x01"  # acc cancel set
-  counter = (frame % 10) << 4
-  dat = start + counter.to_bytes(1, 'little') + b"\x00"
-  dat = dat[:-1] + calc_checksum(dat).to_bytes(1, 'little')
-  return make_can_msg(0x23b, dat, 0)
+  values = {
+    "ACC_CANCEL": cancel,
+    "COUNTER": frame % 10
+  }
+  return packer.make_can_msg("WHEEL_BUTTONS", 0, values)
