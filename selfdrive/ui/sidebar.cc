@@ -180,6 +180,9 @@ static void ui_draw_sidebar_connectivity(UIState *s) {
 
 void ui_draw_sidebar(UIState *s) {
   ui_draw_sidebar_background(s);
+  if (s->scene.uilayout_sidebarcollapsed){
+    return;
+  }
   ui_draw_sidebar_settings_button(s);
   ui_draw_sidebar_home_button(s);
   ui_draw_sidebar_network_strength(s);
