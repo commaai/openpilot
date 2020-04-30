@@ -5,34 +5,6 @@ from selfdrive.car import make_can_msg
 GearShifter = car.CarState.GearShifter
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-def calc_checksum(data):
-  """This function does not want the checksum byte in the input data.
-
-  jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf
-  """
-  checksum = 0xFF
-  for curr in data[:-1]:
-    shift = 0x80
-    for _ in range(0, 8):
-      bit_sum = curr & shift
-      temp_chk = checksum & 0x80
-      if (bit_sum != 0):
-        bit_sum = 0x1C
-        if (temp_chk != 0):
-          bit_sum = 1
-        checksum = checksum << 1
-        temp_chk = checksum | 1
-        bit_sum ^= temp_chk
-      else:
-        if (temp_chk != 0):
-          bit_sum = 0x1D
-        checksum = checksum << 1
-        bit_sum ^= checksum
-      checksum = bit_sum
-      shift = shift >> 1
-  return ~checksum & 0xFF
-
-
 def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_model):
   # LKAS_HUD 0x2a6 (678) Controls what lane-keeping icon is displayed.
 
