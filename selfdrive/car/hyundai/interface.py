@@ -28,6 +28,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     tire_stiffness_factor = 1.
 
+    ret.minSteerSpeed = 0.
+
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
@@ -37,7 +39,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
-      ret.minSteerSpeed = 0.
     elif candidate == CAR.SONATA:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1513. + STD_CARGO_KG
@@ -45,7 +46,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minSteerSpeed = 0.
     elif candidate == CAR.PALISADE:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1999. + STD_CARGO_KG
@@ -60,7 +60,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minSteerSpeed = 0.
     elif candidate in [CAR.ELANTRA, CAR.ELANTRA_GT_I30]:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
@@ -99,7 +98,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minSteerSpeed = 0.
     elif candidate == CAR.KONA:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
