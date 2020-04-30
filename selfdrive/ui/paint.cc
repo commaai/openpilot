@@ -881,15 +881,11 @@ static void ui_draw_vision(UIState *s) {
   glEnable(GL_SCISSOR_TEST);
   glViewport(ui_viz_rx+ui_viz_ro, s->fb_h-(box_y+box_h), viz_w, box_h);
   glScissor(ui_viz_rx, s->fb_h-(box_y+box_h), ui_viz_rw, box_h);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   draw_frame(s);
-  glViewport(0, 0, s->fb_w, s->fb_h);
   glDisable(GL_SCISSOR_TEST);
 
-  glClear(GL_STENCIL_BUFFER_BIT);
+  glViewport(0, 0, s->fb_w, s->fb_h);
 
-  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   // Draw augmented elements
   if (!scene->frontview && !scene->fullview) {
     ui_draw_world(s);
@@ -909,9 +905,6 @@ static void ui_draw_vision(UIState *s) {
   } else {
     if (!scene->frontview){ui_draw_vision_footer(s);}
   }
-
-  nvgEndFrame(s->vg);
-  glDisable(GL_BLEND);
 }
 
 static void ui_draw_background(UIState *s) {
@@ -925,28 +918,16 @@ static void ui_draw_background(UIState *s) {
 
 void ui_draw(UIState *s) {
   ui_draw_background(s);
-  if (s->started && s->active_app == cereal_UiLayoutState_App_none && s->status != STATUS_STOPPED) {
-    ui_draw_sidebar(s);
-
-    if (s->vision_seen){
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glViewport(0, 0, s->fb_w, s->fb_h);
+  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
+  ui_draw_sidebar(s);
+  if (s->started && s->active_app == cereal_UiLayoutState_App_none && s->status != STATUS_STOPPED && s->vision_seen) {
       ui_draw_vision(s);
-    }
-  } else {
-    if (!s->scene.uilayout_sidebarcollapsed) {
-      ui_draw_sidebar(s);
-    }
-  }
-
-  {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClear(GL_STENCIL_BUFFER_BIT);
-
-    nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-
-    nvgEndFrame(s->vg);
-    glDisable(GL_BLEND);
-  }
+  } 
+  nvgEndFrame(s->vg);
+  glDisable(GL_BLEND);
 }
 
 void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha){

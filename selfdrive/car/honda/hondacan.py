@@ -47,9 +47,9 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
 def create_bosch_supplemental_1(packer, car_fingerprint, idx, has_relay):
   # non-active params
   values = {
-    "BYTE_0": 0x04,
-    "BYTE_2": 0x80,
-    "BYTE_3": 0x10,
+    "SET_ME_X04": 0x04,
+    "SET_ME_X80": 0x80,
+    "SET_ME_X10": 0x10,
   }
   bus = get_lkas_cmd_bus(car_fingerprint, has_relay)
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)

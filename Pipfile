@@ -5,7 +5,6 @@ verify_ssl = true
 
 [dev-packages]
 opencv-python= "*"
-PyQt5 = "*"
 ipython = "*"
 networkx = "==2.3"
 azure-core = "*"
@@ -42,7 +41,7 @@ redis = "*"
 "s2sphere" = "*"
 "subprocess32" = "*"
 tenacity = "*"
-tensorflow-gpu = "==2.2.0rc3"
+tensorflow-gpu = "==2.2.0rc4"
 keras_applications = "*"
 PyMySQL = "==0.9.2"
 Werkzeug = "*"
@@ -71,6 +70,7 @@ aiohttp = "*"
 lru-dict = "*"
 scikit-image = "*"
 pygame = "==2.0.0.dev6"
+pyprof2calltree = "*"
 
 [packages]
 atomicwrites = "*"
@@ -110,7 +110,6 @@ pycryptodome = "*"
 "Jinja2" = "*"  
 PyJWT = "*" 
 pyserial = "*"
-
 
 [requires]
 python_version = "3.8.2"
