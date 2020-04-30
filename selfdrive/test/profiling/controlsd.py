@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+import cProfile
+
+import pyprof2calltree
+
 from tools.lib.logreader import LogReader
 from selfdrive.controls.controlsd import controlsd_thread
 from selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
@@ -18,7 +22,10 @@ if __name__ == "__main__":
   sm = SubMaster(msgs, 'can', ['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', 'model'])
   can_sock = SubSocket(msgs, 'can')
 
-  try:
-    controlsd_thread(sm, pm, can_sock)
-  except ReplayDone:
-    pass
+  with cProfile.Profile() as pr:
+    try:
+      controlsd_thread(sm, pm, can_sock)
+    except ReplayDone:
+      pass
+
+  pyprof2calltree.convert(pr.getstats(), 'controlsd.kgrind')
