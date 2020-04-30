@@ -249,5 +249,7 @@ if arch == "aarch64":
 
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/locationd/kalman/SConscript'])
+SConscript(['tools/lib/index_log/SConscript'])
+
 
 # TODO: finish cereal, dbcbuilder, MPC
