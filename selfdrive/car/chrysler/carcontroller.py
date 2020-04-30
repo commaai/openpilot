@@ -50,7 +50,7 @@ class CarController():
 
     if pcm_cancel_cmd:
       # TODO: would be better to start from frame_2b3
-      new_msg = create_wheel_buttons(self.ccframe)
+      new_msg = create_wheel_buttons(self.packer, self.ccframe, cancel=True)
       can_sends.append(new_msg)
 
     # LKAS_HEARTBIT is forwarded by Panda so no need to send it here.
