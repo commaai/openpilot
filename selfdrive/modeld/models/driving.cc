@@ -145,7 +145,7 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   pts = pts.array() - y0;
 
   // Build Least Squares equations
-  Eigen::Matrix<float, Eigen::Dynamic, POLYFIT_DEGREE - 1> lhs = vander.array().colwise() / std.array();
+  Eigen::Matrix<float, Eigen::Dynamic, POLYFIT_DEGREE - 1> lhs = vander.topRows(valid_len).array().colwise() / std.array();
   Eigen::Matrix<float, Eigen::Dynamic, 1> rhs = pts.array() / std.array();
 
   // Improve numerical stability
