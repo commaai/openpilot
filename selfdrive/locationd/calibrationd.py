@@ -10,7 +10,7 @@ from selfdrive.swaglog import cloudlog
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
 from common.transformations.camera import view_frame_from_device_frame, get_view_frame_from_road_frame, \
-                                          get_calib_from_vp, H, W, FOCAL
+                                          get_calib_from_vp, vp_from_rpy, H, W, FOCAL
 
 MPH_TO_MS = 0.44704
 MIN_SPEED_FILTER = 15 * MPH_TO_MS
@@ -69,7 +69,10 @@ class Calibrator():
     if calibration_params:
       try:
         calibration_params = json.loads(calibration_params)
-        self.vp = np.array(calibration_params["vanishing_point"])
+        if 'calib_radians' in calibration_params:
+          self.vp = vp_from_rpy(calibration_params["calib_radians"])
+        else:
+          self.vp = np.array(calibration_params["vanishing_point"])
         if not np.isfinite(self.vp).all():
           self.vp = copy.copy(VP_INIT)
         self.vps = np.tile(self.vp, (INPUTS_WANTED, 1))
@@ -117,7 +120,8 @@ class Calibrator():
       self.update_status()
 
       if self.param_put and ((self.idx == 0 and self.block_idx == 0) or self.just_calibrated):
-        cal_params = {"vanishing_point": list(self.vp),
+        calib = get_calib_from_vp(self.vp)
+        cal_params = {"calib_radians": list(calib),
                       "valid_blocks": self.valid_blocks}
         put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
       return new_vp
