@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import requests
 import sys
-import tempfile
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
@@ -36,6 +34,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 # run the full test (including checks) when no args given
 FULL_TEST = len(sys.argv) <= 1
 
+
 def get_segment(segment_name, original=True):
   route_name, segment_num = segment_name.rsplit("--", 1)
   if original:
@@ -44,25 +43,13 @@ def get_segment(segment_name, original=True):
     process_replay_dir = os.path.dirname(os.path.abspath(__file__))
     model_ref_commit = open(os.path.join(process_replay_dir, "model_ref_commit")).read().strip()
     rlog_url = BASE_URL + "%s/%s/rlog_%s.bz2" % (route_name.replace("|", "/"), segment_num, model_ref_commit)
-  req = requests.get(rlog_url)
-  assert req.status_code == 200, ("Failed to download log for %s" % segment_name)
 
-  with tempfile.NamedTemporaryFile(delete=False, suffix=".bz2") as f:
-    f.write(req.content)
-    return f.name
+  return rlog_url
+
 
 def test_process(cfg, lr, cmp_log_fn, ignore_fields=[], ignore_msgs=[]):
-  if not os.path.isfile(cmp_log_fn):
-    req = requests.get(BASE_URL + os.path.basename(cmp_log_fn))
-    assert req.status_code == 200, ("Failed to download %s" % cmp_log_fn)
-
-    with tempfile.NamedTemporaryFile(suffix=".bz2") as f:
-      f.write(req.content)
-      f.flush()
-      f.seek(0)
-      cmp_log_msgs = list(LogReader(f.name))
-  else:
-    cmp_log_msgs = list(LogReader(cmp_log_fn))
+  url = BASE_URL + os.path.basename(cmp_log_fn)
+  cmp_log_msgs = list(LogReader(url))
 
   log_msgs = replay_process(cfg, lr)
 
@@ -79,6 +66,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=[], ignore_msgs=[]):
       raise Exception("Route never enabled: %s" % segment)
 
   return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs)
+
 
 def format_diff(results, ref_commit):
   diff1, diff2 = "", ""
@@ -166,7 +154,6 @@ if __name__ == "__main__":
 
       cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
       results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
-    os.remove(rlog_fn)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:
