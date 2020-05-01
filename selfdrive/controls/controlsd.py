@@ -49,14 +49,14 @@ def add_lane_change_event(events, path_plan):
     events.append(create_event('laneChange', [ET.WARNING]))
 
 
-def isActive(state):
+def is_active(state):
   """Check if the actuators are enabled"""
   return state in [State.enabled, State.softDisabling]
 
 
-def isEnabled(state):
+def is_enabled(state):
   """Check if openpilot is engaged"""
-  return (isActive(state) or state == State.preEnabled)
+  return (is_active(state) or state == State.preEnabled)
 
 def events_to_bytes(events):
   # optimization when comparing capnp structs: str() or tree traverse are much slower
@@ -248,7 +248,7 @@ class Controls:
     events = list(CS.events)
     events += list(self.sm['dMonitoringState'].events)
     add_lane_change_event(events, self.sm['pathPlan'])
-    enabled = isEnabled(self.state)
+    enabled = is_enabled(self.state)
 
     # Check for CAN timeout
     if not can_strs:
@@ -269,7 +269,7 @@ class Controls:
 
   def state_transition(self, CS, events):
     """Compute conditional state transitions and execute actions on state transitions"""
-    enabled = isEnabled(self.state)
+    enabled = is_enabled(self.state)
 
     self.v_cruise_kph_last = self.v_cruise_kph
 
@@ -360,8 +360,8 @@ class Controls:
 
     actuators = car.CarControl.Actuators.new_message()
 
-    enabled = isEnabled(self.state)
-    active = isActive(self.state)
+    enabled = is_enabled(self.state)
+    active = is_active(self.state)
 
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
@@ -437,11 +437,11 @@ class Controls:
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
     CC = car.CarControl.new_message()
-    CC.enabled = isEnabled(self.state)
+    CC.enabled = is_enabled(self.state)
     CC.actuators = actuators
 
     CC.cruiseControl.override = True
-    CC.cruiseControl.cancel = not self.CP.enableCruise or (not isEnabled(self.state) and CS.cruiseState.enabled)
+    CC.cruiseControl.cancel = not self.CP.enableCruise or (not is_enabled(self.state) and CS.cruiseState.enabled)
 
     # Some override values for Honda
     # brake discount removes a sharp nonlinearity
@@ -450,8 +450,8 @@ class Controls:
     CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
 
     CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
-    CC.hudControl.speedVisible = isEnabled(self.state)
-    CC.hudControl.lanesVisible = isEnabled(self.state)
+    CC.hudControl.speedVisible = is_enabled(self.state)
+    CC.hudControl.lanesVisible = is_enabled(self.state)
     CC.hudControl.leadVisible = self.sm['plan'].hasLead
 
     right_lane_visible = self.sm['pathPlan'].rProb > 0.5
@@ -461,7 +461,7 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     calibrated = self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
-    ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled and not isActive(self.state) and calibrated
+    ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled and not is_active(self.state) and calibrated
 
     md = self.sm['model']
     if len(md.meta.desirePrediction):
@@ -503,8 +503,8 @@ class Controls:
     dat.controlsState.canMonoTimes = list(CS.canMonoTimes)
     dat.controlsState.planMonoTime = self.sm.logMonoTime['plan']
     dat.controlsState.pathPlanMonoTime = self.sm.logMonoTime['pathPlan']
-    dat.controlsState.enabled = isEnabled(self.state)
-    dat.controlsState.active = isActive(self.state)
+    dat.controlsState.enabled = is_enabled(self.state)
+    dat.controlsState.active = is_active(self.state)
     dat.controlsState.vEgo = CS.vEgo
     dat.controlsState.vEgoRaw = CS.vEgoRaw
     dat.controlsState.angleSteers = CS.steeringAngle
@@ -567,6 +567,8 @@ class Controls:
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
 
+    # copy CarControl to pass to CarInterface on the next iteration
+    self.CC = CC
 
   def step(self):
     start_time = sec_since_boot()
