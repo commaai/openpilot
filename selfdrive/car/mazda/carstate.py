@@ -17,7 +17,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
 
     self.steer_lkas = STEER_LKAS()
-
+    self.cruise_speed = 0
     self.acc_active_last = False
     self.speed_kph = 0
     self.lkas_speed_lock = False
@@ -97,7 +97,7 @@ class CarState(CarStateBase):
                 cp.vl["CRZ_BTNS"]['SET_P'],
                 cp.vl["CRZ_BTNS"]['SET_M']]):
       self.acc_active = True
-      ret.cruiseState.speed = self.speed_kph
+      self.cruise_speed = self.speed_kph
       if self.low_speed_lockout_last:
         self.acc_press_update = True
     elif self.acc_press_update:
@@ -108,19 +108,24 @@ class CarState(CarStateBase):
       self.acc_active = False
 
     if self.acc_active != self.acc_active_last:
-      ret.cruiseState.speed = self.speed_kph
       self.acc_active_last = self.acc_active
 
     ret.cruiseState.enabled = self.acc_active
 
-    self.steer_error = False
+    if ret.cruiseState.enabled:
+      ret.cruiseState.speed = self.cruise_speed
+      if self.lkas_speed_lock:
+        ret.steerWarning = True
+    else:
+      ret.cruiseState.speed = 0
+
+
     self.brake_error = False
 
     self.low_speed_lockout_last = self.low_speed_lockout
 
-    #self.steer_not_allowed = self.steer_lkas.block == 1
-
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
+    self.steer_error = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1
 
     return ret
 

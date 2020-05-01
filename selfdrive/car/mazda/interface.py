@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
-from selfdrive.car.mazda.values import CAR,  FINGERPRINTS, ECU_FINGERPRINT, ECU
+from selfdrive.car.mazda.values import CAR,  FINGERPRINTS, ECU_FINGERPRINT, Ecu
 from selfdrive.car.mazda.carstate import CarState
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, is_ecu_disconnected
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -66,7 +66,7 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
 
     return ret
 
@@ -82,8 +82,6 @@ class CarInterface(CarInterfaceBase):
     # TODO: button presses
     ret.buttonEvents = []
 
-    events = self.create_common_events(ret)
-
     if ret.cruiseState.enabled and self.CS.lkas_speed_lock:
       self.low_speed_alert = True
     else:
@@ -96,9 +94,6 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if ret.cruiseState.enabled:
         ret.cruiseState.enabled = False
-
-    if self.low_speed_alert:
-      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     if self.CS.steer_lkas.handsoff:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))

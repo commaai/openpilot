@@ -1,4 +1,7 @@
 from selfdrive.car import dbc_dict
+from cereal import car
+Ecu = car.CarParams.Ecu
+
 
 # Steer torque limits
 
@@ -55,11 +58,8 @@ FINGERPRINTS = {
 
 }
 
-class ECU:
-  CAM = 0
-
 ECU_FINGERPRINT = {
-  ECU.CAM: [579],   # steer torque cmd
+  Ecu.fwdCamera: [579],   # steer torque cmd
 }
 
 
