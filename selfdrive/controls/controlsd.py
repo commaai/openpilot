@@ -51,7 +51,7 @@ def add_lane_change_event(events, path_plan):
 
 def is_active(state):
   """Check if the actuators are enabled"""
-  return state in [State.enabled, State.softDisabling]
+  return state == State.enabled or state == State.softDisabling
 
 
 def is_enabled(state):
@@ -145,6 +145,8 @@ class Controls:
       self.LaC = LatControlLQR(self.CP)
 
     self.state = State.disabled
+    self.enabled = False
+    self.active = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
     self.v_cruise_kph_last = 0
@@ -248,7 +250,6 @@ class Controls:
     events = list(CS.events)
     events += list(self.sm['dMonitoringState'].events)
     add_lane_change_event(events, self.sm['pathPlan'])
-    enabled = is_enabled(self.state)
 
     # Check for CAN timeout
     if not can_strs:
@@ -259,23 +260,22 @@ class Controls:
     # we want to disengage openpilot. However the status from the panda goes through
     # another socket other than the CAN messages and one can arrive earlier than the other.
     # Therefore we allow a mismatch for two samples, then we trigger the disengagement.
-    if not enabled:
+    if not self.enabled:
       self.mismatch_counter = 0
 
-    if not self.sm['health'].controlsAllowed and enabled:
+    if not self.sm['health'].controlsAllowed and self.enabled:
       self.mismatch_counter += 1
 
     return CS, events
 
   def state_transition(self, CS, events):
     """Compute conditional state transitions and execute actions on state transitions"""
-    enabled = is_enabled(self.state)
 
     self.v_cruise_kph_last = self.v_cruise_kph
 
     # if stock cruise is completely disabled, then we can use our own set speed logic
     if not self.CP.enableCruise:
-      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, enabled)
+      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.enabled)
     elif self.CP.enableCruise and CS.cruiseState.enabled:
       self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
@@ -288,43 +288,43 @@ class Controls:
       if get_events(events, [ET.ENABLE]):
         if get_events(events, [ET.NO_ENTRY]):
           for e in get_events(events, [ET.NO_ENTRY]):
-            self.AM.add(self.sm.frame, str(e) + "NoEntry", enabled)
+            self.AM.add(self.sm.frame, str(e) + "NoEntry", self.enabled)
 
         else:
           if get_events(events, [ET.PRE_ENABLE]):
             self.state = State.preEnabled
           else:
             self.state = State.enabled
-          self.AM.add(self.sm.frame, "enable", enabled)
+          self.AM.add(self.sm.frame, "enable", self.enabled)
           self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
 
     # ENABLED
     elif self.state == State.enabled:
       if get_events(events, [ET.USER_DISABLE]):
         self.state = State.disabled
-        self.AM.add(self.sm.frame, "disable", enabled)
+        self.AM.add(self.sm.frame, "disable", self.enabled)
 
       elif get_events(events, [ET.IMMEDIATE_DISABLE]):
         self.state = State.disabled
         for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-          self.AM.add(self.sm.frame, e, enabled)
+          self.AM.add(self.sm.frame, e, self.enabled)
 
       elif get_events(events, [ET.SOFT_DISABLE]):
         self.state = State.softDisabling
         self.soft_disable_timer = 300   # 3s
         for e in get_events(events, [ET.SOFT_DISABLE]):
-          self.AM.add(self.sm.frame, e, enabled)
+          self.AM.add(self.sm.frame, e, self.enabled)
 
     # SOFT DISABLING
     elif self.state == State.softDisabling:
       if get_events(events, [ET.USER_DISABLE]):
         self.state = State.disabled
-        self.AM.add(self.sm.frame, "disable", enabled)
+        self.AM.add(self.sm.frame, "disable", self.enabled)
 
       elif get_events(events, [ET.IMMEDIATE_DISABLE]):
         self.state = State.disabled
         for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-          self.AM.add(self.sm.frame, e, enabled)
+          self.AM.add(self.sm.frame, e, self.enabled)
 
       elif not get_events(events, [ET.SOFT_DISABLE]):
         # no more soft disabling condition, so go back to ENABLED
@@ -332,7 +332,7 @@ class Controls:
 
       elif get_events(events, [ET.SOFT_DISABLE]) and self.soft_disable_timer > 0:
         for e in get_events(events, [ET.SOFT_DISABLE]):
-          self.AM.add(self.sm.frame, e, enabled)
+          self.AM.add(self.sm.frame, e, self.enabled)
 
       elif self.soft_disable_timer <= 0:
         self.state = State.disabled
@@ -341,16 +341,18 @@ class Controls:
     elif self.state == State.preEnabled:
       if get_events(events, [ET.USER_DISABLE]):
         self.state = State.disabled
-        self.AM.add(self.sm.frame, "disable", enabled)
+        self.AM.add(self.sm.frame, "disable", self.enabled)
 
       elif get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
         self.state = State.disabled
         for e in get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
-          self.AM.add(self.sm.frame, e, enabled)
+          self.AM.add(self.sm.frame, e, self.enabled)
 
       elif not get_events(events, [ET.PRE_ENABLE]):
         self.state = State.enabled
 
+    self.enabled = is_enabled(self.state)
+    self.active = is_active(self.state)
 
   def state_control(self, CS, events):
     """Given the state, this function returns an actuators packet"""
@@ -360,19 +362,16 @@ class Controls:
 
     actuators = car.CarControl.Actuators.new_message()
 
-    enabled = is_enabled(self.state)
-    active = is_active(self.state)
-
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
 
     if plan.fcw:
       # send FCW alert if triggered by planner
-      self.AM.add(self.sm.frame, "fcw", enabled)
+      self.AM.add(self.sm.frame, "fcw", self.enabled)
 
     elif CS.stockFcw:
       # send a silent alert when stock fcw triggers, since the car is already beeping
-      self.AM.add(self.sm.frame, "fcwStock", enabled)
+      self.AM.add(self.sm.frame, "fcwStock", self.enabled)
 
     # State specific actions
 
@@ -389,7 +388,7 @@ class Controls:
             extra_text = str(int(round(self.CP.minSteerSpeed * CV.MS_TO_KPH))) + " kph"
           else:
             extra_text = str(int(round(self.CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
-        self.AM.add(self.sm.frame, e, enabled, extra_text_2=extra_text)
+        self.AM.add(self.sm.frame, e, self.enabled, extra_text_2=extra_text)
 
     plan_age = DT_CTRL * (self.sm.frame - self.sm.rcv_frame['plan'])
     dt = min(plan_age, LON_MPC_STEP + DT_CTRL) + DT_CTRL  # no greater than dt mpc + dt, to prevent too high extraps
@@ -398,16 +397,16 @@ class Controls:
     v_acc_sol = plan.vStart + dt * (a_acc_sol + plan.aStart) / 2.0
 
     # Gas/Brake PID loop
-    actuators.gas, actuators.brake = self.LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
+    actuators.gas, actuators.brake = self.LoC.update(self.active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                                       self.v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, self.CP)
     # Steering PID loop and lateral MPC
-    actuators.steer, actuators.steerAngle, lac_log = self.LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CS.steeringRateLimited, self.CP, path_plan)
+    actuators.steer, actuators.steerAngle, lac_log = self.LaC.update(self.active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CS.steeringRateLimited, self.CP, path_plan)
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
       abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
 
-    self.saturated_count = self.saturated_count + 1 if angle_control_saturated and not CS.steeringPressed and active else 0
+    self.saturated_count = self.saturated_count + 1 if angle_control_saturated and not CS.steeringPressed and self.active else 0
 
     # Send a "steering required alert" if saturation count has reached the limit
     if (lac_log.saturated and not CS.steeringPressed) or (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
@@ -416,7 +415,7 @@ class Controls:
       right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
 
       if left_deviation or right_deviation:
-        self.AM.add(self.sm.frame, "steerSaturated", enabled)
+        self.AM.add(self.sm.frame, "steerSaturated", self.enabled)
 
     # Parse permanent warnings to display constantly
     for e in get_events(events, [ET.PERMANENT]):
@@ -427,7 +426,7 @@ class Controls:
           extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
         else:
           extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
-      self.AM.add(self.sm.frame, str(e) + "Permanent", enabled, \
+      self.AM.add(self.sm.frame, str(e) + "Permanent", self.enabled, \
                     extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
     return actuators, v_acc_sol, a_acc_sol, lac_log
@@ -437,11 +436,11 @@ class Controls:
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
     CC = car.CarControl.new_message()
-    CC.enabled = is_enabled(self.state)
+    CC.enabled = self.enabled
     CC.actuators = actuators
 
     CC.cruiseControl.override = True
-    CC.cruiseControl.cancel = not self.CP.enableCruise or (not is_enabled(self.state) and CS.cruiseState.enabled)
+    CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
 
     # Some override values for Honda
     # brake discount removes a sharp nonlinearity
@@ -450,8 +449,8 @@ class Controls:
     CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
 
     CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
-    CC.hudControl.speedVisible = is_enabled(self.state)
-    CC.hudControl.lanesVisible = is_enabled(self.state)
+    CC.hudControl.speedVisible = self.enabled
+    CC.hudControl.lanesVisible = self.enabled
     CC.hudControl.leadVisible = self.sm['plan'].hasLead
 
     right_lane_visible = self.sm['pathPlan'].rProb > 0.5
@@ -461,7 +460,7 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     calibrated = self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
-    ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled and not is_active(self.state) and calibrated
+    ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled and not self.active and calibrated
 
     md = self.sm['model']
     if len(md.meta.desirePrediction):
@@ -503,8 +502,8 @@ class Controls:
     dat.controlsState.canMonoTimes = list(CS.canMonoTimes)
     dat.controlsState.planMonoTime = self.sm.logMonoTime['plan']
     dat.controlsState.pathPlanMonoTime = self.sm.logMonoTime['pathPlan']
-    dat.controlsState.enabled = is_enabled(self.state)
-    dat.controlsState.active = is_active(self.state)
+    dat.controlsState.enabled = self.enabled
+    dat.controlsState.active = self.active
     dat.controlsState.vEgo = CS.vEgo
     dat.controlsState.vEgoRaw = CS.vEgoRaw
     dat.controlsState.angleSteers = CS.steeringAngle
