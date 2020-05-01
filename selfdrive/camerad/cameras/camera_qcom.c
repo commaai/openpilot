@@ -1751,7 +1751,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
 
 static void do_autofocus(CameraState *s) {
   // params for focus PI controller
-  const float focus_kp = 0.1;
+  const float focus_kp = 0.005;
 
   float err = s->focus_err;
   float sag = (s->last_sag_acc_z/9.8) * 128;
