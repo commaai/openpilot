@@ -118,7 +118,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_driver_view_touch(UIState *s, int touch_x, int touch_y) {
-  int err = write_db_value(NULL, "IsDriverViewEnabled", "0", 1);
+  int err = write_db_value("IsDriverViewEnabled", "0", 1);
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
@@ -138,18 +138,18 @@ static void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-static void read_param_bool(bool* param, const char* param_name) {
+static void read_param_bool(bool* param, const char* param_name, bool persistent_param = false) {
   char *s;
-  const int result = read_db_value(NULL, param_name, &s, NULL);
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
   if (result == 0) {
     *param = s[0] == '1';
     free(s);
   }
 }
 
-static int read_param_float(float* param, const char* param_name, const char* params_path = NULL) {
+static int read_param_float(float* param, const char* param_name, bool persistent_param = false) {
   char *s;
-  const int result = read_db_value(params_path, param_name, &s, NULL);
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
   if (result == 0) {
     *param = strtod(s, NULL);
     free(s);
@@ -157,9 +157,9 @@ static int read_param_float(float* param, const char* param_name, const char* pa
   return result;
 }
 
-static int read_param_uint64(uint64_t* dest, const char* param_name) {
+static int read_param_uint64(uint64_t* dest, const char* param_name, bool persistent_param = false) {
   char *s;
-  const int result = read_db_value(NULL, param_name, &s, NULL);
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
   if (result == 0) {
     *dest = strtoull(s, NULL, 0);
     free(s);
@@ -167,38 +167,38 @@ static int read_param_uint64(uint64_t* dest, const char* param_name) {
   return result;
 }
 
-static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout) {
+static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
   } else {
-    read_param_bool(param, param_name);
+    read_param_bool(param, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
 }
 
-static void read_param_float_timeout(float* param, const char* param_name, int* timeout) {
+static void read_param_float_timeout(float* param, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
   } else {
-    read_param_float(param, param_name);
+    read_param_float(param, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
 }
 
-static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int* timeout) {
+static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
     return 0;
   } else {
-    return read_param_uint64(dest, param_name);
+    return read_param_uint64(dest, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
 }
 
-static int write_param_float(float param, const char* param_name, const char* params_path = NULL) {
+static int write_param_float(float param, const char* param_name, bool persistent_param = false) {
   char s[16];
   int size = snprintf(s, sizeof(s), "%f", param);
-  return write_db_value(params_path, param_name, s, MIN(size, sizeof(s)));
+  return write_db_value(param_name, s, MIN(size, sizeof(s)), persistent_param);
 }
 
 static void update_offroad_layout_timeout(UIState *s, int* timeout) {
@@ -861,6 +861,7 @@ int is_leon() {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 #ifdef QCOM
   #define PERSISTENT_PARAMS "/persist/comma/params"
@@ -869,6 +870,8 @@ int is_leon() {
 #endif
 
 >>>>>>> fix params writing
+=======
+>>>>>>> Persistent params argument in C params lib. Fixed symlink flow
 int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
@@ -902,14 +905,14 @@ int main(int argc, char* argv[]) {
   const int LEON = is_leon();
 
   float brightness_b, brightness_m;  
-  int result = read_param_float(&brightness_b, "BRIGHTNESS_B", PERSISTENT_PARAMS);
-  result += read_param_float(&brightness_m, "BRIGHTNESS_M", PERSISTENT_PARAMS);
+  int result = read_param_float(&brightness_b, "BRIGHTNESS_B", true);
+  result += read_param_float(&brightness_m, "BRIGHTNESS_M", true);
 
   if(result != 0){
     brightness_b = LEON ? 10.0 : 5.0;
     brightness_m = LEON ? 2.6 : 1.3;
-    write_param_float(brightness_b, "BRIGHTNESS_B", PERSISTENT_PARAMS);
-    write_param_float(brightness_m, "BRIGHTNESS_M", PERSISTENT_PARAMS);
+    write_param_float(brightness_b, "BRIGHTNESS_B", true);
+    write_param_float(brightness_m, "BRIGHTNESS_M", true);
   }
 
   float smooth_brightness = brightness_b;
