@@ -493,45 +493,46 @@ class Controls:
     # controlsState
     dat = messaging.new_message('controlsState')
     dat.valid = CS.canValid
-    dat.controlsState.alertText1 = self.AM.alert_text_1
-    dat.controlsState.alertText2 = self.AM.alert_text_2
-    dat.controlsState.alertSize = self.AM.alert_size
-    dat.controlsState.alertStatus = self.AM.alert_status
-    dat.controlsState.alertBlinkingRate = self.AM.alert_rate
-    dat.controlsState.alertType = self.AM.alert_type
-    dat.controlsState.alertSound = self.AM.audible_alert
-    dat.controlsState.driverMonitoringOn = self.sm['dMonitoringState'].faceDetected
-    dat.controlsState.canMonoTimes = list(CS.canMonoTimes)
-    dat.controlsState.planMonoTime = self.sm.logMonoTime['plan']
-    dat.controlsState.pathPlanMonoTime = self.sm.logMonoTime['pathPlan']
-    dat.controlsState.enabled = self.enabled
-    dat.controlsState.active = self.active
-    dat.controlsState.vEgo = CS.vEgo
-    dat.controlsState.vEgoRaw = CS.vEgoRaw
-    dat.controlsState.angleSteers = CS.steeringAngle
-    dat.controlsState.curvature = self.VM.calc_curvature((CS.steeringAngle - \
-                                    self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo)
-    dat.controlsState.steerOverride = CS.steeringPressed
-    dat.controlsState.state = self.state
-    dat.controlsState.engageable = not bool(get_events(events, [ET.NO_ENTRY]))
-    dat.controlsState.longControlState = self.LoC.long_control_state
-    dat.controlsState.vPid = float(self.LoC.v_pid)
-    dat.controlsState.vCruise = float(self.v_cruise_kph)
-    dat.controlsState.upAccelCmd = float(self.LoC.pid.p)
-    dat.controlsState.uiAccelCmd = float(self.LoC.pid.i)
-    dat.controlsState.ufAccelCmd = float(self.LoC.pid.f)
-    dat.controlsState.angleSteersDes = float(self.LaC.angle_steers_des)
-    dat.controlsState.vTargetLead = float(v_acc)
-    dat.controlsState.aTarget = float(a_acc)
-    dat.controlsState.jerkFactor = float(self.sm['plan'].jerkFactor)
-    dat.controlsState.gpsPlannerActive = self.sm['plan'].gpsPlannerActive
-    dat.controlsState.vCurvature = self.sm['plan'].vCurvature
-    dat.controlsState.decelForModel = self.sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model
-    dat.controlsState.cumLagMs = -self.rk.remaining * 1000.
-    dat.controlsState.startMonoTime = int(start_time * 1e9)
-    dat.controlsState.mapValid = self.sm['plan'].mapValid
-    dat.controlsState.forceDecel = bool(force_decel)
-    dat.controlsState.canErrorCounter = self.can_error_counter
+    dat.controlsState = {
+      "alertText1": self.AM.alert_text_1,
+      "alertText2": self.AM.alert_text_2,
+      "alertSize": self.AM.alert_size,
+      "alertStatus": self.AM.alert_status,
+      "alertBlinkingRate": self.AM.alert_rate,
+      "alertType": self.AM.alert_type,
+      "alertSound": self.AM.audible_alert,
+      "driverMonitoringOn": self.sm['dMonitoringState'].faceDetected,
+      "canMonoTimes": list(CS.canMonoTimes),
+      "planMonoTime": self.sm.logMonoTime['plan'],
+      "pathPlanMonoTime": self.sm.logMonoTime['pathPlan'],
+      "enabled": self.enabled,
+      "active": self.active,
+      "vEgo": CS.vEgo,
+      "vEgoRaw": CS.vEgoRaw,
+      "angleSteers": CS.steeringAngle,
+      "curvature": self.VM.calc_curvature((CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
+      "steerOverride": CS.steeringPressed,
+      "state": self.state,
+      "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
+      "longControlState": self.LoC.long_control_state,
+      "vPid": float(self.LoC.v_pid),
+      "vCruise": float(self.v_cruise_kph),
+      "upAccelCmd": float(self.LoC.pid.p),
+      "uiAccelCmd": float(self.LoC.pid.i),
+      "ufAccelCmd": float(self.LoC.pid.f),
+      "angleSteersDes": float(self.LaC.angle_steers_des),
+      "vTargetLead": float(v_acc),
+      "aTarget": float(a_acc),
+      "jerkFactor": float(self.sm['plan'].jerkFactor),
+      "gpsPlannerActive": self.sm['plan'].gpsPlannerActive,
+      "vCurvature": self.sm['plan'].vCurvature,
+      "decelForModel": self.sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
+      "cumLagMs": -self.rk.remaining * 1000.,
+      "startMonoTime": int(start_time * 1e9),
+      "mapValid": self.sm['plan'].mapValid,
+      "forceDecel": bool(force_decel),
+      "canErrorCounter": self.can_error_counter,
+    }
 
     if self.CP.lateralTuning.which() == 'pid':
       dat.controlsState.lateralControlState.pidState = lac_log
