@@ -92,13 +92,11 @@ int write_db_value(const char* key, const char* value, size_t value_size, bool p
   // Make sure params path exists
   result = ensure_dir_exists(params_path);
   if (result < 0) {
-    printf("1\n");
     goto cleanup;
   }
 
   result = snprintf(path, sizeof(path), "%s/d", params_path);
   if (result < 0) {
-    printf("2\n");
     goto cleanup;
   }
 
@@ -108,43 +106,36 @@ int write_db_value(const char* key, const char* value, size_t value_size, bool p
     // Create temp folder
     result = snprintf(path, sizeof(path), "%s/.tmp_XXXXXX", params_path);
     if (result < 0) {
-      printf("3\n");
       goto cleanup;
     }
     tmp_dir = mkdtemp(path);
     if (tmp_dir == NULL){
-      printf("4\n");
       goto cleanup;
     }
 
     // Set permissions
     result = chmod(tmp_dir, 0777);
     if (result < 0) {
-      printf("5\n");
       goto cleanup;
     }
 
     // Symlink it to temp link
     result = snprintf(tmp_path, sizeof(tmp_path), "%s.link", tmp_dir);
     if (result < 0) {
-      printf("6\n");
       goto cleanup;
     }
     result = symlink(tmp_dir, tmp_path);
     if (result < 0) {
-      printf("7: %s %s\n", tmp_dir, tmp_path);
       goto cleanup;
     }
 
     // Move symlink to <params>/d
     result = snprintf(path, sizeof(path), "%s/d", params_path);
     if (result < 0) {
-      printf("8\n");
       goto cleanup;
     }
     result = rename(tmp_path, path);
     if (result < 0) {
-      printf("9\n");
       goto cleanup;
     }
   }
