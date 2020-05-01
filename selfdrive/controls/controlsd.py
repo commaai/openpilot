@@ -406,7 +406,8 @@ class Controls:
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
       abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
 
-    self.saturated_count = self.saturated_count + 1 if angle_control_saturated and not CS.steeringPressed and self.active else 0
+    if angle_control_saturated and not CS.steeringPressed and self.active:
+      self.saturated_count += 1
 
     # Send a "steering required alert" if saturation count has reached the limit
     if (lac_log.saturated and not CS.steeringPressed) or (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
@@ -445,7 +446,8 @@ class Controls:
     # Some override values for Honda
     # brake discount removes a sharp nonlinearity
     brake_discount = (1.0 - clip(actuators.brake * 3., 0.0, 1.0))
-    CC.cruiseControl.speedOverride = float(max(0.0, (self.LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount) if self.CP.enableCruise else 0.0)
+    speed_override = max(0.0, (self.LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount)
+    CC.cruiseControl.speedOverride = float(speed_override if self.CP.enableCruise else 0.0)
     CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
 
     CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
@@ -459,8 +461,8 @@ class Controls:
     CC.hudControl.leftLaneVisible = bool(left_lane_visible)
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
-    calibrated = self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
-    ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled and not self.active and calibrated
+    ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled \
+                    and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
     md = self.sm['model']
     if len(md.meta.desirePrediction):
