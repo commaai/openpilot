@@ -448,21 +448,21 @@ void* processing_thread(void *arg) {
 
     /*double t10 = millis_since_boot();*/
 
+    uint8_t *rgb_roi_buf = new uint8_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3];
     int roi_id = cnt % ((ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1));
     int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
     int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
 
-    // cache rgb roi to cl
     for (int r=0;r<(s->rgb_height/NUM_SEGMENTS_Y);r++) {
-      err = clEnqueueWriteBuffer (q, s->rgb_conv_roi_cl, true,
-                                  r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
-                                  s->rgb_width/NUM_SEGMENTS_X * 3 * sizeof(uint8_t),
-                                  (uint8_t *) s->rgb_bufs[rgb_idx].addr + \
-                                    (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 + \
-                                    (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
-                                  0, 0, 0);
-      assert(err == 0);
+      memcpy(rgb_roi_buf + r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
+              (uint8_t *) s->rgb_bufs[rgb_idx].addr + (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 \
+                + (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
+              s->rgb_width/NUM_SEGMENTS_X * 3);
     }
+
+    err = clEnqueueWriteBuffer (q, s->rgb_conv_roi_cl, true, 0,
+        s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), rgb_roi_buf, 0, 0, 0);
+    assert(err == 0);
 
     /*double t11 = millis_since_boot();
     printf("cache time: %f ms\n", t11 - t10);
@@ -497,6 +497,7 @@ void* processing_thread(void *arg) {
     printf("pool time: %f ms\n", t11 - t10);
     t10 = millis_since_boot();*/
 
+    delete [] rgb_roi_buf;
     delete [] conv_result;
 
     /*t11 = millis_since_boot();
