@@ -52,7 +52,7 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.STEER_THRESHOLD
 
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE"]['STEER_TORQUE_MOTOR']
-    self.angle_steers_rate = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
+    ret.steeringRate = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
 
     ret.brakePressed = cp.vl["PEDALS"]['BRAKE_ON'] == 1
     ret.brake = cp.vl["BRAKE"]['BRAKE_PRESSURE']
@@ -108,14 +108,14 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = self.cruise_speed
       if self.lkas_speed_lock or handsoff:
         ret.steerWarning = True
-     else:
+    else:
       ret.cruiseState.speed = 0
 
 
     self.low_speed_lockout_last = self.low_speed_lockout
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
-    self.steer_error = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1
+    self.steerError = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1
 
     return ret
 
