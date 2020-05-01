@@ -41,6 +41,7 @@ class CarState(CarStateBase):
 
     ret.steeringTorque = pt_cp.vl["PSCMStatus"]['LKADriverAppldTrq']
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+    ret.steerWarning = not is_eps_status_ok(self.lkas_status, self.car_fingerprint)
 
     # 1 - open, 0 - closed
     ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]['FrontLeftDoor'] == 1 or
@@ -69,7 +70,6 @@ class CarState(CarStateBase):
 
     # 0 - inactive, 1 - active, 2 - temporary limited, 3 - failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]['LKATorqueDeliveredStatus']
-    self.steer_warning = not is_eps_status_ok(self.lkas_status, self.car_fingerprint)
 
     return ret
 
