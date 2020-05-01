@@ -187,9 +187,9 @@ void* frontview_thread(void *arg) {
     cl_event debayer_event;
     if (s->cameras.front.ci.bayer) {
       err = clSetKernelArg(s->krnl_debayer_front, 0, sizeof(cl_mem), &s->front_camera_bufs_cl[buf_idx]);
-      cl_check_error(err);
+      assert(err == 0);
       err = clSetKernelArg(s->krnl_debayer_front, 1, sizeof(cl_mem), &s->rgb_front_bufs_cl[rgb_idx]);
-      cl_check_error(err);
+      assert(err == 0);
       float digital_gain = 1.0;
       err = clSetKernelArg(s->krnl_debayer_front, 2, sizeof(float), &digital_gain);
       assert(err == 0);
@@ -414,9 +414,9 @@ void* processing_thread(void *arg) {
     cl_event debayer_event;
     if (s->cameras.rear.ci.bayer) {
       err = clSetKernelArg(s->krnl_debayer_rear, 0, sizeof(cl_mem), &s->camera_bufs_cl[buf_idx]);
-      cl_check_error(err);
+      assert(err == 0);
       err = clSetKernelArg(s->krnl_debayer_rear, 1, sizeof(cl_mem), &s->rgb_bufs_cl[rgb_idx]);
-      cl_check_error(err);
+      assert(err == 0);
       err = clSetKernelArg(s->krnl_debayer_rear, 2, sizeof(float), &s->cameras.rear.digital_gain);
       assert(err == 0);
 
@@ -448,15 +448,17 @@ void* processing_thread(void *arg) {
 
     /*double t10 = millis_since_boot();*/
 
+    // cache rgb roi and write to cl
     uint8_t *rgb_roi_buf = new uint8_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3];
-    int roi_id = cnt % ((ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1));
+    int roi_id = cnt % ((ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)); // rolling roi
     int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
     int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
 
     for (int r=0;r<(s->rgb_height/NUM_SEGMENTS_Y);r++) {
       memcpy(rgb_roi_buf + r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
-              (uint8_t *) s->rgb_bufs[rgb_idx].addr + (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 \
-                + (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
+              (uint8_t *) s->rgb_bufs[rgb_idx].addr + \
+                (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 + \
+                (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
               s->rgb_width/NUM_SEGMENTS_X * 3);
     }
 
@@ -469,10 +471,11 @@ void* processing_thread(void *arg) {
     t10 = millis_since_boot();*/
 
     err = clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *) &s->rgb_conv_roi_cl);
+    assert(err == 0);
     err = clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *) &s->rgb_conv_result_cl);
-    cl_check_error(err);
+    assert(err == 0);
     err = clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *) &s->rgb_conv_filter_cl);
-    cl_check_error(err);
+    assert(err == 0);
     err = clSetKernelArg(s->krnl_rgb_laplacian, 3, s->conv_cl_localMemSize, 0);
     assert(err == 0);
 
@@ -486,6 +489,7 @@ void* processing_thread(void *arg) {
     int16_t *conv_result = new int16_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)];
     err = clEnqueueReadBuffer(q, s->rgb_conv_result_cl, true, 0,
        s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), conv_result, 0, 0, 0);
+    assert(err == 0);
 
     /*t11 = millis_since_boot();
     printf("conv time: %f ms\n", t11 - t10);
@@ -1166,13 +1170,6 @@ void init_buffers(VisionState *s) {
     s->krnl_debayer_front = clCreateKernel(s->prg_debayer_front, "debayer10", &err);
     assert(err == 0);
   }
-
-  s->prg_debayer_rear = build_debayer_program(s, s->cameras.rear.ci.frame_width, s->cameras.rear.ci.frame_height,
-                                                   s->cameras.rear.ci.frame_stride,
-                                                 s->rgb_width, s->rgb_height, s->rgb_stride,
-                                                 s->cameras.rear.ci.bayer_flip, s->cameras.rear.ci.hdr);
-  s->krnl_debayer_rear = clCreateKernel(s->prg_debayer_rear, "debayer10", &err);
-  assert(err == 0);
 
   s->prg_rgb_laplacian = build_conv_program(s, s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y, 
                                             3);

@@ -1,36 +1,8 @@
 #include "utils.h"
 #include <stdio.h>
+#include <algorithm>
 
-uint16_t clamp_uint16(float x) {
-  if (x < 0)
-  {
-    return 0;
-  }
-  else if (x > 65535)
-  {
-    return 65535;
-  }
-  else
-  {
-    return (uint16_t) x;
-  }
-}
-
-uint8_t clamp_uint8(float x) {
-  if (x < 0)
-  {
-    return 0;
-  }
-  else if (x > 255)
-  {
-    return 255;
-  }
-  else
-  {
-    return (uint8_t) x;
-  }
-}
-
+// calculate score based on laplacians in one area
 void get_lapmap_one(int16_t *lap, uint16_t *res, int x_pitch, int y_pitch) {
   int size = x_pitch * y_pitch;
   // avg and max of roi
@@ -42,14 +14,12 @@ void get_lapmap_one(int16_t *lap, uint16_t *res, int x_pitch, int y_pitch) {
     int x_offset = i % x_pitch;
     int y_offset = i / x_pitch;
     fsum += lap[x_offset + y_offset*x_pitch];
-    max = lap[x_offset + y_offset*x_pitch]>max?lap[x_offset + y_offset*x_pitch]:max;
+    max = std::max(lap[x_offset + y_offset*x_pitch], max);
   }
 
   mean = fsum / size;
-  // printf("mean %d\n", mean);
 
   // var of roi
-  // uint16_t var = 0;
   float fvar = 0;
   for (int i = 0; i < size; i++) {
     int x_offset = i % x_pitch;
@@ -58,19 +28,17 @@ void get_lapmap_one(int16_t *lap, uint16_t *res, int x_pitch, int y_pitch) {
   }
 
   fvar = fvar / size;
-  // printf("fvar %f\n", fvar);
 
-  *res = clamp_uint16(5 * fvar + max);
+  *res = std::clamp(5 * fvar + max, 0, 65535);
 }
 
 bool is_blur(uint16_t *lapmap) {
   int n_roi = (ROI_X_MAX - ROI_X_MIN + 1) * (ROI_Y_MAX - ROI_Y_MIN + 1);
   float bad_sum = 0;
   for (int i = 0; i < n_roi; i++) {
-    // printf("%d- %d\n", i, *(lapmap + i));
     if (*(lapmap + i) < LM_THRESH) {
       bad_sum += 1/(float)n_roi;
     }
   }
-  return (bool)(bad_sum > LM_PREC_THRESH);
+  return (bad_sum > LM_PREC_THRESH);
 }
