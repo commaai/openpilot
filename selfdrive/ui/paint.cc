@@ -440,7 +440,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     color = s->is_ego_over_limit ? COLOR_WHITE_ALPHA(20) : COLOR_WHITE;
   }
 
-  void ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
+  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
@@ -820,11 +820,7 @@ void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image
 
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r, int width) {
   nvgBeginPath(vg);
-  if (r > 0) {
-    nvgRoundedRect(vg, x, y, w, h, r);
-  } else {
-    nvgRect(vg, x, y, w, h);
-  }
+  r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
   if (width) {
     nvgStrokeColor(vg, color);
     nvgStrokeWidth(vg, width);
@@ -837,11 +833,7 @@ void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor c
 
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r){
   nvgBeginPath(vg);
-  if (r > 0){
-    nvgRoundedRect(vg, x, y, w, h, r);
-  }else{
-    nvgRect(vg, x, y, w, h);
-  }
+  r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
   nvgFillPaint(vg, paint);
   nvgFill(vg);
 }
