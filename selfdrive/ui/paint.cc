@@ -64,34 +64,6 @@ static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, f
   nvgText(vg, x, y, string, NULL);
 }
 
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r, int width) {
-  nvgBeginPath(vg);
-  if (r > 0) {
-    nvgRoundedRect(vg, x, y, w, h, r);
-  } else {
-    nvgRect(vg, x, y, w, h);
-  }
-  if (width) {
-    nvgStrokeColor(vg, color);
-    nvgStrokeWidth(vg, width);
-    nvgStroke(vg);
-  } else {
-    nvgFillColor(vg, color);
-    nvgFill(vg);
-  }
-}
-
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r){
-  nvgBeginPath(vg);
-  if (r > 0){
-    nvgRoundedRect(vg, x, y, w, h, r);
-  }else{
-    nvgRect(vg, x, y, w, h);
-  }
-  nvgFillPaint(vg, paint);
-  nvgFill(vg);
-}
-
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
   const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
@@ -426,11 +398,6 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   /*if (!s->longitudinal_control){
     return;
   }*/
-
-  const UIScene *scene = &s->scene;
-  int ui_viz_rx = scene->ui_viz_rx;
-  int ui_viz_rw = scene->ui_viz_rw;
-
   char maxspeed_str[32];
   float maxspeed = s->scene.v_cruise;
   int maxspeed_calc = maxspeed * 0.6225 + 0.5;
@@ -450,7 +417,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 
   int viz_maxspeed_w = 184;
   int viz_maxspeed_h = 202;
-  int viz_maxspeed_x = (ui_viz_rx + (bdr_s*2));
+  int viz_maxspeed_x = (s->scene.ui_viz_rx + (bdr_s*2));
   int viz_maxspeed_y = (box_y + (bdr_s*1.5));
   int viz_maxspeed_xo = 180;
 
@@ -469,32 +436,25 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   NVGcolor color = COLOR_WHITE_ALPHA(100);
   if (is_set_over_limit) {
     color = COLOR_OCHRE;
-  } else if (is_speedlim_valid && !s->is_ego_over_limit) {
-    color = COLOR_WHITE;
-  } else if (is_speedlim_valid && s->is_ego_over_limit) {
-    color = COLOR_WHITE_ALPHA(20);
+  } else if (is_speedlim_valid) {
+    color = s->is_ego_over_limit ? COLOR_WHITE_ALPHA(20) : COLOR_WHITE;
   }
 
   void ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
 
-  // Draw "MAX" Text
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
   ui_draw_text(s->vg, text_x, 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
-  // Draw Speed Text
+
   if (is_cruise_set) {
     snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", maxspeed_calc);
     ui_draw_text(s->vg, text_x, 242, maxspeed_str, 48 * 2.5, COLOR_WHITE, s->font_sans_bold);
   } else {
-    ui_draw_text(s->vg, text_x, 242, "N/A", 42*2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
+    ui_draw_text(s->vg, text_x, 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
   }
-   }
+}
 
 static void ui_draw_vision_speedlimit(UIState *s) {
-  const UIScene *scene = &s->scene;
-  int ui_viz_rx = scene->ui_viz_rx;
-  int ui_viz_rw = scene->ui_viz_rw;
-
   char speedlim_str[32];
   float speedlimit = s->scene.speedlimit;
   int speedlim_calc = speedlimit * 2.2369363 + 0.5;
@@ -511,7 +471,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
 
   int viz_speedlim_w = 180;
   int viz_speedlim_h = 202;
-  int viz_speedlim_x = (ui_viz_rx + (bdr_s*2));
+  int viz_speedlim_x = (s->scene.ui_viz_rx + (bdr_s*2));
   int viz_speedlim_y = (box_y + (bdr_s*1.5));
   if (!is_speedlim_valid) {
     viz_speedlim_w -= 5;
@@ -519,8 +479,6 @@ static void ui_draw_vision_speedlimit(UIState *s) {
     viz_speedlim_x += 9;
     viz_speedlim_y += 5;
   }
-  int viz_speedlim_bdr = is_speedlim_valid ? 30 : 15;
-
   // Draw Background
   NVGcolor color = COLOR_WHITE_ALPHA(100);
   if (is_speedlim_valid && s->is_ego_over_limit) {
@@ -528,7 +486,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   } else if (is_speedlim_valid) {
     color = COLOR_WHITE;
   }
-  ui_draw_rect(s->vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h, color, viz_speedlim_bdr);
+  ui_draw_rect(s->vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h, color, is_speedlim_valid ? 30 : 15);
 
   // Draw Border
   if (is_speedlim_valid) {
@@ -555,36 +513,28 @@ static void ui_draw_vision_speedlimit(UIState *s) {
 
 static void ui_draw_vision_speed(UIState *s) {
   const UIScene *scene = &s->scene;
-  int ui_viz_rx = scene->ui_viz_rx;
-  int ui_viz_rw = scene->ui_viz_rw;
-  float speed = s->scene.v_ego;
-
+  float speed = s->scene.v_ego * 2.2369363 + 0.5;
+  if (s->is_metric){
+    speed = s->scene.v_ego * 3.6 + 0.5;
+  }
   const int viz_speed_w = 280;
-  const int viz_speed_x = ui_viz_rx+((ui_viz_rw/2)-(viz_speed_w/2));
+  const int viz_speed_x = scene->ui_viz_rx+((scene->ui_viz_rw/2)-(viz_speed_w/2));
   char speed_str[32];
 
   nvgBeginPath(s->vg);
   nvgRect(s->vg, viz_speed_x, box_y, viz_speed_w, header_h);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
-  if (s->is_metric) {
-    snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 3.6 + 0.5));
-  } else {
-    snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2369363 + 0.5));
-  }
-  const int text_x = viz_speed_x + viz_speed_w / 2;
-  ui_draw_text(s->vg, text_x, 240, speed_str, 96*2.5, COLOR_WHITE, s->font_sans_bold);
-  ui_draw_text(s->vg, text_x, 320, s->is_metric?"kph":"mph", 36*2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
+  snprintf(speed_str, sizeof(speed_str), "%d", (int)speed);
+  ui_draw_text(s->vg, viz_speed_x + viz_speed_w / 2, 240, speed_str, 96*2.5, COLOR_WHITE, s->font_sans_bold);
+  ui_draw_text(s->vg, viz_speed_x + viz_speed_w / 2, 320, s->is_metric?"kph":"mph", 36*2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
 }
 
 static void ui_draw_vision_event(UIState *s) {
   const UIScene *scene = &s->scene;
-  const int ui_viz_rx = scene->ui_viz_rx;
-  const int ui_viz_rw = scene->ui_viz_rw;
   const int viz_event_w = 220;
-  const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
+  const int viz_event_x = ((scene->ui_viz_rx + scene->ui_viz_rw) - (viz_event_w + (bdr_s*2)));
   const int viz_event_y = (box_y + (bdr_s*1.5));
-  const int viz_event_h = (header_h - (bdr_s*1.5));
   if (s->scene.decel_for_model && s->scene.engaged) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
@@ -754,12 +704,8 @@ static void ui_draw_vision_header(UIState *s) {
 }
 
 static void ui_draw_vision_footer(UIState *s) {
-  const UIScene *scene = &s->scene;
-  int ui_viz_rx = scene->ui_viz_rx;
-  int ui_viz_rw = scene->ui_viz_rw;
-
   nvgBeginPath(s->vg);
-  nvgRect(s->vg, ui_viz_rx, footer_y, ui_viz_rw, footer_h);
+  nvgRect(s->vg, s->scene.ui_viz_rx, footer_y, s->scene.ui_viz_rw, footer_h);
 
   ui_draw_vision_face(s);
 
@@ -771,16 +717,14 @@ static void ui_draw_vision_footer(UIState *s) {
 void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
                           const char* va_text1, const char* va_text2) {
   const UIScene *scene = &s->scene;
-  int ui_viz_rx = scene->ui_viz_rx;
-  int ui_viz_rw = scene->ui_viz_rw;
   const bool hasSidebar = !scene->uilayout_sidebarcollapsed;
   const bool mapEnabled = scene->uilayout_mapenabled;
   bool longAlert1 = strlen(va_text1) > 15;
 
   const uint8_t *color = alert_colors[va_color];
   const int alr_s = alert_sizes[va_size];
-  const int alr_x = ui_viz_rx-(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)-bdr_s;
-  const int alr_w = ui_viz_rw+(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)+(bdr_s*2);
+  const int alr_x = scene->ui_viz_rx-(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)-bdr_s;
+  const int alr_w = scene->ui_viz_rw+(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)+(bdr_s*2);
   const int alr_h = alr_s+(va_size==ALERTSIZE_NONE?0:bdr_s);
   const int alr_y = vwp_h-alr_h;
 
@@ -812,14 +756,11 @@ void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
 
 static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
-  int ui_viz_rx = scene->ui_viz_rx;
-  int ui_viz_rw = scene->ui_viz_rw;
-  int ui_viz_ro = scene->ui_viz_ro;
 
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
-  glViewport(ui_viz_rx+ui_viz_ro, s->fb_h-(box_y+box_h), viz_w, box_h);
-  glScissor(ui_viz_rx, s->fb_h-(box_y+box_h), ui_viz_rw, box_h);
+  glViewport(scene->ui_viz_rx+scene->ui_viz_ro, s->fb_h-(box_y+box_h), viz_w, box_h);
+  glScissor(scene->ui_viz_rx, s->fb_h-(box_y+box_h), scene->ui_viz_rw, box_h);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
 
@@ -874,6 +815,34 @@ void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image
   NVGpaint imgPaint = nvgImagePattern(vg, x, y, w, h, 0, image, alpha);
   nvgRect(vg, x, y, w, h);
   nvgFillPaint(vg, imgPaint);
+  nvgFill(vg);
+}
+
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r, int width) {
+  nvgBeginPath(vg);
+  if (r > 0) {
+    nvgRoundedRect(vg, x, y, w, h, r);
+  } else {
+    nvgRect(vg, x, y, w, h);
+  }
+  if (width) {
+    nvgStrokeColor(vg, color);
+    nvgStrokeWidth(vg, width);
+    nvgStroke(vg);
+  } else {
+    nvgFillColor(vg, color);
+    nvgFill(vg);
+  }
+}
+
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r){
+  nvgBeginPath(vg);
+  if (r > 0){
+    nvgRoundedRect(vg, x, y, w, h, r);
+  }else{
+    nvgRect(vg, x, y, w, h);
+  }
+  nvgFillPaint(vg, paint);
   nvgFill(vg);
 }
 
