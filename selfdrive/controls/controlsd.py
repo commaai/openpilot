@@ -117,7 +117,8 @@ class Controls:
     # If stock camera is disconnected, we loaded car controls and it's not chffrplus
     controller_available = self.CP.enableCamera and self.CI.CC is not None and not self.passive
     community_feature_disallowed = self.CP.communityFeature and not community_feature_toggle
-    self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly or community_feature_disallowed
+    self.read_only = not car_recognized or not controller_available or \
+                       self.CP.dashcamOnly or community_feature_disallowed
     if self.read_only:
       self.CP.safetyModel = car.CarParams.SafetyModel.noOutput
 
@@ -184,22 +185,19 @@ class Controls:
   def create_events(self, CS):
     events = self.permanent_events.copy()
 
-    overtemp = self.sm['thermal'].thermalStatus >= ThermalStatus.red
-    free_space = self.sm['thermal'].freeSpace < 0.07  # under 7% of space free no enable allowed
-    low_battery = self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError  # at zero percent battery, while discharging, OP should not allowed
-    mem_low = self.sm['thermal'].memUsedPercent > 90
-
-    # Create events for battery, temperature and disk space
-    if low_battery:
+    # Create events for battery, temperature, disk space, and memory
+    if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
+      # at zero percent battery, while discharging, OP should not allowed
       events.append(create_event('lowBattery', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if overtemp:
+    if self.sm['thermal'].thermalStatus >= ThermalStatus.red:
       events.append(create_event('overheat', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if free_space:
+    if self.sm['thermal'].freeSpace < 0.07:
+      # under 7% of space free no enable allowed
       events.append(create_event('outOfSpace', [ET.NO_ENTRY]))
-    if mem_low:
+    if self.sm['thermal'].memUsedPercent > 90:
       events.append(create_event('lowMemory', [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.PERMANENT]))
 
-    # Handle calibration
+    # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
     if cal_status != Calibration.CALIBRATED:
       if cal_status == Calibration.UNCALIBRATED:
@@ -209,7 +207,8 @@ class Controls:
 
     if self.mismatch_counter >= 200:
       events.append(create_event('controlsMismatch', [ET.IMMEDIATE_DISABLE]))
-    if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:  # only plan not being received: radar not communicating
+    if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
+      # only plan not being received: radar not communicating
       events.append(create_event('radarCommIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     elif not self.sm.all_alive_and_valid():
       events.append(create_event('commIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -428,7 +427,8 @@ class Controls:
           extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
         else:
           extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
-      self.AM.add(self.sm.frame, str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
+      self.AM.add(self.sm.frame, str(e) + "Permanent", enabled, \
+                    extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
     return actuators, v_acc_sol, a_acc_sol, lac_log
 
@@ -444,7 +444,8 @@ class Controls:
     CC.cruiseControl.cancel = not self.CP.enableCruise or (not isEnabled(self.state) and CS.cruiseState.enabled)
 
     # Some override values for Honda
-    brake_discount = (1.0 - clip(actuators.brake * 3., 0.0, 1.0))  # brake discount removes a sharp nonlinearity
+    # brake discount removes a sharp nonlinearity
+    brake_discount = (1.0 - clip(actuators.brake * 3., 0.0, 1.0))
     CC.cruiseControl.speedOverride = float(max(0.0, (self.LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount) if self.CP.enableCruise else 0.0)
     CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
 
@@ -507,7 +508,8 @@ class Controls:
     dat.controlsState.vEgo = CS.vEgo
     dat.controlsState.vEgoRaw = CS.vEgoRaw
     dat.controlsState.angleSteers = CS.steeringAngle
-    dat.controlsState.curvature = self.VM.calc_curvature((CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo)
+    dat.controlsState.curvature = self.VM.calc_curvature((CS.steeringAngle - \
+                                    self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo)
     dat.controlsState.steerOverride = CS.steeringPressed
     dat.controlsState.state = self.state
     dat.controlsState.engageable = not bool(get_events(events, [ET.NO_ENTRY]))
