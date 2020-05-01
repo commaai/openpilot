@@ -1,1 +1,2 @@
-*.kgrind
+cachegrind.out.*
+*.prof
