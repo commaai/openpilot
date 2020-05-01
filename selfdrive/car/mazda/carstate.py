@@ -1,14 +1,16 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
+from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, CAR
 
-GearShifter = car.CarState.GearShifter
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
+
+    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = can_define.dv["GEAR"]['GEAR']
 
     self.cruise_speed = 0
     self.acc_active_last = False
@@ -31,18 +33,8 @@ class CarState(CarStateBase):
 
     self.speed_kph =  ret.vEgoRaw  // CV.KPH_TO_MS
 
-    gear = int(cp.vl["GEAR"]['GEAR']) >> 1
-
-    if gear >= 1 & gear <= 5:
-      ret.gearShifter = GearShifter.drive
-    elif gear == 0:
-      ret.gearShifter = GearShifter.park
-    elif gear == 6:
-      ret.gearShifter = GearShifter.reverse
-    elif gear == 7:
-      ret.gearShifter = GearShifter.neutral
-    else:
-      ret.gearShifter = GearShifter.unknown
+    can_gear = int(cp.vl["GEAR"]['GEAR'])
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.leftBlinker = cp.vl["BLINK_INFO"]['LEFT_BLINK'] == 1
     ret.rightBlinker = cp.vl["BLINK_INFO"]['RIGHT_BLINK'] == 1
@@ -89,7 +81,7 @@ class CarState(CarStateBase):
                 cp.vl["CRZ_BTNS"]['SET_P'],
                 cp.vl["CRZ_BTNS"]['SET_M']]):
       self.acc_active = True
-      self.cruise_speed = self.speed_kph
+      self.cruise_speed = ret.vEgoRaw
       if self.low_speed_lockout_last:
         self.acc_press_update = True
     elif self.acc_press_update:
@@ -195,8 +187,8 @@ class CarState(CarStateBase):
         ("LDW",              "CAM_LKAS", 0),
         ("BIT_1",            "CAM_LKAS", 1),
         ("ERR_BIT_2",        "CAM_LKAS", 0),
-        ("LKAS_ANGLE",       "CAM_LKAS", 2048),
-        ("BIT2",             "CAM_LKAS", 0),
+        ("STEERING_ANGLE",   "CAM_LKAS", 2048),
+        ("ANGLE_ENABLED",    "CAM_LKAS", 0),
         ("CHKSUM",           "CAM_LKAS", 0),
       ]
 
