@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 import cProfile
 import pprofile
 import pyprof2calltree
@@ -12,16 +13,20 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 SEGMENT = "99c94dc769b5d96e|2019-08-03--14-19-59/2"
 
 
+def get_inputs(msgs):
+  sm = SubMaster(msgs, 'can', ['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', 'model'])
+  pm = PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
+  can_sock = SubSocket(msgs, 'can')
+  return sm, pm, can_sock
+
+
 if __name__ == "__main__":
   segment = SEGMENT.replace('|', '/')
   rlog_url = f"{BASE_URL}{segment}/rlog.bz2"
   msgs = list(LogReader(rlog_url))
 
-  pm = PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
-  sm = SubMaster(msgs, 'can', ['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', 'model'])
-  can_sock = SubSocket(msgs, 'can')
-
   # Statistical
+  sm, pm, can_sock = get_inputs(msgs)
   with pprofile.StatisticalProfile()(period=0.00001) as pr:
     try:
       controlsd_thread(sm, pm, can_sock)
@@ -30,10 +35,7 @@ if __name__ == "__main__":
   pr.dump_stats('cachegrind.out.controlsd_statistical')
 
   # Deterministic
-  pm = PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
-  sm = SubMaster(msgs, 'can', ['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', 'model'])
-  can_sock = SubSocket(msgs, 'can')
-
+  sm, pm, can_sock = get_inputs(msgs)
   with cProfile.Profile() as pr:
     try:
       controlsd_thread(sm, pm, can_sock)
