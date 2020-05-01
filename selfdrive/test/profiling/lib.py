@@ -1,3 +1,4 @@
+from collections import defaultdict
 import cereal.messaging as messaging
 import capnp
 
@@ -98,10 +99,8 @@ class SubMaster():
 
 
 class PubMaster():
-  def __init__(self, services):
-    self.sock = {}
-    for s in services:
-      self.sock[s] = PubSocket()
+  def __init__(self):
+    self.sock = defaultdict(PubSocket)
 
   def send(self, s, dat):
     pass
