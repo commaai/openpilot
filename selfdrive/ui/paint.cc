@@ -57,6 +57,13 @@ static float lerp(float v0, float v1, float t) {
   return (1 - t) * v0 + t * v1;
 }
 
+static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, float size, NVGcolor color, int font){
+  nvgFontFaceId(vg, font);
+  nvgFontSize(vg, size);
+  nvgFillColor(vg, color);
+  nvgText(vg, x, y, string, NULL);
+}
+
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
   const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
@@ -453,30 +460,15 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 
   // Draw "MAX" Text
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFaceId(s->vg,  s->font_sans_regular);
-  nvgFontSize(s->vg, 26*2.5);
-  if (is_cruise_set) {
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-  } else {
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
-  }
   const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
-  nvgText(s->vg, text_x, 148, "MAX", NULL);
-
+  ui_draw_text(s->vg, text_x, 148, "MAX", 26*2.5, COLOR_WHITE_ALPHA(is_cruise_set?200:100), s->font_sans_regular);
   // Draw Speed Text
-  nvgFontFaceId(s->vg, s->font_sans_bold);
-  nvgFontSize(s->vg, 48*2.5);
   if (is_cruise_set) {
     snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", maxspeed_calc);
-    nvgFillColor(s->vg, COLOR_WHITE);
-    nvgText(s->vg, text_x, 242, maxspeed_str, NULL);
+    ui_draw_text(s->vg, text_x, 242, maxspeed_str, 48*2.5, COLOR_WHITE, s->font_sans_bold);
   } else {
-    nvgFontFaceId(s->vg, s->font_sans_semibold);
-    nvgFontSize(s->vg, 42*2.5);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
-    nvgText(s->vg, text_x, 242, "N/A", NULL);
+    ui_draw_text(s->vg, text_x, 242, "N/A", 42*2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
   }
-
 }
 
 static void ui_draw_vision_speedlimit(UIState *s) {
@@ -534,35 +526,21 @@ static void ui_draw_vision_speedlimit(UIState *s) {
       nvgStrokeColor(s->vg, COLOR_WHITE);
     }
   }
-
+  const float text_x = viz_speedlim_x + viz_speedlim_w / 2;
+  const float text_y = viz_speedlim_y + (is_speedlim_valid ? 50 : 45);
   // Draw "Speed Limit" Text
-
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFaceId(s->vg, s->font_sans_semibold);
-  nvgFontSize(s->vg, 50);
-  nvgFillColor(s->vg, COLOR_BLACK);
-  if (is_speedlim_valid && s->is_ego_over_limit) {
-    nvgFillColor(s->vg, COLOR_WHITE);
-  }
-  const int text_x = viz_speedlim_x + viz_speedlim_w / 2;
-  nvgText(s->vg, text_x + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 50 : 45), "SMART", NULL);
-  nvgText(s->vg, text_x + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 90 : 85), "SPEED", NULL);
+  NVGcolor color = is_speedlim_valid && s->is_ego_over_limit ? COLOR_WHITE : COLOR_BLACK;
+  ui_draw_text(s->vg, text_x + (is_speedlim_valid ? 6 : 0), text_y, "SMART", 50, color, s->font_sans_semibold);
+  ui_draw_text(s->vg, text_x + (is_speedlim_valid ? 6 : 0), text_y + 40, "SPEED", 50, color, s->font_sans_semibold);
 
   // Draw Speed Text
-  nvgFontFaceId(s->vg, s->font_sans_bold);
-  nvgFontSize(s->vg, 48*2.5);
-  if (s->is_ego_over_limit) {
-    nvgFillColor(s->vg, COLOR_WHITE);
-  } else {
-    nvgFillColor(s->vg, COLOR_BLACK);
-  }
+  color = s->is_ego_over_limit ? COLOR_WHITE : COLOR_BLACK;
   if (is_speedlim_valid) {
     snprintf(speedlim_str, sizeof(speedlim_str), "%d", speedlim_calc);
-    nvgText(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), speedlim_str, NULL);
+    ui_draw_text(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), speedlim_str, 48*2.5, color, s->font_sans_bold);
   } else {
-    nvgFontFaceId(s->vg, s->font_sans_semibold);
-    nvgFontSize(s->vg, 42*2.5);
-    nvgText(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), "N/A", NULL);
+    ui_draw_text(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), "N/A", 42*2.5, color, s->font_sans_semibold);
   }
 }
 
@@ -586,20 +564,8 @@ static void ui_draw_vision_speed(UIState *s) {
     snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2369363 + 0.5));
   }
   const int text_x = viz_speed_x + viz_speed_w / 2;
-  nvgFontFaceId(s->vg, s->font_sans_bold);
-  nvgFontSize(s->vg, 96*2.5);
-  nvgFillColor(s->vg, COLOR_WHITE);
-  nvgText(s->vg, text_x, 240, speed_str, NULL);
-
-  nvgFontFaceId(s->vg,  s->font_sans_regular);
-  nvgFontSize(s->vg, 36*2.5);
-  nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-
-  if (s->is_metric) {
-    nvgText(s->vg, text_x, 320, "kph", NULL);
-  } else {
-    nvgText(s->vg, text_x, 320, "mph", NULL);
-  }
+  ui_draw_text(s->vg, text_x, 240, speed_str, 96*2.5, COLOR_WHITE, s->font_sans_bold);
+  ui_draw_text(s->vg, text_x, 320, s->is_metric?"kph":"mph", 36*2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
 }
 
 static void ui_draw_vision_event(UIState *s) {
@@ -849,16 +815,10 @@ void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
   if (va_size == ALERTSIZE_SMALL) {
-    nvgFontFaceId(s->vg, s->font_sans_semibold);
-    nvgFontSize(s->vg, 40*2.5);
-    nvgText(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, va_text1, NULL);
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, va_text1, 40*2.5, COLOR_WHITE, s->font_sans_semibold);
   } else if (va_size== ALERTSIZE_MID) {
-    nvgFontFaceId(s->vg, s->font_sans_bold);
-    nvgFontSize(s->vg, 48*2.5);
-    nvgText(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, va_text1, NULL);
-    nvgFontFaceId(s->vg,  s->font_sans_regular);
-    nvgFontSize(s->vg, 36*2.5);
-    nvgText(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, va_text2, NULL);
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, va_text1, 48*2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, va_text2, 36*2.5, COLOR_WHITE, s->font_sans_regular);
   } else if (va_size== ALERTSIZE_FULL) {
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
     nvgFontFaceId(s->vg, s->font_sans_bold);
