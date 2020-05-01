@@ -234,7 +234,6 @@ static void ui_init(UIState *s) {
   s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->health_sock = SubSocket::create(s->ctx, "health");
   s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
-  s->frame_sock = SubSocket::create(s->ctx, "frame");
   s->driverstate_sock = SubSocket::create(s->ctx, "driverState");
   s->dmonitoring_sock = SubSocket::create(s->ctx, "dMonitoringState");
   s->offroad_sock = PubSocket::create(s->ctx, "offroadLayout");
@@ -247,7 +246,6 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock != NULL);
   assert(s->health_sock != NULL);
   assert(s->ubloxgnss_sock != NULL);
-  assert(s->frame_sock != NULL);
   assert(s->driverstate_sock != NULL);
   assert(s->dmonitoring_sock != NULL);
   assert(s->offroad_sock != NULL);
@@ -261,7 +259,6 @@ static void ui_init(UIState *s) {
                               s->thermal_sock,
                               s->health_sock,
                               s->ubloxgnss_sock,
-                              s->frame_sock,
                               s->driverstate_sock,
                               s->dmonitoring_sock
                              });

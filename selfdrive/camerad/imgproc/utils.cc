@@ -31,43 +31,6 @@ uint8_t clamp_uint8(float x) {
   }
 }
 
-// replaced by var_pool cl kernel
-void get_lapmap(int16_t *lap, uint16_t *lapmap, int x_pitch, int y_pitch) {
-  int size = x_pitch * y_pitch;
-  for (int xidx=ROI_X_MIN;xidx<=ROI_X_MAX;xidx++) {
-    for (int yidx=ROI_Y_MIN;yidx<=ROI_Y_MAX;yidx++) {
-      // avg and max of roi
-      float fsum = 0;
-      int16_t mean, max;
-      max = 0;
-      
-      for (int i = 0; i < size; i++) {
-        int x_offset = i % x_pitch;
-        int y_offset = i / x_pitch;
-        fsum += lap[xidx*x_pitch + yidx*y_pitch*FULL_STRIDE_X + x_offset + y_offset*FULL_STRIDE_X];
-        max = lap[xidx*x_pitch + yidx*y_pitch*FULL_STRIDE_X + x_offset + y_offset*FULL_STRIDE_X]>max?lap[xidx*x_pitch + yidx*y_pitch*FULL_STRIDE_X + x_offset + y_offset*FULL_STRIDE_X]:max;
-      }
-
-      mean = fsum / size;
-      // printf("mean %d\n", mean);
-
-      // var of roi
-      // uint16_t var = 0;
-      float fvar = 0;
-      for (int i = 0; i < size; i++) {
-        int x_offset = i % x_pitch;
-        int y_offset = i / x_pitch;
-        fvar += (lap[xidx*x_pitch + yidx*y_pitch*FULL_STRIDE_X + x_offset + y_offset*FULL_STRIDE_X] - mean) * (lap[xidx*x_pitch + yidx*y_pitch*FULL_STRIDE_X + x_offset + y_offset*FULL_STRIDE_X] - mean);
-      }
-
-      fvar = fvar / size;
-      // printf("fvar %f\n", fvar);
-
-      lapmap[(xidx-ROI_X_MIN)+(yidx-ROI_Y_MIN)*(ROI_X_MAX-ROI_X_MIN+1)] = clamp_uint16(5 * fvar + max);
-    }
-  }
-}
-
 void get_lapmap_one(int16_t *lap, uint16_t *res, int x_pitch, int y_pitch) {
   int size = x_pitch * y_pitch;
   // avg and max of roi

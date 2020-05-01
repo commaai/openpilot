@@ -27,7 +27,6 @@ const int16_t lapl_conv_krnl[9] = {0, 1, 0,
 uint16_t clamp_uint16(float x);
 uint8_t clamp_uint8(float x);
 
-void get_lapmap(int16_t *lap, uint16_t *lapmap, int x_pitch, int y_pitch);
 void get_lapmap_one(int16_t *lap, uint16_t *res, int x_pitch, int y_pitch);
 bool is_blur(uint16_t *lapmap);
 
