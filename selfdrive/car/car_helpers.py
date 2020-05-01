@@ -71,7 +71,9 @@ def only_toyota_left(candidate_cars):
 
 # **** for use live only ****
 def fingerprint(logcan, sendcan, has_relay):
-  if has_relay:
+  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
+
+  if has_relay and not fixed_fingerprint:
     # Vin query only reliably works thorugh OBDII
     bus = 1
 
@@ -146,8 +148,7 @@ def fingerprint(logcan, sendcan, has_relay):
     car_fingerprint = list(fw_candidates)[0]
     source = car.CarParams.FingerprintSource.fw
 
-  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
-  if len(fixed_fingerprint):
+  if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
