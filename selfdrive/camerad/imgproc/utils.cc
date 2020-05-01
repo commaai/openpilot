@@ -29,7 +29,7 @@ void get_lapmap_one(int16_t *lap, uint16_t *res, int x_pitch, int y_pitch) {
 
   fvar = fvar / size;
 
-  *res = std::clamp(5 * fvar + max, 0, 65535);
+  *res = std::max(5 * fvar + max, 65535);
 }
 
 bool is_blur(uint16_t *lapmap) {
