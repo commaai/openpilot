@@ -5,7 +5,6 @@ from selfdrive.car import apply_std_steer_torque_limits
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
-    self.steer_idx = 0
     self.apply_steer_last = 0
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False

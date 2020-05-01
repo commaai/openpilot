@@ -7,19 +7,9 @@ from selfdrive.car.mazda.carstate import CarState
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, is_ecu_disconnected
 from selfdrive.car.interfaces import CarInterfaceBase
 
-class CanBus():
-  def __init__(self):
-    self.powertrain = 0
-    self.obstacle = 1
-    self.cam = 2
-
 ButtonType = car.CarState.ButtonEvent.Type
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
-    self.low_speed_alert = False
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -82,11 +72,6 @@ class CarInterface(CarInterfaceBase):
     # TODO: button presses
     ret.buttonEvents = []
 
-    if ret.cruiseState.enabled and self.CS.lkas_speed_lock:
-      self.low_speed_alert = True
-    else:
-      self.low_speed_alert = False
-
     # events
     events = self.create_common_events(ret)
 
@@ -94,9 +79,6 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if ret.cruiseState.enabled:
         ret.cruiseState.enabled = False
-
-    if self.CS.steer_lkas.handsoff:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
     ret.events = events
 

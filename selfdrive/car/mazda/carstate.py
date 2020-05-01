@@ -6,17 +6,10 @@ from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, CAR
 
 GearShifter = car.CarState.GearShifter
 
-class STEER_LKAS():
-  def __init__(self):
-    self.block = 1
-    self.track = 1
-    self.handsoff = 0
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
 
-    self.steer_lkas = STEER_LKAS()
     self.cruise_speed = 0
     self.acc_active_last = False
     self.speed_kph = 0
@@ -58,7 +51,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["STEER_TORQUE"]['STEER_TORQUE_SENSOR']
     ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.STEER_THRESHOLD
 
-    self.steer_torque_motor = cp.vl["STEER_TORQUE"]['STEER_TORQUE_MOTOR']
+    ret.steeringTorqueEps = cp.vl["STEER_TORQUE"]['STEER_TORQUE_MOTOR']
     self.angle_steers_rate = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
 
     ret.brakePressed = cp.vl["PEDALS"]['BRAKE_ON'] == 1
@@ -73,11 +66,10 @@ class CarState(CarStateBase):
     ret.gasPressed = ret.gas > 1e-3
 
     # No steer if block signal is on
-    self.steer_lkas.block = cp.vl["STEER_RATE"]['LKAS_BLOCK']
-    # track driver torque, on if torque is not detected
-    self.steer_lkas.track = cp.vl["STEER_RATE"]['LKAS_TRACK_STATE']
+    block = cp.vl["STEER_RATE"]['LKAS_BLOCK'] == 1
+
     # On if no driver torque the last 5 seconds
-    self.steer_lkas.handsoff = cp.vl["STEER_RATE"]['HANDS_OFF_5_SECONDS']
+    handsoff = cp.vl["STEER_RATE"]['HANDS_OFF_5_SECONDS'] == 1
 
     # LKAS is enabled at 50kph going up and disabled at 45kph going down
     if self.speed_kph > LKAS_LIMITS.ENABLE_SPEED and self.low_speed_lockout:
@@ -85,7 +77,7 @@ class CarState(CarStateBase):
     elif self.speed_kph < LKAS_LIMITS.DISABLE_SPEED and not self.low_speed_lockout:
       self.low_speed_lockout = True
 
-    if (self.low_speed_lockout or self.steer_lkas.block) and self.speed_kph < LKAS_LIMITS.DISABLE_SPEED:
+    if (self.low_speed_lockout or block) and self.speed_kph < LKAS_LIMITS.DISABLE_SPEED:
         if not self.lkas_speed_lock:
           self.lkas_speed_lock = True
     elif self.lkas_speed_lock:
@@ -114,13 +106,11 @@ class CarState(CarStateBase):
 
     if ret.cruiseState.enabled:
       ret.cruiseState.speed = self.cruise_speed
-      if self.lkas_speed_lock:
+      if self.lkas_speed_lock or handsoff:
         ret.steerWarning = True
-    else:
+     else:
       ret.cruiseState.speed = 0
 
-
-    self.brake_error = False
 
     self.low_speed_lockout_last = self.low_speed_lockout
 
