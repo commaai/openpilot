@@ -72,6 +72,7 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+    ret.steerWarning = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
 
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]['MAIN_ON'] != 0
@@ -99,8 +100,7 @@ class CarState(CarStateBase):
     ret.espDisabled = cp.vl["ESP_CONTROL"]['TC_DISABLED'] != 0
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
-    self.steer_warning = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
-    
+
     if self.CP.carFingerprint in TSS2_CAR:
       ret.leftBlindspot = cp.vl["BSM"]['L_ADJACENT'] == 1
       ret.rightBlindspot = cp.vl["BSM"]['R_ADJACENT'] == 1
