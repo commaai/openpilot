@@ -475,7 +475,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     color = COLOR_WHITE_ALPHA(20);
   }
 
-  void ui_draw_rect(vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
+  void ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
 
   // Draw "MAX" Text
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
@@ -528,11 +528,11 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   } else if (is_speedlim_valid) {
     color = COLOR_WHITE;
   }
-  ui_draw_rect(s->vg, iz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h, color, viz_speedlim_bdr);
+  ui_draw_rect(s->vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h, color, viz_speedlim_bdr);
 
   // Draw Border
   if (is_speedlim_valid) {
-    ui_draw_rect(vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h,
+    ui_draw_rect(s->vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h,
                  s->is_ego_over_limit ? COLOR_OCHRE : COLOR_WHITE, 20, 10);
   }
   const float text_x = viz_speedlim_x + viz_speedlim_w / 2;
