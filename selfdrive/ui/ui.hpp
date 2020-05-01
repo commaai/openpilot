@@ -224,7 +224,6 @@ typedef struct UIState {
   SubSocket *driverstate_sock;
   SubSocket *dmonitoring_sock;
   PubSocket *offroad_sock;
-
   Poller * poller;
   Poller * ublox_poller;
 
