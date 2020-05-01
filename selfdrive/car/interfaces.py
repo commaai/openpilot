@@ -102,10 +102,9 @@ class CarInterfaceBase():
     if cs_out.vEgo > 92 * CV.MPH_TO_MS:
       events.append(create_event('speedTooHigh', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
-    # TODO: move this stuff to the capnp strut
-    if getattr(self.CS, "steer_error", False):
+    if cs_out.steerError:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
-    elif getattr(self.CS, "steer_warning", False):
+    elif cs_out.steerWarning:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
