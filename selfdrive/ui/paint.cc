@@ -57,6 +57,41 @@ static float lerp(float v0, float v1, float t) {
   return (1 - t) * v0 + t * v1;
 }
 
+static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, float size, NVGcolor color, int font){
+  nvgFontFaceId(vg, font);
+  nvgFontSize(vg, size);
+  nvgFillColor(vg, color);
+  nvgText(vg, x, y, string, NULL);
+}
+
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r, int width) {
+  nvgBeginPath(vg);
+  if (r > 0) {
+    nvgRoundedRect(vg, x, y, w, h, r);
+  } else {
+    nvgRect(vg, x, y, w, h);
+  }
+  if (width) {
+    nvgStrokeColor(vg, color);
+    nvgStrokeWidth(vg, width);
+    nvgStroke(vg);
+  } else {
+    nvgFillColor(vg, color);
+    nvgFill(vg);
+  }
+}
+
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r){
+  nvgBeginPath(vg);
+  if (r > 0){
+    nvgRoundedRect(vg, x, y, w, h, r);
+  }else{
+    nvgRect(vg, x, y, w, h);
+  }
+  nvgFillPaint(vg, paint);
+  nvgFill(vg);
+}
+
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
   const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
@@ -427,57 +462,33 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 #endif
 
   // Draw Background
-  nvgBeginPath(s->vg);
-  nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, 30);
-  if (is_set_over_limit) {
-    nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 180));
-  } else {
-    nvgFillColor(s->vg, COLOR_BLACK_ALPHA(100));
-  }
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h,
+               is_set_over_limit ? nvgRGBA(218, 111, 37, 180) : COLOR_BLACK_ALPHA(100), 30);
 
   // Draw Border
-  nvgBeginPath(s->vg);
-  nvgRoundedRect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, 20);
+  NVGcolor color = COLOR_WHITE_ALPHA(100);
   if (is_set_over_limit) {
-    nvgStrokeColor(s->vg, COLOR_OCHRE);
+    color = COLOR_OCHRE;
   } else if (is_speedlim_valid && !s->is_ego_over_limit) {
-    nvgStrokeColor(s->vg, COLOR_WHITE);
+    color = COLOR_WHITE;
   } else if (is_speedlim_valid && s->is_ego_over_limit) {
-    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(20));
-  } else {
-    nvgStrokeColor(s->vg, COLOR_WHITE_ALPHA(100));
+    color = COLOR_WHITE_ALPHA(20);
   }
-  nvgStrokeWidth(s->vg, 10);
-  nvgStroke(s->vg);
+
+  void ui_draw_rect(vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
 
   // Draw "MAX" Text
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFaceId(s->vg,  s->font_sans_regular);
-  nvgFontSize(s->vg, 26*2.5);
-  if (is_cruise_set) {
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-  } else {
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
-  }
   const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
-  nvgText(s->vg, text_x, 148, "MAX", NULL);
-
+  ui_draw_text(s->vg, text_x, 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
   // Draw Speed Text
-  nvgFontFaceId(s->vg, s->font_sans_bold);
-  nvgFontSize(s->vg, 48*2.5);
   if (is_cruise_set) {
     snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", maxspeed_calc);
-    nvgFillColor(s->vg, COLOR_WHITE);
-    nvgText(s->vg, text_x, 242, maxspeed_str, NULL);
+    ui_draw_text(s->vg, text_x, 242, maxspeed_str, 48 * 2.5, COLOR_WHITE, s->font_sans_bold);
   } else {
-    nvgFontFaceId(s->vg, s->font_sans_semibold);
-    nvgFontSize(s->vg, 42*2.5);
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
-    nvgText(s->vg, text_x, 242, "N/A", NULL);
+    ui_draw_text(s->vg, text_x, 242, "N/A", 42*2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
   }
-
-}
+   }
 
 static void ui_draw_vision_speedlimit(UIState *s) {
   const UIScene *scene = &s->scene;
@@ -511,58 +522,34 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   int viz_speedlim_bdr = is_speedlim_valid ? 30 : 15;
 
   // Draw Background
-  nvgBeginPath(s->vg);
-  nvgRoundedRect(s->vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h, viz_speedlim_bdr);
+  NVGcolor color = COLOR_WHITE_ALPHA(100);
   if (is_speedlim_valid && s->is_ego_over_limit) {
-    nvgFillColor(s->vg, nvgRGBA(218, 111, 37, 180));
+    color = nvgRGBA(218, 111, 37, 180);
   } else if (is_speedlim_valid) {
-    nvgFillColor(s->vg, COLOR_WHITE);
-  } else {
-    nvgFillColor(s->vg, COLOR_WHITE_ALPHA(100));
+    color = COLOR_WHITE;
   }
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, iz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h, color, viz_speedlim_bdr);
 
   // Draw Border
   if (is_speedlim_valid) {
-    nvgStrokeWidth(s->vg, 10);
-    nvgStroke(s->vg);
-    nvgBeginPath(s->vg);
-    nvgRoundedRect(s->vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h, 20);
-    if (s->is_ego_over_limit) {
-      nvgStrokeColor(s->vg, COLOR_OCHRE);
-    } else if (is_speedlim_valid) {
-      nvgStrokeColor(s->vg, COLOR_WHITE);
-    }
+    ui_draw_rect(vg, viz_speedlim_x, viz_speedlim_y, viz_speedlim_w, viz_speedlim_h,
+                 s->is_ego_over_limit ? COLOR_OCHRE : COLOR_WHITE, 20, 10);
   }
-
+  const float text_x = viz_speedlim_x + viz_speedlim_w / 2;
+  const float text_y = viz_speedlim_y + (is_speedlim_valid ? 50 : 45);
   // Draw "Speed Limit" Text
-
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  nvgFontFaceId(s->vg, s->font_sans_semibold);
-  nvgFontSize(s->vg, 50);
-  nvgFillColor(s->vg, COLOR_BLACK);
-  if (is_speedlim_valid && s->is_ego_over_limit) {
-    nvgFillColor(s->vg, COLOR_WHITE);
-  }
-  const int text_x = viz_speedlim_x + viz_speedlim_w / 2;
-  nvgText(s->vg, text_x + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 50 : 45), "SMART", NULL);
-  nvgText(s->vg, text_x + (is_speedlim_valid ? 6 : 0), viz_speedlim_y + (is_speedlim_valid ? 90 : 85), "SPEED", NULL);
+  color = is_speedlim_valid && s->is_ego_over_limit ? COLOR_WHITE : COLOR_BLACK;
+  ui_draw_text(s->vg, text_x + (is_speedlim_valid ? 6 : 0), text_y, "SMART", 50, color, s->font_sans_semibold);
+  ui_draw_text(s->vg, text_x + (is_speedlim_valid ? 6 : 0), text_y + 40, "SPEED", 50, color, s->font_sans_semibold);
 
   // Draw Speed Text
-  nvgFontFaceId(s->vg, s->font_sans_bold);
-  nvgFontSize(s->vg, 48*2.5);
-  if (s->is_ego_over_limit) {
-    nvgFillColor(s->vg, COLOR_WHITE);
-  } else {
-    nvgFillColor(s->vg, COLOR_BLACK);
-  }
+  color = s->is_ego_over_limit ? COLOR_WHITE : COLOR_BLACK;
   if (is_speedlim_valid) {
     snprintf(speedlim_str, sizeof(speedlim_str), "%d", speedlim_calc);
-    nvgText(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), speedlim_str, NULL);
+    ui_draw_text(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), speedlim_str, 48*2.5, color, s->font_sans_bold);
   } else {
-    nvgFontFaceId(s->vg, s->font_sans_semibold);
-    nvgFontSize(s->vg, 42*2.5);
-    nvgText(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), "N/A", NULL);
+    ui_draw_text(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), "N/A", 42*2.5, color, s->font_sans_semibold);
   }
 }
 
@@ -586,20 +573,8 @@ static void ui_draw_vision_speed(UIState *s) {
     snprintf(speed_str, sizeof(speed_str), "%d", (int)(speed * 2.2369363 + 0.5));
   }
   const int text_x = viz_speed_x + viz_speed_w / 2;
-  nvgFontFaceId(s->vg, s->font_sans_bold);
-  nvgFontSize(s->vg, 96*2.5);
-  nvgFillColor(s->vg, COLOR_WHITE);
-  nvgText(s->vg, text_x, 240, speed_str, NULL);
-
-  nvgFontFaceId(s->vg,  s->font_sans_regular);
-  nvgFontSize(s->vg, 36*2.5);
-  nvgFillColor(s->vg, COLOR_WHITE_ALPHA(200));
-
-  if (s->is_metric) {
-    nvgText(s->vg, text_x, 320, "kph", NULL);
-  } else {
-    nvgText(s->vg, text_x, 320, "mph", NULL);
-  }
+  ui_draw_text(s->vg, text_x, 240, speed_str, 96*2.5, COLOR_WHITE, s->font_sans_bold);
+  ui_draw_text(s->vg, text_x, 320, s->is_metric?"kph":"mph", 36*2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
 }
 
 static void ui_draw_vision_event(UIState *s) {
@@ -695,38 +670,23 @@ static void ui_draw_driver_view(UIState *s) {
 
   // blackout
   if (!scene->is_rhd) {
-    nvgBeginPath(s->vg);
     NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x + valid_frame_w,
                           box_y,
                           valid_frame_x + box_h / 2, box_y,
                           nvgRGBAf(0,0,0,1), nvgRGBAf(0,0,0,0));
-    nvgFillPaint(s->vg, gradient);
-    nvgRect(s->vg, valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h);
-    nvgFill(s->vg);
+    ui_draw_rect(s->vg, valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, gradient);
   } else {
-    nvgBeginPath(s->vg);
     NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x,
                           box_y,
                           valid_frame_w - box_h / 2, box_y,
                           nvgRGBAf(0,0,0,1), nvgRGBAf(0,0,0,0));
-    nvgFillPaint(s->vg, gradient);
-    nvgRect(s->vg, valid_frame_x, box_y, valid_frame_w - box_h / 2, box_h);
-    nvgFill(s->vg);
+    ui_draw_rect(s->vg, valid_frame_x, box_y, valid_frame_w - box_h / 2, box_h, gradient);
   }
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, scene->is_rhd ? valid_frame_x:valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h);
-  nvgFillColor(s->vg, COLOR_BLACK_ALPHA(144));
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
 
   // borders
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h);
-  nvgFillColor(s->vg, nvgRGBA(23,51,73,255));
-  nvgFill(s->vg);
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h);
-  nvgFillColor(s->vg, nvgRGBA(23,51,73,255));
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h, nvgRGBA(23, 51, 73, 255));
+  ui_draw_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
 
   // draw face box
   if (scene->face_prob > 0.4) {
@@ -738,17 +698,11 @@ static void ui_draw_driver_view(UIState *s) {
       fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     }
     if (abs(scene->face_x) <= 0.35 && abs(scene->face_y) <= 0.4) {
-      nvgBeginPath(s->vg);
-      nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
-      nvgStrokeColor(s->vg, nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((abs(scene->face_x) > abs(scene->face_y) ? abs(scene->face_x):abs(scene->face_y))) * 0.6 / 0.375));
-      nvgStrokeWidth(s->vg, 10);
-      nvgStroke(s->vg);
+      ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2,
+                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((abs(scene->face_x) > abs(scene->face_y) ? abs(scene->face_x) : abs(scene->face_y))) * 0.6 / 0.375),
+                   35, 10);
     } else {
-      nvgBeginPath(s->vg);
-      nvgRoundedRect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, 35);
-      nvgStrokeColor(s->vg, nvgRGBAf(1.0, 1.0, 1.0, 0.2));
-      nvgStrokeWidth(s->vg, 10);
-      nvgStroke(s->vg);
+      ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 35, 10);
     }
   } else {
     ;
@@ -784,14 +738,11 @@ static void ui_draw_vision_header(UIState *s) {
   int ui_viz_rx = scene->ui_viz_rx;
   int ui_viz_rw = scene->ui_viz_rw;
 
-  nvgBeginPath(s->vg);
   NVGpaint gradient = nvgLinearGradient(s->vg, ui_viz_rx,
                         (box_y+(header_h-(header_h/2.5))),
                         ui_viz_rx, box_y+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
-  nvgFillPaint(s->vg, gradient);
-  nvgRect(s->vg, ui_viz_rx, box_y, ui_viz_rw, header_h);
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, ui_viz_rx, box_y, ui_viz_rw, header_h, gradient);
 
   ui_draw_vision_maxspeed(s);
 
@@ -833,32 +784,20 @@ void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
   const int alr_h = alr_s+(va_size==ALERTSIZE_NONE?0:bdr_s);
   const int alr_y = vwp_h-alr_h;
 
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, alr_x, alr_y, alr_w, alr_h);
-  nvgFillColor(s->vg, nvgRGBA(color[0],color[1],color[2],(color[3]*s->alert_blinking_alpha)));
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, nvgRGBA(color[0],color[1],color[2],(color[3]*s->alert_blinking_alpha)));
 
-  nvgBeginPath(s->vg);
   NVGpaint gradient = nvgLinearGradient(s->vg, alr_x, alr_y, alr_x, alr_y+alr_h,
                         nvgRGBAf(0.0,0.0,0.0,0.05), nvgRGBAf(0.0,0.0,0.0,0.35));
-  nvgFillPaint(s->vg, gradient);
-  nvgRect(s->vg, alr_x, alr_y, alr_w, alr_h);
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, gradient);
 
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
   if (va_size == ALERTSIZE_SMALL) {
-    nvgFontFaceId(s->vg, s->font_sans_semibold);
-    nvgFontSize(s->vg, 40*2.5);
-    nvgText(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, va_text1, NULL);
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, va_text1, 40*2.5, COLOR_WHITE, s->font_sans_semibold);
   } else if (va_size== ALERTSIZE_MID) {
-    nvgFontFaceId(s->vg, s->font_sans_bold);
-    nvgFontSize(s->vg, 48*2.5);
-    nvgText(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, va_text1, NULL);
-    nvgFontFaceId(s->vg,  s->font_sans_regular);
-    nvgFontSize(s->vg, 36*2.5);
-    nvgText(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, va_text2, NULL);
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, va_text1, 48*2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, va_text2, 36*2.5, COLOR_WHITE, s->font_sans_regular);
   } else if (va_size== ALERTSIZE_FULL) {
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
     nvgFontFaceId(s->vg, s->font_sans_bold);
