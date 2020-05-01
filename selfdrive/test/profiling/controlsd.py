@@ -28,4 +28,4 @@ if __name__ == "__main__":
     except ReplayDone:
       pass
 
-  pyprof2calltree.convert(pr.getstats(), 'controlsd.kgrind')
+  pyprof2calltree.convert(pr.getstats(), 'cachegrind.out.controlsd')
