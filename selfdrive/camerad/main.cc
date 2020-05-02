@@ -18,6 +18,7 @@
 #include "common/visionipc.h"
 #include "common/visionbuf.h"
 #include "common/visionimg.h"
+#include "common/messagehelp.h"
 
 #include "messaging.hpp"
 
@@ -202,33 +203,21 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      Message *msg_dmon = dmonstate_sock->receive(true);
-      if (msg_dmon != NULL) {
-        auto amsg = kj::heapArray<capnp::word>((msg_dmon->getSize() / sizeof(capnp::word)) + 1);
-        memcpy(amsg.begin(), msg_dmon->getData(), msg_dmon->getSize());
-
-        capnp::FlatArrayMessageReader cmsg(amsg);
-        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-        s->rhd_front = event.getDMonitoringState().getIsRHD();
-        s->rhd_front_checked = event.getDMonitoringState().getRhdChecked();
-
-        delete msg_dmon;
+      MessageReader amsg = dmonstate_sock->receive(true);
+      if (amsg) {
+        auto state = amsg.getEvent().getDMonitoringState();
+        s->rhd_front = state.getIsRHD();
+        s->rhd_front_checked = state.getRhdChecked();
       }
     }
 
-    Message *msg = monitoring_sock->receive(true);
-    if (msg != NULL) {
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-      float face_prob = event.getDriverState().getFaceProb();
+    MessageReader amsg = monitoring_sock->receive(true);
+    if (amsg) {
+      auto state = amsg.getEvent().getDriverState();
+      float face_prob = state.getFaceProb();
       float face_position[2];
-      face_position[0] = event.getDriverState().getFacePosition()[0];
-      face_position[1] = event.getDriverState().getFacePosition()[1];
+      face_position[0] = state.getFacePosition()[0];
+      face_position[1] = state.getFacePosition()[1];
 
       // set front camera metering target
       if (face_prob > 0.4)
@@ -246,8 +235,6 @@ void* frontview_thread(void *arg) {
         s->front_meteringbox_xmin = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
         s->front_meteringbox_xmax = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
-
-      delete msg;
     }
 
     // auto exposure
