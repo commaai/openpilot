@@ -531,9 +531,8 @@ static void ui_draw_vision_speed(UIState *s) {
 }
 
 static void ui_draw_vision_event(UIState *s) {
-  const UIScene *scene = &s->scene;
   const int viz_event_w = 220;
-  const int viz_event_x = ((scene->ui_viz_rx + scene->ui_viz_rw) - (viz_event_w + (bdr_s*2)));
+  const int viz_event_x = ((s->scene.ui_viz_rx + s->scene.ui_viz_rw) - (viz_event_w + (bdr_s*2)));
   const int viz_event_y = (box_y + (bdr_s*1.5));
   if (s->scene.decel_for_model && s->scene.engaged) {
     // draw winding road sign
