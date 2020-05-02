@@ -40,7 +40,7 @@ else:
     __excepthook__ = sys.excepthook
     def handle_exception(*exc_info):
       if exc_info[0] not in (KeyboardInterrupt, SystemExit):
-        capture_exception(exc_info=exc_info)
+        capture_exception()
       __excepthook__(*exc_info)
     sys.excepthook = handle_exception
 

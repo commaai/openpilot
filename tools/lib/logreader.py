@@ -4,10 +4,8 @@ import sys
 import json
 import bz2
 import tempfile
-import requests
 import subprocess
 import urllib.parse
-from aenum import Enum
 import capnp
 import numpy as np
 

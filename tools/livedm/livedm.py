@@ -23,7 +23,7 @@ if __name__ == "__main__":
   poller = messaging.Poller()
 
   m = 'driverMonitoring'
-  sock = messaging.sub_sock(m, poller, addr=args.addr)
+  messaging.sub_sock(m, poller, addr=args.addr)
 
   pygame.init()
   pygame.display.set_caption('livedm')

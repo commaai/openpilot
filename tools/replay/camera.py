@@ -6,18 +6,11 @@ os.environ['BASEDIR'] = BASEDIR
 SCALE = float(os.getenv("SCALE", 1.0))
 
 import argparse
-import zmq
 import pygame
 import numpy as np
 import cv2
 import sys
-import traceback
-from collections import namedtuple
-from cereal import car
-from common.params import Params
 from tools.lib.lazy_property import lazy_property
-from cereal.messaging import sub_sock, recv_one_or_none, recv_one
-from cereal.services import service_list
 import cereal.messaging as messaging
 
 _BB_OFFSET = 0, 0
@@ -33,8 +26,6 @@ def pygame_modules_have_loaded():
 
 
 def ui_thread(addr, frame_address):
-  context = zmq.Context.instance()
-
   pygame.init()
   pygame.font.init()
   assert pygame_modules_have_loaded()

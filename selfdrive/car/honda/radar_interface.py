@@ -20,8 +20,7 @@ def _create_nidec_can_parser():
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
-    # radar
-    self.pts = {}
+    super().__init__(CP)
     self.track_id = 0
     self.radar_fault = False
     self.radar_wrong_config = False

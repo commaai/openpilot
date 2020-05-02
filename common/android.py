@@ -135,8 +135,6 @@ def get_network_strength(network_type):
   # from SignalStrength.java
   def get_lte_level(rsrp, rssnr):
     INT_MAX = 2147483647
-    lvl_rsrp = NetworkStrength.unknown
-    lvl_rssnr = NetworkStrength.unknown
     if rsrp == INT_MAX:
       lvl_rsrp = NetworkStrength.unknown
     elif rsrp >= -95:
@@ -174,7 +172,6 @@ def get_network_strength(network_type):
     return lvl
 
   def get_gsm_level(asu):
-    lvl = NetworkStrength.unknown
     if asu <= 2 or asu == 99:
       lvl = NetworkStrength.unknown
     elif asu >= 12:

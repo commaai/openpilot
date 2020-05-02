@@ -2,8 +2,7 @@
 import os
 import argparse
 import signal
-from collections import deque, defaultdict
-from statistics import mean
+from collections import defaultdict
 
 import cereal.messaging as messaging
 
