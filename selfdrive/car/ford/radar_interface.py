@@ -19,12 +19,9 @@ def _create_radar_can_parser(car_fingerprint):
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
-    # radar
-    self.pts = {}
+    super().__init__(CP)
     self.validCnt = {key: 0 for key in RADAR_MSGS}
     self.track_id = 0
-
-    self.delay = 0  # Delay of radar
 
     self.rcp = _create_radar_can_parser(CP.carFingerprint)
     self.trigger_msg = 0x53f

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2016, Comma.ai, Inc.
 
-import sys
 import re
 import binascii
 
@@ -63,25 +62,4 @@ def simple_gen(of, config_record, w, h, framedata):
     + ebml_element(0xE7, ben(0)) # TimeCode, uint, milliseconds
     # + ebml_element(0xA7, ben(0)) # Position, uint
     + ''.join(blocks)))
-
-if __name__ == "__main__":
-  import random
-
-  if len(sys.argv) != 2:
-    print("usage: %s mkvpath" % sys.argv[0])
-  with open(sys.argv[1], "rb") as f:
-    cr, index = mkvindex(f)
-
-  # cr = "280000003002000030010000010018004646563100cb070000000000000000000000000000000000".decode("hex")
-
-  def geti(i):
-    pos, length = index[i]
-    with open(sys.argv[1], "rb") as f:
-      f.seek(pos)
-      return f.read(length)
-
-  dats = [geti(random.randrange(200)) for _ in xrange(30)]
-
-  with open("tmpout.mkv", "wb") as of:
-    simple_gen(of, cr, dats)
 

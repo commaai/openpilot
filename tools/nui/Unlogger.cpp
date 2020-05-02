@@ -15,7 +15,11 @@
 
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
-  clock_gettime(CLOCK_BOOTTIME, &t);
+  #ifdef __APPLE__
+    clock_gettime(CLOCK_REALTIME, &t);
+  #else
+    clock_gettime(CLOCK_BOOTTIME, &t);
+  #endif
   return t.tv_sec * 1000000000ULL + t.tv_nsec;
 }
 

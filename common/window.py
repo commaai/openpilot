@@ -1,6 +1,5 @@
 import sys
 import pygame
-from pygame.locals import *
 
 class Window():
   def __init__(self, w, h, caption="window", double=False):
