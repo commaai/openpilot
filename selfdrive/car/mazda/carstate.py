@@ -14,11 +14,9 @@ class CarState(CarStateBase):
 
     self.cruise_speed = 0
     self.acc_active_last = False
-    self.speed_kph = 0
-    self.lkas_speed_lock = False
     self.low_speed_lockout = True
-    self.low_speed_lockout_last = True
-    self.acc_press_update = False
+    self.low_speed_alert = False
+    self.lkas_on = False
 
   def update(self, cp, cp_cam):
 
@@ -29,9 +27,9 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]['RR'] * CV.KPH_TO_MS
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < 0.01
+    ret.standstill = ret.vEgoRaw < .1
 
-    self.speed_kph =  ret.vEgoRaw  // CV.KPH_TO_MS
+    speed_kph =  ret.vEgoRaw  // CV.KPH_TO_MS
 
     can_gear = int(cp.vl["GEAR"]['GEAR'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
@@ -64,17 +62,11 @@ class CarState(CarStateBase):
     handsoff = cp.vl["STEER_RATE"]['HANDS_OFF_5_SECONDS'] == 1
 
     # LKAS is enabled at 50kph going up and disabled at 45kph going down
-    if self.speed_kph > LKAS_LIMITS.ENABLE_SPEED and self.low_speed_lockout:
-      self.low_speed_lockout = False
-    elif self.speed_kph < LKAS_LIMITS.DISABLE_SPEED and not self.low_speed_lockout:
-      self.low_speed_lockout = True
 
-    if (self.low_speed_lockout or block) and self.speed_kph < LKAS_LIMITS.DISABLE_SPEED:
-        if not self.lkas_speed_lock:
-          self.lkas_speed_lock = True
-    elif self.lkas_speed_lock:
-      self.lkas_speed_lock = False
-
+    if speed_kph > LKAS_LIMITS.ENABLE_SPEED:
+      self.lkas_on = True
+    elif speed_kph < LKAS_LIMITS.DISABLE_SPEED and block:
+      self.lkas_on = False
 
     # if any of the cruize buttons is pressed force state update
     if any([cp.vl["CRZ_BTNS"]['RES'],
@@ -82,29 +74,30 @@ class CarState(CarStateBase):
                 cp.vl["CRZ_BTNS"]['SET_M']]):
       self.acc_active = True
       self.cruise_speed = ret.vEgoRaw
-      if self.low_speed_lockout_last:
-        self.acc_press_update = True
-    elif self.acc_press_update:
-      self.acc_press_update = False
 
     ret.cruiseState.available = cp.vl["CRZ_CTRL"]['CRZ_ACTIVE'] == 1
     if not ret.cruiseState.available:
       self.acc_active = False
 
-    if self.acc_active != self.acc_active_last:
-      self.acc_active_last = self.acc_active
-
     ret.cruiseState.enabled = self.acc_active
+    ret.cruiseState.speed = self.cruise_speed
 
-    if ret.cruiseState.enabled:
-      ret.cruiseState.speed = self.cruise_speed
-      if self.lkas_speed_lock or handsoff:
+    if self.acc_active:
+      if not self.lkas_on:
+        if not self.acc_active_last:
+          self.acc_active = False
+          self.low_speed_lockout = True
+        else:
+          self.low_speed_alert = True
+      else:
+        self.low_speed_lockout = False
+        self.low_speed_alert = False
+
+      if handsoff:
         ret.steerWarning = True
-    else:
-      ret.cruiseState.speed = 0
 
+    self.acc_active_last = self.acc_active
 
-    self.low_speed_lockout_last = self.low_speed_lockout
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     self.steerError = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1

@@ -77,8 +77,9 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.low_speed_lockout:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
-      if ret.cruiseState.enabled:
-        ret.cruiseState.enabled = False
+
+    if self.CS.low_speed_alert:
+      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
 
