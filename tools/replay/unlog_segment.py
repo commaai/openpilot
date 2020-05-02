@@ -19,11 +19,11 @@ def input_ready():
   return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
 
 
-def replay(route, segment):
+def replay(route, loop):
   route = route.replace('|', '/')
 
-  lr = LogReader(f"cd:/{route}/{segment}/rlog.bz2")
-  fr = FrameReader(f"cd:/{route}/{segment}/fcamera.hevc", readahead=True)
+  lr = LogReader(f"cd:/{route}/rlog.bz2")
+  fr = FrameReader(f"cd:/{route}/fcamera.hevc", readahead=True)
 
   # Build mapping from frameId to segmentId from encodeIdx, type == fullHEVC
   msgs = [m for m in lr if m.which() not in IGNORE]
@@ -53,7 +53,12 @@ def replay(route, segment):
 
     if w not in socks:
       socks[w] = messaging.pub_sock(w)
-    socks[w].send(msg.to_bytes())
+
+    try:
+      if socks[w]:
+        socks[w].send(msg.to_bytes())
+    except messaging.messaging_pyx.MultiplePublishersError:
+      socks[w] = None
 
     lag += (next_msg.logMonoTime - msg.logMonoTime) / 1e9
     lag -= time.time() - start_time
@@ -80,20 +85,20 @@ def replay(route, segment):
       new_time = msgs[i].logMonoTime + dt * 1e9
       i = bisect.bisect_left(times, new_time)
 
-    i = min(i + 1, max_i)
+    i = (i + 1) % max_i if loop else min(i + 1, max_i)
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument("route")
-  parser.add_argument("segment", type=int)
+  parser.add_argument("--loop", action='store_true')
+  parser.add_argument("segment")
   args = parser.parse_args()
 
   orig_settings = termios.tcgetattr(sys.stdin)
   tty.setcbreak(sys.stdin)
 
   try:
-    replay(args.route, args.segment)
+    replay(args.segment, args.loop)
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
   except:
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)

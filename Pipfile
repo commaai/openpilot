@@ -70,6 +70,8 @@ aiohttp = "*"
 lru-dict = "*"
 scikit-image = "*"
 pygame = "==2.0.0.dev6"
+pprofile = "*"
+pyprof2calltree = "*"
 
 [packages]
 atomicwrites = "*"
