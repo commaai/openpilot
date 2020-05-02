@@ -23,7 +23,7 @@
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "messaging.hpp"
-#include "cereal/gen/c/log.capnp.h"
+#include "cereal/gen/cpp/log.capnp.h"
 
 #include "sound.hpp"
 
@@ -148,8 +148,8 @@ typedef struct UIScene {
   int front_box_x, front_box_y, front_box_width, front_box_height;
 
   uint64_t alert_ts;
-  char alert_text1[1024];
-  char alert_text2[1024];
+  std::string alert_text1;
+  std::string alert_text2;
   uint8_t alert_size;
   float alert_blinkingrate;
 
@@ -158,14 +158,14 @@ typedef struct UIScene {
   // Used to show gps planner status
   bool gps_planner_active;
 
-  uint8_t networkType;
-  uint8_t networkStrength;
+  cereal::ThermalData::NetworkType networkType;
+  cereal::ThermalData::NetworkStrength networkStrength;
   int batteryPercent;
-  char batteryStatus[64];
+  bool batteryStatus;
   float freeSpace;
-  uint8_t thermalStatus;
+  cereal::ThermalData::ThermalStatus thermalStatus;
   int paTemp;
-  int hwType;
+  cereal::HealthData::HwType hwType;
   int satelliteCount;
   uint8_t athenaStatus;
 } UIScene;
@@ -227,7 +227,7 @@ typedef struct UIState {
   Poller * poller;
   Poller * ublox_poller;
 
-  int active_app;
+  cereal::UiLayoutState::App active_app;
 
   // vision state
   bool vision_connected;

@@ -737,7 +737,7 @@ static void ui_draw_vision(UIState *s) {
   if (scene->alert_size != ALERTSIZE_NONE) {
     // Controls Alerts
     ui_draw_vision_alert(s, scene->alert_size, s->status,
-                            scene->alert_text1, scene->alert_text2);
+                            scene->alert_text1.c_str(), scene->alert_text2.c_str());
   } else {
     if (!scene->frontview){ui_draw_vision_footer(s);}
   }

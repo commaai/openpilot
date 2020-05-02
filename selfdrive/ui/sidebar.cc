@@ -9,14 +9,14 @@ static void ui_draw_sidebar_background(UIState *s) {
 }
 
 static void ui_draw_sidebar_settings_button(UIState *s) {
-  bool settingsActive = s->active_app == cereal_UiLayoutState_App_settings;
+  bool settingsActive = s->active_app == cereal::UiLayoutState::App::SETTINGS;
   const int settings_btn_xr = !s->scene.uilayout_sidebarcollapsed ? settings_btn_x : -(sbr_w);
 
   ui_draw_image(s->vg, settings_btn_xr, settings_btn_y, settings_btn_w, settings_btn_h, s->img_button_settings, settingsActive ? 1.0f : 0.65f);
 }
 
 static void ui_draw_sidebar_home_button(UIState *s) {
-  bool homeActive = s->active_app == cereal_UiLayoutState_App_home;
+  bool homeActive = s->active_app == cereal::UiLayoutState::App::HOME;
   const int home_btn_xr = !s->scene.uilayout_sidebarcollapsed ? home_btn_x : -(sbr_w);
 
   ui_draw_image(s->vg, home_btn_xr, home_btn_y, home_btn_w, home_btn_h, s->img_button_home, homeActive ? 1.0f : 0.65f);
@@ -27,8 +27,8 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
   const int network_img_w = 176;
   const int network_img_x = !s->scene.uilayout_sidebarcollapsed ? 58 : -(sbr_w);
   const int network_img_y = 196;
-  const int network_img = s->scene.networkType == cereal_ThermalData_NetworkType_none ?
-                          s->img_network[0] : s->img_network[s->scene.networkStrength + 1];
+  const int network_img = s->scene.networkType == cereal::ThermalData::NetworkType::NONE ?
+                          s->img_network[0] : s->img_network[(int)s->scene.networkStrength + 1];
 
   ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, network_img, 1.0f);
 }
@@ -56,8 +56,8 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   const char *network_types[6] = {"--", "WiFi", "2G", "3G", "4G", "5G"};
   char network_type_str[32];
 
-  if (s->scene.networkType <= 5) {
-    snprintf(network_type_str, sizeof(network_type_str), "%s", network_types[s->scene.networkType]);
+  if ((int)s->scene.networkType <= 5) {
+    snprintf(network_type_str, sizeof(network_type_str), "%s", network_types[(int)s->scene.networkType]);
   }
 
   nvgFillColor(s->vg, COLOR_WHITE);
@@ -119,13 +119,13 @@ static void ui_draw_sidebar_temp_metric(UIState *s) {
   char temp_value_unit[32];
   const int temp_y_offset = 0;
 
-  if (s->scene.thermalStatus == cereal_ThermalData_ThermalStatus_green) {
+  if (s->scene.thermalStatus == cereal::ThermalData::ThermalStatus::GREEN) {
     temp_severity = 0;
-  } else if (s->scene.thermalStatus == cereal_ThermalData_ThermalStatus_yellow) {
+  } else if (s->scene.thermalStatus == cereal::ThermalData::ThermalStatus::YELLOW) {
     temp_severity = 1;
-  } else if (s->scene.thermalStatus == cereal_ThermalData_ThermalStatus_red) {
+  } else if (s->scene.thermalStatus == cereal::ThermalData::ThermalStatus::RED) {
     temp_severity = 2;
-  } else if (s->scene.thermalStatus == cereal_ThermalData_ThermalStatus_danger) {
+  } else if (s->scene.thermalStatus == cereal::ThermalData::ThermalStatus::DANGER) {
     temp_severity = 3;
   }
 
