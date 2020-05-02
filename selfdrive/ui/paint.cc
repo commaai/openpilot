@@ -94,6 +94,21 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgFill(s->vg);
 }
 
+static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int image, NVGcolor color, float img_alpha, int img_y = 0) {
+  const int img_size = size * 1.5;
+  nvgBeginPath(vg);
+  nvgCircle(vg, x, y + (bdr_s * 1.5), size);
+  nvgFillColor(vg, color);
+  nvgFill(vg);
+  ui_draw_image(vg, x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size, image, img_alpha);
+}
+
+static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int image, bool active) {
+  float bg_alpha = active ? 0.3f : 0.1f;
+  float img_alpha = active ? 1.0f : 0.15f;
+  ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
+}
+
 static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
   // Draw lead car indicator
   float fillAlpha = 0;
@@ -603,13 +618,9 @@ static void ui_draw_vision_speed(UIState *s) {
 }
 
 static void ui_draw_vision_event(UIState *s) {
-  const UIScene *scene = &s->scene;
-  const int ui_viz_rx = scene->ui_viz_rx;
-  const int ui_viz_rw = scene->ui_viz_rw;
   const int viz_event_w = 220;
-  const int viz_event_x = ((ui_viz_rx + ui_viz_rw) - (viz_event_w + (bdr_s*2)));
+  const int viz_event_x = ((s->scene.ui_viz_rx + s->scene.ui_viz_rw) - (viz_event_w + (bdr_s*2)));
   const int viz_event_y = (box_y + (bdr_s*1.5));
-  const int viz_event_h = (header_h - (bdr_s*1.5));
   if (s->scene.decel_for_model && s->scene.engaged) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
@@ -619,70 +630,30 @@ static void ui_draw_vision_event(UIState *s) {
     const int bg_wheel_size = 96;
     const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
     const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
-    const int img_wheel_size = bg_wheel_size*1.5;
-    const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
-    const int img_wheel_y = bg_wheel_y-25;
-    float img_wheel_alpha = 0.1f;
-    bool is_engaged = (s->status == STATUS_ENGAGED);
-    bool is_warning = (s->status == STATUS_WARNING);
-    bool is_engageable = scene->engageable;
-    if (is_engaged || is_warning || is_engageable) {
-      nvgBeginPath(s->vg);
-      nvgCircle(s->vg, bg_wheel_x, (bg_wheel_y + (bdr_s*1.5)), bg_wheel_size);
-      if (is_engaged) {
-        nvgFillColor(s->vg, nvgRGBA(23, 134, 68, 255));
-      } else if (is_warning) {
-        nvgFillColor(s->vg, COLOR_OCHRE);
-      } else if (is_engageable) {
-        nvgFillColor(s->vg, nvgRGBA(23, 51, 73, 255));
-      }
-      nvgFill(s->vg);
-      img_wheel_alpha = 1.0f;
+    NVGcolor color = COLOR_BLACK_ALPHA(0);
+    if (s->status == STATUS_ENGAGED) {
+      color = nvgRGBA(23, 134, 68, 255);
+    } else if (s->status == STATUS_WARNING) {
+      color = COLOR_OCHRE;
+    } else if (s->scene.engageable) {
+      color = nvgRGBA(23, 51, 73, 255);
     }
-    ui_draw_image(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size, s->img_wheel, img_wheel_alpha);
+    ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
   }
 }
 
 static void ui_draw_vision_map(UIState *s) {
-  const UIScene *scene = &s->scene;
   const int map_size = 96;
-  const int map_x = (scene->ui_viz_rx + (map_size * 3) + (bdr_s * 3));
+  const int map_x = (s->scene.ui_viz_rx + (map_size * 3) + (bdr_s * 3));
   const int map_y = (footer_y + ((footer_h - map_size) / 2));
-  const int map_img_size = (map_size * 1.5);
-  const int map_img_x = (map_x - (map_img_size / 2));
-  const int map_img_y = (map_y - (map_size / 4));
-
-  bool map_valid = s->scene.map_valid;
-  float map_img_alpha = map_valid ? 1.0f : 0.15f;
-  float map_bg_alpha = map_valid ? 0.3f : 0.1f;
-  NVGcolor map_bg = nvgRGBA(0, 0, 0, (255 * map_bg_alpha));
-
-  nvgBeginPath(s->vg);
-  nvgCircle(s->vg, map_x, (map_y + (bdr_s * 1.5)), map_size);
-  nvgFillColor(s->vg, map_bg);
-  nvgFill(s->vg);
-
-  ui_draw_image(s->vg, map_img_x, map_img_y, map_img_size, map_img_size, s->img_map, map_img_alpha);
+  ui_draw_circle_image(s->vg, map_x, map_y, map_size, s->img_map, s->scene.map_valid);
 }
 
 static void ui_draw_vision_face(UIState *s) {
-  const UIScene *scene = &s->scene;
   const int face_size = 96;
-  const int face_x = (scene->ui_viz_rx + face_size + (bdr_s * 2));
+  const int face_x = (s->scene.ui_viz_rx + face_size + (bdr_s * 2));
   const int face_y = (footer_y + ((footer_h - face_size) / 2));
-  const int face_img_size = (face_size * 1.5);
-  const int face_img_x = (face_x - (face_img_size / 2));
-  const int face_img_y = (face_y - (face_size / 4));
-  float face_img_alpha = scene->monitoring_active ? 1.0f : 0.15f;
-  float face_bg_alpha = scene->monitoring_active ? 0.3f : 0.1f;
-  NVGcolor face_bg = nvgRGBA(0, 0, 0, (255 * face_bg_alpha));
-
-  nvgBeginPath(s->vg);
-  nvgCircle(s->vg, face_x, (face_y + (bdr_s * 1.5)), face_size);
-  nvgFillColor(s->vg, face_bg);
-  nvgFill(s->vg);
-
-  ui_draw_image(s->vg, face_img_x, face_img_y, face_img_size, face_img_size, s->img_face, face_img_alpha);
+  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.monitoring_active);
 }
 
 static void ui_draw_driver_view(UIState *s) {
@@ -758,25 +729,7 @@ static void ui_draw_driver_view(UIState *s) {
   const int face_size = 85;
   const int face_x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
   const int face_y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  const int face_img_size = (face_size * 1.5);
-  const int face_img_x = (face_x - (face_img_size / 2));
-  const int face_img_y = (face_y - (face_size / 4));
-  float face_img_alpha = scene->face_prob > 0.4 ? 1.0f : 0.15f;
-  float face_bg_alpha = scene->face_prob > 0.4 ? 0.3f : 0.1f;
-  NVGcolor face_bg = nvgRGBA(0, 0, 0, (255 * face_bg_alpha));
-  NVGpaint face_img = nvgImagePattern(s->vg, face_img_x, face_img_y,
-    face_img_size, face_img_size, 0, s->img_face, face_img_alpha);
-
-  nvgBeginPath(s->vg);
-  nvgCircle(s->vg, face_x, (face_y + (bdr_s * 1.5)), face_size);
-  nvgFillColor(s->vg, face_bg);
-  nvgFill(s->vg);
-
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, face_img_x, face_img_y, face_img_size, face_img_size);
-  nvgFillPaint(s->vg, face_img);
-  nvgFill(s->vg);
-
+  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, scene->face_prob > 0.4);
 }
 
 static void ui_draw_vision_header(UIState *s) {
