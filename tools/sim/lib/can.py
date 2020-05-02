@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import time
 import cereal.messaging as messaging
 from opendbc.can.parser import CANParser
 from opendbc.can.packer import CANPacker

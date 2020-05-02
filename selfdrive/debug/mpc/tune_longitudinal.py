@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
-import math
 
 # plot liongitudinal MPC trajectory by defining boundary conditions:
 # ego and lead vehicles state. Use this script to tune MPC costs
