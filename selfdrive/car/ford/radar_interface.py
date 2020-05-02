@@ -19,7 +19,7 @@ def _create_radar_can_parser(car_fingerprint):
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
-    super().__init__()
+    super().__init__(CP)
     self.validCnt = {key: 0 for key in RADAR_MSGS}
     self.track_id = 0
 
