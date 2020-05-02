@@ -40,7 +40,7 @@ sound_file sound_table[] = {
 };
 
 sound_file* get_sound_file(AudibleAlert alert) {
-  for (sound_file *s = sound_table; s->alert != cereal_CarControl_HUDControl_AudibleAlert_none; s++) {
+  for (sound_file *s = sound_table; s->alert != cereal::CarControl::HUDControl::AudibleAlert::NONE; s++) {
     if (s->alert == alert) {
       return s;
     }
@@ -74,7 +74,7 @@ void ui_sound_init() {
   slplay_setup(&error);
   if (error) goto fail;
 
-  for (sound_file *s = sound_table; s->alert != cereal_CarControl_HUDControl_AudibleAlert_none; s++) {
+  for (sound_file *s = sound_table; s->alert != cereal::CarControl::HUDControl::AudibleAlert::NONE; s++) {
     slplay_create_player_for_uri(s->uri, &error);
     if (error) goto fail;
   }

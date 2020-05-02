@@ -1,5 +1,5 @@
-#include <assert.h>
 #include "ui.hpp"
+#include <assert.h>
 
 #include "common/util.h"
 
@@ -759,7 +759,7 @@ void ui_draw(UIState *s) {
   glViewport(0, 0, s->fb_w, s->fb_h);
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
-  if (s->started && s->active_app == cereal_UiLayoutState_App_none && s->status != STATUS_STOPPED && s->vision_seen) {
+  if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED && s->vision_seen) {
       ui_draw_vision(s);
   } 
   nvgEndFrame(s->vg);

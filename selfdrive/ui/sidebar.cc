@@ -39,8 +39,7 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
   const int battery_img_x = !s->scene.uilayout_sidebarcollapsed ? 160 : -(sbr_w);
   const int battery_img_y = 255;
 
-  int battery_img = strcmp(s->scene.batteryStatus, "Charging") == 0 ?
-    s->img_battery_charging : s->img_battery;
+  int battery_img = s->scene.batteryStatus ? s->img_battery_charging : s->img_battery;
 
   ui_draw_rect(s->vg, battery_img_x + 6, battery_img_y + 5,
                ((battery_img_w - 19) * (s->scene.batteryPercent * 0.01)), battery_img_h - 11, COLOR_WHITE);
@@ -142,7 +141,7 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
   char panda_message_str[32];
   const int panda_y_offset = 32 + 148;
 
-  if (s->scene.hwType == cereal_HealthData_HwType_unknown) {
+  if (s->scene.hwType == cereal::HealthData::HwType::UNKNOWN) {
     panda_severity = 2;
     snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO\nVEHICLE");
   } else {

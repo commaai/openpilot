@@ -1,6 +1,7 @@
 #ifndef _UI_H
 #define _UI_H
 
+#include "cereal/gen/cpp/log.capnp.h"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -14,7 +15,6 @@
 
 #include <capnp/serialize.h>
 #include <pthread.h>
-
 #include "nanovg.h"
 
 #include "common/mat.h"
@@ -23,8 +23,6 @@
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "messaging.hpp"
-#include "cereal/gen/cpp/log.capnp.h"
-
 #include "sound.hpp"
 
 #define STATUS_STOPPED 0
@@ -282,7 +280,7 @@ typedef struct UIState {
   bool limit_set_speed;
   float speed_lim_off;
   bool is_ego_over_limit;
-  char alert_type[64];
+  std::string alert_type;
   AudibleAlert alert_sound;
   int alert_size;
   float alert_blinking_alpha;

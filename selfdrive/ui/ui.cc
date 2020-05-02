@@ -1,3 +1,4 @@
+#include "ui.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -14,9 +15,7 @@
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
-
-#include "ui.hpp"
-#include "sound.hpp"
+#include "common/messagehelp.h"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -367,8 +366,8 @@ static void update_status(UIState *s, int status) {
   }
 }
 
-void handle_message(UIState *s,  MessageReader& reader) {
-  auto event = reader.getEvent();
+void handle_message(UIState *s,  MessageReader& msg) {
+  auto event = msg.getEvent();
   auto which = event.which();
   UIScene &scene = s->scene;
   if (which == cereal::Event::CONTROLS_STATE && s->started) {
@@ -383,8 +382,6 @@ void handle_message(UIState *s,  MessageReader& reader) {
     }
     scene.v_cruise = data.getVCruise();
     scene.v_ego = data.getVEgo();
-    scene.angleSteers = data.getAngleSteers();
-    scene.steerOverride= data.getSteerOverride();
     scene.curvature = data.getCurvature();
     scene.engaged = data.getEnabled();
     scene.engageable = data.getEngageable();
@@ -392,7 +389,6 @@ void handle_message(UIState *s,  MessageReader& reader) {
     scene.monitoring_active = data.getDriverMonitoringOn();
 
     scene.decel_for_model = data.getDecelForModel();
-    scene.angleSteersDes = data.getAngleSteersDes();
     auto alert_sound = data.getAlertSound();
     const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     if (alert_sound != s->alert_sound){
@@ -447,6 +443,7 @@ void handle_message(UIState *s,  MessageReader& reader) {
     scene.lead_d_rel2 = leaddatad2.getDRel();
     scene.lead_y_rel2 = leaddatad2.getYRel();
     scene.lead_v_rel2 = leaddatad2.getVRel();
+
     s->livempc_or_radarstate_changed = true;
   } else if (which == cereal::Event::LIVE_CALIBRATION) {
     scene.world_objects_visible = true;
@@ -463,7 +460,6 @@ void handle_message(UIState *s,  MessageReader& reader) {
     for (int i = 0; i < 50; i++){
       scene.mpc_x[i] = x_list[i];
     }
-
     auto y_list = data.getY();
     for (int i = 0; i < 50; i++){
       scene.mpc_y[i] = y_list[i];
@@ -487,11 +483,8 @@ void handle_message(UIState *s,  MessageReader& reader) {
     scene.freeSpace = data.getFreeSpace();
     scene.thermalStatus = data.getThermalStatus();
     scene.paTemp = data.getPa0();
-
+    
     s->thermal_started = data.getStarted();
-    scene.cpuPerc = data.getCpuPerc();
-    scene.bat_temp = int(data.getBat() / 1000);
-
   } else if (which == cereal::Event::UBLOX_GNSS) {
     auto data = event.getUbloxGnss();
     if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
@@ -540,12 +533,10 @@ static void check_messages(UIState *s) {
       break;
 
     for (auto sock : polls){
-      Message * msg = sock->receive();
-      if (msg == NULL) continue;
-
-      handle_message(s, msg);
-
-      delete msg;
+      MessageReader msg = sock->receive();
+      if (msg) {
+        handle_message(s, msg);
+      }
     }
   }
 }
@@ -859,8 +850,6 @@ int is_leon() {
   return strstr(str, "letv") != NULL;
 }
 
-
-
 int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
@@ -997,7 +986,7 @@ int main(int argc, char* argv[]) {
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      if (s->started && s->controls_seen && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
+      if (s->started && s->controls_seen && s->scene.alert_text2 != "Controls Unresponsive") {
         LOGE("Controls unresponsive");
         s->scene.alert_size = ALERTSIZE_FULL;
         update_status(s, STATUS_ALERT);
@@ -1005,7 +994,7 @@ int main(int argc, char* argv[]) {
         s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
         s->scene.alert_text2 = "Controls Unresponsive";
 
-        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1, s->scene.alert_text2);
+        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
 
         s->alert_sound_timeout = 2 * UI_FREQ;
         s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT;
