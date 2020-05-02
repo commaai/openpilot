@@ -10,7 +10,7 @@ try:  # bacause this crashes somtimes when running pipeline
   subprocess.check_output(["make", "-C", _visiond_dir, "-f",
                          os.path.join(_visiond_dir, "visiontest.mk"),
                          _libvisiontest])
-except:
+except Exception:
   pass
 
 class VisionTest():

@@ -11,12 +11,7 @@ import pygame
 import numpy as np
 import cv2
 import sys
-import traceback
-from collections import namedtuple
-from cereal import car
-from common.params import Params
 from tools.lib.lazy_property import lazy_property
-from cereal.messaging import sub_sock, recv_one_or_none, recv_one
 import cereal.messaging as messaging
 
 _BB_OFFSET = 0, 0
