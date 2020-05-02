@@ -5,11 +5,7 @@
 
 static void ui_draw_sidebar_background(UIState *s) {
   int sbr_x = !s->scene.uilayout_sidebarcollapsed ? 0 : -(sbr_w) + bdr_s * 2;
-
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, sbr_x, 0, sbr_w, vwp_h);
-  nvgFillColor(s->vg, COLOR_BLACK_ALPHA(85));
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, sbr_x, 0, sbr_w, vwp_h, COLOR_BLACK_ALPHA(85));
 }
 
 static void ui_draw_sidebar_settings_button(UIState *s) {
@@ -46,11 +42,8 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
   int battery_img = strcmp(s->scene.batteryStatus, "Charging") == 0 ?
     s->img_battery_charging : s->img_battery;
 
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, battery_img_x + 6, battery_img_y + 5,
-    ((battery_img_w - 19) * (s->scene.batteryPercent * 0.01)), battery_img_h - 11);
-  nvgFillColor(s->vg, COLOR_WHITE);
-  nvgFill(s->vg);
+  ui_draw_rect(s->vg, battery_img_x + 6, battery_img_y + 5,
+               ((battery_img_w - 19) * (s->scene.batteryPercent * 0.01)), battery_img_h - 11, COLOR_WHITE);
 
   ui_draw_image(s->vg, battery_img_x, battery_img_y, battery_img_w, battery_img_h, battery_img, 1.0f);
 }
@@ -90,11 +83,8 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
     status_color = COLOR_RED;
   }
 
-  nvgBeginPath(s->vg);
-  nvgRoundedRect(s->vg, metric_x, metric_y, metric_w, metric_h, 20);
-  nvgStrokeColor(s->vg, severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85));
-  nvgStrokeWidth(s->vg, 2);
-  nvgStroke(s->vg);
+  ui_draw_rect(s->vg, metric_x, metric_y, metric_w, metric_h,
+               severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 20, 2);
 
   nvgBeginPath(s->vg);
   nvgRoundedRectVarying(s->vg, metric_x + 6, metric_y + 6, 18, metric_h - 12, 25, 0, 0, 25);
