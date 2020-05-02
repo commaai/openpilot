@@ -182,7 +182,6 @@ class Localizer():
       initial_pose_ecef_quat = quat_from_euler(initial_pose_ecef)
       gps_speed = log.speed
       quat_uncertainty = 0.2**2
-      initial_pose_ecef_quat = quat_from_euler(initial_pose_ecef)
 
       initial_state = LiveKalman.initial_x
       initial_covs_diag = LiveKalman.initial_P_diag

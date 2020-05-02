@@ -92,13 +92,3 @@ def sendcan_function(sendcan):
 
   return (gas, brake, steer_torque)
 
-if __name__ == "__main__":
-  pm = messaging.PubMaster(['can'])
-  sendcan = messaging.sub_sock('sendcan')
-  idx = 0
-  while 1:
-    sendcan_function(sendcan)
-    can_function(pm, 10.0, idx)
-    time.sleep(0.01)
-    idx += 1
-

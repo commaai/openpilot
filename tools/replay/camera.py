@@ -17,7 +17,6 @@ from cereal import car
 from common.params import Params
 from tools.lib.lazy_property import lazy_property
 from cereal.messaging import sub_sock, recv_one_or_none, recv_one
-from cereal.services import service_list
 import cereal.messaging as messaging
 
 _BB_OFFSET = 0, 0
@@ -33,8 +32,6 @@ def pygame_modules_have_loaded():
 
 
 def ui_thread(addr, frame_address):
-  context = zmq.Context.instance()
-
   pygame.init()
   pygame.font.init()
   assert pygame_modules_have_loaded()
