@@ -26,6 +26,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/messagehelp.h"
 #include "messaging.hpp"
 
 #include <algorithm>
@@ -548,16 +549,12 @@ void can_send(SubSocket *subscriber) {
   int err;
 
   // recv from sendcan
-  Message * msg = subscriber->receive();
+  MessageReader amsg = subscriber->receive();
+  if (!amsg) return;
 
-  auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-  capnp::FlatArrayMessageReader cmsg(amsg);
-  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+  auto event = amsg.getEvent();
   if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
-    delete msg;
     return;
   }
   int msg_count = event.getSendcan().size();
@@ -578,14 +575,9 @@ void can_send(SubSocket *subscriber) {
     send[i*4+1] = cmsg.getDat().size() | (cmsg.getSrc() << 4);
     memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
   }
-
-  // release msg
-  delete msg;
-
   // send to board
   int sent;
   pthread_mutex_lock(&usb_lock);
-
 
   if (!fake_send) {
     do {
@@ -716,17 +708,10 @@ void *hardware_control_thread(void *crap) {
   while (!do_exit) {
     cnt++;
     for (auto sock : poller->poll(1000)){
-      Message * msg = sock->receive();
-      if (msg == NULL) continue;
+      MessageReader amsg = sock->receive();
+      if (!amsg) continue;
 
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      delete msg;
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
+      auto event = amsg.getEvent();
       auto type = event.which();
       if(type == cereal::Event::THERMAL){
         uint16_t fan_speed = event.getThermal().getFanSpeed();

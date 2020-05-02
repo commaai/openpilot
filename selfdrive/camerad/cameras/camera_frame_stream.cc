@@ -15,6 +15,7 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/messagehelp.h"
 #include "buffering.h"
 
 extern "C" {
@@ -61,15 +62,10 @@ void run_frame_stream(DualCameraState *s) {
   auto *tb = &rear_camera->camera_tb;
 
   while (!do_exit) {
-    Message * msg = recorder_sock->receive();
+    MessageReader amsg = recorder_sock->receive();
+    if (!amsg) continue;
 
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-    auto frame = event.getFrame();
-
+    auto frame = amsg.getEvent().getFrame();
     const int buf_idx = tbuffer_select(tb);
     rear_camera->camera_bufs_metadata[buf_idx] = {
       .frame_id = frame.getFrameId(),
@@ -94,8 +90,6 @@ void run_frame_stream(DualCameraState *s) {
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     tbuffer_dispatch(tb, buf_idx);
-    delete msg;
-
   }
   delete recorder_sock;
   delete context;
