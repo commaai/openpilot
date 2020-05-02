@@ -6,7 +6,6 @@ os.environ['BASEDIR'] = BASEDIR
 SCALE = float(os.getenv("SCALE", 1.0))
 
 import argparse
-import zmq
 import pygame
 import numpy as np
 import cv2

@@ -48,7 +48,7 @@ def _address_to_track(address):
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
-    super().__init__()
+    super().__init__(CP)
     self.rcp = _create_radar_can_parser()
     self.updated_messages = set()
     self.trigger_msg = LAST_MSG
