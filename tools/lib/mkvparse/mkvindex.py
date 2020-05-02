@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2016, Comma.ai, Inc.
 
-import sys
 import re
 import binascii
 
