@@ -352,9 +352,7 @@ static ModelData read_model(cereal::ModelData::Reader model) {
 
   auto leadd = model.getLead();
   d.lead = (LeadData){
-      .dist = leadd.getDist(),
-      .prob = leadd.getProb(),
-      .std = leadd.getStd(),
+      .dist = leadd.getDist(), .prob = leadd.getProb(), .std = leadd.getStd(),
   };
 
   return d;
@@ -375,9 +373,8 @@ void handle_message(UIState *s,  MessageReader& msg) {
 
     s->controls_timeout = 1 * UI_FREQ;
     scene.frontview = data.getRearViewCam();
-    if (!scene.frontview){
-      s->controls_seen = true;
-    }
+    if (!scene.frontview){ s->controls_seen = true; }
+
     if (data.getVCruise() != scene.v_cruise) {
       scene.v_cruise_update_ts = event.getLogMonoTime();
     }
@@ -460,16 +457,15 @@ void handle_message(UIState *s,  MessageReader& msg) {
     auto data = event.getLiveMpc();
 
     auto x_list = data.getX();
-    for (int i = 0; i < 50; i++){
-      scene.mpc_x[i] = x_list[i];
-    }
     auto y_list = data.getY();
     for (int i = 0; i < 50; i++){
+      scene.mpc_x[i] = x_list[i];
       scene.mpc_y[i] = y_list[i];
     }
     s->livempc_or_radarstate_changed = true;
   } else if (which == cereal::Event::UI_LAYOUT_STATE) {
     auto data = event.getUiLayoutState();
+
     s->active_app = data.getActiveApp();
     scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
     if (data.getMockEngaged() != scene.uilayout_mockengaged) {
