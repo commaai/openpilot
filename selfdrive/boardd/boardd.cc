@@ -312,7 +312,7 @@ void can_recv(PubSocket *publisher) {
   }
 
   // create message
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(start_time);
   size_t num_msg = recv / 0x10;
@@ -335,9 +335,7 @@ void can_recv(PubSocket *publisher) {
   }
 
   // send to can
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  publisher->send((char*)bytes.begin(), bytes.size());
+  msg.sendTo(publisher);
 }
 
 void can_health(PubSocket *publisher) {
@@ -366,7 +364,7 @@ void can_health(PubSocket *publisher) {
   } health;
 
   // create message
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   auto healthData = event.initHealth();
@@ -533,9 +531,7 @@ void can_health(PubSocket *publisher) {
     }
   }
   // send to health
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  publisher->send((char*)bytes.begin(), bytes.size());
+  msg.sendTo(publisher);
 
   // send heartbeat back to panda
   pthread_mutex_lock(&usb_lock);
@@ -852,16 +848,14 @@ void pigeon_init() {
 
 static void pigeon_publish_raw(PubSocket *publisher, unsigned char *dat, int alen) {
   // create message
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   auto ublox_raw = event.initUbloxRaw(alen);
   memcpy(ublox_raw.begin(), dat, alen);
 
   // send to ubloxRaw
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  publisher->send((char*)bytes.begin(), bytes.size());
+  msg.sendTo(publisher);
 }
 
 

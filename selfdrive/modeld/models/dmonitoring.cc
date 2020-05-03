@@ -2,6 +2,7 @@
 #include "dmonitoring.h"
 #include "common/mat.h"
 #include "common/timing.h"
+#include "common/messagehelp.h"
 
 // #include <fastcv.h>
 #include <libyuv.h>
@@ -146,7 +147,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 
 void dmonitoring_publish(PubSocket* sock, uint32_t frame_id, const DMonitoringResult res) {
   // make msg
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
 
@@ -167,10 +168,7 @@ void dmonitoring_publish(PubSocket* sock, uint32_t frame_id, const DMonitoringRe
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
 
-  // send message
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  sock->send((char*)bytes.begin(), bytes.size());
+  msg.sendTo(sock);
 }
 
 void dmonitoring_free(DMonitoringModelState* s) {

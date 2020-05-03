@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include "common/timing.h"
 #include "common/params.h"
+#include "common/messagehelp.h"
 #include "driving.h"
 
 
@@ -249,7 +250,7 @@ void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float 
 void model_publish(PubSocket *sock, uint32_t frame_id,
                    const ModelDataRaw net_outputs, uint64_t timestamp_eof) {
     // make msg
-    capnp::MallocMessageBuilder msg;
+    MessageBuilder msg;
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(nanos_since_boot());
   
@@ -292,16 +293,12 @@ void model_publish(PubSocket *sock, uint32_t frame_id,
     auto meta = framed.initMeta();
     fill_meta(meta, net_outputs.meta);
 
-
-    // send message
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    sock->send((char*)bytes.begin(), bytes.size());
+    msg.sendTo(sock);
   }
 
 void posenet_publish(PubSocket *sock, uint32_t frame_id,
                    const ModelDataRaw net_outputs, uint64_t timestamp_eof) {
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
 
@@ -331,7 +328,5 @@ void posenet_publish(PubSocket *sock, uint32_t frame_id,
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(frame_id);
 
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  sock->send((char*)bytes.begin(), bytes.size());
-  }
+  msg.sendTo(sock);
+}

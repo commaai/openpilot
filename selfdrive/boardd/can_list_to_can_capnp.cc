@@ -2,9 +2,11 @@
 #include <tuple>
 #include <string>
 #include "common/timing.h"
+#include "common/messagehelp.h"
 #include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "cereal/gen/cpp/car.capnp.h"
+
 
 typedef struct {
 	long address;
@@ -16,7 +18,7 @@ typedef struct {
 extern "C" {
 
 void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendCan, bool valid) {
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   event.setValid(valid);
@@ -29,7 +31,7 @@ void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::stri
     canData[j].setDat(kj::arrayPtr((uint8_t*)it->dat.data(), it->dat.size()));
     canData[j].setSrc(it->src);
   }
-  auto words = capnp::messageToFlatArray(msg);
+  auto words = msg.toFlatArrayPtr();
   auto bytes = words.asBytes();
   out.append((const char *)bytes.begin(), bytes.size());
 }

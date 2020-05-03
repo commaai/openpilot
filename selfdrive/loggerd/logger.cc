@@ -14,6 +14,7 @@
 #include <bzlib.h>
 
 #include "common/swaglog.h"
+#include "common/messagehelp.h"
 
 #include "logger.h"
 
@@ -21,12 +22,12 @@
 #include "cereal/gen/cpp/log.capnp.h"
 
 static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   auto event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   auto sen = event.initSentinel();
   sen.setType(type);
-  auto words = capnp::messageToFlatArray(msg);
+  auto words = msg.toFlatArrayPtr();
   auto bytes = words.asBytes();
 
   logger_log(s, bytes.begin(), bytes.size(), true);

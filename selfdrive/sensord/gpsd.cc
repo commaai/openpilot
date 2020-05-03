@@ -21,6 +21,7 @@
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/messagehelp.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -44,7 +45,7 @@ void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
   uint64_t log_time = nanos_since_boot();
   uint64_t log_time_wall = nanos_since_epoch();
 
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(log_time);
 
@@ -53,17 +54,15 @@ void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
   nmeaData.setLocalWallTime(log_time_wall);
   nmeaData.setNmea(nmea);
 
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
+  msg.sendTo(gps_publisher);
   // printf("gps send %d\n", bytes.size());
-  gps_publisher->send((char*)bytes.begin(), bytes.size());
 }
 
 void location_callback(GpsLocation* location) {
   //printf("got location callback\n");
   uint64_t log_time = nanos_since_boot();
 
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(log_time);
 
@@ -78,9 +77,7 @@ void location_callback(GpsLocation* location) {
   locationData.setTimestamp(location->timestamp);
   locationData.setSource(cereal::GpsLocationData::SensorSource::ANDROID);
 
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  gps_location_publisher->send((char*)bytes.begin(), bytes.size());
+  msg.sendTo(gps_location_publisher);
 }
 
 pthread_t create_thread_callback(const char* name, void (*start)(void *), void* arg) {

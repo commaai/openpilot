@@ -7,6 +7,7 @@
 #include <capnp/serialize.h>
 #include "messaging.hpp"
 #include "common/timing.h"
+#include "common/messagehelp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 
 namespace {
@@ -49,7 +50,7 @@ int main() {
 
     uint64_t modem_uptime_v = arm_cntpct() / 19200ULL; // 19.2 mhz clock
 
-    capnp::MallocMessageBuilder msg;
+    MessageBuilder msg;
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(boottime);
     auto clocks = event.initClocks();
@@ -60,9 +61,7 @@ int main() {
     clocks.setWallTimeNanos(wall_time);
     clocks.setModemUptimeMillis(modem_uptime_v);
 
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    clock_publisher->send((char*)bytes.begin(), bytes.size());
+    msg.sendTo(clock_publisher);
   }
 
   close(timerfd);

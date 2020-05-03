@@ -22,6 +22,7 @@
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/messagehelp.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -135,7 +136,7 @@ void sensor_loop() {
 
       uint64_t log_time = nanos_since_boot();
 
-      capnp::MallocMessageBuilder msg;
+      MessageBuilder msg;
       cereal::Event::Builder event = msg.initRoot<cereal::Event>();
       event.setLogMonoTime(log_time);
 
@@ -215,9 +216,7 @@ void sensor_loop() {
         log_i++;
       }
 
-      auto words = capnp::messageToFlatArray(msg);
-      auto bytes = words.asBytes();
-      sensor_events_sock->send((char*)bytes.begin(), bytes.size());
+      msg.sendTo(sensor_events_sock);
 
       if (re_init_sensors){
         LOGE("Resetting sensors");

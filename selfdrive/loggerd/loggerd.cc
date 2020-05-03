@@ -237,7 +237,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
         }
 
         // publish encode index
-        capnp::MallocMessageBuilder msg;
+        MessageBuilder msg;
         cereal::Event::Builder event = msg.initRoot<cereal::Event>();
         event.setLogMonoTime(nanos_since_boot());
         auto eidx = event.initEncodeIdx();
@@ -247,7 +247,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
 
-        auto words = capnp::messageToFlatArray(msg);
+        auto words = msg.toFlatArrayPtr();
         auto bytes = words.asBytes();
         if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
@@ -269,7 +269,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
           }
 
           // publish encode index
-          capnp::MallocMessageBuilder msg;
+          MessageBuilder msg;
           cereal::Event::Builder event = msg.initRoot<cereal::Event>();
           event.setLogMonoTime(nanos_since_boot());
           auto eidx = event.initEncodeIdx();
@@ -279,8 +279,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
           eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
 
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
+          auto words = msg.toFlatArrayPtr();
+          auto bytes = words.asBytes()
           if (lh) {
             lh_log(lh, bytes.begin(), bytes.size(), false);
           }
@@ -383,7 +383,7 @@ int lidar_thread() {
     }
 
     // create message for log
-    capnp::MallocMessageBuilder msg;
+    MessageBuilder msg;
     auto event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(nanos_since_boot());
     auto lidar_pts = event.initLidarPts();
@@ -394,7 +394,7 @@ int lidar_thread() {
     lidar_pts.setPkt(bufferPtr);
 
     // log it
-    auto words = capnp::messageToFlatArray(msg);
+    auto words = msg.toFlatArrayPtr();
     auto bytes = words.asBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size());
   }
@@ -412,7 +412,7 @@ void append_property(const char* key, const char* value, void *cookie) {
 }
 
 kj::Array<capnp::word> gen_init_data() {
-  capnp::MallocMessageBuilder msg;
+  MessageBuilder msg;
   auto event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   auto init = event.initInitData();
@@ -544,7 +544,7 @@ static void bootlog() {
   LOGW("bootlog to %s", s.segment_path);
 
   {
-    capnp::MallocMessageBuilder msg;
+    MessageBuilder msg;
     auto event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(nanos_since_boot());
 
@@ -558,7 +558,7 @@ static void bootlog() {
     std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
     boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-    auto words = capnp::messageToFlatArray(msg);
+    auto words = msg.toFlatArrayPtr();
     auto bytes = words.asBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size(), false);
   }

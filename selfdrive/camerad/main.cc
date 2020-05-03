@@ -318,7 +318,7 @@ void* frontview_thread(void *arg) {
     // send frame event
     {
       if (s->front_frame_sock != NULL) {
-        capnp::MallocMessageBuilder msg;
+        MessageBuilder msg;
         cereal::Event::Builder event = msg.initRoot<cereal::Event>();
         event.setLogMonoTime(nanos_since_boot());
 
@@ -336,9 +336,7 @@ void* frontview_thread(void *arg) {
         framed.setGainFrac(frame_data.gain_frac);
         framed.setFrameType(cereal::FrameData::FrameType::FRONT);
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        s->front_frame_sock->send((char*)bytes.begin(), bytes.size());
+        msg.sendTo(s->front_frame_sock);
       }
     }
 
@@ -522,7 +520,7 @@ void* processing_thread(void *arg) {
     // send frame event
     {
       if (s->frame_sock != NULL) {
-        capnp::MallocMessageBuilder msg;
+        MessageBuilder msg;
         cereal::Event::Builder event = msg.initRoot<cereal::Event>();
         event.setLogMonoTime(nanos_since_boot());
 
@@ -557,9 +555,7 @@ void* processing_thread(void *arg) {
         kj::ArrayPtr<const float> transform_vs(&s->yuv_transform.v[0], 9);
         framed.setTransform(transform_vs);
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        s->frame_sock->send((char*)bytes.begin(), bytes.size());
+        msg.sendTo(s->frame_sock);
       }
     }
 
@@ -611,7 +607,7 @@ void* processing_thread(void *arg) {
       free(row);
       jpeg_finish_compress(&cinfo);
 
-      capnp::MallocMessageBuilder msg;
+      MessageBuilder msg;
       cereal::Event::Builder event = msg.initRoot<cereal::Event>();
       event.setLogMonoTime(nanos_since_boot());
 
@@ -620,10 +616,8 @@ void* processing_thread(void *arg) {
       thumbnaild.setTimestampEof(frame_data.timestamp_eof);
       thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
 
-      auto words = capnp::messageToFlatArray(msg);
-      auto bytes = words.asBytes();
       if (s->thumbnail_sock != NULL) {
-        s->thumbnail_sock->send((char*)bytes.begin(), bytes.size());
+        msg.sendTo(s->thumbnail_sock);
       }
 
       free(thumbnail_buffer);

@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
         double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
         double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
 
-        capnp::MallocMessageBuilder msg;
+        MessageBuilder msg;
         cereal::Event::Builder event = msg.initRoot<cereal::Event>();
         event.setLogMonoTime(nanos_since_boot());
         auto live_params = event.initLiveParameters();
@@ -148,9 +148,7 @@ int main(int argc, char *argv[]) {
         live_params.setPosenetSpeed(localizer.posenet_speed);
         live_params.setPosenetValid((posenet_invalid_count < 4) && (camera_odometry_age < 5.0));
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        live_parameters_sock->send((char*)bytes.begin(), bytes.size());
+        msg.sendTo(live_parameters_sock);
 
         // Save parameters every minute
         if (save_counter % 6000 == 0) {
