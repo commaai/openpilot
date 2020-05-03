@@ -39,7 +39,7 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
   const int battery_img_x = !s->scene.uilayout_sidebarcollapsed ? 160 : -(sbr_w);
   const int battery_img_y = 255;
 
-  int battery_img = s->scene.batteryStatus ? s->img_battery_charging : s->img_battery;
+  int battery_img = s->scene.batteryCharging ? s->img_battery_charging : s->img_battery;
 
   ui_draw_rect(s->vg, battery_img_x + 6, battery_img_y + 5,
                ((battery_img_w - 19) * (s->scene.batteryPercent * 0.01)), battery_img_h - 11, COLOR_WHITE);

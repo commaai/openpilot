@@ -210,49 +210,28 @@ static void ui_init(UIState *s) {
 
   pthread_mutex_init(&s->lock, NULL);
 
+static void ui_init(UIState *s) {
+  memset(s, 0, sizeof(UIState));
+
+  pthread_mutex_init(&s->lock, NULL);
+
   s->ctx = Context::create();
-  s->model_sock = SubSocket::create(s->ctx, "model");
-  s->controlsstate_sock = SubSocket::create(s->ctx, "controlsState");
-  s->uilayout_sock = SubSocket::create(s->ctx, "uiLayoutState");
-  s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
-  s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
-  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
-  s->health_sock = SubSocket::create(s->ctx, "health");
-  s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
-  s->driverstate_sock = SubSocket::create(s->ctx, "driverState");
-  s->dmonitoring_sock = SubSocket::create(s->ctx, "dMonitoringState");
-  s->offroad_sock = PubSocket::create(s->ctx, "offroadLayout");
-
-  assert(s->model_sock != NULL);
-  assert(s->controlsstate_sock != NULL);
-  assert(s->uilayout_sock != NULL);
-  assert(s->livecalibration_sock != NULL);
-  assert(s->radarstate_sock != NULL);
-  assert(s->thermal_sock != NULL);
-  assert(s->health_sock != NULL);
-  assert(s->ubloxgnss_sock != NULL);
-  assert(s->driverstate_sock != NULL);
-  assert(s->dmonitoring_sock != NULL);
-  assert(s->offroad_sock != NULL);
-
-  s->poller = Poller::create({
-                              s->model_sock,
-                              s->controlsstate_sock,
-                              s->uilayout_sock,
-                              s->livecalibration_sock,
-                              s->radarstate_sock,
-                              s->thermal_sock,
-                              s->health_sock,
-                              s->ubloxgnss_sock,
-                              s->driverstate_sock,
-                              s->dmonitoring_sock
-                             });
-
+  const char *sub_sockets[] = {"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
+                               "health", "ubloxGnss", "driverState", "dMonitoringState", "offroadLayout"
 #ifdef SHOW_SPEEDLIMIT
-  s->map_data_sock = SubSocket::create(s->ctx, "liveMapData");
-  assert(s->map_data_sock != NULL);
-  s->poller->registerSocket(s->map_data_sock);
+                               , "liveMapData"
 #endif
+  };
+  for (int i = 0; i < sizeof(sub_sockets) / sizeof(sub_sockets[0]); ++i) {
+    SubSocket *socket = SubSocket::create(s->ctx, sub_sockets[i]);
+    assert(socket != NULL);
+    s->sub_sockets.push_back(socket);
+  }
+
+  s->poller = Poller::create(s->sub_sockets);
+
+  s->offroad_sock = PubSocket::create(s->ctx, "offroadLayout");
+  assert(s->offroad_sock != NULL);
 
   s->ipc_fd = -1;
 
@@ -479,7 +458,7 @@ void handle_message(UIState *s,  MessageReader& msg) {
     scene.networkType = data.getNetworkType();
     scene.networkStrength = data.getNetworkStrength();
     scene.batteryPercent = data.getBatteryPercent();
-    scene.batteryStatus = data.getBatteryStatus() == "Charging" ? true : false;
+    scene.batteryCharging = data.getBatteryStatus() == "Charging" ? true : false;
     scene.freeSpace = data.getFreeSpace();
     scene.thermalStatus = data.getThermalStatus();
     scene.paTemp = data.getPa0();
