@@ -28,7 +28,7 @@ SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int ru
   // load model
   std::unique_ptr<zdl::DlContainer::IDlContainer> container = zdl::DlContainer::IDlContainer::open(model_data, model_size);
   if (!container) { PrintErrorStringAndExit(); }
-  printf("loaded model with size: %u\n", model_size);
+  printf("loaded model with size: %lu\n", model_size);
 
   // create model runner
   zdl::SNPE::SNPEBuilder snpeBuilder(container.get());
@@ -79,7 +79,7 @@ SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int ru
       stride *= bufferShape[i];
       strides[i-1] = stride;
     }
-    printf("input product is %u\n", product);
+    printf("input product is %lu\n", product);
     inputBuffer = ubFactory.createUserBuffer(NULL, product*sizeof(float), strides, &userBufferEncodingFloat);
 
     inputMap.add(input_tensor_name, inputBuffer.get());
