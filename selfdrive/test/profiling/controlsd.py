@@ -7,7 +7,7 @@ import pprofile
 import pyprof2calltree
 
 from tools.lib.logreader import LogReader
-from selfdrive.controls.controlsd import controlsd_thread
+from selfdrive.controls.controlsd import main as controlsd_thread
 from selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
 from selfdrive.test.process_replay.process_replay import CONFIGS
 
