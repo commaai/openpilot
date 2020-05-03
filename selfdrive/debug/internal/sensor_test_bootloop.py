@@ -19,7 +19,7 @@ except PermissionError:
 try:
   with open('/tmp/test-results.json', 'r') as infile:
     data = json.load(infile)
-except:
+except Exception:
   data = {'sensor-pass': 0, 'sensor-fail': 0}
 
 STARTUP_SCRIPT = "/data/data/com.termux/files/continue.sh"
@@ -27,7 +27,7 @@ try:
   with open(STARTUP_SCRIPT, 'w') as startup_script:
     startup_script.write("#!/usr/bin/bash\n\n/data/openpilot/selfdrive/test/sensor_test_bootloop.py\n")
   os.chmod(STARTUP_SCRIPT, stat.S_IRWXU)
-except:
+except Exception:
   print("Failed to install new startup script -- aborting")
   sys.exit(-1)
 

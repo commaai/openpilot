@@ -3,10 +3,8 @@
 
 import argparse
 import time
-import zmq
 
 import cereal.messaging as messaging
-from cereal.services import service_list
 from selfdrive.controls.lib.alerts import ALERTS
 
 def now_millis(): return time.time() * 1000

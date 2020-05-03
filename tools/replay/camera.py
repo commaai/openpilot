@@ -10,7 +10,6 @@ import pygame
 import numpy as np
 import cv2
 import sys
-from tools.lib.lazy_property import lazy_property
 import cereal.messaging as messaging
 
 _BB_OFFSET = 0, 0

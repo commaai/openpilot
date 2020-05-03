@@ -1,9 +1,7 @@
 import os
-import subprocess
 from common.basedir import BASEDIR
 
 from cffi import FFI
-from ctypes import cdll
 
 locationd_dir = os.path.dirname(os.path.abspath(__file__))
 liblocationd_fn = os.path.join(locationd_dir, "liblocationd.so")
