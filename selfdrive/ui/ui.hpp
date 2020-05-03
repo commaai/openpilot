@@ -281,7 +281,6 @@ typedef struct UIState {
   bool is_ego_over_limit;
   std::string alert_type;
   AudibleAlert alert_sound;
-  int alert_size;
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
