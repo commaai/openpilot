@@ -11,6 +11,7 @@ import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_alert
+from selfdrive.car.disable_ecu import disable_ecu
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import get_events, \
                                                  create_event, \
@@ -491,6 +492,9 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   params.put("CarParams", cp_bytes)
   put_nonblocking("CarParamsCache", cp_bytes)
   put_nonblocking("LongitudinalControl", "1" if CP.openpilotLongitudinalControl else "0")
+
+  if CP.openpilotLongitudinalControl and CP.safetyModel in [car.CarParams.SafetyModel.hondaBoschGiraffe, car.CarParams.SafetyModel.hondaBoschHarness]:
+    disable_ecu(0x18DAB0F1, can_sock, pm.sock['sendcan'], 1 if has_relay else 0, timeout=1, retry=10)
 
   CC = car.CarControl.new_message()
   AM = AlertManager()

@@ -5,7 +5,7 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD
+from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -143,6 +143,12 @@ class CarController():
 
     # Send CAN commands.
     can_sends = []
+
+    if CS.CP.carFingerprint in HONDA_BOSCH and CS.CP.openpilotLongitudinalControl:
+      # TODO: radar disable hacked together to see if it works
+      if (frame % 10) == 0:
+        # tester present - w/ no response (keeps radar disabled)
+        can_sends.append([0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1 if CS.CP.isPandaBlack else 0])
 
     # Send steering command.
     idx = frame % 4
