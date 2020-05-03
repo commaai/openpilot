@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import struct
 from common.numpy_fast import clip
 from common.params import Params
 from copy import copy

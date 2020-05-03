@@ -1,8 +1,6 @@
 import os
 import sys
-import glob
 import json
-import time
 import struct
 import tempfile
 import threading

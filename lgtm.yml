@@ -1,3 +1,9 @@
+path_classifiers:
+  library:
+    - external
+    - phonelibs
+    - pyextra
+    - tools/lib/mkvparse
 extraction:
   cpp:
     after_prepare:
