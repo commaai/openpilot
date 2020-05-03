@@ -1,6 +1,6 @@
 #pragma once
 #include <capnp/serialize.h>
-
+#include <kj/vector.h>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "messaging.hpp"
 class MessageReader {
