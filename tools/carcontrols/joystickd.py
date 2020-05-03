@@ -7,9 +7,7 @@
 ### this process needs pygame and can't run on the EON ###
 
 import pygame
-import zmq
 import cereal.messaging as messaging
-
 
 def joystick_thread():
   joystick_sock = messaging.pub_sock('testJoystick')

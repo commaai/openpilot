@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-
-import json
-import os
 import sys
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlencode, parse_qs
-from common.file_helpers import mkdirs_exists_ok
 from tools.lib.api import CommaApi, APIError
 from tools.lib.auth_config import set_token
 
