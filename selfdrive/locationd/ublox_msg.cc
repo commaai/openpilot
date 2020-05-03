@@ -22,6 +22,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/messagehelp.h"
 
 #include "ublox_msg.h"
 
@@ -198,9 +199,8 @@ inline bool UbloxMsgParser::valid_so_far() {
   return true;
 }
 
-kj::Array<capnp::word> UbloxMsgParser::gen_solution() {
+kj::ArrayPtr<kj::byte> UbloxMsgParser::gen_solution(MessageBuilder& msg_builder) {
   nav_pvt_msg *msg = (nav_pvt_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
-  capnp::MallocMessageBuilder msg_builder;
   cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   auto gpsLoc = event.initGpsLocationExternal();
@@ -227,23 +227,22 @@ kj::Array<capnp::word> UbloxMsgParser::gen_solution() {
   gpsLoc.setVerticalAccuracy(msg->vAcc * 1e-03);
   gpsLoc.setSpeedAccuracy(msg->sAcc * 1e-03);
   gpsLoc.setBearingAccuracy(msg->headAcc * 1e-05);
-  return capnp::messageToFlatArray(msg_builder);
+  return msg_builder.toBytes();
 }
 
 inline bool bit_to_bool(uint8_t val, int shifts) {
   return (val & (1 << shifts)) ? true : false;
 }
 
-kj::Array<capnp::word> UbloxMsgParser::gen_raw() {
+kj::ArrayPtr<kj::byte> UbloxMsgParser::gen_raw(MessageBuilder& msg_builder) {
   rxm_raw_msg *msg = (rxm_raw_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
   if(bytes_in_parse_buf != (
     UBLOX_HEADER_SIZE + sizeof(rxm_raw_msg) + msg->numMeas * sizeof(rxm_raw_msg_extra) + UBLOX_CHECKSUM_SIZE
     )) {
     LOGD("Invalid measurement size %u, %u, %u, %u", msg->numMeas, bytes_in_parse_buf, sizeof(rxm_raw_msg_extra), sizeof(rxm_raw_msg));
-    return kj::Array<capnp::word>();
+    return kj::Array<kj::byte>();
   }
   rxm_raw_msg_extra *measurements = (rxm_raw_msg_extra *)&msg_parse_buf[UBLOX_HEADER_SIZE + sizeof(rxm_raw_msg)];
-  capnp::MallocMessageBuilder msg_builder;
   cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   auto gnss = event.initUbloxGnss();
@@ -277,16 +276,16 @@ kj::Array<capnp::word> UbloxMsgParser::gen_raw() {
   auto rs = mr.initReceiverStatus();
   rs.setLeapSecValid(bit_to_bool(msg->recStat, 0));
   rs.setClkReset(bit_to_bool(msg->recStat, 2));
-  return capnp::messageToFlatArray(msg_builder);
+  return msg_builder.toBytes();
 }
 
-kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
+kj::ArrayPtr<kj::byte> UbloxMsgParser::gen_nav_data(MessageBuilder& msg_builder) {
   rxm_sfrbx_msg *msg = (rxm_sfrbx_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
   if(bytes_in_parse_buf != (
     UBLOX_HEADER_SIZE + sizeof(rxm_sfrbx_msg) + msg->numWords * sizeof(rxm_sfrbx_msg_extra) + UBLOX_CHECKSUM_SIZE
     )) {
     LOGD("Invalid sfrbx words size %u, %u, %u, %u", msg->numWords, bytes_in_parse_buf, sizeof(rxm_raw_msg_extra), sizeof(rxm_raw_msg));
-    return kj::Array<capnp::word>();
+    return kj::Array<kj::byte>();
   }
   rxm_sfrbx_msg_extra *measurements = (rxm_sfrbx_msg_extra *)&msg_parse_buf[UBLOX_HEADER_SIZE + sizeof(rxm_sfrbx_msg)];
   if(msg->gnssId  == 0) {
@@ -302,7 +301,6 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
       nav_frame_buffer[msg->gnssId][msg->svid][subframeId] = words;
     if(nav_frame_buffer[msg->gnssId][msg->svid].size() == 5) {
       EphemerisData ephem_data(msg->svid, nav_frame_buffer[msg->gnssId][msg->svid]);
-      capnp::MallocMessageBuilder msg_builder;
       cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
       event.setLogMonoTime(nanos_since_boot());
       auto gnss = event.initUbloxGnss();
@@ -341,16 +339,15 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
         eph.setIonoAlpha(kj::ArrayPtr<const double>());
         eph.setIonoBeta(kj::ArrayPtr<const double>());
       }
-      return capnp::messageToFlatArray(msg_builder);
+      return msg_builder.toBytes();
     }
   }
-  return kj::Array<capnp::word>();
+  return kj::Array<kj::byte>();
 }
 
-kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw() {
+kj::ArrayPtr<kj::byte> UbloxMsgParser::gen_mon_hw(MessageBuilder& msg_builder) {
   mon_hw_msg *msg = (mon_hw_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
 
-  capnp::MallocMessageBuilder msg_builder;
   cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   auto gnss = event.initUbloxGnss();
@@ -360,7 +357,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw() {
   hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->aStatus);
   hwStatus.setAPower((cereal::UbloxGnss::HwStatus::AntennaPowerStatus) msg->aPower);
   hwStatus.setJamInd(msg->jamInd);
-  return capnp::messageToFlatArray(msg_builder);
+  return msg_builder.toBytes();
 }
 
 bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {

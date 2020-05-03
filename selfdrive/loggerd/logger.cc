@@ -27,9 +27,7 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
   event.setLogMonoTime(nanos_since_boot());
   auto sen = event.initSentinel();
   sen.setType(type);
-  auto words = msg.toFlatArrayPtr();
-  auto bytes = words.asBytes();
-
+  auto bytes = msg.toBytes();
   logger_log(s, bytes.begin(), bytes.size(), true);
 }
 

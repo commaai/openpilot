@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include "messaging.hpp"
+#include "common/messagehelp.h"
 
 #define min(x, y) ((x) <= (y) ? (x) : (y))
 
@@ -136,11 +137,11 @@ namespace ublox {
     public:
 
       UbloxMsgParser();
-      kj::Array<capnp::word> gen_solution();
-      kj::Array<capnp::word> gen_raw();
-      kj::Array<capnp::word> gen_mon_hw();
+      kj::ArrayPtr<kj::byte> gen_solution(MessageBuilder& msg);
+      kj::ArrayPtr<kj::byte> gen_raw(MessageBuilder& msg);
+      kj::ArrayPtr<kj::byte> gen_mon_hw(MessageBuilder& msg);
 
-      kj::Array<capnp::word> gen_nav_data();
+      kj::ArrayPtr<kj::byte> gen_nav_data(MessageBuilder& msg);
       bool add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
       inline void reset() {bytes_in_parse_buf = 0;}
       inline uint8_t msg_class() {

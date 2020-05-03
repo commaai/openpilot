@@ -41,10 +41,10 @@ class MessageReader {
   cereal::Event::Reader event;
 };
 
-#define SEGEMENT_BUF_SIZE 256
+#define STACK_SEGEMENT_BUF_SIZE 256
 class MessageBuilder : public capnp::MessageBuilder {
  public:
-  MessageBuilder() : returnedFirstSegment(false), nextSize(2048), stackSegment{} {};
+  MessageBuilder(uint firstMallocSize = 2048) : returnedFirstSegment(false), nextSize(firstMallocSize), stackSegment{} {};
 
   ~MessageBuilder() {
     for (auto ptr : moreSegments) {
@@ -55,8 +55,8 @@ class MessageBuilder : public capnp::MessageBuilder {
   kj::ArrayPtr<capnp::word> allocateSegment(uint minimumSize) {
     if (!returnedFirstSegment) {
       returnedFirstSegment = true;
-      uint size = kj::max(minimumSize, SEGEMENT_BUF_SIZE - 1);
-      if (size < SEGEMENT_BUF_SIZE) {
+      uint size = kj::max(minimumSize, STACK_SEGEMENT_BUF_SIZE);
+      if (size <= STACK_SEGEMENT_BUF_SIZE) {
         return kj::ArrayPtr<capnp::word>(stackSegment + 1, size);
       }
     }
@@ -67,30 +67,30 @@ class MessageBuilder : public capnp::MessageBuilder {
     return kj::ArrayPtr<capnp::word>(result, size);
   }
 
-  kj::ArrayPtr<capnp::word> toFlatArrayPtr() {
-    kj::ArrayPtr<const kj::ArrayPtr<const capnp::word>> segments = getSegmentsForOutput();
+  kj::ArrayPtr<kj::byte> toBytes() {
+    auto segments = getSegmentsForOutput();
     if (segments.size() == 1 && segments[0].begin() == stackSegment + 1) {
+      cosnt size_t segment_size = segments[0].size();
       uint32_t *table = (uint32_t *)stackSegment;
       table[0] = 0;
-      table[1] = segments[0].size();
-      return kj::ArrayPtr<capnp::word>(stackSegment, segments[0].size() + 1);
+      table[1] = segment_size;
+      return kj::ArrayPtr<capnp::word>(stackSegment, segment_size + 1).asBytes();
     } else {
-      const size_t size = capnp::computeSerializedSizeInWords(*this);
       flatArray = capnp::messageToFlatArray(segments);
-      return flatArray.asPtr();
+      return flatArray.asBytes();
     }
   }
 
   int sendTo(PubSocket *sock) {
-    auto words = toFlatArrayPtr();
-    auto bytes = words.asBytes();
+    auto bytes = toBytes();
     return sock->send((char *)(bytes.begin()), bytes.size());
   }
 
  protected:
   bool returnedFirstSegment;
   uint nextSize;
-  capnp::word stackSegment[SEGEMENT_BUF_SIZE];
+  // the first words of stackSement is used internally to set the head table.
+  capnp::word stackSegment[STACK_SEGEMENT_BUF_SIZE + 1];
   kj::Array<capnp::word> flatArray;
   kj::Vector<capnp::word *> moreSegments;
 };

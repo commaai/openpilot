@@ -247,8 +247,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
 
-        auto words = msg.toFlatArrayPtr();
-        auto bytes = words.asBytes();
+        auto bytes = msg.toBytes();
         if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
@@ -279,8 +278,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
           eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
 
-          auto words = msg.toFlatArrayPtr();
-          auto bytes = words.asBytes()
+          auto bytes = msg.toBytes();
           if (lh) {
             lh_log(lh, bytes.begin(), bytes.size(), false);
           }
@@ -394,8 +392,7 @@ int lidar_thread() {
     lidar_pts.setPkt(bufferPtr);
 
     // log it
-    auto words = msg.toFlatArrayPtr();
-    auto bytes = words.asBytes();
+    auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size());
   }
   return 0;
@@ -558,8 +555,7 @@ static void bootlog() {
     std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
     boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-    auto words = msg.toFlatArrayPtr();
-    auto bytes = words.asBytes();
+    auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size(), false);
   }
 

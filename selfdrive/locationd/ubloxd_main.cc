@@ -69,9 +69,9 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
         if(parser.msg_class() == CLASS_NAV) {
           if(parser.msg_id() == MSG_NAV_PVT) {
             //LOGD("MSG_NAV_PVT");
-            auto words = parser.gen_solution();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
+            MessageBuilder msg;
+            auto bytes = parser.gen_solution(msg);
+            if(bytes.size() > 0) {
               send_func(gpsLocationExternal, bytes.begin(), bytes.size());
             }
           } else
@@ -79,16 +79,16 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
         } else if(parser.msg_class() == CLASS_RXM) {
           if(parser.msg_id() == MSG_RXM_RAW) {
             //LOGD("MSG_RXM_RAW");
-            auto words = parser.gen_raw();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
+            MessageBuilder msg;
+            auto bytes = parser.gen_raw(msg);
+            if(bytes.size() > 0) {
               send_func(ubloxGnss, bytes.begin(), bytes.size());
             }
           } else if(parser.msg_id() == MSG_RXM_SFRBX) {
             //LOGD("MSG_RXM_SFRBX");
-            auto words = parser.gen_nav_data();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
+            MessageBuilder msg;
+            auto bytes = parser.gen_nav_data(msg);
+            if(bytes.size() > 0) {
               send_func(ubloxGnss, bytes.begin(), bytes.size());
             }
           } else
@@ -96,9 +96,9 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
         } else if(parser.msg_class() == CLASS_MON) {
           if(parser.msg_id() == MSG_MON_HW) {
             //LOGD("MSG_MON_HW");
-            auto words = parser.gen_mon_hw();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
+            MessageBuilder msg;
+            auto bytes = parser.gen_mon_hw(msg);
+            if(bytes.size() > 0) {
               send_func(ubloxGnss, bytes.begin(), bytes.size());
             }
           } else {
