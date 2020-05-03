@@ -1,6 +1,5 @@
 #ifndef _UI_H
 #define _UI_H
-
 #include "cereal/gen/cpp/log.capnp.h"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -210,7 +209,17 @@ typedef struct UIState {
 
   // sockets
   Context *ctx;
-  std::vector<SubSocket *> sub_sockets;
+  SubSocket *model_sock;
+  SubSocket *controlsstate_sock;
+  SubSocket *livecalibration_sock;
+  SubSocket *radarstate_sock;
+  SubSocket *map_data_sock;
+  SubSocket *uilayout_sock;
+  SubSocket *thermal_sock;
+  SubSocket *health_sock;
+  SubSocket *ubloxgnss_sock;
+  SubSocket *driverstate_sock;
+  SubSocket *dmonitoring_sock;
   PubSocket *offroad_sock;
   Poller * poller;
   Poller * ublox_poller;
