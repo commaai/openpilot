@@ -33,6 +33,7 @@ STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
 HwType = log.HealthData.HwType
+LongitudinalPlanSource = log.Plan.LongitudinalPlanSource
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
@@ -449,96 +450,98 @@ class Controls:
     CC.cruiseControl.speedOverride = float(speed_override if self.CP.enableCruise else 0.0)
     CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
 
-    CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
-    CC.hudControl.speedVisible = self.enabled
-    CC.hudControl.lanesVisible = self.enabled
-    CC.hudControl.leadVisible = self.sm['plan'].hasLead
+    hudControl = CC.hudControl
+    hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
+    hudControl.speedVisible = self.enabled
+    hudControl.lanesVisible = self.enabled
+    hudControl.leadVisible = self.sm['plan'].hasLead
 
     right_lane_visible = self.sm['pathPlan'].rProb > 0.5
     left_lane_visible = self.sm['pathPlan'].lProb > 0.5
-    CC.hudControl.rightLaneVisible = bool(right_lane_visible)
-    CC.hudControl.leftLaneVisible = bool(left_lane_visible)
+    hudControl.rightLaneVisible = bool(right_lane_visible)
+    hudControl.leftLaneVisible = bool(left_lane_visible)
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled \
                     and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
-    md = self.sm['model']
-    if len(md.meta.desirePrediction):
-      l_lane_change_prob = md.meta.desirePrediction[log.PathPlan.Desire.laneChangeLeft - 1]
-      r_lane_change_prob = md.meta.desirePrediction[log.PathPlan.Desire.laneChangeRight - 1]
+    meta = self.sm['model'].meta
+    if len(meta.desirePrediction):
+      l_lane_change_prob = meta.desirePrediction[log.PathPlan.Desire.laneChangeLeft - 1]
+      r_lane_change_prob = meta.desirePrediction[log.PathPlan.Desire.laneChangeRight - 1]
 
       l_lane_close = left_lane_visible and (self.sm['pathPlan'].lPoly[3] < (1.08 - CAMERA_OFFSET))
       r_lane_close = right_lane_visible and (self.sm['pathPlan'].rPoly[3] > -(1.08 + CAMERA_OFFSET))
 
       if ldw_allowed:
-        CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
-        CC.hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
+        hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
+        hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
 
-    if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
+    if hudControl.rightLaneDepart or hudControl.leftLaneDepart:
       self.AM.add(self.sm.frame, 'ldwPermanent', False)
       events.append(create_event('ldw', [ET.PERMANENT]))
 
     self.AM.process_alerts(self.sm.frame)
-    CC.hudControl.visualAlert = self.AM.visual_alert
+    hudControl.visualAlert = self.AM.visual_alert
 
     if not self.read_only:
       # send car controls over can
       can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-    force_decel = (self.sm['dMonitoringState'].awarenessStatus < 0.) or (self.state == State.softDisabling)
+    force_decel = (self.sm['dMonitoringState'].awarenessStatus < 0.) or \
+                    (self.state == State.softDisabling)
 
     # controlsState
     dat = messaging.new_message('controlsState')
     dat.valid = CS.canValid
-    dat.controlsState = {
-      "alertText1": self.AM.alert_text_1,
-      "alertText2": self.AM.alert_text_2,
-      "alertSize": self.AM.alert_size,
-      "alertStatus": self.AM.alert_status,
-      "alertBlinkingRate": self.AM.alert_rate,
-      "alertType": self.AM.alert_type,
-      "alertSound": self.AM.audible_alert,
-      "driverMonitoringOn": self.sm['dMonitoringState'].faceDetected,
-      "canMonoTimes": list(CS.canMonoTimes),
-      "planMonoTime": self.sm.logMonoTime['plan'],
-      "pathPlanMonoTime": self.sm.logMonoTime['pathPlan'],
-      "enabled": self.enabled,
-      "active": self.active,
-      "vEgo": CS.vEgo,
-      "vEgoRaw": CS.vEgoRaw,
-      "angleSteers": CS.steeringAngle,
-      "curvature": self.VM.calc_curvature((CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
-      "steerOverride": CS.steeringPressed,
-      "state": self.state,
-      "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
-      "longControlState": self.LoC.long_control_state,
-      "vPid": float(self.LoC.v_pid),
-      "vCruise": float(self.v_cruise_kph),
-      "upAccelCmd": float(self.LoC.pid.p),
-      "uiAccelCmd": float(self.LoC.pid.i),
-      "ufAccelCmd": float(self.LoC.pid.f),
-      "angleSteersDes": float(self.LaC.angle_steers_des),
-      "vTargetLead": float(v_acc),
-      "aTarget": float(a_acc),
-      "jerkFactor": float(self.sm['plan'].jerkFactor),
-      "gpsPlannerActive": self.sm['plan'].gpsPlannerActive,
-      "vCurvature": self.sm['plan'].vCurvature,
-      "decelForModel": self.sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
-      "cumLagMs": -self.rk.remaining * 1000.,
-      "startMonoTime": int(start_time * 1e9),
-      "mapValid": self.sm['plan'].mapValid,
-      "forceDecel": bool(force_decel),
-      "canErrorCounter": self.can_error_counter,
-    }
+    controlsState = dat.controlsState
+    controlsState.alertText1 = self.AM.alert_text_1
+    controlsState.alertText2 = self.AM.alert_text_2
+    controlsState.alertSize = self.AM.alert_size
+    controlsState.alertStatus = self.AM.alert_status
+    controlsState.alertBlinkingRate = self.AM.alert_rate
+    controlsState.alertType = self.AM.alert_type
+    controlsState.alertSound = self.AM.audible_alert
+    controlsState.driverMonitoringOn = self.sm['dMonitoringState'].faceDetected
+    controlsState.canMonoTimes = list(CS.canMonoTimes)
+    controlsState.planMonoTime = self.sm.logMonoTime['plan']
+    controlsState.pathPlanMonoTime = self.sm.logMonoTime['pathPlan']
+    controlsState.enabled = self.enabled
+    controlsState.active = self.active
+    controlsState.vEgo = CS.vEgo
+    controlsState.vEgoRaw = CS.vEgoRaw
+    controlsState.angleSteers = CS.steeringAngle
+    controlsState.curvature = self.VM.calc_curvature((CS.steeringAngle - \
+                                    self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo)
+    controlsState.steerOverride = CS.steeringPressed
+    controlsState.state = self.state
+    controlsState.engageable = not bool(get_events(events, [ET.NO_ENTRY]))
+    controlsState.longControlState = self.LoC.long_control_state
+    controlsState.vPid = float(self.LoC.v_pid)
+    controlsState.vCruise = float(self.v_cruise_kph)
+    controlsState.upAccelCmd = float(self.LoC.pid.p)
+    controlsState.uiAccelCmd = float(self.LoC.pid.i)
+    controlsState.ufAccelCmd = float(self.LoC.pid.f)
+    controlsState.angleSteersDes = float(self.LaC.angle_steers_des)
+    controlsState.vTargetLead = float(v_acc)
+    controlsState.aTarget = float(a_acc)
+    controlsState.jerkFactor = float(self.sm['plan'].jerkFactor)
+    controlsState.gpsPlannerActive = self.sm['plan'].gpsPlannerActive
+    controlsState.vCurvature = self.sm['plan'].vCurvature
+    controlsState.decelForModel = self.sm['plan'].longitudinalPlanSource == LongitudinalPlanSource.model
+    controlsState.cumLagMs = -self.rk.remaining * 1000.
+    controlsState.startMonoTime = int(start_time * 1e9)
+    controlsState.mapValid = self.sm['plan'].mapValid
+    controlsState.forceDecel = bool(force_decel)
+    controlsState.canErrorCounter = self.can_error_counter
 
     if self.CP.lateralTuning.which() == 'pid':
-      dat.controlsState.lateralControlState.pidState = lac_log
+      controlsState.lateralControlState.pidState = lac_log
     elif self.CP.lateralTuning.which() == 'lqr':
-      dat.controlsState.lateralControlState.lqrState = lac_log
+      controlsState.lateralControlState.lqrState = lac_log
     elif self.CP.lateralTuning.which() == 'indi':
-      dat.controlsState.lateralControlState.indiState = lac_log
+      controlsState.lateralControlState.indiState = lac_log
     self.pm.send('controlsState', dat)
 
     # carState
