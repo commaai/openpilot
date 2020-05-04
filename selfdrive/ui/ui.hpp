@@ -34,11 +34,6 @@
 #define NET_DISCONNECTED 1
 #define NET_ERROR 2
 
-#define ALERTSIZE_NONE 0
-#define ALERTSIZE_SMALL 1
-#define ALERTSIZE_MID 2
-#define ALERTSIZE_FULL 3
-
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
 #define COLOR_WHITE nvgRGBA(255, 255, 255, 255)
@@ -147,7 +142,7 @@ typedef struct UIScene {
   uint64_t alert_ts;
   std::string alert_text1;
   std::string alert_text2;
-  uint8_t alert_size;
+  cereal::ControlsState::AlertSize alert_size;
   float alert_blinkingrate;
 
   float awareness_status;
@@ -304,7 +299,7 @@ typedef struct UIState {
 } UIState;
 
 // API
-void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
+void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, int va_color,
                           const char* va_text1, const char* va_text2);
 void ui_draw(UIState *s);
 void ui_draw_sidebar(UIState *s);

@@ -402,7 +402,7 @@ void handle_message(UIState *s,  MessageReader& msg) {
     scene.alert_text1 = data.getAlertText1();
     scene.alert_text2 = data.getAlertText2();
     scene.alert_ts = event.getLogMonoTime();
-    scene.alert_size = (uint8_t)data.getAlertSize();
+    scene.alert_size = data.getAlertSize();
     auto alertStatus = data.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       update_status(s, STATUS_WARNING);
@@ -479,7 +479,7 @@ void handle_message(UIState *s,  MessageReader& msg) {
     scene.networkType = data.getNetworkType();
     scene.networkStrength = data.getNetworkStrength();
     scene.batteryPercent = data.getBatteryPercent();
-    scene.batteryCharging = data.getBatteryStatus() == "Charging" ? true : false;
+    scene.batteryCharging = data.getBatteryStatus() == "Charging";
     scene.freeSpace = data.getFreeSpace();
     scene.thermalStatus = data.getThermalStatus();
     scene.paTemp = data.getPa0();
@@ -988,7 +988,7 @@ int main(int argc, char* argv[]) {
     } else {
       if (s->started && s->controls_seen && s->scene.alert_text2 != "Controls Unresponsive") {
         LOGE("Controls unresponsive");
-        s->scene.alert_size = ALERTSIZE_FULL;
+        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);
 
         s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";

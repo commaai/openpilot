@@ -27,10 +27,27 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
   const int network_img_w = 176;
   const int network_img_x = !s->scene.uilayout_sidebarcollapsed ? 58 : -(sbr_w);
   const int network_img_y = 196;
-  const int network_img = s->scene.networkType == cereal::ThermalData::NetworkType::NONE ?
-                          s->img_network[0] : s->img_network[(int)s->scene.networkStrength + 1];
-
-  ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, network_img, 1.0f);
+  int img_idx = 0;
+  if (s->scene.networkType != cereal::ThermalData::NetworkType::NONE) {
+    switch (s->scene.networkStrength) {
+      case cereal::ThermalData::NetworkStrength::UNKNOWN:
+        img_idx = 1;
+        break;
+      case cereal::ThermalData::NetworkStrength::POOR:
+        img_idx = 2;
+        break;
+      case cereal::ThermalData::NetworkStrength::MODERATE:
+        img_idx = 3;
+        break;
+      case cereal::ThermalData::NetworkStrength::GOOD:
+        img_idx = 4;
+        break;
+      case cereal::ThermalData::NetworkStrength::GREAT:
+        img_idx = 5;
+        break;
+    }
+  }
+  ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, s->img_network[img_idx], 1.0f);
 }
 
 static void ui_draw_sidebar_battery_icon(UIState *s) {
@@ -52,18 +69,32 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   const int network_y = 273;
   const int network_w = 100;
   const int network_h = 100;
-  const char *network_types[6] = {"--", "WiFi", "2G", "3G", "4G", "5G"};
-  char network_type_str[32];
-
-  if ((int)s->scene.networkType <= 5) {
-    snprintf(network_type_str, sizeof(network_type_str), "%s", network_types[(int)s->scene.networkType]);
+  const char *network_type = NULL;
+  switch (s->scene.networkType) {
+    case cereal::ThermalData::NetworkType::WIFI:
+      network_type = "WiFi";
+      break;
+    case cereal::ThermalData::NetworkType::CELL2_G:
+      network_type = "2G";
+      break;
+    case cereal::ThermalData::NetworkType::CELL3_G:
+      network_type = "3G";
+      break;
+    case cereal::ThermalData::NetworkType::CELL4_G:
+      network_type = "4G";
+      break;
+    case cereal::ThermalData::NetworkType::CELL5_G:
+      network_type = "5G";
+      break;
+    default:
+      network_type = "--";
+      break;
   }
-
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);
   nvgFontFaceId(s->vg, s->font_sans_regular);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-  nvgTextBox(s->vg, network_x, network_y, network_w, network_type_str, NULL);
+  nvgTextBox(s->vg, network_x, network_y, network_w, network_type, NULL);
 }
 
 static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char* value_str, const int severity, const int y_offset, const char* message_str) {
@@ -112,22 +143,26 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
 }
 
 static void ui_draw_sidebar_temp_metric(UIState *s) {
-  int temp_severity;
+  int temp_severity = 0;
   char temp_label_str[32];
   char temp_value_str[32];
   char temp_value_unit[32];
   const int temp_y_offset = 0;
 
-  if (s->scene.thermalStatus == cereal::ThermalData::ThermalStatus::GREEN) {
-    temp_severity = 0;
-  } else if (s->scene.thermalStatus == cereal::ThermalData::ThermalStatus::YELLOW) {
-    temp_severity = 1;
-  } else if (s->scene.thermalStatus == cereal::ThermalData::ThermalStatus::RED) {
-    temp_severity = 2;
-  } else if (s->scene.thermalStatus == cereal::ThermalData::ThermalStatus::DANGER) {
-    temp_severity = 3;
+  switch(s->scene.thermalStatus){
+    case cereal::ThermalData::ThermalStatus::GREEN:
+      temp_severity = 0;
+      break;
+    case cereal::ThermalData::ThermalStatus::YELLOW:
+      temp_severity = 1;
+      break;
+    case cereal::ThermalData::ThermalStatus::RED:
+      temp_severity = 2;
+      break;
+    case cereal::ThermalData::ThermalStatus::DANGER:
+      temp_severity = 3;
+      break;
   }
-
   snprintf(temp_value_str, sizeof(temp_value_str), "%d", s->scene.paTemp);
   snprintf(temp_value_unit, sizeof(temp_value_unit), "%s", "°C");
   snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");

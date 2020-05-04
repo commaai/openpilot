@@ -27,13 +27,6 @@ const uint8_t alert_colors[][4] = {
   [STATUS_ALERT] = {0xC9, 0x22, 0x31, 0xf1},
 };
 
-const int alert_sizes[] = {
-  [ALERTSIZE_NONE] = 0,
-  [ALERTSIZE_SMALL] = 241,
-  [ALERTSIZE_MID] = 390,
-  [ALERTSIZE_FULL] = vwp_h,
-};
-
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
 vec3 car_space_to_full_frame(const UIState *s, vec4 car_space_projective) {
@@ -670,7 +663,7 @@ static void ui_draw_vision_footer(UIState *s) {
 #endif
 }
 
-void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
+void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, int va_color,
                           const char* va_text1, const char* va_text2) {
   const UIScene *scene = &s->scene;
   const bool hasSidebar = !scene->uilayout_sidebarcollapsed;
@@ -678,10 +671,25 @@ void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
   bool longAlert1 = strlen(va_text1) > 15;
 
   const uint8_t *color = alert_colors[va_color];
-  const int alr_s = alert_sizes[va_size];
+  int alr_s = 0;
+  switch (va_size) {
+    case cereal::ControlsState::AlertSize::NONE:
+      alr_s = 0;
+      break;
+    case cereal::ControlsState::AlertSize::SMALL:
+      alr_s = 241;
+      break;
+    case cereal::ControlsState::AlertSize::MID:
+      alr_s = 390;
+      break;
+    case cereal::ControlsState::AlertSize::FULL:
+      alr_s = vwp_h;
+      break;
+  }
+
   const int alr_x = scene->ui_viz_rx-(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)-bdr_s;
   const int alr_w = scene->ui_viz_rw+(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)+(bdr_s*2);
-  const int alr_h = alr_s+(va_size==ALERTSIZE_NONE?0:bdr_s);
+  const int alr_h = alr_s+(va_size==cereal::ControlsState::AlertSize::NONE?0:bdr_s);
   const int alr_y = vwp_h-alr_h;
 
   ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, nvgRGBA(color[0],color[1],color[2],(color[3]*s->alert_blinking_alpha)));
@@ -693,12 +701,12 @@ void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
-  if (va_size == ALERTSIZE_SMALL) {
+  if (va_size == cereal::ControlsState::AlertSize::SMALL) {
     ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, va_text1, 40*2.5, COLOR_WHITE, s->font_sans_semibold);
-  } else if (va_size== ALERTSIZE_MID) {
+  } else if (va_size == cereal::ControlsState::AlertSize::MID) {
     ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, va_text1, 48*2.5, COLOR_WHITE, s->font_sans_bold);
     ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, va_text2, 36*2.5, COLOR_WHITE, s->font_sans_regular);
-  } else if (va_size== ALERTSIZE_FULL) {
+  } else if (va_size == cereal::ControlsState::AlertSize::FULL) {
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
     nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
@@ -734,7 +742,7 @@ static void ui_draw_vision(UIState *s) {
     ui_draw_driver_view(s);
   }
 
-  if (scene->alert_size != ALERTSIZE_NONE) {
+  if (scene->alert_size != cereal::ControlsState::AlertSize::NONE) {
     // Controls Alerts
     ui_draw_vision_alert(s, scene->alert_size, s->status,
                             scene->alert_text1.c_str(), scene->alert_text2.c_str());
