@@ -83,11 +83,11 @@ jobs:
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
-                    $UNIT_TEST tools/lib/tests"
+                    $UNIT_TEST tools/lib/tests && \
+                    coverage xml"
       - name: Upload coverage to Codecov
         run: |
-          pip install coverage==5.1
-          docker cp tmppilot:/tmp/openpilot/.coverage .
+          docker cp tmppilot:/tmp/openpilot/coverage.xml coverage.xml
           bash <(curl -s https://codecov.io/bash)
 
   process_replay:
@@ -103,11 +103,10 @@ jobs:
         run: $LOAD
       - name: Run replay
         run: |
-          $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+          $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py && coverage xml"
       - name: Upload coverage to Codecov
         run: |
-          pip install coverage==5.1
-          docker cp tmppilot:/tmp/openpilot/.coverage .
+          docker cp tmppilot:/tmp/openpilot/coverage.xml coverage.xml
           bash <(curl -s https://codecov.io/bash)
       - name: Copy diff
         if: always()
@@ -160,10 +159,9 @@ jobs:
         run: $LOAD
       - name: Test car models
         run: |
-          $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine"
+          $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine && coverage xml"
       - name: Upload coverage to Codecov
         run: |
-          pip install coverage==5.1
-          docker cp tmppilot:/tmp/openpilot/.coverage .
+          docker cp tmppilot:/tmp/openpilot/coverage.xml coverage.xml
           bash <(curl -s https://codecov.io/bash)
 
