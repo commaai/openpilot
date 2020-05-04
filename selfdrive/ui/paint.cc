@@ -1,6 +1,6 @@
 #include "ui.hpp"
 #include <assert.h>
-
+#include <map>
 #include "common/util.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
@@ -665,27 +665,19 @@ static void ui_draw_vision_footer(UIState *s) {
 
 void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, int va_color,
                           const char* va_text1, const char* va_text2) {
+  static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
+      {cereal::ControlsState::AlertSize::NONE, 0},
+      {cereal::ControlsState::AlertSize::SMALL, 241},
+      {cereal::ControlsState::AlertSize::MID, 390},
+      {cereal::ControlsState::AlertSize::FULL, vwp_h}};
+
   const UIScene *scene = &s->scene;
   const bool hasSidebar = !scene->uilayout_sidebarcollapsed;
   const bool mapEnabled = scene->uilayout_mapenabled;
   bool longAlert1 = strlen(va_text1) > 15;
 
   const uint8_t *color = alert_colors[va_color];
-  int alr_s = 0;
-  switch (va_size) {
-    case cereal::ControlsState::AlertSize::NONE:
-      alr_s = 0;
-      break;
-    case cereal::ControlsState::AlertSize::SMALL:
-      alr_s = 241;
-      break;
-    case cereal::ControlsState::AlertSize::MID:
-      alr_s = 390;
-      break;
-    case cereal::ControlsState::AlertSize::FULL:
-      alr_s = vwp_h;
-      break;
-  }
+  int alr_s = alert_size_map[va_size];
 
   const int alr_x = scene->ui_viz_rx-(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)-bdr_s;
   const int alr_w = scene->ui_viz_rw+(mapEnabled?(hasSidebar?nav_w:(nav_ww)):0)+(bdr_s*2);

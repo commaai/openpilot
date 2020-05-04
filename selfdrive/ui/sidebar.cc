@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <map>
 #include "ui.hpp"
 
 static void ui_draw_sidebar_background(UIState *s) {
@@ -23,30 +24,17 @@ static void ui_draw_sidebar_home_button(UIState *s) {
 }
 
 static void ui_draw_sidebar_network_strength(UIState *s) {
+  static std::map<cereal::ThermalData::NetworkStrength, int> network_type_map = {
+      {cereal::ThermalData::NetworkStrength::UNKNOWN, 1},
+      {cereal::ThermalData::NetworkStrength::POOR, 2},
+      {cereal::ThermalData::NetworkStrength::MODERATE, 3},
+      {cereal::ThermalData::NetworkStrength::GOOD, 4},
+      {cereal::ThermalData::NetworkStrength::GREAT, 5}};
   const int network_img_h = 27;
   const int network_img_w = 176;
   const int network_img_x = !s->scene.uilayout_sidebarcollapsed ? 58 : -(sbr_w);
   const int network_img_y = 196;
-  int img_idx = 0;
-  if (s->scene.networkType != cereal::ThermalData::NetworkType::NONE) {
-    switch (s->scene.networkStrength) {
-      case cereal::ThermalData::NetworkStrength::UNKNOWN:
-        img_idx = 1;
-        break;
-      case cereal::ThermalData::NetworkStrength::POOR:
-        img_idx = 2;
-        break;
-      case cereal::ThermalData::NetworkStrength::MODERATE:
-        img_idx = 3;
-        break;
-      case cereal::ThermalData::NetworkStrength::GOOD:
-        img_idx = 4;
-        break;
-      case cereal::ThermalData::NetworkStrength::GREAT:
-        img_idx = 5;
-        break;
-    }
-  }
+  const int img_idx = s->scene.networkType != cereal::ThermalData::NetworkType::NONE ? network_type_map[s->scene.networkStrength] : 0;
   ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, s->img_network[img_idx], 1.0f);
 }
 
@@ -65,36 +53,23 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
 }
 
 static void ui_draw_sidebar_network_type(UIState *s) {
+  static std::map<cereal::ThermalData::NetworkType, const char *> network_type_map = {
+      {cereal::ThermalData::NetworkType::NONE, "--"},
+      {cereal::ThermalData::NetworkType::WIFI, "WiFi"},
+      {cereal::ThermalData::NetworkType::CELL2_G, "2G"},
+      {cereal::ThermalData::NetworkType::CELL3_G, "3G"},
+      {cereal::ThermalData::NetworkType::CELL4_G, "4G"},
+      {cereal::ThermalData::NetworkType::CELL5_G, "5G"}};
   const int network_x = !s->scene.uilayout_sidebarcollapsed ? 50 : -(sbr_w);
   const int network_y = 273;
   const int network_w = 100;
   const int network_h = 100;
-  const char *network_type = NULL;
-  switch (s->scene.networkType) {
-    case cereal::ThermalData::NetworkType::WIFI:
-      network_type = "WiFi";
-      break;
-    case cereal::ThermalData::NetworkType::CELL2_G:
-      network_type = "2G";
-      break;
-    case cereal::ThermalData::NetworkType::CELL3_G:
-      network_type = "3G";
-      break;
-    case cereal::ThermalData::NetworkType::CELL4_G:
-      network_type = "4G";
-      break;
-    case cereal::ThermalData::NetworkType::CELL5_G:
-      network_type = "5G";
-      break;
-    default:
-      network_type = "--";
-      break;
-  }
+  const char *network_type = network_type_map[s->scene.networkType];
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);
   nvgFontFaceId(s->vg, s->font_sans_regular);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-  nvgTextBox(s->vg, network_x, network_y, network_w, network_type, NULL);
+  nvgTextBox(s->vg, network_x, network_y, network_w, network_type ? network_type : "--", NULL);
 }
 
 static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char* value_str, const int severity, const int y_offset, const char* message_str) {
@@ -143,32 +118,22 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
 }
 
 static void ui_draw_sidebar_temp_metric(UIState *s) {
-  int temp_severity = 0;
+  static std::map<cereal::ThermalData::ThermalStatus, const int> temp_severity_map = {
+      {cereal::ThermalData::NetworkStrength::UNKNOWN, 1},
+      {cereal::ThermalData::NetworkStrength::POOR, 2},
+      {cereal::ThermalData::NetworkStrength::MODERATE, 3},
+      {cereal::ThermalData::NetworkStrength::GOOD, 4},
+      {cereal::ThermalData::NetworkStrength::GREAT, 5}};
   char temp_label_str[32];
   char temp_value_str[32];
   char temp_value_unit[32];
-  const int temp_y_offset = 0;
-
-  switch(s->scene.thermalStatus){
-    case cereal::ThermalData::ThermalStatus::GREEN:
-      temp_severity = 0;
-      break;
-    case cereal::ThermalData::ThermalStatus::YELLOW:
-      temp_severity = 1;
-      break;
-    case cereal::ThermalData::ThermalStatus::RED:
-      temp_severity = 2;
-      break;
-    case cereal::ThermalData::ThermalStatus::DANGER:
-      temp_severity = 3;
-      break;
-  }
+  const int temp_y_offset = ;
   snprintf(temp_value_str, sizeof(temp_value_str), "%d", s->scene.paTemp);
   snprintf(temp_value_unit, sizeof(temp_value_unit), "%s", "°C");
   snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");
   strcat(temp_value_str, temp_value_unit);
 
-  ui_draw_sidebar_metric(s, temp_label_str, temp_value_str, temp_severity, temp_y_offset, NULL);
+  ui_draw_sidebar_metric(s, temp_label_str, temp_value_str, temp_severity_map[s->scene.thermalStatus], temp_y_offset, NULL);
 }
 
 static void ui_draw_sidebar_panda_metric(UIState *s) {
