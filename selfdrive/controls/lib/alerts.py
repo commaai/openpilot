@@ -55,7 +55,15 @@ class Alert():
   def __gt__(self, alert2):
     return self.alert_priority > alert2.alert_priority
 
-# TODO: make NoEntryAlert, PermanentAlert, etc.
+class NoEntryAlert(Alert):
+  def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
+               visual_alert=VisualAlert.none, duration_hud_alert=2.):
+    super().__init__("openpilot Unavailable", alert_text_2, AlertStatus.normal, \
+          AlertSize.mid, Priority.LOW, visual_alert, \
+          audible_alert, .4, duration_hud_alert, 3.)
+
+
+# TODO: make PermanentAlert, etc.
 
 ALERTS = {
   # Miscellaneous alerts
@@ -180,11 +188,8 @@ ALERTS = {
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 3.),
 
-  "steerTempUnavailableNoEntry": Alert(
-      "openpilot Unavailable",
-      "Steering Temporarily Unavailable",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 0., 3.),
+  "steerTempUnavailableNoEntry": NoEntryAlert("Steering Temporarily Unavailable",
+                                              duration_hud_alert=0.),
 
   "manualRestart": Alert(
       "TAKE CONTROL",
@@ -235,77 +240,22 @@ ALERTS = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
 
   # Non-entry only alerts
-  "wrongCarModeNoEntry": Alert(
-      "openpilot Unavailable",
-      "Main Switch Off",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 0., 3.),
-
-  "dataNeededNoEntry": Alert(
-      "openpilot Unavailable",
-      "Calibration Needs Data. Upload Drive, Try Again",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 0., 3.),
-
-  "outOfSpaceNoEntry": Alert(
-      "openpilot Unavailable",
-      "Out of Storage Space",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 0., 3.),
-
-  "pedalPressedNoEntry": Alert(
-      "openpilot Unavailable",
-      "Pedal Pressed During Attempt",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, "brakePressed", AudibleAlert.chimeError, .4, 2., 3.),
-
-  "speedTooLowNoEntry": Alert(
-      "openpilot Unavailable",
-      "Speed Too Low",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  "brakeHoldNoEntry": Alert(
-      "openpilot Unavailable",
-      "Brake Hold Active",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  "parkBrakeNoEntry": Alert(
-      "openpilot Unavailable",
-      "Park Brake Engaged",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  "lowSpeedLockoutNoEntry": Alert(
-      "openpilot Unavailable",
-      "Cruise Fault: Restart the Car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  "lowBatteryNoEntry": Alert(
-      "openpilot Unavailable",
-      "Low Battery",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  "sensorDataInvalidNoEntry": Alert(
-      "openpilot Unavailable",
-      "No Data from Device Sensors",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  "soundsUnavailableNoEntry": Alert(
-      "openpilot Unavailable",
-      "Speaker not found",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  "tooDistractedNoEntry": Alert(
-      "openpilot Unavailable",
-      "Distraction Level Too High",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "wrongCarModeNoEntry": NoEntryAlert("Main Switch Off",
+                                      duration_hud_alert=0.),
+  "dataNeededNoEntry": NoEntryAlert("Calibration Needs Data. Upload Drive, Try Again",
+                                    duration_hud_alert=0.),
+  "outOfSpaceNoEntry": NoEntryAlert("Out of Storage Space",
+                                    duration_hud_alert=0.),
+  "pedalPressedNoEntry": NoEntryAlert("Pedal Pressed During Attempt",
+                                      visual_alert=VisualAlert.brakePressed),
+  "speedTooLowNoEntry": NoEntryAlert("Speed Too Low"),
+  "brakeHoldNoEntry": NoEntryAlert("Brake Hold Active"),
+  "parkBrakeNoEntry": NoEntryAlert("Park Brake Engaged"),
+  "lowSpeedLockoutNoEntry": NoEntryAlert("Cruise Fault: Restart the Car"),
+  "lowBatteryNoEntry": NoEntryAlert("Low Battery"),
+  "sensorDataInvalidNoEntry": NoEntryAlert("No Data from Device Sensors"),
+  "soundsUnavailableNoEntry": NoEntryAlert("Speaker not found"),
+  "tooDistractedNoEntry": NoEntryAlert("Distraction Level Too High"),
 
   # Cancellation alerts causing soft disabling
   "overheat": Alert(
@@ -469,159 +419,61 @@ ALERTS = {
       Priority.HIGH, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
 
   # Cancellation alerts causing non-entry
-  "overheatNoEntry": Alert(
-      "openpilot Unavailable",
-      "System overheated",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "overheatNoEntry": NoEntryAlert("System overheated"),
 
-  "wrongGearNoEntry": Alert(
-      "openpilot Unavailable",
-      "Gear not D",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "wrongGearNoEntry": NoEntryAlert("Gear not D"),
 
-  "calibrationInvalidNoEntry": Alert(
-      "openpilot Unavailable",
-      "Calibration Invalid: Reposition Device & Recalibrate",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "calibrationInvalidNoEntry": NoEntryAlert("Calibration Invalid: Reposition Device & Recalibrate"),
 
-  "calibrationIncompleteNoEntry": Alert(
-      "openpilot Unavailable",
-      "Calibration in Progress",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "calibrationIncompleteNoEntry": NoEntryAlert("Calibration in Progress"),
 
-  "doorOpenNoEntry": Alert(
-      "openpilot Unavailable",
-      "Door open",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "doorOpenNoEntry": NoEntryAlert("Door open"),
 
-  "seatbeltNotLatchedNoEntry": Alert(
-      "openpilot Unavailable",
-      "Seatbelt unlatched",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "seatbeltNotLatchedNoEntry": NoEntryAlert("Seatbelt unlatched"),
 
-  "espDisabledNoEntry": Alert(
-      "openpilot Unavailable",
-      "ESP Off",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "espDisabledNoEntry": NoEntryAlert("ESP Off"),
 
-  "geofenceNoEntry": Alert(
-      "openpilot Unavailable",
-      "Not in Geofenced Area",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.MID, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "radarCanErrorNoEntry": NoEntryAlert("Radar Error: Restart the Car"),
 
-  "radarCanErrorNoEntry": Alert(
-      "openpilot Unavailable",
-      "Radar Error: Restart the Car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "radarFaultNoEntry": NoEntryAlert("Radar Error: Restart the Car"),
 
-  "radarFaultNoEntry": Alert(
-      "openpilot Unavailable",
-      "Radar Error: Restart the Car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "posenetInvalidNoEntry": NoEntryAlert("Vision Model Output Uncertain"),
 
-  "posenetInvalidNoEntry": Alert(
-      "openpilot Unavailable",
-      "Vision Model Output Uncertain",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "controlsFailedNoEntry": NoEntryAlert("Controls Failed"),
 
-  "controlsFailedNoEntry": Alert(
-      "openpilot Unavailable",
-      "Controls Failed",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "canErrorNoEntry": NoEntryAlert("CAN Error: Check Connections"),
 
-  "canErrorNoEntry": Alert(
-      "openpilot Unavailable",
-      "CAN Error: Check Connections",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "steerUnavailableNoEntry": NoEntryAlert("LKAS Fault: Restart the Car"),
 
-  "steerUnavailableNoEntry": Alert(
-      "openpilot Unavailable",
-      "LKAS Fault: Restart the Car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "brakeUnavailableNoEntry": NoEntryAlert("Cruise Fault: Restart the Car"),
 
-  "brakeUnavailableNoEntry": Alert(
-      "openpilot Unavailable",
-      "Cruise Fault: Restart the Car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "gasUnavailableNoEntry": NoEntryAlert("Gas Error: Restart the Car"),
 
-  "gasUnavailableNoEntry": Alert(
-      "openpilot Unavailable",
-      "Gas Error: Restart the Car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "reverseGearNoEntry": NoEntryAlert("Reverse Gear"),
 
-  "reverseGearNoEntry": Alert(
-      "openpilot Unavailable",
-      "Reverse Gear",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "cruiseDisabledNoEntry": NoEntryAlert("Cruise is Off"),
 
-  "cruiseDisabledNoEntry": Alert(
-      "openpilot Unavailable",
-      "Cruise is Off",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "noTargetNoEntry": NoEntryAlert("No Close Lead Car"),
 
-  "noTargetNoEntry": Alert(
-      "openpilot Unavailable",
-      "No Close Lead Car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "plannerErrorNoEntry": NoEntryAlert("Planner Solution Error"),
 
-  "plannerErrorNoEntry": Alert(
-      "openpilot Unavailable",
-      "Planner Solution Error",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
+  "commIssueNoEntry": NoEntryAlert("Communication Issue between Processes",
+                                   audible_alert=AudibleAlert.chimeDisengage),
 
-  "commIssueNoEntry": Alert(
-      "openpilot Unavailable",
-      "Communication Issue between Processes",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+  "radarCommIssueNoEntry": NoEntryAlert("Radar Communication Issue",
+                                        audible_alert=AudibleAlert.chimeDisengage),
 
-  "radarCommIssueNoEntry": Alert(
-      "openpilot Unavailable",
-      "Radar Communication Issue",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+  "internetConnectivityNeededNoEntry": NoEntryAlert("Please Connect to Internet",
+                                                    audible_alert=AudibleAlert.chimeDisengage),
 
-  "internetConnectivityNeededNoEntry": Alert(
-      "openpilot Unavailable",
-      "Please Connect to Internet",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+  "lowMemoryNoEntry": NoEntryAlert("Low Memory: Reboot Your Device",
+                                   audible_alert=AudibleAlert.chimeDisengage),
 
-  "lowMemoryNoEntry": Alert(
-      "openpilot Unavailable",
-      "Low Memory: Reboot Your Device",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
+  "relayMalfunctionNoEntry": NoEntryAlert("Harness Malfunction"),
 
   "speedTooHighNoEntry": Alert(
       "Speed Too High",
       "Slow down to engage",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-
-  "relayMalfunctionNoEntry": Alert(
-      "openpilot Unavailable",
-      "Harness Malfunction",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
 
