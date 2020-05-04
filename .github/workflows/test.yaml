@@ -3,8 +3,10 @@ on: [push, pull_request]
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
+  PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
   LOAD: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
-  UNIT_TEST: cd /tmp/openpilot && python -m unittest discover
+  CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
+  UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
   build:
@@ -72,16 +74,21 @@ jobs:
         run: $LOAD
       - name: Run unit tests
         run: |
-          $RUN /tmp/openpilot/selfdrive/test/test_fingerprints.py
-          $RUN "$UNIT_TEST common"
-          $RUN "$UNIT_TEST opendbc/can"
-          $RUN "$UNIT_TEST selfdrive/boardd"
-          $RUN "$UNIT_TEST selfdrive/controls"
-          $RUN "$UNIT_TEST selfdrive/loggerd"
-          $RUN "$UNIT_TEST selfdrive/car"
-          $RUN "$UNIT_TEST selfdrive/locationd"
-          $RUN "$UNIT_TEST selfdrive/athena"
-          $RUN "$UNIT_TEST tools/lib/tests"
+          $PERSIST "cd /tmp/openpilot && \
+                    coverage run selfdrive/test/test_fingerprints.py && \
+                    $UNIT_TEST common && \
+                    $UNIT_TEST opendbc/can && \
+                    $UNIT_TEST selfdrive/boardd && \
+                    $UNIT_TEST selfdrive/controls && \
+                    $UNIT_TEST selfdrive/loggerd && \
+                    $UNIT_TEST selfdrive/car && \
+                    $UNIT_TEST selfdrive/locationd && \
+                    $UNIT_TEST selfdrive/athena && \
+                    $UNIT_TEST tools/lib/tests"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F unit_tests"
 
   process_replay:
     name: process replay
@@ -96,14 +103,15 @@ jobs:
         run: $LOAD
       - name: Run replay
         run: |
-          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
+          $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F process_replay"
       - name: Copy diff
         if: always()
         run: |
-          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
-          docker rm $CONTAINER_NAME
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
       - name: Print diff
         if: always()
         run: cat diff.txt
@@ -126,15 +134,12 @@ jobs:
         run: $LOAD
       - name: Test longitudinal
         run: |
-          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+          $PERSIST "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
       - name: Copy artifacts
         if: always()
         run: |
-          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
           mkdir out
-          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
-          docker rm $CONTAINER_NAME
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
       - uses: actions/upload-artifact@v1
         if: always()
         with:
@@ -153,4 +158,10 @@ jobs:
       - name: Load image
         run: $LOAD
       - name: Test car models
-        run: $RUN "mkdir -p /data/params && cd /tmp/openpilot/selfdrive/test/ && ./test_car_models.py"
+        run: |
+          $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F test_car_models"
+
