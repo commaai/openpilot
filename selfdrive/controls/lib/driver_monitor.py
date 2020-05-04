@@ -1,7 +1,7 @@
 from common.numpy_fast import interp
 from math import atan2, sqrt
 from common.realtime import DT_DMON
-from selfdrive.controls.lib.drive_helpers import create_event
+from selfdrive.controls.lib.events import create_event
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
 

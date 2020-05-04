@@ -4,7 +4,7 @@ from cereal import car
 from common.realtime import set_realtime_priority
 from common.params import Params
 import cereal.messaging as messaging
-from selfdrive.controls.lib.drive_helpers import create_event
+from selfdrive.controls.lib.events import create_event
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
 from selfdrive.locationd.calibration_helpers import Calibration
 
