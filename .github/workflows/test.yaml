@@ -97,12 +97,13 @@ jobs:
       - name: Run replay
         run: |
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/bash -c "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/bash -c "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py && coverage xml"
           docker cp $CONTAINER_NAME:/tmp/openpilot/coverage.xml coverage.xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
           file: ./coverage.xml
+          flags: process_replay
           fail_ci_if_error: true
       - name: Copy diff
         if: always()
@@ -159,4 +160,15 @@ jobs:
       - name: Load image
         run: $LOAD
       - name: Test car models
-        run: $RUN "mkdir -p /data/params && cd /tmp/openpilot/selfdrive/test/ && ./test_car_models.py"
+        run: |
+          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
+          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode selfdrive/test/test_car_models.py && coverage combine && coverage xml"
+          docker cp $CONTAINER_NAME:/tmp/openpilot/coverage.xml coverage.xml
+          docker rm $CONTAINER_NAME
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: /tmp/openpilot/coverage.xml
+          flags: test_car_models
+          fail_ci_if_error: true
+
