@@ -164,9 +164,4 @@ jobs:
         run: |
           docker commit tmppilot tmppilotci
           $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F test_car_models"
-      - uses: actions/upload-artifact@v1
-        if: always()
-        with:
-          name: coverage.xml
-          path: coverage.xml
 
