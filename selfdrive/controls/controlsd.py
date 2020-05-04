@@ -163,14 +163,16 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
           state = State.preEnabled
         else:
           state = State.enabled
-        AM.add(frame, "enable", enabled)
+        for e in get_events(events, [ET.ENABLE]):
+          AM.add(frame, e, enabled)
         v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, v_cruise_kph_last)
 
   # ENABLED
   elif state == State.enabled:
     if get_events(events, [ET.USER_DISABLE]):
       state = State.disabled
-      AM.add(frame, "disable", enabled)
+      for e in get_events(events, [ET.USER_DISABLE]):
+        AM.add(frame, e, enabled)
 
     elif get_events(events, [ET.IMMEDIATE_DISABLE]):
       state = State.disabled

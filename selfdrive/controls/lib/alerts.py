@@ -65,19 +65,30 @@ class NoEntryAlert(Alert):
 
 # TODO: make PermanentAlert, etc.
 
+enable_alert =  Alert(
+                    "",
+                    "",
+                    AlertStatus.normal, AlertSize.none,
+                    Priority.MID, VisualAlert.none, AudibleAlert.chimeEngage, .2, 0., 0.)
+
+disable_alert = Alert(
+                    "",
+                    "",
+                    AlertStatus.normal, AlertSize.none,
+                    Priority.MID, VisualAlert.none, AudibleAlert.chimeDisengage, .2, 0., 0.)
+
 ALERTS = {
   # Miscellaneous alerts
-  "enable": Alert(
-      "",
-      "",
-      AlertStatus.normal, AlertSize.none,
-      Priority.MID, VisualAlert.none, AudibleAlert.chimeEngage, .2, 0., 0.),
 
-  "disable": Alert(
-      "",
-      "",
-      AlertStatus.normal, AlertSize.none,
-      Priority.MID, VisualAlert.none, AudibleAlert.chimeDisengage, .2, 0., 0.),
+  "pcmEnable": enable_alert,
+  "buttonEnable": enable_alert,
+
+  "pcmDisable": disable_alert,
+  "buttonCancel": disable_alert,
+  "brakeHold": disable_alert,
+  "parkBrake": disable_alert,
+  "wrongCarMode": disable_alert,
+  "pedalPressed": disable_alert,
 
   "fcw": Alert(
       "BRAKE!",
