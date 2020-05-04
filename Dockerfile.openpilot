@@ -70,6 +70,8 @@ RUN mkdir -p /tmp/openpilot
 COPY ./flake8_openpilot.sh /tmp/openpilot/
 COPY ./pylint_openpilot.sh /tmp/openpilot/
 COPY ./.pylintrc /tmp/openpilot/
+
+COPY ./codecov.yml /tmp/openpilot/
 COPY ./.coveragerc-app /tmp/openpilot/
 
 COPY ./pyextra /tmp/openpilot/pyextra
