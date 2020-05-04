@@ -35,7 +35,7 @@ class PubSocket():
     pass
 
 
-class SubMaster():
+class SubMaster(messaging.SubMaster):
   def __init__(self, msgs, trigger, services):
     self.max_i = len(msgs) - 1
     self.i = 0
@@ -43,6 +43,7 @@ class SubMaster():
     self.trigger = trigger
     self.msgs = msgs
     self.data = {}
+    self.ignore_alive = []
 
     self.alive = {s: True for s in services}
     self.updated = {s: False for s in services}
@@ -85,22 +86,7 @@ class SubMaster():
       if w == self.trigger:
         break
 
-  def all_alive(self):
-    return True
 
-  def all_valid(self):
-    return True
-
-  def all_alive_and_valid(self):
-    return True
-
-  def __getitem__(self, s):
-    return self.data[s]
-
-
-class PubMaster():
+class PubMaster(messaging.PubMaster):
   def __init__(self):
     self.sock = defaultdict(PubSocket)
-
-  def send(self, s, dat):
-    pass
