@@ -1,2 +1,4 @@
 codecov:
   token: "d5365c72-7402-4c23-9d12-d3ce87f920d8"
+fixes:
+  - "/tmp/openpilot/::"
