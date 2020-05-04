@@ -1,9 +1,13 @@
 from common.numpy_fast import interp
 from math import atan2, sqrt
 from common.realtime import DT_DMON
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
+from selfdrive.controls.lib.drive_helpers import create_event
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
+
+from cereal import car
+
+EventName = car.CarEvent.EventName
 
 # ******************************************************************************************
 #  NOTE: To fork maintainers.
@@ -225,7 +229,7 @@ class DriverStatus():
     awareness_prev = self.awareness
 
     if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT:
-      events.append(create_event('driverMonitorLowAcc', [ET.WARNING]))
+      events.append(create_event(EventName.driverMonitorLowAcc))
 
     if (driver_attentive and self.face_detected and self.pose.low_std and self.awareness > 0):
       # only restore awareness when paying attention and alert is not red
@@ -244,18 +248,18 @@ class DriverStatus():
     alert = None
     if self.awareness <= 0.:
       # terminal red alert: disengagement required
-      alert = 'driverDistracted' if self.active_monitoring_mode else 'driverUnresponsive'
+      alert = EventName.driverDistracted if self.active_monitoring_mode else EventName.driverUnresponsive
       self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_prompt:
       # prompt orange alert
-      alert = 'promptDriverDistracted' if self.active_monitoring_mode else 'promptDriverUnresponsive'
+      alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
     elif self.awareness <= self.threshold_pre:
       # pre green alert
-      alert = 'preDriverDistracted' if self.active_monitoring_mode else 'preDriverUnresponsive'
+      alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive
 
     if alert is not None:
-      events.append(create_event(alert, [ET.WARNING]))
+      events.append(create_event(alert))
 
     return events

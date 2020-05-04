@@ -12,9 +12,9 @@ from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_alert
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
+from selfdrive.controls.lib.alerts import EventTypes as ET
 from selfdrive.controls.lib.drive_helpers import get_events, \
                                                  create_event, \
-                                                 EventTypes as ET, \
                                                  update_v_cruise, \
                                                  initialize_v_cruise
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
@@ -37,15 +37,16 @@ HwType = log.HealthData.HwType
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 
+EventName = car.CarEvent.EventName
 
 def add_lane_change_event(events, path_plan):
   if path_plan.laneChangeState == LaneChangeState.preLaneChange:
     if path_plan.laneChangeDirection == LaneChangeDirection.left:
-      events.append(create_event('preLaneChangeLeft', [ET.WARNING]))
+      events.append(create_event(EventName.preLaneChangeLeft))
     else:
-      events.append(create_event('preLaneChangeRight', [ET.WARNING]))
+      events.append(create_event(EventName.preLaneChangeRight))
   elif path_plan.laneChangeState in [LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing]:
-      events.append(create_event('laneChange', [ET.WARNING]))
+      events.append(create_event(EventName.laneChange))
 
 
 def isActive(state):
@@ -57,6 +58,8 @@ def isEnabled(state):
   """Check if openpilot is engaged"""
   return (isActive(state) or state == State.preEnabled)
 
+
+# TODO: just use event names, since the types don't change
 def events_to_bytes(events):
   # optimization when comparing capnp structs: str() or tree traverse are much slower
   ret = []
@@ -86,7 +89,7 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
   # Check for CAN timeout
   if not can_strs:
     can_error_counter += 1
-    events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    events.append(create_event(EventName.canError))
 
   overtemp = sm['thermal'].thermalStatus >= ThermalStatus.red
   free_space = sm['thermal'].freeSpace < 0.07  # under 7% of space free no enable allowed
@@ -95,16 +98,16 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
 
   # Create events for battery, temperature and disk space
   if low_battery:
-    events.append(create_event('lowBattery', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    events.append(create_event(EventName.lowBattery))
   if overtemp:
-    events.append(create_event('overheat', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    events.append(create_event(EventName.overheat))
   if free_space:
-    events.append(create_event('outOfSpace', [ET.NO_ENTRY]))
+    events.append(create_event(EventName.outOfSpace))
   if mem_low:
-    events.append(create_event('lowMemory', [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.PERMANENT]))
+    events.append(create_event(EventName.lowMemory))
 
   if CS.stockAeb:
-    events.append(create_event('stockAeb', []))
+    events.append(create_event(EventName.stockAeb))
 
   # Handle calibration
   cal_status = sm['liveCalibration'].calStatus
@@ -112,12 +115,12 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
 
   if cal_status != Calibration.CALIBRATED:
     if cal_status == Calibration.UNCALIBRATED:
-      events.append(create_event('calibrationIncomplete', [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.PERMANENT]))
+      events.append(create_event(EventName.calibrationIncomplete))
     else:
-      events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.append(create_event(EventName.calibrationInvalid))
 
   if CS.vEgo > 92 * CV.MPH_TO_MS:
-    events.append(create_event('speedTooHigh', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    events.append(create_event(EventName.speedTooHigh))
 
   # When the panda and controlsd do not agree on controls_allowed
   # we want to disengage openpilot. However the status from the panda goes through
@@ -130,7 +133,7 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
   if not controls_allowed and enabled:
     mismatch_counter += 1
   if mismatch_counter >= 200:
-    events.append(create_event('controlsMismatch', [ET.IMMEDIATE_DISABLE]))
+    events.append(create_event(EventName.controlsMismatch))
 
   return CS, events, cal_perc, mismatch_counter, can_error_counter
 
@@ -345,7 +348,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
 
   if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
     AM.add(sm.frame, 'ldwPermanent', False)
-    events.append(create_event('ldw', [ET.PERMANENT]))
+    events.append(create_event(EventName.ldw))
 
   AM.process_alerts(sm.frame)
   CC.hudControl.visualAlert = AM.visual_alert
@@ -545,38 +548,38 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
     # Create alerts
     if not sm.alive['plan'] and sm.alive['pathPlan']:  # only plan not being received: radar not communicating
-      events.append(create_event('radarCommIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.append(create_event(EventName.radarCommIssue))
     elif not sm.all_alive_and_valid():
-      events.append(create_event('commIssue', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.append(create_event(EventName.commIssue))
     if not sm['pathPlan'].mpcSolutionValid:
-      events.append(create_event('plannerError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.append(create_event(EventName.plannerError))
     if not sm['pathPlan'].sensorValid and os.getenv("NOSENSOR") is None:
-      events.append(create_event('sensorDataInvalid', [ET.NO_ENTRY, ET.PERMANENT]))
+      events.append(create_event(EventName.sensorDataInvalid))
     if not sm['pathPlan'].paramsValid:
-      events.append(create_event('vehicleModelInvalid', [ET.WARNING]))
+      events.append(create_event(EventName.vehicleModelInvalid))
     if not sm['pathPlan'].posenetValid:
-      events.append(create_event('posenetInvalid', [ET.NO_ENTRY, ET.WARNING]))
+      events.append(create_event(EventName.posenetInvalid))
     if not sm['plan'].radarValid:
-      events.append(create_event('radarFault', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.append(create_event(EventName.radarFault))
     if sm['plan'].radarCanError:
-      events.append(create_event('radarCanError', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.append(create_event(EventName.radarCanError))
     if not CS.canValid:
-      events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.append(create_event(EventName.canError))
     if not sounds_available:
-      events.append(create_event('soundsUnavailable', [ET.NO_ENTRY, ET.PERMANENT]))
+      events.append(create_event(EventName.soundsUnavailable))
     if internet_needed:
-      events.append(create_event('internetConnectivityNeeded', [ET.NO_ENTRY, ET.PERMANENT]))
+      events.append(create_event(EventName.internetConnectivityNeeded))
     if community_feature_disallowed:
-      events.append(create_event('communityFeatureDisallowed', [ET.PERMANENT]))
+      events.append(create_event(EventName.communityFeatureDisallowed))
     if read_only and not passive:
-      events.append(create_event('carUnrecognized', [ET.PERMANENT]))
+      events.append(create_event(EventName.carUnrecognized))
     if log.HealthData.FaultType.relayMalfunction in sm['health'].faults:
-      events.append(create_event('relayMalfunction', [ET.NO_ENTRY, ET.PERMANENT, ET.IMMEDIATE_DISABLE]))
+      events.append(create_event(EventName.relayMalfunction))
 
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
-      events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.append(create_event(EventName.noTarget))
 
     if not read_only:
       # update control state

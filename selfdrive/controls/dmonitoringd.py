@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import gc
+from cereal import car
 from common.realtime import set_realtime_priority
 from common.params import Params
 import cereal.messaging as messaging
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
+from selfdrive.controls.lib.drive_helpers import create_event
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
 from selfdrive.locationd.calibration_helpers import Calibration
 
@@ -70,7 +71,7 @@ def dmonitoringd_thread(sm=None, pm=None):
       driver_status.get_pose(sm['driverState'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
       # Block any engage after certain distrations
       if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
-        events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
+        events.append(create_event(car.CarEvent.EventName.tooDistracted))
       # Update events from driver state
       events = driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
 

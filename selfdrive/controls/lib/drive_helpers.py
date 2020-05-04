@@ -1,6 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.alerts import EVENT_ALERTS
 
 # kph
 V_CRUISE_MAX = 144
@@ -23,22 +24,14 @@ class MPC_COST_LONG:
   JERK = 20.0
 
 
-class EventTypes:
-  ENABLE = 'enable'
-  PRE_ENABLE = 'preEnable'
-  NO_ENTRY = 'noEntry'
-  WARNING = 'warning'
-  USER_DISABLE = 'userDisable'
-  SOFT_DISABLE = 'softDisable'
-  IMMEDIATE_DISABLE = 'immediateDisable'
-  PERMANENT = 'permanent'
-
-
-def create_event(name, types):
+def create_event(name, event_types=None):
   event = car.CarEvent.new_message()
   event.name = name
-  for t in types:
-    setattr(event, t, True)
+  if event_types is None:
+    event_types = EVENT_ALERTS[name].keys()
+
+  for event_type in event_types:
+    setattr(event, event_type, True)
   return event
 
 

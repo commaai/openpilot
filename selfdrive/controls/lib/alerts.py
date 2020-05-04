@@ -1,5 +1,4 @@
 from cereal import car, log
-from selfdrive.controls.lib.drive_helpers import EventTypes as ET
 
 # Priority
 class Priority:
@@ -15,6 +14,18 @@ AlertStatus = log.ControlsState.AlertStatus
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 EN = car.CarEvent.EventName
+
+
+class EventTypes:
+  ENABLE = 'enable'
+  PRE_ENABLE = 'preEnable'
+  NO_ENTRY = 'noEntry'
+  WARNING = 'warning'
+  USER_DISABLE = 'userDisable'
+  SOFT_DISABLE = 'softDisable'
+  IMMEDIATE_DISABLE = 'immediateDisable'
+  PERMANENT = 'permanent'
+ET = EventTypes
 
 class Alert():
   def __init__(self,
@@ -587,7 +598,7 @@ EVENT_ALERTS = {
   },
 
   EN.vehicleModelInvalid: {
-    ET.PERMANENT: Alert(
+    ET.WARNING: Alert(
       "Vehicle Parameter Identification Failed",
       "",
       AlertStatus.normal, AlertSize.small,
