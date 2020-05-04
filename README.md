@@ -330,4 +330,4 @@ NO WARRANTY EXPRESSED OR IMPLIED.**
 
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/context:python)
-![Codecov](https://img.shields.io/codecov/c/gh/commaai/openpilot?token=d5365c72-7402-4c23-9d12-d3ce87f920d8)
+![Codecov](https://img.shields.io/codecov/c/gh/commaai/openpilot)
