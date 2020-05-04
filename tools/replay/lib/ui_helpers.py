@@ -1,4 +1,3 @@
-import platform
 from collections import namedtuple
 
 import matplotlib

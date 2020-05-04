@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import zmq
 import cereal.messaging as messaging
-from cereal.services import service_list
 import pcap
 
 def main():

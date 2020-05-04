@@ -64,8 +64,8 @@ int main() {
 
   android_logger_list_close(logger_list);
 
-  delete c;
   delete androidLog;
+  delete c;
 
   return 0;
 }

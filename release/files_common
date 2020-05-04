@@ -173,6 +173,7 @@ selfdrive/common/efd.[c,h]
 selfdrive/common/cqueue.[c,h]
 selfdrive/common/clutil.[c,h]
 selfdrive/common/messaging.h
+selfdrive/common/messagehelp.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
 selfdrive/common/mutex.h
@@ -353,6 +354,11 @@ selfdrive/camerad/transforms/rgb_to_yuv.c
 selfdrive/camerad/transforms/rgb_to_yuv.h
 selfdrive/camerad/transforms/rgb_to_yuv.cl
 selfdrive/camerad/transforms/rgb_to_yuv_test.cc
+
+selfdrive/camerad/imgproc/conv.cl
+selfdrive/camerad/imgproc/pool.cl
+selfdrive/camerad/imgproc/utils.cc
+selfdrive/camerad/imgproc/utils.h
 
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc

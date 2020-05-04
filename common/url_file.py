@@ -1,14 +1,11 @@
 import os
-import sys
 import time
 import tempfile
 import threading
 import urllib.parse
 import pycurl
-import hashlib
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
 
 class URLFile(object):
   _tlocal = threading.local()

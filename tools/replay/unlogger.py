@@ -4,10 +4,7 @@ import os
 import sys
 import zmq
 import time
-import gc
 import signal
-from threading import Thread
-import numpy as np
 from uuid import uuid4
 from collections import namedtuple
 from collections import deque
@@ -22,7 +19,6 @@ from cereal.services import service_list
 from cereal.messaging import pub_sock, MultiplePublishersError
 from common import realtime
 
-from tools.lib.file_helpers import mkdirs_exists_ok
 from tools.lib.kbhit import KBHit
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route

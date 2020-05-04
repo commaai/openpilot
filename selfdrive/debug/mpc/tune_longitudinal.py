@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
-import math
 
 # plot liongitudinal MPC trajectory by defining boundary conditions:
 # ego and lead vehicles state. Use this script to tune MPC costs
@@ -16,7 +15,7 @@ def RW(v_ego, v_l):
 
 def NORM_RW_ERROR(v_ego, v_l, p):
     return (RW(v_ego, v_l) + 4.0 - p)
-    return (RW(v_ego, v_l) + 4.0 - p) / (np.sqrt(v_ego + 0.5) + 0.1)
+    #return (RW(v_ego, v_l) + 4.0 - p) / (np.sqrt(v_ego + 0.5) + 0.1)
 
 
 v_ego = 20.0
@@ -36,7 +35,7 @@ a_lead_tau = 0.
 
 # a_lead_tau = 2.90729817665
 
-min_a_lead_tau = (a_lead**2 * math.pi) / (2 * (v_lead + 0.01)**2)
+#min_a_lead_tau = (a_lead**2 * math.pi) / (2 * (v_lead + 0.01)**2)
 min_a_lead_tau = 0.0
 
 print(a_lead_tau, min_a_lead_tau)

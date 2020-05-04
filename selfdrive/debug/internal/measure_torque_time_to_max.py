@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import sys
 import argparse
 import struct
 from collections import deque
@@ -8,7 +7,6 @@ from statistics import mean
 
 from cereal import log
 import cereal.messaging as messaging
-from cereal.services import service_list
 
 if __name__ == "__main__":
 

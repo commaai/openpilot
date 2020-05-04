@@ -1,4 +1,3 @@
-import sys
 import os
 import requests
 from tools.lib.auth_config import clear_token

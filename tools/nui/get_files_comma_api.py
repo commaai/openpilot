@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 
 from tools.lib.route import Route

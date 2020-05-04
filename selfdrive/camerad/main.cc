@@ -18,10 +18,12 @@
 #include "common/visionipc.h"
 #include "common/visionbuf.h"
 #include "common/visionimg.h"
+#include "common/messagehelp.h"
 
 #include "messaging.hpp"
 
 #include "transforms/rgb_to_yuv.h"
+#include "imgproc/utils.h"
 
 #include "clutil.h"
 #include "bufs.h"
@@ -77,6 +79,14 @@ struct VisionState {
   cl_kernel krnl_debayer_rear;
   cl_kernel krnl_debayer_front;
 
+  cl_program prg_rgb_laplacian;
+  cl_kernel krnl_rgb_laplacian;
+
+  int conv_cl_localMemSize;
+  size_t conv_cl_globalWorkSize[2];
+  size_t conv_cl_localWorkSize[2];
+  size_t pool_cl_globalWorkSize[2];
+
   // processing
   TBuffer ui_tb;
   TBuffer ui_front_tb;
@@ -109,6 +119,8 @@ struct VisionState {
   int rgb_width, rgb_height, rgb_stride;
   VisionBuf rgb_bufs[UI_BUF_COUNT];
   cl_mem rgb_bufs_cl[UI_BUF_COUNT];
+  cl_mem rgb_conv_roi_cl, rgb_conv_result_cl, rgb_conv_filter_cl;
+  uint16_t lapres[(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)];
 
   size_t rgb_front_buf_size;
   int rgb_front_width, rgb_front_height, rgb_front_stride;
@@ -176,9 +188,9 @@ void* frontview_thread(void *arg) {
     cl_event debayer_event;
     if (s->cameras.front.ci.bayer) {
       err = clSetKernelArg(s->krnl_debayer_front, 0, sizeof(cl_mem), &s->front_camera_bufs_cl[buf_idx]);
-      cl_check_error(err);
+      assert(err == 0);
       err = clSetKernelArg(s->krnl_debayer_front, 1, sizeof(cl_mem), &s->rgb_front_bufs_cl[rgb_idx]);
-      cl_check_error(err);
+      assert(err == 0);
       float digital_gain = 1.0;
       err = clSetKernelArg(s->krnl_debayer_front, 2, sizeof(float), &digital_gain);
       assert(err == 0);
@@ -202,33 +214,21 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      Message *msg_dmon = dmonstate_sock->receive(true);
-      if (msg_dmon != NULL) {
-        auto amsg = kj::heapArray<capnp::word>((msg_dmon->getSize() / sizeof(capnp::word)) + 1);
-        memcpy(amsg.begin(), msg_dmon->getData(), msg_dmon->getSize());
-
-        capnp::FlatArrayMessageReader cmsg(amsg);
-        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-        s->rhd_front = event.getDMonitoringState().getIsRHD();
-        s->rhd_front_checked = event.getDMonitoringState().getRhdChecked();
-
-        delete msg_dmon;
+      MessageReader amsg = dmonstate_sock->receive(true);
+      if (amsg) {
+        auto state = amsg.getEvent().getDMonitoringState();
+        s->rhd_front = state.getIsRHD();
+        s->rhd_front_checked = state.getRhdChecked();
       }
     }
 
-    Message *msg = monitoring_sock->receive(true);
-    if (msg != NULL) {
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-      float face_prob = event.getDriverState().getFaceProb();
+    MessageReader amsg = monitoring_sock->receive(true);
+    if (amsg) {
+      auto state = amsg.getEvent().getDriverState();
+      float face_prob = state.getFaceProb();
       float face_position[2];
-      face_position[0] = event.getDriverState().getFacePosition()[0];
-      face_position[1] = event.getDriverState().getFacePosition()[1];
+      face_position[0] = state.getFacePosition()[0];
+      face_position[1] = state.getFacePosition()[1];
 
       // set front camera metering target
       if (face_prob > 0.4)
@@ -246,8 +246,6 @@ void* frontview_thread(void *arg) {
         s->front_meteringbox_xmin = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
         s->front_meteringbox_xmax = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
-
-      delete msg;
     }
 
     // auto exposure
@@ -403,9 +401,9 @@ void* processing_thread(void *arg) {
     cl_event debayer_event;
     if (s->cameras.rear.ci.bayer) {
       err = clSetKernelArg(s->krnl_debayer_rear, 0, sizeof(cl_mem), &s->camera_bufs_cl[buf_idx]);
-      cl_check_error(err);
+      assert(err == 0);
       err = clSetKernelArg(s->krnl_debayer_rear, 1, sizeof(cl_mem), &s->rgb_bufs_cl[rgb_idx]);
-      cl_check_error(err);
+      assert(err == 0);
       err = clSetKernelArg(s->krnl_debayer_rear, 2, sizeof(float), &s->cameras.rear.digital_gain);
       assert(err == 0);
 
@@ -429,6 +427,74 @@ void* processing_thread(void *arg) {
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
+#ifdef QCOM
+    /*FILE *dump_rgb_file = fopen("/tmp/process_dump.rgb", "wb");
+    fwrite(s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, sizeof(uint8_t), dump_rgb_file);
+    fclose(dump_rgb_file);
+    printf("ORIGINAL SAVED!!\n");*/
+
+    /*double t10 = millis_since_boot();*/
+
+    // cache rgb roi and write to cl
+    uint8_t *rgb_roi_buf = new uint8_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3];
+    int roi_id = cnt % ((ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)); // rolling roi
+    int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
+    int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
+
+    for (int r=0;r<(s->rgb_height/NUM_SEGMENTS_Y);r++) {
+      memcpy(rgb_roi_buf + r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
+              (uint8_t *) s->rgb_bufs[rgb_idx].addr + \
+                (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 + \
+                (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
+              s->rgb_width/NUM_SEGMENTS_X * 3);
+    }
+
+    err = clEnqueueWriteBuffer (q, s->rgb_conv_roi_cl, true, 0,
+        s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), rgb_roi_buf, 0, 0, 0);
+    assert(err == 0);
+
+    /*double t11 = millis_since_boot();
+    printf("cache time: %f ms\n", t11 - t10);
+    t10 = millis_since_boot();*/
+
+    err = clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *) &s->rgb_conv_roi_cl);
+    assert(err == 0);
+    err = clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *) &s->rgb_conv_result_cl);
+    assert(err == 0);
+    err = clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *) &s->rgb_conv_filter_cl);
+    assert(err == 0);
+    err = clSetKernelArg(s->krnl_rgb_laplacian, 3, s->conv_cl_localMemSize, 0);
+    assert(err == 0);
+
+    cl_event conv_event;
+    err = clEnqueueNDRangeKernel(q, s->krnl_rgb_laplacian, 2, NULL,
+                                   s->conv_cl_globalWorkSize, s->conv_cl_localWorkSize, 0, 0, &conv_event);
+    assert(err == 0);
+    clWaitForEvents(1, &conv_event);
+    clReleaseEvent(conv_event);
+
+    int16_t *conv_result = new int16_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)];
+    err = clEnqueueReadBuffer(q, s->rgb_conv_result_cl, true, 0,
+       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), conv_result, 0, 0, 0);
+    assert(err == 0);
+
+    /*t11 = millis_since_boot();
+    printf("conv time: %f ms\n", t11 - t10);
+    t10 = millis_since_boot();*/
+
+    get_lapmap_one(conv_result, &s->lapres[roi_id], s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y);
+
+    /*t11 = millis_since_boot();
+    printf("pool time: %f ms\n", t11 - t10);
+    t10 = millis_since_boot();*/
+
+    delete [] rgb_roi_buf;
+    delete [] conv_result;
+
+    /*t11 = millis_since_boot();
+    printf("process time: %f ms\n ----- \n", t11 - t10);
+    t10 = millis_since_boot();*/
+#endif
 
     double t2 = millis_since_boot();
 
@@ -478,6 +544,8 @@ void* processing_thread(void *arg) {
         kj::ArrayPtr<const uint8_t> focus_confs(&s->cameras.rear.confidence[0], NUM_FOCUS);
         framed.setFocusVal(focus_vals);
         framed.setFocusConf(focus_confs);
+        kj::ArrayPtr<const uint16_t> sharpness_score(&s->lapres[0], (ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1));
+        framed.setSharpnessScore(sharpness_score);
 #endif
 
 // TODO: add this back
@@ -920,6 +988,34 @@ cl_program build_debayer_program(VisionState *s,
   return CLU_LOAD_FROM_FILE(s->context, s->device_id, "cameras/debayer.cl", args);
 }
 
+cl_program build_conv_program(VisionState *s,
+                              int image_w, int image_h,
+                              int filter_size) {
+  char args[4096];
+  snprintf(args, sizeof(args),
+          "-cl-fast-relaxed-math -cl-denorms-are-zero "
+          "-DIMAGE_W=%d -DIMAGE_H=%d -DFLIP_RB=%d "
+          "-DFILTER_SIZE=%d -DHALF_FILTER_SIZE=%d -DTWICE_HALF_FILTER_SIZE=%d -DHALF_FILTER_SIZE_IMAGE_W=%d",
+          image_w, image_h, 1,
+          filter_size, filter_size/2, (filter_size/2)*2, (filter_size/2)*image_w);
+  return CLU_LOAD_FROM_FILE(s->context, s->device_id, "imgproc/conv.cl", args);
+}
+
+cl_program build_pool_program(VisionState *s,
+                              int full_stride_x,
+                              int x_pitch, int y_pitch,
+                              int roi_x_min, int roi_x_max,
+                              int roi_y_min, int roi_y_max) {
+  char args[4096];
+  snprintf(args, sizeof(args),
+          "-cl-fast-relaxed-math -cl-denorms-are-zero "
+          "-DFULL_STRIDE_X=%d -DX_PITCH=%d -DY_PITCH=%d "
+          "-DROI_X_MIN=%d -DROI_X_MAX=%d -DROI_Y_MIN=%d -DROI_Y_MAX=%d",
+          full_stride_x, x_pitch, y_pitch,
+          roi_x_min, roi_x_max, roi_y_min, roi_y_max);
+  return CLU_LOAD_FROM_FILE(s->context, s->device_id, "imgproc/pool.cl", args);
+}
+
 void cl_init(VisionState *s) {
   int err;
   cl_platform_id platform_id = NULL;
@@ -1061,6 +1157,25 @@ void init_buffers(VisionState *s) {
     s->krnl_debayer_front = clCreateKernel(s->prg_debayer_front, "debayer10", &err);
     assert(err == 0);
   }
+
+  s->prg_rgb_laplacian = build_conv_program(s, s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y, 
+                                            3);
+  s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
+  assert(err == 0);
+  s->rgb_conv_roi_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
+      s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, NULL);
+  s->rgb_conv_result_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
+      s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, NULL);
+  s->rgb_conv_filter_cl = clCreateBuffer(s->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+      9 * sizeof(int16_t), (void*)&lapl_conv_krnl, NULL);
+  s->conv_cl_localMemSize = ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) ) * ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) );
+  s->conv_cl_localMemSize *= 3 * sizeof(uint8_t);
+  s->conv_cl_globalWorkSize[0] = s->rgb_width/NUM_SEGMENTS_X;
+  s->conv_cl_globalWorkSize[1] = s->rgb_height/NUM_SEGMENTS_Y;
+  s->conv_cl_localWorkSize[0] = CONV_LOCAL_WORKSIZE;
+  s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
+
+  for (int i=0; i<(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1); i++) {s->lapres[i] = 16160;}
 
   rgb_to_yuv_init(&s->rgb_to_yuv_state, s->context, s->device_id, s->yuv_width, s->yuv_height, s->rgb_stride);
   rgb_to_yuv_init(&s->front_rgb_to_yuv_state, s->context, s->device_id, s->yuv_front_width, s->yuv_front_height, s->rgb_front_stride);

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import carla
-import os
-import time, termios, tty, sys
+import time
 import math
 import atexit
 import numpy as np
@@ -9,7 +7,6 @@ import threading
 import random
 import cereal.messaging as messaging
 import argparse
-import queue
 from common.params import Params
 from common.realtime import Ratekeeper
 from lib.can import can_function, sendcan_function

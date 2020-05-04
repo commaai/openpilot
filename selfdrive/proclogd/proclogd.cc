@@ -240,8 +240,8 @@ int main() {
     usleep(2000000); // 2 secs
   }
 
-  delete c;
   delete publisher;
+  delete c;
 
   return 0;
 }

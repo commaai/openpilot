@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 import os
 import sys
-import argparse
 import zmq
-import json
 import cv2
 import numpy as np
-from hexdump import hexdump
-import scipy.misc
 import struct
-from collections import deque
 
 # sudo pip install git+git://github.com/mikeboers/PyAV.git
 import av
