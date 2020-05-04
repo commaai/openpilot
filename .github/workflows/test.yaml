@@ -98,12 +98,12 @@ jobs:
         run: |
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
           docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/bash -c "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
-      - name: Upload Codecov
-        if: always()
-        run: |
-          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          docker cp $CONTAINER_NAME:/tmp/openpilot/coverage.txt coverage.txt
-          bash <(curl -s https://codecov.io/bash)
+          docker cp $CONTAINER_NAME:/tmp/openpilot/coverage.xml coverage.xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
       - name: Copy diff
         if: always()
         run: |
