@@ -36,7 +36,6 @@
 #include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
-#include "common/messagehelp.h"
 
 #include "logger.h"
 #include "messaging.hpp"
@@ -655,13 +654,21 @@ int main(int argc, char** argv) {
   while (!do_exit) {
     for (auto sock : poller->poll(100 * 1000)){
       while (true) {
-        MessageReader amsg = sock->receive(true);
-        if (!amsg){
+        Message * msg = sock->receive(true);
+        if (msg == NULL){
           break;
         }
+
+        uint8_t* data = (uint8_t*)msg->getData();
+        size_t len = msg->getSize();
+
         if (sock == frame_sock) {
-          auto event = amsg.getEvent();
           // track camera frames to sync to encoder
+          auto amsg = kj::heapArray<capnp::word>((len / sizeof(capnp::word)) + 1);
+          memcpy(amsg.begin(), data, len);
+
+          capnp::FlatArrayMessageReader cmsg(amsg);
+          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
           if (event.isFrame()) {
             std::unique_lock<std::mutex> lk(s.lock);
             s.last_frame_id = event.getFrame().getFrameId();
@@ -670,7 +677,8 @@ int main(int argc, char** argv) {
           }
         }
 
-        logger_log(&s.logger, (uint8_t*)amsg.getData(), amsg.getSize(), qlog_counter[sock] == 0);
+        logger_log(&s.logger, data, len, qlog_counter[sock] == 0);
+        delete msg;
 
         if (qlog_counter[sock] != -1) {
           //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
@@ -678,7 +686,7 @@ int main(int argc, char** argv) {
           qlog_counter[sock] %= qlog_freqs[sock];
         }
 
-        bytes_count += amsg.getSize();
+        bytes_count += len;
         msg_count++;
       }
     }
