@@ -4,7 +4,7 @@ from cereal import car
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
-from selfdrive.controls.lib.events import create_event, EventTypes as ET
+from selfdrive.controls.lib.events import create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 GearShifter = car.CarState.GearShifter
@@ -96,7 +96,7 @@ class CarInterfaceBase():
     if cs_out.espDisabled:
       events.append(create_event(EventName.espDisabled))
     if cs_out.gasPressed:
-      events.append(create_event(EventName.pedalPressed, event_types=[ET.PRE_ENABLE]))
+      events.append(create_event(EventName.gasPressed))
 
     if cs_out.steerError:
       events.append(create_event(EventName.steerUnavailable))

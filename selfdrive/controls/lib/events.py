@@ -19,13 +19,10 @@ class EventTypes:
 ET = EventTypes
 
 
-def create_event(name, event_types=None):
+def create_event(name):
   event = car.CarEvent.new_message()
   event.name = name
-  if event_types is None:
-    event_types = EVENTS[name].keys()
-
-  for event_type in event_types:
+  for event_type in EVENTS[name].keys():
     setattr(event, event_type, True)
   return event
 
@@ -76,6 +73,9 @@ disable_alert = Alert(
                     Priority.MID, VisualAlert.none, AudibleAlert.chimeDisengage, .2, 0., 0.)
 
 EVENTS = {
+  # events with no alerts
+  EN.gasPressed: {ET.PRE_ENABLE: None},
+
   EN.pcmEnable: {ET.ENABLE: enable_alert},
   EN.buttonEnable: {ET.ENABLE: enable_alert},
 
