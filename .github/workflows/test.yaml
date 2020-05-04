@@ -86,9 +86,8 @@ jobs:
                     $UNIT_TEST tools/lib/tests"
       - name: Upload coverage to Codecov
         run: |
-          docker commit tmppilot tmppilotci
-          ci_env=`bash <(curl -s https://codecov.io/env)`
-          docker run $ci_env --rm tmppilotci /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F unit_tests"
+          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
+          bash <(curl -s https://codecov.io/bash)
 
   process_replay:
     name: process replay
@@ -106,9 +105,8 @@ jobs:
           $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
       - name: Upload coverage to Codecov
         run: |
-          docker commit tmppilot tmppilotci
-          ci_env=`bash <(curl -s https://codecov.io/env)`
-          docker run $ci_env --rm tmppilotci /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F process_replay"
+          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
+          bash <(curl -s https://codecov.io/bash)
       - name: Copy diff
         if: always()
         run: |
@@ -163,7 +161,6 @@ jobs:
           $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine"
       - name: Upload coverage to Codecov
         run: |
-          docker commit tmppilot tmppilotci
-          ci_env=`bash <(curl -s https://codecov.io/env)`
-          docker run $ci_env --rm tmppilotci /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F test_car_models"
+          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
+          bash <(curl -s https://codecov.io/bash)
 
