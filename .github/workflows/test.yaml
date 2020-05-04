@@ -83,14 +83,12 @@ jobs:
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
-                    $UNIT_TEST tools/lib/tests && \
-                    coverage xml"
-          docker cp tmppilot:/tmp/openpilot/coverage.xml coverage.xml
+                    $UNIT_TEST tools/lib/tests"
+          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
           docker rm tmppilot
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-          file: ./coverage.xml
           flags: unit_tests
           name: codecov-umbrella
           fail_ci_if_error: true
@@ -108,12 +106,11 @@ jobs:
         run: $LOAD
       - name: Run replay
         run: |
-          $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py && coverage xml"
-          docker cp tmppilot:/tmp/openpilot/coverage.xml coverage.xml
+          $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-          file: ./coverage.xml
           flags: process_replay
           name: codecov-umbrella
           fail_ci_if_error: true
@@ -170,13 +167,12 @@ jobs:
         run: $LOAD
       - name: Test car models
         run: |
-          $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine && coverage xml"
-          docker cp tmppilot:/tmp/openpilot/coverage.xml coverage.xml
+          $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine"
+          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
           docker rm tmppilot
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-          file: ./coverage.xml
           flags: test_car_models
           name: codecov-umbrella
           fail_ci_if_error: true
