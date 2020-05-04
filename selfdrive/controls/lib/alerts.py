@@ -73,7 +73,13 @@ class SoftDisableAlert(Alert):
                      AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
 
 
-# TODO: make PermanentAlert, etc.
+class ImmediateDisableAlert(Alert):
+  def __init__(self, alert_text_2, alert_text_1="TAKE CONTROL IMMEDIATELY"):
+    super().__init__(alert_text_1, alert_text_2,
+                     AlertStatus.critical, AlertSize.full,
+                     Priority.HIGHEST, VisualAlert.steerRequired,
+                     AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+
 
 enable_alert =  Alert(
                     "",
@@ -429,37 +435,21 @@ EVENT_ALERTS = {
 
   # Cancellation alerts causing immediate disabling
   EN.controlsFailed: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Controls Failed",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Failed"),
     ET.NO_ENTRY: NoEntryAlert("Controls Failed"),
   },
 
   EN.controlsMismatch: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Controls Mismatch",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
   },
 
   EN.canError: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "CAN Error: Check Connections",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error: Check Connections"),
     ET.NO_ENTRY: NoEntryAlert("CAN Error: Check Connections"),
   },
 
   EN.steerUnavailable: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "LKAS Fault: Restart the Car",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("LKAS Fault: Restart the Car"),
     ET.PERMANENT: Alert(
       "LKAS Fault: Restart the car to engage",
       "",
@@ -469,11 +459,7 @@ EVENT_ALERTS = {
   },
 
   EN.brakeUnavailable: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Cruise Fault: Restart the Car",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Fault: Restart the Car"),
     ET.PERMANENT: Alert(
       "Cruise Fault: Restart the car to engage",
       "",
@@ -483,47 +469,27 @@ EVENT_ALERTS = {
   },
 
   EN.gasUnavailable: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Gas Fault: Restart the Car",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Gas Fault: Restart the Car"),
     ET.NO_ENTRY: NoEntryAlert("Gas Error: Restart the Car"),
   },
 
   EN.reverseGear: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Reverse Gear",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Reverse Gear"),
     ET.NO_ENTRY: NoEntryAlert("Reverse Gear"),
   },
 
   EN.cruiseDisabled: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Cruise Is Off",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Is Off"),
     ET.NO_ENTRY: NoEntryAlert("Cruise is Off"),
   },
 
   EN.plannerError: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Planner Solution Error",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Planner Solution Error"),
     ET.NO_ENTRY: NoEntryAlert("Planner Solution Error"),
   },
 
   EN.relayMalfunction: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Harness Malfunction",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Harness Malfunction"),
     ET.PERMANENT: Alert(
       "Harness Malfunction",
       "Please Check Hardware",
