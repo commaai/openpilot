@@ -70,7 +70,7 @@ class MessageBuilder : public capnp::MessageBuilder {
   kj::ArrayPtr<kj::byte> toBytes() {
     auto segments = getSegmentsForOutput();
     if (segments.size() == 1 && segments[0].begin() == stackSegment + 1) {
-      cosnt size_t segment_size = segments[0].size();
+      const size_t segment_size = segments[0].size();
       uint32_t *table = (uint32_t *)stackSegment;
       table[0] = 0;
       table[1] = segment_size;
