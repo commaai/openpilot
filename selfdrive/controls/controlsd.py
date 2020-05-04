@@ -50,15 +50,6 @@ def add_lane_change_event(events, path_plan):
     events.append(create_event('laneChange', [ET.WARNING]))
 
 
-def is_active(state):
-  """Check if the actuators are enabled"""
-  return state == State.enabled or state == State.softDisabling
-
-
-def is_enabled(state):
-  """Check if openpilot is engaged"""
-  return (is_active(state) or state == State.preEnabled)
-
 def events_to_bytes(events):
   # optimization when comparing capnp structs: str() or tree traverse are much slower
   ret = []
@@ -148,6 +139,7 @@ class Controls:
     self.state = State.disabled
     self.enabled = False
     self.active = False
+    self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
     self.v_cruise_kph_last = 0
@@ -187,6 +179,16 @@ class Controls:
 
   def create_events(self, CS):
     events = self.permanent_events.copy()
+
+    # can't change order or else process replay will fail
+    # TODO: clean this up after refactor is done and it's verified to have no changes
+
+    events += list(CS.events)
+    events += list(self.sm['dMonitoringState'].events)
+    add_lane_change_event(events, self.sm['pathPlan'])
+
+    if self.can_rcv_error:
+      events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
     # Create events for battery, temperature, disk space, and memory
     if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
@@ -248,14 +250,12 @@ class Controls:
 
     self.sm.update(0)
 
-    events = list(CS.events)
-    events += list(self.sm['dMonitoringState'].events)
-    add_lane_change_event(events, self.sm['pathPlan'])
-
     # Check for CAN timeout
     if not can_strs:
       self.can_error_counter += 1
-      events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      self.can_rcv_error = True
+    else:
+      self.can_rcv_error = False
 
     # When the panda and controlsd do not agree on controls_allowed
     # we want to disengage openpilot. However the status from the panda goes through
@@ -267,7 +267,7 @@ class Controls:
     if not self.sm['health'].controlsAllowed and self.enabled:
       self.mismatch_counter += 1
 
-    return CS, events
+    return CS
 
   def state_transition(self, CS, events):
     """Compute conditional state transitions and execute actions on state transitions"""
@@ -352,8 +352,12 @@ class Controls:
       elif not get_events(events, [ET.PRE_ENABLE]):
         self.state = State.enabled
 
-    self.enabled = is_enabled(self.state)
-    self.active = is_active(self.state)
+    # Check if the actuators are enabled
+    self.active = state == State.enabled or state == State.softDisabling
+
+    # Check if openpilot is engaged
+    self.enabled = self.active or state == State.preEnabled
+
 
   def state_control(self, CS, events):
     """Given the state, this function returns an actuators packet"""
@@ -392,7 +396,8 @@ class Controls:
         self.AM.add(self.sm.frame, e, self.enabled, extra_text_2=extra_text)
 
     plan_age = DT_CTRL * (self.sm.frame - self.sm.rcv_frame['plan'])
-    dt = min(plan_age, LON_MPC_STEP + DT_CTRL) + DT_CTRL  # no greater than dt mpc + dt, to prevent too high extraps
+    # no greater than dt mpc + dt, to prevent too high extraps
+    dt = min(plan_age, LON_MPC_STEP + DT_CTRL) + DT_CTRL
 
     a_acc_sol = plan.aStart + (dt / LON_MPC_STEP) * (plan.aTarget - plan.aStart)
     v_acc_sol = plan.vStart + dt * (a_acc_sol + plan.aStart) / 2.0
@@ -492,6 +497,8 @@ class Controls:
     force_decel = (self.sm['dMonitoringState'].awarenessStatus < 0.) or \
                     (self.state == State.softDisabling)
 
+    steer_angle_rad = (CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD
+
     # controlsState
     dat = messaging.new_message('controlsState')
     dat.valid = CS.canValid
@@ -512,8 +519,7 @@ class Controls:
     controlsState.vEgo = CS.vEgo
     controlsState.vEgoRaw = CS.vEgoRaw
     controlsState.angleSteers = CS.steeringAngle
-    controlsState.curvature = self.VM.calc_curvature((CS.steeringAngle - \
-                                    self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo)
+    controlsState.curvature = self.VM.calc_curvature(steer_angle_rad, CS.vEgo)
     controlsState.steerOverride = CS.steeringPressed
     controlsState.state = self.state
     controlsState.engageable = not bool(get_events(events, [ET.NO_ENTRY]))
@@ -579,10 +585,10 @@ class Controls:
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
-    CS, events = self.data_sample(self.CC)
+    CS = self.data_sample(self.CC)
     self.prof.checkpoint("Sample")
 
-    events += self.create_events(CS)
+    events = self.create_events(CS)
 
     if not self.read_only:
       # update control state

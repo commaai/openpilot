@@ -51,11 +51,11 @@ class LatControlLQR():
 
     # Subtract offset. Zero angle should correspond to zero torque
     self.angle_steers_des = path_plan.angleSteers - path_plan.angleOffset
-    CS.angleSteers -= path_plan.angleOffset
+    CS.steeringAngle -= path_plan.angleOffset
 
     # Update Kalman filter
     angle_steers_k = float(self.C.dot(self.x_hat))
-    e = CS.angleSteers - angle_steers_k
+    e = CS.steeringAngle - angle_steers_k
     self.x_hat = self.A.dot(self.x_hat) + self.B.dot(CS.steeringTorqueEps / torque_scale) + self.L.dot(e)
 
     if CS.vEgo < 0.3 or not active:
@@ -70,7 +70,7 @@ class LatControlLQR():
       lqr_output = torque_scale * u_lqr / self.scale
 
       # Integrator
-      if CS.steeringPressedCS.steeringPressedCS.steeringPressedCS.steeringPressedCS.steeringPressedCS.steeringPressedCS.steeringPressedCS.steeringPressed:
+      if CS.steeringPressed:
         self.i_lqr -= self.i_unwind_rate * float(np.sign(self.i_lqr))
       else:
         error = self.angle_steers_des - angle_steers_k
