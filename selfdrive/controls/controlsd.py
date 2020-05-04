@@ -151,58 +151,53 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
   # entrance in SOFT_DISABLING state
   soft_disable_timer = max(0, soft_disable_timer - 1)
 
+  alert_types = []
+
   # DISABLED
   if state == State.disabled:
     if get_events(events, [ET.ENABLE]):
       if get_events(events, [ET.NO_ENTRY]):
-        for e in get_events(events, [ET.NO_ENTRY]):
-          AM.add_from_event(frame, e, ET.NO_ENTRY, enabled)
+        alert_types = [ET.NO_ENTRY]
 
       else:
         if get_events(events, [ET.PRE_ENABLE]):
           state = State.preEnabled
         else:
           state = State.enabled
-        for e in get_events(events, [ET.ENABLE]):
-          AM.add_from_event(frame, e, ET.ENABLE, enabled)
+        alert_types = [ET.ENABLE]
         v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, v_cruise_kph_last)
 
   # ENABLED
   elif state == State.enabled:
     if get_events(events, [ET.USER_DISABLE]):
       state = State.disabled
-      for e in get_events(events, [ET.USER_DISABLE]):
-        AM.add_from_event(frame, e, ET.USER_DISABLE, enabled)
+      alert_types = [ET.USER_DISABLE]
 
     elif get_events(events, [ET.IMMEDIATE_DISABLE]):
       state = State.disabled
-      for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-        AM.add_from_event(frame, e, ET.IMMEDIATE_DISABLE, enabled)
+      alert_types = [ET.IMMEDIATE_DISABLE]
 
     elif get_events(events, [ET.SOFT_DISABLE]):
       state = State.softDisabling
       soft_disable_timer = 300   # 3s
-      for e in get_events(events, [ET.SOFT_DISABLE]):
-        AM.add_from_event(frame, e, ET.SOFT_DISABLE, enabled)
+      alert_types = [ET.SOFT_DISABLE]
 
   # SOFT DISABLING
   elif state == State.softDisabling:
     if get_events(events, [ET.USER_DISABLE]):
       state = State.disabled
-      AM.add_from_event(frame, e, ET.USER_DISABLE, enabled)
+      alert_types = [ET.USER_DISABLE]
 
     elif get_events(events, [ET.IMMEDIATE_DISABLE]):
       state = State.disabled
-      for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-        AM.add_from_event(frame, e, ET.IMMEDIATE_DISABLE, enabled)
+      alert_types = ET.IMMEDIATE_DISABLE
 
     elif not get_events(events, [ET.SOFT_DISABLE]):
       # no more soft disabling condition, so go back to ENABLED
       state = State.enabled
 
     elif get_events(events, [ET.SOFT_DISABLE]) and soft_disable_timer > 0:
-      for e in get_events(events, [ET.SOFT_DISABLE]):
-        AM.add_from_event(frame, e, ET.SOFT_DISABLE, enabled)
+      alert_types = [ET.SOFT_DISABLE]
 
     elif soft_disable_timer <= 0:
       state = State.disabled
@@ -211,19 +206,18 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
   elif state == State.preEnabled:
     if get_events(events, [ET.USER_DISABLE]):
       state = State.disabled
-      for e in get_events(events, [ET.USER_DISABLE]):
-        AM.add_from_event(frame, e, ET.USER_DISABLE, enabled)
+      alert_types = [ET.USER_DISABLE]
 
     elif get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
       state = State.disabled
-      # TODO: clean this up
-      for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-        AM.add_from_event(frame, e, ET.IMMEDIATE_DISABLE, enabled)
-      for e in get_events(events, [ET.SOFT_DISABLE]):
-        AM.add_from_event(frame, e, ET.SOFT_DISABLE, enabled)
+      alert_types = [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]
 
     elif not get_events(events, [ET.PRE_ENABLE]):
       state = State.enabled
+
+  for t in alert_types:
+    for e in get_events(events, (t,)):
+      AM.add_from_event(frame, e, t, enabled)
 
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
 
