@@ -388,7 +388,6 @@ EVENTS = {
 
   EN.cruiseDisabled: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Is Off"),
-    ET.NO_ENTRY: NoEntryAlert("Cruise is Off"),
   },
 
   EN.plannerError: {
