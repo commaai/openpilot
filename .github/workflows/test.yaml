@@ -86,7 +86,8 @@ jobs:
                     $UNIT_TEST tools/lib/tests"
       - name: Upload coverage to Codecov
         run: |
-          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
+          pip install coverage==5.1
+          docker cp tmppilot:/tmp/openpilot/.coverage .
           bash <(curl -s https://codecov.io/bash)
 
   process_replay:
@@ -105,7 +106,8 @@ jobs:
           $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
       - name: Upload coverage to Codecov
         run: |
-          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
+          pip install coverage==5.1
+          docker cp tmppilot:/tmp/openpilot/.coverage .
           bash <(curl -s https://codecov.io/bash)
       - name: Copy diff
         if: always()
@@ -161,6 +163,7 @@ jobs:
           $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine"
       - name: Upload coverage to Codecov
         run: |
-          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
+          pip install coverage==5.1
+          docker cp tmppilot:/tmp/openpilot/.coverage .
           bash <(curl -s https://codecov.io/bash)
 
