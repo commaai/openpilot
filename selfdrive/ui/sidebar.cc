@@ -24,7 +24,7 @@ static void ui_draw_sidebar_home_button(UIState *s) {
 }
 
 static void ui_draw_sidebar_network_strength(UIState *s) {
-  static std::map<cereal::ThermalData::NetworkStrength, int> network_type_map = {
+  static std::map<cereal::ThermalData::NetworkStrength, int> network_strength_map = {
       {cereal::ThermalData::NetworkStrength::UNKNOWN, 1},
       {cereal::ThermalData::NetworkStrength::POOR, 2},
       {cereal::ThermalData::NetworkStrength::MODERATE, 3},
@@ -34,7 +34,7 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
   const int network_img_w = 176;
   const int network_img_x = !s->scene.uilayout_sidebarcollapsed ? 58 : -(sbr_w);
   const int network_img_y = 196;
-  const int img_idx = s->scene.networkType == cereal::ThermalData::NetworkType::NONE ? 0 : network_type_map[s->scene.networkStrength];
+  const int img_idx = s->scene.networkType == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.networkStrength];
   ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, s->img_network[img_idx], 1.0f);
 }
 
