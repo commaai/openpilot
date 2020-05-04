@@ -156,7 +156,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
     if get_events(events, [ET.ENABLE]):
       if get_events(events, [ET.NO_ENTRY]):
         for e in get_events(events, [ET.NO_ENTRY]):
-          AM.add(frame, str(e) + "NoEntry", enabled)
+          AM.add_from_event(frame, e, ET.NO_ENTRY, enabled)
 
       else:
         if get_events(events, [ET.PRE_ENABLE]):
@@ -164,7 +164,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
         else:
           state = State.enabled
         for e in get_events(events, [ET.ENABLE]):
-          AM.add(frame, e, enabled)
+          AM.add_from_event(frame, e, ET.ENABLE, enabled)
         v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, v_cruise_kph_last)
 
   # ENABLED
@@ -172,29 +172,29 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
     if get_events(events, [ET.USER_DISABLE]):
       state = State.disabled
       for e in get_events(events, [ET.USER_DISABLE]):
-        AM.add(frame, e, enabled)
+        AM.add_from_event(frame, e, ET.USER_DISABLE, enabled)
 
     elif get_events(events, [ET.IMMEDIATE_DISABLE]):
       state = State.disabled
       for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-        AM.add(frame, e, enabled)
+        AM.add_from_event(frame, e, ET.IMMEDIATE_DISABLE, enabled)
 
     elif get_events(events, [ET.SOFT_DISABLE]):
       state = State.softDisabling
       soft_disable_timer = 300   # 3s
       for e in get_events(events, [ET.SOFT_DISABLE]):
-        AM.add(frame, e, enabled)
+        AM.add_from_event(frame, e, ET.SOFT_DISABLE, enabled)
 
   # SOFT DISABLING
   elif state == State.softDisabling:
     if get_events(events, [ET.USER_DISABLE]):
       state = State.disabled
-      AM.add(frame, "disable", enabled)
+      AM.add_from_event(frame, e, ET.USER_DISABLE, enabled)
 
     elif get_events(events, [ET.IMMEDIATE_DISABLE]):
       state = State.disabled
       for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-        AM.add(frame, e, enabled)
+        AM.add_from_event(frame, e, ET.IMMEDIATE_DISABLE, enabled)
 
     elif not get_events(events, [ET.SOFT_DISABLE]):
       # no more soft disabling condition, so go back to ENABLED
@@ -202,7 +202,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
     elif get_events(events, [ET.SOFT_DISABLE]) and soft_disable_timer > 0:
       for e in get_events(events, [ET.SOFT_DISABLE]):
-        AM.add(frame, e, enabled)
+        AM.add_from_event(frame, e, ET.SOFT_DISABLE, enabled)
 
     elif soft_disable_timer <= 0:
       state = State.disabled
@@ -211,12 +211,16 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
   elif state == State.preEnabled:
     if get_events(events, [ET.USER_DISABLE]):
       state = State.disabled
-      AM.add(frame, "disable", enabled)
+      for e in get_events(events, [ET.USER_DISABLE]):
+        AM.add_from_event(frame, e, ET.USER_DISABLE, enabled)
 
     elif get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
       state = State.disabled
-      for e in get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
-        AM.add(frame, e, enabled)
+      # TODO: clean this up
+      for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
+        AM.add_from_event(frame, e, ET.IMMEDIATE_DISABLE, enabled)
+      for e in get_events(events, [ET.SOFT_DISABLE]):
+        AM.add_from_event(frame, e, ET.SOFT_DISABLE, enabled)
 
     elif not get_events(events, [ET.PRE_ENABLE]):
       state = State.enabled
@@ -259,7 +263,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
           extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_KPH))) + " kph"
         else:
           extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
-      AM.add(frame, e, enabled, extra_text_2=extra_text)
+      AM.add_from_event(frame, e, ET.WARNING, enabled, extra_text_2=extra_text)
 
   plan_age = DT_CTRL * (frame - rcv_frame['plan'])
   dt = min(plan_age, LON_MPC_STEP + DT_CTRL) + DT_CTRL  # no greater than dt mpc + dt, to prevent too high extraps
@@ -297,7 +301,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
       else:
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
-    AM.add(frame, str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
+    AM.add_from_event(frame, e, ET.PERMANENT, enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
   return actuators, v_cruise_kph, v_acc_sol, a_acc_sol, lac_log, last_blinker_frame, saturated_count
 
