@@ -84,14 +84,10 @@ jobs:
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
                     $UNIT_TEST tools/lib/tests"
-          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
-          docker rm tmppilot
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          flags: unit_tests
-          name: codecov-umbrella
-          fail_ci_if_error: true
+        run: |
+          ci_env=`bash <(curl -s https://codecov.io/env)`
+          docker exec $ci_env tmppilot /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F unit_tests"
 
   process_replay:
     name: process replay
@@ -107,18 +103,14 @@ jobs:
       - name: Run replay
         run: |
           $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
-          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          flags: process_replay
-          name: codecov-umbrella
-          fail_ci_if_error: true
+        run: |
+          ci_env=`bash <(curl -s https://codecov.io/env)`
+          docker exec $ci_env tmppilot /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F process_replay"
       - name: Copy diff
         if: always()
         run: |
           docker cp tmppilot:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
-          docker rm tmppilot
       - name: Print diff
         if: always()
         run: cat diff.txt
@@ -147,7 +139,6 @@ jobs:
         run: |
           mkdir out
           docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
-          docker rm tmppilot
       - uses: actions/upload-artifact@v1
         if: always()
         with:
@@ -168,12 +159,8 @@ jobs:
       - name: Test car models
         run: |
           $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine"
-          docker cp tmppilot:/tmp/openpilot/.coverage .coverage
-          docker rm tmppilot
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          flags: test_car_models
-          name: codecov-umbrella
-          fail_ci_if_error: true
+        run: |
+          ci_env=`bash <(curl -s https://codecov.io/env)`
+          docker exec $ci_env tmppilot /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F test_car_models"
 
