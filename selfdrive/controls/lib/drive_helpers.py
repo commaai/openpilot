@@ -1,7 +1,6 @@
 from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.alerts import EVENT_ALERTS
 
 # kph
 V_CRUISE_MAX = 144
@@ -22,26 +21,6 @@ class MPC_COST_LONG:
   DISTANCE = 0.1
   ACCELERATION = 10.0
   JERK = 20.0
-
-
-def create_event(name, event_types=None):
-  event = car.CarEvent.new_message()
-  event.name = name
-  if event_types is None:
-    event_types = EVENT_ALERTS[name].keys()
-
-  for event_type in event_types:
-    setattr(event, event_type, True)
-  return event
-
-
-def get_events(events, types):
-  out = []
-  for e in events:
-    for t in types:
-      if getattr(e, t):
-        out.append(e.name)
-  return out
 
 
 def rate_limit(new_value, last_value, dw_step, up_step):

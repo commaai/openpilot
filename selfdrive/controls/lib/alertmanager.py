@@ -1,7 +1,8 @@
 from cereal import car, log
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.alerts import ALERTS, EVENT_ALERTS
+from selfdrive.controls.lib.alerts import ALERTS
+from selfdrive.controls.lib.events import EVENTS
 import copy
 
 
@@ -25,7 +26,7 @@ class AlertManager():
 
   def add_from_event(self, frame, event_name, event_type, enabled=True, extra_text_1='', extra_text_2=''):
     alert_type = str(event_name)
-    alert = copy.copy(EVENT_ALERTS[event_name.raw][event_type])
+    alert = copy.copy(EVENTS[event_name.raw][event_type])
     self._add(frame, alert, alert_type, enabled, extra_text_1, extra_text_2)
 
   def _add(self, frame, added_alert, alert_type, enabled, extra_text_1, extra_text_2):

@@ -12,11 +12,8 @@ from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_alert
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.alerts import EventTypes as ET
-from selfdrive.controls.lib.drive_helpers import get_events, \
-                                                 create_event, \
-                                                 update_v_cruise, \
-                                                 initialize_v_cruise
+from selfdrive.controls.lib.events import create_event, get_events, EventTypes as ET
+from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
@@ -59,7 +56,6 @@ def isEnabled(state):
   return (isActive(state) or state == State.preEnabled)
 
 
-# TODO: just use event names, since the types don't change
 def events_to_bytes(events):
   # optimization when comparing capnp structs: str() or tree traverse are much slower
   ret = []
