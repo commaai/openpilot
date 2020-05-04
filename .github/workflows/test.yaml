@@ -97,7 +97,8 @@ jobs:
       - name: Run replay
         run: |
           CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/bash -c "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py && bash <(curl -s https://codecov.io/bash)"
+          CI_ENV=`bash <(curl -s https://codecov.io/env)`
+          docker run $CI_ENV --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/bash -c "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py && bash <(curl -s https://codecov.io/bash)"
       - name: Copy diff
         if: always()
         run: |
