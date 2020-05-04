@@ -5,7 +5,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 from cereal import log
 from common.basedir import BASEDIR
-from selfdrive.controls.lib.alerts import ALERTS, EVENT_ALERTS
+from selfdrive.controls.lib.alerts import ALERTS
+from selfdrive.controls.lib.events import EVENTS
 
 AlertSize = log.ControlsState.AlertSize
 
@@ -31,7 +32,7 @@ class TestAlerts(unittest.TestCase):
             }
 
     all_alerts = list(ALERTS.values())
-    for event_types in EVENT_ALERTS.values():
+    for event_types in EVENTS.values():
       for alert in event_types.values():
         all_alerts.append(alert)
 
