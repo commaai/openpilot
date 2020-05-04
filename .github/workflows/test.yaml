@@ -164,4 +164,9 @@ jobs:
         run: |
           docker cp tmppilot:/tmp/openpilot/coverage.xml coverage.xml
           bash <(curl -s https://codecov.io/bash)
+      - uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: coverage.xml
+          path: coverage.xml
 
