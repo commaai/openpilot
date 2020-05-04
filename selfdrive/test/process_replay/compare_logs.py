@@ -4,6 +4,7 @@ import os
 import sys
 import numbers
 
+import capnp
 import dictdiffer
 if "CI" in os.environ:
   tqdm = lambda x: x
@@ -40,6 +41,8 @@ def remove_ignored_fields(msg, ignore):
         val = False
       elif isinstance(v, numbers.Number):
         val = 0
+      elif isinstance(v, capnp.lib.capnp._DynamicListBuilder):
+        val = []
       else:
         raise NotImplementedError
       setattr(attr, keys[-1], val)
