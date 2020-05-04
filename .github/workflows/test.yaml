@@ -87,7 +87,8 @@ jobs:
       - name: Upload coverage to Codecov
         run: |
           ci_env=`bash <(curl -s https://codecov.io/env)`
-          docker exec $ci_env tmppilot /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F unit_tests"
+          docker commit tmppilot tmppilotci
+          docker run $ci_env --rm tmppilotci /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F unit_tests"
 
   process_replay:
     name: process replay
@@ -106,7 +107,8 @@ jobs:
       - name: Upload coverage to Codecov
         run: |
           ci_env=`bash <(curl -s https://codecov.io/env)`
-          docker exec $ci_env tmppilot /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F process_replay"
+          docker commit tmppilot tmppilotci
+          docker run $ci_env --rm tmppilotci /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F process_replay"
       - name: Copy diff
         if: always()
         run: |
@@ -162,5 +164,6 @@ jobs:
       - name: Upload coverage to Codecov
         run: |
           ci_env=`bash <(curl -s https://codecov.io/env)`
-          docker exec $ci_env tmppilot /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F test_car_models"
+          docker commit tmppilot tmppilotci
+          docker run $ci_env --rm tmppilotci /bin/bash -c "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -F test_car_models"
 
