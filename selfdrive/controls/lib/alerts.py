@@ -60,9 +60,17 @@ class Alert():
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
                visual_alert=VisualAlert.none, duration_hud_alert=2.):
-    super().__init__("openpilot Unavailable", alert_text_2, AlertStatus.normal, \
-          AlertSize.mid, Priority.LOW, visual_alert, \
-          audible_alert, .4, duration_hud_alert, 3.)
+    super().__init__("openpilot Unavailable", alert_text_2, AlertStatus.normal,
+                     AlertSize.mid, Priority.LOW, visual_alert,
+                     audible_alert, .4, duration_hud_alert, 3.)
+
+
+class SoftDisableAlert(Alert):
+  def __init__(self, alert_text_2):
+    super().__init__("TAKE CONTROL IMMEDIATELY", alert_text_2,
+                     AlertStatus.critical, AlertSize.full,
+                     Priority.MID, VisualAlert.steerRequired,
+                     AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
 
 
 # TODO: make PermanentAlert, etc.
@@ -341,38 +349,22 @@ EVENT_ALERTS = {
 
   # Cancellation alerts causing soft disabling
   EN.overheat: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "System Overheated",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("System Overheated"),
     ET.NO_ENTRY: NoEntryAlert("System overheated"),
   },
 
   EN.wrongGear: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Gear not D",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Gear not D"),
     ET.NO_ENTRY: NoEntryAlert("Gear not D"),
   },
 
   EN.calibrationInvalid: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Calibration Invalid: Reposition Device and Recalibrate",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Calibration Invalid: Reposition Device and Recalibrate"),
     ET.NO_ENTRY: NoEntryAlert("Calibration Invalid: Reposition Device & Recalibrate"),
   },
 
   EN.calibrationIncomplete: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Calibration in Progress",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Calibration in Progress"),
     ET.PERMANENT: Alert(
       "Calibration in Progress: ",
       "Drive Above ",
@@ -382,86 +374,50 @@ EVENT_ALERTS = {
   },
 
   EN.doorOpen: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Door Open",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Door Open"),
     ET.NO_ENTRY: NoEntryAlert("Door open"),
   },
 
   EN.seatbeltNotLatched: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Seatbelt Unlatched",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Seatbelt Unlatched"),
     ET.NO_ENTRY: NoEntryAlert("Seatbelt unlatched"),
   },
 
   EN.espDisabled: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "ESP Off",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("ESP Off"),
     ET.NO_ENTRY: NoEntryAlert("ESP Off"),
   },
 
   EN.lowBattery: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Low Battery",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Low Battery"),
     ET.NO_ENTRY: NoEntryAlert("Low Battery"),
   },
 
   EN.commIssue: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Communication Issue between Processes",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Communication Issue between Processes"),
     ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes",
                               audible_alert=AudibleAlert.chimeDisengage),
   },
 
   EN.radarCommIssue: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Radar Communication Issue",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Radar Communication Issue"),
     ET.NO_ENTRY: NoEntryAlert("Radar Communication Issue",
                               audible_alert=AudibleAlert.chimeDisengage),
   },
 
   EN.radarCanError: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Radar Error: Restart the Car",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
     ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
   },
 
   EN.radarFault: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Radar Error: Restart the Car",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
     ET.NO_ENTRY : NoEntryAlert("Radar Error: Restart the Car"),
   },
 
 
   EN.lowMemory: {
-    ET.SOFT_DISABLE: Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Low Memory: Reboot Your Device",
-      AlertStatus.critical, AlertSize.full,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, 2., 2.),
+    ET.SOFT_DISABLE: SoftDisableAlert("Low Memory: Reboot Your Device"),
     ET.PERMANENT: Alert(
       "RAM Critically Low",
       "Reboot your Device",
@@ -647,12 +603,13 @@ EVENT_ALERTS = {
   },
 
   EN.communityFeatureDisallowed: {
+    # LOW priority to overcome Cruise Error
     ET.PERMANENT: Alert(
       "",
       "Community Feature Detected",
       "Enable Community Features in Developer Settings",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),  # LOW priority to overcome Cruise Error
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
   EN.carUnrecognized: {

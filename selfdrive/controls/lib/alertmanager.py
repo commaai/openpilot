@@ -25,10 +25,6 @@ class AlertManager():
 
   def add_from_event(self, frame, event_name, event_type, enabled=True, extra_text_1='', extra_text_2=''):
     alert_type = str(event_name)
-    print(event_name)
-    print(type(event_name))
-    print(dir(event_name))
-    print(event_name.raw)
     alert = copy.copy(EVENT_ALERTS[event_name.raw][event_type])
     self._add(frame, alert, alert_type, enabled, extra_text_1, extra_text_2)
 
