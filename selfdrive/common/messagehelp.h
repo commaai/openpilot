@@ -87,10 +87,10 @@ class MessageBuilder : public capnp::MessageBuilder {
   }
 
  protected:
+  kj::Array<capnp::word> flatArray;
+  kj::Vector<capnp::word *> moreSegments;
   bool returnedFirstSegment;
   uint nextSize;
   // the first words of stackSement is used internally to set the head table.
-  capnp::word stackSegment[STACK_SEGEMENT_BUF_SIZE + 1];
-  kj::Array<capnp::word> flatArray;
-  kj::Vector<capnp::word *> moreSegments;
+  alignas(8) capnp::word stackSegment[STACK_SEGEMENT_BUF_SIZE + 1];
 };
