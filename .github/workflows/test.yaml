@@ -73,7 +73,8 @@ jobs:
         run: $LOAD
       - name: Run unit tests
         run: |
-          $PERSIST "cd /tmp/openpilot && coverage run selfdrive/test/test_fingerprints.py && \
+          $PERSIST "cd /tmp/openpilot && \
+                    coverage run selfdrive/test/test_fingerprints.py && \
                     $UNIT_TEST common && \
                     $UNIT_TEST opendbc/can && \
                     $UNIT_TEST selfdrive/boardd && \
