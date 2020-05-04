@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from cereal import log
 from common.basedir import BASEDIR
-from selfdrive.controls.lib.alerts import ALERTS
+from selfdrive.controls.lib.alerts import ALERTS, EVENT_ALERTS
 
 AlertSize = log.ControlsState.AlertSize
 
@@ -30,7 +30,12 @@ class TestAlerts(unittest.TestCase):
                               ImageFont.truetype(REGULAR_FONT_PATH, int(36*FONT_SIZE_SCALE))],
             }
 
-    for alert in ALERTS:
+    all_alerts = list(ALERTS.values())
+    for event_types in EVENT_ALERTS.values():
+      for alert in event_types.values():
+        all_alerts.append(alert)
+
+    for alert in all_alerts:
       # for full size alerts, both text fields wrap the text,
       # so it's unlikely that they  would go past the max width
       if alert.alert_size in [AlertSize.none, AlertSize.full]:
