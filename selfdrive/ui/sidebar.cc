@@ -34,7 +34,7 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
   const int network_img_w = 176;
   const int network_img_x = !s->scene.uilayout_sidebarcollapsed ? 58 : -(sbr_w);
   const int network_img_y = 196;
-  const int img_idx = s->scene.networkType != cereal::ThermalData::NetworkType::NONE ? network_type_map[s->scene.networkStrength] : 0;
+  const int img_idx = s->scene.networkType == cereal::ThermalData::NetworkType::NONE ? 0 : network_type_map[s->scene.networkStrength];
   ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, s->img_network[img_idx], 1.0f);
 }
 
@@ -119,15 +119,14 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
 
 static void ui_draw_sidebar_temp_metric(UIState *s) {
   static std::map<cereal::ThermalData::ThermalStatus, const int> temp_severity_map = {
-      {cereal::ThermalData::NetworkStrength::UNKNOWN, 1},
-      {cereal::ThermalData::NetworkStrength::POOR, 2},
-      {cereal::ThermalData::NetworkStrength::MODERATE, 3},
-      {cereal::ThermalData::NetworkStrength::GOOD, 4},
-      {cereal::ThermalData::NetworkStrength::GREAT, 5}};
+      {cereal::ThermalData::ThermalStatus::GREEN, 0},
+      {cereal::ThermalData::ThermalStatus::YELLOW, 1},
+      {cereal::ThermalData::ThermalStatus::RED, 2},
+      {cereal::ThermalData::ThermalStatus::DANGER, 3}};
   char temp_label_str[32];
   char temp_value_str[32];
   char temp_value_unit[32];
-  const int temp_y_offset = ;
+  const int temp_y_offset = 0;
   snprintf(temp_value_str, sizeof(temp_value_str), "%d", s->scene.paTemp);
   snprintf(temp_value_unit, sizeof(temp_value_unit), "%s", "°C");
   snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");
