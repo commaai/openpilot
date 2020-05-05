@@ -31,8 +31,8 @@ static LogState s = {
   .lock = PTHREAD_MUTEX_INITIALIZER,
 };
 
-static void cloudlog_bind_locked(std::string k, std::string v) {
-  s.ctx_j[k] = v;
+static void cloudlog_bind_locked(const char* k, const char* v) {
+  s.ctx_j[std::string(k)] = std::string(v);
 }
 
 static void cloudlog_init() {
@@ -57,7 +57,7 @@ static void cloudlog_init() {
   // openpilot bindings
   char* dongle_id = getenv("DONGLE_ID");
   if (dongle_id) {
-    cloudlog_bind_locked("dongle_id", std::string(dongle_id));
+    cloudlog_bind_locked("dongle_id", dongle_id);
   }
   cloudlog_bind_locked("version", COMMA_VERSION);
   s.ctx_j["dirty"] = !getenv("CLEAN");
@@ -65,7 +65,7 @@ static void cloudlog_init() {
   s.inited = true;
 }
 
-void cloudlog_e(int levelnum, std::string filename, int lineno, std::string func,
+void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) {
   pthread_mutex_lock(&s.lock);
   cloudlog_init();
@@ -82,16 +82,16 @@ void cloudlog_e(int levelnum, std::string filename, int lineno, std::string func
   }
 
   if (levelnum >= s.print_level) {
-    std::cout << filename << ": " << std::string(msg_buf) << std::endl;
+    printf("%s: %s\n", filename, msg_buf);
   }
 
   json11::Json log_j = json11::Json::object {
     {"msg", std::string(msg_buf)},
     {"ctx", s.ctx_j},
     {"levelnum", levelnum},
-    {"filename", filename},
+    {"filename", std::string(filename)},
     {"lineno", lineno},
-    {"funcname", func},
+    {"funcname", std::string(func)},
     {"created", seconds_since_epoch()}
   };
   //assert(log_j);
@@ -108,7 +108,7 @@ void cloudlog_e(int levelnum, std::string filename, int lineno, std::string func
   pthread_mutex_unlock(&s.lock);
 }
 
-void cloudlog_bind(std::string k, std::string v) {
+void cloudlog_bind(const char *k, const char *v) {
   pthread_mutex_lock(&s.lock);
   cloudlog_init();
   cloudlog_bind_locked(k, v);
