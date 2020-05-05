@@ -1,3 +1,5 @@
+#pragma once
+
 #include <assert.h>
 #include <map>
 #include "messaging.hpp"
