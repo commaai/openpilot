@@ -6,16 +6,14 @@
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-
+#include <capnp/serialize.h>
 #include <czmq.h>
-
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
-#include "common/messagehelp.h"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -364,8 +362,12 @@ static void update_status(UIState *s, int status) {
   }
 }
 
-void handle_message(UIState *s,  MessageReader& msg) {
-  auto event = msg.getEvent();
+void handle_message(UIState *s,  Message* msg) {
+  auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), msg->getData(), msg->getSize());
+  capnp::FlatArrayMessageReader cmsg(amsg);
+  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+  
   auto which = event.which();
   UIScene &scene = s->scene;
   if (which == cereal::Event::CONTROLS_STATE && s->started) {
@@ -533,9 +535,10 @@ static void check_messages(UIState *s) {
       break;
 
     for (auto sock : polls){
-      MessageReader msg = sock->receive();
+      Message *msg = sock->receive();
       if (msg) {
         handle_message(s, msg);
+        delete msg;
       }
     }
   }
