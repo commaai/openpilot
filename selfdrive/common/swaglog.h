@@ -1,6 +1,8 @@
 #ifndef SWAGLOG_H
 #define SWAGLOG_H
 
+#ifdef __cplusplus
+
 #include <string>
 
 #include "selfdrive/common/timing.h"
@@ -59,4 +61,6 @@ void cloudlog_bind(std::string k, std::string v);
 #define LOGW_100(fmt, ...) cloudlog_rl(2, 100, CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)
 #define LOGE_100(fmt, ...) cloudlog_rl(2, 100, CLOUDLOG_ERROR, fmt, ## __VA_ARGS__)
 
-#endif
+#endif // __cplusplus
+
+#endif // SWAGLOG_H

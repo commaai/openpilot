@@ -1,12 +1,15 @@
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
-#include <iostream>
-#include <string>
 #include <string.h>
 #include <assert.h>
 
 #include <pthread.h>
 #include <zmq.h>
+
+#include <iostream>
+#include <string>
 
 #include "json11.hpp"
 
