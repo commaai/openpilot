@@ -222,7 +222,7 @@ class DriverStatus():
       self.awareness = 1.
       self.awareness_active = 1.
       self.awareness_passive = 1.
-      return events
+      return
 
     driver_attentive = self.driver_distraction_filter.x < 0.37
     awareness_prev = self.awareness
@@ -237,7 +237,7 @@ class DriverStatus():
         self.awareness_passive = min(self.awareness_passive + self.step_change, 1.)
       # don't display alert banner when awareness is recovering and has cleared orange
       if self.awareness > self.threshold_prompt:
-        return events
+        return
 
     # should always be counting if distracted unless at standstill and reaching orange
     if (not (self.face_detected and self.hi_stds * DT_DMON <= _HI_STD_FALLBACK_TIME) or (self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected)) and \
@@ -260,5 +260,3 @@ class DriverStatus():
 
     if alert is not None:
       events.add(alert)
-
-    return events

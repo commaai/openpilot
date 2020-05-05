@@ -26,6 +26,9 @@ class Events:
   def names(self):
     return self.events
 
+  def __len__(self):
+    return len(self.events)
+
   def add(self, event_name):
     self.events.append(event_name)
 

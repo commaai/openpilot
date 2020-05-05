@@ -1,4 +1,3 @@
-from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
 

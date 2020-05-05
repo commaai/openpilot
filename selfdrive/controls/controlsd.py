@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import gc
-import capnp
 from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper, DT_CTRL

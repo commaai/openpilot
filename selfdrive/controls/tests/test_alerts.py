@@ -34,7 +34,9 @@ class TestAlerts(unittest.TestCase):
     all_alerts = list(ALERTS.values())
     for event_types in EVENTS.values():
       for alert in event_types.values():
-        all_alerts.append(alert)
+        # not all events have alerts
+        if alert is not None:
+          all_alerts.append(alert)
 
     for alert in all_alerts:
       # for full size alerts, both text fields wrap the text,
