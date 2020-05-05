@@ -32,7 +32,6 @@ class Events:
   def any(self, event_types):
     for e in self.events:
       for t in event_types:
-        print(e)
         if t in EVENTS[e].keys():
           return True
     return False
