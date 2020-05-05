@@ -66,8 +66,8 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
   sm.update(0)
 
   events = Events()
-  events.add_from_capnp(CS.events)
-  events.add_from_capnp(sm['dMonitoringState'].events)
+  events.add_from_msg(CS.events)
+  events.add_from_msg(sm['dMonitoringState'].events)
   add_lane_change_event(events, sm['pathPlan'])
   enabled = isEnabled(state)
 
@@ -397,17 +397,19 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     dat.controlsState.lateralControlState.indiState = lac_log
   pm.send('controlsState', dat)
 
+  car_events = events.to_msg()
+
   # carState
   cs_send = messaging.new_message('carState')
   cs_send.valid = CS.canValid
   cs_send.carState = CS
-  cs_send.carState.events = events.to_capnp()
+  cs_send.carState.events = car_events
   pm.send('carState', cs_send)
 
   # carEvents - logged every second or on change
   if (sm.frame % int(1. / DT_CTRL) == 0) or (events.names != events_prev):
     ce_send = messaging.new_message('carEvents', len(events.names))
-    ce_send.carEvents = events.to_capnp()
+    ce_send.carEvents = car_events
     pm.send('carEvents', ce_send)
 
   # carParams - logged every 50 seconds (> 1 per segment)

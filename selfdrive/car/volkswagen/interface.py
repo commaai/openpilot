@@ -112,7 +112,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.steeringFault:
       events.add(EventName.steerTempUnavailable)
 
-    ret.events = events.to_capnp()
+    ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
     ret.canMonoTimes = canMonoTimes
 

@@ -44,11 +44,11 @@ class Events:
           ret.append(e)
     return ret
 
-  def add_from_capnp(self, events):
+  def add_from_msg(self, events):
     for e in events:
       self.events.append(e.name.raw)
 
-  def to_capnp(self):
+  def to_msg(self):
     # TODO: use pycapnp's resizeable list builder
     ret = []
     for event_name in self.events:
