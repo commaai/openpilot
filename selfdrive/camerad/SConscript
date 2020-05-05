@@ -1,6 +1,6 @@
 Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc', 'cereal', 'webcam')
 
-libs = ['m', 'pthread', common, 'jpeg', 'json', cereal, 'OpenCL', messaging, 'czmq', 'zmq', 'capnp', 'kj', 'capnp_c', visionipc, gpucommon]
+libs = ['m', 'pthread', common, 'jpeg', cereal, 'OpenCL', messaging, 'czmq', 'zmq', 'capnp', 'kj', 'capnp_c', visionipc, gpucommon]
 
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'adreno_utils', 'EGL', 'GLESv3', 'cutils', 'ui']
