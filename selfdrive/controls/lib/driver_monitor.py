@@ -1,7 +1,6 @@
 from common.numpy_fast import interp
 from math import atan2, sqrt
 from common.realtime import DT_DMON
-from selfdrive.controls.lib.events import create_event
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
 
@@ -229,7 +228,7 @@ class DriverStatus():
     awareness_prev = self.awareness
 
     if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT:
-      events.append(create_event(EventName.driverMonitorLowAcc))
+      events.add(EventName.driverMonitorLowAcc)
 
     if (driver_attentive and self.face_detected and self.pose.low_std and self.awareness > 0):
       # only restore awareness when paying attention and alert is not red
@@ -260,6 +259,6 @@ class DriverStatus():
       alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive
 
     if alert is not None:
-      events.append(create_event(alert))
+      events.add(alert)
 
     return events

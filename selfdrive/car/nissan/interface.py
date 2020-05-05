@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.controls.lib.events import create_event
 from selfdrive.car.nissan.values import CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -77,9 +76,9 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret)
 
     if self.CS.lkas_enabled:
-      events.append(create_event(car.CarEvent.EventName.invalidLkasSetting))
+      events.add(car.CarEvent.EventName.invalidLkasSetting)
 
-    ret.events = events
+    ret.events = events.to_capnp()
 
     self.CS.out = ret.as_reader()
     return self.CS.out

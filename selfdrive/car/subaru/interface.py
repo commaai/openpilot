@@ -63,7 +63,7 @@ class CarInterface(CarInterfaceBase):
     be.type = car.CarState.ButtonEvent.Type.accelCruise
     buttonEvents.append(be)
 
-    ret.events = self.create_common_events(ret)
+    ret.events = self.create_common_events(ret).to_capnp()
 
     self.CS.out = ret.as_reader()
     return self.CS.out

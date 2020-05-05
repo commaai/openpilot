@@ -18,23 +18,48 @@ class EventTypes:
   PERMANENT = 'permanent'
 ET = EventTypes
 
+class Events:
+  def __init__(self):
+    self.events = []
 
-def create_event(name):
-  event = car.CarEvent.new_message()
-  event.name = name
-  for event_type in EVENTS[name].keys():
-    setattr(event, event_type, True)
-  return event
+  @property
+  def names(self):
+    return self.events
 
+  def add(self, event_name):
+    self.events.append(event_name)
 
-def get_events(events, types):
-  out = []
-  for e in events:
-    for t in types:
-      if getattr(e, t):
-        out.append(e.name)
-  return out
+  def any(self, event_types):
+    for e in self.events:
+      for t in event_types:
+        print(e)
+        if t in EVENTS[e].keys():
+          return True
+    return False
 
+  def get_events(self, event_types):
+    ret = []
+    for e in self.events:
+      for t in event_types:
+        if t in EVENTS[e].keys():
+          ret.append(e)
+    return ret
+
+  def add_from_capnp(self, events):
+    for e in events:
+      #print(e)
+      self.events.append(e.name.raw)
+
+  def to_capnp(self):
+    # TODO: use pycapnp's resizeable list builder
+    ret = []
+    for event_name in self.events:
+      event = car.CarEvent.new_message()
+      event.name = event_name
+      for event_type in EVENTS[event_name].keys():
+        setattr(event, event_type , True)
+      ret.append(event)
+    return ret
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,

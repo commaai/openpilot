@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.events import create_event
 from selfdrive.car.gm.values import CAR, Ecu, ECU_FINGERPRINT, CruiseButtons, \
                                     AccState, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
@@ -150,24 +149,24 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, pcm_enable=False)
 
     if ret.vEgo < self.CP.minEnableSpeed:
-      events.append(create_event(EventName.speedTooLow))
+      events.add(EventName.speedTooLow)
     if self.CS.park_brake:
-      events.append(create_event(EventName.parkBrake))
+      events.add(EventName.parkBrake)
     if ret.cruiseState.standstill:
-      events.append(create_event(EventName.resumeRequired))
+      events.add(EventName.resumeRequired)
     if self.CS.pcm_acc_status == AccState.FAULTED:
-      events.append(create_event(EventName.controlsFailed))
+      events.add(EventName.controlsFailed)
 
     # handle button presses
     for b in ret.buttonEvents:
       # do enable on both accel and decel buttons
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
-        events.append(create_event(EventName.buttonEnable))
+        events.add(EventName.buttonEnable)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
-        events.append(create_event(EventName.buttonCancel))
+        events.add(EventName.buttonCancel)
 
-    ret.events = events
+    ret.events = events.to_capnp()
 
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()
