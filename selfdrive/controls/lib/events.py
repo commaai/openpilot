@@ -7,7 +7,8 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EN = car.CarEvent.EventName
 
-class EventTypes:
+# Event types
+class ET:
   ENABLE = 'enable'
   PRE_ENABLE = 'preEnable'
   NO_ENTRY = 'noEntry'
@@ -16,7 +17,6 @@ class EventTypes:
   SOFT_DISABLE = 'softDisable'
   IMMEDIATE_DISABLE = 'immediateDisable'
   PERMANENT = 'permanent'
-ET = EventTypes
 
 class Events:
   def __init__(self):
@@ -46,7 +46,6 @@ class Events:
 
   def add_from_capnp(self, events):
     for e in events:
-      #print(e)
       self.events.append(e.name.raw)
 
   def to_capnp(self):
@@ -97,8 +96,11 @@ disable_alert = Alert(
                     Priority.MID, VisualAlert.none, AudibleAlert.chimeDisengage, .2, 0., 0.)
 
 EVENTS = {
-  # events with no alerts
+  # ********** events with no alerts **********
+
   EN.gasPressed: {ET.PRE_ENABLE: None},
+
+  # ********** events with one or more alerts **********
 
   EN.pcmEnable: {ET.ENABLE: enable_alert},
   EN.buttonEnable: {ET.ENABLE: enable_alert},
@@ -286,7 +288,6 @@ EVENTS = {
     ET.NO_ENTRY: NoEntryAlert("Distraction Level Too High"),
   },
 
-  # Cancellation alerts causing soft disabling
   EN.overheat: {
     ET.SOFT_DISABLE: SoftDisableAlert("System Overheated"),
     ET.NO_ENTRY: NoEntryAlert("System overheated"),
@@ -365,7 +366,6 @@ EVENTS = {
                                audible_alert=AudibleAlert.chimeDisengage),
   },
 
-  # Cancellation alerts causing immediate disabling
   EN.controlsFailed: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Failed"),
     ET.NO_ENTRY: NoEntryAlert("Controls Failed"),
@@ -429,8 +429,6 @@ EVENTS = {
     ET.NO_ENTRY: NoEntryAlert("Harness Malfunction"),
   },
 
-
-  # not loud cancellations (user is in control)
   EN.noTarget: {
     ET.IMMEDIATE_DISABLE: Alert(
       "openpilot Canceled",
@@ -471,8 +469,6 @@ EVENTS = {
     ET.NO_ENTRY: NoEntryAlert("Please Connect to Internet",
                               audible_alert=AudibleAlert.chimeDisengage),
   },
-
-  # permanent alerts
 
   EN.lowSpeedLockout: {
     ET.PERMANENT: Alert(
