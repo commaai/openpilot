@@ -101,8 +101,8 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   char levelnum_c = levelnum;
   zmq_send(s.sock, &levelnum_c, 1, ZMQ_NOBLOCK | ZMQ_SNDMORE);
   zmq_send(s.sock, log_s, strlen(log_s), ZMQ_NOBLOCK);
-
   free(log_s);
+
   pthread_mutex_unlock(&s.lock);
 }
 
