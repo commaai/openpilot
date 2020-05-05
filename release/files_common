@@ -404,8 +404,6 @@ phonelibs/openmax/**
 
 phonelibs/zmq/aarch64/lib/*
 
-phonelibs/json/src/json.c
-phonelibs/json/src/json.h
 phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
 

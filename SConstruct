@@ -130,7 +130,6 @@ env = Environment(
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
     "#phonelibs/openmax/include",
-    "#phonelibs/json/src",
     "#phonelibs/json11",
     "#phonelibs/eigen",
     "#phonelibs/curl/include",
