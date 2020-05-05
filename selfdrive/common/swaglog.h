@@ -1,6 +1,8 @@
 #ifndef SWAGLOG_H
 #define SWAGLOG_H
 
+#include <string>
+
 #include "selfdrive/common/timing.h"
 
 #define CLOUDLOG_DEBUG 10
@@ -9,18 +11,10 @@
 #define CLOUDLOG_ERROR 40
 #define CLOUDLOG_CRITICAL 50
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
+void cloudlog_e(int levelnum, std::string filename, int lineno, std::string func,
                 const char* fmt, ...) /*__attribute__ ((format (printf, 6, 7)))*/;
 
-void cloudlog_bind(const char* k, const char* v);
-
-#ifdef __cplusplus
-}
-#endif
+void cloudlog_bind(std::string k, std::string v);
 
 #define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
                                            __func__, \

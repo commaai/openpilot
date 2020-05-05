@@ -215,7 +215,7 @@ Import('_common', '_visionipc', '_gpucommon', '_gpu_libs')
 if SHARED:
   common, visionipc, gpucommon = abspath(common), abspath(visionipc), abspath(gpucommon)
 else:
-  common = [_common, 'json']
+  common = [_common, 'json11']
   visionipc = _visionipc
   gpucommon = [_gpucommon] + _gpu_libs
 
