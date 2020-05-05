@@ -4,6 +4,7 @@
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
+#include "common/socketmaster.h"
 
 #include "models/driving.h"
 
@@ -22,11 +23,8 @@ void* live_thread(void *arg) {
   int err;
   set_thread_name("live");
 
-  Context * c = Context::create();
-  SubSocket * live_calibration_sock = SubSocket::create(c, "liveCalibration");
-  assert(live_calibration_sock != NULL);
-
-  Poller * poller = Poller::create({live_calibration_sock});
+  SocketMaster socketMaster;
+  socketMaster.createSubSocket("liveCalibration", true);
 
   /*
      import numpy as np
@@ -47,7 +45,7 @@ void* live_thread(void *arg) {
     0.0,   0.0,   1.0;
 
   while (!do_exit) {
-    for (auto sock : poller->poll(10)){
+    for (auto sock : socketMaster.poll(10)){
       Message * msg = sock->receive();
 
       auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
@@ -86,10 +84,6 @@ void* live_thread(void *arg) {
 
   }
 
-  delete live_calibration_sock;
-  delete poller;
-  delete c;
-
   return NULL;
 }
 
@@ -103,14 +97,10 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  Context *msg_context = Context::create();
-  PubSocket *model_sock = PubSocket::create(msg_context, "model");
-  PubSocket *posenet_sock = PubSocket::create(msg_context, "cameraOdometry");
-  SubSocket *pathplan_sock = SubSocket::create(msg_context, "pathPlan", "127.0.0.1", true);
-
-  assert(model_sock != NULL);
-  assert(posenet_sock != NULL);
-  assert(pathplan_sock != NULL);
+  SocketMaster socketMaster;
+  PubSocket *model_sock = socketMaster.createPubSocket("model");
+  PubSocket *posenet_sock = socketMaster.createPubSocket("cameraOdometry");
+  SubSocket *pathplan_sock = socketMaster.createSubSocket("pathPlan", false, "127.0.0.1", true);
 
   // cl init
   cl_device_id device_id;
@@ -238,11 +228,6 @@ int main(int argc, char **argv) {
   }
 
   visionstream_destroy(&stream);
-
-  delete model_sock;
-  delete posenet_sock;
-  delete pathplan_sock;
-  delete msg_context;
 
   model_free(&model);
 

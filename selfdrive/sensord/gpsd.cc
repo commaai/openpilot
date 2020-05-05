@@ -21,6 +21,7 @@
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/socketmaster.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -28,7 +29,7 @@ volatile sig_atomic_t do_exit = 0;
 
 namespace {
 
-Context *gps_context;
+SocketMaster socketMaster;
 PubSocket *gps_publisher;
 PubSocket *gps_location_publisher;
 
@@ -156,12 +157,8 @@ void gps_init() {
                                    GPS_POSITION_RECURRENCE_PERIODIC,
                                    100, 0, 0);
 
-  gps_context = Context::create();
-  gps_publisher = PubSocket::create(gps_context, "gpsNMEA");
-  gps_location_publisher = PubSocket::create(gps_context, "gpsLocation");
-
-  assert(gps_publisher != NULL);
-  assert(gps_location_publisher != NULL);
+  gps_publisher = socketMaster.createPubSocket("gpsNMEA");
+  gps_location_publisher = socketMaster.createPubSocket("gpsLocation");
 }
 
 void gps_destroy() {

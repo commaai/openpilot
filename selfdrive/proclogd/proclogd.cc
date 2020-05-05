@@ -22,6 +22,7 @@
 
 #include "common/timing.h"
 #include "common/utilpp.h"
+#include "common/socketmaster.h"
 
 namespace {
 
@@ -35,10 +36,8 @@ struct ProcCache {
 
 int main() {
   int err;
-
-  Context * c = Context::create();
-  PubSocket * publisher = PubSocket::create(c, "procLog");
-  assert(publisher != NULL);
+  SocketMaster socketMaster;
+  PubSocket* publisher = socketMaster.createPubSocket("procLog");
 
   double jiffy = sysconf(_SC_CLK_TCK);
   size_t page_size = sysconf(_SC_PAGE_SIZE);
@@ -239,9 +238,6 @@ int main() {
 
     usleep(2000000); // 2 secs
   }
-
-  delete publisher;
-  delete c;
 
   return 0;
 }

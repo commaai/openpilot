@@ -9,6 +9,7 @@
 
 #include <capnp/serialize.h>
 #include "common/timing.h"
+#include "common/socketmaster.h"
 #include "cereal/gen/cpp/log.capnp.h"
 #include "messaging.hpp"
 
@@ -28,9 +29,8 @@ int main() {
   struct logger *kernel_logger = android_logger_open(logger_list, (log_id_t)5); // LOG_ID_KERNEL
   assert(kernel_logger);
 
-  Context * c = Context::create();
-  PubSocket * androidLog = PubSocket::create(c, "androidLog");
-  assert(androidLog != NULL);
+  SocketMaster socketMaster;
+  PubSocket * androidLog = socketMaster.createPubSocket("androidLog");
 
   while (1) {
     log_msg log_msg;
@@ -63,9 +63,6 @@ int main() {
   }
 
   android_logger_list_close(logger_list);
-
-  delete androidLog;
-  delete c;
 
   return 0;
 }

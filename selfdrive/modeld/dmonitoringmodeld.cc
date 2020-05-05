@@ -7,6 +7,7 @@
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
+#include "common/socketmaster.h"
 
 #include "models/dmonitoring.h"
 
@@ -26,10 +27,9 @@ int main(int argc, char **argv) {
   set_realtime_priority(1);
 
   // messaging
-  Context *msg_context = Context::create();
-  PubSocket *dmonitoring_sock = PubSocket::create(msg_context, "driverState");
-  SubSocket *dmonstate_sock = SubSocket::create(msg_context, "dMonitoringState", "127.0.0.1", true);
-  assert(dmonstate_sock != NULL);
+  SocketMaster socketMaster;
+  PubSocket *dmonitoring_sock = socketMaster.createPubSocket("driverState");
+  SubSocket *dmonstate_sock = socketMaster.createSubSocket("dMonitoringState", false, "127.0.0.1", true);
 
   // init the models
   DMonitoringModelState dmonitoringmodel;
@@ -95,8 +95,6 @@ int main(int argc, char **argv) {
 
   visionstream_destroy(&stream);
 
-  delete dmonitoring_sock;
-  delete msg_context;
   dmonitoring_free(&dmonitoringmodel);
 
   return 0;

@@ -25,6 +25,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/socketmaster.h"
 #include "messaging.hpp"
 
 #include <algorithm>
@@ -613,10 +614,8 @@ void *can_send_thread(void *crap) {
   LOGD("start send thread");
 
   // sendcan = 8017
-  Context * context = Context::create();
-  SubSocket * subscriber = SubSocket::create(context, "sendcan");
-  assert(subscriber != NULL);
-
+  SocketMaster socketMaster;
+  SubSocket * subscriber = socketMaster.createSubSocket("sendcan", false);
 
   // drain sendcan to delete any stale messages from previous runs
   while (true){
@@ -632,8 +631,6 @@ void *can_send_thread(void *crap) {
     can_send(subscriber);
   }
   
-  delete subscriber;
-  delete context;
   return NULL;
 }
 
@@ -641,9 +638,8 @@ void *can_recv_thread(void *crap) {
   LOGD("start recv thread");
 
   // can = 8006
-  Context * c = Context::create();
-  PubSocket * publisher = PubSocket::create(c, "can");
-  assert(publisher != NULL);
+  SocketMaster socketMaster;
+  PubSocket * publisher = socketMaster.createPubSocket("can");
 
   // run at 100hz
   const uint64_t dt = 10000000ULL;
@@ -664,39 +660,28 @@ void *can_recv_thread(void *crap) {
 
     next_frame_time += dt;
   }
-
-  delete publisher;
-  delete c;
   return NULL;
 }
 
 void *can_health_thread(void *crap) {
   LOGD("start health thread");
   // health = 8011
-  Context * c = Context::create();
-  PubSocket * publisher = PubSocket::create(c, "health");
-  assert(publisher != NULL);
+  SocketMaster socketMaster;
+  PubSocket * publisher = socketMaster.createPubSocket("health");
 
   // run at 2hz
   while (!do_exit) {
     can_health(publisher);
     usleep(500*1000);
   }
-
-  delete publisher;
-  delete c;
   return NULL;
 }
 
 void *hardware_control_thread(void *crap) {
   LOGD("start hardware control thread");
-  Context * c = Context::create();
-  SubSocket * thermal_sock = SubSocket::create(c, "thermal");
-  SubSocket * front_frame_sock = SubSocket::create(c, "frontFrame");
-  assert(thermal_sock != NULL);
-  assert(front_frame_sock != NULL);
 
-  Poller * poller = Poller::create({thermal_sock, front_frame_sock});
+  SocketMaster socketMaster;
+  socketMaster.createSubSockets({"thermal", "frontFrame"});
 
   // Wait for hardware type to be set.
   while (hw_type == cereal::HealthData::HwType::UNKNOWN){
@@ -714,7 +699,7 @@ void *hardware_control_thread(void *crap) {
 
   while (!do_exit) {
     cnt++;
-    for (auto sock : poller->poll(1000)){
+    for (auto sock : socketMaster.poll(1000)){
       Message * msg = sock->receive();
       if (msg == NULL) continue;
 
@@ -764,11 +749,6 @@ void *hardware_control_thread(void *crap) {
     }
 
   }
-
-  delete poller;
-  delete thermal_sock;
-  delete c;
-
   return NULL;
 }
 
@@ -882,9 +862,8 @@ static void pigeon_publish_raw(PubSocket *publisher, unsigned char *dat, int ale
 
 void *pigeon_thread(void *crap) {
   // ubloxRaw = 8042
-  Context * context = Context::create();
-  PubSocket * publisher = PubSocket::create(context, "ubloxRaw");
-  assert(publisher != NULL);
+  SocketMaster socketMaster;
+  PubSocket * publisher = socketMaster.createPubSocket("ubloxRaw");
 
   // run at ~100hz
   unsigned char dat[0x1000];
@@ -919,8 +898,6 @@ void *pigeon_thread(void *crap) {
     cnt++;
   }
 
-  delete publisher;
-  delete context;
   return NULL;
 }
 

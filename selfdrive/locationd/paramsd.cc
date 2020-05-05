@@ -15,6 +15,7 @@
 #include "common/messaging.h"
 #include "common/params.h"
 #include "common/timing.h"
+#include "common/socketmaster.h"
 
 #include "messaging.hpp"
 #include "locationd_yawrate.h"
@@ -30,18 +31,9 @@ void sigpipe_handler(int sig) {
 int main(int argc, char *argv[]) {
   signal(SIGPIPE, (sighandler_t)sigpipe_handler);
 
-  Context * c = Context::create();
-  SubSocket * controls_state_sock = SubSocket::create(c, "controlsState");
-  SubSocket * sensor_events_sock = SubSocket::create(c, "sensorEvents");
-  SubSocket * camera_odometry_sock = SubSocket::create(c, "cameraOdometry");
-  PubSocket * live_parameters_sock = PubSocket::create(c, "liveParameters");
-
-  assert(controls_state_sock != NULL);
-  assert(sensor_events_sock != NULL);
-  assert(camera_odometry_sock != NULL);
-  assert(live_parameters_sock != NULL);
-
-  Poller * poller = Poller::create({controls_state_sock, sensor_events_sock, camera_odometry_sock});
+  SocketMaster socketMaster;
+  socketMaster.createSubSockets({"controlsState", "sensorEvents", "cameraOdometry"});
+  PubSocket *live_parameters_sock = socketMaster.createPubSocket("liveParameters");
 
   Localizer localizer;
 
@@ -104,7 +96,7 @@ int main(int argc, char *argv[]) {
   // Main loop
   int save_counter = 0;
   while (true){
-    for (auto s : poller->poll(100)){
+    for (auto s : socketMaster.poll(100)){
       Message * msg = s->receive();
 
       auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
@@ -175,13 +167,6 @@ int main(int argc, char *argv[]) {
       delete msg;
     }
   }
-
-  delete live_parameters_sock;
-  delete controls_state_sock;
-  delete camera_odometry_sock;
-  delete sensor_events_sock;
-  delete poller;
-  delete c;
 
   return 0;
 }

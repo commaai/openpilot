@@ -22,6 +22,7 @@
 #include "common/visionimg.h"
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
+#include "common/socketmaster.h"
 #include "messaging.hpp"
 #include "cereal/gen/c/log.capnp.h"
 
@@ -211,21 +212,8 @@ typedef struct UIState {
   int img_network[6];
 
   // sockets
-  Context *ctx;
-  SubSocket *model_sock;
-  SubSocket *controlsstate_sock;
-  SubSocket *livecalibration_sock;
-  SubSocket *radarstate_sock;
-  SubSocket *map_data_sock;
-  SubSocket *uilayout_sock;
-  SubSocket *thermal_sock;
-  SubSocket *health_sock;
-  SubSocket *ubloxgnss_sock;
-  SubSocket *driverstate_sock;
-  SubSocket *dmonitoring_sock;
+  SocketMaster *socketMaster;
   PubSocket *offroad_sock;
-  Poller * poller;
-  Poller * ublox_poller;
 
   int active_app;
 

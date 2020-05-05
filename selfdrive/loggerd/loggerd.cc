@@ -36,6 +36,7 @@
 #include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
+#include "common/socketmaster.h"
 
 #include "logger.h"
 #include "messaging.hpp"
@@ -77,7 +78,7 @@ static void set_do_exit(int sig) {
   do_exit = 1;
 }
 struct LoggerdState {
-  Context *ctx;
+  SocketMaster socketMaster;
   LoggerState logger;
 
   std::mutex lock;
@@ -116,8 +117,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
   int encoder_segment = -1;
   int cnt = 0;
 
-  PubSocket *idx_sock = PubSocket::create(s.ctx, front ? "frontEncodeIdx" : "encodeIdx");
-  assert(idx_sock != NULL);
+  PubSocket *idx_sock = s.socketMaster.createPubSocket(front ? "frontEncodeIdx" : "encodeIdx");
 
   LoggerHandle *lh = NULL;
 
@@ -312,8 +312,6 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
     visionstream_destroy(&stream);
   }
-
-  delete idx_sock;
 
   if (encoder_inited) {
     LOG("encoder destroy");
@@ -580,13 +578,9 @@ int main(int argc, char** argv) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  s.ctx = Context::create();
-  Poller * poller = Poller::create();
-
   // subscribe to all services
 
   SubSocket *frame_sock = NULL;
-  std::vector<SubSocket*> socks;
 
   std::map<SubSocket*, int> qlog_counter;
   std::map<SubSocket*, int> qlog_freqs;
@@ -595,21 +589,14 @@ int main(int argc, char** argv) {
     std::string name = it.name;
 
     if (it.should_log) {
-      SubSocket * sock = SubSocket::create(s.ctx, name);
-      assert(sock != NULL);
-
-      poller->registerSocket(sock);
-      socks.push_back(sock);
-
+      SubSocket *sock = s.socketMaster.createSubSocket(name.c_str(), true);
       if (name == "frame") {
         frame_sock = sock;
       }
-
       qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
       qlog_freqs[sock] = it.decimation;
     }
   }
-
 
   {
     auto words = gen_init_data();
@@ -652,7 +639,7 @@ int main(int argc, char** argv) {
   uint64_t bytes_count = 0;
 
   while (!do_exit) {
-    for (auto sock : poller->poll(100 * 1000)){
+    for (auto sock : s.socketMaster.poll(100 * 1000)){
       while (true) {
         Message * msg = sock->receive(true);
         if (msg == NULL){
@@ -729,11 +716,5 @@ int main(int argc, char** argv) {
 
   logger_close(&s.logger);
 
-  for (auto s : socks){
-    delete s;
-  }
-  
-  delete poller;
-  delete s.ctx;
   return 0;
 }

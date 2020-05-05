@@ -7,6 +7,7 @@
 #include <capnp/serialize.h>
 #include "messaging.hpp"
 #include "common/timing.h"
+#include "common/socketmaster.h"
 #include "cereal/gen/cpp/log.capnp.h"
 
 namespace {
@@ -21,10 +22,9 @@ int main() {
   setpriority(PRIO_PROCESS, 0, -13);
 
   int err = 0;
-  Context *context = Context::create();
 
-  PubSocket* clock_publisher = PubSocket::create(context, "clocks");
-  assert(clock_publisher != NULL);
+  SocketMaster socketMaster;
+  PubSocket* clock_publisher = socketMaster.createPubSocket("clocks");
 
   int timerfd = timerfd_create(CLOCK_BOOTTIME, 0);
   assert(timerfd >= 0);
@@ -66,7 +66,5 @@ int main() {
   }
 
   close(timerfd);
-  delete clock_publisher;
-  delete context;
   return 0;
 }

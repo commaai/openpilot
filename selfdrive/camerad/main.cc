@@ -18,6 +18,7 @@
 #include "common/visionipc.h"
 #include "common/visionbuf.h"
 #include "common/visionimg.h"
+#include "common/socketmaster.h"
 
 #include "messaging.hpp"
 
@@ -143,7 +144,7 @@ struct VisionState {
 
   zsock_t *terminate_pub;
 
-  Context * msg_context;
+  SocketMaster socketMaster;
   PubSocket *frame_sock;
   PubSocket *front_frame_sock;
   PubSocket *thumbnail_sock;
@@ -159,15 +160,11 @@ void* frontview_thread(void *arg) {
 
   set_thread_name("frontview");
 
-  s->msg_context = Context::create();
-
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  Context *msg_context = Context::create();
-  SubSocket *monitoring_sock = SubSocket::create(msg_context, "driverState", "127.0.0.1", true);
-  SubSocket *dmonstate_sock = SubSocket::create(msg_context, "dMonitoringState", "127.0.0.1", true);
-  assert(monitoring_sock != NULL);
-  assert(dmonstate_sock != NULL);
+  SocketMaster socketMaster;
+  SubSocket *monitoring_sock = socketMaster.createSubSocket("driverState", false, "127.0.0.1", true);
+  SubSocket *dmonstate_sock = socketMaster.createSubSocket("dMonitoringState", false, "127.0.0.1", true);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -366,9 +363,6 @@ void* frontview_thread(void *arg) {
 
     //LOGD("front process: %.2fms", t2-t1);
   }
-
-  delete monitoring_sock;
-  delete dmonstate_sock;
 
   return NULL;
 }
@@ -1297,25 +1291,14 @@ int main(int argc, char *argv[]) {
   init_buffers(s);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->msg_context = Context::create();
-  s->frame_sock = PubSocket::create(s->msg_context, "frame");
-  s->front_frame_sock = PubSocket::create(s->msg_context, "frontFrame");
-  s->thumbnail_sock = PubSocket::create(s->msg_context, "thumbnail");
-  assert(s->frame_sock != NULL);
-  assert(s->front_frame_sock != NULL);
-  assert(s->thumbnail_sock != NULL);
+  s->frame_sock = s->socketMaster.createPubSocket("frame");
+  s->front_frame_sock = s->socketMaster.createPubSocket("frontFrame");
+  s->thumbnail_sock = s->socketMaster.createPubSocket("thumbnail");
 #endif
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
 
   party(s);
-
-#if defined(QCOM) || defined(QCOM2)
-  delete s->frame_sock;
-  delete s->front_frame_sock;
-  delete s->thumbnail_sock;
-  delete s->msg_context;
-#endif
 
   free_buffers(s);
   cl_free(s);

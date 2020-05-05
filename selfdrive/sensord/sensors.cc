@@ -22,6 +22,7 @@
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/socketmaster.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -57,9 +58,8 @@ void sensor_loop() {
 
 
   while (!do_exit) {
-    Context * c = Context::create();
-    PubSocket * sensor_events_sock = PubSocket::create(c, "sensorEvents");
-    assert(sensor_events_sock != NULL);
+    SocketMaster socketMaster;
+    PubSocket *sensor_events_sock =socketMaster.createPubSocket("sensorEvents");
 
     struct sensors_poll_device_t* device;
     struct sensors_module_t* module;
@@ -226,8 +226,6 @@ void sensor_loop() {
       }
     }
     sensors_close(device);
-    delete sensor_events_sock;
-    delete c;
   }
 }
 

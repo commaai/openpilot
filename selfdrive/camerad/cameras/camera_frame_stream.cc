@@ -15,6 +15,7 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/socketmaster.h"
 #include "buffering.h"
 
 extern "C" {
@@ -53,9 +54,8 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps) {
 
 void run_frame_stream(DualCameraState *s) {
   int err;
-  Context * context = Context::create();
-  SubSocket * recorder_sock = SubSocket::create(context, "frame");
-  assert(recorder_sock != NULL);
+  SocketMaster socketMaster;
+  SubSocket *recorder_sock = socketMaster.createSubSocket("frame", false);
 
   CameraState *const rear_camera = &s->rear;
   auto *tb = &rear_camera->camera_tb;
@@ -95,10 +95,7 @@ void run_frame_stream(DualCameraState *s) {
     clReleaseEvent(map_event);
     tbuffer_dispatch(tb, buf_idx);
     delete msg;
-
   }
-  delete recorder_sock;
-  delete context;
 }
 
 }  // namespace
