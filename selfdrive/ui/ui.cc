@@ -1,3 +1,4 @@
+#include "ui.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -5,18 +6,14 @@
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-
+#include <capnp/serialize.h>
 #include <czmq.h>
-
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
-
-#include "ui.hpp"
-#include "sound.hpp"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -69,35 +66,21 @@ static void set_awake(UIState *s, bool awake) {
 }
 
 static void update_offroad_layout_state(UIState *s) {
-  struct capn rc;
-  capn_init_malloc(&rc);
-  struct capn_segment *cs = capn_root(&rc).seg;
-
-  cereal_UiLayoutState_ptr layoutp = cereal_new_UiLayoutState(cs);
-  struct cereal_UiLayoutState layoutd = {
-    .activeApp = (cereal_UiLayoutState_App)s->active_app,
-    .sidebarCollapsed = s->scene.uilayout_sidebarcollapsed,
-  };
-  cereal_write_UiLayoutState(&layoutd, layoutp);
-  LOGD("setting active app to %d with sidebar %d", layoutd.activeApp, layoutd.sidebarCollapsed);
-
-  cereal_Event_ptr eventp = cereal_new_Event(cs);
-  struct cereal_Event event = {
-    .logMonoTime = nanos_since_boot(),
-    .which = cereal_Event_uiLayoutState,
-    .uiLayoutState = layoutp,
-  };
-  cereal_write_Event(&event, eventp);
-  capn_setp(capn_root(&rc), 0, eventp.p);
-  uint8_t buf[4096];
-  ssize_t rs = capn_write_mem(&rc, buf, sizeof(buf), 0);
-  s->offroad_sock->send((char*)buf, rs);
-  capn_free(&rc);
+  capnp::MallocMessageBuilder msg;
+  auto event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto layout = event.initUiLayoutState();
+  layout.setActiveApp(s->active_app);
+  layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
+  auto words = capnp::messageToFlatArray(msg);
+  auto bytes = words.asBytes();
+  s->offroad_sock->send((char*)bytes.begin(), bytes.size());
+  LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
 }
 
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
-  s->active_app = cereal_UiLayoutState_App_settings;
+  s->active_app = cereal::UiLayoutState::App::SETTINGS;
   update_offroad_layout_state(s);
 #else
   // computer UI doesn't have offroad settings
@@ -107,9 +90,9 @@ static void navigate_to_settings(UIState *s) {
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
   if (s->started) {
-    s->active_app = cereal_UiLayoutState_App_none;
+    s->active_app = cereal::UiLayoutState::App::NONE;
   } else {
-    s->active_app = cereal_UiLayoutState_App_home;
+    s->active_app = cereal::UiLayoutState::App::HOME;
   }
   update_offroad_layout_state(s);
 #else
@@ -140,7 +123,7 @@ static void handle_driver_view_touch(UIState *s, int touch_x, int touch_y) {
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
   if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
-    && (s->active_app != cereal_UiLayoutState_App_settings)) {
+    && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
     } else {
@@ -339,19 +322,15 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->limit_set_speed_timeout = UI_FREQ;
 }
 
-static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
+static PathData read_path(cereal::ModelData::PathData::Reader pathp) {
   PathData ret = {0};
 
-  struct cereal_ModelData_PathData pathd;
-  cereal_read_ModelData_PathData(&pathd, pathp);
+  ret.prob = pathp.getProb();
+  ret.std = pathp.getStd();
 
-  ret.prob = pathd.prob;
-  ret.std = pathd.std;
-
-  capn_list32 polyp = pathd.poly;
-  capn_resolve(&polyp.p);
+  auto polyp = pathp.getPoly();
   for (int i = 0; i < POLYFIT_DEGREE; i++) {
-    ret.poly[i] = capn_to_f32(capn_get32(polyp, i));
+    ret.poly[i] = polyp[i];
   }
 
   // Compute points locations
@@ -362,20 +341,16 @@ static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
   return ret;
 }
 
-static ModelData read_model(cereal_ModelData_ptr modelp) {
-  struct cereal_ModelData modeld;
-  cereal_read_ModelData(&modeld, modelp);
-
+static ModelData read_model(cereal::ModelData::Reader model) {
   ModelData d = {0};
 
-  d.path = read_path(modeld.path);
-  d.left_lane = read_path(modeld.leftLane);
-  d.right_lane = read_path(modeld.rightLane);
+  d.path = read_path(model.getPath());
+  d.left_lane = read_path(model.getLeftLane());
+  d.right_lane = read_path(model.getRightLane());
 
-  struct cereal_ModelData_LeadData leadd;
-  cereal_read_ModelData_LeadData(&leadd, modeld.lead);
+  auto leadd = model.getLead();
   d.lead = (LeadData){
-      .dist = leadd.dist, .prob = leadd.prob, .std = leadd.std,
+      .dist = leadd.getDist(), .prob = leadd.getProb(), .std = leadd.getStd(),
   };
 
   return d;
@@ -387,207 +362,150 @@ static void update_status(UIState *s, int status) {
   }
 }
 
-
-void handle_message(UIState *s, Message * msg) {
-  struct capn ctx;
-  capn_init_mem(&ctx, (uint8_t*)msg->getData(), msg->getSize(), 0);
-
-  cereal_Event_ptr eventp;
-  eventp.p = capn_getp(capn_root(&ctx), 0, 1);
-  struct cereal_Event eventd;
-  cereal_read_Event(&eventd, eventp);
-
-  if (eventd.which == cereal_Event_controlsState && s->started) {
-    struct cereal_ControlsState datad;
-    cereal_read_ControlsState(&datad, eventd.controlsState);
+void handle_message(UIState *s,  Message* msg) {
+  auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), msg->getData(), msg->getSize());
+  capnp::FlatArrayMessageReader cmsg(amsg);
+  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+  
+  auto which = event.which();
+  UIScene &scene = s->scene;
+  if (which == cereal::Event::CONTROLS_STATE && s->started) {
+    auto data = event.getControlsState();
 
     s->controls_timeout = 1 * UI_FREQ;
-    s->scene.frontview = datad.rearViewCam;
-    if (!s->scene.frontview){s->controls_seen = true;}
+    scene.frontview = data.getRearViewCam();
+    if (!scene.frontview){ s->controls_seen = true; }
 
-    if (datad.vCruise != s->scene.v_cruise) {
-      s->scene.v_cruise_update_ts = eventd.logMonoTime;
+    if (data.getVCruise() != scene.v_cruise) {
+      scene.v_cruise_update_ts = event.getLogMonoTime();
     }
-    s->scene.v_cruise = datad.vCruise;
-    s->scene.v_ego = datad.vEgo;
-    s->scene.curvature = datad.curvature;
-    s->scene.engaged = datad.enabled;
-    s->scene.engageable = datad.engageable;
-    s->scene.gps_planner_active = datad.gpsPlannerActive;
-    s->scene.monitoring_active = datad.driverMonitoringOn;
+    scene.v_cruise = data.getVCruise();
+    scene.v_ego = data.getVEgo();
+    scene.curvature = data.getCurvature();
+    scene.engaged = data.getEnabled();
+    scene.engageable = data.getEngageable();
+    scene.gps_planner_active = data.getGpsPlannerActive();
+    scene.monitoring_active = data.getDriverMonitoringOn();
 
-    s->scene.decel_for_model = datad.decelForModel;
-
-    if (datad.alertSound != cereal_CarControl_HUDControl_AudibleAlert_none && datad.alertSound != s->alert_sound) {
-      if (s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+    scene.decel_for_model = data.getDecelForModel();
+    auto alert_sound = data.getAlertSound();
+    const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
+    if (alert_sound != s->alert_sound){
+      if (s->alert_sound != sound_none){
         stop_alert_sound(s->alert_sound);
       }
-      play_alert_sound(datad.alertSound);
-
-      s->alert_sound = datad.alertSound;
-      snprintf(s->alert_type, sizeof(s->alert_type), "%s", datad.alertType.str);
-    } else if ((!datad.alertSound || datad.alertSound == cereal_CarControl_HUDControl_AudibleAlert_none)
-                  && s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
-      stop_alert_sound(s->alert_sound);
-      s->alert_type[0] = '\0';
-      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
+      if (alert_sound != sound_none){
+        play_alert_sound(alert_sound);
+        s->alert_type = data.getAlertType();
+      }
+      s->alert_sound = alert_sound;
     }
-
-    if (datad.alertText1.str) {
-      snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", datad.alertText1.str);
-    } else {
-      s->scene.alert_text1[0] = '\0';
-    }
-    if (datad.alertText2.str) {
-      snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", datad.alertText2.str);
-    } else {
-      s->scene.alert_text2[0] = '\0';
-    }
-
-    s->scene.alert_ts = eventd.logMonoTime;
-
-    s->scene.alert_size = datad.alertSize;
-    if (datad.alertSize == cereal_ControlsState_AlertSize_none) {
-      s->alert_size = ALERTSIZE_NONE;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_small) {
-      s->alert_size = ALERTSIZE_SMALL;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_mid) {
-      s->alert_size = ALERTSIZE_MID;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_full) {
-      s->alert_size = ALERTSIZE_FULL;
-    }
-
-    if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
+    scene.alert_text1 = data.getAlertText1();
+    scene.alert_text2 = data.getAlertText2();
+    scene.alert_ts = event.getLogMonoTime();
+    scene.alert_size = data.getAlertSize();
+    auto alertStatus = data.getAlertStatus();
+    if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       update_status(s, STATUS_WARNING);
-    } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
+    } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
       update_status(s, STATUS_ALERT);
-    } else if (datad.enabled) {
-      update_status(s, STATUS_ENGAGED);
-    } else {
-      update_status(s, STATUS_DISENGAGED);
+    } else{
+      update_status(s, scene.engaged ? STATUS_ENGAGED : STATUS_DISENGAGED);
     }
 
-    s->scene.alert_blinkingrate = datad.alertBlinkingRate;
-    if (datad.alertBlinkingRate > 0.) {
+    scene.alert_blinkingrate = data.getAlertBlinkingRate();
+    if (scene.alert_blinkingrate > 0.) {
       if (s->alert_blinked) {
         if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
-          s->alert_blinking_alpha += (0.05*datad.alertBlinkingRate);
+          s->alert_blinking_alpha += (0.05*scene.alert_blinkingrate);
         } else {
           s->alert_blinked = false;
         }
       } else {
         if (s->alert_blinking_alpha > 0.25) {
-          s->alert_blinking_alpha -= (0.05*datad.alertBlinkingRate);
+          s->alert_blinking_alpha -= (0.05*scene.alert_blinkingrate);
         } else {
           s->alert_blinking_alpha += 0.25;
           s->alert_blinked = true;
         }
       }
     }
-  } else if (eventd.which == cereal_Event_radarState) {
-    struct cereal_RadarState datad;
-    cereal_read_RadarState(&datad, eventd.radarState);
-    struct cereal_RadarState_LeadData leaddatad;
-    cereal_read_RadarState_LeadData(&leaddatad, datad.leadOne);
-    s->scene.lead_status = leaddatad.status;
-    s->scene.lead_d_rel = leaddatad.dRel;
-    s->scene.lead_y_rel = leaddatad.yRel;
-    s->scene.lead_v_rel = leaddatad.vRel;
-    cereal_read_RadarState_LeadData(&leaddatad, datad.leadTwo);
-    s->scene.lead_status2 = leaddatad.status;
-    s->scene.lead_d_rel2 = leaddatad.dRel;
-    s->scene.lead_y_rel2 = leaddatad.yRel;
-    s->scene.lead_v_rel2 = leaddatad.vRel;
-    s->livempc_or_radarstate_changed = true;
-  } else if (eventd.which == cereal_Event_liveCalibration) {
-    s->scene.world_objects_visible = true;
-    struct cereal_LiveCalibrationData datad;
-    cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
+  } else if (which == cereal::Event::RADAR_STATE) {
+    auto data = event.getRadarState();
+    
+    auto leaddatad = data.getLeadOne();
+    scene.lead_status = leaddatad.getStatus();
+    scene.lead_d_rel = leaddatad.getDRel();
+    scene.lead_y_rel = leaddatad.getYRel();
+    scene.lead_v_rel = leaddatad.getVRel();
+    auto leaddatad2 = data.getLeadTwo();
+    scene.lead_status2 = leaddatad2.getStatus();
+    scene.lead_d_rel2 = leaddatad2.getDRel();
+    scene.lead_y_rel2 = leaddatad2.getYRel();
+    scene.lead_v_rel2 = leaddatad2.getVRel();
 
-    capn_list32 extrinsicl = datad.extrinsicMatrix;
-    capn_resolve(&extrinsicl.p);  // is this a bug?
+    s->livempc_or_radarstate_changed = true;
+  } else if (which == cereal::Event::LIVE_CALIBRATION) {
+    scene.world_objects_visible = true;
+    auto extrinsicl = event.getLiveCalibration().getExtrinsicMatrix();
     for (int i = 0; i < 3 * 4; i++) {
-      s->scene.extrinsic_matrix.v[i] =
-          capn_to_f32(capn_get32(extrinsicl, i));
+      scene.extrinsic_matrix.v[i] = extrinsicl[i];
     }
-  } else if (eventd.which == cereal_Event_model) {
-    s->scene.model = read_model(eventd.model);
+  } else if (which == cereal::Event::MODEL) {
+    scene.model = read_model(event.getModel());
     s->model_changed = true;
-  } else if (eventd.which == cereal_Event_liveMpc) {
-    struct cereal_LiveMpcData datad;
-    cereal_read_LiveMpcData(&datad, eventd.liveMpc);
+  } else if (which == cereal::Event::LIVE_MPC) {
+    auto data = event.getLiveMpc();
 
-    capn_list32 x_list = datad.x;
-    capn_resolve(&x_list.p);
-
+    auto x_list = data.getX();
+    auto y_list = data.getY();
     for (int i = 0; i < 50; i++){
-      s->scene.mpc_x[i] = capn_to_f32(capn_get32(x_list, i));
-    }
-
-    capn_list32 y_list = datad.y;
-    capn_resolve(&y_list.p);
-
-    for (int i = 0; i < 50; i++){
-      s->scene.mpc_y[i] = capn_to_f32(capn_get32(y_list, i));
+      scene.mpc_x[i] = x_list[i];
+      scene.mpc_y[i] = y_list[i];
     }
     s->livempc_or_radarstate_changed = true;
-  } else if (eventd.which == cereal_Event_uiLayoutState) {
-    struct cereal_UiLayoutState datad;
-    cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
-    s->active_app = datad.activeApp;
-    s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
-    if (datad.mockEngaged != s->scene.uilayout_mockengaged) {
-      s->scene.uilayout_mockengaged = datad.mockEngaged;
+  } else if (which == cereal::Event::UI_LAYOUT_STATE) {
+    auto data = event.getUiLayoutState();
+
+    s->active_app = data.getActiveApp();
+    scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
+    if (data.getMockEngaged() != scene.uilayout_mockengaged) {
+      scene.uilayout_mockengaged = data.getMockEngaged();
     }
-  } else if (eventd.which == cereal_Event_liveMapData) {
-    struct cereal_LiveMapData datad;
-    cereal_read_LiveMapData(&datad, eventd.liveMapData);
-    s->scene.map_valid = datad.mapValid;
-  } else if (eventd.which == cereal_Event_thermal) {
-    struct cereal_ThermalData datad;
-    cereal_read_ThermalData(&datad, eventd.thermal);
-
-    s->scene.networkType = datad.networkType;
-    s->scene.networkStrength = datad.networkStrength;
-    s->scene.batteryPercent = datad.batteryPercent;
-    snprintf(s->scene.batteryStatus, sizeof(s->scene.batteryStatus), "%s", datad.batteryStatus.str);
-    s->scene.freeSpace = datad.freeSpace;
-    s->scene.thermalStatus = datad.thermalStatus;
-    s->scene.paTemp = datad.pa0;
-
-    s->thermal_started = datad.started;
-
-  } else if (eventd.which == cereal_Event_ubloxGnss) {
-    struct cereal_UbloxGnss datad;
-    cereal_read_UbloxGnss(&datad, eventd.ubloxGnss);
-    if (datad.which == cereal_UbloxGnss_measurementReport) {
-      struct cereal_UbloxGnss_MeasurementReport reportdatad;
-      cereal_read_UbloxGnss_MeasurementReport(&reportdatad, datad.measurementReport);
-      s->scene.satelliteCount = reportdatad.numMeas;
+  } else if (which == cereal::Event::LIVE_MAP_DATA) {
+    scene.map_valid = event.getLiveMapData().getMapValid();
+  } else if (which == cereal::Event::THERMAL) {
+    auto data = event.getThermal();
+    
+    scene.networkType = data.getNetworkType();
+    scene.networkStrength = data.getNetworkStrength();
+    scene.batteryPercent = data.getBatteryPercent();
+    scene.batteryCharging = data.getBatteryStatus() == "Charging";
+    scene.freeSpace = data.getFreeSpace();
+    scene.thermalStatus = data.getThermalStatus();
+    scene.paTemp = data.getPa0();
+    
+    s->thermal_started = data.getStarted();
+  } else if (which == cereal::Event::UBLOX_GNSS) {
+    auto data = event.getUbloxGnss();
+    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
     }
-  } else if (eventd.which == cereal_Event_health) {
-    struct cereal_HealthData datad;
-    cereal_read_HealthData(&datad, eventd.health);
-
-    s->scene.hwType = datad.hwType;
+  } else if (which == cereal::Event::HEALTH) {
+    scene.hwType = event.getHealth().getHwType();
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
-  } else if (eventd.which == cereal_Event_driverState) {
-    struct cereal_DriverState datad;
-    cereal_read_DriverState(&datad, eventd.driverState);
-
-    s->scene.face_prob = datad.faceProb;
-
-    capn_list32 fxy_list = datad.facePosition;
-    capn_resolve(&fxy_list.p);
-    s->scene.face_x = capn_to_f32(capn_get32(fxy_list, 0));
-    s->scene.face_y = capn_to_f32(capn_get32(fxy_list, 1));
-  } else if (eventd.which == cereal_Event_dMonitoringState) {
-    struct cereal_DMonitoringState datad;
-    cereal_read_DMonitoringState(&datad, eventd.dMonitoringState);
-
-    s->scene.is_rhd = datad.isRHD;
-    s->scene.awareness_status = datad.awarenessStatus;
-    s->preview_started = datad.isPreview;
+  } else if (which == cereal::Event::DRIVER_STATE) {
+    auto data = event.getDriverState();
+    scene.face_prob = data.getFaceProb();
+    auto fxy_list = data.getFacePosition();
+    scene.face_x = fxy_list[0];
+    scene.face_y = fxy_list[1];
+  } else if (which == cereal::Event::D_MONITORING_STATE) {
+    auto data = event.getDMonitoringState();
+    scene.is_rhd = data.getIsRHD();
+    scene.awareness_status = data.getAwarenessStatus();
+    s->preview_started = data.getIsPreview();
   }
 
   s->started = s->thermal_started || s->preview_started ;
@@ -598,17 +516,15 @@ void handle_message(UIState *s, Message * msg) {
       s->alert_sound_timeout = 0;
       s->vision_seen = false;
       s->controls_seen = false;
-      s->active_app = cereal_UiLayoutState_App_home;
+      s->active_app = cereal::UiLayoutState::App::HOME;
       update_offroad_layout_state(s);
     }
   } else if (s->status == STATUS_STOPPED) {
     update_status(s, STATUS_DISENGAGED);
 
-    s->active_app = cereal_UiLayoutState_App_none;
+    s->active_app = cereal::UiLayoutState::App::NONE;
     update_offroad_layout_state(s);
   }
-
-  capn_free(&ctx);
 }
 
 static void check_messages(UIState *s) {
@@ -619,12 +535,11 @@ static void check_messages(UIState *s) {
       break;
 
     for (auto sock : polls){
-      Message * msg = sock->receive();
-      if (msg == NULL) continue;
-
-      handle_message(s, msg);
-
-      delete msg;
+      Message *msg = sock->receive();
+      if (msg) {
+        handle_message(s, msg);
+        delete msg;
+      }
     }
   }
 }
@@ -938,8 +853,6 @@ int is_leon() {
   return strstr(str, "letv") != NULL;
 }
 
-
-
 int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
@@ -1054,7 +967,7 @@ int main(int argc, char* argv[]) {
     if (s->hardware_timeout > 0) {
       s->hardware_timeout--;
     } else {
-      s->scene.hwType = cereal_HealthData_HwType_unknown;
+      s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
     }
 
     // Don't waste resources on drawing in case screen is off
@@ -1076,17 +989,18 @@ int main(int argc, char* argv[]) {
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      if (s->started && s->controls_seen && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
+      if (s->started && s->controls_seen && s->scene.alert_text2 != "Controls Unresponsive") {
         LOGE("Controls unresponsive");
-        s->scene.alert_size = ALERTSIZE_FULL;
+        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);
 
-        snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", "TAKE CONTROL IMMEDIATELY");
-        snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", "Controls Unresponsive");
-        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1, s->scene.alert_text2);
+        s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
+        s->scene.alert_text2 = "Controls Unresponsive";
+
+        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
 
         s->alert_sound_timeout = 2 * UI_FREQ;
-        s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat;
+        s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT;
         play_alert_sound(s->alert_sound);
       }
 
@@ -1096,9 +1010,9 @@ int main(int argc, char* argv[]) {
 
     // stop playing alert sound
     if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
-        s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+        s->alert_sound != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
       stop_alert_sound(s->alert_sound);
-      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
+      s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     }
 
     read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
