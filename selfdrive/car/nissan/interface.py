@@ -78,7 +78,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.lkas_enabled:
       events.add(car.CarEvent.EventName.invalidLkasSetting)
 
-    ret.events = events.to_msg()
+    events.to_msg(ret)
 
     self.CS.out = ret.as_reader()
     return self.CS.out

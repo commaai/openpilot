@@ -54,16 +54,13 @@ class Events:
     for e in events:
       self.events.append(e.name.raw)
 
-  def to_msg(self):
-    # TODO: use pycapnp's resizeable list builder
-    ret = []
-    for event_name in self.events:
-      event = car.CarEvent.new_message()
-      event.name = event_name
+  def to_msg(self, msg, field_name='events'):
+    msg.init(field_name, len(self.events))
+    evts = getattr(msg, field_name)
+    for i, event_name in enumerate(self.events):
+      evts[i].name = event_name
       for event_type in EVENTS[event_name].keys():
-        setattr(event, event_type , True)
-      ret.append(event)
-    return ret
+        setattr(evts[i], event_type , True)
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,

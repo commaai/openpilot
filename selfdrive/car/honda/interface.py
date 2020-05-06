@@ -517,7 +517,7 @@ class CarInterface(CarInterfaceBase):
     elif enable_pressed:
       events.add(EventName.buttonEnable)
 
-    ret.events = events.to_msg()
+    events.to_msg(ret)
 
     self.CS.out = ret.as_reader()
     return self.CS.out
