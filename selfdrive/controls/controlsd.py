@@ -278,7 +278,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
       else:
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
-      AM.add_from_event(frame, e, ET.PERMANENT, enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
+    AM.add_from_event(frame, e, ET.PERMANENT, enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
   for t in alert_types:
     for e in events.get_events((t,)):
