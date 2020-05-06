@@ -72,6 +72,8 @@ scikit-image = "*"
 pygame = "==2.0.0.dev6"
 pprofile = "*"
 pyprof2calltree = "*"
+dm-tree = "*"
+tensorflow_model_optimization = "*"
 
 [packages]
 atomicwrites = "*"
