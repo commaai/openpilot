@@ -564,6 +564,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     if CS.brakePressed and sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED and not CP.radarOffCan and CS.vEgo < 0.3:
       events.add(EventName.noTarget)
 
+    alert_types = []
     if not read_only:
       # update control state
       state, alert_types, soft_disable_timer, v_cruise_kph, v_cruise_kph_last = \
