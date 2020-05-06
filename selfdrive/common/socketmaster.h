@@ -45,7 +45,7 @@ class SocketMaster {
         break;
       }
       for (auto sock : polls) {
-        Message *msg = sock->receive();
+        Message *msg = sock->receive(true);
         if (msg) {
           messages.push_back(msg);
         }
