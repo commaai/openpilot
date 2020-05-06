@@ -2,7 +2,7 @@ from cereal import car, log
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alerts import ALERTS
-from selfdrive.controls.lib.events import EVENTS
+from selfdrive.controls.lib.events import EVENTS, EVENT_NAME
 import copy
 
 
@@ -16,7 +16,7 @@ class AlertManager():
   def __init__(self):
     self.activealerts = []
 
-  def alertPresent(self):
+  def alert_present(self):
     return len(self.activealerts) > 0
 
   def add(self, frame, alert_type, enabled=True, extra_text_1='', extra_text_2=''):
@@ -24,9 +24,9 @@ class AlertManager():
     alert = copy.copy(ALERTS[alert_type])
     self._add(frame, alert, alert_type, enabled, extra_text_1, extra_text_2)
 
-  def add_from_event(self, frame, event_name, event_type, enabled=True, extra_text_1='', extra_text_2=''):
-    alert_type = str(event_name)
-    alert = copy.copy(EVENTS[event_name][event_type])
+  def add_from_event(self, frame, event, event_type, enabled=True, extra_text_1='', extra_text_2=''):
+    alert_type = EVENT_NAME[event]
+    alert = copy.copy(EVENTS[event][event_type])
     self._add(frame, alert, alert_type, enabled, extra_text_1, extra_text_2)
 
   def _add(self, frame, added_alert, alert_type, enabled, extra_text_1, extra_text_2):
@@ -37,7 +37,7 @@ class AlertManager():
     added_alert.start_time = frame * DT_CTRL
 
     # if new alert is higher priority, log it
-    if not self.alertPresent() or added_alert.alert_priority > self.activealerts[0].alert_priority:
+    if not self.alert_present() or added_alert.alert_priority > self.activealerts[0].alert_priority:
       cloudlog.event('alert_add', alert_type=alert_type, enabled=enabled)
 
     self.activealerts.append(added_alert)
@@ -52,7 +52,7 @@ class AlertManager():
     self.activealerts = [a for a in self.activealerts if a.start_time +
                          max(a.duration_sound, a.duration_hud_alert, a.duration_text) > cur_time]
 
-    current_alert = self.activealerts[0] if self.alertPresent() else None
+    current_alert = self.activealerts[0] if self.alert_present() else None
 
     # start with assuming no alerts
     self.alert_type = ""

@@ -18,6 +18,9 @@ class ET:
   IMMEDIATE_DISABLE = 'immediateDisable'
   PERMANENT = 'permanent'
 
+# get event name from enum
+EVENT_NAME = {v: k for k, v in EN.schema.enumerants.items()}
+
 class Events:
   def __init__(self):
     self.events = []

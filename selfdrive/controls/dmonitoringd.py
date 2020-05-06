@@ -58,7 +58,7 @@ def dmonitoringd_thread(sm=None, pm=None):
                         v_cruise != v_cruise_last or \
                         sm['carState'].steeringPressed
       if driver_engaged:
-        _ = driver_status.update(Events(), True, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
+        driver_status.update(Events(), True, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
       v_cruise_last = v_cruise
 
     # Get model meta

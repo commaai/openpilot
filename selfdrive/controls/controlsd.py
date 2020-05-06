@@ -122,7 +122,7 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
   return CS, events, cal_perc, mismatch_counter, can_error_counter
 
 
-def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM):
+def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph):
   """Compute conditional state transitions and execute actions on state transitions"""
   enabled = isEnabled(state)
 
@@ -202,15 +202,11 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
     elif not events.any([ET.PRE_ENABLE]):
       state = State.enabled
 
-  for t in alert_types:
-    for e in events.get_events((t,)):
-      AM.add_from_event(frame, e, t, enabled)
-
-  return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
+  return state, alert_types, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
 
 
 def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
-                  AM, rk, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, saturated_count):
+                  AM, rk, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, saturated_count, alert_types):
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -282,7 +278,11 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
       else:
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
-    AM.add_from_event(frame, e, ET.PERMANENT, enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
+      AM.add_from_event(frame, e, ET.PERMANENT, enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
+
+  for t in alert_types:
+    for e in events.get_events((t,)):
+      AM.add_from_event(frame, e, t, enabled)
 
   return actuators, v_cruise_kph, v_acc_sol, a_acc_sol, lac_log, last_blinker_frame, saturated_count
 
@@ -568,14 +568,14 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
 
     if not read_only:
       # update control state
-      state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last = \
-        state_transition(sm.frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM)
+      state, alert_types, soft_disable_timer, v_cruise_kph, v_cruise_kph_last = \
+        state_transition(sm.frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph)
       prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, v_acc, a_acc, lac_log, last_blinker_frame, saturated_count = \
       state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                    LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, saturated_count)
+                    LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, saturated_count, alert_types)
 
     prof.checkpoint("State Control")
 
