@@ -24,7 +24,7 @@ jobs:
 
         docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
         docker save tmppilot:latest | gzip > tmppilot.tar.gz
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: tmppilot.tar.gz
         path: tmppilot.tar.gz
@@ -115,7 +115,7 @@ jobs:
       - name: Print diff
         if: always()
         run: cat diff.txt
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         if: always()
         with:
           name: process_replay_diff.txt
@@ -140,7 +140,7 @@ jobs:
         run: |
           mkdir out
           docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         if: always()
         with:
           name: longitudinal
