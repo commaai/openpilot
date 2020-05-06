@@ -63,8 +63,6 @@ def compare_logs(log1, log2, ignore_fields=[], ignore_msgs=[]):
     msg2_bytes = remove_ignored_fields(msg2, ignore_fields).as_builder().to_bytes()
 
     if msg1_bytes != msg2_bytes:
-      if msg1.which() == "carEvents":
-        print(msg1)
       msg1_dict = msg1.to_dict(verbose=True)
       msg2_dict = msg2.to_dict(verbose=True)
       dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields, tolerance=0)

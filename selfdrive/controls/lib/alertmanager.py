@@ -20,17 +20,15 @@ class AlertManager():
     return len(self.activealerts) > 0
 
   def add(self, frame, alert_type, enabled=True, extra_text_1='', extra_text_2=''):
-    alert_type = str(alert_type)
-    alert = copy.copy(ALERTS[alert_type])
-    self._add(frame, alert, alert_type, enabled, extra_text_1, extra_text_2)
+    self._add(frame, ALERTS[alert_type], alert_type, enabled, extra_text_1, extra_text_2)
 
   def add_from_event(self, frame, event, event_type, enabled=True, extra_text_1='', extra_text_2=''):
     alert_type = EVENT_NAME[event]
-    alert = copy.copy(EVENTS[event][event_type])
+    alert = EVENTS[event][event_type]
     self._add(frame, alert, alert_type, enabled, extra_text_1, extra_text_2)
 
-  def _add(self, frame, added_alert, alert_type, enabled, extra_text_1, extra_text_2):
-    # TODO: handle this in a cleaner way
+  def _add(self, frame, alert, alert_type, enabled, extra_text_1, extra_text_2):
+    added_alert = copy.copy(alert)
     added_alert.alert_type = alert_type
     added_alert.alert_text_1 += extra_text_1
     added_alert.alert_text_2 += extra_text_2
