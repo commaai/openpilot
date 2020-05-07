@@ -137,7 +137,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, msm_camera_i2c_data_type data_type) {
   struct msm_camera_i2c_reg_setting out_settings = {
     .reg_setting = arr,
-    .size = (unsigned short)size,
+    .size = (uint16_t)size,
     .addr_type = MSM_CAMERA_I2C_WORD_ADDR,
     .data_type = data_type,
     .delay = 0,
@@ -177,12 +177,12 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     {0x3002,0x0,0}, // long autoexposure off
 
     // FRM_LENGTH
-    {0x340, (unsigned short)(frame_length >> 8), 0}, {0x341, (unsigned short)(frame_length & 0xff), 0},
+    {0x340, (uint16_t)(frame_length >> 8), 0}, {0x341, (uint16_t)(frame_length & 0xff), 0},
     // INTEG_TIME aka coarse_int_time_addr aka shutter speed
-    {0x202, (unsigned short)(integ_lines >> 8), 0}, {0x203, (unsigned short)(integ_lines & 0xff),0},
+    {0x202, (uint16_t)(integ_lines >> 8), 0}, {0x203, (uint16_t)(integ_lines & 0xff),0},
     // global_gain_addr
     // if you assume 1x gain is 32, 448 is 14x gain, aka 2^14=16384
-    {0x204, (unsigned short)(analog_gain >> 8), 0}, {0x205, (unsigned short)(analog_gain & 0xff),0},
+    {0x204, (uint16_t)(analog_gain >> 8), 0}, {0x205, (uint16_t)(analog_gain & 0xff),0},
 
     // digital gain for colors: gain_greenR, gain_red, gain_blue, gain_greenB
     /*{0x20e, digital_gain_gr >> 8, 0}, {0x20f,digital_gain_gr & 0xFF,0},
@@ -222,13 +222,13 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     //{0x104,0x1,0},
 
     // FRM_LENGTH
-    {0x380e, (unsigned short)(frame_length >> 8), 0}, {0x380f, (unsigned short)(frame_length & 0xff), 0},
+    {0x380e, (uint16_t)(frame_length >> 8), 0}, {0x380f, (uint16_t)(frame_length & 0xff), 0},
     // AEC EXPO
-    {0x3500, (unsigned short)(integ_lines >> 16), 0}, {0x3501, (unsigned short)(integ_lines >> 8), 0}, {0x3502, (unsigned short)(integ_lines & 0xff),0},
+    {0x3500, (uint16_t)(integ_lines >> 16), 0}, {0x3501, (uint16_t)(integ_lines >> 8), 0}, {0x3502, (uint16_t)(integ_lines & 0xff),0},
     // AEC MANUAL
     {0x3503, 0x4, 0},
     // AEC GAIN
-    {0x3508, (unsigned short)(gain_bitmap), 0}, {0x3509, 0xf8, 0},
+    {0x3508, (uint16_t)(gain_bitmap), 0}, {0x3509, 0xf8, 0},
 
     //{0x104,0x0,0},
   };
@@ -253,11 +253,11 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
     {0x104,0x1,0},
 
     // FRM_LENGTH
-    {0x340, (unsigned short)(frame_length >> 8), 0}, {0x341, (unsigned short)(frame_length & 0xff), 0},
+    {0x340, (uint16_t)(frame_length >> 8), 0}, {0x341, (uint16_t)(frame_length & 0xff), 0},
     // coarse_int_time
-    {0x202, (unsigned short)(integ_lines >> 8), 0}, {0x203, (unsigned short)(integ_lines & 0xff),0},
+    {0x202, (uint16_t)(integ_lines >> 8), 0}, {0x203, (uint16_t)(integ_lines & 0xff),0},
     // global_gain
-    {0x204, (unsigned short)(gain >> 8), 0}, {0x205, (unsigned short)(gain & 0xff),0},
+    {0x204, (uint16_t)(gain >> 8), 0}, {0x205, (uint16_t)(gain & 0xff),0},
 
     {0x104,0x0,0},
   };
