@@ -62,12 +62,6 @@ ALERTS = {
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.chimeWarningRepeat, 1., 2., 2.),
 
-  "fcwStock": Alert(
-      "BRAKE!",
-      "Risk of Collision",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 1., 2., 2.),  # no EON chime for stock FCW
-
   "startup": Alert(
       "Be ready to take over at any time",
       "Always keep hands on wheel and eyes on road",

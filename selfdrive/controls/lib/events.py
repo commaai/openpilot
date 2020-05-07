@@ -37,16 +37,18 @@ class Events:
 
   def any(self, event_types):
     for e in self.events:
+      et = EVENTS.get(e, {}).keys()
       for t in event_types:
-        if t in EVENTS[e].keys():
+        if t in et:
           return True
     return False
 
   def get_events(self, event_types):
     ret = []
     for e in self.events:
+      et = EVENTS.get(e, {}).keys()
       for t in event_types:
-        if t in EVENTS[e].keys():
+        if t in et:
           ret.append(e)
     return ret
 
@@ -59,7 +61,7 @@ class Events:
     evts = getattr(msg, field_name)
     for i, event_name in enumerate(self.events):
       evts[i].name = event_name
-      for event_type in EVENTS[event_name].keys():
+      for event_type in EVENTS.get(event_name, {}).keys():
         setattr(evts[i], event_type , True)
 
 class NoEntryAlert(Alert):
@@ -114,6 +116,14 @@ EVENTS = {
   EventName.brakeHold: {
     ET.USER_DISABLE: disable_alert,
     ET.NO_ENTRY: NoEntryAlert("Brake Hold Active"),
+  },
+
+  EventName.stockFcw: {
+    ET.WARNING: Alert(
+      "BRAKE!",
+      "Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 1., 2., 2.),
   },
 
   EventName.parkBrake: {

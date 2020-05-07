@@ -90,9 +90,6 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
   if mem_low:
     events.add(EventName.lowMemory)
 
-  if CS.stockAeb:
-    events.add(EventName.stockAeb)
-
   # Handle calibration
   cal_status = sm['liveCalibration'].calStatus
   cal_perc = sm['liveCalibration'].calPerc
@@ -220,10 +217,6 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   if plan.fcw:
     # send FCW alert if triggered by planner
     AM.add(frame, "fcw", enabled)
-
-  elif CS.stockFcw:
-    # send a silent alert when stock fcw triggers, since the car is already beeping
-    AM.add(frame, "fcwStock", enabled)
 
   # State specific actions
 
