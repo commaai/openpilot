@@ -44,7 +44,7 @@ class MessageReader {
 #define STACK_SEGEMENT_BUF_SIZE 256
 class MessageBuilder : public capnp::MessageBuilder {
  public:
-  MessageBuilder(uint firstMallocSize = 2048) : returnedFirstSegment(false), nextSize(firstMallocSize), stackSegment{} {};
+  MessageBuilder() : firstSegment(true), nextMallocSize(2048), stackSegment{} {};
 
   ~MessageBuilder() {
     for (auto ptr : moreSegments) {
@@ -53,17 +53,17 @@ class MessageBuilder : public capnp::MessageBuilder {
   }
 
   kj::ArrayPtr<capnp::word> allocateSegment(uint minimumSize) {
-    if (!returnedFirstSegment) {
-      returnedFirstSegment = true;
+    if (firstSegment) {
+      firstSegment = false;
       uint size = kj::max(minimumSize, STACK_SEGEMENT_BUF_SIZE);
       if (size <= STACK_SEGEMENT_BUF_SIZE) {
         return kj::ArrayPtr<capnp::word>(stackSegment + 1, size);
       }
     }
-    uint size = kj::max(minimumSize, nextSize);
+    uint size = kj::max(minimumSize, nextMallocSize);
     capnp::word *result = (capnp::word *)calloc(size, sizeof(capnp::word));
     moreSegments.add(result);
-    nextSize += size;
+    nextMallocSize += size;
     return kj::ArrayPtr<capnp::word>(result, size);
   }
 
@@ -76,8 +76,8 @@ class MessageBuilder : public capnp::MessageBuilder {
       table[1] = segment_size;
       return kj::ArrayPtr<capnp::word>(stackSegment, segment_size + 1).asBytes();
     } else {
-      flatArray = capnp::messageToFlatArray(segments);
-      return flatArray.asBytes();
+      array = capnp::messageToFlatArray(segments);
+      return array.asBytes();
     }
   }
 
@@ -87,10 +87,10 @@ class MessageBuilder : public capnp::MessageBuilder {
   }
 
  protected:
-  kj::Array<capnp::word> flatArray;
+  kj::Array<capnp::word> array;
   kj::Vector<capnp::word *> moreSegments;
-  bool returnedFirstSegment;
-  uint nextSize;
+  bool firstSegment;
+  size_t nextMallocSize;
   // the first words of stackSement is used internally to set the head table.
   alignas(8) capnp::word stackSegment[STACK_SEGEMENT_BUF_SIZE + 1];
 };
