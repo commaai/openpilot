@@ -166,7 +166,7 @@ class CarInterface(CarInterfaceBase):
       if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
 
-    events.to_msg(ret)
+    ret.events = events.to_msg()
 
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()

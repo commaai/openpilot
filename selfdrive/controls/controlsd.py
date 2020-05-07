@@ -389,17 +389,19 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     dat.controlsState.lateralControlState.indiState = lac_log
   pm.send('controlsState', dat)
 
+  car_events = events.to_msg()
+
   # carState
   cs_send = messaging.new_message('carState')
   cs_send.valid = CS.canValid
   cs_send.carState = CS
-  events.to_msg(cs_send.carState)
+  cs_send.carState.events = car_events
   pm.send('carState', cs_send)
 
   # carEvents - logged every second or on change
   if (sm.frame % int(1. / DT_CTRL) == 0) or (events.names != events_prev):
     ce_send = messaging.new_message('carEvents', len(events.names))
-    events.to_msg(ce_send, field_name='carEvents')
+    ce_send.carEvents = car_events
     pm.send('carEvents', ce_send)
 
   # carParams - logged every 50 seconds (> 1 per segment)

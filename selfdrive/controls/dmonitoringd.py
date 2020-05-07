@@ -78,6 +78,7 @@ def dmonitoringd_thread(sm=None, pm=None):
       # dMonitoringState packet
       dat = messaging.new_message('dMonitoringState')
       dat.dMonitoringState = {
+        "events": events.to_msg(),
         "faceDetected": driver_status.face_detected,
         "isDistracted": driver_status.driver_distracted,
         "awarenessStatus": driver_status.awareness,
@@ -94,7 +95,6 @@ def dmonitoringd_thread(sm=None, pm=None):
         "hiStdCount": driver_status.hi_stds,
         "isPreview": False,
       }
-      events.to_msg(dat.dMonitoringState)
       pm.send('dMonitoringState', dat)
 
 def main(sm=None, pm=None):

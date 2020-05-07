@@ -309,7 +309,7 @@ class CarInterface(CarInterfaceBase):
         # while in standstill, send a user alert
         events.add(EventName.manualRestart)
 
-    events.to_msg(ret)
+    ret.events = events.to_msg()
 
     self.CS.out = ret.as_reader()
     return self.CS.out
