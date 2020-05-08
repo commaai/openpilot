@@ -860,18 +860,6 @@ int is_leon() {
   return strstr(str, "letv") != NULL;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-#ifdef QCOM
-  #define PERSISTENT_PARAMS "/persist/comma/params"
-#else
-  #define PERSISTENT_PARAMS NULL
-#endif
-
->>>>>>> fix params writing
-=======
->>>>>>> Persistent params argument in C params lib. Fixed symlink flow
 int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
