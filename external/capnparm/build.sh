@@ -20,21 +20,6 @@ g++ -std=gnu++11 -I./src -I./src -DKJ_HEADER_WARNINGS -DCAPNP_HEADER_WARNINGS -D
 make -j4 install
 
 # --------
-echo "Installing c-capnp"
-
-git clone https://github.com/commaai/c-capnproto.git
-cd c-capnproto
-git submodule update --init --recursive
-autoreconf -f -i -s
-CFLAGS="-fPIC" ./configure --prefix=${ONE}/external/capnparm
-make -j4
-
-# manually build binaries statically
-gcc -fPIC -o .libs/capnpc-c compiler/capnpc-c.o compiler/schema.capnp.o compiler/str.o  ./.libs/libcapnp_c.a -Wl,-rpath -Wl,${ONE}/external/capnp/lib
-
-make install
-
-# --------
 echo "Installing java-capnp"
 
 git clone https://github.com/dwrensha/capnproto-java.git
