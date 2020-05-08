@@ -4,10 +4,8 @@
 #include <sys/timerfd.h>
 #include <sys/time.h>
 #include <utils/Timers.h>
-#include <capnp/serialize.h>
 #include "messaging.hpp"
 #include "common/timing.h"
-#include "cereal/gen/cpp/log.capnp.h"
 
 namespace {
   int64_t arm_cntpct() {
@@ -60,13 +58,9 @@ int main() {
     clocks.setWallTimeNanos(wall_time);
     clocks.setModemUptimeMillis(modem_uptime_v);
 
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    clock_publisher->send((char*)bytes.begin(), bytes.size());
+     pm.send("clocks", msg);
   }
 
   close(timerfd);
-  delete clock_publisher;
-  delete context;
   return 0;
 }

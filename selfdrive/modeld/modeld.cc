@@ -22,13 +22,7 @@ pthread_mutex_t transform_lock;
 void* live_thread(void *arg) {
   int err;
   set_thread_name("live");
-
-  Context * c = Context::create();
-  SubSocket * live_calibration_sock = SubSocket::create(c, "liveCalibration");
-  assert(live_calibration_sock != NULL);
-
-  Poller * poller = Poller::create({live_calibration_sock});
-
+  SubMaster sm({"liveCalibration"});
   /*
      import numpy as np
      from common.transformations.model import medmodel_frame_from_road_frame
@@ -48,15 +42,8 @@ void* live_thread(void *arg) {
     0.0,   0.0,   1.0;
 
   while (!do_exit) {
-    for (auto sock : poller->poll(10)){
-      Message * msg = sock->receive();
-
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
+    for (auto msg : sm.poll(10)){
+      auto event = msg->getEvent();
       if (event.isLiveCalibration()) {
         pthread_mutex_lock(&transform_lock);
 
@@ -81,15 +68,8 @@ void* live_thread(void *arg) {
         run_model = true;
         pthread_mutex_unlock(&transform_lock);
       }
-
-      delete msg;
     }
-
   }
-
-  delete live_calibration_sock;
-  delete poller;
-  delete c;
 
   return NULL;
 }
@@ -104,14 +84,9 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  Context *msg_context = Context::create();
-  PubSocket *model_sock = PubSocket::create(msg_context, "model");
-  PubSocket *posenet_sock = PubSocket::create(msg_context, "cameraOdometry");
-  SubSocket *pathplan_sock = SubSocket::create(msg_context, "pathPlan", "127.0.0.1", true);
-
-  assert(model_sock != NULL);
-  assert(posenet_sock != NULL);
-  assert(pathplan_sock != NULL);
+  SubMaster sm;
+  sm.createSocket("pathPlan", "127.0.0.1", true);
+  PubMaster pm({"model", "cameraOdometry"});
 
   // cl init
   cl_device_id device_id;
@@ -194,18 +169,9 @@ int main(int argc, char **argv) {
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
-      Message *msg = pathplan_sock->receive(true);
-      if (msg != NULL) {
-        // TODO: copy and pasted from camerad/main.cc
-        auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-        memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-        capnp::FlatArrayMessageReader cmsg(amsg);
-        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-        // TODO: path planner timeout?
-        desire = ((int)event.getPathPlan().getDesire()) - 1;
-        delete msg;
+      auto msg = sm.pollOne(0);
+      if (msg){
+        desire = (int)(msg->getEvent().getPathPlan().getDesire()) - 1;
       }
 
       double mt1 = 0, mt2 = 0;
@@ -227,8 +193,8 @@ int main(int argc, char **argv) {
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
-        model_publish(model_sock, extra.frame_id, model_buf, extra.timestamp_eof);
-        posenet_publish(posenet_sock, extra.frame_id, model_buf, extra.timestamp_eof);
+        model_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
+        posenet_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
         last = mt1;
@@ -239,11 +205,6 @@ int main(int argc, char **argv) {
   }
 
   visionstream_destroy(&stream);
-
-  delete model_sock;
-  delete posenet_sock;
-  delete pathplan_sock;
-  delete msg_context;
 
   model_free(&model);
 

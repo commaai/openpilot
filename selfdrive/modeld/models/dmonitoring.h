@@ -4,9 +4,6 @@
 #include "common/util.h"
 #include "commonmodel.h"
 #include "runners/run.h"
-
-#include "cereal/gen/cpp/log.capnp.h"
-#include <capnp/serialize.h>
 #include "messaging.hpp"
 
 #ifdef __cplusplus
@@ -37,7 +34,7 @@ typedef struct DMonitoringModelState {
 
 void dmonitoring_init(DMonitoringModelState* s);
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
-void dmonitoring_publish(PubSocket *sock, uint32_t frame_id, const DMonitoringResult res);
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult res);
 void dmonitoring_free(DMonitoringModelState* s);
 
 #ifdef __cplusplus

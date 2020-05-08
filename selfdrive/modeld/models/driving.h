@@ -12,10 +12,7 @@
 
 #include "commonmodel.h"
 #include "runners/run.h"
-
-#include "cereal/gen/cpp/log.capnp.h"
 #include <czmq.h>
-#include <capnp/serialize.h>
 #include "messaging.hpp"
 
 #define MODEL_WIDTH 512

@@ -6,11 +6,8 @@
 
 
 #include <capnp/message.h>
-#include <capnp/serialize-packed.h>
 
 #include "json11.hpp"
-#include "cereal/gen/cpp/log.capnp.h"
-
 #include "common/swaglog.h"
 #include "common/messaging.h"
 #include "common/params.h"
@@ -30,19 +27,8 @@ void sigpipe_handler(int sig) {
 int main(int argc, char *argv[]) {
   signal(SIGPIPE, (sighandler_t)sigpipe_handler);
 
-  Context * c = Context::create();
-  SubSocket * controls_state_sock = SubSocket::create(c, "controlsState");
-  SubSocket * sensor_events_sock = SubSocket::create(c, "sensorEvents");
-  SubSocket * camera_odometry_sock = SubSocket::create(c, "cameraOdometry");
-  PubSocket * live_parameters_sock = PubSocket::create(c, "liveParameters");
-
-  assert(controls_state_sock != NULL);
-  assert(sensor_events_sock != NULL);
-  assert(camera_odometry_sock != NULL);
-  assert(live_parameters_sock != NULL);
-
-  Poller * poller = Poller::create({controls_state_sock, sensor_events_sock, camera_odometry_sock});
-
+  SubMaster sm({"controlsState", "sensorEvents", "cameraOdometry"});
+  PubMaster pm({"liveParameters"});
   Localizer localizer;
 
   // Read car params
@@ -104,15 +90,8 @@ int main(int argc, char *argv[]) {
   // Main loop
   int save_counter = 0;
   while (true){
-    for (auto s : poller->poll(100)){
-      Message * msg = s->receive();
-
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      capnp::FlatArrayMessageReader capnp_msg(amsg);
-      cereal::Event::Reader event = capnp_msg.getRoot<cereal::Event>();
-
+    for (auto msg : sm.poll(100)){
+      auto event = msg->getEvent();
       localizer.handle_log(event);
 
       auto which = event.which();
@@ -137,9 +116,7 @@ int main(int argc, char *argv[]) {
         live_params.setStiffnessFactor(learner.x);
         live_params.setSteerRatio(learner.sR);
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        live_parameters_sock->send((char*)bytes.begin(), bytes.size());
+        pm.send("liveParameters", msg);
 
         // Save parameters every minute
         if (save_counter % 6000 == 0) {
@@ -158,16 +135,8 @@ int main(int argc, char *argv[]) {
                      });
         }
       }
-      delete msg;
     }
   }
-
-  delete live_parameters_sock;
-  delete controls_state_sock;
-  delete camera_odometry_sock;
-  delete sensor_events_sock;
-  delete poller;
-  delete c;
 
   return 0;
 }
