@@ -43,7 +43,7 @@ if arch == "aarch64" or arch == "larch64":
   ]
 
   if arch == "larch64":
-    cpppath += ["#phonelibs/capnp-cpp/include", "#phonelibs/capnp-c/include"]
+    cpppath += ["#phonelibs/capnp-cpp/include"]
     libpath += ["#phonelibs/snpe/larch64"]
     libpath += ["#phonelibs/libyuv/larch64/lib"]
     libpath += ["#external/capnparm/lib", "/usr/lib/aarch64-linux-gnu"]
@@ -63,7 +63,6 @@ else:
   }
   cpppath = [
     "#phonelibs/capnp-cpp/include",
-    "#phonelibs/capnp-c/include",
     "#phonelibs/zmq/x64/include",
     "#external/tensorflow/include",
   ]
@@ -71,7 +70,6 @@ else:
   if arch == "Darwin":
     libpath = [
       "#phonelibs/capnp-cpp/mac/lib",
-      "#phonelibs/capnp-c/mac/lib",
       "#phonelibs/libyuv/mac/lib",
       "#cereal",
       "#selfdrive/common",
@@ -81,7 +79,6 @@ else:
   else:
     libpath = [
       "#phonelibs/capnp-cpp/x64/lib",
-      "#phonelibs/capnp-c/x64/lib",
       "#phonelibs/snpe/x86_64-linux-clang",
       "#phonelibs/zmq/x64/lib",
       "#phonelibs/libyuv/x64/lib",
