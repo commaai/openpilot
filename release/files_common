@@ -167,7 +167,8 @@ selfdrive/common/touch.[c,h]
 selfdrive/common/visionipc.[c,h]
 selfdrive/common/visionbuf_cl.c
 selfdrive/common/ipc.[c,h]
-selfdrive/common/swaglog.[c,h]
+selfdrive/common/swaglog.h
+selfdrive/common/swaglog.cc
 selfdrive/common/util.[c,h]
 selfdrive/common/efd.[c,h]
 selfdrive/common/cqueue.[c,h]
@@ -405,8 +406,6 @@ phonelibs/openmax/**
 
 phonelibs/zmq/aarch64/lib/*
 
-phonelibs/json/src/json.c
-phonelibs/json/src/json.h
 phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
 
