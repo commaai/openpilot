@@ -6,7 +6,6 @@
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-#include <capnp/serialize.h>
 #include <czmq.h>
 #include "common/util.h"
 #include "common/timing.h"
@@ -72,9 +71,7 @@ static void update_offroad_layout_state(UIState *s) {
   auto layout = event.initUiLayoutState();
   layout.setActiveApp(s->active_app);
   layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  s->offroad_sock->send((char*)bytes.begin(), bytes.size());
+  s->pm->send("offroadLayout", msg);
   LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
 }
 
@@ -215,49 +212,13 @@ static void ui_init(UIState *s) {
 
   pthread_mutex_init(&s->lock, NULL);
 
-  s->ctx = Context::create();
-  s->model_sock = SubSocket::create(s->ctx, "model");
-  s->controlsstate_sock = SubSocket::create(s->ctx, "controlsState");
-  s->uilayout_sock = SubSocket::create(s->ctx, "uiLayoutState");
-  s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
-  s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
-  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
-  s->health_sock = SubSocket::create(s->ctx, "health");
-  s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
-  s->driverstate_sock = SubSocket::create(s->ctx, "driverState");
-  s->dmonitoring_sock = SubSocket::create(s->ctx, "dMonitoringState");
-  s->offroad_sock = PubSocket::create(s->ctx, "offroadLayout");
-
-  assert(s->model_sock != NULL);
-  assert(s->controlsstate_sock != NULL);
-  assert(s->uilayout_sock != NULL);
-  assert(s->livecalibration_sock != NULL);
-  assert(s->radarstate_sock != NULL);
-  assert(s->thermal_sock != NULL);
-  assert(s->health_sock != NULL);
-  assert(s->ubloxgnss_sock != NULL);
-  assert(s->driverstate_sock != NULL);
-  assert(s->dmonitoring_sock != NULL);
-  assert(s->offroad_sock != NULL);
-
-  s->poller = Poller::create({
-                              s->model_sock,
-                              s->controlsstate_sock,
-                              s->uilayout_sock,
-                              s->livecalibration_sock,
-                              s->radarstate_sock,
-                              s->thermal_sock,
-                              s->health_sock,
-                              s->ubloxgnss_sock,
-                              s->driverstate_sock,
-                              s->dmonitoring_sock
-                             });
-
+  s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
+                                    "health", "ubloxGnss", "driverState", "dMonitoringState", "offroadLayout"
 #ifdef SHOW_SPEEDLIMIT
-  s->map_data_sock = SubSocket::create(s->ctx, "liveMapData");
-  assert(s->map_data_sock != NULL);
-  s->poller->registerSocket(s->map_data_sock);
+                                    , "liveMapData"
 #endif
+  });
+  s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
 
@@ -369,12 +330,7 @@ static void update_status(UIState *s, int status) {
   }
 }
 
-void handle_message(UIState *s,  Message* msg) {
-  auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), msg->getData(), msg->getSize());
-  capnp::FlatArrayMessageReader cmsg(amsg);
-  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
+void handle_message(UIState *s,  cereal::Event::Reader &event) {
   auto which = event.which();
   UIScene &scene = s->scene;
   if (which == cereal::Event::CONTROLS_STATE && s->started) {
@@ -535,19 +491,8 @@ void handle_message(UIState *s,  Message* msg) {
 }
 
 static void check_messages(UIState *s) {
-  while(true) {
-    auto polls = s->poller->poll(0);
-
-    if (polls.size() == 0)
-      break;
-
-    for (auto sock : polls){
-      Message *msg = sock->receive();
-      if (msg) {
-        handle_message(s, msg);
-        delete msg;
-      }
-    }
+  for (auto msg : s->sm->poll(0)) {
+    handle_message(s, msg->getEvent());
   }
 }
 
@@ -772,17 +717,7 @@ static void* vision_connect_thread(void *args) {
     s->vision_connect_firstrun = true;
 
     // Drain sockets
-    while (true){
-      auto polls = s->poller->poll(0);
-      if (polls.size() == 0)
-        break;
-
-      for (auto sock : polls){
-        Message * msg = sock->receive();
-        if (msg == NULL) continue;
-        delete msg;
-      }
-    }
+    s->sm->poll(0, false);
 
     pthread_mutex_unlock(&s->lock);
   }
@@ -1071,6 +1006,7 @@ int main(int argc, char* argv[]) {
 
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
-
+  delete s->sm;
+  delete s->pm;
   return 0;
 }

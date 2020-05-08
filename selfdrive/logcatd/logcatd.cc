@@ -7,9 +7,7 @@
 #include <log/logger.h>
 #include <log/logprint.h>
 
-#include <capnp/serialize.h>
 #include "common/timing.h"
-#include "cereal/gen/cpp/log.capnp.h"
 #include "messaging.hpp"
 
 int main() {
@@ -28,10 +26,7 @@ int main() {
   struct logger *kernel_logger = android_logger_open(logger_list, (log_id_t)5); // LOG_ID_KERNEL
   assert(kernel_logger);
 
-  Context * c = Context::create();
-  PubSocket * androidLog = PubSocket::create(c, "androidLog");
-  assert(androidLog != NULL);
-
+  PubMaster pm({"androidLog"});
   while (1) {
     log_msg log_msg;
     err = android_logger_list_read(logger_list, &log_msg);
@@ -57,15 +52,10 @@ int main() {
     androidEntry.setTag(entry.tag);
     androidEntry.setMessage(entry.message);
 
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    androidLog->send((char*)bytes.begin(), bytes.size());
+    pm.send("androidLog", msg);
   }
 
   android_logger_list_close(logger_list);
-
-  delete androidLog;
-  delete c;
 
   return 0;
 }

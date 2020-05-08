@@ -12,7 +12,6 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 
-#include <capnp/serialize.h>
 #include <pthread.h>
 #include "nanovg.h"
 
@@ -203,21 +202,8 @@ typedef struct UIState {
   int img_network[6];
 
   // sockets
-  Context *ctx;
-  SubSocket *model_sock;
-  SubSocket *controlsstate_sock;
-  SubSocket *livecalibration_sock;
-  SubSocket *radarstate_sock;
-  SubSocket *map_data_sock;
-  SubSocket *uilayout_sock;
-  SubSocket *thermal_sock;
-  SubSocket *health_sock;
-  SubSocket *ubloxgnss_sock;
-  SubSocket *driverstate_sock;
-  SubSocket *dmonitoring_sock;
-  PubSocket *offroad_sock;
-  Poller * poller;
-  Poller * ublox_poller;
+  SubMaster *sm;
+  PubMaster *pm;
 
   cereal::UiLayoutState::App active_app;
 

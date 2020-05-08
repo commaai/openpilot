@@ -55,11 +55,8 @@ void sigpipe_handler(int sig) {
 void sensor_loop() {
   LOG("*** sensor loop");
 
-
   while (!do_exit) {
-    Context * c = Context::create();
-    PubSocket * sensor_events_sock = PubSocket::create(c, "sensorEvents");
-    assert(sensor_events_sock != NULL);
+    PubMaster pm({"sensorEvents"});
 
     struct sensors_poll_device_t* device;
     struct sensors_module_t* module;
@@ -215,9 +212,7 @@ void sensor_loop() {
         log_i++;
       }
 
-      auto words = capnp::messageToFlatArray(msg);
-      auto bytes = words.asBytes();
-      sensor_events_sock->send((char*)bytes.begin(), bytes.size());
+      pm.send("sensorEvents", msg);
 
       if (re_init_sensors){
         LOGE("Resetting sensors");
@@ -226,8 +221,6 @@ void sensor_loop() {
       }
     }
     sensors_close(device);
-    delete sensor_events_sock;
-    delete c;
   }
 }
 

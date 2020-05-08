@@ -16,8 +16,6 @@
 #include <vector>
 
 #include "messaging.hpp"
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/util.h"
 #include "common/params.h"
@@ -41,30 +39,16 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   UbloxMsgParser parser;
 
-  Context * c = Context::create();
-  PubSocket * gpsLocationExternal = PubSocket::create(c, "gpsLocationExternal");
-  PubSocket * ubloxGnss = PubSocket::create(c, "ubloxGnss");
-  SubSocket * ubloxRaw = SubSocket::create(c, "ubloxRaw");
-
-  assert(gpsLocationExternal != NULL);
-  assert(ubloxGnss != NULL);
-  assert(ubloxRaw != NULL);
-
-  Poller * poller = Poller::create({ubloxRaw});
-
+  SubMaster sm({"ubloxRaw"});
+  PubMaster pm({"gpsLocationExternal", "ubloxGnss"});
 
   while (!do_exit) {
-    Message * msg = poll_func(poller);
-    if (msg == NULL) continue;
+    auto msg = sm.pollOne(1000);
+    if (msg == NULL){ continue; }
 
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    const uint8_t *data = event.getUbloxRaw().begin();
-    size_t len = event.getUbloxRaw().size();
+    auto ubloxRaw = msg->getEvent().getUbloxRaw();
+    const uint8_t *data = ubloxRaw.begin();
+    size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;
     while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;
@@ -76,7 +60,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_solution();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              send_func(gpsLocationExternal, bytes.begin(), bytes.size());
+              pm.send("gpsLocationExternal", (char *)bytes.begin(), bytes.size());
             }
           } else
             LOGW("Unknown nav msg id: 0x%02X", parser.msg_id());
@@ -86,14 +70,14 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_raw();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              send_func(ubloxGnss, bytes.begin(), bytes.size());
+              pm.send("ubloxGnss", (char *)bytes.begin(), bytes.size());
             }
           } else if(parser.msg_id() == MSG_RXM_SFRBX) {
             //LOGD("MSG_RXM_SFRBX");
             auto words = parser.gen_nav_data();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              send_func(ubloxGnss, bytes.begin(), bytes.size());
+              pm.send("ubloxGnss", (char *)bytes.begin(), bytes.size());
             }
           } else
             LOGW("Unknown rxm msg id: 0x%02X", parser.msg_id());
@@ -103,7 +87,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_mon_hw();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              send_func(ubloxGnss, bytes.begin(), bytes.size());
+              pm.send("ubloxGnss", (char *)bytes.begin(), bytes.size())
             }
           } else {
             LOGW("Unknown mon msg id: 0x%02X", parser.msg_id());
@@ -114,14 +98,6 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       }
       bytes_consumed += bytes_consumed_this_time;
     }
-    delete msg;
   }
-
-  delete poller;
-  delete ubloxRaw;
-  delete ubloxGnss;
-  delete gpsLocationExternal;
-  delete c;
-
   return 0;
 }

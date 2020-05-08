@@ -16,12 +16,11 @@
 #include <vector>
 #include <algorithm>
 
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "messaging.hpp"
 
 #include "ublox_msg.h"
 

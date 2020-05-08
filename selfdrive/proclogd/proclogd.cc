@@ -36,10 +36,7 @@ struct ProcCache {
 int main() {
   int err;
 
-  Context * c = Context::create();
-  PubSocket * publisher = PubSocket::create(c, "procLog");
-  assert(publisher != NULL);
-
+  PubMaster pm({"procLog"});
   double jiffy = sysconf(_SC_CLK_TCK);
   size_t page_size = sysconf(_SC_PAGE_SIZE);
 
@@ -233,15 +230,10 @@ int main() {
       }
     }
 
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    publisher->send((char*)bytes.begin(), bytes.size());
+    pm.send("procLog", msg);
 
     usleep(2000000); // 2 secs
   }
-
-  delete publisher;
-  delete c;
 
   return 0;
 }

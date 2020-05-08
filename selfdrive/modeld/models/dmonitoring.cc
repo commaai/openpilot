@@ -143,7 +143,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   return ret;
 }
 
-void dmonitoring_publish(PubSocket* sock, uint32_t frame_id, const DMonitoringResult res) {
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult res) {
   // make msg
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -167,9 +167,7 @@ void dmonitoring_publish(PubSocket* sock, uint32_t frame_id, const DMonitoringRe
   framed.setRightBlinkProb(res.right_blink_prob);
 
   // send message
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  sock->send((char*)bytes.begin(), bytes.size());
+  pm.send("driverState", msg);
 }
 
 void dmonitoring_free(DMonitoringModelState* s) {
