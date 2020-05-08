@@ -418,7 +418,7 @@ void can_health(PubSocket *publisher) {
   if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
     char *disable_power_down = NULL;
     size_t disable_power_down_sz = 0;
-    const int result = read_db_value(NULL, "DisablePowerDown", &disable_power_down, &disable_power_down_sz);
+    const int result = read_db_value("DisablePowerDown", &disable_power_down, &disable_power_down_sz);
     if (disable_power_down_sz != 1 || disable_power_down[0] != '1') {
       printf("TURN OFF CHARGING!\n");
       pthread_mutex_lock(&usb_lock);
@@ -456,9 +456,9 @@ void can_health(PubSocket *publisher) {
 
   // clear VIN, CarParams, and set new safety on car start
   if (ignition && !ignition_last) {
-    int result = delete_db_value(NULL, "CarVin");
+    int result = delete_db_value("CarVin");
     assert((result == 0) || (result == ERR_NO_VALUE));
-    result = delete_db_value(NULL, "CarParams");
+    result = delete_db_value("CarParams");
     assert((result == 0) || (result == ERR_NO_VALUE));
 
     if (!safety_setter_thread_initialized) {
