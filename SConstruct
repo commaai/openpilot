@@ -127,7 +127,6 @@ env = Environment(
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
     "#phonelibs/openmax/include",
-    "#phonelibs/json/src",
     "#phonelibs/json11",
     "#phonelibs/eigen",
     "#phonelibs/curl/include",
@@ -212,7 +211,7 @@ Import('_common', '_visionipc', '_gpucommon', '_gpu_libs')
 if SHARED:
   common, visionipc, gpucommon = abspath(common), abspath(visionipc), abspath(gpucommon)
 else:
-  common = [_common, 'json']
+  common = [_common, 'json11']
   visionipc = _visionipc
   gpucommon = [_gpucommon] + _gpu_libs
 
