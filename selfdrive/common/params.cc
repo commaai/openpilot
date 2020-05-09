@@ -66,7 +66,6 @@ static int fsync_dir(const char* path){
 static int ensure_dir_exists(const char* path) {
   struct stat st;
   if (stat(path, &st) == -1) {
-    printf("Creating folder: %s\n", path);
     return mkdir(path, 0700);
   }
   return 0;
