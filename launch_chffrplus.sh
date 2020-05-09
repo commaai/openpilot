@@ -62,6 +62,11 @@ function launch {
   echo 0-3 > /dev/cpuset/foreground/cpus
   echo 0-3 > /dev/cpuset/android/cpus
 
+  # change interrupt affinity
+  echo 3 > /proc/irq/6/smp_affinity_list # MDSS
+  echo 1 > /proc/irq/78/smp_affinity_list # Modem, can potentially lock up
+  echo 2 > /proc/irq/733/smp_affinity_list # USB
+
   DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
   # Remove old NEOS update file
