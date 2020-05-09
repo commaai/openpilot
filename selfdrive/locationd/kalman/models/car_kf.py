@@ -44,37 +44,25 @@ class CarKalman():
     0.0,
   ])
 
-  # state covariance
-  P_initial = np.diag([
-    .1**2,
-    .1**2,
-    math.radians(0.1)**2,
-    math.radians(0.1)**2,
-
-    10**2, 10**2,
-    1**2,
-    1**2,
-  ])
-
   # process noise
   Q = np.diag([
-    (.05/10)**2,
-    .0001**2,
-    math.radians(0.01)**2,
-    math.radians(0.2)**2,
+    (.05/100)**2,
+    .01**2,
+    math.radians(0.002)**2,
+    math.radians(0.1)**2,
 
-    .1**2, .1**2,
+    .1**2, .01**2,
     math.radians(0.1)**2,
     math.radians(0.1)**2,
   ])
+  P_initial = Q.copy()
 
   obs_noise = {
-    ObservationKind.ROAD_FRAME_XY_SPEED: np.diag([0.1**2, 0.1**2]),
-    ObservationKind.ROAD_FRAME_YAW_RATE: np.atleast_2d(math.radians(0.1)**2),
-    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.1)**2),
+    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(5.0)**2),
-    ObservationKind.STEER_RATIO: np.atleast_2d(50.0**2),
-    ObservationKind.STIFFNESS: np.atleast_2d(50.0**2),
+    ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
+    ObservationKind.STIFFNESS: np.atleast_2d(5.0**2),
+    ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
   }
 
   maha_test_kinds = []  # [ObservationKind.ROAD_FRAME_YAW_RATE, ObservationKind.ROAD_FRAME_XY_SPEED]
@@ -141,6 +129,7 @@ class CarKalman():
     obs_eqs = [
       [sp.Matrix([r]), ObservationKind.ROAD_FRAME_YAW_RATE, None],
       [sp.Matrix([u, v]), ObservationKind.ROAD_FRAME_XY_SPEED, None],
+      [sp.Matrix([u]), ObservationKind.ROAD_FRAME_X_SPEED, None],
       [sp.Matrix([sa]), ObservationKind.STEER_ANGLE, None],
       [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
       [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],
@@ -149,8 +138,12 @@ class CarKalman():
 
     gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds, global_vars=CarKalman.global_vars)
 
-  def __init__(self):
+  def __init__(self, steer_ratio=15, stiffness_factor=1, angle_offset=0):
     self.dim_state = self.x_initial.shape[0]
+    x_init = self.x_initial
+    x_init[States.STEER_RATIO] = steer_ratio
+    x_init[States.STIFFNESS] = stiffness_factor
+    x_init[States.ANGLE_OFFSET] = angle_offset
 
     # init filter
     self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds, global_vars=self.global_vars)
@@ -186,10 +179,14 @@ class CarKalman():
       P = self.filter.covs()
     self.filter.init_state(state, P, filter_time)
 
-  def predict_and_observe(self, t, kind, data):
+  def predict_and_observe(self, t, kind, data, R=None):
     if len(data) > 0:
       data = np.atleast_2d(data)
-    self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
+
+    if R is None:
+      R = self.get_R(kind, len(data))
+
+    self.filter.predict_and_update_batch(t, kind, data, R)
 
 
 if __name__ == "__main__":

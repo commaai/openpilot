@@ -132,8 +132,22 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   return h;
 fail:
   LOGE("logger failed to open files");
-  if (h->qlog_file) fclose(h->qlog_file);
-  if (h->log_file) fclose(h->log_file);
+  if (h->bz_file) {
+    BZ2_bzWriteClose(&bzerror, h->bz_file, 0, NULL, NULL);
+    h->bz_file = NULL;
+  }
+  if (h->bz_qlog) {
+    BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
+    h->bz_qlog = NULL;
+  }
+  if (h->qlog_file) {
+    fclose(h->qlog_file);
+    h->qlog_file = NULL;
+  }
+  if (h->log_file) {
+    fclose(h->log_file);
+    h->log_file = NULL;
+  }
   return NULL;
 }
 
@@ -228,8 +242,12 @@ void lh_close(LoggerHandle* h) {
       BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
       h->bz_qlog = NULL;
     }
-    if (h->qlog_file) fclose(h->qlog_file);
+    if (h->qlog_file) {
+      fclose(h->qlog_file);
+      h->qlog_file = NULL;
+    }
     fclose(h->log_file);
+    h->log_file = NULL;
     unlink(h->lock_path);
     pthread_mutex_unlock(&h->lock);
     pthread_mutex_destroy(&h->lock);

@@ -135,8 +135,6 @@ def get_network_strength(network_type):
   # from SignalStrength.java
   def get_lte_level(rsrp, rssnr):
     INT_MAX = 2147483647
-    lvl_rsrp = NetworkStrength.unknown
-    lvl_rssnr = NetworkStrength.unknown
     if rsrp == INT_MAX:
       lvl_rsrp = NetworkStrength.unknown
     elif rsrp >= -95:
@@ -174,7 +172,6 @@ def get_network_strength(network_type):
     return lvl
 
   def get_gsm_level(asu):
-    lvl = NetworkStrength.unknown
     if asu <= 2 or asu == 99:
       lvl = NetworkStrength.unknown
     elif asu >= 12:
@@ -232,7 +229,7 @@ def get_network_strength(network_type):
   if network_type == NetworkType.none:
     return network_strength
   if network_type == NetworkType.wifi:
-    out = subprocess.check_output('dumpsys connectivity', shell=True).decode('ascii')
+    out = subprocess.check_output('dumpsys connectivity', shell=True).decode('utf-8')
     network_strength = NetworkStrength.unknown
     for line in out.split('\n'):
       signal_str = "SignalStrength: "
@@ -251,7 +248,7 @@ def get_network_strength(network_type):
     return network_strength
   else:
     # check cell strength
-    out = subprocess.check_output('dumpsys telephony.registry', shell=True).decode('ascii')
+    out = subprocess.check_output('dumpsys telephony.registry', shell=True).decode('utf-8')
     for line in out.split('\n'):
       if "mSignalStrength" in line:
         arr = line.split(' ')

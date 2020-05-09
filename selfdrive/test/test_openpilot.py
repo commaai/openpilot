@@ -4,6 +4,7 @@ os.environ['FAKEUPLOAD'] = "1"
 
 from common.apk import update_apks, start_offroad, pm_apply_packages, android_packages
 from common.params import Params
+from common.realtime import sec_since_boot
 from common.testing import phone_only
 from selfdrive.manager import manager_init, manager_prepare
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
@@ -14,6 +15,7 @@ import requests
 import signal
 import subprocess
 import time
+from datetime import datetime, timedelta
 
 DID_INIT = False
 
@@ -108,6 +110,7 @@ def test_uploader():
 @phone_only
 def test_athena():
   print("ATHENA")
+  start = sec_since_boot()
   start_daemon_process("manage_athenad")
   params = Params()
   manage_athenad_pid = params.get("AthenadPid")
@@ -155,7 +158,7 @@ def test_athena():
         else:
           print(f'athena_post failed {e}. retrying...')
 
-  def expect_athena_registers():
+  def expect_athena_registers(test_t0):
     resp = athena_post({
       "method": "echo",
       "params": ["hello"],
@@ -163,6 +166,10 @@ def test_athena():
       "jsonrpc": "2.0"
     }, max_retries=12, wait=5)
     assert resp.get('result') == "hello", f'Athena failed to register ({resp})'
+
+    last_pingtime = params.get("LastAthenaPingTime", encoding='utf8')
+    assert last_pingtime, last_pingtime
+    assert ((int(last_pingtime)/1e9) - test_t0) < (sec_since_boot() - test_t0)
 
   try:
     athenad_pid = expect_athena_starts()
@@ -174,7 +181,7 @@ def test_athena():
       print('WARNING: COMMA_JWT env not set, will not test requests to athena.comma.ai')
       return
 
-    expect_athena_registers()
+    expect_athena_registers(start)
 
     print("ATHENA: getSimInfo")
     resp = athena_post({

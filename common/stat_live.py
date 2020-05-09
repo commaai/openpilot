@@ -53,7 +53,7 @@ class RunningStat():
 
 class RunningStatFilter():
   def __init__(self, raw_priors=None, filtered_priors=None, max_trackable=-1):
-    self.raw_stat = RunningStat(raw_priors, max_trackable)
+    self.raw_stat = RunningStat(raw_priors, -1)
     self.filtered_stat = RunningStat(filtered_priors, max_trackable)
 
   def reset(self):

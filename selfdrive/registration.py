@@ -36,7 +36,7 @@ def register():
   os.chmod(PERSIST+'/comma/', 0o755)
   os.chmod(PERSIST+'/comma/id_rsa', 0o744)
 
-  dongle_id, access_token = params.get("DongleId", encoding='utf8'), params.get("AccessToken", encoding='utf8')
+  dongle_id = params.get("DongleId", encoding='utf8')
   public_key = open(PERSIST+"/comma/id_rsa.pub").read()
 
   # create registration token
@@ -52,15 +52,14 @@ def register():
     resp = api_get("v2/pilotauth/", method='POST', timeout=15,
                    imei=get_imei(0), imei2=get_imei(1), serial=get_serial(), public_key=public_key, register_token=register_token)
     dongleauth = json.loads(resp.text)
-    dongle_id, access_token = dongleauth["dongle_id"], dongleauth["access_token"]
+    dongle_id = dongleauth["dongle_id"]
 
     params.put("DongleId", dongle_id)
-    params.put("AccessToken", access_token)
-    return dongle_id, access_token
+    return dongle_id
   except Exception:
     cloudlog.exception("failed to authenticate")
-    if dongle_id is not None and access_token is not None:
-      return dongle_id, access_token
+    if dongle_id is not None:
+      return dongle_id
     else:
       return None
 

@@ -86,6 +86,9 @@ void* live_thread(void *arg) {
 
   }
 
+  delete live_calibration_sock;
+  delete poller;
+  delete c;
 
   return NULL;
 }
@@ -121,7 +124,7 @@ int main(int argc, char **argv) {
 
     err = clGetPlatformIDs(sizeof(platform_id)/sizeof(cl_platform_id), platform_id, &num_platforms);
     assert(err == 0);
-    
+
     #ifdef QCOM
       int clPlatform = 0;
     #else
@@ -163,7 +166,7 @@ int main(int argc, char **argv) {
     VisionStreamBufs buf_info;
     err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
     if (err) {
-      printf("visionstream connect fail\n");
+      LOGW("visionstream connect failed");
       usleep(100000);
       continue;
     }
@@ -180,7 +183,8 @@ int main(int argc, char **argv) {
       VIPCBufExtra extra;
       buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
-        printf("visionstream get failed\n");
+        LOGW("visionstream get failed");
+        visionstream_destroy(&stream);
         break;
       }
 
@@ -205,8 +209,8 @@ int main(int argc, char **argv) {
 
       double mt1 = 0, mt2 = 0;
       if (run_model_this_iter) {
-        float vec_desire[DESIRE_SIZE] = {0};
-        if (desire >= 0 && desire < DESIRE_SIZE) {
+        float vec_desire[DESIRE_LEN] = {0};
+        if (desire >= 0 && desire < DESIRE_LEN) {
           vec_desire[desire] = 1.0;
         }
 
@@ -236,7 +240,10 @@ int main(int argc, char **argv) {
   visionstream_destroy(&stream);
 
   delete model_sock;
-  
+  delete posenet_sock;
+  delete pathplan_sock;
+  delete msg_context;
+
   model_free(&model);
 
   LOG("joining live_thread");

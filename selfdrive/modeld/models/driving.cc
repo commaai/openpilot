@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "common/timing.h"
+#include "common/params.h"
 #include "driving.h"
 
 
@@ -42,11 +43,29 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 #endif
 
 #ifdef DESIRE
-  s->desire = (float*)malloc(DESIRE_SIZE * sizeof(float));
-  for (int i = 0; i < DESIRE_SIZE; i++) s->desire[i] = 0.0;
-  s->pulse_desire = (float*)malloc(DESIRE_SIZE * sizeof(float));
-  for (int i = 0; i < DESIRE_SIZE; i++) s->pulse_desire[i] = 0.0;
-  s->m->addDesire(s->pulse_desire, DESIRE_SIZE);
+  s->prev_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
+  for (int i = 0; i < DESIRE_LEN; i++) s->prev_desire[i] = 0.0;
+  s->pulse_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
+  for (int i = 0; i < DESIRE_LEN; i++) s->pulse_desire[i] = 0.0;
+  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
+#endif
+
+#ifdef TRAFFIC_CONVENTION
+  s->traffic_convention = (float*)malloc(TRAFFIC_CONVENTION_LEN * sizeof(float));
+  for (int i = 0; i < TRAFFIC_CONVENTION_LEN; i++) s->traffic_convention[i] = 0.0;
+  s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
+
+  char *string;
+  const int result = read_db_value("IsRHD", &string, NULL);
+  if (result == 0) {
+    bool is_rhd = string[0] == '1';
+    free(string);
+    if (is_rhd) {
+      s->traffic_convention[1] = 1.0;
+    } else {
+      s->traffic_convention[0] = 1.0;
+    }
+  }
 #endif
 
   // Build Vandermonde matrix
@@ -61,21 +80,23 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 
 ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
-                           mat3 transform, void* sock, float *desire_in) {
+                           mat3 transform, void* sock,
+                           float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
-    for (int i = 0; i < DESIRE_SIZE; i++) {
+    for (int i = 0; i < DESIRE_LEN; i++) {
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
-      if (desire_in[i] - s->desire[i] == 1) {
+      if (desire_in[i] - s->prev_desire[i] > .99) {
         s->pulse_desire[i] = desire_in[i];
       } else {
         s->pulse_desire[i] = 0.0;
       }
-      s->desire[i] = desire_in[i];
+      s->prev_desire[i] = desire_in[i];
     }
   }
 #endif
+
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
@@ -90,6 +111,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
     fclose(dump_yuv_file);
     assert(1==2);
   #endif
+
+  clEnqueueUnmapMemObject(q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
 
   // net outputs
   ModelDataRaw net_outputs;
@@ -112,18 +135,18 @@ void model_free(ModelState* s) {
   delete s->m;
 }
 
-void poly_fit(float *in_pts, float *in_stds, float *out) {
+void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   // References to inputs
-  Eigen::Map<Eigen::Matrix<float, MODEL_PATH_DISTANCE, 1> > pts(in_pts, MODEL_PATH_DISTANCE);
-  Eigen::Map<Eigen::Matrix<float, MODEL_PATH_DISTANCE, 1> > std(in_stds, MODEL_PATH_DISTANCE);
+  Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, 1> > pts(in_pts, valid_len);
+  Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, 1> > std(in_stds, valid_len);
   Eigen::Map<Eigen::Matrix<float, POLYFIT_DEGREE - 1, 1> > p(out, POLYFIT_DEGREE - 1);
 
   float y0 = pts[0];
   pts = pts.array() - y0;
 
   // Build Least Squares equations
-  Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> lhs = vander.array().colwise() / std.array();
-  Eigen::Matrix<float, MODEL_PATH_DISTANCE, 1> rhs = pts.array() / std.array();
+  Eigen::Matrix<float, Eigen::Dynamic, POLYFIT_DEGREE - 1> lhs = vander.topRows(valid_len).array().colwise() / std.array();
+  Eigen::Matrix<float, Eigen::Dynamic, 1> rhs = pts.array() / std.array();
 
   // Improve numerical stability
   Eigen::Matrix<float, POLYFIT_DEGREE - 1, 1> scale = 1. / (lhs.array()*lhs.array()).sqrt().colwise().sum();
@@ -147,15 +170,11 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   float prob;
   float valid_len;
 
-  valid_len =  data[MODEL_PATH_DISTANCE*2];
+  // clamp to 5 and 192
+  valid_len =  fmin(192, fmax(5, data[MODEL_PATH_DISTANCE*2]));
   for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
     points_arr[i] = data[i] + offset;
-    // Always do at least 5 points
-    if (i < 5 || i < valid_len) {
-      stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
-    } else {
-      stds_arr[i] = 1.0e3; 
-    }
+    stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
   }
   if (has_prob) {
     prob =  sigmoid(data[MODEL_PATH_DISTANCE*2 + 1]);
@@ -163,7 +182,7 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
     prob = 1.0;
   }
   std = softplus(data[MODEL_PATH_DISTANCE]);
-  poly_fit(points_arr, stds_arr, poly_arr);
+  poly_fit(points_arr, stds_arr, poly_arr, valid_len);
 
   if (std::getenv("DEBUG")){
     kj::ArrayPtr<const float> stds(&stds_arr[0], ARRAYSIZE(stds_arr));
@@ -205,14 +224,18 @@ void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_dat
   meta.setDesirePrediction(desire_pred);
 }
 
-void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float * long_v_data, const float * long_a_data) {
+void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float * long_x_data, const float * long_v_data, const float * long_a_data) {
   // just doing 10 vals, 1 every sec for now
+  float dist_arr[TIME_DISTANCE/10];
   float speed_arr[TIME_DISTANCE/10];
   float accel_arr[TIME_DISTANCE/10];
   for (int i=0; i<TIME_DISTANCE/10; i++) {
+    dist_arr[i] = long_x_data[i*10];
     speed_arr[i] = long_v_data[i*10];
     accel_arr[i] = long_a_data[i*10];
   }
+  kj::ArrayPtr<const float> dist(&dist_arr[0], ARRAYSIZE(dist_arr));
+  longi.setDistances(dist);
   kj::ArrayPtr<const float> speed(&speed_arr[0], ARRAYSIZE(speed_arr));
   longi.setSpeeds(speed);
   kj::ArrayPtr<const float> accel(&accel_arr[0], ARRAYSIZE(accel_arr));
@@ -237,7 +260,7 @@ void model_publish(PubSocket *sock, uint32_t frame_id,
     auto right_lane = framed.initRightLane();
     fill_path(right_lane, net_outputs.right_lane, true, -1.8);
     auto longi = framed.initLongitudinal();
-    fill_longi(longi, net_outputs.long_v, net_outputs.long_a);
+    fill_longi(longi, net_outputs.long_x, net_outputs.long_v, net_outputs.long_a);
 
 
     // Find the distribution that corresponds to the current lead

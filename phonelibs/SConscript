@@ -4,9 +4,6 @@ def static_library(lib_dir, header_dir):
   env.Append(LIBPATH=[Dir(lib_dir)])
   env.Append(CPPPATH=[Dir(header_dir)])
 
-env.Library('json', ['json/src/json.c'])
-env.Append(CPPPATH=[Dir('json/src')])
-
 env.Library('json11', ['json11/json11.cpp'])
 env.Append(CPPPATH=[Dir('json11')])
 

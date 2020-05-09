@@ -1,3 +1,4 @@
+#include "ui.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -5,18 +6,14 @@
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-
+#include <capnp/serialize.h>
 #include <czmq.h>
-
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
-
-#include "ui.hpp"
-#include "sound.hpp"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -27,6 +24,17 @@ static void set_brightness(UIState *s, int brightness) {
       fclose(f);
       last_brightness = brightness;
     }
+  }
+}
+
+int event_processing_enabled = -1;
+static void enable_event_processing(bool yes) {
+  if (event_processing_enabled != 1 && yes) {
+    system("service call window 18 i32 1");  // enable event processing
+    event_processing_enabled = 1;
+  } else if (event_processing_enabled != 0 && !yes) {
+    system("service call window 18 i32 0");  // disable event processing
+    event_processing_enabled = 0;
   }
 }
 
@@ -42,13 +50,13 @@ static void set_awake(UIState *s, bool awake) {
     // TODO: replace command_awake and command_sleep with direct calls to android
     if (awake) {
       LOGW("awake normal");
-      system("service call window 18 i32 1");  // enable event processing
       framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
+      enable_event_processing(true);
     } else {
       LOGW("awake off");
       set_brightness(s, 0);
-      system("service call window 18 i32 0");  // disable event processing
       framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
+      enable_event_processing(false);
     }
   }
 #else
@@ -57,9 +65,23 @@ static void set_awake(UIState *s, bool awake) {
 #endif
 }
 
+static void update_offroad_layout_state(UIState *s) {
+  capnp::MallocMessageBuilder msg;
+  auto event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto layout = event.initUiLayoutState();
+  layout.setActiveApp(s->active_app);
+  layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
+  auto words = capnp::messageToFlatArray(msg);
+  auto bytes = words.asBytes();
+  s->offroad_sock->send((char*)bytes.begin(), bytes.size());
+  LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
+}
+
 static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
-  system("am broadcast -a 'ai.comma.plus.SidebarSettingsTouchUpInside'");
+  s->active_app = cereal::UiLayoutState::App::SETTINGS;
+  update_offroad_layout_state(s);
 #else
   // computer UI doesn't have offroad settings
 #endif
@@ -67,7 +89,12 @@ static void navigate_to_settings(UIState *s) {
 
 static void navigate_to_home(UIState *s) {
 #ifdef QCOM
-  system("am broadcast -a 'ai.comma.plus.HomeButtonTouchUpInside'");
+  if (s->started) {
+    s->active_app = cereal::UiLayoutState::App::NONE;
+  } else {
+    s->active_app = cereal::UiLayoutState::App::HOME;
+  }
+  update_offroad_layout_state(s);
 #else
   // computer UI doesn't have offroad home
 #endif
@@ -82,17 +109,27 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
     if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
       && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
       navigate_to_home(s);
-      if (s->vision_connected) {
+      if (s->started) {
         s->scene.uilayout_sidebarcollapsed = true;
+        update_offroad_layout_state(s);
       }
     }
   }
 }
 
+static void handle_driver_view_touch(UIState *s, int touch_x, int touch_y) {
+  int err = write_db_value("IsDriverViewEnabled", "0", 1);
+}
+
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->vision_connected && (touch_x >= s->scene.ui_viz_rx - bdr_s)
-    && (s->active_app != cereal_UiLayoutState_App_settings)) {
-    s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
+  if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+    && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
+    if (!s->scene.frontview) {
+      s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
+    } else {
+      handle_driver_view_touch(s, touch_x, touch_y);
+    }
+    update_offroad_layout_state(s);
   }
 }
 
@@ -101,39 +138,75 @@ static void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-static void read_param_bool(bool* param, const char* param_name) {
+static void read_param_bool(bool* param, const char* param_name, bool persistent_param = false) {
   char *s;
-  const int result = read_db_value(NULL, param_name, &s, NULL);
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
   if (result == 0) {
     *param = s[0] == '1';
     free(s);
   }
 }
 
-static void read_param_float(float* param, const char* param_name) {
+static int read_param_float(float* param, const char* param_name, bool persistent_param = false) {
   char *s;
-  const int result = read_db_value(NULL, param_name, &s, NULL);
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
   if (result == 0) {
     *param = strtod(s, NULL);
     free(s);
   }
+  return result;
 }
 
-static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout) {
+static int read_param_uint64(uint64_t* dest, const char* param_name, bool persistent_param = false) {
+  char *s;
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
+  if (result == 0) {
+    *dest = strtoull(s, NULL, 0);
+    free(s);
+  }
+  return result;
+}
+
+static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
   } else {
-    read_param_bool(param, param_name);
+    read_param_bool(param, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
 }
 
-static void read_param_float_timeout(float* param, const char* param_name, int* timeout) {
+static void read_param_float_timeout(float* param, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
   } else {
-    read_param_float(param, param_name);
+    read_param_float(param, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
+  }
+}
+
+static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int* timeout, bool persistent_param = false) {
+  if (*timeout > 0){
+    (*timeout)--;
+    return 0;
+  } else {
+    return read_param_uint64(dest, param_name, persistent_param);
+    *timeout = 2 * UI_FREQ; // 0.5Hz
+  }
+}
+
+static int write_param_float(float param, const char* param_name, bool persistent_param = false) {
+  char s[16];
+  int size = snprintf(s, sizeof(s), "%f", param);
+  return write_db_value(param_name, s, MIN(size, sizeof(s)), persistent_param);
+}
+
+static void update_offroad_layout_timeout(UIState *s, int* timeout) {
+  if (*timeout > 0) {
+    (*timeout)--;
+  } else {
+    update_offroad_layout_state(s);
+    *timeout = 2 * UI_FREQ;
   }
 }
 
@@ -141,7 +214,6 @@ static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
 
   pthread_mutex_init(&s->lock, NULL);
-  pthread_cond_init(&s->bg_cond, NULL);
 
   s->ctx = Context::create();
   s->model_sock = SubSocket::create(s->ctx, "model");
@@ -152,6 +224,9 @@ static void ui_init(UIState *s) {
   s->thermal_sock = SubSocket::create(s->ctx, "thermal");
   s->health_sock = SubSocket::create(s->ctx, "health");
   s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
+  s->driverstate_sock = SubSocket::create(s->ctx, "driverState");
+  s->dmonitoring_sock = SubSocket::create(s->ctx, "dMonitoringState");
+  s->offroad_sock = PubSocket::create(s->ctx, "offroadLayout");
 
   assert(s->model_sock != NULL);
   assert(s->controlsstate_sock != NULL);
@@ -161,6 +236,9 @@ static void ui_init(UIState *s) {
   assert(s->thermal_sock != NULL);
   assert(s->health_sock != NULL);
   assert(s->ubloxgnss_sock != NULL);
+  assert(s->driverstate_sock != NULL);
+  assert(s->dmonitoring_sock != NULL);
+  assert(s->offroad_sock != NULL);
 
   s->poller = Poller::create({
                               s->model_sock,
@@ -170,7 +248,9 @@ static void ui_init(UIState *s) {
                               s->radarstate_sock,
                               s->thermal_sock,
                               s->health_sock,
-                              s->ubloxgnss_sock
+                              s->ubloxgnss_sock,
+                              s->driverstate_sock,
+                              s->dmonitoring_sock
                              });
 
 #ifdef SHOW_SPEEDLIMIT
@@ -182,7 +262,7 @@ static void ui_init(UIState *s) {
   s->ipc_fd = -1;
 
   // init display
-  s->fb = framebuffer_init("ui", 0x00010000, true, &s->fb_w, &s->fb_h);
+  s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
 
   set_awake(s, true);
@@ -249,19 +329,15 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->limit_set_speed_timeout = UI_FREQ;
 }
 
-static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
+static PathData read_path(cereal::ModelData::PathData::Reader pathp) {
   PathData ret = {0};
 
-  struct cereal_ModelData_PathData pathd;
-  cereal_read_ModelData_PathData(&pathd, pathp);
+  ret.prob = pathp.getProb();
+  ret.std = pathp.getStd();
 
-  ret.prob = pathd.prob;
-  ret.std = pathd.std;
-
-  capn_list32 polyp = pathd.poly;
-  capn_resolve(&polyp.p);
+  auto polyp = pathp.getPoly();
   for (int i = 0; i < POLYFIT_DEGREE; i++) {
-    ret.poly[i] = capn_to_f32(capn_get32(polyp, i));
+    ret.poly[i] = polyp[i];
   }
 
   // Compute points locations
@@ -272,20 +348,16 @@ static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
   return ret;
 }
 
-static ModelData read_model(cereal_ModelData_ptr modelp) {
-  struct cereal_ModelData modeld;
-  cereal_read_ModelData(&modeld, modelp);
-
+static ModelData read_model(cereal::ModelData::Reader model) {
   ModelData d = {0};
 
-  d.path = read_path(modeld.path);
-  d.left_lane = read_path(modeld.leftLane);
-  d.right_lane = read_path(modeld.rightLane);
+  d.path = read_path(model.getPath());
+  d.left_lane = read_path(model.getLeftLane());
+  d.right_lane = read_path(model.getRightLane());
 
-  struct cereal_ModelData_LeadData leadd;
-  cereal_read_ModelData_LeadData(&leadd, modeld.lead);
+  auto leadd = model.getLead();
   d.lead = (LeadData){
-      .dist = leadd.dist, .prob = leadd.prob, .std = leadd.std,
+      .dist = leadd.getDist(), .prob = leadd.getProb(), .std = leadd.getStd(),
   };
 
   return d;
@@ -294,195 +366,172 @@ static ModelData read_model(cereal_ModelData_ptr modelp) {
 static void update_status(UIState *s, int status) {
   if (s->status != status) {
     s->status = status;
-    // wake up bg thread to change
-    pthread_cond_signal(&s->bg_cond);
   }
 }
 
+void handle_message(UIState *s,  Message* msg) {
+  auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), msg->getData(), msg->getSize());
+  capnp::FlatArrayMessageReader cmsg(amsg);
+  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-void handle_message(UIState *s, Message * msg) {
-  struct capn ctx;
-  capn_init_mem(&ctx, (uint8_t*)msg->getData(), msg->getSize(), 0);
-
-  cereal_Event_ptr eventp;
-  eventp.p = capn_getp(capn_root(&ctx), 0, 1);
-  struct cereal_Event eventd;
-  cereal_read_Event(&eventd, eventp);
-
-  if (eventd.which == cereal_Event_controlsState) {
-    struct cereal_ControlsState datad;
-    cereal_read_ControlsState(&datad, eventd.controlsState);
+  auto which = event.which();
+  UIScene &scene = s->scene;
+  if (which == cereal::Event::CONTROLS_STATE && s->started) {
+    auto data = event.getControlsState();
 
     s->controls_timeout = 1 * UI_FREQ;
-    s->controls_seen = true;
+    scene.frontview = data.getRearViewCam();
+    if (!scene.frontview){ s->controls_seen = true; }
 
-    if (datad.vCruise != s->scene.v_cruise) {
-      s->scene.v_cruise_update_ts = eventd.logMonoTime;
+    if (data.getVCruise() != scene.v_cruise) {
+      scene.v_cruise_update_ts = event.getLogMonoTime();
     }
-    s->scene.v_cruise = datad.vCruise;
-    s->scene.v_ego = datad.vEgo;
-    s->scene.curvature = datad.curvature;
-    s->scene.engaged = datad.enabled;
-    s->scene.engageable = datad.engageable;
-    s->scene.gps_planner_active = datad.gpsPlannerActive;
-    s->scene.monitoring_active = datad.driverMonitoringOn;
+    scene.v_cruise = data.getVCruise();
+    scene.v_ego = data.getVEgo();
+    scene.curvature = data.getCurvature();
+    scene.engaged = data.getEnabled();
+    scene.engageable = data.getEngageable();
+    scene.gps_planner_active = data.getGpsPlannerActive();
+    scene.monitoring_active = data.getDriverMonitoringOn();
 
-    s->scene.frontview = datad.rearViewCam;
-
-    s->scene.decel_for_model = datad.decelForModel;
-
-    if (datad.alertSound != cereal_CarControl_HUDControl_AudibleAlert_none && datad.alertSound != s->alert_sound) {
-      if (s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
+    scene.decel_for_model = data.getDecelForModel();
+    auto alert_sound = data.getAlertSound();
+    const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
+    if (alert_sound != s->alert_sound){
+      if (s->alert_sound != sound_none){
         stop_alert_sound(s->alert_sound);
       }
-      play_alert_sound(datad.alertSound);
-
-      s->alert_sound = datad.alertSound;
-      snprintf(s->alert_type, sizeof(s->alert_type), "%s", datad.alertType.str);
-    } else if ((!datad.alertSound || datad.alertSound == cereal_CarControl_HUDControl_AudibleAlert_none)
-                  && s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
-      stop_alert_sound(s->alert_sound);
-      s->alert_type[0] = '\0';
-      s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
-    }
-
-    if (datad.alertText1.str) {
-      snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", datad.alertText1.str);
-    } else {
-      s->scene.alert_text1[0] = '\0';
-    }
-    if (datad.alertText2.str) {
-      snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", datad.alertText2.str);
-    } else {
-      s->scene.alert_text2[0] = '\0';
-    }
-    s->scene.awareness_status = datad.awarenessStatus;
-
-    s->scene.alert_ts = eventd.logMonoTime;
-
-    s->scene.alert_size = datad.alertSize;
-    if (datad.alertSize == cereal_ControlsState_AlertSize_none) {
-      s->alert_size = ALERTSIZE_NONE;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_small) {
-      s->alert_size = ALERTSIZE_SMALL;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_mid) {
-      s->alert_size = ALERTSIZE_MID;
-    } else if (datad.alertSize == cereal_ControlsState_AlertSize_full) {
-      s->alert_size = ALERTSIZE_FULL;
-    }
-
-    if (s->status != STATUS_STOPPED) {
-      if (datad.alertStatus == cereal_ControlsState_AlertStatus_userPrompt) {
-        update_status(s, STATUS_WARNING);
-      } else if (datad.alertStatus == cereal_ControlsState_AlertStatus_critical) {
-        update_status(s, STATUS_ALERT);
-      } else if (datad.enabled) {
-        update_status(s, STATUS_ENGAGED);
-      } else {
-        update_status(s, STATUS_DISENGAGED);
+      if (alert_sound != sound_none){
+        play_alert_sound(alert_sound);
+        s->alert_type = data.getAlertType();
       }
+      s->alert_sound = alert_sound;
+    }
+    scene.alert_text1 = data.getAlertText1();
+    scene.alert_text2 = data.getAlertText2();
+    scene.alert_ts = event.getLogMonoTime();
+    scene.alert_size = data.getAlertSize();
+    auto alertStatus = data.getAlertStatus();
+    if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
+      update_status(s, STATUS_WARNING);
+    } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
+      update_status(s, STATUS_ALERT);
+    } else{
+      update_status(s, scene.engaged ? STATUS_ENGAGED : STATUS_DISENGAGED);
     }
 
-    s->scene.alert_blinkingrate = datad.alertBlinkingRate;
-    if (datad.alertBlinkingRate > 0.) {
+    scene.alert_blinkingrate = data.getAlertBlinkingRate();
+    if (scene.alert_blinkingrate > 0.) {
       if (s->alert_blinked) {
         if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
-          s->alert_blinking_alpha += (0.05*datad.alertBlinkingRate);
+          s->alert_blinking_alpha += (0.05*scene.alert_blinkingrate);
         } else {
           s->alert_blinked = false;
         }
       } else {
         if (s->alert_blinking_alpha > 0.25) {
-          s->alert_blinking_alpha -= (0.05*datad.alertBlinkingRate);
+          s->alert_blinking_alpha -= (0.05*scene.alert_blinkingrate);
         } else {
           s->alert_blinking_alpha += 0.25;
           s->alert_blinked = true;
         }
       }
     }
-  } else if (eventd.which == cereal_Event_radarState) {
-    struct cereal_RadarState datad;
-    cereal_read_RadarState(&datad, eventd.radarState);
-    struct cereal_RadarState_LeadData leaddatad;
-    cereal_read_RadarState_LeadData(&leaddatad, datad.leadOne);
-    s->scene.lead_status = leaddatad.status;
-    s->scene.lead_d_rel = leaddatad.dRel;
-    s->scene.lead_y_rel = leaddatad.yRel;
-    s->scene.lead_v_rel = leaddatad.vRel;
-    cereal_read_RadarState_LeadData(&leaddatad, datad.leadTwo);
-    s->scene.lead_status2 = leaddatad.status;
-    s->scene.lead_d_rel2 = leaddatad.dRel;
-    s->scene.lead_y_rel2 = leaddatad.yRel;
-    s->scene.lead_v_rel2 = leaddatad.vRel;
-    s->livempc_or_radarstate_changed = true;
-  } else if (eventd.which == cereal_Event_liveCalibration) {
-    s->scene.world_objects_visible = true;
-    struct cereal_LiveCalibrationData datad;
-    cereal_read_LiveCalibrationData(&datad, eventd.liveCalibration);
+  } else if (which == cereal::Event::RADAR_STATE) {
+    auto data = event.getRadarState();
 
-    capn_list32 extrinsicl = datad.extrinsicMatrix;
-    capn_resolve(&extrinsicl.p);  // is this a bug?
+    auto leaddatad = data.getLeadOne();
+    scene.lead_status = leaddatad.getStatus();
+    scene.lead_d_rel = leaddatad.getDRel();
+    scene.lead_y_rel = leaddatad.getYRel();
+    scene.lead_v_rel = leaddatad.getVRel();
+    auto leaddatad2 = data.getLeadTwo();
+    scene.lead_status2 = leaddatad2.getStatus();
+    scene.lead_d_rel2 = leaddatad2.getDRel();
+    scene.lead_y_rel2 = leaddatad2.getYRel();
+    scene.lead_v_rel2 = leaddatad2.getVRel();
+
+    s->livempc_or_radarstate_changed = true;
+  } else if (which == cereal::Event::LIVE_CALIBRATION) {
+    scene.world_objects_visible = true;
+    auto extrinsicl = event.getLiveCalibration().getExtrinsicMatrix();
     for (int i = 0; i < 3 * 4; i++) {
-      s->scene.extrinsic_matrix.v[i] =
-          capn_to_f32(capn_get32(extrinsicl, i));
+      scene.extrinsic_matrix.v[i] = extrinsicl[i];
     }
-  } else if (eventd.which == cereal_Event_model) {
-    s->scene.model = read_model(eventd.model);
+  } else if (which == cereal::Event::MODEL) {
+    scene.model = read_model(event.getModel());
     s->model_changed = true;
-  } else if (eventd.which == cereal_Event_liveMpc) {
-    struct cereal_LiveMpcData datad;
-    cereal_read_LiveMpcData(&datad, eventd.liveMpc);
+  } else if (which == cereal::Event::LIVE_MPC) {
+    auto data = event.getLiveMpc();
 
-    capn_list32 x_list = datad.x;
-    capn_resolve(&x_list.p);
-
+    auto x_list = data.getX();
+    auto y_list = data.getY();
     for (int i = 0; i < 50; i++){
-      s->scene.mpc_x[i] = capn_to_f32(capn_get32(x_list, i));
-    }
-
-    capn_list32 y_list = datad.y;
-    capn_resolve(&y_list.p);
-
-    for (int i = 0; i < 50; i++){
-      s->scene.mpc_y[i] = capn_to_f32(capn_get32(y_list, i));
+      scene.mpc_x[i] = x_list[i];
+      scene.mpc_y[i] = y_list[i];
     }
     s->livempc_or_radarstate_changed = true;
-  } else if (eventd.which == cereal_Event_uiLayoutState) {
-    struct cereal_UiLayoutState datad;
-    cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
-    s->active_app = datad.activeApp;
-    s->scene.uilayout_sidebarcollapsed = datad.sidebarCollapsed;
-  } else if (eventd.which == cereal_Event_liveMapData) {
-    struct cereal_LiveMapData datad;
-    cereal_read_LiveMapData(&datad, eventd.liveMapData);
-    s->scene.map_valid = datad.mapValid;
-  } else if (eventd.which == cereal_Event_thermal) {
-    struct cereal_ThermalData datad;
-    cereal_read_ThermalData(&datad, eventd.thermal);
+  } else if (which == cereal::Event::UI_LAYOUT_STATE) {
+    auto data = event.getUiLayoutState();
 
-    s->scene.networkType = datad.networkType;
-    s->scene.networkStrength = datad.networkStrength;
-    s->scene.batteryPercent = datad.batteryPercent;
-    snprintf(s->scene.batteryStatus, sizeof(s->scene.batteryStatus), "%s", datad.batteryStatus.str);
-    s->scene.freeSpace = datad.freeSpace;
-    s->scene.thermalStatus = datad.thermalStatus;
-    s->scene.paTemp = datad.pa0;
-  } else if (eventd.which == cereal_Event_ubloxGnss) {
-    struct cereal_UbloxGnss datad;
-    cereal_read_UbloxGnss(&datad, eventd.ubloxGnss);
-    if (datad.which == cereal_UbloxGnss_measurementReport) {
-      struct cereal_UbloxGnss_MeasurementReport reportdatad;
-      cereal_read_UbloxGnss_MeasurementReport(&reportdatad, datad.measurementReport);
-      s->scene.satelliteCount = reportdatad.numMeas;
+    s->active_app = data.getActiveApp();
+    scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
+    if (data.getMockEngaged() != scene.uilayout_mockengaged) {
+      scene.uilayout_mockengaged = data.getMockEngaged();
     }
-  } else if (eventd.which == cereal_Event_health) {
-    struct cereal_HealthData datad;
-    cereal_read_HealthData(&datad, eventd.health);
+  } else if (which == cereal::Event::LIVE_MAP_DATA) {
+    scene.map_valid = event.getLiveMapData().getMapValid();
+  } else if (which == cereal::Event::THERMAL) {
+    auto data = event.getThermal();
 
-    s->scene.hwType = datad.hwType;
+    scene.networkType = data.getNetworkType();
+    scene.networkStrength = data.getNetworkStrength();
+    scene.batteryPercent = data.getBatteryPercent();
+    scene.batteryCharging = data.getBatteryStatus() == "Charging";
+    scene.freeSpace = data.getFreeSpace();
+    scene.thermalStatus = data.getThermalStatus();
+    scene.paTemp = data.getPa0();
+
+    s->thermal_started = data.getStarted();
+  } else if (which == cereal::Event::UBLOX_GNSS) {
+    auto data = event.getUbloxGnss();
+    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+    }
+  } else if (which == cereal::Event::HEALTH) {
+    scene.hwType = event.getHealth().getHwType();
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
+  } else if (which == cereal::Event::DRIVER_STATE) {
+    auto data = event.getDriverState();
+    scene.face_prob = data.getFaceProb();
+    auto fxy_list = data.getFacePosition();
+    scene.face_x = fxy_list[0];
+    scene.face_y = fxy_list[1];
+  } else if (which == cereal::Event::D_MONITORING_STATE) {
+    auto data = event.getDMonitoringState();
+    scene.is_rhd = data.getIsRHD();
+    scene.awareness_status = data.getAwarenessStatus();
+    s->preview_started = data.getIsPreview();
   }
-  capn_free(&ctx);
+
+  s->started = s->thermal_started || s->preview_started ;
+  // Handle onroad/offroad transition
+  if (!s->started) {
+    if (s->status != STATUS_STOPPED) {
+      update_status(s, STATUS_STOPPED);
+      s->alert_sound_timeout = 0;
+      s->vision_seen = false;
+      s->controls_seen = false;
+      s->active_app = cereal::UiLayoutState::App::HOME;
+      update_offroad_layout_state(s);
+    }
+  } else if (s->status == STATUS_STOPPED) {
+    update_status(s, STATUS_DISENGAGED);
+
+    s->active_app = cereal::UiLayoutState::App::NONE;
+    update_offroad_layout_state(s);
+  }
 }
 
 static void check_messages(UIState *s) {
@@ -493,12 +542,11 @@ static void check_messages(UIState *s) {
       break;
 
     for (auto sock : polls){
-      Message * msg = sock->receive();
-      if (msg == NULL) continue;
-
-      handle_message(s, msg);
-
-      delete msg;
+      Message *msg = sock->receive();
+      if (msg) {
+        handle_message(s, msg);
+        delete msg;
+      }
     }
   }
 }
@@ -573,6 +621,7 @@ static void ui_update(UIState *s) {
     assert(glGetError() == GL_NO_ERROR);
 
     s->scene.uilayout_sidebarcollapsed = true;
+    update_offroad_layout_state(s);
     s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
     s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
     s->scene.ui_viz_ro = 0;
@@ -652,8 +701,6 @@ static void ui_update(UIState *s) {
     }
     break;
   }
-  // peek and consume all events in the zmq queue, then return.
-  check_messages(s);
 }
 
 static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
@@ -721,6 +768,7 @@ static void* vision_connect_thread(void *args) {
                    front_rp.d.stream_bufs, front_rp.num_fds, front_rp.fds);
 
     s->vision_connected = true;
+    s->vision_seen = true;
     s->vision_connect_firstrun = true;
 
     // Drain sockets
@@ -785,41 +833,12 @@ static void* light_sensor_thread(void *args) {
       s->light_sensor = buffer[0].light;
     }
   }
-
+  sensors_close(device);
   return NULL;
 
 fail:
   LOGE("LIGHT SENSOR IS MISSING");
   s->light_sensor = 255;
-  return NULL;
-}
-
-static void* bg_thread(void* args) {
-  UIState *s = (UIState*)args;
-  set_thread_name("bg");
-
-  FramebufferState *bg_fb = framebuffer_init("bg", 0x00001000, false, NULL, NULL);
-  assert(bg_fb);
-
-  int bg_status = -1;
-  while(!do_exit) {
-    pthread_mutex_lock(&s->lock);
-    if (bg_status == s->status) {
-      // will always be signaled if it changes?
-      pthread_cond_wait(&s->bg_cond, &s->lock);
-    }
-    bg_status = s->status;
-    pthread_mutex_unlock(&s->lock);
-
-    assert(bg_status < ARRAYSIZE(bg_colors));
-    const uint8_t *color = bg_colors[bg_status];
-
-    glClearColor(color[0]/256.0, color[1]/256.0, color[2]/256.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    framebuffer_swap(bg_fb);
-  }
-
   return NULL;
 }
 
@@ -841,8 +860,6 @@ int is_leon() {
   return strstr(str, "letv") != NULL;
 }
 
-
-
 int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
@@ -853,6 +870,7 @@ int main(int argc, char* argv[]) {
   UIState uistate;
   UIState *s = &uistate;
   ui_init(s);
+  enable_event_processing(true);
 
   pthread_t connect_thread_handle;
   err = pthread_create(&connect_thread_handle, NULL,
@@ -864,11 +882,6 @@ int main(int argc, char* argv[]) {
   err = pthread_create(&light_sensor_thread_handle, NULL,
                        light_sensor_thread, s);
   assert(err == 0);
-
-  pthread_t bg_thread_handle;
-  err = pthread_create(&bg_thread_handle, NULL,
-                       bg_thread, s);
-  assert(err == 0);
 #endif
 
   TouchState touch = {0};
@@ -879,10 +892,18 @@ int main(int argc, char* argv[]) {
   // light sensor scaling params
   const int LEON = is_leon();
 
-  const float BRIGHTNESS_B = LEON ? 10.0 : 5.0;
-  const float BRIGHTNESS_M = LEON ? 2.6 : 1.3;
+  float brightness_b, brightness_m;
+  int result = read_param_float(&brightness_b, "BRIGHTNESS_B", true);
+  result += read_param_float(&brightness_m, "BRIGHTNESS_M", true);
 
-  float smooth_brightness = BRIGHTNESS_B;
+  if(result != 0){
+    brightness_b = LEON ? 10.0 : 5.0;
+    brightness_m = LEON ? 2.6 : 1.3;
+    write_param_float(brightness_b, "BRIGHTNESS_B", true);
+    write_param_float(brightness_m, "BRIGHTNESS_M", true);
+  }
+
+  float smooth_brightness = brightness_b;
 
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
@@ -892,10 +913,12 @@ int main(int argc, char* argv[]) {
   int draws = 0;
 
   s->scene.satelliteCount = -1;
+  s->started = false;
+  s->vision_seen = false;
 
   while (!do_exit) {
     bool should_swap = false;
-    if (!s->vision_connected) {
+    if (!s->started) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
       // Don't hold the lock while sleeping, so that vision_connect_thread have chances to get the lock.
       usleep(30 * 1000);
@@ -904,7 +927,7 @@ int main(int argc, char* argv[]) {
     double u1 = millis_since_boot();
 
     // light sensor is only exposed on EONs
-    float clipped_brightness = (s->light_sensor*BRIGHTNESS_M) + BRIGHTNESS_B;
+    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
     if (clipped_brightness > 512) clipped_brightness = 512;
     smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
     if (smooth_brightness > 255) smooth_brightness = 255;
@@ -925,22 +948,22 @@ int main(int argc, char* argv[]) {
       handle_vision_touch(s, touch_x, touch_y);
     }
 
-    if (!s->vision_connected) {
-      if (s->status != STATUS_STOPPED) {
-        update_status(s, STATUS_STOPPED);
-      }
+    if (!s->started) {
+      // always process events offroad
       check_messages(s);
     } else {
       set_awake(s, true);
-      if (s->status == STATUS_STOPPED) {
-        update_status(s, STATUS_DISENGAGED);
+      // Car started, fetch a new rgb image from ipc
+      if (s->vision_connected){
+        ui_update(s);
       }
-      // Car started, fetch a new rgb image from ipc and peek for zmq events.
-      ui_update(s);
-      if (!s->vision_connected) {
-        // Visiond process is just stopped, force a redraw to make screen blank again.
-        s->scene.satelliteCount = -1;
+
+      check_messages(s);
+
+      // Visiond process is just stopped, force a redraw to make screen blank again.
+      if (!s->started) {
         s->scene.uilayout_sidebarcollapsed = false;
+        update_offroad_layout_state(s);
         ui_draw(s);
         glFinish();
         should_swap = true;
@@ -958,7 +981,7 @@ int main(int argc, char* argv[]) {
     if (s->hardware_timeout > 0) {
       s->hardware_timeout--;
     } else {
-      s->scene.hwType = cereal_HealthData_HwType_unknown;
+      s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
     }
 
     // Don't waste resources on drawing in case screen is off
@@ -976,40 +999,49 @@ int main(int argc, char* argv[]) {
       s->volume_timeout = 5 * UI_FREQ;
     }
 
+    // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      // stop playing alert sound
-      if ((!s->vision_connected || (s->vision_connected && s->alert_sound_timeout == 0)) &&
-            s->alert_sound != cereal_CarControl_HUDControl_AudibleAlert_none) {
-        stop_alert_sound(s->alert_sound);
-        s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_none;
-      }
+      if (s->started && s->controls_seen && s->scene.alert_text2 != "Controls Unresponsive") {
+        LOGE("Controls unresponsive");
+        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+        update_status(s, STATUS_ALERT);
 
-      // if visiond is still running and controlsState times out, display an alert
-      // TODO: refactor this to not be here
-      if (s->controls_seen && s->vision_connected && strcmp(s->scene.alert_text2, "Controls Unresponsive") != 0) {
-        s->scene.alert_size = ALERTSIZE_FULL;
-        if (s->status != STATUS_STOPPED) {
-          update_status(s, STATUS_ALERT);
-        }
-        snprintf(s->scene.alert_text1, sizeof(s->scene.alert_text1), "%s", "TAKE CONTROL IMMEDIATELY");
-        snprintf(s->scene.alert_text2, sizeof(s->scene.alert_text2), "%s", "Controls Unresponsive");
-        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1, s->scene.alert_text2);
+        s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
+        s->scene.alert_text2 = "Controls Unresponsive";
+
+        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
 
         s->alert_sound_timeout = 2 * UI_FREQ;
-
-        s->alert_sound = cereal_CarControl_HUDControl_AudibleAlert_chimeWarningRepeat;
+        s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT;
         play_alert_sound(s->alert_sound);
       }
+
       s->alert_sound_timeout--;
       s->controls_seen = false;
+    }
+
+    // stop playing alert sound
+    if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
+        s->alert_sound != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
+      stop_alert_sound(s->alert_sound);
+      s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     }
 
     read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
     read_param_bool_timeout(&s->longitudinal_control, "LongitudinalControl", &s->longitudinal_control_timeout);
     read_param_bool_timeout(&s->limit_set_speed, "LimitSetSpeed", &s->limit_set_speed_timeout);
     read_param_float_timeout(&s->speed_lim_off, "SpeedLimitOffset", &s->limit_set_speed_timeout);
+    int param_read = read_param_uint64_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
+    if (param_read != 0) {
+      s->scene.athenaStatus = NET_DISCONNECTED;
+    } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
+      s->scene.athenaStatus = NET_CONNECTED;
+    } else {
+      s->scene.athenaStatus = NET_ERROR;
+    }
+    update_offroad_layout_timeout(s, &s->offroad_layout_timeout);
 
     pthread_mutex_unlock(&s->lock);
 
@@ -1031,14 +1063,10 @@ int main(int argc, char* argv[]) {
 
   // wake up bg thread to exit
   pthread_mutex_lock(&s->lock);
-  pthread_cond_signal(&s->bg_cond);
   pthread_mutex_unlock(&s->lock);
 
 #ifdef QCOM
   // join light_sensor_thread?
-
-  err = pthread_join(bg_thread_handle, NULL);
-  assert(err == 0);
 #endif
 
   err = pthread_join(connect_thread_handle, NULL);

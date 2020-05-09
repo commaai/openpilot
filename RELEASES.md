@@ -1,3 +1,13 @@
+Version 0.7.5 (2020-05-13)
+========================
+* Right-Hand Drive support for both driving and driver monitoring!
+* New driving model: improved at sharp turns and lead speed estimation
+* New driver monitoring model: overall improvement on comma two
+* Driver camera preview in settings to improve mounting position
+* Added support for many Hyundai, Kia, Genesis models thanks to xx979xx!
+* 2019 Nissan X-Trail and 2018 Nissan Leaf support thanks to avolmensky!
+* Improved lateral tuning for 2020 Toyota Rav 4 (hybrid)
+
 Version 0.7.4 (2020-03-20)
 ========================
  * New driving model: improved lane changes and lead car detection

@@ -99,7 +99,7 @@ int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, Visi
     close(s->ipc_fd);
     return -1;
   }
-  assert(rp.type = VIPC_STREAM_BUFS);
+  assert(rp.type == VIPC_STREAM_BUFS);
   assert(rp.d.stream_bufs.type == type);
 
   s->bufs_info = rp.d.stream_bufs;
