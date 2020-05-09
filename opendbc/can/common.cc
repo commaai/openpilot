@@ -18,10 +18,53 @@ unsigned int toyota_checksum(unsigned int address, uint64_t d, int l) {
   d >>= 8; // remove checksum
 
   unsigned int s = l;
-  while (address) { s += address & 0xff; address >>= 8; }
-  while (d) { s += d & 0xff; d >>= 8; }
+  while (address) { s += address & 0xFF; address >>= 8; }
+  while (d) { s += d & 0xFF; d >>= 8; }
 
   return s & 0xFF;
+}
+
+unsigned int subaru_checksum(unsigned int address, uint64_t d, int l) {
+  d >>= ((8-l)*8); // remove padding
+
+  unsigned int s = 0;
+  while (address) { s += address & 0xFF; address >>= 8; }
+  l -= 1; // checksum is first byte
+  while (l) { s += d & 0xFF; d >>= 8; l -= 1; }
+
+  return s & 0xFF;
+}
+
+unsigned int chrysler_checksum(unsigned int address, uint64_t d, int l) {
+  /* This function does not want the checksum byte in the input data.
+  jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf */
+  uint8_t checksum = 0xFF;
+  for (int j = 0; j < (l - 1); j++) {
+    uint8_t shift = 0x80;
+    uint8_t curr = (d >> 8*j) & 0xFF;
+    for (int i=0; i<8; i++) {
+      uint8_t bit_sum = curr & shift;
+      uint8_t temp_chk = checksum & 0x80U;
+      if (bit_sum != 0U) {
+        bit_sum = 0x1C;
+        if (temp_chk != 0U) {
+          bit_sum = 1;
+        }
+        checksum = checksum << 1;
+        temp_chk = checksum | 1U;
+        bit_sum ^= temp_chk;
+      } else {
+        if (temp_chk != 0U) {
+          bit_sum = 0x1D;
+        }
+        checksum = checksum << 1;
+        bit_sum ^= checksum;
+      }
+      checksum = bit_sum;
+      shift = shift >> 1;
+    }
+  }
+  return ~checksum & 0xFF;
 }
 
 // Static lookup table for fast computation of CRC8 poly 0x2F, aka 8H2F/AUTOSAR
@@ -105,6 +148,9 @@ unsigned int volkswagen_crc(unsigned int address, uint64_t d, int l) {
       break;
     case 0x30C: // ACC_02 Automatic Cruise Control
       crc ^= (uint8_t[]){0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F}[counter];
+      break;
+    case 0x30F: // SWA_01 Lane Change Assist (SpurWechselAssistent)
+      crc ^= (uint8_t[]){0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C,0x0C}[counter];
       break;
     case 0x3C0: // Klemmen_Status_01 ignition and starting status
       crc ^= (uint8_t[]){0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3}[counter];

@@ -116,7 +116,7 @@ BO_ 388 PSCMStatus: 8 K43_PSCM
  SG_ LKATorqueDelivered : 18|11@0- (0.01,0) [0|1] "" NEO
  SG_ LKATotalTorqueDelivered : 2|11@0- (0.01,0) [-10.24|10.23] "Nm" NEO
 
-BO_ 417 AcceleratorPedal: 8 XXX
+BO_ 417 AcceleratorPedal: 7 XXX
  SG_ AcceleratorPedal : 55|8@0+ (1,0) [0|0] ""  NEO
 
 BO_ 451 GasAndAcc: 8 XXX
@@ -170,7 +170,7 @@ BO_ 840 EBCMWheelSpdFront: 4 K17_EBCM
  SG_ FLWheelSpd : 7|16@0+ (0.0311,0) [0|255] "km/h"  NEO
  SG_ FRWheelSpd : 23|16@0+ (0.0311,0) [0|255] "km/h"  NEO
 
-BO_ 842 EBCMWheelSpdRear: 4 K17_EBCM
+BO_ 842 EBCMWheelSpdRear: 5 K17_EBCM
  SG_ RLWheelSpd : 7|16@0+ (0.0311,0) [0|255] "km/h"  NEO
  SG_ RRWheelSpd : 23|16@0+ (0.0311,0) [0|255] "km/h"  NEO
 
