@@ -118,7 +118,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_driver_view_touch(UIState *s, int touch_x, int touch_y) {
-  int err = write_db_value(NULL, "IsDriverViewEnabled", "0", 1);
+  int err = write_db_value("IsDriverViewEnabled", "0", 1);
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
@@ -138,27 +138,28 @@ static void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-static void read_param_bool(bool* param, const char* param_name) {
+static void read_param_bool(bool* param, const char* param_name, bool persistent_param = false) {
   char *s;
-  const int result = read_db_value(NULL, param_name, &s, NULL);
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
   if (result == 0) {
     *param = s[0] == '1';
     free(s);
   }
 }
 
-static void read_param_float(float* param, const char* param_name) {
+static int read_param_float(float* param, const char* param_name, bool persistent_param = false) {
   char *s;
-  const int result = read_db_value(NULL, param_name, &s, NULL);
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
   if (result == 0) {
     *param = strtod(s, NULL);
     free(s);
   }
+  return result;
 }
 
-static int read_param_uint64(uint64_t* dest, const char* param_name) {
+static int read_param_uint64(uint64_t* dest, const char* param_name, bool persistent_param = false) {
   char *s;
-  const int result = read_db_value(NULL, param_name, &s, NULL);
+  const int result = read_db_value(param_name, &s, NULL, persistent_param);
   if (result == 0) {
     *dest = strtoull(s, NULL, 0);
     free(s);
@@ -166,32 +167,38 @@ static int read_param_uint64(uint64_t* dest, const char* param_name) {
   return result;
 }
 
-static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout) {
+static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
   } else {
-    read_param_bool(param, param_name);
+    read_param_bool(param, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
 }
 
-static void read_param_float_timeout(float* param, const char* param_name, int* timeout) {
+static void read_param_float_timeout(float* param, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
   } else {
-    read_param_float(param, param_name);
+    read_param_float(param, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
 }
 
-static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int* timeout) {
+static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
     return 0;
   } else {
-    return read_param_uint64(dest, param_name);
+    return read_param_uint64(dest, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
   }
+}
+
+static int write_param_float(float param, const char* param_name, bool persistent_param = false) {
+  char s[16];
+  int size = snprintf(s, sizeof(s), "%f", param);
+  return write_db_value(param_name, s, MIN(size, sizeof(s)), persistent_param);
 }
 
 static void update_offroad_layout_timeout(UIState *s, int* timeout) {
@@ -885,10 +892,18 @@ int main(int argc, char* argv[]) {
   // light sensor scaling params
   const int LEON = is_leon();
 
-  const float BRIGHTNESS_B = LEON ? 10.0 : 5.0;
-  const float BRIGHTNESS_M = LEON ? 2.6 : 1.3;
+  float brightness_b, brightness_m;  
+  int result = read_param_float(&brightness_b, "BRIGHTNESS_B", true);
+  result += read_param_float(&brightness_m, "BRIGHTNESS_M", true);
 
-  float smooth_brightness = BRIGHTNESS_B;
+  if(result != 0){
+    brightness_b = LEON ? 10.0 : 5.0;
+    brightness_m = LEON ? 2.6 : 1.3;
+    write_param_float(brightness_b, "BRIGHTNESS_B", true);
+    write_param_float(brightness_m, "BRIGHTNESS_M", true);
+  }
+
+  float smooth_brightness = brightness_b;
 
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
@@ -912,7 +927,7 @@ int main(int argc, char* argv[]) {
     double u1 = millis_since_boot();
 
     // light sensor is only exposed on EONs
-    float clipped_brightness = (s->light_sensor*BRIGHTNESS_M) + BRIGHTNESS_B;
+    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
     if (clipped_brightness > 512) clipped_brightness = 512;
     smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
     if (smooth_brightness > 255) smooth_brightness = 255;
