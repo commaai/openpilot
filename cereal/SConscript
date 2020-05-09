@@ -6,10 +6,6 @@ messaging_dir = Dir('messaging')
 # TODO: remove src-prefix and cereal from command string. can we set working directory?
 env.Command(["gen/c/include/c++.capnp.h", "gen/c/include/java.capnp.h"], [], "mkdir -p " + gen_dir.path + "/c/include && touch $TARGETS")
 env.Command(
-  ['gen/c/car.capnp.c', 'gen/c/log.capnp.c', 'gen/c/car.capnp.h', 'gen/c/log.capnp.h'],
-  ['car.capnp', 'log.capnp'],
-  'capnpc $SOURCES --src-prefix=cereal -o c:' + gen_dir.path + '/c/')
-env.Command(
   ['gen/cpp/car.capnp.c++', 'gen/cpp/log.capnp.c++', 'gen/cpp/car.capnp.h', 'gen/cpp/log.capnp.h'],
   ['car.capnp', 'log.capnp'],
   'capnpc $SOURCES --src-prefix=cereal -o c++:' + gen_dir.path + '/cpp/')
@@ -22,14 +18,12 @@ if shutil.which('capnpc-java'):
 
 # TODO: remove non shared cereal and messaging
 cereal_objects = env.SharedObject([
-    'gen/c/car.capnp.c',
-    'gen/c/log.capnp.c',
     'gen/cpp/car.capnp.c++',
     'gen/cpp/log.capnp.c++',
   ])
 
 env.Library('cereal', cereal_objects)
-env.SharedLibrary('cereal_shared', cereal_objects, LIBS=["capnp_c"])
+env.SharedLibrary('cereal_shared', cereal_objects)
 
 cereal_dir = Dir('.')
 services_h = env.Command(

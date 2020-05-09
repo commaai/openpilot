@@ -34,7 +34,8 @@ extra_compile_args = ["-std=c++11"]
 libraries = ['zmq']
 ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()  # pylint: disable=unexpected-keyword-arg
 
-if ARCH == "aarch64":
+if ARCH == "aarch64" and os.path.isdir("/system"):
+  # android
   extra_compile_args += ["-Wno-deprecated-register"]
   libraries += ['gnustl_shared']
 
