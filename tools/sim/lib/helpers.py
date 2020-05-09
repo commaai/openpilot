@@ -1,5 +1,3 @@
-import numpy as np
-
 class FakeSteeringWheel():
   def __init__(self, dt=0.01):
     # physical params
@@ -13,7 +11,7 @@ class FakeSteeringWheel():
 
     self.angle = 0. # start centered
     # self.omega = 0.
-    
+
   def response(self, torque, vego=0):
     exerted_torque = torque * self.DAC
     # centering_torque = np.clip(-(self.centering_k * self.angle), -1.1, 1.1)
