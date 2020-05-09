@@ -154,7 +154,7 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
       }
     } else {
       panda_severity = 0;
-      snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\CONNECTED");
+      snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nCONNECTED");
     }
   }
 
