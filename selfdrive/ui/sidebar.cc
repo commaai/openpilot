@@ -144,12 +144,17 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
     panda_severity = 2;
     snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO\nVEHICLE");
   } else {
-    if (s->scene.satelliteCount < 6) {
-      panda_severity = 1;
-      snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nNO GPS");
-    } else if (s->scene.satelliteCount >= 6) {
+    if (s->started){
+      if (s->scene.satelliteCount < 6) {
+        panda_severity = 1;
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nNO GPS");
+      } else if (s->scene.satelliteCount >= 6) {
+        panda_severity = 0;
+        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nGOOD GPS");
+      }
+    } else {
       panda_severity = 0;
-      snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nGOOD GPS");
+      snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nONLINE");
     }
   }
 
