@@ -33,16 +33,12 @@ AddrCheckStruct gm_rx_checks[] = {
 };
 const int GM_RX_CHECK_LEN = sizeof(gm_rx_checks) / sizeof(gm_rx_checks[0]);
 
-bool gm_moving = false;
-int gm_rt_torque_last = 0;
-int gm_desired_torque_last = 0;
-uint32_t gm_ts_last = 0;
-struct sample_t gm_torque_driver;         // last few driver torques measured
-
 static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   bool valid = addr_safety_check(to_push, gm_rx_checks, GM_RX_CHECK_LEN,
                                  NULL, NULL, NULL);
+
+  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
 
   if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
@@ -51,13 +47,13 @@ static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       int torque_driver_new = ((GET_BYTE(to_push, 6) & 0x7) << 8) | GET_BYTE(to_push, 7);
       torque_driver_new = to_signed(torque_driver_new, 11);
       // update array of samples
-      update_sample(&gm_torque_driver, torque_driver_new);
+      update_sample(&torque_driver, torque_driver_new);
     }
 
     // sample speed, really only care if car is moving or not
     // rear left wheel speed
     if (addr == 842) {
-      gm_moving = GET_BYTE(to_push, 0) | GET_BYTE(to_push, 1);
+      vehicle_moving = GET_BYTE(to_push, 0) | GET_BYTE(to_push, 1);
     }
 
     // ACC steering wheel buttons
@@ -82,7 +78,7 @@ static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       // Brake pedal's potentiometer returns near-zero reading
       // even when pedal is not pressed
       bool brake_pressed = GET_BYTE(to_push, 1) >= 10;
-      if (brake_pressed && (!brake_pressed_prev || gm_moving)) {
+      if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
          controls_allowed = 0;
       }
       brake_pressed_prev = brake_pressed;
@@ -91,7 +87,7 @@ static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // exit controls on rising edge of gas press
     if (addr == 417) {
       bool gas_pressed = GET_BYTE(to_push, 6) != 0;
-      if (gas_pressed && !gas_pressed_prev) {
+      if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev) {
         controls_allowed = 0;
       }
       gas_pressed_prev = gas_pressed;
@@ -110,7 +106,7 @@ static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // 384 = ASCMLKASteeringCmd
     // 715 = ASCMGasRegenCmd
     if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && ((addr == 384) || (addr == 715))) {
-      relay_malfunction = true;
+      relay_malfunction_set();
     }
   }
   return valid;
@@ -138,7 +134,11 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   // disallow actuator commands if gas or brake (with vehicle moving) are pressed
   // and the the latching controls_allowed flag is True
-  int pedal_pressed = gas_pressed_prev || (brake_pressed_prev && gm_moving);
+  int pedal_pressed = brake_pressed_prev && vehicle_moving;
+  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
+  if (!unsafe_allow_gas) {
+    pedal_pressed = pedal_pressed || gas_pressed_prev;
+  }
   bool current_controls_allowed = controls_allowed && !pedal_pressed;
 
   // BRAKE: safety check
@@ -168,21 +168,21 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       violation |= max_limit_check(desired_torque, GM_MAX_STEER, -GM_MAX_STEER);
 
       // *** torque rate limit check ***
-      violation |= driver_limit_check(desired_torque, gm_desired_torque_last, &gm_torque_driver,
+      violation |= driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
         GM_MAX_STEER, GM_MAX_RATE_UP, GM_MAX_RATE_DOWN,
         GM_DRIVER_TORQUE_ALLOWANCE, GM_DRIVER_TORQUE_FACTOR);
 
       // used next time
-      gm_desired_torque_last = desired_torque;
+      desired_torque_last = desired_torque;
 
       // *** torque real time rate limit check ***
-      violation |= rt_rate_limit_check(desired_torque, gm_rt_torque_last, GM_MAX_RT_DELTA);
+      violation |= rt_rate_limit_check(desired_torque, rt_torque_last, GM_MAX_RT_DELTA);
 
       // every RT_INTERVAL set the new limits
-      uint32_t ts_elapsed = get_ts_elapsed(ts, gm_ts_last);
+      uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
       if (ts_elapsed > GM_RT_INTERVAL) {
-        gm_rt_torque_last = desired_torque;
-        gm_ts_last = ts;
+        rt_torque_last = desired_torque;
+        ts_last = ts;
       }
     }
 
@@ -193,9 +193,9 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
     // reset to 0 if either controls is not allowed or there's a violation
     if (violation || !current_controls_allowed) {
-      gm_desired_torque_last = 0;
-      gm_rt_torque_last = 0;
-      gm_ts_last = ts;
+      desired_torque_last = 0;
+      rt_torque_last = 0;
+      ts_last = ts;
     }
 
     if (violation) {

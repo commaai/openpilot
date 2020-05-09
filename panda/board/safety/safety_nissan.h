@@ -9,25 +9,22 @@ const struct lookup_t NISSAN_LOOKUP_ANGLE_RATE_DOWN = {
   {2., 7., 17.},
   {5., 3.5, .5}};
 
-const struct lookup_t NISSAN_LOOKUP_MAX_ANGLE = {
-  {3.3, 12, 32},
-  {540., 120., 23.}};
-
 const int NISSAN_DEG_TO_CAN = 100;
 
-const AddrBus NISSAN_TX_MSGS[] = {{0x169, 0}, {0x2b1, 0}, {0x4cc, 0}, {0x20b, 2}};
+const AddrBus NISSAN_TX_MSGS[] = {{0x169, 0}, {0x2b1, 0}, {0x4cc, 0}, {0x20b, 2}, {0x280, 2}};
 
 AddrCheckStruct nissan_rx_checks[] = {
-  {.addr = {0x2}, .bus = 0, .expected_timestep = 10000U},
-  {.addr = {0x29a}, .bus = 0, .expected_timestep = 20000U},
-  {.addr = {0x1b6}, .bus = 1, .expected_timestep = 10000U},
+  {.addr = {0x2}, .bus = 0, .expected_timestep = 10000U},  // STEER_ANGLE_SENSOR (100Hz)
+  {.addr = {0x285}, .bus = 0, .expected_timestep = 20000U}, // WHEEL_SPEEDS_REAR (50Hz)
+  {.addr = {0x30f}, .bus = 2, .expected_timestep = 100000U}, // CRUISE_STATE (10Hz)
+  {.addr = {0x15c, 0x239}, .bus = 0, .expected_timestep = 20000U}, // GAS_PEDAL (100Hz / 50Hz)
+  {.addr = {0x454, 0x1cc}, .bus = 0, .expected_timestep = 100000U}, // DOORS_LIGHTS (10Hz) / BRAKE (100Hz)
 };
 const int NISSAN_RX_CHECK_LEN = sizeof(nissan_rx_checks) / sizeof(nissan_rx_checks[0]);
 
 float nissan_speed = 0;
 //int nissan_controls_allowed_last = 0;
 uint32_t nissan_ts_angle_last = 0;
-int nissan_cruise_engaged_last = 0;
 int nissan_desired_angle_last = 0;
 
 struct sample_t nissan_angle_meas;            // last 3 steer angles
@@ -37,6 +34,8 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   bool valid = addr_safety_check(to_push, nissan_rx_checks, NISSAN_RX_CHECK_LEN,
                                  NULL, NULL, NULL);
+
+  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
 
   if (valid) {
     int bus = GET_BUS(to_push);
@@ -54,16 +53,24 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         update_sample(&nissan_angle_meas, angle_meas_new);
       }
 
-      if (addr == 0x29a) {
+      if (addr == 0x285) {
         // Get current speed
-        // Factor 0.00555
-        nissan_speed = ((GET_BYTE(to_push, 2) << 8) | (GET_BYTE(to_push, 3))) * 0.00555 / 3.6;
+        // Factor 0.005
+        nissan_speed = ((GET_BYTE(to_push, 2) << 8) | (GET_BYTE(to_push, 3))) * 0.005 / 3.6;
+        vehicle_moving = nissan_speed > 0.;
       }
 
       // exit controls on rising edge of gas press
-      if (addr == 0x15c) {
-        bool gas_pressed = ((GET_BYTE(to_push, 5) << 2) | ((GET_BYTE(to_push, 6) >> 6) & 0x3));
-        if (gas_pressed && !gas_pressed_prev) {
+      // X-Trail 0x15c, Leaf 0x239
+      if ((addr == 0x15c) || (addr == 0x239)) {
+        bool gas_pressed = true;
+        if (addr == 0x15c){
+          gas_pressed = ((GET_BYTE(to_push, 5) << 2) | ((GET_BYTE(to_push, 6) >> 6) & 0x3)) > 1;
+        } else {
+          gas_pressed = GET_BYTE(to_push, 0) > 3;
+        }
+
+        if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev) {
           controls_allowed = 0;
         }
         gas_pressed_prev = gas_pressed;
@@ -71,30 +78,38 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
       // 0x169 is lkas cmd. If it is on bus 0, then relay is unexpectedly closed
       if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (addr == 0x169)) {
-        relay_malfunction = true;
+        relay_malfunction_set();
       }
     }
 
-    if (bus == 1) {
-      if (addr == 0x1b6) {
-        int cruise_engaged = (GET_BYTE(to_push, 4) >> 6) & 1;
-        if (cruise_engaged && !nissan_cruise_engaged_last) {
-          controls_allowed = 1;
-        }
-        if (!cruise_engaged) {
-          controls_allowed = 0;
-        }
-        nissan_cruise_engaged_last = cruise_engaged;
+    // exit controls on rising edge of brake press, or if speed > 0 and brake
+    // X-trail 0x454, Leaf  0x1cc
+    if ((addr == 0x454) || (addr == 0x1cc)) {
+      bool brake_pressed = true;
+      if (addr == 0x454){
+        brake_pressed = (GET_BYTE(to_push, 2) & 0x80) != 0;
+      } else {
+        brake_pressed = GET_BYTE(to_push, 0) > 3;
       }
 
-      // exit controls on rising edge of brake press, or if speed > 0 and brake
-      if (addr == 0x454) {
-        bool brake_pressed = (GET_BYTE(to_push, 2) & 0x80) != 0;
-        if (brake_pressed && (!brake_pressed_prev || (nissan_speed > 0.))) {
-          controls_allowed = 0;
-        }
-        brake_pressed_prev = brake_pressed;
+      if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
+        controls_allowed = 0;
       }
+      brake_pressed_prev = brake_pressed;
+    }
+
+
+    // Handle cruise enabled
+    if ((bus == 2) && (addr == 0x30f)) {
+      bool cruise_engaged = (GET_BYTE(to_push, 0) >> 3) & 1;
+
+      if (cruise_engaged && !cruise_engaged_prev) {
+        controls_allowed = 1;
+      }
+      if (!cruise_engaged) {
+        controls_allowed = 0;
+      }
+      cruise_engaged_prev = cruise_engaged;
     }
   }
   return valid;
@@ -132,16 +147,6 @@ static int nissan_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       int delta_angle_down = (int)(delta_angle_float);
       int highest_desired_angle = nissan_desired_angle_last + ((nissan_desired_angle_last > 0) ? delta_angle_up : delta_angle_down);
       int lowest_desired_angle = nissan_desired_angle_last - ((nissan_desired_angle_last >= 0) ? delta_angle_down : delta_angle_up);
-
-      // Limit maximum steering angle at current speed
-      int maximum_angle = ((int)interpolate(NISSAN_LOOKUP_MAX_ANGLE, nissan_speed));
-
-      if (highest_desired_angle > (maximum_angle * NISSAN_DEG_TO_CAN)) {
-        highest_desired_angle = (maximum_angle * NISSAN_DEG_TO_CAN);
-      }
-      if (lowest_desired_angle < (-maximum_angle * NISSAN_DEG_TO_CAN)) {
-        lowest_desired_angle = (-maximum_angle * NISSAN_DEG_TO_CAN);
-      }
 
       // check for violation;
       violation |= max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle);
@@ -183,7 +188,10 @@ static int nissan_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   int addr = GET_ADDR(to_fwd);
 
   if (bus_num == 0) {
-    bus_fwd = 2;  // ADAS
+    int block_msg = (addr == 0x280); // CANCEL_MSG
+    if (!block_msg) {
+      bus_fwd = 2;  // ADAS
+    }
   }
 
   if (bus_num == 2) {

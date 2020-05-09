@@ -23,12 +23,16 @@ typedef union _USB_Setup {
 }
 USB_Setup_TypeDef;
 
+#define MAX_CAN_MSGS_PER_BULK_TRANSFER 4U
+
 void usb_init(void);
 int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired);
 int usb_cb_ep1_in(void *usbdata, int len, bool hardwired);
 void usb_cb_ep2_out(void *usbdata, int len, bool hardwired);
 void usb_cb_ep3_out(void *usbdata, int len, bool hardwired);
+void usb_cb_ep3_out_complete(void);
 void usb_cb_enumeration_complete(void);
+void usb_outep3_resume_if_paused(void);
 
 // **** supporting defines ****
 
@@ -380,6 +384,7 @@ USB_Setup_TypeDef setup;
 uint8_t usbdata[0x100];
 uint8_t* ep0_txdata = NULL;
 uint16_t ep0_txlen = 0;
+bool outep3_processing = false;
 
 // Store the current interface alt setting.
 int current_int0_alt_setting = 0;
@@ -744,6 +749,7 @@ void usb_irqhandler(void) {
       }
 
       if (endpoint == 3) {
+        outep3_processing = true;
         usb_cb_ep3_out(usbdata, len, 1);
       }
     } else if (status == STS_SETUP_UPDT) {
@@ -816,15 +822,17 @@ void usb_irqhandler(void) {
       #ifdef DEBUG_USB
         puts("  OUT3 PACKET XFRC\n");
       #endif
-      USBx_OUTEP(3)->DOEPTSIZ = (1U << 19) | 0x40U;
-      USBx_OUTEP(3)->DOEPCTL |= USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK;
+      // NAK cleared by process_can (if tx buffers have room)
+      outep3_processing = false;
+      usb_cb_ep3_out_complete();
     } else if ((USBx_OUTEP(3)->DOEPINT & 0x2000) != 0) {
       #ifdef DEBUG_USB
         puts("  OUT3 PACKET WTF\n");
       #endif
       // if NAK was set trigger this, unknown interrupt
-      USBx_OUTEP(3)->DOEPTSIZ = (1U << 19) | 0x40U;
-      USBx_OUTEP(3)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
+      // TODO: why was this here? fires when TX buffers when we can't clear NAK
+      // USBx_OUTEP(3)->DOEPTSIZ = (1U << 19) | 0x40U;
+      // USBx_OUTEP(3)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
     } else if ((USBx_OUTEP(3)->DOEPINT) != 0) {
       puts("OUTEP3 error ");
       puth(USBx_OUTEP(3)->DOEPINT);
@@ -930,6 +938,15 @@ void usb_irqhandler(void) {
   USBx->GINTSTS = gintsts;
 
   //USBx->GINTMSK = 0xFFFFFFFF & ~(USB_OTG_GINTMSK_NPTXFEM | USB_OTG_GINTMSK_PTXFEM | USB_OTG_GINTSTS_SOF | USB_OTG_GINTSTS_EOPF);
+}
+
+void usb_outep3_resume_if_paused() {
+  ENTER_CRITICAL();
+  if (!outep3_processing && (USBx_OUTEP(3)->DOEPCTL & USB_OTG_DOEPCTL_NAKSTS) != 0) {
+    USBx_OUTEP(3)->DOEPTSIZ = (1U << 19) | 0x40U;
+    USBx_OUTEP(3)->DOEPCTL |= USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK;
+  }
+  EXIT_CRITICAL();
 }
 
 void OTG_FS_IRQ_Handler(void) {
