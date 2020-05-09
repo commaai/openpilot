@@ -1,6 +1,9 @@
 README.md
 SAFETY.md
 
+codecov.yml
+lgtm.yml
+
 .gitignore
 LICENSE
 launch_chffrplus.sh
