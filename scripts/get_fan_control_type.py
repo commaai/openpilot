@@ -12,11 +12,12 @@ def setup_fan():
     bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
     bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
     print("OP detected")
-    return False
+    ret = False
   except IOError:
     print("LEON detected")
-    return True
+    ret = True
   bus.close()
+  return ret
 
 def get_fan_type():
   if not setup_fan():
@@ -27,7 +28,7 @@ def get_fan_type():
     # alternate type
     bus.write_i2c_block_data(0x3d, 0, [0x1])
     print("Alternate type detected")
-    return 
+    return
   except IOError:
     # tusb320 type
     print("tusb320 type detected")
