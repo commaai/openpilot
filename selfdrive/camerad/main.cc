@@ -156,10 +156,8 @@ void* frontview_thread(void *arg) {
 
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  SubMaster monitoringMaster;
-  monitoringMaster.createSocket("driverState", "127.0.0.1", true);
-  SubMaster dmonstateMaster;
-  dmonstateMaster.createSocket("dMonitoringState", "127.0.0.1", true);
+  SubMaster smMonitoring({"driverState"}, "127.0.0.1", true);
+  SubMaster smDMonstate({"dMonitoringState"}, "127.0.0.1", true);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -205,7 +203,7 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      auto msg  = dmonstateMaster.pollOne(0);
+      auto msg  = smDMonstate.pollOne(0);
       if (msg) {
         auto state = msg->getEvent().getDMonitoringState();
         s->rhd_front = state.getIsRHD();
@@ -213,7 +211,7 @@ void* frontview_thread(void *arg) {
       }
     }
 
-    auto msg = monitoringMaster.pollOne(0);
+    auto msg = smMonitoring.pollOne(0);
     if (msg) {
       auto state = msg->getEvent().getDriverState();
       float face_prob = state.getFaceProb();

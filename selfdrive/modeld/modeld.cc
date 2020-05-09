@@ -84,8 +84,7 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  SubMaster sm;
-  sm.createSocket("pathPlan", "127.0.0.1", true);
+  SubMaster sm({"pathPlan"}, "127.0.0.1", true);
   PubMaster pm({"model", "cameraOdometry"});
 
   // cl init

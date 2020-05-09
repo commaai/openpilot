@@ -27,8 +27,7 @@ int main(int argc, char **argv) {
 
   // messaging
   PubMaster pm({"driverState"});
-  SubMaster sm;
-  sm.createSocket("dMonitoringState", "127.0.0.1", true);
+  SubMaster sm({"dMonitoringState"}, "127.0.0.1", true);
 
   // init the models
   DMonitoringModelState dmonitoringmodel;
