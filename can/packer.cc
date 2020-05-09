@@ -99,6 +99,12 @@ uint64_t CANPacker::pack(uint32_t address, const std::vector<SignalPackValue> &s
       // The correct fix is unclear but this works for the moment.
       unsigned int chksm = volkswagen_crc(address, ReverseBytes(ret), message_lookup[address].size);
       ret = set_value(ret, sig, chksm);
+    } else if (sig.type == SignalType::SUBARU_CHECKSUM) {
+      unsigned int chksm = subaru_checksum(address, ret, message_lookup[address].size);
+      ret = set_value(ret, sig, chksm);
+    } else if (sig.type == SignalType::CHRYSLER_CHECKSUM) {
+      unsigned int chksm = chrysler_checksum(address, ReverseBytes(ret), message_lookup[address].size);
+      ret = set_value(ret, sig, chksm);
     } else {
       //WARN("CHECKSUM signal type not valid\n");
     }

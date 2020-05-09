@@ -1446,3 +1446,10 @@ BO_ 905 SCC14: 8 SCC
 
 BO_ 882 ELECT_GEAR: 8 XXX
  SG_ Elect_Gear_Shifter : 16|3@1+ (1,0) [0|7] ""  CLU
+
+BO_ 1157 LFAHDA_MFC: 4 XXX
+ SG_ LFA_USM : 28|2@1+ (1,0) [0|3] "" XXX
+ SG_ LFA_SysWarning : 16|2@1+ (1,0) [0|3] "" XXX
+ SG_ ACTIVE2 : 4|2@0+ (1,0) [0|3] "" XXX
+ SG_ HDA_USM : 0|2@1+ (1,0) [0|3] "" XXX
+ SG_ ACTIVE : 25|1@1+ (1,0) [0|3] "" XXX
