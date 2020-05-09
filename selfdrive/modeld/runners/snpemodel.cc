@@ -87,6 +87,13 @@ SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int ru
 
   // create output buffer
   {
+    const zdl::DlSystem::TensorShape& bufferShape = snpe->getInputOutputBufferAttributes(output_tensor_name)->getDims();
+    if (output_size != 0) {
+      assert(output_size == bufferShape[1]);
+    } else {
+      output_size = bufferShape[1];
+    }
+
     std::vector<size_t> outputStrides = {output_size * sizeof(float), sizeof(float)};
     outputBuffer = ubFactory.createUserBuffer(output, output_size * sizeof(float), outputStrides, &userBufferEncodingFloat);
     outputMap.add(output_tensor_name, outputBuffer.get());

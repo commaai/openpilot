@@ -40,7 +40,6 @@ private:
   // snpe output stuff
   zdl::DlSystem::UserBufferMap outputMap;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> outputBuffer;
-  float *output;
 
   // recurrent and desire
   std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);

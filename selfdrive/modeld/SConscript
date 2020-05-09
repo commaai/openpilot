@@ -34,3 +34,8 @@ lenv.Program('_modeld', [
     "models/driving.cc",
   ]+common, LIBS=libs)
 
+if arch == "aarch64":
+  lenv.Program('thneed/_thneed', [
+      "thneed/main.cc",
+    ]+common, LIBS=libs)
+
