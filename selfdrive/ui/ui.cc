@@ -374,7 +374,7 @@ void handle_message(UIState *s,  Message* msg) {
   memcpy(amsg.begin(), msg->getData(), msg->getSize());
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-  
+
   auto which = event.which();
   UIScene &scene = s->scene;
   if (which == cereal::Event::CONTROLS_STATE && s->started) {
@@ -440,7 +440,7 @@ void handle_message(UIState *s,  Message* msg) {
     }
   } else if (which == cereal::Event::RADAR_STATE) {
     auto data = event.getRadarState();
-    
+
     auto leaddatad = data.getLeadOne();
     scene.lead_status = leaddatad.getStatus();
     scene.lead_d_rel = leaddatad.getDRel();
@@ -484,7 +484,7 @@ void handle_message(UIState *s,  Message* msg) {
     scene.map_valid = event.getLiveMapData().getMapValid();
   } else if (which == cereal::Event::THERMAL) {
     auto data = event.getThermal();
-    
+
     scene.networkType = data.getNetworkType();
     scene.networkStrength = data.getNetworkStrength();
     scene.batteryPercent = data.getBatteryPercent();
@@ -492,7 +492,7 @@ void handle_message(UIState *s,  Message* msg) {
     scene.freeSpace = data.getFreeSpace();
     scene.thermalStatus = data.getThermalStatus();
     scene.paTemp = data.getPa0();
-    
+
     s->thermal_started = data.getStarted();
   } else if (which == cereal::Event::UBLOX_GNSS) {
     auto data = event.getUbloxGnss();
@@ -892,7 +892,7 @@ int main(int argc, char* argv[]) {
   // light sensor scaling params
   const int LEON = is_leon();
 
-  float brightness_b, brightness_m;  
+  float brightness_b, brightness_m;
   int result = read_param_float(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param_float(&brightness_m, "BRIGHTNESS_M", true);
 
@@ -962,7 +962,6 @@ int main(int argc, char* argv[]) {
 
       // Visiond process is just stopped, force a redraw to make screen blank again.
       if (!s->started) {
-        s->scene.satelliteCount = -1;
         s->scene.uilayout_sidebarcollapsed = false;
         update_offroad_layout_state(s);
         ui_draw(s);
