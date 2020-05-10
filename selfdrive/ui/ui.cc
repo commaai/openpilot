@@ -1,4 +1,3 @@
-#include "ui.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -13,6 +12,8 @@
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
+#include "ui.hpp"
+#include "sound.hpp"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -718,7 +719,7 @@ static void* vision_connect_thread(void *args) {
 
     // Drain sockets
     while (true) {
-      auto msgs = s->sm->poll(0, false);
+      auto msgs = s->sm->pollRaw(0);
       if (msgs.size() == 0)
         break;
     }
