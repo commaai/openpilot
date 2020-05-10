@@ -95,7 +95,7 @@ void *safety_setter_thread(void *s) {
   // switch to SILENT when CarVin param is read
   while (1) {
     if (do_exit) return NULL;
-    const int result = read_db_value(NULL, "CarVin", &value_vin, &value_vin_sz);
+    const int result = read_db_value("CarVin", &value_vin, &value_vin_sz);
     if (value_vin_sz > 0) {
       // sanity check VIN format
       assert(value_vin_sz == 17);
@@ -118,7 +118,7 @@ void *safety_setter_thread(void *s) {
   while (1) {
     if (do_exit) return NULL;
 
-    const int result = read_db_value(NULL, "CarParams", &value, &value_sz);
+    const int result = read_db_value("CarParams", &value, &value_sz);
     if (value_sz > 0) break;
     usleep(100*1000);
   }
@@ -183,13 +183,13 @@ bool usb_connect() {
   err2 = libusb_control_transfer(dev_handle, 0xc0, 0xd4, 0, 0, fw_sig_buf + 64, 64, TIMEOUT);
   if ((err == 64) && (err2 == 64)) {
     printf("FW signature read\n");
-    write_db_value(NULL, "PandaFirmware", (const char *)fw_sig_buf, 128);
+    write_db_value("PandaFirmware", (const char *)fw_sig_buf, 128);
 
     for (size_t i = 0; i < 8; i++){
       fw_sig_hex_buf[2*i] = NIBBLE_TO_HEX(fw_sig_buf[i] >> 4);
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX(fw_sig_buf[i] & 0xF);
     }
-    write_db_value(NULL, "PandaFirmwareHex", (const char *)fw_sig_hex_buf, 16);
+    write_db_value("PandaFirmwareHex", (const char *)fw_sig_hex_buf, 16);
   }
   else { goto fail; }
 
@@ -199,7 +199,7 @@ bool usb_connect() {
   if (err > 0) {
     serial = (const char *)serial_buf;
     serial_sz = strnlen(serial, err);
-    write_db_value(NULL, "PandaDongleId", serial, serial_sz);
+    write_db_value("PandaDongleId", serial, serial_sz);
     printf("panda serial: %.*s\n", serial_sz, serial);
   }
   else { goto fail; }
@@ -418,7 +418,7 @@ void can_health(PubSocket *publisher) {
   if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
     char *disable_power_down = NULL;
     size_t disable_power_down_sz = 0;
-    const int result = read_db_value(NULL, "DisablePowerDown", &disable_power_down, &disable_power_down_sz);
+    const int result = read_db_value("DisablePowerDown", &disable_power_down, &disable_power_down_sz);
     if (disable_power_down_sz != 1 || disable_power_down[0] != '1') {
       printf("TURN OFF CHARGING!\n");
       pthread_mutex_lock(&usb_lock);
@@ -456,9 +456,9 @@ void can_health(PubSocket *publisher) {
 
   // clear VIN, CarParams, and set new safety on car start
   if (ignition && !ignition_last) {
-    int result = delete_db_value(NULL, "CarVin");
+    int result = delete_db_value("CarVin");
     assert((result == 0) || (result == ERR_NO_VALUE));
-    result = delete_db_value(NULL, "CarParams");
+    result = delete_db_value("CarParams");
     assert((result == 0) || (result == ERR_NO_VALUE));
 
     if (!safety_setter_thread_initialized) {

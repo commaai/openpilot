@@ -64,11 +64,7 @@ def steer_thread():
       #print "enable", enabled, "steer", actuators.steer, "accel", actuators.gas - actuators.brake
 
       hud_alert = 0
-      audible_alert = 0
-      if joystick.testJoystick.buttons[2]:
-        audible_alert = "beepSingle"
       if joystick.testJoystick.buttons[3]:
-        audible_alert = "chimeRepeated"
         hud_alert = "steerRequired"
 
     CC.actuators.gas = actuators.gas

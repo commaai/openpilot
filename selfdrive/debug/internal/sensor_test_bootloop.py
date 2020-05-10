@@ -17,7 +17,7 @@ except PermissionError:
   print("WARNING: failed to make /dev/shm")
 
 try:
-  with open('/tmp/test-results.json', 'r') as infile:
+  with open('/tmp/sensor-test-results.json', 'r') as infile:
     data = json.load(infile)
 except Exception:
   data = {'sensor-pass': 0, 'sensor-fail': 0}
@@ -25,7 +25,7 @@ except Exception:
 STARTUP_SCRIPT = "/data/data/com.termux/files/continue.sh"
 try:
   with open(STARTUP_SCRIPT, 'w') as startup_script:
-    startup_script.write("#!/usr/bin/bash\n\n/data/openpilot/selfdrive/test/sensor_test_bootloop.py\n")
+    startup_script.write("#!/usr/bin/bash\n\n/data/openpilot/selfdrive/debug/internal/sensor_test_bootloop.py\n")
   os.chmod(STARTUP_SCRIPT, stat.S_IRWXU)
 except Exception:
   print("Failed to install new startup script -- aborting")
@@ -52,7 +52,7 @@ text += "Sensor fail history: " + str(data['sensor-fail']) + "\n"
 
 print(text)
 
-with open('/tmp/test-results.json', 'w') as outfile:
+with open('/tmp/sensor-test-results.json', 'w') as outfile:
   json.dump(data, outfile, indent=4)
 
 with TextWindow(text) as status:

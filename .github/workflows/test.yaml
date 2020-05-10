@@ -14,9 +14,8 @@ jobs:
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: |
-        git submodule update --init
+      with:
+        submodules: true
     - name: Build docker image
       run: |
         docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
@@ -24,10 +23,45 @@ jobs:
 
         docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
         docker save tmppilot:latest | gzip > tmppilot.tar.gz
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: tmppilot.tar.gz
         path: tmppilot.tar.gz
+
+  build_release:
+    name: build release
+    runs-on: ubuntu-16.04
+    timeout-minutes: 30
+    env:
+      TEST_DIR: tmppilot
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Strip non-release files
+      run: |
+        mkdir $TEST_DIR
+        cp -pR --parents $(cat release/files_common) $TEST_DIR
+        cp Dockerfile.openpilot $TEST_DIR
+
+        # copy submodules
+        cp -pR panda/ opendbc/ cereal/ $TEST_DIR
+
+        # need this to build on x86
+        cp -pR --parents phonelibs/capnp-cpp phonelibs/zmq phonelibs/libyuv phonelibs/snpe \
+                         external/bin external/capnp selfdrive/modeld/runners $TEST_DIR
+
+        # need these so docker copy won't fail
+        cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
+           .coveragerc-app $TEST_DIR
+        cd $TEST_DIR
+        mkdir pyextra laika laika_repo tools release
+    - name: Build
+      run: |
+        cd $TEST_DIR
+        docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+        docker pull docker.io/commaai/openpilot:latest || true
+        docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
 
   push:
     name: push
@@ -115,7 +149,7 @@ jobs:
       - name: Print diff
         if: always()
         run: cat diff.txt
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         if: always()
         with:
           name: process_replay_diff.txt
@@ -140,7 +174,7 @@ jobs:
         run: |
           mkdir out
           docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         if: always()
         with:
           name: longitudinal

@@ -25,18 +25,3 @@ cp .libs/capnpc-c++ /usr/local/bin/
 cp .libs/capnpc-capnp /usr/local/bin/
 cp .libs/*.a /usr/local/lib
 
-cd /tmp
-echo "Installing c-capnp"
-git clone https://github.com/commaai/c-capnproto.git
-cd c-capnproto
-git submodule update --init --recursive
-autoreconf -f -i -s
-CXXFLAGS="-fPIC" ./configure
-make -j4
-make install
-
-# manually build binaries statically
-gcc -fPIC -o .libs/capnpc-c compiler/capnpc-c.o compiler/schema.capnp.o compiler/str.o  ./.libs/libcapnp_c.a
-
-cp .libs/capnpc-c /usr/local/bin/
-cp .libs/*.a /usr/local/lib

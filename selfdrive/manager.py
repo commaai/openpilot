@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 import os
 import time
 import sys
@@ -236,7 +236,7 @@ car_started_processes = [
   'modeld',
   'proclogd',
   'ubloxd',
-  'locationd',
+  #'locationd',
 ]
 
 if WEBCAM:
