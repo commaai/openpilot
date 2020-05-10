@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import cereal.messaging as messaging
-#from opendbc.can.parser import CANParser
 from opendbc.can.packer import CANPacker
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
 from selfdrive.car.honda.values import FINGERPRINTS, CAR
@@ -9,7 +8,6 @@ import math
 
 from selfdrive.test.longitudinal_maneuvers.plant import get_car_can_parser
 cp = get_car_can_parser()
-#cp = CANParser("honda_civic_touring_2016_can_generated")
 
 packer = CANPacker("honda_civic_touring_2016_can_generated")
 rpacker = CANPacker("acura_ilx_2016_nidec")
@@ -77,17 +75,17 @@ def sendcan_function(sendcan):
   if cp.vl[0x1fa]['COMPUTER_BRAKE_REQUEST']:
     brake = cp.vl[0x1fa]['COMPUTER_BRAKE'] * 0.003906248
   else:
-    brake = 0.0 
+    brake = 0.0
 
   if cp.vl[0x200]['GAS_COMMAND'] > 0:
     gas = cp.vl[0x200]['GAS_COMMAND'] / 256.0
   else:
-    gas = 0.0 
+    gas = 0.0
 
   if cp.vl[0xe4]['STEER_TORQUE_REQUEST']:
     steer_torque = cp.vl[0xe4]['STEER_TORQUE']*1.0/0x1000
   else:
-    steer_torque = 0.0 
+    steer_torque = 0.0
 
   return (gas, brake, steer_torque)
 
