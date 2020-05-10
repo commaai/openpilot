@@ -8,6 +8,10 @@ GearShifter = car.CarState.GearShifter
 
 
 class CarState(CarStateBase):
+    def __init__(self, CP):
+    super().__init__(CP)
+    self.no_scc = CP.openpilotLongitudinalControl
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
@@ -36,18 +40,18 @@ class CarState(CarStateBase):
     ret.steerWarning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0
 
     # cruise state
-    self.main_on = (cp_scc.vl["SCC11"]["MainMode_ACC"] != 0) if not self.no_radar else \
-                                        cp.vl['EMS16']['CRUISE_LAMP_M']
-    self.acc_active = (cp_scc.vl["SCC12"]['ACCMode'] != 0) if not self.no_radar else \
-                                      (cp.vl["LVR12"]['CF_Lvr_CruiseSet'] != 0)
+    #self.main_on = (cp_scc.vl["SCC11"]["MainMode_ACC"] != 0) if not self.no_radar else \
+    #                                    cp.vl['EMS16']['CRUISE_LAMP_M']
+    #self.acc_active = (cp_scc.vl["SCC12"]['ACCMode'] != 0) if not self.no_radar else \
+    #                                  (cp.vl["LVR12"]['CF_Lvr_CruiseSet'] != 0)
     ret.cruiseState.available = True
-    ret.cruiseState.enabled = (cp_scc.vl["SCC12"]['ACCMode'] != 0) if ret.openpilotLongitudinalControl else cp.vl['EMS16']['CRUISE_LAMP_M']
-    ret.cruiseState.standstill = (cp.vl["SCC11"]['SCCInfoDisplay'] == 4.) if ret.openpilotLongitudinalControl else (not ret.vEgoRaw > 0.1)
+    ret.cruiseState.enabled = (cp.vl["SCC12"]['ACCMode'] != 0) if self.no_scc else cp.vl['EMS16']['CRUISE_LAMP_M']
+    ret.cruiseState.standstill = (cp.vl["SCC11"]['SCCInfoDisplay'] == 4.) if self.no_scc else (not ret.vEgoRaw > 0.1)
 
     if ret.cruiseState.enabled:
       is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
       speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
-      ret.cruiseState.speed = cp.vl["SCC11"]['VSetDis'] * speed_conv if ret.openpilotLongitudinalControl else (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv)
+      ret.cruiseState.speed = cp.vl["SCC11"]['VSetDis'] * speed_conv if CP.openpilotLongitudinalControl else (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv)
     else:
       ret.cruiseState.speed = 0
 
