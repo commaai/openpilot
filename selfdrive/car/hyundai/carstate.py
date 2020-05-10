@@ -200,10 +200,10 @@ class CarState(CarStateBase):
     ]
 
     if not CP.openpilotLongitudinalControl:
-    signals += [
-      ("CRUISE_LAMP_M", "EMS16", 0),
-      ("CF_Lvr_CruiseSet", "LVR12", 0),
-    ]
+      signals += [
+        ("CRUISE_LAMP_M", "EMS16", 0),
+        ("CF_Lvr_CruiseSet", "LVR12", 0),
+      ]
     else:
       signals += [
       ("MainMode_ACC", "SCC11", 0),
