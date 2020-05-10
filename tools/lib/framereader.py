@@ -216,7 +216,7 @@ def get_video_index(fn, frame_type, cache_prefix=None):
 
 def pstream_predecompress(fns, probe, indexes, global_prefix, cache_prefix, multithreaded=False):
   assert len(fns) == len(indexes)
-  out_fns = [cache_path_for_file_path(fn, cache_prefix) for fn in fns]
+  out_fns = [cache_path_for_file_path(fn, cache_prefix, extension=".predecom.mkv") for fn in fns]
   out_exists = map(os.path.exists, out_fns)
   if all(out_exists):
     return
