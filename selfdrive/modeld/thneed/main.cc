@@ -58,6 +58,16 @@ cl_kernel clCreateKernel(cl_program program, const char *kernel_name, cl_int *er
   return ret;
 }
 
+typedef struct image {
+  size_t image_width;
+  size_t image_height;
+  size_t image_row_pitch;
+  cl_mem buffer;
+} image;
+
+map<cl_mem, size_t> buffers;
+map<cl_mem, image> images;
+
 cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
   cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;
   my_clSetKernelArg = reinterpret_cast<decltype(my_clSetKernelArg)>(dlsym(RTLD_NEXT, "REAL_clSetKernelArg"));
@@ -84,6 +94,19 @@ cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, cons
     if (strcmp(arg_name, "input") == 0) kernel_inputs[kernel] = val;
     if (strcmp(arg_name, "output") == 0) kernel_outputs[kernel] = val;
     if (strcmp(arg_name, "accumulator") == 0) assert(kernel_inputs[kernel] = val);
+
+    cl_mem mval = (cl_mem)val;
+
+    if (buffers.find(mval) != buffers.end()) {
+      printf(" buffer %zu", buffers[mval]);
+    }
+
+    if (images.find(mval) != images.end()) {
+      printf(" image %zu x %zu rp %zu @ %p", images[mval].image_width, images[mval].image_height, images[mval].image_row_pitch, images[mval].buffer);
+    }
+
+  } else {
+    printf(" %zu", arg_size);
   }
   printf("\n");
   cl_int ret = my_clSetKernelArg(kernel, arg_index, arg_size, arg_value);
@@ -134,13 +157,13 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   return ret;
 }
 
-map<cl_mem, string> buffers;
 
 cl_mem clCreateBuffer(cl_context context, cl_mem_flags flags, size_t size, void *host_ptr, cl_int *errcode_ret) {
   cl_mem (*my_clCreateBuffer)(cl_context context, cl_mem_flags flags, size_t size, void *host_ptr, cl_int *errcode_ret) = NULL;
   my_clCreateBuffer = reinterpret_cast<decltype(my_clCreateBuffer)>(dlsym(RTLD_NEXT, "REAL_clCreateBuffer"));
 
   cl_mem ret = my_clCreateBuffer(context, flags, size, host_ptr, errcode_ret);
+  buffers[ret] = size;
   printf("%p = clCreateBuffer %zu\n", ret, size);
   return ret;
 }
@@ -169,6 +192,12 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags, const cl_image_form
   assert(image_desc->image_array_size == 0);
   assert(image_desc->image_slice_pitch == 0);
   //assert(image_desc->image_width * image_desc->image_height * 2 == image_desc->image_row_pitch);
+  
+  image img;
+  img.image_width = image_desc->image_width;
+  img.image_height = image_desc->image_height;
+  img.image_row_pitch = image_desc->image_row_pitch;
+  img.buffer = image_desc->buffer;
 
   cl_mem ret = my_clCreateImage(context, flags, image_format, image_desc, host_ptr, errcode_ret);
   printf("%p = clCreateImage %s -- %p -- %d %d -- %4zu x %4zu x %4zu -- %4zu %4zu %4zu\n", ret, lc[image_desc->image_type].c_str(),
@@ -177,6 +206,7 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags, const cl_image_form
     image_desc->image_width, image_desc->image_height, image_desc->image_depth,
     image_desc->image_array_size, image_desc->image_row_pitch, image_desc->image_slice_pitch
   );
+  images[ret] = img;
   return ret;
 }
 
