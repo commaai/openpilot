@@ -12,8 +12,6 @@
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <map>
-#include <vector>
 
 #include "messaging.hpp"
 
@@ -31,7 +29,7 @@ void set_do_exit(int sig) {
 }
 
 using namespace ublox;
-
+const long ZMQ_POLL_TIMEOUT = 1000; // In miliseconds
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
   signal(SIGINT, (sighandler_t) set_do_exit);

@@ -50,8 +50,6 @@
 #include "raw_logger.h"
 #endif
 
-#include "cereal/gen/cpp/log.capnp.h"
-
 #define CAMERA_FPS 20
 #define SEGMENT_LENGTH 60
 #define LOG_ROOT "/data/media/0/realdata"

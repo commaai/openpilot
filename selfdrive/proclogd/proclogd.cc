@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <dirent.h>
 
-#include <vector>
-#include <string>
 #include <memory>
 #include <utility>
 #include <sstream>
