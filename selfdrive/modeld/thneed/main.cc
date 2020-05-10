@@ -68,10 +68,6 @@ cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, cons
   clGetKernelArgInfo(kernel, arg_index, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
   printf("  %s %s", arg_type, arg_name);
 
-  if (strcmp(arg_name, "input") == 0) kernel_inputs[kernel] = (void*)arg_value;
-  if (strcmp(arg_name, "output") == 0) kernel_outputs[kernel] = (void*)arg_value;
-  if (strcmp(arg_name, "accumulator") == 0) assert(kernel_inputs[kernel] = (void*)arg_value);
-
   if (arg_size == 1) {
     printf(" = %d", *((char*)arg_value));
   } else if (arg_size == 2) {
@@ -83,7 +79,11 @@ cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, cons
       printf(" = %d", *((int*)arg_value));
     }
   } else if (arg_size == 8) {
-    printf(" = %p", (void*)arg_value);
+    void *val = (void*)(*((uintptr_t*)arg_value));
+    printf(" = %p", val);
+    if (strcmp(arg_name, "input") == 0) kernel_inputs[kernel] = val;
+    if (strcmp(arg_name, "output") == 0) kernel_outputs[kernel] = val;
+    if (strcmp(arg_name, "accumulator") == 0) assert(kernel_inputs[kernel] = val);
   }
   printf("\n");
   cl_int ret = my_clSetKernelArg(kernel, arg_index, arg_size, arg_value);
@@ -134,6 +134,8 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   return ret;
 }
 
+map<cl_mem, string> buffers;
+
 cl_mem clCreateBuffer(cl_context context, cl_mem_flags flags, size_t size, void *host_ptr, cl_int *errcode_ret) {
   cl_mem (*my_clCreateBuffer)(cl_context context, cl_mem_flags flags, size_t size, void *host_ptr, cl_int *errcode_ret) = NULL;
   my_clCreateBuffer = reinterpret_cast<decltype(my_clCreateBuffer)>(dlsym(RTLD_NEXT, "REAL_clCreateBuffer"));
@@ -150,17 +152,31 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags, const cl_image_form
   // SNPE only uses this
   assert(CL_MEM_OBJECT_IMAGE2D == image_desc->image_type);
 
+  // RGBA, HALF FLOAT
+  assert(CL_RGBA == image_format->image_channel_order);
+  assert(CL_HALF_FLOAT == image_format->image_channel_data_type);
+
   map<cl_mem_object_type, string> lc = {
     {CL_MEM_OBJECT_BUFFER, "CL_MEM_OBJECT_BUFFER"},
-    {CL_MEM_OBJECT_IMAGE2D, "CL_MEM_OBJECT_IMAGE2D"},
+    {CL_MEM_OBJECT_IMAGE2D, "CL_MEM_OBJECT_IMAGE2D"},  // all this one
     {CL_MEM_OBJECT_IMAGE3D, "CL_MEM_OBJECT_IMAGE3D"},
     {CL_MEM_OBJECT_IMAGE2D_ARRAY, "CL_MEM_OBJECT_IMAGE2D_ARRAY"},
     {CL_MEM_OBJECT_IMAGE1D, "CL_MEM_OBJECT_IMAGE1D"},
     {CL_MEM_OBJECT_IMAGE1D_ARRAY, "CL_MEM_OBJECT_IMAGE1D_ARRAY"},
     {CL_MEM_OBJECT_IMAGE1D_BUFFER, "CL_MEM_OBJECT_IMAGE1D_BUFFER"}};
 
+  assert(image_desc->image_depth == 0);
+  assert(image_desc->image_array_size == 0);
+  assert(image_desc->image_slice_pitch == 0);
+  //assert(image_desc->image_width * image_desc->image_height * 2 == image_desc->image_row_pitch);
+
   cl_mem ret = my_clCreateImage(context, flags, image_format, image_desc, host_ptr, errcode_ret);
-  printf("%p = clCreateImage %s\n", ret, lc[image_desc->image_type].c_str());
+  printf("%p = clCreateImage %s -- %p -- %d %d -- %4zu x %4zu x %4zu -- %4zu %4zu %4zu\n", ret, lc[image_desc->image_type].c_str(),
+    image_desc->buffer,
+    image_format->image_channel_order, image_format->image_channel_data_type,
+    image_desc->image_width, image_desc->image_height, image_desc->image_depth,
+    image_desc->image_array_size, image_desc->image_row_pitch, image_desc->image_slice_pitch
+  );
   return ret;
 }
 
