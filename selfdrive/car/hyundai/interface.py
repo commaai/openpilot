@@ -22,6 +22,7 @@ class CarInterface(CarInterfaceBase):
 
     # Hyundai port is a community feature for now
     ret.communityFeature = True
+    ret.openpilotLongitudinalControl = any([1056 in fingerprint[0], 1056 in fingerprint[1], 1056 in fingerprint[2]])
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
