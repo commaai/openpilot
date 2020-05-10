@@ -41,8 +41,27 @@ cl_kernel clCreateKernel(cl_program program, const char *kernel_name, cl_int *er
   my_clCreateKernel = reinterpret_cast<decltype(my_clCreateKernel)>(dlsym(RTLD_NEXT, "REAL_clCreateKernel"));
   cl_kernel ret = my_clCreateKernel(program, kernel_name, errcode_ret);
 
-  //printf("clCreateKernel: %s -> %p\n", kernel_name, ret);
+  printf("clCreateKernel: %s -> %p\n", kernel_name, ret);
   kernels.insert(make_pair(ret, kernel_name));
+  return ret;
+}
+
+cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
+  cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;
+  my_clSetKernelArg = reinterpret_cast<decltype(my_clSetKernelArg)>(dlsym(RTLD_NEXT, "REAL_clSetKernelArg"));
+
+  printf("  clSetKernelArg: %p %3d %zu -- ", kernel, arg_index, arg_size);
+  if (arg_size == 1) {
+    printf("%d", *((char*)arg_value));
+  } else if (arg_size == 2) {
+    printf("%d", *((short*)arg_value));
+  } else if (arg_size == 4) {
+    printf("%d %f", *((int*)arg_value), *((float*)arg_value));
+  } else if (arg_size == 8) {
+    printf("%p", (void*)arg_value);
+  }
+  printf("\n");
+  cl_int ret = my_clSetKernelArg(kernel, arg_index, arg_size, arg_value);
   return ret;
 }
 
@@ -56,18 +75,28 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   const cl_event *event_wait_list,
   cl_event *event) {
 
+  // SNPE doesn't use these
+  assert(num_events_in_wait_list == 0);
+  assert(global_work_offset == NULL);
+
   cl_int (*my_clEnqueueNDRangeKernel)(cl_command_queue, cl_kernel, cl_uint, const size_t *, const size_t *, const size_t *, cl_uint, const cl_event *, cl_event *) = NULL;
   my_clEnqueueNDRangeKernel = reinterpret_cast<decltype(my_clEnqueueNDRangeKernel)>(dlsym(RTLD_NEXT, "REAL_clEnqueueNDRangeKernel"));
 
-  printf("running %s ", kernels[kernel].c_str());
+  printf("running -- %p -- %60s ", event, kernels[kernel].c_str());
+  printf("global -- ");
   for (int i = 0; i < work_dim; i++) {
     printf("%4zu ", global_work_size[i]);
+  }
+  printf("local -- ");
+  for (int i = 0; i < work_dim; i++) {
+    printf("%4zu ", local_work_size[i]);
   }
   printf("\n");
 
   cl_int ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
     global_work_offset, global_work_size, local_work_size,
     num_events_in_wait_list, event_wait_list, event);
+
   return ret;
 }
 
@@ -81,6 +110,8 @@ void *dlsym(void *handle, const char *symbol) {
     return (void*)clCreateKernel;
   } else if (strcmp("clEnqueueNDRangeKernel", symbol) == 0) {
     return (void*)clEnqueueNDRangeKernel;
+  } else if (strcmp("clSetKernelArg", symbol) == 0) {
+    return (void*)clSetKernelArg;
   } else {
     //printf("dlsym %s\n", symbol);
     return my_dlsym(handle, symbol);
@@ -102,6 +133,9 @@ int main(int argc, char* argv[]) {
   mdl.addTrafficConvention(traffic_convention, TRAFFIC_CONVENTION_LEN);
 
   float *input = (float*)calloc(0x1000000, sizeof(float));;
+  printf("************** execute 1 **************\n");
   mdl.execute(input, 0);
+  /*printf("************** execute 2 **************\n");
+  mdl.execute(input, 0);*/
 }
 
