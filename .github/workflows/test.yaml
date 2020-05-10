@@ -14,9 +14,8 @@ jobs:
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: |
-        git submodule update --init
+      with:
+        submodules: true
     - name: Build docker image
       run: |
         docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
@@ -28,6 +27,41 @@ jobs:
       with:
         name: tmppilot.tar.gz
         path: tmppilot.tar.gz
+
+  build_release:
+    name: build release
+    runs-on: ubuntu-16.04
+    timeout-minutes: 30
+    env:
+      TEST_DIR: tmppilot
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Strip non-release files
+      run: |
+        mkdir $TEST_DIR
+        cp -pR --parents $(cat release/files_common) $TEST_DIR
+        cp Dockerfile.openpilot $TEST_DIR
+
+        # copy submodules
+        cp -pR panda/ opendbc/ cereal/ $TEST_DIR
+
+        # need this to build on x86
+        cp -pR --parents phonelibs/capnp-cpp phonelibs/zmq phonelibs/libyuv phonelibs/snpe \
+                         external/bin external/capnp selfdrive/modeld/runners $TEST_DIR
+
+        # need these so docker copy won't fail
+        cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
+           .coveragerc-app $TEST_DIR
+        cd $TEST_DIR
+        mkdir pyextra laika laika_repo tools release
+    - name: Build
+      run: |
+        cd $TEST_DIR
+        docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+        docker pull docker.io/commaai/openpilot:latest || true
+        docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
 
   push:
     name: push
