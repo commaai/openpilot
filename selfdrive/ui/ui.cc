@@ -717,7 +717,11 @@ static void* vision_connect_thread(void *args) {
     s->vision_connect_firstrun = true;
 
     // Drain sockets
-    s->sm->poll(0, false);
+    while (true) {
+      auto msgs = s->sm->poll(0, false);
+      if (msgs.size() == 0)
+        break;
+    }
 
     pthread_mutex_unlock(&s->lock);
   }
