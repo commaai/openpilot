@@ -76,7 +76,7 @@ def ffprobe(fn, fmt=None):
     "-print_format", "json",
     "-show_format", "-show_streams"]
   if fmt:
-    cmd += ["-format", fmt]
+    cmd += ["-f", fmt]
   cmd += [fn]
 
   try:
