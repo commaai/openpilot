@@ -1,9 +1,73 @@
-#include <cassert>
-#include <stdlib.h>
+#include <sys/types.h>
+#include "include/msm_kgsl.h"
+#include <stdio.h>
 #include <dlfcn.h>
+#include <cassert>
+
+void hexdump(uint32_t *d, int len) {
+  assert((len%4) == 0);
+  for (int i = 0; i < len/4; i++) {
+    if (i != 0 && (i%0x10) == 0) printf("\n");
+    printf("%8x ", d[i]);
+  }
+  printf("\n");
+}
+
+extern "C" {
+
+#undef ioctl
+int ioctl(int filedes, unsigned long request, void *argp) {
+  int (*my_ioctl)(int filedes, unsigned long request, void *argp);
+  my_ioctl = reinterpret_cast<decltype(my_ioctl)>(dlsym(RTLD_NEXT, "ioctl"));
+
+  //printf("%x\n", request);
+
+  if (request == IOCTL_KGSL_GPU_COMMAND) {
+    struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
+    printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx numcmds: %u   numobjs: %u  numsyncs: %u   context_id: %u\n",
+        cmd->flags,
+        cmd->numcmds, cmd->numobjs, cmd->numsyncs,
+        cmd->context_id);
+
+    assert(cmd->numcmds == 2);
+    assert(cmd->numobjs == 1);
+    assert(cmd->numsyncs == 0);
+
+    // kgsl_cmdbatch_add_cmdlist
+    for (int i = 0; i < cmd->numcmds; i++) {
+      struct kgsl_command_object *obj = (struct kgsl_command_object *)cmd->cmdlist;
+      printf("  cmd: %lx %5lx %5lx flags:%3x %d\n",
+          obj[i].offset, obj[i].gpuaddr, obj[i].size, obj[i].flags, obj[i].id);
+      hexdump((uint32_t *)obj[i].gpuaddr, obj[i].size);
+    }
+
+    // kgsl_cmdbatch_add_memlist
+    for (int i = 0; i < cmd->numobjs; i++) {
+      struct kgsl_command_object *obj = (struct kgsl_command_object *)cmd->objlist;
+      printf("  obj: %lx %5lx %5lx flags:%3x %d\n",
+          obj[i].offset, obj[i].gpuaddr, obj[i].size, obj[i].flags, obj[i].id);
+      hexdump((uint32_t *)obj[i].gpuaddr, obj[i].size);
+    }
+  } else if (request == IOCTL_KGSL_SETPROPERTY) {
+    struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
+    printf("IOCTL_KGSL_SETPROPERTY: 0x%x\n", prop->type);
+    //hexdump((unsigned char*)prop->value, prop->sizebytes);
+  } else if (request == IOCTL_KGSL_GPUOBJ_SYNC) {
+    printf("IOCTL_KGSL_GPUOBJ_SYNC\n");
+  } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
+    printf("IOCTL_KGSL_GPUOBJ_SYNC\n");
+  }
+
+  int ret = my_ioctl(filedes, request, argp);
+  return ret;
+}
+
+}
+
+#include <stdlib.h>
 #include <CL/cl.h>
 #include "../runners/snpemodel.h"
-#include "../models/driving.h"
+#include <sys/types.h>
 #include <time.h>
 
 static inline uint64_t nanos_since_boot() {
@@ -45,8 +109,8 @@ cl_program clCreateProgramWithSource(cl_context context, cl_uint count, const ch
 }
 
 map<cl_kernel, string> kernels;
-map<cl_kernel, void*> kernel_inputs;
-map<cl_kernel, void*> kernel_outputs;
+map<cl_kernel, cl_mem> kernel_inputs;
+map<cl_kernel, cl_mem> kernel_outputs;
 
 cl_kernel clCreateKernel(cl_program program, const char *kernel_name, cl_int *errcode_ret) {
   cl_kernel (*my_clCreateKernel)(cl_program program, const char *kernel_name, cl_int *errcode_ret) = NULL;
@@ -89,20 +153,18 @@ cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, cons
       printf(" = %d", *((int*)arg_value));
     }
   } else if (arg_size == 8) {
-    void *val = (void*)(*((uintptr_t*)arg_value));
+    cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
     printf(" = %p", val);
     if (strcmp(arg_name, "input") == 0) kernel_inputs[kernel] = val;
     if (strcmp(arg_name, "output") == 0) kernel_outputs[kernel] = val;
     if (strcmp(arg_name, "accumulator") == 0) assert(kernel_inputs[kernel] = val);
 
-    cl_mem mval = (cl_mem)val;
-
-    if (buffers.find(mval) != buffers.end()) {
-      printf(" buffer %zu", buffers[mval]);
+    if (buffers.find(val) != buffers.end()) {
+      printf(" buffer %zu", buffers[val]);
     }
 
-    if (images.find(mval) != images.end()) {
-      printf(" image %zu x %zu rp %zu @ %p", images[mval].image_width, images[mval].image_height, images[mval].image_row_pitch, images[mval].buffer);
+    if (images.find(val) != images.end()) {
+      printf(" image %zu x %zu rp %zu @ %p", images[val].image_width, images[val].image_height, images[val].image_row_pitch, images[val].buffer);
     }
 
   } else {
@@ -115,6 +177,8 @@ cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, cons
 
 uint64_t start_time = 0;
 uint64_t tns = 0;
+
+int cnt = 0;
 
 cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   cl_kernel kernel,
@@ -140,9 +204,15 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     num_events_in_wait_list, event_wait_list, event);
   uint64_t te = nanos_since_boot();
 
+  /*ret = clWaitForEvents(1, event);
+  assert(ret == CL_SUCCESS);
+  uint64_t tq = nanos_since_boot();*/
+
   if (do_print) {
     tns += te-tb;
-    printf("%10lu %10lu running -- %p %p -- %60s -- %p -> %p ", (tb-start_time)/1000, (tns/1000), kernel, event, kernels[kernel].c_str(), kernel_inputs[kernel], kernel_outputs[kernel]);
+
+    printf("%10lu %10lu running(%3d) -- %p %p -- %60s -- %p -> %p %s ", (tb-start_time)/1000, (tns/1000), cnt++, kernel, *event, kernels[kernel].c_str(), kernel_inputs[kernel], kernel_outputs[kernel],
+        (buffers[kernel_outputs[kernel]] != 0) ? "B" : "I");
     printf("global -- ");
     for (int i = 0; i < work_dim; i++) {
       printf("%4zu ", global_work_size[i]);
@@ -210,6 +280,21 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags, const cl_image_form
   return ret;
 }
 
+cl_int clWaitForEvents(cl_uint num_events, const cl_event *event_list) {
+  cl_int (*my_clWaitForEvents)(cl_uint num_events, const cl_event *event_list);
+  my_clWaitForEvents = reinterpret_cast<decltype(my_clWaitForEvents)>(dlsym(RTLD_NEXT, "REAL_clWaitForEvents"));
+  printf("clWaitForEvents\n");
+  return my_clWaitForEvents(num_events, event_list);
+}
+
+cl_int clReleaseEvent(cl_event event) {
+  cl_int (*my_clReleaseEvent)(cl_event event);
+  my_clReleaseEvent = reinterpret_cast<decltype(my_clReleaseEvent)>(dlsym(RTLD_NEXT, "REAL_clReleaseEvent"));
+  printf("clReleaseEvent: %p\n", event);
+  return my_clReleaseEvent(event);
+}
+
+
 void *dlsym(void *handle, const char *symbol) {
   void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
   if (memcmp("REAL_", symbol, 5) == 0) {
@@ -226,6 +311,10 @@ void *dlsym(void *handle, const char *symbol) {
     return (void*)clCreateBuffer;
   } else if (strcmp("clCreateImage", symbol) == 0) {
     return (void*)clCreateImage;
+  /*} else if (strcmp("clReleaseEvent", symbol) == 0) {
+    return (void*)clReleaseEvent;
+  } else if (strcmp("clWaitForEvents", symbol) == 0) {
+    return (void*)clWaitForEvents;*/
   } else {
     //printf("dlsym %s\n", symbol);
     return my_dlsym(handle, symbol);
@@ -233,6 +322,28 @@ void *dlsym(void *handle, const char *symbol) {
 }
 
 int main(int argc, char* argv[]) {
+  int err;
+  cl_platform_id platform_id = NULL;
+  cl_device_id device_id = NULL;
+  cl_uint num_devices;
+  cl_uint num_platforms;
+
+  err = clGetPlatformIDs(1, &platform_id, &num_platforms);
+  assert(err == 0);
+  err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
+  assert(err == 0);
+
+  cl_uint tmp;
+
+  // sweet this is 64!
+  err = clGetDeviceInfo(device_id, CL_DEVICE_MAX_WRITE_IMAGE_ARGS, sizeof(tmp), &tmp, NULL);
+  assert(err == 0);
+  printf("CL_DEVICE_MAX_WRITE_IMAGE_ARGS: %u\n", tmp);
+
+  err = clGetDeviceInfo(device_id, CL_DEVICE_MAX_READ_IMAGE_ARGS, sizeof(tmp), &tmp, NULL);
+  assert(err == 0);
+  printf("CL_DEVICE_MAX_READ_IMAGE_ARGS: %u\n", tmp);
+
   float *output = (float*)calloc(0x10000, sizeof(float));
   SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME);
 
@@ -256,5 +367,7 @@ int main(int argc, char* argv[]) {
   do_print = 1;
   start_time = nanos_since_boot();
   mdl.execute(input, 0);
+  
+  printf("buffers: %lu images: %lu\n", buffers.size(), images.size());
 }
 
