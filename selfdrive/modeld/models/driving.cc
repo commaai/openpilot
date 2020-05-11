@@ -174,14 +174,14 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   valid_len =  fmin(192, fmax(5, data[MODEL_PATH_DISTANCE*2]));
   for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
     points_arr[i] = data[i] + offset;
-    stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
+    stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]) + 1e-6;
   }
   if (has_prob) {
     prob =  sigmoid(data[MODEL_PATH_DISTANCE*2 + 1]);
   } else {
     prob = 1.0;
   }
-  std = softplus(data[MODEL_PATH_DISTANCE]);
+  std = softplus(data[MODEL_PATH_DISTANCE]) + 1e-6;
   poly_fit(points_arr, stds_arr, poly_arr, valid_len);
 
   if (std::getenv("DEBUG")){
