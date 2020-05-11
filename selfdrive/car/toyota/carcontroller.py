@@ -67,20 +67,27 @@ class CarController():
 
     # steer torque
     new_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
-    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, SteerLimitParams)
-    self.steer_rate_limited = new_steer != apply_steer
+
 
     # only cut torque when steer state is a known fault
     if CS.steer_state in [9, 25]:
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
-      apply_steer = 0
+    if (frame - self.last_fault_frame < 200) or \
+       (abs(CS.out.steeringRate) > 100):
+      new_steer = 0
       apply_steer_req = 0
     else:
       apply_steer_req = 1
-
+      
+    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, SteerLimitParams)
+    self.steer_rate_limited = new_steer != apply_steer
+    
+    if not enabled:
+      apply_steer = 0
+      apply_steer_req = 0
+      
     if not enabled and CS.pcm_acc_status:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       pcm_cancel_cmd = 1
