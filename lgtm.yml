@@ -9,10 +9,10 @@ extraction:
     after_prepare:
       - "pip3 install jinja2 pyyaml cython pycapnp numpy sympy tqdm cffi logentries zmq"
       - "export PATH=$PWD/external/bin:$PATH"
+      - "cereal/install_capnp.sh"
     index:
       build_command: "python3 $(which scons)"
   javascript:
     index:
       filters:
       - exclude: "*"
-
