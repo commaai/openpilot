@@ -6,7 +6,7 @@
 #define uint uint32_t
 #define bool char
 #define u64 uint64_t
-#include "adreno_pm4types.h"
+#include "../include/adreno_pm4types.h"
 
 void parse_cmd_packet(uint32_t *src, int len) {
   int i = 0;

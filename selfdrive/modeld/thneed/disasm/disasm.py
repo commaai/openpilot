@@ -18,6 +18,19 @@ def parse_cmd_packet(dat):
   hexdump(dat)
   ptr = 0
 
+
+regs = {}
+for l in open("../include/a5xx.xml.h").read().split("\n"):
+  if l.startswith("#define REG"):
+    _, rr, aa = l.split()
+    regs[int(aa, 16)] = rr
+
+ops = {}
+for l in open("../include/adreno_pm4.xml.h").read().split("\n")[134:233]:
+  rr, _, aa = l.strip(",").split()
+  ops[int(aa)] = rr
+
+
 for i in range(34):
   pkts1 = parse_packets(open("../runs/run_1_%d" % i, "rb").read())
   pkts2 = parse_packets(open("../runs/run_2_%d" % i, "rb").read())
@@ -43,23 +56,29 @@ for i in range(34):
 
     prt.append("%d size: %2d -- " % (pkttype, pktsize))
 
-    if pkttype == 7:
-      op = (o1>>16) & 0x7F
-      prt.append("op:  %5x -- " % op)
-
-    if pkttype == 4:
-      op = (o1>>8) & 0x7FFFF
-      prt.append("reg: %5x -- " % op)
+    prtsize = 0
 
     for _ in range(pktsize):
       o1 = struct.unpack("I", pkts1[1][k*4:k*4+4])[0]
       o2 = struct.unpack("I", pkts2[1][k*4:k*4+4])[0]
       if o1 == o2:
         prt.append("%08X " % o1)
+        prtsize += 1
       else:
         prt.append(colored("%08X " % o1, 'red'))
         prt.append(colored("%08X " % o2, 'green'))
+        prtsize += 2
       k += 1
+
+    prt.append(" "*(9*(10-prtsize)))
+
+    if pkttype == 7:
+      op = (o1>>16) & 0x7F
+      prt.append("-- op: %s" % (ops[op] if op in ops else ("%5X" % op)))
+
+    if pkttype == 4:
+      op = (o1>>8) & 0x7FFFF
+      prt.append("-- reg: %s" % (regs[op] if op in regs else ("%5X" % op)))
 
     prt.append("\n")
   print(''.join(prt))
