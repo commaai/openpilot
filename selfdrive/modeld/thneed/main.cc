@@ -9,6 +9,7 @@ int ioctl_num = 0;
 
 void hexdump(uint32_t *d, int len) {
   assert((len%4) == 0);
+  printf("  dumping %p len 0x%x\n", d, len);
   for (int i = 0; i < len/4; i++) {
     if (i != 0 && (i%0x10) == 0) printf("\n");
     printf("%8x ", d[i]);
@@ -23,11 +24,38 @@ using namespace std;
 
 #include "include/adreno_pm4types.h"
 
-uint8_t queue_init[0xbc];
-vector<string> queue_cmds;
-
 #define REG_A5XX_TPL1_CS_TEX_CONST_LO        0x0000e760
 #define REG_A5XX_TPL1_CS_TEX_SAMP_LO         0x0000e75c
+
+class CachedCommand {
+  public:
+    CachedCommand(struct kgsl_gpu_command *cmd);
+    void exec();
+  private:
+    string cmd_0, cmd_1;
+    int obj_len;
+
+    struct kgsl_gpu_command cache;
+    struct kgsl_command_object cmds[2];
+    struct kgsl_command_object objs[1];
+};
+
+CachedCommand::CachedCommand(struct kgsl_gpu_command *cmd) {
+  assert(cmd->numcmds == 2);
+  assert(cmd->numobjs == 1);
+  assert(cmd->numsyncs == 0);
+
+  printf("%p  %p %p\n", cmd, (void*)cmd->cmdlist, (void*)cmd->objlist);
+
+  memcpy(cmds, (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*2);
+  memcpy(objs, (void *)cmd->objlist, sizeof(struct kgsl_command_object)*1);
+  cmd_0.assign((char*)cmds[0].gpuaddr, cmds[0].size);
+  cmd_1.assign((char*)cmds[1].gpuaddr, cmds[1].size);
+
+  memcpy(&cache, cmd, sizeof(cache));
+}
+
+vector<CachedCommand *> queue_cmds;
 
 void disassemble(uint32_t *src, int len) {
   int i = 0;
@@ -48,7 +76,20 @@ void disassemble(uint32_t *src, int len) {
       pkttype = 7;
       pktsize = type7_pkt_size(src[i]);
     }
-    printf("%3d: type:%d size:%d\n", i, pkttype, pktsize);
+    printf("%3d: type:%d size:%d ", i, pkttype, pktsize);
+
+    if (pkttype == 7) {
+      printf("op:  %4x ", cp_type7_opcode(src[i]));
+    }
+
+    if (pkttype == 4) {
+      printf("reg: %4x ", cp_type4_base_index_one_reg_wr(src[i]));
+    }
+
+    for (int j = 0; j < pktsize+1; j++) {
+      printf("%8.8X ", src[i+j]);
+    }
+    printf("\n");
 
     if (pkttype == 7 && cp_type7_opcode(src[i]) == CP_LOAD_STATE) {
       // CP_LOAD_STATE4
@@ -74,18 +115,22 @@ void disassemble(uint32_t *src, int len) {
 
 }
 
+
 extern "C" {
+
+pid_t gettid(void);
 
 #undef ioctl
 int ioctl(int filedes, unsigned long request, void *argp) {
   int (*my_ioctl)(int filedes, unsigned long request, void *argp);
   my_ioctl = reinterpret_cast<decltype(my_ioctl)>(dlsym(RTLD_NEXT, "ioctl"));
 
-  //printf("%x\n", request);
+  int tid = gettid();
 
   if (request == IOCTL_KGSL_GPU_COMMAND) {
     struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
-    printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx numcmds: %u   numobjs: %u  numsyncs: %u   context_id: %u  timestamp: %u\n",
+    printf("IOCTL_KGSL_GPU_COMMAND(%d): flags: 0x%lx numcmds: %u   numobjs: %u  numsyncs: %u   context_id: %u  timestamp: %u\n",
+        tid,
         cmd->flags,
         cmd->numcmds, cmd->numobjs, cmd->numsyncs,
         cmd->context_id, cmd->timestamp);
@@ -94,19 +139,22 @@ int ioctl(int filedes, unsigned long request, void *argp) {
     assert(cmd->numobjs == 1);
     assert(cmd->numsyncs == 0);
 
-    struct kgsl_command_object *obj = (struct kgsl_command_object *)cmd->cmdlist;
-    assert(obj[0].size == sizeof(queue_init));
-    memcpy(queue_init, (void*)obj[0].gpuaddr, sizeof(queue_init));
-    string qcmd((char*)obj[1].gpuaddr, obj[1].size);
-
+    //struct kgsl_command_object *obj = (struct kgsl_command_object *)cmd->cmdlist;
+    //assert(obj[0].size == sizeof(queue_init));
+    //memcpy(queue_init, (void*)obj[0].gpuaddr, sizeof(queue_init));
+    //string qcmd((char*)obj[1].gpuaddr, obj[1].size);
     if (run_num == 3) {
-      disassemble((uint32_t *)qcmd.data(), qcmd.size()/4);
-      queue_cmds.push_back(qcmd);
+      queue_cmds.push_back(new CachedCommand(cmd));
+      //printf("command 0x%lx\n", obj[1].gpuaddr);
+      //disassemble((uint32_t *)qcmd.data(), qcmd.size()/4);
+      //queue_cmds.push_back(qcmd);
     }
     
-    /*char tmp[0x100];
-    snprintf(tmp, sizeof(tmp), "/tmp/thneed/run_%d_%d", run_num, ioctl_num++);
-    FILE *f = fopen(tmp, "wb");
+    #ifdef DUMP
+      char tmp[0x100];
+      snprintf(tmp, sizeof(tmp), "/tmp/thneed/run_%d_%d", run_num, ioctl_num++);
+      FILE *f = fopen(tmp, "wb");
+    #endif
 
     // kgsl_cmdbatch_add_cmdlist
     for (int i = 0; i < cmd->numcmds; i++) {
@@ -114,8 +162,10 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       printf("  cmd: %lx %5lx %5lx flags:%3x %d\n",
           obj[i].offset, obj[i].gpuaddr, obj[i].size, obj[i].flags, obj[i].id);
       //hexdump((uint32_t *)obj[i].gpuaddr, obj[i].size);
-      fwrite(&obj[i].size, sizeof(obj[i].size), 1, f);
-      fwrite((void*)obj[i].gpuaddr, obj[i].size, 1, f);
+      #ifdef DUMP
+        fwrite(&obj[i].size, sizeof(obj[i].size), 1, f);
+        fwrite((void*)obj[i].gpuaddr, obj[i].size, 1, f);
+      #endif
     }
 
     // kgsl_cmdbatch_add_memlist
@@ -124,19 +174,31 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       printf("  obj: %lx %5lx %5lx flags:%3x %d\n",
           obj[i].offset, obj[i].gpuaddr, obj[i].size, obj[i].flags, obj[i].id);
       //hexdump((uint32_t *)obj[i].gpuaddr, obj[i].size);
-      fwrite(&obj[i].size, sizeof(obj[i].size), 1, f);
-      fwrite((void*)obj[i].gpuaddr, obj[i].size, 1, f);
+
+      #ifdef DUMP
+        fwrite(&obj[i].size, sizeof(obj[i].size), 1, f);
+        fwrite((void*)obj[i].gpuaddr, obj[i].size, 1, f);
+      #endif
     }
-    fclose(f);*/
+
+    #ifdef DUMP
+      fclose(f);
+    #endif
 
   } else if (request == IOCTL_KGSL_SETPROPERTY) {
     struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
-    printf("IOCTL_KGSL_SETPROPERTY: 0x%x\n", prop->type);
+    printf("IOCTL_KGSL_SETPROPERTY(%d): 0x%x\n", tid, prop->type);
     //hexdump((unsigned char*)prop->value, prop->sizebytes);
   } else if (request == IOCTL_KGSL_GPUOBJ_SYNC) {
-    printf("IOCTL_KGSL_GPUOBJ_SYNC\n");
+    printf("IOCTL_KGSL_GPUOBJ_SYNC(%d)\n", tid);
   } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
-    printf("IOCTL_KGSL_GPUOBJ_SYNC\n");
+    struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
+    printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID(%d): context_id: %d  timestamp: %d  timeout: %d\n",
+        tid, cmd->context_id, cmd->timestamp, cmd->timeout);
+  } else if (request == IOCTL_KGSL_GPUOBJ_FREE) {
+    //printf("IOCTL_KGSL_GPUOBJ_FREE\n");
+  } else if (filedes == 3) {
+    printf("ioctl(%d) %lx\n", tid, request);
   }
 
   int ret = my_ioctl(filedes, request, argp);
@@ -156,8 +218,6 @@ static inline uint64_t nanos_since_boot() {
   clock_gettime(CLOCK_BOOTTIME, &t);
   return t.tv_sec * 1000000000ULL + t.tv_nsec;
 }
-
-
 
 int do_print = 0;
 
@@ -291,6 +351,7 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
 
     printf("%10lu %10lu running(%3d) -- %p %p -- %60s -- %p -> %p %s ", (tb-start_time)/1000, (tns/1000), cnt++, kernel, *event, kernels[kernel].c_str(), kernel_inputs[kernel], kernel_outputs[kernel],
         (buffers[kernel_outputs[kernel]] != 0) ? "B" : "I");
+
     printf("global -- ");
     for (int i = 0; i < work_dim; i++) {
       printf("%4zu ", global_work_size[i]);
@@ -372,6 +433,31 @@ cl_int clReleaseEvent(cl_event event) {
   return my_clReleaseEvent(event);
 }
 
+/*size_t total = 0;
+
+void *calloc(size_t num, size_t size) {
+  void *(*my_calloc)(size_t num, size_t size);
+  my_calloc = reinterpret_cast<decltype(my_calloc)>(dlsym(RTLD_NEXT, "REAL_calloc"));
+
+  void *ret = my_calloc(num, size);
+
+  if (do_print) {
+    total += num*size;
+    printf("calloc %p -- total:0x%zx -- num:0x%zx size:0x%zx\n", ret, total, num, size);
+  }
+  return ret;
+}
+
+void free(void *ptr) {
+  void (*my_free)(void *ptr);
+  my_free = reinterpret_cast<decltype(my_free)>(dlsym(RTLD_NEXT, "REAL_free"));
+
+  if (do_print) {
+    //printf("free: %p\n", ptr);
+  } else {
+    my_free(ptr);
+  }
+}*/
 
 void *dlsym(void *handle, const char *symbol) {
   void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
@@ -445,12 +531,59 @@ int main(int argc, char* argv[]) {
   mdl.execute(input, 0);
   printf("************** execute 3 **************\n");
   run_num = 3; ioctl_num = 0;
-  do_print = 1;
   start_time = nanos_since_boot();
+
+  do_print = 1;
   mdl.execute(input, 0);
+  do_print = 0;
+
+  /*FILE *f = fopen("/proc/self/maps", "rb");
+  char maps[0x100000];
+  int len = fread(maps, 1, sizeof(maps), f);
+  maps[len] = '\0';
+  fclose(f);
+  printf("%s\n", maps);*/
   
   printf("buffers: %lu images: %lu\n", buffers.size(), images.size());
-
   printf("queues: %lu\n", queue_cmds.size());
+
+  // IOCTL_KGSL_GPU_COMMAND: flags: 0x11 numcmds: 2   numobjs: 1  numsyncs: 0   context_id: 7  timestamp: 77
+  /*int ts = 100;
+  for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
+    auto qcmd = *it;
+    //disassemble((uint32_t *)qcmd.data(), qcmd.size()/4);
+
+    struct kgsl_command_object cmdlists[2];
+    struct kgsl_command_object objlists;
+    struct kgsl_gpu_command cmd;
+    uint8_t objs[0xc0];
+    memset(objs, 0, 0xc0);
+
+    memset(&cmd, 0, sizeof(cmd));
+    memset(&cmdlists, 0, sizeof(struct kgsl_command_object)*2);
+    memset(&objlists, 0, sizeof(objlists));
+
+    cmd.flags = 0x11;
+    cmd.cmdlist = (uint64_t)cmdlists;
+    cmd.numcmds = 2;
+    cmd.objlist = (uint64_t)objlists;
+    cmd.numobjs = 1;
+    cmd.numsyncs = 0;
+    cmd.context_id = 7;
+    cmd.timestamp = ts++;
+
+    cmdlists[0].gpuaddr = (uint64_t)queue_init;
+    cmdlists[0].size = 0xbc;
+    cmdlists[0].flags = 1;
+    cmdlists[1].gpuaddr = (uint64_t)qcmd.data();
+    cmdlists[1].size = qcmd.size();
+    cmdlists[1].flags = 1;
+
+    objlists.gpuaddr = (uint64_t)objs;
+    objlists.size = 0xc0;
+    objlists.flags = 0x18;
+
+    ioctl(3, IOCTL_KGSL_GPU_COMMAND, &cmd);
+  }*/
 }
 
