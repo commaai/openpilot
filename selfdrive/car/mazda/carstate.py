@@ -95,14 +95,13 @@ class CarState(CarStateBase):
         self.low_speed_lockout = False
         self.low_speed_alert = False
 
-      if handsoff:
-        ret.steerWarning = True
+      ret.steerWarning = handsoff
 
     self.acc_active_last = self.acc_active
 
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
-    self.steerError = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1
+    ret.steerError = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1
 
     return ret
 
