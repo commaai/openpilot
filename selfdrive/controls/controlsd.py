@@ -88,8 +88,6 @@ class Controls:
     internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
     community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
     openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
-
-    # Passive if internet needed or openpilot toggle disabled
     passive = params.get("Passive", encoding='utf8') == "1" or \
               internet_needed or not openpilot_enabled_toggle
 
@@ -166,6 +164,8 @@ class Controls:
 
 
   def create_events(self, CS):
+    """Compute carEvents from carState"""
+
     events = self.static_events.copy()
     events.extend(CS.events)
     events.extend(self.sm['dMonitoringState'].events)
@@ -567,14 +567,14 @@ class Controls:
     start_time = sec_since_boot()
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
-    # Sample data and compute car events
+    # Sample data from sockets and get a carState
     CS = self.data_sample()
     self.prof.checkpoint("Sample")
 
     events = self.create_events(CS)
 
     if not self.read_only:
-      # update control state
+      # Update control state
       self.state_transition(CS, events)
       self.prof.checkpoint("State transition")
 
