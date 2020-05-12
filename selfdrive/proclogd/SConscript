@@ -1,0 +1,2 @@
+Import('env', 'messaging')
+env.Program('proclogd.cc', LIBS=[messaging, 'pthread', 'zmq', 'czmq', 'capnp', 'kj'])

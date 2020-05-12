@@ -1,0 +1,31 @@
+{
+  "Offroad_ChargeDisabled": {
+    "text": "EON charging disabled after car being off for more than 30 hours. Turn ignition on to start charging again.",
+    "severity": 0
+  },
+  "Offroad_TemperatureTooHigh": {
+    "text": "Device temperature too high. System won't start.",
+    "severity": 1
+  },
+  "Offroad_ConnectivityNeededPrompt": {
+    "text": "Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won't engage in ",
+    "severity": 0,
+    "_comment": "Append the number of days at the end of the text"
+  },
+  "Offroad_ConnectivityNeeded": {
+    "text": "Connect to internet to check for updates. openpilot won't engage until it connects to internet to check for updates.",
+    "severity": 1
+  },
+  "Offroad_PandaFirmwareMismatch": {
+    "text": "Unexpected panda firmware version. System won't start. Reboot your device to reflash panda.",
+    "severity": 1
+  },
+  "Offroad_InvalidTime": {
+    "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
+    "severity": 1
+  },
+  "Offroad_IsTakingSnapshot": {
+    "text": "Taking camera snapshots. System won't start until finished.",
+    "severity": 0
+  }
+}
