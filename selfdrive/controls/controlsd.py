@@ -66,20 +66,7 @@ class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     gc.disable()
 
-    # start the loop
     set_realtime_priority(3)
-
-    params = Params()
-
-    self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
-    self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
-
-    # Passive if internet needed or openpilot toggle disabled
-    self.passive = params.get("Passive", encoding='utf8') == "1"
-    internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
-    community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
-    openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
-    self.passive = self.passive or internet_needed or not openpilot_enabled_toggle
 
     # Pub/Sub Sockets
     self.pm = pm
@@ -105,9 +92,22 @@ class Controls:
 
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], has_relay)
 
+    # read params
+    params = Params()
+
+    self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
+    self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
+
+    # Passive if internet needed or openpilot toggle disabled
+    passive = params.get("Passive", encoding='utf8') == "1"
+    internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
+    community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
+    openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
+    passive = passive or internet_needed or not openpilot_enabled_toggle
+
     car_recognized = self.CP.carName != 'mock'
     # If stock camera is disconnected, we loaded car controls and it's not chffrplus
-    controller_available = self.CP.enableCamera and self.CI.CC is not None and not self.passive
+    controller_available = self.CP.enableCamera and self.CI.CC is not None and not passive
     community_feature_disallowed = self.CP.communityFeature and not community_feature_toggle
     self.read_only = not car_recognized or not controller_available or \
                        self.CP.dashcamOnly or community_feature_disallowed
@@ -122,9 +122,6 @@ class Controls:
 
     self.CC = car.CarControl.new_message()
     self.AM = AlertManager()
-
-    startup_alert = get_startup_alert(car_recognized, controller_available)
-    self.AM.add(self.sm.frame, startup_alert, False)
 
     self.LoC = LongControl(self.CP, self.CI.compute_gb)
     self.VM = VehicleModel(self.CP)
@@ -157,6 +154,9 @@ class Controls:
     self.sm['dMonitoringState'].awarenessStatus = 1.
     self.sm['dMonitoringState'].faceDetected = False
 
+    startup_alert = get_startup_alert(car_recognized, controller_available)
+    self.AM.add(self.sm.frame, startup_alert, False)
+
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -166,22 +166,21 @@ class Controls:
     sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') \
                         and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
-    # create permanent events
-    self.permanent_events = []
+    self.static_events = []
     if not sounds_available:
-      self.permanent_events.append(create_event('soundsUnavailable', [ET.NO_ENTRY, ET.PERMANENT]))
+      self.static_events.append(create_event('soundsUnavailable', [ET.NO_ENTRY, ET.PERMANENT]))
     if internet_needed:
-      self.permanent_events.append(create_event('internetConnectivityNeeded', [ET.NO_ENTRY, ET.PERMANENT]))
+      self.static_events.append(create_event('internetConnectivityNeeded', [ET.NO_ENTRY, ET.PERMANENT]))
     if community_feature_disallowed:
-      self.permanent_events.append(create_event('communityFeatureDisallowed', [ET.PERMANENT]))
-    if self.read_only and not self.passive:
-      self.permanent_events.append(create_event('carUnrecognized', [ET.PERMANENT]))
+      self.static_events.append(create_event('communityFeatureDisallowed', [ET.PERMANENT]))
+    if self.read_only and not passive:
+      self.static_events.append(create_event('carUnrecognized', [ET.PERMANENT]))
 
   def create_events(self, CS):
-    events = self.permanent_events.copy()
+    events = self.static_events.copy()
 
-    # can't change order or else process replay will fail
-    # TODO: clean this up after refactor is done and it's verified to have no changes
+    # can't change order yet as process replay will fail
+    # TODO: clean this up after refactor is done and verified to have no changes
 
     events += list(CS.events)
     events += list(self.sm['dMonitoringState'].events)
@@ -241,12 +240,12 @@ class Controls:
 
     return events
 
-  def data_sample(self, CC):
-    """Receive data from sockets and create events for battery, temperature and disk space"""
+  def data_sample(self):
+    """Receive data from sockets and update carState"""
 
     # Update carState from CAN and create events
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    CS = self.CI.update(CC, can_strs)
+    CS = self.CI.update(self.CC, can_strs)
 
     self.sm.update(0)
 
@@ -274,6 +273,7 @@ class Controls:
 
     self.v_cruise_kph_last = self.v_cruise_kph
 
+    # TODO: car interface should handle this
     # if stock cruise is completely disabled, then we can use our own set speed logic
     if not self.CP.enableCruise:
       self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.enabled)
@@ -353,10 +353,10 @@ class Controls:
         self.state = State.enabled
 
     # Check if the actuators are enabled
-    self.active = state == State.enabled or state == State.softDisabling
+    self.active = self.state == State.enabled or self.state == State.softDisabling
 
     # Check if openpilot is engaged
-    self.enabled = self.active or state == State.preEnabled
+    self.enabled = self.active or self.state == State.preEnabled
 
 
   def state_control(self, CS, events):
@@ -585,7 +585,7 @@ class Controls:
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
-    CS = self.data_sample(self.CC)
+    CS = self.data_sample()
     self.prof.checkpoint("Sample")
 
     events = self.create_events(CS)
