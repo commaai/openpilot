@@ -300,8 +300,46 @@ class Controls:
     # entrance in SOFT_DISABLING state
     self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
 
+    # ENABLED, PRE ENABLED, SOFT DISABLING
+    if self.state != State.disabled:
+      if get_events(events, [ET.USER_DISABLE]):
+        self.state = State.disabled
+        self.AM.add(self.sm.frame, "disable", self.enabled)
+
+      elif get_events(events, [ET.IMMEDIATE_DISABLE]):
+        self.state = State.disabled
+        for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
+          self.AM.add(self.sm.frame, e, self.enabled)
+
+      else:
+        # ENABLED
+        if self.state == State.enabled:
+          if get_events(events, [ET.SOFT_DISABLE]):
+            self.state = State.softDisabling
+            self.soft_disable_timer = 300   # 3s
+            for e in get_events(events, [ET.SOFT_DISABLE]):
+              self.AM.add(self.sm.frame, e, self.enabled)
+
+        # SOFT DISABLING
+        elif self.state == State.softDisabling:
+          if not get_events(events, [ET.SOFT_DISABLE]):
+            # no more soft disabling condition, so go back to ENABLED
+            self.state = State.enabled
+
+          elif get_events(events, [ET.SOFT_DISABLE]) and self.soft_disable_timer > 0:
+            for e in get_events(events, [ET.SOFT_DISABLE]):
+              self.AM.add(self.sm.frame, e, self.enabled)
+
+          elif self.soft_disable_timer <= 0:
+            self.state = State.disabled
+
+        # PRE ENABLING
+        elif self.state == State.preEnabled:
+          if not get_events(events, [ET.PRE_ENABLE]):
+            self.state = State.enabled
+
     # DISABLED
-    if self.state == State.disabled:
+    elif self.state == State.disabled:
       if get_events(events, [ET.ENABLE]):
         if get_events(events, [ET.NO_ENTRY]):
           for e in get_events(events, [ET.NO_ENTRY]):
@@ -314,59 +352,6 @@ class Controls:
             self.state = State.enabled
           self.AM.add(self.sm.frame, "enable", self.enabled)
           self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
-
-    # ENABLED
-    elif self.state == State.enabled:
-      if get_events(events, [ET.USER_DISABLE]):
-        self.state = State.disabled
-        self.AM.add(self.sm.frame, "disable", self.enabled)
-
-      elif get_events(events, [ET.IMMEDIATE_DISABLE]):
-        self.state = State.disabled
-        for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-          self.AM.add(self.sm.frame, e, self.enabled)
-
-      elif get_events(events, [ET.SOFT_DISABLE]):
-        self.state = State.softDisabling
-        self.soft_disable_timer = 300   # 3s
-        for e in get_events(events, [ET.SOFT_DISABLE]):
-          self.AM.add(self.sm.frame, e, self.enabled)
-
-    # SOFT DISABLING
-    elif self.state == State.softDisabling:
-      if get_events(events, [ET.USER_DISABLE]):
-        self.state = State.disabled
-        self.AM.add(self.sm.frame, "disable", self.enabled)
-
-      elif get_events(events, [ET.IMMEDIATE_DISABLE]):
-        self.state = State.disabled
-        for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-          self.AM.add(self.sm.frame, e, self.enabled)
-
-      elif not get_events(events, [ET.SOFT_DISABLE]):
-        # no more soft disabling condition, so go back to ENABLED
-        self.state = State.enabled
-
-      elif get_events(events, [ET.SOFT_DISABLE]) and self.soft_disable_timer > 0:
-        for e in get_events(events, [ET.SOFT_DISABLE]):
-          self.AM.add(self.sm.frame, e, self.enabled)
-
-      elif self.soft_disable_timer <= 0:
-        self.state = State.disabled
-
-    # PRE ENABLING
-    elif self.state == State.preEnabled:
-      if get_events(events, [ET.USER_DISABLE]):
-        self.state = State.disabled
-        self.AM.add(self.sm.frame, "disable", self.enabled)
-
-      elif get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
-        self.state = State.disabled
-        for e in get_events(events, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
-          self.AM.add(self.sm.frame, e, self.enabled)
-
-      elif not get_events(events, [ET.PRE_ENABLE]):
-        self.state = State.enabled
 
     # Check if actuators are enabled
     self.active = self.state == State.enabled or self.state == State.softDisabling
