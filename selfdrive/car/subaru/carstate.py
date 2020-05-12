@@ -69,8 +69,6 @@ class CarState(CarStateBase):
       ret.seatbeltUnlatched = False # FIXME: stock ACC disengages on unlatch so this is fine for now, signal has not yet been found
       self.steer_not_allowed = cp.vl["Steering_Torque"]["LKA_Lockout"]
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
-      self.brake_hold = cp_cam.vl["ES_CruiseThrottle"]["Standstill"]
-      self.close_distance = cp_cam.vl["ES_CruiseThrottle"]["CloseDistance"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
 
     if self.car_fingerprint in [CAR.FORESTER]:

@@ -13,11 +13,10 @@ class CarControllerParams():
     if car_fingerprint == CAR.IMPREZA:
       self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
       self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
-      self.STEER_DRIVER_FACTOR = 1       # from dbc
     if car_fingerprint in (CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER):
       self.STEER_DRIVER_ALLOWANCE = 600  # allowed driver torque before start limiting
       self.STEER_DRIVER_MULTIPLIER = 1   # weight driver torque heavily
-      self.STEER_DRIVER_FACTOR = 1       # from dbc
+    self.STEER_DRIVER_FACTOR = 1         # from dbc
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -44,8 +43,7 @@ class CarController():
 
     if (frame % P.STEER_STEP) == 0:
 
-      final_steer = actuators.steer if enabled else 0.
-      apply_steer = int(round(final_steer * P.STEER_MAX))
+      apply_steer = int(round(actuators.steer * P.STEER_MAX))
 
       # limits due to driver torque
 
