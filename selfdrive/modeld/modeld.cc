@@ -22,7 +22,8 @@ pthread_mutex_t transform_lock;
 void* live_thread(void *arg) {
   int err;
   set_thread_name("live");
-  SubMaster sm({"liveCalibration"});
+
+  SubMaster sm(NULL, {"liveCalibration"});
   /*
      import numpy as np
      from common.transformations.model import medmodel_frame_from_road_frame
@@ -84,8 +85,10 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  SubMaster sm({"pathPlan"}, "127.0.0.1", true);
-  PubMaster pm({"model", "cameraOdometry"});
+  MessageContext ctx;
+  PubMessage model_pub(&ctx, "model");
+  PubMessage posenet_pub(&ctx, "cameraOdometry");
+  SubMessage pathplan_sock(&ctx, "pathPlan", "127.0.0.1", true);
 
   // cl init
   cl_device_id device_id;
@@ -168,9 +171,10 @@ int main(int argc, char **argv) {
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
-      auto msg = sm.pollOne(0);
-      if (msg){
-        desire = (int)(msg->getEvent().getPathPlan().getDesire()) - 1;
+      auto pevent = pathplan_sock.receive(true);
+      if (pevent != NULL) {
+        // TODO: path planner timeout?
+        desire = ((int)pevent->getPathPlan().getDesire()) - 1;
       }
 
       double mt1 = 0, mt2 = 0;
@@ -192,8 +196,8 @@ int main(int argc, char **argv) {
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
-        model_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
-        posenet_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
+        model_publish(model_pub, extra.frame_id, model_buf, extra.timestamp_eof);
+        posenet_publish(posenet_pub, extra.frame_id, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
         last = mt1;

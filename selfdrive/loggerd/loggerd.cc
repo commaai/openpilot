@@ -111,8 +111,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
   int encoder_segment = -1;
   int cnt = 0;
-
-  PubMaster pm({front ? "frontEncodeIdx" : "encodeIdx"});
+  PubMessage pm(NULL, front ? "frontEncodeIdx" : "encodeIdx");
 
   LoggerHandle *lh = NULL;
 
@@ -243,7 +242,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
-        if (pm.send(front ? "frontEncodeIdx" : "encodeIdx", (char *)bytes.begin(), bytes.size()) < 0) {
+        if (pm.send((char *)bytes.begin(), bytes.size()) < 0){
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
         if (lh) {
@@ -585,10 +584,7 @@ int main(int argc, char** argv) {
       qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
       qlog_freqs[sock] = it.decimation;
     }
-  }
-
-
-  {
+    sm = new SubMaster(NULL, endpoints);
     auto words = gen_init_data();
     auto bytes = words.asBytes();
     logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
