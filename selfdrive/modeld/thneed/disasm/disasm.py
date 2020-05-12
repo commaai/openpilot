@@ -2,6 +2,7 @@
 import struct
 from hexdump import hexdump
 from termcolor import colored
+import hashlib
 
 def parse_packets(dat):
   ret = []
@@ -31,9 +32,13 @@ for l in open("../include/adreno_pm4.xml.h").read().split("\n")[134:233]:
   ops[int(aa)] = rr
 
 
-for i in range(34):
+#for i in range(34):
+for i in range(1):
   pkts1 = parse_packets(open("../runs/run_1_%d" % i, "rb").read())
   pkts2 = parse_packets(open("../runs/run_2_%d" % i, "rb").read())
+  # does this change from program to program?
+  assert hashlib.sha1(pkts1[0]).hexdigest() == "a530ce5114a48830bce158da7158959007f7cf1a"
+  assert hashlib.sha1(pkts1[2]).hexdigest() == "d7699308c38cd04eeb732577a82d31d04e05a339"
   assert pkts1[0] == pkts2[0]
   assert pkts1[2] == pkts2[2]
   print("parsing packet with len %x" % len(pkts1[1]))
@@ -54,10 +59,22 @@ for i in range(34):
     else:
       assert False
 
+    if pkttype == 7:
+      op = (o1>>16) & 0x7F
+      final = "-- op:  %s" % (ops[op] if op in ops else ("0x%X" % op))
+    if pkttype == 4:
+      op = (o1>>8) & 0x7FFFF
+      final = "-- reg: %s" % (regs[op] if op in regs else ("0x%X" % op))
+
+    if pkttype == 7 and op == 16:
+      k += pktsize
+      continue
+
     prt.append("%d size: %2d -- " % (pkttype, pktsize))
 
     prtsize = 0
 
+    changed = False
     for _ in range(pktsize):
       o1 = struct.unpack("I", pkts1[1][k*4:k*4+4])[0]
       o2 = struct.unpack("I", pkts2[1][k*4:k*4+4])[0]
@@ -66,25 +83,21 @@ for i in range(34):
         prtsize += 1
       else:
         prt.append(colored("%08X " % o1, 'red'))
-        prt.append(colored("%08X " % o2, 'green'))
-        prtsize += 2
+        #prt.append(colored("%08X " % o2, 'green'))
+        prtsize += 1
+        changed = True
       k += 1
 
     prt.append(" "*(9*(10-prtsize)))
+    prt.append(final)
+    prt.append("****" if changed else "")
 
-    if pkttype == 7:
-      op = (o1>>16) & 0x7F
-      prt.append("-- op: %s" % (ops[op] if op in ops else ("%5X" % op)))
-
-    if pkttype == 4:
-      op = (o1>>8) & 0x7FFFF
-      prt.append("-- reg: %s" % (regs[op] if op in regs else ("%5X" % op)))
+    if pkttype == 7 and op == 38: # CP_WAIT_FOR_IDLE
+      prt.append("\n")
 
     prt.append("\n")
   print(''.join(prt))
     
 
-  #hexdump(pkts1[1])
-  #hexdump(pkts2[1])
 
 
