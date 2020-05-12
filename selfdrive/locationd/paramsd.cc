@@ -46,27 +46,25 @@ int main(int argc, char *argv[]) {
   Localizer localizer;
 
   // Read car params
-  char *value;
-  size_t value_sz = 0;
+  std::string value;
 
   LOGW("waiting for params to set vehicle model");
   while (true) {
-    read_db_value("CarParams", &value, &value_sz);
-    if (value_sz > 0) break;
+    read_param("CarParams", &value);
+    if (value.length() > 0) break;
     usleep(100*1000);
   }
-  LOGW("got %d bytes CarParams", value_sz);
+  LOGW("got %d bytes CarParams", value.length());
 
   // make copy due to alignment issues
-  auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), value, value_sz);
-  free(value);
+  auto amsg = kj::heapArray<capnp::word>((value.length() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), value.c_str(), value.length());
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
   // Read params from previous run
-  const int result = read_db_value("LiveParameters", &value, &value_sz);
+  const int result = read_param("LiveParameters", &value);
 
   std::string fingerprint = car_params.getCarFingerprint();
   std::string vin = car_params.getCarVin();
@@ -76,8 +74,7 @@ int main(int argc, char *argv[]) {
   double posenet_invalid_count = 0;
 
   if (result == 0){
-    auto str = std::string(value, value_sz);
-    free(value);
+    auto str = value;
 
     std::string err;
     auto json = json11::Json::parse(str, err);

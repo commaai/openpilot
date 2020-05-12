@@ -94,11 +94,9 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
   int err;
 
   if (front) {
-    char *value;
-    const int result = read_db_value("RecordFront", &value, NULL);
-    if (result != 0) return;
-    if (value[0] != '1') { free(value); return; }
-    free(value);
+    bool value = false;
+    const int result = read_param("RecordFront", &value);
+    if (!value) return;
     LOGW("recording front camera");
 
     set_thread_name("FrontCameraEncoder");
@@ -457,29 +455,25 @@ kj::Array<capnp::word> gen_init_data() {
     init.setDirty(true);
   }
 
-  char* git_commit = NULL;
-  size_t size;
-  read_db_value("GitCommit", &git_commit, &size);
-  if (git_commit) {
-    init.setGitCommit(capnp::Text::Reader(git_commit, size));
+  std::string value;
+  read_param("GitCommit", &value);
+  if (value.length() > 0) {
+    init.setGitCommit(capnp::Text::Reader(value));
   }
 
-  char* git_branch = NULL;
-  read_db_value("GitBranch", &git_branch, &size);
-  if (git_branch) {
-    init.setGitBranch(capnp::Text::Reader(git_branch, size));
+  read_param("GitBranch", &value);
+  if (value.length() > 0) {
+    init.setGitBranch(capnp::Text::Reader(value));
   }
 
-  char* git_remote = NULL;
-  read_db_value("GitRemote", &git_remote, &size);
-  if (git_remote) {
-    init.setGitRemote(capnp::Text::Reader(git_remote, size));
+  read_param("GitRemote", &value);
+  if (value.length() > 0) {
+    init.setGitRemote(capnp::Text::Reader(value));
   }
 
-  char* passive = NULL;
-  read_db_value("Passive", &passive, NULL);
-  init.setPassive(passive && strlen(passive) && passive[0] == '1');
-
+  bool passive = false;
+  read_param("Passive", &passive);
+  init.setPassive(passive);
 
   {
     // log params
@@ -495,25 +489,8 @@ kj::Array<capnp::word> gen_init_data() {
     }
   }
 
-
   auto words = capnp::messageToFlatArray(msg);
-
-  if (git_commit) {
-    free((void*)git_commit);
-  }
-
-  if (git_branch) {
-    free((void*)git_branch);
-  }
-
-  if (git_remote) {
-    free((void*)git_remote);
-  }
-
-  if (passive) {
-    free((void*)passive);
-  }
-
+  
   return words;
 }
 

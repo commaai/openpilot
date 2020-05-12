@@ -55,11 +55,9 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
   for (int i = 0; i < TRAFFIC_CONVENTION_LEN; i++) s->traffic_convention[i] = 0.0;
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 
-  char *string;
-  const int result = read_db_value("IsRHD", &string, NULL);
+  bool is_rhd = false;
+  const int result = read_param("IsRHD", &is_rhd);
   if (result == 0) {
-    bool is_rhd = string[0] == '1';
-    free(string);
     if (is_rhd) {
       s->traffic_convention[1] = 1.0;
     } else {

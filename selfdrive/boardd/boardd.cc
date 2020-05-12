@@ -89,45 +89,39 @@ void *safety_setter_thread(void *s) {
   libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::ELM327), 0, NULL, 0, TIMEOUT);
   pthread_mutex_unlock(&usb_lock);
 
-  char *value_vin;
-  size_t value_vin_sz = 0;
-
-  // switch to SILENT when CarVin param is read
+  std::string value_vin;
   while (1) {
     if (do_exit) return NULL;
-    const int result = read_db_value("CarVin", &value_vin, &value_vin_sz);
-    if (value_vin_sz > 0) {
+    const int result = read_param("CarVin", &value_vin);
+    if (value_vin.length() > 0) {
       // sanity check VIN format
-      assert(value_vin_sz == 17);
+      assert(value_vin.length() == 17);
       break;
     }
     usleep(100*1000);
   }
-  LOGW("got CarVin %s", value_vin);
-  free(value_vin);
+  LOGW("got CarVin %s", value_vin.c_str());
 
   // VIN query done, stop listening to OBDII
   pthread_mutex_lock(&usb_lock);
   libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::NO_OUTPUT), 0, NULL, 0, TIMEOUT);
   pthread_mutex_unlock(&usb_lock);
 
-  char *value;
-  size_t value_sz = 0;
+  std::string value;
 
   LOGW("waiting for params to set safety model");
   while (1) {
     if (do_exit) return NULL;
 
-    const int result = read_db_value("CarParams", &value, &value_sz);
-    if (value_sz > 0) break;
+    const int result = read_param("CarParams", &value);
+    if (value.length() > 0) break;
     usleep(100*1000);
   }
-  LOGW("got %d bytes CarParams", value_sz);
+  LOGW("got %d bytes CarParams", value.length());
 
   // format for board, make copy due to alignment issues, will be freed on out of scope
-  auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), value, value_sz);
-  free(value);
+  auto amsg = kj::heapArray<capnp::word>((value.length() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), value.c_str(), value.length());
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
@@ -416,10 +410,9 @@ void can_health(PubSocket *publisher) {
   bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
   bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
   if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
-    char *disable_power_down = NULL;
-    size_t disable_power_down_sz = 0;
-    const int result = read_db_value("DisablePowerDown", &disable_power_down, &disable_power_down_sz);
-    if (disable_power_down_sz != 1 || disable_power_down[0] != '1') {
+    bool disable_power_down = true;
+    const int result = read_param("DisablePowerDown", &disable_power_down);
+    if (!disable_power_down) {
       printf("TURN OFF CHARGING!\n");
       pthread_mutex_lock(&usb_lock);
       libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
@@ -427,7 +420,6 @@ void can_health(PubSocket *publisher) {
       printf("POWER DOWN DEVICE\n");
       system("service call power 17 i32 0 i32 1");
     }
-    if (disable_power_down) free(disable_power_down);
   }
   if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
     printf("TURN ON CHARGING!\n");

@@ -39,7 +39,18 @@ void read_db_value_blocking(const char* key, char** value, size_t* value_sz, boo
 #ifdef __cplusplus
 #include <map>
 #include <string>
+#include <sstream>
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param = false);
+template <typename T>
+int read_param(const char* key, T* value, bool persistent_param = false){
+  char *s;
+  int result = read_db_value(key, &s, NULL, persistent_param);
+  if (result == 0){
+    std::istringstream(s) >> *value;
+    free(s);
+  }
+  return result;
+}
 #endif
 
 #endif  // _SELFDRIVE_COMMON_PARAMS_H_
