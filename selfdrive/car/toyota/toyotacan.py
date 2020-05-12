@@ -10,7 +10,7 @@ def create_steer_command(packer, steer, steer_req, raw_cnt):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, steer, steer_req, raw_cnt, angle):
+def create_lta_steer_command(packer, steer, steer_req, raw_cnt):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   values = {
@@ -18,7 +18,7 @@ def create_lta_steer_command(packer, steer, steer_req, raw_cnt, angle):
     "SETME_X3": 3,
     "PERCENTAGE" : 100,
     "SETME_X64": 0x64,
-    "ANGLE": angle,
+    "ANGLE": steer,
     "STEER_ANGLE_CMD": steer,
     "STEER_REQUEST": steer_req,
     "BIT": 0,

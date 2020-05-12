@@ -2,7 +2,8 @@ from cereal import car
 from common.numpy_fast import clip
 from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
-                                           create_accel_command, create_acc_cancel_command, create_fcw_command
+                                           create_accel_command, create_acc_cancel_command, \
+                                           create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, SteerLimitParams
 from opendbc.can.packer import CANPacker
 
@@ -65,6 +66,8 @@ class CarController():
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
 
+    apply_angle = actuators.steerAngle
+
     # steer torque
     new_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, SteerLimitParams)
@@ -105,7 +108,9 @@ class CarController():
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
     if Ecu.fwdCamera in self.fake_ecus:
-      can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
+      # TODO: check steering type in CP
+      can_sends.append(create_steer_command(self.packer, 0, 0, frame))
+      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req, frame))
 
     # we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
