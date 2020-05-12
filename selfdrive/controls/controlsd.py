@@ -34,7 +34,7 @@ ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
 HwType = log.HealthData.HwType
 LongitudinalPlanSource = log.Plan.LongitudinalPlanSource
-
+Desire = log.PathPlan.Desire
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 
@@ -71,13 +71,13 @@ class Controls:
     # Pub/Sub Sockets
     self.pm = pm
     if self.pm is None:
-      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', \
-                                      'carEvents', 'carParams'])
+      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', \
+                                     'carContro', 'carEvents', 'carParams'])
 
     self.sm = sm
     if self.sm is None:
-      self.sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'dMonitoringState', \
-                                      'plan', 'pathPlan', 'model'])
+      self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', \
+                                     'dMonitoringState', 'plan', 'pathPlan'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -94,7 +94,6 @@ class Controls:
 
     # read params
     params = Params()
-
     self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
     self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
 
@@ -106,7 +105,7 @@ class Controls:
     passive = passive or internet_needed or not openpilot_enabled_toggle
 
     car_recognized = self.CP.carName != 'mock'
-    # If stock camera is disconnected, we loaded car controls and it's not chffrplus
+    # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
     controller_available = self.CP.enableCamera and self.CI.CC is not None and not passive
     community_feature_disallowed = self.CP.communityFeature and not community_feature_toggle
     self.read_only = not car_recognized or not controller_available or \
@@ -144,7 +143,7 @@ class Controls:
     self.can_error_counter = 0
     self.last_blinker_frame = 0
     self.saturated_count = 0
-    self.events_prev = []
+    self.events_prev = ""
 
     self.sm['liveCalibration'].calStatus = Calibration.INVALID
     self.sm['pathPlan'].sensorValid = True
@@ -182,8 +181,8 @@ class Controls:
     # can't change order yet as process replay will fail
     # TODO: clean this up after refactor is done and verified to have no changes
 
-    events += list(CS.events)
-    events += list(self.sm['dMonitoringState'].events)
+    events.extend(CS.events)
+    events.extend(self.sm['dMonitoringState'].events)
     add_lane_change_event(events, self.sm['pathPlan'])
 
     if self.can_rcv_error:
@@ -238,12 +237,38 @@ class Controls:
         and not self.CP.radarOffCan and CS.vEgo < 0.3:
       events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
+
+    # TODO: remove this with event/alerts refactor
+
+    if self.active:
+      for e in get_events(events, [ET.WARNING]):
+        # TODO: handle non static text in a cleaner way, like a callback
+        extra_text = ""
+        if e == "belowSteerSpeed":
+          if self.is_metric:
+            extra_text = str(int(round(self.CP.minSteerSpeed * CV.MS_TO_KPH))) + " kph"
+          else:
+            extra_text = str(int(round(self.CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
+        self.AM.add(self.sm.frame, e, self.enabled, extra_text_2=extra_text)
+
+    for e in get_events(events, [ET.PERMANENT]):
+      # TODO: handle non static text in a cleaner way, like a callback
+      extra_text_1, extra_text_2 = "", ""
+      if e == "calibrationIncomplete":
+        extra_text_1 = str(self.sm['liveCalibration'].calPerc) + "%"
+        if self.is_metric:
+          extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
+        else:
+          extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
+      self.AM.add(self.sm.frame, str(e) + "Permanent", self.enabled, \
+                    extra_text_1=extra_text_1, extra_text_2=extra_text_2)
+
     return events
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
 
-    # Update carState from CAN and create events
+    # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     CS = self.CI.update(self.CC, can_strs)
 
@@ -273,7 +298,6 @@ class Controls:
 
     self.v_cruise_kph_last = self.v_cruise_kph
 
-    # TODO: car interface should handle this
     # if stock cruise is completely disabled, then we can use our own set speed logic
     if not self.CP.enableCruise:
       self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.enabled)
@@ -352,7 +376,7 @@ class Controls:
       elif not get_events(events, [ET.PRE_ENABLE]):
         self.state = State.enabled
 
-    # Check if the actuators are enabled
+    # Check if actuators are enabled
     self.active = self.state == State.enabled or self.state == State.softDisabling
 
     # Check if openpilot is engaged
@@ -380,20 +404,9 @@ class Controls:
 
     # State specific actions
 
-    if self.state in [State.preEnabled, State.disabled]:
+    if not self.active:
       self.LaC.reset()
       self.LoC.reset(v_pid=CS.vEgo)
-
-    elif self.state in [State.enabled, State.softDisabling]:
-      # parse warnings from car specific interface
-      for e in get_events(events, [ET.WARNING]):
-        extra_text = ""
-        if e == "belowSteerSpeed":
-          if self.is_metric:
-            extra_text = str(int(round(self.CP.minSteerSpeed * CV.MS_TO_KPH))) + " kph"
-          else:
-            extra_text = str(int(round(self.CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
-        self.AM.add(self.sm.frame, e, self.enabled, extra_text_2=extra_text)
 
     plan_age = DT_CTRL * (self.sm.frame - self.sm.rcv_frame['plan'])
     # no greater than dt mpc + dt, to prevent too high extraps
@@ -415,25 +428,14 @@ class Controls:
       self.saturated_count += 1
 
     # Send a "steering required alert" if saturation count has reached the limit
-    if (lac_log.saturated and not CS.steeringPressed) or (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
+    if (lac_log.saturated and not CS.steeringPressed) or \
+        (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
       # Check if we deviated from the path
       left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
       right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
 
       if left_deviation or right_deviation:
         self.AM.add(self.sm.frame, "steerSaturated", self.enabled)
-
-    # Parse permanent warnings to display constantly
-    for e in get_events(events, [ET.PERMANENT]):
-      extra_text_1, extra_text_2 = "", ""
-      if e == "calibrationIncomplete":
-        extra_text_1 = str(self.sm['liveCalibration'].calPerc) + "%"
-        if self.is_metric:
-          extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
-        else:
-          extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
-      self.AM.add(self.sm.frame, str(e) + "Permanent", self.enabled, \
-                    extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
     return actuators, v_acc_sol, a_acc_sol, lac_log
 
@@ -455,16 +457,15 @@ class Controls:
     CC.cruiseControl.speedOverride = float(speed_override if self.CP.enableCruise else 0.0)
     CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
 
-    hudControl = CC.hudControl
-    hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
-    hudControl.speedVisible = self.enabled
-    hudControl.lanesVisible = self.enabled
-    hudControl.leadVisible = self.sm['plan'].hasLead
+    CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
+    CC.hudControl.speedVisible = self.enabled
+    CC.hudControl.lanesVisible = self.enabled
+    CC.hudControl.leadVisible = self.sm['plan'].hasLead
 
     right_lane_visible = self.sm['pathPlan'].rProb > 0.5
     left_lane_visible = self.sm['pathPlan'].lProb > 0.5
-    hudControl.rightLaneVisible = bool(right_lane_visible)
-    hudControl.leftLaneVisible = bool(left_lane_visible)
+    CC.hudControl.rightLaneVisible = bool(right_lane_visible)
+    CC.hudControl.leftLaneVisible = bool(left_lane_visible)
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled \
@@ -472,22 +473,22 @@ class Controls:
 
     meta = self.sm['model'].meta
     if len(meta.desirePrediction):
-      l_lane_change_prob = meta.desirePrediction[log.PathPlan.Desire.laneChangeLeft - 1]
-      r_lane_change_prob = meta.desirePrediction[log.PathPlan.Desire.laneChangeRight - 1]
+      l_lane_change_prob = meta.desirePrediction[Desire.laneChangeLeft - 1]
+      r_lane_change_prob = meta.desirePrediction[Desire.laneChangeRight - 1]
 
       l_lane_close = left_lane_visible and (self.sm['pathPlan'].lPoly[3] < (1.08 - CAMERA_OFFSET))
       r_lane_close = right_lane_visible and (self.sm['pathPlan'].rPoly[3] > -(1.08 + CAMERA_OFFSET))
 
       if ldw_allowed:
-        hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
-        hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
+        CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
+        CC.hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
 
-    if hudControl.rightLaneDepart or hudControl.leftLaneDepart:
+    if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
       self.AM.add(self.sm.frame, 'ldwPermanent', False)
       events.append(create_event('ldw', [ET.PERMANENT]))
 
     self.AM.process_alerts(self.sm.frame)
-    hudControl.visualAlert = self.AM.visual_alert
+    CC.hudControl.visualAlert = self.AM.visual_alert
 
     if not self.read_only:
       # send car controls over can
