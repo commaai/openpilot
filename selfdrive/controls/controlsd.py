@@ -26,6 +26,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.planner import LON_MPC_STEP
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
 
+LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
@@ -163,6 +164,7 @@ class Controls:
     if self.read_only and not passive:
       self.static_events.append(create_event('carUnrecognized', [ET.PERMANENT]))
 
+
   def create_events(self, CS):
     events = self.static_events.copy()
     events.extend(CS.events)
@@ -189,12 +191,12 @@ class Controls:
         events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
     # Handle lane change
-    if path_plan.laneChangeState == LaneChangeState.preLaneChange:
-      if path_plan.laneChangeDirection == LaneChangeDirection.left:
+    if self.sm['pathPlan'].laneChangeState == LaneChangeState.preLaneChange:
+      if self.sm['path_plan'].laneChangeDirection == LaneChangeDirection.left:
         events.append(create_event('preLaneChangeLeft', [ET.WARNING]))
       else:
         events.append(create_event('preLaneChangeRight', [ET.WARNING]))
-    elif path_plan.laneChangeState in [LaneChangeState.laneChangeStarting, \
+    elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting, \
                                         LaneChangeState.laneChangeFinishing]:
       events.append(create_event('laneChange', [ET.WARNING]))
 
@@ -230,7 +232,7 @@ class Controls:
       events.append(create_event('noTarget', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
 
-    # TODO: remove this with event/alerts refactor
+    # TODO: clean up this alert creation in alerts refactor
 
     if self.active:
       for e in get_events(events, [ET.WARNING]):
@@ -256,6 +258,7 @@ class Controls:
                     extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
     return events
+
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
@@ -285,6 +288,7 @@ class Controls:
 
     return CS
 
+
   def state_transition(self, CS, events):
     """Compute conditional state transitions and execute actions on state transitions"""
 
@@ -300,16 +304,18 @@ class Controls:
     # entrance in SOFT_DISABLING state
     self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
 
-    # ENABLED, PRE ENABLED, SOFT DISABLING
+    alert_types = []
+
+    # ENABLED, PRE ENABLING, SOFT DISABLING
     if self.state != State.disabled:
+      # user and immediate disable always have priority in a non-disabled state
       if get_events(events, [ET.USER_DISABLE]):
         self.state = State.disabled
         self.AM.add(self.sm.frame, "disable", self.enabled)
 
       elif get_events(events, [ET.IMMEDIATE_DISABLE]):
         self.state = State.disabled
-        for e in get_events(events, [ET.IMMEDIATE_DISABLE]):
-          self.AM.add(self.sm.frame, e, self.enabled)
+        alert_types = [ET.IMMEDIATE_DISABLE]
 
       else:
         # ENABLED
@@ -317,8 +323,7 @@ class Controls:
           if get_events(events, [ET.SOFT_DISABLE]):
             self.state = State.softDisabling
             self.soft_disable_timer = 300   # 3s
-            for e in get_events(events, [ET.SOFT_DISABLE]):
-              self.AM.add(self.sm.frame, e, self.enabled)
+            alert_types = [ET.SOFT_DISABLE]
 
         # SOFT DISABLING
         elif self.state == State.softDisabling:
@@ -327,8 +332,7 @@ class Controls:
             self.state = State.enabled
 
           elif get_events(events, [ET.SOFT_DISABLE]) and self.soft_disable_timer > 0:
-            for e in get_events(events, [ET.SOFT_DISABLE]):
-              self.AM.add(self.sm.frame, e, self.enabled)
+            alert_types = [ET.SOFT_DISABLE]
 
           elif self.soft_disable_timer <= 0:
             self.state = State.disabled
@@ -352,6 +356,9 @@ class Controls:
             self.state = State.enabled
           self.AM.add(self.sm.frame, "enable", self.enabled)
           self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
+
+    for e in get_events(events, alert_types):
+      self.AM.add(self.sm.frame, e, self.enabled)
 
     # Check if actuators are enabled
     self.active = self.state == State.enabled or self.state == State.softDisabling
@@ -445,20 +452,18 @@ class Controls:
     CC.hudControl.leftLaneVisible = bool(left_lane_visible)
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
-    ldw_allowed = CS.vEgo > 31 * CV.MPH_TO_MS and not recent_blinker and self.is_ldw_enabled \
+    ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
                     and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
     meta = self.sm['model'].meta
-    if len(meta.desirePrediction):
+    if len(meta.desirePrediction) and ldw_allowed:
       l_lane_change_prob = meta.desirePrediction[Desire.laneChangeLeft - 1]
       r_lane_change_prob = meta.desirePrediction[Desire.laneChangeRight - 1]
-
       l_lane_close = left_lane_visible and (self.sm['pathPlan'].lPoly[3] < (1.08 - CAMERA_OFFSET))
       r_lane_close = right_lane_visible and (self.sm['pathPlan'].rPoly[3] > -(1.08 + CAMERA_OFFSET))
 
-      if ldw_allowed:
-        CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
-        CC.hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
+      CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
+      CC.hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
 
     if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
       self.AM.add(self.sm.frame, 'ldwPermanent', False)
