@@ -141,7 +141,10 @@ struct VisionState {
 
   zsock_t *terminate_pub;
 
-  PubMaster *pm;
+  MessageContext *msg_context;
+  PubMessage *frame_sock;
+  PubMessage *front_frame_sock;
+  PubMessage *thumbnail_sock;
 
   pthread_mutex_t clients_lock;
   VisionClientState clients[MAX_CLIENTS];
@@ -156,8 +159,9 @@ void* frontview_thread(void *arg) {
 
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  SubMaster smMonitoring({"driverState"}, "127.0.0.1", true);
-  SubMaster smDMonstate({"dMonitoringState"}, "127.0.0.1", true);
+  MessageContext ctx;
+  SubMessage monitoring_sm(&ctx, "driverState", "127.0.0.1", true);
+  SubMessage dmonstate_sm(&ctx, "dMonitoringState", "127.0.0.1", true);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -203,17 +207,17 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      auto msg  = smDMonstate.pollOne(0);
-      if (msg) {
-        auto state = msg->getEvent().getDMonitoringState();
+      auto pevent = dmonstate_sm.receive(true);
+      if (pevent != NULL) {
+        auto state = pevent->getDMonitoringState();
         s->rhd_front = state.getIsRHD();
         s->rhd_front_checked = state.getRhdChecked();
       }
     }
 
-    auto msg = smMonitoring.pollOne(0);
-    if (msg) {
-      auto state = msg->getEvent().getDriverState();
+    auto pevent = monitoring_sm.receive(true);
+    if (pevent != NULL) {
+      auto state = pevent->getDriverState();
       float face_prob = state.getFaceProb();
       float face_position[2];
       face_position[0] = state.getFacePosition()[0];
@@ -300,7 +304,7 @@ void* frontview_thread(void *arg) {
 
     // send frame event
     {
-      if (s->pm != NULL) {
+      if (s->front_frame_sock != NULL) {
         capnp::MallocMessageBuilder msg;
         cereal::Event::Builder event = msg.initRoot<cereal::Event>();
         event.setLogMonoTime(nanos_since_boot());
@@ -319,7 +323,7 @@ void* frontview_thread(void *arg) {
         framed.setGainFrac(frame_data.gain_frac);
         framed.setFrameType(cereal::FrameData::FrameType::FRONT);
 
-         s->pm->send("frontFrame", msg);
+        s->front_frame_sock->send(msg);
       }
     }
 
@@ -498,7 +502,7 @@ void* processing_thread(void *arg) {
 
     // send frame event
     {
-      if (s->pm != NULL) {
+      if (s->frame_sock != NULL) {
         capnp::MallocMessageBuilder msg;
         cereal::Event::Builder event = msg.initRoot<cereal::Event>();
         event.setLogMonoTime(nanos_since_boot());
@@ -534,7 +538,7 @@ void* processing_thread(void *arg) {
         kj::ArrayPtr<const float> transform_vs(&s->yuv_transform.v[0], 9);
         framed.setTransform(transform_vs);
 
-        s->pm->send("frame", msg);
+        s->frame_sock->send(msg);
       }
     }
 
@@ -595,8 +599,8 @@ void* processing_thread(void *arg) {
       thumbnaild.setTimestampEof(frame_data.timestamp_eof);
       thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
 
-      if (s->pm != NULL) {
-        s->pm->send("thumbnail", msg);
+      if (s->thumbnail_sock != NULL) {
+        s->thumbnail_sock->send(msg);
       }
 
       free(thumbnail_buffer);
@@ -1257,7 +1261,10 @@ int main(int argc, char *argv[]) {
   init_buffers(s);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+  s->msg_context = new MessageContext();
+  s->frame_sock = new PubMessage(s->msg_context->getContext(), "frame");
+  s->front_frame_sock = new PubMessage(s->msg_context->getContext(), "frontFrame");
+  s->thumbnail_sock = new PubMessage(s->msg_context->getContext(), "thumbnail");
 #endif
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
@@ -1265,7 +1272,10 @@ int main(int argc, char *argv[]) {
   party(s);
 
 #if defined(QCOM) || defined(QCOM2)
-  delete s->pm;
+  delete s->frame_sock;
+  delete s->front_frame_sock;
+  delete s->thumbnail_sock;
+  delete s->msg_context;
 #endif
 
   free_buffers(s);

@@ -19,10 +19,7 @@ int main() {
   setpriority(PRIO_PROCESS, 0, -13);
 
   int err = 0;
-  Context *context = Context::create();
-
-  PubSocket* clock_publisher = PubSocket::create(context, "clocks");
-  assert(clock_publisher != NULL);
+  PubMessage pm(NULL, "clocks");
 
   int timerfd = timerfd_create(CLOCK_BOOTTIME, 0);
   assert(timerfd >= 0);
@@ -58,7 +55,7 @@ int main() {
     clocks.setWallTimeNanos(wall_time);
     clocks.setModemUptimeMillis(modem_uptime_v);
 
-     pm.send("clocks", msg);
+    pm.send(msg);
   }
 
   close(timerfd);

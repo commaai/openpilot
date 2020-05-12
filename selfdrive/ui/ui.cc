@@ -72,7 +72,7 @@ static void update_offroad_layout_state(UIState *s) {
   auto layout = event.initUiLayoutState();
   layout.setActiveApp(s->active_app);
   layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
-  s->pm->send("offroadLayout", msg);
+  s->offroadLayout->send(msg);
   LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
 }
 
@@ -212,14 +212,15 @@ static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
 
   pthread_mutex_init(&s->lock, NULL);
-
-  s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
-                                    "health", "ubloxGnss", "driverState", "dMonitoringState", "offroadLayout"
+  s->ctx = new MessageContext();
+  s->sm = new SubMaster(s->ctx->getContext(), {"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
+                         "health", "ubloxGnss", "driverState", "dMonitoringState", "offroadLayout"
 #ifdef SHOW_SPEEDLIMIT
-                                    , "liveMapData"
+                         ,
+                         "liveMapData"
 #endif
   });
-  s->pm = new PubMaster({"offroadLayout"});
+  s->offroadLayout = new PubMessage(s->ctx->getContext(), "offroadLayout");
 
   s->ipc_fd = -1;
 
@@ -492,8 +493,15 @@ void handle_message(UIState *s,  cereal::Event::Reader &event) {
 }
 
 static void check_messages(UIState *s) {
-  for (auto msg : s->sm->poll(0)) {
-    handle_message(s, msg->getEvent());
+  while(true) {
+    auto events = s->sm->poll(0);
+
+    if (events.size() == 0)
+      break;
+
+    for (auto &e : events){
+        handle_message(s, e);
+    }
   }
 }
 
@@ -1012,6 +1020,7 @@ int main(int argc, char* argv[]) {
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
   delete s->sm;
-  delete s->pm;
+  delete s->offroadLayout;
+  delete s->ctx;
   return 0;
 }
