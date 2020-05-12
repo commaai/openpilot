@@ -18,7 +18,10 @@ jobs:
         submodules: true
     - name: Build docker image
       run: |
-        docker build  -t tmppilot -f Dockerfile.openpilot .
+        docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+        docker pull docker.io/commaai/openpilot:latest || true
+
+        docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
         docker save tmppilot:latest | gzip > tmppilot.tar.gz
     - uses: actions/upload-artifact@v2
       with:
