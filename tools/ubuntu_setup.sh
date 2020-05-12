@@ -71,7 +71,7 @@ git submodule init
 git submodule update
 
 # install capnproto
-cereal/install_capnp.sh
+sudo cereal/install_capnp.sh
 
 # install python 3.8.2 globally (you should move to python3 anyway)
 pyenv install -s 3.8.2
