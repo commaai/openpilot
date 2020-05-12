@@ -62,9 +62,9 @@ class LatControlINDI():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, rate_limited, CP, path_plan):
+  def update(self, active, CS, CP, path_plan):
     # Update Kalman filter
-    y = np.matrix([[math.radians(angle_steers)], [math.radians(angle_steers_rate)]])
+    y = np.matrix([[math.radians(CS.steeringAngle)], [math.radians(CS.steeringRate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
     indi_log = log.ControlsState.LateralINDIState.new_message()
@@ -72,7 +72,7 @@ class LatControlINDI():
     indi_log.steerRate = math.degrees(self.x[1])
     indi_log.steerAccel = math.degrees(self.x[2])
 
-    if v_ego < 0.3 or not active:
+    if CS.vEgo < 0.3 or not active:
       indi_log.active = False
       self.output_steer = 0.0
       self.delayed_output = 0.0
@@ -105,7 +105,7 @@ class LatControlINDI():
       else:
         self.output_steer = self.delayed_output + delta_u
 
-      steers_max = get_steer_max(CP, v_ego)
+      steers_max = get_steer_max(CP, CS.vEgo)
       self.output_steer = clip(self.output_steer, -steers_max, steers_max)
 
       indi_log.active = True
@@ -116,7 +116,7 @@ class LatControlINDI():
       indi_log.delta = float(delta_u)
       indi_log.output = float(self.output_steer)
 
-      check_saturation = (v_ego > 10.) and not rate_limited and not steer_override
+      check_saturation = (CS.vEgo> 10.) and not CS.steeringRateLimited and not CS.steeringPressed 
       indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
     return float(self.output_steer), float(self.angle_steers_des), indi_log

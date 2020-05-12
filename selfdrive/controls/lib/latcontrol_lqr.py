@@ -43,22 +43,24 @@ class LatControlLQR():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, rate_limited, CP, path_plan):
+  def update(self, active, CS, CP, path_plan):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
-    steers_max = get_steer_max(CP, v_ego)
-    torque_scale = (0.45 + v_ego / 60.0)**2  # Scale actuator model with speed
+    steers_max = get_steer_max(CP, CS.vEgo)
+    torque_scale = (0.45 + CS.vEgo / 60.0)**2  # Scale actuator model with speed
+
+    steering_angle = CS.steeringAngle
 
     # Subtract offset. Zero angle should correspond to zero torque
     self.angle_steers_des = path_plan.angleSteers - path_plan.angleOffset
-    angle_steers -= path_plan.angleOffset
+    steering_angle -= path_plan.angleOffset
 
     # Update Kalman filter
     angle_steers_k = float(self.C.dot(self.x_hat))
-    e = angle_steers - angle_steers_k
-    self.x_hat = self.A.dot(self.x_hat) + self.B.dot(eps_torque / torque_scale) + self.L.dot(e)
+    e = steering_angle - angle_steers_k
+    self.x_hat = self.A.dot(self.x_hat) + self.B.dot(CS.steeringTorqueEps / torque_scale) + self.L.dot(e)
 
-    if v_ego < 0.3 or not active:
+    if CS.vEgo < 0.3 or not active:
       lqr_log.active = False
       lqr_output = 0.
       self.reset()
@@ -70,7 +72,7 @@ class LatControlLQR():
       lqr_output = torque_scale * u_lqr / self.scale
 
       # Integrator
-      if steer_override:
+      if CS.steeringPressed:
         self.i_lqr -= self.i_unwind_rate * float(np.sign(self.i_lqr))
       else:
         error = self.angle_steers_des - angle_steers_k
@@ -84,7 +86,7 @@ class LatControlLQR():
       self.output_steer = lqr_output + self.i_lqr
       self.output_steer = clip(self.output_steer, -steers_max, steers_max)
 
-    check_saturation = (v_ego > 10) and not rate_limited and not steer_override
+    check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
     saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
     lqr_log.steerAngle = angle_steers_k + path_plan.angleOffset
