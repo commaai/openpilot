@@ -11,4 +11,8 @@ extraction:
       - "export PATH=$PWD/external/bin:$PATH"
     index:
       build_command: "python3 $(which scons)"
+  javascript:
+    index:
+      filters:
+      - exclude: "*"
 
