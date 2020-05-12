@@ -25,7 +25,6 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
-#include "common/messagehelp.h"
 #include "messaging.hpp"
 
 #include <algorithm>
@@ -96,7 +95,7 @@ void *safety_setter_thread(void *s) {
   // switch to SILENT when CarVin param is read
   while (1) {
     if (do_exit) return NULL;
-    const int result = read_db_value(NULL, "CarVin", &value_vin, &value_vin_sz);
+    const int result = read_db_value("CarVin", &value_vin, &value_vin_sz);
     if (value_vin_sz > 0) {
       // sanity check VIN format
       assert(value_vin_sz == 17);
@@ -119,7 +118,7 @@ void *safety_setter_thread(void *s) {
   while (1) {
     if (do_exit) return NULL;
 
-    const int result = read_db_value(NULL, "CarParams", &value, &value_sz);
+    const int result = read_db_value("CarParams", &value, &value_sz);
     if (value_sz > 0) break;
     usleep(100*1000);
   }
@@ -184,13 +183,13 @@ bool usb_connect() {
   err2 = libusb_control_transfer(dev_handle, 0xc0, 0xd4, 0, 0, fw_sig_buf + 64, 64, TIMEOUT);
   if ((err == 64) && (err2 == 64)) {
     printf("FW signature read\n");
-    write_db_value(NULL, "PandaFirmware", (const char *)fw_sig_buf, 128);
+    write_db_value("PandaFirmware", (const char *)fw_sig_buf, 128);
 
     for (size_t i = 0; i < 8; i++){
       fw_sig_hex_buf[2*i] = NIBBLE_TO_HEX(fw_sig_buf[i] >> 4);
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX(fw_sig_buf[i] & 0xF);
     }
-    write_db_value(NULL, "PandaFirmwareHex", (const char *)fw_sig_hex_buf, 16);
+    write_db_value("PandaFirmwareHex", (const char *)fw_sig_hex_buf, 16);
   }
   else { goto fail; }
 
@@ -200,7 +199,7 @@ bool usb_connect() {
   if (err > 0) {
     serial = (const char *)serial_buf;
     serial_sz = strnlen(serial, err);
-    write_db_value(NULL, "PandaDongleId", serial, serial_sz);
+    write_db_value("PandaDongleId", serial, serial_sz);
     printf("panda serial: %.*s\n", serial_sz, serial);
   }
   else { goto fail; }
@@ -419,7 +418,7 @@ void can_health(PubSocket *publisher) {
   if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
     char *disable_power_down = NULL;
     size_t disable_power_down_sz = 0;
-    const int result = read_db_value(NULL, "DisablePowerDown", &disable_power_down, &disable_power_down_sz);
+    const int result = read_db_value("DisablePowerDown", &disable_power_down, &disable_power_down_sz);
     if (disable_power_down_sz != 1 || disable_power_down[0] != '1') {
       printf("TURN OFF CHARGING!\n");
       pthread_mutex_lock(&usb_lock);
@@ -457,9 +456,9 @@ void can_health(PubSocket *publisher) {
 
   // clear VIN, CarParams, and set new safety on car start
   if (ignition && !ignition_last) {
-    int result = delete_db_value(NULL, "CarVin");
+    int result = delete_db_value("CarVin");
     assert((result == 0) || (result == ERR_NO_VALUE));
-    result = delete_db_value(NULL, "CarParams");
+    result = delete_db_value("CarParams");
     assert((result == 0) || (result == ERR_NO_VALUE));
 
     if (!safety_setter_thread_initialized) {
@@ -548,12 +547,16 @@ void can_send(SubSocket *subscriber) {
   int err;
 
   // recv from sendcan
-  MessageReader amsg = subscriber->receive();
-  if (!amsg) return;
+  Message * msg = subscriber->receive();
 
-  auto event = amsg.getEvent();
+  auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+  capnp::FlatArrayMessageReader cmsg(amsg);
+  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
   if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
+    delete msg;
     return;
   }
   int msg_count = event.getSendcan().size();
@@ -574,9 +577,14 @@ void can_send(SubSocket *subscriber) {
     send[i*4+1] = cmsg.getDat().size() | (cmsg.getSrc() << 4);
     memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
   }
+
+  // release msg
+  delete msg;
+
   // send to board
   int sent;
   pthread_mutex_lock(&usb_lock);
+
 
   if (!fake_send) {
     do {
@@ -707,10 +715,17 @@ void *hardware_control_thread(void *crap) {
   while (!do_exit) {
     cnt++;
     for (auto sock : poller->poll(1000)){
-      MessageReader amsg = sock->receive();
-      if (!amsg) continue;
+      Message * msg = sock->receive();
+      if (msg == NULL) continue;
 
-      auto event = amsg.getEvent();
+      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+      memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+      delete msg;
+
+      capnp::FlatArrayMessageReader cmsg(amsg);
+      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
       auto type = event.which();
       if(type == cereal::Event::THERMAL){
         uint16_t fan_speed = event.getThermal().getFanSpeed();

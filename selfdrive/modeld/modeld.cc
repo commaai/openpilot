@@ -4,7 +4,6 @@
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
-#include "common/messagehelp.h"
 
 #include "models/driving.h"
 
@@ -49,10 +48,14 @@ void* live_thread(void *arg) {
 
   while (!do_exit) {
     for (auto sock : poller->poll(10)){
-      MessageReader amsg = sock->receive();
-      if (!amsg) continue;
+      Message * msg = sock->receive();
 
-      auto event = amsg.getEvent();
+      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+      memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+      capnp::FlatArrayMessageReader cmsg(amsg);
+      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
       if (event.isLiveCalibration()) {
         pthread_mutex_lock(&transform_lock);
 
@@ -77,6 +80,8 @@ void* live_thread(void *arg) {
         run_model = true;
         pthread_mutex_unlock(&transform_lock);
       }
+
+      delete msg;
     }
 
   }
@@ -188,10 +193,18 @@ int main(int argc, char **argv) {
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
-      MessageReader amsg = pathplan_sock->receive(true);
-      if (amsg) {
+      Message *msg = pathplan_sock->receive(true);
+      if (msg != NULL) {
+        // TODO: copy and pasted from camerad/main.cc
+        auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+        memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+        capnp::FlatArrayMessageReader cmsg(amsg);
+        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
         // TODO: path planner timeout?
-        desire = ((int)amsg.getEvent().getPathPlan().getDesire()) - 1;
+        desire = ((int)event.getPathPlan().getDesire()) - 1;
+        delete msg;
       }
 
       double mt1 = 0, mt2 = 0;

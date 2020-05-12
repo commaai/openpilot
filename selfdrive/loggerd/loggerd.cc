@@ -36,7 +36,6 @@
 #include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
-#include "common/messagehelp.h"
 
 #include "logger.h"
 #include "messaging.hpp"
@@ -96,7 +95,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
   if (front) {
     char *value;
-    const int result = read_db_value(NULL, "RecordFront", &value, NULL);
+    const int result = read_db_value("RecordFront", &value, NULL);
     if (result != 0) return;
     if (value[0] != '1') { free(value); return; }
     free(value);
@@ -460,32 +459,32 @@ kj::Array<capnp::word> gen_init_data() {
 
   char* git_commit = NULL;
   size_t size;
-  read_db_value(NULL, "GitCommit", &git_commit, &size);
+  read_db_value("GitCommit", &git_commit, &size);
   if (git_commit) {
     init.setGitCommit(capnp::Text::Reader(git_commit, size));
   }
 
   char* git_branch = NULL;
-  read_db_value(NULL, "GitBranch", &git_branch, &size);
+  read_db_value("GitBranch", &git_branch, &size);
   if (git_branch) {
     init.setGitBranch(capnp::Text::Reader(git_branch, size));
   }
 
   char* git_remote = NULL;
-  read_db_value(NULL, "GitRemote", &git_remote, &size);
+  read_db_value("GitRemote", &git_remote, &size);
   if (git_remote) {
     init.setGitRemote(capnp::Text::Reader(git_remote, size));
   }
 
   char* passive = NULL;
-  read_db_value(NULL, "Passive", &passive, NULL);
+  read_db_value("Passive", &passive, NULL);
   init.setPassive(passive && strlen(passive) && passive[0] == '1');
 
 
   {
     // log params
     std::map<std::string, std::string> params;
-    read_db_all(NULL, &params);
+    read_db_all(&params);
     auto lparams = init.initParams().initEntries(params.size());
     int i = 0;
     for (auto& kv : params) {
@@ -655,13 +654,21 @@ int main(int argc, char** argv) {
   while (!do_exit) {
     for (auto sock : poller->poll(100 * 1000)){
       while (true) {
-        MessageReader amsg = sock->receive(true);
-        if (!amsg){
+        Message * msg = sock->receive(true);
+        if (msg == NULL){
           break;
         }
+
+        uint8_t* data = (uint8_t*)msg->getData();
+        size_t len = msg->getSize();
+
         if (sock == frame_sock) {
-          auto event = amsg.getEvent();
           // track camera frames to sync to encoder
+          auto amsg = kj::heapArray<capnp::word>((len / sizeof(capnp::word)) + 1);
+          memcpy(amsg.begin(), data, len);
+
+          capnp::FlatArrayMessageReader cmsg(amsg);
+          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
           if (event.isFrame()) {
             std::unique_lock<std::mutex> lk(s.lock);
             s.last_frame_id = event.getFrame().getFrameId();
@@ -670,7 +677,8 @@ int main(int argc, char** argv) {
           }
         }
 
-        logger_log(&s.logger, (uint8_t*)amsg.getData(), amsg.getSize(), qlog_counter[sock] == 0);
+        logger_log(&s.logger, data, len, qlog_counter[sock] == 0);
+        delete msg;
 
         if (qlog_counter[sock] != -1) {
           //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
@@ -678,7 +686,7 @@ int main(int argc, char** argv) {
           qlog_counter[sock] %= qlog_freqs[sock];
         }
 
-        bytes_count += amsg.getSize();
+        bytes_count += len;
         msg_count++;
       }
     }

@@ -1,4 +1,4 @@
-Version 0.7.5 (2020-04-23)
+Version 0.7.5 (2020-05-13)
 ========================
 * Right-Hand Drive support for both driving and driver monitoring!
 * New driving model: improved at sharp turns and lead speed estimation
