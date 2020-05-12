@@ -11,16 +11,16 @@ class SteerLimitParams:
   STEER_DELTA_UP = 10             # torque increase per refresh
   STEER_DELTA_DOWN = 20           # torque decrease per refresh
   STEER_DRIVER_ALLOWANCE = 15     # allowed driver torque before start limiting
-  STEER_DRIVER_MULTIPLIER = 1     # weight driver torque heavily
+  STEER_DRIVER_MULTIPLIER = 1     # weight driver torque
   STEER_DRIVER_FACTOR = 1         # from dbc
 
 class CAR:
   CX5 = "Mazda CX-5 2017"
 
 class LKAS_LIMITS:
-  STEER_THRESHOLD = 20
-  DISABLE_SPEED = 45
-  ENABLE_SPEED = 50
+  STEER_THRESHOLD = 15
+  DISABLE_SPEED   = 45  #kph
+  ENABLE_SPEED    = 52  #kph
 
 FINGERPRINTS = {
   CAR.CX5: [

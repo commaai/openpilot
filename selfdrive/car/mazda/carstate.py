@@ -63,7 +63,7 @@ class CarState(CarStateBase):
     # On if no driver torque the last 5 seconds
     handsoff = cp.vl["STEER_RATE"]['HANDS_OFF_5_SECONDS'] == 1
 
-    # LKAS is enabled at 50kph going up and disabled at 45kph going down
+    # LKAS is enabled at 52kph going up and disabled at 45kph going down
 
     if speed_kph > LKAS_LIMITS.ENABLE_SPEED:
       self.lkas_on = True
