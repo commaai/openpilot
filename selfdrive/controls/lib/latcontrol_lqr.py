@@ -49,13 +49,15 @@ class LatControlLQR():
     steers_max = get_steer_max(CP, CS.vEgo)
     torque_scale = (0.45 + CS.vEgo / 60.0)**2  # Scale actuator model with speed
 
+    steering_angle = CS.steeringAngle
+
     # Subtract offset. Zero angle should correspond to zero torque
     self.angle_steers_des = path_plan.angleSteers - path_plan.angleOffset
-    CS.steeringAngle -= path_plan.angleOffset
+    steering_angle -= path_plan.angleOffset
 
     # Update Kalman filter
     angle_steers_k = float(self.C.dot(self.x_hat))
-    e = CS.steeringAngle - angle_steers_k
+    e = steering_angle - angle_steers_k
     self.x_hat = self.A.dot(self.x_hat) + self.B.dot(CS.steeringTorqueEps / torque_scale) + self.L.dot(e)
 
     if CS.vEgo < 0.3 or not active:

@@ -39,17 +39,6 @@ LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 
 
-def add_lane_change_event(events, path_plan):
-  if path_plan.laneChangeState == LaneChangeState.preLaneChange:
-    if path_plan.laneChangeDirection == LaneChangeDirection.left:
-      events.append(create_event('preLaneChangeLeft', [ET.WARNING]))
-    else:
-      events.append(create_event('preLaneChangeRight', [ET.WARNING]))
-  elif path_plan.laneChangeState in [LaneChangeState.laneChangeStarting, \
-                                      LaneChangeState.laneChangeFinishing]:
-    events.append(create_event('laneChange', [ET.WARNING]))
-
-
 def events_to_bytes(events):
   # optimization when comparing capnp structs: str() or tree traverse are much slower
   ret = []
@@ -71,7 +60,7 @@ class Controls:
     self.pm = pm
     if self.pm is None:
       self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', \
-                                     'carContro', 'carEvents', 'carParams'])
+                                     'carControl', 'carEvents', 'carParams'])
 
     self.sm = sm
     if self.sm is None:
@@ -83,7 +72,7 @@ class Controls:
       can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
       self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
-    # wait for health and CAN packets
+    # wait for one health and one CAN packet
     hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
     has_relay = hw_type in [HwType.blackPanda, HwType.uno]
     print("Waiting for CAN messages...")
@@ -95,13 +84,13 @@ class Controls:
     params = Params()
     self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
     self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
-
-    # Passive if internet needed or openpilot toggle disabled
-    passive = params.get("Passive", encoding='utf8') == "1"
     internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
     community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
     openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
-    passive = passive or internet_needed or not openpilot_enabled_toggle
+
+    # Passive if internet needed or openpilot toggle disabled
+    passive = params.get("Passive", encoding='utf8') == "1" or \
+              internet_needed or not openpilot_enabled_toggle
 
     car_recognized = self.CP.carName != 'mock'
     # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
@@ -178,7 +167,6 @@ class Controls:
     events = self.static_events.copy()
     events.extend(CS.events)
     events.extend(self.sm['dMonitoringState'].events)
-    add_lane_change_event(events, self.sm['pathPlan'])
 
     # Create events for battery, temperature, disk space, and memory
     if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
@@ -199,6 +187,16 @@ class Controls:
         events.append(create_event('calibrationIncomplete', [ET.NO_ENTRY, ET.SOFT_DISABLE, ET.PERMANENT]))
       else:
         events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+
+    # Handle lane change
+    if path_plan.laneChangeState == LaneChangeState.preLaneChange:
+      if path_plan.laneChangeDirection == LaneChangeDirection.left:
+        events.append(create_event('preLaneChangeLeft', [ET.WARNING]))
+      else:
+        events.append(create_event('preLaneChangeRight', [ET.WARNING]))
+    elif path_plan.laneChangeState in [LaneChangeState.laneChangeStarting, \
+                                        LaneChangeState.laneChangeFinishing]:
+      events.append(create_event('laneChange', [ET.WARNING]))
 
     if self.can_rcv_error:
       events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
