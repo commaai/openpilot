@@ -317,6 +317,11 @@ static inline uint cp_type7_packet(uint opcode, uint cnt)
 /* gmem command buffer length */
 #define CP_REG(reg) ((0x4 << 16) | (SUBBLOCK_OFFSET(reg)))
 
+// add these
+#define ADRENO_GPUREV(x) 530
+#define lower_32_bits(n) ((uint32_t)(n))
+#define upper_32_bits(n) ((uint32_t)(((n) >> 16) >> 16))
+
 /* Return true if the hardware uses the legacy (A4XX and older) PM4 format */
 #define ADRENO_LEGACY_PM4(_d) (ADRENO_GPUREV(_d) < 500)
 
