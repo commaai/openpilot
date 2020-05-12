@@ -29,7 +29,8 @@ sudo apt-get update && sudo apt-get install -y \
     libsqlite3-dev \
     libtool \
     libusb-1.0-0-dev \
-    libzmq5-dev \
+    libzmq3-dev \
+    libczmq-dev \
     locales \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
@@ -68,6 +69,9 @@ cd $HOME/openpilot
 git lfs pull
 git submodule init
 git submodule update
+
+# install capnproto
+cereal/install_capnp.sh
 
 # install python 3.8.2 globally (you should move to python3 anyway)
 pyenv install -s 3.8.2
