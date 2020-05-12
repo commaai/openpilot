@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include "include/msm_kgsl.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <dlfcn.h>
 #include <cassert>
 
@@ -29,31 +30,17 @@ using namespace std;
 
 class CachedCommand {
   public:
-    CachedCommand(struct kgsl_gpu_command *cmd);
+    CachedCommand(struct kgsl_gpu_command *cmd, int lfd);
     void exec();
   private:
     string cmd_0, cmd_1;
     int obj_len;
+    int fd;
 
     struct kgsl_gpu_command cache;
     struct kgsl_command_object cmds[2];
     struct kgsl_command_object objs[1];
 };
-
-CachedCommand::CachedCommand(struct kgsl_gpu_command *cmd) {
-  assert(cmd->numcmds == 2);
-  assert(cmd->numobjs == 1);
-  assert(cmd->numsyncs == 0);
-
-  printf("%p  %p %p\n", cmd, (void*)cmd->cmdlist, (void*)cmd->objlist);
-
-  memcpy(cmds, (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*2);
-  memcpy(objs, (void *)cmd->objlist, sizeof(struct kgsl_command_object)*1);
-  cmd_0.assign((char*)cmds[0].gpuaddr, cmds[0].size);
-  cmd_1.assign((char*)cmds[1].gpuaddr, cmds[1].size);
-
-  memcpy(&cache, cmd, sizeof(cache));
-}
 
 vector<CachedCommand *> queue_cmds;
 
@@ -127,6 +114,7 @@ int ioctl(int filedes, unsigned long request, void *argp) {
 
   int tid = gettid();
 
+  int skip = 0;
   if (request == IOCTL_KGSL_GPU_COMMAND) {
     struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
     printf("IOCTL_KGSL_GPU_COMMAND(%d): flags: 0x%lx numcmds: %u   numobjs: %u  numsyncs: %u   context_id: %u  timestamp: %u\n",
@@ -144,7 +132,12 @@ int ioctl(int filedes, unsigned long request, void *argp) {
     //memcpy(queue_init, (void*)obj[0].gpuaddr, sizeof(queue_init));
     //string qcmd((char*)obj[1].gpuaddr, obj[1].size);
     if (run_num == 3) {
-      queue_cmds.push_back(new CachedCommand(cmd));
+      CachedCommand *ccmd = new CachedCommand(cmd, filedes);
+      queue_cmds.push_back(ccmd);
+
+      //ccmd->exec();
+
+      //skip = 0;
       //printf("command 0x%lx\n", obj[1].gpuaddr);
       //disassemble((uint32_t *)qcmd.data(), qcmd.size()/4);
       //queue_cmds.push_back(qcmd);
@@ -201,13 +194,17 @@ int ioctl(int filedes, unsigned long request, void *argp) {
     printf("ioctl(%d) %lx\n", tid, request);
   }
 
-  int ret = my_ioctl(filedes, request, argp);
+  int ret;
+  if (skip) {
+    ret = 0;
+  } else {
+    ret = my_ioctl(filedes, request, argp);
+  }
   return ret;
 }
 
 }
 
-#include <stdlib.h>
 #include <CL/cl.h>
 #include "../runners/snpemodel.h"
 #include <sys/types.h>
@@ -218,6 +215,41 @@ static inline uint64_t nanos_since_boot() {
   clock_gettime(CLOCK_BOOTTIME, &t);
   return t.tv_sec * 1000000000ULL + t.tv_nsec;
 }
+
+int global_timestamp = -1;
+CachedCommand::CachedCommand(struct kgsl_gpu_command *cmd, int lfd) {
+  fd = lfd;
+  assert(cmd->numcmds == 2);
+  assert(cmd->numobjs == 1);
+  assert(cmd->numsyncs == 0);
+
+  global_timestamp = cmd->timestamp;
+
+  printf("%p  %p %p\n", cmd, (void*)cmd->cmdlist, (void*)cmd->objlist);
+
+  memcpy(cmds, (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*2);
+  memcpy(objs, (void *)cmd->objlist, sizeof(struct kgsl_command_object)*1);
+  cmd_0.assign((char*)cmds[0].gpuaddr, cmds[0].size);
+  cmd_1.assign((char*)cmds[1].gpuaddr, cmds[1].size);
+
+  memcpy(&cache, cmd, sizeof(cache));
+}
+
+void CachedCommand::exec() {
+  // set up buffers
+  memcpy((void*)cmds[0].gpuaddr, cmd_0.data(), cmd_0.size());
+  memcpy((void*)cmds[1].gpuaddr, cmd_1.data(), cmd_1.size());
+  memset((void*)objs[0].gpuaddr, 0, objs[0].size);
+
+  cache.timestamp = ++global_timestamp;
+  cache.cmdlist = (uint64_t)cmds;
+  cache.objlist = (uint64_t)objs;
+
+  // run
+  int ret = ioctl(fd, IOCTL_KGSL_GPU_COMMAND, &cache);
+  printf("CachedCommand::exec got %d\n", ret);
+}
+
 
 int do_print = 0;
 
@@ -537,6 +569,12 @@ int main(int argc, char* argv[]) {
   mdl.execute(input, 0);
   do_print = 0;
 
+  printf("************** execute 4 **************\n");
+  run_num = 4;
+  for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
+    (*it)->exec();
+  }
+
   /*FILE *f = fopen("/proc/self/maps", "rb");
   char maps[0x100000];
   int len = fread(maps, 1, sizeof(maps), f);
@@ -583,7 +621,6 @@ int main(int argc, char* argv[]) {
     objlists.size = 0xc0;
     objlists.flags = 0x18;
 
-    ioctl(3, IOCTL_KGSL_GPU_COMMAND, &cmd);
   }*/
 }
 
