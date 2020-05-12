@@ -65,10 +65,9 @@ def events_to_bytes(events):
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     gc.disable()
-
     set_realtime_priority(3)
 
-    # Pub/Sub Sockets
+    # Setup sockets
     self.pm = pm
     if self.pm is None:
       self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', \
@@ -177,16 +176,9 @@ class Controls:
 
   def create_events(self, CS):
     events = self.static_events.copy()
-
-    # can't change order yet as process replay will fail
-    # TODO: clean this up after refactor is done and verified to have no changes
-
     events.extend(CS.events)
     events.extend(self.sm['dMonitoringState'].events)
     add_lane_change_event(events, self.sm['pathPlan'])
-
-    if self.can_rcv_error:
-      events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
 
     # Create events for battery, temperature, disk space, and memory
     if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
@@ -208,6 +200,8 @@ class Controls:
       else:
         events.append(create_event('calibrationInvalid', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
+    if self.can_rcv_error:
+      events.append(create_event('canError', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.mismatch_counter >= 200:
       events.append(create_event('controlsMismatch', [ET.IMMEDIATE_DISABLE]))
     if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
