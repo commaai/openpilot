@@ -3,7 +3,6 @@
 #include "common/mat.h"
 #include "common/timing.h"
 
-// #include <fastcv.h>
 #include <libyuv.h>
 
 #define MODEL_WIDTH 160
