@@ -34,8 +34,6 @@ float tesla_ts_angle_last = 0;
 
 int tesla_controls_allowed_last = 0;
 
-int tesla_brake_prev = 0;
-int tesla_gas_prev = 0;
 int tesla_speed = 0;
 int eac_status = 0;
 

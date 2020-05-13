@@ -11,7 +11,7 @@ jobs:
       - run:
           name: Run safety test
           command: |
-            docker run panda_safety /bin/bash -c "cd /panda/tests/safety; PYTHONPATH=/ ./test.sh"
+            docker run panda_safety /bin/bash -c "cd /openpilot/panda/tests/safety; PYTHONPATH=/openpilot ./test.sh"
 
   misra-c2012:
     machine:

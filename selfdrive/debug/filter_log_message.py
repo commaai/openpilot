@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import argparse
 import json
 
@@ -14,6 +13,15 @@ LEVELS = {
   "CRITICAL": 50,
 }
 
+ANDROID_LOG_SOURCE = {
+  0: "MAIN",
+  1: "RADIO",
+  2: "EVENTS",
+  3: "SYSTEM",
+  4: "CRASH",
+  5: "KERNEL",
+}
+
 
 if __name__ == "__main__":
 
@@ -23,20 +31,24 @@ if __name__ == "__main__":
   parser.add_argument("socket", type=str, nargs='*', help="socket name")
   args = parser.parse_args()
 
-  if args.addr != "127.0.0.1":
-    os.environ["ZMQ"] = "1"
-    messaging.context = messaging.Context()
-
-  poller = messaging.Poller()
-  sock = messaging.sub_sock("logMessage", poller, addr=args.addr)
+  sm = messaging.SubMaster(['logMessage', 'androidLog'], addr=args.addr)
 
   min_level = LEVELS[args.level]
 
   while True:
-    polld = poller.poll(1000)
-    for sock in polld:
-      evt = messaging.recv_one(sock)
-      log = json.loads(evt.logMessage)
+    sm.update()
 
-      if log['levelnum'] >= min_level:
-        print(f"{log['filename']}:{log.get('lineno', '')} - {log.get('funcname', '')}: {log['msg']}")
+    if sm.updated['logMessage']:
+      t = sm.logMonoTime['logMessage']
+      try:
+        log = json.loads(sm['logMessage'])
+        if log['levelnum'] >= min_level:
+          print(f"[{t / 1e9:.6f}] {log['filename']}:{log.get('lineno', '')} - {log.get('funcname', '')}: {log['msg']}")
+      except json.decoder.JSONDecodeError:
+        print(f"[{t / 1e9:.6f}] decode error: {sm['logMessage']}")
+
+    if sm.updated['androidLog']:
+      t = sm.logMonoTime['androidLog']
+      m = sm['androidLog']
+      source = ANDROID_LOG_SOURCE[m.id]
+      print(f"[{t / 1e9:.6f}] {source} {m.pid} {m.tag} - {m.message}")

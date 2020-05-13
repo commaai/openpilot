@@ -27,12 +27,19 @@ def load_interfaces(brand_names):
   for brand_name in brand_names:
     path = ('selfdrive.car.%s' % brand_name)
     CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
+
+    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carstate.py'):
+      CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
+    else:
+      CarState = None
+
     if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carcontroller.py'):
       CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
     else:
       CarController = None
+
     for model_name in brand_names[brand_name]:
-      ret[model_name] = (CarInterface, CarController)
+      ret[model_name] = (CarInterface, CarController, CarState)
   return ret
 
 
@@ -54,7 +61,8 @@ def _get_interface_names():
 
 
 # imports from directory selfdrive/car/<name>/
-interfaces = load_interfaces(_get_interface_names())
+interface_names = _get_interface_names()
+interfaces = load_interfaces(interface_names)
 
 
 def only_toyota_left(candidate_cars):
@@ -63,17 +71,24 @@ def only_toyota_left(candidate_cars):
 
 # **** for use live only ****
 def fingerprint(logcan, sendcan, has_relay):
-  if has_relay:
+  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
+
+  if has_relay and not fixed_fingerprint:
     # Vin query only reliably works thorugh OBDII
     bus = 1
 
     cached_params = Params().get("CarParamsCache")
     if cached_params is not None:
+      cached_params = car.CarParams.from_bytes(cached_params)
+      if cached_params.carName == "mock":
+        cached_params = None
+
+    if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
-      CP = car.CarParams.from_bytes(cached_params)
-      vin = CP.carVin
-      car_fw = list(CP.carFw)
+      vin = cached_params.carVin
+      car_fw = list(cached_params.carFw)
     else:
+      cloudlog.warning("Getting VIN & FW versions")
       _, vin = get_vin(logcan, sendcan, bus)
       car_fw = get_fw_versions(logcan, sendcan, bus)
 
@@ -133,8 +148,7 @@ def fingerprint(logcan, sendcan, has_relay):
     car_fingerprint = list(fw_candidates)[0]
     source = car.CarParams.FingerprintSource.fw
 
-  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
-  if len(fixed_fingerprint):
+  if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
@@ -149,10 +163,10 @@ def get_car(logcan, sendcan, has_relay=False):
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     candidate = "mock"
 
-  CarInterface, CarController = interfaces[candidate]
+  CarInterface, CarController, CarState = interfaces[candidate]
   car_params = CarInterface.get_params(candidate, fingerprints, has_relay, car_fw)
   car_params.carVin = vin
   car_params.carFw = car_fw
   car_params.fingerprintSource = source
 
-  return CarInterface(car_params, CarController), car_params
+  return CarInterface(car_params, CarController, CarState), car_params

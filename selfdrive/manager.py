@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 import os
 import time
 import sys
@@ -8,13 +8,16 @@ import signal
 import shutil
 import subprocess
 import datetime
+import textwrap
+from selfdrive.swaglog import cloudlog, add_logentries_handler
 
 from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
+WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-TOTAL_SCONS_NODES = 1195
+TOTAL_SCONS_NODES = 1140
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 # Create folders needed for msgq
@@ -56,14 +59,21 @@ def unblock_stdout():
       except (OSError, IOError, UnicodeDecodeError):
         pass
 
-    os._exit(os.wait()[1])
+    # os.wait() returns a tuple with the pid and a 16 bit value
+    # whose low byte is the signal number and whose high byte is the exit satus
+    exit_status = os.wait()[1] >> 8
+    os._exit(exit_status)
 
 
 if __name__ == "__main__":
   unblock_stdout()
+
+if __name__ == "__main__" and ANDROID:
   from common.spinner import Spinner
+  from common.text_window import TextWindow
 else:
   from common.spinner import FakeSpinner as Spinner
+  from common.text_window import FakeTextWindow as TextWindow
 
 import importlib
 import traceback
@@ -84,25 +94,32 @@ if not prebuilt:
     j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
     scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
+    compile_output = []
+
     # Read progress from stderr and update spinner
     while scons.poll() is None:
       try:
         line = scons.stderr.readline()
         if line is None:
           continue
-
         line = line.rstrip()
+
         prefix = b'progress: '
         if line.startswith(prefix):
           i = int(line[len(prefix):])
           if spinner is not None:
-            spinner.update("%d" % (50.0 * (i / TOTAL_SCONS_NODES)))
+            spinner.update("%d" % (70.0 * (i / TOTAL_SCONS_NODES)))
         elif len(line):
-          print(line.decode('utf8'))
+          compile_output.append(line)
+          print(line.decode('utf8', 'replace'))
       except Exception:
         pass
 
     if scons.returncode != 0:
+      # Read remaining output
+      r = scons.stderr.read().split(b'\n')
+      compile_output += r
+
       if retry:
         print("scons build failed, cleaning in")
         for i in range(3,-1,-1):
@@ -111,7 +128,19 @@ if not prebuilt:
         subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
         shutil.rmtree("/tmp/scons_cache")
       else:
-        raise RuntimeError("scons build failed")
+        # Build failed log errors
+        errors = [line.decode('utf8', 'replace') for line in compile_output
+                  if any([err in line for err in [b'error: ', b'not found, needed by target']])]
+        error_s = "\n".join(errors)
+        add_logentries_handler(cloudlog)
+        cloudlog.error("scons build failed\n" + error_s)
+
+        # Show TextWindow
+        error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
+        with TextWindow("Openpilot failed to build\n \n" + error_s) as t:
+          t.wait_for_exit()
+
+        exit(1)
     else:
       break
 
@@ -120,19 +149,19 @@ import cereal.messaging as messaging
 
 from common.params import Params
 import selfdrive.crash as crash
-from selfdrive.swaglog import cloudlog
 from selfdrive.registration import register
 from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
 from common import android
-from common.apk import update_apks, pm_apply_packages, start_frame
+from common.apk import update_apks, pm_apply_packages, start_offroad
+from common.manager_helpers import print_cpu_usage
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
 # comment out anything you don't want to run
 managed_processes = {
-  "thermald": "selfdrive.thermald",
+  "thermald": "selfdrive.thermald.thermald",
   "uploader": "selfdrive.loggerd.uploader",
   "deleter": "selfdrive.loggerd.deleter",
   "controlsd": "selfdrive.controls.controlsd",
@@ -158,6 +187,7 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
+  "driverview": "selfdrive.controls.lib.driverview",
 }
 
 daemon_processes = {
@@ -186,6 +216,7 @@ persistent_processes = [
   'ui',
   'uploader',
 ]
+
 if ANDROID:
   persistent_processes += [
     'logcatd',
@@ -205,8 +236,14 @@ car_started_processes = [
   'modeld',
   'proclogd',
   'ubloxd',
-  'locationd',
+  #'locationd',
 ]
+
+if WEBCAM:
+  car_started_processes += [
+    'dmonitoringmodeld',
+  ]
+
 if ANDROID:
   car_started_processes += [
     'sensord',
@@ -349,7 +386,7 @@ def manager_init(should_register=True):
   if should_register:
     reg_res = register()
     if reg_res:
-      dongle_id, dongle_secret = reg_res
+      dongle_id = reg_res
     else:
       raise Exception("server registration failed")
   else:
@@ -383,6 +420,9 @@ def manager_thread():
   # now loop
   thermal_sock = messaging.sub_sock('thermal')
 
+  if os.getenv("GET_CPU_USAGE"):
+    proc_sock = messaging.sub_sock('procLog', conflate=True)
+
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
@@ -399,15 +439,22 @@ def manager_thread():
   for p in persistent_processes:
     start_managed_process(p)
 
-  # start frame
+  # start offroad
   if ANDROID:
     pm_apply_packages('enable')
-    start_frame()
+    start_offroad()
 
   if os.getenv("NOBOARD") is None:
     start_managed_process("pandad")
 
+  if os.getenv("BLOCK") is not None:
+    for k in os.getenv("BLOCK").split(","):
+      del managed_processes[k]
+
   logger_dead = False
+
+  start_t = time.time()
+  first_proc = None
 
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
@@ -425,7 +472,7 @@ def manager_thread():
     if msg.thermal.freeSpace < 0.05:
       logger_dead = True
 
-    if msg.thermal.started:
+    if msg.thermal.started and "driverview" not in running:
       for p in car_started_processes:
         if p == "loggerd" and logger_dead:
           kill_managed_process(p)
@@ -435,6 +482,11 @@ def manager_thread():
       logger_dead = False
       for p in reversed(car_started_processes):
         kill_managed_process(p)
+      # this is ugly
+      if "driverview" not in running and params.get("IsDriverViewEnabled") == b"1":
+        start_managed_process("driverview")
+      elif "driverview" in running and params.get("IsDriverViewEnabled") == b"0":
+        kill_managed_process("driverview")
 
     # check the status of all processes, did any of them die?
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
@@ -444,12 +496,26 @@ def manager_thread():
     if params.get("DoUninstall", encoding='utf8') == "1":
       break
 
+    if os.getenv("GET_CPU_USAGE"):
+      dt = time.time() - start_t
+
+      # Get first sample
+      if dt > 30 and first_proc is None:
+        first_proc = messaging.recv_sock(proc_sock)
+
+      # Get last sample and exit
+      if dt > 90:
+        last_proc = messaging.recv_sock(proc_sock, wait=True)
+
+        cleanup_all_processes(None, None)
+        sys.exit(print_cpu_usage(first_proc, last_proc))
+
 def manager_prepare(spinner=None):
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
   # Spinner has to start from 70 here
-  total = 100.0 if prebuilt else 50.0
+  total = 100.0 if prebuilt else 30.0
 
   for i, p in enumerate(managed_processes):
     if spinner is not None:
@@ -475,40 +541,31 @@ def main():
   params = Params()
   params.manager_start()
 
+  default_params = [
+    ("CommunityFeaturesToggle", "0"),
+    ("CompletedTrainingVersion", "0"),
+    ("IsRHD", "0"),
+    ("IsMetric", "0"),
+    ("RecordFront", "0"),
+    ("HasAcceptedTerms", "0"),
+    ("HasCompletedSetup", "0"),
+    ("IsUploadRawEnabled", "1"),
+    ("IsLdwEnabled", "1"),
+    ("IsGeofenceEnabled", "-1"),
+    ("SpeedLimitOffset", "0"),
+    ("LongitudinalControl", "0"),
+    ("LimitSetSpeed", "0"),
+    ("LimitSetSpeedNeural", "0"),
+    ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
+    ("OpenpilotEnabledToggle", "1"),
+    ("LaneChangeEnabled", "1"),
+    ("IsDriverViewEnabled", "0"),
+  ]
+
   # set unset params
-  if params.get("CommunityFeaturesToggle") is None:
-    params.put("CommunityFeaturesToggle", "0")
-  if params.get("CompletedTrainingVersion") is None:
-    params.put("CompletedTrainingVersion", "0")
-  if params.get("IsMetric") is None:
-    params.put("IsMetric", "0")
-  if params.get("RecordFront") is None:
-    params.put("RecordFront", "0")
-  if params.get("HasAcceptedTerms") is None:
-    params.put("HasAcceptedTerms", "0")
-  if params.get("HasCompletedSetup") is None:
-    params.put("HasCompletedSetup", "0")
-  if params.get("IsUploadRawEnabled") is None:
-    params.put("IsUploadRawEnabled", "1")
-  if params.get("IsLdwEnabled") is None:
-    params.put("IsLdwEnabled", "1")
-  if params.get("IsGeofenceEnabled") is None:
-    params.put("IsGeofenceEnabled", "-1")
-  if params.get("SpeedLimitOffset") is None:
-    params.put("SpeedLimitOffset", "0")
-  if params.get("LongitudinalControl") is None:
-    params.put("LongitudinalControl", "0")
-  if params.get("LimitSetSpeed") is None:
-    params.put("LimitSetSpeed", "0")
-  if params.get("LimitSetSpeedNeural") is None:
-    params.put("LimitSetSpeedNeural", "0")
-  if params.get("LastUpdateTime") is None:
-    t = datetime.datetime.now().isoformat()
-    params.put("LastUpdateTime", t.encode('utf8'))
-  if params.get("OpenpilotEnabledToggle") is None:
-    params.put("OpenpilotEnabledToggle", "1")
-  if params.get("LaneChangeEnabled") is None:
-    params.put("LaneChangeEnabled", "1")
+  for k, v in default_params:
+    if params.get(k) is None:
+      params.put(k, v)
 
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:
@@ -531,6 +588,8 @@ def main():
 
   try:
     manager_thread()
+  except SystemExit:
+    raise
   except Exception:
     traceback.print_exc()
     crash.capture_exception()
@@ -540,7 +599,22 @@ def main():
   if params.get("DoUninstall", encoding='utf8') == "1":
     uninstall()
 
+
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except Exception:
+    add_logentries_handler(cloudlog)
+    cloudlog.exception("Manager failed to start")
+
+    # Show last 3 lines of traceback
+    error = traceback.format_exc(3)
+
+    error = "Manager failed to start\n \n" + error
+    with TextWindow(error) as t:
+      t.wait_for_exit()
+
+    raise
+
   # manual exit because we are forked
   sys.exit(0)

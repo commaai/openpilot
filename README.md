@@ -5,22 +5,24 @@ This is the "Community fork" for Kia, Hyundai and Genesis.
 it is a fork of comma's openpilot: https://github.com/commaai/openpilot. It is open source and inherits MIT license.  By installing this software you accept all responsibility for anything that might occur while you use it.  All contributors to this fork are not liable.  <b>Use at your own risk.</b>
 
 <b>The port was started by Andrew Frahn of Emmertex, ku7 tech on youtube
-https://www.youtube.com/c/ku7tech
-I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JX92RNKXRPJKN&currency_code=USD&source=url)</b>
+https://www.youtube.com/c/ku7tech</b>
+
+support:
+------
+<b>I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JX92RNKXRPJKN&currency_code=USD&source=url)</b>
 
 Changes:
 ------
 
 - <b>  Auto LCA:</b> credit to @SiGmAX666: Auto Lane change assist, no need for steering nudge. LCA will abort if driver override steering wheel. To enable Auto LCA(disabled by default),  change line 189 in selfdrive/car/hyundai/interface.py to:
 ```python
-    ret.autoLcaEnabled = 1
+    ret.autoLcaEnabled = True
 ```
 - <b>  Enable by Cruise button:</b> Only for Car without long control, Openpilot will engage when turn cruise control on. To revert to SET button for enable, change line 54 in selfdrive/car/hyundai/carcontroller.py to:
 ```python
-    self.longcontrol = 1
+    self.longcontrol = True
 ```
 - <b>  Turning disable:</b> thank to Ku7: Openpilot will disable steering while turning signal on and speed below 60 kph, Enable again after 1 second. 
-- <b>  Increase driver monitoring timer</b>  
 - <b>  Disabling by LKAS button:</b> Openpilot will disable and enable steering by toggling LKAS button.
 - <b>  Setup Auto Detection:</b> Openpilot and Panda will detect MDPS, SCC and SAS buses and behaive acordingly.
 - <b>  Panda Universal Forwarding(PUF):</b> Panda will auto forwading for all CAN messages if Eon disconnected.

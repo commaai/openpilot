@@ -9,3 +9,4 @@ requests
 flake8==3.7.9
 pylint==2.4.3
 cffi==1.11.4
+crcmod

@@ -30,11 +30,8 @@ def _create_radar_can_parser(car_fingerprint):
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
-    # radar
-    self.pts = {}
+    super().__init__(CP)
     self.track_id = 0
-
-    self.delay = 0  # Delay of radar
     self.radar_ts = CP.radarTimeStep
 
     if CP.carFingerprint in TSS2_CAR:

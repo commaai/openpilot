@@ -1,6 +1,6 @@
 #ifndef _UI_H
 #define _UI_H
-
+#include "cereal/gen/cpp/log.capnp.h"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -12,8 +12,8 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 
+#include <capnp/serialize.h>
 #include <pthread.h>
-
 #include "nanovg.h"
 
 #include "common/mat.h"
@@ -22,9 +22,6 @@
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "messaging.hpp"
-
-#include "cereal/gen/c/log.capnp.h"
-
 #include "sound.hpp"
 
 #define STATUS_STOPPED 0
@@ -33,10 +30,17 @@
 #define STATUS_WARNING 3
 #define STATUS_ALERT 4
 
-#define ALERTSIZE_NONE 0
-#define ALERTSIZE_SMALL 1
-#define ALERTSIZE_MID 2
-#define ALERTSIZE_FULL 3
+#define NET_CONNECTED 0
+#define NET_DISCONNECTED 1
+#define NET_ERROR 2
+
+#define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
+#define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
+#define COLOR_WHITE nvgRGBA(255, 255, 255, 255)
+#define COLOR_WHITE_ALPHA(x) nvgRGBA(255, 255, 255, x)
+#define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
+#define COLOR_RED nvgRGBA(201, 34, 49, 255)
+#define COLOR_OCHRE nvgRGBA(218, 111, 37, 255)
 
 #ifndef QCOM
   #define UI_60FPS
@@ -57,9 +61,18 @@ const int box_y = bdr_s;
 const int box_w = vwp_w-sbr_w-(bdr_s*2);
 const int box_h = vwp_h-(bdr_s*2);
 const int viz_w = vwp_w-(bdr_s*2);
+const int ff_xoffset = 32;
 const int header_h = 420;
 const int footer_h = 280;
 const int footer_y = vwp_h-bdr_s-footer_h;
+const int settings_btn_h = 117;
+const int settings_btn_w = 200;
+const int settings_btn_x = 50;
+const int settings_btn_y = 35;
+const int home_btn_h = 180;
+const int home_btn_w = 180;
+const int home_btn_x = 60;
+const int home_btn_y = vwp_h - home_btn_h - 40;
 
 const int UI_FREQ = 30;   // Hz
 
@@ -108,6 +121,7 @@ typedef struct UIScene {
 
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
+  bool uilayout_mockengaged;
   // responsive layout
   int ui_viz_rx;
   int ui_viz_rw;
@@ -116,18 +130,36 @@ typedef struct UIScene {
   int lead_status;
   float lead_d_rel, lead_y_rel, lead_v_rel;
 
+  int lead_status2;
+  float lead_d_rel2, lead_y_rel2, lead_v_rel2;
+
+  float face_prob;
+  bool is_rhd;
+  float face_x, face_y;
+
   int front_box_x, front_box_y, front_box_width, front_box_height;
 
   uint64_t alert_ts;
-  char alert_text1[1024];
-  char alert_text2[1024];
-  uint8_t alert_size;
+  std::string alert_text1;
+  std::string alert_text2;
+  cereal::ControlsState::AlertSize alert_size;
   float alert_blinkingrate;
 
   float awareness_status;
 
   // Used to show gps planner status
   bool gps_planner_active;
+
+  cereal::ThermalData::NetworkType networkType;
+  cereal::ThermalData::NetworkStrength networkStrength;
+  int batteryPercent;
+  bool batteryCharging;
+  float freeSpace;
+  cereal::ThermalData::ThermalStatus thermalStatus;
+  int paTemp;
+  cereal::HealthData::HwType hwType;
+  int satelliteCount;
+  uint8_t athenaStatus;
 } UIScene;
 
 typedef struct {
@@ -147,7 +179,6 @@ typedef struct {
 
 typedef struct UIState {
   pthread_mutex_t lock;
-  pthread_cond_t bg_cond;
 
   // framebuffer
   FramebufferState *fb;
@@ -165,6 +196,11 @@ typedef struct UIState {
   int img_turn;
   int img_face;
   int img_map;
+  int img_button_settings;
+  int img_button_home;
+  int img_battery;
+  int img_battery_charging;
+  int img_network[6];
 
   // sockets
   Context *ctx;
@@ -174,9 +210,16 @@ typedef struct UIState {
   SubSocket *radarstate_sock;
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
+  SubSocket *thermal_sock;
+  SubSocket *health_sock;
+  SubSocket *ubloxgnss_sock;
+  SubSocket *driverstate_sock;
+  SubSocket *dmonitoring_sock;
+  PubSocket *offroad_sock;
   Poller * poller;
+  Poller * ublox_poller;
 
-  int active_app;
+  cereal::UiLayoutState::App active_app;
 
   // vision state
   bool vision_connected;
@@ -218,20 +261,26 @@ typedef struct UIState {
   int is_metric_timeout;
   int longitudinal_control_timeout;
   int limit_set_speed_timeout;
+  int hardware_timeout;
+  int last_athena_ping_timeout;
+  int offroad_layout_timeout;
 
   bool controls_seen;
 
+  uint64_t last_athena_ping;
   int status;
   bool is_metric;
   bool longitudinal_control;
   bool limit_set_speed;
   float speed_lim_off;
   bool is_ego_over_limit;
-  char alert_type[64];
+  std::string alert_type;
   AudibleAlert alert_sound;
-  int alert_size;
   float alert_blinking_alpha;
   bool alert_blinked;
+  bool started;
+  bool thermal_started, preview_started;
+  bool vision_seen;
 
   float light_sensor;
 
@@ -250,9 +299,13 @@ typedef struct UIState {
 } UIState;
 
 // API
-void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
-                          const char* va_text1, const char* va_text2); 
+void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, int va_color,
+                          const char* va_text1, const char* va_text2);
 void ui_draw(UIState *s);
+void ui_draw_sidebar(UIState *s);
+void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha);
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r = 0, int width = 0);
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r = 0);
 void ui_nvg_init(UIState *s);
 
 #endif

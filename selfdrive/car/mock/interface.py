@@ -14,7 +14,7 @@ LPG = 2 * 3.1415 * YAW_FR * TS / (1 + 2 * 3.1415 * YAW_FR * TS)
 
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController):
+  def __init__(self, CP, CarController, CarState):
     self.CP = CP
     self.CC = CarController
 
@@ -35,17 +35,9 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-
-    ret = car.CarParams.new_message()
-
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "mock"
-    ret.carFingerprint = candidate
-
     ret.safetyModel = car.CarParams.SafetyModel.noOutput
-    ret.openpilotLongitudinalControl = False
-
-    # FIXME: hardcoding honda civic 2016 touring params so they can be used to
-    # scale unknown params for other cars
     ret.mass = 1700.
     ret.rotationalInertia = 2500.
     ret.wheelbase = 2.70
@@ -53,22 +45,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 13. # reasonable
     ret.tireStiffnessFront = 1e6    # very stiff to neglect slip
     ret.tireStiffnessRear = 1e6     # very stiff to neglect slip
-    ret.steerRatioRear = 0.
-
-    ret.steerMaxBP = [0.]
-    ret.steerMaxV = [0.]  # 2/3rd torque allowed above 45 kph
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.]
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [0.]
-
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
-    ret.steerActuatorDelay = 0.
 
     return ret
 
@@ -97,13 +73,13 @@ class CarInterface(CarInterfaceBase):
     ret.aEgo = a
     ret.brakePressed = a < -0.5
 
-    self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
-    ret.yawRate = self.yaw_rate
     ret.standstill = self.speed < 0.01
     ret.wheelSpeeds.fl = self.speed
     ret.wheelSpeeds.fr = self.speed
     ret.wheelSpeeds.rl = self.speed
     ret.wheelSpeeds.rr = self.speed
+
+    self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
     curvature = self.yaw_rate / max(self.speed, 1.)
     ret.steeringAngle = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
 

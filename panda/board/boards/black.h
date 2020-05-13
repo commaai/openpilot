@@ -23,9 +23,13 @@ void black_enable_can_transciever(uint8_t transciever, bool enabled) {
 }
 
 void black_enable_can_transcievers(bool enabled) {
-  uint8_t t1 = enabled ? 1U : 2U;  // leave transciever 1 enabled to detect CAN ignition
-  for(uint8_t i=t1; i<=4U; i++) {
-    black_enable_can_transciever(i, enabled);
+  for(uint8_t i=1U; i<=4U; i++){
+    // Leave main CAN always on for CAN-based ignition detection
+    if((car_harness_status == HARNESS_STATUS_FLIPPED) ? (i == 3U) : (i == 1U)){
+      black_enable_can_transciever(i, true);
+    } else {
+      black_enable_can_transciever(i, enabled);
+    }
   }
 }
 

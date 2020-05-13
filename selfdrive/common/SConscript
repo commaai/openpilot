@@ -5,7 +5,7 @@ if SHARED:
 else:
   fxn = env.Library
 
-_common = fxn('common', ['params.cc', 'swaglog.c', 'util.c', 'cqueue.c'], LIBS="json")
+_common = fxn('common', ['params.cc', 'swaglog.cc', 'util.c', 'cqueue.c'], LIBS="json11")
 _visionipc = fxn('visionipc', ['visionipc.c', 'ipc.c'])
 
 files = [
@@ -24,6 +24,12 @@ if arch == "aarch64":
     'visionbuf_ion.c',
   ]
   _gpu_libs = ['gui', 'adreno_utils']
+elif arch == "larch64":
+  defines = {"CLU_NO_CACHE": None}
+  files += [
+    'visionbuf_ion.c',
+  ]
+  _gpu_libs = ['GL']
 else:
   defines = {"CLU_NO_CACHE": None}
   files += [

@@ -27,8 +27,7 @@ except Exception:
 
 # *** serialization functions ***
 def can_list_to_can_capnp(can_msgs, msgtype='can'):
-  dat = messaging.new_message()
-  dat.init(msgtype, len(can_msgs))
+  dat = messaging.new_message(msgtype, len(can_msgs))
   for i, can_msg in enumerate(can_msgs):
     if msgtype == 'sendcan':
       cc = dat.sendcan[i]
@@ -168,8 +167,7 @@ def boardd_loop(rate=100):
     # health packet @ 2hz
     if (rk.frame % (rate // 2)) == 0:
       health = can_health()
-      msg = messaging.new_message()
-      msg.init('health')
+      msg = messaging.new_message('health')
 
       # store the health to be logged
       msg.health.voltage = health['voltage']
@@ -232,7 +230,7 @@ def boardd_proxy_loop(rate=100, address="192.168.2.251"):
 
     rk.keep_time()
 
-def main(gctx=None):
+def main():
   if os.getenv("MOCK") is not None:
     boardd_mock_loop()
   elif os.getenv("PROXY") is not None:
