@@ -393,8 +393,6 @@ selfdrive/assets/fonts/*.ttf
 
 phonelibs/SConscript
 
-phonelibs/eigen/**
-
 phonelibs/nanovg/*.c
 phonelibs/nanovg/*.h
 

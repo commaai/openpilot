@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 #include "data.h"
 
