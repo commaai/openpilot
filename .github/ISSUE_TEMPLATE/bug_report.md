@@ -18,6 +18,7 @@ A clear and concise description of what you expected to happen.
 
 **Device/Version information (please complete the following information):**
  - Device: [e.g. EON/EON Gold]
+ - Dongle ID: [e.g. 77611a1fac303767, can be found in Settings -> Device -> Dongle ID]
  - Version: [e.g. 0.6.4], or commit hash when on devel
  - Car make/model [e.g. Toyota Prius 2016]
 
