@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <cassert>
+#include <sys/mman.h>
 
 int run_num = 0;
 int ioctl_num = 0;
@@ -102,6 +103,7 @@ void disassemble(uint32_t *src, int len) {
 
 }
 
+int intercept = 1;
 
 extern "C" {
 
@@ -111,10 +113,12 @@ pid_t gettid(void);
 int ioctl(int filedes, unsigned long request, void *argp) {
   int (*my_ioctl)(int filedes, unsigned long request, void *argp);
   my_ioctl = reinterpret_cast<decltype(my_ioctl)>(dlsym(RTLD_NEXT, "ioctl"));
+  int skip = 0;
+
+if (intercept) {
 
   int tid = gettid();
 
-  int skip = 0;
   if (request == IOCTL_KGSL_GPU_COMMAND) {
     struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
     printf("IOCTL_KGSL_GPU_COMMAND(%d): flags: 0x%lx numcmds: %u   numobjs: %u  numsyncs: %u   context_id: %u  timestamp: %u\n",
@@ -188,11 +192,16 @@ int ioctl(int filedes, unsigned long request, void *argp) {
     struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
     printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID(%d): context_id: %d  timestamp: %d  timeout: %d\n",
         tid, cmd->context_id, cmd->timestamp, cmd->timeout);
+  } else if (request == IOCTL_KGSL_GPUOBJ_ALLOC) {
+    struct kgsl_gpuobj_alloc *cmd = (struct kgsl_gpuobj_alloc *)argp;
+    printf("IOCTL_KGSL_GPUOBJ_ALLOC: 0x%lx\n", cmd->size);
   } else if (request == IOCTL_KGSL_GPUOBJ_FREE) {
     //printf("IOCTL_KGSL_GPUOBJ_FREE\n");
   } else if (filedes == 3) {
     printf("ioctl(%d) %lx\n", tid, request);
   }
+
+}
 
   int ret;
   if (skip) {
@@ -232,6 +241,7 @@ CachedCommand::CachedCommand(struct kgsl_gpu_command *cmd, int lfd) {
   cmd_0.assign((char*)cmds[0].gpuaddr, cmds[0].size);
   cmd_1.assign((char*)cmds[1].gpuaddr, cmds[1].size);
 
+
   memcpy(&cache, cmd, sizeof(cache));
 }
 
@@ -247,7 +257,6 @@ void CachedCommand::exec(bool wait) {
 
   // run
   int ret = ioctl(fd, IOCTL_KGSL_GPU_COMMAND, &cache);
-  printf("CachedCommand::exec got %d\n", ret);
 
   if (wait) {
     struct kgsl_device_waittimestamp_ctxtid wait;
@@ -256,10 +265,12 @@ void CachedCommand::exec(bool wait) {
     wait.timeout = -1;
 
     uint64_t tb = nanos_since_boot();
-    int ret = ioctl(fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &cache);
+    int wret = ioctl(fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &wait);
     uint64_t te = nanos_since_boot();
 
-    printf("wait got %d after %lu us\n", ret, (te-tb)/1000);
+    printf("exec %d wait %d after %lu us\n", ret, wret, (te-tb)/1000);
+  } else {
+    printf("CachedCommand::exec got %d\n", ret);
   }
 }
 
@@ -582,22 +593,30 @@ int main(int argc, char* argv[]) {
   mdl.execute(input, 0);
   do_print = 0;
 
-  printf("************** execute 4 **************\n");
-  run_num = 4;
+  intercept = 0;
+  while (1) {
+    printf("************** execute 4 **************\n");
+    run_num = 4;
 
-  uint64_t tb = nanos_since_boot();
-  for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
-    (*it)->exec(true);
+    uint64_t tb = nanos_since_boot();
+    int i = 0;
+    for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
+      printf("run %2d: ", i++);
+      //(*it)->exec(((i%5) == 0) || (i == queue_cmds.size()-1));
+      (*it)->exec(true);
+    }
+    uint64_t te = nanos_since_boot();
+    printf("model exec in %lu us\n", (te-tb)/1000);
+
+    break;
   }
-  uint64_t te = nanos_since_boot();
-  printf("model exec in %lu us\n", (te-tb)/1000);
 
-  /*FILE *f = fopen("/proc/self/maps", "rb");
+  FILE *f = fopen("/proc/self/maps", "rb");
   char maps[0x100000];
   int len = fread(maps, 1, sizeof(maps), f);
   maps[len] = '\0';
   fclose(f);
-  printf("%s\n", maps);*/
+  printf("%s\n", maps);
   
   printf("buffers: %lu images: %lu\n", buffers.size(), images.size());
   printf("queues: %lu\n", queue_cmds.size());
