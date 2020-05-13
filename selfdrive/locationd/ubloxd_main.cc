@@ -12,8 +12,6 @@
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <map>
-#include <vector>
 
 #include "messaging.hpp"
 #include "common/util.h"
@@ -30,7 +28,7 @@ void set_do_exit(int sig) {
 }
 
 using namespace ublox;
-
+const long ZMQ_POLL_TIMEOUT = 1000; // In miliseconds
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
   signal(SIGINT, (sighandler_t) set_do_exit);
@@ -38,17 +36,19 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   UbloxMsgParser parser;
 
-  SubMaster sm({"ubloxRaw"}, true);
-  PubMaster pm({"gpsLocationExternal", "ubloxGnss"});
+  MessageContext ctx;
+  SubMaster sm(&ctx, {"ubloxRaw"});
+  PubMessage ubloxGnss(&ctx, "ubloxGnss");
+  PubMessage gpsLocationExternal(&ctx, "gpsLocationExternal");
 
   while (!do_exit) {
-    auto msg = sm.pollOne(1000);
-    if (msg == NULL) continue;
+    sm.update(ZMQ_POLL_TIMEOUT);
+    auto events = sm.allAliveAndValid();
+    if (events.size() == 0) continue;
 
-    cereal::Event::Reader event = msg->getEvent();
-
-    const uint8_t *data = event.getUbloxRaw().begin();
-    size_t len = event.getUbloxRaw().size();
+    auto ubloxRaw = events[0].getUbloxRaw();
+    const uint8_t *data = ubloxRaw.begin();
+    size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;
     while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;
@@ -60,7 +60,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_solution();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              pm.send("gpsLocationExternal", (char*)bytes.begin(), bytes.size());
+              gpsLocationExternal.send((char*)bytes.begin(), bytes.size());
             }
           } else
             LOGW("Unknown nav msg id: 0x%02X", parser.msg_id());
@@ -70,14 +70,14 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_raw();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              pm.send("ubloxGnss", (char*)bytes.begin(), bytes.size());
+              ubloxGnss.send((char*)bytes.begin(), bytes.size());
             }
           } else if(parser.msg_id() == MSG_RXM_SFRBX) {
             //LOGD("MSG_RXM_SFRBX");
             auto words = parser.gen_nav_data();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              pm.send("ubloxGnss", (char*)bytes.begin(), bytes.size());
+              ubloxGnss.send((char*)bytes.begin(), bytes.size());
             }
           } else
             LOGW("Unknown rxm msg id: 0x%02X", parser.msg_id());
@@ -87,7 +87,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_mon_hw();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              pm.send("ubloxGnss", (char*)bytes.begin(), bytes.size());
+              ubloxGnss.send((char*)bytes.begin(), bytes.size());
             }
           } else {
             LOGW("Unknown mon msg id: 0x%02X", parser.msg_id());
@@ -101,4 +101,3 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
   }
 
   return 0;
-}

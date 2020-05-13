@@ -1261,7 +1261,7 @@ int main(int argc, char *argv[]) {
   init_buffers(s);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster(NULL, {"frame", "frontFrame", "thumbnail"});
 #endif
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
