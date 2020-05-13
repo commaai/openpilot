@@ -1,5 +1,5 @@
-#include <Eigen/QR>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/QR>
+#include <eigen3/Eigen/Dense>
 #include <iostream>
 
 typedef Eigen::Matrix<double, KDIM*2, 3, Eigen::RowMajor> R3M;

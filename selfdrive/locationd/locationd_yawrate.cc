@@ -3,7 +3,7 @@
 
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
