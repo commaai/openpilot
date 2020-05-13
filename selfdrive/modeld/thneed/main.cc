@@ -31,7 +31,7 @@ using namespace std;
 class CachedCommand {
   public:
     CachedCommand(struct kgsl_gpu_command *cmd, int lfd);
-    void exec();
+    void exec(bool wait);
   private:
     string cmd_0, cmd_1;
     int obj_len;
@@ -235,7 +235,7 @@ CachedCommand::CachedCommand(struct kgsl_gpu_command *cmd, int lfd) {
   memcpy(&cache, cmd, sizeof(cache));
 }
 
-void CachedCommand::exec() {
+void CachedCommand::exec(bool wait) {
   // set up buffers
   memcpy((void*)cmds[0].gpuaddr, cmd_0.data(), cmd_0.size());
   memcpy((void*)cmds[1].gpuaddr, cmd_1.data(), cmd_1.size());
@@ -248,6 +248,19 @@ void CachedCommand::exec() {
   // run
   int ret = ioctl(fd, IOCTL_KGSL_GPU_COMMAND, &cache);
   printf("CachedCommand::exec got %d\n", ret);
+
+  if (wait) {
+    struct kgsl_device_waittimestamp_ctxtid wait;
+    wait.context_id = cache.context_id;
+    wait.timestamp = cache.timestamp;
+    wait.timeout = -1;
+
+    uint64_t tb = nanos_since_boot();
+    int ret = ioctl(fd, IOCTL_KGSL_GPU_COMMAND, &cache);
+    uint64_t te = nanos_since_boot();
+
+    printf("wait got %d after %d us\n", ret, (te-tb)/1000);
+  }
 }
 
 
@@ -572,7 +585,7 @@ int main(int argc, char* argv[]) {
   printf("************** execute 4 **************\n");
   run_num = 4;
   for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
-    (*it)->exec();
+    (*it)->exec(true);
   }
 
   /*FILE *f = fopen("/proc/self/maps", "rb");
