@@ -120,6 +120,7 @@ class Controls:
     self.last_blinker_frame = 0
     self.saturated_count = 0
     self.events_prev = []
+    self.current_alert_types = []
 
     self.sm['liveCalibration'].calStatus = Calibration.INVALID
     self.sm['pathPlan'].sensorValid = True
@@ -129,10 +130,7 @@ class Controls:
     self.sm['dMonitoringState'].awarenessStatus = 1.
     self.sm['dMonitoringState'].faceDetected = False
 
-    startup_event = get_startup_event(car_recognized, controller_available)
-    self.events.add(startup_event)
-    alerts = self.events.create_alerts([ET.PERMANENT])
-    self.AM.add_many(self.sm.frame, alerts, False)
+    self.startup_event = get_startup_event(car_recognized, controller_available)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
@@ -154,6 +152,11 @@ class Controls:
     self.events.clear()
     self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['dMonitoringState'].events)
+
+    # Handle startup event
+    if self.startup_event is not None:
+      self.events.add(self.startup_event)
+      self.startup_event = None
 
     # Create events for battery, temperature, disk space, and memory
     if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
@@ -211,7 +214,6 @@ class Controls:
     if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
       self.events.add(EventName.relayMalfunction)
     if self.sm['plan'].fcw:
-      # send FCW alert if triggered by planner
       self.events.add(EventName.fcw)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
@@ -219,9 +221,6 @@ class Controls:
         and not self.CP.radarOffCan and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
 
-    alert_types = [ET.PERMANENT, ET.WARNING] if self.active else [ET.PERMANENT]
-    alerts = self.events.create_alerts(alert_types, [self.CP, self.sm, self.is_metric])
-    self.AM.add_many(self.sm.frame, alerts, self.enabled)
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
@@ -267,18 +266,18 @@ class Controls:
     # entrance in SOFT_DISABLING state
     self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
 
-    alert_types = []
+    self.current_alert_types = [ET.PERMANENT]
 
     # ENABLED, PRE ENABLING, SOFT DISABLING
     if self.state != State.disabled:
       # user and immediate disable always have priority in a non-disabled state
       if self.events.any([ET.USER_DISABLE]):
         self.state = State.disabled
-        alert_types = [ET.USER_DISABLE]
+        self.current_alert_types.append(ET.USER_DISABLE)
 
       elif self.events.any([ET.IMMEDIATE_DISABLE]):
         self.state = State.disabled
-        alert_types = [ET.IMMEDIATE_DISABLE]
+        self.current_alert_types.append(ET.IMMEDIATE_DISABLE)
 
       else:
         # ENABLED
@@ -286,7 +285,7 @@ class Controls:
           if self.events.any([ET.SOFT_DISABLE]):
             self.state = State.softDisabling
             self.soft_disable_timer = 300   # 3s
-            alert_types = [ET.SOFT_DISABLE]
+            self.current_alert_types.append(ET.SOFT_DISABLE)
 
         # SOFT DISABLING
         elif self.state == State.softDisabling:
@@ -295,7 +294,7 @@ class Controls:
             self.state = State.enabled
 
           elif self.events.any([ET.SOFT_DISABLE]) and self.soft_disable_timer > 0:
-            alert_types = [ET.SOFT_DISABLE]
+            self.current_alert_types.append(ET.SOFT_DISABLE)
 
           elif self.soft_disable_timer <= 0:
             self.state = State.disabled
@@ -309,21 +308,20 @@ class Controls:
     elif self.state == State.disabled:
       if self.events.any([ET.ENABLE]):
         if self.events.any([ET.NO_ENTRY]):
-          alert_types = [ET.NO_ENTRY]
+          self.current_alert_types.append(ET.NO_ENTRY)
 
         else:
           if self.events.any([ET.PRE_ENABLE]):
             self.state = State.preEnabled
           else:
             self.state = State.enabled
-          alert_types = [ET.ENABLE]
+          self.current_alert_types.append(ET.ENABLE)
           self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
-
-    alerts = self.events.create_alerts(alert_types)
-    self.AM.add_many(self.sm.frame, alerts, self.enabled)
 
     # Check if actuators are enabled
     self.active = self.state == State.enabled or self.state == State.softDisabling
+    if self.active:
+      self.current_alert_types.append(ET.WARNING)
 
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
@@ -419,10 +417,12 @@ class Controls:
       CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
       CC.hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
 
-    # TODO: fix this, event gets added but alert creation happens before this
     if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
       self.events.add(EventName.ldw)
 
+    # add the alerts here
+    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric])
+    self.AM.add_many(self.sm.frame, alerts, self.enabled)
     self.AM.process_alerts(self.sm.frame)
     CC.hudControl.visualAlert = self.AM.visual_alert
 

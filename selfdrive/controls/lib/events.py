@@ -1,4 +1,7 @@
 from cereal import log, car
+
+from selfdrive.config import Conversions as CV
+
 from selfdrive.locationd.calibration_helpers import Filter
 
 AlertSize = log.ControlsState.AlertSize
@@ -67,6 +70,7 @@ class Events:
           alert = EVENTS[e][et]
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
+          alert.alert_type = EVENT_NAME[e]
           ret.append(alert)
     return ret
 
@@ -148,36 +152,30 @@ class ImmediateDisableAlert(Alert):
                      Priority.HIGHEST, VisualAlert.steerRequired,
                      AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
 
+class EngagementAlert(Alert):
+  def __init__(self, audible_alert=True):
+    super().__init__("", "",
+                     AlertStatus.normal, AlertSize.none,
+                     Priority.MID, VisualAlert.none,
+                     audible_alert, .2, 0., 0.),
+
 def below_steer_speed_alert(CP, sm, metric):
   speed = CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)
-  unit = "kph" if is_metric else "mph"
+  unit = "kph" if metric else "mph"
   return Alert(
     "TAKE CONTROL",
     "Steer Unavailable Below %d %s" % (speed, unit),
     AlertStatus.userPrompt, AlertSize.mid,
     Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3),
 
-def calibration_incomplete_alert(CP_, sm, metric):
+def calibration_incomplete_alert(CP, sm, metric):
   speed = int(Filter.MIN_SPEED * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
-  unit = "kph" if is_metric else "mph"
+  unit = "kph" if metric else "mph"
   return Alert(
     "Calibration in Progress: %d" % sm['liveCalibration'].calPerc,
-    "Drive Above %d %s" % (Filter.MIN, unit),
+    "Drive Above %d %s" % (speed, unit),
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-
-enable_alert =  Alert(
-                    "",
-                    "",
-                    AlertStatus.normal, AlertSize.none,
-                    Priority.MID, VisualAlert.none, AudibleAlert.chimeEngage, .2, 0., 0.)
-
-disable_alert = Alert(
-                    "",
-                    "",
-                    AlertStatus.normal, AlertSize.none,
-                    Priority.MID, VisualAlert.none, AudibleAlert.chimeDisengage, .2, 0., 0.)
-
 
 EVENTS = {
   # ********** events with no alerts **********
@@ -416,30 +414,40 @@ EVENTS = {
 
   # ********** events that affect controls state transitions **********
 
-  EventName.pcmEnable: {ET.ENABLE: enable_alert},
-  EventName.buttonEnable: {ET.ENABLE: enable_alert},
+  EventName.pcmEnable: {
+    ET.ENABLE: EngagementAlert(AudibleAlert.chimeEngage),
+  },
 
-  EventName.pcmDisable: {ET.USER_DISABLE: disable_alert},
-  EventName.buttonCancel: {ET.USER_DISABLE: disable_alert},
+  EventName.buttonEnable: {
+    ET.ENABLE: EngagementAlert(AudibleAlert.chimeEngage),
+  },
+
+  EventName.pcmDisable: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+  },
+
+  EventName.buttonCancel: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+  },
 
   EventName.brakeHold: {
-    ET.USER_DISABLE: disable_alert,
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
     ET.NO_ENTRY: NoEntryAlert("Brake Hold Active"),
   },
 
   EventName.parkBrake: {
-    ET.USER_DISABLE: disable_alert,
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
     ET.NO_ENTRY: NoEntryAlert("Park Brake Engaged"),
   },
 
   EventName.pedalPressed: {
-    ET.USER_DISABLE: disable_alert,
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
     ET.NO_ENTRY: NoEntryAlert("Pedal Pressed During Attempt",
                               visual_alert=VisualAlert.brakePressed),
   },
 
   EventName.wrongCarMode: {
-    ET.USER_DISABLE: disable_alert,
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
     ET.NO_ENTRY: NoEntryAlert("Main Switch Off",
                               duration_hud_alert=0.),
   },

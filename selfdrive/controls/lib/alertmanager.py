@@ -1,7 +1,6 @@
 from cereal import car, log
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.events import EVENTS, EVENT_NAME
 import copy
 
 
@@ -21,10 +20,9 @@ class AlertManager():
   def add_many(self, frame, alerts, enabled=True):
     for a in alerts:
       self.add(frame, a, enabled=enabled)
-  
+
   def add(self, frame, alert, enabled=True):
     added_alert = copy.copy(alert)
-    #added_alert.alert_type = alert_type
     added_alert.start_time = frame * DT_CTRL
 
     # if new alert is higher priority, log it
