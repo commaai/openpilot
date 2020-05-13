@@ -256,10 +256,10 @@ void CachedCommand::exec(bool wait) {
     wait.timeout = -1;
 
     uint64_t tb = nanos_since_boot();
-    int ret = ioctl(fd, IOCTL_KGSL_GPU_COMMAND, &cache);
+    int ret = ioctl(fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &cache);
     uint64_t te = nanos_since_boot();
 
-    printf("wait got %d after %d us\n", ret, (te-tb)/1000);
+    printf("wait got %d after %lu us\n", ret, (te-tb)/1000);
   }
 }
 
@@ -584,9 +584,13 @@ int main(int argc, char* argv[]) {
 
   printf("************** execute 4 **************\n");
   run_num = 4;
+
+  uint64_t tb = nanos_since_boot();
   for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
     (*it)->exec(true);
   }
+  uint64_t te = nanos_since_boot();
+  printf("model exec in %lu us\n", (te-tb)/1000);
 
   /*FILE *f = fopen("/proc/self/maps", "rb");
   char maps[0x100000];
