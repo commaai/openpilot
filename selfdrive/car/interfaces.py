@@ -4,6 +4,7 @@ from cereal import car
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
@@ -101,6 +102,8 @@ class CarInterfaceBase():
       events.add(EventName.stockFcw)
     if cs_out.stockAeb:
       events.add(EventName.stockAeb)
+    if cs_out.vEgo > 92 * CV.MPH_TO_MS:
+      events.append(EventName.speedTooHigh)
 
     if cs_out.steerError:
       events.add(EventName.steerUnavailable)

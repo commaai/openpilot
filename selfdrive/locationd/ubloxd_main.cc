@@ -23,7 +23,6 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
-#include "common/messagehelp.h"
 
 #include "ublox_msg.h"
 
@@ -55,12 +54,17 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
 
   while (!do_exit) {
-    MessageReader amsg = poll_func(poller);
-    if (!amsg) continue;
+    Message * msg = poll_func(poller);
+    if (msg == NULL) continue;
 
-    auto ubloxRaw = amsg.getEvent().getUbloxRaw();
-    const uint8_t *data = ubloxRaw.begin();
-    size_t len = ubloxRaw.size();
+    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+    memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+    capnp::FlatArrayMessageReader cmsg(amsg);
+    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
+    const uint8_t *data = event.getUbloxRaw().begin();
+    size_t len = event.getUbloxRaw().size();
     size_t bytes_consumed = 0;
     while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;
@@ -110,6 +114,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       }
       bytes_consumed += bytes_consumed_this_time;
     }
+    delete msg;
   }
 
   delete poller;

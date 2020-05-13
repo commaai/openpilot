@@ -111,7 +111,6 @@ def ui_thread(addr, frame_address):
 
   draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=True)
 
-  counter = 0
   while 1:
     list(pygame.event.get())
 

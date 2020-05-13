@@ -1,6 +1,9 @@
 README.md
 SAFETY.md
 
+codecov.yml
+lgtm.yml
+
 .gitignore
 LICENSE
 launch_chffrplus.sh
@@ -167,13 +170,13 @@ selfdrive/common/touch.[c,h]
 selfdrive/common/visionipc.[c,h]
 selfdrive/common/visionbuf_cl.c
 selfdrive/common/ipc.[c,h]
-selfdrive/common/swaglog.[c,h]
+selfdrive/common/swaglog.h
+selfdrive/common/swaglog.cc
 selfdrive/common/util.[c,h]
 selfdrive/common/efd.[c,h]
 selfdrive/common/cqueue.[c,h]
 selfdrive/common/clutil.[c,h]
 selfdrive/common/messaging.h
-selfdrive/common/messagehelp.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
 selfdrive/common/mutex.h
@@ -347,7 +350,8 @@ selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
-selfdrive/camerad/cameras/camera_qcom.[c,h]
+selfdrive/camerad/cameras/camera_qcom.cc
+selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 
@@ -404,10 +408,6 @@ phonelibs/boringssl/*
 phonelibs/bzip2/*
 phonelibs/openmax/**
 
-phonelibs/zmq/aarch64/lib/*
-
-phonelibs/json/src/json.c
-phonelibs/json/src/json.h
 phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
 
@@ -418,8 +418,6 @@ phonelibs/libyuv/lib/**
 
 phonelibs/snpe/include/**
 phonelibs/snpe/aarch64**
-
-phonelibs/fastcv/aarch64/**
 
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**

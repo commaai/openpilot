@@ -1,9 +1,9 @@
 #ifndef __SOUND_HPP
 #define __SOUND_HPP
 
-#include "cereal/gen/c/log.capnp.h"
+#include "cereal/gen/cpp/log.capnp.h"
 
-typedef enum cereal_CarControl_HUDControl_AudibleAlert AudibleAlert;
+typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 void ui_sound_init();
 void ui_sound_destroy();

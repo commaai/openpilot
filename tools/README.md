@@ -120,15 +120,6 @@ TODO: These instructions maybe outdated, follow ubuntu_setup.sh setup instructio
     ./configure --prefix=/usr/local CPPFLAGS=-DPIC CFLAGS=-fPIC CXXFLAGS=-fPIC LDFLAGS=-fPIC --disable-shared --enable-static
     make -j4
     sudo make install
-
-    cd ..
-    git clone https://github.com/commaai/c-capnproto.git
-    cd c-capnproto
-    git submodule update --init --recursive
-    autoreconf -f -i -s
-    CFLAGS="-fPIC" ./configure --prefix=/usr/local
-    make -j4
-    sudo make install
     ```
 
 2. Clone openpilot if you haven't already
