@@ -556,7 +556,7 @@ static void ui_draw_vision_event(UIState *s) {
       color = nvgRGBA(23, 134, 68, 255);
     } else if (s->status == STATUS_WARNING) {
       color = COLOR_OCHRE;
-    } else if {
+    } else {
       color = nvgRGBA(23, 51, 73, 255);
     }
 
