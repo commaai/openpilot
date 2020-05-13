@@ -16,11 +16,9 @@
 #include <hardware/gps.h>
 #include <utils/Timers.h>
 
-
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/swaglog.h"
-
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -49,7 +47,6 @@ void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
   nmeaData.setLocalWallTime(log_time_wall);
   nmeaData.setNmea(nmea);
 
-  // printf("gps send %d\n", bytes.size());
   pm->send("gpsNMEA", msg);
 }
 
@@ -117,8 +114,6 @@ AGpsCallbacks agps_callbacks = {
   create_thread_callback,
 };
 
-
-
 void gps_init() {
   LOG("*** init GPS");
   hw_module_t* module = NULL;
@@ -148,7 +143,7 @@ void gps_init() {
                                    GPS_POSITION_RECURRENCE_PERIODIC,
                                    100, 0, 0);
 
-  pm = new PubMaster(NULL, {"gpsNMEA", "gpsLocation"});
+  pm = new PubMaster({"gpsNMEA", "gpsLocation"});
 }
 
 void gps_destroy() {

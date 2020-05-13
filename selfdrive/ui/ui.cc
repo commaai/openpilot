@@ -1,3 +1,4 @@
+#include "ui.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -12,7 +13,6 @@
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
-#include "ui.hpp"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -212,13 +212,13 @@ static void ui_init(UIState *s) {
 
   pthread_mutex_init(&s->lock, NULL);
 
-  s->sm = new SubMaster(NULL, {"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
+  s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
                                     "health", "ubloxGnss", "driverState", "dMonitoringState", "offroadLayout"
 #ifdef SHOW_SPEEDLIMIT
                                     , "liveMapData"
 #endif
   });
-  s->pm = new PubMaster(NULL, {"offroadLayout"});
+  s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
 
@@ -491,10 +491,15 @@ void handle_message(UIState *s,  cereal::Event::Reader &event) {
 }
 
 static void check_messages(UIState *s) {
-  while (s->sm->update(0) > 0) {
-    for (auto &e : s->sm->allAliveAndValid()) {
-      handle_message(s, e);
-    }
+  while(true) {
+    auto msgs = s->sm->poll(0);
+
+    if (msgs.size() == 0)
+      break;
+
+    for (auto msg : msgs){
+        handle_message(s, msg->getEvent());
+      }
   }
 }
 
@@ -720,10 +725,11 @@ static void* vision_connect_thread(void *args) {
 
     // Drain sockets
     while (true) {
-      if (s->sm->update(0) == 0){
+      auto msgs = s->sm->poll(0, false);
+      if (msgs.size() == 0)
         break;
-      }
     }
+
     pthread_mutex_unlock(&s->lock);
   }
   return NULL;

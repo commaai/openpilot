@@ -16,11 +16,9 @@
 #include <vector>
 #include <algorithm>
 
-
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
-#include "messaging.hpp"
 
 #include "ublox_msg.h"
 

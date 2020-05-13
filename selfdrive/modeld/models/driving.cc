@@ -330,4 +330,4 @@ void posenet_publish(PubMaster &pm, uint32_t frame_id,
   posenetd.setFrameId(frame_id);
 
   pm.send("cameraOdometry", msg);
-}
+  }

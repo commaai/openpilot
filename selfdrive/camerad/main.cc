@@ -156,8 +156,8 @@ void* frontview_thread(void *arg) {
 
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  SSubMessage monitoring_sm(NULL, "driverState", "127.0.0.1", true);
-  SubMessage dmonstate_sm(NULL, "dMonitoringState", "127.0.0.1", true);
+  SubMaster monitoring_sm({"driverState"}, false, "127.0.0.1", true);
+  SubMaster dmonstate_sm({"dMonitoringState"}, false, "127.0.0.1", true);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -203,17 +203,17 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      auto pevent = dmonstate_sm.receive(true);
-      if (pevent != NULL) {
-        auto state = pevent->getDMonitoringState();
+      auto msg = dmonstate_sm.receive(true);
+      if (msg != NULL) {
+        auto state = msg->getEvent().getDMonitoringState();
         s->rhd_front = state.getIsRHD();
         s->rhd_front_checked = state.getRhdChecked();
       }
     }
 
-    auto pevent = monitoring_sm.receive(true);
-    if (pevent != NULL) {
-      auto state = pevent->getDriverState();
+    auto msg = monitoring_sm.receive(true);
+    if (msg != NULL) {
+      auto state = msg->getEvent().getDriverState();
       float face_prob = state.getFaceProb();
       float face_position[2];
       face_position[0] = state.getFacePosition()[0];
@@ -226,7 +226,7 @@ void* frontview_thread(void *arg) {
         s->front_meteringbox_xmax = x_offset + (face_position[0] + 0.5) * (0.5 * s->rgb_front_height) + 72;
         s->front_meteringbox_ymin = (face_position[1] + 0.5) * (s->rgb_front_height) - 72;
         s->front_meteringbox_ymax = (face_position[1] + 0.5) * (s->rgb_front_height) + 72;
-      }else { // use default setting if no face
+      }else {// use default setting if no face
         s->front_meteringbox_ymin = s->rgb_front_height * 1 / 3;
         s->front_meteringbox_ymax = s->rgb_front_height * 1;
         s->front_meteringbox_xmin = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
@@ -246,12 +246,15 @@ void* frontview_thread(void *arg) {
       int y_start;
       int y_end;
 
-      if (s->front_meteringbox_xmax > 0) {
+      if (s->front_meteringbox_xmax > 0)
+      {
         x_start = s->front_meteringbox_xmin<0 ? 0:s->front_meteringbox_xmin;
         x_end = s->front_meteringbox_xmax>=s->rgb_front_width ? s->rgb_front_width-1:s->front_meteringbox_xmax;
         y_start = s->front_meteringbox_ymin<0 ? 0:s->front_meteringbox_ymin;
         y_end = s->front_meteringbox_ymax>=s->rgb_front_height ? s->rgb_front_height-1:s->front_meteringbox_ymax;
-      } else {
+      }
+      else
+      {
         y_start = s->rgb_front_height * 1 / 3;
         y_end = s->rgb_front_height * 1;
         x_start = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
@@ -331,6 +334,7 @@ void* frontview_thread(void *arg) {
     tbuffer_dispatch(&s->ui_front_tb, ui_idx);
 
     double t2 = millis_since_boot();
+
     //LOGD("front process: %.2fms", t2-t1);
   }
 
@@ -1257,7 +1261,7 @@ int main(int argc, char *argv[]) {
   init_buffers(s);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->pm = new PubMaster(NULL, {"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 #endif
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
