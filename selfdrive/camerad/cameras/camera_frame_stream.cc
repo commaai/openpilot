@@ -1,8 +1,6 @@
 #include "camera_frame_stream.h"
 
-#include <string>
 #include <unistd.h>
-#include <vector>
 #include <cassert>
 #include <string.h>
 #include <signal.h>

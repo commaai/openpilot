@@ -2,7 +2,6 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
@@ -279,7 +278,7 @@ void handle_usb_issue(int err, const char func[]) {
   // TODO: check other errors, is simply retrying okay?
 }
 
-void can_recv(PubMessage &pm) {
+void can_recv(PubMaster &pm) {
   int err;
   uint32_t data[RECV_SIZE/4];
   int recv;
@@ -331,10 +330,10 @@ void can_recv(PubMessage &pm) {
     canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
   }
 
-  pm.send(msg);
+  pm.send("can", msg);
 }
 
-void can_health(PubMessage &pm) {
+void can_health(PubMaster &pm) {
   int cnt;
   int err;
 
@@ -379,8 +378,7 @@ void can_health(PubMessage &pm) {
   // No panda connected, send empty health packet
   if (!received){
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
-
-    pm.send(msg);
+    pm.send("health", msg);
     return;
   }
 
@@ -566,7 +564,6 @@ void can_send(SubMessage &subscriber) {
   int sent;
   pthread_mutex_lock(&usb_lock);
 
-
   if (!fake_send) {
     do {
       // Try sending can messages. If the receive buffer on the panda is full it will NAK
@@ -592,12 +589,10 @@ void can_send(SubMessage &subscriber) {
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
-
   SubMessage subscriber(NULL, "sendcan");
 
   // drain sendcan to delete any stale messages from previous runs
-  subscriber.drain();
-
+  while(subscriber.receive(true)){}
   // run as fast as messages come in
   while (!do_exit) {
     can_send(subscriber);
@@ -610,7 +605,7 @@ void *can_recv_thread(void *crap) {
   LOGD("start recv thread");
 
   // can = 8006
-  PubMessage pm(NULL, "can");
+  PubMaster pm(NULL, {"can"});
 
   // run at 100hz
   const uint64_t dt = 10000000ULL;
@@ -637,7 +632,7 @@ void *can_recv_thread(void *crap) {
 void *can_health_thread(void *crap) {
   LOGD("start health thread");
   // health = 8011
-  PubMessage pm(NULL, "health");
+  PubMaster pm(NULL, {"health"});
 
   // run at 2hz
   while (!do_exit) {
@@ -668,8 +663,8 @@ void *hardware_control_thread(void *crap) {
 
   while (!do_exit) {
     cnt++;
-    for (auto msg : sm.poll(1000)){
-      auto event = msg->getEvent();
+    sm.update(1000);
+    for (auto &event : sm.allAliveAndValid()) {
       auto type = event.which();
       if(type == cereal::Event::THERMAL){
         uint16_t fan_speed = event.getThermal().getFanSpeed();
@@ -804,7 +799,7 @@ void pigeon_init() {
   LOGW("panda GPS on");
 }
 
-static void pigeon_publish_raw(PubMessage &pm, unsigned char *dat, int alen) {
+static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -812,13 +807,13 @@ static void pigeon_publish_raw(PubMessage &pm, unsigned char *dat, int alen) {
   auto ublox_raw = event.initUbloxRaw(alen);
   memcpy(ublox_raw.begin(), dat, alen);
 
-  pm.send(msg);
+  pm.send("ubloxRaw", msg);
 }
 
 
 void *pigeon_thread(void *crap) {
   // ubloxRaw = 8042
-  PubMessage pm(NULL, "ubloxRaw");
+  PubMaster pm(NULL, {"ubloxRaw"});
 
   // run at ~100hz
   unsigned char dat[0x1000];

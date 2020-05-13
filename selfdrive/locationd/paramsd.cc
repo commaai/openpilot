@@ -27,9 +27,8 @@ void sigpipe_handler(int sig) {
 int main(int argc, char *argv[]) {
   signal(SIGPIPE, (sighandler_t)sigpipe_handler);
 
-  MessageContext ctx;
-  SubMaster sm(&ctx, {"controlsState", "sensorEvents", "cameraOdometry"});
-  PubMessage pm(&ctx, "liveParameters");
+  SubMaster sm(NULL, {"controlsState", "sensorEvents", "cameraOdometry"});
+  PubMaster pm(NULL, {"liveParameters"});
 
 
   Localizer localizer;
@@ -93,8 +92,8 @@ int main(int argc, char *argv[]) {
   // Main loop
   int save_counter = 0;
   while (true){
-    for (auto msg : sm.poll(100)){
-      auto event = msg->getEvent();
+    sm.update(100);
+    for (auto &event : sm.allAliveAndValid()) {
       localizer.handle_log(event);
 
       auto which = event.which();
@@ -119,7 +118,7 @@ int main(int argc, char *argv[]) {
         live_params.setStiffnessFactor(learner.x);
         live_params.setSteerRatio(learner.sR);
 
-        pm.send(msg);
+        pm.send("liveParameters", msg);
 
         // Save parameters every minute
         if (save_counter % 6000 == 0) {

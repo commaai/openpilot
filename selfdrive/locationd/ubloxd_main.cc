@@ -37,13 +37,13 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   UbloxMsgParser parser;
 
-  MessageContext ctx;
-  SubMaster sm(&ctx, {"ubloxRaw"});
-  PubMessage ubloxGnss(&ctx, "ubloxGnss");
-  PubMessage gpsLocationExternal(&ctx, "gpsLocationExternal");
+  SubMaster sm(NULL, {"ubloxRaw"});
+  PubMaster pm(NULL, {"ubloxGnss", "gpsLocationExternal"});
+
   while (!do_exit) {
-    auto msg = sm.pollOne(1000);
-    if (msg == NULL){ continue; }
+    sm.update(ZMQ_POLL_TIMEOUT);
+    auto events = sm.allAliveAndValid();
+    if (events.size() == 0) continue;
 
     auto ubloxRaw = msg->getEvent().getUbloxRaw();
     const uint8_t *data = ubloxRaw.begin();
@@ -59,7 +59,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_solution();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              gpsLocationExternal.send((char*)bytes.begin(), bytes.size());
+              pm.send("gpsLocationExternal", (char*)bytes.begin(), bytes.size());
             }
           } else
             LOGW("Unknown nav msg id: 0x%02X", parser.msg_id());
@@ -69,14 +69,14 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_raw();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              ubloxGnss.send((char*)bytes.begin(), bytes.size());
+              pm.send("ubloxGnss", (char*)bytes.begin(), bytes.size());
             }
           } else if(parser.msg_id() == MSG_RXM_SFRBX) {
             //LOGD("MSG_RXM_SFRBX");
             auto words = parser.gen_nav_data();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              ubloxGnss.send((char*)bytes.begin(), bytes.size());
+              pm.send("ubloxGnss", (char*)bytes.begin(), bytes.size());
             }
           } else
             LOGW("Unknown rxm msg id: 0x%02X", parser.msg_id());
@@ -86,7 +86,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_mon_hw();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              ubloxGnss.send((char*)bytes.begin(), bytes.size());
+              pm.send("ubloxGnss", (char*)bytes.begin(), bytes.size());
             }
           } else {
             LOGW("Unknown mon msg id: 0x%02X", parser.msg_id());
