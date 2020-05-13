@@ -1,5 +1,6 @@
 #ifndef _UI_H
 #define _UI_H
+#include "cereal/gen/cpp/log.capnp.h"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -202,7 +203,7 @@ typedef struct UIState {
 
   // sockets
   SubMaster *sm;
-  PubMessage *offroadLayout;
+  PubMaster *pm;
 
   cereal::UiLayoutState::App active_app;
 

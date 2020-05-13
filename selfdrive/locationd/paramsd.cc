@@ -27,10 +27,8 @@ void sigpipe_handler(int sig) {
 int main(int argc, char *argv[]) {
   signal(SIGPIPE, (sighandler_t)sigpipe_handler);
 
-  SubMaster sm(NULL, {"controlsState", "sensorEvents", "cameraOdometry"});
-  PubMaster pm(NULL, {"liveParameters"});
-
-
+  SubMaster sm({"controlsState", "sensorEvents", "cameraOdometry"});
+  PubMaster pm({"liveParameters"});
   Localizer localizer;
 
   // Read car params
@@ -92,8 +90,8 @@ int main(int argc, char *argv[]) {
   // Main loop
   int save_counter = 0;
   while (true){
-    sm.update(100);
-    for (auto &event : sm.allAliveAndValid()) {
+    for (auto msg : sm.poll(100)){
+      auto event = msg->getEvent();
       localizer.handle_log(event);
 
       auto which = event.which();
@@ -139,5 +137,6 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+
   return 0;
 }

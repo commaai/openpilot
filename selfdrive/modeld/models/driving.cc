@@ -292,6 +292,8 @@ void model_publish(PubMaster &pm, uint32_t frame_id,
     auto meta = framed.initMeta();
     fill_meta(meta, net_outputs.meta);
 
+
+    // send message
     pm.send("model", msg);
   }
 
@@ -328,4 +330,4 @@ void posenet_publish(PubMaster &pm, uint32_t frame_id,
   posenetd.setFrameId(frame_id);
 
   pm.send("cameraOdometry", msg);
-}
+  }

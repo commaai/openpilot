@@ -26,8 +26,9 @@ int main(int argc, char **argv) {
   set_realtime_priority(1);
 
   // messaging
-  SubMessage dmonstate_sock(NULL, "dMonitoringState", "127.0.0.1", true);
-  PubMaster pm(NULL, {"driverState"});
+  PubMaster pm({"driverState"});
+  SubMaster sm;
+  sm.createSocket("dMonitoringState", "127.0.0.1", true);
 
   // init the models
   DMonitoringModelState dmonitoringmodel;
@@ -59,9 +60,9 @@ int main(int argc, char **argv) {
       //printf("frame_id: %d %dx%d\n", extra.frame_id, buf_info.width, buf_info.height);
       if (!dmonitoringmodel.is_rhd_checked) {
         if (chk_counter >= RHD_CHECK_INTERVAL) {
-          auto pevent = dmonstate_sock.receive(true);
-          if (pevent != NULL) {
-            auto state = pevent->getDMonitoringState();
+          auto msg = sm.pollOne(0);
+          if (msg) {
+            auto state = msg->getEvent().getDMonitoringState();
             dmonitoringmodel.is_rhd = state.getIsRHD();
             dmonitoringmodel.is_rhd_checked = state.getRhdChecked();
           }
