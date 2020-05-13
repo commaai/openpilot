@@ -72,7 +72,7 @@ class CarState(CarStateBase):
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
 
     if self.car_fingerprint in [CAR.FORESTER]:
-      self.v_cruise_pcm = 0
+      ret.cruiseState.speed = 0
       self.ready = True
 
     if self.car_fingerprint in [CAR.OUTBACK, CAR.LEGACY]:
