@@ -5,6 +5,8 @@ RUN apt-get update && apt-get install -y \
     autoconf \
     build-essential \
     bzip2 \
+    capnproto \
+    libcapnp-dev \
     clang \
     cmake \
     curl \
@@ -27,7 +29,8 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libtool \
     libusb-1.0-0-dev \
-    libzmq5-dev \
+    libczmq-dev \
+    libzmq3-dev \
     locales \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
@@ -67,6 +70,7 @@ ENV PATH="/tmp/openpilot/external/bin:${PATH}"
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
 RUN mkdir -p /tmp/openpilot
+
 COPY ./flake8_openpilot.sh /tmp/openpilot/
 COPY ./pylint_openpilot.sh /tmp/openpilot/
 COPY ./.pylintrc /tmp/openpilot/

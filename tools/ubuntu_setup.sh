@@ -4,6 +4,8 @@ sudo apt-get update && sudo apt-get install -y \
     autoconf \
     build-essential \
     bzip2 \
+    capnproto \
+    libcapnp-dev \
     clang \
     cmake \
     curl \
@@ -29,7 +31,8 @@ sudo apt-get update && sudo apt-get install -y \
     libsqlite3-dev \
     libtool \
     libusb-1.0-0-dev \
-    libzmq5-dev \
+    libzmq3-dev \
+    libczmq-dev \
     locales \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \

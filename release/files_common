@@ -407,8 +407,6 @@ phonelibs/boringssl/*
 phonelibs/bzip2/*
 phonelibs/openmax/**
 
-phonelibs/zmq/aarch64/lib/*
-
 phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
 
@@ -419,8 +417,6 @@ phonelibs/libyuv/lib/**
 
 phonelibs/snpe/include/**
 phonelibs/snpe/aarch64**
-
-phonelibs/fastcv/aarch64/**
 
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**
