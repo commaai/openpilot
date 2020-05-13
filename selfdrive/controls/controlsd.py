@@ -9,7 +9,7 @@ from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_alert
+from selfdrive.car.car_helpers import get_car, get_startup_event
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
@@ -75,6 +75,10 @@ class Controls:
     self.passive = params.get("Passive", encoding='utf8') == "1" or \
               self.internet_needed or not openpilot_enabled_toggle
 
+    # detect sound card presence and ensure successful init
+    self.sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') \
+                            and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
+
     car_recognized = self.CP.carName != 'mock'
     # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
     controller_available = self.CP.enableCamera and self.CI.CC is not None and not self.passive
@@ -124,17 +128,13 @@ class Controls:
     self.sm['dMonitoringState'].awarenessStatus = 1.
     self.sm['dMonitoringState'].faceDetected = False
 
-    startup_alert = get_startup_alert(car_recognized, controller_available)
-    self.AM.add(self.sm.frame, startup_alert, False)
+    startup_event = get_startup_event(car_recognized, controller_available)
+    self.AM.add_from_event(self.sm.frame, startup_event, ET.PERMANENT, False)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
     self.prof = Profiler(False)  # off by default
-
-    # detect sound card presence and ensure successful init
-    self.sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') \
-                            and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
 
   def create_events(self, CS):
@@ -209,6 +209,9 @@ class Controls:
       events.add(EventName.canError)
     if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
       events.add(EventName.relayMalfunction)
+    if self.sm['plan'].fcw:
+      # send FCW alert if triggered by planner
+      events.add(EventName.fcw)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
@@ -361,11 +364,6 @@ class Controls:
 
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
-
-    # TODO: move this to plan.events
-    if plan.fcw:
-      # send FCW alert if triggered by planner
-      self.AM.add(self.sm.frame, "fcw", self.enabled)
 
     # State specific actions
 

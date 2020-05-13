@@ -1,4 +1,13 @@
 from cereal import car, log
+from common.realtime import DT_CTRL
+from selfdrive.swaglog import cloudlog
+from selfdrive.controls.lib.events import EVENTS, EVENT_NAME
+import copy
+
+AlertSize = log.ControlsState.AlertSize
+AlertStatus = log.ControlsState.AlertStatus
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 class Priority:
   LOWEST = 0
@@ -7,11 +16,6 @@ class Priority:
   MID = 3
   HIGH = 4
   HIGHEST = 5
-
-AlertSize = log.ControlsState.AlertSize
-AlertStatus = log.ControlsState.AlertStatus
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 class Alert():
   def __init__(self,
@@ -55,58 +59,69 @@ class Alert():
     return self.alert_priority > alert2.alert_priority
 
 
-ALERTS = {
-  "fcw": Alert(
-      "BRAKE!",
-      "Risk of Collision",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.chimeWarningRepeat, 1., 2., 2.),
+class AlertManager():
 
-  "startup": Alert(
-      "Be ready to take over at any time",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  def __init__(self):
+    self.activealerts = []
 
-  "startupMaster": Alert(
-      "WARNING: This branch is not tested",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  def alert_present(self):
+    return len(self.activealerts) > 0
 
-  "startupNoControl": Alert(
-      "Dashcam mode",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  def add(self, frame, alert_type, enabled=True, extra_text_1='', extra_text_2=''):
+    self._add(frame, ALERTS[alert_type], alert_type, enabled, extra_text_1, extra_text_2)
 
-  "startupNoCar": Alert(
-      "Dashcam mode for unsupported car",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  def add_from_event(self, frame, event, event_type, enabled=True, extra_text_1='', extra_text_2=''):
+    alert_type = EVENT_NAME[event]
+    alert = EVENTS[event][event_type]
+    self._add(frame, alert, alert_type, enabled, extra_text_1, extra_text_2)
 
-  "debug": Alert(
-      "DEBUG ALERT",
-      "",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, .1, .1),
+  def _add(self, frame, alert, alert_type, enabled, extra_text_1, extra_text_2):
+    added_alert = copy.copy(alert)
+    added_alert.alert_type = alert_type
+    added_alert.alert_text_1 += extra_text_1
+    added_alert.alert_text_2 += extra_text_2
+    added_alert.start_time = frame * DT_CTRL
 
-  "ethicalDilemma": Alert(
-      "TAKE CONTROL IMMEDIATELY",
-      "Ethical Dilemma Detected",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, 1., 3., 3.),
+    # if new alert is higher priority, log it
+    if not self.alert_present() or added_alert.alert_priority > self.activealerts[0].alert_priority:
+      cloudlog.event('alert_add', alert_type=alert_type, enabled=enabled)
 
-  "steerSaturated": Alert(
-      "TAKE CONTROL",
-      "Turn Exceeds Steering Limit",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
+    self.activealerts.append(added_alert)
 
-  "ldwPermanent": Alert(
-      "TAKE CONTROL",
-      "Lane Departure Detected",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
-}
+    # sort by priority first and then by start_time
+    self.activealerts.sort(key=lambda k: (k.alert_priority, k.start_time), reverse=True)
+
+  def process_alerts(self, frame):
+    cur_time = frame * DT_CTRL
+
+    # first get rid of all the expired alerts
+    self.activealerts = [a for a in self.activealerts if a.start_time +
+                         max(a.duration_sound, a.duration_hud_alert, a.duration_text) > cur_time]
+
+    current_alert = self.activealerts[0] if self.alert_present() else None
+
+    # start with assuming no alerts
+    self.alert_type = ""
+    self.alert_text_1 = ""
+    self.alert_text_2 = ""
+    self.alert_status = AlertStatus.normal
+    self.alert_size = AlertSize.none
+    self.visual_alert = VisualAlert.none
+    self.audible_alert = AudibleAlert.none
+    self.alert_rate = 0.
+
+    if current_alert:
+      self.alert_type = current_alert.alert_type
+
+      if current_alert.start_time + current_alert.duration_sound > cur_time:
+        self.audible_alert = current_alert.audible_alert
+
+      if current_alert.start_time + current_alert.duration_hud_alert > cur_time:
+        self.visual_alert = current_alert.visual_alert
+
+      if current_alert.start_time + current_alert.duration_text > cur_time:
+        self.alert_text_1 = current_alert.alert_text_1
+        self.alert_text_2 = current_alert.alert_text_2
+        self.alert_status = current_alert.alert_status
+        self.alert_size = current_alert.alert_size
+        self.alert_rate = current_alert.alert_rate

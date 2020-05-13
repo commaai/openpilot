@@ -1,11 +1,19 @@
 from cereal import log, car
-from selfdrive.controls.lib.alerts import Alert, Priority
 
 AlertSize = log.ControlsState.AlertSize
 AlertStatus = log.ControlsState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EventName = car.CarEvent.EventName
+
+# Alert priorities
+class Priority:
+  LOWEST = 0
+  LOWER = 1
+  LOW = 2
+  MID = 3
+  HIGH = 4
+  HIGHEST = 5
 
 # Event types
 class ET:
@@ -61,10 +69,51 @@ class Events:
     for event_name in self.events:
       event = car.CarEvent.new_message()
       event.name = event_name
-      for event_type in EVENTS[event_name].keys():
+      for event_type in EVENTS.get(event_name, {}).keys():
         setattr(event, event_type , True)
       ret.append(event)
     return ret
+
+class Alert:
+  def __init__(self,
+               alert_text_1,
+               alert_text_2,
+               alert_status,
+               alert_size,
+               alert_priority,
+               visual_alert,
+               audible_alert,
+               duration_sound,
+               duration_hud_alert,
+               duration_text,
+               alert_rate=0.):
+
+    self.alert_type = ""
+    self.alert_text_1 = alert_text_1
+    self.alert_text_2 = alert_text_2
+    self.alert_status = alert_status
+    self.alert_size = alert_size
+    self.alert_priority = alert_priority
+    self.visual_alert = visual_alert
+    self.audible_alert = audible_alert
+
+    self.duration_sound = duration_sound
+    self.duration_hud_alert = duration_hud_alert
+    self.duration_text = duration_text
+
+    self.start_time = 0.
+    self.alert_rate = alert_rate
+
+    # typecheck that enums are valid on startup
+    tst = car.CarControl.new_message()
+    tst.hudControl.visualAlert = self.visual_alert
+
+  def __str__(self):
+    return self.alert_text_1 + "/" + self.alert_text_2 + " " + str(self.alert_priority) + "  " + str(
+      self.visual_alert) + " " + str(self.audible_alert)
+
+  def __gt__(self, alert2):
+    return self.alert_priority > alert2.alert_priority
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
@@ -102,57 +151,122 @@ disable_alert = Alert(
                     AlertStatus.normal, AlertSize.none,
                     Priority.MID, VisualAlert.none, AudibleAlert.chimeDisengage, .2, 0., 0.)
 
+
 EVENTS = {
   # ********** events with no alerts **********
 
   EventName.gasPressed: {ET.PRE_ENABLE: None},
 
-  # ********** events with one or more alerts **********
+  # ********** events only containing alerts displayed in all states **********
 
-  EventName.pcmEnable: {ET.ENABLE: enable_alert},
-  EventName.buttonEnable: {ET.ENABLE: enable_alert},
-
-  EventName.pcmDisable: {ET.USER_DISABLE: disable_alert},
-  EventName.buttonCancel: {ET.USER_DISABLE: disable_alert},
-
-  EventName.brakeHold: {
-    ET.USER_DISABLE: disable_alert,
-    ET.NO_ENTRY: NoEntryAlert("Brake Hold Active"),
+  EventName.startup: {
+    ET.PERMANENT: Alert(
+      "Be ready to take over at any time",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
-  EventName.stockFcw: {
-    ET.WARNING: Alert(
+  EventName.startupMaster: {
+    ET.PERMANENT: Alert(
+      "WARNING: This branch is not tested",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  },
+
+  EventName.startupNoControl: {
+    ET.PERMANENT: Alert(
+      "Dashcam mode",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  },
+
+  EventName.startupNoCar: {
+    ET.PERMANENT: Alert(
+      "Dashcam mode for unsupported car",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  },
+
+  EventName.invalidGiraffeToyota: {
+    ET.PERMANENT: Alert(
+      "Unsupported Giraffe Configuration",
+      "Visit comma.ai/tg",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+  },
+
+  EventName.invalidLkasSetting: {
+    ET.PERMANENT: Alert(
+      "Stock LKAS is turned on",
+      "Turn off stock LKAS to engage",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+  },
+
+  EventName.communityFeatureDisallowed: {
+    # LOW priority to overcome Cruise Error
+    ET.PERMANENT: Alert(
+      "",
+      "Community Feature Detected",
+      "Enable Community Features in Developer Settings",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+  },
+
+  EventName.carUnrecognized: {
+    ET.PERMANENT: Alert(
+      "Dashcam Mode",
+      "Car Unrecognized",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+  },
+
+  EventName.stockAeb: {
+    ET.PERMANENT: Alert(
       "BRAKE!",
-      "Risk of Collision",
+      "Stock AEB: Risk of Collision",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 1., 2., 2.),
   },
 
-  EventName.parkBrake: {
-    ET.USER_DISABLE: disable_alert,
-    ET.NO_ENTRY: NoEntryAlert("Park Brake Engaged"),
+  EventName.stockFcw: {
+    ET.PERMANENT: Alert(
+      "BRAKE!",
+      "Stock FCW: Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 1., 2., 2.),
   },
 
-  EventName.pedalPressed: {
-    ET.USER_DISABLE: disable_alert,
-    ET.NO_ENTRY: NoEntryAlert("Pedal Pressed During Attempt",
-                              visual_alert=VisualAlert.brakePressed),
+  EventName.fcw: {
+    ET.PERMANENT: Alert(
+      "BRAKE!",
+      "Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.chimeWarningRepeat, 1., 2., 2.),
   },
 
-  EventName.wrongCarMode: {
-    ET.USER_DISABLE: disable_alert,
-    ET.NO_ENTRY: NoEntryAlert("Main Switch Off",
-                              duration_hud_alert=0.),
-  },
-
-  EventName.steerTempUnavailable: {
-    ET.WARNING: Alert(
+  EventName.ldw: {
+    ET.PERMANENT: Alert(
       "TAKE CONTROL",
-      "Steering Temporarily Unavailable",
+      "Lane Departure Detected",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
-    ET.NO_ENTRY: NoEntryAlert("Steering Temporarily Unavailable",
-                              duration_hud_alert=0.),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
+  },
+
+
+
+  # ********** events with alerts that only display while engaged **********
+
+  EventName.vehicleModelInvalid: {
+    ET.WARNING: Alert(
+      "Vehicle Parameter Identification Failed",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWEST, VisualAlert.steerRequired, AudibleAlert.none, .0, .0, .1),
   },
 
   EventName.steerTempUnavailableMute: {
@@ -265,6 +379,54 @@ EVENTS = {
       "Monitor Other Vehicles",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1),
+  },
+
+  EventName.steerSaturated: {
+    ET.WARNING: Alert(
+      "TAKE CONTROL",
+      "Turn Exceeds Steering Limit",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
+  },
+
+  # ********** events with one or more event types **********
+
+  EventName.pcmEnable: {ET.ENABLE: enable_alert},
+  EventName.buttonEnable: {ET.ENABLE: enable_alert},
+
+  EventName.pcmDisable: {ET.USER_DISABLE: disable_alert},
+  EventName.buttonCancel: {ET.USER_DISABLE: disable_alert},
+
+  EventName.brakeHold: {
+    ET.USER_DISABLE: disable_alert,
+    ET.NO_ENTRY: NoEntryAlert("Brake Hold Active"),
+  },
+
+  EventName.parkBrake: {
+    ET.USER_DISABLE: disable_alert,
+    ET.NO_ENTRY: NoEntryAlert("Park Brake Engaged"),
+  },
+
+  EventName.pedalPressed: {
+    ET.USER_DISABLE: disable_alert,
+    ET.NO_ENTRY: NoEntryAlert("Pedal Pressed During Attempt",
+                              visual_alert=VisualAlert.brakePressed),
+  },
+
+  EventName.wrongCarMode: {
+    ET.USER_DISABLE: disable_alert,
+    ET.NO_ENTRY: NoEntryAlert("Main Switch Off",
+                              duration_hud_alert=0.),
+  },
+
+  EventName.steerTempUnavailable: {
+    ET.WARNING: Alert(
+      "TAKE CONTROL",
+      "Steering Temporarily Unavailable",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
+    ET.NO_ENTRY: NoEntryAlert("Steering Temporarily Unavailable",
+                              duration_hud_alert=0.),
   },
 
   EventName.posenetInvalid: {
@@ -492,48 +654,6 @@ EVENTS = {
       AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
     ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
-  },
-
-  EventName.invalidGiraffeToyota: {
-    ET.PERMANENT: Alert(
-      "Unsupported Giraffe Configuration",
-      "Visit comma.ai/tg",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-  },
-
-  EventName.invalidLkasSetting: {
-    ET.PERMANENT: Alert(
-      "Stock LKAS is turned on",
-      "Turn off stock LKAS to engage",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-  },
-
-  EventName.communityFeatureDisallowed: {
-    # LOW priority to overcome Cruise Error
-    ET.PERMANENT: Alert(
-      "",
-      "Community Feature Detected",
-      "Enable Community Features in Developer Settings",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-  },
-
-  EventName.carUnrecognized: {
-    ET.PERMANENT: Alert(
-      "Dashcam Mode",
-      "Car Unrecognized",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-  },
-
-  EventName.vehicleModelInvalid: {
-    ET.WARNING: Alert(
-      "Vehicle Parameter Identification Failed",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWEST, VisualAlert.steerRequired, AudibleAlert.none, .0, .0, .1),
   },
 
 }

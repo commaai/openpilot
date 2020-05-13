@@ -1,7 +1,6 @@
 from cereal import car, log
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.alerts import ALERTS
 from selfdrive.controls.lib.events import EVENTS, EVENT_NAME
 import copy
 
