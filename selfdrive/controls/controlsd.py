@@ -271,29 +271,29 @@ class Controls:
     # ENABLED, PRE ENABLING, SOFT DISABLING
     if self.state != State.disabled:
       # user and immediate disable always have priority in a non-disabled state
-      if self.events.any([ET.USER_DISABLE]):
+      if self.events.any(ET.USER_DISABLE):
         self.state = State.disabled
         self.current_alert_types.append(ET.USER_DISABLE)
 
-      elif self.events.any([ET.IMMEDIATE_DISABLE]):
+      elif self.events.any(ET.IMMEDIATE_DISABLE):
         self.state = State.disabled
         self.current_alert_types.append(ET.IMMEDIATE_DISABLE)
 
       else:
         # ENABLED
         if self.state == State.enabled:
-          if self.events.any([ET.SOFT_DISABLE]):
+          if self.events.any(ET.SOFT_DISABLE):
             self.state = State.softDisabling
             self.soft_disable_timer = 300   # 3s
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
         # SOFT DISABLING
         elif self.state == State.softDisabling:
-          if not self.events.any([ET.SOFT_DISABLE]):
+          if not self.events.any(ET.SOFT_DISABLE):
             # no more soft disabling condition, so go back to ENABLED
             self.state = State.enabled
 
-          elif self.events.any([ET.SOFT_DISABLE]) and self.soft_disable_timer > 0:
+          elif self.events.any(ET.SOFT_DISABLE) and self.soft_disable_timer > 0:
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
           elif self.soft_disable_timer <= 0:
@@ -301,17 +301,17 @@ class Controls:
 
         # PRE ENABLING
         elif self.state == State.preEnabled:
-          if not self.events.any([ET.PRE_ENABLE]):
+          if not self.events.any(ET.PRE_ENABLE):
             self.state = State.enabled
 
     # DISABLED
     elif self.state == State.disabled:
-      if self.events.any([ET.ENABLE]):
-        if self.events.any([ET.NO_ENTRY]):
+      if self.events.any(ET.ENABLE):
+        if self.events.any(ET.NO_ENTRY):
           self.current_alert_types.append(ET.NO_ENTRY)
 
         else:
-          if self.events.any([ET.PRE_ENABLE]):
+          if self.events.any(ET.PRE_ENABLE):
             self.state = State.preEnabled
           else:
             self.state = State.enabled
@@ -420,7 +420,6 @@ class Controls:
     if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
       self.events.add(EventName.ldw)
 
-    # add the alerts here
     alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric])
     self.AM.add_many(self.sm.frame, alerts, self.enabled)
     self.AM.process_alerts(self.sm.frame)
@@ -459,7 +458,7 @@ class Controls:
     controlsState.curvature = self.VM.calc_curvature(steer_angle_rad, CS.vEgo)
     controlsState.steerOverride = CS.steeringPressed
     controlsState.state = self.state
-    controlsState.engageable = not self.events.any([ET.NO_ENTRY])
+    controlsState.engageable = not self.events.any(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.v_cruise_kph)
