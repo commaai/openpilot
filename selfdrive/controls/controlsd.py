@@ -219,8 +219,6 @@ class Controls:
         and not self.CP.radarOffCan and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
 
-
-
     alert_types = [ET.PERMANENT, ET.WARNING] if self.active else [ET.PERMANENT]
     alerts = self.events.create_alerts(alert_types, [self.CP, self.sm, self.is_metric])
     self.AM.add_many(self.sm.frame, alerts, self.enabled)
@@ -374,9 +372,8 @@ class Controls:
       left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
       right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
 
-      # TODO: fix this
-      #if left_deviation or right_deviation:
-      #  self.AM.add(self.sm.frame, "steerSaturated", self.enabled)
+      if left_deviation or right_deviation:
+        self.events.add(EventName.steerSaturated)
 
     return actuators, v_acc_sol, a_acc_sol, lac_log
 

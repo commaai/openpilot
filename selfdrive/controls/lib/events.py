@@ -284,9 +284,7 @@ EVENTS = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   },
 
-
-
-  # ********** events with alerts that only display while engaged **********
+  # ********** events only containing alerts that display while engaged **********
 
   EventName.vehicleModelInvalid: {
     ET.WARNING: Alert(
@@ -416,7 +414,7 @@ EVENTS = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   },
 
-  # ********** events with one or more event types **********
+  # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {ET.ENABLE: enable_alert},
   EventName.buttonEnable: {ET.ENABLE: enable_alert},
