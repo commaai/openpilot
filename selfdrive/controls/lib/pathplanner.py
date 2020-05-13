@@ -89,8 +89,8 @@ class PathPlanner():
 
     angle_offset = sm['liveParameters'].angleOffset
 
-    lca_left = sm['carState'].lcaLeft
-    lca_right = sm['carState'].lcaRight
+    lca_left = sm['carState'].leftBlindspot
+    lca_right = sm['carState'].rightBlindspot
 
     # Run MPC
     self.angle_steers_des_prev = self.angle_steers_des_mpc
