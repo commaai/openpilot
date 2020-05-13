@@ -48,8 +48,9 @@ void sigpipe_handler(int sig) {
 
 void sensor_loop() {
   LOG("*** sensor loop");
+
   while (!do_exit) {
-    PubMaster pm(NULL, {"sensorEvents"});
+    PubMaster pm({"sensorEvents"});
 
     struct sensors_poll_device_t* device;
     struct sensors_module_t* module;

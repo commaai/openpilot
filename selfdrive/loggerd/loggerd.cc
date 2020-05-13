@@ -21,10 +21,7 @@
 #include <random>
 
 #include <ftw.h>
-
 #include <zmq.h>
-#include <capnp/serialize.h>
-
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
@@ -36,7 +33,6 @@
 #include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
-#include "common/messagehelp.h"
 
 #include "logger.h"
 #include "messaging.hpp"
@@ -78,7 +74,6 @@ static void set_do_exit(int sig) {
   do_exit = 1;
 }
 struct LoggerdState {
-  Context *ctx;
   LoggerState logger;
 
   std::mutex lock;
@@ -117,8 +112,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
   int encoder_segment = -1;
   int cnt = 0;
 
-  PubSocket *idx_sock = PubSocket::create(s.ctx, front ? "frontEncodeIdx" : "encodeIdx");
-  assert(idx_sock != NULL);
+  PubMaster pm({front ? "frontEncodeIdx" : "encodeIdx"});
 
   LoggerHandle *lh = NULL;
 
@@ -249,7 +243,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
-        if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
+        if (pm.send(front ? "frontEncodeIdx" : "encodeIdx", (char *)bytes.begin(), bytes.size()) < 0){
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
         if (lh) {
@@ -313,8 +307,6 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
     visionstream_destroy(&stream);
   }
-
-  delete idx_sock;
 
   if (encoder_inited) {
     LOG("encoder destroy");
@@ -580,39 +572,20 @@ int main(int argc, char** argv) {
 
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
-
-  s.ctx = Context::create();
-  Poller * poller = Poller::create();
-
-  // subscribe to all services
-
-  SubSocket *frame_sock = NULL;
-  std::vector<SubSocket*> socks;
-
-  std::map<SubSocket*, int> qlog_counter;
-  std::map<SubSocket*, int> qlog_freqs;
-
-  for (const auto& it : services) {
-    std::string name = it.name;
-
-    if (it.should_log) {
-      SubSocket * sock = SubSocket::create(s.ctx, name);
-      assert(sock != NULL);
-
-      poller->registerSocket(sock);
-      socks.push_back(sock);
-
-      if (name == "frame") {
-        frame_sock = sock;
-      }
-
-      qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
-      qlog_freqs[sock] = it.decimation;
-    }
-  }
-
-
+  SubMaster *sm = NULL;
+  std::map<std::string, int> qlog_counter;
+  std::map<std::string, int> qlog_freqs;
   {
+    std::vector<const char *> endpoints;  
+    for (const auto &it : services) {
+      if (it.should_log) {
+        endpoints.push_back(it.name);
+        std::string name = it.name;
+        qlog_counter[name] = (it.decimation == -1) ? -1 : 0;
+        qlog_freqs[name] = it.decimation;
+      }
+    }
+    sm = new SubMaster(endpoints);
     auto words = gen_init_data();
     auto bytes = words.asBytes();
     logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
@@ -653,34 +626,29 @@ int main(int argc, char** argv) {
   uint64_t bytes_count = 0;
 
   while (!do_exit) {
-    for (auto sock : poller->poll(100 * 1000)){
-      while (true) {
-        MessageReader amsg = sock->receive(true);
-        if (!amsg){
-          break;
+    for (auto msg : sm->poll(100 * 1000)){
+      std::string name = msg->getName();
+      if (name == "frame") {
+        // track camera frames to sync to encoder
+        cereal::Event::Reader event = msg->getEvent();
+        if (event.isFrame()) {
+          std::unique_lock<std::mutex> lk(s.lock);
+          s.last_frame_id = event.getFrame().getFrameId();
+          lk.unlock();
+          s.cv.notify_all();
         }
-        if (sock == frame_sock) {
-          auto event = amsg.getEvent();
-          // track camera frames to sync to encoder
-          if (event.isFrame()) {
-            std::unique_lock<std::mutex> lk(s.lock);
-            s.last_frame_id = event.getFrame().getFrameId();
-            lk.unlock();
-            s.cv.notify_all();
-          }
-        }
-
-        logger_log(&s.logger, (uint8_t*)amsg.getData(), amsg.getSize(), qlog_counter[sock] == 0);
-
-        if (qlog_counter[sock] != -1) {
-          //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
-          qlog_counter[sock]++;
-          qlog_counter[sock] %= qlog_freqs[sock];
-        }
-
-        bytes_count += amsg.getSize();
-        msg_count++;
       }
+
+      logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), qlog_counter[name] == 0);
+
+      if (qlog_counter[name] != -1) {
+        //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
+        qlog_counter[name]++;
+        qlog_counter[name] %= qlog_freqs[name];
+      }
+
+      bytes_count += msg->getSize();
+      msg_count++;
     }
 
     double ts = seconds_since_boot();
@@ -720,12 +688,6 @@ int main(int argc, char** argv) {
 #endif
 
   logger_close(&s.logger);
-
-  for (auto s : socks){
-    delete s;
-  }
-  
-  delete poller;
-  delete s.ctx;
+  delete sm;
   return 0;
 }

@@ -17,7 +17,8 @@
 
 #include "logger.h"
 
-#include "messaging.hpp"
+#include <capnp/serialize.h>
+#include "cereal/gen/cpp/log.capnp.h"
 
 static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
   capnp::MallocMessageBuilder msg;
