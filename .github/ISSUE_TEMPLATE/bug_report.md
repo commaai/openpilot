@@ -7,6 +7,11 @@ assignees: ''
 
 ---
 
+**Device/Version information (please complete the following information):**
+ - Device: [e.g. comma two and car harness, EON with black panda and car harness, EON with grey panda and giraffe]
+ - Version: [e.g. 0.7.5], or commit hash when not on release2
+ - Car make/model: [e.g. Toyota Corolla 2020]
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
@@ -15,11 +20,6 @@ Steps to reproduce the behavior, or a explorer/cabana link to the exact drive an
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
-
-**Device/Version information (please complete the following information):**
- - Device: [e.g. EON/EON Gold]
- - Version: [e.g. 0.6.4], or commit hash when on devel
- - Car make/model [e.g. Toyota Prius 2016]
 
 **Additional context**
 Add any other context about the problem here.
