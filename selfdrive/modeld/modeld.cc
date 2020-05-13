@@ -22,8 +22,7 @@ pthread_mutex_t transform_lock;
 void* live_thread(void *arg) {
   int err;
   set_thread_name("live");
-
-  SubMaster sm(NULL, {"liveCalibration"});
+  SubMaster sm({"liveCalibration"});
   /*
      import numpy as np
      from common.transformations.model import medmodel_frame_from_road_frame
@@ -43,8 +42,8 @@ void* live_thread(void *arg) {
     0.0,   0.0,   1.0;
 
   while (!do_exit) {
-    sm.update(10);
-    for (auto event : sm.allAliveAndValid()) {
+    for (auto msg : sm.poll(10)){
+      auto event = msg->getEvent();
       if (event.isLiveCalibration()) {
         pthread_mutex_lock(&transform_lock);
 
@@ -85,8 +84,9 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  PubMaster pm(NULL, {"model", "cameraOdometry"});
-  SubMessage pathplan_sock(NULL, "pathPlan", "127.0.0.1", true);
+  SubMaster sm;
+  sm.createSocket("pathPlan", "127.0.0.1", true);
+  PubMaster pm({"model", "cameraOdometry"});
 
   // cl init
   cl_device_id device_id;
@@ -169,10 +169,9 @@ int main(int argc, char **argv) {
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
-      auto pevent = pathplan_sock.receive(true);
-      if (pevent != NULL) {
-        // TODO: path planner timeout?
-        desire = ((int)pevent->getPathPlan().getDesire()) - 1;
+      auto msg = sm.pollOne(0);
+      if (msg){
+        desire = (int)(msg->getEvent().getPathPlan().getDesire()) - 1;
       }
 
       double mt1 = 0, mt2 = 0;
