@@ -20,7 +20,7 @@ from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.planner import LON_MPC_STEP
-from selfdrive.locationd.calibration_helpers import Calibration, Filter
+from selfdrive.locationd.calibration_helpers import Calibration
 
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -69,22 +69,22 @@ class Controls:
     params = Params()
     self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
     self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
-    self.internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
+    internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
     community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
     openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
-    self.passive = params.get("Passive", encoding='utf8') == "1" or \
-              self.internet_needed or not openpilot_enabled_toggle
+    passive = params.get("Passive", encoding='utf8') == "1" or \
+              internet_needed or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
-    self.sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') \
+    sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') \
                             and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
     car_recognized = self.CP.carName != 'mock'
     # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
-    controller_available = self.CP.enableCamera and self.CI.CC is not None and not self.passive
-    self.community_feature_disallowed = self.CP.communityFeature and not community_feature_toggle
+    controller_available = self.CP.enableCamera and self.CI.CC is not None and not passive
+    community_feature_disallowed = self.CP.communityFeature and not community_feature_toggle
     self.read_only = not car_recognized or not controller_available or \
-                       self.CP.dashcamOnly or self.community_feature_disallowed
+                       self.CP.dashcamOnly or community_feature_disallowed
     if self.read_only:
       self.CP.safetyModel = car.CarParams.SafetyModel.noOutput
 
@@ -96,6 +96,7 @@ class Controls:
 
     self.CC = car.CarControl.new_message()
     self.AM = AlertManager()
+    self.events = Events()
 
     self.LoC = LongControl(self.CP, self.CI.compute_gb)
     self.VM = VehicleModel(self.CP)
@@ -129,123 +130,100 @@ class Controls:
     self.sm['dMonitoringState'].faceDetected = False
 
     startup_event = get_startup_event(car_recognized, controller_available)
-    self.AM.add_from_event(self.sm.frame, startup_event, ET.PERMANENT, False)
+    self.events.add(startup_event)
+    alerts = self.events.create_alerts([ET.PERMANENT])
+    self.AM.add_many(self.sm.frame, alerts, False)
+
+    if not sounds_available:
+      self.events.add(EventName.soundsUnavailable, static=True)
+    if internet_needed:
+      self.events.add(EventName.internetConnectivityNeeded, static=True)
+    if community_feature_disallowed:
+      self.events.add(EventName.communityFeatureDisallowed, static=True)
+    if self.read_only and not passive:
+      self.events.add(EventName.carUnrecognized, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
-
     self.prof = Profiler(False)  # off by default
 
 
-  def create_events(self, CS):
+  def update_events(self, CS):
     """Compute carEvents from carState"""
 
-    events = Events()
-    events.add_from_msg(CS.events)
-    events.add_from_msg(self.sm['dMonitoringState'].events)
-
-    # Create unrecoverable events
-    if not self.sounds_available:
-      events.add(EventName.soundsUnavailable)
-    if self.internet_needed:
-      events.add(EventName.internetConnectivityNeeded)
-    if self.community_feature_disallowed:
-      events.add(EventName.communityFeatureDisallowed)
-    if self.read_only and not self.passive:
-      events.add(EventName.carUnrecognized)
+    self.events.clear()
+    self.events.add_from_msg(CS.events)
+    self.events.add_from_msg(self.sm['dMonitoringState'].events)
 
     # Create events for battery, temperature, disk space, and memory
     if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
       # at zero percent battery, while discharging, OP should not allowed
-      events.add(EventName.lowBattery)
+      self.events.add(EventName.lowBattery)
     if self.sm['thermal'].thermalStatus >= ThermalStatus.red:
-      events.add(EventName.overheat)
+      self.events.add(EventName.overheat)
     if self.sm['thermal'].freeSpace < 0.07:
       # under 7% of space free no enable allowed
-      events.add(EventName.outOfSpace)
+      self.events.add(EventName.outOfSpace)
     if self.sm['thermal'].memUsedPercent > 90:
-      events.add(EventName.lowMemory)
+      self.events.add(EventName.lowMemory)
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
     if cal_status != Calibration.CALIBRATED:
       if cal_status == Calibration.UNCALIBRATED:
-        events.add(EventName.calibrationIncomplete)
+        self.events.add(EventName.calibrationIncomplete)
       else:
-        events.add(EventName.calibrationInvalid)
+        self.events.add(EventName.calibrationInvalid)
 
     # Handle lane change
     if self.sm['pathPlan'].laneChangeState == LaneChangeState.preLaneChange:
       if self.sm['pathPlan'].laneChangeDirection == LaneChangeDirection.left:
-        events.add(EventName.preLaneChangeLeft)
+        self.events.add(EventName.preLaneChangeLeft)
       else:
-        events.add(EventName.preLaneChangeRight)
+        self.events.add(EventName.preLaneChangeRight)
     elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting, \
                                         LaneChangeState.laneChangeFinishing]:
-      events.add(EventName.laneChange)
+      self.events.add(EventName.laneChange)
 
     if self.can_rcv_error:
-      events.add(EventName.canError)
+      self.events.add(EventName.canError)
     if self.mismatch_counter >= 200:
-      events.add(EventName.controlsMismatch)
+      self.events.add(EventName.controlsMismatch)
     if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
       # only plan not being received: radar not communicating
-      events.add(EventName.radarCommIssue)
+      self.events.add(EventName.radarCommIssue)
     elif not self.sm.all_alive_and_valid():
-      events.add(EventName.commIssue)
+      self.events.add(EventName.commIssue)
     if not self.sm['pathPlan'].mpcSolutionValid:
-      events.add(EventName.plannerError)
+      self.events.add(EventName.plannerError)
     if not self.sm['pathPlan'].sensorValid and os.getenv("NOSENSOR") is None:
-      events.add(EventName.sensorDataInvalid)
+      self.events.add(EventName.sensorDataInvalid)
     if not self.sm['pathPlan'].paramsValid:
-      events.add(EventName.vehicleModelInvalid)
+      self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['pathPlan'].posenetValid:
-      events.add(EventName.posenetInvalid)
+      self.events.add(EventName.posenetInvalid)
     if not self.sm['plan'].radarValid:
-      events.add(EventName.radarFault)
+      self.events.add(EventName.radarFault)
     if self.sm['plan'].radarCanError:
-      events.add(EventName.radarCanError)
+      self.events.add(EventName.radarCanError)
     if not CS.canValid:
-      events.add(EventName.canError)
+      self.events.add(EventName.canError)
     if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
-      events.add(EventName.relayMalfunction)
+      self.events.add(EventName.relayMalfunction)
     if self.sm['plan'].fcw:
       # send FCW alert if triggered by planner
-      events.add(EventName.fcw)
+      self.events.add(EventName.fcw)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
         and not self.CP.radarOffCan and CS.vEgo < 0.3:
-      events.add(EventName.noTarget)
+      self.events.add(EventName.noTarget)
 
 
-    # TODO: clean up this alert creation in alerts refactor
 
-    if self.active:
-      for e in events.get_events([ET.WARNING]):
-        # TODO: handle non static text in a cleaner way, like a callback
-        extra_text = ""
-        if e == "belowSteerSpeed":
-          if self.is_metric:
-            extra_text = str(int(round(self.CP.minSteerSpeed * CV.MS_TO_KPH))) + " kph"
-          else:
-            extra_text = str(int(round(self.CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
-        self.AM.add_from_event(self.sm.frame, e, ET.WARNING, self.enabled, extra_text_2=extra_text)
-
-    for e in events.get_events([ET.PERMANENT]):
-      # TODO: handle non static text in a cleaner way, like a callback
-      extra_text_1, extra_text_2 = "", ""
-      if e == "calibrationIncomplete":
-        extra_text_1 = str(self.sm['liveCalibration'].calPerc) + "%"
-        if self.is_metric:
-          extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
-        else:
-          extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
-      self.AM.add_from_event(self.sm.frame, e, ET.PERMANENT, self.enabled, \
-                    extra_text_1=extra_text_1, extra_text_2=extra_text_2)
-
-    return events
-
+    alert_types = [ET.PERMANENT, ET.WARNING] if self.active else [ET.PERMANENT]
+    alerts = self.events.create_alerts(alert_types, [self.CP, self.sm, self.is_metric])
+    self.AM.add_many(self.sm.frame, alerts, self.enabled)
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
@@ -276,7 +254,7 @@ class Controls:
     return CS
 
 
-  def state_transition(self, CS, events):
+  def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
 
     self.v_cruise_kph_last = self.v_cruise_kph
@@ -296,29 +274,29 @@ class Controls:
     # ENABLED, PRE ENABLING, SOFT DISABLING
     if self.state != State.disabled:
       # user and immediate disable always have priority in a non-disabled state
-      if events.any([ET.USER_DISABLE]):
+      if self.events.any([ET.USER_DISABLE]):
         self.state = State.disabled
         alert_types = [ET.USER_DISABLE]
 
-      elif events.any([ET.IMMEDIATE_DISABLE]):
+      elif self.events.any([ET.IMMEDIATE_DISABLE]):
         self.state = State.disabled
         alert_types = [ET.IMMEDIATE_DISABLE]
 
       else:
         # ENABLED
         if self.state == State.enabled:
-          if events.any([ET.SOFT_DISABLE]):
+          if self.events.any([ET.SOFT_DISABLE]):
             self.state = State.softDisabling
             self.soft_disable_timer = 300   # 3s
             alert_types = [ET.SOFT_DISABLE]
 
         # SOFT DISABLING
         elif self.state == State.softDisabling:
-          if not events.any([ET.SOFT_DISABLE]):
+          if not self.events.any([ET.SOFT_DISABLE]):
             # no more soft disabling condition, so go back to ENABLED
             self.state = State.enabled
 
-          elif events.any([ET.SOFT_DISABLE]) and self.soft_disable_timer > 0:
+          elif self.events.any([ET.SOFT_DISABLE]) and self.soft_disable_timer > 0:
             alert_types = [ET.SOFT_DISABLE]
 
           elif self.soft_disable_timer <= 0:
@@ -326,26 +304,25 @@ class Controls:
 
         # PRE ENABLING
         elif self.state == State.preEnabled:
-          if not events.any([ET.PRE_ENABLE]):
+          if not self.events.any([ET.PRE_ENABLE]):
             self.state = State.enabled
 
     # DISABLED
     elif self.state == State.disabled:
-      if events.any([ET.ENABLE]):
-        if events.any([ET.NO_ENTRY]):
+      if self.events.any([ET.ENABLE]):
+        if self.events.any([ET.NO_ENTRY]):
           alert_types = [ET.NO_ENTRY]
 
         else:
-          if events.any([ET.PRE_ENABLE]):
+          if self.events.any([ET.PRE_ENABLE]):
             self.state = State.preEnabled
           else:
             self.state = State.enabled
           alert_types = [ET.ENABLE]
           self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
 
-    for et in alert_types:
-      for e in events.get_events((et,)):
-        self.AM.add_from_event(self.sm.frame, e, et, self.enabled)
+    alerts = self.events.create_alerts(alert_types)
+    self.AM.add_many(self.sm.frame, alerts, self.enabled)
 
     # Check if actuators are enabled
     self.active = self.state == State.enabled or self.state == State.softDisabling
@@ -354,7 +331,7 @@ class Controls:
     self.enabled = self.active or self.state == State.preEnabled
 
 
-  def state_control(self, CS, events):
+  def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
 
     plan = self.sm['plan']
@@ -404,7 +381,7 @@ class Controls:
     return actuators, v_acc_sol, a_acc_sol, lac_log
 
 
-  def publish_logs(self, CS, events, start_time, actuators, v_acc, a_acc, lac_log):
+  def publish_logs(self, CS, start_time, actuators, v_acc, a_acc, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
     CC = car.CarControl.new_message()
@@ -447,7 +424,7 @@ class Controls:
 
     # TODO: fix this, event gets added but alert creation happens before this
     if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
-      events.add(EventName.ldw)
+      self.events.add(EventName.ldw)
 
     self.AM.process_alerts(self.sm.frame)
     CC.hudControl.visualAlert = self.AM.visual_alert
@@ -485,7 +462,7 @@ class Controls:
     controlsState.curvature = self.VM.calc_curvature(steer_angle_rad, CS.vEgo)
     controlsState.steerOverride = CS.steeringPressed
     controlsState.state = self.state
-    controlsState.engageable = not events.any([ET.NO_ENTRY])
+    controlsState.engageable = not self.events.any([ET.NO_ENTRY])
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.v_cruise_kph)
@@ -514,7 +491,7 @@ class Controls:
     self.pm.send('controlsState', dat)
 
     # carState
-    car_events = events.to_msg()
+    car_events = self.events.to_msg()
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
     cs_send.carState = CS
@@ -522,11 +499,11 @@ class Controls:
     self.pm.send('carState', cs_send)
 
     # carEvents - logged every second or on change
-    if (self.sm.frame % int(1. / DT_CTRL) == 0) or (events.names != self.events_prev):
-      ce_send = messaging.new_message('carEvents', len(events))
+    if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
+      ce_send = messaging.new_message('carEvents', len(self.events))
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
-    self.events_prev = events.names.copy()
+    self.events_prev = self.events.names.copy()
 
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
@@ -551,20 +528,20 @@ class Controls:
     CS = self.data_sample()
     self.prof.checkpoint("Sample")
 
-    events = self.create_events(CS)
+    self.update_events(CS)
 
     if not self.read_only:
       # Update control state
-      self.state_transition(CS, events)
+      self.state_transition(CS)
       self.prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
-    actuators, v_acc, a_acc, lac_log = self.state_control(CS, events)
+    actuators, v_acc, a_acc, lac_log = self.state_control(CS)
 
     self.prof.checkpoint("State Control")
 
     # Publish data
-    self.publish_logs(CS, events, start_time, actuators, v_acc, a_acc, lac_log)
+    self.publish_logs(CS, start_time, actuators, v_acc, a_acc, lac_log)
     self.prof.checkpoint("Sent")
 
   def controlsd_thread(self):

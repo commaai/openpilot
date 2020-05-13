@@ -1,4 +1,5 @@
 from cereal import log, car
+from selfdrive.locationd.calibration_helpers import Filter
 
 AlertSize = log.ControlsState.AlertSize
 AlertStatus = log.ControlsState.AlertStatus
@@ -32,6 +33,7 @@ EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 class Events:
   def __init__(self):
     self.events = []
+    self.static_events = []
 
   @property
   def names(self):
@@ -40,8 +42,13 @@ class Events:
   def __len__(self):
     return len(self.events)
 
-  def add(self, event_name):
+  def add(self, event_name, static=False):
+    if static:
+      self.static_events.append(event_name)
     self.events.append(event_name)
+
+  def clear(self):
+    self.events = self.static_events.copy()
 
   def any(self, event_types):
     for e in self.events:
@@ -51,13 +58,16 @@ class Events:
           return True
     return False
 
-  def get_events(self, event_types):
+  def create_alerts(self, event_types, callback_args=[]):
     ret = []
     for e in self.events:
-      et = EVENTS.get(e, {}).keys()
-      for t in event_types:
-        if t in et:
-          ret.append(e)
+      types = EVENTS[e].keys()
+      for et in event_types:
+        if et in types:
+          alert = EVENTS[e][et]
+          if not isinstance(alert, Alert):
+            alert = alert(*callback_args)
+          ret.append(alert)
     return ret
 
   def add_from_msg(self, events):
@@ -138,6 +148,23 @@ class ImmediateDisableAlert(Alert):
                      Priority.HIGHEST, VisualAlert.steerRequired,
                      AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
 
+def below_steer_speed_alert(CP, sm, metric):
+  speed = CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)
+  unit = "kph" if is_metric else "mph"
+  return Alert(
+    "TAKE CONTROL",
+    "Steer Unavailable Below %d %s" % (speed, unit),
+    AlertStatus.userPrompt, AlertSize.mid,
+    Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3),
+
+def calibration_incomplete_alert(CP_, sm, metric):
+  speed = int(Filter.MIN_SPEED * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
+  unit = "kph" if is_metric else "mph"
+  return Alert(
+    "Calibration in Progress: %d" % sm['liveCalibration'].calPerc,
+    "Drive Above %d %s" % (Filter.MIN, unit),
+    AlertStatus.normal, AlertSize.mid,
+    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 
 enable_alert =  Alert(
                     "",
@@ -482,11 +509,7 @@ EVENTS = {
 
   EventName.calibrationIncomplete: {
     ET.SOFT_DISABLE: SoftDisableAlert("Calibration in Progress"),
-    ET.PERMANENT: Alert(
-      "Calibration in Progress: ",
-      "Drive Above ",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.PERMANENT: calibration_incomplete_alert,
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
 

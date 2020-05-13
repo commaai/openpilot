@@ -18,24 +18,18 @@ class AlertManager():
   def alert_present(self):
     return len(self.activealerts) > 0
 
-  def add(self, frame, alert_type, enabled=True, extra_text_1='', extra_text_2=''):
-    self._add(frame, ALERTS[alert_type], alert_type, enabled, extra_text_1, extra_text_2)
-
-  def add_from_event(self, frame, event, event_type, enabled=True, extra_text_1='', extra_text_2=''):
-    alert_type = EVENT_NAME[event]
-    alert = EVENTS[event][event_type]
-    self._add(frame, alert, alert_type, enabled, extra_text_1, extra_text_2)
-
-  def _add(self, frame, alert, alert_type, enabled, extra_text_1, extra_text_2):
+  def add_many(self, frame, alerts, enabled=True):
+    for a in alerts:
+      self.add(frame, a, enabled=enabled)
+  
+  def add(self, frame, alert, enabled=True):
     added_alert = copy.copy(alert)
-    added_alert.alert_type = alert_type
-    added_alert.alert_text_1 += extra_text_1
-    added_alert.alert_text_2 += extra_text_2
+    #added_alert.alert_type = alert_type
     added_alert.start_time = frame * DT_CTRL
 
     # if new alert is higher priority, log it
     if not self.alert_present() or added_alert.alert_priority > self.activealerts[0].alert_priority:
-      cloudlog.event('alert_add', alert_type=alert_type, enabled=enabled)
+      cloudlog.event('alert_add', alert_type=added_alert.alert_type, enabled=enabled)
 
     self.activealerts.append(added_alert)
 
