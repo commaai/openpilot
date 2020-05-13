@@ -120,7 +120,6 @@ env = Environment(
     "#phonelibs/libyuv/include",
     "#phonelibs/openmax/include",
     "#phonelibs/json11",
-    "#phonelibs/eigen",
     "#phonelibs/curl/include",
     #"#phonelibs/opencv/include", # use opencv4 instead
     "#phonelibs/libgralloc/include",
