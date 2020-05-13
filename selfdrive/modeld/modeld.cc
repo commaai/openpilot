@@ -43,8 +43,8 @@ void* live_thread(void *arg) {
     0.0,   0.0,   1.0;
 
   while (!do_exit) {
-    for (auto msg : sm.poll(10)){
-      auto event = msg->getEvent();
+    sm.update(10);
+    for (auto event : sm.allAliveAndValid()) {
       if (event.isLiveCalibration()) {
         pthread_mutex_lock(&transform_lock);
 
@@ -85,10 +85,8 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  MessageContext ctx;
-  PubMessage model_pub(&ctx, "model");
-  PubMessage posenet_pub(&ctx, "cameraOdometry");
-  SubMessage pathplan_sock(&ctx, "pathPlan", "127.0.0.1", true);
+  PubMaster pm(NULL, {"model", "cameraOdometry"});
+  SubMessage pathplan_sock(NULL, "pathPlan", "127.0.0.1", true);
 
   // cl init
   cl_device_id device_id;
@@ -196,8 +194,8 @@ int main(int argc, char **argv) {
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
-        model_publish(model_pub, extra.frame_id, model_buf, extra.timestamp_eof);
-        posenet_publish(posenet_pub, extra.frame_id, model_buf, extra.timestamp_eof);
+        model_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
+        posenet_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
         last = mt1;

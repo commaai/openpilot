@@ -26,9 +26,8 @@ int main(int argc, char **argv) {
   set_realtime_priority(1);
 
   // messaging
-  MessageContext ctx;
-  SubMessage dmonstate_sock(&ctx, "dMonitoringState", "127.0.0.1", true);
-  PubMessage pm(&ctx, "driverState");
+  SubMessage dmonstate_sock(NULL, "dMonitoringState", "127.0.0.1", true);
+  PubMaster pm(NULL, {"driverState"});
 
   // init the models
   DMonitoringModelState dmonitoringmodel;

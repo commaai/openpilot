@@ -201,7 +201,6 @@ typedef struct UIState {
   int img_network[6];
 
   // sockets
-  MessageContext *ctx;
   SubMaster *sm;
   PubMessage *offroadLayout;
 

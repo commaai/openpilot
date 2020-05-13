@@ -26,9 +26,7 @@ volatile sig_atomic_t do_exit = 0;
 
 namespace {
 
-MessageContext ctx;
-PubMessage gps_publisher(&ctx, "gpsNMEA");
-PubMessage gps_location_publisher(&ctx, "gpsLocation");
+PubMaster pm(NULL, {"gpsNMEA", "gpsLocation"});
 
 const GpsInterface* gGpsInterface = NULL;
 const AGpsInterface* gAGpsInterface = NULL;
@@ -51,7 +49,7 @@ void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
   nmeaData.setLocalWallTime(log_time_wall);
   nmeaData.setNmea(nmea);
 
-  gps_publisher.send(msg);
+  pm.send("gpsNMEA", msg);
 }
 
 void location_callback(GpsLocation* location) {
@@ -73,7 +71,7 @@ void location_callback(GpsLocation* location) {
   locationData.setTimestamp(location->timestamp);
   locationData.setSource(cereal::GpsLocationData::SensorSource::ANDROID);
 
-  gps_location_publisher.send(msg);
+  pm.send("gpsLocation",msg);
 }
 
 pthread_t create_thread_callback(const char* name, void (*start)(void *), void* arg) {
