@@ -2,7 +2,6 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
@@ -534,24 +533,22 @@ void can_health(PubMaster &pm) {
 }
 
 
-void can_send(SubMaster &sm) {
+void can_send(SubMessage &sm) {
   int err;
   // recv from sendcan
-  auto msg =  sm.pollOne(0);
-  if (msg == NULL){return;}
-
-  auto event = msg->getEvent();
-  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
+  auto pevent = subscriber.receive();
+  if (!pevent){ return; }
+  if (nanos_since_boot() - pevent->getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
     return;
   }
-  int msg_count = event.getSendcan().size();
+  int msg_count = pevent->getSendcan().size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
-    auto cmsg = event.getSendcan()[i];
+    auto cmsg = pevent->getSendcan()[i];
     if (cmsg.getAddress() >= 0x800) {
       // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
@@ -596,14 +593,13 @@ void *can_send_thread(void *crap) {
   LOGD("start send thread");
 
   // sendcan = 8017
-  SubMaster sm({"sendcan"});
+  SubMessage subscriber(NULL, "sendcan");
 
   // drain sendcan to delete any stale messages from previous runs
-  sm.poll(0, false);
-
+  while(subscriber.receive(true)){}
   // run as fast as messages come in
   while (!do_exit) {
-    can_send(sm);
+    can_send(subscriber);
   }
   
   return NULL;
@@ -613,10 +609,12 @@ void *can_recv_thread(void *crap) {
   LOGD("start recv thread");
 
   // can = 8006
-  PubMaster pm({"can"});
+  PubMaster pm(NULL, {"can"});
+
   // run at 100hz
   const uint64_t dt = 10000000ULL;
   uint64_t next_frame_time = nanos_since_boot() + dt;
+
   while (!do_exit) {
     can_recv(pm);
 
@@ -639,7 +637,7 @@ void *can_recv_thread(void *crap) {
 void *can_health_thread(void *crap) {
   LOGD("start health thread");
   // health = 8011
-   PubMaster pm({"health"});
+  PubMaster pm(NULL, {"health"});
      // run at 2hz
   while (!do_exit) {
     can_health(pm);
@@ -651,7 +649,7 @@ void *can_health_thread(void *crap) {
 
 void *hardware_control_thread(void *crap) {
   LOGD("start hardware control thread");
-  SubMaster sm({"thermal", "frontFrame"});
+  SubMaster sm(NULL, {"thermal", "frontFrame"});
   // Wait for hardware type to be set.
   while (hw_type == cereal::HealthData::HwType::UNKNOWN){
     usleep(100*1000);
@@ -668,8 +666,8 @@ void *hardware_control_thread(void *crap) {
 
   while (!do_exit) {
     cnt++;
-    for (auto msg : sm.poll(1000)){
-      auto event = msg->getEvent();
+    sm.update(1000);
+    for (auto &event : sm.allAliveAndValid()) {
       auto type = event.which();
       if(type == cereal::Event::THERMAL){
         uint16_t fan_speed = event.getThermal().getFanSpeed();
@@ -819,7 +817,7 @@ static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
 
 void *pigeon_thread(void *crap) {
   // ubloxRaw = 8042
-  PubMaster pm({"ubloxRaw"});
+  PubMaster pm(NULL, {"ubloxRaw"});
 
   // run at ~100hz
   unsigned char dat[0x1000];

@@ -19,10 +19,7 @@ int main() {
   setpriority(PRIO_PROCESS, 0, -13);
 
   int err = 0;
-  Context *context = Context::create();
-
-  PubSocket* clock_publisher = PubSocket::create(context, "clocks");
-  assert(clock_publisher != NULL);
+  PubMaster pm(NULL, {"clocks"});
 
   int timerfd = timerfd_create(CLOCK_BOOTTIME, 0);
   assert(timerfd >= 0);
