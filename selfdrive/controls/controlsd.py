@@ -192,7 +192,7 @@ class Controls:
 
     # Handle lane change
     if self.sm['pathPlan'].laneChangeState == LaneChangeState.preLaneChange:
-      if self.sm['path_plan'].laneChangeDirection == LaneChangeDirection.left:
+      if self.sm['pathPlan'].laneChangeDirection == LaneChangeDirection.left:
         events.append(create_event('preLaneChangeLeft', [ET.WARNING]))
       else:
         events.append(create_event('preLaneChangeRight', [ET.WARNING]))
