@@ -2,7 +2,6 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
@@ -279,7 +278,7 @@ void handle_usb_issue(int err, const char func[]) {
   // TODO: check other errors, is simply retrying okay?
 }
 
-void can_recv(PubMaster &pm) {
+void can_recv(PubMessage &pm) {
   int err;
   uint32_t data[RECV_SIZE/4];
   int recv;
@@ -331,10 +330,10 @@ void can_recv(PubMaster &pm) {
     canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
   }
 
-  pm.send("can", msg);
+  pm.send(msg);
 }
 
-void can_health(PubMaster &pm) {
+void can_health(PubMessage &pm) {
   int cnt;
   int err;
 
@@ -379,8 +378,7 @@ void can_health(PubMaster &pm) {
   // No panda connected, send empty health packet
   if (!received){
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
-
-    pm.send("health", msg);
+    pm.send(msg);
     return;
   }
 
@@ -525,7 +523,7 @@ void can_health(PubMaster &pm) {
     }
   }
   // send to health
-  pm.send("health", msg);
+  pm.send(msg);
 
   // send heartbeat back to panda
   pthread_mutex_lock(&usb_lock);
@@ -534,24 +532,22 @@ void can_health(PubMaster &pm) {
 }
 
 
-void can_send(SubMaster &sm) {
+void can_send(SubMessage &subscriber) {
   int err;
-
   // recv from sendcan
-  auto msg = sm.receive();
-  if (!msg){ return; }
-  cereal::Event::Reader event = msg->getEvent();
-  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
+  auto pevent = subscriber.receive();
+  if (!pevent){ return; }
+  if (nanos_since_boot() - pevent->getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
     return;
   }
-  int msg_count = event.getSendcan().size();
+  int msg_count = pevent->getSendcan().size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
-    auto cmsg = event.getSendcan()[i];
+    auto cmsg = pevent->getSendcan()[i];
     if (cmsg.getAddress() >= 0x800) {
       // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
@@ -567,7 +563,6 @@ void can_send(SubMaster &sm) {
   // send to board
   int sent;
   pthread_mutex_lock(&usb_lock);
-
 
   if (!fake_send) {
     do {
@@ -594,19 +589,13 @@ void can_send(SubMaster &sm) {
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
-
-  SubMaster sm({"sendcan"}, false);
+  SubMessage subscriber(NULL, "sendcan");
 
   // drain sendcan to delete any stale messages from previous runs
-  while (true){
-    if (!sm.receive(true)){
-      break;
-    }
-  }
-
+  while (subscriber.receive(true) != NULL){}
   // run as fast as messages come in
   while (!do_exit) {
-    can_send(sm);
+    can_send(subscriber);
   }
   
   return NULL;
@@ -616,7 +605,7 @@ void *can_recv_thread(void *crap) {
   LOGD("start recv thread");
 
   // can = 8006
-  PubMaster pm({"can"});
+  PubMessage pm(NULL, "can");
 
   // run at 100hz
   const uint64_t dt = 10000000ULL;
@@ -644,7 +633,7 @@ void *can_recv_thread(void *crap) {
 void *can_health_thread(void *crap) {
   LOGD("start health thread");
   // health = 8011
-  PubMaster pm({"health"});
+  PubMessage pm(NULL, "health");
 
   // run at 2hz
   while (!do_exit) {
@@ -657,8 +646,7 @@ void *can_health_thread(void *crap) {
 
 void *hardware_control_thread(void *crap) {
   LOGD("start hardware control thread");
-
-  SubMaster sm({"thermal", "frontFrame"});
+  SubMaster sm(NULL, {"thermal", "frontFrame"});
 
   // Wait for hardware type to be set.
   while (hw_type == cereal::HealthData::HwType::UNKNOWN){
@@ -676,9 +664,8 @@ void *hardware_control_thread(void *crap) {
 
   while (!do_exit) {
     cnt++;
-    for (auto msg : sm.poll(1000)){
-      cereal::Event::Reader event = msg->getEvent();
-
+    sm.update(1000);
+    for (auto &event : sm.allAliveAndValid()) {
       auto type = event.which();
       if(type == cereal::Event::THERMAL){
         uint16_t fan_speed = event.getThermal().getFanSpeed();
@@ -814,7 +801,7 @@ void pigeon_init() {
   LOGW("panda GPS on");
 }
 
-static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
+static void pigeon_publish_raw(PubMessage &pm, unsigned char *dat, int alen) {
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -822,13 +809,13 @@ static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
   auto ublox_raw = event.initUbloxRaw(alen);
   memcpy(ublox_raw.begin(), dat, alen);
 
-  pm.send("ubloxRaw", msg);
+  pm.send(msg);
 }
 
 
 void *pigeon_thread(void *crap) {
   // ubloxRaw = 8042
-  PubMaster pm({"ubloxRaw"});
+  PubMessage pm(NULL, "ubloxRaw");
 
   // run at ~100hz
   unsigned char dat[0x1000];

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
@@ -12,8 +11,6 @@
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <map>
-#include <vector>
 #include <algorithm>
 
 #include "common/params.h"

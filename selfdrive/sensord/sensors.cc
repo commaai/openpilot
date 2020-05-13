@@ -48,9 +48,9 @@ void sigpipe_handler(int sig) {
 
 void sensor_loop() {
   LOG("*** sensor loop");
-
+  MessageContext ctx;
   while (!do_exit) {
-    PubMaster pm({"sensorEvents"});
+    PubMessage pm(&ctx, "sensorEvents");
 
     struct sensors_poll_device_t* device;
     struct sensors_module_t* module;
@@ -205,7 +205,7 @@ void sensor_loop() {
         log_i++;
       }
 
-      pm.send("sensorEvents", msg);
+      pm.send(msg);
 
       if (re_init_sensors){
         LOGE("Resetting sensors");

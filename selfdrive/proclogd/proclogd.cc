@@ -5,9 +5,6 @@
 
 #include <unistd.h>
 #include <dirent.h>
-
-#include <vector>
-#include <string>
 #include <memory>
 #include <utility>
 #include <sstream>
@@ -33,8 +30,7 @@ struct ProcCache {
 
 int main() {
   int err;
-
-  PubMaster pm({"procLog"});
+  PubMessage publisher(NULL, "procLog");
 
   double jiffy = sysconf(_SC_CLK_TCK);
   size_t page_size = sysconf(_SC_PAGE_SIZE);
@@ -229,7 +225,7 @@ int main() {
       }
     }
 
-    pm.send("procLog", msg);
+    publisher.send(msg);
 
     usleep(2000000); // 2 secs
   }

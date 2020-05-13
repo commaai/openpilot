@@ -202,8 +202,9 @@ typedef struct UIState {
   int img_network[6];
 
   // sockets
+  MessageContext *ctx;
   SubMaster *sm;
-  PubMaster *pm;
+  PubMessage *offroadLayout;
 
   cereal::UiLayoutState::App active_app;
 

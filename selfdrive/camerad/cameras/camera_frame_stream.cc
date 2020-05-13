@@ -1,8 +1,6 @@
 #include "camera_frame_stream.h"
 
-#include <string>
 #include <unistd.h>
-#include <vector>
 #include <cassert>
 #include <string.h>
 #include <signal.h>
@@ -51,15 +49,15 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps) {
 
 void run_frame_stream(DualCameraState *s) {
   int err;
-  SubMaster sm({"frame"}, false);
+  SubMessage frame_sock(NULL, "frame");
 
   CameraState *const rear_camera = &s->rear;
   auto *tb = &rear_camera->camera_tb;
 
   while (!do_exit) {
-    auto msg = sm.receive();
-    if (!msg) { continue; }
-    auto frame = msg->getEvent().getFrame();
+    auto pevent = frame_sock.receive();
+    if (!pevent) { continue; }
+    auto frame = pevent->getFrame();
 
     const int buf_idx = tbuffer_select(tb);
     rear_camera->camera_bufs_metadata[buf_idx] = {
