@@ -108,6 +108,29 @@ int prop_num = 0;
 
 extern "C" {
 
+/*void *gsl_memory_alloc_pure(long param_1, long param_2, long *param_3) {
+  void *(*my_gsl_memory_alloc_pure)(long param_1, long param_2, long *param_3);
+  my_gsl_memory_alloc_pure = reinterpret_cast<decltype(my_gsl_memory_alloc_pure)>(dlsym(RTLD_NEXT, "gsl_memory_alloc_pure"));
+
+  void *ret = my_gsl_memory_alloc_pure(param_1, param_2, param_3);
+  printf("gsl_memory_alloc_pure: 0x%lx 0x%lx %p = %p\n", param_1, param_2, param_3, ret);
+  return ret;
+}*/
+
+void *mmap64(void *addr, size_t len, int prot, int flags, int fildes, off64_t off) {
+  void *(*my_mmap64)(void *addr, size_t len, int prot, int flags, int fildes, off64_t off);
+  my_mmap64 = reinterpret_cast<decltype(my_mmap64)>(dlsym(RTLD_NEXT, "mmap64"));
+
+  void *ret = my_mmap64(addr, len, prot, flags, fildes, off);
+
+  if (fildes == 3) {
+    printf("mmap64(addr=%p, len=0x%zx, prot=0x%x, flags=0x%x, fildes=%d, off=0x%lx) = %p\n", addr, len, prot, flags, fildes, off, ret);
+  }
+
+  return ret;
+}
+
+
 pid_t gettid(void);
 
 #undef ioctl
@@ -193,17 +216,18 @@ if (intercept) {
     struct kgsl_gpuobj_sync *cmd = (struct kgsl_gpuobj_sync *)argp;
     struct kgsl_gpuobj_sync_obj *objs = (struct kgsl_gpuobj_sync_obj *)(cmd->objs);
 
-    printf("IOCTL_KGSL_GPUOBJ_SYNC(%d) %d\n", tid, cmd->count);
+    printf("IOCTL_KGSL_GPUOBJ_SYNC(%d) count:%d ", tid, cmd->count);
     for (int i = 0; i < cmd->count; i++) {
-      printf("  offset:0x%lx len:0x%lx id:%d op:%d\n", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
+      printf(" -- offset:0x%lx len:0x%lx id:%d op:%d  ", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
     }
+    printf("\n");
   } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
     struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
     printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID(%d): context_id: %d  timestamp: %d  timeout: %d\n",
         tid, cmd->context_id, cmd->timestamp, cmd->timeout);
   } else if (request == IOCTL_KGSL_GPUOBJ_ALLOC) {
     struct kgsl_gpuobj_alloc *cmd = (struct kgsl_gpuobj_alloc *)argp;
-    printf("IOCTL_KGSL_GPUOBJ_ALLOC: 0x%lx\n", cmd->size);
+    printf("IOCTL_KGSL_GPUOBJ_ALLOC: size:0x%lx flags:0x%lx va_len:0x%lx  ", cmd->size, cmd->flags, cmd->va_len);
   } else if (request == IOCTL_KGSL_GPUOBJ_FREE) {
     //printf("IOCTL_KGSL_GPUOBJ_FREE\n");
   } else if (filedes == 3) {
@@ -218,6 +242,12 @@ if (intercept) {
   } else {
     ret = my_ioctl(filedes, request, argp);
   }
+
+  if (request == IOCTL_KGSL_GPUOBJ_ALLOC) {
+    struct kgsl_gpuobj_alloc *cmd = (struct kgsl_gpuobj_alloc *)argp;
+    printf("mmapsize:0x%lx id:%d metadata_len:%x metadata:0x%lx = %d\n", cmd->mmapsize, cmd->id, cmd->metadata_len, cmd->metadata, ret);
+  }
+
   return ret;
 }
 
@@ -254,23 +284,18 @@ CachedCommand::CachedCommand(struct kgsl_gpu_command *cmd, int lfd) {
   memcpy(&cache, cmd, sizeof(cache));
 }
 
-
-uint64_t base = 0x7ff998000 + 0x1000;
+// i think you get these with cl_a5x_ringbuffer_alloc
+uint64_t base = 0;
 
 void CachedCommand::exec(bool wait) {
-  if (base == 0x7ff9a2100) {
-    base = 0x7ff9a5000;
-  }
-  /*if (base == 0x7ff9ba000) {
-    base = 0x7ff999000;
-  }*/
   printf("old addr 0x%lx ", cmds[1].gpuaddr);
   cmds[1].gpuaddr = base;
-  printf("using addr 0x%lx with size 0x%lx ", cmds[1].gpuaddr, cmd_1.size());
+  printf("using addr 0x%lx with size 0x%4lx ", cmds[1].gpuaddr, cmd_1.size());
   base += (cmd_1.size()+0xff) & (~0xFF);
-  // set up buffers
-  memcpy((void*)cmds[0].gpuaddr, cmd_0.data(), cmd_0.size());
   memcpy((void*)cmds[1].gpuaddr, cmd_1.data(), cmd_1.size());
+
+  // set up other buffers
+  memcpy((void*)cmds[0].gpuaddr, cmd_0.data(), cmd_0.size());
   memset((void*)objs[0].gpuaddr, 0, objs[0].size);
 
   cache.timestamp = ++global_timestamp;
@@ -426,20 +451,20 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
 
   if (do_print) {
     tns += te-tb;
-
-    printf("%10lu %10lu running(%3d) -- %p %p -- %60s -- %p -> %p %s ", (tb-start_time)/1000, (tns/1000), cnt++, kernel, *event, kernels[kernel].c_str(), kernel_inputs[kernel], kernel_outputs[kernel],
-        (buffers[kernel_outputs[kernel]] != 0) ? "B" : "I");
-
-    printf("global -- ");
-    for (int i = 0; i < work_dim; i++) {
-      printf("%4zu ", global_work_size[i]);
-    }
-    printf("local -- ");
-    for (int i = 0; i < work_dim; i++) {
-      printf("%4zu ", local_work_size[i]);
-    }
-    printf("\n");
   }
+
+  printf("%10lu %10lu running(%3d) -- %p -- %56s -- %p -> %p %s ", (tb-start_time)/1000, (tns/1000), cnt++, kernel, kernels[kernel].c_str(), kernel_inputs[kernel], kernel_outputs[kernel],
+    (buffers[kernel_outputs[kernel]] != 0) ? "B" : "I");
+
+  printf("global -- ");
+  for (int i = 0; i < work_dim; i++) {
+    printf("%4zu ", global_work_size[i]);
+  }
+  printf("local -- ");
+  for (int i = 0; i < work_dim; i++) {
+    printf("%4zu ", local_work_size[i]);
+  }
+  printf("\n");
 
   return ret;
 }
@@ -570,6 +595,8 @@ int main(int argc, char* argv[]) {
   cl_uint num_devices;
   cl_uint num_platforms;
 
+  start_time = nanos_since_boot();
+
   err = clGetPlatformIDs(1, &platform_id, &num_platforms);
   assert(err == 0);
   err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
@@ -602,31 +629,41 @@ int main(int argc, char* argv[]) {
   printf("************** execute 1 **************\n");
   run_num = 1; ioctl_num = 0;
   do_print = 0;
+  start_time = nanos_since_boot();
   mdl.execute(input, 0);
-  printf("************** execute 2 **************\n");
+  /*printf("************** execute 2 **************\n");
   run_num = 2; ioctl_num = 0;
   do_print = 0;
-  mdl.execute(input, 0);
+  mdl.execute(input, 0);*/
   printf("************** execute 3 **************\n");
   run_num = 3; ioctl_num = 0;
-  start_time = nanos_since_boot();
 
   do_print = 1;
+  start_time = nanos_since_boot();
   mdl.execute(input, 0);
   do_print = 0;
+
+  struct kgsl_gpuobj_alloc alloc;
+  memset(&alloc, 0, sizeof(alloc));
+  alloc.size = 0x40000;
+  alloc.flags = 0x10000a00;
+  int fd = 3;
+  int ret = ioctl(fd, IOCTL_KGSL_GPUOBJ_ALLOC, &alloc);
+  void *addr = mmap64(NULL, alloc.mmapsize, 0x3, 0x1, fd, alloc.id*0x1000);
+  assert(addr != MAP_FAILED);
 
   intercept = 0;
   while (1) {
     printf("************** execute 4 **************\n");
     run_num = 4;
-    base = 0x7ff998000 + 0x1000;
+    base = (uint64_t)addr;
 
     uint64_t tb = nanos_since_boot();
     int i = 0;
     for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
       printf("run %2d: ", i++);
-      (*it)->exec(i == queue_cmds.size());
-      //(*it)->exec(true);
+      //(*it)->exec(i == queue_cmds.size());
+      (*it)->exec(true);
     }
     uint64_t te = nanos_since_boot();
     printf("model exec in %lu us\n", (te-tb)/1000);
@@ -679,7 +716,6 @@ int main(int argc, char* argv[]) {
     objlists.gpuaddr = (uint64_t)objs;
     objlists.size = 0xc0;
     objlists.flags = 0x18;
-
   }*/
 }
 
