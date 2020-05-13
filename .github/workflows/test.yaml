@@ -48,8 +48,8 @@ jobs:
         cp -pR panda/ opendbc/ cereal/ $TEST_DIR
 
         # need this to build on x86
-        cp -pR --parents phonelibs/capnp-cpp phonelibs/zmq phonelibs/libyuv phonelibs/snpe \
-                         external/bin external/capnp selfdrive/modeld/runners $TEST_DIR
+        cp -pR --parents phonelibs/libyuv phonelibs/snpe \
+                         external/bin selfdrive/modeld/runners $TEST_DIR
 
         # need these so docker copy won't fail
         cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
@@ -198,4 +198,3 @@ jobs:
         run: |
           docker commit tmppilot tmppilotci
           $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F test_car_models"
-

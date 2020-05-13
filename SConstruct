@@ -43,10 +43,9 @@ if arch == "aarch64" or arch == "larch64":
   ]
 
   if arch == "larch64":
-    cpppath += ["#phonelibs/capnp-cpp/include"]
     libpath += ["#phonelibs/snpe/larch64"]
     libpath += ["#phonelibs/libyuv/larch64/lib"]
-    libpath += ["#external/capnparm/lib", "/usr/lib/aarch64-linux-gnu"]
+    libpath += ["/usr/lib/aarch64-linux-gnu"]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     rpath = ["/usr/local/lib"]
@@ -62,14 +61,11 @@ else:
     "PATH": "#external/bin:" + os.environ['PATH'],
   }
   cpppath = [
-    "#phonelibs/capnp-cpp/include",
-    "#phonelibs/zmq/x64/include",
     "#external/tensorflow/include",
   ]
 
   if arch == "Darwin":
     libpath = [
-      "#phonelibs/capnp-cpp/mac/lib",
       "#phonelibs/libyuv/mac/lib",
       "#cereal",
       "#selfdrive/common",
@@ -78,11 +74,8 @@ else:
     ]
   else:
     libpath = [
-      "#phonelibs/capnp-cpp/x64/lib",
       "#phonelibs/snpe/x86_64-linux-clang",
-      "#phonelibs/zmq/x64/lib",
       "#phonelibs/libyuv/x64/lib",
-      "#external/zmq/lib",
       "#external/tensorflow/lib",
       "#cereal",
       "#selfdrive/common",
@@ -90,8 +83,7 @@ else:
       "/usr/local/lib",
     ]
 
-  rpath = ["phonelibs/capnp-cpp/x64/lib",
-           "phonelibs/zmq/x64/lib",
+  rpath = [
            "external/tensorflow/lib",
            "cereal",
            "selfdrive/common"]
@@ -189,10 +181,7 @@ def abspath(x):
     return x[0].path.rsplit("/", 1)[1][:-3]
 
 # still needed for apks
-if arch == 'larch64':
-  zmq = 'zmq'
-else:
-  zmq = FindFile("libzmq.a", libpath)
+zmq = 'zmq'
 Export('env', 'arch', 'zmq', 'SHARED', 'webcam')
 
 # cereal and messaging are shared with the system
