@@ -222,9 +222,9 @@ class CarInterface(CarInterfaceBase):
       self.turning_indicator_alert = False
 
     # LKAS button alert logic: reverse on/off
-    if not self.CS.lkas_error and self.CS.lkas_button_on != self.CS.prev_lkas_button_on:
-      self.CC.lkas_button_on = not self.CC.lkas_button_on
-      self.lkas_button_alert = not self.CC.lkas_button_on
+    #if not self.CS.lkas_error and self.CS.lkas_button_on != self.CS.prev_lkas_button_on:
+      #self.CC.lkas_button_on = not self.CC.lkas_button_on
+      #self.lkas_button_alert = not self.CC.lkas_button_on
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:
