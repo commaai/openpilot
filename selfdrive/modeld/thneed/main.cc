@@ -19,12 +19,22 @@ void hexdump(uint32_t *d, int len) {
   printf("\n");
 }
 
+void hexdump8(uint8_t *d, int len) {
+  printf("  dumping %p len 0x%x\n", d, len);
+  for (int i = 0; i < len; i++) {
+    if (i != 0 && (i%0x10) == 0) printf("\n");
+    printf("%02x ", d[i]);
+  }
+  printf("\n");
+}
+
+
 #include <string>
 #include <vector>
 #include <map>
 using namespace std;
 
-#include "include/adreno_pm4types.h"
+#include "include/disasm/adreno_pm4types.h"
 
 #define REG_A5XX_TPL1_CS_TEX_CONST_LO        0x0000e760
 #define REG_A5XX_TPL1_CS_TEX_SAMP_LO         0x0000e75c
@@ -209,6 +219,7 @@ if (intercept) {
   } else if (request == IOCTL_KGSL_SETPROPERTY) {
     struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
     printf("IOCTL_KGSL_SETPROPERTY(%d): 0x%x\n", tid, prop->type);
+    hexdump8((uint8_t*)prop->value, prop->sizebytes);
     if (prop_num == 1) { printf("SKIPPING\n"); skip = 1; }
     if (run_num == 3) prop_num++;
     //hexdump((unsigned char*)prop->value, prop->sizebytes);
@@ -631,10 +642,10 @@ int main(int argc, char* argv[]) {
   do_print = 0;
   start_time = nanos_since_boot();
   mdl.execute(input, 0);
-  /*printf("************** execute 2 **************\n");
+  printf("************** execute 2 **************\n");
   run_num = 2; ioctl_num = 0;
   do_print = 0;
-  mdl.execute(input, 0);*/
+  mdl.execute(input, 0);
   printf("************** execute 3 **************\n");
   run_num = 3; ioctl_num = 0;
 
@@ -662,13 +673,13 @@ int main(int argc, char* argv[]) {
     int i = 0;
     for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
       printf("run %2d: ", i++);
-      //(*it)->exec(i == queue_cmds.size());
-      (*it)->exec(true);
+      (*it)->exec(i == queue_cmds.size());
+      //(*it)->exec(true);
     }
     uint64_t te = nanos_since_boot();
     printf("model exec in %lu us\n", (te-tb)/1000);
 
-    break;
+    //break;
   }
 
   /*FILE *f = fopen("/proc/self/maps", "rb");

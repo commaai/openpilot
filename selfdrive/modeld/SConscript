@@ -36,6 +36,6 @@ lenv.Program('_modeld', [
 
 if arch == "aarch64":
   lenv.Program('thneed/_thneed', [
-      "thneed/main.cc",
+      "thneed/thneed.cc", "thneed/test.cc"
     ]+common, LIBS=libs)
 
