@@ -5,6 +5,8 @@ RUN apt-get update && apt-get install -y \
     autoconf \
     build-essential \
     bzip2 \
+    capnproto \
+    libcapnp-dev \
     clang \
     cmake \
     curl \
@@ -68,8 +70,6 @@ ENV PATH="/tmp/openpilot/external/bin:${PATH}"
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
 RUN mkdir -p /tmp/openpilot
-COPY ./cereal /tmp/openpilot/cereal
-RUN cd /tmp/openpilot/cereal && ./install_capnp.sh
 
 COPY ./flake8_openpilot.sh /tmp/openpilot/
 COPY ./pylint_openpilot.sh /tmp/openpilot/
@@ -86,6 +86,7 @@ COPY ./tools /tmp/openpilot/tools
 COPY ./release /tmp/openpilot/release
 COPY ./common /tmp/openpilot/common
 COPY ./opendbc /tmp/openpilot/opendbc
+COPY ./cereal /tmp/openpilot/cereal
 COPY ./panda /tmp/openpilot/panda
 COPY ./selfdrive /tmp/openpilot/selfdrive
 
