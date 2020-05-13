@@ -104,6 +104,7 @@ void disassemble(uint32_t *src, int len) {
 }
 
 int intercept = 1;
+int prop_num = 0;
 
 extern "C" {
 
@@ -185,6 +186,8 @@ if (intercept) {
   } else if (request == IOCTL_KGSL_SETPROPERTY) {
     struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
     printf("IOCTL_KGSL_SETPROPERTY(%d): 0x%x\n", tid, prop->type);
+    if (prop_num == 1) { printf("SKIPPING\n"); skip = 1; }
+    if (run_num == 3) prop_num++;
     //hexdump((unsigned char*)prop->value, prop->sizebytes);
   } else if (request == IOCTL_KGSL_GPUOBJ_SYNC) {
     printf("IOCTL_KGSL_GPUOBJ_SYNC(%d)\n", tid);
@@ -245,7 +248,20 @@ CachedCommand::CachedCommand(struct kgsl_gpu_command *cmd, int lfd) {
   memcpy(&cache, cmd, sizeof(cache));
 }
 
+
+uint64_t base = 0x7ff998000 + 0x1000;
+
 void CachedCommand::exec(bool wait) {
+  if (base == 0x7ff9a2100) {
+    base = 0x7ff9a5000;
+  }
+  /*if (base == 0x7ff9ba000) {
+    base = 0x7ff999000;
+  }*/
+  printf("old addr 0x%lx ", cmds[1].gpuaddr);
+  cmds[1].gpuaddr = base;
+  printf("using addr 0x%lx with size 0x%lx ", cmds[1].gpuaddr, cmd_1.size());
+  base += (cmd_1.size()+0xff) & (~0xFF);
   // set up buffers
   memcpy((void*)cmds[0].gpuaddr, cmd_0.data(), cmd_0.size());
   memcpy((void*)cmds[1].gpuaddr, cmd_1.data(), cmd_1.size());
@@ -597,26 +613,27 @@ int main(int argc, char* argv[]) {
   while (1) {
     printf("************** execute 4 **************\n");
     run_num = 4;
+    base = 0x7ff998000 + 0x1000;
 
     uint64_t tb = nanos_since_boot();
     int i = 0;
     for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
       printf("run %2d: ", i++);
-      //(*it)->exec(((i%5) == 0) || (i == queue_cmds.size()-1));
-      (*it)->exec(true);
+      (*it)->exec(i == queue_cmds.size());
+      //(*it)->exec(true);
     }
     uint64_t te = nanos_since_boot();
     printf("model exec in %lu us\n", (te-tb)/1000);
 
-    break;
+    //break;
   }
 
-  FILE *f = fopen("/proc/self/maps", "rb");
+  /*FILE *f = fopen("/proc/self/maps", "rb");
   char maps[0x100000];
   int len = fread(maps, 1, sizeof(maps), f);
   maps[len] = '\0';
   fclose(f);
-  printf("%s\n", maps);
+  printf("%s\n", maps);*/
   
   printf("buffers: %lu images: %lu\n", buffers.size(), images.size());
   printf("queues: %lu\n", queue_cmds.size());
