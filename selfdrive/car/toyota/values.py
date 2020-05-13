@@ -771,11 +771,20 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_ES_TSS2: {
-    (Ecu.engine, 0x700, None): [b'\x018966333T5100\x00\x00\x00\x00'],
+    (Ecu.engine, 0x700, None): [
+      b'\x018966333T5100\x00\x00\x00\x00',
+      b'\x018966333T5000\x00\x00\x00\x00',
+    ],
     (Ecu.esp, 0x7b0, None): [b'\x01F152606281\x00\x00\x00\x00\x00\x00'],
     (Ecu.eps, 0x7a1, None): [b'8965B33252\x00\x00\x00\x00\x00\x00'],
-    (Ecu.fwdRadar, 0x750, 0xf): [b'\x018821F3301200\x00\x00\x00\x00'],
-    (Ecu.fwdCamera, 0x750, 0x6d): [b'\x028646F3303200\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00'],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F3301200\x00\x00\x00\x00',
+      b'\x018821F3301100\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F3303200\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
+      b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
+    ],
   },
   CAR.SIENNA: {
     (Ecu.engine, 0x700, None): [
