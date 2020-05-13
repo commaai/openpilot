@@ -156,10 +156,8 @@ void* frontview_thread(void *arg) {
 
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  SubMaster monitoringMaster;
-  monitoringMaster.createSocket("driverState", "127.0.0.1", true);
-  SubMaster dmonstateMaster;
-  dmonstateMaster.createSocket("dMonitoringState", "127.0.0.1", true);
+  SSubMessage monitoring_sm(NULL, "driverState", "127.0.0.1", true);
+  SubMessage dmonstate_sm(NULL, "dMonitoringState", "127.0.0.1", true);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -205,17 +203,17 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      auto msg  = dmonstateMaster.pollOne(0);
-      if (msg) {
-        auto state = msg->getEvent().getDMonitoringState();
+      auto pevent = dmonstate_sm.receive(true);
+      if (pevent != NULL) {
+        auto state = pevent->getDMonitoringState();
         s->rhd_front = state.getIsRHD();
         s->rhd_front_checked = state.getRhdChecked();
       }
     }
 
-    auto msg = monitoringMaster.pollOne(0);
-    if (msg) {
-      auto state = msg->getEvent().getDriverState();
+    auto pevent = monitoring_sm.receive(true);
+    if (pevent != NULL) {
+      auto state = pevent->getDriverState();
       float face_prob = state.getFaceProb();
       float face_position[2];
       face_position[0] = state.getFacePosition()[0];
@@ -321,7 +319,7 @@ void* frontview_thread(void *arg) {
         framed.setGainFrac(frame_data.gain_frac);
         framed.setFrameType(cereal::FrameData::FrameType::FRONT);
 
-         s->pm->send("frontFrame", msg);
+        s->pm->send("frontFrame", msg);
       }
     }
 
@@ -1259,7 +1257,7 @@ int main(int argc, char *argv[]) {
   init_buffers(s);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster(NULL, {"frame", "frontFrame", "thumbnail"});
 #endif
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);

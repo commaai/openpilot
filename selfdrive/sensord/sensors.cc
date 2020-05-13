@@ -13,17 +13,12 @@
 #include <pthread.h>
 
 #include <cutils/log.h>
-
 #include <hardware/sensors.h>
 #include <utils/Timers.h>
-
-#include <capnp/serialize.h>
 
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/swaglog.h"
-
-#include "cereal/gen/cpp/log.capnp.h"
 
 #define SENSOR_ACCELEROMETER 1
 #define SENSOR_MAGNETOMETER 2
@@ -51,12 +46,10 @@ void sigpipe_handler(int sig) {
   re_init_sensors = true;
 }
 
-
 void sensor_loop() {
   LOG("*** sensor loop");
-
   while (!do_exit) {
-    PubMaster pm({"sensorEvents"});
+    PubMaster pm(NULL, {"sensorEvents"});
 
     struct sensors_poll_device_t* device;
     struct sensors_module_t* module;
@@ -103,7 +96,6 @@ void sensor_loop() {
 
     static const size_t numEvents = 16;
     sensors_event_t buffer[numEvents];
-
 
     while (!do_exit) {
       int n = device->poll(device, buffer, numEvents);

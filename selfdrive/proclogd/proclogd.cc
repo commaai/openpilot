@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <dirent.h>
 
-#include <vector>
-#include <string>
 #include <memory>
 #include <utility>
 #include <sstream>
@@ -17,8 +15,6 @@
 #include <unordered_map>
 
 #include "messaging.hpp"
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/timing.h"
 #include "common/utilpp.h"
@@ -35,8 +31,8 @@ struct ProcCache {
 
 int main() {
   int err;
+  PubMaster pm(NULL, {"procLog"});
 
-  PubMaster pm({"procLog"});
   double jiffy = sysconf(_SC_CLK_TCK);
   size_t page_size = sysconf(_SC_PAGE_SIZE);
 
