@@ -72,7 +72,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   sz /= (x_in / 3 + 30);
   if (sz > 30) sz = 30;
   if (sz < 15) sz = 15;
-  
+
   // glow
   float g_xo = sz/5;
   float g_yo = sz/10;
@@ -382,7 +382,7 @@ static void ui_draw_world(UIState *s) {
 
   nvgSave(s->vg);
   nvgScissor(s->vg, ui_viz_rx, box_y, ui_viz_rw, box_h);
-  
+
   nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
   nvgTranslate(s->vg, 240.0f, 0.0);
@@ -556,10 +556,13 @@ static void ui_draw_vision_event(UIState *s) {
       color = nvgRGBA(23, 134, 68, 255);
     } else if (s->status == STATUS_WARNING) {
       color = COLOR_OCHRE;
-    } else if (s->scene.engageable) {
+    } else {
       color = nvgRGBA(23, 51, 73, 255);
     }
-    ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
+
+    if (s->scene.engageable){
+      ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
+    }
   }
 }
 
@@ -761,7 +764,7 @@ void ui_draw(UIState *s) {
   ui_draw_sidebar(s);
   if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED && s->vision_seen) {
       ui_draw_vision(s);
-  } 
+  }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
