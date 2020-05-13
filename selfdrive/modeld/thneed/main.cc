@@ -190,7 +190,13 @@ if (intercept) {
     if (run_num == 3) prop_num++;
     //hexdump((unsigned char*)prop->value, prop->sizebytes);
   } else if (request == IOCTL_KGSL_GPUOBJ_SYNC) {
-    printf("IOCTL_KGSL_GPUOBJ_SYNC(%d)\n", tid);
+    struct kgsl_gpuobj_sync *cmd = (struct kgsl_gpuobj_sync *)argp;
+    struct kgsl_gpuobj_sync_obj *objs = (struct kgsl_gpuobj_sync_obj *)(cmd->objs);
+
+    printf("IOCTL_KGSL_GPUOBJ_SYNC(%d) %d\n", tid, cmd->count);
+    for (int i = 0; i < cmd->count; i++) {
+      printf("  offset:0x%lx len:0x%lx id:%d op:%d\n", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
+    }
   } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
     struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
     printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID(%d): context_id: %d  timestamp: %d  timeout: %d\n",
@@ -625,7 +631,7 @@ int main(int argc, char* argv[]) {
     uint64_t te = nanos_since_boot();
     printf("model exec in %lu us\n", (te-tb)/1000);
 
-    //break;
+    break;
   }
 
   /*FILE *f = fopen("/proc/self/maps", "rb");
