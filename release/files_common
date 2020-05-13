@@ -202,7 +202,6 @@ selfdrive/controls/radard.py
 selfdrive/controls/dmonitoringd.py
 selfdrive/controls/lib/__init__.py
 selfdrive/controls/lib/alertmanager.py
-selfdrive/controls/lib/alerts.py
 selfdrive/controls/lib/alerts_offroad.json
 selfdrive/controls/lib/events.py
 selfdrive/controls/lib/drive_helpers.py
