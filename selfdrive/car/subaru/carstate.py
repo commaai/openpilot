@@ -66,16 +66,17 @@ class CarState(CarStateBase):
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     if self.car_fingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
-      ret.seatbeltUnlatched = False # FIXME: stock ACC disengages on unlatch so this is fine for now, signal has not yet been found
       self.steer_not_allowed = cp.vl["Steering_Torque"]["LKA_Lockout"]
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
 
     if self.car_fingerprint in [CAR.FORESTER]:
+      ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
       ret.cruiseState.speed = 0
       self.ready = True
 
     if self.car_fingerprint in [CAR.OUTBACK, CAR.LEGACY]:
+      ret.seatbeltUnlatched = False # FIXME: stock ACC disengages on unlatch so this is fine for now, signal has not yet been found
       ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
 
