@@ -626,7 +626,6 @@ void *can_recv_thread(void *crap) {
 
     next_frame_time += dt;
   }
-
   return NULL;
 }
 

@@ -153,11 +153,11 @@ void* frontview_thread(void *arg) {
   VisionState *s = (VisionState*)arg;
 
   set_thread_name("frontview");
-
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  SubMaster monitoring_sm({"driverState"}, false, "127.0.0.1", true);
-  SubMaster dmonstate_sm({"dMonitoringState"}, false, "127.0.0.1", true);
+  MessageContext ctx;
+  SubMessage monitoring_sm(&ctx, "driverState", "127.0.0.1", true);
+  SubMessage dmonstate_sm(&ctx, "dMonitoringState", "127.0.0.1", true);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -203,17 +203,17 @@ void* frontview_thread(void *arg) {
 
     // no more check after gps check
     if (!s->rhd_front_checked) {
-      auto msg = dmonstate_sm.receive(true);
-      if (msg != NULL) {
-        auto state = msg->getEvent().getDMonitoringState();
+      auto pevent = dmonstate_sm.receive(true);
+      if (pevent != NULL) {
+        auto state = pevent->getDMonitoringState();
         s->rhd_front = state.getIsRHD();
         s->rhd_front_checked = state.getRhdChecked();
       }
     }
 
-    auto msg = monitoring_sm.receive(true);
-    if (msg != NULL) {
-      auto state = msg->getEvent().getDriverState();
+    auto pevent = monitoring_sm.receive(true);
+    if (pevent != NULL) {
+      auto state = pevent->getDriverState();
       float face_prob = state.getFaceProb();
       float face_position[2];
       face_position[0] = state.getFacePosition()[0];

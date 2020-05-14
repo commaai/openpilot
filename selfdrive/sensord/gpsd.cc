@@ -143,7 +143,7 @@ void gps_init() {
                                    GPS_POSITION_RECURRENCE_PERIODIC,
                                    100, 0, 0);
 
-  pm = new PubMaster({"gpsNMEA", "gpsLocation"});
+  pm = new PubMaster(NULL, {"gpsNMEA", "gpsLocation"});
 }
 
 void gps_destroy() {
