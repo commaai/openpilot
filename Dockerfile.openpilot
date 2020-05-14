@@ -88,6 +88,7 @@ COPY ./common /tmp/openpilot/common
 COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./panda /tmp/openpilot/panda
+COPY ./rednose /tmp/openpilot/rednose
 COPY ./selfdrive /tmp/openpilot/selfdrive
 
 COPY SConstruct /tmp/openpilot/SConstruct
