@@ -260,14 +260,11 @@ selfdrive/locationd/test/*.py
 
 selfdrive/locationd/locationd.py
 selfdrive/locationd/paramsd.py
-selfdrive/locationd/kalman/.gitignore
-selfdrive/locationd/kalman/__init__.py
-selfdrive/locationd/kalman/README.md
-selfdrive/locationd/kalman/SConscript
-selfdrive/locationd/kalman/templates/*
-selfdrive/locationd/kalman/helpers/*
-selfdrive/locationd/kalman/models/live_kf.py
-selfdrive/locationd/kalman/models/car_kf.py
+selfdrive/locationd/models/.gitignore
+selfdrive/locationd/models/SConscript
+selfdrive/locationd/models/live_kf.py
+selfdrive/locationd/models/car_kf.py
+selfdrive/locationd/models/constants.py
 
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py
@@ -427,3 +424,5 @@ installer/updater/Makefile
 
 scripts/update_now.sh
 scripts/stop_updater.sh
+
+rednose/**

@@ -227,7 +227,7 @@ SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/locationd/kalman/SConscript'])
+SConscript(['selfdrive/locationd/models/SConscript'])
 
 if arch == "aarch64":
   SConscript(['selfdrive/logcatd/SConscript'])
@@ -235,4 +235,3 @@ if arch == "aarch64":
   SConscript(['selfdrive/clocksd/SConscript'])
 else:
   SConscript(['tools/lib/index_log/SConscript'])
-

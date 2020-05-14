@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
+import sys
+
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.kalman.helpers import ObservationKind
-from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
-from selfdrive.locationd.kalman.helpers.lst_sq_computer import LstSqComputer
-from selfdrive.locationd.kalman.helpers.sympy_helpers import (euler_rotate,
-                                                              quat_matrix_r,
-                                                              quat_rotate)
+from selfdrive.locationd.models.constants import ObservationKind
+from rednose.helpers.ekf_sym import EKF_sym, gen_code
+from rednose.helpers.lst_sq_computer import LstSqComputer
+from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
 
@@ -114,7 +115,7 @@ class LocKalman():
   dim_augment_err = 6
 
   @staticmethod
-  def generate_code(N=4):
+  def generate_code(generated_dir, N=4):
     dim_augment = LocKalman.dim_augment
     dim_augment_err = LocKalman.dim_augment_err
 
@@ -355,9 +356,9 @@ class LocKalman():
       msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES]]
     else:
       msckf_params = None
-    gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
+    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
 
-  def __init__(self, N=4, max_tracks=3000):
+  def __init__(self, generated_dir, N=4, max_tracks=3000):
     name = f"{self.name}_{N}"
 
     self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
@@ -377,11 +378,11 @@ class LocKalman():
 
     if self.N > 0:
       x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)
-      self.computer = LstSqComputer(N)
+      self.computer = LstSqComputer(generated_dir, N)
       self.max_tracks = max_tracks
 
     # init filter
-    self.filter = EKF_sym(name, Q, x_initial, P_initial, self.dim_main, self.dim_main_err,
+    self.filter = EKF_sym(generated_dir, name, Q, x_initial, P_initial, self.dim_main, self.dim_main_err,
                           N, self.dim_augment, self.dim_augment_err, self.maha_test_kinds)
 
   @property
@@ -584,4 +585,5 @@ class LocKalman():
 
 
 if __name__ == "__main__":
-  LocKalman.generate_code(N=4)
+  generated_dir = sys.argv[2]
+  LocKalman.generate_code(generated_dir, N=4)
