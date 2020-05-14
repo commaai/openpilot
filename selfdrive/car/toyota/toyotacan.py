@@ -17,9 +17,9 @@ def create_lta_steer_command(packer, steer, steer_req, raw_cnt):
     "COUNTER": raw_cnt + 128,
     "SETME_X1": 1,
     "SETME_X3": 3,
-    "PERCENTAGE" : 100,
+    "PERCENTAGE": 100,
     "SETME_X64": 0x64,
-    "ANGLE": steer,
+    "ANGLE": 0,  # Rate limit? Lower values seeem to work better, but needs more testing
     "STEER_ANGLE_CMD": steer,
     "STEER_REQUEST": steer_req,
     "STEER_REQUEST_2": steer_req,

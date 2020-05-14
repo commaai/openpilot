@@ -107,10 +107,13 @@ class CarController():
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
-    if Ecu.fwdCamera in self.fake_ecus and (frame % 2 == 0):
-      # TODO: check steering type in CP
-      can_sends.append(create_steer_command(self.packer, 0, 0, frame // 2))
-      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req, frame // 2))
+    if Ecu.fwdCamera in self.fake_ecus:
+      can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
+
+      # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
+      # if frame % 2 == 0:
+      #   can_sends.append(create_steer_command(self.packer, 0, 0, frame // 2))
+      #   can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req, frame // 2))
 
     # we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
