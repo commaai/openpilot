@@ -7,8 +7,8 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car
 from common.params import Params, put_nonblocking
-from selfdrive.locationd.kalman.models.car_kf import (CarKalman,
-                                                      ObservationKind, States)
+from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
+from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
 
 CARSTATE_DECIMATION = 5
@@ -16,7 +16,7 @@ CARSTATE_DECIMATION = 5
 
 class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset):
-    self.kf = CarKalman(steer_ratio, stiffness_factor, angle_offset)
+    self.kf = CarKalman(GENERATED_DIR, steer_ratio, stiffness_factor, angle_offset)
 
     self.kf.filter.set_mass(CP.mass)  # pylint: disable=no-member
     self.kf.filter.set_rotational_inertia(CP.rotationalInertia)  # pylint: disable=no-member
