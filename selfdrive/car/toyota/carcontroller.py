@@ -66,8 +66,6 @@ class CarController():
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
 
-    apply_angle = actuators.steerAngle
-
     # steer torque
     new_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, SteerLimitParams)
@@ -113,7 +111,7 @@ class CarController():
       # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
       # if frame % 2 == 0:
       #   can_sends.append(create_steer_command(self.packer, 0, 0, frame // 2))
-      #   can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req, frame // 2))
+      #   can_sends.append(create_lta_steer_command(self.packer, actuators.steerAngle, apply_steer_req, frame // 2))
 
     # we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
