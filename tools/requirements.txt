@@ -8,4 +8,5 @@ numpy
 opencv-python
 pygame
 hexdump
+pycurl
 av==0.5.0
