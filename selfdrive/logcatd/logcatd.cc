@@ -25,7 +25,6 @@ int main() {
   assert(crash_logger);
   struct logger *kernel_logger = android_logger_open(logger_list, (log_id_t)5); // LOG_ID_KERNEL
   assert(kernel_logger);
-
   PubMessage pm(NULL, "androidLog");
 
   while (1) {

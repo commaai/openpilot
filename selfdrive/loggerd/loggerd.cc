@@ -113,7 +113,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
   int encoder_segment = -1;
   int cnt = 0;
 
-  PubMessage pm(NULL, front ? "frontEncodeIdx" : "encodeIdx");
+  PubSocket *idx_sock = PubSocket::create(s.ctx, front ? "frontEncodeIdx" : "encodeIdx");
+  assert(idx_sock != NULL);
 
   LoggerHandle *lh = NULL;
 
@@ -244,7 +245,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
-        if (pm.send((char *)bytes.begin(), bytes.size()) < 0){
+        if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
         if (lh) {
@@ -308,6 +309,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
     visionstream_destroy(&stream);
   }
+
+  delete idx_sock;
 
   if (encoder_inited) {
     LOG("encoder destroy");
