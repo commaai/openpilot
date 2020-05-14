@@ -12,7 +12,6 @@ void PrintErrorStringAndExit() {
 SNPEModel::SNPEModel(const char *path, float *loutput, size_t output_size, int runtime) {
   output = loutput;
 #ifdef QCOM
-  zdl::DlSystem::Runtime_t Runtime;
   if (runtime==USE_GPU_RUNTIME) {
     Runtime = zdl::DlSystem::Runtime_t::GPU;
   } else if (runtime==USE_DSP_RUNTIME) {
@@ -134,26 +133,29 @@ std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, in
 
 void SNPEModel::execute(float *net_input_buf, int buf_size) {
 #ifdef USE_THNEED
-  if (thneed == NULL) {
+  if (Runtime == zdl::DlSystem::Runtime_t::GPU) {
+    if (thneed == NULL) {
+      assert(inputBuffer->setBufferAddress(net_input_buf));
+      if (!snpe->execute(inputMap, outputMap)) {
+        PrintErrorStringAndExit();
+      }
+      thneed = new Thneed();
+      thneed->record = 3;
+      if (!snpe->execute(inputMap, outputMap)) {
+        PrintErrorStringAndExit();
+      }
+      thneed->stop();
+    } else {
+      float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
+      thneed->execute(inputs, output);
+    }
+  } else {
+#endif
     assert(inputBuffer->setBufferAddress(net_input_buf));
     if (!snpe->execute(inputMap, outputMap)) {
       PrintErrorStringAndExit();
     }
-    thneed = new Thneed();
-    thneed->record = 3;
-    if (!snpe->execute(inputMap, outputMap)) {
-      PrintErrorStringAndExit();
-    }
-    thneed->stop();
-  } else {
-    float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
-    thneed->execute(inputs, output);
-  }
-
-#else
-  assert(inputBuffer->setBufferAddress(net_input_buf));
-  if (!snpe->execute(inputMap, outputMap)) {
-    PrintErrorStringAndExit();
+#ifdef USE_THNEED
   }
 #endif
 }

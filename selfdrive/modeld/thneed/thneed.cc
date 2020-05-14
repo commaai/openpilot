@@ -75,10 +75,12 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       if (thneed->record & 2) {
         struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
         printf("IOCTL_KGSL_SETPROPERTY: 0x%x sizebytes:%zu\n", prop->type, prop->sizebytes);
-        hexdump((uint32_t *)prop->value, prop->sizebytes);
-        if (prop->type == KGSL_PROP_PWR_CONSTRAINT) {
-          struct kgsl_device_constraint *constraint = (struct kgsl_device_constraint *)prop->value;
-          hexdump((uint32_t *)constraint->data, constraint->size);
+        if (thneed->record & 4) {
+          hexdump((uint32_t *)prop->value, prop->sizebytes);
+          if (prop->type == KGSL_PROP_PWR_CONSTRAINT) {
+            struct kgsl_device_constraint *constraint = (struct kgsl_device_constraint *)prop->value;
+            hexdump((uint32_t *)constraint->data, constraint->size);
+          }
         }
       }
     }

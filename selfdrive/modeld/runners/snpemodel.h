@@ -38,6 +38,8 @@ private:
   Thneed *thneed = NULL;
 #endif
 
+  zdl::DlSystem::Runtime_t Runtime;
+
   // snpe model stuff
   std::unique_ptr<zdl::SNPE::SNPE> snpe;
 
