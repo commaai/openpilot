@@ -37,6 +37,7 @@ class Thneed {
     cl_mem output;
 
     cl_command_queue command_queue;
+    int context_id;
 
     // protected?
     int record;

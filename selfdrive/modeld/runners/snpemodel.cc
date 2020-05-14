@@ -136,14 +136,18 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
 #ifdef USE_THNEED
   if (thneed == NULL) {
     assert(inputBuffer->setBufferAddress(net_input_buf));
-    thneed = new Thneed();
     if (!snpe->execute(inputMap, outputMap)) {
       PrintErrorStringAndExit();
     }
-    t->stop();
+    thneed = new Thneed();
+    thneed->record = 3;
+    if (!snpe->execute(inputMap, outputMap)) {
+      PrintErrorStringAndExit();
+    }
+    thneed->stop();
   } else {
-    float *inputs[4] = {state, trafficConvention, desire, input};
-    t->execute(inputs, output);
+    float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
+    thneed->execute(inputs, output);
   }
 
 #else

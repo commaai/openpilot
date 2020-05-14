@@ -44,6 +44,7 @@ int ioctl(int filedes, unsigned long request, void *argp) {
             cmd->context_id, cmd->timestamp);
       }
       if (thneed->record & 1) {
+        thneed->context_id = cmd->context_id;
         CachedCommand *ccmd = new CachedCommand(thneed, cmd);
         thneed->cmds.push_back(ccmd);
       }
@@ -150,9 +151,9 @@ void CachedCommand::exec(bool wait) {
     int wret = ioctl(thneed->fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &wait);
     uint64_t te = nanos_since_boot();
 
-    printf("exec %d wait %d after %lu us\n", ret, wret, (te-tb)/1000);
+    if (thneed->record & 2) printf("exec %d wait %d after %lu us\n", ret, wret, (te-tb)/1000);
   } else {
-    printf("CachedCommand::exec got %d\n", ret);
+    if (thneed->record & 2) printf("CachedCommand::exec got %d\n", ret);
   }
 }
 
@@ -183,7 +184,7 @@ void Thneed::execute(float **finputs, float *foutput) {
 
   struct kgsl_device_constraint constraint;
   constraint.type = KGSL_CONSTRAINT_PWRLEVEL;
-  constraint.context_id = 3;
+  constraint.context_id = context_id;
   constraint.data = (void*)&pwrlevel;
   constraint.size = sizeof(pwrlevel);
 
@@ -197,7 +198,7 @@ void Thneed::execute(float **finputs, float *foutput) {
   // ****** run commands
   int i = 0;
   for (auto it = cmds.begin(); it != cmds.end(); ++it) {
-    printf("run %2d: ", i);
+    if (record & 2) printf("run %2d: ", i);
     (*it)->exec((++i) == cmds.size());
   }
 
@@ -286,7 +287,8 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     }
   }
 
-  if (thneed != NULL && thneed->record & 2) {
+  if (thneed != NULL && thneed->record & 4) {
+    // extreme debug
     printf("%s -- %p\n", name, kernel);
     for (int i = 0; i < num_args; i++) {
       char arg_type[0x100];
