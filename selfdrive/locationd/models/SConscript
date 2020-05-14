@@ -7,8 +7,17 @@ ekf_sym = "#rednose/helpers/ekf_sym.py"
 
 to_build = {
     'live': ('live_kf.py', 'generated'),
+    'car': ('car_kf.py', 'generated'),
 }
 
+if arch != "aarch64":
+    to_build.update({
+        'gnss': ('gnss_kf.py', 'generated'),
+        'loc_4': ('loc_kf.py', 'generated'),
+        # 'pos_computer_4': 'helpers/lst_sq_computer.py',
+        # 'pos_computer_5': 'helpers/lst_sq_computer.py',
+        # 'feature_handler_5': 'helpers/feature_handler.py',
+    })
 
 found = {}
 
