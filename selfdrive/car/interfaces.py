@@ -103,7 +103,7 @@ class CarInterfaceBase():
     if cs_out.stockAeb:
       events.add(EventName.stockAeb)
     if cs_out.vEgo > 92 * CV.MPH_TO_MS:
-      events.append(EventName.speedTooHigh)
+      events.add(EventName.speedTooHigh)
 
     if cs_out.steerError:
       events.add(EventName.steerUnavailable)
