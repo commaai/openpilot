@@ -11,6 +11,9 @@ common_src = [
 
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'gnustl_shared']
+  common_src += ["thneed/thneed.cc"]
+  lenv['CFLAGS'].append("-DUSE_THNEED")
+  lenv['CXXFLAGS'].append("-DUSE_THNEED")
 elif arch == "larch64":
   libs += ['gsl', 'CB', 'symphony-cpu', 'pthread']
 else:
@@ -34,7 +37,7 @@ lenv.Program('_modeld', [
     "models/driving.cc",
   ]+common, LIBS=libs)
 
-if arch == "aarch64":
+if False and arch == "aarch64":
   lenv.Program('thneed/_thneed', [
 #      "thneed/main.cc",
       "thneed/thneed.cc", "thneed/test.cc"

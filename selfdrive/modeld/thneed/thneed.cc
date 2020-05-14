@@ -169,7 +169,15 @@ void Thneed::stop() {
   record = 0;
 }
 
-void Thneed::execute(float **inputs, float *outputs) {
+void Thneed::execute(float **finputs, float *foutput) {
+  // ****** copy inputs
+  for (int idx = 0; idx < inputs.size(); ++idx) {
+    size_t sz;
+    clGetMemObjectInfo(inputs[idx], CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+    clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
+  }
+
+  // ****** set power constraint
   struct kgsl_device_constraint_pwrlevel pwrlevel;
   pwrlevel.level = KGSL_CONSTRAINT_PWR_MAX;
 
@@ -186,12 +194,14 @@ void Thneed::execute(float **inputs, float *outputs) {
   int ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
   assert(ret == 0);
 
-  int i;
+  // ****** run commands
+  int i = 0;
   for (auto it = cmds.begin(); it != cmds.end(); ++it) {
     printf("run %2d: ", i);
     (*it)->exec((++i) == cmds.size());
   }
 
+  // ****** sync objects
   for (auto it = syncobjs.begin(); it != syncobjs.end(); ++it) {
     struct kgsl_gpuobj_sync cmd;
 
@@ -203,6 +213,12 @@ void Thneed::execute(float **inputs, float *outputs) {
     assert(ret == 0);
   }
 
+  // ****** copy outputs
+  size_t sz;
+  clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+  clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
+
+  // ****** unset power constraint
   constraint.type = KGSL_CONSTRAINT_NONE;
   constraint.data = NULL;
   constraint.size = 0;
@@ -250,6 +266,7 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   clGetKernelInfo(kernel, CL_KERNEL_NUM_ARGS, sizeof(num_args), &num_args, NULL);
 
   if (thneed != NULL && thneed->record & 1) {
+    thneed->command_queue = command_queue;
     for (int i = 0; i < num_args; i++) {
       char arg_name[0x100];
       clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);

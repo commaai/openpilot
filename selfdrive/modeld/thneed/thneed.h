@@ -31,10 +31,12 @@ class Thneed {
   public:
     Thneed();
     void stop();
-    void execute(float **inputs, float *outputs);
+    void execute(float **finputs, float *foutput);
 
     std::vector<cl_mem> inputs;
     cl_mem output;
+
+    cl_command_queue command_queue;
 
     // protected?
     int record;

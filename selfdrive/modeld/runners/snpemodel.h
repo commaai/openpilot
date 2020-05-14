@@ -17,9 +17,13 @@
 #define USE_GPU_RUNTIME 1
 #define USE_DSP_RUNTIME 2
 
+#ifdef USE_THNEED
+#include "thneed/thneed.h"
+#endif
+
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *output, size_t output_size, int runtime);
+  SNPEModel(const char *path, float *loutput, size_t output_size, int runtime);
   ~SNPEModel() {
     if (model_data) free(model_data);
   }
@@ -29,6 +33,10 @@ public:
   void execute(float *net_input_buf, int buf_size);
 private:
   uint8_t *model_data = NULL;
+
+#ifdef USE_THNEED
+  Thneed *thneed = NULL;
+#endif
 
   // snpe model stuff
   std::unique_ptr<zdl::SNPE::SNPE> snpe;
@@ -40,11 +48,15 @@ private:
   // snpe output stuff
   zdl::DlSystem::UserBufferMap outputMap;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> outputBuffer;
+  float *output;
 
   // recurrent and desire
   std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);
+  float *recurrent;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> recurrentBuffer;
+  float *trafficConvention;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> trafficConventionBuffer;
+  float *desire;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
 };
 
