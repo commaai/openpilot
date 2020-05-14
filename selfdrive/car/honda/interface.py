@@ -511,7 +511,7 @@ class CarInterface(CarInterfaceBase):
       if ((cur_time - self.last_enable_pressed) < 0.2 and
           (cur_time - self.last_enable_sent) > 0.2 and
           ret.cruiseState.enabled) or \
-         (enable_pressed and events.any([ET.NO_ENTRY])):
+         (enable_pressed and events.any(ET.NO_ENTRY)):
         events.add(EventName.buttonEnable)
         self.last_enable_sent = cur_time
     elif enable_pressed:
