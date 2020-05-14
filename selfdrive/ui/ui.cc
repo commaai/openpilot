@@ -190,8 +190,8 @@ static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int
     (*timeout)--;
     return 0;
   } else {
-    return read_param_uint64(dest, param_name, persistent_param);
     *timeout = 2 * UI_FREQ; // 0.5Hz
+    return read_param_uint64(dest, param_name, persistent_param);
   }
 }
 
