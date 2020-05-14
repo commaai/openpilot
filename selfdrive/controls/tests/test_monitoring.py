@@ -1,11 +1,15 @@
 import unittest
 import numpy as np
+from cereal import car
 from common.realtime import DT_DMON
+from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, \
                                   _AWARENESS_TIME, _AWARENESS_PRE_TIME_TILL_TERMINAL, \
                                   _AWARENESS_PROMPT_TIME_TILL_TERMINAL, _DISTRACTED_TIME, \
                                   _DISTRACTED_PRE_TIME_TILL_TERMINAL, _DISTRACTED_PROMPT_TIME_TILL_TERMINAL, \
                                   _POSESTD_THRESHOLD, _HI_STD_TIMEOUT
+
+EventName = car.CarEvent.EventName
 
 _TEST_TIMESPAN = 120 # seconds
 _DISTRACTED_SECONDS_TO_ORANGE = _DISTRACTED_TIME - _DISTRACTED_PROMPT_TIME_TILL_TERMINAL + 1
@@ -59,13 +63,14 @@ def run_DState_seq(driver_state_msgs, driver_car_interaction, openpilot_status, 
   DS = DriverStatus()
   events_from_DM = []
   for idx in range(len(driver_state_msgs)):
+    e = Events()
     DS.get_pose(driver_state_msgs[idx], [0,0,0], 0, openpilot_status[idx])
                 # cal_rpy and car_speed don't matter here
 
-    event_per_state = DS.update([], driver_car_interaction[idx], openpilot_status[idx], car_standstill_status[idx])
-    events_from_DM.append(event_per_state) # evaluate events at 10Hz for tests
-
-  assert len(events_from_DM)==len(driver_state_msgs), 'somethings wrong'
+    # evaluate events at 10Hz for tests
+    DS.update(e, driver_car_interaction[idx], openpilot_status[idx], car_standstill_status[idx])
+    events_from_DM.append(e)
+  assert len(events_from_DM) == len(driver_state_msgs), 'somethings wrong'
   return events_from_DM, DS
 
 class TestMonitoring(unittest.TestCase):
@@ -79,11 +84,11 @@ class TestMonitoring(unittest.TestCase):
     events_output, d_status = run_DState_seq(always_distracted, always_false, always_true, always_false)
     self.assertTrue(len(events_output[int((_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL)/2/DT_DMON)])==0)
     self.assertEqual(events_output[int((_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL+\
-                      ((_DISTRACTED_PRE_TIME_TILL_TERMINAL-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)][0].name, 'preDriverDistracted')
+                      ((_DISTRACTED_PRE_TIME_TILL_TERMINAL-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0], EventName.preDriverDistracted)
     self.assertEqual(events_output[int((_DISTRACTED_TIME-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL+\
-                      ((_DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)][0].name, 'promptDriverDistracted')
+                      ((_DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0], EventName.promptDriverDistracted)
     self.assertEqual(events_output[int((_DISTRACTED_TIME+\
-                      ((_TEST_TIMESPAN-10-_DISTRACTED_TIME)/2))/DT_DMON)][0].name, 'driverDistracted')
+                      ((_TEST_TIMESPAN-10-_DISTRACTED_TIME)/2))/DT_DMON)].names[0], EventName.driverDistracted)
     self.assertIs(type(d_status.awareness), float)
 
   # 2. op engaged, no face detected the whole time, no action
@@ -91,11 +96,11 @@ class TestMonitoring(unittest.TestCase):
     events_output = run_DState_seq(always_no_face, always_false, always_true, always_false)[0]
     self.assertTrue(len(events_output[int((_AWARENESS_TIME-_AWARENESS_PRE_TIME_TILL_TERMINAL)/2/DT_DMON)])==0)
     self.assertEqual(events_output[int((_AWARENESS_TIME-_AWARENESS_PRE_TIME_TILL_TERMINAL+\
-                      ((_AWARENESS_PRE_TIME_TILL_TERMINAL-_AWARENESS_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)][0].name, 'preDriverUnresponsive')
+                      ((_AWARENESS_PRE_TIME_TILL_TERMINAL-_AWARENESS_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0], EventName.preDriverUnresponsive)
     self.assertEqual(events_output[int((_AWARENESS_TIME-_AWARENESS_PROMPT_TIME_TILL_TERMINAL+\
-                      ((_AWARENESS_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)][0].name, 'promptDriverUnresponsive')
+                      ((_AWARENESS_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
     self.assertEqual(events_output[int((_AWARENESS_TIME+\
-                      ((_TEST_TIMESPAN-10-_AWARENESS_TIME)/2))/DT_DMON)][0].name, 'driverUnresponsive')
+                      ((_TEST_TIMESPAN-10-_AWARENESS_TIME)/2))/DT_DMON)].names[0], EventName.driverUnresponsive)
 
   # 3. op engaged, down to orange, driver pays attention, back to normal; then down to orange, driver touches wheel
   #  - should have short orange recovery time and no green afterwards; should recover rightaway on wheel touch
@@ -107,9 +112,9 @@ class TestMonitoring(unittest.TestCase):
                         [car_interaction_DETECTED] * (int(_TEST_TIMESPAN/DT_DMON)-int(_DISTRACTED_SECONDS_TO_ORANGE*3/DT_DMON))
     events_output = run_DState_seq(ds_vector, interaction_vector, always_true, always_false)[0]
     self.assertTrue(len(events_output[int(_DISTRACTED_SECONDS_TO_ORANGE*0.5/DT_DMON)])==0)
-    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_ORANGE-0.1)/DT_DMON)][0].name, 'promptDriverDistracted')
+    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0], EventName.promptDriverDistracted)
     self.assertTrue(len(events_output[int(_DISTRACTED_SECONDS_TO_ORANGE*1.5/DT_DMON)])==0)
-    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_ORANGE*3-0.1)/DT_DMON)][0].name, 'promptDriverDistracted')
+    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_ORANGE*3-0.1)/DT_DMON)].names[0], EventName.promptDriverDistracted)
     self.assertTrue(len(events_output[int((_DISTRACTED_SECONDS_TO_ORANGE*3+0.1)/DT_DMON)])==0)
 
   # 4. op engaged, down to orange, driver dodges camera, then comes back still distracted, down to red, \
@@ -125,9 +130,9 @@ class TestMonitoring(unittest.TestCase):
     interaction_vector[int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+0.5)/DT_DMON):int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+1.5)/DT_DMON)] = [True] * int(1/DT_DMON)
     op_vector[int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+2.5)/DT_DMON):int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+3)/DT_DMON)] = [False] * int(0.5/DT_DMON)
     events_output = run_DState_seq(ds_vector, interaction_vector, op_vector, always_false)[0]
-    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_ORANGE+0.5*_invisible_time)/DT_DMON)][0].name, 'promptDriverDistracted')
-    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_RED+1.5*_invisible_time)/DT_DMON)][0].name, 'driverDistracted')
-    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+1.5)/DT_DMON)][0].name, 'driverDistracted')
+    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_ORANGE+0.5*_invisible_time)/DT_DMON)].names[0], EventName.promptDriverDistracted)
+    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_RED+1.5*_invisible_time)/DT_DMON)].names[0], EventName.driverDistracted)
+    self.assertEqual(events_output[int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+1.5)/DT_DMON)].names[0], EventName.driverDistracted)
     self.assertTrue(len(events_output[int((_DISTRACTED_SECONDS_TO_RED+2*_invisible_time+3.5)/DT_DMON)])==0)
 
   # 5. op engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
@@ -141,13 +146,13 @@ class TestMonitoring(unittest.TestCase):
       interaction_vector[int((_INVISIBLE_SECONDS_TO_ORANGE)/DT_DMON):int((_INVISIBLE_SECONDS_TO_ORANGE+1)/DT_DMON)] = [True] * int(1/DT_DMON)
       events_output = run_DState_seq(ds_vector, interaction_vector, 2*always_true, 2*always_false)[0]
       self.assertTrue(len(events_output[int(_INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)])==0)
-      self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)][0].name, 'promptDriverUnresponsive')
+      self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
       self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)])==0)
       if _visible_time == 1:
-        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)][0].name, 'promptDriverUnresponsive')
-        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)][0].name, 'preDriverUnresponsive')
+        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
+        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)].names[0], EventName.preDriverUnresponsive)
       elif _visible_time == 10:
-        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)][0].name, 'promptDriverUnresponsive')
+        self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
         self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)])==0)
       else:
         pass
@@ -164,10 +169,10 @@ class TestMonitoring(unittest.TestCase):
     op_vector[int((_INVISIBLE_SECONDS_TO_RED+_visible_time+1)/DT_DMON):int((_INVISIBLE_SECONDS_TO_RED+_visible_time+0.5)/DT_DMON)] = [False] * int(0.5/DT_DMON)
     events_output = run_DState_seq(ds_vector, interaction_vector, op_vector, always_false)[0]
     self.assertTrue(len(events_output[int(_INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)])==0)
-    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)][0].name, 'promptDriverUnresponsive')
-    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_RED-0.1)/DT_DMON)][0].name, 'driverUnresponsive')
-    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_RED+0.5*_visible_time)/DT_DMON)][0].name, 'driverUnresponsive')
-    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_RED+_visible_time+0.5)/DT_DMON)][0].name, 'driverUnresponsive')
+    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
+    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_RED-0.1)/DT_DMON)].names[0], EventName.driverUnresponsive)
+    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_RED+0.5*_visible_time)/DT_DMON)].names[0], EventName.driverUnresponsive)
+    self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_RED+_visible_time+0.5)/DT_DMON)].names[0], EventName.driverUnresponsive)
     self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_RED+_visible_time+1+0.1)/DT_DMON)])==0)
 
   # 7. op not engaged, always distracted driver
@@ -183,9 +188,9 @@ class TestMonitoring(unittest.TestCase):
     standstill_vector = always_true[:]
     standstill_vector[int(_redlight_time/DT_DMON):] = [False] * int((_TEST_TIMESPAN-_redlight_time)/DT_DMON)
     events_output = run_DState_seq(always_distracted, always_false, always_true, standstill_vector)[0]
-    self.assertEqual(events_output[int((_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL+1)/DT_DMON)][0].name, 'preDriverDistracted')
-    self.assertEqual(events_output[int((_redlight_time-0.1)/DT_DMON)][0].name, 'preDriverDistracted')
-    self.assertEqual(events_output[int((_redlight_time+0.5)/DT_DMON)][0].name, 'promptDriverDistracted')
+    self.assertEqual(events_output[int((_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL+1)/DT_DMON)].names[0], EventName.preDriverDistracted)
+    self.assertEqual(events_output[int((_redlight_time-0.1)/DT_DMON)].names[0], EventName.preDriverDistracted)
+    self.assertEqual(events_output[int((_redlight_time+0.5)/DT_DMON)].names[0], EventName.promptDriverDistracted)
 
   # 9. op engaged, model is extremely uncertain. driver first attentive, then distracted
   #  - should only pop the green alert about model uncertainty
@@ -197,9 +202,9 @@ class TestMonitoring(unittest.TestCase):
     interaction_vector = always_false[:]
     events_output = run_DState_seq(ds_vector, interaction_vector, always_true, always_false)[0]
     self.assertTrue(len(events_output[int(_UNCERTAIN_SECONDS_TO_GREEN*0.5/DT_DMON)])==0)
-    self.assertEqual(events_output[int((_UNCERTAIN_SECONDS_TO_GREEN-0.1)/DT_DMON)][0].name, 'driverMonitorLowAcc')
+    self.assertEqual(events_output[int((_UNCERTAIN_SECONDS_TO_GREEN-0.1)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
     self.assertTrue(len(events_output[int((_UNCERTAIN_SECONDS_TO_GREEN+_DISTRACTED_SECONDS_TO_ORANGE-0.5)/DT_DMON)])==0)
-    self.assertEqual(events_output[int((_TEST_TIMESPAN-5.)/DT_DMON)][0].name, 'driverMonitorLowAcc')
+    self.assertEqual(events_output[int((_TEST_TIMESPAN-5.)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
 
   # 10. op engaged, model is somehow uncertain and driver is distracted
   #  - should slow down the alert countdown but it still gets there
@@ -208,11 +213,11 @@ class TestMonitoring(unittest.TestCase):
     interaction_vector = always_false[:]
     events_output = run_DState_seq(ds_vector, interaction_vector, always_true, always_false)[0]
     self.assertTrue(len(events_output[int(_UNCERTAIN_SECONDS_TO_GREEN*0.5/DT_DMON)])==0)
-    self.assertEqual(events_output[int((_UNCERTAIN_SECONDS_TO_GREEN)/DT_DMON)][0].name, 'driverMonitorLowAcc')
-    self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL))/DT_DMON)][1].name, 'preDriverDistracted')
-    self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL))/DT_DMON)][1].name, 'promptDriverDistracted')
-    self.assertEqual(events_output[int((_DISTRACTED_TIME+1)/DT_DMON)][1].name, 'promptDriverDistracted')
-    self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)][1].name, 'promptDriverDistracted') # set_timer blocked
+    self.assertEqual(events_output[int((_UNCERTAIN_SECONDS_TO_GREEN)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
+    self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL))/DT_DMON)].names[1], EventName.preDriverDistracted)
+    self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL))/DT_DMON)].names[1], EventName.promptDriverDistracted)
+    self.assertEqual(events_output[int((_DISTRACTED_TIME+1)/DT_DMON)].names[1], EventName.promptDriverDistracted)
+    self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)].names[1], EventName.promptDriverDistracted) # set_timer blocked
 
 if __name__ == "__main__":
   print('MAX_TERMINAL_ALERTS', MAX_TERMINAL_ALERTS)

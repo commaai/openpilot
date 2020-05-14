@@ -5,10 +5,11 @@ from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
+from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 GearShifter = car.CarState.GearShifter
+EventName = car.CarEvent.EventName
 
 # generic car and radar interfaces
 
@@ -81,45 +82,47 @@ class CarInterfaceBase():
     raise NotImplementedError
 
   def create_common_events(self, cs_out, extra_gears=[], gas_resume_speed=-1, pcm_enable=True):
-    events = []
+    events = Events()
 
     if cs_out.doorOpen:
-      events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.add(EventName.doorOpen)
     if cs_out.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.add(EventName.seatbeltNotLatched)
     if cs_out.gearShifter != GearShifter.drive and cs_out.gearShifter not in extra_gears:
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.add(EventName.wrongGear)
     if cs_out.gearShifter == GearShifter.reverse:
-      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.add(EventName.reverseGear)
     if not cs_out.cruiseState.available:
-      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      events.add(EventName.wrongCarMode)
     if cs_out.espDisabled:
-      events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.add(EventName.espDisabled)
     if cs_out.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      events.add(EventName.gasPressed)
+    if cs_out.stockFcw:
+      events.add(EventName.stockFcw)
     if cs_out.stockAeb:
-      events.append(create_event('stockAeb', []))
+      events.add(EventName.stockAeb)
     if cs_out.vEgo > 92 * CV.MPH_TO_MS:
-      events.append(create_event('speedTooHigh', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      events.add(EventName.speedTooHigh)
 
     if cs_out.steerError:
-      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
+      events.add(EventName.steerUnavailable)
     elif cs_out.steerWarning:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      events.add(EventName.steerTempUnavailable)
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
     # Optionally allow to press gas at zero speed to resume.
     # e.g. Chrysler does not spam the resume button yet, so resuming with gas is handy. FIXME!
     if (cs_out.gasPressed and (not self.CS.out.gasPressed) and cs_out.vEgo > gas_resume_speed) or \
        (cs_out.brakePressed and (not self.CS.out.brakePressed or not cs_out.standstill)):
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      events.add(EventName.pedalPressed)
 
     # we engage when pcm is active (rising edge)
     if pcm_enable:
       if cs_out.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
-        events.append(create_event('pcmEnable', [ET.ENABLE]))
+        events.add(EventName.pcmEnable)
       elif not cs_out.cruiseState.enabled:
-        events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+        events.add(EventName.pcmDisable)
 
     return events
 

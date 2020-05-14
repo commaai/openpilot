@@ -1,12 +1,12 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
 from common.params import put_nonblocking
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
 GEAR = car.CarState.GearShifter
+EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
@@ -108,11 +108,11 @@ class CarInterface(CarInterfaceBase):
 
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
-      events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      events.add(EventName.parkBrake)
     if self.CS.steeringFault:
-      events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+      events.add(EventName.steerTempUnavailable)
 
-    ret.events = events
+    ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
     ret.canMonoTimes = canMonoTimes
 
