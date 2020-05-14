@@ -11,14 +11,15 @@ from common.transformations.orientation import (ecef_euler_from_ned,
                                                 ned_euler_from_ecef,
                                                 quat_from_euler,
                                                 rot_from_quat, rot_from_euler)
-from selfdrive.locationd.kalman.helpers import ObservationKind, KalmanError
-from selfdrive.locationd.kalman.models.live_kf import LiveKalman, States
+from rednose.helpers import KalmanError
+from selfdrive.locationd.models.live_kf import LiveKalman, States, ObservationKind
 from selfdrive.swaglog import cloudlog
+
 #from datetime import datetime
 #from laika.gps_time import GPSTime
 
 from sympy.utilities.lambdify import lambdify
-from selfdrive.locationd.kalman.helpers.sympy_helpers import euler_rotate
+from rednose.helpers.sympy_helpers import euler_rotate
 
 
 VISION_DECIMATION = 2

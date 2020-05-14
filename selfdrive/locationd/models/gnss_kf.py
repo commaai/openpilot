@@ -3,9 +3,9 @@
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.kalman.helpers import ObservationKind
-from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
-from selfdrive.locationd.kalman.models.loc_kf import parse_pr, parse_prr
+from selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
+from rednose.helpers.ekf_sym import EKF_sym, gen_code
+from selfdrive.locationd.models.loc_kf import parse_pr, parse_prr
 
 
 class States():
@@ -111,13 +111,13 @@ class GNSSKalman():
                [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GPS, sat_pos_vel_sym],
                [h_pseudorange_rate_sym, ObservationKind.PSEUDORANGE_RATE_GLONASS, sat_pos_vel_sym]]
 
-    gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)
+    gen_code(GENERATED_DIR, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)
 
   def __init__(self):
     self.dim_state = self.x_initial.shape[0]
 
     # init filter
-    self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds)
+    self.filter = EKF_sym(GENERATED_DIR, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds)
 
   @property
   def x(self):

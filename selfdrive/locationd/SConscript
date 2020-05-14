@@ -19,4 +19,3 @@ env.Program("ubloxd_test", [
   "ublox_msg.cc",
   "ubloxd_main.cc"],
   LIBS=loc_libs)
-

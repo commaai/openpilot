@@ -7,8 +7,7 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car
 from common.params import Params, put_nonblocking
-from selfdrive.locationd.kalman.models.car_kf import (CarKalman,
-                                                      ObservationKind, States)
+from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.swaglog import cloudlog
 
 CARSTATE_DECIMATION = 5

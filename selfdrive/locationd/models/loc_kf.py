@@ -3,12 +3,11 @@
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.kalman.helpers import ObservationKind
-from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
-from selfdrive.locationd.kalman.helpers.lst_sq_computer import LstSqComputer
-from selfdrive.locationd.kalman.helpers.sympy_helpers import (euler_rotate,
-                                                              quat_matrix_r,
-                                                              quat_rotate)
+from selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
+from rednose.helpers.ekf_sym import EKF_sym, gen_code
+from rednose.helpers.lst_sq_computer import LstSqComputer
+from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
 
@@ -355,7 +354,7 @@ class LocKalman():
       msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES]]
     else:
       msckf_params = None
-    gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
+    gen_code(GENERATED_DIR, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
 
   def __init__(self, N=4, max_tracks=3000):
     name = f"{self.name}_{N}"
@@ -381,7 +380,7 @@ class LocKalman():
       self.max_tracks = max_tracks
 
     # init filter
-    self.filter = EKF_sym(name, Q, x_initial, P_initial, self.dim_main, self.dim_main_err,
+    self.filter = EKF_sym(GENERATED_DIR, name, Q, x_initial, P_initial, self.dim_main, self.dim_main_err,
                           N, self.dim_augment, self.dim_augment_err, self.maha_test_kinds)
 
   @property

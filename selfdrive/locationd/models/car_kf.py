@@ -4,8 +4,8 @@ import math
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.kalman.helpers import ObservationKind
-from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
+from selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
+from rednose.helpers.ekf_sym import EKF_sym, gen_code
 
 i = 0
 
@@ -136,7 +136,7 @@ class CarKalman():
       [sp.Matrix([x]), ObservationKind.STIFFNESS, None],
     ]
 
-    gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds, global_vars=CarKalman.global_vars)
+    gen_code(GENERATED_DIR, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds, global_vars=CarKalman.global_vars)
 
   def __init__(self, steer_ratio=15, stiffness_factor=1, angle_offset=0):
     self.dim_state = self.x_initial.shape[0]
@@ -146,7 +146,7 @@ class CarKalman():
     x_init[States.ANGLE_OFFSET] = angle_offset
 
     # init filter
-    self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds, global_vars=self.global_vars)
+    self.filter = EKF_sym(GENERATED_DIR, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds, global_vars=self.global_vars)
 
   @property
   def x(self):

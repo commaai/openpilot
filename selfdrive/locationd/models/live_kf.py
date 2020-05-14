@@ -2,11 +2,11 @@
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.kalman.helpers import KalmanError, ObservationKind
-from selfdrive.locationd.kalman.helpers.ekf_sym import EKF_sym, gen_code
-from selfdrive.locationd.kalman.helpers.sympy_helpers import (euler_rotate,
-                                                              quat_matrix_r,
-                                                              quat_rotate)
+from selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
+from rednose.helpers import KalmanError
+from rednose.helpers.ekf_sym import EKF_sym, gen_code
+from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+
 from selfdrive.swaglog import cloudlog
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
@@ -185,7 +185,7 @@ class LiveKalman():
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
 
-    gen_code(name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params)
+    gen_code(GENERATED_DIR, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params)
 
   def __init__(self):
     self.dim_state = self.initial_x.shape[0]
@@ -200,7 +200,7 @@ class LiveKalman():
                       ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2])}
 
     # init filter
-    self.filter = EKF_sym(self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err)
+    self.filter = EKF_sym(GENERATED_DIR, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err)
 
   @property
   def x(self):
