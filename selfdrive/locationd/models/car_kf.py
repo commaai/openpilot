@@ -139,7 +139,7 @@ class CarKalman():
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds, global_vars=CarKalman.global_vars)
 
-  def __init__(self, steer_ratio=15, stiffness_factor=1, angle_offset=0):
+  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0):
     self.dim_state = self.x_initial.shape[0]
     x_init = self.x_initial
     x_init[States.STEER_RATIO] = steer_ratio
