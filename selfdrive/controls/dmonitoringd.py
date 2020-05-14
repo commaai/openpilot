@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import gc
+from cereal import car
 from common.realtime import set_realtime_priority
 from common.params import Params
 import cereal.messaging as messaging
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
+from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
 from selfdrive.locationd.calibration_helpers import Calibration
 
@@ -57,7 +58,7 @@ def dmonitoringd_thread(sm=None, pm=None):
                         v_cruise != v_cruise_last or \
                         sm['carState'].steeringPressed
       if driver_engaged:
-        _ = driver_status.update([], True, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
+        driver_status.update(Events(), True, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
       v_cruise_last = v_cruise
 
     # Get model meta
@@ -66,18 +67,18 @@ def dmonitoringd_thread(sm=None, pm=None):
 
     # Get data from dmonitoringmodeld
     if sm.updated['driverState']:
-      events = []
+      events = Events()
       driver_status.get_pose(sm['driverState'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
       # Block any engage after certain distrations
       if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
-        events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
+        events.add(car.CarEvent.EventName.tooDistracted)
       # Update events from driver state
-      events = driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
+      driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
 
       # dMonitoringState packet
       dat = messaging.new_message('dMonitoringState')
       dat.dMonitoringState = {
-        "events": events,
+        "events": events.to_msg(),
         "faceDetected": driver_status.face_detected,
         "isDistracted": driver_status.driver_distracted,
         "awarenessStatus": driver_status.awareness,

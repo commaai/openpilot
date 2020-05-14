@@ -5,7 +5,7 @@ from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
+from selfdrive.controls.lib.events import ET
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, Ecu, ECU_FINGERPRINT, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
@@ -14,6 +14,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
 ButtonType = car.CarState.ButtonEvent.Type
+EventName = car.CarEvent.EventName
 
 def compute_gb_honda(accel, speed):
   creep_brake = 0.0
@@ -468,25 +469,25 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret, pcm_enable=False)
     if self.CS.brake_error:
-      events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
+      events.add(EventName.brakeUnavailable)
     if self.CS.brake_hold and self.CS.CP.carFingerprint not in HONDA_BOSCH:
-      events.append(create_event('brakeHold', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      events.add(EventName.brakeHold)
     if self.CS.park_brake:
-      events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      events.add(EventName.parkBrake)
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
-      events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
+      events.add(EventName.speedTooLow)
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
     if self.CP.enableCruise and not ret.cruiseState.enabled and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
       # non loud alert if cruise disbales below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
-        events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
+        events.add(EventName.speedTooLow)
       else:
-        events.append(create_event("cruiseDisabled", [ET.IMMEDIATE_DISABLE]))
+        events.add(EventName.cruiseDisabled)
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
-      events.append(create_event('manualRestart', [ET.WARNING]))
+      events.add(EventName.manualRestart)
 
     cur_time = self.frame * DT_CTRL
     enable_pressed = False
@@ -500,7 +501,7 @@ class CarInterface(CarInterfaceBase):
 
       # do disable on button down
       if b.type == "cancel" and b.pressed:
-        events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
+        events.add(EventName.buttonCancel)
 
     if self.CP.enableCruise:
       # KEEP THIS EVENT LAST! send enable event if button is pressed and there are
@@ -510,13 +511,13 @@ class CarInterface(CarInterfaceBase):
       if ((cur_time - self.last_enable_pressed) < 0.2 and
           (cur_time - self.last_enable_sent) > 0.2 and
           ret.cruiseState.enabled) or \
-         (enable_pressed and get_events(events, [ET.NO_ENTRY])):
-        events.append(create_event('buttonEnable', [ET.ENABLE]))
+         (enable_pressed and events.any(ET.NO_ENTRY)):
+        events.add(EventName.buttonEnable)
         self.last_enable_sent = cur_time
     elif enable_pressed:
-      events.append(create_event('buttonEnable', [ET.ENABLE]))
+      events.add(EventName.buttonEnable)
 
-    ret.events = events
+    ret.events = events.to_msg()
 
     self.CS.out = ret.as_reader()
     return self.CS.out
