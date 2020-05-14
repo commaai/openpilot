@@ -9,4 +9,5 @@ opencv-python
 pygame
 hexdump
 pycurl
+tenacity
 av==0.5.0
