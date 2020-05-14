@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "include/msm_kgsl.h"
 #include <vector>
+#include <CL/cl.h>
 
 class Thneed;
 
@@ -30,7 +31,10 @@ class Thneed {
   public:
     Thneed();
     void stop();
-    void execute();
+    void execute(float **inputs, float *outputs);
+
+    std::vector<cl_mem> inputs;
+    cl_mem output;
 
     // protected?
     int record;

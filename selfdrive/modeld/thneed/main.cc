@@ -34,7 +34,7 @@ void hexdump8(uint8_t *d, int len) {
 #include <map>
 using namespace std;
 
-#include "include/disasm/adreno_pm4types.h"
+#include "disasm/include/adreno_pm4types.h"
 
 #define REG_A5XX_TPL1_CS_TEX_CONST_LO        0x0000e760
 #define REG_A5XX_TPL1_CS_TEX_SAMP_LO         0x0000e75c
@@ -638,6 +638,7 @@ int main(int argc, char* argv[]) {
 
   float *input = (float*)calloc(0x1000000, sizeof(float));;
   printf("************** execute 1 **************\n");
+  printf("%p %p %p %p -> %p\n", input, state, desire, traffic_convention, output);
   run_num = 1; ioctl_num = 0;
   do_print = 0;
   start_time = nanos_since_boot();
@@ -673,13 +674,13 @@ int main(int argc, char* argv[]) {
     int i = 0;
     for (auto it = queue_cmds.begin(); it != queue_cmds.end(); ++it) {
       printf("run %2d: ", i++);
-      (*it)->exec(i == queue_cmds.size());
-      //(*it)->exec(true);
+      //(*it)->exec(i == queue_cmds.size());
+      (*it)->exec(true);
     }
     uint64_t te = nanos_since_boot();
     printf("model exec in %lu us\n", (te-tb)/1000);
 
-    //break;
+    break;
   }
 
   /*FILE *f = fopen("/proc/self/maps", "rb");

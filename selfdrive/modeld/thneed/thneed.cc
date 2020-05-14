@@ -2,15 +2,17 @@
 #include <cassert>
 #include <sys/mman.h>
 #include <dlfcn.h>
+#include <map>
+#include <string>
 
 Thneed *g_thneed = NULL;
-int gfd = -1;
+int g_fd = -1;
+std::map<std::pair<cl_kernel, int>, std::string> g_args;
 
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
   clock_gettime(CLOCK_BOOTTIME, &t);
-  return t.tv_sec * 1000000000ULL + t.tv_nsec;
-}
+  return t.tv_sec * 1000000000ULL + t.tv_nsec; }
 
 void hexdump(uint32_t *d, int len) {
   assert((len%4) == 0);
@@ -31,15 +33,17 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   Thneed *thneed = g_thneed;
 
   // save the fd
-  if (request == IOCTL_KGSL_GPUOBJ_ALLOC) gfd = filedes;
+  if (request == IOCTL_KGSL_GPUOBJ_ALLOC) g_fd = filedes;
 
   if (thneed != NULL && thneed->record) {
     if (request == IOCTL_KGSL_GPU_COMMAND) {
       struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
-      printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
-          cmd->flags,
-          cmd->context_id, cmd->timestamp);
-      if (thneed->record == 1) {
+      if (thneed->record & 2) {
+        printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
+            cmd->flags,
+            cmd->context_id, cmd->timestamp);
+      }
+      if (thneed->record & 1) {
         CachedCommand *ccmd = new CachedCommand(thneed, cmd);
         thneed->cmds.push_back(ccmd);
       }
@@ -47,28 +51,34 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       struct kgsl_gpuobj_sync *cmd = (struct kgsl_gpuobj_sync *)argp;
       struct kgsl_gpuobj_sync_obj *objs = (struct kgsl_gpuobj_sync_obj *)(cmd->objs);
 
-      printf("IOCTL_KGSL_GPUOBJ_SYNC count:%d ", cmd->count);
-      for (int i = 0; i < cmd->count; i++) {
-        printf(" -- offset:0x%lx len:0x%lx id:%d op:%d  ", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
+      if (thneed->record & 2) {
+        printf("IOCTL_KGSL_GPUOBJ_SYNC count:%d ", cmd->count);
+        for (int i = 0; i < cmd->count; i++) {
+          printf(" -- offset:0x%lx len:0x%lx id:%d op:%d  ", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
+        }
+        printf("\n");
       }
-      printf("\n");
 
-      if (thneed->record == 1) {
+      if (thneed->record & 1) {
         struct kgsl_gpuobj_sync_obj *new_objs = (struct kgsl_gpuobj_sync_obj *)malloc(sizeof(struct kgsl_gpuobj_sync_obj)*cmd->count);
         memcpy(new_objs, objs, sizeof(struct kgsl_gpuobj_sync_obj)*cmd->count);
         thneed->syncobjs.push_back(std::make_pair(cmd->count, new_objs));
       }
     } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
-      struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
-      printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
-          cmd->context_id, cmd->timestamp, cmd->timeout);
+      if (thneed->record & 2) {
+        struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
+        printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
+            cmd->context_id, cmd->timestamp, cmd->timeout);
+      }
     } else if (request == IOCTL_KGSL_SETPROPERTY) {
-      struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
-      printf("IOCTL_KGSL_SETPROPERTY: 0x%x sizebytes:%zu\n", prop->type, prop->sizebytes);
-      hexdump((uint32_t *)prop->value, prop->sizebytes);
-      if (prop->type == KGSL_PROP_PWR_CONSTRAINT) {
-        struct kgsl_device_constraint *constraint = (struct kgsl_device_constraint *)prop->value;
-        hexdump((uint32_t *)constraint->data, constraint->size);
+      if (thneed->record & 2) {
+        struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
+        printf("IOCTL_KGSL_SETPROPERTY: 0x%x sizebytes:%zu\n", prop->type, prop->sizebytes);
+        hexdump((uint32_t *)prop->value, prop->sizebytes);
+        if (prop->type == KGSL_PROP_PWR_CONSTRAINT) {
+          struct kgsl_device_constraint *constraint = (struct kgsl_device_constraint *)prop->value;
+          hexdump((uint32_t *)constraint->data, constraint->size);
+        }
       }
     }
   }
@@ -147,8 +157,8 @@ void CachedCommand::exec(bool wait) {
 }
 
 Thneed::Thneed() {
-  assert(gfd != -1);
-  fd = gfd;
+  assert(g_fd != -1);
+  fd = g_fd;
   ram = new GPUMalloc(0x40000, fd);
   record = 1;
   timestamp = 0;
@@ -159,7 +169,7 @@ void Thneed::stop() {
   record = 0;
 }
 
-void Thneed::execute() {
+void Thneed::execute(float **inputs, float *outputs) {
   struct kgsl_device_constraint_pwrlevel pwrlevel;
   pwrlevel.level = KGSL_CONSTRAINT_PWR_MAX;
 
@@ -199,5 +209,109 @@ void Thneed::execute() {
 
   ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
   assert(ret == 0);
+}
+
+cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;
+cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
+  if (my_clSetKernelArg == NULL) my_clSetKernelArg = reinterpret_cast<decltype(my_clSetKernelArg)>(dlsym(RTLD_NEXT, "REAL_clSetKernelArg"));
+  if (arg_value != NULL) {
+    g_args[std::make_pair(kernel, arg_index)] = std::string((char*)arg_value, arg_size);
+  }
+  cl_int ret = my_clSetKernelArg(kernel, arg_index, arg_size, arg_value);
+  return ret;
+}
+
+cl_int (*my_clEnqueueNDRangeKernel)(cl_command_queue, cl_kernel, cl_uint, const size_t *, const size_t *, const size_t *, cl_uint, const cl_event *, cl_event *) = NULL;
+cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
+  cl_kernel kernel,
+  cl_uint work_dim,
+  const size_t *global_work_offset,
+  const size_t *global_work_size,
+  const size_t *local_work_size,
+  cl_uint num_events_in_wait_list,
+  const cl_event *event_wait_list,
+  cl_event *event) {
+
+  if (my_clEnqueueNDRangeKernel == NULL) my_clEnqueueNDRangeKernel = reinterpret_cast<decltype(my_clEnqueueNDRangeKernel)>(dlsym(RTLD_NEXT, "REAL_clEnqueueNDRangeKernel"));
+  Thneed *thneed = g_thneed;
+
+  // SNPE doesn't use these
+  assert(num_events_in_wait_list == 0);
+  assert(global_work_offset == NULL);
+
+  cl_int ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
+    global_work_offset, global_work_size, local_work_size,
+    num_events_in_wait_list, event_wait_list, event);
+
+  char name[0x100];
+  clGetKernelInfo(kernel, CL_KERNEL_FUNCTION_NAME, sizeof(name), name, NULL);
+
+  cl_uint num_args;
+  clGetKernelInfo(kernel, CL_KERNEL_NUM_ARGS, sizeof(num_args), &num_args, NULL);
+
+  if (thneed != NULL && thneed->record & 1) {
+    for (int i = 0; i < num_args; i++) {
+      char arg_name[0x100];
+      clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
+      std::string arg = g_args[std::make_pair(kernel, i)];
+
+      if (strcmp(arg_name, "input") == 0 && strcmp(name, "zero_pad_image_float")) {
+        cl_mem mem;
+        memcpy(&mem, (void*)arg.data(), sizeof(mem));
+        thneed->inputs.push_back(mem);
+      }
+
+      if (strcmp(arg_name, "output") == 0 && strcmp(name, "image2d_to_buffer_float")) {
+        cl_mem mem;
+        memcpy(&mem, (void*)arg.data(), sizeof(mem));
+        thneed->output = mem;
+      }
+    }
+  }
+
+  if (thneed != NULL && thneed->record & 2) {
+    printf("%s -- %p\n", name, kernel);
+    for (int i = 0; i < num_args; i++) {
+      char arg_type[0x100];
+      char arg_name[0x100];
+      clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_type), arg_type, NULL);
+      clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
+      std::string arg = g_args[std::make_pair(kernel, i)];
+      printf("  %s %s", arg_type, arg_name);
+      void *arg_value = (void*)arg.data();
+      int arg_size = arg.size();
+      if (arg_size == 1) {
+        printf(" = %d", *((char*)arg_value));
+      } else if (arg_size == 2) {
+        printf(" = %d", *((short*)arg_value));
+      } else if (arg_size == 4) {
+        if (strcmp(arg_type, "float") == 0) {
+          printf(" = %f", *((float*)arg_value));
+        } else {
+          printf(" = %d", *((int*)arg_value));
+        }
+      } else if (arg_size == 8) {
+        cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
+        printf(" = %p", val);
+      }
+      printf("\n");
+    }
+  }
+
+  return ret;
+}
+
+
+void *dlsym(void *handle, const char *symbol) {
+  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
+  if (memcmp("REAL_", symbol, 5) == 0) {
+    return my_dlsym(handle, symbol+5);
+  } else if (strcmp("clEnqueueNDRangeKernel", symbol) == 0) {
+    return (void*)clEnqueueNDRangeKernel;
+  } else if (strcmp("clSetKernelArg", symbol) == 0) {
+    return (void*)clSetKernelArg;
+  } else {
+    return my_dlsym(handle, symbol);
+  }
 }
 

@@ -27,13 +27,15 @@ int main(int argc, char* argv[]) {
   // second run
   printf("************** execute 2 **************\n");
   Thneed *t = new Thneed();
+  t->record = 3;  // debug print with record
   mdl.execute(input, 0);
   t->stop();
 
   // third run
   printf("************** execute 3 **************\n");
-  t->record = 2;  // debug print w/o record
-  t->execute();
+  //t->record = 2;  // debug print w/o record
+  float *inputs[4] = {state, traffic_convention, desire, input};
+  t->execute(inputs, output);
 
   printf("************** execute done **************\n");
 }
