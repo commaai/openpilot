@@ -427,3 +427,5 @@ installer/updater/Makefile
 
 scripts/update_now.sh
 scripts/stop_updater.sh
+
+rednose/**
