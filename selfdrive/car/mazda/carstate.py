@@ -58,7 +58,7 @@ class CarState(CarStateBase):
     ret.gasPressed = ret.gas > 1e-3
 
     # No steer if block signal is on
-    block = cp.vl["STEER_RATE"]['LKAS_BLOCK'] == 1
+    # block = cp.vl["STEER_RATE"]['LKAS_BLOCK'] == 1
 
     # On if no driver torque the last 5 seconds
     handsoff = cp.vl["STEER_RATE"]['HANDS_OFF_5_SECONDS'] == 1
@@ -67,7 +67,7 @@ class CarState(CarStateBase):
 
     if speed_kph > LKAS_LIMITS.ENABLE_SPEED:
       self.lkas_on = True
-    elif speed_kph < LKAS_LIMITS.DISABLE_SPEED and block:
+    elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
       self.lkas_on = False
 
     # if any of the cruize buttons is pressed force state update

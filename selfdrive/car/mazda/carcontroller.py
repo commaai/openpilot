@@ -1,5 +1,5 @@
 from selfdrive.car.mazda import mazdacan
-from selfdrive.car.mazda.values import DBC, SteerLimitParams
+from selfdrive.car.mazda.values import SteerLimitParams
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 

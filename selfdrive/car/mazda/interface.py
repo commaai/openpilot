@@ -3,7 +3,6 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.mazda.values import CAR,  FINGERPRINTS, ECU_FINGERPRINT, Ecu
-from selfdrive.car.mazda.carstate import CarState
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, is_ecu_disconnected
 from selfdrive.car.interfaces import CarInterfaceBase
 
