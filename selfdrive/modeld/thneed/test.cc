@@ -32,6 +32,9 @@ int main(int argc, char* argv[]) {
 
   // third run
   printf("************** execute 3 **************\n");
+  t->record = 2;  // debug print w/o record
   t->execute();
+
+  printf("************** execute done **************\n");
 }
 

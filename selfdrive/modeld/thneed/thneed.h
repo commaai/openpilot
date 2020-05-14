@@ -17,10 +17,9 @@ class GPUMalloc {
 
 class CachedCommand {
   public:
-    CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd, int lfd);
+    CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd);
     void exec(bool wait);
   private:
-    int fd;
     struct kgsl_gpu_command cache;
     struct kgsl_command_object cmds[2];
     struct kgsl_command_object objs[1];
@@ -38,5 +37,7 @@ class Thneed {
     int timestamp;
     GPUMalloc *ram;
     std::vector<CachedCommand *> cmds;
+    std::vector<std::pair<int, struct kgsl_gpuobj_sync_obj *> > syncobjs;
+    int fd;
 };
 
