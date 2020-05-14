@@ -159,13 +159,13 @@ class LiveKalman():
     # Observation functions
     #
     imu_rot = euler_rotate(*imu_angles)
-    h_gyro_sym = imu_rot * sp.Matrix([vroll + roll_bias,
+    h_gyro_sym = sp.Matrix([vroll + roll_bias,
                                       vpitch + pitch_bias,
                                       vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
-    h_acc_sym = imu_rot * (gravity + acceleration)
+    h_acc_sym = (gravity + acceleration)
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2)
