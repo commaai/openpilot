@@ -1,9 +1,11 @@
 [submodule "panda"]
 	path = panda
-	url = ../../commaai/panda.git
+	url = ../../martinl/panda.git
+	branch = Subaru-PR-master
 [submodule "opendbc"]
 	path = opendbc
-	url = ../../commaai/opendbc.git
+	url = ../../martinl/opendbc.git
+	branch = Subaru-PR-master
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git
