@@ -1,7 +1,0 @@
-https://github.com/zeromq/libzmq/releases/download/v4.2.2/zeromq-4.2.2.tar.gz
-./configure --prefix="this_thingy"
-make -j4
-make install
-
-czmq
-see ~/one/external/zmq/build_czmq.sh
