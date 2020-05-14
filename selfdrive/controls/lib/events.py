@@ -182,6 +182,14 @@ EVENTS = {
 
   # ********** events only containing alerts displayed in all states **********
 
+  EventName.debugAlert: {
+    ET.PERMANENT: Alert(
+      "DEBUG ALERT",
+      "",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, .1, .1),
+  },
+
   EventName.startup: {
     ET.PERMANENT: Alert(
       "Be ready to take over at any time",
