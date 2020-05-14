@@ -13,6 +13,7 @@ from common.transformations.orientation import (ecef_euler_from_ned,
                                                 rot_from_quat, rot_from_euler)
 from rednose.helpers import KalmanError
 from selfdrive.locationd.models.live_kf import LiveKalman, States, ObservationKind
+from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
 
 #from datetime import datetime
@@ -48,7 +49,7 @@ def get_H():
 
 class Localizer():
   def __init__(self, disabled_logs=[], dog=None):
-    self.kf = LiveKalman()
+    self.kf = LiveKalman(GENERATED_DIR)
     self.reset_kalman()
     self.max_age = .2  # seconds
     self.disabled_logs = disabled_logs
