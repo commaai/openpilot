@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include "cereal/gen/cpp/log.capnp.h"
 
 #define DEGREES_TO_RADIANS 0.017453292519943295
