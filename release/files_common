@@ -264,6 +264,7 @@ selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/SConscript
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/car_kf.py
+selfdrive/locationd/models/constants.py
 
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py
