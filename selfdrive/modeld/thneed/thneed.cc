@@ -177,12 +177,25 @@ void Thneed::stop() {
   record = 0;
 }
 
+#define SAVE_LOG
+
 void Thneed::execute(float **finputs, float *foutput) {
+#ifdef SAVE_LOG
+  char fn[0x100];
+  snprintf(fn, sizeof(fn), "/tmp/thneed_log_%d", timestamp);
+  FILE *f = fopen(fn, "wb");
+#endif
 
   // ****** copy inputs
   for (int idx = 0; idx < inputs.size(); ++idx) {
     size_t sz;
     clGetMemObjectInfo(inputs[idx], CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+
+    #ifdef SAVE_LOG
+    fwrite(&sz, 1, sizeof(sz), f);
+    fwrite(finputs[idx], 1, sz, f);
+    #endif
+
     if (record & 2) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
     clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
@@ -228,6 +241,12 @@ void Thneed::execute(float **finputs, float *foutput) {
   clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
   if (record & 2) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
   clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
+
+  #ifdef SAVE_LOG
+  fwrite(&sz, 1, sizeof(sz), f);
+  fwrite(foutput, 1, sz, f);
+  fclose(f);
+  #endif
 
   // ****** unset power constraint
   constraint.type = KGSL_CONSTRAINT_NONE;
