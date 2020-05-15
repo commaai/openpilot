@@ -38,7 +38,12 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   if (thneed != NULL) {
     if (request == IOCTL_KGSL_GPU_COMMAND) {
       struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
-      thneed->timestamp = cmd->timestamp;
+      // TODO: understand how the driver manages timestamps and remove this hack
+      if (thneed->record & 1) {
+        thneed->timestamp = cmd->timestamp;
+      } else {
+        cmd->timestamp = ++thneed->timestamp;
+      }
       if (thneed->record & 2) {
         printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
             cmd->flags,
@@ -67,8 +72,11 @@ int ioctl(int filedes, unsigned long request, void *argp) {
         thneed->syncobjs.push_back(std::make_pair(cmd->count, new_objs));
       }
     } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
+      struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
+      if (!(thneed->record & 1)) {
+        cmd->timestamp = thneed->timestamp;
+      }
       if (thneed->record & 2) {
-        struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
         printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
             cmd->context_id, cmd->timestamp, cmd->timeout);
       }
@@ -140,7 +148,6 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
 }
 
 void CachedCommand::exec(bool wait) {
-  cache.timestamp = ++thneed->timestamp;
   int ret = ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
   if (wait) {
@@ -164,7 +171,7 @@ Thneed::Thneed() {
   fd = g_fd;
   ram = new GPUMalloc(0x40000, fd);
   record = 1;
-  timestamp = 0;
+  timestamp = -1;
   g_thneed = this;
 }
 
