@@ -114,5 +114,5 @@ DBC = {
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_outback_2015_eyesight', None),
   CAR.LEGACY: dbc_dict('subaru_outback_2015_eyesight', None),
-  CAR.FORESTER: dbc_dict('subaru_outback_2015_eyesight', None),
+  CAR.FORESTER: dbc_dict('subaru_forester_2017', None),
 }
