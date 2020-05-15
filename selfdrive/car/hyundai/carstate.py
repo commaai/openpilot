@@ -178,12 +178,6 @@ class CarState(CarStateBase):
       ("CF_Gway_TurnSigRh", "CGW1", 0),
       ("CF_Gway_ParkBrakeSw", "CGW1", 0),   # Parking Brake
 
-      ("BRAKE_ACT", "EMS12", 0),
-      ("PV_AV_CAN", "EMS12", 0),
-      ("TPS", "EMS12", 0),
-
-      ("CF_Ems_AclAct", "EMS16", 0),
-
       ("CYL_PRES", "ESP12", 0),
 
       ("CF_Clu_CruiseSwState", "CLU11", 0),
@@ -221,8 +215,6 @@ class CarState(CarStateBase):
       ("CGW1", 10),
       ("CGW4", 5),
       ("WHL_SPD11", 50),
-      ("EMS12", 100),
-      ("EMS16", 100),
     ]
     if not CP.mdpsBus:
       signals += [
@@ -308,6 +300,24 @@ class CarState(CarStateBase):
       signals += [
         ("CF_Lvr_Gear","LVR12",0),
       ]
+    if CP.carFingerprint not in FEATURES["use_elect_ems"]:
+      signals += [
+        ("PV_AV_CAN", "EMS12", 0),
+
+        ("CF_Ems_AclAct", "EMS16", 0),
+      ]
+      checks += [
+        ("EMS12", 100),
+        ("EMS16", 100),
+      ]
+    #else:
+      #signals += [
+        #("Accel_Pedal_Pos","E_EMS11",0),
+        #("Brake_Pedal_Pos","E_EMS11",0),
+      #]
+      #checks += [
+        #("E_EMS11", 100),
+      #]
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
   @staticmethod
