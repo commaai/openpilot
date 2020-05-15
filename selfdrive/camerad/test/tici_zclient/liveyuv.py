@@ -19,6 +19,13 @@ if __name__ == '__main__':
 
     dat = np.frombuffer(message, dtype=np.float32)
     mc = (dat.reshape(H//2, W//2)).astype(np.uint8)
-    cv2.imshow('model fov', mc)
+
+    hist = cv2.calcHist([mc],[0],None,[32],[0,256])
+    hist = (H*hist/hist.max()).astype(np.uint8)
+    himg = np.zeros((H//2, W//2), dtype=np.uint8)
+    for i,b in enumerate(hist):
+      himg[H//2-b[0]:,i*(W//2//32):(i+1)*(W//2//32)] = 222
+
+    cv2.imshow('model fov', np.hstack([mc, himg]))
     cv2.waitKey(20)
     dat.tofile('/tmp/c3yuv.img')
