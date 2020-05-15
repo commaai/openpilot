@@ -18,7 +18,7 @@ if __name__ == '__main__':
       message = b"123"
 
     dat = np.frombuffer(message, dtype=np.float32)
-    mc = (dat.reshape(H//2, W//2) * 128 + 128).astype(np.uint8)
+    mc = (dat.reshape(H//2, W//2)).astype(np.uint8)
     cv2.imshow('model fov', mc)
     cv2.waitKey(20)
     dat.tofile('/tmp/c3yuv.img')
