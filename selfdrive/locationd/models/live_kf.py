@@ -158,7 +158,7 @@ class LiveKalman():
     #
     # Observation functions
     #
-    imu_rot = euler_rotate(*imu_angles)
+    #imu_rot = euler_rotate(*imu_angles)
     h_gyro_sym = sp.Matrix([vroll + roll_bias,
                                       vpitch + pitch_bias,
                                       vyaw + yaw_bias])
