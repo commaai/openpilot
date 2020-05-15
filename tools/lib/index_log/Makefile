@@ -1,8 +1,6 @@
 CC := gcc
 CXX := g++
-PHONELIBS?=../../../../phonelibs
 
-UNAME_S := $(shell uname -s)
 index_log: index_log.cc
 	$(eval $@_TMP := $(shell mktemp))
 	$(CXX) -std=gnu++11 -o $($@_TMP) \
