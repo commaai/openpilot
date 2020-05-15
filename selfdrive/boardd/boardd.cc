@@ -943,11 +943,11 @@ void pigeon_init() {
 
   // baud rate upping
   pigeon_send("\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A");
-  usleep(500*1000);
+  usleep(100*1000);
 
   // set baud rate to 460800
   pigeon_set_baud(460800);
-  usleep(500*1000);
+  usleep(100*1000);
 
   // init from ubloxd
   // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py
@@ -998,7 +998,7 @@ void *pigeon_thread(void *crap) {
   printf("Pigeon thread started\n");
 
   // run at ~100hz
-  unsigned char dat[0x10000];
+  unsigned char dat[0x1000];
   uint64_t cnt = 0;
   while (!do_exit) {
     if (pigeon_needs_init) {
