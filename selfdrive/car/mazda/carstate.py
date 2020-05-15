@@ -97,8 +97,10 @@ class CarState(CarStateBase):
 
       ret.steerWarning = handsoff
 
-    self.acc_active_last = self.acc_active
+    if ret.gasPressed:
+      self.acc_active = False
 
+    self.acc_active_last = self.acc_active
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     ret.steerError = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1
