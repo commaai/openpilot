@@ -147,21 +147,20 @@ class Localizer():
     #fix.gpsTimeOfWeek = self.time.tow
     fix.unixTimestampMillis = self.unix_timestamp_millis
 
-    if self.filter_ready and self.calibrated:
+    if np.limalg.norm(fix.positionECEF.std) < 50 and self.calibrated:
       fix.status = 'valid'
-    elif self.filter_ready:
+    elif np.limalg.norm(fix.positionECEF.std) < 50:
       fix.status = 'uncalibrated'
     else:
       fix.status = 'uninitialized'
     return fix
 
   def update_kalman(self, time, kind, meas):
-    if self.filter_ready:
-      try:
-        self.kf.predict_and_observe(time, kind, meas)
-      except KalmanError:
-        cloudlog.error("Error in predict and observe, kalman reset")
-        self.reset_kalman()
+    try:
+      self.kf.predict_and_observe(time, kind, meas)
+    except KalmanError:
+      cloudlog.error("Error in predict and observe, kalman reset")
+      self.reset_kalman()
     #idx = bisect_right([x[0] for x in self.observation_buffer], time)
     #self.observation_buffer.insert(idx, (time, kind, meas))
     #while len(self.observation_buffer) > 0 and self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
@@ -171,40 +170,19 @@ class Localizer():
   def handle_gps(self, current_time, log):
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
     fix_ecef = self.converter.ned2ecef([0, 0, 0])
+    vel_ecef = self.converter.ned2ecef_matrix.dot(np.array(log.vNED))
 
     #self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
     self.unix_timestamp_millis = log.timestamp
+    gps_est_error = np.sqrt((self.kf.x[0] - fix_ecef[0])**2 +
+                            (self.kf.x[1] - fix_ecef[1])**2 +
+                            (self.kf.x[2] - fix_ecef[2])**2)
+    if gps_est_error > 50:
+      cloudlog.error("Locationd vs ubloxLocation difference too large, kalman reset")
+      self.reset_kalman(current_time)
 
-    # TODO initing with bad bearing not allowed, maybe not bad?
-    if not self.filter_ready and log.speed > 5:
-      self.filter_ready = True
-      initial_ecef = fix_ecef
-      gps_bearing = math.radians(log.bearing)
-      initial_pose_ecef = ecef_euler_from_ned(initial_ecef, [0, 0, gps_bearing])
-      initial_pose_ecef_quat = quat_from_euler(initial_pose_ecef)
-      gps_speed = log.speed
-      quat_uncertainty = 0.2**2
-
-      initial_state = LiveKalman.initial_x
-      initial_covs_diag = LiveKalman.initial_P_diag
-
-      initial_state[States.ECEF_POS] = initial_ecef
-      initial_state[States.ECEF_ORIENTATION] = initial_pose_ecef_quat
-      initial_state[States.ECEF_VELOCITY] = rot_from_quat(initial_pose_ecef_quat).dot(np.array([gps_speed, 0, 0]))
-
-      initial_covs_diag[States.ECEF_POS_ERR] = 10**2
-      initial_covs_diag[States.ECEF_ORIENTATION_ERR] = quat_uncertainty
-      initial_covs_diag[States.ECEF_VELOCITY_ERR] = 1**2
-      self.kf.init_state(initial_state, covs=np.diag(initial_covs_diag), filter_time=current_time)
-      cloudlog.info("Filter initialized")
-    elif self.filter_ready:
-      self.update_kalman(current_time, ObservationKind.ECEF_POS, fix_ecef)
-      gps_est_error = np.sqrt((self.kf.x[0] - fix_ecef[0])**2 +
-                              (self.kf.x[1] - fix_ecef[1])**2 +
-                              (self.kf.x[2] - fix_ecef[2])**2)
-      if gps_est_error > 50:
-        cloudlog.error("Locationd vs ubloxLocation difference too large, kalman reset")
-        self.reset_kalman()
+    self.update_kalman(current_time, ObservationKind.ECEF_POS, fix_ecef)
+    self.update_kalman(current_time, ObservationKind.ECEF_VEL, vel_ecef)
 
   def handle_car_state(self, current_time, log):
     self.speed_counter += 1
@@ -256,9 +234,9 @@ class Localizer():
     self.calib_from_device = self.device_from_calib.T
     self.calibrated = log.calStatus == 1
 
-  def reset_kalman(self):
-    self.filter_time = None
-    self.filter_ready = False
+  def reset_kalman(self, current_time=None):
+    self.filter_time = current_time
+    self.kf.init_state(self.kf.x, covs=np.diag(LiveKalman.initial_P_diag), filter_time=current_time)
     self.observation_buffer = []
 
     self.gyro_counter = 0
@@ -292,7 +270,7 @@ def locationd_thread(sm, pm, disabled_logs=[]):
         elif sock == "liveCalibration":
           localizer.handle_live_calib(t, sm[sock])
 
-    if localizer.filter_ready and sm.updated['gpsLocationExternal']:
+    if sm.updated['gpsLocationExternal']:
       t = sm.logMonoTime['gpsLocationExternal']
       msg = messaging.new_message('liveLocationKalman')
       msg.logMonoTime = t
