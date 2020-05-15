@@ -324,7 +324,7 @@ EVENTS = {
 
   EventName.driverDistracted: {
     ET.WARNING: Alert(
-      "DISEventName.AGE IMMEDIATELY",
+      "DISENGAGE IMMEDIATELY",
       "Driver Was Distracted",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, .1, .1),
@@ -348,7 +348,7 @@ EVENTS = {
 
   EventName.driverUnresponsive: {
     ET.WARNING: Alert(
-      "DISEventName.AGE IMMEDIATELY",
+      "DISENGAGE IMMEDIATELY",
       "Driver Was Unresponsive",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, .1, .1),
