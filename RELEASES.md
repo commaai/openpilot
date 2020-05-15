@@ -1,5 +1,6 @@
 Version 0.7.6 (2020-xx-xx)
 ========================
+* White panda is deprecated, upgrade to comma two or black panda
 * 2019 Nissan X-Trail and 2018 Nissan Leaf support thanks to avolmensky!
 
 Version 0.7.5 (2020-05-13)
