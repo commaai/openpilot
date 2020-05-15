@@ -243,11 +243,6 @@ class LiveKalman():
 
     # Normalize quats
     quat_norm = np.linalg.norm(self.filter.x[3:7, 0])
-
-    # Should not continue if the quats behave this weirdly
-    if not (0.01 < quat_norm < 100):
-      raise KalmanError("Kalman filter quaternions unstable")
-
     self.filter.x[States.ECEF_ORIENTATION, 0] = self.filter.x[States.ECEF_ORIENTATION, 0] / quat_norm
 
     return r
