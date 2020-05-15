@@ -39,16 +39,18 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   if (thneed != NULL) {
     if (request == IOCTL_KGSL_GPU_COMMAND) {
       struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
-      if (thneed->record & 2) {
-        printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
-            cmd->flags,
-            cmd->context_id, cmd->timestamp);
-      }
       if (thneed->record & 1) {
         thneed->timestamp = cmd->timestamp;
         thneed->context_id = cmd->context_id;
         CachedCommand *ccmd = new CachedCommand(thneed, cmd);
         thneed->cmds.push_back(ccmd);
+      } else {
+        cmd->timestamp = ++thneed->timestamp;
+      }
+      if (thneed->record & 2) {
+        printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
+            cmd->flags,
+            cmd->context_id, cmd->timestamp);
       }
     } else if (request == IOCTL_KGSL_GPUOBJ_SYNC) {
       struct kgsl_gpuobj_sync *cmd = (struct kgsl_gpuobj_sync *)argp;
@@ -69,6 +71,9 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       }
     } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
       struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
+      if ( !(thneed->record & 1) ) {
+        cmd->timestamp = thneed->timestamp;
+      }
       if (thneed->record & 2) {
         printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
             cmd->context_id, cmd->timestamp, cmd->timeout);
@@ -143,13 +148,13 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
 }
 
 void CachedCommand::exec(bool wait) {
-  cache.timestamp = ++thneed->timestamp;
+  cache.timestamp = -1;
   int ret = ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
   if (wait) {
     struct kgsl_device_waittimestamp_ctxtid wait;
     wait.context_id = cache.context_id;
-    wait.timestamp = cache.timestamp;
+    wait.timestamp = -1;
     wait.timeout = -1;
 
     uint64_t tb = nanos_since_boot();
@@ -169,22 +174,6 @@ Thneed::Thneed() {
   record = 1;
   timestamp = -1;
   g_thneed = this;
-}
-
-void Thneed::init_command_queue(cl_command_queue real_command_queue) {
-  // ****** make new command queue?
-  if (!command_queue_initted) {
-    cl_context ctx;
-    cl_device_id device_id;
-    cl_command_queue_properties props;
-    clGetCommandQueueInfo(real_command_queue, CL_QUEUE_CONTEXT, sizeof(ctx), &ctx, NULL);
-    clGetCommandQueueInfo(real_command_queue, CL_QUEUE_DEVICE, sizeof(device_id), &device_id, NULL);
-    clGetCommandQueueInfo(real_command_queue, CL_QUEUE_PROPERTIES, sizeof(props), &props, NULL);
-
-    command_queue = clCreateCommandQueue(ctx, device_id, props, NULL);
-    command_queue_initted = 1;
-    printf("created new command queue with props %d\n", props);
-  }
 }
 
 void Thneed::stop() {
@@ -287,9 +276,7 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   clGetKernelInfo(kernel, CL_KERNEL_NUM_ARGS, sizeof(num_args), &num_args, NULL);
 
   if (thneed != NULL && thneed->record & 1) {
-    thneed->init_command_queue(command_queue);
-    command_queue = thneed->command_queue;
-
+    thneed->command_queue = command_queue;
     for (int i = 0; i < num_args; i++) {
       char arg_name[0x100];
       clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);

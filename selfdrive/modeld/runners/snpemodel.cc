@@ -148,16 +148,16 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
       thneed->record = 2;
       printf("thneed cached\n");
     } else {
-      assert(inputBuffer->setBufferAddress(net_input_buf));
+      /*assert(inputBuffer->setBufferAddress(net_input_buf));
       if (!snpe->execute(inputMap, outputMap)) {
         PrintErrorStringAndExit();
-      }
+      }*/
 
       float output_bak[2383];
       memcpy(output_bak, output, 2383*4);
 
       float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
-      //thneed->execute(inputs, output);
+      thneed->execute(inputs, output);
 
       if (memcmp(output_bak, output, 2383*4) != 0) {
         printf("COMPARE FAILED\n");

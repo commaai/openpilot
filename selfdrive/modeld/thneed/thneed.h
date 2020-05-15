@@ -36,11 +36,8 @@ class Thneed {
     std::vector<cl_mem> inputs;
     cl_mem output;
 
-    int context_id;
-
-    void init_command_queue(cl_command_queue real_command_queue);
     cl_command_queue command_queue;
-    int command_queue_initted = 0;
+    int context_id;
 
     // protected?
     int record;
