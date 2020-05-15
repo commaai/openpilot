@@ -122,6 +122,13 @@ selfdrive/car/toyota/radar_interface.py
 selfdrive/car/toyota/values.py
 selfdrive/car/toyota/carcontroller.py
 selfdrive/car/toyota/toyotacan.py
+selfdrive/car/nissan/__init__.py
+selfdrive/car/nissan/carcontroller.py
+selfdrive/car/nissan/carstate.py
+selfdrive/car/nissan/interface.py
+selfdrive/car/nissan/nissancan.py
+selfdrive/car/nissan/radar_interface.py
+selfdrive/car/nissan/values.py
 selfdrive/car/volkswagen/__init__.py
 selfdrive/car/volkswagen/carstate.py
 selfdrive/car/volkswagen/interface.py
