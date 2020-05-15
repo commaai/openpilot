@@ -198,6 +198,14 @@ EVENTS = {
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
+  EventName.startupWhitePanda: {
+    ET.PERMANENT: Alert(
+      "WARNING: White panda is deprecated",
+      "Upgrade to comma two or black panda",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  },
+
   EventName.startupMaster: {
     ET.PERMANENT: Alert(
       "WARNING: This branch is not tested",
@@ -228,6 +236,15 @@ EVENTS = {
       "Visit comma.ai/tg",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+  },
+
+  EventName.whitePandaUnsupported: {
+    ET.PERMANENT: Alert(
+      "White Panda Is No Longer Supported",
+      "Upgrade to comma two or black panda",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.NO_ENTRY: NoEntryAlert("White panda is no longer supported"),
   },
 
   EventName.invalidLkasSetting: {
