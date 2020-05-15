@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
   delete msg_context;
 
 #ifdef NOSCREEN
-  zsock_destroy(&model.yuv_sock)
+  zsock_destroy(&model.yuv_sock);
 #endif
 
   model_free(&model);
