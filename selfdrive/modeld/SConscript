@@ -1,7 +1,7 @@
 Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc')
 lenv = env.Clone()
 
-libs = [messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
+libs = [messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'czmq', 'kj', 'yuv', gpucommon, visionipc]
 
 common_src = [
   "models/commonmodel.c",
@@ -13,6 +13,9 @@ if arch == "aarch64":
   libs += ['gsl', 'CB', 'gnustl_shared']
 elif arch == "larch64":
   libs += ['gsl', 'CB', 'symphony-cpu', 'pthread']
+  # no screen
+  lenv['CFLAGS'].append("-DNOSCREEN")
+  lenv['CXXFLAGS'].append("-DNOSCREEN")
 else:
   libs += ['symphony-cpu', 'pthread']
 

@@ -42,6 +42,12 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 
   s->m = new DefaultRunModel("../../models/supercombo.dlc", s->output, output_size, USE_GPU_RUNTIME);
 
+#ifdef NOSCREEN
+  zsock_t *yuv_sock = zsock_new_push("tcp://192.168.2.221:7769");
+  assert(yuv_sock);
+  s->yuv_sock = yuv_sock;
+#endif
+
 #ifdef TEMPORAL
   assert(temporal);
   s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
@@ -115,6 +121,13 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
     fwrite(new_frame_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file);
     fclose(dump_yuv_file);
     assert(1==2);
+  #endif
+
+  #ifdef NOSCREEN
+    int err, err2;
+    err = zmq_send(zsock_resolve(s->yuv_sock), new_frame_buf, sizeof(float)*(MODEL_HEIGHT*MODEL_WIDTH*3/2)/6, ZMQ_DONTWAIT); // y1
+    err2 = zmq_errno();
+    printf("zmq errcode %d, %d\n", err ,err2);
   #endif
 
   clEnqueueUnmapMemObject(q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);

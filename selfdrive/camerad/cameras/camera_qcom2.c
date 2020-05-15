@@ -45,7 +45,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
     .bayer = true,
-    .bayer_flip = 0,
+    .bayer_flip = 1,
     .hdr = false
   },
 };
@@ -777,6 +777,11 @@ void cameras_init(DualCameraState *s) {
   camera_init(&s->rear, CAMERA_ID_AR0231, 0, 20);
   camera_init(&s->wide, CAMERA_ID_AR0231, 1, 20);
   camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
+#ifdef NOSCREEN
+  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.2.221:7768");
+  assert(rgb_sock);
+  s->rgb_sock = rgb_sock;
+#endif
 }
 
 void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
@@ -882,6 +887,9 @@ static void cameras_close(DualCameraState *s) {
   camera_close(&s->rear);
   //camera_close(&s->front);
   //camera_close(&s->wide);
+#ifdef NOSCREEN
+  zsock_destroy(&s->rgb_sock)
+#endif
 }
 
 struct video_event_data {
@@ -942,5 +950,24 @@ void cameras_run(DualCameraState *s) {
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
+  // TODO: implement autoexposure
+  struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, 0x7777}, // analog gain
+                                                  // {0x3056, 0x0080}, // G1
+                                                  // {0x3058, 0x012A}, // B
+                                                  // {0x305A, 0x00A0}, // R
+                                                  // {0x305C, 0x0080}, // G2
+                                                  // {0x305E, 0x0080}, // global digi gain
+                                                  {0x3012, 0x0312}}; // integ time
+
+  sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
+                    CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
 
+#ifdef NOSCREEN
+void sendrgb(DualCameraState *s, void* dat, int len) {
+  int err, err2;
+  err = zmq_send(zsock_reslove(s->rgb_sock), dat, len, ZMQ_DONTWAIT);
+  err2 = zmq_errno();
+  printf("zmq errcode %d, %d\n", err ,err2);
+}
+#endif

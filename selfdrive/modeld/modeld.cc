@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <czmq.h>
 #include <eigen3/Eigen/Dense>
 
 #include "common/visionbuf.h"
@@ -41,11 +42,19 @@ void* live_thread(void *arg) {
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
+#ifndef QCOM2
   Eigen::Matrix<float, 3, 3> eon_intrinsics;
   eon_intrinsics <<
     910.0, 0.0, 582.0,
     0.0, 910.0, 437.0,
     0.0,   0.0,   1.0;
+#else
+  Eigen::Matrix<float, 3, 3> eon_intrinsics;
+  eon_intrinsics <<
+    1484.0, 0.0, 482.0,
+    0.0, 1484.0, 302.0,
+    0.0,   0.0,   1.0;
+#endif
 
   while (!do_exit) {
     for (auto sock : poller->poll(10)){
@@ -244,6 +253,10 @@ int main(int argc, char **argv) {
   delete posenet_sock;
   delete pathplan_sock;
   delete msg_context;
+
+#ifdef NOSCREEN
+  zsock_destroy(&model.yuv_sock)
+#endif
 
   model_free(&model);
 

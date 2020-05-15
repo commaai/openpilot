@@ -10,7 +10,7 @@ void PrintErrorStringAndExit() {
 }
 
 SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int runtime) {
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
   zdl::DlSystem::Runtime_t Runtime;
   if (runtime==USE_GPU_RUNTIME) {
     Runtime = zdl::DlSystem::Runtime_t::GPU;
@@ -33,7 +33,7 @@ SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int ru
   // create model runner
   zdl::SNPE::SNPEBuilder snpeBuilder(container.get());
   while (!snpe) {
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
     snpe = snpeBuilder.setOutputLayers({})
                       .setRuntimeProcessor(Runtime)
                       .setUseUserSuppliedBuffers(true)
