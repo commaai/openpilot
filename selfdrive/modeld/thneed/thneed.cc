@@ -44,8 +44,6 @@ int ioctl(int filedes, unsigned long request, void *argp) {
         thneed->context_id = cmd->context_id;
         CachedCommand *ccmd = new CachedCommand(thneed, cmd);
         thneed->cmds.push_back(ccmd);
-      } else {
-        cmd->timestamp = ++thneed->timestamp;
       }
       if (thneed->record & 2) {
         printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
@@ -71,9 +69,6 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       }
     } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
       struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
-      if ( !(thneed->record & 1) ) {
-        cmd->timestamp = thneed->timestamp;
-      }
       if (thneed->record & 2) {
         printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
             cmd->context_id, cmd->timestamp, cmd->timeout);
@@ -148,13 +143,13 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
 }
 
 void CachedCommand::exec(bool wait) {
-  cache.timestamp = -1;
+  cache.timestamp = ++thneed->timestamp;
   int ret = ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
   if (wait) {
     struct kgsl_device_waittimestamp_ctxtid wait;
     wait.context_id = cache.context_id;
-    wait.timestamp = -1;
+    wait.timestamp = cache.timestamp;
     wait.timeout = -1;
 
     uint64_t tb = nanos_since_boot();
@@ -165,6 +160,8 @@ void CachedCommand::exec(bool wait) {
   } else {
     if (thneed->record & 2) printf("CachedCommand::exec got %d\n", ret);
   }
+
+  assert(ret == 0);
 }
 
 Thneed::Thneed() {
