@@ -27,6 +27,7 @@ class ObservationKind:
   PSEUDORANGE_RATE_GLONASS = 21
   PSEUDORANGE = 22
   PSEUDORANGE_RATE = 23
+  ECEF_VEL = 31
 
   ROAD_FRAME_XY_SPEED = 24  # (x, y) [m/s]
   ROAD_FRAME_YAW_RATE = 25  # [rad/s]
@@ -35,6 +36,7 @@ class ObservationKind:
   STIFFNESS = 28  # [-]
   STEER_RATIO = 29  # [-]
   ROAD_FRAME_X_SPEED = 30  # (x) [m/s]
+
 
   names = [
     'Unknown',
