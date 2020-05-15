@@ -240,7 +240,7 @@ EVENTS = {
 
   EventName.whitePandaUnsupported: {
     ET.PERMANENT: Alert(
-      "White panda is no longer supported",
+      "White Panda Is No Longer Supported",
       "Upgrade to comma two or black panda",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
