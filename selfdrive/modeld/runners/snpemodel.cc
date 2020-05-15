@@ -9,9 +9,9 @@ void PrintErrorStringAndExit() {
   std::exit(EXIT_FAILURE);
 }
 
-SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int runtime) {
+SNPEModel::SNPEModel(const char *path, float *loutput, size_t output_size, int runtime) {
+  output = loutput;
 #ifdef QCOM
-  zdl::DlSystem::Runtime_t Runtime;
   if (runtime==USE_GPU_RUNTIME) {
     Runtime = zdl::DlSystem::Runtime_t::GPU;
   } else if (runtime==USE_DSP_RUNTIME) {
@@ -87,6 +87,13 @@ SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int ru
 
   // create output buffer
   {
+    const zdl::DlSystem::TensorShape& bufferShape = snpe->getInputOutputBufferAttributes(output_tensor_name)->getDims();
+    if (output_size != 0) {
+      assert(output_size == bufferShape[1]);
+    } else {
+      output_size = bufferShape[1];
+    }
+
     std::vector<size_t> outputStrides = {output_size * sizeof(float), sizeof(float)};
     outputBuffer = ubFactory.createUserBuffer(output, output_size * sizeof(float), outputStrides, &userBufferEncodingFloat);
     outputMap.add(output_tensor_name, outputBuffer.get());
@@ -94,14 +101,17 @@ SNPEModel::SNPEModel(const char *path, float *output, size_t output_size, int ru
 }
 
 void SNPEModel::addRecurrent(float *state, int state_size) {
+  recurrent = state;
   recurrentBuffer = this->addExtra(state, state_size, 3);
 }
 
 void SNPEModel::addTrafficConvention(float *state, int state_size) {
+  trafficConvention = state;
   trafficConventionBuffer = this->addExtra(state, state_size, 2);
 }
 
 void SNPEModel::addDesire(float *state, int state_size) {
+  desire = state;
   desireBuffer = this->addExtra(state, state_size, 1);
 }
 
@@ -122,9 +132,33 @@ std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, in
 }
 
 void SNPEModel::execute(float *net_input_buf, int buf_size) {
-  assert(inputBuffer->setBufferAddress(net_input_buf));
-  if (!snpe->execute(inputMap, outputMap)) {
-    PrintErrorStringAndExit();
+#ifdef USE_THNEED
+  if (Runtime == zdl::DlSystem::Runtime_t::GPU) {
+    if (thneed == NULL) {
+      assert(inputBuffer->setBufferAddress(net_input_buf));
+      if (!snpe->execute(inputMap, outputMap)) {
+        PrintErrorStringAndExit();
+      }
+      thneed = new Thneed();
+      //thneed->record = 3;
+      if (!snpe->execute(inputMap, outputMap)) {
+        PrintErrorStringAndExit();
+      }
+      thneed->stop();
+      //thneed->record = 2;
+      printf("thneed cached\n");
+    } else {
+      float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
+      thneed->execute(inputs, output);
+    }
+  } else {
+#endif
+    assert(inputBuffer->setBufferAddress(net_input_buf));
+    if (!snpe->execute(inputMap, outputMap)) {
+      PrintErrorStringAndExit();
+    }
+#ifdef USE_THNEED
   }
+#endif
 }
 

@@ -387,6 +387,9 @@ selfdrive/modeld/transforms/loadyuv.cl
 selfdrive/modeld/transforms/transform.[c,h]
 selfdrive/modeld/transforms/transform.cl
 
+selfdrive/modeld/thneed/thneed.*
+selfdrive/modeld/thneed/include/*
+
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
 selfdrive/modeld/runners/runmodel.h
