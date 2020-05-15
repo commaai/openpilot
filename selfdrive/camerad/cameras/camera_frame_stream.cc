@@ -49,7 +49,7 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps) {
 
 void run_frame_stream(DualCameraState *s) {
   int err;
-  SubMessage frame_sock(NULL, "frame");
+  SubMessage frame_sock("frame");
 
   CameraState *const rear_camera = &s->rear;
   auto *tb = &rear_camera->camera_tb;
