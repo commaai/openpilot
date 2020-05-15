@@ -8,10 +8,12 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 
-from cereal import car
+from cereal import car, log
 EventName = car.CarEvent.EventName
+HwType = log.HealthData.HwType
 
-def get_startup_event(car_recognized, controller_available):
+
+def get_startup_event(car_recognized, controller_available, hw_type):
   event = EventName.startup
   if Params().get("GitRemote", encoding="utf8") in ['git@github.com:commaai/openpilot.git', 'https://github.com/commaai/openpilot.git']:
     if Params().get("GitBranch", encoding="utf8") not in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']:
@@ -20,6 +22,8 @@ def get_startup_event(car_recognized, controller_available):
     event = EventName.startupNoCar
   elif car_recognized and not controller_available:
     event = EventName.startupNoControl
+  elif hw_type == HwType.whitePanda:
+    event = EventName.startupWhitePanda
   return event
 
 
