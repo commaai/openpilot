@@ -240,11 +240,11 @@ EVENTS = {
 
   EventName.whitePandaUnsupported: {
     ET.PERMANENT: Alert(
-      "White Panda is Unsupported",
+      "White Panda is no longer supported",
       "Upgrade to comma two or black panda",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-    ET.NO_ENTRY: NoEntryAlert("White Panda is Unsupported"),
+    ET.NO_ENTRY: NoEntryAlert("White Panda is no longer supported"),
   },
 
   EventName.invalidLkasSetting: {
