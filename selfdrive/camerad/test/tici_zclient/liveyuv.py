@@ -21,4 +21,4 @@ if __name__ == '__main__':
     mc = (dat.reshape(H//2, W//2) * 128 + 128).astype(np.uint8)
     cv2.imshow('model fov', mc)
     cv2.waitKey(20)
-    dat.tofile('/home/batman/c3yuv.img')
+    dat.tofile('/tmp/c3yuv.img')
