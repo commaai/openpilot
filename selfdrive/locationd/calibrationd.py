@@ -5,6 +5,7 @@ import copy
 import json
 import numpy as np
 import cereal.messaging as messaging
+from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibration_helpers import Calibration
 from selfdrive.swaglog import cloudlog
 from common.params import Params, put_nonblocking
@@ -12,8 +13,7 @@ from common.transformations.model import model_height
 from common.transformations.camera import view_frame_from_device_frame, get_view_frame_from_road_frame, \
                                           get_calib_from_vp, vp_from_rpy, H, W, FOCAL
 
-MPH_TO_MS = 0.44704
-MIN_SPEED_FILTER = 15 * MPH_TO_MS
+MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
