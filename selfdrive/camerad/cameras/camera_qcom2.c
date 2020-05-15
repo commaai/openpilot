@@ -888,7 +888,7 @@ static void cameras_close(DualCameraState *s) {
   //camera_close(&s->front);
   //camera_close(&s->wide);
 #ifdef NOSCREEN
-  zsock_destroy(&s->rgb_sock)
+  zsock_destroy(&s->rgb_sock);
 #endif
 }
 
@@ -966,7 +966,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 #ifdef NOSCREEN
 void sendrgb(DualCameraState *s, void* dat, int len) {
   int err, err2;
-  err = zmq_send(zsock_reslove(s->rgb_sock), dat, len, ZMQ_DONTWAIT);
+  err = zmq_send(zsock_resolve(s->rgb_sock), dat, len, ZMQ_DONTWAIT);
   err2 = zmq_errno();
   printf("zmq errcode %d, %d\n", err ,err2);
 }
