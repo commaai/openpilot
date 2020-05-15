@@ -440,6 +440,10 @@ void* processing_thread(void *arg) {
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
+#ifdef NOSCREEN
+    sendrgb(s->cameras, (void*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len);
+#endif
+
 #ifdef QCOM
     /*FILE *dump_rgb_file = fopen("/tmp/process_dump.rgb", "wb");
     fwrite(s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, sizeof(uint8_t), dump_rgb_file);
