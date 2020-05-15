@@ -198,6 +198,14 @@ EVENTS = {
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
+  EventName.startupWhitePanda: {
+    ET.PERMANENT: Alert(
+      "WARNING: White panda is deprecated",
+      "White pandas will stop working soon",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  },
+
   EventName.startupMaster: {
     ET.PERMANENT: Alert(
       "WARNING: This branch is not tested",
@@ -226,6 +234,14 @@ EVENTS = {
     ET.PERMANENT: Alert(
       "Unsupported Giraffe Configuration",
       "Visit comma.ai/tg",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+  },
+
+  EventName.whitePandaUnsupported: {
+    ET.PERMANENT: Alert(
+      "White Panda is Unsupported",
+      "Upgrade to comma two or black panda",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
