@@ -155,9 +155,8 @@ void* frontview_thread(void *arg) {
   set_thread_name("frontview");
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  MessageContext ctx;
-  SubMessage monitoring_sm(&ctx, "driverState", "127.0.0.1", true);
-  SubMessage dmonstate_sm(&ctx, "dMonitoringState", "127.0.0.1", true);
+  SubMessage monitoring_sm("driverState", "127.0.0.1", true);
+  SubMessage dmonstate_sm("dMonitoringState", "127.0.0.1", true);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -1261,7 +1260,7 @@ int main(int argc, char *argv[]) {
   init_buffers(s);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->pm = new PubMaster(NULL, {"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 #endif
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);

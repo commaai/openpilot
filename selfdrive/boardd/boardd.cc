@@ -278,7 +278,7 @@ void handle_usb_issue(int err, const char func[]) {
   // TODO: check other errors, is simply retrying okay?
 }
 
-void can_recv(PubMessage &pm) {
+void can_recv(PubMaster &pm) {
   int err;
   uint32_t data[RECV_SIZE/4];
   int recv;
@@ -330,10 +330,10 @@ void can_recv(PubMessage &pm) {
     canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
   }
 
-  pm.send(msg);
+  pm.send("can", msg);
 }
 
-void can_health(PubMessage &pm) {
+void can_health(PubMaster &pm) {
   int cnt;
   int err;
 
@@ -378,7 +378,7 @@ void can_health(PubMessage &pm) {
   // No panda connected, send empty health packet
   if (!received){
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
-    pm.send(msg);
+    pm.send("health", msg);
     return;
   }
 
@@ -523,7 +523,7 @@ void can_health(PubMessage &pm) {
     }
   }
   // send to health
-  pm.send(msg);
+  pm.send("health", msg);
 
   // send heartbeat back to panda
   pthread_mutex_lock(&usb_lock);
@@ -589,7 +589,7 @@ void can_send(SubMessage &subscriber) {
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
-  SubMessage subscriber(NULL, "sendcan");
+  SubMessage subscriber("sendcan");
 
   // drain sendcan to delete any stale messages from previous runs
   while (subscriber.receive(true) != NULL){}
@@ -605,7 +605,7 @@ void *can_recv_thread(void *crap) {
   LOGD("start recv thread");
 
   // can = 8006
-  PubMessage pm(NULL, "can");
+  PubMaster pm({"can"});
 
   // run at 100hz
   const uint64_t dt = 10000000ULL;
@@ -632,7 +632,7 @@ void *can_recv_thread(void *crap) {
 void *can_health_thread(void *crap) {
   LOGD("start health thread");
   // health = 8011
-  PubMessage pm(NULL, "health");
+  PubMaster pm({"health"});
 
   // run at 2hz
   while (!do_exit) {
@@ -645,7 +645,7 @@ void *can_health_thread(void *crap) {
 
 void *hardware_control_thread(void *crap) {
   LOGD("start hardware control thread");
-  SubMaster sm(NULL, {"thermal", "frontFrame"});
+  SubMaster sm({"thermal", "frontFrame"});
 
   // Wait for hardware type to be set.
   while (hw_type == cereal::HealthData::HwType::UNKNOWN){
@@ -800,7 +800,7 @@ void pigeon_init() {
   LOGW("panda GPS on");
 }
 
-static void pigeon_publish_raw(PubMessage &pm, unsigned char *dat, int alen) {
+static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -808,13 +808,13 @@ static void pigeon_publish_raw(PubMessage &pm, unsigned char *dat, int alen) {
   auto ublox_raw = event.initUbloxRaw(alen);
   memcpy(ublox_raw.begin(), dat, alen);
 
-  pm.send(msg);
+  pm.send("ubloxRaw", msg);
 }
 
 
 void *pigeon_thread(void *crap) {
   // ubloxRaw = 8042
-  PubMessage pm(NULL, "ubloxRaw");
+  PubMaster pm({"ubloxRaw"});
 
   // run at ~100hz
   unsigned char dat[0x1000];

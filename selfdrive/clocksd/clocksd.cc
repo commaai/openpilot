@@ -19,7 +19,7 @@ int main() {
   setpriority(PRIO_PROCESS, 0, -13);
 
   int err = 0;
-  PubMessage pm(NULL, "clocks");
+  PubMaster pm({"clocks"});
 
   int timerfd = timerfd_create(CLOCK_BOOTTIME, 0);
   assert(timerfd >= 0);
@@ -55,7 +55,7 @@ int main() {
     clocks.setWallTimeNanos(wall_time);
     clocks.setModemUptimeMillis(modem_uptime_v);
 
-    pm.send(msg);
+    pm.send("clocks", msg);
   }
 
   close(timerfd);

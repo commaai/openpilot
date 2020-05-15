@@ -115,6 +115,7 @@ AGpsCallbacks agps_callbacks = {
 };
 
 void gps_init() {
+  pm = new PubMaster({"gpsNMEA", "gpsLocation"});
   LOG("*** init GPS");
   hw_module_t* module = NULL;
   hw_get_module(GPS_HARDWARE_MODULE_ID, (hw_module_t const**)&module);
@@ -143,7 +144,6 @@ void gps_init() {
                                    GPS_POSITION_RECURRENCE_PERIODIC,
                                    100, 0, 0);
 
-  pm = new PubMaster(NULL, {"gpsNMEA", "gpsLocation"});
 }
 
 void gps_destroy() {
