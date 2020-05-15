@@ -441,7 +441,7 @@ void* processing_thread(void *arg) {
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
 #ifdef NOSCREEN
-    sendrgb(s->cameras, (void*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len);
+    sendrgb(&s->cameras, (void*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len);
 #endif
 
 #ifdef QCOM
