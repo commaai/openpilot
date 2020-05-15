@@ -180,7 +180,6 @@ void Thneed::execute(float **finputs, float *foutput) {
     if (record & 2) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
     clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
-  clFinish(command_queue);
 
   // ****** set power constraint
   struct kgsl_device_constraint_pwrlevel pwrlevel;
@@ -223,7 +222,6 @@ void Thneed::execute(float **finputs, float *foutput) {
   clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
   if (record & 2) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
   clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
-  clFinish(command_queue);
 
   // ****** unset power constraint
   constraint.type = KGSL_CONSTRAINT_NONE;

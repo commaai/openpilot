@@ -145,6 +145,7 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
         PrintErrorStringAndExit();
       }
       thneed->stop();
+      printf("thneed cached\n");
     } else {
       float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
       thneed->execute(inputs, output);

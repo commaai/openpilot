@@ -42,7 +42,6 @@ lenv.Program('_modeld', [
 
 if TEST_THNEED:
   lenv.Program('thneed/_thneed', [
-#      "thneed/main.cc",
       "thneed/thneed.cc", "thneed/test.cc"
     ]+common, LIBS=libs)
 
