@@ -1,5 +1,5 @@
-#include "thneed.h"
-#include "../runners/snpemodel.h"
+#include "../thneed.h"
+#include "../../runners/snpemodel.h"
 
 #define TEMPORAL_SIZE 512
 #define DESIRE_LEN 8
@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
   printf("************** execute 2 **************\n");
   memset(input, 0xBB, 0x1000000);
   Thneed *t = new Thneed();
-  t->record = 7;  // debug print with record
+  t->record = 3;  // debug print with record
   mdl.execute(input, 0);
   t->stop();
   hexdump((uint32_t *)output, 0x100);

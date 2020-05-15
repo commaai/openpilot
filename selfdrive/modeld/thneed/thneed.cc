@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <map>
 #include <string>
+#include <errno.h>
 
 Thneed *g_thneed = NULL;
 int g_fd = -1;
@@ -38,18 +39,13 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   if (thneed != NULL) {
     if (request == IOCTL_KGSL_GPU_COMMAND) {
       struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
-      // TODO: understand how the driver manages timestamps and remove this hack
-      if (thneed->record & 1) {
-        thneed->timestamp = cmd->timestamp;
-      } else {
-        cmd->timestamp = ++thneed->timestamp;
-      }
       if (thneed->record & 2) {
         printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
             cmd->flags,
             cmd->context_id, cmd->timestamp);
       }
       if (thneed->record & 1) {
+        thneed->timestamp = cmd->timestamp;
         thneed->context_id = cmd->context_id;
         CachedCommand *ccmd = new CachedCommand(thneed, cmd);
         thneed->cmds.push_back(ccmd);
@@ -73,9 +69,6 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       }
     } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
       struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
-      if (!(thneed->record & 1)) {
-        cmd->timestamp = thneed->timestamp;
-      }
       if (thneed->record & 2) {
         printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
             cmd->context_id, cmd->timestamp, cmd->timeout);
@@ -95,7 +88,9 @@ int ioctl(int filedes, unsigned long request, void *argp) {
     }
   }
 
-  return my_ioctl(filedes, request, argp);
+  int ret = my_ioctl(filedes, request, argp);
+  if (ret != 0) printf("ioctl returned %d with errno %d\n", ret, errno);
+  return ret;
 }
 
 }
@@ -148,6 +143,7 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
 }
 
 void CachedCommand::exec(bool wait) {
+  cache.timestamp = ++thneed->timestamp;
   int ret = ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
   if (wait) {
@@ -175,11 +171,28 @@ Thneed::Thneed() {
   g_thneed = this;
 }
 
+void Thneed::init_command_queue(cl_command_queue real_command_queue) {
+  // ****** make new command queue?
+  if (!command_queue_initted) {
+    cl_context ctx;
+    cl_device_id device_id;
+    cl_command_queue_properties props;
+    clGetCommandQueueInfo(real_command_queue, CL_QUEUE_CONTEXT, sizeof(ctx), &ctx, NULL);
+    clGetCommandQueueInfo(real_command_queue, CL_QUEUE_DEVICE, sizeof(device_id), &device_id, NULL);
+    clGetCommandQueueInfo(real_command_queue, CL_QUEUE_PROPERTIES, sizeof(props), &props, NULL);
+
+    command_queue = clCreateCommandQueue(ctx, device_id, props, NULL);
+    command_queue_initted = 1;
+    printf("created new command queue with props %d\n", props);
+  }
+}
+
 void Thneed::stop() {
   record = 0;
 }
 
 void Thneed::execute(float **finputs, float *foutput) {
+
   // ****** copy inputs
   for (int idx = 0; idx < inputs.size(); ++idx) {
     size_t sz;
@@ -267,10 +280,6 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   assert(num_events_in_wait_list == 0);
   assert(global_work_offset == NULL);
 
-  cl_int ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
-    global_work_offset, global_work_size, local_work_size,
-    num_events_in_wait_list, event_wait_list, event);
-
   char name[0x100];
   clGetKernelInfo(kernel, CL_KERNEL_FUNCTION_NAME, sizeof(name), name, NULL);
 
@@ -278,7 +287,9 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   clGetKernelInfo(kernel, CL_KERNEL_NUM_ARGS, sizeof(num_args), &num_args, NULL);
 
   if (thneed != NULL && thneed->record & 1) {
-    thneed->command_queue = command_queue;
+    thneed->init_command_queue(command_queue);
+    command_queue = thneed->command_queue;
+
     for (int i = 0; i < num_args; i++) {
       char arg_name[0x100];
       clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
@@ -328,9 +339,11 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     }
   }
 
+  cl_int ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
+    global_work_offset, global_work_size, local_work_size,
+    num_events_in_wait_list, event_wait_list, event);
   return ret;
 }
-
 
 void *dlsym(void *handle, const char *symbol) {
   void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
