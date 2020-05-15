@@ -45,7 +45,7 @@ To add new car or fingerprint, please make Pull Requset or send me the fingerpri
 | Genesis   | G90 2018                           | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Elantra 2017-19<sup>5</sup>        | SCC + LKAS        | Stock            | 19mph              | 34mph        |
 | Hyundai   | Elantra GT/i30 2017-19             | All               | Stock            | 0mph               | 30mph        |
-| Hyundai   | Genesis 2018                       | All               | Stock            | 19mph              | 34mph        |
+| Hyundai   | Genesis 2015-16                    | All               | Stock            | 19mph              | 34mph        |
 | Hyundai   | Ioniq 2017<sup>5</sup>             | All               | Stock            | 0mph               | 34mph        |
 | Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS              | Stock            | 22mph              | 0mph         |
 | Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph         |
