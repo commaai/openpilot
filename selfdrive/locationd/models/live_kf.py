@@ -46,9 +46,9 @@ class LiveKalman():
                         0, 0, 0])
 
   # state covariance
-  initial_P_diag = np.array([10000**2, 10000**2, 10000**2,
-                             10**2, 10**2, 10**2,
-                             10**2, 10**2, 10**2,
+  initial_P_diag = np.array([1e20, 1e20, 1e20,
+                             100**2, 100**2, 100**2,
+                             100**2, 100**2, 100**2,
                              1**2, 1**2, 1**2,
                              0.05**2, 0.05**2, 0.05**2,
                              0.02**2,
@@ -57,8 +57,8 @@ class LiveKalman():
 
   # process noise
   Q = np.diag([0.03**2, 0.03**2, 0.03**2,
-               0.0**2, 0.0**2, 0.0**2,
-               0.0**2, 0.0**2, 0.0**2,
+               0.001**2, 0.001*2, 0.001**2,
+               0.01**2, 0.01**2, 0.01**2,
                0.1**2, 0.1**2, 0.1**2,
                (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
                (0.02 / 100)**2,
@@ -200,7 +200,7 @@ class LiveKalman():
                       ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
                       ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
-                      ObservationKind.ECEF_VEL: np.diag([1**2, 1**2, 1**2])}
+                      ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2])}
 
     # init filter
     self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err)

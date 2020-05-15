@@ -200,12 +200,12 @@ class Localizer():
       rot_device_std = self.device_from_calib.dot(log.rotStd)
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_ROTATION,
-                         np.concatenate([rot_device, rot_device_std]))
+                         np.concatenate([rot_device, 10*rot_device_std]))
       trans_device = self.device_from_calib.dot(log.trans)
       trans_device_std = self.device_from_calib.dot(log.transStd)
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_TRANSLATION,
-                         np.concatenate([trans_device, trans_device_std]))
+                         np.concatenate([trans_device, 10*trans_device_std]))
 
   def handle_sensors(self, current_time, log):
     # TODO does not yet account for double sensor readings in the log
