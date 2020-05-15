@@ -35,9 +35,10 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   // save the fd
   if (request == IOCTL_KGSL_GPUOBJ_ALLOC) g_fd = filedes;
 
-  if (thneed != NULL && thneed->record) {
+  if (thneed != NULL) {
     if (request == IOCTL_KGSL_GPU_COMMAND) {
       struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
+      thneed->timestamp = cmd->timestamp;
       if (thneed->record & 2) {
         printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
             cmd->flags,
@@ -117,7 +118,6 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
   assert(cmd->numcmds == 2);
   assert(cmd->numobjs == 1);
   assert(cmd->numsyncs == 0);
-  thneed->timestamp = cmd->timestamp;
 
   memcpy(cmds, (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*2);
   memcpy(objs, (void *)cmd->objlist, sizeof(struct kgsl_command_object)*1);
