@@ -177,8 +177,10 @@ void Thneed::execute(float **finputs, float *foutput) {
   for (int idx = 0; idx < inputs.size(); ++idx) {
     size_t sz;
     clGetMemObjectInfo(inputs[idx], CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+    if (record & 2) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
     clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
+  clFinish(command_queue);
 
   // ****** set power constraint
   struct kgsl_device_constraint_pwrlevel pwrlevel;
@@ -219,7 +221,9 @@ void Thneed::execute(float **finputs, float *foutput) {
   // ****** copy outputs
   size_t sz;
   clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+  if (record & 2) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
   clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
+  clFinish(command_queue);
 
   // ****** unset power constraint
   constraint.type = KGSL_CONSTRAINT_NONE;
@@ -275,13 +279,13 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
       clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
       std::string arg = g_args[std::make_pair(kernel, i)];
 
-      if (strcmp(arg_name, "input") == 0 && strcmp(name, "zero_pad_image_float")) {
+      if (strcmp(arg_name, "input") == 0 && strcmp(name, "zero_pad_image_float") == 0) {
         cl_mem mem;
         memcpy(&mem, (void*)arg.data(), sizeof(mem));
         thneed->inputs.push_back(mem);
       }
 
-      if (strcmp(arg_name, "output") == 0 && strcmp(name, "image2d_to_buffer_float")) {
+      if (strcmp(arg_name, "output") == 0 && strcmp(name, "image2d_to_buffer_float") == 0) {
         cl_mem mem;
         memcpy(&mem, (void*)arg.data(), sizeof(mem));
         thneed->output = mem;

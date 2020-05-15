@@ -3,6 +3,8 @@ lenv = env.Clone()
 
 libs = [messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
 
+TEST_THNEED = False
+
 common_src = [
   "models/commonmodel.c",
   "runners/snpemodel.cc",
@@ -11,9 +13,10 @@ common_src = [
 
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'gnustl_shared']
-  common_src += ["thneed/thneed.cc"]
-  lenv['CFLAGS'].append("-DUSE_THNEED")
-  lenv['CXXFLAGS'].append("-DUSE_THNEED")
+  if not TEST_THNEED:
+    common_src += ["thneed/thneed.cc"]
+    lenv['CFLAGS'].append("-DUSE_THNEED")
+    lenv['CXXFLAGS'].append("-DUSE_THNEED")
 elif arch == "larch64":
   libs += ['gsl', 'CB', 'symphony-cpu', 'pthread']
 else:
@@ -37,7 +40,7 @@ lenv.Program('_modeld', [
     "models/driving.cc",
   ]+common, LIBS=libs)
 
-if False and arch == "aarch64":
+if TEST_THNEED:
   lenv.Program('thneed/_thneed', [
 #      "thneed/main.cc",
       "thneed/thneed.cc", "thneed/test.cc"

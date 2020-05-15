@@ -140,7 +140,7 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
         PrintErrorStringAndExit();
       }
       thneed = new Thneed();
-      thneed->record = 3;
+      //thneed->record = 3;
       if (!snpe->execute(inputMap, outputMap)) {
         PrintErrorStringAndExit();
       }
