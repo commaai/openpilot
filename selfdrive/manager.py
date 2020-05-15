@@ -236,7 +236,7 @@ car_started_processes = [
   'modeld',
   'proclogd',
   'ubloxd',
-  #'locationd',
+  'locationd',
 ]
 
 if WEBCAM:
