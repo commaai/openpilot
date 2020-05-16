@@ -135,18 +135,18 @@ Community Maintained Cars and Features
 | Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2019-20       | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Genesis   | G80 2018<sup>2</sup>          | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G90 2018<sup>2</sup>          | All               | Stock            | 0mph               | 0mph         |
-| GMC       | Acadia Denali 2018<sup>3</sup>| Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Genesis   | G90 2018                      | All               | Stock            | 0mph               | 0mph         |
+| GMC       | Acadia Denali 2018<sup>2</sup>| Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Hyundai   | Elantra 2017-19<sup>2</sup>   | SCC + LKAS        | Stock            | 19mph              | 34mph        |
 | Hyundai   | Genesis 2015-16<sup>2</sup>   | SCC + LKAS        | Stock            | 19mph              | 37mph        |
 | Hyundai   | Ioniq 2017<sup>2</sup>        | SCC + LKAS        | Stock            | 0mph               | 32mph        |
-| Hyundai   | Ioniq 2019 EV<sup>2</sup>     | SCC + LKAS        | Stock            | 0mph               | 32mph        |
+| Hyundai   | Ioniq 2019 Electric           | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Hyundai   | Kona 2017-19<sup>2</sup>      | SCC + LKAS        | Stock            | 22mph              | 0mph         |
 | Hyundai   | Kona 2019 EV<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Palisade 2020<sup>2</sup>     | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Santa Fe 2019<sup>2</sup>     | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Sonata 2020<sup>2</sup>       | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Santa Fe 2019                 | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata 2020                   | All               | Stock            | 0mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019           | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Kia       | Forte 2018<sup>2</sup>        | SCC + LKAS        | Stock            | 0mph               | 0mph         |
@@ -154,15 +154,14 @@ Community Maintained Cars and Features
 | Kia       | Optima 2019<sup>2</sup>       | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Nissan    | Leaf 2019                     | Propilot          | Stock            | 0mph               | 0mph         |
-| Nissan    | X-Trail 2018                  | Propilot          | Stock            | 0mph               | 0mph         |
+| Nissan    | Leaf 2019<sup>2</sup>         | Propilot          | Stock            | 0mph               | 0mph         |
+| Nissan    | X-Trail 2018<sup>2</sup>      | Propilot          | Stock            | 0mph               | 0mph         |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Impreza 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf 2015-19<sup>3</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
-<sup>2</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and open sourced [Hyundai giraffe](https://github.com/commaai/neo/tree/master/giraffe/hyundai), designed for the 2019 Sante Fe; pinout may differ for other Hyundai and Kia models. <br />
-<sup>3</sup>Requires a [custom connector](https://community.comma.ai/wiki/index.php/Volkswagen#Integration_at_R242_Camera) for the [car harness](https://comma.ai/shop/products/car-harness) <br />
+<sup>2</sup>May require a custom connector for the developer [car harness](https://comma.ai/shop/products/car-harness) <br />
 
 Although it's not upstream, there's a community of people getting openpilot to run on Tesla's [here](https://tinkla.us/)
 
