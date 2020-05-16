@@ -28,6 +28,7 @@ class ObservationKind:
   PSEUDORANGE = 22
   PSEUDORANGE_RATE = 23
   ECEF_VEL = 31
+  ECEF_ORIENTATION_FROM_GPS = 32
 
   ROAD_FRAME_XY_SPEED = 24  # (x, y) [m/s]
   ROAD_FRAME_YAW_RATE = 25  # [rad/s]

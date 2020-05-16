@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import math
-
 import numpy as np
 import sympy as sp
 
@@ -177,8 +175,18 @@ class Localizer():
     gps_est_error = np.sqrt((self.kf.x[0] - fix_ecef[0])**2 +
                             (self.kf.x[1] - fix_ecef[1])**2 +
                             (self.kf.x[2] - fix_ecef[2])**2)
-    if gps_est_error > 50:
-      cloudlog.error("Locationd vs ubloxLocation difference too large, kalman reset")
+
+    orientation_ecef = euler_from_quat(self.kf.x[States.ECEF_ORIENTATION])
+    orientation_ned = ned_euler_from_ecef(fix_ecef, orientation_ecef)
+    orientation_ned_gps = np.array([0, 0, np.radians(log.bearing)])
+    orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
+    if log.speed > 5 and np.linalg.norm(orientation_error) > 2:
+      cloudlog.error("Locationd vs ubloxLocation orientation difference too large, kalman reset")
+      self.reset_kalman(current_time)
+      initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(fix_ecef, orientation_ned_gps))
+      self.update_kalman(current_time, ObservationKind.ECEF_ORIENTATION_FROM_GPS, initial_pose_ecef_quat)
+    elif gps_est_error > 50:
+      cloudlog.error("Locationd vs ubloxLocation position difference too large, kalman reset")
       self.reset_kalman(current_time)
 
     self.update_kalman(current_time, ObservationKind.ECEF_POS, fix_ecef)

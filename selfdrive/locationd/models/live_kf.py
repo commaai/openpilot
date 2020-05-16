@@ -173,6 +173,7 @@ class LiveKalman():
 
     h_pos_sym = sp.Matrix([x, y, z])
     h_vel_sym = sp.Matrix([vx, vy, vz])
+    h_orientation_sym = q
     h_imu_frame_sym = sp.Matrix(imu_angles)
 
     h_relative_motion = sp.Matrix(quat_rot.T * v)
@@ -183,6 +184,7 @@ class LiveKalman():
                [h_acc_sym, ObservationKind.PHONE_ACCEL, None],
                [h_pos_sym, ObservationKind.ECEF_POS, None],
                [h_vel_sym, ObservationKind.ECEF_VEL, None],
+               [h_orientation_sym, ObservationKind.ECEF_ORIENTATION_FROM_GPS, None],
                [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
@@ -200,7 +202,8 @@ class LiveKalman():
                       ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
                       ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
-                      ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2])}
+                      ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2]),
+                      ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.1**2, .1**2, .1**2, .1**2])}
 
     # init filter
     self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err)
