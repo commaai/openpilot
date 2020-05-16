@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     bzip2 \
@@ -37,9 +37,7 @@ RUN apt-get update && apt-get install -y \
     opencl-headers \
     python-dev \
     python-pip \
-    screen \
     sudo \
-    vim \
     wget
 
 
