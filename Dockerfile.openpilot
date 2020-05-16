@@ -49,16 +49,13 @@ ENV LC_ALL en_US.UTF-8
 RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-RUN pyenv install 3.8.2
-RUN pyenv global 3.8.2
+RUN pyenv install 3.8.2 && pyenv global 3.8.2
 RUN pyenv rehash
 
 RUN pip install pipenv==2018.11.26
 
-COPY Pipfile /tmp/
-COPY Pipfile.lock /tmp/
+COPY Pipfile Pipfile.lock /tmp/
 
-RUN python --version
 RUN cd /tmp && pipenv install --system --deploy
 
 # Install subset of dev dependencies needed for CI
@@ -69,11 +66,7 @@ ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
 RUN mkdir -p /tmp/openpilot
 
-COPY ./flake8_openpilot.sh /tmp/openpilot/
-COPY ./pylint_openpilot.sh /tmp/openpilot/
-COPY ./.pylintrc /tmp/openpilot/
-
-COPY ./.coveragerc-app /tmp/openpilot/
+COPY ./flake8_openpilot.sh ./pylint_openpilot.sh ./.pylintrc ./.coveragerc-app /tmp/openpilot/
 
 COPY ./pyextra /tmp/openpilot/pyextra
 COPY ./phonelibs /tmp/openpilot/phonelibs
