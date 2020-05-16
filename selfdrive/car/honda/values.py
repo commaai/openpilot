@@ -439,10 +439,6 @@ FW_VERSIONS = {
       b'36161-TGL-G050\x00\x00',
       b'36161-TGG-A080\x00\x00',
     ],
-    (Ecu.unknown, 0x18daeff1, None): [
-      b'38897-TBA-A110\x00\x00',
-      b'38897-TBA-A020\x00\x00',
-    ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TBA-A110\x00\x00',
       b'38897-TBA-A020\x00\x00',
