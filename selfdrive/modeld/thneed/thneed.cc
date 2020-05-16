@@ -361,12 +361,12 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     global_work_offset, global_work_size, local_work_size,
     num_events_in_wait_list, event_wait_list, event);
 
-  uint64_t tb = nanos_since_boot();
+  /*uint64_t tb = nanos_since_boot();
   clWaitForEvents(1, event);
   uint64_t te = nanos_since_boot();
   if (thneed != NULL && thneed->record & 2) {
     printf("  wait %lu us\n", (te-tb)/1000);
-  }
+  }*/
 
   return ret;
 }
