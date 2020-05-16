@@ -951,16 +951,29 @@ void cameras_run(DualCameraState *s) {
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
   // TODO: implement autoexposure
-  struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, 0x7777}, // analog gain
+  FILE *evfile;
+  evfile = fopen("./exp", "r");
+  if (!evfile) {
+    struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, 0x7777}, // analog gain
                                                   // {0x3056, 0x0080}, // G1
                                                   // {0x3058, 0x012A}, // B
                                                   // {0x305A, 0x00A0}, // R
                                                   // {0x305C, 0x0080}, // G2
                                                   // {0x305E, 0x0080}, // global digi gain
                                                   {0x3012, 0x0312}}; // integ time
-
-  sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
+    sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                     CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  } else {
+    uint16_t A = 0;
+    uint16_t T = 0;
+    fscanf(evfile, "%x,", &A);
+    fscanf(evfile, "%x,", &T);
+    struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, A}, // analog gain
+                                                  {0x3012, T}}; // integ time
+    sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
+                    CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+    fclose(evfile);
+  }
 }
 
 #ifdef NOSCREEN
