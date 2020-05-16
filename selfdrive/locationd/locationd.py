@@ -180,7 +180,7 @@ class Localizer():
     orientation_ned = ned_euler_from_ecef(fix_ecef, orientation_ecef)
     orientation_ned_gps = np.array([0, 0, np.radians(log.bearing)])
     orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
-    if log.speed > 5 and np.linalg.norm(orientation_error) > 2:
+    if log.speed > 5 and np.linalg.norm(orientation_error) > 1:
       cloudlog.error("Locationd vs ubloxLocation orientation difference too large, kalman reset")
       self.reset_kalman(current_time)
       initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(fix_ecef, orientation_ned_gps))
