@@ -48,7 +48,6 @@ void sigpipe_handler(int sig) {
 
 void sensor_loop() {
   LOG("*** sensor loop");
-  MessageContext ctx;
   while (!do_exit) {
     PubMaster pm({"sensorEvents"});
 

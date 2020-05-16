@@ -90,52 +90,55 @@ int main(int argc, char *argv[]) {
   // Main loop
   int save_counter = 0;
   while (true){
-    sm.update(100);
-    for (auto &event : sm.allAliveAndValid()) {
-      localizer.handle_log(event);
+    if (sm.update(100) == 0) continue;
 
-      auto which = event.which();
-      if (which == cereal::Event::CONTROLS_STATE){
-        save_counter++;
+    if (sm.updated("controlsState")){
+      localizer.handle_log(sm["controlsState"]);
+      save_counter++;
 
-        double yaw_rate = -localizer.x[0];
-        bool valid = learner.update(yaw_rate, localizer.car_speed, localizer.steering_angle);
+      double yaw_rate = -localizer.x[0];
+      bool valid = learner.update(yaw_rate, localizer.car_speed, localizer.steering_angle);
 
-        double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
-        double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
+      double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
+      double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
 
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-        auto live_params = event.initLiveParameters();
-        live_params.setValid(valid);
-        live_params.setYawRate(localizer.x[0]);
-        live_params.setGyroBias(localizer.x[1]);
-        live_params.setAngleOffset(angle_offset_degrees);
-        live_params.setAngleOffsetAverage(angle_offset_average_degrees);
-        live_params.setStiffnessFactor(learner.x);
-        live_params.setSteerRatio(learner.sR);
+      capnp::MallocMessageBuilder msg;
+      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+      event.setLogMonoTime(nanos_since_boot());
+      auto live_params = event.initLiveParameters();
+      live_params.setValid(valid);
+      live_params.setYawRate(localizer.x[0]);
+      live_params.setGyroBias(localizer.x[1]);
+      live_params.setAngleOffset(angle_offset_degrees);
+      live_params.setAngleOffsetAverage(angle_offset_average_degrees);
+      live_params.setStiffnessFactor(learner.x);
+      live_params.setSteerRatio(learner.sR);
 
-        pm.send("liveParameters", msg);
+      pm.send("liveParameters", msg);
 
-        // Save parameters every minute
-        if (save_counter % 6000 == 0) {
-          json11::Json json = json11::Json::object {
-                                                    {"carVin", vin},
-                                                    {"carFingerprint", fingerprint},
-                                                    {"steerRatio", learner.sR},
-                                                    {"stiffnessFactor", learner.x},
-                                                    {"angleOffsetAverage", angle_offset_average_degrees},
-          };
+      // Save parameters every minute
+      if (save_counter % 6000 == 0) {
+        json11::Json json = json11::Json::object {
+                                                  {"carVin", vin},
+                                                  {"carFingerprint", fingerprint},
+                                                  {"steerRatio", learner.sR},
+                                                  {"stiffnessFactor", learner.x},
+                                                  {"angleOffsetAverage", angle_offset_average_degrees},
+        };
 
-          std::string out = json.dump();
-          std::async(std::launch::async,
-                     [out]{
-                       write_db_value("LiveParameters", out.c_str(), out.length());
-                     });
-        }
+        std::string out = json.dump();
+        std::async(std::launch::async,
+                    [out]{
+                      write_db_value("LiveParameters", out.c_str(), out.length());
+                    });
       }
     }
+    if (sm.updated("sensorEvents")){
+      localizer.handle_log(sm["sensorEvents"]);
+    }
+    if (sm.updated("cameraOdometry")){
+      localizer.handle_log(sm["cameraOdometry"]);
+    } 
   }
   return 0;
 }

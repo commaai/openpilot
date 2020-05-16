@@ -30,7 +30,7 @@ struct ProcCache {
 
 int main() {
   int err;
-  PubMessage publisher(NULL, "procLog");
+  PubMaster publisher({"procLog"});
 
   double jiffy = sysconf(_SC_CLK_TCK);
   size_t page_size = sysconf(_SC_PAGE_SIZE);
@@ -225,7 +225,7 @@ int main() {
       }
     }
 
-    publisher.send(msg);
+    publisher.send("procLog", msg);
 
     usleep(2000000); // 2 secs
   }

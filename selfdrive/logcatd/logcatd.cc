@@ -25,7 +25,7 @@ int main() {
   assert(crash_logger);
   struct logger *kernel_logger = android_logger_open(logger_list, (log_id_t)5); // LOG_ID_KERNEL
   assert(kernel_logger);
-  PubMessage pm(NULL, "androidLog");
+  PubMaster pm({"androidLog"});
 
   while (1) {
     log_msg log_msg;
@@ -52,7 +52,7 @@ int main() {
     androidEntry.setTag(entry.tag);
     androidEntry.setMessage(entry.message);
 
-    pm.send(msg);
+    pm.send("androidLog", msg);
   }
 
   android_logger_list_close(logger_list);
