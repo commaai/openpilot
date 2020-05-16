@@ -364,6 +364,8 @@ class Controls:
 
     if angle_control_saturated and not CS.steeringPressed and self.active:
       self.saturated_count += 1
+    else:
+      self.saturated_count = 0
 
     # Send a "steering required alert" if saturation count has reached the limit
     if (lac_log.saturated and not CS.steeringPressed) or \
