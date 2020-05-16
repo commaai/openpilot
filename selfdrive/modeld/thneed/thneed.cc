@@ -177,9 +177,14 @@ void Thneed::stop() {
   record = 0;
 }
 
+#define TIMING
 //#define SAVE_LOG
 
 void Thneed::execute(float **finputs, float *foutput) {
+  #ifdef TIMING
+    uint64_t tb = nanos_since_boot();
+  #endif
+
   #ifdef SAVE_LOG
     char fn[0x100];
     snprintf(fn, sizeof(fn), "/tmp/thneed_log_%d", timestamp);
@@ -197,7 +202,7 @@ void Thneed::execute(float **finputs, float *foutput) {
     #endif
 
     if (record & 2) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
-    clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
+    //clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
 
   // ****** set power constraint
@@ -221,7 +226,8 @@ void Thneed::execute(float **finputs, float *foutput) {
   int i = 0;
   for (auto it = cmds.begin(); it != cmds.end(); ++it) {
     if (record & 2) printf("run %2d: ", i);
-    (*it)->exec((++i) == cmds.size());
+    //(*it)->exec((++i) == cmds.size());
+    (*it)->exec(true);
   }
 
   // ****** sync objects
@@ -255,6 +261,11 @@ void Thneed::execute(float **finputs, float *foutput) {
 
   ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
   assert(ret == 0);
+
+  #ifdef TIMING
+    uint64_t te = nanos_since_boot();
+    printf("model exec in %lu ms\n", (te-tb)/1000);
+  #endif
 }
 
 cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;
@@ -311,10 +322,15 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
       }
     }
   }
-
+  if (thneed != NULL && thneed->record & 2) {
+    printf("%p %56s -- ", kernel, name);
+    for (int i = 0; i < work_dim; i++) {
+      printf("%4zu ", global_work_size[i]);
+    }
+    printf("\n");
+  }
   if (thneed != NULL && thneed->record & 4) {
     // extreme debug
-    printf("%s -- %p\n", name, kernel);
     for (int i = 0; i < num_args; i++) {
       char arg_type[0x100];
       char arg_name[0x100];
