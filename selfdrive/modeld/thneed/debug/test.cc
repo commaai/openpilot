@@ -91,6 +91,7 @@ int main(int argc, char* argv[]) {
     t->execute(inputs, output);
     hexdump((uint32_t *)output, 0x100);
     if (memcmp(golden, output, OUTPUT_SIZE * sizeof(float)) != 0) { printf("FAILURE\n"); return -1; }
+    break;
   }
 
   printf("************** execute done **************\n");

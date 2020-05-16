@@ -352,6 +352,17 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
       } else if (arg_size == 8) {
         cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
         printf(" = %p", val);
+        if (strcmp("image2d_t", arg_type) == 0 || strcmp("image1d_t", arg_type) == 0) {
+          size_t width, height, row_pitch;
+          clGetImageInfo(val, CL_IMAGE_WIDTH, sizeof(width), &width, NULL);
+          clGetImageInfo(val, CL_IMAGE_HEIGHT, sizeof(height), &height, NULL);
+          clGetImageInfo(val, CL_IMAGE_ROW_PITCH, sizeof(row_pitch), &row_pitch, NULL);
+          printf(" image %zu x %zu rp %zu", width, height, row_pitch);
+        } else {
+          size_t sz;
+          clGetMemObjectInfo(val, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+          printf(" buffer %zu", sz);
+        }
       }
       printf("\n");
     }
