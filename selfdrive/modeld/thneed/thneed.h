@@ -20,6 +20,7 @@ class CachedCommand {
   public:
     CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd);
     void exec(bool wait);
+    void disassemble();
   private:
     struct kgsl_gpu_command cache;
     struct kgsl_command_object cmds[2];
