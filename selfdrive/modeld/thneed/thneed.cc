@@ -46,7 +46,8 @@ int ioctl(int filedes, unsigned long request, void *argp) {
         thneed->cmds.push_back(ccmd);
       }
       if (thneed->record & 2) {
-        printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
+        printf("IOCTL_KGSL_GPU_COMMAND(%2zu): flags: 0x%lx    context_id: %u  timestamp: %u\n",
+            thneed->cmds.size(),
             cmd->flags,
             cmd->context_id, cmd->timestamp);
       }
@@ -177,13 +178,11 @@ void Thneed::stop() {
   record = 0;
 }
 
-#define TIMING
 //#define SAVE_LOG
 
-void Thneed::execute(float **finputs, float *foutput) {
-  #ifdef TIMING
-    uint64_t tb = nanos_since_boot();
-  #endif
+void Thneed::execute(float **finputs, float *foutput, bool slow) {
+  uint64_t tb, te;
+  if (record & 2) tb = nanos_since_boot();
 
   #ifdef SAVE_LOG
     char fn[0x100];
@@ -225,9 +224,9 @@ void Thneed::execute(float **finputs, float *foutput) {
   // ****** run commands
   int i = 0;
   for (auto it = cmds.begin(); it != cmds.end(); ++it) {
+    ++i;
     if (record & 2) printf("run %2d: ", i);
-    //(*it)->exec((++i) == cmds.size());
-    (*it)->exec(true);
+    (*it)->exec((i == cmds.size()) || slow);
   }
 
   // ****** sync objects
@@ -262,10 +261,10 @@ void Thneed::execute(float **finputs, float *foutput) {
   ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
   assert(ret == 0);
 
-  #ifdef TIMING
-    uint64_t te = nanos_since_boot();
+  if (record & 2) {
+    te = nanos_since_boot();
     printf("model exec in %lu ms\n", (te-tb)/1000);
-  #endif
+  }
 }
 
 cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;

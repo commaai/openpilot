@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
   printf("************** execute 4 **************\n");
   memset(output, 0, OUTPUT_SIZE * sizeof(float));
   //t->record = 2;  // debug print w/o record
-  t->execute(inputs, output);
+  t->execute(inputs, output, true);
   hexdump((uint32_t *)output, 0x100);
   if (memcmp(golden, output, OUTPUT_SIZE * sizeof(float)) != 0) { printf("FAILURE\n"); return -1; }
 

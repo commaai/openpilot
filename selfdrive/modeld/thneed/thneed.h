@@ -31,7 +31,7 @@ class Thneed {
   public:
     Thneed();
     void stop();
-    void execute(float **finputs, float *foutput);
+    void execute(float **finputs, float *foutput, bool slow=false);
 
     std::vector<cl_mem> inputs;
     cl_mem output;
