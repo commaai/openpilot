@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
   printf("************** execute 2 **************\n");
   memset(output, 0, OUTPUT_SIZE * sizeof(float));
   Thneed *t = new Thneed();
-  t->record = 3;  // debug print with record
+  t->record = 7;  // debug print with record
   mdl.execute(input, 0);
   t->stop();
   hexdump((uint32_t *)output, 0x100);

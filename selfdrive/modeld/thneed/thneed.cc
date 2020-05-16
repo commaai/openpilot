@@ -263,7 +263,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 
   if (record & 2) {
     te = nanos_since_boot();
-    printf("model exec in %lu ms\n", (te-tb)/1000);
+    printf("model exec in %lu us\n", (te-tb)/1000);
   }
 }
 
@@ -360,8 +360,40 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   cl_int ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
     global_work_offset, global_work_size, local_work_size,
     num_events_in_wait_list, event_wait_list, event);
+
+  uint64_t tb = nanos_since_boot();
+  clWaitForEvents(1, event);
+  uint64_t te = nanos_since_boot();
+  if (thneed != NULL && thneed->record & 2) {
+    printf("  wait %lu us\n", (te-tb)/1000);
+  }
+
   return ret;
 }
+
+#define SAVE_KERNELS
+
+cl_program (*my_clCreateProgramWithSource)(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) = NULL;
+cl_program clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
+  if (my_clCreateProgramWithSource == NULL) my_clCreateProgramWithSource = reinterpret_cast<decltype(my_clCreateProgramWithSource)>(dlsym(RTLD_NEXT, "REAL_clCreateProgramWithSource"));
+
+#ifdef SAVE_KERNELS
+  static FILE *kernel_f = NULL;
+  if (kernel_f == NULL) {
+    kernel_f = fopen("/tmp/kernels.cl", "w");
+  }
+
+  fprintf(kernel_f, "/* ************************ PROGRAM BREAK ****************************/\n");
+  for (int i = 0; i < count; i++) {
+    fprintf(kernel_f, "%s\n", strings[i]);
+    if (i != 0) fprintf(kernel_f, "/* ************************ SECTION BREAK ****************************/\n");
+  }
+  fflush(kernel_f);
+#endif
+
+  return my_clCreateProgramWithSource(context, count, strings, lengths, errcode_ret);
+}
+
 
 void *dlsym(void *handle, const char *symbol) {
   void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
@@ -371,6 +403,8 @@ void *dlsym(void *handle, const char *symbol) {
     return (void*)clEnqueueNDRangeKernel;
   } else if (strcmp("clSetKernelArg", symbol) == 0) {
     return (void*)clSetKernelArg;
+  } else if (strcmp("clCreateProgramWithSource", symbol) == 0) {
+    return (void*)clCreateProgramWithSource;
   } else {
     return my_dlsym(handle, symbol);
   }
