@@ -274,7 +274,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30B0, 0x0800}, // DIGITAL_TEST
   {0x30A2, 0x0001}, // X_ODD_INC_
   {0x30A6, 0x0001}, // Y_ODD_INC_
-  {0x3040, 0x0000}, // READ_MODE C000?
+  {0x3040, 0xC000}, // READ_MODE
   {0x30BA, 0x11F2}, // DIGITAL_CTRL
   {0x3044, 0x0400}, // DARK_CONTROL
   {0x3064, 0x1802}, // SMIA_TEST
