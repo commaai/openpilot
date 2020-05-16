@@ -27,11 +27,10 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]['RR'] * CV.KPH_TO_MS
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < .1
 
     # Match panda speed reading
-    speed_kph = (cp.vl["WHEEL_SPEEDS"]['FL'] + cp.vl["WHEEL_SPEEDS"]['FR'] +
-                cp.vl["WHEEL_SPEEDS"]['RL'] + cp.vl["WHEEL_SPEEDS"]['RR']) / 4
+    speed_kph = cp.vl["ENGINE_DATA"]['SPEED']
+    ret.standstill = speed_kph < .1
 
     can_gear = int(cp.vl["GEAR"]['GEAR'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
@@ -149,6 +148,7 @@ class CarState(CarStateBase):
         ("BL", "DOORS", 0),
         ("BR", "DOORS", 0),
         ("PEDAL_GAS", "ENGINE_DATA", 0),
+        ("SPEED", "ENGINE_DATA", 0),
         ("RES", "CRZ_BTNS", 0),
         ("SET_P", "CRZ_BTNS", 0),
         ("SET_M", "CRZ_BTNS", 0),
