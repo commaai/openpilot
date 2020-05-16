@@ -166,9 +166,12 @@ class Localizer():
     #    self.observation_buffer.pop(0)
 
   def handle_gps(self, current_time, log):
+    # validity flag seems broken, this is the best proxy
+    if log.verticalAccuracy > 100:
+      return
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
     fix_ecef = self.converter.ned2ecef([0, 0, 0])
-    vel_ecef = self.converter.ned2ecef_matrix.dot(np.array(log.vNED))
+    ecef_vel = self.converter.ned2ecef_matrix.dot(np.array(log.vNED))
 
     #self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
     self.unix_timestamp_millis = log.timestamp
@@ -180,7 +183,7 @@ class Localizer():
     orientation_ned = ned_euler_from_ecef(fix_ecef, orientation_ecef)
     orientation_ned_gps = np.array([0, 0, np.radians(log.bearing)])
     orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
-    if log.speed > 5 and np.linalg.norm(orientation_error) > 1:
+    if np.linalg.norm(ecef_vel) > 5 and np.linalg.norm(orientation_error) > 1:
       cloudlog.error("Locationd vs ubloxLocation orientation difference too large, kalman reset")
       self.reset_kalman(current_time)
       initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(fix_ecef, orientation_ned_gps))
@@ -190,7 +193,9 @@ class Localizer():
       self.reset_kalman(current_time)
 
     self.update_kalman(current_time, ObservationKind.ECEF_POS, fix_ecef)
-    self.update_kalman(current_time, ObservationKind.ECEF_VEL, vel_ecef)
+    if np.linalg.norm(ecef_vel) > .1:
+      self.update_kalman(current_time, ObservationKind.ECEF_VEL, ecef_vel)
+    #print(vel_ecef, self.kf.x[7:10])
 
   def handle_car_state(self, current_time, log):
     self.speed_counter += 1
@@ -255,7 +260,8 @@ class Localizer():
 
 def locationd_thread(sm, pm, disabled_logs=[]):
   if sm is None:
-    sm = messaging.SubMaster(['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration'])
+    socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration']
+    sm = messaging.SubMaster(socks)
   if pm is None:
     pm = messaging.PubMaster(['liveLocationKalman'])
 
