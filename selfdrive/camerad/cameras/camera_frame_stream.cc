@@ -49,15 +49,15 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps) {
 
 void run_frame_stream(DualCameraState *s) {
   int err;
-  SubMessage frame_sock("frame");
+  SubMaster sm({"frame"});
 
   CameraState *const rear_camera = &s->rear;
   auto *tb = &rear_camera->camera_tb;
 
   while (!do_exit) {
-    auto pevent = frame_sock.receive();
-    if (!pevent) { continue; }
-    auto frame = pevent->getFrame();
+    if (sm.update(1000) == 0) continue;
+
+    auto frame = sm["frame"];
 
     const int buf_idx = tbuffer_select(tb);
     rear_camera->camera_bufs_metadata[buf_idx] = {

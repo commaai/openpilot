@@ -532,22 +532,20 @@ void can_health(PubMaster &pm) {
 }
 
 
-void can_send(SubMessage &subscriber) {
+void can_send(cereal::Event::Reader &event) {
   int err;
   // recv from sendcan
-  auto pevent = subscriber.receive();
-  if (!pevent){ return; }
-  if (nanos_since_boot() - pevent->getLogMonoTime() > 1e9) {
+  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
     return;
   }
-  int msg_count = pevent->getSendcan().size();
+  int msg_count = event.getSendcan().size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
-    auto cmsg = pevent->getSendcan()[i];
+    auto cmsg = event.getSendcan()[i];
     if (cmsg.getAddress() >= 0x800) {
       // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
@@ -589,13 +587,15 @@ void can_send(SubMessage &subscriber) {
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
-  SubMessage subscriber("sendcan");
+  SubMaster sm({"sendcan"});
 
   // drain sendcan to delete any stale messages from previous runs
-  while (subscriber.receive(true) != NULL){}
+  sm.drain();
   // run as fast as messages come in
   while (!do_exit) {
-    can_send(subscriber);
+    if (sm.update(1000) > 0){
+      can_send(sm["sendcan"]);
+    }
   }
   
   return NULL;
@@ -664,31 +664,29 @@ void *hardware_control_thread(void *crap) {
   while (!do_exit) {
     cnt++;
     sm.update(1000);
-    for (auto &event : sm.allAliveAndValid()) {
-      auto type = event.which();
-      if(type == cereal::Event::THERMAL){
-        uint16_t fan_speed = event.getThermal().getFanSpeed();
-        if (fan_speed != prev_fan_speed || cnt % 100 == 0){
-          pthread_mutex_lock(&usb_lock);
-          libusb_control_transfer(dev_handle, 0x40, 0xb1, fan_speed, 0, NULL, 0, TIMEOUT);
-          pthread_mutex_unlock(&usb_lock);
+    if (sm.updated("thermal")){
+      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
+      if (fan_speed != prev_fan_speed || cnt % 100 == 0){
+        pthread_mutex_lock(&usb_lock);
+        libusb_control_transfer(dev_handle, 0x40, 0xb1, fan_speed, 0, NULL, 0, TIMEOUT);
+        pthread_mutex_unlock(&usb_lock);
 
-          prev_fan_speed = fan_speed;
-        }
-      } else if (type == cereal::Event::FRONT_FRAME){
-        float cur_front_gain = event.getFrontFrame().getGainFrac();
-        last_front_frame_t = event.getLogMonoTime();
-
-        if (cur_front_gain <= CUTOFF_GAIN) {
-          ir_pwr = 100.0 * MIN_IR_POWER;
-        } else if (cur_front_gain > SATURATE_GAIN) {
-          ir_pwr = 100.0 * MAX_IR_POWER;
-        } else {
-          ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
-        }
+        prev_fan_speed = fan_speed;
       }
     }
+    if (sm.updated("frontFrame")){
+      auto event = sm["frontFrame"];
+      float cur_front_gain = event.getFrontFrame().getGainFrac();
+      last_front_frame_t = event.getLogMonoTime();
 
+      if (cur_front_gain <= CUTOFF_GAIN) {
+        ir_pwr = 100.0 * MIN_IR_POWER;
+      } else if (cur_front_gain > SATURATE_GAIN) {
+        ir_pwr = 100.0 * MAX_IR_POWER;
+      } else {
+        ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
+      }
+    }
     // Disable ir_pwr on front frame timeout
     uint64_t cur_t = nanos_since_boot();
     if (cur_t - last_front_frame_t > 1e9){

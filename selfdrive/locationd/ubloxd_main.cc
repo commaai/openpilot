@@ -40,11 +40,9 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
   while (!do_exit) {
-    sm.update(ZMQ_POLL_TIMEOUT);
-    auto events = sm.allAliveAndValid();
-    if (events.size() == 0) continue;
+    if (sm.update(ZMQ_POLL_TIMEOUT) == 0) continue;
 
-    auto ubloxRaw = events[0].getUbloxRaw();
+    auto ubloxRaw = sm["ubloxRaw"].getUbloxRaw();
     const uint8_t *data = ubloxRaw.begin();
     size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;

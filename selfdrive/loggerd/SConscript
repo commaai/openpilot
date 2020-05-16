@@ -1,4 +1,4 @@
-Import('env', 'arch', 'cereak', 'messaging', 'common', 'visionipc')
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
 
 src = ['loggerd.cc', 'logger.cc']
 libs = ['zmq', 'czmq', 'capnp', 'kj', 'z',

@@ -155,8 +155,7 @@ void* frontview_thread(void *arg) {
   set_thread_name("frontview");
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  SubMessage monitoring_sm("driverState", "127.0.0.1", true);
-  SubMessage dmonstate_sm("dMonitoringState", "127.0.0.1", true);
+  SubMaster sm({"driverState", "dMonitoringState"}, "127.0.0.1", true);
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -200,19 +199,16 @@ void* frontview_thread(void *arg) {
     tbuffer_release(&s->cameras.front.camera_tb, buf_idx);
     visionbuf_sync(&s->rgb_front_bufs[ui_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
+    sm.update(0);
     // no more check after gps check
-    if (!s->rhd_front_checked) {
-      auto pevent = dmonstate_sm.receive(true);
-      if (pevent != NULL) {
-        auto state = pevent->getDMonitoringState();
-        s->rhd_front = state.getIsRHD();
-        s->rhd_front_checked = state.getRhdChecked();
-      }
+    if (!s->rhd_front_checked && sm.updated("dMonitoringState")) {
+      auto state = sm["dMonitoringState"].getDMonitoringState();
+      s->rhd_front = state.getIsRHD();
+      s->rhd_front_checked = state.getRhdChecked();
     }
 
-    auto pevent = monitoring_sm.receive(true);
-    if (pevent != NULL) {
-      auto state = pevent->getDriverState();
+    if (sm.updated("driverState")) {
+      auto state = sm["driverState"].getDriverState();
       float face_prob = state.getFaceProb();
       float face_position[2];
       face_position[0] = state.getFacePosition()[0];
@@ -225,7 +221,7 @@ void* frontview_thread(void *arg) {
         s->front_meteringbox_xmax = x_offset + (face_position[0] + 0.5) * (0.5 * s->rgb_front_height) + 72;
         s->front_meteringbox_ymin = (face_position[1] + 0.5) * (s->rgb_front_height) - 72;
         s->front_meteringbox_ymax = (face_position[1] + 0.5) * (s->rgb_front_height) + 72;
-      }else {// use default setting if no face
+      } else {// use default setting if no face
         s->front_meteringbox_ymin = s->rgb_front_height * 1 / 3;
         s->front_meteringbox_ymax = s->rgb_front_height * 1;
         s->front_meteringbox_xmin = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
