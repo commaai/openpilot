@@ -164,7 +164,7 @@ def below_steer_speed_alert(CP, sm, metric):
     "TAKE CONTROL",
     "Steer Unavailable Below %d %s" % (speed, unit),
     AlertStatus.userPrompt, AlertSize.mid,
-    Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3),
+    Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3)
 
 def calibration_incomplete_alert(CP, sm, metric):
   speed = int(Filter.MIN_SPEED * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
@@ -173,7 +173,7 @@ def calibration_incomplete_alert(CP, sm, metric):
     "Calibration in Progress: %d" % sm['liveCalibration'].calPerc,
     "Drive Above %d %s" % (speed, unit),
     AlertStatus.normal, AlertSize.mid,
-    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
 
 EVENTS = {
   # ********** events with no alerts **********
