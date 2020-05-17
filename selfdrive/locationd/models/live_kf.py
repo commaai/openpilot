@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
+
 import sys
 
 import numpy as np
 import sympy as sp
 
 from selfdrive.locationd.models.constants import ObservationKind
-from rednose.helpers import KalmanError
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
 
@@ -232,17 +232,21 @@ class LiveKalman():
       P = self.filter.covs()
     self.filter.init_state(state, P, filter_time)
 
-  def predict_and_observe(self, t, kind, data):
-    if len(data) > 0:
-      data = np.atleast_2d(data)
+  def predict_and_observe(self, t, kind, meas, R=None):
+    if len(meas) > 0:
+      meas = np.atleast_2d(meas)
     if kind == ObservationKind.CAMERA_ODO_TRANSLATION:
-      r = self.predict_and_update_odo_trans(data, t, kind)
+      r = self.predict_and_update_odo_trans(meas, t, kind)
     elif kind == ObservationKind.CAMERA_ODO_ROTATION:
-      r = self.predict_and_update_odo_rot(data, t, kind)
+      r = self.predict_and_update_odo_rot(meas, t, kind)
     elif kind == ObservationKind.ODOMETRIC_SPEED:
-      r = self.predict_and_update_odo_speed(data, t, kind)
+      r = self.predict_and_update_odo_speed(meas, t, kind)
     else:
-      r = self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
+      if R is None:
+        R = self.get_R(kind, len(meas))
+      elif len(R.shape) == 2:
+        R = R[None]
+      r = self.filter.predict_and_update_batch(t, kind, meas, R)
 
     # Normalize quats
     quat_norm = np.linalg.norm(self.filter.x[3:7, 0])

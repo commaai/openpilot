@@ -4,11 +4,11 @@ import sympy as sp
 
 import cereal.messaging as messaging
 import common.transformations.coordinates as coord
-from common.transformations.orientation import (ecef_euler_from_ned,
-                                                euler_from_quat,
-                                                ned_euler_from_ecef,
-                                                quat_from_euler,
-                                                rot_from_quat, rot_from_euler)
+from common.transformations.orientation import ecef_euler_from_ned, \
+                                               euler_from_quat, \
+                                               ned_euler_from_ecef, \
+                                               quat_from_euler, \
+                                               rot_from_quat, rot_from_euler
 from rednose.helpers import KalmanError
 from selfdrive.locationd.models.live_kf import LiveKalman, States, ObservationKind
 from selfdrive.locationd.models.constants import GENERATED_DIR
@@ -153,9 +153,9 @@ class Localizer():
       fix.status = 'uninitialized'
     return fix
 
-  def update_kalman(self, time, kind, meas):
+  def update_kalman(self, time, kind, meas, R=None):
     try:
-      self.kf.predict_and_observe(time, kind, meas)
+      self.kf.predict_and_observe(time, kind, meas, R=R)
     except KalmanError:
       cloudlog.error("Error in predict and observe, kalman reset")
       self.reset_kalman()
@@ -166,36 +166,37 @@ class Localizer():
     #    self.observation_buffer.pop(0)
 
   def handle_gps(self, current_time, log):
-    # validity flag seems broken, this is the best proxy
-    if log.verticalAccuracy > 100:
+    # ignore the message if the fix is invalid
+    if log.flags % 2 == 0:
       return
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
-    fix_ecef = self.converter.ned2ecef([0, 0, 0])
+    ecef_pos = self.converter.ned2ecef([0, 0, 0])
     ecef_vel = self.converter.ned2ecef_matrix.dot(np.array(log.vNED))
+    ecef_pos_R = np.diag([(3*log.verticalAccuracy)**2]*3)
+    ecef_vel_R = np.diag([(log.speedAccuracy)**2]*3)
+
 
     #self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
     self.unix_timestamp_millis = log.timestamp
-    gps_est_error = np.sqrt((self.kf.x[0] - fix_ecef[0])**2 +
-                            (self.kf.x[1] - fix_ecef[1])**2 +
-                            (self.kf.x[2] - fix_ecef[2])**2)
+    gps_est_error = np.sqrt((self.kf.x[0] - ecef_pos[0])**2 +
+                            (self.kf.x[1] - ecef_pos[1])**2 +
+                            (self.kf.x[2] - ecef_pos[2])**2)
 
     orientation_ecef = euler_from_quat(self.kf.x[States.ECEF_ORIENTATION])
-    orientation_ned = ned_euler_from_ecef(fix_ecef, orientation_ecef)
+    orientation_ned = ned_euler_from_ecef(ecef_pos, orientation_ecef)
     orientation_ned_gps = np.array([0, 0, np.radians(log.bearing)])
     orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
     if np.linalg.norm(ecef_vel) > 5 and np.linalg.norm(orientation_error) > 1:
       cloudlog.error("Locationd vs ubloxLocation orientation difference too large, kalman reset")
-      self.reset_kalman(current_time)
-      initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(fix_ecef, orientation_ned_gps))
+      self.reset_kalman()
+      initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(ecef_pos, orientation_ned_gps))
       self.update_kalman(current_time, ObservationKind.ECEF_ORIENTATION_FROM_GPS, initial_pose_ecef_quat)
     elif gps_est_error > 50:
       cloudlog.error("Locationd vs ubloxLocation position difference too large, kalman reset")
-      self.reset_kalman(current_time)
+      self.reset_kalman()
 
-    self.update_kalman(current_time, ObservationKind.ECEF_POS, fix_ecef)
-    if np.linalg.norm(ecef_vel) > .1:
-      self.update_kalman(current_time, ObservationKind.ECEF_VEL, ecef_vel)
-    #print(vel_ecef, self.kf.x[7:10])
+    self.update_kalman(current_time, ObservationKind.ECEF_POS, ecef_pos, R=ecef_pos_R)
+    self.update_kalman(current_time, ObservationKind.ECEF_VEL, ecef_vel, R=ecef_vel_R)
 
   def handle_car_state(self, current_time, log):
     self.speed_counter += 1
@@ -227,10 +228,6 @@ class Localizer():
       if sensor_reading.sensor == 5 and sensor_reading.type == 16:
         self.gyro_counter += 1
         if self.gyro_counter % SENSOR_DECIMATION == 0:
-          if max(abs(self.kf.x[States.IMU_OFFSET])) > 0.07:
-            cloudlog.info('imu frame angles exceeded, correcting')
-            self.update_kalman(current_time, ObservationKind.IMU_FRAME, [0, 0, 0])
-
           v = sensor_reading.gyroUncalibrated.v
           self.update_kalman(current_time, ObservationKind.PHONE_GYRO, [-v[2], -v[1], -v[0]])
 
@@ -249,7 +246,8 @@ class Localizer():
 
   def reset_kalman(self, current_time=None):
     self.filter_time = current_time
-    self.kf.init_state(self.kf.x, covs=np.diag(LiveKalman.initial_P_diag), filter_time=current_time)
+    self.kf.init_state(LiveKalman.initial_x, covs=np.diag(LiveKalman.initial_P_diag), filter_time=current_time)
+
     self.observation_buffer = []
 
     self.gyro_counter = 0
