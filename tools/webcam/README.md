@@ -40,9 +40,9 @@ touch prebuilt
 ## GO  
 ```
 cd ~/openpilot/tools/webcam  
-./accept_terms.py # accept the user terms so that thermald can detect the car started  
+python accept_terms.py # accept the user terms so that thermald can detect the car started  
 cd ~/openpilot/selfdrive  
-PASSIVE=0 NOSENSOR=1 WEBCAM=1 ./manager.py  
+PASSIVE=0 NOSENSOR=1 WEBCAM=1 python manager.py  
 ```
 - Start the car, then the UI should show the road webcam's view  
 - Adjust and secure the webcams (you can run tools/webcam/front_mount_helper.py to help mount the driver camera)  
