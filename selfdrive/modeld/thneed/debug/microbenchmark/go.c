@@ -4,6 +4,14 @@
 #include <time.h>
 
 /*
+block7b_project_conv (Conv2D)   (None, 8, 16, 352)   743424      block7b_activation[0][0]
+8448*8*4 = 8*16*2112 = 270336 = input = 128*2112
+2112*88*4 = 743424 = weights = 2112*352
+1408*8*4 = 8*16*352 = 45056 = output = 128*352
+
+FLOPS = 128*2112*352 = 95158272 = 95 MFLOPS
+RAM = 128*2112 + 2112*352 + 128*352 = 1058816 = 1 M accesses
+
 0x7f7e8a6380                 convolution_horizontal_reduced_reads_1x1 --   88    4    8  --    4    4    8
   image2d_t input = 0x7f7f490b00 image 8448 x 8 rp 67840
   short startPackedInputChannel = 0
@@ -165,7 +173,13 @@ int main(int argc, char *argv[]) {
     uint64_t tb = nanos_since_boot();
     clWaitForEvents(1, &event);
     uint64_t te = nanos_since_boot();
-    printf("%2d: wait %lu us\n", i, (te-tb)/1000);
+    uint64_t us = (te-tb)/1000;
+
+    float s = 1000000.0/us;
+    float flops = 95158272.0*s;
+    float rams = 1058816.0*s;
+
+    printf("%2d: wait %lu us -- %.2f GFLOPS -- %.2f GB/s\n", i, us, flops/1e9, rams*2/1e9);
   }
 
   return 0;
