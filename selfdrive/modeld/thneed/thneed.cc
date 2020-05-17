@@ -226,20 +226,35 @@ void CachedCommand::disassemble() {
     if (pkttype == 7) {
       switch (cp_type7_opcode(src[i])) {
         case CP_LOAD_STATE:
-          int sz = (src[i+1] & 0xffc00000) >> 22;
+          int dst_off = src[i+1] & 0x1FFF;
+          int state_src = (src[i+1] >> 16) & 3;
+          int state_block = (src[i+1] >> 18) & 7;
+          int state_type = src[i+2] & 3;
+          int num_unit = (src[i+1] & 0xffc00000) >> 22;
+          printf("  dst_off: %x  state_src: %d  state_block: %d  state_type: %d  num_unit: %d\n",
+              dst_off, state_src, state_block, state_type, num_unit);
           addr = (uint64_t)(src[i+2] & 0xfffffffc) | ((uint64_t)(src[i+3]) << 32);
-          hexdump((uint32_t *)addr, sz*4);
+          if (state_block == 5 && state_type == 0) {
+            hexdump((uint32_t *)addr, num_unit*8*16);
+            char fn[0x100];
+            snprintf(fn, sizeof(fn), "/tmp/0x%lx.shader", addr);
+            FILE *f = fopen(fn, "wb");
+            // groups of 16 instructions
+            fwrite((void*)addr, 1, num_unit*8*16, f);
+            fclose(f);
+          }
           break;
       }
     }
-    if (pkttype == 4) {
+
+    /*if (pkttype == 4) {
       switch (cp_type4_base_index_one_reg_wr(src[i])) {
         case REG_A5XX_SP_CS_CTRL_REG0:
           addr = (uint64_t)(src[i+4] & 0xfffffffc) | ((uint64_t)(src[i+5]) << 32);
-          hexdump((uint32_t *)addr, 0x100);
+          hexdump((uint32_t *)addr, 0x1000);
           break;
       }
-    }
+    }*/
 
     /*if (pkttype == 4 && cp_type4_base_index_one_reg_wr(src[i]) == REG_A5XX_TPL1_CS_TEX_CONST_LO) {
       uint64_t addr = (uint64_t)(src[i+1] & 0xffffffff) | ((uint64_t)(src[i+2]) << 32);
