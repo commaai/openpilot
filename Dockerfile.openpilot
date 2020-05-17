@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     curl \
     ffmpeg \
+    git \
     libarchive-dev \
     libbz2-dev \
     libcurl4-openssl-dev \
@@ -37,7 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-dev \
     python-pip \
     sudo \
-    wget
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
@@ -62,13 +64,18 @@ RUN pip install matplotlib==3.1.1 dictdiffer==0.8.0 fastcluster==1.1.25 aenum==2
 ENV PATH="/tmp/openpilot/external/bin:${PATH}"
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
+# don't need these anymore, so don't bloat the docker image
+RUN apt-get --purge autoremove -y git
+
 RUN mkdir -p /tmp/openpilot
 
 COPY ./flake8_openpilot.sh ./pylint_openpilot.sh ./.pylintrc ./.coveragerc-app /tmp/openpilot/
 
-# group directories that don't change often together for faster docker builds and smallerimage size
-COPY ./pyextra ./phonelibs ./external /tmp/openpilot/pyextra
-COPY ./laika ./laika_repo /tmp/openpilot/laika
+COPY ./pyextra /tmp/openpilot/pyextra
+COPY ./phonelibs /tmp/openpilot/phonelibs
+COPY ./external /tmp/openpilot/external
+COPY ./laika /tmp/openpilot/laika
+COPY ./laika_repo /tmp/openpilot/laika_repo
 COPY ./rednose /tmp/openpilot/rednose
 COPY ./tools /tmp/openpilot/tools
 COPY ./release /tmp/openpilot/release
