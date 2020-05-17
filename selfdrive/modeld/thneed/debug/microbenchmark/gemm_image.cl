@@ -30,8 +30,8 @@ __kernel void gemm(
   xtype a_r;
   xtype b_r;
 
-  int const a_off_thr = get_global_id(0)/128;
-  int const b_off_thr = get_global_id(0)%128;
+  int const a_off_thr = get_global_id(0);
+  int const b_off_thr = get_global_id(1);
 
   for( int k = 0; k < 1024; k += 1 ) {
     int2 a_samp = {a_off_thr*2+0, k};

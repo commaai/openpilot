@@ -48,7 +48,17 @@ Each kernel run computes 16 outputs
 */
 
 #define GEMM
-#define IMAGE
+//#define IMAGE
+
+void dump_maps() {
+  FILE *f = fopen("/proc/self/maps", "rb");
+  char maps[0x100000];
+  int len = fread(maps, 1, sizeof(maps), f);
+  maps[len] = '\0';
+  maps[0x800] = '\0';
+  fclose(f);
+  printf("%s\n", maps);
+}
 
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
@@ -98,6 +108,7 @@ int main(int argc, char *argv[]) {
   printf("creating program\n");
 
   err = clBuildProgram(prog, 1, &device_id, "-D AVANTE_IS_GPU_A530_64", NULL, NULL);
+
   if (err != 0) {
     printf("got err %d\n", err);
     size_t length;
@@ -158,8 +169,11 @@ int main(int argc, char *argv[]) {
   clSetKernelArg(kern, 2, sizeof(cl_mem), &C);
 	printf("set args\n");
 
-  size_t global_work_size[3] = {16384, 1, 1};
-  size_t local_work_size[3] = {256, 1, 1};
+  size_t global_work_size[3] = {128*128, 1, 1};
+  size_t local_work_size[3] = {16*16, 1, 1};
+
+  //size_t global_work_size[3] = {128, 128, 1};
+  //size_t local_work_size[3] = {16, 16, 1};
 
 #else
   cl_kernel kern = clCreateKernel(prog, "convolution_horizontal_reduced_reads_1x1", &err);
@@ -260,6 +274,29 @@ int main(int argc, char *argv[]) {
 
     printf("%2d: wait %lu us -- %.2f GFLOPS -- %.2f GB/s\n", i, us, flops/1e9, rams*2/1e9);
   }
+
+  size_t binary_size = 0;
+  err = clGetProgramInfo(prog, CL_PROGRAM_BINARY_SIZES, sizeof(binary_size), &binary_size, NULL);
+  assert(err == 0);
+  assert(binary_size > 0);
+
+  uint8_t *binary_buf = (uint8_t *)malloc(binary_size);
+  assert(binary_buf);
+
+  uint8_t* bufs[1] = { binary_buf, };
+  err = clGetProgramInfo(prog, CL_PROGRAM_BINARIES, sizeof(bufs), &bufs, NULL);
+  assert(err == 0);
+
+  FILE *g = fopen("/tmp/bin.bin", "wb");
+  fwrite(binary_buf, 1, binary_size, g);
+  fclose(g);
+
+  /*dump_maps();
+  for (uint64_t i = 0x7ffbd2000; i < 0x800000000; i += 0x1000) {
+    uint64_t cmd = *((uint64_t*)i);
+    printf("%llx: %llx\n", i, cmd);
+  }*/
+
 
   return 0;
 }

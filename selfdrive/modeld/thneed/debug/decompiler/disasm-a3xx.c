@@ -42,8 +42,6 @@ enum debug_t {
 
 static enum debug_t debug = PRINT_RAW | PRINT_VERBOSE | EXPAND_REPEAT;
 
-#define printf debug_printf
-
 static const char *levels[] = {
     "",
     "\t",
@@ -1392,7 +1390,7 @@ int disasm_a3xx(uint32_t *dwords, int sizedwords, int level, FILE *out, unsigned
   int i;
   int nop_count = 0;
 
-  assert((sizedwords % 2) == 0);
+  //assert((sizedwords % 2) == 0);
 
   memset(&ctx, 0, sizeof(ctx));
   ctx.out = out;
@@ -1415,6 +1413,11 @@ int disasm_a3xx(uint32_t *dwords, int sizedwords, int level, FILE *out, unsigned
 int main(int argc, char *argv[]) {
   uint32_t buf[0x10000];
   FILE *f = fopen(argv[1], "rb");
+  if (argc > 2) {
+    int seek = atoi(argv[2]);
+    printf("skip %d\n", seek);
+    fread(buf, 1, seek , f);
+  }
   int len = fread(buf, 1, sizeof(buf), f);
   fclose(f);
 
