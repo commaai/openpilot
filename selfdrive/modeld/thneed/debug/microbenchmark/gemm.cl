@@ -42,6 +42,7 @@ __kernel void gemm( global const half* a, global const half* b, global half* c )
   int c_off = (get_global_id(0)/128)*1024 + (get_global_id(0)%128);
 	for (int i = 0; i < 8; i++) {
 		((global half8*)c)[c_off] = c_r[i];
+		c_off += 128;
 	}
 }
 
