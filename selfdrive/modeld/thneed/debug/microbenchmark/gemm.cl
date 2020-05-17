@@ -16,8 +16,6 @@
 __kernel void gemm( global const half* a, global const half* b, global half* c )
 {
   xtype c_r[8] = {0,0,0,0,0,0,0,0};
-  xtype a_r;
-  xtype b_r;
 
   int const a_off_thr = get_global_id(0)/128;
   int const b_off_thr = get_global_id(0)%128;
@@ -25,8 +23,8 @@ __kernel void gemm( global const half* a, global const half* b, global half* c )
   int a_off = a_off_thr;
   int b_off = b_off_thr;
   for( int k = 0; k < 1024; k += 1 ) {
-    a_r = up(((global const half8*)a)[a_off+0]);
-    b_r = up(((global const half8*)b)[b_off+0]);
+    xtype a_r = up(((global const half8*)a)[a_off+0]);
+    xtype b_r = up(((global const half8*)b)[b_off+0]);
     c_r[0] += a_r.s0*b_r;
     c_r[1] += a_r.s1*b_r;
     c_r[2] += a_r.s2*b_r;
@@ -39,9 +37,10 @@ __kernel void gemm( global const half* a, global const half* b, global half* c )
     b_off += 128;
   }
 
-  int c_off = (get_global_id(0)/128)*1024 + (get_global_id(0)%128);
+  int c_off = a_off_thr*1024 + b_off_thr;
 	for (int i = 0; i < 8; i++) {
-		((global half8*)c)[c_off] = c_r[i];
+		vstore8(down(c_r[i]), 0, c+(c_off*8));
+		//((global half8*)c)[c_off] = down(c_r[i]);
 		c_off += 128;
 	}
 }

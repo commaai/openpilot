@@ -48,7 +48,7 @@ Each kernel run computes 16 outputs
 */
 
 #define GEMM
-//#define IMAGE
+#define IMAGE
 
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
