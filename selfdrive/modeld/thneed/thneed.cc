@@ -235,13 +235,18 @@ void CachedCommand::disassemble() {
               dst_off, state_src, state_block, state_type, num_unit);
           addr = (uint64_t)(src[i+2] & 0xfffffffc) | ((uint64_t)(src[i+3]) << 32);
           if (state_block == 5 && state_type == 0) {
-            hexdump((uint32_t *)addr, num_unit*8*16);
-            char fn[0x100];
-            snprintf(fn, sizeof(fn), "/tmp/0x%lx.shader", addr);
-            FILE *f = fopen(fn, "wb");
-            // groups of 16 instructions
-            fwrite((void*)addr, 1, num_unit*8*16, f);
-            fclose(f);
+            if (!(addr&0xFFF)) {
+              int len = 0x1000;
+              if (num_unit >= 32) len += 0x1000;
+              //hexdump((uint32_t *)addr, len);
+              char fn[0x100];
+              snprintf(fn, sizeof(fn), "/tmp/0x%lx.shader", addr);
+              printf("dumping %s\n", fn);
+              FILE *f = fopen(fn, "wb");
+              // groups of 16 instructions
+              fwrite((void*)addr, 1, len, f);
+              fclose(f);
+            }
           }
           break;
       }
@@ -448,12 +453,32 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
         memcpy(&mem, (void*)arg.data(), sizeof(mem));
         thneed->output = mem;
       }
+
+      // we are going to replace this kernel
+      if (strcmp(name, "convolution_horizontal_reduced_reads_1x1") == 0) {
+        int16_t val = *((int16_t*)arg.data());
+        if (strcmp(arg_name, "filterSizeX") == 0) assert(val == 1);
+        if (strcmp(arg_name, "filterSizeY") == 0) assert(val == 1);
+        if (strcmp(arg_name, "paddingX") == 0) assert(val == 0);
+        if (strcmp(arg_name, "paddingY") == 0) assert(val == 0);
+        if (strcmp(arg_name, "strideX") == 0) assert(val == 1);
+        if (strcmp(arg_name, "strideY") == 0) assert(val == 1);
+        if (strcmp(arg_name, "neuron") == 0) assert(val == 0 || val == 2);
+
+        cl_mem pval = (cl_mem)(*((uintptr_t*)arg.data()));
+        if (strcmp(arg_name, "parameters") == 0) assert(pval == NULL);
+        if (strcmp(arg_name, "batchNormBiases") == 0) assert(pval == NULL);
+      }
     }
   }
   if (thneed != NULL && thneed->record & 2) {
     printf("%p %56s -- ", kernel, name);
     for (int i = 0; i < work_dim; i++) {
       printf("%4zu ", global_work_size[i]);
+    }
+    printf(" -- ");
+    for (int i = 0; i < work_dim; i++) {
+      printf("%4zu ", local_work_size[i]);
     }
     printf("\n");
   }
@@ -481,19 +506,21 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
       } else if (arg_size == 8) {
         cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
         printf(" = %p", val);
-        if (strcmp("image2d_t", arg_type) == 0 || strcmp("image1d_t", arg_type) == 0) {
-          cl_image_format format;
-          size_t width, height, row_pitch;
-          clGetImageInfo(val, CL_IMAGE_FORMAT, sizeof(format), &format, NULL);
-          assert(format.image_channel_data_type == CL_HALF_FLOAT);
-          clGetImageInfo(val, CL_IMAGE_WIDTH, sizeof(width), &width, NULL);
-          clGetImageInfo(val, CL_IMAGE_HEIGHT, sizeof(height), &height, NULL);
-          clGetImageInfo(val, CL_IMAGE_ROW_PITCH, sizeof(row_pitch), &row_pitch, NULL);
-          printf(" image %zu x %zu rp %zu", width, height, row_pitch);
-        } else {
-          size_t sz;
-          clGetMemObjectInfo(val, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-          printf(" buffer %zu", sz);
+        if (val != NULL) {
+          if (strcmp("image2d_t", arg_type) == 0 || strcmp("image1d_t", arg_type) == 0) {
+            cl_image_format format;
+            size_t width, height, row_pitch;
+            clGetImageInfo(val, CL_IMAGE_FORMAT, sizeof(format), &format, NULL);
+            assert(format.image_channel_data_type == CL_HALF_FLOAT);
+            clGetImageInfo(val, CL_IMAGE_WIDTH, sizeof(width), &width, NULL);
+            clGetImageInfo(val, CL_IMAGE_HEIGHT, sizeof(height), &height, NULL);
+            clGetImageInfo(val, CL_IMAGE_ROW_PITCH, sizeof(row_pitch), &row_pitch, NULL);
+            printf(" image %zu x %zu rp %zu", width, height, row_pitch);
+          } else {
+            size_t sz;
+            clGetMemObjectInfo(val, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+            printf(" buffer %zu", sz);
+          }
         }
       }
       printf("\n");
@@ -504,36 +531,47 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     global_work_offset, global_work_size, local_work_size,
     num_events_in_wait_list, event_wait_list, event);
 
-  uint64_t tb = nanos_since_boot();
+  /*uint64_t tb = nanos_since_boot();
   clWaitForEvents(1, event);
   uint64_t te = nanos_since_boot();
   if (thneed != NULL && thneed->record & 2) {
     printf("  wait %lu us\n", (te-tb)/1000);
-  }
+  }*/
 
   return ret;
 }
 
-//#define SAVE_KERNELS
+#define SAVE_KERNELS
 std::map<cl_program, std::string> program_source;
 
 cl_program (*my_clCreateProgramWithSource)(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) = NULL;
 cl_program clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
   if (my_clCreateProgramWithSource == NULL) my_clCreateProgramWithSource = reinterpret_cast<decltype(my_clCreateProgramWithSource)>(dlsym(RTLD_NEXT, "REAL_clCreateProgramWithSource"));
   assert(count == 1);
+  size_t my_lengths[1];
+  my_lengths[0] = lengths[0];
 
 #ifdef SAVE_KERNELS
-  static FILE *kernel_f = NULL;
-  if (kernel_f == NULL) {
-    kernel_f = fopen("/tmp/kernels.cl", "w");
-  }
+  char fn[0x100];
+  snprintf(fn, sizeof(fn), "/tmp/program_%zu.cl", strlen(strings[0]));
+  FILE *f = fopen(fn, "wb");
+  fprintf(f, "%s", strings[0]);
+  fclose(f);
 
-  fprintf(kernel_f, "/* ************************ PROGRAM BREAK ****************************/\n");
-  fprintf(kernel_f, "%s\n", strings[0]);
-  fflush(kernel_f);
+  char tmp[0x10000];
+  memset(tmp, 0, sizeof(tmp));
+  snprintf(fn, sizeof(fn), "/tmp/patched_%zu.cl", strlen(strings[0]));
+  FILE *g = fopen(fn, "rb");
+  if (g != NULL) {
+    printf("LOADING PATCHED PROGRAM %s\n", fn);
+    fread(tmp, 1, sizeof(tmp), g);
+    fclose(g);
+    strings[0] = tmp;
+    my_lengths[0] = strlen(tmp);
+  }
 #endif
 
-  cl_program ret = my_clCreateProgramWithSource(context, count, strings, lengths, errcode_ret);
+  cl_program ret = my_clCreateProgramWithSource(context, count, strings, my_lengths, errcode_ret);
   program_source[ret] = strings[0];
   return ret;
 }
