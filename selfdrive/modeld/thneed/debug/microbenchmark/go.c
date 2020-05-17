@@ -48,6 +48,7 @@ Each kernel run computes 16 outputs
 */
 
 #define GEMM
+//#define IMAGE
 
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
@@ -127,8 +128,7 @@ int main(int argc, char *argv[]) {
   assert(err == 0);
 	printf("created buffers\n");
 
-  /*cl_mem Ai, Bi, Ci;
-
+#ifdef IMAGE
   cl_image_format fmt;
   fmt.image_channel_order = CL_RGBA;
   fmt.image_channel_data_type = CL_HALF_FLOAT;
@@ -140,16 +140,18 @@ int main(int argc, char *argv[]) {
   desc.image_width = 256; desc.image_height = 1024; desc.image_row_pitch = desc.image_width*8;
 
   desc.buffer = A;
-  Ai = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
+  A = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
   assert(err == 0);
 
   desc.buffer = B;
-  Bi = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
+  B = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
   assert(err == 0);
 
   desc.buffer = C;
-  Ci = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
-  assert(err == 0);*/
+  C = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
+  assert(err == 0);
+  printf("created images\n");
+#endif
 
   clSetKernelArg(kern, 0, sizeof(cl_mem), &A);
   clSetKernelArg(kern, 1, sizeof(cl_mem), &B);
