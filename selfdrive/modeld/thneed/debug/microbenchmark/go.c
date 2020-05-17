@@ -12,6 +12,15 @@ block7b_project_conv (Conv2D)   (None, 8, 16, 352)   743424      block7b_activat
 FLOPS = 128*2112*352 = 95158272 = 95 MFLOPS
 RAM = 128*2112 + 2112*352 + 128*352 = 1058816 = 1 M accesses
 
+# 22 groups
+128*2112 + 2112*16 + 128*16 = 306176
+306176*22 = 6735872 real accesses
+
+This is a 128x2112 by 2112x352 matrix multiply
+
+work_size = {88, 4, 8}
+Each kernel run computes 16 outputs
+
 0x7f7e8a6380                 convolution_horizontal_reduced_reads_1x1 --   88    4    8  --    4    4    8
   image2d_t input = 0x7f7f490b00 image 8448 x 8 rp 67840
   short startPackedInputChannel = 0
@@ -37,6 +46,8 @@ RAM = 128*2112 + 2112*352 + 128*352 = 1058816 = 1 M accesses
   float* batchNormBiases = 0x0
   short numOutputColumns = 16
 */
+
+#define GEMM
 
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
@@ -86,22 +97,49 @@ int main(int argc, char *argv[]) {
   printf("creating program\n");
 
   err = clBuildProgram(prog, 1, &device_id, "-D AVANTE_IS_GPU_A530_64", NULL, NULL);
+  if (err != 0) {
+    printf("got err %d\n", err);
+    size_t length;
+    char buffer[2048];
+    clGetProgramBuildInfo(prog, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length);
+    buffer[length] = '\0';
+    printf("%s\n", buffer);
+  }
   assert(err == 0);
   printf("built program\n");
 
+
+#ifdef GEMM
+  int M = 1024;
+  int N = 1024;
+  int K = 1024;
+
+  cl_kernel kern = clCreateKernel(prog, "myGEMM1", &err);
+  assert(err == 0);
+  printf("creating kernel\n");
+
+  cl_mem A,B,C;
+  A = clCreateBuffer(context, CL_MEM_READ_WRITE, M*N*4, NULL, &err);
+  B = clCreateBuffer(context, CL_MEM_READ_WRITE, N*K*4, NULL, &err);
+  C = clCreateBuffer(context, CL_MEM_READ_WRITE, M*K*4, NULL, &err);
+
+  clSetKernelArg(kern, 0, sizeof(int), &M);
+  clSetKernelArg(kern, 1, sizeof(int), &N);
+  clSetKernelArg(kern, 2, sizeof(int), &K);
+  clSetKernelArg(kern, 3, sizeof(cl_mem), &A);
+  clSetKernelArg(kern, 4, sizeof(cl_mem), &B);
+  clSetKernelArg(kern, 5, sizeof(cl_mem), &C);
+
+  size_t global_work_size[3] = {M, N, 1};
+  size_t local_work_size[3] = {32, 32, 1};
+#else
   cl_kernel kern = clCreateKernel(prog, "convolution_horizontal_reduced_reads_1x1", &err);
   assert(err == 0);
   printf("creating kernel\n");
 
-  /*
-    image2d_t input = 0x7f7f490b00 image 8448 x 8 rp 67840
-    image2d_t weights = 0x7f7f52fb80 image 2112 x 88 rp 16896
-    float* biases = 0x7f7f564d80 buffer 1408
-    image2d_t output = 0x7f7f490e80 image 1408 x 8 rp 11264
-  */
-
   cl_mem input;
   cl_mem weights;
+  cl_mem weights_buffer;
   cl_mem biases;
   cl_mem outputs;
 
@@ -124,7 +162,7 @@ int main(int argc, char *argv[]) {
   assert(err == 0);
 
   desc.image_width = 2112; desc.image_height = 88; desc.image_row_pitch = 16896;
-  desc.buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, desc.image_height * desc.image_row_pitch, NULL, &err);
+  weights_buffer = desc.buffer = clCreateBuffer(context, CL_MEM_READ_WRITE, desc.image_height * desc.image_row_pitch, NULL, &err);
   assert(err == 0);
   weights = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
   assert(err == 0);
@@ -146,6 +184,7 @@ int main(int argc, char *argv[]) {
   v = 0; clSetKernelArg(kern, 4, sizeof(v), &v);
   v = 88; clSetKernelArg(kern, 5, sizeof(v), &v);
   clSetKernelArg(kern, 6, sizeof(cl_mem), &weights);
+  //clSetKernelArg(kern, 6, sizeof(cl_mem), &weights_buffer);
   clSetKernelArg(kern, 7, sizeof(cl_mem), &biases);
   v = 1; clSetKernelArg(kern, 8, sizeof(v), &v);
   v = 1; clSetKernelArg(kern, 9, sizeof(v), &v);
@@ -165,19 +204,29 @@ int main(int argc, char *argv[]) {
   
   size_t global_work_size[3] = {88, 4, 8};
   size_t local_work_size[3] = {4, 4, 8};
+#endif
 
   for (int i = 0; i < 20; i++) {
     cl_event event;
-    clEnqueueNDRangeKernel(q, kern, 3, NULL, global_work_size, local_work_size, 0, NULL, &event);
+    err = clEnqueueNDRangeKernel(q, kern, 3, NULL, global_work_size, local_work_size, 0, NULL, &event);
+    assert(err == 0);
 
     uint64_t tb = nanos_since_boot();
-    clWaitForEvents(1, &event);
+    err = clWaitForEvents(1, &event);
+    assert(err == 0);
     uint64_t te = nanos_since_boot();
     uint64_t us = (te-tb)/1000;
 
     float s = 1000000.0/us;
+
+#ifdef GEMM
+    float flops = M*N*K*s;
+    float rams = (M*N + N*K + M*K)*s;
+#else
     float flops = 95158272.0*s;
     float rams = 1058816.0*s;
+    //float rams = 6735872.0*s;
+#endif
 
     printf("%2d: wait %lu us -- %.2f GFLOPS -- %.2f GB/s\n", i, us, flops/1e9, rams*2/1e9);
   }
