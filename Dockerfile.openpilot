@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     bzip2 \
@@ -37,11 +37,9 @@ RUN apt-get update && apt-get install -y \
     opencl-headers \
     python-dev \
     python-pip \
-    screen \
     sudo \
-    vim \
-    wget
-
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
@@ -51,16 +49,13 @@ ENV LC_ALL en_US.UTF-8
 RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-RUN pyenv install 3.8.2
-RUN pyenv global 3.8.2
+RUN pyenv install 3.8.2 && pyenv global 3.8.2
 RUN pyenv rehash
 
 RUN pip install pipenv==2018.11.26
 
-COPY Pipfile /tmp/
-COPY Pipfile.lock /tmp/
+COPY Pipfile Pipfile.lock /tmp/
 
-RUN python --version
 RUN cd /tmp && pipenv install --system --deploy
 
 # Install subset of dev dependencies needed for CI
@@ -71,24 +66,20 @@ ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
 RUN mkdir -p /tmp/openpilot
 
-COPY ./flake8_openpilot.sh /tmp/openpilot/
-COPY ./pylint_openpilot.sh /tmp/openpilot/
-COPY ./.pylintrc /tmp/openpilot/
-
-COPY ./.coveragerc-app /tmp/openpilot/
+COPY ./flake8_openpilot.sh ./pylint_openpilot.sh ./.pylintrc ./.coveragerc-app /tmp/openpilot/
 
 COPY ./pyextra /tmp/openpilot/pyextra
 COPY ./phonelibs /tmp/openpilot/phonelibs
 COPY ./external /tmp/openpilot/external
 COPY ./laika /tmp/openpilot/laika
 COPY ./laika_repo /tmp/openpilot/laika_repo
+COPY ./rednose /tmp/openpilot/rednose
 COPY ./tools /tmp/openpilot/tools
 COPY ./release /tmp/openpilot/release
 COPY ./common /tmp/openpilot/common
 COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./panda /tmp/openpilot/panda
-COPY ./rednose /tmp/openpilot/rednose
 COPY ./selfdrive /tmp/openpilot/selfdrive
 
 COPY SConstruct /tmp/openpilot/SConstruct
