@@ -114,24 +114,51 @@ int main(int argc, char *argv[]) {
   int N = 1024;
   int K = 1024;
 
-  cl_kernel kern = clCreateKernel(prog, "myGEMM1", &err);
+  cl_kernel kern = clCreateKernel(prog, "gemm", &err);
   assert(err == 0);
-  printf("creating kernel\n");
+  printf("creating kernel %p\n", kern);
 
   cl_mem A,B,C;
-  A = clCreateBuffer(context, CL_MEM_READ_WRITE, M*N*4, NULL, &err);
-  B = clCreateBuffer(context, CL_MEM_READ_WRITE, N*K*4, NULL, &err);
-  C = clCreateBuffer(context, CL_MEM_READ_WRITE, M*K*4, NULL, &err);
+  A = clCreateBuffer(context, CL_MEM_READ_WRITE, M*K*2, NULL, &err);
+  assert(err == 0);
+  B = clCreateBuffer(context, CL_MEM_READ_WRITE, K*N*2, NULL, &err);
+  assert(err == 0);
+  C = clCreateBuffer(context, CL_MEM_READ_WRITE, M*N*2, NULL, &err);
+  assert(err == 0);
+	printf("created buffers\n");
 
-  clSetKernelArg(kern, 0, sizeof(int), &M);
-  clSetKernelArg(kern, 1, sizeof(int), &N);
-  clSetKernelArg(kern, 2, sizeof(int), &K);
-  clSetKernelArg(kern, 3, sizeof(cl_mem), &A);
-  clSetKernelArg(kern, 4, sizeof(cl_mem), &B);
-  clSetKernelArg(kern, 5, sizeof(cl_mem), &C);
+  /*cl_mem Ai, Bi, Ci;
 
-  size_t global_work_size[3] = {M, N, 1};
-  size_t local_work_size[3] = {32, 32, 1};
+  cl_image_format fmt;
+  fmt.image_channel_order = CL_RGBA;
+  fmt.image_channel_data_type = CL_HALF_FLOAT;
+
+  cl_image_desc desc;
+  desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+  desc.image_depth = 0; desc.image_slice_pitch = 0; desc.num_mip_levels = 0; desc.num_samples = 0;
+
+  desc.image_width = 256; desc.image_height = 1024; desc.image_row_pitch = desc.image_width*8;
+
+  desc.buffer = A;
+  Ai = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
+  assert(err == 0);
+
+  desc.buffer = B;
+  Bi = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
+  assert(err == 0);
+
+  desc.buffer = C;
+  Ci = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
+  assert(err == 0);*/
+
+  clSetKernelArg(kern, 0, sizeof(cl_mem), &A);
+  clSetKernelArg(kern, 1, sizeof(cl_mem), &B);
+  clSetKernelArg(kern, 2, sizeof(cl_mem), &C);
+	printf("set args\n");
+
+  size_t global_work_size[3] = {16384, 1, 1};
+  size_t local_work_size[3] = {256, 1, 1};
+
 #else
   cl_kernel kern = clCreateKernel(prog, "convolution_horizontal_reduced_reads_1x1", &err);
   assert(err == 0);
@@ -206,6 +233,7 @@ int main(int argc, char *argv[]) {
   size_t local_work_size[3] = {4, 4, 8};
 #endif
 
+	printf("ready to enqueue\n");
   for (int i = 0; i < 20; i++) {
     cl_event event;
     err = clEnqueueNDRangeKernel(q, kern, 3, NULL, global_work_size, local_work_size, 0, NULL, &event);
