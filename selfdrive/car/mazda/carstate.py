@@ -54,7 +54,7 @@ class CarState(CarStateBase):
                         cp.vl["DOORS"]['BL'], cp.vl["DOORS"]['BR']])
 
     ret.gas = cp.vl["ENGINE_DATA"]['PEDAL_GAS']
-    ret.gasPressed = ret.gas > 1e-3
+    ret.gasPressed = ret.gas > 0
 
     # No steer if block signal is on
     # block = cp.vl["STEER_RATE"]['LKAS_BLOCK'] == 1
@@ -77,7 +77,7 @@ class CarState(CarStateBase):
       self.cruise_speed = ret.vEgoRaw
 
     ret.cruiseState.available = cp.vl["CRZ_CTRL"]['CRZ_ACTIVE'] == 1
-    if not ret.cruiseState.available:
+    if not ret.cruiseState.available or ret.gasPressed or ret.brakePressed:
       self.acc_active = False
 
     ret.cruiseState.enabled = self.acc_active
@@ -95,9 +95,6 @@ class CarState(CarStateBase):
         self.low_speed_alert = False
 
       ret.steerWarning = handsoff
-
-    if ret.gasPressed:
-      self.acc_active = False
 
     self.acc_active_last = self.acc_active
 
