@@ -2728,7 +2728,7 @@
             ],
             "version": "==2.2.0"
         },
-        "tensorflow-gpu": {
+        "tensorflow": {
             "hashes": [
                 "sha256:3cd3fa2b13a505902704a63d6b2f256cdc85ddfd6c70dc7093796b7e490d09c4",
                 "sha256:453f0e3d8e56c47f4b374fba17cb5e0b57afbe34cd17f565b5498b5a0ccf33ac",
