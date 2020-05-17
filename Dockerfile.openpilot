@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     curl \
     ffmpeg \
-    git \
     libarchive-dev \
     libbz2-dev \
     libcurl4-openssl-dev \
@@ -40,7 +39,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     wget
 
-
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
@@ -68,18 +66,16 @@ RUN mkdir -p /tmp/openpilot
 
 COPY ./flake8_openpilot.sh ./pylint_openpilot.sh ./.pylintrc ./.coveragerc-app /tmp/openpilot/
 
-COPY ./pyextra /tmp/openpilot/pyextra
-COPY ./phonelibs /tmp/openpilot/phonelibs
-COPY ./external /tmp/openpilot/external
-COPY ./laika /tmp/openpilot/laika
-COPY ./laika_repo /tmp/openpilot/laika_repo
+# group directories that don't change often together for faster docker builds and smallerimage size
+COPY ./pyextra ./phonelibs ./external /tmp/openpilot/pyextra
+COPY ./laika ./laika_repo /tmp/openpilot/laika
+COPY ./rednose /tmp/openpilot/rednose
 COPY ./tools /tmp/openpilot/tools
 COPY ./release /tmp/openpilot/release
 COPY ./common /tmp/openpilot/common
 COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./panda /tmp/openpilot/panda
-COPY ./rednose /tmp/openpilot/rednose
 COPY ./selfdrive /tmp/openpilot/selfdrive
 
 COPY SConstruct /tmp/openpilot/SConstruct
