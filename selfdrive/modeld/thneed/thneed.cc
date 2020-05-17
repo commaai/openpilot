@@ -13,7 +13,8 @@ std::map<std::pair<cl_kernel, int>, std::string> g_args;
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
   clock_gettime(CLOCK_BOOTTIME, &t);
-  return t.tv_sec * 1000000000ULL + t.tv_nsec; }
+  return t.tv_sec * 1000000000ULL + t.tv_nsec;
+}
 
 void hexdump(uint32_t *d, int len) {
   assert((len%4) == 0);
@@ -509,12 +510,19 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
         if (val != NULL) {
           if (strcmp("image2d_t", arg_type) == 0 || strcmp("image1d_t", arg_type) == 0) {
             cl_image_format format;
-            size_t width, height, row_pitch;
+            size_t width, height, depth, array_size, row_pitch, slice_pitch;
             clGetImageInfo(val, CL_IMAGE_FORMAT, sizeof(format), &format, NULL);
             assert(format.image_channel_data_type == CL_HALF_FLOAT);
             clGetImageInfo(val, CL_IMAGE_WIDTH, sizeof(width), &width, NULL);
             clGetImageInfo(val, CL_IMAGE_HEIGHT, sizeof(height), &height, NULL);
+            clGetImageInfo(val, CL_IMAGE_DEPTH, sizeof(depth), &depth, NULL);
+            clGetImageInfo(val, CL_IMAGE_ARRAY_SIZE, sizeof(array_size), &array_size, NULL);
             clGetImageInfo(val, CL_IMAGE_ROW_PITCH, sizeof(row_pitch), &row_pitch, NULL);
+            clGetImageInfo(val, CL_IMAGE_SLICE_PITCH, sizeof(slice_pitch), &slice_pitch, NULL);
+            assert(depth == 0);
+            assert(array_size == 0);
+            assert(slice_pitch == 0);
+
             printf(" image %zu x %zu rp %zu", width, height, row_pitch);
           } else {
             size_t sz;
@@ -531,12 +539,12 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
     global_work_offset, global_work_size, local_work_size,
     num_events_in_wait_list, event_wait_list, event);
 
-  /*uint64_t tb = nanos_since_boot();
+  uint64_t tb = nanos_since_boot();
   clWaitForEvents(1, event);
   uint64_t te = nanos_since_boot();
   if (thneed != NULL && thneed->record & 2) {
     printf("  wait %lu us\n", (te-tb)/1000);
-  }*/
+  }
 
   return ret;
 }
