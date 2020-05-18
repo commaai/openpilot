@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <CL/cl.h>
 #include <assert.h>
 #include <time.h>
@@ -48,7 +49,7 @@ Each kernel run computes 16 outputs
 */
 
 #define GEMM
-//#define IMAGE
+#define IMAGE
 
 void dump_maps() {
   FILE *f = fopen("/proc/self/maps", "rb");
@@ -169,11 +170,13 @@ int main(int argc, char *argv[]) {
   clSetKernelArg(kern, 2, sizeof(cl_mem), &C);
 	printf("set args\n");
 
-  size_t global_work_size[3] = {128*128, 1, 1};
-  size_t local_work_size[3] = {16*16, 1, 1};
-
-  //size_t global_work_size[3] = {128, 128, 1};
-  //size_t local_work_size[3] = {16, 16, 1};
+#ifdef IMAGE
+  size_t global_work_size[3] = {256, 256, 1};
+  size_t local_work_size[3] = {4, 64, 1};
+#else
+  size_t global_work_size[3] = {128, 128, 1};
+  size_t local_work_size[3] = {2, 128, 1};
+#endif
 
 #else
   cl_kernel kern = clCreateKernel(prog, "convolution_horizontal_reduced_reads_1x1", &err);

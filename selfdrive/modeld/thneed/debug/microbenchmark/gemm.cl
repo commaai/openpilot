@@ -1,6 +1,6 @@
 // https://github.com/moskewcz/boda/issues/13
 
-//#define USE_FP16
+#define USE_FP16
 
 #ifdef USE_FP16
 	#define up(x) x
@@ -19,14 +19,15 @@ __kernel void gemm( global const half8* a, global const half8* b, global half8* 
 {
   xtype c_r[8] = {0,0,0,0,0,0,0,0};
 
-  int const a_off_thr = get_global_id(0)/skip;
-  int const b_off_thr = get_global_id(0)%skip;
+  int const a_off_thr = get_global_id(0);
+  int const b_off_thr = get_global_id(1);
 
   int a_off = a_off_thr;
   int b_off = b_off_thr;
   for( int k = 0; k < 1024; k += 1 ) {
     xtype a_r = up(a[a_off]);
     xtype b_r = up(b[b_off]);
+
     c_r[0] += a_r.s0*b_r;
     c_r[1] += a_r.s1*b_r;
     c_r[2] += a_r.s2*b_r;
@@ -35,6 +36,7 @@ __kernel void gemm( global const half8* a, global const half8* b, global half8* 
     c_r[5] += a_r.s5*b_r;
     c_r[6] += a_r.s6*b_r;
     c_r[7] += a_r.s7*b_r;
+
     a_off += skip;
     b_off += skip;
   }
