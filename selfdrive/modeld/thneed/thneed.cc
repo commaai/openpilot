@@ -203,7 +203,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
     #endif
 
     if (record & 2) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
-    //clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
+    clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
 
   // ****** set power constraint
