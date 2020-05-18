@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
+
 import sys
 
 import numpy as np
 import sympy as sp
 
 from selfdrive.locationd.models.constants import ObservationKind
-from rednose.helpers import KalmanError
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
 
@@ -46,9 +46,9 @@ class LiveKalman():
                         0, 0, 0])
 
   # state covariance
-  initial_P_diag = np.array([10000**2, 10000**2, 10000**2,
-                             10**2, 10**2, 10**2,
-                             10**2, 10**2, 10**2,
+  initial_P_diag = np.array([1e14, 1e14, 1e14,
+                             1e6, 1e6, 1e6,
+                             1e4, 1e4, 1e4,
                              1**2, 1**2, 1**2,
                              0.05**2, 0.05**2, 0.05**2,
                              0.02**2,
@@ -57,8 +57,8 @@ class LiveKalman():
 
   # process noise
   Q = np.diag([0.03**2, 0.03**2, 0.03**2,
-               0.0**2, 0.0**2, 0.0**2,
-               0.0**2, 0.0**2, 0.0**2,
+               0.001**2, 0.001*2, 0.001**2,
+               0.01**2, 0.01**2, 0.01**2,
                0.1**2, 0.1**2, 0.1**2,
                (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
                (0.02 / 100)**2,
@@ -172,6 +172,8 @@ class LiveKalman():
     h_speed_sym = sp.Matrix([speed * odo_scale])
 
     h_pos_sym = sp.Matrix([x, y, z])
+    h_vel_sym = sp.Matrix([vx, vy, vz])
+    h_orientation_sym = q
     h_imu_frame_sym = sp.Matrix(imu_angles)
 
     h_relative_motion = sp.Matrix(quat_rot.T * v)
@@ -181,6 +183,8 @@ class LiveKalman():
                [h_phone_rot_sym, ObservationKind.NO_ROT, None],
                [h_acc_sym, ObservationKind.PHONE_ACCEL, None],
                [h_pos_sym, ObservationKind.ECEF_POS, None],
+               [h_vel_sym, ObservationKind.ECEF_VEL, None],
+               [h_orientation_sym, ObservationKind.ECEF_ORIENTATION_FROM_GPS, None],
                [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
@@ -197,7 +201,9 @@ class LiveKalman():
                       ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
-                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2])}
+                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
+                      ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2]),
+                      ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2**2, .2**2, .2**2, .2**2])}
 
     # init filter
     self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err)
@@ -226,25 +232,24 @@ class LiveKalman():
       P = self.filter.covs()
     self.filter.init_state(state, P, filter_time)
 
-  def predict_and_observe(self, t, kind, data):
-    if len(data) > 0:
-      data = np.atleast_2d(data)
+  def predict_and_observe(self, t, kind, meas, R=None):
+    if len(meas) > 0:
+      meas = np.atleast_2d(meas)
     if kind == ObservationKind.CAMERA_ODO_TRANSLATION:
-      r = self.predict_and_update_odo_trans(data, t, kind)
+      r = self.predict_and_update_odo_trans(meas, t, kind)
     elif kind == ObservationKind.CAMERA_ODO_ROTATION:
-      r = self.predict_and_update_odo_rot(data, t, kind)
+      r = self.predict_and_update_odo_rot(meas, t, kind)
     elif kind == ObservationKind.ODOMETRIC_SPEED:
-      r = self.predict_and_update_odo_speed(data, t, kind)
+      r = self.predict_and_update_odo_speed(meas, t, kind)
     else:
-      r = self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
+      if R is None:
+        R = self.get_R(kind, len(meas))
+      elif len(R.shape) == 2:
+        R = R[None]
+      r = self.filter.predict_and_update_batch(t, kind, meas, R)
 
     # Normalize quats
     quat_norm = np.linalg.norm(self.filter.x[3:7, 0])
-
-    # Should not continue if the quats behave this weirdly
-    if not (0.1 < quat_norm < 10):
-      raise KalmanError("Kalman filter quaternions unstable")
-
     self.filter.x[States.ECEF_ORIENTATION, 0] = self.filter.x[States.ECEF_ORIENTATION, 0] / quat_norm
 
     return r
