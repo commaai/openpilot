@@ -321,22 +321,6 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
         memcpy(&mem, (void*)arg.data(), sizeof(mem));
         thneed->output = mem;
       }
-
-      // we are going to replace this kernel
-      if (strcmp(name, "convolution_horizontal_reduced_reads_1x1") == 0) {
-        int16_t val = *((int16_t*)arg.data());
-        if (strcmp(arg_name, "filterSizeX") == 0) assert(val == 1);
-        if (strcmp(arg_name, "filterSizeY") == 0) assert(val == 1);
-        if (strcmp(arg_name, "paddingX") == 0) assert(val == 0);
-        if (strcmp(arg_name, "paddingY") == 0) assert(val == 0);
-        if (strcmp(arg_name, "strideX") == 0) assert(val == 1);
-        if (strcmp(arg_name, "strideY") == 0) assert(val == 1);
-        if (strcmp(arg_name, "neuron") == 0) assert(val == 0 || val == 2);
-
-        cl_mem pval = (cl_mem)(*((uintptr_t*)arg.data()));
-        if (strcmp(arg_name, "parameters") == 0) assert(pval == NULL);
-        if (strcmp(arg_name, "batchNormBiases") == 0) assert(pval == NULL);
-      }
     }
   }
   if (thneed != NULL && thneed->record & 2) {
@@ -417,7 +401,10 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
 }
 
 //#define SAVE_KERNELS
-std::map<cl_program, std::string> program_source;
+
+#ifdef SAVE_KERNELS
+  std::map<cl_program, std::string> program_source;
+#endif
 
 cl_program (*my_clCreateProgramWithSource)(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) = NULL;
 cl_program clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
@@ -444,24 +431,11 @@ cl_program clCreateProgramWithSource(cl_context context, cl_uint count, const ch
     strings[0] = tmp;
     my_lengths[0] = strlen(tmp);
   }
+
+  program_source[ret] = strings[0];
 #endif
 
   cl_program ret = my_clCreateProgramWithSource(context, count, strings, my_lengths, errcode_ret);
-  program_source[ret] = strings[0];
-  return ret;
-}
-
-cl_int (*my_clBuildProgram)(cl_program program, cl_uint num_devices, const cl_device_id *device_list, const char *options, void (CL_CALLBACK *pfn_notify)(cl_program program, void *user_data), void *user_data) = NULL;
-cl_int clBuildProgram(cl_program program,
-	cl_uint num_devices,
-	const cl_device_id *device_list,
-	const char *options,
-	void (CL_CALLBACK *pfn_notify)(cl_program program, void *user_data),
-	void *user_data) {
-  if (my_clBuildProgram == NULL) my_clBuildProgram = reinterpret_cast<decltype(my_clBuildProgram)>(dlsym(RTLD_NEXT, "REAL_clBuildProgram"));
-
-  cl_int ret = my_clBuildProgram(program, num_devices, device_list, options, pfn_notify, user_data);
-
   return ret;
 }
 
@@ -475,8 +449,6 @@ void *dlsym(void *handle, const char *symbol) {
     return (void*)clSetKernelArg;
   } else if (strcmp("clCreateProgramWithSource", symbol) == 0) {
     return (void*)clCreateProgramWithSource;
-  } else if (strcmp("clBuildProgram", symbol) == 0) {
-    return (void*)clBuildProgram;
   } else {
     return my_dlsym(handle, symbol);
   }
