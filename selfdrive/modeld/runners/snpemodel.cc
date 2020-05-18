@@ -142,14 +142,12 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
       if (!snpe->execute(inputMap, outputMap)) {
         PrintErrorStringAndExit();
       }
-      thneed = new Thneed();
-      //thneed->record = 3;
       memset(recurrent, 0, recurrent_size*sizeof(float));
+      thneed = new Thneed();
       if (!snpe->execute(inputMap, outputMap)) {
         PrintErrorStringAndExit();
       }
       thneed->stop();
-      //thneed->record = 2;
       printf("thneed cached\n");
 
       // doing self test
