@@ -109,6 +109,7 @@ jobs:
       - name: Run unit tests
         run: |
           $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
                     coverage run selfdrive/test/test_fingerprints.py && \
                     $UNIT_TEST common && \
                     $UNIT_TEST opendbc/can && \
@@ -137,7 +138,9 @@ jobs:
         run: $LOAD
       - name: Run replay
         run: |
-          $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
@@ -168,7 +171,11 @@ jobs:
         run: $LOAD
       - name: Test longitudinal
         run: |
-          $PERSIST "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+          $PERSIST "mkdir -p /tmp/openpilot/selfdrive/test/out && \
+                    cd /tmp/openpilot/ && \
+                    scons -j$(nproc) && \
+                    cd selfdrive/test/longitudinal_maneuvers && \
+                    OPTEST=1 ./test_longitudinal.py"
       - name: Copy artifacts
         if: always()
         run: |
@@ -193,7 +200,11 @@ jobs:
         run: $LOAD
       - name: Test car models
         run: |
-          $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine"
+          $PERSIST "mkdir -p /data/params && \
+                    cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && \
+                    coverage combine"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci

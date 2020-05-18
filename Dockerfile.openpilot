@@ -81,6 +81,3 @@ COPY ./panda /tmp/openpilot/panda
 COPY ./selfdrive /tmp/openpilot/selfdrive
 
 COPY SConstruct /tmp/openpilot/SConstruct
-
-RUN mkdir -p /tmp/openpilot/selfdrive/test/out
-RUN cd /tmp/openpilot && scons -j$(nproc)
