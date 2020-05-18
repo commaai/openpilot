@@ -20,6 +20,7 @@ class CachedCommand {
   public:
     CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd);
     void exec(bool wait);
+    void disassemble();
   private:
     struct kgsl_gpu_command cache;
     struct kgsl_command_object cmds[2];
@@ -31,7 +32,7 @@ class Thneed {
   public:
     Thneed();
     void stop();
-    void execute(float **finputs, float *foutput);
+    void execute(float **finputs, float *foutput, bool slow=false);
 
     std::vector<cl_mem> inputs;
     cl_mem output;

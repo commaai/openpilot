@@ -13,7 +13,8 @@ std::map<std::pair<cl_kernel, int>, std::string> g_args;
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
   clock_gettime(CLOCK_BOOTTIME, &t);
-  return t.tv_sec * 1000000000ULL + t.tv_nsec; }
+  return t.tv_sec * 1000000000ULL + t.tv_nsec;
+}
 
 void hexdump(uint32_t *d, int len) {
   assert((len%4) == 0);
@@ -43,10 +44,12 @@ int ioctl(int filedes, unsigned long request, void *argp) {
         thneed->timestamp = cmd->timestamp;
         thneed->context_id = cmd->context_id;
         CachedCommand *ccmd = new CachedCommand(thneed, cmd);
+        //ccmd->disassemble();
         thneed->cmds.push_back(ccmd);
       }
       if (thneed->record & 2) {
-        printf("IOCTL_KGSL_GPU_COMMAND: flags: 0x%lx    context_id: %u  timestamp: %u\n",
+        printf("IOCTL_KGSL_GPU_COMMAND(%2zu): flags: 0x%lx    context_id: %u  timestamp: %u\n",
+            thneed->cmds.size(),
             cmd->flags,
             cmd->context_id, cmd->timestamp);
       }
@@ -179,7 +182,10 @@ void Thneed::stop() {
 
 //#define SAVE_LOG
 
-void Thneed::execute(float **finputs, float *foutput) {
+void Thneed::execute(float **finputs, float *foutput, bool slow) {
+  uint64_t tb, te;
+  if (record & 2) tb = nanos_since_boot();
+
   #ifdef SAVE_LOG
     char fn[0x100];
     snprintf(fn, sizeof(fn), "/tmp/thneed_log_%d", timestamp);
@@ -197,7 +203,7 @@ void Thneed::execute(float **finputs, float *foutput) {
     #endif
 
     if (record & 2) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
-    clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
+    //clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
 
   // ****** set power constraint
@@ -220,8 +226,9 @@ void Thneed::execute(float **finputs, float *foutput) {
   // ****** run commands
   int i = 0;
   for (auto it = cmds.begin(); it != cmds.end(); ++it) {
+    ++i;
     if (record & 2) printf("run %2d: ", i);
-    (*it)->exec((++i) == cmds.size());
+    (*it)->exec((i == cmds.size()) || slow);
   }
 
   // ****** sync objects
@@ -255,6 +262,11 @@ void Thneed::execute(float **finputs, float *foutput) {
 
   ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
   assert(ret == 0);
+
+  if (record & 2) {
+    te = nanos_since_boot();
+    printf("model exec in %lu us\n", (te-tb)/1000);
+  }
 }
 
 cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;
@@ -311,10 +323,19 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
       }
     }
   }
-
+  if (thneed != NULL && thneed->record & 2) {
+    printf("%p %56s -- ", kernel, name);
+    for (int i = 0; i < work_dim; i++) {
+      printf("%4zu ", global_work_size[i]);
+    }
+    printf(" -- ");
+    for (int i = 0; i < work_dim; i++) {
+      printf("%4zu ", local_work_size[i]);
+    }
+    printf("\n");
+  }
   if (thneed != NULL && thneed->record & 4) {
     // extreme debug
-    printf("%s -- %p\n", name, kernel);
     for (int i = 0; i < num_args; i++) {
       char arg_type[0x100];
       char arg_name[0x100];
@@ -337,6 +358,29 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
       } else if (arg_size == 8) {
         cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
         printf(" = %p", val);
+        if (val != NULL) {
+          if (strcmp("image2d_t", arg_type) == 0 || strcmp("image1d_t", arg_type) == 0) {
+            cl_image_format format;
+            size_t width, height, depth, array_size, row_pitch, slice_pitch;
+            clGetImageInfo(val, CL_IMAGE_FORMAT, sizeof(format), &format, NULL);
+            assert(format.image_channel_data_type == CL_HALF_FLOAT);
+            clGetImageInfo(val, CL_IMAGE_WIDTH, sizeof(width), &width, NULL);
+            clGetImageInfo(val, CL_IMAGE_HEIGHT, sizeof(height), &height, NULL);
+            clGetImageInfo(val, CL_IMAGE_DEPTH, sizeof(depth), &depth, NULL);
+            clGetImageInfo(val, CL_IMAGE_ARRAY_SIZE, sizeof(array_size), &array_size, NULL);
+            clGetImageInfo(val, CL_IMAGE_ROW_PITCH, sizeof(row_pitch), &row_pitch, NULL);
+            clGetImageInfo(val, CL_IMAGE_SLICE_PITCH, sizeof(slice_pitch), &slice_pitch, NULL);
+            assert(depth == 0);
+            assert(array_size == 0);
+            assert(slice_pitch == 0);
+
+            printf(" image %zu x %zu rp %zu", width, height, row_pitch);
+          } else {
+            size_t sz;
+            clGetMemObjectInfo(val, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+            printf(" buffer %zu", sz);
+          }
+        }
       }
       printf("\n");
     }
@@ -345,6 +389,53 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
   cl_int ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
     global_work_offset, global_work_size, local_work_size,
     num_events_in_wait_list, event_wait_list, event);
+
+  /*uint64_t tb = nanos_since_boot();
+  clWaitForEvents(1, event);
+  uint64_t te = nanos_since_boot();
+  if (thneed != NULL && thneed->record & 2) {
+    printf("  wait %lu us\n", (te-tb)/1000);
+  }*/
+
+  return ret;
+}
+
+//#define SAVE_KERNELS
+
+#ifdef SAVE_KERNELS
+  std::map<cl_program, std::string> program_source;
+#endif
+
+cl_program (*my_clCreateProgramWithSource)(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) = NULL;
+cl_program clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
+  if (my_clCreateProgramWithSource == NULL) my_clCreateProgramWithSource = reinterpret_cast<decltype(my_clCreateProgramWithSource)>(dlsym(RTLD_NEXT, "REAL_clCreateProgramWithSource"));
+  assert(count == 1);
+  size_t my_lengths[1];
+  my_lengths[0] = lengths[0];
+
+#ifdef SAVE_KERNELS
+  char fn[0x100];
+  snprintf(fn, sizeof(fn), "/tmp/program_%zu.cl", strlen(strings[0]));
+  FILE *f = fopen(fn, "wb");
+  fprintf(f, "%s", strings[0]);
+  fclose(f);
+
+  char tmp[0x10000];
+  memset(tmp, 0, sizeof(tmp));
+  snprintf(fn, sizeof(fn), "/tmp/patched_%zu.cl", strlen(strings[0]));
+  FILE *g = fopen(fn, "rb");
+  if (g != NULL) {
+    printf("LOADING PATCHED PROGRAM %s\n", fn);
+    fread(tmp, 1, sizeof(tmp), g);
+    fclose(g);
+    strings[0] = tmp;
+    my_lengths[0] = strlen(tmp);
+  }
+
+  program_source[ret] = strings[0];
+#endif
+
+  cl_program ret = my_clCreateProgramWithSource(context, count, strings, my_lengths, errcode_ret);
   return ret;
 }
 
@@ -356,6 +447,8 @@ void *dlsym(void *handle, const char *symbol) {
     return (void*)clEnqueueNDRangeKernel;
   } else if (strcmp("clSetKernelArg", symbol) == 0) {
     return (void*)clSetKernelArg;
+  } else if (strcmp("clCreateProgramWithSource", symbol) == 0) {
+    return (void*)clCreateProgramWithSource;
   } else {
     return my_dlsym(handle, symbol);
   }
