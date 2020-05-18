@@ -7,9 +7,11 @@ from selfdrive.car import gen_empty_fingerprint
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
+MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS # 144 + 4 = 92 mph
 
 # generic car and radar interfaces
 
@@ -102,7 +104,7 @@ class CarInterfaceBase():
       events.add(EventName.stockFcw)
     if cs_out.stockAeb:
       events.add(EventName.stockAeb)
-    if cs_out.vEgo > 92 * CV.MPH_TO_MS:
+    if cs_out.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
 
     if cs_out.steerError:
