@@ -23,7 +23,7 @@
 
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *loutput, size_t output_size, int runtime);
+  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime);
   ~SNPEModel() {
     if (model_data) free(model_data);
   }
@@ -51,10 +51,12 @@ private:
   zdl::DlSystem::UserBufferMap outputMap;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> outputBuffer;
   float *output;
+  size_t output_size;
 
   // recurrent and desire
   std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);
   float *recurrent;
+  size_t recurrent_size;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> recurrentBuffer;
   float *trafficConvention;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> trafficConventionBuffer;
