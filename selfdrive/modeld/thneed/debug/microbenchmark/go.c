@@ -48,8 +48,8 @@ Each kernel run computes 16 outputs
   short numOutputColumns = 16
 */
 
-//#define GEMM
-//#define IMAGE
+#define GEMM
+#define IMAGE
 
 void dump_maps() {
   FILE *f = fopen("/proc/self/maps", "rb");

@@ -3,7 +3,7 @@ lenv = env.Clone()
 
 libs = [messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
 
-TEST_THNEED = True
+TEST_THNEED = False
 
 common_src = [
   "models/commonmodel.c",
