@@ -13,7 +13,7 @@
 #endif
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-__kernel void gemm(
+__kernel void gemm(const int M, const int N, const int K,
   read_only image2d_t A, 
   read_only image2d_t B, 
   write_only image2d_t C)
@@ -28,23 +28,40 @@ __kernel void gemm(
   int const a_off_thr = get_global_id(0);
   int const b_off_thr = get_global_id(1);
 
-  int2 a_samp = {a_off_thr, 0};
-  int2 b_samp = {b_off_thr, 0};
+  int2 a_samp = {0, a_off_thr};
+  int2 b_samp = {0, b_off_thr};
 
-  for (short k = 0; k < 1024; k+=4) {
+  for (short k = 0; k < K/4; k++) {
     for (short i = 0; i < 4; ++i) {
       a_r[i] = read_imagep(A, smp, a_samp);
-      ++a_samp.y;
       b_r[i] = read_imagep(B, smp, b_samp);
-      ++b_samp.y;
+      ++a_samp.x;
+      ++b_samp.x;
     }
 
     for (short i = 0; i < 4; ++i) {
-      xtype ov = c_r[i];
-      ov += a_r[0].x * b_r[0];
-      ov += a_r[1].y * b_r[1];
-      ov += a_r[2].z * b_r[2];
-      ov += a_r[3].w * b_r[3];
+      float4 ov = c_r[i];
+
+      ov.x += a_r[i].x * b_r[0].x;
+      ov.x += a_r[i].y * b_r[0].y;
+      ov.x += a_r[i].z * b_r[0].z;
+      ov.x += a_r[i].w * b_r[0].w;
+
+      ov.y += a_r[i].x * b_r[1].x;
+      ov.y += a_r[i].y * b_r[1].y;
+      ov.y += a_r[i].z * b_r[1].z;
+      ov.y += a_r[i].w * b_r[1].w;
+
+      ov.z += a_r[i].x * b_r[2].x;
+      ov.z += a_r[i].y * b_r[2].y;
+      ov.z += a_r[i].z * b_r[2].z;
+      ov.z += a_r[i].w * b_r[2].w;
+
+      ov.w += a_r[i].x * b_r[3].x;
+      ov.w += a_r[i].y * b_r[3].y;
+      ov.w += a_r[i].z * b_r[3].z;
+      ov.w += a_r[i].w * b_r[3].w;
+
       c_r[i] = ov;
     }
   }

@@ -48,8 +48,8 @@ Each kernel run computes 16 outputs
   short numOutputColumns = 16
 */
 
-#define GEMM
-#define IMAGE
+//#define GEMM
+//#define IMAGE
 
 void dump_maps() {
   FILE *f = fopen("/proc/self/maps", "rb");
@@ -123,10 +123,12 @@ int main(int argc, char *argv[]) {
 
 
 #ifdef GEMM
-  int M = 1024;
-  int N = 1024;
-  int K = 1024;
+  // 128x2112 by 2112x352
+  int M,N,K;
 
+  M = N = K = 1024;
+  //M = 128; K = 2112; N = 352;
+  
   cl_kernel kern = clCreateKernel(prog, "gemm", &err);
   assert(err == 0);
   printf("creating kernel %p\n", kern);
@@ -149,29 +151,35 @@ int main(int argc, char *argv[]) {
   desc.image_type = CL_MEM_OBJECT_IMAGE2D;
   desc.image_depth = 0; desc.image_slice_pitch = 0; desc.num_mip_levels = 0; desc.num_samples = 0;
 
-  desc.image_width = 256; desc.image_height = 1024; desc.image_row_pitch = desc.image_width*8;
-
+  desc.image_width = K; desc.image_height = M/4;
   desc.buffer = A;
+  desc.image_row_pitch = desc.image_width*8;
   A = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
   assert(err == 0);
 
-  desc.buffer = B;
+  desc.image_width = K; desc.image_height = N/4;
+  desc.buffer = B; desc.image_row_pitch = desc.image_width*8;
   B = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
   assert(err == 0);
 
-  desc.buffer = C;
+  desc.image_width = M/4; desc.image_height = N;
+  desc.buffer = C; desc.image_row_pitch = desc.image_width*8;
   C = clCreateImage(context, CL_MEM_READ_WRITE, &fmt, &desc, NULL, &err);
   assert(err == 0);
   printf("created images\n");
 #endif
 
-  clSetKernelArg(kern, 0, sizeof(cl_mem), &A);
-  clSetKernelArg(kern, 1, sizeof(cl_mem), &B);
-  clSetKernelArg(kern, 2, sizeof(cl_mem), &C);
+  clSetKernelArg(kern, 0, sizeof(int), &M);
+  clSetKernelArg(kern, 1, sizeof(int), &N);
+  clSetKernelArg(kern, 2, sizeof(int), &K);
+
+  clSetKernelArg(kern, 3, sizeof(cl_mem), &A);
+  clSetKernelArg(kern, 4, sizeof(cl_mem), &B);
+  clSetKernelArg(kern, 5, sizeof(cl_mem), &C);
 	printf("set args\n");
 
 #ifdef IMAGE
-  size_t global_work_size[3] = {256, 256, 1};
+  size_t global_work_size[3] = {M/4, N/4, 1};
   size_t local_work_size[3] = {4, 64, 1};
 #else
   size_t global_work_size[3] = {128, 128, 1};

@@ -15,7 +15,8 @@
 #endif
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-__kernel void gemm( global const half8* a, global const half8* b, global half8* c )
+__kernel void gemm(const int M, const int N, const int K,
+                   global const half8* a, global const half8* b, global half8* c )
 {
   xtype c_r[8] = {0,0,0,0,0,0,0,0};
 
