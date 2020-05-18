@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
   assert(err == 0);
   C = clCreateBuffer(context, CL_MEM_READ_WRITE, M*N*2, NULL, &err);
   assert(err == 0);
-	printf("created buffers\n");
+  printf("created buffers\n");
 
 #ifdef IMAGE
   cl_image_format fmt;
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
   clSetKernelArg(kern, 3, sizeof(cl_mem), &A);
   clSetKernelArg(kern, 4, sizeof(cl_mem), &B);
   clSetKernelArg(kern, 5, sizeof(cl_mem), &C);
-	printf("set args\n");
+  printf("set args\n");
 
 #ifdef IMAGE
   size_t global_work_size[3] = {M/4, N/4, 1};
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
   size_t local_work_size[3] = {4, 4, 8};
 #endif
 
-	printf("ready to enqueue\n");
+  printf("ready to enqueue\n");
   for (int i = 0; i < 20; i++) {
     cl_event event;
     err = clEnqueueNDRangeKernel(q, kern, 3, NULL, global_work_size, local_work_size, 0, NULL, &event);

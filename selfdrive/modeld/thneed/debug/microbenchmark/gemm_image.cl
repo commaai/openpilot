@@ -3,11 +3,11 @@
 //#define USE_FP16
 
 #ifdef USE_FP16
-	#define xtype half4
+  #define xtype half4
   #define read_imagep read_imageh
   #define write_imagep write_imageh
 #else
-	#define xtype float4
+  #define xtype float4
   #define read_imagep read_imagef
   #define write_imagep write_imagef
 #endif
