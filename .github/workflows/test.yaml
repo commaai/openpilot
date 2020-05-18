@@ -4,7 +4,7 @@ on: [push, pull_request]
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
   PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
-  LOAD: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
+  LOAD: docker load < tmppilot/tmppilot
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
 
@@ -22,11 +22,11 @@ jobs:
         docker pull docker.io/commaai/openpilot:latest || true
 
         docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
-        docker save tmppilot:latest | gzip > tmppilot.tar.gz
+        docker save tmppilot:latest > tmppilot
     - uses: actions/upload-artifact@v2
       with:
-        name: tmppilot.tar.gz
-        path: tmppilot.tar.gz
+        name: tmppilot
+        path: tmppilot
 
   build_release:
     name: build release
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: tmppilot.tar.gz
+          name: tmppilot
       - name: Load image
         run: $LOAD
       - name: Login to dockerhub
@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: tmppilot.tar.gz
+          name: tmppilot
       - name: Load image
         run: $LOAD
       - name: flake8
@@ -104,7 +104,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: tmppilot.tar.gz
+          name: tmppilot
       - name: Load image
         run: $LOAD
       - name: Run unit tests
@@ -134,7 +134,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: tmppilot.tar.gz
+          name: tmppilot
       - name: Load image
         run: $LOAD
       - name: Run replay
@@ -167,7 +167,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: tmppilot.tar.gz
+          name: tmppilot
       - name: Load image
         run: $LOAD
       - name: Test longitudinal
@@ -196,7 +196,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: tmppilot.tar.gz
+          name: tmppilot
       - name: Load image
         run: $LOAD
       - name: Test car models
