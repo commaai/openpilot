@@ -378,6 +378,7 @@ FW_VERSIONS = {
       b'37805-5AW-G720\x00\x00',
       b'37805-5AZ-E850\x00\x00',
       b'37805-5BB-L640\x00\x00',
+      b'37805-5AN-AG20\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-5CG-A920\x00\x00',
@@ -424,6 +425,7 @@ FW_VERSIONS = {
       b'78109-TGG-A810\x00\x00',
       b'78109-TGG-A820\x00\x00',
       b'78109-TGL-G120\x00\x00',
+      b'78109-TGG-A610\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TBA-A150\x00\x00',
