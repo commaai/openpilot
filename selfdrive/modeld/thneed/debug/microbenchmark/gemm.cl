@@ -3,14 +3,14 @@
 #define USE_FP16
 
 #ifdef USE_FP16
-	#define up(x) x
-	#define down(x) x
-	#define xtype half8
+  #define up(x) x
+  #define down(x) x
+  #define xtype half8
   #define skip 128
 #else
-	#define up(x) convert_float8(x)
-	#define down(x) convert_half8(x)
-	#define xtype float8
+  #define up(x) convert_float8(x)
+  #define down(x) convert_half8(x)
+  #define xtype float8
   #define skip 128
 #endif
 
@@ -43,9 +43,9 @@ __kernel void gemm(const int M, const int N, const int K,
   }
 
   int c_off = a_off_thr*1024 + b_off_thr;
-	for (int i = 0; i < 8; i++) {
-		c[c_off] = down(c_r[i]);
-		c_off += skip;
-	}
+  for (int i = 0; i < 8; i++) {
+    c[c_off] = down(c_r[i]);
+    c_off += skip;
+  }
 }
 

@@ -35,16 +35,16 @@ void CachedCommand::disassemble() {
 
   int i = 0;
   while (i < len) {
-		int pktsize;
+    int pktsize;
     int pkttype = -1;
 
-		if (pkt_is_type0(src[i])) {
+    if (pkt_is_type0(src[i])) {
       pkttype = 0;
-			pktsize = type0_pkt_size(src[i]);
-		} else if (pkt_is_type3(src[i])) {
+      pktsize = type0_pkt_size(src[i]);
+    } else if (pkt_is_type3(src[i])) {
       pkttype = 3;
-			pktsize = type3_pkt_size(src[i]);
-		} else if (pkt_is_type4(src[i])) {
+      pktsize = type3_pkt_size(src[i]);
+    } else if (pkt_is_type4(src[i])) {
       pkttype = 4;
       pktsize = type4_pkt_size(src[i]);
     } else if (pkt_is_type7(src[i])) {
