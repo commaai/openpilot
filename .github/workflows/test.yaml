@@ -1,37 +1,21 @@
-name: Openpilot Tests
+name: openpilot tests
 on: [push, pull_request]
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
   PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
-  LOAD: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
+  BUILD: |
+      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+      docker pull docker.io/commaai/openpilot:latest || true
+      docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
 
 jobs:
-  build:
-    name: build
-    runs-on: ubuntu-16.04
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Build docker image
-      run: |
-        docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
-        docker pull docker.io/commaai/openpilot:latest || true
-
-        docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
-        docker save tmppilot:latest | gzip > tmppilot.tar.gz
-    - uses: actions/upload-artifact@v2
-      with:
-        name: tmppilot.tar.gz
-        path: tmppilot.tar.gz
-
   build_release:
     name: build release
     runs-on: ubuntu-16.04
-    timeout-minutes: 30
+    timeout-minutes: 50
     env:
       TEST_DIR: tmppilot
     steps:
@@ -56,41 +40,37 @@ jobs:
            .coveragerc-app $TEST_DIR
         cd $TEST_DIR
         mkdir pyextra laika laika_repo tools release
-    - name: Build
-      run: |
-        cd $TEST_DIR
-        docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
-        docker pull docker.io/commaai/openpilot:latest || true
-        docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
+    - name: Build Docker image
+      run: cd $TEST_DIR && eval "$BUILD"
+    - name: Build openpilot
+      run: $RUN "cd /tmp/openpilot && scons -j$(nproc)"
 
-  push:
-    name: push
+  docker_push:
+    name: docker push
     runs-on: ubuntu-16.04
-    needs: build
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    needs: linter # hack to ensure slow tests run first since this and linter are fast
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
-      - name: Login to dockerhub
-        run: docker login -u wmelching -p ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Tag image
-        run: docker tag tmppilot docker.io/commaai/openpilot:latest
-      - name: Push image
-        run: docker push docker.io/commaai/openpilot:latest
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Push to dockerhub
+        run: |
+          docker login -u wmelching -p ${{ secrets.DOCKERHUB_TOKEN }}
+          docker tag tmppilot docker.io/commaai/openpilot:latest
+          docker push docker.io/commaai/openpilot:latest
 
   linter:
     name: linter
     runs-on: ubuntu-16.04
-    needs: build
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: flake8
         run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
@@ -99,16 +79,16 @@ jobs:
   unit_tests:
     name: unit tests
     runs-on: ubuntu-16.04
-    needs: build
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: Run unit tests
         run: |
           $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
                     coverage run selfdrive/test/test_fingerprints.py && \
                     $UNIT_TEST common && \
                     $UNIT_TEST opendbc/can && \
@@ -127,17 +107,18 @@ jobs:
   process_replay:
     name: process replay
     runs-on: ubuntu-16.04
-    needs: build
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: Run replay
         run: |
-          $PERSIST "cd /tmp/openpilot && CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
@@ -158,17 +139,20 @@ jobs:
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-16.04
-    needs: build
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: Test longitudinal
         run: |
-          $PERSIST "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+          $PERSIST "mkdir -p /tmp/openpilot/selfdrive/test/out && \
+                    cd /tmp/openpilot/ && \
+                    scons -j$(nproc) && \
+                    cd selfdrive/test/longitudinal_maneuvers && \
+                    OPTEST=1 ./test_longitudinal.py"
       - name: Copy artifacts
         if: always()
         run: |
@@ -183,17 +167,20 @@ jobs:
   test_car_models:
     name: test car models
     runs-on: ubuntu-16.04
-    needs: build
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: Test car models
         run: |
-          $PERSIST "mkdir -p /data/params && cd /tmp/openpilot && coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && coverage combine"
+          $PERSIST "mkdir -p /data/params && \
+                    cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && \
+                    coverage combine"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci

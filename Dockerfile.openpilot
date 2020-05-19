@@ -1,5 +1,6 @@
 FROM ubuntu:16.04
 ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
@@ -22,12 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglfw3-dev \
     libglib2.0-0 \
     liblzma-dev \
-    libmysqlclient-dev \
     libomp-dev \
     libopencv-dev \
     libssl-dev \
     libsqlite3-dev \
-    libtool \
     libusb-1.0-0-dev \
     libczmq-dev \
     libzmq3-dev \
@@ -39,33 +38,49 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-pip \
     sudo \
     wget \
-    && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
+# Install python dependencies
 RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-RUN pyenv install 3.8.2 && pyenv global 3.8.2
-RUN pyenv rehash
-
-RUN pip install --no-cache-dir pipenv==2018.11.26
 
 COPY Pipfile Pipfile.lock /tmp/
-
-RUN cd /tmp && pipenv install --system --deploy
-
-# Install subset of dev dependencies needed for CI
-RUN pip install --no-cache-dir matplotlib==3.1.1 dictdiffer==0.8.0 fastcluster==1.1.25 aenum==2.2.1 lru-dict==1.1.6 scipy==1.4.1 tenacity==5.1.1 azure-common==1.1.23 azure-nspkg==3.0.2 azure-storage-blob==2.1.0 azure-storage-common==2.1.0 azure-storage-nspkg==3.1.0 pycurl==7.43.0.3 coverage==5.1
-
-ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
+RUN pyenv install 3.8.2 && \
+    pyenv global 3.8.2 && \
+    pyenv rehash && \
+    pip install --no-cache-dir pipenv==2018.11.26 && \
+    cd /tmp && \
+    pipenv install --system --deploy --clear && \
+    pip uninstall -y pipenv && \
+    pip install --no-cache-dir \
+      matplotlib==3.1.1 \
+      dictdiffer==0.8.0 \
+      fastcluster==1.1.25 \
+      aenum==2.2.1 \
+      lru-dict==1.1.6 \
+      scipy==1.4.1 \
+      tenacity==5.1.1 \
+      azure-common==1.1.23 \
+      azure-nspkg==3.0.2 \
+      azure-storage-blob==2.1.0 \
+      azure-storage-common==2.1.0 \
+      azure-storage-nspkg==3.1.0 \
+      pycurl==7.43.0.3 \
+      coverage==5.1
 
 RUN mkdir -p /tmp/openpilot
 
-COPY ./flake8_openpilot.sh ./pylint_openpilot.sh ./.pylintrc ./.coveragerc-app /tmp/openpilot/
+COPY SConstruct \
+     flake8_openpilot.sh \
+     pylint_openpilot.sh \
+     .pylintrc \
+     .coveragerc-app \
+     /tmp/openpilot/
 
 COPY ./pyextra /tmp/openpilot/pyextra
 COPY ./phonelibs /tmp/openpilot/phonelibs
@@ -79,8 +94,3 @@ COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./panda /tmp/openpilot/panda
 COPY ./selfdrive /tmp/openpilot/selfdrive
-
-COPY SConstruct /tmp/openpilot/SConstruct
-
-RUN mkdir -p /tmp/openpilot/selfdrive/test/out
-RUN cd /tmp/openpilot && scons -j$(nproc)
