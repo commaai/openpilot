@@ -24,9 +24,8 @@ INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 WRITE_CYCLES = 10  # write every 1000 cycles
 VP_INIT = np.array([W/2., H/2.])
 
-# These validity corners were chosen by looking at 1000
-# and taking most extreme cases with some margin.
-VP_VALIDITY_CORNERS = np.array([[W//2 - 120, 300], [W//2 + 120, 520]])
+# These values are needed to accomodate biggest modelframe
+VP_VALIDITY_CORNERS = np.array([[W//2 - 63, 300], [W//2 + 63, 520]])
 DEBUG = os.getenv("DEBUG") is not None
 
 
@@ -38,8 +37,8 @@ def is_calibration_valid(vp):
 def sanity_clip(vp):
   if np.isnan(vp).any():
     vp = VP_INIT
-  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 20, VP_VALIDITY_CORNERS[1,0] + 20),
-                   np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 20, VP_VALIDITY_CORNERS[1,1] + 20)])
+  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 5, VP_VALIDITY_CORNERS[1,0] + 5),
+                   np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 5, VP_VALIDITY_CORNERS[1,1] + 5)])
 
 
 def intrinsics_from_vp(vp):
