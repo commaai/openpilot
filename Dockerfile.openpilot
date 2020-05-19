@@ -23,7 +23,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     liblzma-dev \
     libomp-dev \
-    libopencv-dev \
     libssl-dev \
     libsqlite3-dev \
     libusb-1.0-0-dev \
