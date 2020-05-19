@@ -52,27 +52,33 @@ OBD_VERSION_REQUEST = b'\x09\x04'
 OBD_VERSION_RESPONSE = b'\x49\x04'
 
 
+# supports subaddressing, request, response
 REQUESTS = [
   # Hundai
   (
+    False,
     [HYUNDAI_VERSION_REQUEST],
     [HYUNDAI_VERSION_RESPONSE],
   ),
   # Honda
   (
+    False,
     [UDS_VERSION_REQUEST],
     [UDS_VERSION_RESPONSE],
   ),
   # Toyota
   (
+    True,
     [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
   ),
   (
+    True,
     [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
   ),
   (
+    True,
     [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
   )
@@ -148,8 +154,12 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
   fw_versions = {}
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
-      for request, response in REQUESTS:
+      for supports_sub_addr, request, response in REQUESTS:
         try:
+          # Don't send Hyundai and Honda requests to subaddress
+          if i != 0 and not supports_sub_addr:
+            continue
+
           query = IsoTpParallelQuery(sendcan, logcan, bus, addr_chunk, request, response, debug=debug)
           t = 2 * timeout if i == 0 else timeout
           fw_versions.update(query.get_data(t))
