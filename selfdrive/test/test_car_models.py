@@ -426,6 +426,7 @@ if __name__ == "__main__":
     params.put("CommunityFeaturesToggle", "1")
     params.put("Passive", "1" if route in passive_routes else "0")
 
+    os.environ['SKIP_FW_QUERY'] = "1"
     if checks.get('fingerprintSource', None) == 'fixed':
       os.environ['FINGERPRINT'] = checks['carFingerprint']
     else:
