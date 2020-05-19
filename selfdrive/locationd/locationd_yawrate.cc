@@ -32,7 +32,6 @@ void Localizer::update_state(const Eigen::Matrix<double, 1, 2> &C, const double 
 void Localizer::handle_sensor_events(capnp::List<cereal::SensorEventData>::Reader sensor_events, double current_time) {
   for (cereal::SensorEventData::Reader sensor_event : sensor_events){
     if (sensor_event.getSensor() == 5 && sensor_event.getType() == 16) {
-      sensor_data_time = current_time;
       double meas = -sensor_event.getGyroUncalibrated().getV()[0];
       update_state(C_gyro, R_gyro, current_time, meas);
     }
@@ -43,16 +42,11 @@ void Localizer::handle_camera_odometry(cereal::CameraOdometry::Reader camera_odo
   double R = pow(5 * camera_odometry.getRotStd()[2], 2);
   double meas = camera_odometry.getRot()[2];
   update_state(C_posenet, R, current_time, meas);
-
-  auto trans = camera_odometry.getTrans();
-  posenet_speed = sqrt(trans[0]*trans[0] + trans[1]*trans[1] + trans[2]*trans[2]);
-  camera_odometry_time = current_time;
 }
 
 void Localizer::handle_controls_state(cereal::ControlsState::Reader controls_state, double current_time) {
   steering_angle = controls_state.getAngleSteers() * DEGREES_TO_RADIANS;
   car_speed = controls_state.getVEgo();
-  controls_state_time = current_time;
 }
 
 
