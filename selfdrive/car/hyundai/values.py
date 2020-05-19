@@ -135,6 +135,17 @@ ECU_FINGERPRINT = {
   Ecu.fwdCamera: [832, 1156, 1191, 1342]
 }
 
+FW_VERSIONS = {
+  CAR.SONATA: {
+    (Ecu.unknown, 0x793, None): [b'0.7\x00\x00\x00\x00\x00\x00\x00\x00\x00'],  # Blindspot
+    (Ecu.esp, 0x7d1, None): [b'DN ESC \x06 104\x19\x08\x01 58910-L0100'],
+    (Ecu.eps, 0x7d4, None): [b'DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101'],
+    (Ecu.shiftByWire, 0x7e6, None): [b'PSBG4222  B510\x00\x00\x00\x00\x00\x00SDN0000NS0\xb8?\xccR'],
+    (Ecu.transmission, 0x7e1, None): [b'U903\x00\x00\x00\x00\x00\x00'],
+    (Ecu.unknown, 0x7d0, None): [b'DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ']  # SCC
+  }
+}
+
 CHECKSUM = {
   "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE],
   "6B": [CAR.KIA_SORENTO, CAR.HYUNDAI_GENESIS],
