@@ -50,35 +50,24 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = cp.vl["CruiseControl"]['Cruise_Activated'] != 0
     ret.cruiseState.available = cp.vl["CruiseControl"]['Cruise_On'] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.KPH_TO_MS
-    # EDM Impreza: 1 = mph
+    # EDM Impreza: 1, 2 = mph
     if cp.vl["Dash_State"]['Units'] in [1, 2]:
       ret.cruiseState.speed *= CV.MPH_TO_KPH
 
+    ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     ret.doorOpen = any([cp.vl["BodyInfo"]['DOOR_OPEN_RR'],
       cp.vl["BodyInfo"]['DOOR_OPEN_RL'],
       cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
       cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
     if self.car_fingerprint == CAR.IMPREZA:
-      ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
-      self.steer_not_allowed = 0
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     if self.car_fingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
-      self.steer_not_allowed = cp.vl["Steering_Torque"]["LKA_Lockout"]
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
-      self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
-
-    if self.car_fingerprint in [CAR.FORESTER]:
-      ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
-      ret.cruiseState.speed = 0
-      self.ready = True
-
-    if self.car_fingerprint in [CAR.OUTBACK, CAR.LEGACY]:
-      ret.seatbeltUnlatched = False # FIXME: stock ACC disengages on unlatch so this is fine for now, signal has not yet been found
-      ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
+      self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
 
     return ret
 
@@ -104,6 +93,7 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_FL", "BodyInfo", 1),
       ("DOOR_OPEN_RR", "BodyInfo", 1),
       ("DOOR_OPEN_RL", "BodyInfo", 1),
+      ("Units", "Dash_State", 1),
       ("Gear", "Transmission", 0),
       ("L_ADJACENT", "BSD_RCTA", 0),
       ("R_ADJACENT", "BSD_RCTA", 0),
@@ -111,27 +101,29 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
-      ("Dashlights", 10),
       ("Wheel_Speeds", 50),
       ("Steering_Torque", 50),
     ]
 
     if CP.carFingerprint == CAR.IMPREZA:
-      signals += [
-        ("Units", "Dash_State", 1),
-      ]
       checks += [
+        ("Dashlights", 10),
         ("BodyInfo", 10),
         ("CruiseControl", 20),
      ]
 
-    if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
-      signals += [
-       ("LKA_Lockout", "Steering_Torque", 0),
-      ]
+    if CP.carFingerprint == CAR.FORESTER:
       checks += [
-       ("CruiseControl", 50),
-     ]
+        ("Dashlights", 20),
+        ("BodyInfo", 1),
+        ("CruiseControl", 50),
+      ]
+
+    if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY]:
+      checks += [
+        ("Dashlights", 10),
+        ("CruiseControl", 50),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -140,6 +132,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.IMPREZA:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
+
         ("Counter", "ES_Distance", 0),
         ("Signal1", "ES_Distance", 0),
         ("Signal2", "ES_Distance", 0),
@@ -170,8 +163,15 @@ class CarState(CarStateBase):
         ("Signal5", "ES_LKAS_State", 0),
       ]
 
+      checks = [
+        ("ES_DashStatus", 10),
+      ]
+
     if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
       signals = [
+        ("Cruise_Set_Speed", "ES_DashStatus", 0),
+        ("Not_Ready_Startup", "ES_DashStatus", 0),
+
         ("Throttle_Cruise", "ES_CruiseThrottle", 0),
         ("Signal1", "ES_CruiseThrottle", 0),
         ("Cruise_Activated", "ES_CruiseThrottle", 0),
@@ -191,14 +191,8 @@ class CarState(CarStateBase):
         ("Signal7", "ES_CruiseThrottle", 0),
       ]
 
-    if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY]:
-      signals += [
-        ("Not_Ready_Startup", "ES_DashStatus", 0),
-        ("Cruise_Set_Speed", "ES_DashStatus", 0),
+      checks = [
+        ("ES_DashStatus", 20),
       ]
-
-    checks = [
-      ("ES_DashStatus", 10),
-    ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
