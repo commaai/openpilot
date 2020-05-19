@@ -1,6 +1,10 @@
 name: "Update Pipfile.lock"
-on: push # just for testing, to be removed
-# on: '00 08 * * 1' # Every monday on 08:00 UTC
+on:
+  schedule:
+    - cron: '00 08 * * 1' # Every monday on 08:00 UTC
+  push:
+    paths:
+    - 'Pipfile'
 
 jobs:
   piplock:
