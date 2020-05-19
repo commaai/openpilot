@@ -76,10 +76,10 @@ RUN pyenv install 3.8.2 && \
 RUN mkdir -p /tmp/openpilot
 
 COPY SConstruct \
-     ./flake8_openpilot.sh \
-     ./pylint_openpilot.sh \
-     ./.pylintrc \
-     ./.coveragerc-app \
+     flake8_openpilot.sh \
+     pylint_openpilot.sh \
+     .pylintrc \
+     .coveragerc-app \
      /tmp/openpilot/
 
 COPY ./pyextra /tmp/openpilot/pyextra
