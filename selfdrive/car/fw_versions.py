@@ -12,8 +12,10 @@ import panda.python.uds as uds
 from cereal import car
 Ecu = car.CarParams.Ecu
 
+
 def p16(val):
   return struct.pack("!H", val)
+
 
 TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
 TESTER_PRESENT_RESPONSE = bytes([uds.SERVICE_TYPE.TESTER_PRESENT + 0x40, 0x0])
@@ -36,6 +38,13 @@ UDS_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
 UDS_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION)
 
+
+HYUNDAI_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
+  p16(0xf1a0) # 4 Byte version number
+HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
 TOYOTA_VERSION_REQUEST = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE = b'\x5a\x88\x01'
 
@@ -43,24 +52,35 @@ OBD_VERSION_REQUEST = b'\x09\x04'
 OBD_VERSION_RESPONSE = b'\x49\x04'
 
 
+# supports subaddressing, request, response
 REQUESTS = [
+  # Hundai
+  (
+    False,
+    [HYUNDAI_VERSION_REQUEST],
+    [HYUNDAI_VERSION_RESPONSE],
+  ),
   # Honda
   (
+    False,
     [UDS_VERSION_REQUEST],
-   [UDS_VERSION_RESPONSE]
+    [UDS_VERSION_RESPONSE],
   ),
   # Toyota
   (
+    True,
     [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
-    [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE]
+    [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
   ),
   (
+    True,
     [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
-    [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE]
+    [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
   ),
   (
+    True,
     [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE]
+    [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
   )
 ]
 
@@ -134,8 +154,12 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
   fw_versions = {}
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
-      for request, response in REQUESTS:
+      for supports_sub_addr, request, response in REQUESTS:
         try:
+          # Don't send Hyundai and Honda requests to subaddress
+          if i != 0 and not supports_sub_addr:
+            continue
+
           query = IsoTpParallelQuery(sendcan, logcan, bus, addr_chunk, request, response, debug=debug)
           t = 2 * timeout if i == 0 else timeout
           fw_versions.update(query.get_data(t))
