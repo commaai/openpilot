@@ -15,7 +15,7 @@ jobs:
   build_release:
     name: build release
     runs-on: ubuntu-16.04
-    timeout-minutes: 30
+    timeout-minutes: 50
     env:
       TEST_DIR: tmppilot
     steps:
@@ -110,7 +110,7 @@ jobs:
   process_replay:
     name: process replay
     runs-on: ubuntu-16.04
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:
@@ -142,7 +142,7 @@ jobs:
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-16.04
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:
@@ -170,7 +170,7 @@ jobs:
   test_car_models:
     name: test car models
     runs-on: ubuntu-16.04
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:
