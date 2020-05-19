@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang \
     cmake \
     curl \
-    git \
     ffmpeg \
+    git \
     libarchive-dev \
     libbz2-dev \
     libcurl4-openssl-dev \
@@ -53,7 +53,7 @@ RUN pyenv install 3.8.2 && \
     pyenv rehash && \
     pip install --no-cache-dir pipenv==2018.11.26 && \
     cd /tmp && \
-    pipenv install --sytem --deploy
+    pipenv install --system --deploy
 
 # Install subset of dev dependencies needed for CI
 RUN pip install --no-cache-dir \
