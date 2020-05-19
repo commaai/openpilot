@@ -127,8 +127,6 @@ class Controls:
     self.sm['dMonitoringState'].events = []
     self.sm['dMonitoringState'].awarenessStatus = 1.
     self.sm['dMonitoringState'].faceDetected = False
-    self.sm['liveLocationKalman'].inputsOK = True
-    self.sm['liveLocationKalman'].posenetOK = True
 
     self.startup_event = get_startup_event(car_recognized, controller_available, hw_type)
 
