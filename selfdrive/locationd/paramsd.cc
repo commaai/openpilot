@@ -116,22 +116,11 @@ int main(int argc, char *argv[]) {
       localizer.handle_log(event);
 
       auto which = event.which();
-      // Throw vision failure if posenet and odometric speed too different
-      if (which == cereal::Event::CAMERA_ODOMETRY){
-        if (std::abs(localizer.posenet_speed - localizer.car_speed) > std::max(0.4 * localizer.car_speed, 5.0)) {
-          posenet_invalid_count++;
-        } else {
-          posenet_invalid_count = 0;
-        }
-      } else if (which == cereal::Event::CONTROLS_STATE){
+      if (which == cereal::Event::CONTROLS_STATE){
         save_counter++;
 
         double yaw_rate = -localizer.x[0];
         bool valid = learner.update(yaw_rate, localizer.car_speed, localizer.steering_angle);
-
-        // TODO: Fix in replay
-        double sensor_data_age = localizer.controls_state_time - localizer.sensor_data_time;
-        double camera_odometry_age = localizer.controls_state_time - localizer.camera_odometry_time;
 
         double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
         double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
@@ -143,13 +132,10 @@ int main(int argc, char *argv[]) {
         live_params.setValid(valid);
         live_params.setYawRate(localizer.x[0]);
         live_params.setGyroBias(localizer.x[1]);
-        live_params.setSensorValid(sensor_data_age < 5.0);
         live_params.setAngleOffset(angle_offset_degrees);
         live_params.setAngleOffsetAverage(angle_offset_average_degrees);
         live_params.setStiffnessFactor(learner.x);
         live_params.setSteerRatio(learner.sR);
-        live_params.setPosenetSpeed(localizer.posenet_speed);
-        live_params.setPosenetValid((posenet_invalid_count < 4) && (camera_odometry_age < 5.0));
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
