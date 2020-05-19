@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libomp-dev \
     libopencv-dev \
     libssl-dev \
+    libsqlite3-dev \
     libusb-1.0-0-dev \
     libczmq-dev \
     libzmq3-dev \
@@ -44,19 +45,32 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-RUN pyenv install 3.8.2 && pyenv global 3.8.2
-RUN pyenv rehash
-
-RUN pip install --no-cache-dir pipenv==2018.11.26
 
 COPY Pipfile Pipfile.lock /tmp/
-
-RUN cd /tmp && pipenv install --system --deploy
+RUN pyenv install 3.8.2 && \
+    pyenv global 3.8.2 && \
+    pyenv rehash && \
+    pip install --no-cache-dir pipenv==2018.11.26 && \
+    cd /tmp && \
+    pipenv install --sytem --deploy
 
 # Install subset of dev dependencies needed for CI
-RUN pip install --no-cache-dir matplotlib==3.1.1 dictdiffer==0.8.0 fastcluster==1.1.25 aenum==2.2.1 lru-dict==1.1.6 scipy==1.4.1 tenacity==5.1.1 azure-common==1.1.23 azure-nspkg==3.0.2 azure-storage-blob==2.1.0 azure-storage-common==2.1.0 azure-storage-nspkg==3.1.0 pycurl==7.43.0.3 coverage==5.1
+RUN pip install --no-cache-dir \
+    matplotlib==3.1.1 \
+    dictdiffer==0.8.0 \
+    fastcluster==1.1.25 \
+    aenum==2.2.1 \
+    lru-dict==1.1.6 \
+    scipy==1.4.1 \
+    tenacity==5.1.1 \
+    azure-common==1.1.23 \
+    azure-nspkg==3.0.2 \
+    azure-storage-blob==2.1.0 \
+    azure-storage-common==2.1.0 \
+    azure-storage-nspkg==3.1.0 \
+    pycurl==7.43.0.3 \
+    coverage==5.1
 
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
