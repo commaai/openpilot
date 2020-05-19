@@ -25,11 +25,7 @@ public:
   Eigen::Matrix2d P;
   double steering_angle = 0;
   double car_speed = 0;
-  double posenet_speed = 0;
   double prev_update_time = -1;
-  double controls_state_time = -1;
-  double sensor_data_time = -1;
-  double camera_odometry_time = -1;
 
   Localizer();
   void handle_log(cereal::Event::Reader event);
