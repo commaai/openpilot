@@ -50,7 +50,7 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', \
-                                     'dMonitoringState', 'plan', 'pathPlan'])
+                                     'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -123,12 +123,12 @@ class Controls:
     self.current_alert_types = []
 
     self.sm['liveCalibration'].calStatus = Calibration.INVALID
-    self.sm['pathPlan'].sensorValid = True
-    self.sm['pathPlan'].posenetValid = True
     self.sm['thermal'].freeSpace = 1.
     self.sm['dMonitoringState'].events = []
     self.sm['dMonitoringState'].awarenessStatus = 1.
     self.sm['dMonitoringState'].faceDetected = False
+    self.sm['liveLocationKalman'].inputsOK = True
+    self.sm['liveLocationKalman'].posenetOK = True
 
     self.startup_event = get_startup_event(car_recognized, controller_available, hw_type)
 
@@ -201,11 +201,11 @@ class Controls:
       self.events.add(EventName.commIssue)
     if not self.sm['pathPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
-    if not self.sm['pathPlan'].sensorValid and os.getenv("NOSENSOR") is None:
+    if not self.sm['liveLocationKalman'].inputsOK and os.getenv("NOSENSOR") is None:
       self.events.add(EventName.sensorDataInvalid)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
-    if not self.sm['pathPlan'].posenetValid:
+    if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['plan'].radarValid:
       self.events.add(EventName.radarFault)

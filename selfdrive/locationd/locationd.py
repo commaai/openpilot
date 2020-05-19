@@ -57,6 +57,10 @@ class Localizer():
     self.calibrated = 0
     self.H = get_H()
 
+    self.posenet_invalid_count = 0
+    self.posenet_speed = 0
+    self.car_speed = 0
+
   @staticmethod
   def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov):
     predicted_std = np.sqrt(np.diagonal(predicted_cov))
@@ -141,6 +145,12 @@ class Localizer():
   def liveLocationMsg(self, time):
     fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P)
 
+    if abs(self.posenet_speed - self.car_speed) > max(0.4 * self.car_speed, 5.0):
+      self.posenet_invalid_count += 1
+    else:
+      self.posenet_invalid_count = 0
+    fix.posenetOK = self.posenet_invalid_count < 4
+
     #fix.gpsWeek = self.time.week
     #fix.gpsTimeOfWeek = self.time.tow
     fix.unixTimestampMillis = self.unix_timestamp_millis
@@ -198,12 +208,12 @@ class Localizer():
     self.update_kalman(current_time, ObservationKind.ECEF_POS, ecef_pos, R=ecef_pos_R)
     self.update_kalman(current_time, ObservationKind.ECEF_VEL, ecef_vel, R=ecef_vel_R)
 
-
   def handle_car_state(self, current_time, log):
     self.speed_counter += 1
 
     if self.speed_counter % SENSOR_DECIMATION == 0:
       self.update_kalman(current_time, ObservationKind.ODOMETRIC_SPEED, [log.vEgo])
+      self.car_speed = abs(log.vEgo)
       if log.vEgo == 0:
         self.update_kalman(current_time, ObservationKind.NO_ROT, [0, 0, 0])
 
@@ -218,6 +228,7 @@ class Localizer():
                          np.concatenate([rot_device, 10*rot_device_std]))
       trans_device = self.device_from_calib.dot(log.trans)
       trans_device_std = self.device_from_calib.dot(log.transStd)
+      self.posenet_speed = np.linalg.norm(trans_device)
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_TRANSLATION,
                          np.concatenate([trans_device, 10*trans_device_std]))
@@ -263,7 +274,7 @@ class Localizer():
 
 def locationd_thread(sm, pm, disabled_logs=[]):
   if sm is None:
-    socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration']
+    socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration', 'carState']
     sm = messaging.SubMaster(socks)
   if pm is None:
     pm = messaging.PubMaster(['liveLocationKalman'])
@@ -293,6 +304,8 @@ def locationd_thread(sm, pm, disabled_logs=[]):
       msg.logMonoTime = t
 
       msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
+      msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
+
       pm.send('liveLocationKalman', msg)
 
 
