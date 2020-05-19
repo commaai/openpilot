@@ -56,23 +56,22 @@ RUN pyenv install 3.8.2 && \
     pip install --no-cache-dir pipenv==2018.11.26 && \
     cd /tmp && \
     pipenv install --system --deploy --clear && \
-    # TODO: check if this is worth it
-    #pip uninstall -y pipenv && \
+    pip uninstall -y pipenv && \
     pip install --no-cache-dir \
-    matplotlib==3.1.1 \
-    dictdiffer==0.8.0 \
-    fastcluster==1.1.25 \
-    aenum==2.2.1 \
-    lru-dict==1.1.6 \
-    scipy==1.4.1 \
-    tenacity==5.1.1 \
-    azure-common==1.1.23 \
-    azure-nspkg==3.0.2 \
-    azure-storage-blob==2.1.0 \
-    azure-storage-common==2.1.0 \
-    azure-storage-nspkg==3.1.0 \
-    pycurl==7.43.0.3 \
-    coverage==5.1
+      matplotlib==3.1.1 \
+      dictdiffer==0.8.0 \
+      fastcluster==1.1.25 \
+      aenum==2.2.1 \
+      lru-dict==1.1.6 \
+      scipy==1.4.1 \
+      tenacity==5.1.1 \
+      azure-common==1.1.23 \
+      azure-nspkg==3.0.2 \
+      azure-storage-blob==2.1.0 \
+      azure-storage-common==2.1.0 \
+      azure-storage-nspkg==3.1.0 \
+      pycurl==7.43.0.3 \
+      coverage==5.1
 
 RUN mkdir -p /tmp/openpilot
 
