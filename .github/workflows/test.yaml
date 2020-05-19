@@ -41,7 +41,7 @@ jobs:
         cd $TEST_DIR
         mkdir pyextra laika laika_repo tools release
     - name: Build Docker image
-      run: cd $TEST_DIR && eval $BUILD
+      run: cd $TEST_DIR && eval "$BUILD"
         docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
         docker pull docker.io/commaai/openpilot:latest || true
         docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
@@ -58,7 +58,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: eval $BUILD
+        run: eval "$BUILD"
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.DOCKERHUB_TOKEN }}
@@ -73,7 +73,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: eval $BUILD
+        run: eval "$BUILD"
       - name: flake8
         run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
@@ -87,7 +87,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: eval $BUILD
+        run: eval "$BUILD"
       - name: Run unit tests
         run: |
           $PERSIST "cd /tmp/openpilot && \
@@ -116,7 +116,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: eval $BUILD
+        run: eval "$BUILD"
       - name: Run replay
         run: |
           $PERSIST "cd /tmp/openpilot && \
@@ -148,7 +148,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: eval $BUILD
+        run: eval "$BUILD"
       - name: Test longitudinal
         run: |
           $PERSIST "mkdir -p /tmp/openpilot/selfdrive/test/out && \
@@ -176,7 +176,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: eval $BUILD
+        run: eval "$BUILD"
       - name: Test car models
         run: |
           $PERSIST "mkdir -p /data/params && \
