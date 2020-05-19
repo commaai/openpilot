@@ -42,17 +42,14 @@ jobs:
         mkdir pyextra laika laika_repo tools release
     - name: Build Docker image
       run: cd $TEST_DIR && eval "$BUILD"
-        docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
-        docker pull docker.io/commaai/openpilot:latest || true
-        docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
     - name: Build openpilot
       run: $RUN "cd /tmp/openpilot && scons -j$(nproc)"
 
   docker_push:
     name: docker push
     runs-on: ubuntu-16.04
-    #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    if: github.repository == 'commaai/openpilot'
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    needs: linter # hack to ensure slow tests run first since this and linter are fast
     steps:
       - uses: actions/checkout@v2
         with:
