@@ -56,12 +56,14 @@ jobs:
            .coveragerc-app $TEST_DIR
         cd $TEST_DIR
         mkdir pyextra laika laika_repo tools release
-    - name: Build
+    - name: Build docker image
       run: |
         cd $TEST_DIR
         docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
         docker pull docker.io/commaai/openpilot:latest || true
         docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
+    - name: Build openpilot
+      run: $RUN "cd /tmp/openpilot && scons -j$(nproc)"
 
   push:
     name: push
