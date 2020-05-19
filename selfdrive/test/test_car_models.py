@@ -417,9 +417,7 @@ if __name__ == "__main__":
 
   results = {}
   for route, checks in routes.items():
-    print("GETTING ROUTE LOGS")
     get_route_log(route)
-    print("DONE GETTING ROUTE LOGS")
 
     params = Params()
     params.clear_all()
