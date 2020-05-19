@@ -137,12 +137,12 @@ ECU_FINGERPRINT = {
 
 FW_VERSIONS = {
   CAR.SONATA: {
-    (Ecu.unknown, 0x793, None): [b'0.7\x00\x00\x00\x00\x00\x00\x00\x00\x00'],  # Blindspot
-    (Ecu.esp, 0x7d1, None): [b'DN ESC \x06 104\x19\x08\x01 58910-L0100'],
-    (Ecu.eps, 0x7d4, None): [b'DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101'],
-    (Ecu.shiftByWire, 0x7e6, None): [b'PSBG4222  B510\x00\x00\x00\x00\x00\x00SDN0000NS0\xb8?\xccR'],
+    (Ecu.esp, 0x7d1, None): [b'\xf1\x8758910-L0100\xf1\xa01.04'],
+    (Ecu.engine, 0x700, None): [b'\xf1\x8795590L0000'],
+    (Ecu.engine, 0x7e0, None): [b'\xf1\x87391162M003\xf1\xa0000F'],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x8756310L0010\x00\xf1\xa01.01'],
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x8799110L0000\xf1\xa01.00'],
     (Ecu.transmission, 0x7e1, None): [b'U903\x00\x00\x00\x00\x00\x00'],
-    (Ecu.unknown, 0x7d0, None): [b'DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ']  # SCC
   }
 }
 
