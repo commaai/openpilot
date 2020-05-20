@@ -11,7 +11,7 @@ from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
 
-FixStatus = log.LiveLocationKalman.Status
+KalmanStatus = log.LiveLocationKalman.Status
 
 CARSTATE_DECIMATION = 5
 
@@ -43,7 +43,7 @@ class ParamsLearner:
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
       if self.active:
-        if msg.inputsOK and msg.posenetOK and msg.status == FixStatus.valid:
+        if msg.inputsOK and msg.posenetOK and msg.status == KalmanStatus.valid:
           self.kf.predict_and_observe(t,
                                       ObservationKind.ROAD_FRAME_YAW_RATE,
                                       np.array([[[-yaw_rate]]]),
