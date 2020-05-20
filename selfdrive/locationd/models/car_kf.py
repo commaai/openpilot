@@ -49,8 +49,8 @@ class CarKalman(KalmanFilter):
   Q = np.diag([
     (.05/100)**2,
     .01**2,
-    math.radians(0.002)**2,
-    math.radians(0.1)**2,
+    math.radians(0.02)**2,
+    math.radians(0.25)**2,
 
     .1**2, .01**2,
     math.radians(0.1)**2,
@@ -60,7 +60,7 @@ class CarKalman(KalmanFilter):
 
   obs_noise = {
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
-    ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(5.0)**2),
+    ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
     ObservationKind.STIFFNESS: np.atleast_2d(5.0**2),
     ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
@@ -139,7 +139,7 @@ class CarKalman(KalmanFilter):
 
   def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0):
     dim_state = self.initial_x.shape[0]
-    dim_state_err = self.initial_P_diag.shape[0]
+    dim_state_err = self.P_initial.shape[0]
     x_init = self.initial_x
     x_init[States.STEER_RATIO] = steer_ratio
     x_init[States.STIFFNESS] = stiffness_factor

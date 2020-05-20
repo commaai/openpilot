@@ -194,6 +194,7 @@ routes = {
     'carFingerprint': TOYOTA.CAMRY,
     'enableCamera': True,
     'enableDsu': False,
+    'fingerprintSource': 'fixed',
   },
   "f7b6be73e3dfd36c|2019-05-11--22-34-20": {
     'carFingerprint': TOYOTA.AVALON,
