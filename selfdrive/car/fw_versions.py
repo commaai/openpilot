@@ -141,7 +141,7 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
       for ecu_type, addr, sub_addr in c.keys():
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
-          ecu_types[a] = ecu_type
+          ecu_types[(addr, sub_addr)] = ecu_type
 
         if sub_addr is None:
           if a not in parallel_addrs:
