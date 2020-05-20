@@ -143,6 +143,13 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x8799110L0000\xf1\xa01.00'],
     (Ecu.transmission, 0x7e1, None): [b'U903\x00\x00\x00\x00\x00\x00'],
   }
+  CAR.PALISADE: {
+    (Ecu.esp, 0x7d1, None): [b'\xf1\xa01.02'],
+    (Ecu.engine, 0x7e0, None): [b'640J0051\x00\x00\x00\x00\x00\x00\x00\x00'],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x8793571S1120\xf1\xa0100'],
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\xa01.04'],
+    (Ecu.transmission, 0x7e1, None): [b'U891\x00\x00\x00\x00\x00\x00'],
+  }
 }
 
 CHECKSUM = {
