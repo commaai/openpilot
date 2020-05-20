@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.swaglog import cloudlog
-from selfdrive.car.fingerprints import FW_VERSIONS
+from selfdrive.car.fingerprints import get_attr_from_cars, FW_VERSIONS
 from selfdrive.car.toyota.values import CAR as TOYOTA
 import panda.python.uds as uds
 
@@ -56,29 +56,29 @@ OBD_VERSION_RESPONSE = b'\x49\x04'
 REQUESTS = [
   # Hundai
   (
-    False,
+    "hyundai",
     [HYUNDAI_VERSION_REQUEST],
     [HYUNDAI_VERSION_RESPONSE],
   ),
   # Honda
   (
-    False,
+    "honda",
     [UDS_VERSION_REQUEST],
     [UDS_VERSION_RESPONSE],
   ),
   # Toyota
   (
-    True,
+    "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
   ),
   (
-    True,
+    "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
   ),
   (
-    True,
+    "toyota",
     [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
   )
@@ -132,37 +132,37 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
   addrs = []
   parallel_addrs = []
 
-  versions = FW_VERSIONS
+  versions = get_attr_from_cars('FW_VERSIONS', combine_brands=False)
   if extra is not None:
     versions.update(extra)
 
-  for c in versions.values():
-    for ecu_type, addr, sub_addr in c.keys():
-      a = (addr, sub_addr)
-      if a not in ecu_types:
-        ecu_types[a] = ecu_type
+  for brand, brand_versions in versions.items():
+    for c in brand_versions.values():
+      for ecu_type, addr, sub_addr in c.keys():
+        a = (brand, addr, sub_addr)
+        if a not in ecu_types:
+          ecu_types[(addr, sub_addr)] = ecu_type
 
-      if sub_addr is None:
-        if a not in parallel_addrs:
-          parallel_addrs.append(a)
-      else:
-        if [a] not in addrs:
-          addrs.append([a])
+        if sub_addr is None:
+          if a not in parallel_addrs:
+            parallel_addrs.append(a)
+        else:
+          if [a] not in addrs:
+            addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
 
   fw_versions = {}
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
-      for supports_sub_addr, request, response in REQUESTS:
+      for brand, request, response in REQUESTS:
         try:
-          # Don't send Hyundai and Honda requests to subaddress
-          if i != 0 and not supports_sub_addr:
-            continue
+          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any')]
 
-          query = IsoTpParallelQuery(sendcan, logcan, bus, addr_chunk, request, response, debug=debug)
-          t = 2 * timeout if i == 0 else timeout
-          fw_versions.update(query.get_data(t))
+          if addrs:
+            query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, request, response, debug=debug)
+            t = 2 * timeout if i == 0 else timeout
+            fw_versions.update(query.get_data(t))
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
@@ -199,12 +199,13 @@ if __name__ == "__main__":
 
   extra = None
   if args.scan:
-    extra = {"DEBUG": {}}
+    extra = {}
     # Honda
     for i in range(256):
-      extra["DEBUG"][(Ecu.unknown, 0x18da00f1 + (i << 8), None)] = []
-      extra["DEBUG"][(Ecu.unknown, 0x700 + i, None)] = []
-      extra["DEBUG"][(Ecu.unknown, 0x750, i)] = []
+      extra[(Ecu.unknown, 0x18da00f1 + (i << 8), None)] = []
+      extra[(Ecu.unknown, 0x700 + i, None)] = []
+      extra[(Ecu.unknown, 0x750, i)] = []
+    extra = {"any": {"debug": extra}}
 
   time.sleep(1.)
 
