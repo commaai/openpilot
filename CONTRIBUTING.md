@@ -2,7 +2,7 @@
 
 Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use.
 
-Most open source development activity is coordinated through our [Discord](https://discord.comma.ai). A lot of documentation is available on our [medium](https://medium.com/@comma_ai/)
+Most open source development activity is coordinated through our [Discord](https://discord.comma.ai). A lot of documentation is available on our [medium](https://medium.com/@comma_ai/).
 
 ## Getting Started
 
@@ -18,7 +18,7 @@ You can test your changes on your machine by running `run_docker_tests.sh`. This
 
 ### Automated Testing
 
-All PRs are automatically checked by Github Actions. Check out `.github/workflows/` for what Github Actions runs. Any new tests sould be added to Github Actions.
+All PRs and commits are automatically checked by Github Actions. Check out `.github/workflows/` for what Github Actions runs. Any new tests sould be added to Github Actions.
 
 ### Code Style and Linting
 
@@ -48,3 +48,4 @@ Modules that are in seperate repositories include:
 * laika
 * opendbc
 * panda
+* rednose
