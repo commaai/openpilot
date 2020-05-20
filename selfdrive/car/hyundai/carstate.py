@@ -324,7 +324,7 @@ class CarState(CarStateBase):
         #("E_EMS11", 100),
       #]
     if CP.spasEnabled:
-      if not CP.mdpsBus == 1:
+      if CP.mdpsBus == 1:
         signals += [
           ("SWI_IGK", "EMS11", 0),
           ("F_N_ENG", "EMS11", 0),
