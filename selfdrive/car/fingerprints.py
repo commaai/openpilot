@@ -2,7 +2,7 @@ import os
 from common.basedir import BASEDIR
 
 
-def get_attr_from_cars(attr, result=dict):
+def get_attr_from_cars(attr, result=dict, combine_brands=True):
   # read all the folders in selfdrive/car and return a dict where:
   # - keys are all the car models
   # - values are attr values from all car folders
@@ -19,7 +19,12 @@ def get_attr_from_cars(attr, result=dict):
 
       if isinstance(attr_values, dict):
         for f, v in attr_values.items():
-          result[f] = v
+          if combine_brands:
+            result[f] = v
+          else:
+            if car_name not in result:
+              result[car_name] = {}
+            result[car_name][f] = v
       elif isinstance(attr_values, list):
         result += attr_values
 
