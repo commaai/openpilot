@@ -89,7 +89,7 @@ pipenv install --system --deploy
 pip install -r tools/requirements.txt
 
 # to make modeld work on PC with nvidia GPU
-pip install tensorflow-gpu==2.2
+pip install tensorflow==2.2
 
 # for loggerd to work on ubuntu
 # TODO: PC should log somewhere else
