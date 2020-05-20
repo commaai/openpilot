@@ -21,6 +21,7 @@ from sympy.utilities.lambdify import lambdify
 from rednose.helpers.sympy_helpers import euler_rotate
 
 
+OUTPUT_DECIMATION = 2
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
 
@@ -60,6 +61,9 @@ class Localizer():
     self.posenet_invalid_count = 0
     self.posenet_speed = 0
     self.car_speed = 0
+
+    self.converter = coord.LocalCoord.from_ecef(self.kf.x[States.ECEF_POS])
+    self.unix_timestamp_millis = 0
 
   @staticmethod
   def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov):
@@ -271,15 +275,15 @@ class Localizer():
     self.speed_counter = 0
     self.cam_counter = 0
 
-
 def locationd_thread(sm, pm, disabled_logs=[]):
   if sm is None:
     socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration', 'carState']
-    sm = messaging.SubMaster(socks)
+    sm = messaging.SubMaster(socks, ignore_alive=['gpsLocationExternal'])
   if pm is None:
     pm = messaging.PubMaster(['liveLocationKalman'])
 
   localizer = Localizer(disabled_logs=disabled_logs)
+  camera_odometry_cnt = 0
 
   while True:
     sm.update()
@@ -298,15 +302,17 @@ def locationd_thread(sm, pm, disabled_logs=[]):
         elif sock == "liveCalibration":
           localizer.handle_live_calib(t, sm[sock])
 
-    if sm.updated['gpsLocationExternal']:
-      t = sm.logMonoTime['gpsLocationExternal']
-      msg = messaging.new_message('liveLocationKalman')
-      msg.logMonoTime = t
+    if sm.updated['cameraOdometry']:
+      camera_odometry_cnt += 1
 
-      msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
-      msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
+      if camera_odometry_cnt % OUTPUT_DECIMATION == 0:
+        t = sm.logMonoTime['cameraOdometry']
+        msg = messaging.new_message('liveLocationKalman')
+        msg.logMonoTime = t
 
-      pm.send('liveLocationKalman', msg)
+        msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
+        msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
+        pm.send('liveLocationKalman', msg)
 
 
 def main(sm=None, pm=None):
