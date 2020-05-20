@@ -197,6 +197,7 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = ret.sccBus == -1
     ret.openpilotLongitudinalControl = bool(ret.sccBus and not ret.radarOffCan)
     ret.autoLcaEnabled = False
+    ret.spasEnabled = False
 
     return ret
 

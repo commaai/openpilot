@@ -105,3 +105,44 @@ def create_lfa_mfa(packer, frame, enabled):
   # HDA_USM: nothing
 
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
+
+def create_scc12(packer, apply_accel, enabled, cnt, scc12):
+  values = scc12
+  if enabled and scc12["ACCMode"] == 1:
+    values["aReqMax"] = apply_accel
+    values["aReqMin"] = apply_accel
+  values["CR_VSM_Alive"] = cnt
+  values["CR_VSM_ChkSum"] = 0
+
+  dat = packer.make_can_msg("SCC12", 0, values)[2]
+  values["CR_VSM_ChkSum"] = 16 - sum([sum(divmod(i, 16)) for i in dat]) % 16
+
+  return packer.make_can_msg("SCC12", 0, values)
+
+def create_spas11(packer, car_fingerprint, frame, en_spas, apply_steer, bus):
+  values = {
+    "CF_Spas_Stat": en_spas,
+    "CF_Spas_TestMode": 0,
+    "CR_Spas_StrAngCmd": apply_steer,
+    "CF_Spas_BeepAlarm": 0,
+    "CF_Spas_Mode_Seq": 2,
+    "CF_Spas_AliveCnt": frame % 0x200,
+    "CF_Spas_Chksum": 0,
+    "CF_Spas_PasVol": 0,
+  }
+  dat = packer.make_can_msg("SPAS11", 0, values)[2]
+  if car_fingerprint in CHECKSUM["crc8"]:
+    dat = dat[:6]
+    values["CF_Spas_Chksum"] = hyundai_checksum(dat)
+  else:
+    values["CF_Spas_Chksum"] = sum(dat[:6]) % 256
+  return packer.make_can_msg("SPAS11", bus, values)
+
+def create_spas12(bus):
+  return [1268, 0, "\x00\x00\x00\x00\x00\x00\x00\x00", bus]
+
+def create_ems11(packer, ems11, enabled):
+  values = ems11
+  if enabled:
+    values["VS"] = 0
+  return packer.make_can_msg("values", 1, ems11)

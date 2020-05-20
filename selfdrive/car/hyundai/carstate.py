@@ -150,6 +150,11 @@ class CarState(CarStateBase):
       self.lkas_button_on = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"]
     self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
+    if "EMS11" in cp.vl:
+      self.ems11 = cp.vl["EMS11"]
+    if "MDPS11" in cp_mdps.vl:
+      self.mdps11_strang = cp_mdps.vl["MDPS11"]["CR_Mdps_StrAng"]
+      self.mdps11_stat = cp_mdps.vl["MDPS11"]["CF_Mdps_Stat"]
 
     return ret
 
@@ -216,7 +221,7 @@ class CarState(CarStateBase):
       ("CGW4", 5),
       ("WHL_SPD11", 50),
     ]
-    if not CP.mdpsBus:
+    if CP.mdpsBus == 0:
       signals += [
         ("CR_Mdps_StrColTq", "MDPS12", 0),
         ("CF_Mdps_Def", "MDPS12", 0),
@@ -233,7 +238,7 @@ class CarState(CarStateBase):
       checks += [
         ("MDPS12", 50)
       ]
-    if not CP.sasBus:
+    if CP.sasBus == 0:
       signals += [
         ("SAS_Angle", "SAS11", 0),
         ("SAS_Speed", "SAS11", 0),
@@ -246,7 +251,7 @@ class CarState(CarStateBase):
         ("CRUISE_LAMP_M", "EMS16", 0),
         ("CF_Lvr_CruiseSet", "LVR12", 0),
       ]
-    elif not CP.sccBus:
+    elif CP.sccBus == 0:
       signals += [
         ("MainMode_ACC", "SCC11", 0),
         ("VSetDis", "SCC11", 0),
@@ -318,6 +323,30 @@ class CarState(CarStateBase):
       #checks += [
         #("E_EMS11", 100),
       #]
+    if CP.spasEnabled:
+      if not CP.mdpsBus == 1:
+        signals += [
+          ("SWI_IGK", "EMS11", 0),
+          ("F_N_ENG", "EMS11", 0),
+          ("ACK_TCS", "EMS11", 0),
+          ("PUC_STAT", "EMS11", 0),
+          ("TQ_COR_STAT", "EMS11", 0),
+          ("RLY_AC", "EMS11", 0),
+          ("F_SUB_TQI", "EMS11", 0),
+          ("TQI_ACOR", "EMS11", 0),
+          ("N", "EMS11", 0),
+          ("TQI", "EMS11", 0),
+          ("TQFR", "EMS11", 0),
+          ("VS", "EMS11", 0),
+          ("RATIO_TQI_BAS_MAX_STND", "EMS11", 0),
+        ]
+        checks += [("EMS11", 100)]
+      elif CP.mdpsBus == 0:
+        signals += [
+          ("CR_Mdps_StrAng", "MDPS11", 0),
+          ("CF_Mdps_Stat", "MDPS11", 0),
+        ]
+        checks += [("MDPS11", 100)]
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
   @staticmethod
@@ -341,6 +370,14 @@ class CarState(CarStateBase):
       checks += [
         ("MDPS12", 50)
       ]
+      if CP.spasEnabled:
+        signals += [
+          ("CR_Mdps_StrAng", "MDPS11", 0),
+          ("CF_Mdps_Stat", "MDPS11", 0),
+        ]
+        checks += [
+          ("MDPS11", 100),
+        ]
     if CP.sasBus == 1:
       signals += [
         ("SAS_Angle", "SAS11", 0),
