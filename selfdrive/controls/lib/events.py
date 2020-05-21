@@ -607,11 +607,6 @@ EVENTS = {
   EventName.canError: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error: Check Connections"),
     ET.NO_ENTRY: NoEntryAlert("CAN Error: Check Connections"),
-    ET.PERMANENT: Alert(
-      "CAN Error: Check Connections",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
   EventName.steerUnavailable: {
