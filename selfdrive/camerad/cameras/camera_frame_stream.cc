@@ -57,7 +57,7 @@ void run_frame_stream(DualCameraState *s) {
   while (!do_exit) {
     if (sm.update(1000) == 0) continue;
 
-    auto frame = sm["frame"];
+    auto frame = sm["frame"].getFrame();
 
     const int buf_idx = tbuffer_select(tb);
     rear_camera->camera_bufs_metadata[buf_idx] = {

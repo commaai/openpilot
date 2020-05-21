@@ -1,5 +1,8 @@
 #ifndef _UI_H
 #define _UI_H
+
+#include "messaging.hpp"
+
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -19,7 +22,6 @@
 #include "common/visionimg.h"
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
-#include "messaging.hpp"
 #include "sound.hpp"
 
 #define STATUS_STOPPED 0
