@@ -8,8 +8,9 @@
 void hexdump(uint32_t *d, int len);
 
 int main(int argc, char* argv[]) {
-  float *output = (float*)calloc(0x10000, sizeof(float));
-  float *golden = (float*)calloc(0x10000, sizeof(float));
+  #define OUTPUT_SIZE 0x10000
+  float *output = (float*)calloc(OUTPUT_SIZE, sizeof(float));
+  float *golden = (float*)calloc(OUTPUT_SIZE, sizeof(float));
   SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME);
 
   // cmd line test
@@ -59,36 +60,39 @@ int main(int argc, char* argv[]) {
 
   // first run
   printf("************** execute 1 **************\n");
-  memset(output, 0, sizeof(output));
+  memset(output, 0, OUTPUT_SIZE * sizeof(float));
   mdl.execute(input, 0);
   hexdump((uint32_t *)output, 0x100);
-  memcpy(golden, output, sizeof(output));
+  memcpy(golden, output, OUTPUT_SIZE * sizeof(float));
 
   // second run
   printf("************** execute 2 **************\n");
-  memset(output, 0, sizeof(output));
+  memset(output, 0, OUTPUT_SIZE * sizeof(float));
   Thneed *t = new Thneed();
-  t->record = 3;  // debug print with record
+  t->record = 7;  // debug print with record
   mdl.execute(input, 0);
   t->stop();
   hexdump((uint32_t *)output, 0x100);
-  if (memcmp(golden, output, sizeof(output)) != 0) { printf("FAILURE\n"); return -1; }
+  if (memcmp(golden, output, OUTPUT_SIZE * sizeof(float)) != 0) { printf("FAILURE\n"); return -1; }
 
   // third run
   printf("************** execute 3 **************\n");
-  memset(output, 0, sizeof(output));
+  memset(output, 0, OUTPUT_SIZE * sizeof(float));
   t->record = 2;  // debug print w/o record
   float *inputs[4] = {state, traffic_convention, desire, input};
-  t->execute(inputs, output);
+  t->execute(inputs, output, true);
   hexdump((uint32_t *)output, 0x100);
-  if (memcmp(golden, output, sizeof(output)) != 0) { printf("FAILURE\n"); return -1; }
+  if (memcmp(golden, output, OUTPUT_SIZE * sizeof(float)) != 0) { printf("FAILURE\n"); return -1; }
 
   printf("************** execute 4 **************\n");
-  memset(output, 0, sizeof(output));
-  //t->record = 2;  // debug print w/o record
-  t->execute(inputs, output);
-  hexdump((uint32_t *)output, 0x100);
-  if (memcmp(golden, output, sizeof(output)) != 0) { printf("FAILURE\n"); return -1; }
+  while (1) {
+    memset(output, 0, OUTPUT_SIZE * sizeof(float));
+    //t->record = 2;  // debug print w/o record
+    t->execute(inputs, output);
+    hexdump((uint32_t *)output, 0x100);
+    if (memcmp(golden, output, OUTPUT_SIZE * sizeof(float)) != 0) { printf("FAILURE\n"); return -1; }
+    break;
+  }
 
   printf("************** execute done **************\n");
 }

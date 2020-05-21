@@ -6,9 +6,6 @@ if [ -z "$OPENPILOT_ENV" ]; then
     export PATH="$HOME/.pyenv/bin:$PATH"
     eval "$(pyenv init -)"
     eval "$(pyenv virtualenv-init -)"
-
-    export PATH="$PATH:$HOME/openpilot/external/capnp/bin"
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openpilot/external/capnp/lib"
   elif [[ "$unamestr" == 'Darwin' ]]; then
     # msgq doesn't work on mac
     export ZMQ=1
