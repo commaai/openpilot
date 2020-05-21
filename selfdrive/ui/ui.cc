@@ -1,4 +1,3 @@
-#include "ui.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -6,7 +5,6 @@
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-#include <capnp/serialize.h>
 #include <czmq.h>
 #include "common/util.h"
 #include "common/timing.h"
@@ -14,6 +12,7 @@
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
+#include "ui.hpp"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -72,9 +71,7 @@ static void update_offroad_layout_state(UIState *s) {
   auto layout = event.initUiLayoutState();
   layout.setActiveApp(s->active_app);
   layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  s->offroad_sock->send((char*)bytes.begin(), bytes.size());
+  s->pm->send("offroadLayout", msg);
   LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
 }
 
@@ -214,50 +211,13 @@ static void ui_init(UIState *s) {
   memset(s, 0, sizeof(UIState));
 
   pthread_mutex_init(&s->lock, NULL);
-
-  s->ctx = Context::create();
-  s->model_sock = SubSocket::create(s->ctx, "model");
-  s->controlsstate_sock = SubSocket::create(s->ctx, "controlsState");
-  s->uilayout_sock = SubSocket::create(s->ctx, "uiLayoutState");
-  s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
-  s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
-  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
-  s->health_sock = SubSocket::create(s->ctx, "health");
-  s->ubloxgnss_sock = SubSocket::create(s->ctx, "ubloxGnss");
-  s->driverstate_sock = SubSocket::create(s->ctx, "driverState");
-  s->dmonitoring_sock = SubSocket::create(s->ctx, "dMonitoringState");
-  s->offroad_sock = PubSocket::create(s->ctx, "offroadLayout");
-
-  assert(s->model_sock != NULL);
-  assert(s->controlsstate_sock != NULL);
-  assert(s->uilayout_sock != NULL);
-  assert(s->livecalibration_sock != NULL);
-  assert(s->radarstate_sock != NULL);
-  assert(s->thermal_sock != NULL);
-  assert(s->health_sock != NULL);
-  assert(s->ubloxgnss_sock != NULL);
-  assert(s->driverstate_sock != NULL);
-  assert(s->dmonitoring_sock != NULL);
-  assert(s->offroad_sock != NULL);
-
-  s->poller = Poller::create({
-                              s->model_sock,
-                              s->controlsstate_sock,
-                              s->uilayout_sock,
-                              s->livecalibration_sock,
-                              s->radarstate_sock,
-                              s->thermal_sock,
-                              s->health_sock,
-                              s->ubloxgnss_sock,
-                              s->driverstate_sock,
-                              s->dmonitoring_sock
-                             });
-
+  s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
+                         "health", "ubloxGnss", "driverState", "dMonitoringState", "offroadLayout"
 #ifdef SHOW_SPEEDLIMIT
-  s->map_data_sock = SubSocket::create(s->ctx, "liveMapData");
-  assert(s->map_data_sock != NULL);
-  s->poller->registerSocket(s->map_data_sock);
+                                    , "liveMapData"
 #endif
+  });
+  s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
 
@@ -369,17 +329,11 @@ static void update_status(UIState *s, int status) {
   }
 }
 
-void handle_message(UIState *s,  Message* msg) {
-  auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), msg->getData(), msg->getSize());
-  capnp::FlatArrayMessageReader cmsg(amsg);
-  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-  auto which = event.which();
+void handle_message(UIState *s, SubMaster &sm) {
   UIScene &scene = s->scene;
-  if (which == cereal::Event::CONTROLS_STATE && s->started) {
+  if (s->started && sm.updated("controlsState")) {
+    auto event = sm["controlsState"];
     auto data = event.getControlsState();
-
     s->controls_timeout = 1 * UI_FREQ;
     scene.frontview = data.getRearViewCam();
     if (!scene.frontview){ s->controls_seen = true; }
@@ -394,7 +348,6 @@ void handle_message(UIState *s,  Message* msg) {
     scene.engageable = data.getEngageable();
     scene.gps_planner_active = data.getGpsPlannerActive();
     scene.monitoring_active = data.getDriverMonitoringOn();
-
     scene.decel_for_model = data.getDecelForModel();
     auto alert_sound = data.getAlertSound();
     const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
@@ -438,8 +391,9 @@ void handle_message(UIState *s,  Message* msg) {
         }
       }
     }
-  } else if (which == cereal::Event::RADAR_STATE) {
-    auto data = event.getRadarState();
+  }
+  if (sm.updated("radarState")) {
+    auto data = sm["radarState"].getRadarState();
 
     auto leaddatad = data.getLeadOne();
     scene.lead_status = leaddatad.getStatus();
@@ -451,40 +405,44 @@ void handle_message(UIState *s,  Message* msg) {
     scene.lead_d_rel2 = leaddatad2.getDRel();
     scene.lead_y_rel2 = leaddatad2.getYRel();
     scene.lead_v_rel2 = leaddatad2.getVRel();
-
     s->livempc_or_radarstate_changed = true;
-  } else if (which == cereal::Event::LIVE_CALIBRATION) {
+  }
+  if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
-    auto extrinsicl = event.getLiveCalibration().getExtrinsicMatrix();
+    auto extrinsicl = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
     for (int i = 0; i < 3 * 4; i++) {
       scene.extrinsic_matrix.v[i] = extrinsicl[i];
     }
-  } else if (which == cereal::Event::MODEL) {
-    scene.model = read_model(event.getModel());
+  }
+  if (sm.updated("model")) {
+    scene.model = read_model(sm["model"].getModel());
     s->model_changed = true;
-  } else if (which == cereal::Event::LIVE_MPC) {
-    auto data = event.getLiveMpc();
-
-    auto x_list = data.getX();
-    auto y_list = data.getY();
-    for (int i = 0; i < 50; i++){
-      scene.mpc_x[i] = x_list[i];
-      scene.mpc_y[i] = y_list[i];
-    }
-    s->livempc_or_radarstate_changed = true;
-  } else if (which == cereal::Event::UI_LAYOUT_STATE) {
-    auto data = event.getUiLayoutState();
-
+  }
+  // else if (which == cereal::Event::LIVE_MPC) {
+  //   auto data = event.getLiveMpc();
+  //   auto x_list = data.getX();
+  //   auto y_list = data.getY();
+  //   for (int i = 0; i < 50; i++){
+  //     scene.mpc_x[i] = x_list[i];
+  //     scene.mpc_y[i] = y_list[i];
+  //   }
+  //   s->livempc_or_radarstate_changed = true;
+  // } 
+  if (sm.updated("uiLayoutState")) {
+    auto data = sm["uiLayoutState"].getUiLayoutState();
     s->active_app = data.getActiveApp();
     scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
     if (data.getMockEngaged() != scene.uilayout_mockengaged) {
       scene.uilayout_mockengaged = data.getMockEngaged();
     }
-  } else if (which == cereal::Event::LIVE_MAP_DATA) {
-    scene.map_valid = event.getLiveMapData().getMapValid();
-  } else if (which == cereal::Event::THERMAL) {
-    auto data = event.getThermal();
-
+  }
+#ifdef SHOW_SPEEDLIMIT
+  if (sm.updated("liveMapData")) {
+    scene.map_valid = sm["liveMapData"].getLiveMapData().getMapValid();
+  }
+#endif
+  if (sm.updated("thermal")) {
+    auto data = sm["thermal"].getThermal();
     scene.networkType = data.getNetworkType();
     scene.networkStrength = data.getNetworkStrength();
     scene.batteryPercent = data.getBatteryPercent();
@@ -494,22 +452,26 @@ void handle_message(UIState *s,  Message* msg) {
     scene.paTemp = data.getPa0();
 
     s->thermal_started = data.getStarted();
-  } else if (which == cereal::Event::UBLOX_GNSS) {
-    auto data = event.getUbloxGnss();
+  }
+  if (sm.updated("ubloxGnss")) {
+    auto data = sm["ubloxGnss"].getUbloxGnss();
     if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
     }
-  } else if (which == cereal::Event::HEALTH) {
-    scene.hwType = event.getHealth().getHwType();
+  }
+  if (sm.updated("health")) {
+    scene.hwType = sm["health"].getHealth().getHwType();
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
-  } else if (which == cereal::Event::DRIVER_STATE) {
-    auto data = event.getDriverState();
+  }
+  if (sm.updated("driverState")) {
+    auto data = sm["driverState"].getDriverState();
     scene.face_prob = data.getFaceProb();
     auto fxy_list = data.getFacePosition();
     scene.face_x = fxy_list[0];
     scene.face_y = fxy_list[1];
-  } else if (which == cereal::Event::D_MONITORING_STATE) {
-    auto data = event.getDMonitoringState();
+  }
+  if (sm.updated("dMonitoringState")) {
+    auto data = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = data.getIsRHD();
     scene.awareness_status = data.getAwarenessStatus();
     s->preview_started = data.getIsPreview();
@@ -535,19 +497,10 @@ void handle_message(UIState *s,  Message* msg) {
 }
 
 static void check_messages(UIState *s) {
-  while(true) {
-    auto polls = s->poller->poll(0);
-
-    if (polls.size() == 0)
+  while (true) {
+    if (s->sm->update(0) == 0)
       break;
-
-    for (auto sock : polls){
-      Message *msg = sock->receive();
-      if (msg) {
-        handle_message(s, msg);
-        delete msg;
-      }
-    }
+    handle_message(s, *(s->sm));
   }
 }
 
@@ -772,17 +725,7 @@ static void* vision_connect_thread(void *args) {
     s->vision_connect_firstrun = true;
 
     // Drain sockets
-    while (true){
-      auto polls = s->poller->poll(0);
-      if (polls.size() == 0)
-        break;
-
-      for (auto sock : polls){
-        Message * msg = sock->receive();
-        if (msg == NULL) continue;
-        delete msg;
-      }
-    }
+    s->sm->drain();
 
     pthread_mutex_unlock(&s->lock);
   }
@@ -1071,6 +1014,7 @@ int main(int argc, char* argv[]) {
 
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
-
+  delete s->sm;
+  delete s->pm;
   return 0;
 }

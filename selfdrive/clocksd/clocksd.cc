@@ -4,10 +4,8 @@
 #include <sys/timerfd.h>
 #include <sys/time.h>
 #include <utils/Timers.h>
-#include <capnp/serialize.h>
 #include "messaging.hpp"
 #include "common/timing.h"
-#include "cereal/gen/cpp/log.capnp.h"
 
 namespace {
   int64_t arm_cntpct() {
@@ -21,10 +19,7 @@ int main() {
   setpriority(PRIO_PROCESS, 0, -13);
 
   int err = 0;
-  Context *context = Context::create();
-
-  PubSocket* clock_publisher = PubSocket::create(context, "clocks");
-  assert(clock_publisher != NULL);
+  PubMaster pm({"clocks"});
 
   int timerfd = timerfd_create(CLOCK_BOOTTIME, 0);
   assert(timerfd >= 0);
@@ -60,13 +55,9 @@ int main() {
     clocks.setWallTimeNanos(wall_time);
     clocks.setModemUptimeMillis(modem_uptime_v);
 
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    clock_publisher->send((char*)bytes.begin(), bytes.size());
+    pm.send("clocks", msg);
   }
 
   close(timerfd);
-  delete clock_publisher;
-  delete context;
   return 0;
 }
