@@ -73,8 +73,7 @@ class CarController():
     self.turning_signal_timer = 0
     self.lkas_button_on = True
     self.longcontrol = False #TODO: make auto
-    self.spas_enabled = CP.spasEnabled
-    if self.spas_enabled:
+    if CP.spasEnabled:
       self.en_cnt = 0
       self.apply_steer_ang = 0.0
       self.en_spas = 3
@@ -98,7 +97,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # SPAS limit angle extremes for safety
-    if self.spas_enabled:
+    if CS.spas_enabled:
       apply_steer_ang_req = clip(actuators.steerAngle, -1*(STEER_ANG_MAX), STEER_ANG_MAX)
       # SPAS limit angle rate for safety
       if abs(self.apply_steer_ang - apply_steer_ang_req) > 0.6:
@@ -108,7 +107,7 @@ class CarController():
           self.apply_steer_ang -= 0.5
       else:
         self.apply_steer_ang = apply_steer_ang_req
-    spas_active = self.spas_enabled and enabled and (self.spas_always or CS.out.vEgo < 7.0) # 25km/h
+    spas_active = CS.spas_enabled and enabled and (self.spas_always or CS.out.vEgo < 7.0) # 25km/h
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models
     # temporarily disable steering when LKAS button off 
@@ -194,7 +193,7 @@ class CarController():
     if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE]:
       can_sends.append(create_lfa_mfa(self.packer, frame, enabled))
 
-    if self.spas_enabled:
+    if CS.spas_enabled:
       if CS.mdps_bus:
         can_sends.append(create_ems11(self.packer, CS.ems11, spas_active))
 
