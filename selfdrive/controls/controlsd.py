@@ -76,7 +76,7 @@ class Controls:
               internet_needed or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
-    sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') \
+    sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0/state') \
                             and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
     car_recognized = self.CP.carName != 'mock'
