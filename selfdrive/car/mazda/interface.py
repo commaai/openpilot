@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.mazda.values import CAR,  FINGERPRINTS, ECU_FINGERPRINT, Ecu
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, is_ecu_disconnected
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
+EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
 
@@ -75,12 +75,12 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret)
 
     if self.CS.low_speed_lockout:
-      events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
+      events.add(EventName.speedTooLow)
 
     if self.CS.low_speed_alert:
-      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
+      events.add(EventName.belowSteerSpeed)
 
-    ret.events = events
+    ret.events = events.to_msg()
 
     self.CS.out = ret.as_reader()
     return self.CS.out
