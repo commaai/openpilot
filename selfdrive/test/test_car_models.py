@@ -181,6 +181,10 @@ routes = {
     'carFingerprint': HYUNDAI.SONATA,
     'enableCamera': True,
   },
+  "b2a38c712dcf90bd|2020-05-18--18-12-48": {
+    'carFingerprint': HYUNDAI.SONATA_2019,
+    'enableCamera': True,
+  },
   "9c917ba0d42ffe78|2020-04-17--12-43-19": {
     'carFingerprint': HYUNDAI.PALISADE,
     'enableCamera': True,
@@ -390,7 +394,6 @@ non_tested_cars = [
   HYUNDAI.KIA_STINGER,
   HYUNDAI.KONA,
   HYUNDAI.KONA_EV,
-  HYUNDAI.SONATA_2019,
   TOYOTA.CAMRYH,
   TOYOTA.CHR,
   TOYOTA.CHRH,
