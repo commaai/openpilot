@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 
   // messaging
   PubMaster pm({"model", "cameraOdometry"});
-  SubMaster sm({"pathPlan"},  "127.0.0.1", true);
+  SubMaster sm({"pathPlan"});
 
   // cl init
   cl_device_id device_id;

@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   set_realtime_priority(1);
 
   // messaging
-  SubMaster sm({"dMonitoringState"}, "127.0.0.1", true);
+  SubMaster sm({"dMonitoringState"});
   PubMaster pm({"driverState"});
 
   // init the models

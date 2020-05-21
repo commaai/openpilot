@@ -155,7 +155,7 @@ void* frontview_thread(void *arg) {
   set_thread_name("frontview");
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
-  SubMaster sm({"driverState", "dMonitoringState"}, "127.0.0.1", true);
+  SubMaster sm({"driverState", "dMonitoringState"});
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
@@ -1062,7 +1062,7 @@ void init_buffers(VisionState *s) {
     s->rgb_front_width = s->cameras.front.ci.frame_width;
     s->rgb_front_height = s->cameras.front.ci.frame_height;
   }
-  
+
 
   for (int i=0; i<UI_BUF_COUNT; i++) {
     VisionImg img = visionimg_alloc_rgb24(s->rgb_front_width, s->rgb_front_height, &s->rgb_front_bufs[i]);
@@ -1130,7 +1130,7 @@ void init_buffers(VisionState *s) {
     assert(err == 0);
   }
 
-  s->prg_rgb_laplacian = build_conv_program(s, s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y, 
+  s->prg_rgb_laplacian = build_conv_program(s, s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y,
                                             3);
   s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
   assert(err == 0);
