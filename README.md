@@ -146,10 +146,10 @@ Community Maintained Cars and Features
 | Hyundai   | Kona 2019 EV<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Palisade 2020<sup>2</sup>     | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019                 | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Sonata 2020                   | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata 2019-20                | All               | Stock            | 0mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019           | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Kia       | Forte 2018<sup>2</sup>        | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Forte 2018-19<sup>2</sup>     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Optima 2017<sup>2</sup>       | SCC + LKAS/LDWS   | Stock            | 0mph               | 32mph        |
 | Kia       | Optima 2019<sup>2</sup>       | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
