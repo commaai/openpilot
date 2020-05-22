@@ -171,4 +171,6 @@ namespace ublox {
 
 }
 
-int ubloxd_main();
+typedef Message * (*poll_ubloxraw_msg_func)(Poller *poller);
+typedef int (*send_gps_event_func)(PubSocket *s, const void *buf, size_t len);
+int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func);
