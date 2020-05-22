@@ -182,7 +182,6 @@ class CarState(CarStateBase):
       ("SCCInfoDisplay", "SCC11", 0),
       ("ACC_ObjDist", "SCC11", 0),
       ("ACCMode", "SCC12", 1),
-
     ]
 
     checks = [
@@ -216,7 +215,6 @@ class CarState(CarStateBase):
         ("EMS12", 100),
         ("EMS16", 100),
       ]
-
 
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
       signals += [
