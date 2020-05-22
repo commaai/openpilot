@@ -53,9 +53,12 @@ def ui_thread(addr, frame_address):
     size = (640+384, 960+300)
     write_x = 645
     write_y = 970
+  window_ratio = size[0] / size[1]
+  optimal_size = size
 
   pygame.display.set_caption("openpilot debug UI")
-  screen = pygame.display.set_mode(size, pygame.DOUBLEBUF)
+  screen = pygame.display.set_mode(size, pygame.DOUBLEBUF|pygame.RESIZABLE)
+  fake_screen = screen.copy()
 
   alert1_font = pygame.font.SysFont("arial", 30)
   alert2_font = pygame.font.SysFont("arial", 20)
@@ -111,10 +114,20 @@ def ui_thread(addr, frame_address):
 
   draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=True)
 
-  while 1:
-    list(pygame.event.get())
+  running = True
+  while running:
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        running = False
+      elif event.type == pygame.VIDEORESIZE:
+        fake_screen = pygame.display.set_mode(event.dict['size'], pygame.DOUBLEBUF|pygame.RESIZABLE)
+        if event.dict['size'][0] / size[0] < event.dict['size'][1] / size[1]:
+          optimal_size = (event.dict['size'][0], int(event.dict['size'][0] / window_ratio))
+        else:
+          optimal_size = (int(event.dict['size'][1] * window_ratio), event.dict['size'][1])
 
     screen.fill((64,64,64))
+    fake_screen.fill((64,64,64))
     lid_overlay = lid_overlay_blank.copy()
     top_down = top_down_surface, lid_overlay
 
@@ -252,6 +265,8 @@ def ui_thread(addr, frame_address):
       if line is not None:
         screen.blit(line, (write_x, write_y + i * SPACING))
 
+    # sclae screen and blit it into fake screen
+    fake_screen.blit(pygame.transform.scale(screen, optimal_size), (0, 0))    
     # this takes time...vsync or something
     pygame.display.flip()
 
