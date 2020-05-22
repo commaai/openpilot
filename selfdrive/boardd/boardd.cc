@@ -2,7 +2,6 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
@@ -16,8 +15,6 @@
 
 #include <libusb-1.0/libusb.h>
 
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
 #include "cereal/gen/cpp/car.capnp.h"
 
 #include "common/util.h"
@@ -281,7 +278,7 @@ void handle_usb_issue(int err, const char func[]) {
   // TODO: check other errors, is simply retrying okay?
 }
 
-void can_recv(PubSocket *publisher) {
+void can_recv(PubMaster &pm) {
   int err;
   uint32_t data[RECV_SIZE/4];
   int recv;
@@ -333,13 +330,10 @@ void can_recv(PubSocket *publisher) {
     canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
   }
 
-  // send to can
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  publisher->send((char*)bytes.begin(), bytes.size());
+  pm.send("can", msg);
 }
 
-void can_health(PubSocket *publisher) {
+void can_health(PubMaster &pm) {
   int cnt;
   int err;
 
@@ -384,10 +378,7 @@ void can_health(PubSocket *publisher) {
   // No panda connected, send empty health packet
   if (!received){
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
-
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    publisher->send((char*)bytes.begin(), bytes.size());
+    pm.send("health", msg);
     return;
   }
 
@@ -532,9 +523,7 @@ void can_health(PubSocket *publisher) {
     }
   }
   // send to health
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  publisher->send((char*)bytes.begin(), bytes.size());
+  pm.send("health", msg);
 
   // send heartbeat back to panda
   pthread_mutex_lock(&usb_lock);
@@ -543,20 +532,11 @@ void can_health(PubSocket *publisher) {
 }
 
 
-void can_send(SubSocket *subscriber) {
+void can_send(cereal::Event::Reader &event) {
   int err;
-
   // recv from sendcan
-  Message * msg = subscriber->receive();
-
-  auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-  capnp::FlatArrayMessageReader cmsg(amsg);
-  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
   if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
     //Older than 1 second. Dont send.
-    delete msg;
     return;
   }
   int msg_count = event.getSendcan().size();
@@ -578,13 +558,9 @@ void can_send(SubSocket *subscriber) {
     memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
   }
 
-  // release msg
-  delete msg;
-
   // send to board
   int sent;
   pthread_mutex_lock(&usb_lock);
-
 
   if (!fake_send) {
     do {
@@ -611,29 +587,17 @@ void can_send(SubSocket *subscriber) {
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
-
-  // sendcan = 8017
-  Context * context = Context::create();
-  SubSocket * subscriber = SubSocket::create(context, "sendcan");
-  assert(subscriber != NULL);
-
+  SubMaster sm({"sendcan"});
 
   // drain sendcan to delete any stale messages from previous runs
-  while (true){
-    Message * msg = subscriber->receive(true);
-    if (msg == NULL){
-      break;
-    }
-    delete msg;
-  }
-
+  sm.drain();
   // run as fast as messages come in
   while (!do_exit) {
-    can_send(subscriber);
+    if (sm.update(1000) > 0){
+      can_send(sm["sendcan"]);
+    }
   }
   
-  delete subscriber;
-  delete context;
   return NULL;
 }
 
@@ -641,16 +605,14 @@ void *can_recv_thread(void *crap) {
   LOGD("start recv thread");
 
   // can = 8006
-  Context * c = Context::create();
-  PubSocket * publisher = PubSocket::create(c, "can");
-  assert(publisher != NULL);
+  PubMaster pm({"can"});
 
   // run at 100hz
   const uint64_t dt = 10000000ULL;
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
   while (!do_exit) {
-    can_recv(publisher);
+    can_recv(pm);
 
     uint64_t cur_time = nanos_since_boot();
     int64_t remaining = next_frame_time - cur_time;
@@ -664,39 +626,26 @@ void *can_recv_thread(void *crap) {
 
     next_frame_time += dt;
   }
-
-  delete publisher;
-  delete c;
   return NULL;
 }
 
 void *can_health_thread(void *crap) {
   LOGD("start health thread");
   // health = 8011
-  Context * c = Context::create();
-  PubSocket * publisher = PubSocket::create(c, "health");
-  assert(publisher != NULL);
+  PubMaster pm({"health"});
 
   // run at 2hz
   while (!do_exit) {
-    can_health(publisher);
+    can_health(pm);
     usleep(500*1000);
   }
 
-  delete publisher;
-  delete c;
   return NULL;
 }
 
 void *hardware_control_thread(void *crap) {
   LOGD("start hardware control thread");
-  Context * c = Context::create();
-  SubSocket * thermal_sock = SubSocket::create(c, "thermal");
-  SubSocket * front_frame_sock = SubSocket::create(c, "frontFrame");
-  assert(thermal_sock != NULL);
-  assert(front_frame_sock != NULL);
-
-  Poller * poller = Poller::create({thermal_sock, front_frame_sock});
+  SubMaster sm({"thermal", "frontFrame"});
 
   // Wait for hardware type to be set.
   while (hw_type == cereal::HealthData::HwType::UNKNOWN){
@@ -714,42 +663,30 @@ void *hardware_control_thread(void *crap) {
 
   while (!do_exit) {
     cnt++;
-    for (auto sock : poller->poll(1000)){
-      Message * msg = sock->receive();
-      if (msg == NULL) continue;
+    sm.update(1000);
+    if (sm.updated("thermal")){
+      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
+      if (fan_speed != prev_fan_speed || cnt % 100 == 0){
+        pthread_mutex_lock(&usb_lock);
+        libusb_control_transfer(dev_handle, 0x40, 0xb1, fan_speed, 0, NULL, 0, TIMEOUT);
+        pthread_mutex_unlock(&usb_lock);
 
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      delete msg;
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-      auto type = event.which();
-      if(type == cereal::Event::THERMAL){
-        uint16_t fan_speed = event.getThermal().getFanSpeed();
-        if (fan_speed != prev_fan_speed || cnt % 100 == 0){
-          pthread_mutex_lock(&usb_lock);
-          libusb_control_transfer(dev_handle, 0x40, 0xb1, fan_speed, 0, NULL, 0, TIMEOUT);
-          pthread_mutex_unlock(&usb_lock);
-
-          prev_fan_speed = fan_speed;
-        }
-      } else if (type == cereal::Event::FRONT_FRAME){
-        float cur_front_gain = event.getFrontFrame().getGainFrac();
-        last_front_frame_t = event.getLogMonoTime();
-
-        if (cur_front_gain <= CUTOFF_GAIN) {
-          ir_pwr = 100.0 * MIN_IR_POWER;
-        } else if (cur_front_gain > SATURATE_GAIN) {
-          ir_pwr = 100.0 * MAX_IR_POWER;
-        } else {
-          ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
-        }
+        prev_fan_speed = fan_speed;
       }
     }
+    if (sm.updated("frontFrame")){
+      auto event = sm["frontFrame"];
+      float cur_front_gain = event.getFrontFrame().getGainFrac();
+      last_front_frame_t = event.getLogMonoTime();
 
+      if (cur_front_gain <= CUTOFF_GAIN) {
+        ir_pwr = 100.0 * MIN_IR_POWER;
+      } else if (cur_front_gain > SATURATE_GAIN) {
+        ir_pwr = 100.0 * MAX_IR_POWER;
+      } else {
+        ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
+      }
+    }
     // Disable ir_pwr on front frame timeout
     uint64_t cur_t = nanos_since_boot();
     if (cur_t - last_front_frame_t > 1e9){
@@ -764,10 +701,6 @@ void *hardware_control_thread(void *crap) {
     }
 
   }
-
-  delete poller;
-  delete thermal_sock;
-  delete c;
 
   return NULL;
 }
@@ -865,7 +798,7 @@ void pigeon_init() {
   LOGW("panda GPS on");
 }
 
-static void pigeon_publish_raw(PubSocket *publisher, unsigned char *dat, int alen) {
+static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -873,18 +806,13 @@ static void pigeon_publish_raw(PubSocket *publisher, unsigned char *dat, int ale
   auto ublox_raw = event.initUbloxRaw(alen);
   memcpy(ublox_raw.begin(), dat, alen);
 
-  // send to ubloxRaw
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  publisher->send((char*)bytes.begin(), bytes.size());
+  pm.send("ubloxRaw", msg);
 }
 
 
 void *pigeon_thread(void *crap) {
   // ubloxRaw = 8042
-  Context * context = Context::create();
-  PubSocket * publisher = PubSocket::create(context, "ubloxRaw");
-  assert(publisher != NULL);
+  PubMaster pm({"ubloxRaw"});
 
   // run at ~100hz
   unsigned char dat[0x1000];
@@ -910,7 +838,7 @@ void *pigeon_thread(void *crap) {
         LOGW("received invalid ublox message, resetting panda GPS");
         pigeon_init();
       } else {
-        pigeon_publish_raw(publisher, dat, alen);
+        pigeon_publish_raw(pm, dat, alen);
       }
     }
 
@@ -918,9 +846,6 @@ void *pigeon_thread(void *crap) {
     usleep(10*1000);
     cnt++;
   }
-
-  delete publisher;
-  delete context;
   return NULL;
 }
 
