@@ -1,6 +1,8 @@
 #ifndef _UI_H
 #define _UI_H
-#include "cereal/gen/cpp/log.capnp.h"
+
+#include "messaging.hpp"
+
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -12,7 +14,6 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 
-#include <capnp/serialize.h>
 #include <pthread.h>
 #include "nanovg.h"
 
@@ -21,7 +22,6 @@
 #include "common/visionimg.h"
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
-#include "messaging.hpp"
 #include "sound.hpp"
 
 #define STATUS_STOPPED 0
@@ -203,21 +203,8 @@ typedef struct UIState {
   int img_network[6];
 
   // sockets
-  Context *ctx;
-  SubSocket *model_sock;
-  SubSocket *controlsstate_sock;
-  SubSocket *livecalibration_sock;
-  SubSocket *radarstate_sock;
-  SubSocket *map_data_sock;
-  SubSocket *uilayout_sock;
-  SubSocket *thermal_sock;
-  SubSocket *health_sock;
-  SubSocket *ubloxgnss_sock;
-  SubSocket *driverstate_sock;
-  SubSocket *dmonitoring_sock;
-  PubSocket *offroad_sock;
-  Poller * poller;
-  Poller * ublox_poller;
+  SubMaster *sm;
+  PubMaster *pm;
 
   cereal::UiLayoutState::App active_app;
 
