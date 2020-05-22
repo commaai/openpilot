@@ -168,7 +168,7 @@ class LiveKalman():
     h_acc_sym = (gravity + acceleration)
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
-    speed = sp.sqrt(vx**2 + vy**2 + vz**2)
+    speed = sp.sqrt(vx**2 + vy**2 + vz**2 + 1e-6)
     h_speed_sym = sp.Matrix([speed * odo_scale])
 
     h_pos_sym = sp.Matrix([x, y, z])
