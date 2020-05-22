@@ -136,11 +136,11 @@ namespace ublox {
     public:
 
       UbloxMsgParser();
-      kj::Array<capnp::word> gen_solution();
-      kj::Array<capnp::word> gen_raw();
-      kj::Array<capnp::word> gen_mon_hw();
+      bool gen_solution(MessageBuilder &msg_builder);
+      bool gen_raw(MessageBuilder &msg_builder);
+      bool gen_mon_hw(MessageBuilder &msg_builder);
 
-      kj::Array<capnp::word> gen_nav_data();
+      bool gen_nav_data(MessageBuilder &msg_builder);
       bool add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
       inline void reset() {bytes_in_parse_buf = 0;}
       inline uint8_t msg_class() {
@@ -171,6 +171,4 @@ namespace ublox {
 
 }
 
-typedef Message * (*poll_ubloxraw_msg_func)(Poller *poller);
-typedef int (*send_gps_event_func)(PubSocket *s, const void *buf, size_t len);
-int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func);
+int ubloxd_main();

@@ -2,8 +2,7 @@
 #include <tuple>
 #include <string>
 #include "common/timing.h"
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
+#include "messaging.hpp"
 #include "cereal/gen/cpp/car.capnp.h"
 
 typedef struct {
@@ -16,12 +15,8 @@ typedef struct {
 extern "C" {
 
 void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendCan, bool valid) {
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  event.setValid(valid);
-
-  auto canData = sendCan ? event.initSendcan(can_list.size()) : event.initCan(can_list.size());
+  MessageBuilder msg;
+  auto canData = sendCan ? msg.initEvent(0, valid).initSendcan(can_list.size()) : msg.initEvent(0, valid).initCan(can_list.size());
   int j = 0;
   for (auto it = can_list.begin(); it != can_list.end(); it++, j++) {
     canData[j].setAddress(it->address);
@@ -29,8 +24,7 @@ void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::stri
     canData[j].setDat(kj::arrayPtr((uint8_t*)it->dat.data(), it->dat.size()));
     canData[j].setSrc(it->src);
   }
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
+  auto bytes = msg.toBytes();
   out.append((const char *)bytes.begin(), bytes.size());
 }
 

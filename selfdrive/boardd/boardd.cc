@@ -308,11 +308,9 @@ void can_recv(PubMaster &pm) {
   }
 
   // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(start_time);
+  MessageBuilder msg;
   size_t num_msg = recv / 0x10;
-  auto canData = event.initCan(num_msg);
+  auto canData = msg.initEvent().initCan(num_msg);
 
   // populate message
   for (int i = 0; i < num_msg; i++) {
@@ -359,10 +357,8 @@ void can_health(PubMaster &pm) {
   } health;
 
   // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto healthData = event.initHealth();
+  MessageBuilder msg;
+  auto healthData = msg.initEvent().initHealth();
 
   bool received = false;
 
@@ -800,10 +796,8 @@ void pigeon_init() {
 
 static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
   // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto ublox_raw = event.initUbloxRaw(alen);
+  MessageBuilder msg;
+  auto ublox_raw = msg.initEvent().initUbloxRaw(alen);
   memcpy(ublox_raw.begin(), dat, alen);
 
   pm.send("ubloxRaw", msg);

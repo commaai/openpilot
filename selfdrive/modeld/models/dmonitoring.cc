@@ -145,11 +145,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 
 void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult res) {
   // make msg
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-
-  auto framed = event.initDriverState();
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initDriverState();
   framed.setFrameId(frame_id);
 
   kj::ArrayPtr<const float> face_orientation(&res.face_orientation[0], ARRAYSIZE(res.face_orientation));

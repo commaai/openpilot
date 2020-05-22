@@ -249,11 +249,8 @@ void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float 
 void model_publish(PubMaster &pm, uint32_t frame_id,
                    const ModelDataRaw net_outputs, uint64_t timestamp_eof) {
     // make msg
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-
-    auto framed = event.initModel();
+    MessageBuilder msg;
+    auto framed = msg.initEvent().initModel();
     framed.setFrameId(frame_id);
     framed.setTimestampEof(timestamp_eof);
 
@@ -297,10 +294,6 @@ void model_publish(PubMaster &pm, uint32_t frame_id,
 
 void posenet_publish(PubMaster &pm, uint32_t frame_id,
                    const ModelDataRaw net_outputs, uint64_t timestamp_eof) {
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-
   float trans_arr[3];
   float trans_std_arr[3];
   float rot_arr[3];
@@ -314,7 +307,8 @@ void posenet_publish(PubMaster &pm, uint32_t frame_id,
     rot_std_arr[i] = M_PI * (softplus(net_outputs.pose[9 + i]) + 1e-6) / 180.0;
   }
 
-  auto posenetd = event.initCameraOdometry();
+  MessageBuilder msg;
+  auto posenetd = msg.initEvent().initCameraOdometry();
   kj::ArrayPtr<const float> trans_vs(&trans_arr[0], 3);
   posenetd.setTrans(trans_vs);
   kj::ArrayPtr<const float> rot_vs(&rot_arr[0], 3);
