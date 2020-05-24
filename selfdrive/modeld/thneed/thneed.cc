@@ -269,8 +269,10 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   }
 }
 
+// TODO: with a different way of getting the input and output buffers, we don't have to intercept CL at all
+
 cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;
-cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
+cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
   if (my_clSetKernelArg == NULL) my_clSetKernelArg = reinterpret_cast<decltype(my_clSetKernelArg)>(dlsym(RTLD_NEXT, "REAL_clSetKernelArg"));
   if (arg_value != NULL) {
     g_args[std::make_pair(kernel, arg_index)] = std::string((char*)arg_value, arg_size);
@@ -280,7 +282,7 @@ cl_int clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, cons
 }
 
 cl_int (*my_clEnqueueNDRangeKernel)(cl_command_queue, cl_kernel, cl_uint, const size_t *, const size_t *, const size_t *, cl_uint, const cl_event *, cl_event *) = NULL;
-cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
+cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
   cl_kernel kernel,
   cl_uint work_dim,
   const size_t *global_work_offset,
@@ -403,17 +405,15 @@ cl_int clEnqueueNDRangeKernel(cl_command_queue command_queue,
 //#define SAVE_KERNELS
 
 #ifdef SAVE_KERNELS
-  std::map<cl_program, std::string> program_source;
-#endif
+std::map<cl_program, std::string> program_source;
 
 cl_program (*my_clCreateProgramWithSource)(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) = NULL;
-cl_program clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
+cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
   if (my_clCreateProgramWithSource == NULL) my_clCreateProgramWithSource = reinterpret_cast<decltype(my_clCreateProgramWithSource)>(dlsym(RTLD_NEXT, "REAL_clCreateProgramWithSource"));
   assert(count == 1);
   size_t my_lengths[1];
   my_lengths[0] = lengths[0];
 
-#ifdef SAVE_KERNELS
   char fn[0x100];
   snprintf(fn, sizeof(fn), "/tmp/program_%zu.cl", strlen(strings[0]));
   FILE *f = fopen(fn, "wb");
@@ -433,22 +433,24 @@ cl_program clCreateProgramWithSource(cl_context context, cl_uint count, const ch
   }
 
   program_source[ret] = strings[0];
-#endif
 
   cl_program ret = my_clCreateProgramWithSource(context, count, strings, my_lengths, errcode_ret);
   return ret;
 }
+#endif
 
 void *dlsym(void *handle, const char *symbol) {
   void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
   if (memcmp("REAL_", symbol, 5) == 0) {
     return my_dlsym(handle, symbol+5);
   } else if (strcmp("clEnqueueNDRangeKernel", symbol) == 0) {
-    return (void*)clEnqueueNDRangeKernel;
+    return (void*)thneed_clEnqueueNDRangeKernel;
   } else if (strcmp("clSetKernelArg", symbol) == 0) {
-    return (void*)clSetKernelArg;
+    return (void*)thneed_clSetKernelArg;
+#ifdef SAVE_KERNELS
   } else if (strcmp("clCreateProgramWithSource", symbol) == 0) {
-    return (void*)clCreateProgramWithSource;
+    return (void*)thneed_clCreateProgramWithSource;
+#endif
   } else {
     return my_dlsym(handle, symbol);
   }
