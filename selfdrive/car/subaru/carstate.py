@@ -64,7 +64,7 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
                         cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
-    if self.car_fingerprint == CAR.IMPREZA:
+    if self.car_fingerprint in [CAR.IMPREZA, CAR.ASCENT]:
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
@@ -113,7 +113,7 @@ class CarState(CarStateBase):
       ("Steering_Torque", 50),
     ]
 
-    if CP.carFingerprint == CAR.IMPREZA:
+    if CP.carFingerprint in [CAR.IMPREZA, CAR.ASCENT]:
       checks += [
         ("Dashlights", 10),
         ("BodyInfo", 10),
@@ -137,7 +137,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    if CP.carFingerprint == CAR.IMPREZA:
+    if CP.carFingerprint in [CAR.IMPREZA, CAR.ASCENT]:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
         ("Conventional_Cruise", "ES_DashStatus", 0),

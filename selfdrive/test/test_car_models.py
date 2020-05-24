@@ -445,6 +445,7 @@ non_tested_cars = [
   SUBARU.OUTBACK,
   SUBARU.LEGACY,
   SUBARU.FORESTER,
+  SUBARU.ASCENT,
 ]
 
 if __name__ == "__main__":
