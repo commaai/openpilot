@@ -13,7 +13,7 @@
 #define NANOVG_GLES3_IMPLEMENTATION
 #define nvgCreate nvgCreateGLES3
 #endif
-
+#include <atomic>
 #include <pthread.h>
 #include "nanovg.h"
 
@@ -269,7 +269,7 @@ typedef struct UIState {
   bool thermal_started, preview_started;
   bool vision_seen;
 
-  float light_sensor;
+  std::atomic<float> light_sensor;
 
   int touch_fd;
 
