@@ -5,6 +5,7 @@ on:
   push:
     paths:
     - 'Pipfile'
+    - '.github/workflows/update-pipfile.yml'
 
 jobs:
   piplock:
@@ -14,7 +15,7 @@ jobs:
     - uses: actions/setup-python@v2
     - run: pip install wheel
     - run: pip install pipenv
-    - run: pipenv lock --requirements
+    - run: pipenv lock
     - uses: actions/upload-artifact@v2
       with:
         name: "Pipfile lock"
@@ -23,3 +24,4 @@ jobs:
       with:
         title: "Update Pipfile.lock (dependencies)"
         branch: update-pipfile
+        commit-message: "[Bot] Update Pipfile.lock dependencies"
