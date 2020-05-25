@@ -108,12 +108,12 @@ FW_VERSIONS = {
   CAR.IMPREZA: {
     # 2018 Crosstrek - EU / @martinl
     # Ecu, addr, subaddr: ROM ID
-    (Ecu.esp, 0x7b0, None): [b'z\x94?\x90\x00']
-    (Ecu.eps, 0x746, None): [b'z\xc0\x0c\x00']
-    (Ecu.srs, 0x780, None): [b'\x00\x92\x15\x16\x00']
-    (Ecu.fwdCamera, 0x787, None): [b'\x00\x00d\xb5\x1f@ \x0e']
-    (Ecu.engine, 0x7e0, None): [b'\xaaafs\x07']
-    (Ecu.transmission, 0x7e1, None): [b'\xe3\xe5F1\x00']
+    (Ecu.esp, 0x7b0, None): [b'z\x94?\x90\x00'],
+    (Ecu.eps, 0x746, None): [b'z\xc0\x0c\x00'],
+    (Ecu.srs, 0x780, None): [b'\x00\x92\x15\x16\x00'],
+    (Ecu.fwdCamera, 0x787, None): [b'\x00\x00d\xb5\x1f@ \x0e'],
+    (Ecu.engine, 0x7e0, None): [b'\xaaafs\x07'],
+    (Ecu.transmission, 0x7e1, None): [b'\xe3\xe5F1\x00'],
   },
   CAR.FORESTER: {
     # 2018 Subaru Forester 2.5i Touring - NA / @Oreo
@@ -134,7 +134,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x787, None): [b'\x00\x00c\xec\x1f@ \x04'],
     (Ecu.engine, 0x7e0, None): [b'\xb4+@p\x07'],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x00\xa4\x10@'],
-  }
+  },
 }
 
 
