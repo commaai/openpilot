@@ -1,7 +1,7 @@
 name: "Update Pipfile.lock"
 on:
   schedule:
-    - cron: '00 08 * * 1' # Every monday on 08:00 UTC
+    - cron: '00 15 * * 1' # Every monday on 15:00 UTC
   push:
     paths:
     - 'Pipfile'
