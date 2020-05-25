@@ -32,6 +32,7 @@ class CAR:
   KIA_SPORTAGE = "KIA SPORTAGE S 2020"
   SONATA = "HYUNDAI SONATA 2020"
   PALISADE = "HYUNDAI PALISADE 2020"
+  SONATA_H = "HYUNDAI SONATA HYBRID 2020"
 
 
 class Buttons:
@@ -140,6 +141,9 @@ FINGERPRINTS = {
   CAR.PALISADE: [{
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 549: 8, 576: 8, 593: 8, 608: 8, 688: 6, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 913: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1123: 8, 1136: 8, 1151: 6, 1155: 8, 1156: 8, 1157: 4, 1162: 8, 1164: 8, 1168: 7, 1170: 8, 1173: 8, 1180: 8, 1186: 2, 1191: 2, 1193: 8, 1210: 8, 1225: 8, 1227: 8, 1265: 4, 1280: 8, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 8, 1384: 8, 1407: 8, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 2000: 8, 2005: 8, 2008: 8
   }],
+  CAR.SONATA_H: [{
+    67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 549: 8, 576: 8, 593: 8, 608: 8, 688: 6, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 913: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1123: 8, 1136: 8, 1151: 6, 1155: 8, 1156: 8, 1157: 4, 1162: 8, 1164: 8, 1168: 7, 1170: 8, 1173: 8, 1180: 8, 1186: 2, 1191: 2, 1193: 8, 1210: 8, 1225: 8, 1227: 8, 1265: 4, 1280: 8, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 8, 1384: 8, 1407: 8, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 2000: 8, 2005: 8, 2008: 8
+  }],
 }
 
 ECU_FINGERPRINT = {
@@ -155,7 +159,7 @@ FEATURES = {
   "use_cluster_gears": [CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30],     # Use Cluster for Gear Selection, rather than Transmission
   "use_tcu_gears": [CAR.KIA_OPTIMA],                                    # Use TCU Message for Gear Selection
   "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV], # Use TCU Message for Gear Selection
-  "use_elect_ems": [],                                        # Use E_EMS11 Message for Gas and Brake for Hybrid/ELectric
+  "use_elect_ems": [CAR.SONATA_H],                                      # Use E_EMS11 Message for Gas and Brake for Hybrid/ELectric
 }
 
 DBC = {
@@ -178,6 +182,7 @@ DBC = {
   CAR.KIA_SPORTAGE: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', None),
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', None),
+  CAR.SONATA_H: dbc_dict('hyundai_kia_generic', None),
 }
 
 STEER_THRESHOLD = 150
