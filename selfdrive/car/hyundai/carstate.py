@@ -77,8 +77,11 @@ class CarState(CarStateBase):
     ret.brakeLights = bool(cp.vl["TCS13"]['BrakeLight'] or ret.brakePressed)
 
     #TODO: find pedal signal for EV/HYBRID Cars
-    ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100
-    ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
+    ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100 if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
+                cp.vl["E_EMS11"]['Accel_Pedal_Pos'] / 100
+
+    ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"]) / 100 if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
+                cp.vl["E_EMS11"]['Accel_Pedal_Pos'] > 5
 
     ret.espDisabled = cp.vl["TCS15"]['ESC_Off_Step'] != 0
 
@@ -310,14 +313,14 @@ class CarState(CarStateBase):
         ("EMS12", 100),
         ("EMS16", 100),
       ]
-    #else:
-      #signals += [
-        #("Accel_Pedal_Pos","E_EMS11",0),
-        #("Brake_Pedal_Pos","E_EMS11",0),
-      #]
-      #checks += [
-        #("E_EMS11", 100),
-      #]
+    else:
+      signals += [
+        ("Accel_Pedal_Pos","E_EMS11",0),
+        ("Brake_Pedal_Pos","E_EMS11",0),
+      ]
+      checks += [
+        ("E_EMS11", 100),
+      ]
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
   @staticmethod
