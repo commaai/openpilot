@@ -24,3 +24,4 @@ jobs:
       with:
         title: "Update Pipfile.lock (dependencies)"
         branch: update-pipfile
+        commit-message: "[Bot] Update Pipfile.lock dependencies"
