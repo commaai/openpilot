@@ -1248,6 +1248,14 @@ BO_ 790 EMS11: 8 EMS
  SG_ VS : 48|8@1+ (1.0,0.0) [0.0|254.0] "km/h"  _4WD,AAF,ACU,AHLS,BCM,CLU,DATC,ECS,EPB,IBOX,LCA,LDWS_LKAS,LVR,MDPS,ODS,SCC,SMK,SPAS,TCU,TPMS
  SG_ RATIO_TQI_BAS_MAX_STND : 56|8@1+ (0.0078,0.0) [0.0|2.0] ""  _4WD,IBOX,TCU
 
+BO_ 881 E_EMS11: 8 XXX
+ SG_ Cruise_Limit_Status : 13|1@1+ (1,0) [0|1] "" XXX
+ SG_ Cruise_Limit_Target : 23|8@1+ (1,0) [0|15] "" XXX
+ SG_ Gear_Change : 12|1@0+ (1,0) [0|31] "" XXX
+ SG_ IG_Reactive_Stat : 8|3@1+ (1,0) [0|3] "" XXX
+ SG_ Brake_Pedal_Pos : 0|8@1+ (1,0) [0|127] "" XXX
+ SG_ Accel_Pedal_Pos : 31|8@1+ (1,0) [0|7] "" XXX
+
 BO_ 1301 CLU14: 8 CLU
  SG_ CF_Clu_ADrUNValueSet : 0|3@1+ (1.0,0.0) [0.0|7.0] ""  BCM
  SG_ CF_Clu_ADrLNValueSet : 3|3@1+ (1.0,0.0) [0.0|7.0] ""  BCM
