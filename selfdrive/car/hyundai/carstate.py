@@ -81,7 +81,7 @@ class CarState(CarStateBase):
                 cp.vl["E_EMS11"]['Accel_Pedal_Pos'] / 100
 
     ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"]) / 100 if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
-                cp.vl["E_EMS11"]['Accel_Pedal_Pos'] > 5
+                bool(cp.vl["E_EMS11"]['Accel_Pedal_Pos'] > 5)
 
     ret.espDisabled = cp.vl["TCS15"]['ESC_Off_Step'] != 0
 
