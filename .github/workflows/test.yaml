@@ -62,8 +62,8 @@ jobs:
           docker tag tmppilot docker.io/commaai/openpilot:latest
           docker push docker.io/commaai/openpilot:latest
 
-  linter:
-    name: linter
+  static_analysis:
+    name: static analysis
     runs-on: ubuntu-16.04
     steps:
       - uses: actions/checkout@v2
@@ -75,18 +75,13 @@ jobs:
         run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
         run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
-
-  cppcheck:
-    name: cppcheck
-    runs-on: ubuntu-16.04
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Build Docker image
-        run: eval "$BUILD"
       - name: Run cppcheck
-        run: $RUN "cd /tmp/openpilot/ && cppcheck selfdrive/"
+        run: $PERSIST "cd /tmp/openpilot/ && ./cppcheck_openpilot.sh"
+      - name: Print cppcheck output
+        if: always()
+        run: |
+          docker cp tmppilot:/tmp/openpilot/cppcheck_output.txt cppcheck_output.txt
+          cat cppcheck_output.txt
 
   unit_tests:
     name: unit tests
@@ -135,13 +130,11 @@ jobs:
         run: |
           docker commit tmppilot tmppilotci
           $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F process_replay"
-      - name: Copy diff
+      - name: Print diff
         if: always()
         run: |
           docker cp tmppilot:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
-      - name: Print diff
-        if: always()
-        run: cat diff.txt
+          cat diff.txt
       - uses: actions/upload-artifact@v2
         if: always()
         with:
