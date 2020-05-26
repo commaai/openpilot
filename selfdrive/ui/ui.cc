@@ -185,7 +185,7 @@ static void read_param_float_timeout(float* param, const char* param_name, int* 
 static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int* timeout, bool persistent_param = false) {
   if (*timeout > 0){
     (*timeout)--;
-    return 0;
+    return -1;
   } else {
     *timeout = 2 * UI_FREQ; // 0.5Hz
     return read_param_uint64(dest, param_name, persistent_param);
@@ -976,12 +976,14 @@ int main(int argc, char* argv[]) {
     read_param_bool_timeout(&s->limit_set_speed, "LimitSetSpeed", &s->limit_set_speed_timeout);
     read_param_float_timeout(&s->speed_lim_off, "SpeedLimitOffset", &s->limit_set_speed_timeout);
     int param_read = read_param_uint64_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
-    if (param_read != 0) {
-      s->scene.athenaStatus = NET_DISCONNECTED;
-    } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
-      s->scene.athenaStatus = NET_CONNECTED;
-    } else {
-      s->scene.athenaStatus = NET_ERROR;
+    if (param_read != -1) { // Param was updated this loop
+      if (param_read != 0) { // Failed to read param
+        s->scene.athenaStatus = NET_DISCONNECTED;
+      } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
+        s->scene.athenaStatus = NET_CONNECTED;
+      } else {
+        s->scene.athenaStatus = NET_ERROR;
+      }
     }
     update_offroad_layout_timeout(s, &s->offroad_layout_timeout);
 
