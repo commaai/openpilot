@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
+import os
 import time
 from tqdm import tqdm
 
 import cereal.messaging as messaging
-import selfdrive.manager as manager
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
+os.environ['QCOM_REPLAY'] = "1"
+import selfdrive.manager as manager
 
 def camera_replay(lr, fr):
 
   pm = messaging.PubMaster(['frame', 'liveCalibration'])
   sm = messaging.SubMaster(['model'])
+
 
   # TODO: add dmonitoringmodeld
   print("preparing procs")
@@ -52,17 +55,7 @@ def camera_replay(lr, fr):
   manager.kill_managed_process('modeld')
   time.sleep(2)
   manager.kill_managed_process('camerad')
-  
-  # hack to
-
   return log_msgs
-
-
-def test_camera_replay():
-  # TODO: ref logs
-  lr = LogReader("77611a1fac303767_2020-05-11--16-37-07--0--rlog.bz2")
-  fr = FrameReader("77611a1fac303767_2020-05-11--16-37-07--0--fcamera.hevc")
-
 
 def msg_bytes(msgs):
   b = b""

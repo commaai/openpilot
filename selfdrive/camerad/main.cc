@@ -2,8 +2,7 @@
 #include <signal.h>
 #include <cassert>
 
-/*
-#ifdef QCOM
+#if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "cameras/camera_qcom.h"
 #elif QCOM2
 #include "cameras/camera_qcom2.h"
@@ -12,8 +11,6 @@
 #else
 #include "cameras/camera_frame_stream.h"
 #endif
-*/
-#include "cameras/camera_frame_stream.h"
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -406,7 +403,7 @@ void* processing_thread(void *arg) {
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
-#ifdef false //QCOM
+#if defined(QCOM) && !defined(QCOM_REPLAY)
     /*FILE *dump_rgb_file = fopen("/tmp/process_dump.rgb", "wb");
     fwrite(s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, sizeof(uint8_t), dump_rgb_file);
     fclose(dump_rgb_file);
@@ -518,7 +515,7 @@ void* processing_thread(void *arg) {
         framed.setLensTruePos(frame_data.lens_true_pos);
         framed.setGainFrac(frame_data.gain_frac);
 
-#ifdef false //QCOM
+#if defined(QCOM) && !defined(QCOM_REPLAY)
         kj::ArrayPtr<const int16_t> focus_vals(&s->cameras.rear.focus[0], NUM_FOCUS);
         kj::ArrayPtr<const uint8_t> focus_confs(&s->cameras.rear.confidence[0], NUM_FOCUS);
         framed.setFocusVal(focus_vals);
@@ -1258,9 +1255,9 @@ int main(int argc, char *argv[]) {
 
   init_buffers(s);
 
-//#if defined(QCOM) || defined(QCOM2)
-//  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
-//#endif
+#if (defined(QCOM) && !defined(QCOM_REPLAY)) || defined(QCOM2)
+  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+#endif
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
 
