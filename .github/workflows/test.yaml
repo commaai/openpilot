@@ -37,7 +37,7 @@ jobs:
 
         # need these so docker copy won't fail
         cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
-           .coveragerc-app $TEST_DIR
+           cppcheck_openpilot.sh .coveragerc-app $TEST_DIR
         cd $TEST_DIR
         mkdir pyextra laika laika_repo tools release
     - name: Build Docker image
