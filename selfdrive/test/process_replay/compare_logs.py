@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import bz2
 import os
 import sys
 import numbers
@@ -12,15 +11,6 @@ else:
   from tqdm import tqdm  # type: ignore
 
 from tools.lib.logreader import LogReader
-
-def save_log(dest, log_msgs):
-  dat = b""
-  for msg in tqdm(log_msgs):
-    dat += msg.as_builder().to_bytes()
-  dat = bz2.compress(dat)
-
-  with open(dest, "wb") as f:
-   f.write(dat)
 
 def remove_ignored_fields(msg, ignore):
   msg = msg.as_builder()
