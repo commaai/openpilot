@@ -208,8 +208,7 @@ static void update_offroad_layout_timeout(UIState *s, int* timeout) {
 }
 
 static void ui_init(UIState *s) {
-  memset(s, 0, sizeof(UIState));
-
+  
   pthread_mutex_init(&s->lock, NULL);
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
                          "health", "ubloxGnss", "driverState", "dMonitoringState", "offroadLayout"
@@ -810,7 +809,7 @@ int main(int argc, char* argv[]) {
   zsys_handler_set(NULL);
   signal(SIGINT, (sighandler_t)set_do_exit);
 
-  UIState uistate;
+  UIState uistate = {};
   UIState *s = &uistate;
   ui_init(s);
   enable_event_processing(true);
