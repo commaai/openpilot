@@ -1,4 +1,4 @@
-#define FF_DISABLE_DEPRECATION_WARNINGS
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@
 #include "common/swaglog.h"
 
 #include "encoder.h"
+
 
 //#define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
 
