@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcapnp-dev \
     clang \
     cmake \
+    cppcheck \
     curl \
     ffmpeg \
     git \
