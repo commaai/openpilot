@@ -393,9 +393,6 @@ void* processing_thread(void *arg) {
       assert(err == 0);
     } else {
       assert(s->rgb_buf_size >= s->frame_size);
-      printf("rgb width height %d %d\n", s->rgb_width, s->rgb_height);
-      printf("frame width height %d %d\n", s->frame_width, s->frame_height);
-      printf("%d %d\n", s->rgb_stride, s->frame_stride);
       assert(s->rgb_stride == s->frame_stride);
       err = clEnqueueCopyBuffer(q, s->camera_bufs_cl[buf_idx], s->rgb_bufs_cl[rgb_idx],
                                 0, 0, s->rgb_buf_size, 0, 0, &debayer_event);
@@ -1222,9 +1219,9 @@ void party(VisionState *s) {
   zsock_signal(s->terminate_pub, 0);
 
 #ifndef QCOM2
-  LOG("joining frontview_thread");
-  err = pthread_join(frontview_thread_handle, NULL);
-  assert(err == 0);
+  //LOG("joining frontview_thread");
+  //err = pthread_join(frontview_thread_handle, NULL);
+  //assert(err == 0);
 #endif
 
   LOG("joining visionserver_thread");
@@ -1269,9 +1266,9 @@ int main(int argc, char *argv[]) {
 
   party(s);
 
-#if defined(QCOM) || defined(QCOM2)
-  delete s->pm;
-#endif
+  if (s->pm != NULL) {
+    delete s->pm;
+  }
 
   free_buffers(s);
   cl_free(s);

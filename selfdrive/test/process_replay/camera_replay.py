@@ -60,5 +60,5 @@ def camera_replay(lr, fr):
 if __name__ == "__main__":
   lr = LogReader("77611a1fac303767_2020-05-11--16-37-07--0--rlog.bz2")
   fr = FrameReader("77611a1fac303767_2020-05-11--16-37-07--0--fcamera.hevc")
-  print(camera_replay(lr, fr))
+  print(camera_replay(list(lr), fr))
 

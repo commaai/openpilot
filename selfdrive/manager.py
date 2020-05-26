@@ -345,7 +345,7 @@ def kill_managed_process(name):
   cloudlog.info("killing %s" % name)
 
   if running[name].exitcode is None:
-    if name in interrupt_processes:
+    if name in interrupt_processes or name in unkillable_processes:
       os.kill(running[name].pid, signal.SIGINT)
     elif name in kill_processes:
       os.kill(running[name].pid, signal.SIGKILL)
