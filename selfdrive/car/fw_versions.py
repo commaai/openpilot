@@ -255,8 +255,9 @@ if __name__ == "__main__":
   for version in fw_vers:
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
     if args.hex:
-      version.fwVersion = ''.join(r'\x{:02x}'.format(x) for x in version.fwVersion)
-    print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
+      print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [b'%s']" % (''.join(r'\x{:02x}'.format(x) for x in version.fwVersion)))
+    else:
+      print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
   print("}")
 
   print()
