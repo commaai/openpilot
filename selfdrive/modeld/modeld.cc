@@ -44,8 +44,7 @@ void* live_thread(void *arg) {
 
   while (!do_exit) {
     if (sm.update(10) > 0){
-      pthread_mutex_lock(&transform_lock);
-
+      
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
       for (int i = 0; i < 4*3; i++){
@@ -60,6 +59,7 @@ void* live_thread(void *arg) {
 
       auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
 
+      pthread_mutex_lock(&transform_lock);
       for (int i=0; i<3*3; i++) {
         cur_transform.v[i] = warp_matrix(i / 3, i % 3);
       }
