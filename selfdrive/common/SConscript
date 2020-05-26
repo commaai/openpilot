@@ -21,7 +21,8 @@ if arch == "aarch64":
   files += [
     'framebuffer.cc',
     'touch.c',
-    'visionbuf_ion.c',
+    #'visionbuf_ion.c',
+    'visionbuf_cl.c',
   ]
   _gpu_libs = ['gui', 'adreno_utils']
 elif arch == "larch64":

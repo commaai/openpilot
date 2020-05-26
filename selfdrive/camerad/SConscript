@@ -4,7 +4,8 @@ libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', cereal, messaging, 'czmq', 'zm
 
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'adreno_utils', 'EGL', 'GLESv3', 'cutils', 'ui']
-  cameras = ['cameras/camera_qcom.cc']
+  #cameras = ['cameras/camera_qcom.cc']
+  cameras = ['cameras/camera_frame_stream.cc']
 elif arch == "larch64":
   libs += []
   cameras = ['cameras/camera_qcom2.c']

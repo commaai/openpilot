@@ -1,2 +1,5 @@
 out/
 docker_out/
+
+*.bz2
+*.hevc

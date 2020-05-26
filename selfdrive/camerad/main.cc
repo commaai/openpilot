@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <cassert>
 
+/*
 #ifdef QCOM
 #include "cameras/camera_qcom.h"
 #elif QCOM2
@@ -11,6 +12,8 @@
 #else
 #include "cameras/camera_frame_stream.h"
 #endif
+*/
+#include "cameras/camera_frame_stream.h"
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -390,6 +393,9 @@ void* processing_thread(void *arg) {
       assert(err == 0);
     } else {
       assert(s->rgb_buf_size >= s->frame_size);
+      printf("rgb width height %d %d\n", s->rgb_width, s->rgb_height);
+      printf("frame width height %d %d\n", s->frame_width, s->frame_height);
+      printf("%d %d\n", s->rgb_stride, s->frame_stride);
       assert(s->rgb_stride == s->frame_stride);
       err = clEnqueueCopyBuffer(q, s->camera_bufs_cl[buf_idx], s->rgb_bufs_cl[rgb_idx],
                                 0, 0, s->rgb_buf_size, 0, 0, &debayer_event);
@@ -403,7 +409,7 @@ void* processing_thread(void *arg) {
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
-#ifdef QCOM
+#ifdef false //QCOM
     /*FILE *dump_rgb_file = fopen("/tmp/process_dump.rgb", "wb");
     fwrite(s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, sizeof(uint8_t), dump_rgb_file);
     fclose(dump_rgb_file);
@@ -515,7 +521,7 @@ void* processing_thread(void *arg) {
         framed.setLensTruePos(frame_data.lens_true_pos);
         framed.setGainFrac(frame_data.gain_frac);
 
-#ifdef QCOM
+#ifdef false //QCOM
         kj::ArrayPtr<const int16_t> focus_vals(&s->cameras.rear.focus[0], NUM_FOCUS);
         kj::ArrayPtr<const uint8_t> focus_confs(&s->cameras.rear.confidence[0], NUM_FOCUS);
         framed.setFocusVal(focus_vals);
@@ -1255,9 +1261,9 @@ int main(int argc, char *argv[]) {
 
   init_buffers(s);
 
-#if defined(QCOM) || defined(QCOM2)
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
-#endif
+//#if defined(QCOM) || defined(QCOM2)
+//  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+//#endif
 
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
 
