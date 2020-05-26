@@ -208,7 +208,7 @@ static void update_offroad_layout_timeout(UIState *s, int* timeout) {
 }
 
 static void ui_init(UIState *s) {
-  
+
   pthread_mutex_init(&s->lock, NULL);
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
                          "health", "ubloxGnss", "driverState", "dMonitoringState", "offroadLayout"
@@ -426,7 +426,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   //     scene.mpc_y[i] = y_list[i];
   //   }
   //   s->livempc_or_radarstate_changed = true;
-  // } 
+  // }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
     s->active_app = data.getActiveApp();
@@ -511,7 +511,7 @@ static void ui_update(UIState *s) {
     // do this here for now in lieu of a run_on_main_thread event
 
     for (int i=0; i<UI_BUF_COUNT; i++) {
-      if(s->khr[i] != NULL) {
+      if(s->khr[i] != 0) {
         visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
         glDeleteTextures(1, &s->frame_texs[i]);
       }
@@ -541,7 +541,7 @@ static void ui_update(UIState *s) {
     }
 
     for (int i=0; i<UI_BUF_COUNT; i++) {
-      if(s->khr_front[i] != NULL) {
+      if(s->khr_front[i] != 0) {
         visionimg_destroy_gl(s->khr_front[i], s->priv_hnds_front[i]);
         glDeleteTextures(1, &s->frame_front_texs[i]);
       }
