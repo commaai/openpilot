@@ -327,7 +327,6 @@ selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_car_models.py
 
-selfdrive/test/process_replay/.gitignore
 selfdrive/test/process_replay/__init__.py
 selfdrive/test/process_replay/compare_logs.py
 selfdrive/test/process_replay/process_replay.py

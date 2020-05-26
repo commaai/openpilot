@@ -1,5 +1,7 @@
 out/
 docker_out/
 
+process_replay/diff.txt
+
 *.bz2
 *.hevc
