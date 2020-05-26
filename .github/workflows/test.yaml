@@ -49,7 +49,7 @@ jobs:
     name: docker push
     runs-on: ubuntu-16.04
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: linter # hack to ensure slow tests run first since this and linter are fast
+    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
       - uses: actions/checkout@v2
         with:
@@ -82,6 +82,11 @@ jobs:
         run: |
           docker cp tmppilot:/tmp/openpilot/cppcheck_output.txt cppcheck_output.txt
           cat cppcheck_output.txt
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cppcheck_output.txt
+          path: cppcheck_output.txt
 
   unit_tests:
     name: unit tests
