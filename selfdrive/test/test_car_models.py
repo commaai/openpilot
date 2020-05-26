@@ -304,6 +304,11 @@ routes = {
     'enableCamera': True,
     'fingerprintSource': 'fixed',
   },
+    "b74758c690a49668|2020-05-20--15-58-57": {
+    'carFingerprint': TOYOTA.LEXUS_RXH_TSS2,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
+  },
   "ec429c0f37564e3c|2020-02-01--17-28-12": {
     'carFingerprint': TOYOTA.LEXUS_NXH,
     'enableCamera': True,
