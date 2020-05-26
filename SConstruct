@@ -106,11 +106,8 @@ env = Environment(
     "-g",
     "-fPIC",
     "-O2",
-    "-Werror=implicit-function-declaration",
-    "-Werror=incompatible-pointer-types",
-    "-Werror=int-conversion",
-    "-Werror=return-type",
-    "-Werror=format-extra-args",
+    "-Werror",
+    "-Wno-deprecated-register"
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [

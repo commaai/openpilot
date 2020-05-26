@@ -1,6 +1,7 @@
 #include "ui.hpp"
 #include <assert.h>
 #include <map>
+#include <cmath>
 #include "common/util.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
@@ -396,7 +397,7 @@ static void ui_draw_world(UIState *s) {
   if (scene->lead_status) {
     draw_lead(s, scene->lead_d_rel, scene->lead_v_rel, scene->lead_y_rel);
   }
-  if ((scene->lead_status2) && (fabs(scene->lead_d_rel - scene->lead_d_rel2) > 3.0)) {
+  if ((scene->lead_status2) && (std::abs(scene->lead_d_rel - scene->lead_d_rel2) > 3.0)) {
     draw_lead(s, scene->lead_d_rel2, scene->lead_v_rel2, scene->lead_y_rel2);
   }
   nvgRestore(s->vg);
@@ -617,9 +618,9 @@ static void ui_draw_driver_view(UIState *s) {
     } else {
       fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     }
-    if (abs(scene->face_x) <= 0.35 && abs(scene->face_y) <= 0.4) {
+    if (std::abs(scene->face_x) <= 0.35 && std::abs(scene->face_y) <= 0.4) {
       ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2,
-                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((abs(scene->face_x) > abs(scene->face_y) ? abs(scene->face_x) : abs(scene->face_y))) * 0.6 / 0.375),
+                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((std::abs(scene->face_x) > std::abs(scene->face_y) ? std::abs(scene->face_x) : std::abs(scene->face_y))) * 0.6 / 0.375),
                    35, 10);
     } else {
       ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 35, 10);
@@ -959,9 +960,9 @@ void ui_nvg_init(UIState *s) {
   s->rear_frame_mat = matmul(device_transform, frame_transform);
 
   for(int i = 0;i < UI_BUF_COUNT; i++) {
-    s->khr[i] = NULL;
+    s->khr[i] = 0;
     s->priv_hnds[i] = NULL;
-    s->khr_front[i] = NULL;
+    s->khr_front[i] = 0;
     s->priv_hnds_front[i] = NULL;
   }
 }
