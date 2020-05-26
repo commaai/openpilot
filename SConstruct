@@ -107,7 +107,8 @@ env = Environment(
     "-fPIC",
     "-O2",
     "-Werror",
-    "-Wno-deprecated-register"
+    "-Wno-deprecated-register",
+    "-Wno-inconsistent-missing-override",
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
