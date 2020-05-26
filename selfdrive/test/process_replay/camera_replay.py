@@ -7,6 +7,7 @@ import selfdrive.manager as manager
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
+
 def camera_replay(lr, fr):
 
   pm = messaging.PubMaster(['frame', 'liveCalibration'])
@@ -31,23 +32,19 @@ def camera_replay(lr, fr):
     frame_idx = 0
     for msg in tqdm(lr):
       if msg.which() == "liveCalibrationd":
-        print("sending ", msg.which())
         pm.send(msg.which(), msg.as_builder())
       elif msg.which() == "frame":
-        print("sending ", msg.which())
         # recv one
         f = msg.as_builder()
         img = fr.get(frame_idx, pix_fmt="rgb24")[0][:, ::, -1]
         f.frame.image = img.flatten().tobytes()
         frame_idx += 1
-
+        
         pm.send(msg.which(), f)
-        print("wait for odel packet ")
         log_msgs.append(messaging.recv_one(sm.sock['model']))
-        print("got model packet")
 
-      if frame_idx >= fr.frame_count:
-        break
+        if frame_idx >= fr.frame_count:
+          break
   except KeyboardInterrupt:
     pass
 
@@ -55,10 +52,34 @@ def camera_replay(lr, fr):
   manager.kill_managed_process('modeld')
   time.sleep(2)
   manager.kill_managed_process('camerad')
+  
+  # hack to
+
   return log_msgs
+
+
+def test_camera_replay():
+  # TODO: ref logs
+  lr = LogReader("77611a1fac303767_2020-05-11--16-37-07--0--rlog.bz2")
+  fr = FrameReader("77611a1fac303767_2020-05-11--16-37-07--0--fcamera.hevc")
+
+
+def msg_bytes(msgs):
+  b = b""
+  for m in msgs:
+    print(m)
+    m = m.as_builder()
+    m.valid = True
+    m.logMonoTime = 0
+    b += m.to_bytes()
+  return b
 
 if __name__ == "__main__":
   lr = LogReader("77611a1fac303767_2020-05-11--16-37-07--0--rlog.bz2")
   fr = FrameReader("77611a1fac303767_2020-05-11--16-37-07--0--fcamera.hevc")
-  print(camera_replay(list(lr), fr))
+  
+  lr = list(lr)
+  ref = camera_replay(lr, fr)
+  comp = camera_replay(lr, fr)
+  print("same logs", msg_bytes(ref)==msg_bytes(comp))
 
