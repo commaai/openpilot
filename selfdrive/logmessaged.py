@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import zmq
 import cereal.messaging as messaging
+import zmq
+
 from selfdrive.swaglog import get_le_handler
 
 

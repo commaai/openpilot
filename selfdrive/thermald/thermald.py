@@ -1,23 +1,36 @@
 #!/usr/bin/env python3
-import os
-import json
 import copy
 import datetime
-import psutil
-from smbus2 import SMBus
-from cereal import log
-from common.android import ANDROID, get_network_type, get_network_strength
-from common.basedir import BASEDIR
-from common.params import Params, put_nonblocking
-from common.realtime import sec_since_boot, DT_TRML
-from common.numpy_fast import clip, interp
-from common.filter_simple import FirstOrderFilter
-from selfdrive.version import terms_version, training_version
-from selfdrive.swaglog import cloudlog
+import json
+import os
+
 import cereal.messaging as messaging
+import psutil
+from cereal import log
+from smbus2 import SMBus
+
+from common.android import ANDROID
+from common.android import get_network_strength
+from common.android import get_network_type
+from common.basedir import BASEDIR
+from common.filter_simple import FirstOrderFilter
+from common.numpy_fast import clip
+from common.numpy_fast import interp
+from common.params import Params
+from common.params import put_nonblocking
+from common.realtime import DT_TRML
+from common.realtime import sec_since_boot
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
-from selfdrive.thermald.power_monitoring import PowerMonitoring, get_battery_capacity, get_battery_status, get_battery_current, get_battery_voltage, get_usb_present
+from selfdrive.swaglog import cloudlog
+from selfdrive.thermald.power_monitoring import get_battery_capacity
+from selfdrive.thermald.power_monitoring import get_battery_current
+from selfdrive.thermald.power_monitoring import get_battery_status
+from selfdrive.thermald.power_monitoring import get_battery_voltage
+from selfdrive.thermald.power_monitoring import get_usb_present
+from selfdrive.thermald.power_monitoring import PowerMonitoring
+from selfdrive.version import terms_version
+from selfdrive.version import training_version
 
 FW_SIGNATURE = get_expected_signature()
 

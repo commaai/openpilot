@@ -1,5 +1,6 @@
 import json
 import os
+
 from common.file_helpers import mkdirs_exists_ok
 
 class MissingAuthConfigError(Exception):

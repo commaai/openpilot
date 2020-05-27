@@ -1,7 +1,8 @@
 import importlib
-from setproctitle import setproctitle  #pylint: disable=no-name-in-module
 
 import cereal.messaging as messaging
+from setproctitle import setproctitle  #pylint: disable=no-name-in-module
+
 import selfdrive.crash as crash
 from selfdrive.swaglog import cloudlog
 

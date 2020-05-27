@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Script to fill up EON with fake data"""
-
 import os
 
-from selfdrive.loggerd.config import ROOT, get_available_percent
+from selfdrive.loggerd.config import get_available_percent
+from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.tests.loggerd_tests_common import create_random_file
 
 

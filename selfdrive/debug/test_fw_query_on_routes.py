@@ -2,14 +2,15 @@
 import argparse
 import os
 import traceback
-from tqdm import tqdm
-from tools.lib.logreader import LogReader
-from selfdrive.car.fw_versions import match_fw_to_car
-from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
-from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 
-from selfdrive.car.toyota.values import FINGERPRINTS as TOYOTA_FINGERPRINTS
+from tqdm import tqdm
+
+from selfdrive.car.fw_versions import match_fw_to_car
 from selfdrive.car.honda.values import FINGERPRINTS as HONDA_FINGERPRINTS
+from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
+from selfdrive.car.toyota.values import FINGERPRINTS as TOYOTA_FINGERPRINTS
+from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
+from tools.lib.logreader import LogReader
 
 
 if __name__ == "__main__":

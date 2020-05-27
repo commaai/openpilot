@@ -1,6 +1,7 @@
 import os
 
 from cffi import FFI
+
 from common.ffi_wrapper import suffix
 
 mpc_dir = os.path.dirname(os.path.abspath(__file__))

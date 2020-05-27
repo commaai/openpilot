@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-
+import cProfile
 import os
 import time
-import cProfile
+
 import pprofile
 import pyprof2calltree
 
-from tools.lib.logreader import LogReader
 from selfdrive.controls.controlsd import main as controlsd_thread
-from selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
 from selfdrive.test.process_replay.process_replay import CONFIGS
+from selfdrive.test.profiling.lib import PubMaster
+from selfdrive.test.profiling.lib import ReplayDone
+from selfdrive.test.profiling.lib import SubMaster
+from selfdrive.test.profiling.lib import SubSocket
+from tools.lib.logreader import LogReader
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 

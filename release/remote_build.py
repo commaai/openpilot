@@ -1,10 +1,11 @@
 #!/usr/bin/env python2
-import paramiko
 import os
-import sys
 import re
-import time
 import socket
+import sys
+import time
+
+import paramiko
 
 
 def start_build(name):

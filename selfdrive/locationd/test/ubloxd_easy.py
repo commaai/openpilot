@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-
 import os
-from selfdrive.locationd.test import ublox
-from common import realtime
-from selfdrive.locationd.test.ubloxd import gen_raw, gen_solution
-import zmq
+
 import cereal.messaging as messaging
+import zmq
+
+from common import realtime
+from selfdrive.locationd.test import ublox
+from selfdrive.locationd.test.ubloxd import gen_raw
+from selfdrive.locationd.test.ubloxd import gen_solution
 
 
 unlogger = os.getenv("UNLOGGER") is not None   # debug prints

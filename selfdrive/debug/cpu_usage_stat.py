@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import psutil
-import time
-import os
-import sys
-import numpy as np
 import argparse
+import os
 import re
+import sys
+import time
 from collections import defaultdict
+
+import numpy as np
+import psutil
 
 '''
 System tools like top/htop can only show current cpu usage values, so I write this script to do statistics jobs.

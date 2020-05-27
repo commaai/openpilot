@@ -1,5 +1,7 @@
 import numpy as np
-from common.numpy_fast import clip, interp
+
+from common.numpy_fast import clip
+from common.numpy_fast import interp
 
 def apply_deadzone(error, deadzone):
   if error > deadzone:

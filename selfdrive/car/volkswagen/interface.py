@@ -1,9 +1,14 @@
 from cereal import car
-from selfdrive.config import Conversions as CV
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
+
 from common.params import put_nonblocking
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car import scale_rot_inertia
+from selfdrive.car import scale_tire_stiffness
+from selfdrive.car import STD_CARGO_KG
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.volkswagen.values import BUTTON_STATES
+from selfdrive.car.volkswagen.values import CAR
+from selfdrive.config import Conversions as CV
 
 GEAR = car.CarState.GearShifter
 EventName = car.CarEvent.EventName

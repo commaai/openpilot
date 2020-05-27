@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import gc
-from cereal import car
-from common.realtime import set_realtime_priority
-from common.params import Params
+
 import cereal.messaging as messaging
+from cereal import car
+
+from common.params import Params
+from common.realtime import set_realtime_priority
+from selfdrive.controls.lib.driver_monitor import DriverStatus
+from selfdrive.controls.lib.driver_monitor import MAX_TERMINAL_ALERTS
+from selfdrive.controls.lib.driver_monitor import MAX_TERMINAL_DURATION
 from selfdrive.controls.lib.events import Events
-from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
 from selfdrive.locationd.calibration_helpers import Calibration
 
 def dmonitoringd_thread(sm=None, pm=None):

@@ -1,10 +1,12 @@
-from common.numpy_fast import interp
-from math import atan2, sqrt
-from common.realtime import DT_DMON
-from common.filter_simple import FirstOrderFilter
-from common.stat_live import RunningStatFilter
+from math import atan2
+from math import sqrt
 
 from cereal import car
+
+from common.filter_simple import FirstOrderFilter
+from common.numpy_fast import interp
+from common.realtime import DT_DMON
+from common.stat_live import RunningStatFilter
 
 EventName = car.CarEvent.EventName
 

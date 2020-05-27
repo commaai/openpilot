@@ -1,6 +1,7 @@
 import sys
-import pygame
+
 import cv2
+import pygame
 
 class Window():
   def __init__(self, w, h, caption="window", double=False):
@@ -47,4 +48,3 @@ if __name__ == "__main__":
     print("draw")
     img += 1
     win.draw(img)
-

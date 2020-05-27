@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 import os
 import unittest
-from PIL import Image, ImageDraw, ImageFont
 
-from cereal import log, car
+from cereal import car
+from cereal import log
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
+
 from common.basedir import BASEDIR
-from selfdrive.controls.lib.events import Alert, EVENTS
+from selfdrive.controls.lib.events import Alert
+from selfdrive.controls.lib.events import EVENTS
 
 AlertSize = log.ControlsState.AlertSize
 

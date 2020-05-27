@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import sys
-import zmq
-import time
 import signal
-from uuid import uuid4
-from collections import namedtuple
+import sys
+import time
 from collections import deque
-from multiprocessing import Process, TimeoutError
+from collections import namedtuple
 from datetime import datetime
+from multiprocessing import Process
+from multiprocessing import TimeoutError
+from uuid import uuid4
 
-# strat 1: script to copy files
-# strat 2: build pip packages around these
-# could be its own pip package, which we'd need to build and release
+import zmq
 from cereal import log as capnp_log
+from cereal.messaging import MultiplePublishersError
+from cereal.messaging import pub_sock
 from cereal.services import service_list
-from cereal.messaging import pub_sock, MultiplePublishersError
-from common import realtime
 
+from common import realtime
 from tools.lib.kbhit import KBHit
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
 from tools.lib.route_framereader import RouteFrameReader
+# strat 1: script to copy files
+# strat 2: build pip packages around these
+# could be its own pip package, which we'd need to build and release
 
 # Commands.
 SetRoute = namedtuple("SetRoute", ("name", "start_time", "data_dir"))

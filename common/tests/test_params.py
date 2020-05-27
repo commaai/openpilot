@@ -1,9 +1,11 @@
-from common.params import Params, UnknownKeyName
+import shutil
+import tempfile
 import threading
 import time
-import tempfile
-import shutil
 import unittest
+
+from common.params import Params
+from common.params import UnknownKeyName
 
 
 class TestParams(unittest.TestCase):

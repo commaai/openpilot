@@ -1,15 +1,13 @@
-import time
-import threading
-import unittest
-import logging
 import json
+import logging
+import threading
+import time
+import unittest
 
-from selfdrive.swaglog import cloudlog
 import selfdrive.loggerd.uploader as uploader
-
 from common.xattr import getxattr
-
 from selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from selfdrive.swaglog import cloudlog
 
 class TestLogHandler(logging.Handler):
   def __init__(self):

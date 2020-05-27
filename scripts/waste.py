@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-from multiprocessing import Process
-from setproctitle import setproctitle
 import os
+from multiprocessing import Process
+
 import numpy as np
+from setproctitle import setproctitle
+
 from common.realtime import sec_since_boot
 
 def waste(pid):
@@ -32,4 +34,3 @@ def main(gctx=None):
 
 if __name__ == "__main__":
   main()
-

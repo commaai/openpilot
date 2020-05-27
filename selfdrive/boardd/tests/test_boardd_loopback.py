@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Run boardd with the BOARDD_LOOPBACK envvar before running this test."""
-
 import os
 import random
 import time
 
+from cereal.messaging import drain_sock
+from cereal.messaging import pub_sock
+from cereal.messaging import sub_sock
+
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from cereal.messaging import drain_sock, pub_sock, sub_sock
 
 def get_test_string():
   return b"test"+os.urandom(10)

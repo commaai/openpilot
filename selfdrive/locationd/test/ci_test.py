@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import subprocess
-import os
-import sys
 import argparse
+import os
+import subprocess
+import sys
 import tempfile
 
 from selfdrive.locationd.test.ubloxd_py_test import parser_test

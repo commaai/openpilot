@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.nissan.values import CAR
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+
+from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car import scale_rot_inertia
+from selfdrive.car import scale_tire_stiffness
+from selfdrive.car import STD_CARGO_KG
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.nissan.values import CAR
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):

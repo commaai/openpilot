@@ -1,7 +1,7 @@
-from cereal import log, car
+from cereal import car
+from cereal import log
 
 from selfdrive.config import Conversions as CV
-
 from selfdrive.locationd.calibration_helpers import Filter
 
 AlertSize = log.ControlsState.AlertSize

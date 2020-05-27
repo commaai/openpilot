@@ -2,11 +2,13 @@
 import os
 import sys
 import threading
-import capnp
-from selfdrive.version import version, dirty
 
-from selfdrive.swaglog import cloudlog
+import capnp
+
 from common.android import ANDROID
+from selfdrive.swaglog import cloudlog
+from selfdrive.version import dirty
+from selfdrive.version import version
 
 if os.getenv("NOLOG") or os.getenv("NOCRASH") or not ANDROID:
   def capture_exception(*exc_info):

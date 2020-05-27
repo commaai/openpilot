@@ -1,11 +1,12 @@
+import os
 import subprocess
-from distutils.core import Extension, setup
+from distutils.core import Extension
+from distutils.core import setup
 
 from Cython.Build import cythonize
 
-from common.cython_hacks import BuildExtWithoutPlatformSuffix
 from common.basedir import BASEDIR
-import os
+from common.cython_hacks import BuildExtWithoutPlatformSuffix
 
 PHONELIBS = os.path.join(BASEDIR, 'phonelibs')
 

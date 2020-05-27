@@ -1,10 +1,11 @@
-from logentries import LogentriesHandler
-from threading import Lock
-from functools import wraps
 import logging
-import time
 import sys
+import time
+from functools import wraps
+from threading import Lock
+
 import psutil
+from logentries import LogentriesHandler
 
 glob_time = 0
 glob_name = 0

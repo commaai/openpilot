@@ -20,17 +20,18 @@ before deleting the old <params_dir>/<d> directory.
 Writers that only modify a single key can simply take the lock, then swap the corresponding value
 file in place without messing with <params_dir>/d.
 """
-import time
-import os
-import string
 import binascii
 import errno
-import sys
-import shutil
 import fcntl
+import os
+import shutil
+import string
+import sys
 import tempfile
 import threading
+import time
 from enum import Enum
+
 from common.basedir import PARAMS
 
 def mkdirs_exists_ok(path):

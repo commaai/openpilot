@@ -1,13 +1,20 @@
 import unittest
+
 import numpy as np
 from cereal import car
+
 from common.realtime import DT_DMON
+from selfdrive.controls.lib.driver_monitor import _AWARENESS_PRE_TIME_TILL_TERMINAL
+from selfdrive.controls.lib.driver_monitor import _AWARENESS_PROMPT_TIME_TILL_TERMINAL
+from selfdrive.controls.lib.driver_monitor import _AWARENESS_TIME
+from selfdrive.controls.lib.driver_monitor import _DISTRACTED_PRE_TIME_TILL_TERMINAL
+from selfdrive.controls.lib.driver_monitor import _DISTRACTED_PROMPT_TIME_TILL_TERMINAL
+from selfdrive.controls.lib.driver_monitor import _DISTRACTED_TIME
+from selfdrive.controls.lib.driver_monitor import _HI_STD_TIMEOUT
+from selfdrive.controls.lib.driver_monitor import _POSESTD_THRESHOLD
+from selfdrive.controls.lib.driver_monitor import DriverStatus
+from selfdrive.controls.lib.driver_monitor import MAX_TERMINAL_ALERTS
 from selfdrive.controls.lib.events import Events
-from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, \
-                                  _AWARENESS_TIME, _AWARENESS_PRE_TIME_TILL_TERMINAL, \
-                                  _AWARENESS_PROMPT_TIME_TILL_TERMINAL, _DISTRACTED_TIME, \
-                                  _DISTRACTED_PRE_TIME_TILL_TERMINAL, _DISTRACTED_PROMPT_TIME_TILL_TERMINAL, \
-                                  _POSESTD_THRESHOLD, _HI_STD_TIMEOUT
 
 EventName = car.CarEvent.EventName
 

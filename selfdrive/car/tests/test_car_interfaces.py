@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import unittest
 import importlib
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
+import unittest
 
 from cereal import car
+
+from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
+from selfdrive.car.fingerprints import all_known_cars
 
 
 class TestCarInterfaces(unittest.TestCase):

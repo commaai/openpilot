@@ -1,6 +1,8 @@
 import os
 import subprocess
+
 from cffi import FFI
+
 from common.basedir import BASEDIR
 
 # Initialize visiontest. Ignore output.

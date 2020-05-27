@@ -1,12 +1,17 @@
 from cereal import car
-from common.numpy_fast import mean
-from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
+
+from common.numpy_fast import mean
+from selfdrive.car.gm.values import AccState
+from selfdrive.car.gm.values import CanBus
+from selfdrive.car.gm.values import CAR
+from selfdrive.car.gm.values import CruiseButtons
+from selfdrive.car.gm.values import DBC
+from selfdrive.car.gm.values import is_eps_status_ok
+from selfdrive.car.gm.values import STEER_THRESHOLD
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, \
-                                    CruiseButtons, is_eps_status_ok, \
-                                    STEER_THRESHOLD
+from selfdrive.config import Conversions as CV
 
 
 class CarState(CarStateBase):

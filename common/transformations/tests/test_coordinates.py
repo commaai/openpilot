@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+import unittest
 
 import numpy as np
-import unittest
 
 import common.transformations.coordinates as coord
 

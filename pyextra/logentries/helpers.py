@@ -1,7 +1,6 @@
-
 """ This file contains some helpers methods in both Python2 and 3 """
-import sys
 import re
+import sys
 
 if sys.version < '3':
     # Python2.x imports

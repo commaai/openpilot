@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-
 import sys
-from tools.lib.logreader import MultiLogIterator
+
 from xx.chffr.lib.route import Route
+
+from tools.lib.logreader import MultiLogIterator
 
 
 def get_fingerprint(lr):

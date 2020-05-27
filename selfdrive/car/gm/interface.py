@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.config import Conversions as CV
-from selfdrive.car.gm.values import CAR, Ecu, ECU_FINGERPRINT, CruiseButtons, \
-                                    AccState, FINGERPRINTS
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
+
+from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car import is_ecu_disconnected
+from selfdrive.car import scale_rot_inertia
+from selfdrive.car import scale_tire_stiffness
+from selfdrive.car import STD_CARGO_KG
+from selfdrive.car.gm.values import AccState
+from selfdrive.car.gm.values import CAR
+from selfdrive.car.gm.values import CruiseButtons
+from selfdrive.car.gm.values import Ecu
+from selfdrive.car.gm.values import ECU_FINGERPRINT
+from selfdrive.car.gm.values import FINGERPRINTS
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.config import Conversions as CV
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName

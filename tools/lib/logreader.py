@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import os
-import sys
 import bz2
-import tempfile
+import os
 import subprocess
+import sys
+import tempfile
 import urllib.parse
+
 import capnp
 import numpy as np
 

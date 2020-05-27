@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 
-from tools.lib.lazy_property import lazy_property
-from selfdrive.config import UIParams as UP
 from selfdrive.config import RADAR_TO_CAMERA
-from selfdrive.controls.lib.lane_planner import (compute_path_pinv,
-                                                 model_polyfit)
+from selfdrive.config import UIParams as UP
+from selfdrive.controls.lib.lane_planner import compute_path_pinv
+from selfdrive.controls.lib.lane_planner import model_polyfit
+from tools.lib.lazy_property import lazy_property
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)

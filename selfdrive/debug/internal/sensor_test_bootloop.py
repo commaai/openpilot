@@ -1,11 +1,12 @@
 #!/usr/bin/python3
-import sys
+import json
 import os
 import stat
 import subprocess
-import json
-from common.text_window import TextWindow
+import sys
 import time
+
+from common.text_window import TextWindow
 
 # Required for sensord not to bus-error on startup
 # commaai/cereal#22

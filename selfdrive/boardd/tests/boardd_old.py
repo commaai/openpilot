@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-
 # This file is not used by OpenPilot. Only boardd.cc is used.
 # The python version is slower, but has more options for development.
-
 # TODO: merge the extra functionalities of this file (like MOCK) in boardd.c and
 # delete this python version of boardd
-
 import os
 import struct
 import time
 
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper
-from selfdrive.swaglog import cloudlog
-from selfdrive.boardd.boardd import can_capnp_to_can_list
 from cereal import car
+
+from common.realtime import Ratekeeper
+from selfdrive.boardd.boardd import can_capnp_to_can_list
+from selfdrive.swaglog import cloudlog
 
 SafetyModel = car.CarParams.SafetyModel
 

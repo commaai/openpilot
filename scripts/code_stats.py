@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import ast
+import os
 import stat
 import subprocess
 
@@ -38,4 +38,3 @@ for f in sorted(pyf):
 
 print("%d lines of parsed openpilot python" % tlns)
 #print(sorted(list(imps)))
-

@@ -1,7 +1,10 @@
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
-from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
+
+from selfdrive.car.hyundai.values import DBC
+from selfdrive.car.hyundai.values import FEATURES
+from selfdrive.car.hyundai.values import STEER_THRESHOLD
+from selfdrive.car.interfaces import CarStateBase
 from selfdrive.config import Conversions as CV
 
 GearShifter = car.CarState.GearShifter

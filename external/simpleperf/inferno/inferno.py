@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
     Inferno is a tool to generate flamegraphs for android programs. It was originally written
     to profile surfaceflinger (Android compositor) but it can be used for other C++ program.
@@ -28,7 +27,6 @@
     4/ Javascript is injected to allow flamegraph navigation, search, coloring model.
 
 """
-
 import argparse
 import datetime
 import os

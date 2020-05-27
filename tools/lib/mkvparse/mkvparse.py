@@ -1,18 +1,13 @@
 # Licence==MIT; Vitaly "_Vi" Shukela 2012
-
 # Simple easy-to-use hacky matroska parser
-
 # Supports SimpleBlock and BlockGroup, lacing, TimecodeScale.
 # Does not support seeking, cues, chapters and other features.
 # No proper EOF handling unfortunately
-
 # See "mkvuser.py" for the example
-
+import datetime
+import sys
 import traceback
 from struct import unpack
-
-import sys
-import datetime
 
 if sys.version < '3':
     range=xrange

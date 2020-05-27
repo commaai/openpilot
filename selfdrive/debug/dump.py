@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-import os
-import sys
 import argparse
 import json
-from hexdump import hexdump
+import os
+import sys
 
-from cereal import log
 import cereal.messaging as messaging
+from cereal import log
 from cereal.services import service_list
+from hexdump import hexdump
 
 if __name__ == "__main__":
 

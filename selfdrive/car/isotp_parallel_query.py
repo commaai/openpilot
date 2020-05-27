@@ -3,9 +3,13 @@ from collections import defaultdict
 from functools import partial
 
 import cereal.messaging as messaging
-from selfdrive.swaglog import cloudlog
+from panda.python.uds import CanClient
+from panda.python.uds import FUNCTIONAL_ADDRS
+from panda.python.uds import get_rx_addr_for_tx_addr
+from panda.python.uds import IsoTpMessage
+
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
+from selfdrive.swaglog import cloudlog
 
 
 class IsoTpParallelQuery():

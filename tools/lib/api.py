@@ -1,5 +1,7 @@
 import os
+
 import requests
+
 from tools.lib.auth_config import clear_token
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 

@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
+import json
 import math
 
-import json
-import numpy as np
-
 import cereal.messaging as messaging
-from cereal import car, log
-from common.params import Params, put_nonblocking
-from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
+import numpy as np
+from cereal import car
+from cereal import log
+
+from common.params import Params
+from common.params import put_nonblocking
+from selfdrive.locationd.models.car_kf import CarKalman
+from selfdrive.locationd.models.car_kf import ObservationKind
+from selfdrive.locationd.models.car_kf import States
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
 

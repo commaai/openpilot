@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # TODO: why are the keras models saved with python 2?
-from __future__ import print_function
-
-import tensorflow as tf
 import os
 import sys
-import tensorflow.keras as keras
+
 import numpy as np
-from tensorflow.keras.models import Model
+import tensorflow as tf
+import tensorflow.keras as keras
 from tensorflow.keras.models import load_model
+from tensorflow.keras.models import Model
 
 def read(sz):
   dd = []
@@ -55,4 +54,3 @@ if __name__ == "__main__":
   no = keras.layers.Concatenate()(m(tii))
   m = Model(inputs=ri, outputs=[no])
   run_loop(m)
-

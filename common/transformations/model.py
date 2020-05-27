@@ -1,8 +1,9 @@
 import numpy as np
 
-from common.transformations.camera import (FULL_FRAME_SIZE, eon_focal_length,
-                                           get_view_frame_from_road_frame,
-                                           vp_from_ke)
+from common.transformations.camera import eon_focal_length
+from common.transformations.camera import FULL_FRAME_SIZE
+from common.transformations.camera import get_view_frame_from_road_frame
+from common.transformations.camera import vp_from_ke
 
 # segnet
 

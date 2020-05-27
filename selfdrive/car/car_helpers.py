@@ -1,14 +1,19 @@
 import os
-from common.params import Params
-from common.basedir import BASEDIR
-from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
-from selfdrive.car.vin import get_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
-from selfdrive.swaglog import cloudlog
-import cereal.messaging as messaging
-from selfdrive.car import gen_empty_fingerprint
 
-from cereal import car, log
+import cereal.messaging as messaging
+from cereal import car
+from cereal import log
+
+from common.basedir import BASEDIR
+from common.params import Params
+from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car.fingerprints import all_known_cars
+from selfdrive.car.fingerprints import eliminate_incompatible_cars
+from selfdrive.car.fw_versions import get_fw_versions
+from selfdrive.car.fw_versions import match_fw_to_car
+from selfdrive.car.vin import get_vin
+from selfdrive.car.vin import VIN_UNKNOWN
+from selfdrive.swaglog import cloudlog
 EventName = car.CarEvent.EventName
 HwType = log.HealthData.HwType
 

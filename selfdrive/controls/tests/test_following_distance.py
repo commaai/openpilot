@@ -1,12 +1,13 @@
 import unittest
-import numpy as np
 
-from cereal import log
 import cereal.messaging as messaging
+import numpy as np
+from cereal import log
+
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.planner import calc_cruise_accel_limits
 from selfdrive.controls.lib.speed_smoother import speed_smoother
-from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 
 
 def RW(v_ego, v_l):

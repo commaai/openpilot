@@ -1,9 +1,11 @@
-import sys
 import os
+import sys
 
-from selfdrive.locationd.test.ublox import UBloxMessage
-from selfdrive.locationd.test.ubloxd import gen_solution, gen_raw, gen_nav_data
 from common import realtime
+from selfdrive.locationd.test.ublox import UBloxMessage
+from selfdrive.locationd.test.ubloxd import gen_nav_data
+from selfdrive.locationd.test.ubloxd import gen_raw
+from selfdrive.locationd.test.ubloxd import gen_solution
 
 
 def mkdirs_exists_ok(path):

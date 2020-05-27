@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-from __future__ import print_function
-import time
 import random
+import time
 
-from boardd_old import can_init, can_recv, can_send_many, can_health
+from boardd_old import can_health
+from boardd_old import can_init
+from boardd_old import can_recv
+from boardd_old import can_send_many
 
 if __name__ == "__main__":
   can_init()

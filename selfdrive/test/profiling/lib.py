@@ -1,6 +1,7 @@
 from collections import defaultdict
-import cereal.messaging as messaging
+
 import capnp
+import cereal.messaging as messaging
 
 
 class ReplayDone(Exception):

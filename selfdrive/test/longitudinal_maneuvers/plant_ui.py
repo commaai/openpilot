@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-import pygame # pylint: disable=import-error
-from selfdrive.test.longitudinal_maneuvers.plant import Plant
-from selfdrive.car.honda.values import CruiseButtons
-import numpy as np
-import cereal.messaging as messaging
 import math
+
+import cereal.messaging as messaging
+import numpy as np
+import pygame # pylint: disable=import-error
+
+from selfdrive.car.honda.values import CruiseButtons
+from selfdrive.test.longitudinal_maneuvers.plant import Plant
 
 CAR_WIDTH = 2.0
 CAR_LENGTH = 4.5

@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-
-import os
-import serial
-from selfdrive.locationd.test import ublox
-import time
 import datetime
+import os
 import struct
 import sys
-from cereal import log
-from common import realtime
+import time
+
 import cereal.messaging as messaging
-from selfdrive.locationd.test.ephemeris import EphemerisData, GET_FIELD_U
+import serial
+from cereal import log
+
+from common import realtime
+from selfdrive.locationd.test import ublox
+from selfdrive.locationd.test.ephemeris import EphemerisData
+from selfdrive.locationd.test.ephemeris import GET_FIELD_U
 
 panda = os.getenv("PANDA") is not None   # panda directly connected
 grey = not (os.getenv("EVAL") is not None)     # panda through boardd

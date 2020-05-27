@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
 import cereal.messaging as messaging
+
+from selfdrive.car.fingerprints import all_known_cars
+from selfdrive.car.fingerprints import eliminate_incompatible_cars
 
 
 # rav4 2019 and corolla tss2

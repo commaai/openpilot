@@ -1,9 +1,10 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
+import multiprocessing
 import os
-import time
 import platform
 import subprocess
-import multiprocessing
+import time
+
 from cffi import FFI
 
 from common.common_pyx import sec_since_boot  # pylint: disable=no-name-in-module, import-error

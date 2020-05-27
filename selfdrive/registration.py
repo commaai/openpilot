@@ -1,14 +1,22 @@
-import os
 import json
+import os
+from datetime import datetime
+from datetime import timedelta
 
-from datetime import datetime, timedelta
-from selfdrive.swaglog import cloudlog
-from selfdrive.version import version, terms_version, training_version, get_git_commit, get_git_branch, get_git_remote
-from common.android import get_imei, get_serial, get_subscriber_info
+from common.android import get_imei
+from common.android import get_serial
+from common.android import get_subscriber_info
 from common.api import api_get
-from common.params import Params
-from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
+from common.file_helpers import mkdirs_exists_ok
+from common.params import Params
+from selfdrive.swaglog import cloudlog
+from selfdrive.version import get_git_branch
+from selfdrive.version import get_git_commit
+from selfdrive.version import get_git_remote
+from selfdrive.version import terms_version
+from selfdrive.version import training_version
+from selfdrive.version import version
 
 def register():
   params = Params()

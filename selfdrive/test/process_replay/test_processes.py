@@ -4,8 +4,9 @@ import os
 import sys
 
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
 from selfdrive.test.process_replay.compare_logs import compare_logs
+from selfdrive.test.process_replay.process_replay import CONFIGS
+from selfdrive.test.process_replay.process_replay import replay_process
 from tools.lib.logreader import LogReader
 
 

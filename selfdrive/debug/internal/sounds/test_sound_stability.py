@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+import datetime
 import os
+import random
 import subprocess
 import time
-import datetime
-import random
 
 from common.basedir import BASEDIR
 from selfdrive import messaging

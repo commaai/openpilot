@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+
 from smbus2 import SMBus
 
 def setup_fan():

@@ -1,7 +1,8 @@
 import os
-import numpy as np
 
+import numpy as np
 from cffi import FFI
+
 from common.ffi_wrapper import suffix
 
 cluster_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))

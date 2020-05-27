@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from common.params import Params
-from selfdrive.version import terms_version, training_version
+from selfdrive.version import terms_version
+from selfdrive.version import training_version
 
 if __name__ == '__main__':
   params = Params()

@@ -1,0 +1,6 @@
+repos:
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: master
+    hooks:
+    -   id: reorder-python-imports
+        args: [--py37-plus]

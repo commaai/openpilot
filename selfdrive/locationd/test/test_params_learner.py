@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+import unittest
 
 import numpy as np
-import unittest
 
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.car.honda.values import CAR

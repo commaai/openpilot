@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-from __future__ import print_function
 import math
 import time
+
 from cereal import car
 from opendbc.can.parser import CANParser
-from selfdrive.car.gm.values import DBC, CAR, CanBus
-from selfdrive.config import Conversions as CV
+
+from selfdrive.car.gm.values import CanBus
+from selfdrive.car.gm.values import CAR
+from selfdrive.car.gm.values import DBC
 from selfdrive.car.interfaces import RadarInterfaceBase
+from selfdrive.config import Conversions as CV
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1

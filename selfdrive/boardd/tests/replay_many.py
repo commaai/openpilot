@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import os
+import signal
 import sys
 import time
-import signal
 import traceback
-import usb1
-from panda import Panda, PandaDFU
 from multiprocessing import Pool
+
+import usb1
+from panda import Panda
+from panda import PandaDFU
 
 jungle = "JUNGLE" in os.environ
 if jungle:

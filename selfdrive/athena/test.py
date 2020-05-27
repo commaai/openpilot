@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
 import json
 import os
-import requests
-import tempfile
-import time
-import threading
 import queue
+import tempfile
+import threading
+import time
 import unittest
-
 from multiprocessing import Process
 from pathlib import Path
 from unittest import mock
+
+import requests
+from cereal import messaging
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import dispatcher
-from selfdrive.athena.test_helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
-from cereal import messaging
+from selfdrive.athena.test_helpers import EchoSocket
+from selfdrive.athena.test_helpers import MockApi
+from selfdrive.athena.test_helpers import MockParams
+from selfdrive.athena.test_helpers import MockWebsocket
+from selfdrive.athena.test_helpers import with_http_server
 
 class TestAthenadMethods(unittest.TestCase):
   @classmethod

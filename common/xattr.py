@@ -1,4 +1,5 @@
 import os
+
 from cffi import FFI
 
 # Workaround for the EON/termux build of Python having os.*xattr removed.

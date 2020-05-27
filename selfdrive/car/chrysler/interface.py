@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.chrysler.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINTS
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
+
+from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car import is_ecu_disconnected
+from selfdrive.car import scale_rot_inertia
+from selfdrive.car import scale_tire_stiffness
+from selfdrive.car import STD_CARGO_KG
+from selfdrive.car.chrysler.values import CAR
+from selfdrive.car.chrysler.values import Ecu
+from selfdrive.car.chrysler.values import ECU_FINGERPRINT
+from selfdrive.car.chrysler.values import FINGERPRINTS
 from selfdrive.car.interfaces import CarInterfaceBase
 
 

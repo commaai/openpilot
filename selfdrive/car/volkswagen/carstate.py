@@ -1,10 +1,14 @@
 import numpy as np
 from cereal import car
-from selfdrive.config import Conversions as CV
-from selfdrive.car.interfaces import CarStateBase
-from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC, CANBUS, BUTTON_STATES, CarControllerParams
+from opendbc.can.parser import CANParser
+
+from selfdrive.car.interfaces import CarStateBase
+from selfdrive.car.volkswagen.values import BUTTON_STATES
+from selfdrive.car.volkswagen.values import CANBUS
+from selfdrive.car.volkswagen.values import CarControllerParams
+from selfdrive.car.volkswagen.values import DBC
+from selfdrive.config import Conversions as CV
 
 class CarState(CarStateBase):
   def __init__(self, CP):

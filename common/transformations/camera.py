@@ -1,4 +1,5 @@
 import numpy as np
+
 import common.transformations.orientation as orient
 
 FULL_FRAME_SIZE = (1164, 874)
@@ -145,4 +146,3 @@ def pretransform_from_calib(calib):
   camera_frame_from_road_frame = np.dot(eon_intrinsics, view_frame_from_road_frame)
   camera_frame_from_calib_frame = get_camera_frame_from_calib_frame(camera_frame_from_road_frame)
   return np.linalg.inv(camera_frame_from_calib_frame)
-

@@ -1,7 +1,9 @@
 #! /usr/bin/env python
-import numpy as np
 from collections import OrderedDict
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.vehicle_model import VehicleModel

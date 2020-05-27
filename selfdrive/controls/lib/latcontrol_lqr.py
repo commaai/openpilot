@@ -1,8 +1,9 @@
 import numpy as np
-from selfdrive.controls.lib.drive_helpers import get_steer_max
+from cereal import log
+
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
-from cereal import log
+from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 
 class LatControlLQR():

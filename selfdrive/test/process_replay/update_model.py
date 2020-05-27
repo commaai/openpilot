@@ -2,12 +2,14 @@
 import os
 import sys
 
+from inject_model import inject_model
+
 from selfdrive.test.openpilotci_upload import upload_file
 from selfdrive.test.process_replay.compare_logs import save_log
-from selfdrive.test.process_replay.test_processes import segments, get_segment
+from selfdrive.test.process_replay.test_processes import get_segment
+from selfdrive.test.process_replay.test_processes import segments
 from selfdrive.version import get_git_commit
 from tools.lib.logreader import LogReader
-from inject_model import inject_model
 
 if __name__ == "__main__":
 

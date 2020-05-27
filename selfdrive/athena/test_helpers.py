@@ -2,11 +2,12 @@ import http.server
 import multiprocessing
 import queue
 import random
-import requests
 import socket
 import time
 from functools import wraps
 from multiprocessing import Process
+
+import requests
 
 class EchoSocket():
   def __init__(self, port):

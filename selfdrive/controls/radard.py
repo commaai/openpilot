@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 import importlib
 import math
-from collections import defaultdict, deque
+from collections import defaultdict
+from collections import deque
 
 import cereal.messaging as messaging
 from cereal import car
+
 from common.numpy_fast import interp
 from common.params import Params
-from common.realtime import Ratekeeper, set_realtime_priority
+from common.realtime import Ratekeeper
+from common.realtime import set_realtime_priority
 from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
-from selfdrive.controls.lib.radar_helpers import Cluster, Track
+from selfdrive.controls.lib.radar_helpers import Cluster
+from selfdrive.controls.lib.radar_helpers import Track
 from selfdrive.swaglog import cloudlog
 
 

@@ -2,9 +2,12 @@
 import os
 import shutil
 import threading
-from selfdrive.swaglog import cloudlog
-from selfdrive.loggerd.config import ROOT, get_available_bytes, get_available_percent
+
+from selfdrive.loggerd.config import get_available_bytes
+from selfdrive.loggerd.config import get_available_percent
+from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.uploader import listdir_by_creation
+from selfdrive.swaglog import cloudlog
 
 MIN_BYTES = 5 * 1024 * 1024 * 1024
 MIN_PERCENT = 10

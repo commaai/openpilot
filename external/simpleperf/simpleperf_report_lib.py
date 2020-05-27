@@ -14,17 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """simpleperf_report_lib.py: a python wrapper of libsimpleperf_report.so.
    Used to access samples in perf.data.
 
 """
-
 import ctypes as ct
 import os
 import subprocess
 import sys
 import unittest
+
 from utils import *
 
 

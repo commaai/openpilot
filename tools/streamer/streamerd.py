@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 import os
+import struct
 import sys
-import zmq
+
+import av
+import cereal.messaging as messaging
 import cv2
 import numpy as np
-import struct
-
-# sudo pip install git+git://github.com/mikeboers/PyAV.git
-import av
-
-import cereal.messaging as messaging
+import zmq
 from cereal.services import service_list
+# sudo pip install git+git://github.com/mikeboers/PyAV.git
 
 PYGAME = os.getenv("PYGAME") is not None
 if PYGAME:

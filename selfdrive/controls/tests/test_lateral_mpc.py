@@ -1,9 +1,11 @@
 import unittest
+
 import numpy as np
+
 from selfdrive.car.honda.interface import CarInterface
+from selfdrive.controls.lib.lane_planner import calc_d_poly
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.controls.lib.lane_planner import calc_d_poly
 
 
 def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,

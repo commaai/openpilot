@@ -1,13 +1,9 @@
 #!/usr/bin/env python
-
 # This process publishes joystick events. Such events can be suscribed by
 # mocked car controller scripts.
-
-
 ### this process needs pygame and can't run on the EON ###
-
-import pygame
 import cereal.messaging as messaging
+import pygame
 
 def joystick_thread():
   joystick_sock = messaging.pub_sock('testJoystick')

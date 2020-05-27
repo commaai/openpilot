@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-
 import os
+import subprocess
 import time
 
-
+from cereal.messaging import PubMaster
+from cereal.messaging import recv_one
+from cereal.messaging import sub_sock
 from tqdm import tqdm
-from cereal.messaging import PubMaster, recv_one, sub_sock
-from tools.lib.framereader import FrameReader
-import subprocess
+
 import selfdrive.manager as manager
+from tools.lib.framereader import FrameReader
 
 
 def rreplace(s, old, new, occurrence):

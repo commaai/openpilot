@@ -1,12 +1,12 @@
 import random
-import numpy as np
-
-import selfdrive.boardd.tests.boardd_old as boardd_old
-import selfdrive.boardd.boardd as boardd
-
-from common.realtime import sec_since_boot
-from cereal import log
 import unittest
+
+import numpy as np
+from cereal import log
+
+import selfdrive.boardd.boardd as boardd
+import selfdrive.boardd.tests.boardd_old as boardd_old
+from common.realtime import sec_since_boot
 
 
 def generate_random_can_data_list():

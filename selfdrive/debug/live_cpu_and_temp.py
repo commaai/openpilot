@@ -2,7 +2,6 @@
 import argparse
 
 import numpy as np
-
 from cereal.messaging import SubMaster
 
 

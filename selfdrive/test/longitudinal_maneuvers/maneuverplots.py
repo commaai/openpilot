@@ -1,7 +1,7 @@
 import os
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import pylab
 
 from selfdrive.config import Conversions as CV
@@ -140,4 +140,3 @@ class ManeuverPlot():
     pylab.savefig("/".join([path, maneuver_name, 'distance.svg']), dpi=1000)
 
     plt.close("all")
-

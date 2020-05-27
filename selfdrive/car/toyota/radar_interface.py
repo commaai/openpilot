@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 import os
 import time
-from opendbc.can.parser import CANParser
+
 from cereal import car
-from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
+from opendbc.can.parser import CANParser
+
 from selfdrive.car.interfaces import RadarInterfaceBase
+from selfdrive.car.toyota.values import DBC
+from selfdrive.car.toyota.values import NO_DSU_CAR
+from selfdrive.car.toyota.values import TSS2_CAR
 
 def _create_radar_can_parser(car_fingerprint):
   dbc_f = DBC[car_fingerprint]['radar']

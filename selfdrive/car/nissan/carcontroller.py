@@ -1,7 +1,9 @@
 from cereal import car
-from common.numpy_fast import clip, interp
-from selfdrive.car.nissan import nissancan
 from opendbc.can.packer import CANPacker
+
+from common.numpy_fast import clip
+from common.numpy_fast import interp
+from selfdrive.car.nissan import nissancan
 from selfdrive.car.nissan.values import CAR
 
 # Steer angle limits

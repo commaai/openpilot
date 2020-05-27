@@ -1,8 +1,9 @@
-import os
-import subprocess
 import glob
 import hashlib
+import os
 import shutil
+import subprocess
+
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 

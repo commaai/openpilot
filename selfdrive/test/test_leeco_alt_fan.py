@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+
 from smbus2 import SMBus
 
 def setup_leon_fan():
@@ -18,4 +19,3 @@ def setup_leon_fan():
   bus.close()
 
 setup_leon_fan()
-

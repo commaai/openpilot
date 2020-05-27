@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import numpy as np
-
 import matplotlib.pyplot as plt
+import numpy as np
 
 from selfdrive.controls.lib.longitudinal_mpc_model import libmpc_py
 

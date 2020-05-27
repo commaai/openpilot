@@ -41,5 +41,3 @@ if __name__ == "__main__":
       print(img.shape, end='\r')
       cv2.imshow('preview', img)
       cv2.waitKey(10)
-
-

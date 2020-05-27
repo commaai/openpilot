@@ -1,4 +1,5 @@
 import copy
+
 import crcmod
 
 nissan_checksum = crcmod.mkCrcFun(0x11d, initCrc=0x00, rev=False, xorOut=0xff)

@@ -1,9 +1,10 @@
-import numpy as np
 import math
 
-from selfdrive.swaglog import cloudlog
+import numpy as np
+
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.longitudinal_mpc_model import libmpc_py
+from selfdrive.swaglog import cloudlog
 
 
 class LongitudinalMpcModel():

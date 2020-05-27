@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import sys
 import math
+import sys
 
 import numpy as np
 import sympy as sp
-
 from rednose import KalmanFilter
-from rednose.helpers.ekf_sym import EKF_sym, gen_code
+from rednose.helpers.ekf_sym import EKF_sym
+from rednose.helpers.ekf_sym import gen_code
+
 from selfdrive.locationd.models.constants import ObservationKind
 
 i = 0

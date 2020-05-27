@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # Copyright (c) 2016, Comma.ai, Inc.
-
-import re
 import binascii
+import re
 
-from tools.lib.mkvparse import mkvparse
 from tools.lib.mkvparse import mkvgen
-from tools.lib.mkvparse.mkvgen import ben, ebml_element, ebml_encode_number
+from tools.lib.mkvparse import mkvparse
+from tools.lib.mkvparse.mkvgen import ben
+from tools.lib.mkvparse.mkvgen import ebml_element
+from tools.lib.mkvparse.mkvgen import ebml_encode_number
 
 class MatroskaIndex(mkvparse.MatroskaHandler):
   # def __init__(self, banlist, nocluster_mode):
@@ -62,4 +63,3 @@ def simple_gen(of, config_record, w, h, framedata):
     + ebml_element(0xE7, ben(0)) # TimeCode, uint, milliseconds
     # + ebml_element(0xA7, ben(0)) # Position, uint
     + ''.join(blocks)))
-

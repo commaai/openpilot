@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import unittest
+
 from cereal import car
+
 from selfdrive.car.fw_versions import match_fw_to_car
 from selfdrive.car.toyota.values import CAR as TOYOTA
 

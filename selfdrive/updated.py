@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 # Safe Update: A simple service that waits for network access and tries to
 # update every 10 minutes. It's intended to make the OP update process more
 # robust against Git repository corruption. This service DOES NOT try to fix
@@ -21,17 +20,26 @@
 # Other than build byproducts, BASEDIR should not be modified while this
 # service is running. Developers modifying code directly in BASEDIR should
 # disable this service.
-
-import os
 import datetime
-import subprocess
-import psutil
-from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
+import fcntl
+import os
 import shutil
 import signal
-from pathlib import Path
-import fcntl
+import subprocess
 import threading
+from pathlib import Path
+from stat import S_IMODE
+from stat import S_ISDIR
+from stat import S_ISLNK
+from stat import S_ISREG
+from stat import ST_ATIME
+from stat import ST_GID
+from stat import ST_INO
+from stat import ST_MODE
+from stat import ST_MTIME
+from stat import ST_UID
+
+import psutil
 from cffi import FFI
 
 from common.basedir import BASEDIR

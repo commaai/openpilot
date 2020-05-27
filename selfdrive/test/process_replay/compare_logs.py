@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import bz2
+import numbers
 import os
 import sys
-import numbers
 
 import dictdiffer
 if "CI" in os.environ:

@@ -1,5 +1,9 @@
 import numpy as np
-from numpy import dot, inner, array, linalg
+from numpy import array
+from numpy import dot
+from numpy import inner
+from numpy import linalg
+
 from common.transformations.coordinates import LocalCoord
 
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-import os
 import argparse
+import os
 import struct
 from collections import deque
 from statistics import mean
 
-from cereal import log
 import cereal.messaging as messaging
+from cereal import log
 
 if __name__ == "__main__":
 

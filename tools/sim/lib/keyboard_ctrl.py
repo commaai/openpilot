@@ -1,6 +1,6 @@
-import time
 import sys
 import termios
+import time
 from termios import *
 
 # Indexes for termios list.
@@ -58,4 +58,3 @@ if __name__ == '__main__':
   p.start()
 
   keyboard_poll_thread(q)
-

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import argparse
-import numpy as np
-from collections import defaultdict, deque
-from common.realtime import sec_since_boot
+from collections import defaultdict
+from collections import deque
+
 import cereal.messaging as messaging
+import numpy as np
+
+from common.realtime import sec_since_boot
 
 
 if __name__ == "__main__":

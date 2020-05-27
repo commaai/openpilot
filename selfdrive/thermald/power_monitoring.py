@@ -5,6 +5,7 @@ import time
 from statistics import mean
 
 from cereal import log
+
 from selfdrive.swaglog import cloudlog
 
 PANDA_OUTPUT_VOLTAGE = 5.28

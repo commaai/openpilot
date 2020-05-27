@@ -1,7 +1,8 @@
 import os
-from common.basedir import BASEDIR
 
 from cffi import FFI
+
+from common.basedir import BASEDIR
 
 locationd_dir = os.path.dirname(os.path.abspath(__file__))
 liblocationd_fn = os.path.join(locationd_dir, "liblocationd.so")

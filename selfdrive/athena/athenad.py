@@ -1,29 +1,33 @@
 #!/usr/bin/env python3
-import json
-import os
+import base64
 import hashlib
 import io
+import json
+import os
+import queue
 import random
 import select
 import socket
-import time
 import threading
-import base64
-import requests
-import queue
+import time
 from collections import namedtuple
 from functools import partial
-from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import create_connection, WebSocketTimeoutException, ABNF
-from selfdrive.loggerd.config import ROOT
 
 import cereal.messaging as messaging
+import requests
+from cereal.services import service_list
+from jsonrpc import dispatcher
+from jsonrpc import JSONRPCResponseManager
+from websocket import ABNF
+from websocket import create_connection
+from websocket import WebSocketTimeoutException
+
 from common import android
-from common.basedir import PERSIST
 from common.api import Api
+from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from cereal.services import service_list
+from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')

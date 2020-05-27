@@ -1,15 +1,27 @@
 #!/usr/bin/env python3
 import numpy as np
 from cereal import car
-from common.numpy_fast import clip, interp
+
+from common.numpy_fast import clip
+from common.numpy_fast import interp
 from common.realtime import DT_CTRL
-from selfdrive.swaglog import cloudlog
+from selfdrive.car import CivicParams
+from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car import is_ecu_disconnected
+from selfdrive.car import scale_rot_inertia
+from selfdrive.car import scale_tire_stiffness
+from selfdrive.car import STD_CARGO_KG
+from selfdrive.car.honda.values import CAR
+from selfdrive.car.honda.values import CruiseButtons
+from selfdrive.car.honda.values import Ecu
+from selfdrive.car.honda.values import ECU_FINGERPRINT
+from selfdrive.car.honda.values import FINGERPRINTS
+from selfdrive.car.honda.values import HONDA_BOSCH
+from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.events import ET
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, Ecu, ECU_FINGERPRINT, FINGERPRINTS
-from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.swaglog import cloudlog
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 

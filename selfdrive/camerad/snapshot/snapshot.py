@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
 import signal
 import subprocess
 import time
+
 from PIL import Image
+
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.camerad.snapshot.visionipc import VisionIPC

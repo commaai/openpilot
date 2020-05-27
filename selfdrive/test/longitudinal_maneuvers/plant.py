@@ -4,22 +4,20 @@ import os
 import struct
 import time
 from collections import namedtuple
-import numpy as np
 
+import cereal.messaging as messaging
+import numpy as np
 from opendbc import DBC_PATH
+from opendbc.can.dbc import dbc
+from opendbc.can.parser import CANParser
 
 from common.realtime import Ratekeeper
-from selfdrive.config import Conversions as CV
-import cereal.messaging as messaging
-from selfdrive.car import crc8_pedal
-from selfdrive.car.honda.values import CAR
-from selfdrive.car.honda.carstate import get_can_signals
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-
-from opendbc.can.parser import CANParser
+from selfdrive.car import crc8_pedal
+from selfdrive.car.honda.carstate import get_can_signals
 from selfdrive.car.honda.interface import CarInterface
-
-from opendbc.can.dbc import dbc
+from selfdrive.car.honda.values import CAR
+from selfdrive.config import Conversions as CV
 honda = dbc(os.path.join(DBC_PATH, "honda_civic_touring_2016_can_generated.dbc"))
 
 # Trick: set 0x201 (interceptor) in fingerprints for gas is controlled like if there was an interceptor

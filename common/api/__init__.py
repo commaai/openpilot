@@ -1,6 +1,9 @@
+from datetime import datetime
+from datetime import timedelta
+
 import jwt
 import requests
-from datetime import datetime, timedelta
+
 from common.basedir import PERSIST
 from selfdrive.version import version
 
@@ -39,4 +42,3 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
   headers['User-Agent'] = "openpilot-" + version
 
   return requests.request(method, backend+endpoint, timeout=timeout, headers = headers, params=params)
-

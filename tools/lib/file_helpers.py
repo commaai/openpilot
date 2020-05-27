@@ -1,4 +1,5 @@
 import os
+
 from atomicwrites import AtomicWriter
 
 def atomic_write_in_dir(path, **kwargs):

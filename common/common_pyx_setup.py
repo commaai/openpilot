@@ -1,4 +1,6 @@
-from distutils.core import Extension, setup  # pylint: disable=import-error,no-name-in-module
+from distutils.core import Extension
+from distutils.core import setup
+
 from Cython.Build import cythonize
 
 from common.cython_hacks import BuildExtWithoutPlatformSuffix

@@ -1,9 +1,12 @@
 import os
-import tempfile
 import shutil
+import tempfile
 import unittest
 
-from common.xattr import getxattr, setxattr, listxattr, removexattr
+from common.xattr import getxattr
+from common.xattr import listxattr
+from common.xattr import removexattr
+from common.xattr import setxattr
 
 class TestParams(unittest.TestCase):
   def setUp(self):

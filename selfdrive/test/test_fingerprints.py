@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+
 from common.basedir import BASEDIR
 from selfdrive.car.fingerprints import IGNORED_FINGERPRINTS
 

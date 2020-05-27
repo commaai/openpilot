@@ -9,10 +9,9 @@ WARNING: This code has originally intended for
 ublox version 7, it has been adapted to work
 for ublox version 8, not all functions may work.
 '''
-
-
+import os
 import struct
-import time, os
+import time
 
 # protocol constants
 PREAMBLE1 = 0xb5

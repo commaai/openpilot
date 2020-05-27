@@ -1,10 +1,11 @@
-import os
-import sys
 import json
+import os
 import struct
+import sys
 import tempfile
 import threading
 import xml.etree.ElementTree as ET
+
 import numpy as np
 if sys.version_info >= (3,0):
   import queue

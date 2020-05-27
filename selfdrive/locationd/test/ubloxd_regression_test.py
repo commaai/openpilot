@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import sys
-import argparse
 
 from cereal import log
+
 from common.basedir import BASEDIR
 os.environ['BASEDIR'] = BASEDIR
 

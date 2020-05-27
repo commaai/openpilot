@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-import os
-import time
-import sys
-import fcntl
-import errno
-import signal
-import shutil
-import subprocess
 import datetime
+import errno
+import fcntl
+import os
+import shutil
+import signal
+import subprocess
+import sys
 import textwrap
-from selfdrive.swaglog import cloudlog, add_logentries_handler
+import time
 
-from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
+from common.basedir import BASEDIR
+from common.basedir import PARAMS
+from selfdrive.swaglog import add_logentries_handler
+from selfdrive.swaglog import cloudlog
 WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR

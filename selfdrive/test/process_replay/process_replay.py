@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+import importlib
 import os
 import sys
 import threading
-import importlib
 
 if "CI" in os.environ:
   tqdm = lambda x: x

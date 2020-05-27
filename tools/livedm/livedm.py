@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-import os
 import argparse
-import pygame
-import numpy as np
-import cv2
+import os
 
-from cereal import log
 import cereal.messaging as messaging
-
+import cv2
+import numpy as np
+import pygame
+from cereal import log
 from helpers import draw_pose
 
 if __name__ == "__main__":

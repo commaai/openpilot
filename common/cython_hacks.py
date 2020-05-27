@@ -1,5 +1,6 @@
 import os
 import sysconfig
+
 from Cython.Distutils import build_ext
 
 def get_ext_filename_without_platform_suffix(filename):

@@ -1,11 +1,11 @@
 import os
 import re
-from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
+from urllib.parse import urlparse
 
-from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
+from tools.lib.auth_config import get_token
 
 SEGMENT_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}--[0-9]+'
 EXPLORER_FILE_RE = r'^({})--([a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)

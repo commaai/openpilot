@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+
 from common.basedir import BASEDIR
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route

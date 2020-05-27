@@ -1,4 +1,5 @@
-from distutils.core import Extension, setup
+from distutils.core import Extension
+from distutils.core import setup
 
 from Cython.Build import cythonize
 

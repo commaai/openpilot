@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+from copy import copy
+
+import cereal.messaging as messaging
+from cereal import car
+from cereal import log
+
 from common.numpy_fast import clip
 from common.params import Params
-from copy import copy
-from cereal import car, log
-import cereal.messaging as messaging
-from selfdrive.car.car_helpers import get_car
 from selfdrive.boardd.boardd import can_list_to_can_capnp
+from selfdrive.car.car_helpers import get_car
 
 HwType = log.HealthData.HwType
 

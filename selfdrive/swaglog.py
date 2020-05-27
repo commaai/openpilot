@@ -1,10 +1,11 @@
-import os
 import logging
+import os
 
-from logentries import LogentriesHandler
 import zmq
+from logentries import LogentriesHandler
 
-from common.logging_extra import SwagLogger, SwagFormatter
+from common.logging_extra import SwagFormatter
+from common.logging_extra import SwagLogger
 
 
 def get_le_handler():

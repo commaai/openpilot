@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-import numpy as np
 import math
-from tqdm import tqdm
 
-import seaborn as sns
 import matplotlib.pyplot as plt
-
+import numpy as np
+import seaborn as sns
+from tqdm import tqdm
 
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.car.honda.values import CAR
-from selfdrive.controls.lib.vehicle_model import VehicleModel, create_dyn_state_matrices
-from selfdrive.locationd.kalman.models.car_kf import CarKalman, ObservationKind, States
+from selfdrive.controls.lib.vehicle_model import create_dyn_state_matrices
+from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.locationd.kalman.models.car_kf import CarKalman
+from selfdrive.locationd.kalman.models.car_kf import ObservationKind
+from selfdrive.locationd.kalman.models.car_kf import States
 
 T_SIM = 5 * 60  # s
 DT = 0.01

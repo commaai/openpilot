@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-import time
-import math
-import atexit
-import numpy as np
-import threading
-import random
-import cereal.messaging as messaging
 import argparse
+import atexit
+import math
+import random
+import threading
+import time
+
+import cereal.messaging as messaging
+import numpy as np
+from lib.can import can_function
+from lib.can import sendcan_function
+from lib.helpers import FakeSteeringWheel
+
 from common.params import Params
 from common.realtime import Ratekeeper
-from lib.can import can_function, sendcan_function
-from lib.helpers import FakeSteeringWheel
 from selfdrive.car.honda.values import CruiseButtons
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
@@ -246,4 +249,3 @@ if __name__ == "__main__":
     # start input poll for keyboard
     from lib.keyboard_ctrl import keyboard_poll_thread
     keyboard_poll_thread(q)
-

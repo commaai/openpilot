@@ -1,5 +1,5 @@
-from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import HONDA_BOSCH
+from selfdrive.config import Conversions as CV
 
 
 def get_pt_bus(car_fingerprint, has_relay):

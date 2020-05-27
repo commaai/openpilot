@@ -1,8 +1,8 @@
 #!/usr/bin/env python
+import atexit
 import os
 import sys
 import termios
-import atexit
 from select import select
 
 class KBHit:
@@ -88,5 +88,3 @@ if __name__ == "__main__":
       print(c)
        
   kb.set_normal_term()
-    
-

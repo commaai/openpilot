@@ -1,7 +1,9 @@
 from collections import defaultdict
+
+import numpy as np
+
 from selfdrive.test.longitudinal_maneuvers.maneuverplots import ManeuverPlot
 from selfdrive.test.longitudinal_maneuvers.plant import Plant
-import numpy as np
 
 
 class Maneuver():

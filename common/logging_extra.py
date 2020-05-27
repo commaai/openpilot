@@ -1,14 +1,14 @@
-import io
-import os
-import sys
 import copy
+import io
 import json
-import socket
 import logging
+import os
+import socket
+import sys
 import traceback
-from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
+from threading import local
 
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):

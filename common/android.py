@@ -1,10 +1,11 @@
-import os
 import binascii
 import itertools
+import os
+import random
 import re
 import struct
 import subprocess
-import random
+
 from cereal import log
 
 NetworkType = log.ThermalData.NetworkType

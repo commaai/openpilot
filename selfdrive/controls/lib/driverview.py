@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import os
-import subprocess
 import multiprocessing
+import os
 import signal
+import subprocess
 import time
 
 import cereal.messaging as messaging
-from common.params import Params
 
 from common.basedir import BASEDIR
+from common.params import Params
 
 KILL_TIMEOUT = 15
 

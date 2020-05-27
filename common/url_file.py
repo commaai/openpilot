@@ -1,11 +1,14 @@
 import os
-import time
 import tempfile
 import threading
+import time
 import urllib.parse
-import pycurl
 from io import BytesIO
-from tenacity import retry, wait_random_exponential, stop_after_attempt
+
+import pycurl
+from tenacity import retry
+from tenacity import stop_after_attempt
+from tenacity import wait_random_exponential
 
 class URLFile(object):
   _tlocal = threading.local()

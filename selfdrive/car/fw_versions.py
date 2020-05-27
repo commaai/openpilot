@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-import traceback
 import struct
+import traceback
+
+import panda.python.uds as uds
+from cereal import car
 from tqdm import tqdm
 
+from selfdrive.car.fingerprints import FW_VERSIONS
+from selfdrive.car.fingerprints import get_attr_from_cars
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.swaglog import cloudlog
-from selfdrive.car.fingerprints import get_attr_from_cars, FW_VERSIONS
 from selfdrive.car.toyota.values import CAR as TOYOTA
-import panda.python.uds as uds
-
-from cereal import car
+from selfdrive.swaglog import cloudlog
 Ecu = car.CarParams.Ecu
 
 

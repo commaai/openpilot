@@ -1,8 +1,10 @@
 #! /usr/bin/env python
-import matplotlib.pyplot as plt
-from selfdrive.controls.lib.lateral_mpc import libmpc_py
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
 import math
+
+import matplotlib.pyplot as plt
+
+from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
+from selfdrive.controls.lib.lateral_mpc import libmpc_py
 
 libmpc = libmpc_py.libmpc
 libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, 1.)

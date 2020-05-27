@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
-import os
-import re
-import time
-import json
-import random
 import ctypes
 import inspect
-import requests
-import traceback
-import threading
+import json
+import os
+import random
+import re
 import subprocess
+import threading
+import time
+import traceback
 
-from selfdrive.swaglog import cloudlog
-from selfdrive.loggerd.config import ROOT
+import requests
 
 from common import android
-from common.params import Params
 from common.api import Api
-from common.xattr import getxattr, setxattr
+from common.params import Params
+from common.xattr import getxattr
+from common.xattr import setxattr
+from selfdrive.loggerd.config import ROOT
+from selfdrive.swaglog import cloudlog
 
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import time
 from multiprocessing import Process
 
@@ -7,7 +6,8 @@ import selfdrive.crash as crash
 from common.params import Params
 from selfdrive.launcher import launcher
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import version, dirty
+from selfdrive.version import dirty
+from selfdrive.version import version
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
 

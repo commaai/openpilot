@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-import re
-import time
 import json
-import requests
+import os
+import re
 import subprocess
-from common.timeout import Timeout
-from http.server import BaseHTTPRequestHandler, HTTPServer
+import time
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
 from os.path import expanduser
 from threading import Thread
-from selfdrive.manager import unblock_stdout
+
+import requests
 
 from common.params import Params
-import os
+from common.timeout import Timeout
+from selfdrive.manager import unblock_stdout
 
 
 if __name__ == "__main__":

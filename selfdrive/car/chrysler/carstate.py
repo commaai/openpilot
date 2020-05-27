@@ -1,9 +1,11 @@
 from cereal import car
-from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.config import Conversions as CV
+from opendbc.can.parser import CANParser
+
+from selfdrive.car.chrysler.values import DBC
+from selfdrive.car.chrysler.values import STEER_THRESHOLD
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
+from selfdrive.config import Conversions as CV
 
 
 class CarState(CarStateBase):

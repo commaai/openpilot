@@ -1,4 +1,5 @@
 import os
+
 from nose.tools import nottest
 
 def phone_only(x):
@@ -6,4 +7,3 @@ def phone_only(x):
     return x
   else:
     return nottest(x)
-

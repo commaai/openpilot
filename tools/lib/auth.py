@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 import sys
 import webbrowser
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlencode, parse_qs
-from tools.lib.api import CommaApi, APIError
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
+from urllib.parse import parse_qs
+from urllib.parse import urlencode
+
+from tools.lib.api import APIError
+from tools.lib.api import CommaApi
 from tools.lib.auth_config import set_token
 
 class ClientRedirectServer(HTTPServer):

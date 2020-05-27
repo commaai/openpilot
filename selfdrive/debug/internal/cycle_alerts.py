@@ -1,10 +1,10 @@
 # USAGE: python cycle_alerts.py [duration_millis=1000]
 # Then start manager
-
 import argparse
 import time
 
 import cereal.messaging as messaging
+
 from selfdrive.controls.lib.alerts import ALERTS
 
 def now_millis(): return time.time() * 1000

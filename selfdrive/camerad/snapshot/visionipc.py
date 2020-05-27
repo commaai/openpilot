@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
-from cffi import FFI
 
 import numpy as np
+from cffi import FFI
 
 gf_dir = os.path.dirname(os.path.abspath(__file__))
 

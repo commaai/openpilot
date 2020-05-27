@@ -1,11 +1,17 @@
-from cereal import car
 from collections import defaultdict
-from common.numpy_fast import interp
+
+from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from selfdrive.config import Conversions as CV
+
+from common.numpy_fast import interp
+from selfdrive.car.honda.values import CAR
+from selfdrive.car.honda.values import DBC
+from selfdrive.car.honda.values import HONDA_BOSCH
+from selfdrive.car.honda.values import SPEED_FACTOR
+from selfdrive.car.honda.values import STEER_THRESHOLD
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
+from selfdrive.config import Conversions as CV
 
 def calc_cruise_offset(offset, speed):
   # euristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
