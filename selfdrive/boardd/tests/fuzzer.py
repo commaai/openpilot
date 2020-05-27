@@ -2,10 +2,10 @@
 import random
 import time
 
-from boardd_old import can_health
-from boardd_old import can_init
-from boardd_old import can_recv
-from boardd_old import can_send_many
+from .boardd_old import can_health
+from .boardd_old import can_init
+from .boardd_old import can_recv
+from .boardd_old import can_send_many
 
 if __name__ == "__main__":
   can_init()
