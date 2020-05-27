@@ -52,6 +52,5 @@ ECU_FINGERPRINT = {
 
 
 DBC = {
-  CAR.CX5: dbc_dict('mazda_cx5_gt_2017', None),
-#  CAR.MAZDA3_2019: dbc_dict('mazda_3_2019', None),
+  CAR.CX5: dbc_dict('mazda_2017', None),
 }
