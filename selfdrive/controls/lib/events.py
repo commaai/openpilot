@@ -74,7 +74,10 @@ class Events:
 
   def add_from_msg(self, events):
     for e in events:
-      self.events.append(e.name.raw)
+      if isinstance(e.name, int):
+        self.events.append(e.name)
+      else:
+        self.events.append(e.name.raw)
 
   def to_msg(self):
     ret = []
