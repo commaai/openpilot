@@ -91,9 +91,6 @@ class RadarD():
     self.tracks = defaultdict(dict)
     self.kalman_params = KalmanParams(radar_ts)
 
-    self.last_md_ts = 0
-    self.last_controls_state_ts = 0
-
     self.active = 0
 
     # v_ego
@@ -165,10 +162,10 @@ class RadarD():
     # *** publish radarState ***
     dat = messaging.new_message('radarState')
     dat.valid = sm.all_alive_and_valid(service_list=['controlsState', 'model'])
-    dat.radarState.mdMonoTime = self.last_md_ts
+    dat.radarState.mdMonoTime = sm.logMonoTime['model']
     dat.radarState.canMonoTimes = list(rr.canMonoTimes)
     dat.radarState.radarErrors = list(rr.errors)
-    dat.radarState.controlsStateMonoTime = self.last_controls_state_ts
+    dat.radarState.controlsStateMonoTime = sm.logMonoTime['controlsState']
 
     if has_radar:
       dat.radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['model'].lead, low_speed_override=True)
