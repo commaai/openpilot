@@ -25,10 +25,12 @@ class CarController():
     else:
       apply_steer = 0
       self.steer_rate_limited = False
+      if CS.acc_active and frame % 10 == 0:
+        can_sends.append(mazdacan.create_cancel_acc(self.packer, CS.CP.carFingerprint))
+
 
     self.apply_steer_last = apply_steer
   
-
     can_sends.append(mazdacan.create_steering_control(self.packer, CS.CP.carFingerprint,
                                                       frame, apply_steer, CS.cam_lkas))
     return can_sends

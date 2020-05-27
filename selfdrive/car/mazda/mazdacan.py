@@ -55,3 +55,39 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
     }
 
   return packer.make_can_msg("CAM_LKAS", 0, values)
+
+
+def create_cancel_acc(packer, car_fingerprint):
+  if car_fingerprint == CAR.CX5:
+    values = {
+      "CAN_OFF"           : 1,
+      "CAN_OFF_INV"       : 0,
+
+      "SET_P"             : 0,
+      "SET_P_INV"         : 1,
+
+      "RES"               : 0,
+      "RES_INV"           : 1,
+
+      "SET_M"             : 0,
+      "SET_M_INV"         : 1,
+
+      "DISTANCE_LESS"     : 0,
+      "DISTANCE_LESS_INV" : 1,
+
+      "DISTANCE_MORE"     : 0,
+      "DISTANCE_MORE_INV" : 1,
+
+      "MODE_X"            : 0,
+      "MODE_X_INV"        : 1,
+
+      "MODE_Y"            : 0,
+      "MODE_Y_INV"        : 1,
+
+      "BIT1"              : 1,
+      "BIT2"              : 1,
+      "BIT3"              : 1,
+      "CTR"               : 0
+    }
+
+    return packer.make_can_msg("CRZ_BTNS", 0, values)

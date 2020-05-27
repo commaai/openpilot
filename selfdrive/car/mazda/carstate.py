@@ -73,20 +73,16 @@ class CarState(CarStateBase):
     if any([cp.vl["CRZ_BTNS"]['RES'],
                 cp.vl["CRZ_BTNS"]['SET_P'],
                 cp.vl["CRZ_BTNS"]['SET_M']]):
-      self.acc_active = True
       self.cruise_speed = ret.vEgoRaw
 
     ret.cruiseState.available = cp.vl["CRZ_CTRL"]['CRZ_ACTIVE'] == 1
-    if not ret.cruiseState.available or ret.gasPressed or ret.brakePressed:
-      self.acc_active = False
-
+    self.acc_active = ret.cruiseState.available
     ret.cruiseState.enabled = self.acc_active
     ret.cruiseState.speed = self.cruise_speed
 
     if self.acc_active:
       if not self.lkas_on:
         if not self.acc_active_last:
-          self.acc_active = False
           self.low_speed_lockout = True
         else:
           self.low_speed_alert = True
@@ -149,6 +145,7 @@ class CarState(CarStateBase):
         ("RES", "CRZ_BTNS", 0),
         ("SET_P", "CRZ_BTNS", 0),
         ("SET_M", "CRZ_BTNS", 0),
+        ("CTR", "CRZ_BTNS", 0),
       ]
 
       checks += [
