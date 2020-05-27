@@ -90,20 +90,23 @@ struct LoggerdState {
 LoggerdState s;
 
 #ifndef DISABLE_ENCODER
-void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
+void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   int err;
 
-  if (front) {
-    char *value;
+  if (cam_idx == 2) {
+    // TODO: add this back
+    /*char *value;
     const int result = read_db_value("RecordFront", &value, NULL);
     if (result != 0) return;
     if (value[0] != '1') { free(value); return; }
     free(value);
-    LOGW("recording front camera");
+    LOGW("recording front camera");*/
 
     set_thread_name("FrontCameraEncoder");
-  } else {
+  } else if (cam_idx == 0) {
     set_thread_name("RearCameraEncoder");
+  } else if (cam_idx == 1) {
+    set_thread_name("WideCameraEncoder");
   }
 
   VisionStream stream;
@@ -116,17 +119,20 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
   int encoder_segment = -1;
   int cnt = 0;
 
-  PubSocket *idx_sock = PubSocket::create(s.ctx, front ? "frontEncodeIdx" : "encodeIdx");
-  assert(idx_sock != NULL);
+  // TODO: add this back
+  // PubSocket *idx_sock = PubSocket::create(s.ctx, front ? "frontEncodeIdx" : "encodeIdx");
+  // assert(idx_sock != NULL);
 
   LoggerHandle *lh = NULL;
 
   while (!do_exit) {
     VisionStreamBufs buf_info;
-    if (front) {
+    if (cam_idx == 2) {
       err = visionstream_init(&stream, VISION_STREAM_YUV_FRONT, false, &buf_info);
-    } else {
+    } else if (cam_idx == 0) {
       err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
+    } else if (cam_idx == 1) {
+      err = visionstream_init(&stream, VISION_STREAM_YUV_WIDE, false, &buf_info);
     }
     if (err != 0) {
       LOGD("visionstream connect fail");
@@ -136,11 +142,11 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-      encoder_init(&encoder, front ? "dcamera.hevc" : "fcamera.hevc", buf_info.width, buf_info.height, CAMERA_FPS, front ? 2500000 : 5000000, true, false);
+      encoder_init(&encoder, cam_idx == 2 ? "dcamera.hevc" : (cam_idx == 1 ? "ecamera.hevc" : "fcamera.hevc"), buf_info.width, buf_info.height, CAMERA_FPS, cam_idx > 0 ? 2500000 : 5000000, true, false);
 
       #ifndef QCOM2
       // TODO: fix qcamera on tici
-      if (!front) {
+      if (cam_idx == 0) {
         encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
         has_encoder_alt = true;
       }
@@ -184,7 +190,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
       {
         bool should_rotate = false;
         std::unique_lock<std::mutex> lk(s.lock);
-        if (!front) {
+        if (cam_idx==0) {
           // wait if log camera is older on back camera
           while ( extra.frame_id > s.last_frame_id //if the log camera is older, wait for it to catch up.
                  && (extra.frame_id-s.last_frame_id) < 8 // but if its too old then there probably was a discontinuity (visiond restarted)
@@ -235,25 +241,27 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
                                &out_segment_alt, &extra);
         }
 
+        // TODO: add this back
         // publish encode index
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-        auto eidx = event.initEncodeIdx();
-        eidx.setFrameId(extra.frame_id);
-        eidx.setType(front ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
-        eidx.setEncodeId(cnt);
-        eidx.setSegmentNum(out_segment);
-        eidx.setSegmentId(out_id);
+        //capnp::MallocMessageBuilder msg;
+        //cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+        //event.setLogMonoTime(nanos_since_boot());
+        //auto eidx = event.initEncodeIdx();
+        //eidx.setFrameId(extra.frame_id);
+        //eidx.setType(front ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
+        //eidx.setEncodeId(cnt);
+        //eidx.setSegmentNum(out_segment);
+        //eidx.setSegmentId(out_id);
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
-          printf("err sending encodeIdx pkt: %s\n", strerror(errno));
-        }
-        if (lh) {
-          lh_log(lh, bytes.begin(), bytes.size(), false);
-        }
+        //auto words = capnp::messageToFlatArray(msg);
+        //auto bytes = words.asBytes();
+        
+        //if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
+        //  printf("err sending encodeIdx pkt: %s\n", strerror(errno));
+        //}
+        //if (lh) {
+        //  lh_log(lh, bytes.begin(), bytes.size(), false);
+        //}
       }
 
       if (raw_clips) {
@@ -313,7 +321,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
     visionstream_destroy(&stream);
   }
 
-  delete idx_sock;
+  // TODO: add this back
+  //delete idx_sock;
 
   if (encoder_inited) {
     LOG("encoder destroy");
@@ -638,10 +647,13 @@ int main(int argc, char** argv) {
 
 #ifndef DISABLE_ENCODER
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, is_streaming, false, false);
+  std::thread encoder_thread_handle(encoder_thread, is_streaming, false, 0);
 
   // front camera
-  std::thread front_encoder_thread_handle(encoder_thread, false, false, true);
+  std::thread front_encoder_thread_handle(encoder_thread, false, false, 2);
+
+  // wide camera
+  std::thread wide_encoder_thread_handle(encoder_thread, false, false, 1);
 #endif
 
 #if ENABLE_LIDAR
@@ -718,6 +730,7 @@ int main(int argc, char** argv) {
 
 #ifndef DISABLE_ENCODER
   front_encoder_thread_handle.join();
+  wide_encoder_thread_handle.join();
   encoder_thread_handle.join();
   LOGW("encoder joined");
 #endif
