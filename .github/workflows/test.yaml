@@ -75,7 +75,7 @@ jobs:
         run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
         run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
-      - name: Run cppcheck
+      - name: cppcheck
         run: $RUN "cd /tmp/openpilot/ && ./cppcheck_openpilot.sh"
 
   unit_tests:

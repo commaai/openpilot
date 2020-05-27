@@ -57,7 +57,6 @@ panda_jungle
 
 .coverage*
 coverage.xml
-cppcheck_out.txt
 htmlcov
 pandaextra
 
