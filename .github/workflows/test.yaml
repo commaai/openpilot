@@ -76,17 +76,7 @@ jobs:
       - name: pylint
         run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
       - name: Run cppcheck
-        run: $PERSIST "cd /tmp/openpilot/ && ./cppcheck_openpilot.sh"
-      - name: Print cppcheck output
-        if: always()
-        run: |
-          docker cp tmppilot:/tmp/openpilot/cppcheck_output.txt cppcheck_output.txt
-          cat cppcheck_output.txt
-      - uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: cppcheck_output.txt
-          path: cppcheck_output.txt
+        run: $RUN "cd /tmp/openpilot/ && ./cppcheck_openpilot.sh"
 
   unit_tests:
     name: unit tests
