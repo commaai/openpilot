@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cppcheck --force -j$(nproc) --output-file=cppcheck_out.txt \
+cppcheck --force -j$(nproc) \
   selfdrive/ common/ opendbc/ cereal/ installer/
 

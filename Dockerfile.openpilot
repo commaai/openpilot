@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcapnp-dev \
     clang \
     cmake \
+    cppcheck \
     curl \
     ffmpeg \
     git \
@@ -39,10 +40,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     wget \
   && rm -rf /var/lib/apt/lists/*
-
-RUN echo "deb-src http://archive.ubuntu.com/ubuntu bionic main restricted universe multiverse" >> /etc/apt/sources.list && \
-    apt-get update && apt-get install -y --no-install-recommends -t bionic cppcheck && \
-    rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
