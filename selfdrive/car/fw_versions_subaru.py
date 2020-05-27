@@ -150,7 +150,7 @@ def match_fw_to_car(fw_versions):
   return set(candidates.keys()) - set(invalid)
 
 
-def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.5, debug=False, progress=False):
+def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.2, debug=False, progress=False):
   ecu_types = {}
 
   # Extract ECU adresses to query from fingerprints
