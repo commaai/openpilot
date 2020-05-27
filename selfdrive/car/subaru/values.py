@@ -107,7 +107,7 @@ FINGERPRINTS = {
 FW_VERSIONS = {
   CAR.IMPREZA: {
     # 2018 Crosstrek - EDM / @martinl
-    # 2019 Impreza - ADM / @Michael
+    # 2018 Impreza - ADM / @Michael
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x7a\x94\x3f\x90\x00',
