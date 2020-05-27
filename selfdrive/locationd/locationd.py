@@ -63,7 +63,9 @@ class Localizer():
     self.car_speed = 0
 
     self.converter = coord.LocalCoord.from_ecef(self.kf.x[States.ECEF_POS])
+
     self.unix_timestamp_millis = 0
+    self.last_gps_fix = 0
 
   @staticmethod
   def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov):
@@ -183,6 +185,9 @@ class Localizer():
     # ignore the message if the fix is invalid
     if log.flags % 2 == 0:
       return
+
+    self.last_gps_fix = current_time
+
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
     ecef_pos = self.converter.ned2ecef([0, 0, 0])
     ecef_vel = self.converter.ned2ecef_matrix.dot(np.array(log.vNED))
@@ -312,6 +317,9 @@ def locationd_thread(sm, pm, disabled_logs=[]):
 
         msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
         msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
+
+        gps_age = (t / 1e9) - localizer.last_gps_fix
+        msg.liveLocationKalman.gpsOK = gps_age < 1.0
         pm.send('liveLocationKalman', msg)
 
 
