@@ -49,7 +49,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class SCPstepLinesearch implements linesearch techniques to perform a 
+ *  The class SCPstepLinesearch implements linesearch techniques to perform a
  *  globalized step of an SCPmethod for solving nonlinear programming problems.
  *
  *	 \author Boris Houska, Hans Joachim Ferreau
@@ -67,7 +67,7 @@ class SCPstepLinesearch : public SCPstep {
 
 		SCPstepLinesearch(	UserInteraction* _userInteraction
 							);
-					
+
         /** Copy constructor (deep copy). */
         SCPstepLinesearch( const SCPstepLinesearch& rhs );
 

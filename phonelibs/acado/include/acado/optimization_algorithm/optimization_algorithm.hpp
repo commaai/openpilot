@@ -39,7 +39,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief User-interface to formulate and solve optimal control problems and static NLPs.
  *
  *	\ingroup UserInterfaces

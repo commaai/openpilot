@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSEDENSEPRODUCT_H
 #define EIGEN_SPARSEDENSEPRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Lhs, typename Rhs, int InnerSize> struct SparseDenseProductReturnType
 {

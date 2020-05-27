@@ -150,11 +150,11 @@ public:
     //! @brief Flag indicating whether the reference in Taylor expansion of univariate function is taken as the mid-point of the inner Taylor model (true) or the constant term in the centered inner Taylor model (false)
     bool REF_MIDPOINT;
   } options;
-  
+
   //! @brief Pause the program execution and prompt the user
   static void pause();
-    
-private:  
+
+private:
   //! @brief Model order of the model
   unsigned int _nord;
   //! @brief Number of independent variables
@@ -178,7 +178,7 @@ private:
   //! @brief Reference point
   double *_refpoint;
   //! @brief Variable scaling
-  double *_scaling; 
+  double *_scaling;
 
   //! @brief Taylor variable to speed-up computations and reduce dynamic allocation
   TaylorVariable<T>* _TV;
@@ -203,18 +203,18 @@ private:
 
   //! @brief Populate array _expmon w/ exponents for monomial terms 1,...,nmon
   void _set_expmon();
-  
+
   //! @brief Generate exponent configuration for subsequent monomial terms
   void _next_expmon
     ( unsigned int *iexp, const unsigned int iord );
 
   //! @brief Populate array _prodmon w/ exponents resulting from the product of two monomial terms 1,...,nmon
   void _set_prodmon();
-    
+
   //! @brief Locates position in _posord of monomial term with variable exponents iexp
   unsigned int _loc_expmon
     ( const unsigned int *iexp );
-    
+
   //! @brief Populate array _binom w/ binomial coefficients
   void _set_binom();
 
@@ -242,4 +242,3 @@ CLOSE_NAMESPACE_ACADO
 #include <acado/set_arithmetics/taylor_variable.ipp>
 
 #endif  // ACADO_TOOLKIT_TAYLOR_MODEL_HPP
-

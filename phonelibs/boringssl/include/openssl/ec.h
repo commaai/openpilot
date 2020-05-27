@@ -84,7 +84,7 @@ typedef struct ec_point_st EC_POINT;
 /** Enum for the point conversion form as defined in X9.62 (ECDSA)
  *  for the encoding of a elliptic curve point (x,y) */
 typedef enum {
-	/** the point is encoded as z||x, where the octet z specifies 
+	/** the point is encoded as z||x, where the octet z specifies
 	 *  which solution of the quadratic equation y is  */
 	POINT_CONVERSION_COMPRESSED = 2,
 	/** the point is encoded as z||x||y, where z is the octet 0x02  */

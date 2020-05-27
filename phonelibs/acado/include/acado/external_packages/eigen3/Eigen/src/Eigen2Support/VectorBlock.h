@@ -11,7 +11,7 @@
 #ifndef EIGEN2_VECTORBLOCK_H
 #define EIGEN2_VECTORBLOCK_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \deprecated use DenseMase::head(Index) */
 template<typename Derived>

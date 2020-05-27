@@ -44,12 +44,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements a linear state feedback law to be used within a Controller.
  *
  *	\ingroup UserInterfaces
  *
- *  The class LinearStateFeedback implements a linear state feedback law to be used 
+ *  The class LinearStateFeedback implements a linear state feedback law to be used
  *	within a Controller.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -60,7 +60,7 @@ class LinearStateFeedback : public ControlLaw, public ClippingFunctionality
 	// PUBLIC MEMBER FUNCTIONS:
 	//
 	public:
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		LinearStateFeedback( );
 
@@ -81,7 +81,7 @@ class LinearStateFeedback : public ControlLaw, public ClippingFunctionality
 		LinearStateFeedback(	const LinearStateFeedback& rhs
 								);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~LinearStateFeedback( );
 
@@ -99,7 +99,7 @@ class LinearStateFeedback : public ControlLaw, public ClippingFunctionality
 		virtual ControlLaw* clone( ) const;
 
 
-		/** Initializes the feedback law with given start values and 
+		/** Initializes the feedback law with given start values and
 		 *	performs a number of consistency checks.
 		 *
 		 *	@param[in]  _startTime	Start time.
@@ -155,13 +155,13 @@ class LinearStateFeedback : public ControlLaw, public ClippingFunctionality
 
 		/** Returns number of parameters.
 		 *
-		 *  \return Number of parameters 
+		 *  \return Number of parameters
 		 */
 		virtual uint getNP( ) const;
 
 		/** Returns number of (estimated) disturbances.
 		 *
-		 *  \return Number of (estimated) disturbances 
+		 *  \return Number of (estimated) disturbances
 		 */
 		virtual uint getNW( ) const;
 
@@ -172,7 +172,7 @@ class LinearStateFeedback : public ControlLaw, public ClippingFunctionality
 		virtual uint getNY( ) const;
 
 
-		/** Returns whether the control law is based on dynamic optimization or 
+		/** Returns whether the control law is based on dynamic optimization or
 		 *	a static one.
 		 *
 		 *  \return BT_TRUE  iff control law is based on dynamic optimization, \n

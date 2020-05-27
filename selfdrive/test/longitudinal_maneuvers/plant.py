@@ -5,13 +5,13 @@ import struct
 import time
 from collections import namedtuple
 
-import cereal.messaging as messaging
 import numpy as np
+
+import cereal.messaging as messaging
+from common.realtime import Ratekeeper
 from opendbc import DBC_PATH
 from opendbc.can.dbc import dbc
 from opendbc.can.parser import CANParser
-
-from common.realtime import Ratekeeper
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import crc8_pedal
 from selfdrive.car.honda.carstate import get_can_signals

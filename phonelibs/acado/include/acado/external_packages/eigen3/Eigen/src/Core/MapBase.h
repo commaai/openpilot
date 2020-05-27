@@ -15,7 +15,7 @@
       EIGEN_STATIC_ASSERT((int(internal::traits<Derived>::Flags) & LinearAccessBit) || Derived::IsVectorAtCompileTime, \
                           YOU_ARE_TRYING_TO_USE_AN_INDEX_BASED_ACCESSOR_ON_AN_EXPRESSION_THAT_DOES_NOT_SUPPORT_THAT)
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class MapBase
   * \ingroup Core_Module

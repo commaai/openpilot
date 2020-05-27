@@ -154,7 +154,7 @@ def read_fixedlength_number(f, length, signed=False):
     buf = f.read(length)
     (r, pos) = parse_fixedlength_number(buf, 0, length, signed)
     return r
-    
+
 def read_ebml_element_header(f):
     '''
         Read Element ID and size
@@ -175,10 +175,10 @@ class EbmlElementType:
     FLOAT=7
     DATE=8
 
-    JUST_GO_ON=10 # For "Segment". 
-    # Actually MASTER, but don't build the tree for all subelements, 
+    JUST_GO_ON=10 # For "Segment".
+    # Actually MASTER, but don't build the tree for all subelements,
     # interpreting all child elements as if they were top-level elements
-    
+
 
 EET=EbmlElementType
 
@@ -518,9 +518,9 @@ def read_ebml_element_tree(f, total_size):
             (type_, name) = element_types_names[id_]
         data = read_simple_element(f, type_, size)
         total_size-=(size+hsize)
-        childs.append((name, (type_, data))) 
+        childs.append((name, (type_, data)))
     return childs
-                
+
 
 class MatroskaHandler:
     """ User for mkvparse should override these methods """
@@ -564,7 +564,7 @@ def handle_block(buffer, buffer_pos, handler, cluster_timecode, timecode_scale=1
         handler.frame(tracknum, block_timecode, buffer_pos+pos, len(buffer)-pos,
                       0, duration, f_keyframe, f_invisible, f_discardable)
         return
-    
+
     numframes = ord(buffer[pos]); pos+=1
     numframes+=1
 
@@ -623,9 +623,9 @@ def resync(f):
             if b2 == b"\x54\xAE\x6B":
                 (seglen ,x )= read_matroska_number(f)
                 return (0x1654AE6B, seglen, x+4) # tracks
-                
-                
-    
+
+
+
 
 def mkvparse(f, handler):
     '''
@@ -650,14 +650,14 @@ def mkvparse(f, handler):
                     (id_, size, hsize) = read_ebml_element_header(f)
                 except StopIteration:
                     break;
-                if not (id_ in element_types_names): 
+                if not (id_ in element_types_names):
                     sys.stderr.write("mkvparse: Unknown element with id %x and size %d\n"%(id_, size))
                     (resync_element_id, resync_element_size, resync_element_headersize) = resync(f)
                     if resync_element_id:
                         continue;
                     else:
                         break;
-            else: 
+            else:
                 id_ = resync_element_id
                 size=resync_element_size
                 hsize=resync_element_headersize
@@ -681,7 +681,7 @@ def mkvparse(f, handler):
                 continue;
             else:
                 break;
-        
+
         if name=="EBML" and type(data) == list:
             d = dict(tree)
             if 'EBMLReadVersion' in d:
@@ -689,12 +689,12 @@ def mkvparse(f, handler):
             if 'DocTypeReadVersion' in d:
                 if d['DocTypeReadVersion'][1]>2: sys.stderr.write("mkvparse: Warning: DocTypeReadVersion too big\n")
             dt = d['DocType'][1]
-            if dt != "matroska" and dt != "webm": 
+            if dt != "matroska" and dt != "webm":
                 sys.stderr.write("mkvparse: Warning: EBML DocType is not \"matroska\" or \"webm\"")
         elif name=="Info" and type(data) == list:
             handler.segment_info = tree
             handler.segment_info_available()
-            
+
             d = dict(tree)
             if "TimecodeScale" in d:
                 timecode_scale = d["TimecodeScale"][1]

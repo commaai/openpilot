@@ -6,4 +6,3 @@ sudo apt-get install capnproto libyaml-cpp-dev qt5-default
 
 brew install qt5 ffmpeg capnp yaml-cpp zmq
 brew link qt5 --force
-

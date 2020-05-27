@@ -84,23 +84,23 @@ public:
     * element of the vector represents the fastest varying
     * dimension and the zeroth element represents the slowest
     * varying, etc.
-    * 
-    */   
+    *
+    */
    TensorShape(std::vector<Dimension> dims);
 
    /**
    * @brief .
-   *   
+   *
    * copy constructor.
-   * @param[in] other object to copy. 
-   */   
+   * @param[in] other object to copy.
+   */
    TensorShape(const TensorShape& other);
 
    /**
     * @brief .
-    *  
-    * assignment operator. 
-    */   
+    *
+    * assignment operator.
+    */
    TensorShape& operator=(const TensorShape& other);
 
     /**
@@ -114,8 +114,8 @@ public:
   /**
     * @brief .
     *
-    * Concatenates additional dimensions specified in 
-    * initializer list fashion to the existing dimensions. 
+    * Concatenates additional dimensions specified in
+    * initializer list fashion to the existing dimensions.
     *
     * @param[in] dims The dimensions are specified in which the last
     * element of the vector represents the fastest varying
@@ -128,14 +128,14 @@ public:
    /**
     * @brief .
     *
-    * Concatenates additional dimensions specified in 
-    * the array to the existing dimensions. 
+    * Concatenates additional dimensions specified in
+    * the array to the existing dimensions.
     *
     * @param[in] dims The dimensions are specified in which the last
     * element of the vector represents the fastest varying
     * dimension and the zeroth element represents the slowest
     * varying, etc.
-    * 
+    *
     * @param[in] size Size of the array.
     *
    */
@@ -182,7 +182,7 @@ public:
     * Retrieves a pointer to the first dimension of shape
     *
     * @return nullptr if no dimension exists; otherwise, points to
-    * the first dimension. 
+    * the first dimension.
     *
     */
    const Dimension* getDimensions() const;
@@ -200,4 +200,3 @@ private:
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 
 #endif // DL_SYSTEM_TENSOR_SHAPE_HPP
-

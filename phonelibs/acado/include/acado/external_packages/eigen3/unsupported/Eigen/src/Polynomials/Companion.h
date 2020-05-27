@@ -14,7 +14,7 @@
 // * Eigen/Core
 // * Eigen/src/PolynomialSolver.h
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

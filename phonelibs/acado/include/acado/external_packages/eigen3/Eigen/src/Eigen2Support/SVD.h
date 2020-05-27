@@ -49,7 +49,7 @@ template<typename MatrixType> class SVD
   public:
 
     SVD() {} // a user who relied on compiler-generated default compiler reported problems with MSVC in 2.0.7
-    
+
     SVD(const MatrixType& matrix)
       : m_matU(matrix.rows(), (std::min)(matrix.rows(), matrix.cols())),
         m_matV(matrix.cols(),matrix.cols()),

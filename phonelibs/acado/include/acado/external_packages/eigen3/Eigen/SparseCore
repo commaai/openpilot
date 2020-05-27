@@ -11,7 +11,7 @@
 #include <cstring>
 #include <algorithm>
 
-/** 
+/**
   * \defgroup SparseCore_Module SparseCore module
   *
   * This module provides a sparse matrix representation, and basic associatd matrix manipulations
@@ -61,4 +61,3 @@ struct Sparse {};
 #include "src/Core/util/ReenableStupidWarnings.h"
 
 #endif // EIGEN_SPARSECORE_MODULE_H
-

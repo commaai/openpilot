@@ -27,7 +27,7 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Implementation of inlined member functions of the Bounds class designed 
+ *	Implementation of inlined member functions of the Bounds class designed
  *	to manage working sets of bounds within a QProblem.
  */
 
@@ -61,7 +61,7 @@ inline int Bounds::getNBV( ) const
 {
  	return nBV;
 }
- 
+
 
 /*
  *	g e t N U V
@@ -79,10 +79,10 @@ inline int Bounds::getNUV( ) const
 inline returnValue Bounds::setNFV( int n )
 {
  	nFV = n;
-	return SUCCESSFUL_RETURN;	
+	return SUCCESSFUL_RETURN;
 }
- 
- 
+
+
 /*
  *	s e t N B V
  */
@@ -91,7 +91,7 @@ inline returnValue Bounds::setNBV( int n )
  	nBV = n;
 	return SUCCESSFUL_RETURN;
 }
- 
+
 
 /*
  *	s e t N U V

@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
    class Operator;
 
 
-/** 
+/**
  *	\brief Manages the indices of SymbolicVariables.
  *
  *	\ingroup BasicDataStructures

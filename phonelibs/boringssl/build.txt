@@ -4,4 +4,3 @@ mka libcrypt_static libssl_static
 
 cp ~/android/system/out/target/product/oneplus3/obj/STATIC_LIBRARIES/libcrypto_static_intermediates/libcrypto_static.a lib/
 cp ~/android/system/out/target/product/oneplus3/obj/STATIC_LIBRARIES/libssl_static_intermediates/libssl_static.a lib/
-

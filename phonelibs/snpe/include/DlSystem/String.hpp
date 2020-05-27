@@ -105,4 +105,3 @@ ZDL_EXPORT std::ostream& operator<<(std::ostream& os, const String& str) noexcep
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 
 #endif // PLATFORM_STANDARD_STRING_HPP
-

@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored diagonally implicit 5-stage Runge-Kutta method of order 5 for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -59,7 +59,7 @@ class DiagonallyIRK5Export : public DiagonallyImplicitRKExport
 
     private:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -75,7 +75,7 @@ class DiagonallyIRK5Export : public DiagonallyImplicitRKExport
         DiagonallyIRK5Export(	const DiagonallyIRK5Export& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~DiagonallyIRK5Export( );
 

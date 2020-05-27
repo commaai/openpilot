@@ -10,7 +10,7 @@
 #ifndef EIGEN_ARRAYBASE_H
 #define EIGEN_ARRAYBASE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename ExpressionType> class MatrixWrapper;
 

@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup UserDataStructures
  *
- *  The class AdaptiveReferenceTrajectory allows to define an adaptive reference trajectory 
+ *  The class AdaptiveReferenceTrajectory allows to define an adaptive reference trajectory
  *	(determined online) that the ControlLaw aims to track while computing its control action.
  *
  *	 \author Hans Joachim Ferreau, Boris Houska
@@ -59,7 +59,7 @@ class AdaptiveReferenceTrajectory : public ReferenceTrajectory
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		AdaptiveReferenceTrajectory( );
 
@@ -70,7 +70,7 @@ class AdaptiveReferenceTrajectory : public ReferenceTrajectory
 		AdaptiveReferenceTrajectory(	const AdaptiveReferenceTrajectory& rhs
 										);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~AdaptiveReferenceTrajectory( );
 

@@ -26,7 +26,7 @@ int @MODULE_NAME@_@PREFIX@solve( void )
 	@CTOR@;
 	Options_setToMPC( &options );
 	@SOLVER_NAME@_setOptions( &qp,options );
-	
+
 	retVal = @SOLVER_NAME@_@CALL_SOLVER@
 	retVal = qpOASES_getSimpleStatus( retVal,0 );
 
@@ -36,12 +36,12 @@ int @MODULE_NAME@_@PREFIX@solve( void )
         @SOLVER_NAME@_getPrimalSolution( &qp,@PRIMAL_SOLUTION@ );
         @SOLVER_NAME@_getDualSolution( &qp,@DUAL_SOLUTION@ );
     }
-	
+
 #if @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX == 1
 
 	if (retVal != SUCCESSFUL_RETURN)
 		return (int)retVal;
-		
+
 	retVal = @MODULE_NAME@_sa.getHessianInverse( &qp,@SIGMA@ );
 
 #endif /* @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX */

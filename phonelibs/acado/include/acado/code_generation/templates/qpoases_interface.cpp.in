@@ -22,17 +22,17 @@ int @MODULE_NAME@_@PREFIX@solve( void )
 	@MODULE_NAME@_@PREFIX@nWSR = QPOASES_NWSRMAX;
 
 	@CTOR@;
-	
+
 	returnValue retVal = qp.init(@CALL_SOLVER@);
 
     qp.getPrimalSolution( @PRIMAL_SOLUTION@ );
     qp.getDualSolution( @DUAL_SOLUTION@ );
-	
+
 #if @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX == 1
 
 	if (retVal != SUCCESSFUL_RETURN)
 		return (int)retVal;
-		
+
 	retVal = @MODULE_NAME@_sa.getHessianInverse( &qp,@SIGMA@ );
 
 #endif /* @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX */

@@ -186,7 +186,7 @@ inline BooleanType Grid::isEquidistant( ) const
 	for( uint i=1; i<getNumIntervals( ); ++i )
 		if ( acadoIsEqual( getIntervalLength(i),length ) == BT_FALSE )
 			return BT_FALSE;
-		
+
 	return BT_TRUE;
 }
 

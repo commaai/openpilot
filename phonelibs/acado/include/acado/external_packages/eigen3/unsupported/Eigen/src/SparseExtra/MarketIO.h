@@ -13,9 +13,9 @@
 
 #include <iostream>
 
-namespace Eigen { 
+namespace Eigen {
 
-namespace internal 
+namespace internal
 {
   template <typename Scalar>
   inline bool GetMarketLine (std::stringstream& line, int& M, int& N, int& i, int& j, Scalar& value)
@@ -25,7 +25,7 @@ namespace internal
     j--;
     if(i>=0 && j>=0 && i<M && j<N)
     {
-      return true; 
+      return true;
     }
     else
       return false;
@@ -40,7 +40,7 @@ namespace internal
     if(i>=0 && j>=0 && i<M && j<N)
     {
       value = std::complex<Scalar>(valR, valI);
-      return true; 
+      return true;
     }
     else
       return false;
@@ -50,32 +50,32 @@ namespace internal
   inline void  GetVectorElt (const std::string& line, RealScalar& val)
   {
     std::istringstream newline(line);
-    newline >> val;  
+    newline >> val;
   }
 
   template <typename RealScalar>
   inline void GetVectorElt (const std::string& line, std::complex<RealScalar>& val)
   {
-    RealScalar valR, valI; 
+    RealScalar valR, valI;
     std::istringstream newline(line);
-    newline >> valR >> valI; 
+    newline >> valR >> valI;
     val = std::complex<RealScalar>(valR, valI);
   }
-  
+
   template<typename Scalar>
   inline void putMarketHeader(std::string& header,int sym)
   {
     header= "%%MatrixMarket matrix coordinate ";
     if(internal::is_same<Scalar, std::complex<float> >::value || internal::is_same<Scalar, std::complex<double> >::value)
     {
-      header += " complex"; 
+      header += " complex";
       if(sym == Symmetric) header += " symmetric";
       else if (sym == SelfAdjoint) header += " Hermitian";
       else header += " general";
     }
     else
     {
-      header += " real"; 
+      header += " real";
       if(sym == Symmetric) header += " symmetric";
       else header += " general";
     }
@@ -96,39 +96,39 @@ namespace internal
   template<typename Scalar>
   inline void putVectorElt(Scalar value, std::ofstream& out)
   {
-    out << value << "\n"; 
+    out << value << "\n";
   }
   template<typename Scalar>
   inline void putVectorElt(std::complex<Scalar> value, std::ofstream& out)
   {
-    out << value.real << " " << value.imag()<< "\n"; 
+    out << value.real << " " << value.imag()<< "\n";
   }
 
 } // end namepsace internal
 
 inline bool getMarketHeader(const std::string& filename, int& sym, bool& iscomplex, bool& isvector)
 {
-  sym = 0; 
+  sym = 0;
   isvector = false;
   std::ifstream in(filename.c_str(),std::ios::in);
   if(!in)
     return false;
-  
-  std::string line; 
-  // The matrix header is always the first line in the file 
+
+  std::string line;
+  // The matrix header is always the first line in the file
   std::getline(in, line); eigen_assert(in.good());
-  
-  std::stringstream fmtline(line); 
+
+  std::stringstream fmtline(line);
   std::string substr[5];
   fmtline>> substr[0] >> substr[1] >> substr[2] >> substr[3] >> substr[4];
   if(substr[2].compare("array") == 0) isvector = true;
   if(substr[3].compare("complex") == 0) iscomplex = true;
   if(substr[4].compare("symmetric") == 0) sym = Symmetric;
   else if (substr[4].compare("Hermitian") == 0) sym = SelfAdjoint;
-  
+
   return true;
 }
-  
+
 template<typename SparseMatrixType>
 bool loadMarket(SparseMatrixType& mat, const std::string& filename)
 {
@@ -136,30 +136,30 @@ bool loadMarket(SparseMatrixType& mat, const std::string& filename)
   std::ifstream input(filename.c_str(),std::ios::in);
   if(!input)
     return false;
-  
+
   const int maxBuffersize = 2048;
   char buffer[maxBuffersize];
-  
+
   bool readsizes = false;
 
   typedef Triplet<Scalar,int> T;
   std::vector<T> elements;
-  
+
   int M(-1), N(-1), NNZ(-1);
   int count = 0;
   while(input.getline(buffer, maxBuffersize))
   {
-    // skip comments   
+    // skip comments
     //NOTE An appropriate test should be done on the header to get the  symmetry
     if(buffer[0]=='%')
       continue;
-    
+
     std::stringstream line(buffer);
-    
+
     if(!readsizes)
     {
       line >> M >> N >> NNZ;
-      if(M > 0 && N > 0 && NNZ > 0) 
+      if(M > 0 && N > 0 && NNZ > 0)
       {
         readsizes = true;
         std::cout << "sizes: " << M << "," << N << "," << NNZ << "\n";
@@ -168,22 +168,22 @@ bool loadMarket(SparseMatrixType& mat, const std::string& filename)
       }
     }
     else
-    { 
+    {
       int i(-1), j(-1);
-      Scalar value; 
-      if( internal::GetMarketLine(line, M, N, i, j, value) ) 
+      Scalar value;
+      if( internal::GetMarketLine(line, M, N, i, j, value) )
       {
         ++ count;
         elements.push_back(T(i,j,value));
       }
-      else 
-        std::cerr << "Invalid read: " << i << "," << j << "\n";        
+      else
+        std::cerr << "Invalid read: " << i << "," << j << "\n";
     }
   }
   mat.setFromTriplets(elements.begin(), elements.end());
   if(count!=NNZ)
     std::cerr << count << "!=" << NNZ << "\n";
-  
+
   input.close();
   return true;
 }
@@ -195,22 +195,22 @@ bool loadMarketVector(VectorType& vec, const std::string& filename)
   std::ifstream in(filename.c_str(), std::ios::in);
   if(!in)
     return false;
-  
-  std::string line; 
-  int n(0), col(0); 
-  do 
+
+  std::string line;
+  int n(0), col(0);
+  do
   { // Skip comments
     std::getline(in, line); eigen_assert(in.good());
   } while (line[0] == '%');
   std::istringstream newline(line);
-  newline  >> n >> col; 
+  newline  >> n >> col;
   eigen_assert(n>0 && col>0);
   vec.resize(n);
-  int i = 0; 
-  Scalar value; 
+  int i = 0;
+  Scalar value;
   while ( std::getline(in, line) && (i < n) ){
-    internal::GetVectorElt(line, value); 
-    vec(i++) = value; 
+    internal::GetVectorElt(line, value);
+    vec(i++) = value;
   }
   in.close();
   if (i!=n){
@@ -227,12 +227,12 @@ bool saveMarket(const SparseMatrixType& mat, const std::string& filename, int sy
   std::ofstream out(filename.c_str(),std::ios::out);
   if(!out)
     return false;
-  
+
   out.flags(std::ios_base::scientific);
   out.precision(64);
-  std::string header; 
-  internal::putMarketHeader<Scalar>(header, sym); 
-  out << header << std::endl; 
+  std::string header;
+  internal::putMarketHeader<Scalar>(header, sym);
+  out << header << std::endl;
   out << mat.rows() << " " << mat.cols() << " " << mat.nonZeros() << "\n";
   int count = 0;
   for(int j=0; j<mat.outerSize(); ++j)
@@ -249,23 +249,23 @@ bool saveMarket(const SparseMatrixType& mat, const std::string& filename, int sy
 template<typename VectorType>
 bool saveMarketVector (const VectorType& vec, const std::string& filename)
 {
- typedef typename VectorType::Scalar Scalar; 
+ typedef typename VectorType::Scalar Scalar;
  std::ofstream out(filename.c_str(),std::ios::out);
   if(!out)
     return false;
-  
+
   out.flags(std::ios_base::scientific);
   out.precision(64);
   if(internal::is_same<Scalar, std::complex<float> >::value || internal::is_same<Scalar, std::complex<double> >::value)
-      out << "%%MatrixMarket matrix array complex general\n"; 
+      out << "%%MatrixMarket matrix array complex general\n";
   else
-    out << "%%MatrixMarket matrix array real general\n"; 
+    out << "%%MatrixMarket matrix array real general\n";
   out << vec.size() << " "<< 1 << "\n";
   for (int i=0; i < vec.size(); i++){
-    internal::putVectorElt(vec(i), out); 
+    internal::putVectorElt(vec(i), out);
   }
   out.close();
-  return true; 
+  return true;
 }
 
 } // end namespace Eigen

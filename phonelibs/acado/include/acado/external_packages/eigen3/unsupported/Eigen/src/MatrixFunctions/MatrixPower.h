@@ -109,7 +109,7 @@ void MatrixPowerAtomic<MatrixType>::compute2x2(MatrixType& res, RealScalar p) co
 {
   using std::abs;
   using std::pow;
-  
+
   ArrayType logTdiag = m_A.diagonal().array().log();
   res.coeffRef(0,0) = pow(m_A.coeff(0,0), p);
 
@@ -177,7 +177,7 @@ void MatrixPowerAtomic<MatrixType>::computeBig(MatrixType& res) const
   }
   compute2x2(res, m_p);
 }
-  
+
 template<typename MatrixType>
 inline int MatrixPowerAtomic<MatrixType>::getPadeDegree(float normIminusT)
 {
@@ -316,7 +316,7 @@ class MatrixPower
      */
     template<typename ResultType>
     void compute(ResultType& res, RealScalar p);
-    
+
     Index rows() const { return m_A.rows(); }
     Index cols() const { return m_A.cols(); }
 
@@ -381,7 +381,7 @@ MatrixPower<MatrixType>::modfAndInit(RealScalar x, RealScalar* intpart)
     const ComplexSchur<MatrixType> schurOfA(m_A);
     m_T = schurOfA.matrixT();
     m_U = schurOfA.matrixU();
-    
+
     const RealArray absTdiag = m_T.diagonal().array().abs();
     m_conditionNumber = absTdiag.maxCoeff() / absTdiag.minCoeff();
   }

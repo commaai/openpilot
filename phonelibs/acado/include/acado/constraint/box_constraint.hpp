@@ -45,13 +45,13 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief Stores and evaluates box constraints within optimal control problems.
  *
  *	\ingroup BasicDataStructures
  *
  *	The class BoxConstraint allows to manage and evaluate box (path) constraints
- *	(simple upper or lower bounds) on the optimization variables within 
+ *	(simple upper or lower bounds) on the optimization variables within
  *	optimal control problems.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

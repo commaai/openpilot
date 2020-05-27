@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2008 The Khronos Group Inc. 
- * 
+ * Copyright (c) 2008 The Khronos Group Inc.
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
  * without limitation the rights to use, copy, modify, merge, publish,
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject
- * to the following conditions: 
+ * to the following conditions:
  * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software. 
- * 
+ * in all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
@@ -37,22 +37,22 @@ extern "C" {
 
 /* Each OMX header must include all required header files to allow the
  *  header to compile without errors.  The includes below are required
- *  for this header file to compile successfully 
+ *  for this header file to compile successfully
  */
 #include <OMX_Types.h>
 
 
 /** The OMX_INDEXTYPE enumeration is used to select a structure when either
- *  getting or setting parameters and/or configuration data.  Each entry in 
- *  this enumeration maps to an OMX specified structure.  When the 
+ *  getting or setting parameters and/or configuration data.  Each entry in
+ *  this enumeration maps to an OMX specified structure.  When the
  *  OMX_GetParameter, OMX_SetParameter, OMX_GetConfig or OMX_SetConfig methods
  *  are used, the second parameter will always be an entry from this enumeration
  *  and the third entry will be the structure shown in the comments for the entry.
- *  For example, if the application is initializing a cropping function, the 
- *  OMX_SetConfig command would have OMX_IndexConfigCommonInputCrop as the second parameter 
- *  and would send a pointer to an initialized OMX_RECTTYPE structure as the 
+ *  For example, if the application is initializing a cropping function, the
+ *  OMX_SetConfig command would have OMX_IndexConfigCommonInputCrop as the second parameter
+ *  and would send a pointer to an initialized OMX_RECTTYPE structure as the
  *  third parameter.
- *  
+ *
  *  The enumeration entries named with the OMX_Config prefix are sent using
  *  the OMX_SetConfig command and the enumeration entries named with the
  *  OMX_PARAM_ prefix are sent using the OMX_SetParameter command.
@@ -69,11 +69,11 @@ typedef enum OMX_INDEXTYPE {
     OMX_IndexParamActiveStream,             /**< reference: OMX_PARAM_U32TYPE */
     OMX_IndexParamSuspensionPolicy,         /**< reference: OMX_PARAM_SUSPENSIONPOLICYTYPE */
     OMX_IndexParamComponentSuspended,       /**< reference: OMX_PARAM_SUSPENSIONTYPE */
-    OMX_IndexConfigCapturing,               /**< reference: OMX_CONFIG_BOOLEANTYPE */ 
-    OMX_IndexConfigCaptureMode,             /**< reference: OMX_CONFIG_CAPTUREMODETYPE */ 
-    OMX_IndexAutoPauseAfterCapture,         /**< reference: OMX_CONFIG_BOOLEANTYPE */ 
+    OMX_IndexConfigCapturing,               /**< reference: OMX_CONFIG_BOOLEANTYPE */
+    OMX_IndexConfigCaptureMode,             /**< reference: OMX_CONFIG_CAPTUREMODETYPE */
+    OMX_IndexAutoPauseAfterCapture,         /**< reference: OMX_CONFIG_BOOLEANTYPE */
     OMX_IndexParamContentURI,               /**< reference: OMX_PARAM_CONTENTURITYPE */
-    OMX_IndexParamCustomContentPipe,        /**< reference: OMX_PARAM_CONTENTPIPETYPE */ 
+    OMX_IndexParamCustomContentPipe,        /**< reference: OMX_PARAM_CONTENTPIPETYPE */
     OMX_IndexParamDisableResourceConcealment, /**< reference: OMX_RESOURCECONCEALMENTTYPE */
     OMX_IndexConfigMetadataItemCount,       /**< reference: OMX_CONFIG_METADATAITEMCOUNTTYPE */
     OMX_IndexConfigContainerNodeCount,      /**< reference: OMX_CONFIG_CONTAINERNODECOUNTTYPE */
@@ -86,7 +86,7 @@ typedef enum OMX_INDEXTYPE {
 
     OMX_IndexPortStartUnused = 0x02000000,
     OMX_IndexParamPortDefinition,           /**< reference: OMX_PARAM_PORTDEFINITIONTYPE */
-    OMX_IndexParamCompBufferSupplier,       /**< reference: OMX_PARAM_BUFFERSUPPLIERTYPE */ 
+    OMX_IndexParamCompBufferSupplier,       /**< reference: OMX_PARAM_BUFFERSUPPLIERTYPE */
     OMX_IndexReservedStartUnused = 0x03000000,
 
     /* Audio parameters and configurations */
@@ -239,10 +239,10 @@ typedef enum OMX_INDEXTYPE {
     OMX_IndexConfigTimeSeekMode,            /**< reference: OMX_TIME_CONFIG_SEEKMODETYPE */
 
 
-    OMX_IndexKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+    OMX_IndexKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */
     /* Vendor specific area */
     OMX_IndexVendorStartUnused = 0x7F000000,
-    /* Vendor specific structures should be in the range of 0x7F000000 
+    /* Vendor specific structures should be in the range of 0x7F000000
        to 0x7FFFFFFE.  This range is not broken out by vendor, so
        private indexes are not guaranteed unique and therefore should
        only be sent to the appropriate component. */

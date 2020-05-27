@@ -1,8 +1,8 @@
 import math
 
 import numpy as np
-from cereal import log
 
+from cereal import log
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_toyota_steer_torque_limits
@@ -117,7 +117,7 @@ class LatControlINDI():
       indi_log.delta = float(delta_u)
       indi_log.output = float(self.output_steer)
 
-      check_saturation = (CS.vEgo> 10.) and not CS.steeringRateLimited and not CS.steeringPressed 
+      check_saturation = (CS.vEgo> 10.) and not CS.steeringRateLimited and not CS.steeringPressed
       indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
     return float(self.output_steer), float(self.angle_steers_des), indi_log

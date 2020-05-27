@@ -1,8 +1,7 @@
 from cereal import car
+from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-
-from common.numpy_fast import mean
 from selfdrive.car.gm.values import AccState
 from selfdrive.car.gm.values import CanBus
 from selfdrive.car.gm.values import CAR

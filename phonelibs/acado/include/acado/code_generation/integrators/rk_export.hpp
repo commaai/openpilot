@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored Runge-Kutta integrator for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -59,7 +59,7 @@ class RungeKuttaExport : public IntegratorExport
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -75,7 +75,7 @@ class RungeKuttaExport : public IntegratorExport
         RungeKuttaExport(	const RungeKuttaExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~RungeKuttaExport( );
 
@@ -109,7 +109,7 @@ class RungeKuttaExport : public IntegratorExport
 		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
-		
+
 		virtual returnValue setDifferentialEquation( const Expression& rhs ) = 0;
 
 
@@ -153,13 +153,13 @@ class RungeKuttaExport : public IntegratorExport
 		 */
 		virtual returnValue getCode(	ExportStatementBlock& code
 										) = 0;
-        
-        
+
+
         /** This routine returns the number of stages of the Runge-Kutta integrator that will be exported.
          */
         uint getNumStages();
-							
-        
+
+
         /** Sets up the output with the grids for the different output functions.									\n
 		*                                                                      										\n
 		*  \param outputGrids_	  	The vector containing a grid for each output function.			  				\n
@@ -185,12 +185,12 @@ class RungeKuttaExport : public IntegratorExport
 
 
     protected:
-        
+
 		ExportVariable rk_kkk;				/**< Variable containing intermediate results of the RK integrator. */
 
 		DMatrix AA;							/**< This matrix defines the Runge-Kutta method to be exported. */
 		DVector bb, cc;						/**< These vectors define the Runge-Kutta method to be exported. */
-		
+
 		BooleanType is_symmetric;			/**< Boolean defining whether a certain RK method is symmetric or not, which is important for backward sensitivity propagation. */
 
 		uint numStages;						/**< This is the number of stages for the Runge-Kutta method. */

@@ -10,7 +10,7 @@
 #ifndef EIGEN_SOLVETRIANGULAR_H
 #define EIGEN_SOLVETRIANGULAR_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -64,7 +64,7 @@ struct triangular_solver_selector<Lhs,Rhs,Side,Mode,NoUnrolling,1>
 
     ei_declare_aligned_stack_constructed_variable(RhsScalar,actualRhs,rhs.size(),
                                                   (useRhsDirectly ? rhs.data() : 0));
-                                                  
+
     if(!useRhsDirectly)
       MappedRhs(actualRhs,rhs.size()) = rhs;
 
@@ -149,7 +149,7 @@ struct triangular_solver_selector<Lhs,Rhs,OnTheRight,Mode,CompleteUnrolling,1> {
   {
     Transpose<const Lhs> trLhs(lhs);
     Transpose<Rhs> trRhs(rhs);
-    
+
     triangular_solver_unroller<Transpose<const Lhs>,Transpose<Rhs>,
                               ((Mode&Upper)==Upper ? Lower : Upper) | (Mode&UnitDiag),
                               0,Rhs::SizeAtCompileTime>::run(trLhs,trRhs);

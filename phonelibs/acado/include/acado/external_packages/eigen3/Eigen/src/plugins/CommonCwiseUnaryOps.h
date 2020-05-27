@@ -117,7 +117,7 @@ imag() const { return derived(); }
 
 /** \brief Apply a unary operator coefficient-wise
   * \param[in]  func  Functor implementing the unary operator
-  * \tparam  CustomUnaryOp Type of \a func  
+  * \tparam  CustomUnaryOp Type of \a func
   * \returns An expression of a custom coefficient-wise unary operator \a func of *this
   *
   * The function \c ptr_fun() from the C++ standard library can be used to make functors out of normal functions.

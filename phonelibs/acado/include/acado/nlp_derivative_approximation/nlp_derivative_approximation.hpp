@@ -47,13 +47,13 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for techniques of approximating second-order derivatives within NLPsolvers.
  *
  *	\ingroup AlgorithmInterfaces
  *
- *  The class NLPderivativeApproximation serves as a base class for different 
- *	techniques of approximating second-order derivative information within 
+ *  The class NLPderivativeApproximation serves as a base class for different
+ *	techniques of approximating second-order derivative information within
  *	iterative NLPsolvers.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -70,7 +70,7 @@ class NLPderivativeApproximation : public AlgorithmicBase
 
         NLPderivativeApproximation(	UserInteraction* _userInteraction
 									);
-		
+
         /** Copy constructor (deep copy). */
         NLPderivativeApproximation( const NLPderivativeApproximation& rhs );
 

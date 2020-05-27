@@ -55,15 +55,15 @@ class GaussianNoise : public Noise
 	//
 	//  PUBLIC MEMBER FUNCTIONS:
 	//
-	
+
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		GaussianNoise( );
 
 		/** Constructor which takes mean value and variance of the random variable.
-		 *	The dimension of these limit vector determine the dimension of the 
+		 *	The dimension of these limit vector determine the dimension of the
 		 *	random variable.
 		 *
 		 *	@param[in] _mean			Mean value for each component.
@@ -91,7 +91,7 @@ class GaussianNoise : public Noise
 		 */
 		GaussianNoise(	const GaussianNoise& rhs
 						);
-	
+
 		/** Destructor.
 		 */
 		virtual ~GaussianNoise( );
@@ -201,7 +201,7 @@ class GaussianNoise : public Noise
 		virtual returnValue init(	uint seed = 0
 									);
 
-	
+
 		/** Generates a single noise vector based on current internal settings.
 		 *
 		 *	@param[out] _w		Generated noise vector.
@@ -239,7 +239,7 @@ class GaussianNoise : public Noise
 		inline const DVector& getVariance( ) const;
 
 
-	
+
 	//
 	//  PROTECTED MEMBER FUNCTIONS:
 	//

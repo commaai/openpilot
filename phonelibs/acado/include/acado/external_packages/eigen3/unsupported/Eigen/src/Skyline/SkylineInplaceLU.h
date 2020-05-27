@@ -10,7 +10,7 @@
 #ifndef EIGEN_SKYLINEINPLACELU_H
 #define EIGEN_SKYLINEINPLACELU_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup Skyline_Module
  *
@@ -26,7 +26,7 @@ class SkylineInplaceLU {
 protected:
     typedef typename MatrixType::Scalar Scalar;
     typedef typename MatrixType::Index Index;
-    
+
     typedef typename NumTraits<typename MatrixType::Scalar>::Real RealScalar;
 
 public:

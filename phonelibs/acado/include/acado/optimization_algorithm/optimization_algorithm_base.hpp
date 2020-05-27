@@ -51,13 +51,13 @@ Notes:
 
 **/
 
-/** 
+/**
  *	\brief Base class for user-interfaces to formulate and solve optimal control problems and static NLPs.
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class OptimizationAlgorithmBase serves as a base class for user-interfaces 
- *  to formulate and solve optimal control problems and static nonlinear programming (NLP) 
+ *	The class OptimizationAlgorithmBase serves as a base class for user-interfaces
+ *  to formulate and solve optimal control problems and static nonlinear programming (NLP)
  *	problems.
  *
  *  \author Boris Houska, Hans Joachim Ferreau
@@ -120,7 +120,7 @@ class OptimizationAlgorithmBase
         double getObjectiveValue         ( const char* fileName ) const;
         double getObjectiveValue         () const;
 
-		
+
 		returnValue getSensitivitiesX(	BlockMatrix& _sens
 										) const;
 

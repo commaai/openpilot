@@ -7,7 +7,6 @@ from panda import BASEDIR
 from panda import build_st
 from panda import Panda
 from panda import PandaDFU
-
 from selfdrive.swaglog import cloudlog
 
 

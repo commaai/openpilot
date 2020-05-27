@@ -10,7 +10,7 @@
 #ifndef EIGEN_BVALGORITHMS_H
 #define EIGEN_BVALGORITHMS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

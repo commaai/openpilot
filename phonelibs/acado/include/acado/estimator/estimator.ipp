@@ -43,7 +43,7 @@ inline returnValue Estimator::getOutputs(	DVector& _x,
 											DVector& _xa,
 											DVector& _u,
 											DVector& _p,
-											DVector& _w 
+											DVector& _w
 											) const
 {
 	_x   = x;
@@ -51,7 +51,7 @@ inline returnValue Estimator::getOutputs(	DVector& _x,
 	_u   = u;
 	_p   = p;
 	_w   = w;
-	
+
 	return SUCCESSFUL_RETURN;
 }
 

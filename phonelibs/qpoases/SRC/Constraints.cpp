@@ -122,7 +122,7 @@ returnValue Constraints::setupConstraint(	int _number, SubjectToStatus _status
 	/* consistency check */
 	if ( ( _number < 0 ) || ( _number >= getNC( ) ) )
 		return THROWERROR( RET_INDEX_OUT_OF_BOUNDS );
-	
+
 	/* Add constraint index to respective index list. */
 	switch ( _status )
 	{

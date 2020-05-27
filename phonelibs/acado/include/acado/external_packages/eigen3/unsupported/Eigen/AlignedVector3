@@ -51,7 +51,7 @@ template<typename _Scalar> class AlignedVector3
     CoeffType m_coeffs;
   public:
 
-    typedef MatrixBase<AlignedVector3<_Scalar> > Base;	
+    typedef MatrixBase<AlignedVector3<_Scalar> > Base;
     EIGEN_DENSE_PUBLIC_INTERFACE(AlignedVector3)
     using Base::operator*;
 

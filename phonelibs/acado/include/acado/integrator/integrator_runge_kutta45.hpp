@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements the Runge-Kutta-45 scheme for integrating ODEs.
  *
  *	\ingroup NumericalAlgorithms

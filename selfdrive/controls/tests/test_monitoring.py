@@ -1,8 +1,8 @@
 import unittest
 
 import numpy as np
-from cereal import car
 
+from cereal import car
 from common.realtime import DT_DMON
 from selfdrive.controls.lib.driver_monitor import _AWARENESS_PRE_TIME_TILL_TERMINAL
 from selfdrive.controls.lib.driver_monitor import _AWARENESS_PROMPT_TIME_TILL_TERMINAL

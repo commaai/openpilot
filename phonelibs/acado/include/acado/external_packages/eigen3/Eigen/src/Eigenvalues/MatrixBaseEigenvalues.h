@@ -11,7 +11,7 @@
 #ifndef EIGEN_MATRIXBASEEIGENVALUES_H
 #define EIGEN_MATRIXBASEEIGENVALUES_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -42,13 +42,13 @@ struct eigenvalues_selector<Derived, false>
 
 } // end namespace internal
 
-/** \brief Computes the eigenvalues of a matrix 
+/** \brief Computes the eigenvalues of a matrix
   * \returns Column vector containing the eigenvalues.
   *
   * \eigenvalues_module
   * This function computes the eigenvalues with the help of the EigenSolver
   * class (for real matrices) or the ComplexEigenSolver class (for complex
-  * matrices). 
+  * matrices).
   *
   * The eigenvalues are repeated according to their algebraic multiplicity,
   * so there are as many eigenvalues as rows in the matrix.
@@ -84,7 +84,7 @@ MatrixBase<Derived>::eigenvalues() const
   *
   * \sa SelfAdjointEigenSolver::eigenvalues(), MatrixBase::eigenvalues()
   */
-template<typename MatrixType, unsigned int UpLo> 
+template<typename MatrixType, unsigned int UpLo>
 inline typename SelfAdjointView<MatrixType, UpLo>::EigenvaluesReturnType
 SelfAdjointView<MatrixType, UpLo>::eigenvalues() const
 {

@@ -5,10 +5,10 @@ void @MODULE_NAME@_printHeader( )
 {
 	printf(
 		"\nACADO Toolkit -- A Toolkit for Automatic Control and Dynamic Optimization.\n"
-		"Copyright (C) 2008-2015 by Boris Houska, Hans Joachim Ferreau,\n" 
+		"Copyright (C) 2008-2015 by Boris Houska, Hans Joachim Ferreau,\n"
 		"Milan Vukov and Rien Quirynen, KU Leuven.\n"
 	);
-	
+
 	printf(
 		"Developed within the Optimization in Engineering Center (OPTEC) under\n"
 		"supervision of Moritz Diehl. All rights reserved.\n\n"
@@ -47,10 +47,10 @@ real_t @MODULE_NAME@_toc( @MODULE_NAME@_timer* t )
 {
 
     uint64_t duration; /* elapsed time in clock cycles*/
-    
+
     t->toc = mach_absolute_time();
     duration = t->toc - t->tic;
-    
+
     /*conversion from clock cycles to nanoseconds*/
     mach_timebase_info(&(t->tinfo));
     duration *= t->tinfo.numer;
@@ -71,9 +71,9 @@ void @MODULE_NAME@_tic( @MODULE_NAME@_timer* t )
 real_t @MODULE_NAME@_toc( @MODULE_NAME@_timer* t )
 {
 	struct timeval temp;
-	
+
 	gettimeofday(&t->toc, 0);
-    
+
 	if ((t->toc.tv_usec - t->tic.tv_usec) < 0)
 	{
 		temp.tv_sec = t->toc.tv_sec - t->tic.tv_sec - 1;
@@ -84,7 +84,7 @@ real_t @MODULE_NAME@_toc( @MODULE_NAME@_timer* t )
 		temp.tv_sec = t->toc.tv_sec - t->tic.tv_sec;
 		temp.tv_usec = t->toc.tv_usec - t->tic.tv_usec;
 	}
-	
+
 	return (real_t)temp.tv_sec + (real_t)temp.tv_usec / 1e6;
 }
 

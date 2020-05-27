@@ -11,7 +11,7 @@
 #ifndef EIGEN_DIAGONALMATRIX_H
 #define EIGEN_DIAGONALMATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 #ifndef EIGEN_PARSED_BY_DOXYGEN
 template<typename Derived>
@@ -70,7 +70,7 @@ class DiagonalBase : public EigenBase<Derived>
     {
       return diagonal().cwiseInverse();
     }
-    
+
     inline const DiagonalWrapper<const CwiseUnaryOp<internal::scalar_multiple_op<Scalar>, const DiagonalVectorType> >
     operator*(const Scalar& scalar) const
     {
@@ -81,7 +81,7 @@ class DiagonalBase : public EigenBase<Derived>
     {
       return other.diagonal() * scalar;
     }
-    
+
     #ifdef EIGEN2_SUPPORT
     template<typename OtherDerived>
     bool isApprox(const DiagonalBase<OtherDerived>& other, typename NumTraits<Scalar>::Real precision = NumTraits<Scalar>::dummy_precision()) const

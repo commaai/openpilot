@@ -5,10 +5,10 @@ import struct
 import sys
 import time
 
-import cereal.messaging as messaging
 import serial
-from cereal import log
 
+import cereal.messaging as messaging
+from cereal import log
 from common import realtime
 from selfdrive.locationd.test import ublox
 from selfdrive.locationd.test.ephemeris import EphemerisData

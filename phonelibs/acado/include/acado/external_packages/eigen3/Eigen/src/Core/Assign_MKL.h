@@ -33,7 +33,7 @@
 #ifndef EIGEN_ASSIGN_VML_H
 #define EIGEN_ASSIGN_VML_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

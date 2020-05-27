@@ -40,7 +40,7 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *  \brief Allows to export a tailored lifted implicit Runge-Kutta integrator with forward sensitivity generation for extra fast model predictive control.
  *
  *  \ingroup NumericalAlgorithms
@@ -74,7 +74,7 @@ class FeedbackLiftedIRKExport : public ForwardIRKExport
         FeedbackLiftedIRKExport(    const FeedbackLiftedIRKExport& arg
                             );
 
-        /** Destructor. 
+        /** Destructor.
          */
         virtual ~FeedbackLiftedIRKExport( );
 
@@ -101,7 +101,7 @@ class FeedbackLiftedIRKExport : public ForwardIRKExport
          *  \return SUCCESSFUL_RETURN
          */
         virtual returnValue setNonlinearFeedback( const DMatrix& C, const Expression& feedb );
-        
+
 
         /** Adds all data declarations of the auto-generated integrator to given list of declarations.
          *

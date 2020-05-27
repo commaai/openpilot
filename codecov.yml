@@ -5,4 +5,3 @@ coverage:
       default:
         informational: true
     patch: off
-

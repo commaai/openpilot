@@ -45,4 +45,3 @@ int main() {
     camera_bufs_stats, camera_bufs_front);
   cameras_close(&s);
 }
-

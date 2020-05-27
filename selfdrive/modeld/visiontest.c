@@ -157,4 +157,3 @@ void visiontest_transform(VisionTest* vt, const uint8_t* yuv_data,
 
   clFinish(vt->command_queue);
 }
-

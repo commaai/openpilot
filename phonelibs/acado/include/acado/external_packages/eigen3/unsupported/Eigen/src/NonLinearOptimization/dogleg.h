@@ -1,4 +1,4 @@
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -12,7 +12,7 @@ void dogleg(
 {
     using std::abs;
     using std::sqrt;
-    
+
     typedef DenseIndex Index;
 
     /* Local variables */

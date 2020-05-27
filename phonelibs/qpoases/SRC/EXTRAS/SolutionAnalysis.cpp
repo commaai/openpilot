@@ -37,7 +37,7 @@
  */
 SolutionAnalysis::SolutionAnalysis( )
 {
-	
+
 }
 
 /*
@@ -45,7 +45,7 @@ SolutionAnalysis::SolutionAnalysis( )
  */
 SolutionAnalysis::SolutionAnalysis( const SolutionAnalysis& rhs )
 {
-	
+
 }
 
 /*
@@ -53,7 +53,7 @@ SolutionAnalysis::SolutionAnalysis( const SolutionAnalysis& rhs )
  */
 SolutionAnalysis::~SolutionAnalysis( )
 {
-	
+
 }
 
 /*
@@ -63,9 +63,9 @@ SolutionAnalysis& SolutionAnalysis::operator=( const SolutionAnalysis& rhs )
 {
 	if ( this != &rhs )
 	{
-		
+
 	}
-	
+
 	return *this;
 }
 
@@ -77,42 +77,42 @@ returnValue SolutionAnalysis::getHessianInverse( QProblem* qp, real_t* hessianIn
 	returnValue returnvalue; /* the return value */
 	BooleanType Delta_bC_isZero = BT_FALSE; /* (just use FALSE here) */
 	BooleanType Delta_bB_isZero = BT_FALSE; /* (just use FALSE here) */
-	
+
 	register int run1, run2, run3;
-	
+
 	register int nFR, nFX;
-	
+
 	/* Ask for the number of free and fixed variables, assumes that active set
 	 * is constant for the covariance evaluation */
 	nFR = qp->getNFR( );
 	nFX = qp->getNFX( );
-	
+
 	/* Ask for the corresponding index arrays: */
 	if ( qp->bounds.getFree( )->getNumberArray( FR_idx ) != SUCCESSFUL_RETURN )
 		return THROWERROR( RET_HOTSTART_FAILED );
-	
+
 	if ( qp->bounds.getFixed( )->getNumberArray( FX_idx ) != SUCCESSFUL_RETURN )
 		return THROWERROR( RET_HOTSTART_FAILED );
-	
+
 	if ( qp->constraints.getActive( )->getNumberArray( AC_idx ) != SUCCESSFUL_RETURN )
 		return THROWERROR( RET_HOTSTART_FAILED );
-	
+
 	/* Initialization: */
 	for( run1 = 0; run1 < NVMAX; run1++ )
 		delta_g_cov[ run1 ] = 0.0;
-	
+
 	for( run1 = 0; run1 < NVMAX; run1++ )
 		delta_lb_cov[ run1 ] = 0.0;
-	
+
 	for( run1 = 0; run1 < NVMAX; run1++ )
 		delta_ub_cov[ run1 ] = 0.0;
-	
+
 	for( run1 = 0; run1 < NCMAX; run1++ )
 		delta_lbA_cov[ run1 ] = 0.0;
-	
+
 	for( run1 = 0; run1 < NCMAX; run1++ )
 		delta_ubA_cov[ run1 ] = 0.0;
-	
+
 	/* The following loop solves the following:
 	 *
 	 * KKT * x =
@@ -128,12 +128,12 @@ returnValue SolutionAnalysis::getHessianInverse( QProblem* qp, real_t* hessianIn
 	 * so.
 	 *
 	 * */
-	
+
 	for( run3 = 0; run3 < NVMAX; run3++ )
 	{
 		/* Line wise loading of the corresponding (negative) elementary vector: */
 		delta_g_cov[ run3 ] = -1.0;
-		
+
 		/* Evaluation of the step: */
 		returnvalue = qp->hotstart_determineStepDirection(
 			FR_idx, FX_idx, AC_idx,
@@ -145,29 +145,29 @@ returnValue SolutionAnalysis::getHessianInverse( QProblem* qp, real_t* hessianIn
 		{
 			return returnvalue;
 		}
-		
+
 		/* Line wise storage of the QP reaction: */
 		for( run1 = 0; run1 < nFR; run1++ )
 		{
 			run2 = FR_idx[ run1 ];
-			
+
 			hessianInverse[run3 * NVMAX + run2] = delta_xFR[ run1 ];
-		} 
-		
+		}
+
 		for( run1 = 0; run1 < nFX; run1++ )
-		{ 
+		{
 			run2 = FX_idx[ run1 ];
-			
+
 			hessianInverse[run3 * NVMAX + run2] = delta_xFX[ run1 ];
 		}
-		
+
 		/* Prepare for the next iteration */
 		delta_g_cov[ run3 ] = 0.0;
 	}
-	
+
 	// TODO: Perform the transpose of the inverse of the Hessian matrix
-	
-	return SUCCESSFUL_RETURN; 
+
+	return SUCCESSFUL_RETURN;
 }
 
 /*
@@ -177,33 +177,33 @@ returnValue SolutionAnalysis::getHessianInverse( QProblemB* qp, real_t* hessianI
 {
 	returnValue returnvalue; /* the return value */
 	BooleanType Delta_bB_isZero = BT_FALSE; /* (just use FALSE here) */
-	
+
 	register int run1, run2, run3;
-	
+
 	register int nFR, nFX;
-	
+
 	/* Ask for the number of free and fixed variables, assumes that active set
 	 * is constant for the covariance evaluation */
 	nFR = qp->getNFR( );
 	nFX = qp->getNFX( );
-	
+
 	/* Ask for the corresponding index arrays: */
 	if ( qp->bounds.getFree( )->getNumberArray( FR_idx ) != SUCCESSFUL_RETURN )
 		return THROWERROR( RET_HOTSTART_FAILED );
-	
+
 	if ( qp->bounds.getFixed( )->getNumberArray( FX_idx ) != SUCCESSFUL_RETURN )
 		return THROWERROR( RET_HOTSTART_FAILED );
-	
+
 	/* Initialization: */
 	for( run1 = 0; run1 < NVMAX; run1++ )
 		delta_g_cov[ run1 ] = 0.0;
-	
+
 	for( run1 = 0; run1 < NVMAX; run1++ )
 		delta_lb_cov[ run1 ] = 0.0;
-	
+
 	for( run1 = 0; run1 < NVMAX; run1++ )
 		delta_ub_cov[ run1 ] = 0.0;
-	
+
 	/* The following loop solves the following:
 	 *
 	 * KKT * x =
@@ -219,12 +219,12 @@ returnValue SolutionAnalysis::getHessianInverse( QProblemB* qp, real_t* hessianI
 	 * so.
 	 *
 	 * */
-	
+
 	for( run3 = 0; run3 < NVMAX; run3++ )
 	{
 		/* Line wise loading of the corresponding (negative) elementary vector: */
 		delta_g_cov[ run3 ] = -1.0;
-		
+
 		/* Evaluation of the step: */
 		returnvalue = qp->hotstart_determineStepDirection(
 			FR_idx, FX_idx,
@@ -236,29 +236,29 @@ returnValue SolutionAnalysis::getHessianInverse( QProblemB* qp, real_t* hessianI
 		{
 			return returnvalue;
 		}
-				
+
 		/* Line wise storage of the QP reaction: */
 		for( run1 = 0; run1 < nFR; run1++ )
 		{
 			run2 = FR_idx[ run1 ];
-			
+
 			hessianInverse[run3 * NVMAX + run2] = delta_xFR[ run1 ];
-		} 
-		
+		}
+
 		for( run1 = 0; run1 < nFX; run1++ )
-		{ 
+		{
 			run2 = FX_idx[ run1 ];
-			
+
 			hessianInverse[run3 * NVMAX + run2] = delta_xFX[ run1 ];
 		}
-		
+
 		/* Prepare for the next iteration */
 		delta_g_cov[ run3 ] = 0.0;
 	}
-	
+
 	// TODO: Perform the transpose of the inverse of the Hessian matrix
-	
-	return SUCCESSFUL_RETURN; 
+
+	return SUCCESSFUL_RETURN;
 }
 
 /*
@@ -270,30 +270,30 @@ returnValue SolutionAnalysis::getHessianInverse( QProblemB* qp, real_t* hessianI
 returnValue SolutionAnalysis::getVarianceCovariance( QProblem* qp, real_t* g_b_bA_VAR, real_t* Primal_Dual_VAR )
 {
 	int run1, run2, run3; /* simple run variables (for loops). */
-	
+
 	returnValue returnvalue; /* the return value */
 	BooleanType Delta_bC_isZero = BT_FALSE; /* (just use FALSE here) */
 	BooleanType Delta_bB_isZero = BT_FALSE; /* (just use FALSE here) */
-	
+
 	/* ASK FOR THE NUMBER OF FREE AND FIXED VARIABLES:
 	 * (ASSUMES THAT ACTIVE SET IS CONSTANT FOR THE
 	 *  VARIANCE-COVARIANCE EVALUATION)
 	 * ----------------------------------------------- */
 	int nFR, nFX, nAC;
-	
+
 	nFR = qp->getNFR( );
 	nFX = qp->getNFX( );
 	nAC = qp->getNAC( );
-	
+
 	if ( qp->bounds.getFree( )->getNumberArray( FR_idx ) != SUCCESSFUL_RETURN )
 		return THROWERROR( RET_HOTSTART_FAILED );
-	
+
 	if ( qp->bounds.getFixed( )->getNumberArray( FX_idx ) != SUCCESSFUL_RETURN )
 		return THROWERROR( RET_HOTSTART_FAILED );
-	
+
 	if ( qp->constraints.getActive( )->getNumberArray( AC_idx ) != SUCCESSFUL_RETURN )
 		return THROWERROR( RET_HOTSTART_FAILED );
-	
+
 	/* SOME INITIALIZATIONS:
 	 * --------------------- */
 	for( run1 = 0; run1 < KKT_DIM * KKT_DIM; run1++ )
@@ -301,19 +301,19 @@ returnValue SolutionAnalysis::getVarianceCovariance( QProblem* qp, real_t* g_b_b
 		K [run1] = 0.0;
 		Primal_Dual_VAR[run1] = 0.0;
 	}
-	
+
 	/* ================================================================= */
-	
+
 	/* FIRST MATRIX MULTIPLICATION (OBTAINS THE INTERMEDIATE RESULT
 	 *  K := [ ("ACTIVE" KKT-MATRIX OF THE QP)^(-1) * g_b_bA_VAR ]^T )
 	 * THE EVALUATION OF THE INVERSE OF THE KKT-MATRIX OF THE QP
 	 * WITH RESPECT TO THE CURRENT ACTIVE SET
 	 * USES THE EXISTING CHOLESKY AND TQ-DECOMPOSITIONS. FOR DETAILS
 	 * cf. THE (protected) FUNCTION determineStepDirection. */
-	
+
 	for( run3 = 0; run3 < KKT_DIM; run3++ )
 	{
-		
+
 		for( run1 = 0; run1 < NVMAX; run1++ )
 		{
 			delta_g_cov [run1] = g_b_bA_VAR[run3*KKT_DIM+run1];
@@ -325,37 +325,37 @@ returnValue SolutionAnalysis::getVarianceCovariance( QProblem* qp, real_t* g_b_b
 			delta_lbA_cov [run1] = g_b_bA_VAR[run3*KKT_DIM+2*NVMAX+run1];
 			delta_ubA_cov [run1] = g_b_bA_VAR[run3*KKT_DIM+2*NVMAX+run1];
 		}
-		
+
 		/* EVALUATION OF THE STEP:
 		 * ------------------------------------------------------------------------------ */
-		
+
 		returnvalue = qp->hotstart_determineStepDirection(
 			FR_idx, FX_idx, AC_idx,
 			delta_g_cov, delta_lbA_cov, delta_ubA_cov, delta_lb_cov, delta_ub_cov,
 			Delta_bC_isZero, Delta_bB_isZero, delta_xFX,delta_xFR,
 			delta_yAC,delta_yFX );
-		
+
 		/* ------------------------------------------------------------------------------ */
-		
+
 		/* STOP THE ALGORITHM IN THE CASE OF NO SUCCESFUL RETURN:
 		 * ------------------------------------------------------ */
 		if ( returnvalue != SUCCESSFUL_RETURN )
 		{
 			return returnvalue;
 		}
-		
+
 		/*  LINE WISE                  */
 		/*  STORAGE OF THE QP-REACTION */
 		/*  (uses the index list)      */
-		
+
 		for( run1=0; run1<nFR; run1++ )
 		{
 			run2 = FR_idx[run1];
 			K[run3*KKT_DIM+run2] = delta_xFR[run1];
-		} 
+		}
 		for( run1=0; run1<nFX; run1++ )
-		{ 
-			run2 = FX_idx[run1]; 
+		{
+			run2 = FX_idx[run1];
 			K[run3*KKT_DIM+run2] = delta_xFX[run1];
 			K[run3*KKT_DIM+NVMAX+run2] = delta_yFX[run1];
 		}
@@ -365,18 +365,18 @@ returnValue SolutionAnalysis::getVarianceCovariance( QProblem* qp, real_t* g_b_b
 			K[run3*KKT_DIM+2*NVMAX+run2] = delta_yAC[run1];
 		}
 	}
-	
+
 	/* ================================================================= */
-	
+
 	/* SECOND MATRIX MULTIPLICATION (OBTAINS THE FINAL RESULT
 	 * Primal_Dual_VAR := ("ACTIVE" KKT-MATRIX OF THE QP)^(-1) * K )
 	 * THE APPLICATION OF THE KKT-INVERSE IS AGAIN REALIZED
 	 * BY USING THE PROTECTED FUNCTION
 	 * determineStepDirection */
-	
+
 	for( run3 = 0; run3 < KKT_DIM; run3++ )
 	{
-		
+
 		for( run1 = 0; run1 < NVMAX; run1++ )
 		{
 			delta_g_cov [run1] = K[run3+ run1*KKT_DIM];
@@ -388,36 +388,36 @@ returnValue SolutionAnalysis::getVarianceCovariance( QProblem* qp, real_t* g_b_b
 			delta_lbA_cov [run1] = K[run3+(2*NVMAX+run1)*KKT_DIM];
 			delta_ubA_cov [run1] = K[run3+(2*NVMAX+run1)*KKT_DIM];
 		}
-		
+
 		/* EVALUATION OF THE STEP:
 		 * ------------------------------------------------------------------------------ */
-		
+
 		returnvalue = qp->hotstart_determineStepDirection(
 			FR_idx, FX_idx, AC_idx,
 			delta_g_cov, delta_lbA_cov, delta_ubA_cov, delta_lb_cov, delta_ub_cov,
 			Delta_bC_isZero, Delta_bB_isZero, delta_xFX,delta_xFR,
 			delta_yAC,delta_yFX );
-		
+
 		/* ------------------------------------------------------------------------------ */
-		
+
 		/* STOP THE ALGORITHM IN THE CASE OF NO SUCCESFUL RETURN:
 		 * ------------------------------------------------------ */
 		if ( returnvalue != SUCCESSFUL_RETURN )
 		{
 			return returnvalue;
 		}
-		
+
 		/*  ROW-WISE STORAGE */
 		/*  OF THE RESULT.   */
-		
+
 		for( run1=0; run1<nFR; run1++ )
 		{
 			run2 = FR_idx[run1];
 			Primal_Dual_VAR[run3+run2*KKT_DIM] = delta_xFR[run1];
 		}
 		for( run1=0; run1<nFX; run1++ )
-		{ 
-			run2 = FX_idx[run1]; 
+		{
+			run2 = FX_idx[run1];
 			Primal_Dual_VAR[run3+run2*KKT_DIM ] = delta_xFX[run1];
 			Primal_Dual_VAR[run3+(NVMAX+run2)*KKT_DIM] = delta_yFX[run1];
 		}
@@ -427,7 +427,7 @@ returnValue SolutionAnalysis::getVarianceCovariance( QProblem* qp, real_t* g_b_b
 			Primal_Dual_VAR[run3+(2*NVMAX+run2)*KKT_DIM] = delta_yAC[run1];
 		}
 	}
-	
+
 	return SUCCESSFUL_RETURN;
 }
 

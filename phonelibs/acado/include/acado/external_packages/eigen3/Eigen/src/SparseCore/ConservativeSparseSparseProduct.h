@@ -10,7 +10,7 @@
 #ifndef EIGEN_CONSERVATIVESPARSESPARSEPRODUCT_H
 #define EIGEN_CONSERVATIVESPARSESPARSEPRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

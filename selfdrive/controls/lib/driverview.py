@@ -6,7 +6,6 @@ import subprocess
 import time
 
 import cereal.messaging as messaging
-
 from common.basedir import BASEDIR
 from common.params import Params
 

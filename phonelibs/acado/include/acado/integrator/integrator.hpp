@@ -48,7 +48,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Abstract base class for all kinds of algorithms for integrating differential equations (ODEs or DAEs).
  *
  *	\ingroup AlgorithmInterfaces
@@ -70,7 +70,7 @@ class Integrator : public AlgorithmicBase
 	public:
 
 
-		/** Default constructor. 
+		/** Default constructor.
 		*/
 		Integrator( );
 
@@ -281,7 +281,7 @@ class Integrator : public AlgorithmicBase
 
 
 		/**< Integrates forward and/or backward depending on the specified seeds. \n
-		*  
+		*
 		*  \return SUCCESSFUL_RETURN                                            \n
 		*          RET_NO_SEED_ALLOCATED                                        \n
 		*/
@@ -429,7 +429,7 @@ class Integrator : public AlgorithmicBase
 		*   \return BT_TRUE:  if differential equation is defined.                      \n
 		*           BT_FALSE: otherwise
 		*/
-		virtual BooleanType isDifferentialEquationDefined( ) const;	
+		virtual BooleanType isDifferentialEquationDefined( ) const;
 
 
 		/**  Returns if the differential equation of the integrator is affine.           \n
@@ -454,7 +454,7 @@ class Integrator : public AlgorithmicBase
 
 
 		/**< Integrates forward and/or backward depending on the specified seeds. \n
-		*  
+		*
 		*  \return SUCCESSFUL_RETURN                                            \n
 		*          RET_NO_SEED_ALLOCATED                                        \n
 		*/

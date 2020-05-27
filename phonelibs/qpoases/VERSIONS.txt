@@ -25,10 +25,10 @@ VERSION HISTORY
 1.3embedded (last updated on 30th April 2009):
 -----------------------------------------------------------------------
 
-+ Re-programming of internal memory management to avoid dynamic memory allocations 
++ Re-programming of internal memory management to avoid dynamic memory allocations
 + Most #ifdef directives removed
 + Almost all type definitions gathered within INCLUDE/Types.hpp
-+ Irrelevant functionality removed (like the SQProblem class, functionality 
++ Irrelevant functionality removed (like the SQProblem class, functionality
   for loading data from files or the SCILAB interface)
 + Replacement of all doubles by real_t
 + Introduction of define "PC_DEBUG" for switching off all print functions

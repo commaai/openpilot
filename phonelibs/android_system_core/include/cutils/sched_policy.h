@@ -60,4 +60,4 @@ extern const char *get_sched_policy_name(SchedPolicy policy);
 }
 #endif
 
-#endif /* __CUTILS_SCHED_POLICY_H */ 
+#endif /* __CUTILS_SCHED_POLICY_H */

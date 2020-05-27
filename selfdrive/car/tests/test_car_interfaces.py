@@ -3,7 +3,6 @@ import importlib
 import unittest
 
 from cereal import car
-
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
 from selfdrive.car.fingerprints import all_known_cars

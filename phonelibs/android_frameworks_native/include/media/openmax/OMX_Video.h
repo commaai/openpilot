@@ -1078,4 +1078,3 @@ typedef struct OMX_VIDEO_CONFIG_NALSIZE {
 
 #endif
 /* File EOF */
-

@@ -10,9 +10,9 @@
 #ifndef EIGEN_STEM_FUNCTION
 #define EIGEN_STEM_FUNCTION
 
-namespace Eigen { 
+namespace Eigen {
 
-/** \ingroup MatrixFunctions_Module 
+/** \ingroup MatrixFunctions_Module
   * \brief Stem functions corresponding to standard mathematical functions.
   */
 template <typename Scalar>
@@ -31,7 +31,7 @@ class StdStemFunctions
     {
       Scalar res;
       switch (n % 4) {
-      case 0: 
+      case 0:
 	res = std::cos(x);
 	break;
       case 1:
@@ -82,7 +82,7 @@ class StdStemFunctions
       }
       return res;
     }
-	
+
     /** \brief Hyperbolic sine (and its derivatives). */
     static Scalar sinh(Scalar x, int n)
     {

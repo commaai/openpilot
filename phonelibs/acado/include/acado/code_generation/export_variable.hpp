@@ -40,16 +40,16 @@ BEGIN_NAMESPACE_ACADO
 class ExportArithmeticStatement;
 class ExportVariableInternal;
 
-/** 
+/**
  *	\brief Defines a matrix-valued variable to be used for exporting code.
  *
  *	\ingroup UserDataStructures
  *
  *	The class ExportVariable defines a matrix-valued variable to be used for exporting
  *	code. Instances of this class can be used similar to usual DMatrix objects
- *	but offer additional functionality, e.g. they allow to export arithmetic 
- *	expressions and they can be passed as argument to exported functions. By 
- *	default, all entries of a ExportVariable are undefined, but each of its 
+ *	but offer additional functionality, e.g. they allow to export arithmetic
+ *	expressions and they can be passed as argument to exported functions. By
+ *	default, all entries of a ExportVariable are undefined, but each of its
  *	component can be set to a fixed value if known beforehand.
  *
  *	\authors Hans Joachim Ferreau, Boris Houska, Milan Vukov
@@ -85,7 +85,7 @@ class ExportVariable : public ExportArgument
 						);
 
 		/** Constructor which takes the name and type string of the variable.
-		 *	Moreover, it initializes the variable with the dimensions and the 
+		 *	Moreover, it initializes the variable with the dimensions and the
 		 *	values of the given matrix.
 		 *
 		 *	@param[in] _name			Name of the argument.
@@ -184,7 +184,7 @@ class ExportVariable : public ExportArgument
 								);
 
 		/** Initializes variable with given name and type string of the variable.
-		 *	Moreover, the variable is initialized with the dimensions and the 
+		 *	Moreover, the variable is initialized with the dimensions and the
 		 *	values of the given matrix.
 		 *
 		 *	@param[in] _name			Name of the argument.
@@ -268,7 +268,7 @@ class ExportVariable : public ExportArgument
 		bool isGiven( ) const;
 
 
-		/** Returns string containing the value of a given component. If its 
+		/** Returns string containing the value of a given component. If its
 		 *	value is undefined, the string contains the address of the component.
 		 *
 		 *	@param[in] rowIdx		Variable row index of the component.

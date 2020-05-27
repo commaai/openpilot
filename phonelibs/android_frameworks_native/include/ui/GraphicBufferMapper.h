@@ -77,4 +77,3 @@ private:
 }; // namespace android
 
 #endif // ANDROID_UI_BUFFER_MAPPER_H
-

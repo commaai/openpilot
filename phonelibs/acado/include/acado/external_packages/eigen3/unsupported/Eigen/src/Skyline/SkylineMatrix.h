@@ -13,7 +13,7 @@
 #include "SkylineStorage.h"
 #include "SkylineMatrixBase.h"
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup Skyline_Module
  *

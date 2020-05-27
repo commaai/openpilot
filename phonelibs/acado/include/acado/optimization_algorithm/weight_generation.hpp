@@ -38,7 +38,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Generates weights for solving OCPs having multiple objectives.
  *
  *	\ingroup AuxiliaryFunctionality

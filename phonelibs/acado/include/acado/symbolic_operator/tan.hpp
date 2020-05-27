@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Tan implements the scalar tangens operator within the 
+ *	The class Tan implements the scalar tangens operator within the
  *	symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

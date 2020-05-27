@@ -40,7 +40,7 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *	\brief Allows to export a tailored lifted implicit Runge-Kutta integrator with forward-over-adjoint second order sensitivity generation for extra fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -58,7 +58,7 @@ class ForwardBackwardLiftedIRKExport : public ForwardLiftedIRKExport
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -74,7 +74,7 @@ class ForwardBackwardLiftedIRKExport : public ForwardLiftedIRKExport
         ForwardBackwardLiftedIRKExport(	const ForwardBackwardLiftedIRKExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ForwardBackwardLiftedIRKExport( );
 
@@ -101,7 +101,7 @@ class ForwardBackwardLiftedIRKExport : public ForwardLiftedIRKExport
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		virtual returnValue setDifferentialEquation( const Expression& rhs );
-        
+
 
 		/** Adds all data declarations of the auto-generated integrator to given list of declarations.
 		 *

@@ -80,7 +80,7 @@ class NoAlias
     template<typename Lhs, typename Rhs, int NestingFlags>
     EIGEN_STRONG_INLINE ExpressionType& operator-=(const CoeffBasedProduct<Lhs,Rhs,NestingFlags>& other)
     { return m_expression.derived() -= CoeffBasedProduct<Lhs,Rhs,NestByRefBit>(other.lhs(), other.rhs()); }
-    
+
     template<typename OtherDerived>
     ExpressionType& operator=(const ReturnByValue<OtherDerived>& func)
     { return m_expression = func; }

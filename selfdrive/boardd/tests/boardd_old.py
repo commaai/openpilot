@@ -9,7 +9,6 @@ import time
 
 import cereal.messaging as messaging
 from cereal import car
-
 from common.realtime import Ratekeeper
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 from selfdrive.swaglog import cloudlog

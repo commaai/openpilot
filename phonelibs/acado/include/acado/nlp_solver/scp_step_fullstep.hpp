@@ -49,7 +49,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class SCPstepFullstep implements fullstep techniques to perform a 
+ *  The class SCPstepFullstep implements fullstep techniques to perform a
  *  globalized step of an SCPmethod for solving nonlinear programming problems.
  *
  *	 \author Boris Houska, Hans Joachim Ferreau
@@ -67,7 +67,7 @@ class SCPstepFullstep : public SCPstep {
 
 		SCPstepFullstep(	UserInteraction* _userInteraction
 							);
-					
+
         /** Copy constructor (deep copy). */
         SCPstepFullstep( const SCPstepFullstep& rhs );
 

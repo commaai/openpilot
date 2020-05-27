@@ -40,7 +40,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored explicit Runge-Kutta integrator of order 2 for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -58,7 +58,7 @@ class ExplicitRungeKutta2Export : public ExplicitRungeKuttaExport
 
     private:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -74,7 +74,7 @@ class ExplicitRungeKutta2Export : public ExplicitRungeKuttaExport
         ExplicitRungeKutta2Export(	const ExplicitRungeKutta2Export& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ExplicitRungeKutta2Export( );
 

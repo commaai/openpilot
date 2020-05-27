@@ -43,7 +43,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored discrete-time 'integrator' for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -60,7 +60,7 @@ class DiscreteTimeExport : public IntegratorExport
     //
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -76,7 +76,7 @@ class DiscreteTimeExport : public IntegratorExport
         DiscreteTimeExport(	const DiscreteTimeExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~DiscreteTimeExport( );
 
@@ -101,7 +101,7 @@ class DiscreteTimeExport : public IntegratorExport
 		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
-		
+
 		virtual returnValue setDifferentialEquation( const Expression& rhs );
 
 

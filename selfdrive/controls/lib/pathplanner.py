@@ -3,7 +3,6 @@ import os
 
 import cereal.messaging as messaging
 from cereal import log
-
 from common.params import Params
 from common.realtime import DT_MDL
 from common.realtime import sec_since_boot

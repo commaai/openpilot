@@ -33,4 +33,3 @@ Q_OBJECT
 };
 
 #endif
-

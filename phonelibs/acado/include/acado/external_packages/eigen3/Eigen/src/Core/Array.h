@@ -12,7 +12,7 @@
 
 namespace Eigen {
 
-/** \class Array 
+/** \class Array
   * \ingroup Core_Module
   *
   * \brief General-purpose arrays with easy API for coefficient-wise operations

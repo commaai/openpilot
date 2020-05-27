@@ -57,9 +57,9 @@ BEGIN_NAMESPACE_ACADO
  *	The class Simulation Environment is designed to run closed-loop simulations
  *	of dynamic systems.
  *
- *	In a standard setup the Simulation Environment consists of a Process and a 
+ *	In a standard setup the Simulation Environment consists of a Process and a
  *	Controller that are connected by signals. These two main members can be specified
- *	within the constructor or set afterwards by using the methods  "setController"  and  
+ *	within the constructor or set afterwards by using the methods  "setController"  and
  *	"setProcess" , respectively.
  *
  *	A simulation has to be initialized by providing the initial value of the differential
@@ -76,7 +76,7 @@ class SimulationEnvironment : public SimulationBlock
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		SimulationEnvironment( );
 
@@ -94,25 +94,25 @@ class SimulationEnvironment : public SimulationBlock
 								Process& _process,
 								Controller& _controller
 								);
-	
+
 		/** Copy constructor (deep copy).
 		 *
 		 *	@param[in] rhs	Right-hand side object.
 		 */
 		SimulationEnvironment(	const SimulationEnvironment &rhs
 								);
-	
-		/** Destructor. 
+
+		/** Destructor.
 		 */
 		virtual ~SimulationEnvironment();
-	
+
 		/** Assignment Operator (deep copy).
 		 *
 		 *	@param[in] rhs	Right-hand side object.
 		 */
 		SimulationEnvironment& operator=(	const SimulationEnvironment &rhs
 											);
-	
+
 
 		/** Assigns new process block to be used for simulation.
 		 *
@@ -157,7 +157,7 @@ class SimulationEnvironment : public SimulationBlock
 												);
 
 
-		/** Initializes the simulation with given start values and 
+		/** Initializes the simulation with given start values and
 		 *	performs a number of consistency checks.
 		 *
 		 *	@param[in]  x0_		Initial value for differential states.
@@ -237,7 +237,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _processOutput			Continuous output of the process.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getProcessOutput(	Curve& _processOutput
 												) const;
@@ -246,7 +246,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _sampledProcessOutput	Sampled output of the process.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getSampledProcessOutput(	VariablesGrid& _sampledProcessOutput
 													);
@@ -256,7 +256,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _diffStates			Differential states of the process.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getProcessDifferentialStates(	VariablesGrid& _diffStates
 															);
@@ -265,7 +265,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _algStates				Algebraic states of the process.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getProcessAlgebraicStates(		VariablesGrid& _algStates
 															);
@@ -274,7 +274,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _interStates			Intermediate states of the process.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getProcessIntermediateStates(	VariablesGrid& _interStates
 															);
@@ -284,7 +284,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _feedbackControl			Feedback control signals of the controller.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getFeedbackControl(	Curve& _feedbackControl
 												) const;
@@ -293,7 +293,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _sampledFeedbackControl	Feedback control signals of the controller.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getFeedbackControl(	VariablesGrid& _sampledFeedbackControl
 												);
@@ -303,7 +303,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _feedbackParameter			Feedback parameter signals of the controller.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getFeedbackParameter(	Curve& _feedbackParameter
 													) const;
@@ -312,7 +312,7 @@ class SimulationEnvironment : public SimulationBlock
 		 *
 		 *	@param[out]  _sampledFeedbackParameter	Feedback parameter signals of the controller.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getFeedbackParameter(	VariablesGrid& _sampledFeedbackParameter
 													);

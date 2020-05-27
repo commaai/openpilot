@@ -54,4 +54,3 @@ $(OUTPUT): $(OBJS)
 .PHONY: clean
 clean:
 	rm -f $(OUTPUT) $(OBJS) $(DEPS)
-

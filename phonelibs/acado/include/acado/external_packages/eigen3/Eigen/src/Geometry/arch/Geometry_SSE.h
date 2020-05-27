@@ -11,7 +11,7 @@
 #ifndef EIGEN_GEOMETRY_SSE_H
 #define EIGEN_GEOMETRY_SSE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -89,7 +89,7 @@ struct quat_product<Architecture::SSE, Derived, OtherDerived, double, Aligned>
 #else
   pstore(&res.x(), padd(t1, pxor(mask,preverse(t2))));
 #endif
-  
+
   /*
    * t1 = ww*zw - yy*xy
    * t2 = zz*zw + xx*xy

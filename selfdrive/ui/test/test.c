@@ -45,4 +45,3 @@ int main() {
   wait_for_touch();
   printf("done\n");
 }
-

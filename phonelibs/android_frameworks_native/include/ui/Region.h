@@ -220,4 +220,3 @@ Region& Region::operator += (const Point& pt) {
 }; // namespace android
 
 #endif // ANDROID_UI_REGION_H
-

@@ -10,7 +10,7 @@
 #ifndef EIGEN_RANDOMSETTER_H
 #define EIGEN_RANDOMSETTER_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** Represents a std::map
   *

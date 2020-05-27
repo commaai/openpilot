@@ -36,20 +36,20 @@ struct plain_array
 {
   T array[Size];
 
-  plain_array() 
-  { 
+  plain_array()
+  {
     EIGEN_STATIC_ASSERT(Size * sizeof(T) <= 128 * 128 * 8, OBJECT_ALLOCATED_ON_STACK_IS_TOO_BIG);
   }
 
-  plain_array(constructor_without_unaligned_array_assert) 
-  { 
+  plain_array(constructor_without_unaligned_array_assert)
+  {
     EIGEN_STATIC_ASSERT(Size * sizeof(T) <= 128 * 128 * 8, OBJECT_ALLOCATED_ON_STACK_IS_TOO_BIG);
   }
 };
 
 #if defined(EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
   #define EIGEN_MAKE_UNALIGNED_ARRAY_ASSERT(sizemask)
-#elif EIGEN_GNUC_AT_LEAST(4,7) 
+#elif EIGEN_GNUC_AT_LEAST(4,7)
   // GCC 4.7 is too aggressive in its optimizations and remove the alignement test based on the fact the array is declared to be aligned.
   // See this bug report: http://gcc.gnu.org/bugzilla/show_bug.cgi?id=53900
   // Hiding the origin of the array pointer behind a function argument seems to do the trick even if the function is inlined:
@@ -73,14 +73,14 @@ struct plain_array<T, Size, MatrixOrArrayOptions, 16>
 {
   EIGEN_USER_ALIGN16 T array[Size];
 
-  plain_array() 
-  { 
+  plain_array()
+  {
     EIGEN_MAKE_UNALIGNED_ARRAY_ASSERT(0xf);
     EIGEN_STATIC_ASSERT(Size * sizeof(T) <= 128 * 128 * 8, OBJECT_ALLOCATED_ON_STACK_IS_TOO_BIG);
   }
 
-  plain_array(constructor_without_unaligned_array_assert) 
-  { 
+  plain_array(constructor_without_unaligned_array_assert)
+  {
     EIGEN_STATIC_ASSERT(Size * sizeof(T) <= 128 * 128 * 8, OBJECT_ALLOCATED_ON_STACK_IS_TOO_BIG);
   }
 };

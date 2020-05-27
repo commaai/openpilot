@@ -41,7 +41,7 @@ BEGIN_NAMESPACE_ACADO
  *	\brief Implements a very rudimentary block sparse matrix class.
  *
  *	\ingroup BasicDataStructures
- *	
+ *
  *  The class BlockMatrix is a very rudimentary block sparse matrix class. It is only
  *  intended to provide a convenient way to deal with linear algebra objects
  *  and to provide a wrapper for more efficient implementations. It should

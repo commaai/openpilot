@@ -38,14 +38,14 @@ BEGIN_NAMESPACE_ACADO
 class ExportIndexNode;
 class ExportArgument;
 
-/** 
+/**
  *	\brief Defines a scalar-valued index variable to be used for exporting code.
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class ExportIndex defines a scalar-valued index variable to be used for 
- *	exporting code. Instances of this class can be used similar to usual integers 
- *	but offer additional functionality, e.g. they allow to export arithmetic 
+ *	The class ExportIndex defines a scalar-valued index variable to be used for
+ *	exporting code. Instances of this class can be used similar to usual integers
+ *	but offer additional functionality, e.g. they allow to export arithmetic
  *	expressions involving indices of the form:
  *
  *	\author Hans Joachim Ferreau, Boris Houska, Milan Vukov

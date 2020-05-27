@@ -48,27 +48,27 @@
 class SolutionAnalysis
 {
 public:
-	
+
 	/** Default constructor. */
 	SolutionAnalysis( );
-	
+
 	/** Copy constructor (deep copy). */
 	SolutionAnalysis( 	const SolutionAnalysis& rhs	/**< Rhs object. */
 						);
-	
+
 	/** Destructor. */
 	~SolutionAnalysis( );
-	
+
 	/** Copy asingment operator (deep copy). */
 	SolutionAnalysis& operator=(	const SolutionAnalysis& rhs	/**< Rhs object. */
 									);
-	
+
 	/** A routine for computation of inverse of the Hessian matrix. */
 	returnValue getHessianInverse(
 									QProblem* qp,			/** QP */
 									real_t* hessianInverse	/** Inverse of the Hessian matrix*/
 									);
-	
+
 	/** A routine for computation of inverse of the Hessian matrix. */
 	returnValue getHessianInverse(	QProblemB* qp,			/** QP */
 									real_t* hessianInverse	/** Inverse of the Hessian matrix*/
@@ -81,23 +81,23 @@ public:
 										real_t* Primal_Dual_VAR
 										);
 #endif
-	
+
 private:
-	
+
 	real_t delta_g_cov[ NVMAX ];		/** A covariance-vector of g */
 	real_t delta_lb_cov[ NVMAX ];		/** A covariance-vector of lb */
 	real_t delta_ub_cov[ NVMAX ];		/** A covariance-vector of ub */
 	real_t delta_lbA_cov[ NCMAX_ALLOC ];		/** A covariance-vector of lbA */
 	real_t delta_ubA_cov[ NCMAX_ALLOC ];		/** A covariance-vector of ubA */
-	
+
 #if QPOASES_USE_OLD_VERSION
 	real_t K[KKT_DIM * KKT_DIM];		/** A matrix to store an intermediate result */
 #endif
-	
+
 	int FR_idx[ NVMAX ];				/** Index array for free variables */
 	int FX_idx[ NVMAX ];				/** Index array for fixed variables */
 	int AC_idx[ NCMAX_ALLOC ];				/** Index array for active constraints */
-	
+
 	real_t delta_xFR[ NVMAX ];			/** QP reaction, primal, w.r.t. free */
 	real_t delta_xFX[ NVMAX ];			/** QP reaction, primal, w.r.t. fixed */
 	real_t delta_yAC[ NVMAX ];			/** QP reaction, dual, w.r.t. active */

@@ -39,12 +39,12 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *	\brief Allows to export files containing automatically generated algorithms for fast model predictive control
  *
  *	\ingroup NumericalAlgorithms
  *
- *	The class ExportFile allows to export files containing automatically generated 
+ *	The class ExportFile allows to export files containing automatically generated
  *	algorithms for fast model predictive control.
  *
  *	\author Hans Joachim Ferreau, Milan Vukov, Boris Houska
@@ -57,11 +57,11 @@ class ExportFile : public ExportStatementBlock
 
     public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 */
 		ExportFile( );
-                
-		/** Standard constructor. 
+
+		/** Standard constructor.
 		 *
 		 *	@param[in] _fileName			Name of exported file.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -81,7 +81,7 @@ class ExportFile : public ExportStatementBlock
         /** Destructor. */
         virtual ~ExportFile( );
 
-        
+
         /** Setup routine.
 		 *
 		 *	@param[in] _fileName			Name of exported file.
@@ -100,8 +100,8 @@ class ExportFile : public ExportStatementBlock
                                     int _precision = 16,
                                     const std::string& _commentString = std::string()
                                     );
-        
-        
+
+
 		/** Exports the file containing the auto-generated code.
 		 *
 		 *	\return SUCCESSFUL_RETURN
@@ -112,7 +112,7 @@ class ExportFile : public ExportStatementBlock
 
 		std::string fileName;					/**< Name of exported file. */
 		std::string commonHeaderName;			/**< Name of common header file. */
-		
+
 		std::string realString;					/**< std::string to be used to declare real variables. */
 		std::string intString;					/**< std::string to be used to declare integer variables. */
 		int precision;							/**< Number of digits to be used for exporting real values. */

@@ -52,12 +52,12 @@ extern "C" {
  *
  * Apple extension for use to manage externally allocated buffers used with cl_mem objects with CL_MEM_USE_HOST_PTR
  *
- * Registers a user callback function that will be called when the memory object is deleted and its resources 
- * freed. Each call to clSetMemObjectCallbackFn registers the specified user callback function on a callback 
- * stack associated with memobj. The registered user callback functions are called in the reverse order in 
- * which they were registered. The user callback functions are called and then the memory object is deleted 
- * and its resources freed. This provides a mechanism for the application (and libraries) using memobj to be 
- * notified when the memory referenced by host_ptr, specified when the memory object is created and used as 
+ * Registers a user callback function that will be called when the memory object is deleted and its resources
+ * freed. Each call to clSetMemObjectCallbackFn registers the specified user callback function on a callback
+ * stack associated with memobj. The registered user callback functions are called in the reverse order in
+ * which they were registered. The user callback functions are called and then the memory object is deleted
+ * and its resources freed. This provides a mechanism for the application (and libraries) using memobj to be
+ * notified when the memory referenced by host_ptr, specified when the memory object is created and used as
  * the storage bits for the memory object, can be reused or freed.
  *
  * The application may not call CL api's with the cl_mem object passed to the pfn_notify.
@@ -66,9 +66,9 @@ extern "C" {
  * before using.
  */
 #define cl_APPLE_SetMemObjectDestructor 1
-cl_int  CL_API_ENTRY clSetMemObjectDestructorAPPLE(  cl_mem /* memobj */, 
-                                        void (* /*pfn_notify*/)( cl_mem /* memobj */, void* /*user_data*/), 
-                                        void * /*user_data */ )             CL_EXT_SUFFIX__VERSION_1_0;  
+cl_int  CL_API_ENTRY clSetMemObjectDestructorAPPLE(  cl_mem /* memobj */,
+                                        void (* /*pfn_notify*/)( cl_mem /* memobj */, void* /*user_data*/),
+                                        void * /*user_data */ )             CL_EXT_SUFFIX__VERSION_1_0;
 
 
 /* Context Logging Functions
@@ -77,29 +77,29 @@ cl_int  CL_API_ENTRY clSetMemObjectDestructorAPPLE(  cl_mem /* memobj */,
  * Please check for the "cl_APPLE_ContextLoggingFunctions" extension using clGetDeviceInfo(CL_DEVICE_EXTENSIONS)
  * before using.
  *
- * clLogMessagesToSystemLog fowards on all log messages to the Apple System Logger 
+ * clLogMessagesToSystemLog fowards on all log messages to the Apple System Logger
  */
 #define cl_APPLE_ContextLoggingFunctions 1
-extern void CL_API_ENTRY clLogMessagesToSystemLogAPPLE(  const char * /* errstr */, 
-                                            const void * /* private_info */, 
-                                            size_t       /* cb */, 
+extern void CL_API_ENTRY clLogMessagesToSystemLogAPPLE(  const char * /* errstr */,
+                                            const void * /* private_info */,
+                                            size_t       /* cb */,
                                             void *       /* user_data */ )  CL_EXT_SUFFIX__VERSION_1_0;
 
 /* clLogMessagesToStdout sends all log messages to the file descriptor stdout */
-extern void CL_API_ENTRY clLogMessagesToStdoutAPPLE(   const char * /* errstr */, 
-                                          const void * /* private_info */, 
-                                          size_t       /* cb */, 
+extern void CL_API_ENTRY clLogMessagesToStdoutAPPLE(   const char * /* errstr */,
+                                          const void * /* private_info */,
+                                          size_t       /* cb */,
                                           void *       /* user_data */ )    CL_EXT_SUFFIX__VERSION_1_0;
 
 /* clLogMessagesToStderr sends all log messages to the file descriptor stderr */
-extern void CL_API_ENTRY clLogMessagesToStderrAPPLE(   const char * /* errstr */, 
-                                          const void * /* private_info */, 
-                                          size_t       /* cb */, 
+extern void CL_API_ENTRY clLogMessagesToStderrAPPLE(   const char * /* errstr */,
+                                          const void * /* private_info */,
+                                          size_t       /* cb */,
                                           void *       /* user_data */ )    CL_EXT_SUFFIX__VERSION_1_0;
 
 
-/************************ 
-* cl_khr_icd extension *                                                  
+/************************
+* cl_khr_icd extension *
 ************************/
 #define cl_khr_icd 1
 
@@ -134,18 +134,18 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clIcdGetPlatformIDsKHR_fn)(
  * The pitch specified must be a multiple of CL_DEVICE_IMAGE_PITCH_ALIGNMENT pixels.
  * The base address of the buffer must be aligned to CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT pixels.
  */
-    
+
 /*************************************
  * cl_khr_initalize_memory extension *
  *************************************/
-    
+
 #define CL_CONTEXT_MEMORY_INITIALIZE_KHR            0x2030
-    
-    
+
+
 /**************************************
  * cl_khr_terminate_context extension *
  **************************************/
-    
+
 #define CL_DEVICE_TERMINATE_CAPABILITY_KHR          0x2031
 #define CL_CONTEXT_TERMINATE_KHR                    0x2032
 
@@ -153,12 +153,12 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clIcdGetPlatformIDsKHR_fn)(
 extern CL_API_ENTRY cl_int CL_API_CALL clTerminateContextKHR(cl_context /* context */) CL_EXT_SUFFIX__VERSION_1_2;
 
 typedef CL_API_ENTRY cl_int (CL_API_CALL *clTerminateContextKHR_fn)(cl_context /* context */) CL_EXT_SUFFIX__VERSION_1_2;
-    
-    
+
+
 /*
  * Extension: cl_khr_spir
  *
- * This extension adds support to create an OpenCL program object from a 
+ * This extension adds support to create an OpenCL program object from a
  * Standard Portable Intermediate Representation (SPIR) instance
  */
 
@@ -194,17 +194,17 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clTerminateContextKHR_fn)(cl_context /
     * cl_ext_device_fission extension *
     ***********************************/
     #define cl_ext_device_fission   1
-    
+
     extern CL_API_ENTRY cl_int CL_API_CALL
-    clReleaseDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1; 
-    
-    typedef CL_API_ENTRY cl_int 
+    clReleaseDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
+
+    typedef CL_API_ENTRY cl_int
     (CL_API_CALL *clReleaseDeviceEXT_fn)( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
 
     extern CL_API_ENTRY cl_int CL_API_CALL
-    clRetainDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1; 
-    
-    typedef CL_API_ENTRY cl_int 
+    clRetainDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
+
+    typedef CL_API_ENTRY cl_int
     (CL_API_CALL *clRetainDeviceEXT_fn)( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
 
     typedef cl_ulong  cl_device_partition_property_ext;
@@ -215,7 +215,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clTerminateContextKHR_fn)(cl_context /
                             cl_device_id * /*out_devices*/,
                             cl_uint * /*num_devices*/ ) CL_EXT_SUFFIX__VERSION_1_1;
 
-    typedef CL_API_ENTRY cl_int 
+    typedef CL_API_ENTRY cl_int
     ( CL_API_CALL * clCreateSubDevicesEXT_fn)(  cl_device_id /*in_device*/,
                                                 const cl_device_partition_property_ext * /* properties */,
                                                 cl_uint /*num_entries*/,
@@ -227,19 +227,19 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clTerminateContextKHR_fn)(cl_context /
     #define CL_DEVICE_PARTITION_BY_COUNTS_EXT           0x4051
     #define CL_DEVICE_PARTITION_BY_NAMES_EXT            0x4052
     #define CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN_EXT  0x4053
-    
+
     /* clDeviceGetInfo selectors */
     #define CL_DEVICE_PARENT_DEVICE_EXT                 0x4054
     #define CL_DEVICE_PARTITION_TYPES_EXT               0x4055
     #define CL_DEVICE_AFFINITY_DOMAINS_EXT              0x4056
     #define CL_DEVICE_REFERENCE_COUNT_EXT               0x4057
     #define CL_DEVICE_PARTITION_STYLE_EXT               0x4058
-    
+
     /* error codes */
     #define CL_DEVICE_PARTITION_FAILED_EXT              -1057
     #define CL_INVALID_PARTITION_COUNT_EXT              -1058
     #define CL_INVALID_PARTITION_NAME_EXT               -1059
-    
+
     /* CL_AFFINITY_DOMAINs */
     #define CL_AFFINITY_DOMAIN_L1_CACHE_EXT             0x1
     #define CL_AFFINITY_DOMAIN_L2_CACHE_EXT             0x2
@@ -247,7 +247,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clTerminateContextKHR_fn)(cl_context /
     #define CL_AFFINITY_DOMAIN_L4_CACHE_EXT             0x4
     #define CL_AFFINITY_DOMAIN_NUMA_EXT                 0x10
     #define CL_AFFINITY_DOMAIN_NEXT_FISSIONABLE_EXT     0x100
-    
+
     /* cl_device_partition_property_ext list terminators */
     #define CL_PROPERTIES_LIST_END_EXT                  ((cl_device_partition_property_ext) 0)
     #define CL_PARTITION_BY_COUNTS_LIST_END_EXT         ((cl_device_partition_property_ext) 0)
@@ -259,7 +259,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clTerminateContextKHR_fn)(cl_context /
 
 #define CL_MEM_EXT_HOST_PTR_QCOM                  (1 << 29)
 
-#define CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM   0x40A0      
+#define CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM   0x40A0
 #define CL_DEVICE_PAGE_SIZE_QCOM                  0x40A1
 #define CL_IMAGE_ROW_ALIGNMENT_QCOM               0x40A2
 #define CL_IMAGE_SLICE_ALIGNMENT_QCOM             0x40A3
@@ -285,7 +285,7 @@ typedef struct _cl_mem_ext_host_ptr
     /* Type of external memory allocation. */
     /* Legal values will be defined in layered extensions. */
     cl_uint  allocation_type;
-            
+
     /* Host cache policy for this external memory allocation. */
     cl_uint  host_cache_policy;
 
@@ -305,7 +305,7 @@ typedef struct _cl_mem_ion_host_ptr
 
     /* ION file descriptor */
     int                  ion_filedesc;
-            
+
     /* Host pointer to the ION allocated memory */
     void*                ion_hostptr;
 
@@ -335,7 +335,7 @@ clGetKernelSubGroupInfoKHR(cl_kernel /* in_kernel */,
 						   size_t /*param_value_size*/,
 						   void* /*param_value*/,
 						   size_t* /*param_value_size_ret*/ ) CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED;
-						   
+
 typedef CL_API_ENTRY cl_int
      ( CL_API_CALL * clGetKernelSubGroupInfoKHR_fn)(cl_kernel /* in_kernel */,
 						      cl_device_id /*in_device*/,

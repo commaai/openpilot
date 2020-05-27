@@ -38,18 +38,18 @@ class SortedVector : private SortedVectorImpl
 
 public:
             typedef TYPE    value_type;
-    
-    /*! 
+
+    /*!
      * Constructors and destructors
      */
-    
+
                             SortedVector();
                             SortedVector(const SortedVector<TYPE>& rhs);
     virtual                 ~SortedVector();
 
     /*! copy operator */
-    const SortedVector<TYPE>&   operator = (const SortedVector<TYPE>& rhs) const;    
-    SortedVector<TYPE>&         operator = (const SortedVector<TYPE>& rhs);    
+    const SortedVector<TYPE>&   operator = (const SortedVector<TYPE>& rhs) const;
+    SortedVector<TYPE>&         operator = (const SortedVector<TYPE>& rhs);
 
     /*
      * empty the vector
@@ -57,7 +57,7 @@ public:
 
     inline  void            clear()             { VectorImpl::clear(); }
 
-    /*! 
+    /*!
      * vector stats
      */
 
@@ -70,11 +70,11 @@ public:
     //! sets the capacity. capacity can never be reduced less than size()
     inline  ssize_t         setCapacity(size_t size)    { return VectorImpl::setCapacity(size); }
 
-    /*! 
+    /*!
      * C-style array access
      */
-     
-    //! read-only C-style access 
+
+    //! read-only C-style access
     inline  const TYPE*     array() const;
 
     //! read-write C-style access. BE VERY CAREFUL when modifying the array
@@ -83,12 +83,12 @@ public:
 
             //! finds the index of an item
             ssize_t         indexOf(const TYPE& item) const;
-            
+
             //! finds where this item should be inserted
             size_t          orderOf(const TYPE& item) const;
-            
-    
-    /*! 
+
+
+    /*!
      * accessors
      */
 
@@ -105,7 +105,7 @@ public:
 
             //! add an item in the right place (and replace the one that is there)
             ssize_t         add(const TYPE& item);
-            
+
             //! editItemAt() MUST NOT change the order of this item
             TYPE&           editItemAt(size_t index) {
                 return *( static_cast<TYPE *>(VectorImpl::editItemLocation(index)) );
@@ -114,7 +114,7 @@ public:
             //! merges a vector into this one
             ssize_t         merge(const Vector<TYPE>& vector);
             ssize_t         merge(const SortedVector<TYPE>& vector);
-            
+
             //! removes an item
             ssize_t         remove(const TYPE&);
 
@@ -122,7 +122,7 @@ public:
     inline  ssize_t         removeItemsAt(size_t index, size_t count = 1);
     //! remove one item
     inline  ssize_t         removeAt(size_t index)  { return removeItemsAt(index); }
-            
+
 protected:
     virtual void    do_construct(void* storage, size_t num) const;
     virtual void    do_destroy(void* storage, size_t num) const;
@@ -164,13 +164,13 @@ SortedVector<TYPE>::~SortedVector() {
 template<class TYPE> inline
 SortedVector<TYPE>& SortedVector<TYPE>::operator = (const SortedVector<TYPE>& rhs) {
     SortedVectorImpl::operator = (rhs);
-    return *this; 
+    return *this;
 }
 
 template<class TYPE> inline
 const SortedVector<TYPE>& SortedVector<TYPE>::operator = (const SortedVector<TYPE>& rhs) const {
     SortedVectorImpl::operator = (rhs);
-    return *this; 
+    return *this;
 }
 
 template<class TYPE> inline

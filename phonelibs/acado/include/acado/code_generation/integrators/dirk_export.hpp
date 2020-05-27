@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored diagonally implicit Runge-Kutta integrator for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -59,7 +59,7 @@ class DiagonallyImplicitRKExport : public ForwardIRKExport
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -75,7 +75,7 @@ class DiagonallyImplicitRKExport : public ForwardIRKExport
         DiagonallyImplicitRKExport(	const DiagonallyImplicitRKExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~DiagonallyImplicitRKExport( );
 
@@ -273,11 +273,11 @@ class DiagonallyImplicitRKExport : public ForwardIRKExport
 
 
 	protected:
-		
+
 
 
     protected:
-    
+
 
 };
 

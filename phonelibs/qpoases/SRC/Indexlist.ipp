@@ -27,7 +27,7 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Implementation of inlined member functions of the Indexlist class designed 
+ *	Implementation of inlined member functions of the Indexlist class designed
  *	to manage index lists of constraints and bounds within a QProblem_SubjectTo.
  */
 

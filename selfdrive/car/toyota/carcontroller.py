@@ -1,7 +1,6 @@
 from cereal import car
-from opendbc.can.packer import CANPacker
-
 from common.numpy_fast import clip
+from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car import create_gas_command
 from selfdrive.car import make_can_msg

@@ -40,7 +40,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export Householder QR Factorization for solving linear systems of specific dimensions.
  *
  *	\ingroup NumericalAlgorithms
@@ -58,7 +58,7 @@ class ExportHouseholderQR : public ExportLinearSolver
     //
     public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -67,7 +67,7 @@ class ExportHouseholderQR : public ExportLinearSolver
 							const std::string& _commonHeaderName = ""
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ExportHouseholderQR( );
 
@@ -132,7 +132,7 @@ class ExportHouseholderQR : public ExportLinearSolver
 
 
     protected:
-		
+
 		// DEFINITION OF THE EXPORTVARIABLES
 		ExportVariable rk_temp;						/**< Variable that is used to store intermediate results that can be reused. */
 

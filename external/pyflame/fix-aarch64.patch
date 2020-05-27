@@ -7,7 +7,7 @@ index 9cc00ec..8a2d6c7 100644
      - PYVERSION=python3.5
      - PYVERSION=python3.6
 +    - PYVERSION=python3.7
- 
+
  addons:
    apt:
 diff --git a/configure.ac b/configure.ac
@@ -21,12 +21,12 @@ index 0858fc3..8827b3a 100644
 -       AC_DEFINE([USE_ELF64], [0], [Expect 64-bit ELF symbols.])
 +       AC_DEFINE([USE_ELF64], [1], [Expect 64-bit ELF symbols.])
        ])
- 
+
  AC_DEFINE_UNQUOTED([HOST_CPU], ["$host_cpu"], [CPU of target architecture.])
 @@ -111,7 +111,12 @@ PKG_CHECK_MODULES([PY36], [python-3.6], [enable_py36="yes"], [AC_MSG_WARN([Build
  AM_CONDITIONAL([ENABLE_PY36], [test x"$enable_py36" = xyes])
  AM_COND_IF([ENABLE_PY36], [AC_DEFINE([ENABLE_PY36], [1], [Python 3.6 will be enabled])])
- 
+
 -AS_IF([test x"$enable_py26" = xyes -o x"$enable_py34" = xyes -o x"$enable_py36" = xyes],
 +enable_py37=no
 +PKG_CHECK_MODULES([PY37], [python-3.7], [enable_py37="yes"], [AC_MSG_WARN([Building without Python 3.7 support])])
@@ -54,12 +54,12 @@ index 6fe8d1e..da6cec8 100644
 @@ -7,7 +7,7 @@ What Python Versions Are Supported?
  Python 2 is tested with Python 2.6 and 2.7. Earlier versions of Python 2 are
  likely to work as well, but have not been tested.
- 
+
 -Python 3 is tested with Python 3.4, 3.5, and 3.6. Python 3.6 introduces a new
 +Python 3 is tested with Python 3.4, 3.5, 3.6 and 3.7 Python 3.6 introduces a new
  ABI for the ``PyCodeObject`` type, so Pyflame only supports the Python 3
  versions that header files were available for when Pyflame was compiled.
- 
+
 diff --git a/docs/man.md b/docs/man.md
 index 1aa8d25..538a764 100644
 --- a/docs/man.md
@@ -70,7 +70,7 @@ index 1aa8d25..538a764 100644
      two digit integer consisting of the Python major and minor version, e.g. 27
 -    for Python 2.7 or 36 for Python 3.6.
 +    for Python 2.7, 36 for Python 3.6 or 37 for Python 3.7.
- 
+
  **--flamechart**
  :   Print the timestamp for each stack. This is useful for generating "flame
 diff --git a/docs/pyflame.man b/docs/pyflame.man
@@ -101,7 +101,7 @@ index 11d8ab6..4a62bdb 100644
  # The libtool magic here makes it so that frob26.cc is compiled with python2
 -# flags, and frob3{4,6}.cc are compiled with python3.4/3.6 flags.
 +# flags, and frob3{4,6,7}.cc are compiled with python3.4/3.6/3.7 flags.
- 
+
  bin_PROGRAMS = pyflame
  pyflame_SOURCES = aslr.cc frame.cc thread.cc namespace.cc posix.cc prober.cc ptrace.cc pyflame.cc pyfrob.cc symbol.cc
 @@ -34,3 +34,11 @@ libfrob36_la_CXXFLAGS = $(PY36_CFLAGS)
@@ -122,16 +122,16 @@ index 6fcff39..c1c5b30 100644
 +++ b/src/frob.cc
 @@ -17,6 +17,7 @@
  // information.
- 
+
  #include <Python.h>
 +
  #include <frameobject.h>
- 
+
  #if PYFLAME_PY_VERSION >= 34
 @@ -89,6 +90,22 @@ unsigned long ByteData(unsigned long addr) {
    return addr + offsetof(PyBytesObject, ob_sval);
  }
- 
+
 +#elif PYFLAME_PY_VERSION == 37
 +namespace py37 {
 +std::string StringDataPython3(pid_t pid, unsigned long addr);
@@ -163,7 +163,7 @@ index a691c83..c653357 100644
 +     "  --abi                    Force a particular Python ABI (26, 34, 36, 37)\n"
       "  --flamechart             Include timestamps for generating Chrome "
       "\"flamecharts\"\n");
- 
+
 @@ -79,6 +79,9 @@ static const int build_abis[] = {
  #ifdef ENABLE_PY36
      36,
@@ -172,7 +172,7 @@ index a691c83..c653357 100644
 +    37,
 +#endif
  };
- 
+
  static_assert(sizeof(build_abis) > 0, "No Python ABIs detected!");
 @@ -221,6 +224,9 @@ int Prober::ParseOpts(int argc, char **argv) {
            case 36:
@@ -191,7 +191,7 @@ index 610fabb..85483ad 100644
 @@ -122,6 +122,7 @@ void PtraceInterrupt(pid_t pid) {
    DoWait(pid);
  }
- 
+
 +#if 0
  user_regs_struct PtraceGetRegs(pid_t pid) {
    user_regs_struct regs;
@@ -201,7 +201,7 @@ index 610fabb..85483ad 100644
    }
  }
 +#endif
- 
+
  void PtracePoke(pid_t pid, unsigned long addr, long data) {
    if (ptrace(PTRACE_POKEDATA, pid, addr, (void *)data)) {
 diff --git a/src/pyfrob.cc b/src/pyfrob.cc
@@ -209,17 +209,17 @@ index 7c0588d..b280d96 100644
 --- a/src/pyfrob.cc
 +++ b/src/pyfrob.cc
 @@ -14,6 +14,7 @@
- 
+
  #include "./pyfrob.h"
- 
+
 +#include <cstddef>
  #include <fstream>
  #include <sstream>
- 
+
 @@ -25,6 +26,8 @@
  #include "./ptrace.h"
  #include "./symbol.h"
- 
+
 +extern size_t PYFLAME_PYTHON37_OFFSET;
 +
  #define FROB_FUNCS                                            \
@@ -228,7 +228,7 @@ index 7c0588d..b280d96 100644
 @@ -126,11 +129,20 @@ FROB_FUNCS
  }
  #endif
- 
+
 +#ifdef ENABLE_PY37
 +namespace py37 {
 +FROB_FUNCS
@@ -335,5 +335,5 @@ index bb92b9a..818424d 100644
 +  Py36 = 36,    // ABI for Python 3.6
 +  Py37 = 37     // ABI for Python 3.7
  };
- 
+
  // Symbols

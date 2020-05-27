@@ -10,7 +10,7 @@
 #ifndef EIGEN_SKYLINEPRODUCT_H
 #define EIGEN_SKYLINEPRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Lhs, typename Rhs, int ProductMode>
 struct SkylineProductReturnType {
@@ -276,7 +276,7 @@ struct skyline_product_selector<Lhs, Rhs, ResultType, ColMajor> {
 //     internal::skyline_product_selector<typename internal::remove_all<Lhs>::type,
 //             typename internal::remove_all<Rhs>::type,
 //             Derived>::run(product.lhs(), product.rhs(), derived());
-// 
+//
 //     return derived();
 // }
 

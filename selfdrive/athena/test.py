@@ -11,10 +11,10 @@ from pathlib import Path
 from unittest import mock
 
 import requests
-from cereal import messaging
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
+from cereal import messaging
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import dispatcher
 from selfdrive.athena.test_helpers import EchoSocket

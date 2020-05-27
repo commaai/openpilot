@@ -19,4 +19,3 @@ def monotonic_time():
 
 def sec_since_boot():
   return readclock(CLOCK_BOOTTIME)
-

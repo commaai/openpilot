@@ -13,4 +13,3 @@ watch -n1 '
   echo -n "GPU  " ; cat /sys/devices/virtual/thermal/thermal_zone16/temp
   echo -n "BAT  " ; cat /sys/devices/virtual/thermal/thermal_zone29/temp
 '
-

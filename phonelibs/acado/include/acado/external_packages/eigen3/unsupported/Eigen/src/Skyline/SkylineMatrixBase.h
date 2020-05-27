@@ -12,7 +12,7 @@
 
 #include "SkylineUtil.h"
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup Skyline_Module
  *

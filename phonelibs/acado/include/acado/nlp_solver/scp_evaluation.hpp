@@ -55,7 +55,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class SCPevaluation serves as a base class for different ways to evaluate  
+ *  The class SCPevaluation serves as a base class for different ways to evaluate
  *  functions and derivatives within an SCPmethod for solving nonlinear programming problems.
  *
  *	 \author Boris Houska, Hans Joachim Ferreau

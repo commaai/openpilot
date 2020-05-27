@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import time
 
-import cereal.messaging as messaging
 import numpy as np
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
+
+import cereal.messaging as messaging
 
 font = ImageFont.truetype("arial", size=72)
 def get_frame(idx):

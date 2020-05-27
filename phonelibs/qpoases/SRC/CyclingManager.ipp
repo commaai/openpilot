@@ -27,9 +27,9 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Implementation of inlined member functions of the CyclingManager class 
+ *	Implementation of inlined member functions of the CyclingManager class
  *	designed to detect and handle possible cycling during QP iterations.
- *	
+ *
  */
 
 

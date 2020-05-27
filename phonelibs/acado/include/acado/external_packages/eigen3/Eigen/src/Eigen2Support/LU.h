@@ -10,7 +10,7 @@
 #ifndef EIGEN2_LU_H
 #define EIGEN2_LU_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename MatrixType>
 class LU : public FullPivLU<MatrixType>
@@ -60,24 +60,24 @@ class LU : public FullPivLU<MatrixType>
     {
       solve(MatrixType::Identity(this->rows(), this->cols()), result);
     }
-    
+
     template<typename KernelMatrixType>
     void computeKernel(KernelMatrixType *result) const
     {
       *result = static_cast<const Base*>(this)->kernel();
     }
-    
+
     template<typename ImageMatrixType>
     void computeImage(ImageMatrixType *result) const
     {
       *result = static_cast<const Base*>(this)->image(m_originalMatrix);
     }
-    
+
     const ImageResultType image() const
     {
       return static_cast<const Base*>(this)->image(m_originalMatrix);
     }
-    
+
     const MatrixType& m_originalMatrix;
 };
 

@@ -10,7 +10,7 @@
 #ifndef EIGEN_MATRIX_FUNCTION_ATOMIC
 #define EIGEN_MATRIX_FUNCTION_ATOMIC
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup MatrixFunctions_Module
   * \class MatrixFunctionAtomic

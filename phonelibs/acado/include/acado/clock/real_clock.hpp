@@ -40,7 +40,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows real time measurements based on the system's clock.
  *
  *	\ingroup BasicDataStructures
@@ -60,18 +60,18 @@ class RealClock : public Clock
 		/** Default constructor.
 		 */
 		RealClock();
-	
+
 		/** Copy constructor (deep copy).
 		 *
 		 *	@param[in] rhs	Right-hand side object.
 		 */
 		RealClock(	const RealClock &rhs
 					);
-	
+
 		/** Destructor.
 		 */
 		virtual ~RealClock( );
-	
+
 		/** Assignment Operator (deep copy).
 		 *
 		 *	@param[in] rhs	Right-hand side object.
@@ -93,7 +93,7 @@ class RealClock : public Clock
 		 *	        RET_NO_SYSTEM_TIME
 		 */
 		virtual returnValue start( );
-	
+
 		/** Shifts measured time by a given offset.
 		 *
 		 *	@param[in]  _timeShift		Time offset.
@@ -104,7 +104,7 @@ class RealClock : public Clock
 		 */
 		virtual returnValue step(	double _timeShift
 									);
-	
+
 		/** Stops time measurement.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n

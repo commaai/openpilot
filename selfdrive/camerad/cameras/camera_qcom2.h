@@ -83,4 +83,3 @@ void camera_autoexposure(CameraState *s, float grey_frac);
 #endif
 
 #endif
-

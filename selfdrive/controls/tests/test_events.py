@@ -2,12 +2,12 @@
 import os
 import unittest
 
-from cereal import car
-from cereal import log
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 
+from cereal import car
+from cereal import log
 from common.basedir import BASEDIR
 from selfdrive.controls.lib.events import Alert
 from selfdrive.controls.lib.events import EVENTS

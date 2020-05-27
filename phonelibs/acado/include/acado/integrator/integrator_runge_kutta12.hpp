@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements the Runge-Kutta-12 scheme for integrating ODEs.
  *
  *	\ingroup NumericalAlgorithms
@@ -79,11 +79,11 @@ class IntegratorRK12 : public IntegratorRK
 
 
 		virtual returnValue init( const DifferentialEquation &rhs_ );
-		
+
 		virtual returnValue step(	int number  /**< the step number */
 									);
-		
-		
+
+
 	protected:
 
 		/** This routine initializes the coefficients of the Butcher Tableau. */

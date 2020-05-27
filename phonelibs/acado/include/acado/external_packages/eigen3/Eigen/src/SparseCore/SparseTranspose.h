@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSETRANSPOSE_H
 #define EIGEN_SPARSETRANSPOSE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename MatrixType> class TransposeImpl<MatrixType,Sparse>
   : public SparseMatrixBase<Transpose<MatrixType> >

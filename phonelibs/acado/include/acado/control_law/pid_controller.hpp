@@ -44,22 +44,22 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements a PID control law to be used within a Controller.
  *
  *	\ingroup UserInterfaces
  *
- *	The class PIDcontroller implements a PID control law to be used 
- *	within a Controller. 
+ *	The class PIDcontroller implements a PID control law to be used
+ *	within a Controller.
  *
- *	For each input component, the weight for the proportional, integral and 
- *	derivative term can be specified. The PID controller can be used in one 
+ *	For each input component, the weight for the proportional, integral and
+ *	derivative term can be specified. The PID controller can be used in one
  *	of two different modes, depending on the number of inputs and outputs:
- *	
- *	 i) nOutputs = nInputs: Each output component is determined by the sum of 
+ *
+ *	 i) nOutputs = nInputs: Each output component is determined by the sum of
  *	    the P, I, and D weight on the corresponding input component.
  *
- *	ii) nOutputs = 1: The component is determined by the sum of the P, I, 
+ *	ii) nOutputs = 1: The component is determined by the sum of the P, I,
  *	    and D weights on all input components.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -71,7 +71,7 @@ class PIDcontroller : public ControlLaw, public ClippingFunctionality
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		PIDcontroller( );
 
@@ -143,7 +143,7 @@ class PIDcontroller : public ControlLaw, public ClippingFunctionality
 											);
 
 
-		/** Initializes the control law with given start values and 
+		/** Initializes the control law with given start values and
 		 *	performs a number of consistency checks.
 		 *
 		 *	@param[in]  _startTime	Start time.
@@ -214,13 +214,13 @@ class PIDcontroller : public ControlLaw, public ClippingFunctionality
 
 		/** Returns number of parameters.
 		 *
-		 *  \return Number of parameters 
+		 *  \return Number of parameters
 		 */
 		virtual uint getNP( ) const;
 
 		/** Returns number of (estimated) disturbances.
 		 *
-		 *  \return Number of (estimated) disturbances 
+		 *  \return Number of (estimated) disturbances
 		 */
 		virtual uint getNW( ) const;
 
@@ -231,7 +231,7 @@ class PIDcontroller : public ControlLaw, public ClippingFunctionality
 		virtual uint getNY( ) const;
 
 
-		/** Returns whether the control law is based on dynamic optimization or 
+		/** Returns whether the control law is based on dynamic optimization or
 		 *	a static one.
 		 *
 		 *  \return BT_TRUE  iff control law is based on dynamic optimization, \n
@@ -253,7 +253,7 @@ class PIDcontroller : public ControlLaw, public ClippingFunctionality
 	//
 	protected:
 
-		/** Actually calculates the current control action based on the 
+		/** Actually calculates the current control action based on the
 		 *	given current error.
 		 *
 		 *	@param[in]  error		Current error (difference to reference value).

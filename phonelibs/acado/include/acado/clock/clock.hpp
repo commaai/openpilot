@@ -40,12 +40,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for all kind of time measurements.
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Clock serves as base class for all kind of time measurements, 
+ *	The class Clock serves as base class for all kind of time measurements,
  *	both real and simulated ones.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -57,7 +57,7 @@ class Clock
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		Clock( );
 
@@ -68,7 +68,7 @@ class Clock
 		Clock(	const Clock &rhs
 				);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~Clock();
 
@@ -109,7 +109,7 @@ class Clock
 		 *	        RET_NO_SYSTEM_TIME
 		 */
 		virtual returnValue start( ) = 0;
-	
+
 		/** Shifts measured time by a given offset.
 		 *
 		 *	@param[in]  _timeShift		Time offset.
@@ -120,7 +120,7 @@ class Clock
 		 */
 		virtual returnValue step(	double _timeShift
 									) = 0;
-	
+
 		/** Stops time measurement.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n

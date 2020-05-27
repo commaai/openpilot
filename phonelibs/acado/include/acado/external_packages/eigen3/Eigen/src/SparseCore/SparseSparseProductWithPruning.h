@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSESPARSEPRODUCTWITHPRUNING_H
 #define EIGEN_SPARSESPARSEPRODUCTWITHPRUNING_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

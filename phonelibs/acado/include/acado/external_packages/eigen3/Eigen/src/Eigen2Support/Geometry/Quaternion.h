@@ -9,7 +9,7 @@
 
 // no include guard, we'll include this twice from All.h from Eigen2Support, and it's internal anyway
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Other,
          int OtherRows=Other::RowsAtCompileTime,

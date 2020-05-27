@@ -44,10 +44,10 @@ static LogRecord emptyLogRecord;
  *	\brief Provides a generic way to store algorithmic information during runtime.
  *
  *	\ingroup AuxiliaryFunctionality
- *	
- *  The class Logging provides a generic way to store algorithmic information 
- *	during runtime. This class is part of the UserInterface class, i.e. all classes 
- *	that are intended to interact with the user inherit the public functionality 
+ *
+ *  The class Logging provides a generic way to store algorithmic information
+ *	during runtime. This class is part of the UserInterface class, i.e. all classes
+ *	that are intended to interact with the user inherit the public functionality
  *	of the Logging class.
  *
  *	\author Hans Joachim Ferreau, Boris Houska, Milan Vukov
@@ -55,7 +55,7 @@ static LogRecord emptyLogRecord;
 class Logging
 {
 	friend class AlgorithmicBase;
-	
+
 	//
 	// PUBLIC MEMBER FUNCTIONS:
 	//
@@ -71,11 +71,11 @@ class Logging
 		 *
 		 *	@param[in] record	Record to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addLogRecord member function and is introduced for syntax reasons only.
 		 *
 		 *  \return >= 0: index of added record, \n
-		 *	        -RET_LOG_COLLECTION_CORRUPTED 
+		 *	        -RET_LOG_COLLECTION_CORRUPTED
 		 */
 		int operator<<(	LogRecord& record
 						);
@@ -85,20 +85,20 @@ class Logging
 		 *	@param[in] record	Record to be added.
 		 *
 		 *  \return >= 0: index of added record, \n
-		 *	        -RET_LOG_COLLECTION_CORRUPTED 
+		 *	        -RET_LOG_COLLECTION_CORRUPTED
 		 */
 		int addLogRecord(	LogRecord& record
 							);
 
-		/** Returns the record with certain index from the log collection. 
-		 *	This index is not provided when calling the function, but 
+		/** Returns the record with certain index from the log collection.
+		 *	This index is not provided when calling the function, but
 		 *	rather obtained by using the alias index of the record. If the
 		 *	record is no alias record, the error RET_INDEX_OUT_OF_BOUNDS is thrown.
 		 *
 		 *	@param[out] _record		Desired record.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_INDEX_OUT_OF_BOUNDS 
+		 *	        RET_INDEX_OUT_OF_BOUNDS
 		 */
 		returnValue getLogRecord(	LogRecord& _record
 									) const;
@@ -124,7 +124,7 @@ class Logging
 		 *	@param[out] values	All numerical values at all time instants of given item.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getAll(	LogName _name,
 									MatrixVariablesGrid& values
@@ -139,22 +139,22 @@ class Logging
 		 *	@param[out] firstValue	Numerical value at first time instant of given item.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getFirst(	LogName _name,
 										DMatrix& firstValue
 										) const;
 
 		/** Gets numerical value at first time instant of the item
-		 *	with given name (converts internally used DMatrix into VariablesGrid). 
-		 *	If this item exists in more than one record, the first one is choosen 
+		 *	with given name (converts internally used DMatrix into VariablesGrid).
+		 *	If this item exists in more than one record, the first one is choosen
 		 *	as they are expected to have identical values anyhow.
 		 *
 		 *	@param[in]  _name		Internal name of item.
 		 *	@param[out] firstValue	Numerical value at first time instant of given item.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getFirst(	LogName _name,
 										VariablesGrid& firstValue
@@ -169,22 +169,22 @@ class Logging
 		 *	@param[out] lastValue	Numerical value at last time instant of given item.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getLast(	LogName _name,
 									DMatrix& lastValue
 									) const;
 
 		/** Gets numerical value at last time instant of the item
-		 *	with given name (converts internally used DMatrix into VariablesGrid). 
-		 *	If this item exists in more than one record, the first one is choosen 
+		 *	with given name (converts internally used DMatrix into VariablesGrid).
+		 *	If this item exists in more than one record, the first one is choosen
 		 *	as they are expected to have identical values anyhow.
 		 *
 		 *	@param[in]  _name		Internal name of item.
 		 *	@param[out] lastValue	Numerical value at last time instant of given item.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getLast(	LogName _name,
 									VariablesGrid& lastValue

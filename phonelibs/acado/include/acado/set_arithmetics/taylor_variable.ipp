@@ -127,7 +127,7 @@ TaylorVariable<T>::operator =
   if( !_TM ){
     _coefmon[0] = TV._coefmon[0];
     _bndord[0] = TV._bndord[0];
-    return *this; 
+    return *this;
   }
   // Set to TaylorVariable linked to TaylorModel
   for( unsigned int i=0; i<_nmon(); i++ ) _coefmon[i] = TV._coefmon[i];
@@ -222,7 +222,7 @@ TaylorVariable<T>::TaylorVariable
 ( TaylorModel<T>*TM, const unsigned int ivar, const T&X )
 : _TM( TM )
 {
- 
+
  if( !TM ){
     std::cerr << "No Environment!\n";
     throw typename TaylorModel<T>::Exceptions( TaylorModel<T>::Exceptions::INIT );
@@ -230,9 +230,9 @@ TaylorVariable<T>::TaylorVariable
 
   // Scale variables and keep track of them in TaylorModel
   double scaling = ( _TM->options.SCALE_VARIABLES? diam(X)/2.: 1. );
-   
+
   if( fabs( scaling ) < EQUALITY_EPS ) scaling = 1.;
-    
+
   _TM->_set_bndpow( ivar, X, scaling );
   _TM->_set_bndmon();
   _init();
@@ -284,7 +284,7 @@ TaylorVariable<T>::_update_bndord()
   _TM->_set_bndmon();
   _bndord[0] = _coefmon[0];
   for( unsigned int i=1; i<=_nord(); i++ ){
-    _bndord[i] = 0.; 
+    _bndord[i] = 0.;
     for( unsigned int j=_posord(i); j<_posord(i+1); j++ )
       _bndord[i] += _coefmon[j] * _bndmon(j);
   }
@@ -305,18 +305,18 @@ TaylorVariable<T>::_eigen
 {
   //int info;
   double*d = new double[n];
-  
+
   ASSERT(1==0);
-  
+
 // #ifdef MC__TVAR_DEBUG_EIGEN
 //   TaylorModel<T>::_display( n, n, a, n, "DMatrix Q", std::cout );
 // #endif
-// 
+//
 //   // get optimal size
 //   double worktmp;
 //   int lwork = -1;
 //   dsyev_( "Vectors", "Upper", &n, a, &n, d, &worktmp, &lwork, &info );
-// 
+//
 //   // perform eigenvalue decomposition
 //   lwork = (int)worktmp;
 //   double*work = new double[lwork];
@@ -326,7 +326,7 @@ TaylorVariable<T>::_eigen
 //   TaylorModel<T>::_display( 1, n, d, 1, "DMatrix D", std::cout );
 // #endif
 //   delete[] work;
-// 
+//
 // #ifdef MC__TVAR_DEBUG_EIGEN
 //   std::cout << "INFO: " << info << std::endl;
 //   TaylorModel<T>::pause();
@@ -509,11 +509,11 @@ TaylorVariable<T>::quadratic
       pquad[_nvar()*(_nvar()-i-1)+_nvar()-j-1] = 0.;
       pquad[_nvar()*(_nvar()-j-1)+_nvar()-i-1] = _coefmon[_prodmon(i+1,j+2)]/2.
         / _scaling(_nvar()-i-1) / _scaling(_nvar()-j-1);
-    }       
+    }
     pquad[(_nvar()+1)*(_nvar()-i-1)] = _coefmon[_prodmon(i+1,i+2)]
       / _scaling(_nvar()-i-1) / _scaling(_nvar()-i-1);
   }
-  return pquad;  
+  return pquad;
 }
 
 template <typename T> inline std::ostream&
@@ -858,7 +858,7 @@ sqr
   for( unsigned int i=TV2._nord()/2+1; i<=TV2._nord()+1; i++ )
     r += sqr(TV._bndord[i]) ;
   *(TV2._bndrem) = 2. * s + r;
-  
+
   // Populate _bndord for product term (except remainder term)
   TV2._update_bndord();
   if( TV2._TM->options.PROPAGATE_BNDT ) TV2._bndT = sqr( TV._bndT );
@@ -1045,7 +1045,7 @@ sqrt
 template <typename T> inline TaylorVariable<T>
 exp
 ( const TaylorVariable<T>&TV )
-{ 
+{
   if( !TV._TM ){
     TaylorVariable<T> TV2( TV );
     TV2._coefmon[0] = 0.;
@@ -1262,7 +1262,7 @@ inter
   TVR = TV1C.C();
   TVR += TV2C.C();
   TVR *= 0.5;
-  T R1C = TV1C.R(), R2C = TV2C.R(); 
+  T R1C = TV1C.R(), R2C = TV2C.R();
   TV1C -= TV2C;
   TV1C *= 0.5;
   *(TV1C._bndrem) = 0;
@@ -1274,7 +1274,7 @@ inter
 template <typename T> BooleanType TaylorVariable<T>::isCompact() const{
 
   BooleanType result = BT_TRUE;
- 
+
   // Display constant model
   if( !_TM ){
     if( acadoIsNaN   ( _coefmon[0] ) == BT_TRUE  ) result = BT_FALSE;

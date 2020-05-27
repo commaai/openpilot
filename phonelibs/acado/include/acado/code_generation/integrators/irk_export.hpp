@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored implicit Runge-Kutta integrator for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -60,7 +60,7 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -76,7 +76,7 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
         ImplicitRungeKuttaExport(	const ImplicitRungeKuttaExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ImplicitRungeKuttaExport( );
 
@@ -126,8 +126,8 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 		 */
 
 		returnValue setModel( const std::string& _rhs, const std::string& _diffs_rhs );
-							
-        
+
+
         /** Sets up the output with the grids for the different output functions.									\n
 		*                                                                      										\n
 		*  \param outputGrids_	  	The vector containing a grid for each output function.			  				\n
@@ -169,7 +169,7 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 									  	  const std::vector<std::string> _diffs_outputNames,
 										  const std::vector<uint> _dims_output,
 										  const std::vector<DMatrix> _outputDependencies );
-        
+
 
 		/** Adds all data declarations of the auto-generated integrator to given list of declarations.
 		 *
@@ -211,17 +211,17 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		returnValue initializeDDMatrix( );
-		
-		
-		/** Initializes the matrix coeffs, containing coefficients of polynomials that are used to evaluate the 
+
+
+		/** Initializes the matrix coeffs, containing coefficients of polynomials that are used to evaluate the
 		 * 	continuous output (see evaluatePolynomial).
 		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		returnValue initializeCoefficients( );
-		
-		
-		/** Recursive function that helps with the computation of the coefficients of polynomials that are used to evaluate the 
+
+
+		/** Recursive function that helps with the computation of the coefficients of polynomials that are used to evaluate the
 		 * 	continuous output (see initializeCoefficients), by computing the correct combinations of elements of the vector
 		 * 	cc from the Butcher table.
 		 *
@@ -229,12 +229,12 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 		 * 							are computed in a recursive way.
 		 * 	@param[in] index		An index of the vector cVec which denotes the relevant part for this invocation.
 		 * 	@param[in] numEls		The number of elements in the combination.
-		 * 
+		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		DVector computeCombinations( const DVector& cVec, uint index, uint numEls );
-		
-		
+
+
 		/** Returns the coefficients of the polynomial, representing the continuous output of the integrator.
 		 *
 		 *	@param[in] time				The point in the interval (0,1] for which the coefficients are returned.
@@ -242,8 +242,8 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 		 *	\return Coefficients of the polynomial, corresponding the given grid point
 		 */
 		DVector evaluatePolynomial( double time );
-		
-		
+
+
 		/** Returns the coefficients of the derived polynomial, representing the derivative of the continuous output with respect to time.
 		 *
 		 *	@param[in] time				The point in the interval (0,1] for which the coefficients are returned.
@@ -262,9 +262,9 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
-		returnValue evaluatePolynomial( ExportStatementBlock& block, 
-										const ExportVariable& variable, 
-										const ExportVariable& grid, 
+		returnValue evaluatePolynomial( ExportStatementBlock& block,
+										const ExportVariable& variable,
+										const ExportVariable& grid,
 										const std::string& h );
 
 
@@ -279,8 +279,8 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 		returnValue evaluateDerivedPolynomial( ExportStatementBlock& block,
 										const ExportVariable& variable,
 										const ExportVariable& grid );
-		
-		
+
+
 		/** Returns the coefficients of the polynomial for the complete grid of the output, corresponding a certain index.
 		 *
 		 *	@param[in] index	The index of the continuous output for which the coefficients are returned.
@@ -491,17 +491,17 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 		 */
 		virtual returnValue copy(	const ImplicitRungeKuttaExport& arg
 							);
-		
-		
+
+
 		/** Returns the performed number of Newton iterations.
-		 * 
+		 *
 		 * 	\return The performed number of Newton iterations.
 		 */
 		uint getNumIts() const;
-		
-		
+
+
 		/** Returns the performed number of Newton iterations for the initialization of the first step.
-		 * 
+		 *
 		 * 	\return The performed number of Newton iterations for the initialization of the first step.
 		 */
         uint getNumItsInit() const;
@@ -515,7 +515,7 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 
 
     protected:
-    
+
 		bool REUSE;						/**< This boolean is true when the IFTR method is used instead of the IFT method. */
 		bool CONTINUOUS_OUTPUT;			/**< This boolean is true when continuous output needs to be provided. */
 
@@ -536,14 +536,14 @@ class ImplicitRungeKuttaExport : public RungeKuttaExport
 		DVector numXA_output;
 		DVector numVARS_output;
 
-        
+
         // DEFINITION OF THE EXPORTVARIABLES
 		ExportVariable 	rk_rhsOutputTemp;		/**< Variable containing intermediate results of evaluations of the right-hand side expression of an output function. */
 		ExportVariable  rk_diffsOutputTemp;		/**< Variable containing intermediate results of evaluations of the derivatives of an output function. */
 		ExportVariable 	rk_outH;				/**< Variable that is used for the evaluations of the continuous output. */
 		ExportVariable 	rk_out;					/**< Variable that is used for the evaluations of the continuous output. */
 		ExportVariable 	polynEvalVar;			/**< Local variable that is used for the evaluations of the continuous output. */
-		
+
 		ExportVariable stepsH;					/**< Variable defining the different integration step sizes in case of a non equidistant grid. */
 
 		std::vector<ExportVariable> gridVariables;	/**< This vector contains an ExportVariable for the grid of each continuous output. */

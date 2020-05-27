@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored Gauss-Legendre method of order 6 for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -60,7 +60,7 @@ class GaussLegendre6Export : public ImplicitRungeKuttaExport
 
     private:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -76,7 +76,7 @@ class GaussLegendre6Export : public ImplicitRungeKuttaExport
         GaussLegendre6Export(	const GaussLegendre6Export& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~GaussLegendre6Export( );
 

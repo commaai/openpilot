@@ -97,8 +97,8 @@ namespace Eigen {
   * are the dimensions of the original matrix, while _Rows and _Cols are Dynamic.</dd>
   * </dl>
   *
-  * \see MatrixBase for the majority of the API methods for matrices, \ref TopicClassHierarchy, 
-  * \ref TopicStorageOrders 
+  * \see MatrixBase for the majority of the API methods for matrices, \ref TopicClassHierarchy,
+  * \ref TopicStorageOrders
   */
 
 namespace internal {

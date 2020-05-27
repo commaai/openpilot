@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_DOT_H
 #define EIGEN_SPARSE_DOT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Derived>
 template<typename OtherDerived>

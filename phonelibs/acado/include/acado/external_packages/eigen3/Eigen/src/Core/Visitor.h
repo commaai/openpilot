@@ -10,7 +10,7 @@
 #ifndef EIGEN_VISITOR_H
 #define EIGEN_VISITOR_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -182,7 +182,7 @@ DenseBase<Derived>::minCoeff(IndexType* rowId, IndexType* colId) const
 }
 
 /** \returns the minimum of all coefficients of *this and puts in *index its location.
-  * \warning the result is undefined if \c *this contains NaN. 
+  * \warning the result is undefined if \c *this contains NaN.
   *
   * \sa DenseBase::minCoeff(IndexType*,IndexType*), DenseBase::maxCoeff(IndexType*,IndexType*), DenseBase::visitor(), DenseBase::minCoeff()
   */
@@ -199,7 +199,7 @@ DenseBase<Derived>::minCoeff(IndexType* index) const
 }
 
 /** \returns the maximum of all coefficients of *this and puts in *row and *col its location.
-  * \warning the result is undefined if \c *this contains NaN. 
+  * \warning the result is undefined if \c *this contains NaN.
   *
   * \sa DenseBase::minCoeff(IndexType*,IndexType*), DenseBase::visitor(), DenseBase::maxCoeff()
   */

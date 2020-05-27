@@ -10,7 +10,7 @@
 #ifndef EIGEN_SUPERLUSUPPORT_H
 #define EIGEN_SUPERLUSUPPORT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 #define DECL_GSSVX(PREFIX,FLOATTYPE,KEYTYPE)		\
     extern "C" {                                                                                          \
@@ -297,7 +297,7 @@ class SuperLUBase : internal::noncopyable
     typedef typename MatrixType::Index Index;
     typedef Matrix<Scalar,Dynamic,1> Vector;
     typedef Matrix<int, 1, MatrixType::ColsAtCompileTime> IntRowVectorType;
-    typedef Matrix<int, MatrixType::RowsAtCompileTime, 1> IntColVectorType;    
+    typedef Matrix<int, MatrixType::RowsAtCompileTime, 1> IntColVectorType;
     typedef SparseMatrix<Scalar> LUMatrixType;
 
   public:
@@ -308,16 +308,16 @@ class SuperLUBase : internal::noncopyable
     {
       clearFactors();
     }
-    
+
     Derived& derived() { return *static_cast<Derived*>(this); }
     const Derived& derived() const { return *static_cast<const Derived*>(this); }
-    
+
     inline Index rows() const { return m_matrix.rows(); }
     inline Index cols() const { return m_matrix.cols(); }
-    
+
     /** \returns a reference to the Super LU option object to configure the  Super LU algorithms. */
     inline superlu_options_t& options() { return m_sluOptions; }
-    
+
     /** \brief Reports whether previous computation was successful.
       *
       * \returns \c Success if computation was succesful,
@@ -335,7 +335,7 @@ class SuperLUBase : internal::noncopyable
       derived().analyzePattern(matrix);
       derived().factorize(matrix);
     }
-    
+
     /** \returns the solution x of \f$ A x = b \f$ using the current decomposition of A.
       *
       * \sa compute()
@@ -348,7 +348,7 @@ class SuperLUBase : internal::noncopyable
                 && "SuperLU::solve(): invalid number of rows of the right hand side matrix b");
       return internal::solve_retval<SuperLUBase, Rhs>(*this, b.derived());
     }
-    
+
     /** \returns the solution x of \f$ A x = b \f$ using the current decomposition of A.
       *
       * \sa compute()
@@ -361,11 +361,11 @@ class SuperLUBase : internal::noncopyable
                 && "SuperLU::solve(): invalid number of rows of the right hand side matrix b");
       return internal::sparse_solve_retval<SuperLUBase, Rhs>(*this, b.derived());
     }
-    
+
     /** Performs a symbolic decomposition on the sparcity of \a matrix.
       *
       * This function is particularly useful when solving for several problems having the same structure.
-      * 
+      *
       * \sa factorize()
       */
     void analyzePattern(const MatrixType& /*matrix*/)
@@ -375,17 +375,17 @@ class SuperLUBase : internal::noncopyable
       m_analysisIsOk = true;
       m_factorizationIsOk = false;
     }
-    
+
     template<typename Stream>
     void dumpMemory(Stream& /*s*/)
     {}
-    
+
   protected:
-    
+
     void initFactorization(const MatrixType& a)
     {
       set_default_options(&this->m_sluOptions);
-      
+
       const int size = a.rows();
       m_matrix = a;
 
@@ -407,10 +407,10 @@ class SuperLUBase : internal::noncopyable
       m_sluB.ncol           = 0;
       m_sluB.storage.lda    = size;
       m_sluX                = m_sluB;
-      
+
       m_extractedDataAreDirty = true;
     }
-    
+
     void init()
     {
       m_info = InvalidInput;
@@ -418,7 +418,7 @@ class SuperLUBase : internal::noncopyable
       m_sluL.Store = 0;
       m_sluU.Store = 0;
     }
-    
+
     void extractData() const;
 
     void clearFactors()
@@ -457,7 +457,7 @@ class SuperLUBase : internal::noncopyable
     int m_factorizationIsOk;
     int m_analysisIsOk;
     mutable bool m_extractedDataAreDirty;
-    
+
   private:
     SuperLUBase(SuperLUBase& ) { }
 };
@@ -485,7 +485,7 @@ class SuperLU : public SuperLUBase<_MatrixType,SuperLU<_MatrixType> >
     typedef typename Base::RealScalar RealScalar;
     typedef typename Base::Index Index;
     typedef typename Base::IntRowVectorType IntRowVectorType;
-    typedef typename Base::IntColVectorType IntColVectorType;    
+    typedef typename Base::IntColVectorType IntColVectorType;
     typedef typename Base::LUMatrixType LUMatrixType;
     typedef TriangularView<LUMatrixType, Lower|UnitDiag>  LMatrixType;
     typedef TriangularView<LUMatrixType,  Upper>           UMatrixType;
@@ -503,11 +503,11 @@ class SuperLU : public SuperLUBase<_MatrixType,SuperLU<_MatrixType> >
     ~SuperLU()
     {
     }
-    
+
     /** Performs a symbolic decomposition on the sparcity of \a matrix.
       *
       * This function is particularly useful when solving for several problems having the same structure.
-      * 
+      *
       * \sa factorize()
       */
     void analyzePattern(const MatrixType& matrix)
@@ -516,7 +516,7 @@ class SuperLU : public SuperLUBase<_MatrixType,SuperLU<_MatrixType> >
       m_isInitialized = false;
       Base::analyzePattern(matrix);
     }
-    
+
     /** Performs a numeric decomposition of \a matrix
       *
       * The given matrix must has the same sparcity than the matrix on which the symbolic decomposition has been performed.
@@ -524,13 +524,13 @@ class SuperLU : public SuperLUBase<_MatrixType,SuperLU<_MatrixType> >
       * \sa analyzePattern()
       */
     void factorize(const MatrixType& matrix);
-    
+
     #ifndef EIGEN_PARSED_BY_DOXYGEN
     /** \internal */
     template<typename Rhs,typename Dest>
     void _solve(const MatrixBase<Rhs> &b, MatrixBase<Dest> &dest) const;
     #endif // EIGEN_PARSED_BY_DOXYGEN
-    
+
     inline const LMatrixType& matrixL() const
     {
       if (m_extractedDataAreDirty) this->extractData();
@@ -554,11 +554,11 @@ class SuperLU : public SuperLUBase<_MatrixType,SuperLU<_MatrixType> >
       if (m_extractedDataAreDirty) this->extractData();
       return m_q;
     }
-    
+
     Scalar determinant() const;
-    
+
   protected:
-    
+
     using Base::m_matrix;
     using Base::m_sluOptions;
     using Base::m_sluA;
@@ -577,25 +577,25 @@ class SuperLU : public SuperLUBase<_MatrixType,SuperLU<_MatrixType> >
     using Base::m_sluBerr;
     using Base::m_l;
     using Base::m_u;
-    
+
     using Base::m_analysisIsOk;
     using Base::m_factorizationIsOk;
     using Base::m_extractedDataAreDirty;
     using Base::m_isInitialized;
     using Base::m_info;
-    
+
     void init()
     {
       Base::init();
-      
+
       set_default_options(&this->m_sluOptions);
       m_sluOptions.PrintStat        = NO;
       m_sluOptions.ConditionNumber  = NO;
       m_sluOptions.Trans            = NOTRANS;
       m_sluOptions.ColPerm          = COLAMD;
     }
-    
-    
+
+
   private:
     SuperLU(SuperLU& ) { }
 };
@@ -609,9 +609,9 @@ void SuperLU<MatrixType>::factorize(const MatrixType& a)
     m_info = InvalidInput;
     return;
   }
-  
+
   this->initFactorization(a);
-  
+
   m_sluOptions.ColPerm = COLAMD;
   int info = 0;
   RealScalar recip_pivot_growth, rcond;
@@ -648,18 +648,18 @@ void SuperLU<MatrixType>::_solve(const MatrixBase<Rhs> &b, MatrixBase<Dest>& x) 
   m_sluOptions.Trans = NOTRANS;
   m_sluOptions.Fact = FACTORED;
   m_sluOptions.IterRefine = NOREFINE;
-  
+
 
   m_sluFerr.resize(rhsCols);
   m_sluBerr.resize(rhsCols);
   m_sluB = SluMatrix::Map(b.const_cast_derived());
   m_sluX = SluMatrix::Map(x.derived());
-  
+
   typename Rhs::PlainObject b_cpy;
   if(m_sluEqued!='N')
   {
     b_cpy = b;
-    m_sluB = SluMatrix::Map(b_cpy.const_cast_derived());  
+    m_sluB = SluMatrix::Map(b_cpy.const_cast_derived());
   }
 
   StatInit(&m_sluStat);
@@ -776,7 +776,7 @@ template<typename MatrixType>
 typename SuperLU<MatrixType>::Scalar SuperLU<MatrixType>::determinant() const
 {
   eigen_assert(m_factorizationIsOk && "The decomposition is not in a valid state for computing the determinant, you must first call either compute() or analyzePattern()/factorize()");
-  
+
   if (m_extractedDataAreDirty)
     this->extractData();
 
@@ -840,18 +840,18 @@ class SuperILU : public SuperLUBase<_MatrixType,SuperILU<_MatrixType> >
     ~SuperILU()
     {
     }
-    
+
     /** Performs a symbolic decomposition on the sparcity of \a matrix.
       *
       * This function is particularly useful when solving for several problems having the same structure.
-      * 
+      *
       * \sa factorize()
       */
     void analyzePattern(const MatrixType& matrix)
     {
       Base::analyzePattern(matrix);
     }
-    
+
     /** Performs a numeric decomposition of \a matrix
       *
       * The given matrix must has the same sparcity than the matrix on which the symbolic decomposition has been performed.
@@ -859,15 +859,15 @@ class SuperILU : public SuperLUBase<_MatrixType,SuperILU<_MatrixType> >
       * \sa analyzePattern()
       */
     void factorize(const MatrixType& matrix);
-    
+
     #ifndef EIGEN_PARSED_BY_DOXYGEN
     /** \internal */
     template<typename Rhs,typename Dest>
     void _solve(const MatrixBase<Rhs> &b, MatrixBase<Dest> &dest) const;
     #endif // EIGEN_PARSED_BY_DOXYGEN
-    
+
   protected:
-    
+
     using Base::m_matrix;
     using Base::m_sluOptions;
     using Base::m_sluA;
@@ -886,7 +886,7 @@ class SuperILU : public SuperLUBase<_MatrixType,SuperILU<_MatrixType> >
     using Base::m_sluBerr;
     using Base::m_l;
     using Base::m_u;
-    
+
     using Base::m_analysisIsOk;
     using Base::m_factorizationIsOk;
     using Base::m_extractedDataAreDirty;
@@ -896,13 +896,13 @@ class SuperILU : public SuperLUBase<_MatrixType,SuperILU<_MatrixType> >
     void init()
     {
       Base::init();
-      
+
       ilu_set_default_options(&m_sluOptions);
       m_sluOptions.PrintStat        = NO;
       m_sluOptions.ConditionNumber  = NO;
       m_sluOptions.Trans            = NOTRANS;
       m_sluOptions.ColPerm          = MMD_AT_PLUS_A;
-      
+
       // no attempt to preserve column sum
       m_sluOptions.ILU_MILU = SILU;
       // only basic ILU(k) support -- no direct control over memory consumption
@@ -911,7 +911,7 @@ class SuperILU : public SuperLUBase<_MatrixType,SuperILU<_MatrixType> >
       m_sluOptions.ILU_DropRule = DROP_BASIC;
       m_sluOptions.ILU_DropTol = NumTraits<Scalar>::dummy_precision()*10;
     }
-    
+
   private:
     SuperILU(SuperILU& ) { }
 };
@@ -925,7 +925,7 @@ void SuperILU<MatrixType>::factorize(const MatrixType& a)
     m_info = InvalidInput;
     return;
   }
-  
+
   this->initFactorization(a);
 
   int info = 0;
@@ -969,9 +969,9 @@ void SuperILU<MatrixType>::_solve(const MatrixBase<Rhs> &b, MatrixBase<Dest>& x)
   if(m_sluEqued!='N')
   {
     b_cpy = b;
-    m_sluB = SluMatrix::Map(b_cpy.const_cast_derived());  
+    m_sluB = SluMatrix::Map(b_cpy.const_cast_derived());
   }
-  
+
   int info = 0;
   RealScalar recip_pivot_growth, rcond;
 
@@ -992,7 +992,7 @@ void SuperILU<MatrixType>::_solve(const MatrixBase<Rhs> &b, MatrixBase<Dest>& x)
 #endif
 
 namespace internal {
-  
+
 template<typename _MatrixType, typename Derived, typename Rhs>
 struct solve_retval<SuperLUBase<_MatrixType,Derived>, Rhs>
   : solve_retval_base<SuperLUBase<_MatrixType,Derived>, Rhs>

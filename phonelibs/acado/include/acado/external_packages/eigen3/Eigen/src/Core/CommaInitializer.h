@@ -11,7 +11,7 @@
 #ifndef EIGEN_COMMAINITIALIZER_H
 #define EIGEN_COMMAINITIALIZER_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class CommaInitializer
   * \ingroup Core_Module
@@ -118,7 +118,7 @@ struct CommaInitializer
   *
   * Example: \include MatrixBase_set.cpp
   * Output: \verbinclude MatrixBase_set.out
-  * 
+  *
   * \note According the c++ standard, the argument expressions of this comma initializer are evaluated in arbitrary order.
   *
   * \sa CommaInitializer::finished(), class CommaInitializer

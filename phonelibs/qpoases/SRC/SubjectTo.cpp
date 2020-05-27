@@ -158,7 +158,7 @@ returnValue SubjectTo::addIndex(	Indexlist* const indexlist,
 /*
  *	r e m o v e I n d e x
  */
-returnValue SubjectTo::removeIndex(	Indexlist* const indexlist, 
+returnValue SubjectTo::removeIndex(	Indexlist* const indexlist,
 									int removenumber
 									)
 {

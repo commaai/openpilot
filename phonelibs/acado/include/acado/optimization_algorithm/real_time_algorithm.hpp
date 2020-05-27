@@ -43,7 +43,7 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief User-interface to formulate and solve model predictive control problems.
  *
  *	\ingroup UserInterfaces
@@ -60,7 +60,7 @@ class RealTimeAlgorithm : public OptimizationAlgorithmBase, public ControlLaw
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		RealTimeAlgorithm( );
 
@@ -81,7 +81,7 @@ class RealTimeAlgorithm : public OptimizationAlgorithmBase, public ControlLaw
 		RealTimeAlgorithm(	const RealTimeAlgorithm& rhs
 							);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~RealTimeAlgorithm( );
 
@@ -146,7 +146,7 @@ class RealTimeAlgorithm : public OptimizationAlgorithmBase, public ControlLaw
 		 */
 		virtual returnValue init( );
 
-		/** Initializes the control law with given start values and 
+		/** Initializes the control law with given start values and
 		 *	performs a number of consistency checks.
 		 *
 		 *	@param[in]  _startTime	Start time.
@@ -187,7 +187,7 @@ class RealTimeAlgorithm : public OptimizationAlgorithmBase, public ControlLaw
 		 *
 		 *	\note If a non-empty reference trajectory is provided, this one is used
 		 *	      instead of the possibly set-up build-in one.
-		 * 
+		 *
 		 *  \return SUCCESSFUL_RETURN
 		 */
 		virtual returnValue feedbackStep(	double currentTime,
@@ -240,7 +240,7 @@ class RealTimeAlgorithm : public OptimizationAlgorithmBase, public ControlLaw
 		virtual returnValue setReference(	const VariablesGrid &ref
 											);
 
-		
+
 		/** Returns number of (estimated) differential states.
 		 *
 		 *  \return Number of (estimated) differential states
@@ -261,13 +261,13 @@ class RealTimeAlgorithm : public OptimizationAlgorithmBase, public ControlLaw
 
 		/** Returns number of parameters.
 		 *
-		 *  \return Number of parameters 
+		 *  \return Number of parameters
 		 */
 		virtual uint getNP( ) const;
 
 		/** Returns number of (estimated) disturbances.
 		 *
-		 *  \return Number of (estimated) disturbances 
+		 *  \return Number of (estimated) disturbances
 		 */
 		virtual uint getNW( ) const;
 
@@ -291,7 +291,7 @@ class RealTimeAlgorithm : public OptimizationAlgorithmBase, public ControlLaw
 		virtual double getLengthControlHorizon( ) const;
 
 
-		/** Returns whether the control law is based on dynamic optimization or 
+		/** Returns whether the control law is based on dynamic optimization or
 		 *	a static one.
 		 *
 		 *  \return BT_TRUE  iff control law is based on dynamic optimization, \n

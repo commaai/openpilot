@@ -40,4 +40,3 @@ void frame_free(ModelFrame* frame);
 #endif
 
 #endif
-

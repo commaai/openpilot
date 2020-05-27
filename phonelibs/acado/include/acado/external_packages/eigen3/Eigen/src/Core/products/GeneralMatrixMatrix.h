@@ -10,7 +10,7 @@
 #ifndef EIGEN_GENERAL_MATRIX_MATRIX_H
 #define EIGEN_GENERAL_MATRIX_MATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -79,12 +79,12 @@ static void run(Index rows, Index cols, Index depth,
     // this is the parallel version!
     Index tid = omp_get_thread_num();
     Index threads = omp_get_num_threads();
-    
+
     std::size_t sizeA = kc*mc;
     std::size_t sizeW = kc*Traits::WorkSpaceFactor;
     ei_declare_aligned_stack_constructed_variable(LhsScalar, blockA, sizeA, 0);
     ei_declare_aligned_stack_constructed_variable(RhsScalar, w, sizeW, 0);
-    
+
     RhsScalar* blockB = blocking.blockB();
     eigen_internal_assert(blockB!=0);
 
@@ -383,7 +383,7 @@ class GeneralProduct<Lhs, Rhs, GemmProduct>
     };
   public:
     EIGEN_PRODUCT_PUBLIC_INTERFACE(GeneralProduct)
-    
+
     typedef typename  Lhs::Scalar LhsScalar;
     typedef typename  Rhs::Scalar RhsScalar;
     typedef           Scalar      ResScalar;

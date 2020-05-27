@@ -34,7 +34,7 @@ template <typename T> struct trait_trivial_ctor { enum { value = false }; };
 template <typename T> struct trait_trivial_dtor { enum { value = false }; };
 template <typename T> struct trait_trivial_copy { enum { value = false }; };
 template <typename T> struct trait_trivial_move { enum { value = false }; };
-template <typename T> struct trait_pointer      { enum { value = false }; };    
+template <typename T> struct trait_pointer      { enum { value = false }; };
 template <typename T> struct trait_pointer<T*>  { enum { value = true }; };
 
 template <typename TYPE>
@@ -57,13 +57,13 @@ template <typename T, typename U>
 struct aggregate_traits {
     enum {
         is_pointer          = false,
-        has_trivial_ctor    = 
+        has_trivial_ctor    =
             traits<T>::has_trivial_ctor && traits<U>::has_trivial_ctor,
-        has_trivial_dtor    = 
+        has_trivial_dtor    =
             traits<T>::has_trivial_dtor && traits<U>::has_trivial_dtor,
-        has_trivial_copy    = 
+        has_trivial_copy    =
             traits<T>::has_trivial_copy && traits<U>::has_trivial_copy,
-        has_trivial_move    = 
+        has_trivial_move    =
             traits<T>::has_trivial_move && traits<U>::has_trivial_move
     };
 };
@@ -175,8 +175,8 @@ void splat_type(TYPE* where, const TYPE* what, size_t n) {
 
 template<typename TYPE> inline
 void move_forward_type(TYPE* d, const TYPE* s, size_t n = 1) {
-    if ((traits<TYPE>::has_trivial_dtor && traits<TYPE>::has_trivial_copy) 
-            || traits<TYPE>::has_trivial_move) 
+    if ((traits<TYPE>::has_trivial_dtor && traits<TYPE>::has_trivial_copy)
+            || traits<TYPE>::has_trivial_move)
     {
         memmove(d,s,n*sizeof(TYPE));
     } else {
@@ -187,7 +187,7 @@ void move_forward_type(TYPE* d, const TYPE* s, size_t n = 1) {
             if (!traits<TYPE>::has_trivial_copy) {
                 new(d) TYPE(*s);
             } else {
-                *d = *s;   
+                *d = *s;
             }
             if (!traits<TYPE>::has_trivial_dtor) {
                 s->~TYPE();
@@ -198,8 +198,8 @@ void move_forward_type(TYPE* d, const TYPE* s, size_t n = 1) {
 
 template<typename TYPE> inline
 void move_backward_type(TYPE* d, const TYPE* s, size_t n = 1) {
-    if ((traits<TYPE>::has_trivial_dtor && traits<TYPE>::has_trivial_copy) 
-            || traits<TYPE>::has_trivial_move) 
+    if ((traits<TYPE>::has_trivial_dtor && traits<TYPE>::has_trivial_copy)
+            || traits<TYPE>::has_trivial_move)
     {
         memmove(d,s,n*sizeof(TYPE));
     } else {
@@ -207,7 +207,7 @@ void move_backward_type(TYPE* d, const TYPE* s, size_t n = 1) {
             if (!traits<TYPE>::has_trivial_copy) {
                 new(d) TYPE(*s);
             } else {
-                *d = *s;   
+                *d = *s;
             }
             if (!traits<TYPE>::has_trivial_dtor) {
                 s->~TYPE();

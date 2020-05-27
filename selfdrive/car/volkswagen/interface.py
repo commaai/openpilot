@@ -1,5 +1,4 @@
 from cereal import car
-
 from common.params import put_nonblocking
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car import scale_rot_inertia

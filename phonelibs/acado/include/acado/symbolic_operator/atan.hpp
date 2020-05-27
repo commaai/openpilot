@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Atan implements the scalar inverse tanges operator (arctan) within the 
+ *	The class Atan implements the scalar inverse tanges operator (arctan) within the
  *	symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -71,11 +71,11 @@ public:
     /** Assignment Operator (deep copy). */
     Atan& operator=( const Atan &arg );
 
-	
+
 	/** Evaluates the expression (templated version) */
 	virtual returnValue evaluate( EvaluationBase *x );
 
-	 
+
     /** Substitutes var(index) with the expression sub.           \n
      *  \return The substituted expression.                       \n
      *

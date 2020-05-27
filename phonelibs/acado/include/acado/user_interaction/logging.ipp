@@ -45,7 +45,7 @@ inline returnValue Logging::getAll(	LogName _name,
 {
 	for (unsigned it = 0; it < logCollection.size(); ++it)
 		if (logCollection[ it ].hasNonEmptyItem( _name ) == true)
-			return logCollection[ it ].getAll(_name, _values); 
+			return logCollection[ it ].getAll(_name, _values);
 
 	return ACADOERROR( RET_LOG_ENTRY_DOESNT_EXIST );
 }
@@ -57,7 +57,7 @@ inline returnValue Logging::getFirst(	LogName _name,
 {
 	for (unsigned it = 0; it < logCollection.size(); ++it)
 		if (logCollection[ it ].hasNonEmptyItem( _name ) == true)
-			return logCollection[ it ].getFirst(_name, _firstValue); 
+			return logCollection[ it ].getFirst(_name, _firstValue);
 
 	return ACADOERROR( RET_LOG_ENTRY_DOESNT_EXIST );
 }
@@ -69,7 +69,7 @@ inline returnValue Logging::getFirst(	LogName _name,
 {
 	for (unsigned it = 0; it < logCollection.size(); ++it)
 		if (logCollection[ it ].hasNonEmptyItem( _name ) == BT_TRUE)
-			return logCollection[ it ].getFirst(_name, _firstValue); 
+			return logCollection[ it ].getFirst(_name, _firstValue);
 
 	return ACADOERROR( RET_LOG_ENTRY_DOESNT_EXIST );
 }
@@ -81,7 +81,7 @@ inline returnValue Logging::getLast(	LogName _name,
 {
 	for (unsigned it = 0; it < logCollection.size(); ++it)
 		if (logCollection[ it ].hasNonEmptyItem( _name ) == BT_TRUE)
-			return logCollection[ it ].getLast(_name, _lastValue); 
+			return logCollection[ it ].getLast(_name, _lastValue);
 
 	return ACADOERROR( RET_LOG_ENTRY_DOESNT_EXIST );
 }
@@ -93,25 +93,25 @@ inline returnValue Logging::getLast(	LogName _name,
 {
 	for (unsigned it = 0; it < logCollection.size(); ++it)
 		if (logCollection[ it ].hasNonEmptyItem( _name ) == BT_TRUE)
-			return logCollection[ it ].getLast(_name, _lastValue); 
+			return logCollection[ it ].getLast(_name, _lastValue);
 
 	return ACADOERROR( RET_LOG_ENTRY_DOESNT_EXIST );
 }
 
-		
+
 inline returnValue Logging::setAll(	LogName _name,
 									const MatrixVariablesGrid& values
 									)
 {
 	for (unsigned it = 0; it < logCollection.size(); ++it)
 		if (logCollection[ it ].hasItem( _name ) == true)
-			return logCollection[ it ].setAll(_name, values); 
+			return logCollection[ it ].setAll(_name, values);
 
 	return SUCCESSFUL_RETURN;
 }
 
 
-		
+
 inline returnValue Logging::setLast(	LogName _name,
 										const DMatrix& value,
 										double time
@@ -119,7 +119,7 @@ inline returnValue Logging::setLast(	LogName _name,
 {
 	for (unsigned it = 0; it < logCollection.size(); ++it)
 		if (logCollection[ it ].hasItem( _name ) == true)
-			return logCollection[ it ].setLast(_name, value, time); 
+			return logCollection[ it ].setLast(_name, value, time);
 
 	return SUCCESSFUL_RETURN;
 }

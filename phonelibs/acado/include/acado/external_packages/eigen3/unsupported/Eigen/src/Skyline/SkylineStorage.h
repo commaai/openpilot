@@ -10,7 +10,7 @@
 #ifndef EIGEN_SKYLINE_STORAGE_H
 #define EIGEN_SKYLINE_STORAGE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** Stores a skyline set of values in three structures :
  * The diagonal elements

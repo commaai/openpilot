@@ -557,7 +557,7 @@ template<typename Scalar>
 inline EIGEN_MATHFUNC_RETVAL(real, Scalar) real(const Scalar& x)
 {
   return EIGEN_MATHFUNC_IMPL(real, Scalar)::run(x);
-}  
+}
 
 template<typename Scalar>
 inline typename internal::add_const_on_value_type< EIGEN_MATHFUNC_RETVAL(real_ref, Scalar) >::type real_ref(const Scalar& x)
@@ -741,13 +741,13 @@ template<> struct random_impl<bool>
 template<> struct scalar_fuzzy_impl<bool>
 {
   typedef bool RealScalar;
-  
+
   template<typename OtherScalar>
   static inline bool isMuchSmallerThan(const bool& x, const bool&, const bool&)
   {
     return !x;
   }
-  
+
   static inline bool isApprox(bool x, bool y, bool)
   {
     return x == y;
@@ -757,10 +757,10 @@ template<> struct scalar_fuzzy_impl<bool>
   {
     return (!x) || y;
   }
-  
+
 };
 
-  
+
 } // end namespace internal
 
 } // end namespace Eigen

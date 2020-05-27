@@ -239,4 +239,3 @@ ZDL_EXPORT uint32_t enumToUInt32(zdl::DlSystem::ErrorCode code);
 } // zdl
 
 #endif // _DL_ERROR_HPP_
-

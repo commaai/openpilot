@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Stores a DifferentialEquation together with an OutputFcn.
  *
  *	\ingroup UserDataStructures
@@ -61,7 +61,7 @@ class DynamicSystem
 	//
 	public:
 
-		/**< Default Constructor. 
+		/**< Default Constructor.
 		 */
 		DynamicSystem( );
 
@@ -72,7 +72,7 @@ class DynamicSystem
 		 DynamicSystem(	const DifferentialEquation& _diffEqn
 						);
 
-		/** Constructor which takes differential equation and output function 
+		/** Constructor which takes differential equation and output function
 		 *	of first stage.
 		 *
 		 *	@param[in] _diffEqn		Differential equation.
@@ -307,7 +307,7 @@ class DynamicSystem
 		BooleanType isConsistentDiffEqn(	const DifferentialEquation& _diffEqn
 											) const;
 
-		/** Returns whether given output function is consistent with the corresponding 
+		/** Returns whether given output function is consistent with the corresponding
 		 *	differential equation and existing output functions at other stages.
 		 *
 		 *	@param[in] _outputFcn	Output function.

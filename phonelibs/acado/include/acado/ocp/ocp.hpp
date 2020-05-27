@@ -41,7 +41,7 @@ class Grid;
 class Objective;
 class Constraint;
 
-/** 
+/**
  *	\brief Data class for defining optimal control problems.
  *
  *	\ingroup BasicDataStructures

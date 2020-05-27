@@ -10,7 +10,7 @@
 #ifndef EIGEN_BIDIAGONALIZATION_H
 #define EIGEN_BIDIAGONALIZATION_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 // UpperBidiagonalization will probably be replaced by a Bidiagonalization class, don't want to make it stable API.
@@ -43,7 +43,7 @@ template<typename _MatrixType> class UpperBidiagonalization
               Diagonal<const MatrixType,1>,
               OnTheRight
             > HouseholderVSequenceType;
-    
+
     /**
     * \brief Default Constructor.
     *
@@ -59,12 +59,12 @@ template<typename _MatrixType> class UpperBidiagonalization
     {
       compute(matrix);
     }
-    
+
     UpperBidiagonalization& compute(const MatrixType& matrix);
-    
+
     const MatrixType& householder() const { return m_householder; }
     const BidiagonalType& bidiagonal() const { return m_bidiagonal; }
-    
+
     const HouseholderUSequenceType householderU() const
     {
       eigen_assert(m_isInitialized && "UpperBidiagonalization is not initialized.");
@@ -78,7 +78,7 @@ template<typename _MatrixType> class UpperBidiagonalization
              .setLength(m_householder.cols()-1)
              .setShift(1);
     }
-    
+
   protected:
     MatrixType m_householder;
     BidiagonalType m_bidiagonal;
@@ -90,9 +90,9 @@ UpperBidiagonalization<_MatrixType>& UpperBidiagonalization<_MatrixType>::comput
 {
   Index rows = matrix.rows();
   Index cols = matrix.cols();
-  
+
   eigen_assert(rows >= cols && "UpperBidiagonalization is only for matrices satisfying rows>=cols.");
-  
+
   m_householder = matrix;
 
   ColVectorType temp(rows);
@@ -113,7 +113,7 @@ UpperBidiagonalization<_MatrixType>& UpperBidiagonalization<_MatrixType>::comput
                                             temp.data());
 
     if(k == cols-1) break;
-    
+
     // construct right householder transform in-place in m_householder
     m_householder.row(k).tail(remainingCols)
                  .makeHouseholderInPlace(m_householder.coeffRef(k,k+1),

@@ -69,7 +69,7 @@ public:
      * Return the name of the file this map came from, if known.
      */
     const char* getFileName(void) const { return mFileName; }
-    
+
     /*
      * Get a pointer to the piece of the file we requested.
      */

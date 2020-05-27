@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import sys
 
-import cereal.messaging as messaging
 import matplotlib.pyplot as plt
 import numpy as np
+
+import cereal.messaging as messaging
 
 N = 21
 

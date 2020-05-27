@@ -12,11 +12,11 @@ from multiprocessing import TimeoutError
 from uuid import uuid4
 
 import zmq
+
 from cereal import log as capnp_log
 from cereal.messaging import MultiplePublishersError
 from cereal.messaging import pub_sock
 from cereal.services import service_list
-
 from common import realtime
 from tools.lib.kbhit import KBHit
 from tools.lib.logreader import MultiLogIterator

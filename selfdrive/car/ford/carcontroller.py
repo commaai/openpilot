@@ -1,6 +1,5 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-
 from selfdrive.car import make_can_msg
 from selfdrive.car.ford.fordcan import create_lkas_ui
 from selfdrive.car.ford.fordcan import create_steer_command

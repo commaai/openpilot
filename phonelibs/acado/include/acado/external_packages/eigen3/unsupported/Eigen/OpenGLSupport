@@ -21,19 +21,19 @@ namespace Eigen {
   * This module provides wrapper functions for a couple of OpenGL functions
   * which simplify the way to pass Eigen's object to openGL.
   * Here is an exmaple:
-  * 
+  *
   * \code
   * // You need to add path_to_eigen/unsupported to your include path.
   * #include <Eigen/OpenGLSupport>
   * // ...
   * Vector3f x, y;
   * Matrix3f rot;
-  * 
+  *
   * glVertex(y + x * rot);
-  * 
+  *
   * Quaternion q;
   * glRotate(q);
-  * 
+  *
   * // ...
   * \endcode
   *
@@ -70,7 +70,7 @@ namespace internal {                                                            
   };                                                                                                                \
 }
 
-  
+
 #define EIGEN_GL_FUNC_SPECIALIZATION_VEC(FUNC,SCALAR,SIZE,SUFFIX)                                                   \
 namespace internal {                                                                                                \
   template< typename XprType> struct EIGEN_CAT(EIGEN_CAT(gl_,FUNC),_impl)<XprType, SCALAR, SIZE, 1, true> {         \
@@ -81,7 +81,7 @@ namespace internal {                                                            
   };                                                                                                                \
 }
 
-  
+
 EIGEN_GL_FUNC_DECLARATION       (glVertex)
 EIGEN_GL_FUNC_SPECIALIZATION_VEC(glVertex,int,    2,2iv)
 EIGEN_GL_FUNC_SPECIALIZATION_VEC(glVertex,short,  2,2sv)
@@ -183,13 +183,13 @@ static void glRotate(const Rotation2D<double>& rot)
 }
 
 template<typename Derived> void glRotate(const RotationBase<Derived,3>& rot)
-{  
+{
   Transform<typename Derived::Scalar,3,Projective> tr(rot);
   glMultMatrix(tr.matrix());
 }
 
 #define EIGEN_GL_MAKE_CONST_const const
-#define EIGEN_GL_MAKE_CONST__ 
+#define EIGEN_GL_MAKE_CONST__
 #define EIGEN_GL_EVAL(X) X
 
 #define EIGEN_GL_FUNC1_DECLARATION(FUNC,ARG1,CONST)                                                                             \
@@ -222,7 +222,7 @@ namespace internal {                                                            
   }; \
 }
 
-  
+
 #define EIGEN_GL_FUNC1_SPECIALIZATION_VEC(FUNC,ARG1,CONST,SCALAR,SIZE,SUFFIX)                                                   \
 namespace internal {                                                                                                            \
   template< typename XprType> struct EIGEN_CAT(EIGEN_CAT(gl_,FUNC),_impl)<XprType, SCALAR, SIZE, 1, true> {                     \

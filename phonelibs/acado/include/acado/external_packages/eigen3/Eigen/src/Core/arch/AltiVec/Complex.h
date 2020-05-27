@@ -78,14 +78,14 @@ template<> EIGEN_STRONG_INLINE Packet2cf pmul<Packet2cf>(const Packet2cf& a, con
   v1 = vec_perm(a.v, a.v, p16uc_COMPLEX_RE);
   // Get the imaginary parts of a
   v2 = vec_perm(a.v, a.v, p16uc_COMPLEX_IM);
-  // multiply a_re * b 
+  // multiply a_re * b
   v1 = vec_madd(v1, b.v, p4f_ZERO);
   // multiply a_im * b and get the conjugate result
   v2 = vec_madd(v2, b.v, p4f_ZERO);
   v2 = (Packet4f) vec_xor((Packet4ui)v2, p4ui_CONJ_XOR);
   // permute back to a proper order
   v2 = vec_perm(v2, v2, p16uc_COMPLEX_REV);
-  
+
   return Packet2cf(vec_add(v1, v2));
 }
 
@@ -133,7 +133,7 @@ template<> EIGEN_STRONG_INLINE std::complex<float> predux<Packet2cf>(const Packe
 template<> EIGEN_STRONG_INLINE Packet2cf preduxp<Packet2cf>(const Packet2cf* vecs)
 {
   Packet4f b1, b2;
-  
+
   b1 = (Packet4f) vec_sld(vecs[0].v, vecs[1].v, 8);
   b2 = (Packet4f) vec_sld(vecs[1].v, vecs[0].v, 8);
   b2 = (Packet4f) vec_sld(b2, b2, 8);

@@ -10,7 +10,7 @@
 #ifndef EIGEN_LU_H
 #define EIGEN_LU_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup LU_Module
   *
@@ -419,7 +419,7 @@ FullPivLU<MatrixType>& FullPivLU<MatrixType>::compute(const MatrixType& matrix)
 {
   // the permutations are stored as int indices, so just to be sure:
   eigen_assert(matrix.rows()<=NumTraits<int>::highest() && matrix.cols()<=NumTraits<int>::highest());
-  
+
   m_isInitialized = true;
   m_lu = matrix;
 

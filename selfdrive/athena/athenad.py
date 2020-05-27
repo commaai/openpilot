@@ -13,15 +13,15 @@ import time
 from collections import namedtuple
 from functools import partial
 
-import cereal.messaging as messaging
 import requests
-from cereal.services import service_list
 from jsonrpc import dispatcher
 from jsonrpc import JSONRPCResponseManager
 from websocket import ABNF
 from websocket import create_connection
 from websocket import WebSocketTimeoutException
 
+import cereal.messaging as messaging
+from cereal.services import service_list
 from common import android
 from common.api import Api
 from common.basedir import PERSIST

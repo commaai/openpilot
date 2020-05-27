@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELFADJOINTRANK2UPTADE_H
 #define EIGEN_SELFADJOINTRANK2UPTADE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

@@ -29,7 +29,7 @@ clear avCells aInput aOutput @MODULE_PREFIX@data @MODULE_PREFIX@input @MODULE_PR
 avCells = {'@MODULE_PREFIX@data', aHeaderFile, '', 'Auto', '-1', {}};
 
 idx = 1;
-avCells{ 6 }{ idx } = {'x', [1, (@MODULE_PREFIX@_N + 1) * @MODULE_PREFIX@_NX], aRealT, -1, 'real', 'Sample', 'Fixed', [], []}; idx = idx + 1; 
+avCells{ 6 }{ idx } = {'x', [1, (@MODULE_PREFIX@_N + 1) * @MODULE_PREFIX@_NX], aRealT, -1, 'real', 'Sample', 'Fixed', [], []}; idx = idx + 1;
 avCells{ 6 }{ idx } = {'u', [1, @MODULE_PREFIX@_N * @MODULE_PREFIX@_NU], aRealT, -1, 'real', 'Sample', 'Fixed', [], []}; idx = idx + 1;
 
 if @MODULE_PREFIX@_NXA > 0
@@ -40,7 +40,7 @@ if @MODULE_PREFIX@_NOD > 0
     avCells{ 6 }{ idx } = {'od', [1, (@MODULE_PREFIX@_N + 1) * @MODULE_PREFIX@_NOD], aRealT, -1, 'real', 'Sample', 'Fixed', [], []}; idx = idx + 1;
 end;
 
-avCells{ 6 }{ idx } = {'y', [1, @MODULE_PREFIX@_N * @MODULE_PREFIX@_NY], aRealT, -1, 'real', 'Sample', 'Fixed', [], []}; idx = idx + 1; 
+avCells{ 6 }{ idx } = {'y', [1, @MODULE_PREFIX@_N * @MODULE_PREFIX@_NY], aRealT, -1, 'real', 'Sample', 'Fixed', [], []}; idx = idx + 1;
 avCells{ 6 }{ idx } = {'yN', [1, @MODULE_PREFIX@_NYN], aRealT, -1, 'real', 'Sample', 'Fixed', [], []}; idx = idx + 1;
 
 if @MODULE_PREFIX@_WEIGHTING_MATRICES_TYPE == 1
@@ -122,7 +122,7 @@ end;
 	'@MODULE_NAME@_auxiliary_functions.c', ...
 	'@MODULE_NAME@_solver_sfunction.c' ...
 	};
-	
+
 if strcmp(@MODULE_PREFIX@_QP_SOLVER, 'QPOASES')
 	@MODULE_PREFIX@Def.SourceFiles{end + 1} = '@MODULE_NAME@_qpoases_interface.cpp';
 	@MODULE_PREFIX@Def.SourceFiles{end + 1} = 'qpoases/SRC/Bounds.cpp';
@@ -203,10 +203,10 @@ end
 % Add an extra option for qpOASES
 iFlags = {''};
 if (~strcmp(aSfunName, 'acado_solver_sfun')) && (strcmp(@MODULE_PREFIX@_QP_SOLVER, 'QPOASES'))
-    iFlags = {'-DQPOASES_CUSTOM_INTERFACE="@MODULE_NAME@_qpoases_interface.hpp"'};    
+    iFlags = {'-DQPOASES_CUSTOM_INTERFACE="@MODULE_NAME@_qpoases_interface.hpp"'};
 end;
 if strcmp(@MODULE_PREFIX@_QP_SOLVER, 'QPOASES3')
-    iFlags = {'-D__CODE_GENERATION__', '-DQPOASES_CUSTOM_INTERFACE="@MODULE_NAME@_qpoases3_interface.h"'};    
+    iFlags = {'-D__CODE_GENERATION__', '-DQPOASES_CUSTOM_INTERFACE="@MODULE_NAME@_qpoases3_interface.h"'};
 end;
 if strcmp(@MODULE_PREFIX@_QP_SOLVER, 'QPDUNES')
 	iFlags = {'-D__SIMPLE_BOUNDS_ONLY__'};

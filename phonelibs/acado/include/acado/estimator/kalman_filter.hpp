@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Provides a Kalman filter for state estimation.
  *
  *	\ingroup UserInterfaces

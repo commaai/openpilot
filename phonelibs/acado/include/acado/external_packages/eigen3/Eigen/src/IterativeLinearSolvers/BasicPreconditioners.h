@@ -10,7 +10,7 @@
 #ifndef EIGEN_BASIC_PRECONDITIONERS_H
 #define EIGEN_BASIC_PRECONDITIONERS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup IterativeLinearSolvers_Module
   * \brief A preconditioner based on the digonal entries
@@ -50,13 +50,13 @@ class DiagonalPreconditioner
 
     Index rows() const { return m_invdiag.size(); }
     Index cols() const { return m_invdiag.size(); }
-    
+
     template<typename MatType>
     DiagonalPreconditioner& analyzePattern(const MatType& )
     {
       return *this;
     }
-    
+
     template<typename MatType>
     DiagonalPreconditioner& factorize(const MatType& mat)
     {
@@ -73,7 +73,7 @@ class DiagonalPreconditioner
       m_isInitialized = true;
       return *this;
     }
-    
+
     template<typename MatType>
     DiagonalPreconditioner& compute(const MatType& mat)
     {
@@ -130,16 +130,16 @@ class IdentityPreconditioner
 
     template<typename MatrixType>
     IdentityPreconditioner(const MatrixType& ) {}
-    
+
     template<typename MatrixType>
     IdentityPreconditioner& analyzePattern(const MatrixType& ) { return *this; }
-    
+
     template<typename MatrixType>
     IdentityPreconditioner& factorize(const MatrixType& ) { return *this; }
 
     template<typename MatrixType>
     IdentityPreconditioner& compute(const MatrixType& ) { return *this; }
-    
+
     template<typename Rhs>
     inline const Rhs& solve(const Rhs& b) const { return b; }
 };

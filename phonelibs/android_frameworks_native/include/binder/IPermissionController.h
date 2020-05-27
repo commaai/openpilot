@@ -59,4 +59,3 @@ public:
 }; // namespace android
 
 #endif // ANDROID_IPERMISSION_CONTROLLER_H
-

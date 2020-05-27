@@ -51,7 +51,7 @@ class ExportVariable;
 class ExportIndex;
 class ExportDataDeclaration;
 
-/** 
+/**
  *	\brief Allows to export code for a block of statements.
  *
  *	\ingroup AuxiliaryFunctionality
@@ -238,7 +238,7 @@ class ExportStatementBlock : public ExportStatement
 		uint getNumStatements( ) const;
 
 
-		/** Exports data declaration of the statement block into given file. Its appearance can 
+		/** Exports data declaration of the statement block into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream				Name of file to be used to export statement block.
@@ -254,7 +254,7 @@ class ExportStatementBlock : public ExportStatement
 													int _precision = 16
 													) const;
 
-		/** Exports source code of the statement block into given file. Its appearance can 
+		/** Exports source code of the statement block into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream				Name of file to be used to export statement block.

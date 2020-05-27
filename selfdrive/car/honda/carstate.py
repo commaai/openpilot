@@ -1,10 +1,9 @@
 from collections import defaultdict
 
 from cereal import car
+from common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-
-from common.numpy_fast import interp
 from selfdrive.car.honda.values import CAR
 from selfdrive.car.honda.values import DBC
 from selfdrive.car.honda.values import HONDA_BOSCH

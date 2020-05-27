@@ -44,4 +44,3 @@ if TEST_THNEED:
   lenv.Program('thneed/debug/_thneed', [
       "thneed/thneed.cc", "thneed/debug/test.cc"
     ]+common, LIBS=libs)
-

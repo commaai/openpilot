@@ -115,7 +115,7 @@ public:
         right = rb.x;
         bottom = rb.y;
     }
-    
+
     // the following 4 functions return the 4 corners of the rect as Point
     Point leftTop() const {
         return Point(left, top);

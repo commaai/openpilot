@@ -2,10 +2,10 @@ import random
 import unittest
 
 import numpy as np
-from cereal import log
 
 import selfdrive.boardd.boardd as boardd
 import selfdrive.boardd.tests.boardd_old as boardd_old
+from cereal import log
 from common.realtime import sec_since_boot
 
 

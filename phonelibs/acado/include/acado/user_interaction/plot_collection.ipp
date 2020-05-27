@@ -47,7 +47,7 @@ inline PlotWindow& PlotCollection::operator()(	uint idx
 
 	PlotWindow* current = first;
 	for( uint i=0; i<idx; ++i )
-		current = current->getNext( );	
+		current = current->getNext( );
 
 	return *current;
 }
@@ -59,7 +59,7 @@ inline PlotWindow PlotCollection::operator()(	uint idx
 
 	PlotWindow* current = first;
 	for( uint i=0; i<idx; ++i )
-		current = current->getNext( );	
+		current = current->getNext( );
 
 	return *current;
 }

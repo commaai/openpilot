@@ -40,7 +40,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored IRK solver based on Gaussian elimination of specific dimensions.
  *
  *	\ingroup NumericalAlgorithms
@@ -58,7 +58,7 @@ class ExportIRK4StageSingleNewton : public ExportGaussElim
     //
     public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.

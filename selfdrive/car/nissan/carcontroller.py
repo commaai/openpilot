@@ -1,8 +1,7 @@
 from cereal import car
-from opendbc.can.packer import CANPacker
-
 from common.numpy_fast import clip
 from common.numpy_fast import interp
+from opendbc.can.packer import CANPacker
 from selfdrive.car.nissan import nissancan
 from selfdrive.car.nissan.values import CAR
 

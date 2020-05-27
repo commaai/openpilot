@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import os
 
-import cereal.messaging as messaging
 import zmq
 
+import cereal.messaging as messaging
 from common import realtime
 from selfdrive.locationd.test import ublox
 from selfdrive.locationd.test.ubloxd import gen_raw

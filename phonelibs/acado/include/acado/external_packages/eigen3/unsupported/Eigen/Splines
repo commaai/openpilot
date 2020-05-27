@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPLINES_MODULE_H
 #define EIGEN_SPLINES_MODULE_H
 
-namespace Eigen 
+namespace Eigen
 {
 /**
   * \defgroup Splines_Module Spline and spline fitting module

@@ -5,11 +5,11 @@ import subprocess
 import sys
 import time
 
-import cereal.messaging as messaging
 import requests
-from cereal import car
 
+import cereal.messaging as messaging
 import selfdrive.manager as manager
+from cereal import car
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car.chrysler.values import CAR as CHRYSLER

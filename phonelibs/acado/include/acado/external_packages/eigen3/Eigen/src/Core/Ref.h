@@ -10,7 +10,7 @@
 #ifndef EIGEN_REF_H
 #define EIGEN_REF_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Derived> class RefBase;
 template<typename PlainObjectType, int Options = 0,
@@ -149,7 +149,7 @@ public:
       m_stride(StrideType::OuterStrideAtCompileTime==Dynamic?0:StrideType::OuterStrideAtCompileTime,
                StrideType::InnerStrideAtCompileTime==Dynamic?0:StrideType::InnerStrideAtCompileTime)
   {}
-  
+
   EIGEN_INHERIT_ASSIGNMENT_OPERATORS(RefBase)
 
 protected:
@@ -172,7 +172,7 @@ protected:
     else
       ::new (static_cast<Base*>(this)) Base(expr.data(), expr.rows(), expr.cols());
     ::new (&m_stride) StrideBase(StrideType::OuterStrideAtCompileTime==0?0:expr.outerStride(),
-                                 StrideType::InnerStrideAtCompileTime==0?0:expr.innerStride());    
+                                 StrideType::InnerStrideAtCompileTime==0?0:expr.innerStride());
   }
 
   StrideBase m_stride;

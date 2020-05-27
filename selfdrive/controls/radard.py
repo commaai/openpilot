@@ -6,7 +6,6 @@ from collections import deque
 
 import cereal.messaging as messaging
 from cereal import car
-
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import Ratekeeper

@@ -20,9 +20,9 @@ int initializeQpDunes( void )
 {
 	return_t statusFlag;
 	int kk;
-	
+
 	@QP_ND_ARRAY@
-	
+
 	qpOptions = qpDUNES_setupDefaultOptions();
 	qpOptions.maxIter    = @MAX_ITER@;
 	qpOptions.printLevel = @PRINT_LEVEL@;
@@ -39,15 +39,15 @@ int initializeQpDunes( void )
 	qpOptions.regType            = QPDUNES_REG_LEVENBERG_MARQUARDT;
 
 	qpDUNES_setup(&qpData, @ACADO_N@, @ACADO_NX@, @ACADO_NU@, nD, &( qpOptions ));
-	
+
 	for (kk = 0; kk < @ACADO_N@; ++kk)
 	{
 		qpData.intervals[ kk ]->H.sparsityType = @DIAG_H@ ? QPDUNES_DIAGONAL : QPDUNES_DENSE;
 	}
 	qpData.intervals[ @ACADO_N@ ]->H.sparsityType = @DIAG_HN@ ? QPDUNES_DIAGONAL : QPDUNES_DENSE;
-	
+
 	statusFlag = qpDUNES_init(&qpData, @QP_H@, @QP_G@, @QP_C@, @QP_c@, @QP_LB@, @QP_UB@, @QP_D@, @QP_LBA@, @QP_UBA@);
-	
+
 	return (int)statusFlag;
 }
 
@@ -66,7 +66,7 @@ int prepareQpDunes( void )
 	if (statusFlag != QPDUNES_OK)
 		return (int)statusFlag;
 	prepareQPtime = @MODULE_NAME@_toc( &tmr );
-	
+
 	return (int)statusFlag;
 }
 
@@ -86,11 +86,10 @@ int solveQpDunes( void )
 
 	@MODULE_NAME@_tic( &tmr );
 	statusFlag = qpDUNES_solve( &qpData );
-	
+
 	qpDUNES_getPrimalSol(&qpData, @QP_PRIMAL@);
 	qpDUNES_getDualSol(&qpData, @QP_LAMBDA@, @QP_MU@);
 	solveQPtime = @MODULE_NAME@_toc( &tmr );
-	
+
 	return (int)statusFlag;
 }
-

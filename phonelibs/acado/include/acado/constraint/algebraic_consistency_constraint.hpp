@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/**   
+/**
  *	\brief Deals with algebraic consistency constraints within optimal control problems.
  *
  *	\ingroup BasicDataStructures
@@ -144,7 +144,7 @@ class AlgebraicConsistencyConstraint : public ConstraintElement{
 		virtual returnValue initializeEvaluationPoints(	const OCPiterate& iter
 														);
 
-		
+
         /** only for internal use (routine which computes a part of the block
          *  matrix needed for forward differentiation.) */
         inline returnValue computeForwardSensitivityBlock( int offset1, int offset2, int offset3, int stageIdx, DMatrix *seed );

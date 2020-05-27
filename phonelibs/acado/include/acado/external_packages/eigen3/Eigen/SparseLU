@@ -13,7 +13,7 @@
 
 #include "SparseCore"
 
-/** 
+/**
   * \defgroup SparseLU_Module SparseLU module
   * This module defines a supernodal factorization of general sparse matrices.
   * The code is fully optimized for supernode-panel updates with specialized kernels.

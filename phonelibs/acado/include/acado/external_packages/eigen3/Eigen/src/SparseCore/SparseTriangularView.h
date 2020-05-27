@@ -11,10 +11,10 @@
 #ifndef EIGEN_SPARSE_TRIANGULARVIEW_H
 #define EIGEN_SPARSE_TRIANGULARVIEW_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
-  
+
 template<typename MatrixType, int Mode>
 struct traits<SparseTriangularView<MatrixType,Mode> >
 : public traits<MatrixType>
@@ -33,7 +33,7 @@ template<typename MatrixType, int Mode> class SparseTriangularView
     };
 
   public:
-    
+
     EIGEN_SPARSE_PUBLIC_INTERFACE(SparseTriangularView)
 
     class InnerIterator;

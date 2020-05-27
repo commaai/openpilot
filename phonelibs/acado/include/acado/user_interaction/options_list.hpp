@@ -53,12 +53,12 @@ enum OptionsItemType
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *  The class OptionsList provides a generic options list that allows to dynamically 
- *  setup and extend option lists. It is intended for internal use only, as all 
+ *  The class OptionsList provides a generic options list that allows to dynamically
+ *  setup and extend option lists. It is intended for internal use only, as all
  *	user-functionality is encapsulated within the class Options.
  *
- *	\note Parts of the public functionality of the OptionsList class are tunnelled 
- *	via the Options class into the AlgorithmicBase class to be used in derived classes. 
+ *	\note Parts of the public functionality of the OptionsList class are tunnelled
+ *	via the Options class into the AlgorithmicBase class to be used in derived classes.
  *	In case public functionality is modified or added to this class, the Options class
  *	as well as the AlgorithmicBase class have to be adapted accordingly.
  *
@@ -161,7 +161,7 @@ class OptionsList
 		/** Determines whether options have been modified.
 		 *
 		 *	\return BT_TRUE  iff options have been modified, \n
-		 *	        BT_FALSE otherwise 
+		 *	        BT_FALSE otherwise
 		 */
 		inline BooleanType haveOptionsChanged( ) const;
 

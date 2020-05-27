@@ -10,7 +10,7 @@
 
 // no include guard, we'll include this twice from All.h from Eigen2Support, and it's internal anyway
 
-namespace Eigen { 
+namespace Eigen {
 
 // Note that we have to pass Dim and HDim because it is not allowed to use a template
 // parameter to define a template specialization. To be more precise, in the following

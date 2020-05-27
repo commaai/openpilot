@@ -3,7 +3,6 @@ import os
 import cereal.messaging as messaging
 from cereal import car
 from cereal import log
-
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.car import gen_empty_fingerprint

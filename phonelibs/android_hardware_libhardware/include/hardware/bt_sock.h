@@ -88,4 +88,3 @@ typedef struct {
 } btsock_interface_t;
 
 __END_DECLS
-

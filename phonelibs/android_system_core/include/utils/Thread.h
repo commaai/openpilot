@@ -48,7 +48,7 @@ public:
     virtual status_t    run(    const char* name = 0,
                                 int32_t priority = PRIORITY_DEFAULT,
                                 size_t stack = 0);
-    
+
     // Ask this object's thread to exit. This function is asynchronous, when the
     // function returns the thread might still be running. Of course, this
     // function can be called from a different thread.
@@ -56,7 +56,7 @@ public:
 
     // Good place to do one-time initializations
     virtual status_t    readyToRun();
-    
+
     // Call requestExit() and wait until this object's thread exits.
     // BE VERY CAREFUL of deadlocks. In particular, it would be silly to call
     // this function from this object's thread. Will return WOULD_BLOCK in
@@ -79,7 +79,7 @@ public:
 protected:
     // exitPending() returns true if requestExit() has been called.
             bool        exitPending() const;
-    
+
 private:
     // Derived class must implement threadLoop(). The thread starts its life
     // here. There are two ways of using the Thread object:

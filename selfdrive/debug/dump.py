@@ -4,10 +4,11 @@ import json
 import os
 import sys
 
+from hexdump import hexdump
+
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
-from hexdump import hexdump
 
 if __name__ == "__main__":
 

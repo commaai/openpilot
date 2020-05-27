@@ -10,7 +10,7 @@
 #ifndef EIGEN_SCALING_H
 #define EIGEN_SCALING_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \geometry_module \ingroup Geometry_Module
   *

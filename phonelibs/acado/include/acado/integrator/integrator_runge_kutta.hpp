@@ -41,12 +41,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Abstract base class for all kinds of Runge-Kutta schemes for integrating ODEs.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class IntegratorRK serves as an abstract base class for all kinds of 
+ *  The class IntegratorRK serves as an abstract base class for all kinds of
  *	Runge-Kutta schemes for integrating ordinary differential equations (ODEs).
  *
  *	\author Boris Houska, Hans Joachim Ferreau

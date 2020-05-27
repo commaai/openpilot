@@ -59,10 +59,10 @@ class ColoredNoise : public Noise
 	//
 	//  PUBLIC MEMBER FUNCTIONS:
 	//
-	
+
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		ColoredNoise( );
 
@@ -76,8 +76,8 @@ class ColoredNoise : public Noise
 		 */
 		ColoredNoise(	const ColoredNoise& rhs
 						);
-	
-		/** Destructor. 
+
+		/** Destructor.
 		 */
 		virtual ~ColoredNoise( );
 
@@ -125,7 +125,7 @@ class ColoredNoise : public Noise
 		 */
 		virtual returnValue init(	uint seed = 0
 									);
-	
+
 		/** Generates a single noise vector based on current internal settings.
 		 *
 		 *	@param[out] _w		Generated noise vector.
@@ -154,13 +154,13 @@ class ColoredNoise : public Noise
 	//
 	//  PROTECTED MEMBER FUNCTIONS:
 	//
-	
+
 	protected:
 
 	//
 	//  PROTECTED MEMBERS:
 	//
-	
+
 	protected:
 
 		DynamicSystem* dynamicSystem;				/**< Dynamic system generating the colored noise. */

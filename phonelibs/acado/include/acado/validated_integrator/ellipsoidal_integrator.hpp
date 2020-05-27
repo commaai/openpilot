@@ -49,7 +49,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Validated integrator for ODEs based on Taylor models with ellipsoidal remainder term.
  *
  *	\author Mario Villanueva, Boris Houska
@@ -59,9 +59,9 @@ BEGIN_NAMESPACE_ACADO
 
 class EllipsoidalIntegrator : public AlgorithmicBase
 {
- 
-  public: 
-  
+
+  public:
+
     /** Default constructor. */
     EllipsoidalIntegrator( );
 
@@ -80,17 +80,17 @@ class EllipsoidalIntegrator : public AlgorithmicBase
 
     /** Assignment operator (deep copy). */
     virtual EllipsoidalIntegrator& operator=( const EllipsoidalIntegrator& arg );
-  
-	
-	
-	
+
+
+
+
 	Tmatrix<Interval> integrate( double t0, double tf, int M, const Tmatrix<Interval> &x );
-	
+
 	Tmatrix<Interval> integrate( double t0, double tf, int M, const Tmatrix<Interval> &x, const Tmatrix<Interval> &p );
-	
+
 	Tmatrix<Interval> integrate( double t0, double tf, int M, const Tmatrix<Interval> &x,
 								 const Tmatrix<Interval> &p, const Tmatrix<Interval> &w );
-	
+
 
 	template <typename T> returnValue integrate( double t0, double tf,
 												 Tmatrix<T> *x, Tmatrix<T> *p = 0, Tmatrix<T> *w = 0 );
@@ -101,32 +101,32 @@ class EllipsoidalIntegrator : public AlgorithmicBase
 	returnValue init( const DifferentialEquation &rhs_, const int &N_ = 3 );
 
 	Tmatrix<Interval> boundQ() const;
-	
+
 	template <typename T> Tmatrix<Interval> getStateBound( const Tmatrix<T> &x ) const;
-	
-	
-	
-	
+
+
+
+
 // PRIVATE FUNCTIONS:
 // ----------------------------------------------------------
-	
+
 private:
-	
-	
+
+
 	virtual returnValue setupOptions( );
-	
-	
+
+
 	void copy( const EllipsoidalIntegrator& arg );
-	
+
 	template <typename T> void phase0( double t,
 									   Tmatrix<T> *x, Tmatrix<T> *p, Tmatrix<T> *w,
 									   Tmatrix<T> &coeff, Tmatrix<double> &C );
-	
+
 	template <typename T> double phase1(	double t, double tf,
 											Tmatrix<T> *x, Tmatrix<T> *p, Tmatrix<T> *w,
 											Tmatrix<T> &coeff,
 											Tmatrix<double> &C );
-	
+
 	template <typename T> void phase2(	double t, double h,
 										Tmatrix<T> *x, Tmatrix<T> *p, Tmatrix<T> *w,
 										Tmatrix<T> &coeff,
@@ -139,51 +139,51 @@ private:
 	template <typename T> Tmatrix<T> evaluate(	Function &f, Interval t,
 												Tmatrix<T> *x, Tmatrix<T> *p, Tmatrix<T> *w ) const;
 
-	
+
 	template <typename T> Tmatrix<T> phi( const Tmatrix<T> &coeff, const double &h ) const;
-	
-	
-	
+
+
+
 	template <typename T> Tmatrix<double> hat( const Tmatrix<T> &x ) const;
-	
+
 	Tmatrix<Interval> evalC ( const Tmatrix<double> &C, double h ) const;
 	Tmatrix<double>   evalC2( const Tmatrix<double> &C, double h ) const;
-	
+
 	double scale( const         Interval  &E, const   Interval  &X ) const;
 	double norm ( const Tmatrix<Interval> &E, Tmatrix<Interval> &X ) const;
-	
-	
+
+
 	BooleanType isIncluded( const Tmatrix<Interval> &A, const Tmatrix<Interval> &B ) const;
 
 	template <typename T> Tmatrix<Interval> bound( const Tmatrix<T> &x ) const;
-	
+
 	template <typename T> Tmatrix<Interval> getRemainder( const Tmatrix<T> &x ) const;
-	
+
 	template <typename T> Tmatrix<T> getPolynomial( const Tmatrix<T> &x ) const;
-	
+
 	template <typename T> void center( Tmatrix<T> &x ) const;
-	
+
 	void updateQ( Tmatrix<double> C, Tmatrix<Interval> R );
-	
+
 	void setInfinity();
-	
-	
-	
+
+
+
 // PRIVATE MEMBERS:
 // ----------------------------------------------------------
-	
+
 private:
-  
+
 	int       nx;   // number of differential states.
 	int       N ;   // the order of the integrator.
-	
+
 	Function g  ;   // Taylor expansion of the solution trajectory
-	Function gr ;   // Remainder term associated with g 
+	Function gr ;   // Remainder term associated with g
 	Function dg ;   // Jacobian of the function g : g(t,x,...)/dx
 	Function ddg;   // Directional derivative of dg: (d^2 g(t,x,...)/d^2x)*r*r
 
     Tmatrix<double>  Q;  // Ellipsoidal remainder matrix
-    
+
     RealClock totalTime ;
     RealClock Phase0Time;
     RealClock Phase1Time;

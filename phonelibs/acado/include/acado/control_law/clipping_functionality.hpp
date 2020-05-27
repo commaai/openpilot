@@ -48,7 +48,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *  The class ClippingFunctionality allows to limit the output of the 
+ *  The class ClippingFunctionality allows to limit the output of the
  *	ControlLaw before passing it as signal to control the Process.
  *
  *	 \author Hans Joachim Ferreau, Boris Houska
@@ -60,7 +60,7 @@ class ClippingFunctionality
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		ClippingFunctionality( );
 
@@ -80,7 +80,7 @@ class ClippingFunctionality
 		ClippingFunctionality(	const ClippingFunctionality& rhs
 								);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		~ClippingFunctionality( );
 

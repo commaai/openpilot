@@ -40,12 +40,12 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *	\brief Allows to export code of different arithmetic statements.
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class ExportArithmeticStatement allows to export code of different arithmetic 
+ *	The class ExportArithmeticStatement allows to export code of different arithmetic
  *	statements of the form:
  *
  *	lhs <op0> rhs1 <op1> rhs2 <op2> rhs3,
@@ -65,7 +65,7 @@ class ExportArithmeticStatement : public ExportStatement
     //
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
         ExportArithmeticStatement( );
 
@@ -97,7 +97,7 @@ class ExportArithmeticStatement : public ExportStatement
 		 */
 		virtual ExportStatement* clone( ) const;
 
-		/** Exports data declaration of the statement into given file. Its appearance can 
+		/** Exports data declaration of the statement into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream			Name of file to be used to export statement.
@@ -113,7 +113,7 @@ class ExportArithmeticStatement : public ExportStatement
 													int _precision = 16
 													) const;
 
-		/** Exports source code of the statement into given file. Its appearance can 
+		/** Exports source code of the statement into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream			Name of file to be used to export statement.
@@ -136,7 +136,7 @@ class ExportArithmeticStatement : public ExportStatement
     //
     protected:
 
-		/** Exports source code for an addition or subtraction to given file. 
+		/** Exports source code for an addition or subtraction to given file.
 		 *  Its appearance can be adjusted by various options.
 		 *
 		 *	@param[in] stream			Name of file to be used to export statement.
@@ -170,7 +170,7 @@ class ExportArithmeticStatement : public ExportStatement
 										const std::string& _intString = "int"
 										) const;
 
-		/** Exports source code for an assignment to given file. 
+		/** Exports source code for an assignment to given file.
 		 *  Its appearance can be adjusted by various options.
 		 *
 		 *	@param[in] stream			Name of file to be used to export statement.

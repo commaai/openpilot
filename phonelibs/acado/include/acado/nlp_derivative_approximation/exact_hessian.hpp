@@ -43,7 +43,7 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief Implements an exact Hessian computation for obtaining second-order derivatives within NLPsolvers.
  *
  *	\ingroup NumericalAlgorithms
@@ -62,7 +62,7 @@ class ExactHessian : public NLPderivativeApproximation
 
         /** Default constructor. */
         ExactHessian( );
-		
+
 		/** Default constructor. */
         ExactHessian(	UserInteraction* _userInteraction
 						);

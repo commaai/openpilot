@@ -10,7 +10,7 @@
 #ifndef EIGEN_ALLANDANY_H
 #define EIGEN_ALLANDANY_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -148,7 +148,7 @@ inline bool DenseBase<Derived>::allFinite() const
 {
   return !((derived()-derived()).hasNaN());
 }
-    
+
 } // end namespace Eigen
 
 #endif // EIGEN_ALLANDANY_H

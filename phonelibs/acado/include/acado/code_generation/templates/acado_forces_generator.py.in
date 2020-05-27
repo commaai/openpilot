@@ -8,7 +8,7 @@ Dependencies:
     - suds
     - urllib
     - zipfile
-    
+
 Copyright 2014 Milan Vukov, KU Leuven, Juan Jerez, EMBOTECH.
 
 Please note that although the ACADO generated code is released under LGPL
@@ -32,12 +32,12 @@ class MultistageProblem( object ):
         # Initialize structs for inequality constraints
         self.ineq = [
             {
-                'b': {'lb': [], 'lbidx': [], 'ub': [], 'ubidx': [], 'd': float(3)}, 
+                'b': {'lb': [], 'lbidx': [], 'ub': [], 'ubidx': [], 'd': float(3)},
                 'p': {'A': [], 'b': [], 'd': float(3)},
                 'q': {'Q': [], 'G': [], 'r': [], 'd': float(3)}
             }
             for k in range( N )] # d is just a dummy var
-        
+
         # Parameters
         self.params = []
         # Outputs
@@ -59,30 +59,30 @@ class MultistageProblem( object ):
             'parallel': 0,
             'clversion': 1,
             'mu0': 1.0}
-        
+
     def setDims(self, stage, n, r, l, u, p, q):
         if (stage < 0) or (stage > self.N - 1):
             raise ValueError("Stage index must be between 0 and " + str(N - 1))
-            
+
         self.dims[ stage ][ 'n' ] = float( n )
         self.dims[ stage ][ 'r' ] = float( r )
         self.dims[ stage ][ 'l' ] = float( l )
         self.dims[ stage ][ 'u' ] = float( u )
         self.dims[ stage ][ 'p' ] = float( p )
         self.dims[ stage ][ 'q' ] = float( q )
-            
+
     def setStage(self,
                  stage,
                  H = None, f = None,
                  lb = None, ub = None,
                  C = None, c = None, D = None):
-        
+
         if (stage < 0) or (stage > self.N - 1):
             raise ValueError("Stage index must be between 0 and " + str(N - 1))
-            
+
     def newParam(self, name, maps2stage, maps2data, type = 'dense'):
         self.params.append( (name, tuple([float( el ) for el in maps2stage]), maps2data, type) )
-            
+
     def newOutput(self, name, fromStage, idxWithinStage):
         self.outputs.append( (name, fromStage, [float( el ) for el in idxWithinStage]) )
 
@@ -93,7 +93,7 @@ class MultistageProblem( object ):
             for name in ['lbidx', 'ubidx']:
                 data = self.ineq[ stage ][ 'b' ][ name ]
                 self.ineq[ stage ][ 'b' ][ name ] = [float( el ) for el in data]
-        
+
         # Export stages
         self.exportStages = np.array(
             [(self.dims[ n ], self.cost[ n ], self.eq[ n ], self.ineq[ n ]) for n in range( self.N )],
@@ -102,14 +102,14 @@ class MultistageProblem( object ):
         # Max dim of all strings is set to 10
         self.exportParams = np.array(self.params,
             dtype = [('name', 'S10'), ('maps2stage', 'O'), ('maps2data', 'S10'), ('type', 'S10')])
-        
-        # Max dim of all strings is set to 10   
+
+        # Max dim of all strings is set to 10
         self.exportOutputs = np.array(self.outputs,
             dtype = [('name', 'S10'), ('fromStage', 'd'), ('idxWithinStage', 'O')])
-        
+
         # Max dim of all strings is set to 10
         self.exportOptions = np.array([tuple(self.codeoptions.values())],
-            dtype = zip(self.codeoptions.keys(), ('d', 'd', 'd', 'O', 'd', 'd', 'd', 
+            dtype = zip(self.codeoptions.keys(), ('d', 'd', 'd', 'O', 'd', 'd', 'd',
                                                   'S10', 'S10', 'd', 'd', 'd', 'O')))
 
         # Pack shit and save it to a file which we are gonna send to FORCES server
@@ -121,12 +121,12 @@ class MultistageProblem( object ):
 
         import scipy.io as sio
         sio.savemat(fileName, problem, format = '5', oned_as = 'row')
-            
+
     def generateCode(self, userID = "", unzip = True):
 
         if userID == "":
             raise ValueError("userID is empty.")
-    
+
         fileName = 'forces.mat'
         self._saveData( fileName )
 
@@ -140,7 +140,7 @@ class MultistageProblem( object ):
         # send request to server
         from suds import WebFault
         from suds.client import Client
-        
+
         server = "http://forces.ethz.ch"
         self.forcesClient = Client(server + "/CodeGen.asmx?Wsdl")
         resp = self.forcesClient.service[ 0 ].generateCodeFromMatlab(userID, self.fileData)
@@ -159,7 +159,7 @@ class MultistageProblem( object ):
 
             with zipfile.ZipFile('forces.zip', "r") as z:
                 z.extractall( "./forces" )
-                
+
 ## Generator for a FORCES QP solver used by the ACADO OCP solver
 
 #
@@ -180,7 +180,7 @@ lbIdx = [
 ubIdx = [
         @UB_IDX@
         ]
-    
+
 # Constant Hessian
 constHessian = @CONST_HESSIAN@
 # Diagonal Hessian
@@ -201,7 +201,7 @@ for i in range( N ):
 
         # Dimension
         stages.setDims(i, nx + nu, nx, len( lbIdx[ 0 ] ), len( ubIdx[ 0 ] ), 0, 0)
-        
+
         # Cost
         if constHessian == 1:
             if diagHessian == 1:
@@ -300,7 +300,7 @@ for i in range( N ):
     stages.newOutput('out' + str(i + 1), i + 1, range(1, int(stages.dims[ i ][ 'n' ]) + 1))
 
 ## Solver settings
-stages.codeoptions["name"]       = "@SOLVER_NAME@" 
+stages.codeoptions["name"]       = "@SOLVER_NAME@"
 stages.codeoptions["overwrite"]  = 1 # Always overwrite the existing code
 stages.codeoptions["printlevel"] = @PRINT_LEVEL@
 stages.codeoptions["maxit"]      = @MAX_ITERATIONS@

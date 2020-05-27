@@ -11,7 +11,7 @@
 #ifndef EIGEN_DIAGONALPRODUCT_H
 #define EIGEN_DIAGONALPRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 template<typename MatrixType, typename DiagonalType, int ProductOrder>
@@ -62,7 +62,7 @@ class DiagonalProduct : internal::no_assignment_operator,
     {
       return m_diagonal.diagonal().coeff(ProductOrder == OnTheLeft ? row : col) * m_matrix.coeff(row, col);
     }
-    
+
     EIGEN_STRONG_INLINE const Scalar coeff(Index idx) const
     {
       enum {
@@ -82,7 +82,7 @@ class DiagonalProduct : internal::no_assignment_operator,
         ((int(StorageOrder) == RowMajor && int(ProductOrder) == OnTheLeft)
        ||(int(StorageOrder) == ColMajor && int(ProductOrder) == OnTheRight)), internal::true_type, internal::false_type>::type());
     }
-    
+
     template<int LoadMode>
     EIGEN_STRONG_INLINE PacketScalar packet(Index idx) const
     {

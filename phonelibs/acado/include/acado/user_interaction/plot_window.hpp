@@ -50,22 +50,22 @@ BEGIN_NAMESPACE_ACADO
  *	\brief Allows to setup and plot user-specified plot windows for algorithmic outputs.
  *
  *	\ingroup UserDataStructures
- *	
- *  The class PlotWindow allows to setup and plot user-specified plot windows for 
+ *
+ *  The class PlotWindow allows to setup and plot user-specified plot windows for
  *	algorithmic outputs to be plotted during runtime.
  *
- *	A plot windows comprises arbitrarily many PlotWindowSubplots stored in a simple 
- *	singly-linked list. These subplots store the information which algorithmic 
- *	output is to be plotted as well as settings defining the style of the subplot. 
+ *	A plot windows comprises arbitrarily many PlotWindowSubplots stored in a simple
+ *	singly-linked list. These subplots store the information which algorithmic
+ *	output is to be plotted as well as settings defining the style of the subplot.
  *	Note, however, that the actual data to be plotted is stored centrally for all
- *	subplots within the PlotWindow class for memory reasons. The data required for 
+ *	subplots within the PlotWindow class for memory reasons. The data required for
  *	plotting is stored within a LogRecord.
  *
- *	Additionally, a plot window stores the PlotFrequency defining whether the window 
+ *	Additionally, a plot window stores the PlotFrequency defining whether the window
  *	is to be plotted at each iteration or only at the start or end, respectively.
  *
  *	Finally, it is interesting to know that PlotWindows can be setup by the user and
- *	flushed to UserInterface classes. Internally, PlotWindows are stored as basic 
+ *	flushed to UserInterface classes. Internally, PlotWindows are stored as basic
  *	singly-linked within a PlotCollection.
  *
  *	\note The class PlotWindow is designed as non-abstract base class for interfacing
@@ -82,11 +82,11 @@ class PlotWindow
 	// PUBLIC MEMBER FUNCTIONS:
 	//
 	public:
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		PlotWindow( );
 
-		/** Constructor which takes the plot frequency. 
+		/** Constructor which takes the plot frequency.
 		 *
 		 *	@param[in] _frequency	Frequency determining at which time instants the window is to be plotted.
 		 */
@@ -101,7 +101,7 @@ class PlotWindow
 		PlotWindow(	const PlotWindow& rhs
 					);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~PlotWindow( );
 
@@ -245,7 +245,7 @@ class PlotWindow
 		 *
 		 *	@param[in] idx	Index of desired subplot.
 		 *
-		 *  \return Subplot with given index. 
+		 *  \return Subplot with given index.
 		 */
 		inline PlotWindowSubplot& operator()(	uint idx
 												);
@@ -254,7 +254,7 @@ class PlotWindow
 		 *
 		 *	@param[in] idx	Index of desired subplot.
 		 *
-		 *  \return Subplot with given index. 
+		 *  \return Subplot with given index.
 		 */
 		inline PlotWindowSubplot operator()(	uint idx
 												) const;
@@ -264,11 +264,11 @@ class PlotWindow
 		 *
 		 *	@param[in] _subplot		Subplot to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addSubplot member function and is introduced for syntax reasons only.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_PLOT_WINDOW_CORRUPTED 
+		 *	        RET_PLOT_WINDOW_CORRUPTED
 		 */
 		returnValue operator<<(	PlotWindowSubplot& _subplot
 								);
@@ -277,10 +277,10 @@ class PlotWindow
 		 *
 		 *	@param[in] _name	Internal name of subplot to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addSubplot member function and is introduced for syntax reasons only.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue operator<<(	PlotName _name
 								);
@@ -289,10 +289,10 @@ class PlotWindow
 		 *
 		 *	@param[in] _name	Internal name of subplot to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addSubplot member function and is introduced for syntax reasons only.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue operator<<(	const Expression& _name
 								);
@@ -303,7 +303,7 @@ class PlotWindow
 		 *	@param[in] _subplot		Subplot to be added.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_PLOT_WINDOW_CORRUPTED 
+		 *	        RET_PLOT_WINDOW_CORRUPTED
 		 */
 		returnValue addSubplot(	PlotWindowSubplot& _subplot
 								);
@@ -324,7 +324,7 @@ class PlotWindow
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_PLOT_COLLECTION_CORRUPTED, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue addSubplot(	const Expression& _expression,
 								const char* const _title = "",
@@ -353,7 +353,7 @@ class PlotWindow
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_PLOT_COLLECTION_CORRUPTED, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue addSubplot(	const Expression& _expressionX,
 								const Expression& _expressionY,
@@ -382,7 +382,7 @@ class PlotWindow
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_PLOT_COLLECTION_CORRUPTED, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue addSubplot(	PlotName _name,
 								const char* const _title = "",
@@ -410,7 +410,7 @@ class PlotWindow
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_PLOT_COLLECTION_CORRUPTED, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue addSubplot(	const VariablesGrid& _variable,
 								const char* const _title = "",
@@ -438,7 +438,7 @@ class PlotWindow
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_PLOT_COLLECTION_CORRUPTED, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue addSubplot3D(	const VariablesGrid& _variable,
 									const char* const _title = "",
@@ -466,7 +466,7 @@ class PlotWindow
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_PLOT_COLLECTION_CORRUPTED, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue addSubplot(	const Curve& _curve,
 								double _xRangeLowerLimit = 0.0,
@@ -487,7 +487,7 @@ class PlotWindow
 		returnValue clearAllSubplots( );
 
 
-		/** Returns current plot frequency determining at which time instants 
+		/** Returns current plot frequency determining at which time instants
 		 *	the window is to be plotted
 		 *
 		 *  \return Current plot frequency
@@ -513,7 +513,7 @@ class PlotWindow
 		 *
 		 *	@param[out]  _record	Internal plotDataRecord.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue getPlotDataRecord(	LogRecord& _record
 												) const;
@@ -522,7 +522,7 @@ class PlotWindow
 		 *
 		 *	@param[in]  _record		New internal plotDataRecord.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue setPlotDataRecord(	LogRecord& _record
 												);
@@ -535,19 +535,19 @@ class PlotWindow
 		 *	@param[in]  _name		Name of expression/variable to be plotted.
 		 *	@param[in]  value		New numerical values in form of a discrete data grid.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue setPlotData(	const Expression& _name,
 										VariablesGrid& value
 										);
 
-		/** Assigns numerical values of given pre-defined plotting 
+		/** Assigns numerical values of given pre-defined plotting
 		 *	information to internal plotDataRecord.
 		 *
 		 *	@param[in]  _name		Name of pre-defined information to be plotted.
 		 *	@param[in]  value		New numerical values in form of a discrete data grid.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue setPlotData(	LogName _name,
 										VariablesGrid& value
@@ -578,14 +578,14 @@ class PlotWindow
 		 *
 		 *	@param[in]  _next	New pointer to next window.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue setNext(	PlotWindow* const _next
 									);
 
 		/** Returns pointer to next PlotWindow within a PlotCollection.
 		 *
-		 *  \return Pointer to next window (or NULL iff window is terminal element). 
+		 *  \return Pointer to next window (or NULL iff window is terminal element).
 		 */
 		inline PlotWindow* getNext( ) const;
 
@@ -595,7 +595,7 @@ class PlotWindow
 		 *
 		 *	@param[in]  _type	Type of variable to be plotted.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue addPlotDataItem(	VariableType _type
 										);
@@ -605,7 +605,7 @@ class PlotWindow
 		 *
 		 *	@param[in]  _expression	Expression to be plotted.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue addPlotDataItem(	const Expression* const _expression
 										);
@@ -615,7 +615,7 @@ class PlotWindow
 		 *
 		 *	@param[in]  _name	Pre-defined information to be plotted.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue addPlotDataItem(	PlotName _name
 										);
@@ -663,8 +663,8 @@ class PlotWindow
 										);
 
 
-		/** Determines type, discrete plot data grid and the higher-level 
-		 *	discretization grid for a given variable to be plotted. The 
+		/** Determines type, discrete plot data grid and the higher-level
+		 *	discretization grid for a given variable to be plotted. The
 		 *	last two arguments are obtained from the internal plotDataRecord.
 		 *
 		 *	@param[in]  variable				Variable to be plotted.
@@ -680,8 +680,8 @@ class PlotWindow
 											Grid& _discretizationGrid
 											);
 
-		/** Determines type, discrete plot data grid and the higher-level 
-		 *	discretization grid for a given expression to be plotted. The 
+		/** Determines type, discrete plot data grid and the higher-level
+		 *	discretization grid for a given expression to be plotted. The
 		 *	last two arguments are obtained from the internal plotDataRecord.
 		 *
 		 *	@param[in]  expression				Expression to be plotted.
@@ -697,8 +697,8 @@ class PlotWindow
 											Grid& _discretizationGrid
 											);
 
-		/** Determines type and discrete plot data grid for a given data grid to 
-		 *	be plotted. 
+		/** Determines type and discrete plot data grid for a given data grid to
+		 *	be plotted.
 		 *
 		 *	@param[in]  variable				Variable to be plotted.
 		 *	@param[out] _type					Type of variable to be plotted.
@@ -714,7 +714,7 @@ class PlotWindow
 									);
 
 
-		/** Determines suitable range of the y-axis for plotting a given 
+		/** Determines suitable range of the y-axis for plotting a given
 		 *	discrete data grid in an automated way.
 		 *
 		 *	@param[in]  dataGridY				Discrete data grid to be plotted.
@@ -732,17 +732,17 @@ class PlotWindow
 
 
 		inline returnValue enableNominalControls( );
-		
+
 		inline returnValue disableNominalControls( );
 
 
 		inline returnValue enableNominalParameters( );
-		
+
 		inline returnValue disableNominalParameters( );
 
-		
+
 		inline returnValue enableNominalOutputs( );
-		
+
 		inline returnValue disableNominalOutputs( );
 
 
@@ -763,9 +763,9 @@ class PlotWindow
 
 		LogRecord plotDataRecord;				/**< LogRecord to store all data necessary for plotting the window. */
 
-		BooleanType shallPlotNominalControls;	
-		BooleanType shallPlotNominalParameters;	
-		BooleanType shallPlotNominalOutputs;	
+		BooleanType shallPlotNominalControls;
+		BooleanType shallPlotNominalParameters;
+		BooleanType shallPlotNominalOutputs;
 };
 
 

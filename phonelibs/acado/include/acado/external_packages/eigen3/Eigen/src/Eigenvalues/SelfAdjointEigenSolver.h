@@ -13,7 +13,7 @@
 
 #include "./Tridiagonalization.h"
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename _MatrixType>
 class GeneralizedSelfAdjointEigenSolver;
@@ -76,7 +76,7 @@ template<typename _MatrixType> class SelfAdjointEigenSolver
       Options = MatrixType::Options,
       MaxColsAtCompileTime = MatrixType::MaxColsAtCompileTime
     };
-    
+
     /** \brief Scalar type for matrices of type \p _MatrixType. */
     typedef typename MatrixType::Scalar Scalar;
     typedef typename MatrixType::Index Index;
@@ -88,7 +88,7 @@ template<typename _MatrixType> class SelfAdjointEigenSolver
       * complex.
       */
     typedef typename NumTraits<Scalar>::Real RealScalar;
-    
+
     friend struct internal::direct_selfadjoint_eigenvalues<SelfAdjointEigenSolver,Size,NumTraits<Scalar>::IsComplex>;
 
     /** \brief Type for vector of eigenvalues as returned by eigenvalues().
@@ -190,14 +190,14 @@ template<typename _MatrixType> class SelfAdjointEigenSolver
       * \sa SelfAdjointEigenSolver(const MatrixType&, int)
       */
     SelfAdjointEigenSolver& compute(const MatrixType& matrix, int options = ComputeEigenvectors);
-    
+
     /** \brief Computes eigendecomposition of given matrix using a direct algorithm
       *
       * This is a variant of compute(const MatrixType&, int options) which
       * directly solves the underlying polynomial equation.
-      * 
+      *
       * Currently only 3x3 matrices for which the sizes are known at compile time are supported (e.g., Matrix3d).
-      * 
+      *
       * This method is usually significantly faster than the QR algorithm
       * but it might also be less accurate. It is also worth noting that
       * for 3x3 matrices it involves trigonometric operations which are
@@ -329,7 +329,7 @@ template<typename _MatrixType> class SelfAdjointEigenSolver
     {
       compute(matrix, computeEigenvectors);
     }
-    
+
     SelfAdjointEigenSolver(const MatrixType& matA, const MatrixType& matB, bool computeEigenvectors = true)
         : m_eivec(matA.cols(), matA.cols()),
           m_eivalues(matA.cols()),
@@ -338,7 +338,7 @@ template<typename _MatrixType> class SelfAdjointEigenSolver
     {
       static_cast<GeneralizedSelfAdjointEigenSolver<MatrixType>*>(this)->compute(matA, matB, computeEigenvectors ? ComputeEigenvectors : EigenvaluesOnly);
     }
-    
+
     void compute(const MatrixType& matrix, bool computeEigenvectors)
     {
       compute(matrix, computeEigenvectors ? ComputeEigenvectors : EigenvaluesOnly);
@@ -415,7 +415,7 @@ SelfAdjointEigenSolver<MatrixType>& SelfAdjointEigenSolver<MatrixType>
   mat.template triangularView<Lower>() /= scale;
   m_subdiag.resize(n-1);
   internal::tridiagonalization_inplace(mat, diag, m_subdiag, computeEigenvectors);
-  
+
   Index end = n-1;
   Index start = 0;
   Index iter = 0; // total number of iterations
@@ -467,7 +467,7 @@ SelfAdjointEigenSolver<MatrixType>& SelfAdjointEigenSolver<MatrixType>
       }
     }
   }
-  
+
   // scale back the eigen values
   m_eivalues *= scale;
 
@@ -478,7 +478,7 @@ SelfAdjointEigenSolver<MatrixType>& SelfAdjointEigenSolver<MatrixType>
 
 
 namespace internal {
-  
+
 template<typename SolverType,int Size,bool IsComplex> struct direct_selfadjoint_eigenvalues
 {
   static inline void run(SolverType& eig, const typename SolverType::MatrixType& A, int options)
@@ -490,7 +490,7 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,3
   typedef typename SolverType::MatrixType MatrixType;
   typedef typename SolverType::RealVectorType VectorType;
   typedef typename SolverType::Scalar Scalar;
-  
+
   static inline void computeRoots(const MatrixType& m, VectorType& roots)
   {
     using std::sqrt;
@@ -539,7 +539,7 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,3
         std::swap(roots(0),roots(1));
     }
   }
-  
+
   static inline void run(SolverType& solver, const MatrixType& mat, int options)
   {
     using std::sqrt;
@@ -548,10 +548,10 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,3
             && (options&EigVecMask)!=EigVecMask
             && "invalid option parameter");
     bool computeEigenvectors = (options&ComputeEigenvectors)==ComputeEigenvectors;
-    
+
     MatrixType& eivecs = solver.m_eivec;
     VectorType& eivals = solver.m_eivalues;
-  
+
     // map the matrix coefficients to [-1:1] to avoid over- and underflow.
     Scalar scale = mat.cwiseAbs().maxCoeff();
     MatrixType scaledMat = mat / scale;
@@ -652,7 +652,7 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,3
     }
     // Rescale back to the original size.
     eivals *= scale;
-    
+
     solver.m_info = Success;
     solver.m_isInitialized = true;
     solver.m_eigenvectorsOk = computeEigenvectors;
@@ -665,7 +665,7 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,2
   typedef typename SolverType::MatrixType MatrixType;
   typedef typename SolverType::RealVectorType VectorType;
   typedef typename SolverType::Scalar Scalar;
-  
+
   static inline void computeRoots(const MatrixType& m, VectorType& roots)
   {
     using std::sqrt;
@@ -674,7 +674,7 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,2
     roots(0) = t1 - t0;
     roots(1) = t1 + t0;
   }
-  
+
   static inline void run(SolverType& solver, const MatrixType& mat, int options)
   {
     using std::sqrt;
@@ -683,18 +683,18 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,2
             && (options&EigVecMask)!=EigVecMask
             && "invalid option parameter");
     bool computeEigenvectors = (options&ComputeEigenvectors)==ComputeEigenvectors;
-    
+
     MatrixType& eivecs = solver.m_eivec;
     VectorType& eivals = solver.m_eivalues;
-  
+
     // map the matrix coefficients to [-1:1] to avoid over- and underflow.
     Scalar scale = mat.cwiseAbs().maxCoeff();
     scale = (std::max)(scale,Scalar(1));
     MatrixType scaledMat = mat / scale;
-    
+
     // Compute the eigenvalues
     computeRoots(scaledMat,eivals);
-    
+
     // compute the eigen vectors
     if(computeEigenvectors)
     {
@@ -715,10 +715,10 @@ template<typename SolverType> struct direct_selfadjoint_eigenvalues<SolverType,2
 
       eivecs.col(0) << eivecs.col(1).unitOrthogonal();
     }
-    
+
     // Rescale back to the original size.
     eivals *= scale;
-    
+
     solver.m_info = Success;
     solver.m_isInitialized = true;
     solver.m_eigenvectorsOk = computeEigenvectors;
@@ -757,7 +757,7 @@ static void tridiagonal_qr_step(RealScalar* diag, RealScalar* subdiag, Index sta
     if(e2==0)  mu -= (e / (td + (td>0 ? 1 : -1))) * (e / h);
     else       mu -= e2 / (td + (td>0 ? h : -h));
   }
-  
+
   RealScalar x = diag[start] - mu;
   RealScalar z = subdiag[start];
   for (Index k = start; k < end; ++k)
@@ -772,7 +772,7 @@ static void tridiagonal_qr_step(RealScalar* diag, RealScalar* subdiag, Index sta
     diag[k] = rot.c() * (rot.c() * diag[k] - rot.s() * subdiag[k]) - rot.s() * (rot.c() * subdiag[k] - rot.s() * diag[k+1]);
     diag[k+1] = rot.s() * sdk + rot.c() * dkp1;
     subdiag[k] = rot.c() * sdk - rot.s() * dkp1;
-    
+
 
     if (k > start)
       subdiag[k - 1] = rot.c() * subdiag[k-1] - rot.s() * z;
@@ -784,7 +784,7 @@ static void tridiagonal_qr_step(RealScalar* diag, RealScalar* subdiag, Index sta
       z = -rot.s() * subdiag[k+1];
       subdiag[k + 1] = rot.c() * subdiag[k+1];
     }
-    
+
     // apply the givens rotation to the unit matrix Q = Q * G
     if (matrixQ)
     {

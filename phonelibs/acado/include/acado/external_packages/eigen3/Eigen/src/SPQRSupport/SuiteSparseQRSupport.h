@@ -11,10 +11,10 @@
 #define EIGEN_SUITESPARSEQRSUPPORT_H
 
 namespace Eigen {
-  
-  template<typename MatrixType> class SPQR; 
-  template<typename SPQRType> struct SPQRMatrixQReturnType; 
-  template<typename SPQRType> struct SPQRMatrixQTransposeReturnType; 
+
+  template<typename MatrixType> class SPQR;
+  template<typename SPQRType> struct SPQRMatrixQReturnType;
+  template<typename SPQRType> struct SPQRMatrixQTransposeReturnType;
   template <typename SPQRType, typename Derived> struct SPQR_QProduct;
   namespace internal {
     template <typename SPQRType> struct traits<SPQRMatrixQReturnType<SPQRType> >
@@ -30,28 +30,28 @@ namespace Eigen {
       typedef typename Derived::PlainObject ReturnType;
     };
   } // End namespace internal
-  
+
 /**
  * \ingroup SPQRSupport_Module
  * \class SPQR
  * \brief Sparse QR factorization based on SuiteSparseQR library
- * 
- * This class is used to perform a multithreaded and multifrontal rank-revealing QR decomposition 
+ *
+ * This class is used to perform a multithreaded and multifrontal rank-revealing QR decomposition
  * of sparse matrices. The result is then used to solve linear leasts_square systems.
  * Clearly, a QR factorization is returned such that A*P = Q*R where :
- * 
+ *
  * P is the column permutation. Use colsPermutation() to get it.
- * 
- * Q is the orthogonal matrix represented as Householder reflectors. 
+ *
+ * Q is the orthogonal matrix represented as Householder reflectors.
  * Use matrixQ() to get an expression and matrixQ().transpose() to get the transpose.
  * You can then apply it to a vector.
- * 
+ *
  * R is the sparse triangular factor. Use matrixQR() to get it as SparseMatrix.
  * NOTE : The Index type of R is always UF_long. You can get it with SPQR::Index
- * 
+ *
  * \tparam _MatrixType The type of the sparse matrix A, must be a column-major SparseMatrix<>
- * NOTE 
- * 
+ * NOTE
+ *
  */
 template<typename _MatrixType>
 class SPQR
@@ -59,19 +59,19 @@ class SPQR
   public:
     typedef typename _MatrixType::Scalar Scalar;
     typedef typename _MatrixType::RealScalar RealScalar;
-    typedef UF_long Index ; 
+    typedef UF_long Index ;
     typedef SparseMatrix<Scalar, ColMajor, Index> MatrixType;
     typedef PermutationMatrix<Dynamic, Dynamic> PermutationType;
   public:
-    SPQR() 
+    SPQR()
     : m_ordering(SPQR_ORDERING_DEFAULT),
       m_allow_tol(SPQR_DEFAULT_TOL),
       m_tolerance (NumTraits<Scalar>::epsilon())
-    { 
+    {
       cholmod_l_start(&m_cc);
     }
-    
-    SPQR(const _MatrixType& matrix) 
+
+    SPQR(const _MatrixType& matrix)
     : m_ordering(SPQR_ORDERING_DEFAULT),
       m_allow_tol(SPQR_DEFAULT_TOL),
       m_tolerance (NumTraits<Scalar>::epsilon())
@@ -79,7 +79,7 @@ class SPQR
       cholmod_l_start(&m_cc);
       compute(matrix);
     }
-    
+
     ~SPQR()
     {
       // Calls SuiteSparseQR_free()
@@ -93,15 +93,15 @@ class SPQR
     void compute(const _MatrixType& matrix)
     {
       MatrixType mat(matrix);
-      cholmod_sparse A; 
+      cholmod_sparse A;
       A = viewAsCholmod(mat);
       Index col = matrix.cols();
-      m_rank = SuiteSparseQR<Scalar>(m_ordering, m_tolerance, col, &A, 
+      m_rank = SuiteSparseQR<Scalar>(m_ordering, m_tolerance, col, &A,
                              &m_cR, &m_E, &m_H, &m_HPinv, &m_HTau, &m_cc);
 
       if (!m_cR)
       {
-        m_info = NumericalIssue; 
+        m_info = NumericalIssue;
         m_isInitialized = false;
         return;
       }
@@ -109,48 +109,48 @@ class SPQR
       m_isInitialized = true;
       m_isRUpToDate = false;
     }
-    /** 
+    /**
      * Get the number of rows of the input matrix and the Q matrix
      */
     inline Index rows() const {return m_H->nrow; }
-    
-    /** 
-     * Get the number of columns of the input matrix. 
+
+    /**
+     * Get the number of columns of the input matrix.
      */
     inline Index cols() const { return m_cR->ncol; }
-   
+
       /** \returns the solution X of \f$ A X = B \f$ using the current decomposition of A.
       *
       * \sa compute()
       */
     template<typename Rhs>
-    inline const internal::solve_retval<SPQR, Rhs> solve(const MatrixBase<Rhs>& B) const 
+    inline const internal::solve_retval<SPQR, Rhs> solve(const MatrixBase<Rhs>& B) const
     {
       eigen_assert(m_isInitialized && " The QR factorization should be computed first, call compute()");
       eigen_assert(this->rows()==B.rows()
                     && "SPQR::solve(): invalid number of rows of the right hand side matrix B");
           return internal::solve_retval<SPQR, Rhs>(*this, B.derived());
     }
-    
+
     template<typename Rhs, typename Dest>
     void _solve(const MatrixBase<Rhs> &b, MatrixBase<Dest> &dest) const
     {
       eigen_assert(m_isInitialized && " The QR factorization should be computed first, call compute()");
       eigen_assert(b.cols()==1 && "This method is for vectors only");
-      
+
       //Compute Q^T * b
-      Dest y; 
+      Dest y;
       y = matrixQ().transpose() * b;
         // Solves with the triangular matrix R
       Index rk = this->rank();
       y.topRows(rk) = this->matrixR().topLeftCorner(rk, rk).template triangularView<Upper>().solve(y.topRows(rk));
       y.bottomRows(cols()-rk).setZero();
-      // Apply the column permutation 
+      // Apply the column permutation
       dest.topRows(cols()) = colsPermutation() * y.topRows(cols());
-      
+
       m_info = Success;
     }
-    
+
     /** \returns the sparse triangular factor R. It is a sparse matrix
      */
     const MatrixType matrixR() const
@@ -169,16 +169,16 @@ class SPQR
     }
     /// Get the permutation that was applied to columns of A
     PermutationType colsPermutation() const
-    { 
+    {
       eigen_assert(m_isInitialized && "Decomposition is not initialized.");
       Index n = m_cR->ncol;
       PermutationType colsPerm(n);
       for(Index j = 0; j <n; j++) colsPerm.indices()(j) = m_E[j];
-      return colsPerm; 
-      
+      return colsPerm;
+
     }
     /**
-     * Gets the rank of the matrix. 
+     * Gets the rank of the matrix.
      * It should be equal to matrixQR().cols if the matrix is full-rank
      */
     Index rank() const
@@ -190,11 +190,11 @@ class SPQR
     void setSPQROrdering(int ord) { m_ordering = ord;}
     /// Set the tolerance tol to treat columns with 2-norm < =tol as zero
     void setPivotThreshold(const RealScalar& tol) { m_tolerance = tol; }
-    
+
     /** \returns a pointer to the SPQR workspace */
     cholmod_common *cholmodCommon() const { return &m_cc; }
-    
-    
+
+
     /** \brief Reports whether previous computation was successful.
       *
       * \returns \c Success if computation was succesful,
@@ -232,7 +232,7 @@ struct SPQR_QProduct : ReturnByValue<SPQR_QProduct<SPQRType,Derived> >
   typedef typename SPQRType::Index Index;
   //Define the constructor to get reference to argument types
   SPQR_QProduct(const SPQRType& spqr, const Derived& other, bool transpose) : m_spqr(spqr),m_other(other),m_transpose(transpose) {}
-  
+
   inline Index rows() const { return m_transpose ? m_spqr.rows() : m_spqr.cols(); }
   inline Index cols() const { return m_other.cols(); }
   // Assign to a vector
@@ -240,22 +240,22 @@ struct SPQR_QProduct : ReturnByValue<SPQR_QProduct<SPQRType,Derived> >
   void evalTo(ResType& res) const
   {
     cholmod_dense y_cd;
-    cholmod_dense *x_cd; 
-    int method = m_transpose ? SPQR_QTX : SPQR_QX; 
+    cholmod_dense *x_cd;
+    int method = m_transpose ? SPQR_QTX : SPQR_QX;
     cholmod_common *cc = m_spqr.cholmodCommon();
     y_cd = viewAsCholmod(m_other.const_cast_derived());
     x_cd = SuiteSparseQR_qmult<Scalar>(method, m_spqr.m_H, m_spqr.m_HTau, m_spqr.m_HPinv, &y_cd, cc);
     res = Matrix<Scalar,ResType::RowsAtCompileTime,ResType::ColsAtCompileTime>::Map(reinterpret_cast<Scalar*>(x_cd->x), x_cd->nrow, x_cd->ncol);
     cholmod_l_free_dense(&x_cd, cc);
   }
-  const SPQRType& m_spqr; 
-  const Derived& m_other; 
-  bool m_transpose; 
-  
+  const SPQRType& m_spqr;
+  const Derived& m_other;
+  bool m_transpose;
+
 };
 template<typename SPQRType>
 struct SPQRMatrixQReturnType{
-  
+
   SPQRMatrixQReturnType(const SPQRType& spqr) : m_spqr(spqr) {}
   template<typename Derived>
   SPQR_QProduct<SPQRType, Derived> operator*(const MatrixBase<Derived>& other)
@@ -286,7 +286,7 @@ struct SPQRMatrixQTransposeReturnType{
 };
 
 namespace internal {
-  
+
 template<typename _MatrixType, typename Rhs>
 struct solve_retval<SPQR<_MatrixType>, Rhs>
   : solve_retval_base<SPQR<_MatrixType>, Rhs>

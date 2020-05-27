@@ -10,7 +10,7 @@
 #ifndef EIGEN_GENERAL_MATRIX_MATRIX_TRIANGULAR_H
 #define EIGEN_GENERAL_MATRIX_MATRIX_TRIANGULAR_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Scalar, typename Index, int StorageOrder, int UpLo, bool ConjLhs, bool ConjRhs>
 struct selfadjoint_rank1_update;
@@ -27,7 +27,7 @@ namespace internal {
 // forward declarations (defined at the end of this file)
 template<typename LhsScalar, typename RhsScalar, typename Index, int mr, int nr, bool ConjLhs, bool ConjRhs, int UpLo>
 struct tribb_kernel;
-  
+
 /* Optimized matrix-matrix product evaluating only one triangular half */
 template <typename Index,
           typename LhsScalar, int LhsStorageOrder, bool ConjugateLhs,
@@ -78,7 +78,7 @@ struct general_matrix_matrix_triangular_product<Index,LhsScalar,LhsStorageOrder,
     ei_declare_aligned_stack_constructed_variable(LhsScalar, blockA, kc*mc, 0);
     ei_declare_aligned_stack_constructed_variable(RhsScalar, allocatedBlockB, sizeB, 0);
     RhsScalar* blockB = allocatedBlockB + sizeW;
-    
+
     gemm_pack_lhs<LhsScalar, Index, Traits::mr, Traits::LhsProgress, LhsStorageOrder> pack_lhs;
     gemm_pack_rhs<RhsScalar, Index, Traits::nr, RhsStorageOrder> pack_rhs;
     gebp_kernel <LhsScalar, RhsScalar, Index, Traits::mr, Traits::nr, ConjugateLhs, ConjugateRhs> gebp;
@@ -132,7 +132,7 @@ struct tribb_kernel
 {
   typedef gebp_traits<LhsScalar,RhsScalar,ConjLhs,ConjRhs> Traits;
   typedef typename Traits::ResScalar ResScalar;
-  
+
   enum {
     BlockSize  = EIGEN_PLAIN_ENUM_MAX(mr,nr)
   };
@@ -194,13 +194,13 @@ struct general_product_to_triangular_selector<MatrixType,ProductType,UpLo,true>
   {
     typedef typename MatrixType::Scalar Scalar;
     typedef typename MatrixType::Index Index;
-    
+
     typedef typename internal::remove_all<typename ProductType::LhsNested>::type Lhs;
     typedef internal::blas_traits<Lhs> LhsBlasTraits;
     typedef typename LhsBlasTraits::DirectLinearAccessType ActualLhs;
     typedef typename internal::remove_all<ActualLhs>::type _ActualLhs;
     typename internal::add_const_on_value_type<ActualLhs>::type actualLhs = LhsBlasTraits::extract(prod.lhs());
-    
+
     typedef typename internal::remove_all<typename ProductType::RhsNested>::type Rhs;
     typedef internal::blas_traits<Rhs> RhsBlasTraits;
     typedef typename RhsBlasTraits::DirectLinearAccessType ActualRhs;
@@ -214,18 +214,18 @@ struct general_product_to_triangular_selector<MatrixType,ProductType,UpLo,true>
       UseLhsDirectly = _ActualLhs::InnerStrideAtCompileTime==1,
       UseRhsDirectly = _ActualRhs::InnerStrideAtCompileTime==1
     };
-    
+
     internal::gemv_static_vector_if<Scalar,Lhs::SizeAtCompileTime,Lhs::MaxSizeAtCompileTime,!UseLhsDirectly> static_lhs;
     ei_declare_aligned_stack_constructed_variable(Scalar, actualLhsPtr, actualLhs.size(),
       (UseLhsDirectly ? const_cast<Scalar*>(actualLhs.data()) : static_lhs.data()));
     if(!UseLhsDirectly) Map<typename _ActualLhs::PlainObject>(actualLhsPtr, actualLhs.size()) = actualLhs;
-    
+
     internal::gemv_static_vector_if<Scalar,Rhs::SizeAtCompileTime,Rhs::MaxSizeAtCompileTime,!UseRhsDirectly> static_rhs;
     ei_declare_aligned_stack_constructed_variable(Scalar, actualRhsPtr, actualRhs.size(),
       (UseRhsDirectly ? const_cast<Scalar*>(actualRhs.data()) : static_rhs.data()));
     if(!UseRhsDirectly) Map<typename _ActualRhs::PlainObject>(actualRhsPtr, actualRhs.size()) = actualRhs;
-    
-    
+
+
     selfadjoint_rank1_update<Scalar,Index,StorageOrder,UpLo,
                               LhsBlasTraits::NeedToConjugate && NumTraits<Scalar>::IsComplex,
                               RhsBlasTraits::NeedToConjugate && NumTraits<Scalar>::IsComplex>
@@ -239,13 +239,13 @@ struct general_product_to_triangular_selector<MatrixType,ProductType,UpLo,false>
   static void run(MatrixType& mat, const ProductType& prod, const typename MatrixType::Scalar& alpha)
   {
     typedef typename MatrixType::Index Index;
-    
+
     typedef typename internal::remove_all<typename ProductType::LhsNested>::type Lhs;
     typedef internal::blas_traits<Lhs> LhsBlasTraits;
     typedef typename LhsBlasTraits::DirectLinearAccessType ActualLhs;
     typedef typename internal::remove_all<ActualLhs>::type _ActualLhs;
     typename internal::add_const_on_value_type<ActualLhs>::type actualLhs = LhsBlasTraits::extract(prod.lhs());
-    
+
     typedef typename internal::remove_all<typename ProductType::RhsNested>::type Rhs;
     typedef internal::blas_traits<Rhs> RhsBlasTraits;
     typedef typename RhsBlasTraits::DirectLinearAccessType ActualRhs;
@@ -269,7 +269,7 @@ template<typename ProductDerived, typename _Lhs, typename _Rhs>
 TriangularView<MatrixType,UpLo>& TriangularView<MatrixType,UpLo>::assignProduct(const ProductBase<ProductDerived, _Lhs,_Rhs>& prod, const Scalar& alpha)
 {
   general_product_to_triangular_selector<MatrixType, ProductDerived, UpLo, (_Lhs::ColsAtCompileTime==1) || (_Rhs::RowsAtCompileTime==1)>::run(m_matrix.const_cast_derived(), prod.derived(), alpha);
-  
+
   return *this;
 }
 

@@ -7,7 +7,6 @@ import time
 from cereal.messaging import drain_sock
 from cereal.messaging import pub_sock
 from cereal.messaging import sub_sock
-
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 
 def get_test_string():

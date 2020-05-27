@@ -10,7 +10,7 @@
 #ifndef EIGEN2_META_H
 #define EIGEN2_META_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename T>
 struct ei_traits : internal::traits<T>

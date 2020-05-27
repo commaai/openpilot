@@ -13,9 +13,9 @@
 #ifndef EIGEN_HYBRIDNONLINEARSOLVER_H
 #define EIGEN_HYBRIDNONLINEARSOLVER_H
 
-namespace Eigen { 
+namespace Eigen {
 
-namespace HybridNonLinearSolverSpace { 
+namespace HybridNonLinearSolverSpace {
     enum Status {
         Running = -1,
         ImproperInputParameters = 0,
@@ -95,7 +95,7 @@ public:
     Index njev;
     Index iter;
     Scalar fnorm;
-    bool useExternalScaling; 
+    bool useExternalScaling;
 private:
     FunctorType &functor;
     Index n;
@@ -186,7 +186,7 @@ HybridNonLinearSolverSpace::Status
 HybridNonLinearSolver<FunctorType,Scalar>::solveOneStep(FVectorType  &x)
 {
     using std::abs;
-    
+
     eigen_assert(x.size()==n); // check the caller is not cheating us
 
     Index j;
@@ -427,7 +427,7 @@ HybridNonLinearSolver<FunctorType,Scalar>::solveNumericalDiffOneStep(FVectorType
 {
     using std::sqrt;
     using std::abs;
-    
+
     assert(x.size()==n); // check the caller is not cheating us
 
     Index j;

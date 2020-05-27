@@ -175,8 +175,8 @@ public:
 
     /** Evaluates the expression (templated version) */
     virtual returnValue evaluate( EvaluationBase *x ) = 0;
-	
-	
+
+
     /** Returns the derivative of the expression with respect     \n
      *  to the variable var(index).                               \n
      *  \return The expression for the derivative.                \n
@@ -213,8 +213,8 @@ public:
                                      int           &nNewIS  , /**< the number of new IS  */
                                      TreeProjection ***newIS  /**< the new IS-pointer    */ ) = 0;
 
-    
-    
+
+
     /** Automatic Differentiation in symmetric mode on the symbolic \n
      *  level. This function generates an expression for a          \n
      *  second order derivative.                                    \n
@@ -565,8 +565,8 @@ public:
     											);
 
 
-    
-    
+
+
     virtual Operator* myProd(Operator* a,Operator* b);
     virtual Operator* myAdd (Operator* a,Operator* b);
     virtual Operator* mySubtract (Operator* a,Operator* b);
@@ -579,8 +579,8 @@ public:
 
 
     virtual returnValue initDerivative();
-    
-    
+
+
 //
 //  PROTECTED FUNCTIONS:
 //
@@ -589,7 +589,7 @@ protected:
 
 
     virtual TreeProjection* convert2TreeProjection( Operator* a ) const; // Caution: a is deleted inside...
-    
+
     returnValue ADsymCommon( 	Operator     *a  ,
                               	TreeProjection &da ,
                               	TreeProjection &dda,
@@ -609,7 +609,7 @@ protected:
                                 int            &nNewHIS  , /**< the number of newHIS  */
                                 TreeProjection ***newHIS   /**< the new HIS-pointer   */ );
 
-	
+
     returnValue ADsymCommon2( 	  Operator       *a  ,
 				   	   	   	   	  Operator       *b  ,
                                   TreeProjection &dx ,
@@ -650,6 +650,3 @@ CLOSE_NAMESPACE_ACADO
 
 
 #endif
-
-
-

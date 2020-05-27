@@ -48,12 +48,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export automatically generated algorithms for solving linear systems of specific dimensions.
  *
  *	\ingroup NumericalAlgorithms
  *
- *	The class ExportLinearSolver allows to export automatically generated 
+ *	The class ExportLinearSolver allows to export automatically generated
  *	algorithms for solving linear systems of specific dimensions.
  *
  *	\author Rien Quirynen
@@ -66,7 +66,7 @@ class ExportLinearSolver : public ExportAlgorithm
     //
     public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -89,11 +89,11 @@ class ExportLinearSolver : public ExportAlgorithm
 		 *
 		 * 	@param[in] newDim		The dimensions of the linear system.
 		 * 	@param[in] reuse		A boolean that is true when more than one system of linear equations with the same
-		 * 							matrix needs to be solved. This means that an algorithm will be exported expecially 
+		 * 							matrix needs to be solved. This means that an algorithm will be exported expecially
 		 * 							for this case, with extra optimizations by reusing as many intermediate results as possible.
 		 * 	@param[in] unrolling	A boolean that is true when the exported code for the linear solver needs to be unrolled
 		 * 							completely.
-		 * 
+		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		returnValue init(	const uint newDim,
@@ -112,12 +112,12 @@ class ExportLinearSolver : public ExportAlgorithm
 		 *
 		 * 	@param[in] newDim		The dimensions of the linear system.
 		 * 	@param[in] reuse		A boolean that is true when more than one system of linear equations with the same
-		 * 							matrix needs to be solved. This means that an algorithm will be exported expecially 
+		 * 							matrix needs to be solved. This means that an algorithm will be exported expecially
 		 * 							for this case, with extra optimizations by reusing as many intermediate results as possible.
 		 * 	@param[in] unrolling	A boolean that is true when the exported code for the linear solver needs to be unrolled
 		 * 							completely.
 		 * 	@param[in] newId		The new identifier for this linear solver to be exported.
-		 * 
+		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		returnValue init(	const uint newDim,
@@ -197,24 +197,24 @@ class ExportLinearSolver : public ExportAlgorithm
 		 *  \return The dimension of the auxiliary variables for the linear solver.
 		 */
 		virtual ExportVariable getGlobalExportVariable( const uint factor ) const;
-		
-		
+
+
 		/** Returns a boolean that is true when an extra algorithm will be exported for reuse.
 		 *
 		 *  \return A boolean that is true when an extra algorithm will be exported for reuse.
 		 */
 		bool getReuse() const;
-		
-		
+
+
 		/** Sets the boolean that is true when an extra algorithm will be exported for reuse.
-		 * 
+		 *
 		 * 	@param[in] reuse		The new value of this boolean.
 		 *
 		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue setReuse( const bool& reuse );
-		
-		
+
+
 		/** Returns a boolean that is true when an extra algorithm will be exported for solving a transposed linear system based on reuse.
 		 *
 		 *  \return A boolean that is true when an extra algorithm will be exported for solving a transposed linear system based on reuse.
@@ -238,32 +238,32 @@ class ExportLinearSolver : public ExportAlgorithm
 		 * 			completely.
 		 */
 		bool getUnrolling() const;
-		
-		
+
+
 		/** Sets the boolean that is true when the exported code for the linear solver needs to be unrolled
 		 * 	completely.
-		 * 
+		 *
 		 * 	@param[in] unrolling	The new value of this boolean.
 		 *
 		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue setUnrolling( const bool& unrolling );
-		
-		
+
+
 		/** Returns a string containing the name of the function which is exported to solve the linear system.
 		 *
 		 *  \return A string containing the name of the function which is exported to solve the linear system.
 		 */
-		const std::string getNameSolveFunction(); 
-		
-		
+		const std::string getNameSolveFunction();
+
+
 		/** Returns a string containing the name of the function which is exported to solve the linear system with
 		 * 	the reuse of previous results.
 		 *
 		 *  \return A string containing the name of the function which is exported to solve the linear system with
 		 * 			the reuse of previous results.
 		 */
-		const std::string getNameSolveReuseFunction(); 
+		const std::string getNameSolveReuseFunction();
 		const std::string getNameSolveTransposeReuseFunction();
 
 	//
@@ -273,14 +273,14 @@ class ExportLinearSolver : public ExportAlgorithm
 
 
     protected:
-    
+
 		std::string identifier;							/**< This identifier allows the use of more than one exported linear solver. */
-    
+
 		bool UNROLLING;						/**< The boolean that defines the unrolling. */
 		bool REUSE;							/**< The boolean that defines the reuse. */
 		bool TRANSPOSE;
 		uint dim;									/**< The dimensions of the linear system. */
-		
+
 		unsigned nRows;								/**< Number of rows of matrix A. */
 		unsigned nCols;								/**< Number of columns of matrix A. */
 		unsigned nBacksolves;						/**< Number of back-solves. */
@@ -289,7 +289,7 @@ class ExportLinearSolver : public ExportAlgorithm
 		// DEFINITION OF THE EXPORTVARIABLES
 		ExportVariable A;							/**< Variable containing the matrix of the linear system. */
 		ExportVariable b;							/**< Variable containing the right-hand side of the linear system and it will also contain the solution. */
-		
+
 		ExportFunction solve;						/**< Function that solves the linear system. */
 		ExportFunction solveTriangular;				/**< Function that solves the upper-triangular system. */
 		ExportFunction solveReuse;					/**< Function that solves a linear system with the same matrix, reusing previous results. */

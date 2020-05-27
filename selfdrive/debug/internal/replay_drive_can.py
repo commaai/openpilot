@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import time
 
-import cereal.messaging as messaging
 from tqdm import tqdm
 
+import cereal.messaging as messaging
 from tools.lib.logreader import LogReader
 
 ROUTE = "77611a1fac303767/2020-03-24--09-50-38"

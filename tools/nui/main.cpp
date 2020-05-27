@@ -44,7 +44,7 @@ class Window : public QWidget {
 
     QMap<int, LogReader*> lrs;
     QMap<int, FrameReader*> frs;
-    
+
 
     // cache the bar
     QPixmap *px = NULL;
@@ -72,7 +72,7 @@ Window::Window(QString route_, int seek, int use_api_) : route(route_), use_api(
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     settings = file.readAll();
     file.close();
-      
+
     QJsonDocument sd = QJsonDocument::fromJson(settings.toUtf8());
     qWarning() << sd.isNull(); // <- print false :)
     QJsonObject sett2 = sd.object();
@@ -97,7 +97,7 @@ bool Window::addSegment(int i) {
       lrs.insert(i, new LogReader(fn, &events, &events_lock, &unlogger->eidx));
     } else {
       QString log_fn = this->log_paths.at(i).toString();
-      lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));  
+      lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
 
     }
 
@@ -114,8 +114,8 @@ bool Window::addSegment(int i) {
       QString camera_fn = this->camera_paths.at(i).toString();
       frs.insert(i, new FrameReader(qPrintable(camera_fn)));
     }
-    
-    
+
+
     return true;
   }
   return false;
@@ -193,9 +193,9 @@ void Window::paintEvent(QPaintEvent *event) {
             tt.drawLine(lt, 300-lvv, rt, 300-vv);
 
             if (enabled) {
-              tt.setPen(Qt::green); 
+              tt.setPen(Qt::green);
             } else {
-              tt.setPen(Qt::blue); 
+              tt.setPen(Qt::blue);
             }
 
             tt.drawLine(rt, 300, rt, 600);
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
 
   QString route(argv[1]);
-  
+
   int use_api = QString::compare(QString("use_api"), route, Qt::CaseInsensitive) == 0;
   int seek = QString(argv[2]).toInt();
   printf("seek: %d\n", seek);
@@ -251,11 +251,10 @@ int main(int argc, char *argv[]) {
   }
 
   Window window(route, seek, use_api);
-  
+
   window.resize(1920, 800);
   window.setWindowTitle("nui unlogger");
   window.show();
 
   return app.exec();
 }
-

@@ -40,7 +40,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to setup function evaluation points.
  *
  *	\ingroup BasicDataStructures
@@ -48,7 +48,7 @@ BEGIN_NAMESPACE_ACADO
  *  The class TevaluationPoint is an efficient data class for storing points at which \n
  *  a function can be evaluated. This class can be used in combination with the class \n
  *  function. The difference to the class EvaluationPoint is that it can be used with \n
- *  any templated basis class. 
+ *  any templated basis class.
  *
  *	\author Boris Houska
  */
@@ -295,7 +295,7 @@ template <typename T> void TevaluationPoint<T>::copy( const TevaluationPoint<T> 
 template <typename T> void TevaluationPoint<T>::deleteAll(){
 
     if( z != 0 ) delete z;
-  
+
     if( idx != 0 ){
         uint i;
         for( i = 0; i < 7; i++ )

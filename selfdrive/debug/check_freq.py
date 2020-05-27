@@ -3,9 +3,9 @@ import argparse
 from collections import defaultdict
 from collections import deque
 
-import cereal.messaging as messaging
 import numpy as np
 
+import cereal.messaging as messaging
 from common.realtime import sec_since_boot
 
 

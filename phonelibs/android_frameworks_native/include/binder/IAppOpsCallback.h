@@ -52,4 +52,3 @@ public:
 }; // namespace android
 
 #endif // ANDROID_IAPP_OPS_CALLBACK_H
-

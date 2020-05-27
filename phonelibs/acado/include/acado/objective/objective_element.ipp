@@ -85,7 +85,7 @@ inline int ObjectiveElement::getNW() const{
 inline returnValue ObjectiveElement::getFunction( Function& _function )
 {
 	_function = fcn;
-	
+
 	return SUCCESSFUL_RETURN;
 }
 

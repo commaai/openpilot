@@ -1,5 +1,5 @@
 // This file is part of Eigen, a lightweight C++ template library
-// for linear algebra. 
+// for linear algebra.
 //
 // Copyright (C) 2009 Mark Borgerding mark a borgerding net
 //
@@ -7,47 +7,47 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
   // FFTW uses non-const arguments
   // so we must use ugly const_cast calls for all the args it uses
   //
-  // This should be safe as long as 
+  // This should be safe as long as
   // 1. we use FFTW_ESTIMATE for all our planning
   //       see the FFTW docs section 4.3.2 "Planner Flags"
   // 2. fftw_complex is compatible with std::complex
   //    This assumes std::complex<T> layout is array of size 2 with real,imag
-  template <typename T> 
-  inline 
+  template <typename T>
+  inline
   T * fftw_cast(const T* p)
-  { 
-      return const_cast<T*>( p); 
+  {
+      return const_cast<T*>( p);
   }
 
-  inline 
+  inline
   fftw_complex * fftw_cast( const std::complex<double> * p)
   {
-      return const_cast<fftw_complex*>( reinterpret_cast<const fftw_complex*>(p) ); 
+      return const_cast<fftw_complex*>( reinterpret_cast<const fftw_complex*>(p) );
   }
 
-  inline 
+  inline
   fftwf_complex * fftw_cast( const std::complex<float> * p)
-  { 
-      return const_cast<fftwf_complex*>( reinterpret_cast<const fftwf_complex*>(p) ); 
+  {
+      return const_cast<fftwf_complex*>( reinterpret_cast<const fftwf_complex*>(p) );
   }
 
-  inline 
+  inline
   fftwl_complex * fftw_cast( const std::complex<long double> * p)
-  { 
-      return const_cast<fftwl_complex*>( reinterpret_cast<const fftwl_complex*>(p) ); 
+  {
+      return const_cast<fftwl_complex*>( reinterpret_cast<const fftwl_complex*>(p) );
   }
 
-  template <typename T> 
+  template <typename T>
   struct fftw_plan {};
 
-  template <> 
+  template <>
   struct fftw_plan<float>
   {
       typedef float scalar_type;
@@ -78,19 +78,19 @@ namespace internal {
           fftwf_execute_dft_c2r( m_plan, src,dst);
       }
 
-      inline 
+      inline
       void fwd2( complex_type * dst,complex_type * src,int n0,int n1) {
           if (m_plan==NULL) m_plan = fftwf_plan_dft_2d(n0,n1,src,dst,FFTW_FORWARD,FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
           fftwf_execute_dft( m_plan, src,dst);
       }
-      inline 
+      inline
       void inv2( complex_type * dst,complex_type * src,int n0,int n1) {
           if (m_plan==NULL) m_plan = fftwf_plan_dft_2d(n0,n1,src,dst,FFTW_BACKWARD,FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
           fftwf_execute_dft( m_plan, src,dst);
       }
 
   };
-  template <> 
+  template <>
   struct fftw_plan<double>
   {
       typedef double scalar_type;
@@ -120,18 +120,18 @@ namespace internal {
               m_plan = fftw_plan_dft_c2r_1d(nfft,src,dst,FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
           fftw_execute_dft_c2r( m_plan, src,dst);
       }
-      inline 
+      inline
       void fwd2( complex_type * dst,complex_type * src,int n0,int n1) {
           if (m_plan==NULL) m_plan = fftw_plan_dft_2d(n0,n1,src,dst,FFTW_FORWARD,FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
           fftw_execute_dft( m_plan, src,dst);
       }
-      inline 
+      inline
       void inv2( complex_type * dst,complex_type * src,int n0,int n1) {
           if (m_plan==NULL) m_plan = fftw_plan_dft_2d(n0,n1,src,dst,FFTW_BACKWARD,FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
           fftw_execute_dft( m_plan, src,dst);
       }
   };
-  template <> 
+  template <>
   struct fftw_plan<long double>
   {
       typedef long double scalar_type;
@@ -161,12 +161,12 @@ namespace internal {
               m_plan = fftwl_plan_dft_c2r_1d(nfft,src,dst,FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
           fftwl_execute_dft_c2r( m_plan, src,dst);
       }
-      inline 
+      inline
       void fwd2( complex_type * dst,complex_type * src,int n0,int n1) {
           if (m_plan==NULL) m_plan = fftwl_plan_dft_2d(n0,n1,src,dst,FFTW_FORWARD,FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
           fftwl_execute_dft( m_plan, src,dst);
       }
-      inline 
+      inline
       void inv2( complex_type * dst,complex_type * src,int n0,int n1) {
           if (m_plan==NULL) m_plan = fftwl_plan_dft_2d(n0,n1,src,dst,FFTW_BACKWARD,FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
           fftwl_execute_dft( m_plan, src,dst);
@@ -180,7 +180,7 @@ namespace internal {
       typedef std::complex<Scalar> Complex;
 
       inline
-      void clear() 
+      void clear()
       {
         m_plans.clear();
       }
@@ -194,7 +194,7 @@ namespace internal {
 
       // real-to-complex forward FFT
       inline
-      void fwd( Complex * dst,const Scalar * src,int nfft) 
+      void fwd( Complex * dst,const Scalar * src,int nfft)
       {
           get_plan(nfft,false,dst,src).fwd(fftw_cast(dst), fftw_cast(src) ,nfft);
       }
@@ -215,7 +215,7 @@ namespace internal {
 
       // half-complex to scalar
       inline
-      void inv( Scalar * dst,const Complex * src,int nfft) 
+      void inv( Scalar * dst,const Complex * src,int nfft)
       {
         get_plan(nfft,true,dst,src).inv(fftw_cast(dst), fftw_cast(src),nfft );
       }

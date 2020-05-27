@@ -46,7 +46,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief User-interface to formulate and solve parameter estimation problems.
  *
  *	\ingroup UserInterfaces

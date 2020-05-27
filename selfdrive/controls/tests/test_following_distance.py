@@ -1,9 +1,9 @@
 import unittest
 
-import cereal.messaging as messaging
 import numpy as np
-from cereal import log
 
+import cereal.messaging as messaging
+from cereal import log
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.planner import calc_cruise_accel_limits

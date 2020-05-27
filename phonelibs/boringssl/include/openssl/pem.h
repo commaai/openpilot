@@ -164,8 +164,8 @@ typedef struct pem_ctx_st
 	int type;		/* what type of object */
 
 	struct	{
-		int version;	
-		int mode;		
+		int version;
+		int mode;
 		} proc_type;
 
 	char *domain;
@@ -175,7 +175,7 @@ typedef struct pem_ctx_st
 	/* unused, and wrong size
 	   unsigned char iv[8]; */
 		} DEK_info;
-		
+
 	PEM_USER *originator;
 
 	int num_recipient;
@@ -193,7 +193,7 @@ typedef struct pem_ctx_st
 	/* unused, and wrong size
 	   unsigned char iv[8]; */
 
-	
+
 	int  data_enc;		/* is the data encrypted */
 	int data_len;
 	unsigned char *data;
@@ -218,7 +218,7 @@ typedef struct pem_ctx_st
 OPENSSL_EXPORT type *PEM_read_##name(FILE *fp, type **x, pem_password_cb *cb, void *u)\
 { \
 return PEM_ASN1_read((d2i_of_void *)d2i_##asn1, str,fp,(void **)x,cb,u); \
-} 
+}
 
 #define IMPLEMENT_PEM_write_fp(name, type, str, asn1) \
 OPENSSL_EXPORT int PEM_write_##name(FILE *fp, type *x) \
@@ -284,23 +284,23 @@ OPENSSL_EXPORT int PEM_write_bio_##name(BIO *bp, type *x, const EVP_CIPHER *enc,
 
 #define IMPLEMENT_PEM_write(name, type, str, asn1) \
 	IMPLEMENT_PEM_write_bio(name, type, str, asn1) \
-	IMPLEMENT_PEM_write_fp(name, type, str, asn1) 
+	IMPLEMENT_PEM_write_fp(name, type, str, asn1)
 
 #define IMPLEMENT_PEM_write_const(name, type, str, asn1) \
 	IMPLEMENT_PEM_write_bio_const(name, type, str, asn1) \
-	IMPLEMENT_PEM_write_fp_const(name, type, str, asn1) 
+	IMPLEMENT_PEM_write_fp_const(name, type, str, asn1)
 
 #define IMPLEMENT_PEM_write_cb(name, type, str, asn1) \
 	IMPLEMENT_PEM_write_cb_bio(name, type, str, asn1) \
-	IMPLEMENT_PEM_write_cb_fp(name, type, str, asn1) 
+	IMPLEMENT_PEM_write_cb_fp(name, type, str, asn1)
 
 #define IMPLEMENT_PEM_write_cb_const(name, type, str, asn1) \
 	IMPLEMENT_PEM_write_cb_bio_const(name, type, str, asn1) \
-	IMPLEMENT_PEM_write_cb_fp_const(name, type, str, asn1) 
+	IMPLEMENT_PEM_write_cb_fp_const(name, type, str, asn1)
 
 #define IMPLEMENT_PEM_read(name, type, str, asn1) \
 	IMPLEMENT_PEM_read_bio(name, type, str, asn1) \
-	IMPLEMENT_PEM_read_fp(name, type, str, asn1) 
+	IMPLEMENT_PEM_read_fp(name, type, str, asn1)
 
 #define IMPLEMENT_PEM_rw(name, type, str, asn1) \
 	IMPLEMENT_PEM_read(name, type, str, asn1) \
@@ -355,7 +355,7 @@ OPENSSL_EXPORT int PEM_write_bio_##name(BIO *bp, type *x, const EVP_CIPHER *enc,
 
 #define DECLARE_PEM_write(name, type) \
 	DECLARE_PEM_write_bio(name, type) \
-	DECLARE_PEM_write_fp(name, type) 
+	DECLARE_PEM_write_fp(name, type)
 
 #define DECLARE_PEM_write_const(name, type) \
 	DECLARE_PEM_write_bio_const(name, type) \
@@ -363,7 +363,7 @@ OPENSSL_EXPORT int PEM_write_bio_##name(BIO *bp, type *x, const EVP_CIPHER *enc,
 
 #define DECLARE_PEM_write_cb(name, type) \
 	DECLARE_PEM_write_cb_bio(name, type) \
-	DECLARE_PEM_write_cb_fp(name, type) 
+	DECLARE_PEM_write_cb_fp(name, type)
 
 #define DECLARE_PEM_read(name, type) \
 	DECLARE_PEM_read_bio(name, type) \

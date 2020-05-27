@@ -10,13 +10,13 @@
 #ifndef EIGEN_SPARSE_SOLVE_H
 #define EIGEN_SPARSE_SOLVE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
 template<typename _DecompositionType, typename Rhs> struct sparse_solve_retval_base;
 template<typename _DecompositionType, typename Rhs> struct sparse_solve_retval;
-  
+
 template<typename DecompositionType, typename Rhs>
 struct traits<sparse_solve_retval_base<DecompositionType, Rhs> >
 {

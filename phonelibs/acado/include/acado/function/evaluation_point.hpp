@@ -43,7 +43,7 @@ BEGIN_NAMESPACE_ACADO
 
 class Function;
 
-/** 
+/**
  *	\brief Allows to setup function evaluation points.
  *
  *	\ingroup BasicDataStructures

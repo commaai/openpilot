@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import cereal.messaging as messaging
-
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.fingerprints import eliminate_incompatible_cars
 

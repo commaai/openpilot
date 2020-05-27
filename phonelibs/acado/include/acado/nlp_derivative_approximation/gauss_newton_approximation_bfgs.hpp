@@ -45,13 +45,13 @@ BEGIN_NAMESPACE_ACADO
 class BFGSupdate;
 
 
-/** 
+/**
  *	\brief Implements a Gauss-Newton approximation with block BFGS updates as second-order derivatives within NLPsolvers.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class GaussNewtonApproximationBFGS implements a Gauss-Newton approximation combined 
- *	with block BFGS updates as approximation of second-order derivative information within 
+ *  The class GaussNewtonApproximationBFGS implements a Gauss-Newton approximation combined
+ *	with block BFGS updates as approximation of second-order derivative information within
  *	iterative NLPsolvers.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -65,7 +65,7 @@ class GaussNewtonApproximationWithBFGS : public GaussNewtonApproximation
 
         /** Default constructor. */
         GaussNewtonApproximationWithBFGS( );
-		
+
         /** Constructor that takes the number of blocks for matrix block updates. */
         GaussNewtonApproximationWithBFGS(	UserInteraction* _userInteraction,
 											uint _nBlocks = 0

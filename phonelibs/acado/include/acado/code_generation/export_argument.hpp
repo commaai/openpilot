@@ -45,14 +45,14 @@ BEGIN_NAMESPACE_ACADO
 class ExportArgumentInternal;
 
 
-/** 
+/**
  *	\brief Defines a matrix-valued variable that can be passed as argument to exported functions.
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class ExportArgument defines a matrix-valued variable that 
+ *	The class ExportArgument defines a matrix-valued variable that
  *	can be passed as argument to exported functions. By default, all entries
- *	of an arguments are undefined, but each of its component can be set to 
+ *	of an arguments are undefined, but each of its component can be set to
  *	a fixed value if known beforehand.
  *
  *	\author Hans Joachim Ferreau, Boris Houska, Milan Vukov
@@ -65,7 +65,7 @@ class ExportArgument : public ExportData
     //
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
         ExportArgument( );
 
@@ -78,7 +78,7 @@ class ExportArgument : public ExportData
 		 *	@param[in] _type			Data type of the argument.
 		 *	@param[in] _dataStruct		Global data struct to which the argument belongs to (if any).
 		 *	@param[in] _callByValue		Flag indicating whether argument it to be called by value.
-		 *	@param[in] _addressIdx		If an address index is specified, not the argument itself but 
+		 *	@param[in] _addressIdx		If an address index is specified, not the argument itself but
 		 *								a pointer to this address within the memory of the argument is passed.
 		 */
 		ExportArgument(	const std::string& _name,
@@ -92,7 +92,7 @@ class ExportArgument : public ExportData
 						);
 
 		/** Constructor which takes the name and type of the argument.
-		 *	Moreover, it initializes the argument with the dimensions and the 
+		 *	Moreover, it initializes the argument with the dimensions and the
 		 *	values of the given matrix.
 		 *
 		 *	@param[in] _name			Name of the argument.
@@ -100,7 +100,7 @@ class ExportArgument : public ExportData
 		 *	@param[in] _type			Data type of the argument.
 		 *	@param[in] _dataStruct		Global data struct to which the argument belongs to (if any).
 		 *	@param[in] _callByValue		Flag indicating whether argument it to be called by value.
-		 *	@param[in] _addressIdx		If an address index is specified, not the argument itself but 
+		 *	@param[in] _addressIdx		If an address index is specified, not the argument itself but
 		 *								a pointer to this address within the memory of the argument is passed.
 		 */
 		ExportArgument(	const std::string& _name,
@@ -130,9 +130,9 @@ class ExportArgument : public ExportData
 									const ExportIndex& _colIdx = emptyConstExportIndex
 									) const;
 
-		/** Returns a string containing the address of the argument to be called. 
-		 *	If an address index has been set, the string contains a pointer to the 
-		 *	desired location. The string also depends on whether the argument is 
+		/** Returns a string containing the address of the argument to be called.
+		 *	If an address index has been set, the string contains a pointer to the
+		 *	desired location. The string also depends on whether the argument is
 		 *	to be called by value or not.
 		 *
 		 *	\return String containing the address of the argument
@@ -182,7 +182,7 @@ class ExportArgument : public ExportData
 
 
 
-		/** Exports declaration of the argument into given file. Its appearance can 
+		/** Exports declaration of the argument into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] file				Name of file to be used to export declaration.

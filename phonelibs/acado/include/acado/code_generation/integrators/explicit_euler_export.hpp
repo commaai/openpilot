@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored explicit Euler method for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -59,7 +59,7 @@ class ExplicitEulerExport : public ExplicitRungeKuttaExport
 
     private:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -75,7 +75,7 @@ class ExplicitEulerExport : public ExplicitRungeKuttaExport
         ExplicitEulerExport(	const ExplicitEulerExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ExplicitEulerExport( );
 

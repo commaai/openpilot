@@ -12,7 +12,7 @@
 
 // This file implements sparse * permutation products
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

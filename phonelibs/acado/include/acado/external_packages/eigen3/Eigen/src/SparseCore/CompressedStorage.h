@@ -10,7 +10,7 @@
 #ifndef EIGEN_COMPRESSED_STORAGE_H
 #define EIGEN_COMPRESSED_STORAGE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

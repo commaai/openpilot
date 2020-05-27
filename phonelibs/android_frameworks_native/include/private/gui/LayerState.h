@@ -140,4 +140,3 @@ struct DisplayState {
 }; // namespace android
 
 #endif // ANDROID_SF_LAYER_STATE_H
-

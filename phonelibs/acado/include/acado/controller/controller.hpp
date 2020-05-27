@@ -50,19 +50,19 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Calculates the control inputs of the Process based on the Process outputs.
  *
  *	\ingroup UserInterfaces
  *
- *  The class Controller is one of the two main building-blocks within the 
- *  SimulationEnvironment and complements the Process. It contains an 
- *	online control law (e.g. a DynamicFeedbackLaw comprising a RealTimeAlgorithm) 
+ *  The class Controller is one of the two main building-blocks within the
+ *  SimulationEnvironment and complements the Process. It contains an
+ *	online control law (e.g. a DynamicFeedbackLaw comprising a RealTimeAlgorithm)
  *	for obtaining the control inputs of the Process.
  *
- *	A state/parameter estimator as well as a ReferenceTrajectory can optionally be 
+ *	A state/parameter estimator as well as a ReferenceTrajectory can optionally be
  *	used to provide estimated quantities and a reference values to the control law.
- *	The reference trajectory can either be specified beforehand as member of the 
+ *	The reference trajectory can either be specified beforehand as member of the
  *	Controller or, alternatively, provided at each step in order to allow for
  *	reference trajectories that can be adapted online.
  *
@@ -74,11 +74,11 @@ class Controller : public SimulationBlock
     // PUBLIC MEMBER FUNCTIONS:
     //
     public:
-        /** Default constructor. 
+        /** Default constructor.
 		 */
         Controller( );
 
-		/** Constructor which takes a control law, an estimator and a 
+		/** Constructor which takes a control law, an estimator and a
 		 *	reference trajectory for computing the control/parameter signals.
 		 *
 		 *	@param[in] _controlLaw				Control law to be used for computing the control/parameter signals.
@@ -90,7 +90,7 @@ class Controller : public SimulationBlock
 					ReferenceTrajectory& _referenceTrajectory = emptyReferenceTrajectory
 					);
 
-		/** Constructor which takes a control law and a reference trajectory 
+		/** Constructor which takes a control law and a reference trajectory
 		 *	for computing the control/parameter signals.
 		 *
 		 *	@param[in] _controlLaw				Control law to be used for computing the control/parameter signals.
@@ -107,7 +107,7 @@ class Controller : public SimulationBlock
         Controller(	const Controller& rhs
 					);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~Controller( );
 
@@ -128,7 +128,7 @@ class Controller : public SimulationBlock
 		returnValue setControlLaw(	ControlLaw& _controlLaw
 									);
 
-		/** Assigns new estimator for estimating quantities required by the control law 
+		/** Assigns new estimator for estimating quantities required by the control law
 		 *	based on the process output.
 		 *
 		 *	@param[in]  _estimator		New estimator.
@@ -168,7 +168,7 @@ class Controller : public SimulationBlock
 												);
 
 
-		/** Initializes the controller with given start values and 
+		/** Initializes the controller with given start values and
 		 *	performs a number of consistency checks.
 		 *
 		 *	@param[in]  _startTime	Start time.
@@ -199,7 +199,7 @@ class Controller : public SimulationBlock
 		 *
 		 *	\note If a non-empty reference trajectory is provided, this one is used
 		 *	      instead of the possibly set-up build-in one.
-		 * 
+		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_BLOCK_NOT_READY, \n
 		 *	        RET_CONTROLLER_STEP_FAILED, \n
@@ -219,7 +219,7 @@ class Controller : public SimulationBlock
 		 *
 		 *	\note If a non-empty reference trajectory is provided, this one is used
 		 *	      instead of the possibly set-up build-in one.
-		 * 
+		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_BLOCK_NOT_READY, \n
 		 *	        RET_CONTROLLER_STEP_FAILED, \n
@@ -239,7 +239,7 @@ class Controller : public SimulationBlock
 		 *
 		 *	\note If a non-empty reference trajectory is provided, this one is used
 		 *	      instead of the possibly set-up build-in one.
-		 * 
+		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_BLOCK_NOT_READY, \n
 		 *	        RET_CONTROLLER_STEP_FAILED, \n
@@ -257,7 +257,7 @@ class Controller : public SimulationBlock
 		 *
 		 *	\note If a non-empty reference trajectory is provided, this one is used
 		 *	      instead of the possibly set-up build-in one.
-		 * 
+		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_CONTROLLER_STEP_FAILED, \n
 		 *	        RET_NO_CONTROLLAW_SPECIFIED
@@ -277,7 +277,7 @@ class Controller : public SimulationBlock
 		 *
 		 *	@param[out]  _y			Computed control signals.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
         inline returnValue getU(	DVector& _u
 									) const;
@@ -286,7 +286,7 @@ class Controller : public SimulationBlock
 		 *
 		 *	@param[out]  _y			Computed parameter signals.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
         inline returnValue getP(	DVector& _p
 									) const;
@@ -353,7 +353,7 @@ class Controller : public SimulationBlock
 		inline double getSamplingTimeEstimator( );
 
 
-		/** Determines next sampling instant of controller based on the 
+		/** Determines next sampling instant of controller based on the
 		 *	sampling times of control law and estimator
 		 *
 		 *	@param[in]  currentTime		Current time.
@@ -363,7 +363,7 @@ class Controller : public SimulationBlock
 		double getNextSamplingInstant(	double currentTime
 										);
 
-		/** Returns previous real runtime of the controller 
+		/** Returns previous real runtime of the controller
 		 *	(e.g. for determining computational delay).
 		 *
 		 *  \return Previous real runtime of the controller.
@@ -373,13 +373,13 @@ class Controller : public SimulationBlock
 
 		/** Enables the controller.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue enable( );
 
 		/** Disables the controller (i.e. initial values kept and no steps are performed).
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue disable( );
 
@@ -420,13 +420,13 @@ class Controller : public SimulationBlock
     // DATA MEMBERS:
     //
     protected:
-		
+
 		ControlLaw* controlLaw;						/**< Control law (usually including a dynamic optimizer) to be used for computing the control/parameter signals. */
 		Estimator* estimator;						/**< Estimator for estimating quantities required by the control law based on the process output. */
 		ReferenceTrajectory* referenceTrajectory;	/**< Reference trajectory to be used by the control law. */
-		
+
 		BooleanType isEnabled;						/**< Flag indicating whether controller is enabled or not. */
-		
+
 		RealClock controlLawClock;					/**< Clock required to determine runtime of control law. */
 };
 

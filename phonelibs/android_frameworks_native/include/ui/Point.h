@@ -59,7 +59,7 @@ public:
         y = -y;
         return *this;
     }
-    
+
     inline Point& operator += (const Point& rhs) {
         x += rhs.x;
         y += rhs.y;
@@ -70,7 +70,7 @@ public:
         y -= rhs.y;
         return *this;
     }
-    
+
     const Point operator + (const Point& rhs) const {
         const Point result(x+rhs.x, y+rhs.y);
         return result;
@@ -78,7 +78,7 @@ public:
     const Point operator - (const Point& rhs) const {
         const Point result(x-rhs.x, y-rhs.y);
         return result;
-    }    
+    }
 };
 
 ANDROID_BASIC_TYPES_TRAITS(Point)

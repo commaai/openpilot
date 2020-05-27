@@ -1,4 +1,4 @@
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

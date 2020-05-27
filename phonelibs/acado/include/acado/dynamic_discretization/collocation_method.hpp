@@ -40,12 +40,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Discretizes a DifferentialEquation by means of a collocation scheme.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class CollocationMethod allows to discretize a DifferentialEquation 
+ *  The class CollocationMethod allows to discretize a DifferentialEquation
  *	for use in optimal control algorithms by means of a collocation scheme.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -64,7 +64,7 @@ public:
 
     CollocationMethod(	UserInteraction* _userInteraction
 							);
-									
+
     /** Copy constructor (deep copy). */
     CollocationMethod( const CollocationMethod& rhs );
 
@@ -157,4 +157,3 @@ CLOSE_NAMESPACE_ACADO
 #endif  // ACADO_TOOLKIT_COLLOCATION_METHOD_HPP
 
 // end of file
-

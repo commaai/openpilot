@@ -2,7 +2,6 @@ import copy
 
 from cereal import car
 from cereal import log
-
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 

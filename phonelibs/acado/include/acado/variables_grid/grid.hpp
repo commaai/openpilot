@@ -65,8 +65,8 @@ class Grid
 		/** Default constructor. */
 		Grid( );
 
-		/** Constructor that takes the number of grid points along with 
-		 *	with an optional double array containing the initialization 
+		/** Constructor that takes the number of grid points along with
+		 *	with an optional double array containing the initialization
 		 *	of the times.
 		 *
 		 *	@param[in] _nPoints		Number of grid points.
@@ -76,7 +76,7 @@ class Grid
 				double* times_ = 0
 				);
 
-		/** Constructor that takes the number of grid points along with 
+		/** Constructor that takes the number of grid points along with
 		 *	with a initialization of the times in form of a vector.
 		 *
 		 *	@param[in] times		Initialization of times.
@@ -104,7 +104,7 @@ class Grid
         Grid(	const Grid& rhs
 				);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         ~Grid( );
 
@@ -138,8 +138,8 @@ class Grid
 		returnValue init(	const DVector& times_
 							);
 
-		/** Initializes grid with given number of grid points and an 
-		 *	equidistant grid of time points between given time of the first 
+		/** Initializes grid with given number of grid points and an
+		 *	equidistant grid of time points between given time of the first
 		 *	and last grid point.
 		 *
 		 *	@param[in] _firstTime	Time of first grid point.
@@ -395,7 +395,7 @@ class Grid
 								);
 
 
-		/** Refines grid by a given factor by adding equally spaced 
+		/** Refines grid by a given factor by adding equally spaced
 		 *	additional time points in between existing ones.
 		 *
 		 *	@param[in] factor	Refinement factor.
@@ -518,7 +518,7 @@ class Grid
 		inline BooleanType isInInterval(	double _time
 											) const;
 
-		/** Returns whether given time lies within the interval between 
+		/** Returns whether given time lies within the interval between
 		 *	given grid point and next one.
 		 *
 		 *	@param[in] pointIdx		Index of grid point at beginning of interval.
@@ -531,7 +531,7 @@ class Grid
 											double _time
 											) const;
 
-		/** Returns whether given time lies within the half-open interval between 
+		/** Returns whether given time lies within the half-open interval between
 		 *	given grid point and next one (next one not included).
 		 *
 		 *	@param[in] pointIdx		Index of grid point at beginning of interval.
@@ -544,7 +544,7 @@ class Grid
 														double _time
 														) const;
 
-		/** Returns whether given time lies within the half-open interval between 
+		/** Returns whether given time lies within the half-open interval between
 		 *	given grid point (given grid point not included) and next one.
 		 *
 		 *	@param[in] pointIdx		Index of grid point at beginning of interval.
@@ -587,7 +587,7 @@ class Grid
     //
     protected:
 
-		/** Sets-up all times in an equidistant manner, starting at given 
+		/** Sets-up all times in an equidistant manner, starting at given
 		 *	start time and ending at given end time.
 		 *
 		 *	@param[in] _firstTime	Time of first grid point.

@@ -32,7 +32,7 @@ Packet4f plog<Packet4f>(const Packet4f& _x)
   /* the smallest non denormalized float number */
   _EIGEN_DECLARE_CONST_Packet4f_FROM_INT(min_norm_pos,  0x00800000);
   _EIGEN_DECLARE_CONST_Packet4f_FROM_INT(minus_inf,     0xff800000);//-1.f/0.f);
-  
+
   /* natural logarithm computed for 4 simultaneous float
     return NaN for x <= 0
   */

@@ -43,12 +43,12 @@ BEGIN_NAMESPACE_ACADO
  *	\brief Provides a time grid consisting of vector-valued optimization variables at each grid point.
  *
  *	\ingroup BasicDataStructures
- *	
- *  The class VariablesGrid provides a time grid consisting of vector-valued 
- *	optimization variables at each grid point, as they usually occur when 
+ *
+ *  The class VariablesGrid provides a time grid consisting of vector-valued
+ *	optimization variables at each grid point, as they usually occur when
  *	discretizing optimal control problems.
  *
- *	The class specalizes the MatrixVariablesGrid class to vectors represented internally 
+ *	The class specalizes the MatrixVariablesGrid class to vectors represented internally
  *	as matrices with exactly one column.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -68,7 +68,7 @@ class VariablesGrid : public MatrixVariablesGrid
 		 */
         VariablesGrid( );
 
-		/** Constructor that takes the dimension of each vector-valued MatrixVariable 
+		/** Constructor that takes the dimension of each vector-valued MatrixVariable
 		 *	as well as the grid on which they are defined. Further information
 		 *	can optionally be specified.
 		 *
@@ -94,8 +94,8 @@ class VariablesGrid : public MatrixVariablesGrid
 						);
 
 
-		/** Constructor that takes the dimension of each vector-valued MatrixVariable 
-		 *	as well as the number of grid points on which they are defined. 
+		/** Constructor that takes the dimension of each vector-valued MatrixVariable
+		 *	as well as the number of grid points on which they are defined.
 		 *	Further information can optionally be specified.
 		 *
 		 *	@param[in] _dim			Dimension of each vector.
@@ -119,7 +119,7 @@ class VariablesGrid : public MatrixVariablesGrid
 						const BooleanType* const _autoInit = 0
 						);
 
-		/** Constructor that takes the dimensions of each vector-valued MatrixVariable 
+		/** Constructor that takes the dimensions of each vector-valued MatrixVariable
 		 *	as well as the number of grid points on which they are defined. Moreover,
 		 *	it takes the time of the first and the last grid point; all intermediate
 		 *	grid points are setup to form a equidistant grid of time points.
@@ -151,7 +151,7 @@ class VariablesGrid : public MatrixVariablesGrid
 						);
 
 		/** Constructor that creates a VariablesGrid on a given grid with given type.
-		 *	At each grid point, the vector-valued MatrixVariable is constructed from the 
+		 *	At each grid point, the vector-valued MatrixVariable is constructed from the
 		 *	vector passed.
 		 *
 		 *	@param[in] arg			DVector to be assign at each point of the grid.
@@ -163,15 +163,15 @@ class VariablesGrid : public MatrixVariablesGrid
 						VariableType _type = VT_UNKNOWN
 						);
 
-		/** Constructor which reads data from a matrix. The data is expected 
-		 *	to be in matrix format and is interpreted as follows: the first entry 
+		/** Constructor which reads data from a matrix. The data is expected
+		 *	to be in matrix format and is interpreted as follows: the first entry
 		 *	of each row is taken as time of the grid point to be added, all
 		 *	remaining entries of each row are taken as numerical values of a vector-valued
 		 *	MatrixVariable with exactly one column. In effect, a MatrixVariablesGrid
-		 *	consisting of <number of columns - 1>-by-1 MatrixVariables defined on 
+		 *	consisting of <number of columns - 1>-by-1 MatrixVariables defined on
 		 *	<number of rows> grid points is setup. Note that all rows are expected
 		 *	to have equal number of columns.
-		 *	
+		 *
 		 *	@param[in] file		File to be read.
 		 *
 		 *	\note The file is closed at the end of routine.
@@ -216,13 +216,13 @@ class VariablesGrid : public MatrixVariablesGrid
 
         operator DMatrix() const;
 
-		/** Assignment operator which reads data from a matrix. The data is interpreted 
-		 *	as follows: the first entry of each row is taken as time of the grid point 
-		 *	to be added, all remaining entries of each row are taken as numerical values 
-		 *	of a vector-valued MatrixVariable with exactly one column. In effect, a 
-		 *	MatrixVariablesGrid consisting of <number of columns - 1>-by-1 MatrixVariables 
+		/** Assignment operator which reads data from a matrix. The data is interpreted
+		 *	as follows: the first entry of each row is taken as time of the grid point
+		 *	to be added, all remaining entries of each row are taken as numerical values
+		 *	of a vector-valued MatrixVariable with exactly one column. In effect, a
+		 *	MatrixVariablesGrid consisting of <number of columns - 1>-by-1 MatrixVariables
 		 *	defined on <number of rows> grid points is setup.
-		 *	
+		 *
 		 *	@param[in] rhs		DMatrix to be read.
 		 *
 		 *	\note The file is closed at the end of routine.
@@ -246,7 +246,7 @@ class VariablesGrid : public MatrixVariablesGrid
 		 *	@param[in] pointIdx		Index of grid point.
 		 *	@param[in] rowIdx		Row index of the component to be returned.
 		 *
-         *  \return Value of component 'rowIdx' at grid point 'pointIdx' 
+         *  \return Value of component 'rowIdx' at grid point 'pointIdx'
 		 */
         inline double& operator()(	uint pointIdx,
 									uint rowIdx
@@ -257,7 +257,7 @@ class VariablesGrid : public MatrixVariablesGrid
 		 *	@param[in] pointIdx		Index of grid point.
 		 *	@param[in] rowIdx		Row index of the component to be returned.
 		 *
-         *  \return Value of component 'rowIdx' at grid point 'pointIdx' 
+         *  \return Value of component 'rowIdx' at grid point 'pointIdx'
 		 */
         inline double operator()(	uint pointIdx,
 									uint rowIdx
@@ -273,7 +273,7 @@ class VariablesGrid : public MatrixVariablesGrid
         VariablesGrid operator()(	const uint rowIdx
 									) const;
 
-        /** Returns a VariablesGrid consisting only of the values at 
+        /** Returns a VariablesGrid consisting only of the values at
 		 *	given grid point.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -355,8 +355,8 @@ class VariablesGrid : public MatrixVariablesGrid
 							const BooleanType* const _autoInit = 0
 							);
 
-		/** Initializes the VariablesGrid taking the dimension of each vector-valued 
-		 *	MatrixVariable as well as the number of grid points on which they are defined. 
+		/** Initializes the VariablesGrid taking the dimension of each vector-valued
+		 *	MatrixVariable as well as the number of grid points on which they are defined.
 		 *	Further information can optionally be specified.
 		 *
 		 *	@param[in] _dim			Dimension of each vector.
@@ -382,7 +382,7 @@ class VariablesGrid : public MatrixVariablesGrid
 							const BooleanType* const _autoInit = 0
 							);
 
-		/** Initializes the MatrixVariablesGrid taking the dimension of each vector-valued 
+		/** Initializes the MatrixVariablesGrid taking the dimension of each vector-valued
 		 *	MatrixVariable as well as the number of grid points on which they are defined. Moreover,
 		 *	it takes the time of the first and the last grid point; all intermediate
 		 *	grid points are setup to form a equidistant grid of time points.
@@ -515,7 +515,7 @@ class VariablesGrid : public MatrixVariablesGrid
 		returnValue appendTimes(	const DMatrix& arg,
 									MergeMethod _mergeMethod = MM_DUPLICATE
 									);
-									
+
 		/** Appends values at all grid points of given grid to object.
 		 *	Both grids need to be defined over identical grid points.
 		 *
@@ -547,7 +547,7 @@ class VariablesGrid : public MatrixVariablesGrid
 							);
 
 
-		/** Returns the sub grid in time starting and ending at given 
+		/** Returns the sub grid in time starting and ending at given
 		 *	indices.
 		 *
 		 *	@param[in] startIdx		Index of first grid point to be included in sub grid.
@@ -559,7 +559,7 @@ class VariablesGrid : public MatrixVariablesGrid
 										uint endIdx
 										) const;
 
-		/** Returns the sub grid in time starting and ending at given 
+		/** Returns the sub grid in time starting and ending at given
 		 *	times.
 		 *
 		 *	@param[in] startTime	Time of first grid point to be included in sub grid.
@@ -571,14 +571,14 @@ class VariablesGrid : public MatrixVariablesGrid
 										double endTime
 										) const;
 
-		/** Returns the sub grid of values. It comprises all grid points of the 
-		 *	object, but comprises at each grid point only the compenents starting and 
+		/** Returns the sub grid of values. It comprises all grid points of the
+		 *	object, but comprises at each grid point only the compenents starting and
 		 *	ending at given indices.
 		 *
 		 *	@param[in] startIdx		Index of first compenent to be included in sub grid.
 		 *	@param[in] endIdx		Index of last compenent to be included in sub grid.
 		 *
-		 *	\note This function implicitly assumes that vectors at all grid points 
+		 *	\note This function implicitly assumes that vectors at all grid points
 		 *	      have same number of components (or at least more than 'endIdx').
 		 *
 		 *	\return Sub grid of values
@@ -597,8 +597,8 @@ class VariablesGrid : public MatrixVariablesGrid
         VariablesGrid& shiftTimes(	double timeShift
 									);
 
-		/** Shifts all grid points backwards by one grid point, 
-		 *	deleting the first one and doubling the value at 
+		/** Shifts all grid points backwards by one grid point,
+		 *	deleting the first one and doubling the value at
 		 *	last grid point.
 		 *
 		 *  \return Reference to object with shifted points
@@ -634,7 +634,7 @@ class VariablesGrid : public MatrixVariablesGrid
         /** Initializes the grid vector by taking average between upper and lower
          *	bound. If one of these bounds is infinity it is initialized with the
          *	bound. If both bounds are infinity it is initialized with 0.
-         *	This routine is only for internal use by the OptimizationAlgorithm, 
+         *	This routine is only for internal use by the OptimizationAlgorithm,
 		 *	that is a friend of this class.
 		 *
 		 *  \return SUCCESSFUL_RETURN

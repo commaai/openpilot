@@ -40,12 +40,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Simulates real time measurements for simulations.
  *
  *	\ingroup BasicDataStructures
  *
- *	The class SimulationClock simulates real time measurements for 
+ *	The class SimulationClock simulates real time measurements for
  *	simulations within the SimulationEnvironment.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -60,18 +60,18 @@ class SimulationClock : public Clock
 		/** Default constructor.
 		 */
 		SimulationClock();
-	
+
 		/** Copy constructor (deep copy).
 		 *
 		 *	@param[in] rhs	Right-hand side object.
 		 */
 		SimulationClock(	const SimulationClock& rhs
 							);
-	
+
 		/** Destructor.
 		 */
 		virtual ~SimulationClock( );
-	
+
 		/** Assignment Operator (deep copy).
 		 *
 		 *	@param[in] rhs	Right-hand side object.
@@ -92,7 +92,7 @@ class SimulationClock : public Clock
 		 *	        RET_CLOCK_NOT_READY
 		 */
 		virtual returnValue start( );
-	
+
 		/** Shifts measured time by a given offset.
 		 *
 		 *	@param[in]  _timeShift		Time offset.
@@ -102,15 +102,15 @@ class SimulationClock : public Clock
 		 */
 		virtual returnValue step(	double _timeShift
 									);
-	
+
 		/** Stops time measurement.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
 		 *	        RET_CLOCK_NOT_READY
 		 */
 		virtual returnValue stop( );
-	
-	
+
+
 	//
 	//  PROTECTED MEMBERS:
 	//

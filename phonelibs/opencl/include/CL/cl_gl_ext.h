@@ -56,7 +56,7 @@ extern "C" {
  *  This allows us to avoid having to decide whether to include GL headers or GLES here.
  */
 
-/* 
+/*
  *  cl_khr_gl_event  extension
  *  See section 9.9 in the OpenCL 1.1 spec for more information
  */

@@ -12,4 +12,3 @@ void *sub_sock(void *ctx, const char *endpoint) {
   zmq_connect(sock, endpoint);
   return sock;
 }
-

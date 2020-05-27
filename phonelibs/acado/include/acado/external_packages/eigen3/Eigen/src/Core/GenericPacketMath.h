@@ -313,14 +313,14 @@ struct palign_impl
 
 /** \internal update \a first using the concatenation of the packet_size minus \a Offset last elements
   * of \a first and \a Offset first elements of \a second.
-  * 
+  *
   * This function is currently only used to optimize matrix-vector products on unligned matrices.
   * It takes 2 packets that represent a contiguous memory array, and returns a packet starting
   * at the position \a Offset. For instance, for packets of 4 elements, we have:
   *  Input:
   *  - first = {f0,f1,f2,f3}
   *  - second = {s0,s1,s2,s3}
-  * Output: 
+  * Output:
   *   - if Offset==0 then {f0,f1,f2,f3}
   *   - if Offset==1 then {f1,f2,f3,s0}
   *   - if Offset==2 then {f2,f3,s0,s1}
@@ -347,4 +347,3 @@ template<> inline std::complex<double> pmul(const std::complex<double>& a, const
 } // end namespace Eigen
 
 #endif // EIGEN_GENERIC_PACKET_MATH_H
-

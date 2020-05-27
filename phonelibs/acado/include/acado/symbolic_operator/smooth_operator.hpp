@@ -143,8 +143,8 @@ public:
 
     /** Evaluates the expression (templated version) */
     virtual returnValue evaluate( EvaluationBase *x ) = 0;
-	
-	
+
+
     /** Returns the derivative of the expression with respect     \n
      *  to the variable var(index).                               \n
      *  \return The expression for the derivative.                \n
@@ -202,8 +202,8 @@ public:
                                       TreeProjection ***newSIS , /**< the new SIS-pointer   */
                                       int            &nNewHIS  , /**< the number of newHIS  */
                                       TreeProjection ***newHIS   /**< the new HIS-pointer   */ ) = 0;
-     
-     
+
+
     /** Substitutes var(index) with the expression sub.           \n
      *  \return The substituted expression.                       \n
      *
@@ -289,7 +289,7 @@ public:
      *
      */
      virtual BooleanType isSmooth( ) const;
-	 
+
 
     /** Returns the monotonicity of the expression.               \n
      *  \return MT_NONDECREASING                                  \n
@@ -530,6 +530,3 @@ CLOSE_NAMESPACE_ACADO
 
 
 #endif
-
-
-

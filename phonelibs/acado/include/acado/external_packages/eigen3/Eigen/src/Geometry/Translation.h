@@ -10,7 +10,7 @@
 #ifndef EIGEN_TRANSLATION_H
 #define EIGEN_TRANSLATION_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \geometry_module \ingroup Geometry_Module
   *

@@ -54,7 +54,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class SCPstep serves as a base class for different ways to perform a 
+ *  The class SCPstep serves as a base class for different ways to perform a
  *  (globalized) step of an SCPmethod for solving nonlinear programming problems.
  *
  *	 \author Boris Houska, Hans Joachim Ferreau
@@ -73,7 +73,7 @@ class SCPstep : public AlgorithmicBase
 
         SCPstep(	UserInteraction* _userInteraction
 					);
-		
+
         /** Copy constructor (deep copy). */
         SCPstep( const SCPstep& rhs );
 
@@ -96,11 +96,11 @@ class SCPstep : public AlgorithmicBase
     // PROTECTED MEMBER FUNCTIONS:
     //
     protected:
-		
+
 		virtual returnValue setupOptions( );
 		virtual returnValue setupLogging( );
 
-		/** 
+		/**
 		 *
 		 *  \return SUCCESSFUL_RETURN
 		 */

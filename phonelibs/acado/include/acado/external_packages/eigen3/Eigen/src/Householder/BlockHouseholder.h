@@ -13,7 +13,7 @@
 
 // This file contains some helper function to deal with block householder reflectors
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

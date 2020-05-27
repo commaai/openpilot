@@ -43,7 +43,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Stores and evaluates Lagrange terms within optimal control problems.
  *
  *	\ingroup BasicDataStructures

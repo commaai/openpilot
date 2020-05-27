@@ -77,13 +77,13 @@ template<typename LhsScalar,typename RhsScalar> struct scalar_conj_product_op {
   enum {
     Conj = NumTraits<LhsScalar>::IsComplex
   };
-  
+
   typedef typename scalar_product_traits<LhsScalar,RhsScalar>::ReturnType result_type;
-  
+
   EIGEN_EMPTY_STRUCT_CTOR(scalar_conj_product_op)
   EIGEN_STRONG_INLINE const result_type operator() (const LhsScalar& a, const RhsScalar& b) const
   { return conj_helper<LhsScalar,RhsScalar,Conj,false>().pmul(a,b); }
-  
+
   template<typename Packet>
   EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a, const Packet& b) const
   { return conj_helper<Packet,Packet,Conj,false>().pmul(a,b); }
@@ -557,10 +557,10 @@ struct linspaced_op_impl<Scalar,false>
   m_base(padd(pset1<Packet>(low), pmul(pset1<Packet>(step),plset<Scalar>(-packet_traits<Scalar>::size)))) {}
 
   template<typename Index>
-  EIGEN_STRONG_INLINE const Scalar operator() (Index i) const 
-  { 
+  EIGEN_STRONG_INLINE const Scalar operator() (Index i) const
+  {
     m_base = padd(m_base, pset1<Packet>(m_step));
-    return m_low+Scalar(i)*m_step; 
+    return m_low+Scalar(i)*m_step;
   }
 
   template<typename Index>
@@ -617,7 +617,7 @@ template <typename Scalar, bool RandomAccess> struct linspaced_op
   // We need this function when assigning e.g. a RowVectorXd to a MatrixXd since
   // there row==0 and col is used for the actual iteration.
   template<typename Index>
-  EIGEN_STRONG_INLINE const Scalar operator() (Index row, Index col) const 
+  EIGEN_STRONG_INLINE const Scalar operator() (Index row, Index col) const
   {
     eigen_assert(col==0 || row==0);
     return impl(col + row);

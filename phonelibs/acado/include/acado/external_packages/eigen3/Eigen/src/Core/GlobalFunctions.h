@@ -49,7 +49,7 @@ namespace Eigen
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(log,scalar_log_op)
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(abs,scalar_abs_op)
   EIGEN_ARRAY_DECLARE_GLOBAL_UNARY(sqrt,scalar_sqrt_op)
-  
+
   template<typename Derived>
   inline const Eigen::CwiseUnaryOp<Eigen::internal::scalar_pow_op<typename Derived::Scalar>, const Derived>
   pow(const Eigen::ArrayBase<Derived>& x, const typename Derived::Scalar& exponent) {
@@ -58,14 +58,14 @@ namespace Eigen
 
   template<typename Derived>
   inline const Eigen::CwiseBinaryOp<Eigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename Derived::Scalar>, const Derived, const Derived>
-  pow(const Eigen::ArrayBase<Derived>& x, const Eigen::ArrayBase<Derived>& exponents) 
+  pow(const Eigen::ArrayBase<Derived>& x, const Eigen::ArrayBase<Derived>& exponents)
   {
     return Eigen::CwiseBinaryOp<Eigen::internal::scalar_binary_pow_op<typename Derived::Scalar, typename Derived::Scalar>, const Derived, const Derived>(
       x.derived(),
       exponents.derived()
     );
   }
-  
+
   /**
   * \brief Component-wise division of a scalar by array elements.
   **/
@@ -75,7 +75,7 @@ namespace Eigen
   {
     return Eigen::CwiseUnaryOp<Eigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>, const Derived>(
       a.derived(),
-      Eigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>(s)  
+      Eigen::internal::scalar_inverse_mult_op<typename Derived::Scalar>(s)
     );
   }
 

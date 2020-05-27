@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class BinaryOperator serves as a base class all scalar-valued 
+ *	The class BinaryOperator serves as a base class all scalar-valued
  *	binary operators within the symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -87,8 +87,8 @@ public:
 
 	/** Evaluates the expression (templated version) */
 	virtual returnValue evaluate( EvaluationBase *x ) = 0;
-	
-	
+
+
     /** Returns the derivative of the expression with respect     \n
      *  to the variable var(index).                               \n
      *  \return The expression for the derivative.                \n
@@ -125,8 +125,8 @@ public:
                                      int           &nNewIS  , /**< the number of new IS  */
                                      TreeProjection ***newIS  /**< the new IS-pointer    */ ) = 0;
 
-    
-    
+
+
     /** Automatic Differentiation in symmetric mode on the symbolic \n
      *  level. This function generates an expression for a          \n
      *  second order derivative.                                    \n

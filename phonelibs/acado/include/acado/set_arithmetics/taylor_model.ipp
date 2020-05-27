@@ -42,7 +42,7 @@ TaylorModel<T>::_size
 
   //_cleanup();
   _nvar = nvar_;
-  _nord = nord_; 
+  _nord = nord_;
   _set_binom();
   _set_posord();
   _nmon = _posord[_nord+1];
@@ -50,7 +50,7 @@ TaylorModel<T>::_size
   _set_prodmon();
   _bndpow = new T*[_nvar];
   for( unsigned int i=0; i<_nvar; i++ ) _bndpow[i] = 0;
-  _bndmon = new T[_nmon];  
+  _bndmon = new T[_nmon];
   _refpoint = new double[_nvar];
   _scaling = new double[_nvar];
   _modvar = true;
@@ -81,7 +81,7 @@ template <typename T> inline void
 TaylorModel<T>::_set_bndmon()
 {
   if( !_modvar ) return;
-  
+
   _bndmon[0] = 1.;
   for( unsigned int i=1; i<_nmon; i++ ){
     _bndmon[i] = 1.;
@@ -117,7 +117,7 @@ TaylorModel<T>::_set_expmon()
   }
   delete[] iexp;
 }
-  
+
 template <typename T> inline void
 TaylorModel<T>::_next_expmon
 ( unsigned int *iexp, const unsigned int iord )
@@ -145,12 +145,12 @@ TaylorModel<T>::_set_prodmon()
   for( unsigned int i=1; i<=_nmon; i++ ) _prodmon[0][i] = i-1;
 
   unsigned int *iexp = new unsigned int[_nvar];
-  for( unsigned int i=1; i<_nord; i++ ){    
+  for( unsigned int i=1; i<_nord; i++ ){
     for( unsigned int j=_posord[i]; j<_posord[i+1]; j++ ){
       _prodmon[j] = new unsigned int [_posord[_nord+1-i]+1];
       _prodmon[j][0] = _posord[_nord+1-i];
       for( unsigned int k=0; k<_posord[_nord+1-i]; k++ ){
-        for( unsigned int in=0; in<_nvar; in++ ) 
+        for( unsigned int in=0; in<_nvar; in++ )
           iexp[in] = _expmon[j*_nvar+in] + _expmon[k*_nvar+in] ;
         _prodmon[j][k+1] = _loc_expmon( iexp );
       }
@@ -164,7 +164,7 @@ TaylorModel<T>::_set_prodmon()
     _prodmon[i][1] = i;
   }
 }
-    
+
 template <typename T> inline unsigned int
 TaylorModel<T>::_loc_expmon
 ( const unsigned int *iexp )
@@ -173,8 +173,8 @@ TaylorModel<T>::_loc_expmon
   for( unsigned int i=0; i<_nvar; i++ ) ord += iexp[i];
   ASSERT( ord<_nord+2 );
   unsigned int pos = _posord[ord];
-  
-  unsigned int p = _nvar ; 
+
+  unsigned int p = _nvar ;
   for( unsigned int i=0; i<_nvar-1; i++ ){
     p--;
     for( unsigned int j=0; j<iexp[i]; j++ )
@@ -182,9 +182,9 @@ TaylorModel<T>::_loc_expmon
     ord -= iexp[i];
   }
 
-  return pos;    
+  return pos;
 }
-    
+
 template <typename T> inline void
 TaylorModel<T>::_set_binom()
 {

@@ -18,4 +18,3 @@ void slplay_stop_uri (const char* uri, char **error);
 void slplay_destroy();
 
 #endif
-

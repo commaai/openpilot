@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import cereal.messaging as messaging
 import pcap
+
+import cereal.messaging as messaging
 
 def main():
   ethernetData = messaging.pub_sock('ethernetData')

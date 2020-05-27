@@ -45,12 +45,12 @@ public:
 
   /**
    * copy constructor.
-   * @param[in] other object to copy. 
+   * @param[in] other object to copy.
    */
    TensorMap(const TensorMap& other);
 
   /**
-    * assignment operator. 
+    * assignment operator.
     */
    TensorMap& operator=(const TensorMap& other);
 
@@ -90,10 +90,10 @@ public:
 
    /**
     * @brief Returns the tensor given its name.
-    *  
-    * @param[in] name The name of the tensor to get. 
-    *  
-    * @return nullptr if no tensor with the specified name is 
+    *
+    * @param[in] name The name of the tensor to get.
+    *
+    * @return nullptr if no tensor with the specified name is
     *         found; otherwise, a valid pointer to the tensor.
     */
    zdl::DlSystem::ITensor* getTensor(const char *name) const noexcept;
@@ -117,4 +117,3 @@ private:
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 
 #endif // DL_SYSTEM_TENSOR_MAP_HPP
-

@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2008 The Khronos Group Inc. 
- * 
+ * Copyright (c) 2008 The Khronos Group Inc.
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
  * without limitation the rights to use, copy, modify, merge, publish,
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject
- * to the following conditions: 
+ * to the following conditions:
  * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software. 
- * 
+ * in all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
@@ -38,7 +38,7 @@ extern "C" {
 
 /* Each OMX header must include all required header files to allow the
  *  header to compile without errors.  The includes below are required
- *  for this header file to compile successfully 
+ *  for this header file to compile successfully
  */
 
 #include <OMX_Audio.h>
@@ -47,12 +47,12 @@ extern "C" {
 #include <OMX_Other.h>
 
 /** @ingroup comp */
-typedef enum OMX_PORTDOMAINTYPE { 
-    OMX_PortDomainAudio, 
-    OMX_PortDomainVideo, 
-    OMX_PortDomainImage, 
+typedef enum OMX_PORTDOMAINTYPE {
+    OMX_PortDomainAudio,
+    OMX_PortDomainVideo,
+    OMX_PortDomainImage,
     OMX_PortDomainOther,
-    OMX_PortDomainKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+    OMX_PortDomainKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */
     OMX_PortDomainVendorStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
     OMX_PortDomainMax = 0x7ffffff
 } OMX_PORTDOMAINTYPE;
@@ -71,7 +71,7 @@ typedef struct OMX_PARAM_PORTDEFINITIONTYPE {
                                         When disabled a port is unpopulated. A disabled port
                                         is not populated with buffers on a transition to IDLE. */
     OMX_BOOL bPopulated;           /**< Port is populated with all of its buffers as indicated by
-                                        nBufferCountActual. A disabled port is always unpopulated. 
+                                        nBufferCountActual. A disabled port is always unpopulated.
                                         An enabled port is populated on a transition to OMX_StateIdle
                                         and unpopulated on a transition to loaded. */
     OMX_PORTDOMAINTYPE eDomain;    /**< Domain of the port. Determines the contents of metadata below. */
@@ -86,26 +86,26 @@ typedef struct OMX_PARAM_PORTDEFINITIONTYPE {
 } OMX_PARAM_PORTDEFINITIONTYPE;
 
 /** @ingroup comp */
-typedef struct OMX_PARAM_U32TYPE { 
-    OMX_U32 nSize;                    /**< Size of this structure, in Bytes */ 
-    OMX_VERSIONTYPE nVersion;         /**< OMX specification version information */ 
-    OMX_U32 nPortIndex;               /**< port that this structure applies to */ 
+typedef struct OMX_PARAM_U32TYPE {
+    OMX_U32 nSize;                    /**< Size of this structure, in Bytes */
+    OMX_VERSIONTYPE nVersion;         /**< OMX specification version information */
+    OMX_U32 nPortIndex;               /**< port that this structure applies to */
     OMX_U32 nU32;                     /**< U32 value */
 } OMX_PARAM_U32TYPE;
 
 /** @ingroup rpm */
 typedef enum OMX_SUSPENSIONPOLICYTYPE {
     OMX_SuspensionDisabled, /**< No suspension; v1.0 behavior */
-    OMX_SuspensionEnabled,  /**< Suspension allowed */   
-    OMX_SuspensionPolicyKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+    OMX_SuspensionEnabled,  /**< Suspension allowed */
+    OMX_SuspensionPolicyKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */
     OMX_SuspensionPolicyStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
     OMX_SuspensionPolicyMax = 0x7fffffff
 } OMX_SUSPENSIONPOLICYTYPE;
 
 /** @ingroup rpm */
 typedef struct OMX_PARAM_SUSPENSIONPOLICYTYPE {
-    OMX_U32 nSize;                  
-    OMX_VERSIONTYPE nVersion;        
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
     OMX_SUSPENSIONPOLICYTYPE ePolicy;
 } OMX_PARAM_SUSPENSIONPOLICYTYPE;
 
@@ -113,22 +113,22 @@ typedef struct OMX_PARAM_SUSPENSIONPOLICYTYPE {
 typedef enum OMX_SUSPENSIONTYPE {
     OMX_NotSuspended, /**< component is not suspended */
     OMX_Suspended,    /**< component is suspended */
-    OMX_SuspensionKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+    OMX_SuspensionKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */
     OMX_SuspensionVendorStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
     OMX_SuspendMax = 0x7FFFFFFF
 } OMX_SUSPENSIONTYPE;
 
 /** @ingroup rpm */
 typedef struct OMX_PARAM_SUSPENSIONTYPE {
-    OMX_U32 nSize;                  
-    OMX_VERSIONTYPE nVersion;       
-    OMX_SUSPENSIONTYPE eType;             
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_SUSPENSIONTYPE eType;
 } OMX_PARAM_SUSPENSIONTYPE ;
 
 typedef struct OMX_CONFIG_BOOLEANTYPE {
     OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
-    OMX_BOOL bEnabled;    
+    OMX_BOOL bEnabled;
 } OMX_CONFIG_BOOLEANTYPE;
 
 /* Parameter specifying the content uri to use. */
@@ -154,9 +154,9 @@ typedef struct OMX_PARAM_CONTENTPIPETYPE
 typedef struct OMX_RESOURCECONCEALMENTTYPE {
     OMX_U32 nSize;             /**< size of the structure in bytes */
     OMX_VERSIONTYPE nVersion;  /**< OMX specification version information */
-    OMX_BOOL bResourceConcealmentForbidden; /**< disallow the use of resource concealment 
-                                            methods (like degrading algorithm quality to 
-                                            lower resource consumption or functional bypass) 
+    OMX_BOOL bResourceConcealmentForbidden; /**< disallow the use of resource concealment
+                                            methods (like degrading algorithm quality to
+                                            lower resource consumption or functional bypass)
                                             on a component as a resolution to resource conflicts. */
 } OMX_RESOURCECONCEALMENTTYPE;
 
@@ -171,7 +171,7 @@ typedef enum OMX_METADATACHARSETTYPE {
     OMX_MetadataCharsetJavaConformantUTF8,
     OMX_MetadataCharsetUTF7,
     OMX_MetadataCharsetImapUTF7,
-    OMX_MetadataCharsetUTF16LE, 
+    OMX_MetadataCharsetUTF16LE,
     OMX_MetadataCharsetUTF16BE,
     OMX_MetadataCharsetGB12345,
     OMX_MetadataCharsetHZGB2312,
@@ -197,7 +197,7 @@ typedef enum OMX_METADATACHARSETTYPE {
     OMX_MetadataCharsetISO2022JP1,
     OMX_MetadataCharsetISOEUCJP,
     OMX_MetadataCharsetSMS7Bit,
-    OMX_MetadataCharsetKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+    OMX_MetadataCharsetKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */
     OMX_MetadataCharsetVendorStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
     OMX_MetadataCharsetTypeMax= 0x7FFFFFFF
 } OMX_METADATACHARSETTYPE;
@@ -209,7 +209,7 @@ typedef enum OMX_METADATASCOPETYPE
     OMX_MetadataScopeTopLevel,
     OMX_MetadataScopePortLevel,
     OMX_MetadataScopeNodeLevel,
-    OMX_MetadataScopeKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+    OMX_MetadataScopeKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */
     OMX_MetadataScopeVendorStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
     OMX_MetadataScopeTypeMax = 0x7fffffff
 } OMX_METADATASCOPETYPE;
@@ -220,7 +220,7 @@ typedef enum OMX_METADATASEARCHMODETYPE
     OMX_MetadataSearchValueSizeByIndex,
     OMX_MetadataSearchItemByIndex,
     OMX_MetadataSearchNextItemByKey,
-    OMX_MetadataSearchKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */ 
+    OMX_MetadataSearchKhronosExtensions = 0x6F000000, /**< Reserved region for introducing Khronos Standard Extensions */
     OMX_MetadataSearchVendorStartUnused = 0x7F000000, /**< Reserved region for introducing Vendor Extensions */
     OMX_MetadataSearchTypeMax = 0x7fffffff
 } OMX_METADATASEARCHMODETYPE;
@@ -241,7 +241,7 @@ typedef struct OMX_CONFIG_METADATAITEMTYPE
     OMX_VERSIONTYPE nVersion;
     OMX_METADATASCOPETYPE eScopeMode;
     OMX_U32 nScopeSpecifier;
-    OMX_U32 nMetadataItemIndex;  
+    OMX_U32 nMetadataItemIndex;
     OMX_METADATASEARCHMODETYPE eSearchMode;
     OMX_METADATACHARSETTYPE eKeyCharset;
     OMX_U8 nKeySizeUsed;
@@ -270,30 +270,30 @@ typedef struct OMX_CONFIG_CONTAINERNODEIDTYPE
     OMX_VERSIONTYPE nVersion;
     OMX_BOOL bAllKeys;
     OMX_U32 nParentNodeID;
-    OMX_U32 nNodeIndex; 
-    OMX_U32 nNodeID; 
+    OMX_U32 nNodeIndex;
+    OMX_U32 nNodeID;
     OMX_STRING cNodeName;
     OMX_BOOL bIsLeafType;
 } OMX_CONFIG_CONTAINERNODEIDTYPE;
 
 /** @ingroup metadata */
-typedef struct OMX_PARAM_METADATAFILTERTYPE 
-{ 
-    OMX_U32 nSize; 
-    OMX_VERSIONTYPE nVersion; 
-    OMX_BOOL bAllKeys;	/* if true then this structure refers to all keys and 
+typedef struct OMX_PARAM_METADATAFILTERTYPE
+{
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_BOOL bAllKeys;	/* if true then this structure refers to all keys and
                          * the three key fields below are ignored */
     OMX_METADATACHARSETTYPE eKeyCharset;
-    OMX_U32 nKeySizeUsed; 
-    OMX_U8   nKey [128]; 
+    OMX_U32 nKeySizeUsed;
+    OMX_U8   nKey [128];
     OMX_U32 nLanguageCountrySizeUsed;
     OMX_U8 nLanguageCountry[128];
-    OMX_BOOL bEnabled;	/* if true then key is part of filter (e.g. 
+    OMX_BOOL bEnabled;	/* if true then key is part of filter (e.g.
                          * retained for query later). If false then
                          * key is not part of filter */
-} OMX_PARAM_METADATAFILTERTYPE; 
+} OMX_PARAM_METADATAFILTERTYPE;
 
-/** The OMX_HANDLETYPE structure defines the component handle.  The component 
+/** The OMX_HANDLETYPE structure defines the component handle.  The component
  *  handle is used to access all of the component's public methods and also
  *  contains pointers to the component's private data area.  The component
  *  handle is initialized by the OMX core (with help from the component)
@@ -301,7 +301,7 @@ typedef struct OMX_PARAM_METADATAFILTERTYPE
  *  successfully loaded, the application can safely access any of the
  *  component's public functions (although some may return an error because
  *  the state is inappropriate for the access).
- * 
+ *
  *  @ingroup comp
  */
 typedef struct OMX_COMPONENTTYPE
@@ -312,26 +312,26 @@ typedef struct OMX_COMPONENTTYPE
         function will fill in this value. */
     OMX_U32 nSize;
 
-    /** nVersion is the version of the OMX specification that the structure 
-        is built against.  It is the responsibility of the creator of this 
-        structure to initialize this value and every user of this structure 
-        should verify that it knows how to use the exact version of 
+    /** nVersion is the version of the OMX specification that the structure
+        is built against.  It is the responsibility of the creator of this
+        structure to initialize this value and every user of this structure
+        should verify that it knows how to use the exact version of
         this structure found herein. */
     OMX_VERSIONTYPE nVersion;
 
-    /** pComponentPrivate is a pointer to the component private data area.  
-        This member is allocated and initialized by the component when the 
-        component is first loaded.  The application should not access this 
+    /** pComponentPrivate is a pointer to the component private data area.
+        This member is allocated and initialized by the component when the
+        component is first loaded.  The application should not access this
         data area. */
     OMX_PTR pComponentPrivate;
 
-    /** pApplicationPrivate is a pointer that is a parameter to the 
-        OMX_GetHandle method, and contains an application private value 
-        provided by the IL client.  This application private data is 
+    /** pApplicationPrivate is a pointer that is a parameter to the
+        OMX_GetHandle method, and contains an application private value
+        provided by the IL client.  This application private data is
         returned to the IL Client by OMX in all callbacks */
     OMX_PTR pApplicationPrivate;
 
-    /** refer to OMX_GetComponentVersion in OMX_core.h or the OMX IL 
+    /** refer to OMX_GetComponentVersion in OMX_core.h or the OMX IL
         specification for details on the GetComponentVersion method.
      */
     OMX_ERRORTYPE (*GetComponentVersion)(
@@ -341,7 +341,7 @@ typedef struct OMX_COMPONENTTYPE
             OMX_OUT OMX_VERSIONTYPE* pSpecVersion,
             OMX_OUT OMX_UUIDTYPE* pComponentUUID);
 
-    /** refer to OMX_SendCommand in OMX_core.h or the OMX IL 
+    /** refer to OMX_SendCommand in OMX_core.h or the OMX IL
         specification for details on the SendCommand method.
      */
     OMX_ERRORTYPE (*SendCommand)(
@@ -350,43 +350,43 @@ typedef struct OMX_COMPONENTTYPE
             OMX_IN  OMX_U32 nParam1,
             OMX_IN  OMX_PTR pCmdData);
 
-    /** refer to OMX_GetParameter in OMX_core.h or the OMX IL 
+    /** refer to OMX_GetParameter in OMX_core.h or the OMX IL
         specification for details on the GetParameter method.
      */
     OMX_ERRORTYPE (*GetParameter)(
-            OMX_IN  OMX_HANDLETYPE hComponent, 
-            OMX_IN  OMX_INDEXTYPE nParamIndex,  
+            OMX_IN  OMX_HANDLETYPE hComponent,
+            OMX_IN  OMX_INDEXTYPE nParamIndex,
             OMX_INOUT OMX_PTR pComponentParameterStructure);
 
 
-    /** refer to OMX_SetParameter in OMX_core.h or the OMX IL 
+    /** refer to OMX_SetParameter in OMX_core.h or the OMX IL
         specification for details on the SetParameter method.
      */
     OMX_ERRORTYPE (*SetParameter)(
-            OMX_IN  OMX_HANDLETYPE hComponent, 
+            OMX_IN  OMX_HANDLETYPE hComponent,
             OMX_IN  OMX_INDEXTYPE nIndex,
             OMX_IN  OMX_PTR pComponentParameterStructure);
 
 
-    /** refer to OMX_GetConfig in OMX_core.h or the OMX IL 
+    /** refer to OMX_GetConfig in OMX_core.h or the OMX IL
         specification for details on the GetConfig method.
      */
     OMX_ERRORTYPE (*GetConfig)(
             OMX_IN  OMX_HANDLETYPE hComponent,
-            OMX_IN  OMX_INDEXTYPE nIndex, 
+            OMX_IN  OMX_INDEXTYPE nIndex,
             OMX_INOUT OMX_PTR pComponentConfigStructure);
 
 
-    /** refer to OMX_SetConfig in OMX_core.h or the OMX IL 
+    /** refer to OMX_SetConfig in OMX_core.h or the OMX IL
         specification for details on the SetConfig method.
      */
     OMX_ERRORTYPE (*SetConfig)(
             OMX_IN  OMX_HANDLETYPE hComponent,
-            OMX_IN  OMX_INDEXTYPE nIndex, 
+            OMX_IN  OMX_INDEXTYPE nIndex,
             OMX_IN  OMX_PTR pComponentConfigStructure);
 
 
-    /** refer to OMX_GetExtensionIndex in OMX_core.h or the OMX IL 
+    /** refer to OMX_GetExtensionIndex in OMX_core.h or the OMX IL
         specification for details on the GetExtensionIndex method.
      */
     OMX_ERRORTYPE (*GetExtensionIndex)(
@@ -395,50 +395,50 @@ typedef struct OMX_COMPONENTTYPE
             OMX_OUT OMX_INDEXTYPE* pIndexType);
 
 
-    /** refer to OMX_GetState in OMX_core.h or the OMX IL 
+    /** refer to OMX_GetState in OMX_core.h or the OMX IL
         specification for details on the GetState method.
      */
     OMX_ERRORTYPE (*GetState)(
             OMX_IN  OMX_HANDLETYPE hComponent,
             OMX_OUT OMX_STATETYPE* pState);
 
-    
+
     /** The ComponentTunnelRequest method will interact with another OMX
         component to determine if tunneling is possible and to setup the
-        tunneling.  The return codes for this method can be used to 
+        tunneling.  The return codes for this method can be used to
         determine if tunneling is not possible, or if tunneling is not
-        supported.  
-        
-        Base profile components (i.e. non-interop) do not support this
-        method and should return OMX_ErrorNotImplemented 
+        supported.
 
-        The interop profile component MUST support tunneling to another 
-        interop profile component with a compatible port parameters.  
+        Base profile components (i.e. non-interop) do not support this
+        method and should return OMX_ErrorNotImplemented
+
+        The interop profile component MUST support tunneling to another
+        interop profile component with a compatible port parameters.
         A component may also support proprietary communication.
-        
-        If proprietary communication is supported the negotiation of 
-        proprietary communication is done outside of OMX in a vendor 
-        specific way. It is only required that the proper result be 
-        returned and the details of how the setup is done is left 
-        to the component implementation.  
-    
+
+        If proprietary communication is supported the negotiation of
+        proprietary communication is done outside of OMX in a vendor
+        specific way. It is only required that the proper result be
+        returned and the details of how the setup is done is left
+        to the component implementation.
+
         When this method is invoked when nPort in an output port, the
         component will:
-        1.  Populate the pTunnelSetup structure with the output port's 
+        1.  Populate the pTunnelSetup structure with the output port's
             requirements and constraints for the tunnel.
 
         When this method is invoked when nPort in an input port, the
         component will:
-        1.  Query the necessary parameters from the output port to 
+        1.  Query the necessary parameters from the output port to
             determine if the ports are compatible for tunneling
         2.  If the ports are compatible, the component should store
             the tunnel step provided by the output port
         3.  Determine which port (either input or output) is the buffer
             supplier, and call OMX_SetParameter on the output port to
             indicate this selection.
-        
+
         The component will return from this call within 5 msec.
-    
+
         @param [in] hComp
             Handle of the component to be accessed.  This is the component
             handle returned by the call to the OMX_GetHandle method.
@@ -446,7 +446,7 @@ typedef struct OMX_COMPONENTTYPE
             nPort is used to select the port on the component to be used
             for tunneling.
         @param [in] hTunneledComp
-            Handle of the component to tunnel with.  This is the component 
+            Handle of the component to tunnel with.  This is the component
             handle returned by the call to the OMX_GetHandle method.  When
             this parameter is 0x0 the component should setup the port for
             communication with the application / IL Client.
@@ -469,9 +469,9 @@ typedef struct OMX_COMPONENTTYPE
         OMX_IN  OMX_U32 nPort,
         OMX_IN  OMX_HANDLETYPE hTunneledComp,
         OMX_IN  OMX_U32 nTunneledPort,
-        OMX_INOUT  OMX_TUNNELSETUPTYPE* pTunnelSetup); 
+        OMX_INOUT  OMX_TUNNELSETUPTYPE* pTunnelSetup);
 
-    /** refer to OMX_UseBuffer in OMX_core.h or the OMX IL 
+    /** refer to OMX_UseBuffer in OMX_core.h or the OMX IL
         specification for details on the UseBuffer method.
         @ingroup buf
      */
@@ -483,7 +483,7 @@ typedef struct OMX_COMPONENTTYPE
             OMX_IN OMX_U32 nSizeBytes,
             OMX_IN OMX_U8* pBuffer);
 
-    /** refer to OMX_AllocateBuffer in OMX_core.h or the OMX IL 
+    /** refer to OMX_AllocateBuffer in OMX_core.h or the OMX IL
         specification for details on the AllocateBuffer method.
         @ingroup buf
      */
@@ -494,7 +494,7 @@ typedef struct OMX_COMPONENTTYPE
             OMX_IN OMX_PTR pAppPrivate,
             OMX_IN OMX_U32 nSizeBytes);
 
-    /** refer to OMX_FreeBuffer in OMX_core.h or the OMX IL 
+    /** refer to OMX_FreeBuffer in OMX_core.h or the OMX IL
         specification for details on the FreeBuffer method.
         @ingroup buf
      */
@@ -503,7 +503,7 @@ typedef struct OMX_COMPONENTTYPE
             OMX_IN  OMX_U32 nPortIndex,
             OMX_IN  OMX_BUFFERHEADERTYPE* pBuffer);
 
-    /** refer to OMX_EmptyThisBuffer in OMX_core.h or the OMX IL 
+    /** refer to OMX_EmptyThisBuffer in OMX_core.h or the OMX IL
         specification for details on the EmptyThisBuffer method.
         @ingroup buf
      */
@@ -511,7 +511,7 @@ typedef struct OMX_COMPONENTTYPE
             OMX_IN  OMX_HANDLETYPE hComponent,
             OMX_IN  OMX_BUFFERHEADERTYPE* pBuffer);
 
-    /** refer to OMX_FillThisBuffer in OMX_core.h or the OMX IL 
+    /** refer to OMX_FillThisBuffer in OMX_core.h or the OMX IL
         specification for details on the FillThisBuffer method.
         @ingroup buf
      */
@@ -526,10 +526,10 @@ typedef struct OMX_COMPONENTTYPE
             Handle of the component to be accessed.  This is the component
             handle returned by the call to the GetHandle function.
         @param [in] pCallbacks
-            pointer to an OMX_CALLBACKTYPE structure used to provide the 
+            pointer to an OMX_CALLBACKTYPE structure used to provide the
             callback information to the component
         @param [in] pAppData
-            pointer to an application defined value.  It is anticipated that 
+            pointer to an application defined value.  It is anticipated that
             the application will pass a pointer to a data structure or a "this
             pointer" in this area to allow the callback (in the application)
             to determine the context of the call
@@ -539,7 +539,7 @@ typedef struct OMX_COMPONENTTYPE
      */
     OMX_ERRORTYPE (*SetCallbacks)(
             OMX_IN  OMX_HANDLETYPE hComponent,
-            OMX_IN  OMX_CALLBACKTYPE* pCallbacks, 
+            OMX_IN  OMX_CALLBACKTYPE* pCallbacks,
             OMX_IN  OMX_PTR pAppData);
 
     /** ComponentDeInit method is used to deinitialize the component

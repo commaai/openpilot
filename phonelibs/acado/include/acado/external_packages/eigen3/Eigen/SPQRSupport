@@ -9,7 +9,7 @@
 
 /** \ingroup Support_modules
   * \defgroup SPQRSupport_Module SuiteSparseQR module
-  * 
+  *
   * This module provides an interface to the SPQR library, which is part of the <a href="http://www.cise.ufl.edu/research/sparse/SuiteSparse/">suitesparse</a> package.
   *
   * \code

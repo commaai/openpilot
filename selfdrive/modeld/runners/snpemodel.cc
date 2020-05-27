@@ -181,4 +181,3 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
   }
 #endif
 }
-

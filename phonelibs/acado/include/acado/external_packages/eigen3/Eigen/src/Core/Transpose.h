@@ -11,7 +11,7 @@
 #ifndef EIGEN_TRANSPOSE_H
 #define EIGEN_TRANSPOSE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class Transpose
   * \ingroup Core_Module

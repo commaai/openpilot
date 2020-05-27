@@ -184,8 +184,8 @@ public:
 	unsigned int getDim() const{ return _nc*_nr; }
 	unsigned int getNumRows() const{ return _nr; }
 	unsigned int getNumCols() const{ return _nc; }
-	
-	
+
+
   //! @brief Other operators
   Tmatrix<unsigned int> sort();
   T& operator()
@@ -477,7 +477,7 @@ template <typename T, typename U> inline Tmatrix<T>
 operator+
 ( const Tmatrix<T>&M, const Tmatrix<U>&N )
 {
-  Tmatrix<T> P( M );   
+  Tmatrix<T> P( M );
   P += N;
   return P;
 }

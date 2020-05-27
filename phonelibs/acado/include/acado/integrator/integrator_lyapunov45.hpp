@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements the Runge-Kutta-45 scheme for integrating ODEs.
  *
  *	\ingroup NumericalAlgorithms
@@ -93,4 +93,4 @@ CLOSE_NAMESPACE_ACADO
 #include <acado/integrator/integrator_lyapunov45.ipp>
 
 
-#endif  
+#endif

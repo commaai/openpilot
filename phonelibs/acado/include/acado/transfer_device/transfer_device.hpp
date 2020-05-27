@@ -43,7 +43,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for simulating Actuator and Sensor behaviour wihtin the Process.
  *
  *	\ingroup UserDataStructures
@@ -52,7 +52,7 @@ BEGIN_NAMESPACE_ACADO
  *	and Sensor behaviour within the Process. It is intended to collect
  *	common features of the Actuator and Sensor.
  *
- *	At the moment, it basically stores an array of additive noise as well as 
+ *	At the moment, it basically stores an array of additive noise as well as
  *	the dead times of each component. It also provides a common way to generate
  *	noise.
  *
@@ -65,12 +65,12 @@ class TransferDevice : public SimulationBlock
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		TransferDevice( );
 
-		/** Constructor which takes the dimension, the name and the sampling time 
-		 *	of the transfer device. 
+		/** Constructor which takes the dimension, the name and the sampling time
+		 *	of the transfer device.
 		 *
 		 *	@param[in] _dim				Dimension of transfer device signal.
 		 *	@param[in] _name			Name of the block.
@@ -90,7 +90,7 @@ class TransferDevice : public SimulationBlock
 		TransferDevice(	const TransferDevice& rhs
 						);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~TransferDevice( );
 
@@ -137,7 +137,7 @@ class TransferDevice : public SimulationBlock
 	//
 	protected:
 
-		/** Initializes all components of the transfer device and the 
+		/** Initializes all components of the transfer device and the
 		 *	lastSignal member based on the given start information.
 		 *
 		 *	@param[in]  _startTime		Start time.

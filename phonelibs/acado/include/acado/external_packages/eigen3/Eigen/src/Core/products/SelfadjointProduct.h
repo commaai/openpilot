@@ -16,7 +16,7 @@
 * It corresponds to the level 3 SYRK and level 2 SYR Blas routines.
 **********************************************************************/
 
-namespace Eigen { 
+namespace Eigen {
 
 
 template<typename Scalar, typename Index, int UpLo, bool ConjLhs, bool ConjRhs>
@@ -69,10 +69,10 @@ struct selfadjoint_product_selector<MatrixType,OtherType,UpLo,true>
 
     ei_declare_aligned_stack_constructed_variable(Scalar, actualOtherPtr, other.size(),
       (UseOtherDirectly ? const_cast<Scalar*>(actualOther.data()) : static_other.data()));
-      
+
     if(!UseOtherDirectly)
       Map<typename _ActualOtherType::PlainObject>(actualOtherPtr, actualOther.size()) = actualOther;
-    
+
     selfadjoint_rank1_update<Scalar,Index,StorageOrder,UpLo,
                               OtherBlasTraits::NeedToConjugate  && NumTraits<Scalar>::IsComplex,
                             (!OtherBlasTraits::NeedToConjugate) && NumTraits<Scalar>::IsComplex>

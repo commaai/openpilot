@@ -46,7 +46,7 @@ public:
 
     inline  void            clear()                     { mVector.clear(); }
 
-    /*! 
+    /*!
      * vector stats
      */
 
@@ -62,7 +62,7 @@ public:
     // returns true if the arguments is known to be identical to this vector
     inline bool isIdenticalTo(const KeyedVector& rhs) const;
 
-    /*! 
+    /*!
      * accessors
      */
             const VALUE&    valueFor(const KEY& key) const;
@@ -78,10 +78,10 @@ public:
             VALUE&          editValueFor(const KEY& key);
             VALUE&          editValueAt(size_t index);
 
-            /*! 
+            /*!
              * add/insert/replace items
              */
-             
+
             ssize_t         add(const KEY& key, const VALUE& item);
             ssize_t         replaceValueFor(const KEY& key, const VALUE& item);
             ssize_t         replaceValueAt(size_t index, const VALUE& item);
@@ -92,7 +92,7 @@ public:
 
             ssize_t         removeItem(const KEY& key);
             ssize_t         removeItemsAt(size_t index, size_t count = 1);
-            
+
 private:
             SortedVector< key_value_pair_t<KEY, VALUE> >    mVector;
 };

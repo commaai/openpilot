@@ -40,7 +40,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored Runge-Kutta sensitivity propagation for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms

@@ -17,14 +17,14 @@ extern "C" {
 
 /** \ingroup Support_modules
   * \defgroup PaStiXSupport_Module PaStiXSupport module
-  * 
+  *
   * This module provides an interface to the <a href="http://pastix.gforge.inria.fr/">PaSTiX</a> library.
   * PaSTiX is a general \b supernodal, \b parallel and \b opensource sparse solver.
   * It provides the two following main factorization classes:
   * - class PastixLLT : a supernodal, parallel LLt Cholesky factorization.
   * - class PastixLDLT: a supernodal, parallel LDLt Cholesky factorization.
   * - class PastixLU : a supernodal, parallel LU factorization (optimized for a symmetric pattern).
-  * 
+  *
   * \code
   * #include <Eigen/PaStiXSupport>
   * \endcode

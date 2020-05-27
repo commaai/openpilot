@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Acos implements the scalar inverse cosine operator (arccos) within the 
+ *	The class Acos implements the scalar inverse cosine operator (arccos) within the
  *	symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

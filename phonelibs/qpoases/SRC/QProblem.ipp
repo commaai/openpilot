@@ -27,8 +27,8 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Implementation of inlined member functions of the QProblem class which 
- *	is able to use the newly developed online active set strategy for 
+ *	Implementation of inlined member functions of the QProblem class which
+ *	is able to use the newly developed online active set strategy for
  *	parametric quadratic programming.
  */
 
@@ -58,7 +58,7 @@ inline returnValue QProblem::getA( real_t* const _A ) const
 inline returnValue QProblem::getA( int number, real_t* const row ) const
 {
 	int nV = getNV( );
-		
+
 	if ( ( number >= 0 ) && ( number < getNC( ) ) )
 	{
 		for ( int i=0; i<nV; ++i )
@@ -135,7 +135,7 @@ inline returnValue QProblem::getUBA( int number, real_t& value ) const
 inline returnValue QProblem::getConstraints( Constraints* const _constraints ) const
 {
 	*_constraints = constraints;
-	
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -181,7 +181,7 @@ inline int QProblem::getNIAC( )
 /*****************************************************************************
  *  P R O T E C T E D                                                        *
  *****************************************************************************/
- 
+
 
 /*
  *	s e t A
@@ -198,7 +198,7 @@ inline returnValue QProblem::setA( const real_t* const A_new )
 		Ax[j] = 0.0;
 
 		for( i=0; i<nV; ++i )
-		{	
+		{
 			A[j*NVMAX + i] = A_new[j*nV + i];
 			Ax[j] += A[j*NVMAX + i] * x[i];
 		}

@@ -45,7 +45,7 @@ class EvaluationPoint;
 template <typename T> class TevaluationPoint;
 
 
-/** 
+/**
  *	\brief Allows to setup and evaluate a general function based on SymbolicExpressions.
  *
  *	\ingroup BasicDataStructures
@@ -224,9 +224,9 @@ public:
      *  \return The result of the evaluation.  \n
      */
     template <typename T> Tmatrix<T> evaluate( const TevaluationPoint<T> &x );
-	
-	
-	
+
+
+
     /** Evaluates the function and stores the intermediate        \n
      *  results in a buffer (needed for automatic differentiation \n
      *  in backward mode)                                         \n
@@ -431,7 +431,7 @@ public:
                                                    of the expression  */   );
 
 
-    /** \brief calculate the jacobian of an evaluated function 
+    /** \brief calculate the jacobian of an evaluated function
     *
     * Calculates the matrix diff(fun(x,u,v,p,q,w),x)
     *
@@ -466,7 +466,7 @@ public:
      returnValue exportCode(	std::ostream& stream,
 								const char *fcnName = "ACADOfcn",
 								const char *realString = "double",
-								uint        _numX = 0,     
+								uint        _numX = 0,
 								uint        _numXA = 0,
 								uint		_numU = 0,
 								uint		_numP = 0,
@@ -518,7 +518,7 @@ protected:
 
     FunctionEvaluationTree evaluationTree;
     int                    memoryOffset  ;
-	
+
 	double* result;
 };
 

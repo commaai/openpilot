@@ -33,7 +33,7 @@
 #ifndef EIGEN_GENERAL_MATRIX_VECTOR_MKL_H
 #define EIGEN_GENERAL_MATRIX_VECTOR_MKL_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

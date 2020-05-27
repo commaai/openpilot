@@ -17,4 +17,3 @@ cdef class FrameReader():
 
   def get(self, idx):
     self.fr.get(idx)
-

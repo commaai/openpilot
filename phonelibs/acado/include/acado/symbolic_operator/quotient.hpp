@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Quotient implements the scalar quotient operator within the 
+ *	The class Quotient implements the scalar quotient operator within the
  *	symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -85,8 +85,8 @@ public:
 
 	/** Evaluates the expression (templated version) */
 	virtual returnValue evaluate( EvaluationBase *x );
-	
-	
+
+
     /** Returns the derivative of the expression with respect     \n
      *  to the variable var(index).                               \n
      *  \return The expression for the derivative.                \n
@@ -123,7 +123,7 @@ public:
                                      int           &nNewIS  , /**< the number of new IS  */
                                      TreeProjection ***newIS  /**< the new IS-pointer    */ );
 
-    
+
     /** Automatic Differentiation in symmetric mode on the symbolic \n
      *  level. This function generates an expression for a          \n
      *  second order derivative.                                    \n
@@ -144,8 +144,8 @@ public:
                                       TreeProjection ***newSIS , /**< the new SIS-pointer   */
                                       int            &nNewHIS  , /**< the number of newHIS  */
                                       TreeProjection ***newHIS   /**< the new HIS-pointer   */ );
-     
-     
+
+
     /** Substitutes var(index) with the expression sub.           \n
      *  \return The substituted expression.                       \n
      *

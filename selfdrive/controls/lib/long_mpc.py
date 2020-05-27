@@ -2,7 +2,6 @@ import math
 import os
 
 import cereal.messaging as messaging
-
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py

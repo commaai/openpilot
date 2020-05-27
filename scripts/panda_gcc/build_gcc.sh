@@ -62,5 +62,3 @@ popd
 
 # replace stdint.h with stdint-gcc.h for Android compatibility
 mv $PREFIX/lib/gcc/arm-none-eabi/4.7.1/include/stdint-gcc.h $PREFIX/lib/gcc/arm-none-eabi/4.7.1/include/stdint.h
-
-

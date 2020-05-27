@@ -66,7 +66,7 @@ class GnuplotWindow : public PlotWindow
         /** Default constructor. */
         GnuplotWindow( );
 
-		/** Constructor which takes the plot frequency. 
+		/** Constructor which takes the plot frequency.
 		 *
 		 *	@param[in] _frequency	Frequency determining at which time instants the window is to be plotted.
 		 */
@@ -199,7 +199,7 @@ class GnuplotWindow : public PlotWindow
 		returnValue obtainPlotDataString(	VariablesGrid& _dataGrid,
 											std::string& _plotDataString
 											) const;
-	
+
 
 
     // PROTECTED DATA MEMBERS:
@@ -223,4 +223,3 @@ CLOSE_NAMESPACE_ACADO
 /*
  *	end of file
  */
-

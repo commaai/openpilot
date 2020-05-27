@@ -39,4 +39,3 @@ else:
 
 _gpucommon = fxn('gpucommon', files, CPPDEFINES=defines, LIBS=_gpu_libs)
 Export('_common', '_visionipc', '_gpucommon', '_gpu_libs')
-

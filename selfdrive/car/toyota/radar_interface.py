@@ -4,7 +4,6 @@ import time
 
 from cereal import car
 from opendbc.can.parser import CANParser
-
 from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.toyota.values import DBC
 from selfdrive.car.toyota.values import NO_DSU_CAR

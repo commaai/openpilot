@@ -27,8 +27,8 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Implementation of inlined member functions of the QProblemB class which 
- *	is able to use the newly developed online active set strategy for 
+ *	Implementation of inlined member functions of the QProblemB class which
+ *	is able to use the newly developed online active set strategy for
  *	parametric quadratic programming.
  */
 
@@ -138,7 +138,7 @@ inline returnValue QProblemB::getUB( int number, real_t& value ) const
 inline returnValue QProblemB::getBounds( Bounds* const _bounds ) const
 {
 	*_bounds = bounds;
-	
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -367,14 +367,14 @@ inline returnValue QProblemB::setUB( int number, real_t value )
  *	c o m p u t e G i v e n s
  */
 inline void QProblemB::computeGivens(	real_t xold, real_t yold, real_t& xnew, real_t& ynew,
-										real_t& c, real_t& s 
+										real_t& c, real_t& s
 										) const
 {
     if ( getAbs( yold ) <= ZERO )
 	{
         c = 1.0;
         s = 0.0;
-		
+
 		xnew = xold;
 		ynew = yold;
 	}
@@ -385,37 +385,37 @@ inline void QProblemB::computeGivens(	real_t xold, real_t yold, real_t& xnew, re
         mu = getAbs( xold );
 		if ( getAbs( yold ) > mu )
 			mu = getAbs( yold );
-		
+
         t = mu * sqrt( (xold/mu)*(xold/mu) + (yold/mu)*(yold/mu) );
-		
+
 		if ( xold < 0.0 )
             t = -t;
-		
+
         c = xold/t;
         s = yold/t;
         xnew = t;
         ynew = 0.0;
 	}
-	
+
 	return;
 }
 
-		
+
 /*
  *	a p p l y G i v e n s
  */
 inline void QProblemB::applyGivens(	real_t c, real_t s, real_t xold, real_t yold,
-									real_t& xnew, real_t& ynew 
+									real_t& xnew, real_t& ynew
 									) const
 {
 	/* Usual Givens plane rotation requiring four multiplications. */
 	xnew =  c*xold + s*yold;
 	ynew = -s*xold + c*yold;
 // 	double nu = s/(1.0+c);
-// 
+//
 // 	xnew = xold*c + yold*s;
 // 	ynew = (xnew+xold)*nu - yold;
-	
+
 	return;
 }
 

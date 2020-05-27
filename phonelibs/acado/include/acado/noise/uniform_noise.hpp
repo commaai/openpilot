@@ -55,15 +55,15 @@ class UniformNoise : public Noise
 	//
 	//  PUBLIC MEMBER FUNCTIONS:
 	//
-	
+
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		UniformNoise( );
 
 		/** Constructor which takes lower and upper limits of the random variable.
-		 *	The dimension of these limit vector determine the dimension of the 
+		 *	The dimension of these limit vector determine the dimension of the
 		 *	random variable.
 		 *
 		 *	@param[in] _lowerLimit		Lower limit for each component.
@@ -91,8 +91,8 @@ class UniformNoise : public Noise
 		 */
 		UniformNoise(	const UniformNoise& rhs
 						);
-	
-		/** Destructor. 
+
+		/** Destructor.
 		 */
 		virtual ~UniformNoise( );
 
@@ -175,7 +175,7 @@ class UniformNoise : public Noise
 		virtual returnValue init(	uint seed = 0
 									);
 
-	
+
 		/** Generates a single noise vector based on current internal settings.
 		 *
 		 *	@param[out] _w		Generated noise vector.

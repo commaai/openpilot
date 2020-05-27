@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_DIAGONAL_PRODUCT_H
 #define EIGEN_SPARSE_DIAGONAL_PRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 // The product of a diagonal matrix with a sparse matrix can be easily
 // implemented using expression template.
@@ -79,7 +79,7 @@ class SparseDiagonalProduct
 
     typedef internal::sparse_diagonal_product_inner_iterator_selector
                       <_LhsNested,_RhsNested,SparseDiagonalProduct,LhsMode,RhsMode> InnerIterator;
-    
+
     // We do not want ReverseInnerIterator for diagonal-sparse products,
     // but this dummy declaration is needed to make diag * sparse * diag compile.
     class ReverseInnerIterator;
@@ -136,7 +136,7 @@ class sparse_diagonal_product_inner_iterator_selector
               const SparseDiagonalProductType& expr, Index outer)
       : Base(expr.rhs().innerVector(outer) .cwiseProduct(expr.lhs().diagonal()), 0), m_outer(outer)
     {}
-    
+
     inline Index outer() const { return m_outer; }
     inline Index col() const { return m_outer; }
 };
@@ -174,7 +174,7 @@ class sparse_diagonal_product_inner_iterator_selector
               const SparseDiagonalProductType& expr, Index outer)
       : Base(expr.lhs().innerVector(outer) .cwiseProduct(expr.rhs().diagonal().transpose()), 0), m_outer(outer)
     {}
-    
+
     inline Index outer() const { return m_outer; }
     inline Index row() const { return m_outer; }
 };

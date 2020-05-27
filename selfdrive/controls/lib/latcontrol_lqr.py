@@ -1,6 +1,6 @@
 import numpy as np
-from cereal import log
 
+from cereal import log
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import get_steer_max

@@ -33,7 +33,7 @@
 
 #include <Eigen/Core>
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

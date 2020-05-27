@@ -6,12 +6,12 @@ import random
 import threading
 import time
 
-import cereal.messaging as messaging
 import numpy as np
 from lib.can import can_function
 from lib.can import sendcan_function
 from lib.helpers import FakeSteeringWheel
 
+import cereal.messaging as messaging
 from common.params import Params
 from common.realtime import Ratekeeper
 from selfdrive.car.honda.values import CruiseButtons
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     print("WARNING: NO CARLA")
     while 1:
       time.sleep(1)
-    
+
   from multiprocessing import Process, Queue
   q = Queue()
   p = Process(target=go, args=(q,))

@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Log implements the scalar logarithm operator within the 
+ *	The class Log implements the scalar logarithm operator within the
  *	symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

@@ -10,7 +10,7 @@
 #ifndef EIGEN_POLYNOMIAL_UTILS_H
 #define EIGEN_POLYNOMIAL_UTILS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup Polynomials_Module
  * \returns the evaluation of the polynomial at x using Horner algorithm.

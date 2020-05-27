@@ -10,7 +10,7 @@
 #ifndef EIGEN_COREITERATORS_H
 #define EIGEN_COREITERATORS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /* This file contains the respective InnerIterator definition of the expressions defined in Eigen/Core
  */

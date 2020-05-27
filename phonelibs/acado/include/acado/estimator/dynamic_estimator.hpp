@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements an online state/parameter estimator based on dynamic optimization.
  *
  *	\ingroup UserInterfaces

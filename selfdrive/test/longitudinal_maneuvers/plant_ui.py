@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import math
 
-import cereal.messaging as messaging
 import numpy as np
 import pygame # pylint: disable=import-error
 
+import cereal.messaging as messaging
 from selfdrive.car.honda.values import CruiseButtons
 from selfdrive.test.longitudinal_maneuvers.plant import Plant
 

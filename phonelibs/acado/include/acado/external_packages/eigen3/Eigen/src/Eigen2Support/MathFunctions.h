@@ -10,7 +10,7 @@
 #ifndef EIGEN2_MATH_FUNCTIONS_H
 #define EIGEN2_MATH_FUNCTIONS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename T> inline typename NumTraits<T>::Real ei_real(const T& x) { return numext::real(x); }
 template<typename T> inline typename NumTraits<T>::Real ei_imag(const T& x) { return numext::imag(x); }

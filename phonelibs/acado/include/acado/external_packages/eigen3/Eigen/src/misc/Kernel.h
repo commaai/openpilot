@@ -10,7 +10,7 @@
 #ifndef EIGEN_MISC_KERNEL_H
 #define EIGEN_MISC_KERNEL_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

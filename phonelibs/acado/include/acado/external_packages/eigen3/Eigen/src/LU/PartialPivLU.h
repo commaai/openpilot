@@ -11,7 +11,7 @@
 #ifndef EIGEN_PARTIALLU_H
 #define EIGEN_PARTIALLU_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup LU_Module
   *
@@ -247,7 +247,7 @@ struct partial_lu_impl
     {
       Index rrows = rows-k-1;
       Index rcols = cols-k-1;
-        
+
       Index row_of_biggest_in_col;
       RealScalar biggest_in_corner
         = lu.col(k).tail(rows-k).cwiseAbs().maxCoeff(&row_of_biggest_in_col);
@@ -388,7 +388,7 @@ PartialPivLU<MatrixType>& PartialPivLU<MatrixType>::compute(const MatrixType& ma
 {
   // the row permutation is stored as int indices, so just to be sure:
   eigen_assert(matrix.rows()<NumTraits<int>::highest());
-  
+
   m_lu = matrix;
 
   eigen_assert(matrix.rows() == matrix.cols() && "PartialPivLU is only for square (and moreover invertible) matrices");

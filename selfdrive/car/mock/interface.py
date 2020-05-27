@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import cereal.messaging as messaging
 from cereal import car
-
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.config import Conversions as CV

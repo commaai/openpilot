@@ -10,7 +10,7 @@
 #ifndef EIGEN_DYNAMIC_SPARSEMATRIX_H
 #define EIGEN_DYNAMIC_SPARSEMATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \deprecated use a SparseMatrix in an uncompressed mode
   *
@@ -314,7 +314,7 @@ template<typename _Scalar, int _Options, typename _Index>
     /** \deprecated use finalize()
       * Does nothing. Provided for compatibility with SparseMatrix. */
     EIGEN_DEPRECATED void endFill() {}
-    
+
 #   ifdef EIGEN_DYNAMICSPARSEMATRIX_PLUGIN
 #     include EIGEN_DYNAMICSPARSEMATRIX_PLUGIN
 #   endif

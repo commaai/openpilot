@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief User-interface to formulate and solve moving horizon estimation problems.
  *
  *	\ingroup UserInterfaces

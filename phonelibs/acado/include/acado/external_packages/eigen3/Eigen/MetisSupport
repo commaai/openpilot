@@ -16,7 +16,7 @@ extern "C" {
   * \code
   * #include <Eigen/MetisSupport>
   * \endcode
-  * This module defines an interface to the METIS reordering package (http://glaros.dtc.umn.edu/gkhome/views/metis). 
+  * This module defines an interface to the METIS reordering package (http://glaros.dtc.umn.edu/gkhome/views/metis).
   * It can be used just as any other built-in method as explained in \link OrderingMethods_Module here. \endlink
   */
 

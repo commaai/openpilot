@@ -11,7 +11,7 @@
 #ifndef EIGEN_FUZZY_H
 #define EIGEN_FUZZY_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal
 {

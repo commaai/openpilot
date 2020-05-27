@@ -11,7 +11,7 @@
 #ifndef EIGEN_GMRES_H
 #define EIGEN_GMRES_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -30,8 +30,8 @@ namespace internal {
  *  \param tol_error on input: residual tolerance
  *                   on output: residuum achieved
  *
- * \sa IterativeMethods::bicgstab() 
- *  
+ * \sa IterativeMethods::bicgstab()
+ *
  *
  * For references, please see:
  *
@@ -192,7 +192,7 @@ bool gmres(const MatrixType & mat, const Rhs & rhs, Dest & x, const Precondition
 
 
 	}
-	
+
 	return false;
 
 }
@@ -226,7 +226,7 @@ struct traits<GMRES<_MatrixType,_Preconditioner> >
   * The maximal number of iterations and tolerance value can be controlled via the setMaxIterations()
   * and setTolerance() methods. The defaults are the size of the problem for the maximal number of iterations
   * and NumTraits<Scalar>::epsilon() for the tolerance.
-  * 
+  *
   * This class can be used as the direct solver classes. Here is a typical usage example:
   * \code
   * int n = 10000;
@@ -240,7 +240,7 @@ struct traits<GMRES<_MatrixType,_Preconditioner> >
   * // update b, and solve again
   * x = solver.solve(b);
   * \endcode
-  * 
+  *
   * By default the iterations start with x=0 as an initial guess of the solution.
   * One can control the start using the solveWithGuess() method. Here is a step by
   * step execution example starting with a random guess and printing the evolution
@@ -256,7 +256,7 @@ struct traits<GMRES<_MatrixType,_Preconditioner> >
   * } while (solver.info()!=Success && i<100);
   * \endcode
   * Note that such a step by step excution is slightly slower.
-  * 
+  *
   * \sa class SimplicialCholesky, DiagonalPreconditioner, IdentityPreconditioner
   */
 template< typename _MatrixType, typename _Preconditioner>
@@ -268,10 +268,10 @@ class GMRES : public IterativeSolverBase<GMRES<_MatrixType,_Preconditioner> >
   using Base::m_iterations;
   using Base::m_info;
   using Base::m_isInitialized;
- 
+
 private:
   int m_restart;
-  
+
 public:
   typedef _MatrixType MatrixType;
   typedef typename MatrixType::Scalar Scalar;
@@ -285,10 +285,10 @@ public:
   GMRES() : Base(), m_restart(30) {}
 
   /** Initialize the solver with matrix \a A for further \c Ax=b solving.
-    * 
+    *
     * This constructor is a shortcut for the default constructor followed
     * by a call to compute().
-    * 
+    *
     * \warning this class stores a reference to the matrix A as well as some
     * precomputed values that depend on it. Therefore, if \a A is changed
     * this class becomes invalid. Call compute() to update it with the new
@@ -297,16 +297,16 @@ public:
   GMRES(const MatrixType& A) : Base(A), m_restart(30) {}
 
   ~GMRES() {}
-  
+
   /** Get the number of iterations after that a restart is performed.
     */
   int get_restart() { return m_restart; }
-  
+
   /** Set the number of iterations after that a restart is performed.
     *  \param restart   number of iterations for a restarti, default is 30.
     */
   void set_restart(const int restart) { m_restart=restart; }
-  
+
   /** \returns the solution x of \f$ A x = b \f$ using the current decomposition of A
     * \a x0 as an initial solution.
     *
@@ -322,17 +322,17 @@ public:
     return internal::solve_retval_with_guess
             <GMRES, Rhs, Guess>(*this, b.derived(), x0);
   }
-  
+
   /** \internal */
   template<typename Rhs,typename Dest>
   void _solveWithGuess(const Rhs& b, Dest& x) const
-  {    
+  {
     bool failed = false;
     for(int j=0; j<b.cols(); ++j)
     {
       m_iterations = Base::maxIterations();
       m_error = Base::m_tolerance;
-      
+
       typename Dest::ColXpr xj(x,j);
       if(!internal::gmres(*mp_matrix, b.col(j), xj, Base::m_preconditioner, m_iterations, m_restart, m_error))
         failed = true;

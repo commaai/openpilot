@@ -1,6 +1,5 @@
 from cereal import car
 from opendbc.can.parser import CANParser
-
 from selfdrive.car.hyundai.values import DBC
 from selfdrive.car.hyundai.values import FEATURES
 from selfdrive.car.hyundai.values import STEER_THRESHOLD

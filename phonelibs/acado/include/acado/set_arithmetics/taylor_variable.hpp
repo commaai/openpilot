@@ -308,13 +308,13 @@ public:
   TaylorVariable<T>& operator /=
     ( const double );
 
-	
-	
+
+
 	//! Routine which returns BT_FALSE if there are components equal to "nan" or "INFTY".\n
 	//! Otherwise, BT_TRUE is returned.
 	BooleanType isCompact() const;
-	
-	
+
+
 
 	//! @brief Private constructor for a real scalar in a specific TaylorModel
 	TaylorVariable
@@ -330,7 +330,7 @@ private:
   //! @brief Coefficients for monomial terms 1,...,nmon
   double *_coefmon;
   //! @brief Bounds for individual terms of degrees 0,...,_nord+1
-  T * _bndord; 
+  T * _bndord;
   //! @brief Pointer to the remainder error bound
   T * _bndrem;
   //! @brief Interval bound evaluated in T arithmetic
@@ -377,4 +377,3 @@ CLOSE_NAMESPACE_ACADO
 //#include <acado/set_arithmetics/interval.ipp>
 
 #endif  // ACADO_TOOLKIT_TAYLOR_VARIABLE_HPP
-

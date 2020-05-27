@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_CWISE_UNARY_OP_H
 #define EIGEN_SPARSE_CWISE_UNARY_OP_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename UnaryOp, typename MatrixType>
 class CwiseUnaryOpImpl<UnaryOp,MatrixType,Sparse>

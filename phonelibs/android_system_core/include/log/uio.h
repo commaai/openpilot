@@ -48,4 +48,3 @@ extern int  writev( int  fd, const struct iovec*  vecs, int  count );
 #endif
 
 #endif /* _LIBS_UTILS_UIO_H */
-

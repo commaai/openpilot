@@ -46,7 +46,7 @@ inline PlotWindowSubplot& PlotWindow::operator()(	uint idx
 
 	PlotWindowSubplot* current = first;
 	for( uint i=0; i<idx; ++i )
-		current = current->getNext( );	
+		current = current->getNext( );
 
 	return *current;
 }
@@ -59,7 +59,7 @@ inline PlotWindowSubplot PlotWindow::operator()(	uint idx
 
 	PlotWindowSubplot* current = first;
 	for( uint i=0; i<idx; ++i )
-		current = current->getNext( );	
+		current = current->getNext( );
 
 	return *current;
 }
@@ -109,7 +109,7 @@ inline returnValue PlotWindow::setPlotData(	const Expression& _name,
 {
 	plotDataRecord.setLast( _name,value );
 	plotDataRecord.enableWriteProtection( _name );
-	
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -120,7 +120,7 @@ inline returnValue PlotWindow::setPlotData(	LogName _name,
 {
 	plotDataRecord.setLast( _name,value );
 	plotDataRecord.enableWriteProtection( _name );
-	
+
 	return SUCCESSFUL_RETURN;
 }
 

@@ -235,7 +235,7 @@ inline static const char *SimdInstructionSetsInUse(void) {
 // we use size_t frequently and we'll never remember to prepend it with std:: everytime just to
 // ensure QNX/QCC support
 using std::size_t;
-// gcc 4.6.0 wants std:: for ptrdiff_t 
+// gcc 4.6.0 wants std:: for ptrdiff_t
 using std::ptrdiff_t;
 
 /** \defgroup Core_Module Core module

@@ -77,7 +77,7 @@ template<> EIGEN_STRONG_INLINE Packet2cf pmul<Packet2cf>(const Packet2cf& a, con
   v1 = vmulq_f32(v1, b.v);
   // Multiply the imag a with b
   v2 = vmulq_f32(v2, b.v);
-  // Conjugate v2 
+  // Conjugate v2
   v2 = vreinterpretq_f32_u32(veorq_u32(vreinterpretq_u32_f32(v2), p4ui_CONJ_XOR));
   // Swap real/imag elements in v2.
   v2 = vrev64q_f32(v2);
@@ -176,7 +176,7 @@ template<> EIGEN_STRONG_INLINE std::complex<float> predux_mul<Packet2cf>(const P
   v1 = vmul_f32(v1, a2);
   // Multiply the imag a with b
   v2 = vmul_f32(v2, a2);
-  // Conjugate v2 
+  // Conjugate v2
   v2 = vreinterpret_f32_u32(veor_u32(vreinterpret_u32_f32(v2), p2ui_CONJ_XOR));
   // Swap real/imag elements in v2.
   v2 = vrev64_f32(v2);

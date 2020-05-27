@@ -50,8 +50,8 @@ BEGIN_NAMESPACE_ACADO
  *	\ingroup UserDataStructures
  *
  *  The class ReferenceTrajectory can be passed to or used within the Controller
- *	of the SimulationEnvronment. It serves as an abstract base class to define a 
- *	reference trajectory that the ControlLaw aims to track while computing its 
+ *	of the SimulationEnvronment. It serves as an abstract base class to define a
+ *	reference trajectory that the ControlLaw aims to track while computing its
  *	control action.
  *
  *	 \author Hans Joachim Ferreau, Boris Houska
@@ -62,7 +62,7 @@ class ReferenceTrajectory //: public SimulationBlock
 	// PUBLIC MEMBER FUNCTIONS:
 	//
 	public:
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		ReferenceTrajectory( );
 
@@ -73,7 +73,7 @@ class ReferenceTrajectory //: public SimulationBlock
 		ReferenceTrajectory(	const ReferenceTrajectory& rhs
 								);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~ReferenceTrajectory( );
 
@@ -187,7 +187,7 @@ class ReferenceTrajectory //: public SimulationBlock
 	// DATA MEMBERS:
 	//
 	protected:
-		
+
 };
 
 

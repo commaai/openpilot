@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief ...
  *
  *	\ingroup ...
@@ -56,7 +56,7 @@ class ExportMatlabIntegrator : public ExportTemplatedFile
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _templateName		Name of a template.
 		 *	@param[in] _fileName			Name of exported file.
@@ -84,7 +84,7 @@ class ExportMatlabIntegrator : public ExportTemplatedFile
         ExportMatlabIntegrator(	const ExportMatlabIntegrator& arg
 								);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ExportMatlabIntegrator( );
 
@@ -94,7 +94,7 @@ class ExportMatlabIntegrator : public ExportTemplatedFile
 		 */
 		ExportMatlabIntegrator& operator=(	const ExportMatlabIntegrator& arg
 										);
-		
+
 		/** Configure the template
 		 *
 		 *  \return SUCCESSFUL_RETURN

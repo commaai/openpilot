@@ -39,7 +39,7 @@ void @MODULE_NAME@_printControlVariables( );
 void @MODULE_NAME@_printHeader( );
 
 /*
- * A huge thanks goes to Alexander Domahidi from ETHZ, Switzerland, for 
+ * A huge thanks goes to Alexander Domahidi from ETHZ, Switzerland, for
  * providing us with the following timing routines.
  */
 

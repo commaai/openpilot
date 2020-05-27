@@ -54,7 +54,7 @@ inline BooleanType OptionsList::hasOption(	OptionsName name,
 	OptionItems::const_iterator it = items.find(std::make_pair(name, type));
 	if (it != items.end())
 		return true;
-		
+
 	return false;
 }
 

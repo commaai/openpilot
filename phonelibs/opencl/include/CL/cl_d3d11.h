@@ -128,4 +128,3 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clEnqueueReleaseD3D11ObjectsKHR_fn)(
 #endif
 
 #endif  /* __OPENCL_CL_D3D11_H */
-

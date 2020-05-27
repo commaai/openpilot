@@ -44,12 +44,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for all kind of constraints (except for bounds) within optimal control problems.
  *
  *	\ingroup BasicDataStructures
  *
- *	The class ConstraintElement serves as base class for all kind of different 
+ *	The class ConstraintElement serves as base class for all kind of different
  *  constraints (except for box constraints) within optimal control problems.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -253,7 +253,7 @@ class ConstraintElement{
 
 
         // LOW_LEVEL EVALUATION INDICES:
-        // ----------------------------- 
+        // -----------------------------
 
         int            **y_index;   /**< index lists             */
         int             *t_index;   /**< time indices            */

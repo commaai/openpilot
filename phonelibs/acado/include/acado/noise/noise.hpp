@@ -60,7 +60,7 @@ class Noise
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		Noise( );
 
@@ -71,7 +71,7 @@ class Noise
 		Noise(	const Noise& rhs
 				);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~Noise( );
 

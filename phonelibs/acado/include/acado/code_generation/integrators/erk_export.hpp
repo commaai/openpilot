@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored explicit Runge-Kutta integrator for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -59,7 +59,7 @@ class ExplicitRungeKuttaExport : public RungeKuttaExport
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -75,7 +75,7 @@ class ExplicitRungeKuttaExport : public RungeKuttaExport
         ExplicitRungeKuttaExport(	const ExplicitRungeKuttaExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ExplicitRungeKuttaExport( );
 
@@ -93,7 +93,7 @@ class ExplicitRungeKuttaExport : public RungeKuttaExport
 		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
-		
+
 		virtual returnValue setDifferentialEquation( const Expression& rhs );
 
 
@@ -154,8 +154,8 @@ class ExplicitRungeKuttaExport : public RungeKuttaExport
 		 */
 		virtual returnValue getCode(	ExportStatementBlock& code
 										);
-							
-        
+
+
         /** Sets up the output with the grids for the different output functions.									\n
 		*                                                                      										\n
 		*  \param outputGrids_	  	The vector containing a grid for each output function.			  				\n

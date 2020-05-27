@@ -40,12 +40,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export Gaussian elimination for solving linear systems of specific dimensions.
  *
  *	\ingroup NumericalAlgorithms
  *
- *	The class ExportGaussElim allows to export Gaussian elimination 
+ *	The class ExportGaussElim allows to export Gaussian elimination
  * 	for solving linear systems of specific dimensions.
  *
  *	\author Rien Quirynen
@@ -58,7 +58,7 @@ class ExportGaussElim : public ExportLinearSolver
     //
     public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -144,7 +144,7 @@ class ExportGaussElim : public ExportLinearSolver
 
 
     protected:
-		
+
 		// DEFINITION OF THE EXPORTVARIABLES
 		ExportVariable rk_swap;						/**< Variable that is used to swap rows for pivoting. */
 		ExportVariable rk_bPerm;					/**< Variable containing the reordered right-hand side. */

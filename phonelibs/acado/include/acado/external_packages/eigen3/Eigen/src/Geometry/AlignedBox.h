@@ -10,7 +10,7 @@
 #ifndef EIGEN_ALIGNEDBOX_H
 #define EIGEN_ALIGNEDBOX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \geometry_module \ingroup Geometry_Module
   *

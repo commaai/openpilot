@@ -10,7 +10,7 @@
 #ifndef EIGEN_MINOR_H
 #define EIGEN_MINOR_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /**
   * \class Minor

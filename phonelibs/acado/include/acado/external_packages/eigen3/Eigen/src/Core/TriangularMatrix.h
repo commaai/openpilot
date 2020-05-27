@@ -11,12 +11,12 @@
 #ifndef EIGEN_TRIANGULARMATRIX_H
 #define EIGEN_TRIANGULARMATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
-  
+
 template<int Side, typename TriangularType, typename Rhs> struct triangular_solve_retval;
-  
+
 }
 
 /** \internal
@@ -124,7 +124,7 @@ template<typename Derived> class TriangularBase : public EigenBase<Derived>
   * \param MatrixType the type of the object in which we are taking the triangular part
   * \param Mode the kind of triangular matrix expression to construct. Can be #Upper,
   *             #Lower, #UnitUpper, #UnitLower, #StrictlyUpper, or #StrictlyLower.
-  *             This is in fact a bit field; it must have either #Upper or #Lower, 
+  *             This is in fact a bit field; it must have either #Upper or #Lower,
   *             and additionnaly it may have #UnitDiag or #ZeroDiag or neither.
   *
   * This class represents a triangular part of a matrix, not necessarily square. Strictly speaking, for rectangular
@@ -173,10 +173,10 @@ template<typename _MatrixType, unsigned int _Mode> class TriangularView
     typedef typename internal::traits<TriangularView>::MatrixTypeNestedCleaned MatrixTypeNestedCleaned;
 
     typedef typename internal::remove_all<typename MatrixType::ConjugateReturnType>::type MatrixConjugateReturnType;
-    
+
   public:
     using Base::evalToLazy;
-  
+
 
     typedef typename internal::traits<TriangularView>::StorageKind StorageKind;
     typedef typename internal::traits<TriangularView>::Index Index;
@@ -333,7 +333,7 @@ template<typename _MatrixType, unsigned int _Mode> class TriangularView
     void solveInPlace(const MatrixBase<OtherDerived>& other) const;
 
     template<typename Other>
-    inline const internal::triangular_solve_retval<OnTheLeft,TriangularView, Other> 
+    inline const internal::triangular_solve_retval<OnTheLeft,TriangularView, Other>
     solve(const MatrixBase<Other>& other) const
     { return solve<OnTheLeft>(other); }
 
@@ -374,7 +374,7 @@ template<typename _MatrixType, unsigned int _Mode> class TriangularView
       else
         return m_matrix.diagonal().prod();
     }
-    
+
     // TODO simplify the following:
     template<typename ProductDerived, typename Lhs, typename Rhs>
     EIGEN_STRONG_INLINE TriangularView& operator=(const ProductBase<ProductDerived, Lhs,Rhs>& other)
@@ -382,41 +382,41 @@ template<typename _MatrixType, unsigned int _Mode> class TriangularView
       setZero();
       return assignProduct(other,1);
     }
-    
+
     template<typename ProductDerived, typename Lhs, typename Rhs>
     EIGEN_STRONG_INLINE TriangularView& operator+=(const ProductBase<ProductDerived, Lhs,Rhs>& other)
     {
       return assignProduct(other,1);
     }
-    
+
     template<typename ProductDerived, typename Lhs, typename Rhs>
     EIGEN_STRONG_INLINE TriangularView& operator-=(const ProductBase<ProductDerived, Lhs,Rhs>& other)
     {
       return assignProduct(other,-1);
     }
-    
-    
+
+
     template<typename ProductDerived>
     EIGEN_STRONG_INLINE TriangularView& operator=(const ScaledProduct<ProductDerived>& other)
     {
       setZero();
       return assignProduct(other,other.alpha());
     }
-    
+
     template<typename ProductDerived>
     EIGEN_STRONG_INLINE TriangularView& operator+=(const ScaledProduct<ProductDerived>& other)
     {
       return assignProduct(other,other.alpha());
     }
-    
+
     template<typename ProductDerived>
     EIGEN_STRONG_INLINE TriangularView& operator-=(const ScaledProduct<ProductDerived>& other)
     {
       return assignProduct(other,-other.alpha());
     }
-    
+
   protected:
-    
+
     template<typename ProductDerived, typename Lhs, typename Rhs>
     EIGEN_STRONG_INLINE TriangularView& assignProduct(const ProductBase<ProductDerived, Lhs,Rhs>& prod, const Scalar& alpha);
 
@@ -436,7 +436,7 @@ struct triangular_assignment_selector
     col = (UnrollCount-1) / Derived1::RowsAtCompileTime,
     row = (UnrollCount-1) % Derived1::RowsAtCompileTime
   };
-  
+
   typedef typename Derived1::Scalar Scalar;
 
   static inline void run(Derived1 &dst, const Derived2 &src)

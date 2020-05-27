@@ -86,7 +86,7 @@ inline returnValue EvaluationPoint::setZ ( const uint       &idx_,
 
 inline returnValue EvaluationPoint::setZero( )
 {
-	if ( z != 0 ) 
+	if ( z != 0 )
 	{
 		for( uint run1 = 0; run1 < N; run1++ )
 			z[run1] = 0.0;

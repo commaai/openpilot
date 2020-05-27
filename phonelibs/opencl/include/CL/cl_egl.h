@@ -33,7 +33,7 @@
 
 #else
 #include <CL/cl.h>
-#endif  
+#endif
 
 #ifdef __cplusplus
 extern "C" {

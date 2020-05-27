@@ -46,13 +46,13 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Stores and evaluates the constraints of optimal control problems.
  *
  *	\ingroup BasicDataStructures
  *
  *	The class Constraint allows to manage and evaluate the constraints
- *	of optimal control problems. It consists of a list of all different 
+ *	of optimal control problems. It consists of a list of all different
  *	types of constraints that are derived from the base class ConstraintElement.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -475,7 +475,7 @@ class Constraint : public BoxConstraint{
          *  Note that e.g. the expression pointer will be deleted when using this function.
          */
         returnValue add( const int index_, const double lb_, Expression* arg, const double ub_  );
-		
+
         /** CAUTION: This function is protected and strictly for internal use.
          *  Note that e.g. the expression pointer will be deleted when using this function.
          */

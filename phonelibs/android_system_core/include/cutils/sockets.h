@@ -81,7 +81,7 @@ extern int socket_network_client_timeout(const char *host, int port, int type,
 extern int socket_loopback_server(int port, int type);
 extern int socket_local_server(const char *name, int namespaceId, int type);
 extern int socket_local_server_bind(int s, const char *name, int namespaceId);
-extern int socket_local_client_connect(int fd, 
+extern int socket_local_client_connect(int fd,
         const char *name, int namespaceId, int type);
 extern int socket_local_client(const char *name, int namespaceId, int type);
 extern int socket_inaddr_any_server(int port, int type);
@@ -101,4 +101,4 @@ extern bool socket_peer_is_trusted(int fd);
 }
 #endif
 
-#endif /* __CUTILS_SOCKETS_H */ 
+#endif /* __CUTILS_SOCKETS_H */

@@ -10,7 +10,7 @@
 #ifndef EIGEN_PRODUCTBASE_H
 #define EIGEN_PRODUCTBASE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class ProductBase
   * \ingroup Core_Module
@@ -65,7 +65,7 @@ class ProductBase : public MatrixBase<Derived>
   public:
     typedef MatrixBase<Derived> Base;
     EIGEN_DENSE_PUBLIC_INTERFACE(ProductBase)
-    
+
     typedef typename Lhs::Nested LhsNested;
     typedef typename internal::remove_all<LhsNested>::type _LhsNested;
     typedef internal::blas_traits<_LhsNested> LhsBlasTraits;
@@ -257,7 +257,7 @@ class ScaledProduct
     inline void scaleAndAddTo(Dest& dst, const Scalar& a_alpha) const { m_prod.derived().scaleAndAddTo(dst,a_alpha * m_alpha); }
 
     const Scalar& alpha() const { return m_alpha; }
-    
+
   protected:
     const NestedProduct& m_prod;
     Scalar m_alpha;

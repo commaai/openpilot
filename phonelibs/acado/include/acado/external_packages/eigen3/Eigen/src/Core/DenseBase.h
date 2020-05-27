@@ -14,15 +14,15 @@
 namespace Eigen {
 
 namespace internal {
-  
+
 // The index type defined by EIGEN_DEFAULT_DENSE_INDEX_TYPE must be a signed type.
 // This dummy function simply aims at checking that at compile time.
 static inline void check_DenseIndex_is_signed() {
-  EIGEN_STATIC_ASSERT(NumTraits<DenseIndex>::IsSigned,THE_INDEX_TYPE_MUST_BE_A_SIGNED_TYPE); 
+  EIGEN_STATIC_ASSERT(NumTraits<DenseIndex>::IsSigned,THE_INDEX_TYPE_MUST_BE_A_SIGNED_TYPE);
 }
 
 } // end namespace internal
-  
+
 /** \class DenseBase
   * \ingroup Core_Module
   *
@@ -54,11 +54,11 @@ template<typename Derived> class DenseBase
 
     typedef typename internal::traits<Derived>::StorageKind StorageKind;
 
-    /** \brief The type of indices 
+    /** \brief The type of indices
       * \details To change this, \c \#define the preprocessor symbol \c EIGEN_DEFAULT_DENSE_INDEX_TYPE.
       * \sa \ref TopicPreprocessorDirectives.
       */
-    typedef typename internal::traits<Derived>::Index Index; 
+    typedef typename internal::traits<Derived>::Index Index;
 
     typedef typename internal::traits<Derived>::Scalar Scalar;
     typedef typename internal::packet_traits<Scalar>::type PacketScalar;
@@ -202,7 +202,7 @@ template<typename Derived> class DenseBase
     /** \returns the inner size.
       *
       * \note For a vector, this is just the size. For a matrix (non-vector), this is the minor dimension
-      * with respect to the \ref TopicStorageOrders "storage order", i.e., the number of rows for a 
+      * with respect to the \ref TopicStorageOrders "storage order", i.e., the number of rows for a
       * column-major matrix, and the number of columns for a row-major matrix. */
     Index innerSize() const
     {
@@ -346,7 +346,7 @@ template<typename Derived> class DenseBase
     bool isConstant(const Scalar& value, const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
     bool isZero(const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
     bool isOnes(const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
-    
+
     inline bool hasNaN() const;
     inline bool allFinite() const;
 

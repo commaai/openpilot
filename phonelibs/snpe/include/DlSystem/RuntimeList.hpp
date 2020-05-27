@@ -151,4 +151,3 @@ private:
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 
 #endif // DL_SYSTEM_RUNTIME_LIST_HPP
-

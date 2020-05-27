@@ -21,15 +21,15 @@ namespace zdl { namespace DlSystem {
 /**
  * @brief .
  *
- * UDLContext holds the user defined layer context which 
- * consists of a layer name, layer ID, blob and blob size. 
- *  
+ * UDLContext holds the user defined layer context which
+ * consists of a layer name, layer ID, blob and blob size.
+ *
  * An instance of UDLContext is passed as an argument to the
- * UDLFactoryFunc provided by the user every time the SNPE 
- * runtime encounters an unknown layer descriptor. The instance 
- * of a UDLContext is created by the SNPE runtime and is 
- * consumed by the user's factory function. The user should 
- * obtain a copy of this class and should not assume any 
+ * UDLFactoryFunc provided by the user every time the SNPE
+ * runtime encounters an unknown layer descriptor. The instance
+ * of a UDLContext is created by the SNPE runtime and is
+ * consumed by the user's factory function. The user should
+ * obtain a copy of this class and should not assume any
  * prolonged object lifetime beyond the UDLFactoryFunction.
  */
 class ZDL_EXPORT UDLContext final {
@@ -102,7 +102,7 @@ public:
    }
 
    /**
-    * @brief 
+    * @brief
     *
     * Assignment operator - makes a copy from ctx
     *

@@ -42,14 +42,14 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Stores and evaluates path constraints within optimal control problems.
  *
  *	\ingroup BasicDataStructures
  *
  *	The class PathConstraint allows to manage and evaluate constraints
  *	along the whole horizon within optimal control problems. Note that
- *  the path constraints need to be decoupled on each control interval, 
+ *  the path constraints need to be decoupled on each control interval,
  *  otherwise the class CouplePathConstraint has to be used.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

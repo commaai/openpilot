@@ -10,7 +10,7 @@
 #ifndef EIGEN_ANGLEAXIS_H
 #define EIGEN_ANGLEAXIS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \geometry_module \ingroup Geometry_Module
   *
@@ -150,7 +150,7 @@ typedef AngleAxis<double> AngleAxisd;
 
 /** Set \c *this from a \b unit quaternion.
   * The axis is normalized.
-  * 
+  *
   * \warning As any other method dealing with quaternion, if the input quaternion
   *          is not normalized then the result is undefined.
   */

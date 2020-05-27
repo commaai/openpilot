@@ -142,7 +142,7 @@ inline IBinder* BpInterface<INTERFACE>::onAsBinder()
 {
     return remote();
 }
-    
+
 // ----------------------------------------------------------------------
 
 }; // namespace android

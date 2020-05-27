@@ -58,4 +58,3 @@ int set_realtime_priority(int level) {
   return -1;
 #endif
 }
-

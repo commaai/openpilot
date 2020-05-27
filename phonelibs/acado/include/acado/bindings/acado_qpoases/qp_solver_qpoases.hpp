@@ -62,7 +62,7 @@ class QPsolver_qpOASES : public DenseQPsolver
     public:
         /** Default constructor. */
         QPsolver_qpOASES( );
-		
+
         QPsolver_qpOASES(	UserInteraction* _userInteraction
 							);
 
@@ -108,7 +108,7 @@ class QPsolver_qpOASES : public DenseQPsolver
                                     DVector *ub,   /**< Upper bounds of neighbouring QP to be solved. */
                                     DVector *lbA,  /**< Lower constraints' bounds of neighbouring QP to be solved. */
                                     DVector *ubA,  /**< Upper constraints' bounds of neighbouring QP to be solved. */
-                                    uint maxIter        /**< Maximum number of iterations. */  
+                                    uint maxIter        /**< Maximum number of iterations. */
 									);
 
 

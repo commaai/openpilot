@@ -1,6 +1,5 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
 from selfdrive.car.volkswagen.values import BUTTON_STATES

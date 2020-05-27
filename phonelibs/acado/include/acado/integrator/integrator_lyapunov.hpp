@@ -41,12 +41,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for all kinds of Runge-Kutta schemes for integrating ODEs.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class IntegratorRK serves as a base class for all kinds of 
+ *  The class IntegratorRK serves as a base class for all kinds of
  *	Runge-Kutta schemes for integrating ordinary differential equations (ODEs).
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -482,15 +482,15 @@ protected:
     // --------
     int maxAlloc                ;  /**< size of the memory that is allocated to store      \n
                                     *   the trajectory and the mesh.                       */
- 
+
   // Original ODE
   int dimxmy                    ; /* dimension  of  the  original ODE*/
   int dimu                    ; /* dimension  of  the  control*/
   int dimp                    ; /* dimension  of  the  parameters*/
   int dimw                    ; /* dimension  of  the  disturbances*/
- 
+
   // Sensitivities
-  double **Y                  ;  /* sensitivity matrix  */    
+  double **Y                  ;  /* sensitivity matrix  */
 
   double *seedmy              ; /* Seed vector */
   Lyapunov lyap;

@@ -10,7 +10,7 @@
 #ifndef EIGEN_CONJUGATE_GRADIENT_H
 #define EIGEN_CONJUGATE_GRADIENT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -34,16 +34,16 @@ void conjugate_gradient(const MatrixType& mat, const Rhs& rhs, Dest& x,
   typedef typename Dest::RealScalar RealScalar;
   typedef typename Dest::Scalar Scalar;
   typedef Matrix<Scalar,Dynamic,1> VectorType;
-  
+
   RealScalar tol = tol_error;
   int maxIters = iters;
-  
+
   int n = mat.cols();
 
   VectorType residual = rhs - mat * x; //initial residual
 
   RealScalar rhsNorm2 = rhs.squaredNorm();
-  if(rhsNorm2 == 0) 
+  if(rhsNorm2 == 0)
   {
     x.setZero();
     iters = 0;
@@ -58,7 +58,7 @@ void conjugate_gradient(const MatrixType& mat, const Rhs& rhs, Dest& x,
     tol_error = sqrt(residualNorm2 / rhsNorm2);
     return;
   }
-  
+
   VectorType p(n);
   p = precond.solve(residual);      //initial search direction
 
@@ -72,11 +72,11 @@ void conjugate_gradient(const MatrixType& mat, const Rhs& rhs, Dest& x,
     Scalar alpha = absNew / p.dot(tmp);   // the amount we travel on dir
     x += alpha * p;                       // update solution
     residual -= alpha * tmp;              // update residue
-    
+
     residualNorm2 = residual.squaredNorm();
     if(residualNorm2 < threshold)
       break;
-    
+
     z = precond.solve(residual);          // approximately solve for "A z = residual"
 
     RealScalar absOld = absNew;
@@ -120,7 +120,7 @@ struct traits<ConjugateGradient<_MatrixType,_UpLo,_Preconditioner> >
   * The maximal number of iterations and tolerance value can be controlled via the setMaxIterations()
   * and setTolerance() methods. The defaults are the size of the problem for the maximal number of iterations
   * and NumTraits<Scalar>::epsilon() for the tolerance.
-  * 
+  *
   * This class can be used as the direct solver classes. Here is a typical usage example:
   * \code
   * int n = 10000;
@@ -135,7 +135,7 @@ struct traits<ConjugateGradient<_MatrixType,_UpLo,_Preconditioner> >
   * // update b, and solve again
   * x = cg.solve(b);
   * \endcode
-  * 
+  *
   * By default the iterations start with x=0 as an initial guess of the solution.
   * One can control the start using the solveWithGuess() method. Here is a step by
   * step execution example starting with a random guess and printing the evolution
@@ -151,7 +151,7 @@ struct traits<ConjugateGradient<_MatrixType,_UpLo,_Preconditioner> >
   * } while (cg.info()!=Success && i<100);
   * \endcode
   * Note that such a step by step excution is slightly slower.
-  * 
+  *
   * \sa class SimplicialCholesky, DiagonalPreconditioner, IdentityPreconditioner
   */
 template< typename _MatrixType, int _UpLo, typename _Preconditioner>
@@ -180,10 +180,10 @@ public:
   ConjugateGradient() : Base() {}
 
   /** Initialize the solver with matrix \a A for further \c Ax=b solving.
-    * 
+    *
     * This constructor is a shortcut for the default constructor followed
     * by a call to compute().
-    * 
+    *
     * \warning this class stores a reference to the matrix A as well as some
     * precomputed values that depend on it. Therefore, if \a A is changed
     * this class becomes invalid. Call compute() to update it with the new
@@ -192,7 +192,7 @@ public:
   ConjugateGradient(const MatrixType& A) : Base(A) {}
 
   ~ConjugateGradient() {}
-  
+
   /** \returns the solution x of \f$ A x = b \f$ using the current decomposition of A
     * \a x0 as an initial solution.
     *
@@ -229,7 +229,7 @@ public:
     m_isInitialized = true;
     m_info = m_error <= Base::m_tolerance ? Success : NoConvergence;
   }
-  
+
   /** \internal */
   template<typename Rhs,typename Dest>
   void _solve(const Rhs& b, Dest& x) const

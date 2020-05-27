@@ -7,6 +7,7 @@ import traceback
 from multiprocessing import Pool
 
 import usb1
+
 from panda import Panda
 from panda import PandaDFU
 

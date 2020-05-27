@@ -42,7 +42,7 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *	\brief Implements a feedforward law to be used within a Controller.
  *
  *	\ingroup UserInterfaces
@@ -58,7 +58,7 @@ class FeedforwardLaw : public ControlLaw
 	// PUBLIC MEMBER FUNCTIONS:
 	//
 	public:
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		FeedforwardLaw( );
 
@@ -81,7 +81,7 @@ class FeedforwardLaw : public ControlLaw
 		FeedforwardLaw(	const FeedforwardLaw& rhs
 						);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~FeedforwardLaw( );
 
@@ -99,7 +99,7 @@ class FeedforwardLaw : public ControlLaw
 		virtual ControlLaw* clone( ) const;
 
 
-		/** Initializes the feedforward law with given start values and 
+		/** Initializes the feedforward law with given start values and
 		 *	performs a number of consistency checks.
 		 *
 		 *	@param[in]  _startTime	Start time.
@@ -155,13 +155,13 @@ class FeedforwardLaw : public ControlLaw
 
 		/** Returns number of parameters.
 		 *
-		 *  \return Number of parameters 
+		 *  \return Number of parameters
 		 */
 		virtual uint getNP( ) const;
 
 		/** Returns number of (estimated) disturbances.
 		 *
-		 *  \return Number of (estimated) disturbances 
+		 *  \return Number of (estimated) disturbances
 		 */
 		virtual uint getNW( ) const;
 
@@ -172,7 +172,7 @@ class FeedforwardLaw : public ControlLaw
 		virtual uint getNY( ) const;
 
 
-		/** Returns whether the control law is based on dynamic optimization or 
+		/** Returns whether the control law is based on dynamic optimization or
 		 *	a static one.
 		 *
 		 *  \return BT_TRUE  iff control law is based on dynamic optimization, \n

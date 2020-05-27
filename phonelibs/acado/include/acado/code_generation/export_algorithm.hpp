@@ -48,12 +48,12 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *	\brief Allows to export automatically generated algorithms for fast model predictive control
  *
  *	\ingroup NumericalAlgorithms
  *
- *	The class ExportAlgorithm allows to export automatically generated 
+ *	The class ExportAlgorithm allows to export automatically generated
  *	algorithms for fast model predictive control.
  *
  *	\author Hans Joachim Ferreau, Milan Vukov, Boris Houska
@@ -66,7 +66,7 @@ class ExportAlgorithm : public AlgorithmicBase
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -158,7 +158,7 @@ class ExportAlgorithm : public AlgorithmicBase
 		 *  \return Number of differential states
 		 */
 		uint getNX( ) const;
-		
+
 		/** Returns number of algebraic states.
 		 *
 		 *  \return Number of algebraic states
@@ -166,7 +166,7 @@ class ExportAlgorithm : public AlgorithmicBase
 		uint getNXA( ) const;
 
 		/** Returns the number of differential states derivatives.
-		 * 
+		 *
 		 *  \return The requested number of differential state derivatives
 		 */
 		uint getNDX( ) const;
@@ -194,7 +194,7 @@ class ExportAlgorithm : public AlgorithmicBase
 		 *  \return Number of control intervals
 		 */
 		uint getN( ) const;
-		
+
 		void setNY( uint NY_ );
 		uint getNY( ) const;
 

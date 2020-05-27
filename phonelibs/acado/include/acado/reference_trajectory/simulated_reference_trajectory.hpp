@@ -48,7 +48,7 @@ BEGIN_NAMESPACE_ACADO
  *	\ingroup UserDataStructures
  *
  *	The class SimulatedReferenceTrajectory allows to define an reference trajectory that is
- *	determined online based on the simulation of a dynamic system. The ControlLaw can aim to 
+ *	determined online based on the simulation of a dynamic system. The ControlLaw can aim to
  *	track this reference trajectory while computing its control action.
  *
  *	 \author Hans Joachim Ferreau, Boris Houska
@@ -60,11 +60,11 @@ class SimulatedReferenceTrajectory : public AdaptiveReferenceTrajectory
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		SimulatedReferenceTrajectory( );
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		SimulatedReferenceTrajectory(	const DynamicSystem& _dynamicSystem,
 										IntegratorType _integratorType = INT_UNKNOWN
@@ -77,7 +77,7 @@ class SimulatedReferenceTrajectory : public AdaptiveReferenceTrajectory
 		SimulatedReferenceTrajectory(	const SimulatedReferenceTrajectory& rhs
 										);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~SimulatedReferenceTrajectory( );
 

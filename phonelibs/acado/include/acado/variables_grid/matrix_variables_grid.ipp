@@ -32,7 +32,7 @@
 
 
 //
-// mvukov: 
+// mvukov:
 // Disable stupid warning on line 417
 //
 #ifdef WIN32
@@ -273,7 +273,7 @@ inline returnValue MatrixVariablesGrid::setType(	uint pointIdx,
 {
 	if ( pointIdx >= getNumPoints( ) )
 		return ACADOERROR( RET_INDEX_OUT_OF_BOUNDS );
-	
+
 	return values[pointIdx]->setType( _type );
 }
 
@@ -410,8 +410,8 @@ inline double MatrixVariablesGrid::getLowerBound(	uint pointIdx,
 }
 
 
-inline returnValue MatrixVariablesGrid::setLowerBound(	uint pointIdx, 
-														uint valueIdx, 
+inline returnValue MatrixVariablesGrid::setLowerBound(	uint pointIdx,
+														uint valueIdx,
 														double _lb
 														)
 {
@@ -476,7 +476,7 @@ inline returnValue MatrixVariablesGrid::setUpperBound(	uint pointIdx,
 
 
 
-inline BooleanType MatrixVariablesGrid::getAutoInit(	uint pointIdx 
+inline BooleanType MatrixVariablesGrid::getAutoInit(	uint pointIdx
 														) const
 {
 	if ( pointIdx >= getNumPoints( ) )
@@ -501,7 +501,7 @@ inline returnValue MatrixVariablesGrid::setAutoInit(	uint pointIdx,
 
 
 inline returnValue MatrixVariablesGrid::disableAutoInit( )
-{ 
+{
 	for( uint i=0; i<getNumPoints( ); ++i )
 		values[i]->setAutoInit( BT_FALSE );
 

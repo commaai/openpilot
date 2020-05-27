@@ -2,9 +2,10 @@
 import sys
 import time
 
-import cereal.messaging as messaging
 import matplotlib.pyplot as plt
 import numpy as np
+
+import cereal.messaging as messaging
 
 # tool to plot one or more signals live. Call ex:
 #./rqplot.py log.carState.vEgo log.carState.aEgo

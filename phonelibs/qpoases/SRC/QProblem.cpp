@@ -3504,7 +3504,7 @@ returnValue QProblem::hotstart_performStep(	const int* const FR_idx, const int* 
 		visibilityStatus = VS_HIDDEN;
 	#endif
 
-	
+
 	/* III) UPDATE ACTIVE SET */
 	switch ( BC_status )
 	{
@@ -3656,7 +3656,7 @@ returnValue QProblem::setupQPdata(	const real_t* const _H, const real_t* const _
 	}
 
 // 	printmatrix2( "A",A,10,20 );
-	
+
 // 	printmatrix2( "lbA",lbA,1,nC );
 // 	printmatrix2( "ubA",ubA,1,nC );
 

@@ -154,4 +154,3 @@ struct light_device_t {
 __END_DECLS
 
 #endif  // ANDROID_LIGHTS_INTERFACE_H
-

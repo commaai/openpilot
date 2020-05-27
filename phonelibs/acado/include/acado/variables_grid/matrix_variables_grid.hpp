@@ -47,9 +47,9 @@ class MatrixVariable;
  *	\brief Provides a time grid consisting of matrix-valued optimization variables at each grid point.
  *
  *	\ingroup BasicDataStructures
- *	
- *  The class MatrixVariablesGrid provides a time grid consisting of 
- *	matrix-valued optimization variables at each grid point, as they 
+ *
+ *  The class MatrixVariablesGrid provides a time grid consisting of
+ *	matrix-valued optimization variables at each grid point, as they
  *	usually occur when discretizing optimal control problems.
  *
  *	The class inherits from the Grid class and stores the matrix-valued
@@ -68,7 +68,7 @@ class MatrixVariablesGrid : public Grid
 		 */
         MatrixVariablesGrid( );
 
-		/** Constructor that takes the dimensions of each MatrixVariable as 
+		/** Constructor that takes the dimensions of each MatrixVariable as
 		 *	well as the grid on which they are defined. Further information
 		 *	can optionally be specified.
 		 *
@@ -95,8 +95,8 @@ class MatrixVariablesGrid : public Grid
 								const BooleanType* const _autoInit = 0
 								);
 
-		/** Constructor that takes the dimensions of each MatrixVariable as 
-		 *	well as the number of grid points on which they are defined. 
+		/** Constructor that takes the dimensions of each MatrixVariable as
+		 *	well as the number of grid points on which they are defined.
 		 *	Further information can optionally be specified.
 		 *
 		 *	@param[in] _nRows		Number of rows of each matrix.
@@ -122,7 +122,7 @@ class MatrixVariablesGrid : public Grid
 								const BooleanType* const _autoInit = 0
 								);
 
-		/** Constructor that takes the dimensions of each MatrixVariable as 
+		/** Constructor that takes the dimensions of each MatrixVariable as
 		 *	well as the number of grid points on which they are defined. Moreover,
 		 *	it takes the time of the first and the last grid point; all intermediate
 		 *	grid points are setup to form a equidistant grid of time points.
@@ -188,13 +188,13 @@ class MatrixVariablesGrid : public Grid
 
 
 
-		/** Assignment operator which reads data from a matrix. The data is interpreted 
-		 *	as follows: the first entry of each row is taken as time of the grid point 
-		 *	to be added, all remaining entries of each row are taken as numerical values 
+		/** Assignment operator which reads data from a matrix. The data is interpreted
+		 *	as follows: the first entry of each row is taken as time of the grid point
+		 *	to be added, all remaining entries of each row are taken as numerical values
 		 *	of a MatrixVariable with exactly one column. In effect, a MatrixVariablesGrid
-		 *	consisting of <number of columns - 1>-by-1 MatrixVariables defined on 
+		 *	consisting of <number of columns - 1>-by-1 MatrixVariables defined on
 		 *	<number of rows> grid points is setup.
-		 *	
+		 *
 		 *	@param[in] rhs		DMatrix to be read.
 		 *
 		 *	\note The file is closed at the end of routine.
@@ -210,7 +210,7 @@ class MatrixVariablesGrid : public Grid
 		 *	@param[in] rowIdx		Row index of the component to be returned.
 		 *	@param[in] colIdx		Column index of the component to be returned.
 		 *
-         *  \return Value of component 'valueIdx' at grid point 'pointIdx' 
+         *  \return Value of component 'valueIdx' at grid point 'pointIdx'
 		 */
         double& operator()(	uint pointIdx,
 									uint rowIdx,
@@ -224,7 +224,7 @@ class MatrixVariablesGrid : public Grid
 		 *	@param[in] rowIdx		Row index of the component to be returned.
 		 *	@param[in] colIdx		Column index of the component to be returned.
 		 *
-         *  \return Value of component 'valueIdx' at grid point 'pointIdx' 
+         *  \return Value of component 'valueIdx' at grid point 'pointIdx'
 		 */
         double operator()(	uint pointIdx,
 									uint rowIdx,
@@ -240,7 +240,7 @@ class MatrixVariablesGrid : public Grid
         MatrixVariablesGrid operator()(	const uint rowIdx
 												) const;
 
-        /** Returns a MatrixVariablesGrid consisting only of the values at 
+        /** Returns a MatrixVariablesGrid consisting only of the values at
 		 *	given grid point.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -296,7 +296,7 @@ class MatrixVariablesGrid : public Grid
 		 */
         returnValue init( );
 
-		/** Initializes the MatrixVariablesGrid on a given grid with given dimensions 
+		/** Initializes the MatrixVariablesGrid on a given grid with given dimensions
 		 * 	of each MatrixVariable. Further information can optionally be specified.
 		 *
 		 *	@param[in] _nRows		Number of rows of each matrix.
@@ -324,8 +324,8 @@ class MatrixVariablesGrid : public Grid
 							const BooleanType* const _autoInit = 0
 							);
 
-		/** Initializes the MatrixVariablesGrid taking the dimensions of each 
-		 *	MatrixVariable as well as the number of grid points on which they are defined. 
+		/** Initializes the MatrixVariablesGrid taking the dimensions of each
+		 *	MatrixVariable as well as the number of grid points on which they are defined.
 		 *	Further information can optionally be specified.
 		 *
 		 *	@param[in] _nRows		Number of rows of each matrix.
@@ -353,7 +353,7 @@ class MatrixVariablesGrid : public Grid
 							const BooleanType* const _autoInit = 0
 							);
 
-		/** Initializes the MatrixVariablesGrid taking the dimensions of each MatrixVariable 
+		/** Initializes the MatrixVariablesGrid taking the dimensions of each MatrixVariable
 		 *	as well as the number of grid points on which they are defined. Moreover,
 		 *	it takes the time of the first and the last grid point; all intermediate
 		 *	grid points are setup to form a equidistant grid of time points.
@@ -633,7 +633,7 @@ class MatrixVariablesGrid : public Grid
 										const DVector& _scaling
 										);
 
-		/** Returns scaling of given component of MatrixVariable at grid point 
+		/** Returns scaling of given component of MatrixVariable at grid point
 		 *	with given index.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -646,7 +646,7 @@ class MatrixVariablesGrid : public Grid
 									uint valueIdx
 									) const;
 
-		/** Assigns new scaling to given component of MatrixVariable at 
+		/** Assigns new scaling to given component of MatrixVariable at
 		 *	grid point with given index.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -683,7 +683,7 @@ class MatrixVariablesGrid : public Grid
 											const DVector& _lb
 											);
 
-		/** Returns lower bound of given component of MatrixVariable at grid point 
+		/** Returns lower bound of given component of MatrixVariable at grid point
 		 *	with given index.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -696,7 +696,7 @@ class MatrixVariablesGrid : public Grid
 										uint valueIdx
 										) const;
 
-		/** Assigns new lower bound to given component of MatrixVariable at 
+		/** Assigns new lower bound to given component of MatrixVariable at
 		 *	grid point with given index.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -732,7 +732,7 @@ class MatrixVariablesGrid : public Grid
 											const DVector& _ub
 											);
 
-		/** Returns upper bound of given component of MatrixVariable at grid point 
+		/** Returns upper bound of given component of MatrixVariable at grid point
 		 *	with given index.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -745,7 +745,7 @@ class MatrixVariablesGrid : public Grid
 										uint valueIdx
 										) const;
 
-		/** Assigns new upper bound to given component of MatrixVariable at 
+		/** Assigns new upper bound to given component of MatrixVariable at
 		 *	grid point with given index.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -761,7 +761,7 @@ class MatrixVariablesGrid : public Grid
 											);
 
 
-		/** Returns whether MatrixVariable at grid point with given index 
+		/** Returns whether MatrixVariable at grid point with given index
 		 *	will be automatically initialized.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -772,7 +772,7 @@ class MatrixVariablesGrid : public Grid
 		BooleanType getAutoInit(	uint pointIdx
 										) const;
 
-		/** Assigns new auto initialization flag to MatrixVariable at grid point 
+		/** Assigns new auto initialization flag to MatrixVariable at grid point
 		 *	with given index.
 		 *
 		 *	@param[in] pointIdx		Index of grid point.
@@ -821,7 +821,7 @@ class MatrixVariablesGrid : public Grid
 		 */
 		BooleanType hasScaling( ) const;
 
-		/** Returns whether MatrixVariablesGrid comprises lower bounds 
+		/** Returns whether MatrixVariablesGrid comprises lower bounds
 		 *	(at at least one of its grid points).
 		 *
 		 *  \return BT_TRUE  iff MatrixVariablesGrid comprises lower bounds, \n
@@ -925,14 +925,14 @@ class MatrixVariablesGrid : public Grid
 		/** Returns (deep-copy of) time grid of MatrixVariablesGrid.
 		 *
 		 *	\note This routine is only introduced for user-convenience and
-		 *	should not be used by developers aiming for maximum efficiency. 
+		 *	should not be used by developers aiming for maximum efficiency.
 		 *	Use routine getGrid() instead if efficiency is crucial.
 		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		Grid getTimePoints( ) const;
 
-		/** Returns the sub grid in time starting and ending at given 
+		/** Returns the sub grid in time starting and ending at given
 		 *	indices.
 		 *
 		 *	@param[in] startIdx		Index of first grid point to be included in sub grid.
@@ -944,14 +944,14 @@ class MatrixVariablesGrid : public Grid
 											uint endIdx
 											) const;
 
-		/** Returns the sub grid of values. It comprises all grid points of the 
-		 *	object, but comprises at each grid point only the compenents starting and 
+		/** Returns the sub grid of values. It comprises all grid points of the
+		 *	object, but comprises at each grid point only the compenents starting and
 		 *	ending at given indices.
 		 *
 		 *	@param[in] startIdx		Index of first compenent to be included in sub grid.
 		 *	@param[in] endIdx		Index of last compenent to be included in sub grid.
 		 *
-		 *	\note This function implicitly assumes that matrices at all grid points 
+		 *	\note This function implicitly assumes that matrices at all grid points
 		 *	      have same number of components (or at least more than 'endIdx').
 		 *
 		 *	\return Sub grid of values
@@ -961,7 +961,7 @@ class MatrixVariablesGrid : public Grid
 												) const;
 
 		/** Refines the grid by adding all grid points of given grid that are not
-		 *	not yet included. For doing so, the given grid has to be a superset of 
+		 *	not yet included. For doing so, the given grid has to be a superset of
 		 *  the current grid. Values at newly added grid points are obtained by
 		 *  the (optionally) specified interpolation mode.
 		 *
@@ -975,8 +975,8 @@ class MatrixVariablesGrid : public Grid
 								InterpolationMode mode = IM_CONSTANT
 								);
 
-		/** Coarsens the grid by removing all grid points of current grid that are 
-		 *	not included in given grid. For doing so, the given grid has to be a 
+		/** Coarsens the grid by removing all grid points of current grid that are
+		 *	not included in given grid. For doing so, the given grid has to be a
 		 *  subset of the current grid.
 		 *
 		 *	@param[in] arg			Grid to be used for coarsening.
@@ -987,7 +987,7 @@ class MatrixVariablesGrid : public Grid
 		returnValue coarsenGrid(	const Grid& arg
 									);
 
-		/** Returns a refined grid by adding all grid points of given grid that are 
+		/** Returns a refined grid by adding all grid points of given grid that are
 		 *	not yet included. For doing so, the given grid has to be a superset of the
 		 *  current grid. Values at newly added grid points are obtained by
 		 *  the (optionally) specified interpolation mode.
@@ -1001,8 +1001,8 @@ class MatrixVariablesGrid : public Grid
 											InterpolationMode mode = IM_CONSTANT
 											) const;
 
-		/** Returns a coarsened grid by removing all grid points of current grid that are 
-		 *	not included in given grid. For doing so, the given grid has to be a subset of 
+		/** Returns a coarsened grid by removing all grid points of current grid that are
+		 *	not included in given grid. For doing so, the given grid has to be a subset of
 		 *  the current grid.
 		 *
 		 *	@param[in] arg			Grid to be used for coarsening.
@@ -1021,20 +1021,20 @@ class MatrixVariablesGrid : public Grid
 		MatrixVariablesGrid& shiftTimes(	double timeShift
 											);
 
-		/** Shifts all grid points backwards by one grid point, 
-		 *	deleting the first one and doubling the value at 
+		/** Shifts all grid points backwards by one grid point,
+		 *	deleting the first one and doubling the value at
 		 *	last grid point.
 		 *
 		 *  \return Reference to object with shifted points
 		 */
 		MatrixVariablesGrid& shiftBackwards( DMatrix lastValue = emptyMatrix );
 
-		/** Returns a vector with interpolated values of the MatrixVariablesGrid 
-		 *	at given time. If given time lies in between two grid points, the 
-		 *	value of the vector will be determined by linear interpolation between 
-		 *	these grid points. If given time is smaller than the smallest time 
-		 *	of the grid, the value of the first grid point will be returned. 
-		 *	Analoguosly, if given time is larger than the largest time of the grid, 
+		/** Returns a vector with interpolated values of the MatrixVariablesGrid
+		 *	at given time. If given time lies in between two grid points, the
+		 *	value of the vector will be determined by linear interpolation between
+		 *	these grid points. If given time is smaller than the smallest time
+		 *	of the grid, the value of the first grid point will be returned.
+		 *	Analoguosly, if given time is larger than the largest time of the grid,
 		 *	the vector at the last grid point will be returned.
 		 *
 		 *	@param[in] time			Time for evaluation.
@@ -1045,7 +1045,7 @@ class MatrixVariablesGrid : public Grid
 									) const;
 
 		/** Prints object to standard ouput stream. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] stream			Output stream for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -1070,7 +1070,7 @@ class MatrixVariablesGrid : public Grid
 							) const;
 
 		/** Prints object to file with given name. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] filename			Filename for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -1095,7 +1095,7 @@ class MatrixVariablesGrid : public Grid
 							) const;
 
 		/** Prints object to file with given name. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] filename			Filename for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -1111,7 +1111,7 @@ class MatrixVariablesGrid : public Grid
 							) const;
 
 		/** Prints object to given file. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] stream			Output stream for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.

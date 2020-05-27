@@ -11,7 +11,7 @@
 #ifndef EIGEN_CWISE_UNARY_OP_H
 #define EIGEN_CWISE_UNARY_OP_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class CwiseUnaryOp
   * \ingroup Core_Module

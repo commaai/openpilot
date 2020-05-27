@@ -48,23 +48,23 @@ class Logging;
  *	\brief Allows to setup and store user-specified log records of algorithmic information.
  *
  *	\ingroup UserDataStructures
- *	
- *  The class LogRecord allows to setup and store user-specified log records of algorithmic 
+ *
+ *  The class LogRecord allows to setup and store user-specified log records of algorithmic
  *	information consisting of numerical values during runtime.
  *
- *	A log record comprises arbitrarily many LogRecordItems stored in a simple 
- *	singly-linked list. Within these items, the actual numerical values of the 
+ *	A log record comprises arbitrarily many LogRecordItems stored in a simple
+ *	singly-linked list. Within these items, the actual numerical values of the
  *	algorithmic to be logged as well as settings defining their output format is
- *	stored. Several commonly-used output formats are pre-defined within so-called 
+ *	stored. Several commonly-used output formats are pre-defined within so-called
  *	PrintSchemes.
  *
  *	Additionally, a log record stores two important settings: (i) the LogFrequency
- *	defining whether the information is stored at each iteration or only at the 
+ *	defining whether the information is stored at each iteration or only at the
  *	start or end, respectively; (ii) the file, e.g. a file or the screen,
  *	to which the whole log record including all its items can be printed.
  *
  *	Finally, it is interesting to know that LogRecords can be setup by the user and
- *	flushed to UserInterface classes. Internally, LogRecords are stored as basic 
+ *	flushed to UserInterface classes. Internally, LogRecords are stored as basic
  *	singly-linked within a LogCollection.
  *
  *	\author Hans Joachim Ferreau, Boris Houska, Milan Vukov
@@ -78,8 +78,8 @@ class LogRecord
 	//
 	public:
 
-		/** Constructor which takes information in the log frequency and 
-		 *	the general output file. 
+		/** Constructor which takes information in the log frequency and
+		 *	the general output file.
 		 *
 		 *	@param[in] _frequency	Frequency determining at which time instants the numerical values are to be stored.
 		 *	@param[in] _printScheme	Print scheme defining the output format of the information.
@@ -95,7 +95,7 @@ class LogRecord
 		 *
 		 *	@param[in] _name	Internal name of item to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addItem member function and is introduced for syntax reasons only.
 		 *
 		 *  \return SUCCESSFUL_RETURN
@@ -107,10 +107,10 @@ class LogRecord
 		 *
 		 *	@param[in] _name	Internal name of item to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addItem member function and is introduced for syntax reasons only.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue operator<<(	const Expression& _name
 								);
@@ -122,7 +122,7 @@ class LogRecord
 		 *	@param[in] _label	Label of item to be added.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue addItem(	LogName _name,
 								const char* const _label = DEFAULT_LABEL
@@ -135,7 +135,7 @@ class LogRecord
 		 *	@param[in] _label	Label of item to be added.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue addItem(	const Expression& _name,
 								const char* const _label = DEFAULT_LABEL
@@ -150,7 +150,7 @@ class LogRecord
 		 *	\note All public getAll member functions make use of the <em>protected</em> getAll function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getAll(	LogName _name,
 									MatrixVariablesGrid& values
@@ -165,7 +165,7 @@ class LogRecord
 		 *	\note All public getAll member functions make use of the <em>protected</em> getAll function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getAll(	const Expression& _name,
 									MatrixVariablesGrid& values
@@ -181,7 +181,7 @@ class LogRecord
 		 *	\note All public getFirst member functions make use of the <em>protected</em> getFirst function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getFirst(	LogName _name,
 										DMatrix& firstValue
@@ -196,7 +196,7 @@ class LogRecord
 		 *	\note All public getFirst member functions make use of the <em>protected</em> getFirst function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getFirst(	const Expression& _name,
 										DMatrix& firstValue
@@ -211,7 +211,7 @@ class LogRecord
 		 *	\note All public getFirst member functions make use of the <em>protected</em> getFirst function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getFirst(	LogName _name,
 										VariablesGrid& firstValue
@@ -226,7 +226,7 @@ class LogRecord
 		 *	\note All public getFirst member functions make use of the <em>protected</em> getFirst function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getFirst(	const Expression& _name,
 										VariablesGrid& firstValue
@@ -242,7 +242,7 @@ class LogRecord
 		 *	\note All public getLast member functions make use of the <em>protected</em> getLast function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getLast(	LogName _name,
 									DMatrix& lastValue
@@ -257,7 +257,7 @@ class LogRecord
 		 *	\note All public getLast member functions make use of the <em>protected</em> getLast function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getLast(	const Expression& _name,
 									DMatrix& lastValue
@@ -272,7 +272,7 @@ class LogRecord
 		 *	\note All public getLast member functions make use of the <em>protected</em> getLast function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getLast(	LogName _name,
 									VariablesGrid& lastValue
@@ -287,7 +287,7 @@ class LogRecord
 		 *	\note All public getLast member functions make use of the <em>protected</em> getLast function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue getLast(	const Expression& _name,
 									VariablesGrid& lastValue
@@ -303,7 +303,7 @@ class LogRecord
 		 *	\note All public setAll member functions make use of the <em>protected</em> setAll function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		inline returnValue setAll(	LogName _name,
 									const MatrixVariablesGrid& values
@@ -318,7 +318,7 @@ class LogRecord
 		 *	\note All public setAll member functions make use of the <em>protected</em> setAll function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		inline returnValue setAll(	const Expression& _name,
 									const MatrixVariablesGrid& values
@@ -335,7 +335,7 @@ class LogRecord
 		 *	\note All public setLast member functions make use of the <em>protected</em> setLast function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue setLast(	LogName _name,
 									const DMatrix& value,
@@ -352,7 +352,7 @@ class LogRecord
 		 *	\note All public setLast member functions make use of the <em>protected</em> setLast function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue setLast(	const Expression& _name,
 									const DMatrix& value,
@@ -369,7 +369,7 @@ class LogRecord
 		 *	\note All public setLast member functions make use of the <em>protected</em> setLast function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue setLast(	LogName _name,
 									VariablesGrid& value,
@@ -386,7 +386,7 @@ class LogRecord
 		 *	\note All public setLast member functions make use of the <em>protected</em> setLast function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		inline returnValue setLast(	const Expression& _name,
 									VariablesGrid& value,
@@ -435,7 +435,7 @@ class LogRecord
 		 */
 		inline BooleanType isEmpty( ) const;
 
-		/** Returns current log frequency determining at which time instants the 
+		/** Returns current log frequency determining at which time instants the
 		 *	numerical values are to be stored.
 		 *
 		 *  \return Current log frequency
@@ -448,7 +448,7 @@ class LogRecord
 		 */
 		inline PrintScheme getPrintScheme( ) const;
 
-		/** Sets the log frequency determining at which time instants the 
+		/** Sets the log frequency determining at which time instants the
 		 *	numerical values are to be stored.
 		 *
 		 *	@param[in]  _frequency	New log frequency
@@ -467,7 +467,7 @@ class LogRecord
 		inline returnValue setPrintScheme(	PrintScheme _printScheme
 											);
 
-		/** Returns whether an (possibly empty) item with given internal name 
+		/** Returns whether an (possibly empty) item with given internal name
 		 *	exists or not.
 		 *
 		 *	@param[in] _name	Internal name of item.
@@ -478,7 +478,7 @@ class LogRecord
 		inline BooleanType hasItem(	LogName _name
 									) const;
 
-		/** Returns whether an (possibly empty) item with given internal name 
+		/** Returns whether an (possibly empty) item with given internal name
 		 *	exists or not.
 		 *
 		 *	@param[in] _name	Internal name of item.
@@ -522,7 +522,7 @@ class LogRecord
 		 *	\note All <em>public</em> getAll member functions make use of this protected function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		returnValue getAll(	uint _name,
 							LogRecordItemType _type,
@@ -539,7 +539,7 @@ class LogRecord
 		 *	\note All <em>public</em> getFirst member functions make use of this protected function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		returnValue getFirst(	uint _name,
 								LogRecordItemType _type,
@@ -556,7 +556,7 @@ class LogRecord
 		 *	\note All <em>public</em> getLast member functions make use of this protected function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		returnValue getLast(	uint _name,
 								LogRecordItemType _type,
@@ -573,7 +573,7 @@ class LogRecord
 		 *	\note All <em>public</em> setAll member functions make use of this protected function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_RECORD_CORRUPTED 
+		 *	        RET_LOG_RECORD_CORRUPTED
 		 */
 		returnValue setAll(	uint _name,
 							LogRecordItemType _type,
@@ -591,7 +591,7 @@ class LogRecord
 		 *	\note All <em>public</em> setLast member functions make use of this protected function.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_LOG_ENTRY_DOESNT_EXIST 
+		 *	        RET_LOG_ENTRY_DOESNT_EXIST
 		 */
 		returnValue setLast(	uint _name,
 								LogRecordItemType _type,
@@ -600,7 +600,7 @@ class LogRecord
 								);
 
 
-		/** Returns whether an (possibly empty) item with given internal name 
+		/** Returns whether an (possibly empty) item with given internal name
 		 *	and internal type exists or not.
 		 *
 		 *	@param[in] _name	Internal name of item.

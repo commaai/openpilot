@@ -38,4 +38,4 @@ extern void *load_file(const char *fn, unsigned *sz);
 }
 #endif
 
-#endif /* __CUTILS_MISC_H */ 
+#endif /* __CUTILS_MISC_H */

@@ -97,7 +97,7 @@
 
 	\section QR polynomial solver class
 	Computes the complex roots of a polynomial by computing the eigenvalues of the associated companion matrix with the QR algorithm.
-	
+
 	The roots of \f$ p(x) = a_0 + a_1 x + a_2 x^2 + a_{3} x^3 + x^4 \f$ are the eigenvalues of
 	\f$
 	\left [
@@ -112,7 +112,7 @@
 	However, the QR algorithm is not guaranteed to converge when there are several eigenvalues with same modulus.
 
 	Therefore the current polynomial solver is guaranteed to provide a correct result only when the complex roots \f$r_1,r_2,...,r_d\f$ have distinct moduli i.e.
-	
+
 	\f$ \forall i,j \in [1;d],~ \| r_i \| \neq \| r_j \| \f$.
 
 	With 32bit (float) floating types this problem shows up frequently.
@@ -120,9 +120,9 @@
   (double) floating types and small polynomial degree (<20).
 
 	\include PolynomialSolver1.cpp
-	
+
 	In the above example:
-	
+
 	-# a simple use of the polynomial solver is shown;
 	-# the accuracy problem with the QR algorithm is presented: a polynomial with almost conjugate roots is provided to the solver.
 	Those roots have almost same module therefore the QR algorithm failed to converge: the accuracy

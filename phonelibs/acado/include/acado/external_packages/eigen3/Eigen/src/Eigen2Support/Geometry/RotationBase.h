@@ -9,7 +9,7 @@
 
 // no include guard, we'll include this twice from All.h from Eigen2Support, and it's internal anyway
 
-namespace Eigen { 
+namespace Eigen {
 
 // this file aims to contains the various representations of rotation/orientation
 // in 2D and 3D space excepted Matrix and Quaternion.
@@ -28,7 +28,7 @@ class RotationBase
     enum { Dim = _Dim };
     /** the scalar type of the coefficients */
     typedef typename ei_traits<Derived>::Scalar Scalar;
-    
+
     /** corresponding linear transformation matrix type */
     typedef Matrix<Scalar,Dim,Dim> RotationMatrixType;
 

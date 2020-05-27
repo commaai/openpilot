@@ -11,10 +11,10 @@
 #ifndef EIGEN_HESSENBERGDECOMPOSITION_H
 #define EIGEN_HESSENBERGDECOMPOSITION_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
-  
+
 template<typename MatrixType> struct HessenbergDecompositionMatrixHReturnType;
 template<typename MatrixType>
 struct traits<HessenbergDecompositionMatrixHReturnType<MatrixType> >
@@ -83,7 +83,7 @@ template<typename _MatrixType> class HessenbergDecomposition
 
     /** \brief Return type of matrixQ() */
     typedef HouseholderSequence<MatrixType,typename internal::remove_all<typename CoeffVectorType::ConjugateReturnType>::type> HouseholderSequenceType;
-    
+
     typedef internal::HessenbergDecompositionMatrixHReturnType<MatrixType> MatrixHReturnType;
 
     /** \brief Default constructor; the decomposition will be computed later.

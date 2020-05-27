@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Cos implements the scalar cosine operator within the 
+ *	The class Cos implements the scalar cosine operator within the
  *	symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -71,7 +71,7 @@ public:
     /** Assignment Operator (deep copy). */
     Cos& operator=( const Cos &arg );
 
-	
+
 	/** Evaluates the expression (templated version) */
 	virtual returnValue evaluate( EvaluationBase *x );
 

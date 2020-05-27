@@ -39,4 +39,4 @@ const char* get_process_name(void);
 }
 #endif
 
-#endif /* __PROCESS_NAME_H */ 
+#endif /* __PROCESS_NAME_H */

@@ -42,7 +42,7 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *	\brief Allows to export a tailored implicit Runge-Kutta integrator with forward sensitivity generation for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -60,7 +60,7 @@ class ForwardIRKExport : public ImplicitRungeKuttaExport, public RKSensitivities
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -76,7 +76,7 @@ class ForwardIRKExport : public ImplicitRungeKuttaExport, public RKSensitivities
         ForwardIRKExport(	const ForwardIRKExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ForwardIRKExport( );
 
@@ -94,7 +94,7 @@ class ForwardIRKExport : public ImplicitRungeKuttaExport, public RKSensitivities
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		virtual returnValue setup( );
-        
+
 
 		/** Adds all data declarations of the auto-generated integrator to given list of declarations.
 		 *
@@ -129,8 +129,8 @@ class ForwardIRKExport : public ImplicitRungeKuttaExport, public RKSensitivities
 
 
 	protected:
-		
-		
+
+
 		/** Returns the index corresponding Compressed Row Storage (CRS) for the dependency matrix of a specific output function.
 		 *
 		 * @param[in] output	The number of the output function.
@@ -274,7 +274,7 @@ class ForwardIRKExport : public ImplicitRungeKuttaExport, public RKSensitivities
 
 
     protected:
-		
+
 
 };
 

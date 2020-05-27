@@ -41,21 +41,21 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for interfacing online feedback laws to be used within a Controller.
  *
  *	\ingroup UserInterfaces
  *
- *  The class ControlLaw serves as a base class for interfacing online 
+ *  The class ControlLaw serves as a base class for interfacing online
  *	control laws to be used within a Controller. Most prominently, the
  *	control law can be a RealTimeAlgorithm solving dynamic optimization
  *	problems. But also classical feedback laws like LQR or PID controller
  *	or feedforward laws can be interfaced.
  *
- *	After initialization, the ControlLaw is evaluated with a given fixed 
+ *	After initialization, the ControlLaw is evaluated with a given fixed
  *	sampling time by calling the step-routines. Additionally, the steps
  *	can be divided into a preparation step and a feedback step that actually
- *	computes the feedback. This feature has mainly been added to deal with 
+ *	computes the feedback. This feature has mainly been added to deal with
  *	RealTimeAlgorithm can make use of this division in order to reduce the
  *	feedback delay.
  *
@@ -68,7 +68,7 @@ class ControlLaw : public SimulationBlock
 	//
 	public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		ControlLaw( );
 
@@ -144,7 +144,7 @@ class ControlLaw : public SimulationBlock
 												);
 
 
-		/** Initializes the control law with given start values and 
+		/** Initializes the control law with given start values and
 		 *	performs a number of consistency checks.
 		 *
 		 *	@param[in]  _startTime	Start time.
@@ -179,7 +179,7 @@ class ControlLaw : public SimulationBlock
 									const DVector& _p = emptyConstVector,
 									const VariablesGrid& _yRef = emptyConstVariablesGrid
 									) = 0;
-									
+
 		/** Performs next step of the control law based on given inputs.
 		 *
 		 *	@param[in]  _x			Most recent value for differential states.
@@ -233,7 +233,7 @@ class ControlLaw : public SimulationBlock
 		virtual returnValue shift(	double timeShift = -1.0
 									);
 
-									
+
 		/** Returns control signal as determined by the control law.
 		 *
 		 *	@param[out]  _u		Control signal as determined by the control law.
@@ -273,13 +273,13 @@ class ControlLaw : public SimulationBlock
 
 		/** Returns number of parameters.
 		 *
-		 *  \return Number of parameters 
+		 *  \return Number of parameters
 		 */
 		virtual uint getNP( ) const;
 
 		/** Returns number of (estimated) disturbances.
 		 *
-		 *  \return Number of (estimated) disturbances 
+		 *  \return Number of (estimated) disturbances
 		 */
 		virtual uint getNW( ) const;
 
@@ -303,7 +303,7 @@ class ControlLaw : public SimulationBlock
 		virtual double getLengthControlHorizon( ) const;
 
 
-		/** Returns whether the control law is based on dynamic optimization or 
+		/** Returns whether the control law is based on dynamic optimization or
 		 *	a static one.
 		 *
 		 *  \return BT_TRUE  iff control law is based on dynamic optimization, \n

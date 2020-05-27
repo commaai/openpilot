@@ -44,7 +44,7 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief Stores and evaluates Mayer terms within optimal control problems.
  *
  *	\ingroup BasicDataStructures

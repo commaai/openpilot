@@ -10,7 +10,7 @@
 #ifndef EIGEN_EULERANGLES_H
 #define EIGEN_EULERANGLES_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \geometry_module \ingroup Geometry_Module
   *
@@ -27,9 +27,9 @@ namespace Eigen {
   *      * AngleAxisf(ea[1], Vector3f::UnitX())
   *      * AngleAxisf(ea[2], Vector3f::UnitZ()); \endcode
   * This corresponds to the right-multiply conventions (with right hand side frames).
-  * 
+  *
   * The returned angles are in the ranges [0:pi]x[0:pi]x[-pi:pi].
-  * 
+  *
   * \sa class AngleAxis
   */
 template<typename Derived>
@@ -49,7 +49,7 @@ MatrixBase<Derived>::eulerAngles(Index a0, Index a1, Index a2) const
   const Index i = a0;
   const Index j = (a0 + 1 + odd)%3;
   const Index k = (a0 + 2 - odd)%3;
-  
+
   if (a0==a2)
   {
     res[0] = atan2(coeff(j,i), coeff(k,i));
@@ -64,21 +64,21 @@ MatrixBase<Derived>::eulerAngles(Index a0, Index a1, Index a2) const
       Scalar s2 = Vector2(coeff(j,i), coeff(k,i)).norm();
       res[1] = atan2(s2, coeff(i,i));
     }
-    
+
     // With a=(0,1,0), we have i=0; j=1; k=2, and after computing the first two angles,
     // we can compute their respective rotation, and apply its inverse to M. Since the result must
     // be a rotation around x, we have:
     //
-    //  c2  s1.s2 c1.s2                   1  0   0 
+    //  c2  s1.s2 c1.s2                   1  0   0
     //  0   c1    -s1       *    M    =   0  c3  s3
     //  -s2 s1.c2 c1.c2                   0 -s3  c3
     //
     //  Thus:  m11.c1 - m21.s1 = c3  &   m12.c1 - m22.s1 = s3
-    
+
     Scalar s1 = sin(res[0]);
     Scalar c1 = cos(res[0]);
     res[2] = atan2(c1*coeff(j,k)-s1*coeff(k,k), c1*coeff(j,j) - s1 * coeff(k,j));
-  } 
+  }
   else
   {
     res[0] = atan2(coeff(j,k), coeff(k,k));
@@ -95,7 +95,7 @@ MatrixBase<Derived>::eulerAngles(Index a0, Index a1, Index a2) const
   }
   if (!odd)
     res = -res;
-  
+
   return res;
 }
 

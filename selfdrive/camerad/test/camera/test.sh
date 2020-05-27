@@ -7,4 +7,3 @@ gcc -DQCOM -I ~/one -I ~/one/selfdrive -I ../../include \
   -l:libczmq.a -l:libzmq.a -lgnustl_shared -lm -llog -lcutils \
   -l:libcapn.a -l:libcapnp.a -l:libkj.a \
   ~/one/cereal/gen/c/log.capnp.o
-

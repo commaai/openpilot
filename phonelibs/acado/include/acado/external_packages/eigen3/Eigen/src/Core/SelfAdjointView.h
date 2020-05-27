@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELFADJOINTMATRIX_H
 #define EIGEN_SELFADJOINTMATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class SelfAdjointView
   * \ingroup Core_Module
@@ -60,7 +60,7 @@ template<typename MatrixType, unsigned int UpLo> class SelfAdjointView
     typedef typename internal::traits<SelfAdjointView>::MatrixTypeNestedCleaned MatrixTypeNestedCleaned;
 
     /** \brief The type of coefficients in this matrix */
-    typedef typename internal::traits<SelfAdjointView>::Scalar Scalar; 
+    typedef typename internal::traits<SelfAdjointView>::Scalar Scalar;
 
     typedef typename MatrixType::Index Index;
 
@@ -161,7 +161,7 @@ template<typename MatrixType, unsigned int UpLo> class SelfAdjointView
 
     EigenvaluesReturnType eigenvalues() const;
     RealScalar operatorNorm() const;
-    
+
     #ifdef EIGEN2_SUPPORT
     template<typename OtherDerived>
     SelfAdjointView& operator=(const MatrixBase<OtherDerived>& other)

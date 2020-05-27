@@ -10,7 +10,7 @@
 #ifndef EIGEN_DETERMINANT_H
 #define EIGEN_DETERMINANT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

@@ -33,10 +33,10 @@ class TextOutput
 public:
                         TextOutput();
     virtual             ~TextOutput();
-    
+
     virtual status_t    print(const char* txt, size_t len) = 0;
     virtual void        moveIndent(int delta) = 0;
-    
+
     class Bundle {
     public:
         inline Bundle(TextOutput& to) : mTO(to) { to.pushBundle(); }
@@ -44,7 +44,7 @@ public:
     private:
         TextOutput&     mTO;
     };
-    
+
     virtual void        pushBundle() = 0;
     virtual void        popBundle() = 0;
 };
@@ -82,14 +82,14 @@ TextOutput& operator<<(TextOutput& to, const void*);
 TextOutput& operator<<(TextOutput& to, const String8& val);
 TextOutput& operator<<(TextOutput& to, const String16& val);
 
-class TypeCode 
+class TypeCode
 {
 public:
     inline TypeCode(uint32_t code);
     inline ~TypeCode();
 
     inline uint32_t typeCode() const;
-    
+
 private:
     uint32_t mCode;
 };
@@ -101,12 +101,12 @@ class HexDump
 public:
     HexDump(const void *buf, size_t size, size_t bytesPerLine=16);
     inline ~HexDump();
-    
+
     inline HexDump& setBytesPerLine(size_t bytesPerLine);
     inline HexDump& setSingleLineCutoff(int32_t bytes);
     inline HexDump& setAlignment(size_t alignment);
     inline HexDump& setCArrayStyle(bool enabled);
-    
+
     inline const void* buffer() const;
     inline size_t size() const;
     inline size_t bytesPerLine() const;

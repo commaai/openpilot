@@ -38,7 +38,7 @@ BEGIN_NAMESPACE_ACADO
 
 class Function;
 
-/** 
+/**
  *	\brief Allows to export code of an ACADO function.
  *
  *	\ingroup AuxiliaryFunctionality

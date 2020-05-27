@@ -1,6 +1,6 @@
 /*
  *    This file was auto-generated using the ACADO Toolkit.
- *    
+ *
  *    While ACADO Toolkit is free software released under the terms of
  *    the GNU Lesser General Public License (LGPL), the generated code
  *    as such remains the property of the user who used ACADO Toolkit
@@ -9,11 +9,11 @@
  *    generated code that are a direct copy of source code from the
  *    ACADO Toolkit or the software tools it is based on, remain, as derived
  *    work, automatically covered by the LGPL license.
- *    
+ *
  *    ACADO Toolkit is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *    
+ *
  */
 
 
@@ -553,7 +553,7 @@ int lRun3;
 int lRun4;
 int lRun5;
 /** Row vector of size: 40 */
-static const int xBoundIndices[ 40 ] = 
+static const int xBoundIndices[ 40 ] =
 { 6, 7, 10, 11, 14, 15, 18, 19, 22, 23, 26, 27, 30, 31, 34, 35, 38, 39, 42, 43, 46, 47, 50, 51, 54, 55, 58, 59, 62, 63, 66, 67, 70, 71, 74, 75, 78, 79, 82, 83 };
 acado_moveGuE( acadoWorkspace.evGu, acadoWorkspace.E );
 acado_moveGxT( &(acadoWorkspace.evGx[ 16 ]), acadoWorkspace.T );
@@ -4988,7 +4988,7 @@ acadoVariables.x[81] = xEnd[1];
 acadoVariables.x[82] = xEnd[2];
 acadoVariables.x[83] = xEnd[3];
 }
-else if (strategy == 2) 
+else if (strategy == 2)
 {
 acadoWorkspace.state[0] = acadoVariables.x[80];
 acadoWorkspace.state[1] = acadoVariables.x[81];
@@ -5160,4 +5160,3 @@ objVal += + acadoWorkspace.DyN[0]*tmpDyN[0] + acadoWorkspace.DyN[1]*tmpDyN[1] + 
 objVal *= 0.5;
 return objVal;
 }
-

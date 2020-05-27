@@ -11,7 +11,7 @@
 #ifndef EIGEN_BLOCK2_H
 #define EIGEN_BLOCK2_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \returns a dynamic-size expression of a corner of *this.
   *

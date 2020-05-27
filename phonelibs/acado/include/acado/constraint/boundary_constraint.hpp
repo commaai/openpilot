@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Stores and evaluates boundary constraints within optimal control problems.
  *
  *	\ingroup BasicDataStructures

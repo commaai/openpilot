@@ -27,7 +27,7 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Implementation of inlined member functions of the MessageHandling class. 
+ *	Implementation of inlined member functions of the MessageHandling class.
  */
 
 
@@ -35,7 +35,7 @@
 /*****************************************************************************
  *  P U B L I C                                                              *
  *****************************************************************************/
- 
+
 /*
  *	g e t E r r o r V i s i b i l i t y S t a t u s
  */
@@ -84,7 +84,7 @@ inline int MessageHandling::getErrorCount( ) const
 /*
  *	s e t E r r o r V i s i b i l i t y S t a t u s
  */
-inline void MessageHandling::setErrorVisibilityStatus( VisibilityStatus _errorVisibility ) 
+inline void MessageHandling::setErrorVisibilityStatus( VisibilityStatus _errorVisibility )
 {
  	errorVisibility = _errorVisibility;
 }
@@ -93,7 +93,7 @@ inline void MessageHandling::setErrorVisibilityStatus( VisibilityStatus _errorVi
 /*
  *	s e t W a r n i n g V i s i b i l i t y S t a t u s
  */
-inline void MessageHandling::setWarningVisibilityStatus( VisibilityStatus _warningVisibility ) 
+inline void MessageHandling::setWarningVisibilityStatus( VisibilityStatus _warningVisibility )
 {
  	warningVisibility = _warningVisibility;
 }
@@ -102,7 +102,7 @@ inline void MessageHandling::setWarningVisibilityStatus( VisibilityStatus _warni
 /*
  *	s e t I n f o V i s i b i l i t y S t a t u s
  */
-inline void MessageHandling::setInfoVisibilityStatus( VisibilityStatus _infoVisibility ) 
+inline void MessageHandling::setInfoVisibilityStatus( VisibilityStatus _infoVisibility )
 {
  	infoVisibility = _infoVisibility;
 }
@@ -111,7 +111,7 @@ inline void MessageHandling::setInfoVisibilityStatus( VisibilityStatus _infoVisi
 /*
  *	s e t O u t p u t F i l e
  */
-inline void MessageHandling::setOutputFile( myFILE* _outputFile ) 
+inline void MessageHandling::setOutputFile( myFILE* _outputFile )
 {
  	outputFile = _outputFile;
 }
@@ -122,7 +122,7 @@ inline void MessageHandling::setOutputFile( myFILE* _outputFile )
  */
 inline returnValue MessageHandling::setErrorCount( int _errorCount )
 {
-	if ( _errorCount >= 0 ) 	
+	if ( _errorCount >= 0 )
 	{
 		errorCount = _errorCount;
 		return SUCCESSFUL_RETURN;

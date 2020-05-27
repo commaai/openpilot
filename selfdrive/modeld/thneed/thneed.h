@@ -48,4 +48,3 @@ class Thneed {
     std::vector<std::pair<int, struct kgsl_gpuobj_sync_obj *> > syncobjs;
     int fd;
 };
-

@@ -46,12 +46,12 @@ class ExportIndex;
 class MemoryAllocator;
 
 
-/** 
+/**
  *	\brief Base class for all kind of statements to be exported by the code generation tool.
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class ExportStatement serves as a base class for all kind of statements to be exported 
+ *	The class ExportStatement serves as a base class for all kind of statements to be exported
  *	by the code generation tool.
  *
  *	\authors Hans Joachim Ferreau, Boris Houska, Milan Vukov
@@ -99,7 +99,7 @@ class ExportStatement
 		virtual ExportStatement* clone( ) const = 0;
 
 
-		/** Exports data declaration of the statement into given file. Its appearance can 
+		/** Exports data declaration of the statement into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream				Name of file to be used to export statement.
@@ -115,7 +115,7 @@ class ExportStatement
 													int _precision = 16
 													) const;
 
-		/** Exports source code of the statement into given file. Its appearance can 
+		/** Exports source code of the statement into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream				Name of file to be used to export statement.
@@ -148,8 +148,8 @@ class ExportStatement
 		{
 			return *this;
 		}
-        
-        
+
+
     public:
         static std::string fcnPrefix;
         static std::string varPrefix;

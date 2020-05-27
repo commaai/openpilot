@@ -114,15 +114,15 @@ public:
 	/** Appends an Expression matrix (n x m)
 	with an argument matrix (s x m) in the row direction,
 	such that the result is ( (n + s) x m).
-	
+
 	As a special case, when applied on an empty Expression,
 	the Expression will be assigned the argument. */
 	Expression&  appendRows(const Expression& arg);
-	
+
 	/** Appends an Expression matrix (n x m)
 	with an argument matrix (n x s) in the column direction,
 	such that the result is ( n x (m + s) ).
-	
+
 	As a special case, when applied on an empty Expression,
 	the Expression will be assigned the argument. */
 	Expression&  appendCols(const Expression& arg);
@@ -149,13 +149,13 @@ public:
 
 	/** Returns the symbolic inverse of a matrix (only for square matrices) */
 	Expression getInverse( ) const;
-	
+
 	Expression getRow( const uint& rowIdx ) const;
 	Expression getRows( const uint& rowIdx1, const uint& rowIdx2 ) const;
 	Expression getCol( const uint& colIdx ) const;
 	Expression getCols( const uint& colIdx1, const uint& colIdx2 ) const;
 	Expression getSubMatrix( const uint& rowIdx1, const uint& rowIdx2, const uint& colIdx1, const uint& colIdx2 ) const;
-	
+
 	/** When operated on an n x 1 Expression, returns an m x n DMatrix.
 	* The element (i,j) of this matrix is zero when this(i) does not depend on arg(j)
 	* \param arg m x 1 Expression
@@ -188,7 +188,7 @@ public:
 	Expression ADforward  ( const Expression &arg ) const;
 	Expression ADforward  ( const VariableType &varType_, const int *arg, int nV ) const;
 	Expression ADbackward ( const Expression &arg ) const;
-	
+
 	/** Second order symmetric AD routine returning \n
 	 *  S^T*(l^T*f'')*S  with f'' being the second  \n
 	 * order derivative of the current expression.  \n
@@ -212,7 +212,7 @@ public:
 				 	 	 	Expression *dfS = 0,    /** first order forward  result */
 				 	 	 	Expression *ldf = 0    /** first order backward result */
 							) const;
-	
+
 	/** Second order symmetric AD routine returning \n
 	 *  l^T*f''  with f'' being the second          \n
 	 * order derivative of the current expression.  \n
@@ -235,7 +235,7 @@ public:
 							Expression *dfS = 0,    /** first order forward  result */
 							Expression *ldf = 0    /** first order backward result */
 							) const;
-	
+
 	Expression getODEexpansion( const int &order, const int *arg ) const;
 
 	Expression ADforward ( const Expression &arg, const Expression &seed ) const;

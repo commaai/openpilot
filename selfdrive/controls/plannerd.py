@@ -3,7 +3,6 @@ import gc
 
 import cereal.messaging as messaging
 from cereal import car
-
 from common.params import Params
 from common.realtime import set_realtime_priority
 from selfdrive.controls.lib.pathplanner import PathPlanner

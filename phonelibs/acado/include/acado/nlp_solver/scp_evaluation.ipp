@@ -45,7 +45,7 @@ inline BooleanType SCPevaluation::hasLSQobjective( ) const
 {
 	if ( objective == 0 )
 		return BT_FALSE;
-		
+
 	return objective->hasLSQform( );
 }
 
@@ -72,7 +72,7 @@ inline uint SCPevaluation::getNumConstraints( ) const
 {
 	if ( constraint == 0 )
 		return 0;
-		
+
 	return constraint->getNC( );
 }
 
@@ -81,7 +81,7 @@ inline uint SCPevaluation::getNumConstraintBlocks( ) const
 {
 	if ( constraint == 0 )
 		return 0;
-		
+
 	return constraint->getNumberOfBlocks( );
 }
 
@@ -90,7 +90,7 @@ inline DVector SCPevaluation::getConstraintBlockDims( ) const
 {
 	if ( constraint == 0 )
 		return DVector();
-		
+
 	return constraint->getBlockDims( );
 }
 

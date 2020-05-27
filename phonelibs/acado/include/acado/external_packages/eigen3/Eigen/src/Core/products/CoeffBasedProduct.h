@@ -11,7 +11,7 @@
 #ifndef EIGEN_COEFFBASED_PRODUCT_H
 #define EIGEN_COEFFBASED_PRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

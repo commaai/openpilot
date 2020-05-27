@@ -42,12 +42,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Stores and evaluates pointwise constraints within optimal control problems.
  *
  *	\ingroup BasicDataStructures
  *
- *	The class PointConstraint allows to manage and evaluate pointwise 
+ *	The class PointConstraint allows to manage and evaluate pointwise
  *	constraints within optimal control problems.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

@@ -37,9 +37,9 @@ class ManeuverPlot():
     self.fcw_array = []
 
     self.title = title
-    
-  def add_data(self, time, gas, brake, steer_torque, distance, speed, 
-    acceleration, up_accel_cmd, ui_accel_cmd, uf_accel_cmd, d_rel, v_rel, 
+
+  def add_data(self, time, gas, brake, steer_torque, distance, speed,
+    acceleration, up_accel_cmd, ui_accel_cmd, uf_accel_cmd, d_rel, v_rel,
     v_lead, v_target_lead, pid_speed, cruise_speed, jerk_factor, a_target, fcw):
     self.time_array.append(time)
     self.gas_array.append(gas)
@@ -70,7 +70,7 @@ class ManeuverPlot():
     if not os.path.exists(path + "/" + maneuver_name):
       os.makedirs(path + "/" + maneuver_name)
     plt_num = 0
-    
+
     # speed chart ===================
     plt_num += 1
     plt.figure(plt_num)

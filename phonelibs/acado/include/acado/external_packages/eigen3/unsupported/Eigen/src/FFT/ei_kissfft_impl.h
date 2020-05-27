@@ -7,7 +7,7 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -72,7 +72,7 @@ struct kiss_cpx_fft
         do{
           // recursive call:
           // DFT of size m*p performed by doing
-          // p instances of smaller DFTs of size m, 
+          // p instances of smaller DFTs of size m,
           // each one takes a decimated version of the input
           work(stage+1, xout , xin, fstride*p,in_stride);
           xin += fstride*in_stride;
@@ -85,7 +85,7 @@ struct kiss_cpx_fft
       }
       xout=Fout_beg;
 
-      // recombine the p smaller DFTs 
+      // recombine the p smaller DFTs
       switch (p) {
         case 2: bfly2(xout,fstride,m); break;
         case 3: bfly3(xout,fstride,m); break;
@@ -267,7 +267,7 @@ struct kissfft_impl
   typedef _Scalar Scalar;
   typedef std::complex<Scalar> Complex;
 
-  void clear() 
+  void clear()
   {
     m_plans.clear();
     m_realTwiddles.clear();
@@ -302,7 +302,7 @@ struct kissfft_impl
   // then twiddle to recombine them into the half-spectrum format
   // then fill in the conjugate symmetric half
   inline
-    void fwd( Complex * dst,const Scalar * src,int nfft) 
+    void fwd( Complex * dst,const Scalar * src,int nfft)
     {
       if ( nfft&3  ) {
         // use generic mode for odd
@@ -342,7 +342,7 @@ struct kissfft_impl
 
   // half-complex to scalar
   inline
-    void inv( Scalar * dst,const Complex * src,int nfft) 
+    void inv( Scalar * dst,const Complex * src,int nfft)
     {
       if (nfft&3) {
         m_tmpBuf1.resize(nfft);
@@ -406,7 +406,7 @@ struct kissfft_impl
         twidref.resize(ncfft2);
         int ncfft= ncfft2<<1;
         Scalar pi =  acos( Scalar(-1) );
-        for (int k=1;k<=ncfft2;++k) 
+        for (int k=1;k<=ncfft2;++k)
           twidref[k-1] = exp( Complex(0,-pi * (Scalar(k) / ncfft + Scalar(.5)) ) );
       }
       return &twidref[0];

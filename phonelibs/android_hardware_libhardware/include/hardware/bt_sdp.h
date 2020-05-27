@@ -147,4 +147,3 @@ typedef struct {
 } btsdp_interface_t;
 
 __END_DECLS
-

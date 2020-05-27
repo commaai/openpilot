@@ -10,7 +10,7 @@
 #ifndef EIGEN_INVERSE_H
 #define EIGEN_INVERSE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

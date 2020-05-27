@@ -27,10 +27,10 @@ template<typename RECT>
 class region_operator
 {
 public:
-    typedef typename RECT::value_type TYPE;    
+    typedef typename RECT::value_type TYPE;
     static const TYPE max_value = 0x7FFFFFF;
 
-    /* 
+    /*
      * Common boolean operations:
      * value is computed as 0b101 op 0b110
      *    other boolean operation are possible, simply compute
@@ -51,11 +51,11 @@ public:
         size_t count;
         TYPE dx;
         TYPE dy;
-        inline region(const region& rhs) 
+        inline region(const region& rhs)
             : rects(rhs.rects), count(rhs.count), dx(rhs.dx), dy(rhs.dy) { }
-        inline region(RECT const* r, size_t c) 
+        inline region(RECT const* r, size_t c)
             : rects(r), count(c), dx(), dy() { }
-        inline region(RECT const* r, size_t c, TYPE dx, TYPE dy) 
+        inline region(RECT const* r, size_t c, TYPE dx, TYPE dy)
             : rects(r), count(c), dx(dx), dy(dy) { }
     };
 
@@ -65,9 +65,9 @@ public:
     public:
         virtual ~region_rasterizer() { };
     };
-    
-    inline region_operator(int op, const region& lhs, const region& rhs) 
-        : op_mask(op), spanner(lhs, rhs) 
+
+    inline region_operator(int op, const region& lhs, const region& rhs)
+        : op_mask(op), spanner(lhs, rhs)
     {
     }
 
@@ -81,7 +81,7 @@ public:
                 TYPE left, right;
                 int inside = spannerInner.next(current.left, current.right);
                 if ((op_mask >> inside) & 1) {
-                    if (current.left < current.right && 
+                    if (current.left < current.right &&
                             current.top < current.bottom) {
                         rasterizer(current);
                     }
@@ -90,7 +90,7 @@ public:
         } while(!spanner.isDone());
     }
 
-private:    
+private:
     uint32_t op_mask;
 
     class SpannerBase
@@ -114,7 +114,7 @@ private:
         TYPE rhs_tail;
 
         inline int next(TYPE& head, TYPE& tail,
-                bool& more_lhs, bool& more_rhs) 
+                bool& more_lhs, bool& more_rhs)
         {
             int inside;
             more_lhs = false;
@@ -155,7 +155,7 @@ private:
         }
     };
 
-    class Spanner : protected SpannerBase 
+    class Spanner : protected SpannerBase
     {
         friend class region_operator;
         region lhs;
@@ -179,7 +179,7 @@ private:
             return !rhs.count && !lhs.count;
         }
 
-        inline int next(TYPE& top, TYPE& bottom) 
+        inline int next(TYPE& top, TYPE& bottom)
         {
             bool more_lhs = false;
             bool more_rhs = false;
@@ -194,7 +194,7 @@ private:
         }
 
     private:
-        static inline 
+        static inline
         void advance(region& reg, TYPE& aTop, TYPE& aBottom) {
             // got to next span
             size_t count = reg.count;
@@ -217,14 +217,14 @@ private:
         }
     };
 
-    class SpannerInner : protected SpannerBase 
+    class SpannerInner : protected SpannerBase
     {
         region lhs;
         region rhs;
-        
+
     public:
         inline SpannerInner(const region& lhs, const region& rhs)
-            : lhs(lhs), rhs(rhs) 
+            : lhs(lhs), rhs(rhs)
         {
         }
 
@@ -256,11 +256,11 @@ private:
         }
 
         inline bool isDone() const {
-            return SpannerBase::lhs_head == max_value && 
+            return SpannerBase::lhs_head == max_value &&
                    SpannerBase::rhs_head == max_value;
         }
 
-        inline int next(TYPE& left, TYPE& right) 
+        inline int next(TYPE& left, TYPE& right)
         {
             bool more_lhs = false;
             bool more_rhs = false;
@@ -275,7 +275,7 @@ private:
         }
 
     private:
-        static inline 
+        static inline
         void advance(region& reg, TYPE& left, TYPE& right) {
             if (reg.rects && reg.count) {
                 const int cur_span_top = reg.rects->top;

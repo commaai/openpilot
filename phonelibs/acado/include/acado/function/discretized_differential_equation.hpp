@@ -41,12 +41,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to setup and evaluate discretized differential equations based on SymbolicExpressions.
  *
  *	\ingroup BasicDataStructures
  *
- *  The class DiscretizedDifferentialEquation allows to setup and evaluate 
+ *  The class DiscretizedDifferentialEquation allows to setup and evaluate
  *	discretized differential equations (ODEs and DAEs) based on SymbolicExpressions.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

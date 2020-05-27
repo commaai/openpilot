@@ -16,7 +16,7 @@
 #include <mpreal.h>
 
 namespace Eigen {
-  
+
 /**
   * \defgroup MPRealSupport_Module MPFRC++ Support module
   * \code
@@ -56,7 +56,7 @@ int main()
 \endcode
   *
   */
-	
+
   template<> struct NumTraits<mpfr::mpreal>
     : GenericNumTraits<mpfr::mpreal>
   {
@@ -72,7 +72,7 @@ int main()
 
     typedef mpfr::mpreal Real;
     typedef mpfr::mpreal NonInteger;
-    
+
     inline static Real highest   (long Precision = mpfr::mpreal::get_default_prec())  { return  mpfr::maxval(Precision); }
     inline static Real lowest    (long Precision = mpfr::mpreal::get_default_prec())  { return -mpfr::maxval(Precision); }
 
@@ -85,8 +85,8 @@ int main()
     inline static Real epsilon  (long Precision = mpfr::mpreal::get_default_prec())     {    return mpfr::machine_epsilon(Precision); }
     inline static Real epsilon  (const Real& x)                                         {    return mpfr::machine_epsilon(x); }
 
-    inline static Real dummy_precision()   
-    { 
+    inline static Real dummy_precision()
+    {
         unsigned int weak_prec = ((mpfr::mpreal::get_default_prec()-1) * 90) / 100;
         return mpfr::machine_epsilon(weak_prec);
     }
@@ -157,7 +157,7 @@ int main()
                       Index strideA=-1, Index strideB=-1, Index offsetA=0, Index offsetB=0, mpreal* /*unpackedB*/ = 0)
       {
         mpreal acc1, acc2, tmp;
-        
+
         if(strideA==-1) strideA = depth;
         if(strideB==-1) strideB = depth;
 
@@ -176,18 +176,18 @@ int main()
             {
               mpfr_mul(tmp.mpfr_ptr(), A[k].mpfr_ptr(), B[0].mpfr_ptr(), mpreal::get_default_rnd());
               mpfr_add(acc1.mpfr_ptr(), acc1.mpfr_ptr(), tmp.mpfr_ptr(),  mpreal::get_default_rnd());
-              
+
               if(actual_nr==2) {
                 mpfr_mul(tmp.mpfr_ptr(), A[k].mpfr_ptr(), B[1].mpfr_ptr(), mpreal::get_default_rnd());
                 mpfr_add(acc2.mpfr_ptr(), acc2.mpfr_ptr(), tmp.mpfr_ptr(),  mpreal::get_default_rnd());
               }
-              
+
               B+=actual_nr;
             }
-            
+
             mpfr_mul(acc1.mpfr_ptr(), acc1.mpfr_ptr(), alpha.mpfr_ptr(), mpreal::get_default_rnd());
             mpfr_add(C1[i].mpfr_ptr(), C1[i].mpfr_ptr(), acc1.mpfr_ptr(),  mpreal::get_default_rnd());
-            
+
             if(actual_nr==2) {
               mpfr_mul(acc2.mpfr_ptr(), acc2.mpfr_ptr(), alpha.mpfr_ptr(), mpreal::get_default_rnd());
               mpfr_add(C2[i].mpfr_ptr(), C2[i].mpfr_ptr(), acc2.mpfr_ptr(),  mpreal::get_default_rnd());

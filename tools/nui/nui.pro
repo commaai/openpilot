@@ -34,4 +34,3 @@ INCLUDEPATH += /usr/local/include
 INCLUDEPATH += $$PHONELIBS/capnp-cpp/include $$BASEDIR $$BASEDIR/cereal/messaging $$PHONELIBS/yaml-cpp/include
 LIBS += -L/usr/local/lib -lavformat -lavcodec -lavutil -lswscale
 LIBS += -lbz2 $$BASEDIR/cereal/libmessaging.a -lzmq
-

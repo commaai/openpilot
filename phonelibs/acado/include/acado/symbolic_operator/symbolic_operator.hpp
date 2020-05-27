@@ -36,7 +36,7 @@
     // -------------------------------------------------------
     #include <acado/symbolic_operator/evaluation_base.hpp>
     #include <acado/symbolic_operator/evaluation_template.hpp>
-    
+
     #include <acado/symbolic_operator/operator.hpp>
     #include <acado/symbolic_operator/smooth_operator.hpp>
 	#include <acado/symbolic_operator/nonsmooth_operator.hpp>
@@ -67,4 +67,3 @@
     // -------------------------------------------------------
     // -------------------------------------------------------
     // end of file.
-

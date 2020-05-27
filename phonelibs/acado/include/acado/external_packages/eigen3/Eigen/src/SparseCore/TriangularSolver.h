@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSETRIANGULARSOLVER_H
 #define EIGEN_SPARSETRIANGULARSOLVER_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

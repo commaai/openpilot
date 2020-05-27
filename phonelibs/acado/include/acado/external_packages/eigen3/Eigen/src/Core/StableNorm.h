@@ -10,7 +10,7 @@
 #ifndef EIGEN_STABLENORM_H
 #define EIGEN_STABLENORM_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -33,7 +33,7 @@ template<typename Derived>
 inline typename NumTraits<typename traits<Derived>::Scalar>::Real
 blueNorm_impl(const EigenBase<Derived>& _vec)
 {
-  typedef typename Derived::RealScalar RealScalar;  
+  typedef typename Derived::RealScalar RealScalar;
   typedef typename Derived::Index Index;
   using std::pow;
   using std::min;

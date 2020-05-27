@@ -11,19 +11,19 @@
 #define EIGEN_INCOMPLETE_LUT_H
 
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
-    
+
 /** \internal
-  * Compute a quick-sort split of a vector 
+  * Compute a quick-sort split of a vector
   * On output, the vector row is permuted such that its elements satisfy
   * abs(row(i)) >= abs(row(ncut)) if i<ncut
-  * abs(row(i)) <= abs(row(ncut)) if i>ncut 
+  * abs(row(i)) <= abs(row(ncut)) if i>ncut
   * \param row The vector of values
   * \param ind The array of index for the elements in @p row
   * \param ncut  The number of largest elements to keep
-  **/ 
+  **/
 template <typename VectorV, typename VectorI, typename Index>
 Index QuickSplit(VectorV &row, VectorI &ind, Index ncut)
 {
@@ -33,15 +33,15 @@ Index QuickSplit(VectorV &row, VectorI &ind, Index ncut)
   Index mid;
   Index n = row.size(); /* length of the vector */
   Index first, last ;
-  
+
   ncut--; /* to fit the zero-based indices */
-  first = 0; 
-  last = n-1; 
+  first = 0;
+  last = n-1;
   if (ncut < first || ncut > last ) return 0;
-  
+
   do {
-    mid = first; 
-    RealScalar abskey = abs(row(mid)); 
+    mid = first;
+    RealScalar abskey = abs(row(mid));
     for (Index j = first + 1; j <= last; j++) {
       if ( abs(row(j)) > abskey) {
         ++mid;
@@ -52,12 +52,12 @@ Index QuickSplit(VectorV &row, VectorI &ind, Index ncut)
     /* Interchange for the pivot element */
     swap(row(mid), row(first));
     swap(ind(mid), ind(first));
-    
+
     if (mid > ncut) last = mid - 1;
-    else if (mid < ncut ) first = mid + 1; 
+    else if (mid < ncut ) first = mid + 1;
   } while (mid != ncut );
-  
-  return 0; /* mid is equal to ncut */ 
+
+  return 0; /* mid is equal to ncut */
 }
 
 }// end namespace internal
@@ -68,23 +68,23 @@ Index QuickSplit(VectorV &row, VectorI &ind, Index ncut)
   *
   * During the numerical factorization, two dropping rules are used :
   *  1) any element whose magnitude is less than some tolerance is dropped.
-  *    This tolerance is obtained by multiplying the input tolerance @p droptol 
+  *    This tolerance is obtained by multiplying the input tolerance @p droptol
   *    by the average magnitude of all the original elements in the current row.
-  *  2) After the elimination of the row, only the @p fill largest elements in 
-  *    the L part and the @p fill largest elements in the U part are kept 
-  *    (in addition to the diagonal element ). Note that @p fill is computed from 
-  *    the input parameter @p fillfactor which is used the ratio to control the fill_in 
+  *  2) After the elimination of the row, only the @p fill largest elements in
+  *    the L part and the @p fill largest elements in the U part are kept
+  *    (in addition to the diagonal element ). Note that @p fill is computed from
+  *    the input parameter @p fillfactor which is used the ratio to control the fill_in
   *    relatively to the initial number of nonzero elements.
-  * 
+  *
   * The two extreme cases are when @p droptol=0 (to keep all the @p fill*2 largest elements)
-  * and when @p fill=n/2 with @p droptol being different to zero. 
-  * 
-  * References : Yousef Saad, ILUT: A dual threshold incomplete LU factorization, 
+  * and when @p fill=n/2 with @p droptol being different to zero.
+  *
+  * References : Yousef Saad, ILUT: A dual threshold incomplete LU factorization,
   *              Numerical Linear Algebra with Applications, 1(4), pp 387-402, 1994.
-  * 
+  *
   * NOTE : The following implementation is derived from the ILUT implementation
-  * in the SPARSKIT package, Copyright (C) 2005, the Regents of the University of Minnesota 
-  *  released under the terms of the GNU LGPL: 
+  * in the SPARSKIT package, Copyright (C) 2005, the Regents of the University of Minnesota
+  *  released under the terms of the GNU LGPL:
   *    http://www-users.cs.umn.edu/~saad/software/SPARSKIT/README
   * However, Yousef Saad gave us permission to relicense his ILUT code to MPL2.
   * See the Eigen mailing list archive, thread: ILUT, date: July 8, 2012:
@@ -104,23 +104,23 @@ class IncompleteLUT : internal::noncopyable
 
   public:
     typedef Matrix<Scalar,Dynamic,Dynamic> MatrixType;
-    
+
     IncompleteLUT()
       : m_droptol(NumTraits<Scalar>::dummy_precision()), m_fillfactor(10),
         m_analysisIsOk(false), m_factorizationIsOk(false), m_isInitialized(false)
     {}
-    
+
     template<typename MatrixType>
     IncompleteLUT(const MatrixType& mat, const RealScalar& droptol=NumTraits<Scalar>::dummy_precision(), int fillfactor = 10)
       : m_droptol(droptol),m_fillfactor(fillfactor),
         m_analysisIsOk(false),m_factorizationIsOk(false),m_isInitialized(false)
     {
       eigen_assert(fillfactor != 0);
-      compute(mat); 
+      compute(mat);
     }
-    
+
     Index rows() const { return m_lu.rows(); }
-    
+
     Index cols() const { return m_lu.cols(); }
 
     /** \brief Reports whether previous computation was successful.
@@ -133,37 +133,37 @@ class IncompleteLUT : internal::noncopyable
       eigen_assert(m_isInitialized && "IncompleteLUT is not initialized.");
       return m_info;
     }
-    
+
     template<typename MatrixType>
     void analyzePattern(const MatrixType& amat);
-    
+
     template<typename MatrixType>
     void factorize(const MatrixType& amat);
-    
+
     /**
       * Compute an incomplete LU factorization with dual threshold on the matrix mat
       * No pivoting is done in this version
-      * 
+      *
       **/
     template<typename MatrixType>
     IncompleteLUT<Scalar>& compute(const MatrixType& amat)
     {
-      analyzePattern(amat); 
+      analyzePattern(amat);
       factorize(amat);
       m_isInitialized = m_factorizationIsOk;
       return *this;
     }
 
-    void setDroptol(const RealScalar& droptol); 
-    void setFillfactor(int fillfactor); 
-    
+    void setDroptol(const RealScalar& droptol);
+    void setFillfactor(int fillfactor);
+
     template<typename Rhs, typename Dest>
     void _solve(const Rhs& b, Dest& x) const
     {
-      x = m_Pinv * b;  
+      x = m_Pinv * b;
       x = m_lu.template triangularView<UnitLower>().solve(x);
       x = m_lu.template triangularView<Upper>().solve(x);
-      x = m_P * x; 
+      x = m_P * x;
     }
 
     template<typename Rhs> inline const internal::solve_retval<IncompleteLUT, Rhs>
@@ -200,22 +200,22 @@ protected:
 
 /**
  * Set control parameter droptol
- *  \param droptol   Drop any element whose magnitude is less than this tolerance 
- **/ 
+ *  \param droptol   Drop any element whose magnitude is less than this tolerance
+ **/
 template<typename Scalar>
 void IncompleteLUT<Scalar>::setDroptol(const RealScalar& droptol)
 {
-  this->m_droptol = droptol;   
+  this->m_droptol = droptol;
 }
 
 /**
  * Set control parameter fillfactor
- * \param fillfactor  This is used to compute the  number @p fill_in of largest elements to keep on each row. 
- **/ 
+ * \param fillfactor  This is used to compute the  number @p fill_in of largest elements to keep on each row.
+ **/
 template<typename Scalar>
 void IncompleteLUT<Scalar>::setFillfactor(int fillfactor)
 {
-  this->m_fillfactor = fillfactor;   
+  this->m_fillfactor = fillfactor;
 }
 
 template <typename Scalar>

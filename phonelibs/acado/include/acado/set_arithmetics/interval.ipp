@@ -73,7 +73,7 @@ inline double   diam( const Interval &I ){ return I._u-I._l;       }
 inline double   mid ( const Interval &I ){ return 0.5*(I._u+I._l); }
 inline double   abs ( const Interval &I ){ return std::max(::fabs(I._l),::fabs(I._u)); }
 inline Interval inv ( const Interval &I ){
- 
+
   if ( I._l <= EQUALITY_EPS && I._u >= -EQUALITY_EPS ){
 		Interval I2(-INFINITY,INFINITY);
 		return I2;
@@ -82,7 +82,7 @@ inline Interval inv ( const Interval &I ){
   return I2;
 }
 inline Interval sqr( const Interval&I ){
-  int imid = -1;  
+  int imid = -1;
   Interval I2( ::pow(I.mid(I._l,I._u,0.,imid),2.),
                std::max((I._l)*(I._l),(I._u)*(I._u)) );
   return I2;
@@ -138,7 +138,7 @@ inline Interval pow( const Interval&I, const int n ){
   if( n == 1 ){
     return I;
   }
-  if( n >= 2 && n%2 == 0 ){ 
+  if( n >= 2 && n%2 == 0 ){
     int imid = -1;
     Interval I2( ::pow(I.mid(I._l,I._u,0.,imid),n),
                  std::max(::pow(I._l,n),::pow(I._u,n)) );
@@ -232,7 +232,7 @@ inline Interval acos( const Interval &I ){
 
   if ( I._l <= -1.+EQUALITY_EPS || I._u >= 1.-EQUALITY_EPS ){
        Interval I2( -INFINITY , INFINITY );
-	   return I2;   
+	   return I2;
   }
   Interval I2( ::acos(I._u), ::acos(I._l) );
   return I2;
@@ -242,7 +242,7 @@ inline Interval asin( const Interval &I ){
 
   if ( I._l <= -1.+EQUALITY_EPS || I._u >= 1.-EQUALITY_EPS ){
 		Interval I2( -INFINITY , INFINITY );
-		return I2;   
+		return I2;
   }
   Interval I2( ::asin(I._l), ::asin(I._u) );
   return I2;

@@ -1,8 +1,8 @@
 import numpy as np
+
 from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.volkswagen.values import BUTTON_STATES
 from selfdrive.car.volkswagen.values import CANBUS

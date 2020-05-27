@@ -4,7 +4,6 @@ import time
 
 from cereal import car
 from opendbc.can.parser import CANParser
-
 from selfdrive.car.gm.values import CanBus
 from selfdrive.car.gm.values import CAR
 from selfdrive.car.gm.values import DBC

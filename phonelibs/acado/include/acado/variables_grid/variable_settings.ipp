@@ -76,7 +76,7 @@ inline returnValue VariableSettings::setScaling(	const DVector& _scaling
 
 	if ( acadoIsSmaller( _scaling.getMin( ),0.0 ) == BT_TRUE )
 		return ACADOERROR( RET_INVALID_ARGUMENTS );
-	
+
 	scaling = _scaling;
 	return SUCCESSFUL_RETURN;
 }
@@ -110,7 +110,7 @@ inline returnValue VariableSettings::setScaling(	uint idx,
 
 	if ( acadoIsSmaller( _scaling,0.0 ) == BT_TRUE )
 		return ACADOERROR( RET_INVALID_ARGUMENTS );
-	
+
 	scaling( idx ) = _scaling;
 	return SUCCESSFUL_RETURN;
 }
@@ -185,7 +185,7 @@ inline DVector VariableSettings::getUpperBounds( ) const
 }
 
 
-inline returnValue VariableSettings::setUpperBounds(	const DVector& _ub 
+inline returnValue VariableSettings::setUpperBounds(	const DVector& _ub
 														)
 {
 	if( _ub.getDim() != dim )
@@ -210,7 +210,7 @@ inline double VariableSettings::getUpperBound(	uint idx
 
 
 inline returnValue VariableSettings::setUpperBound(	uint idx,
-													double _ub 
+													double _ub
 													)
 {
 	if( idx >= dim )
@@ -235,7 +235,7 @@ inline BooleanType VariableSettings::getAutoInit( ) const
 
 inline returnValue VariableSettings::setAutoInit(	BooleanType _autoInit
 													)
-{  
+{
 	autoInit = _autoInit;
 	return SUCCESSFUL_RETURN;
 }

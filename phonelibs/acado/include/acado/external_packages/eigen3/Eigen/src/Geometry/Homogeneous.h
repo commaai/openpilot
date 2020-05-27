@@ -10,7 +10,7 @@
 #ifndef EIGEN_HOMOGENEOUS_H
 #define EIGEN_HOMOGENEOUS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \geometry_module \ingroup Geometry_Module
   *

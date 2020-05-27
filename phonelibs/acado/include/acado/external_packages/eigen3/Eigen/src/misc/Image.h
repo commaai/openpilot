@@ -10,7 +10,7 @@
 #ifndef EIGEN_MISC_IMAGE_H
 #define EIGEN_MISC_IMAGE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

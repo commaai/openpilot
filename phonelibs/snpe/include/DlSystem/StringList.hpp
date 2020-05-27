@@ -68,7 +68,7 @@ public:
 
 
    /**
-    * assignment operator. 
+    * assignment operator.
     */
    StringList& operator=(const StringList&) noexcept;
 
@@ -80,7 +80,7 @@ public:
 
    /**
     * move constructor.
-    * @param[in] other object to move.    
+    * @param[in] other object to move.
     */
    StringList(StringList&& other) noexcept;
 
@@ -104,4 +104,3 @@ private:
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 
 #endif // DL_SYSTEM_STRINGLIST_HPP
-

@@ -1423,4 +1423,3 @@ int main(int argc, char *argv[]) {
 
   disasm_a3xx(buf, len/4, 0, stdout, 0);
 }
-

@@ -15,7 +15,7 @@
 
 #include "src/Core/util/DisableStupidWarnings.h"
 
-/** 
+/**
   * \defgroup SparseCholesky_Module SparseCholesky module
   *
   * This module currently provides two variants of the direct sparse Cholesky decomposition for selfadjoint (hermitian) matrices.

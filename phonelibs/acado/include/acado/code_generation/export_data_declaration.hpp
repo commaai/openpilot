@@ -47,12 +47,12 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief Allows to export code containing variable declarations.
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class ExportDataDeclaration allows to export code containing variable 
+ *	The class ExportDataDeclaration allows to export code containing variable
  *	declarations of different data types.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -64,10 +64,10 @@ class ExportDataDeclaration : public ExportStatement
     //
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 */
         ExportDataDeclaration( );
-		
+
 		/** Constructor taking the variable to be declared.
 		 *
 		 *	@param[in] _data	Variable to be declared.
@@ -89,7 +89,7 @@ class ExportDataDeclaration : public ExportStatement
 		ExportDataDeclaration(	const ExportDataDeclaration& arg
 								);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ExportDataDeclaration( );
 
@@ -107,7 +107,7 @@ class ExportDataDeclaration : public ExportStatement
 		virtual ExportStatement* clone( ) const;
 
 
-		/** Exports source code of the statement into given file. Its appearance can 
+		/** Exports source code of the statement into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] file				Name of file to be used to export statement.
@@ -132,7 +132,7 @@ class ExportDataDeclaration : public ExportStatement
 
 
     protected:
-		
+
 		ExportData data;					/**< Variable to be declared. */
 
 };

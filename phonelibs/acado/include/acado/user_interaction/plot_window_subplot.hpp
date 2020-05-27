@@ -47,16 +47,16 @@ class Curve;
  *	\brief Allows to manage sub-windows of user-specified plot windows for algorithmic outputs (for internal use).
  *
  *	\ingroup AuxiliaryFunctionality
- *	
- *  The class PlotWindowSubplot allows to manage sub-windows of user-specified 
- *	plot windows for algorithmic outputs to be plotted during runtime. 
+ *
+ *  The class PlotWindowSubplot allows to manage sub-windows of user-specified
+ *	plot windows for algorithmic outputs to be plotted during runtime.
  *	It is intended for internal use only and is used by the class PlotWindow.
  *
  *	The class stores the internal name or the symbolic expression to be plotted within
- *	one sub-plot of a figure. Moreover, output settings like title, axis labels or 
+ *	one sub-plot of a figure. Moreover, output settings like title, axis labels or
  *	ranges of the sub-plot are stored.
  *
- *	Note that PlotWindowSubplot is always stored in a basic singly-linked list within 
+ *	Note that PlotWindowSubplot is always stored in a basic singly-linked list within
  *	a PlotWindow. Thus, also a pointer to the next subplot is stored. Also the actual
  *	numerical data to be plotted is stored centrally for each PlotWindow.
  *
@@ -74,7 +74,7 @@ class PlotWindowSubplot
 		PlotWindowSubplot( );
 
 		/** Constructor which takes the symbolic expression to be plotted
-		 *	along with settings defining the output format of the subplot. 
+		 *	along with settings defining the output format of the subplot.
 		 *
 		 *	@param[in] _expression			Symbolic expression to be plotted on the y-axis.
 		 *	@param[in] _title				Title of the subplot.
@@ -98,7 +98,7 @@ class PlotWindowSubplot
 							);
 
 		/** Constructor which takes symbolic expressions to be plotted
-		 *	along with settings defining the output format of the subplot. 
+		 *	along with settings defining the output format of the subplot.
 		 *
 		 *	@param[in] _expressionX			Symbolic expression to be plotted on the x-axis.
 		 *	@param[in] _expressionY			Symbolic expression to be plotted on the y-axis.
@@ -124,7 +124,7 @@ class PlotWindowSubplot
 							);
 
 		/** Constructor which takes the internal name of pre-defined information to be plotted
-		 *	along with settings defining the output format of the subplot. 
+		 *	along with settings defining the output format of the subplot.
 		 *
 		 *	@param[in] _name				Internal name of pre-defined information to be plotted.
 		 *	@param[in] _title				Title of the subplot.
@@ -148,7 +148,7 @@ class PlotWindowSubplot
 							);
 
 		/** Constructor which takes discrete data to be plotted
-		 *	along with settings defining the output format of the subplot. 
+		 *	along with settings defining the output format of the subplot.
 		 *
 		 *	@param[in] _variable			Discrete data to be plotted on the y-axis.
 		 *	@param[in] _title				Title of the subplot.
@@ -390,14 +390,14 @@ class PlotWindowSubplot
 		 *
 		 *	@param[in]  _next	New pointer to next item.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue setNext(	PlotWindowSubplot* const _next
 									);
 
 		/** Returns pointer to next SubPlotWindow within a PlotWindow.
 		 *
-		 *  \return Pointer to next subplot (or NULL iff subplot is terminal element). 
+		 *  \return Pointer to next subplot (or NULL iff subplot is terminal element).
 		 */
 		inline PlotWindowSubplot* getNext( ) const;
 

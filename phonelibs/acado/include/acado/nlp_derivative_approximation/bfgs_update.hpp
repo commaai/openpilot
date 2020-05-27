@@ -54,12 +54,12 @@ enum BFGSModificationType{
 
 
 
-/** 
+/**
  *	\brief Implements BFGS updates for approximating second-order derivatives within NLPsolvers.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class BFGSupdate implements BFGS updates for approximating second-order 
+ *  The class BFGSupdate implements BFGS updates for approximating second-order
  *	derivative information within iterative NLPsolvers.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -74,7 +74,7 @@ class BFGSupdate : public ConstantHessian
 
         /** Default constructor. */
         BFGSupdate( );
-		
+
         /** Constructor that takes the number of blocks for matrix block updates. */
         BFGSupdate(	UserInteraction* _userInteraction,
 					uint _nBlocks = 0

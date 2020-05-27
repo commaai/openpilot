@@ -26,7 +26,7 @@ extern "C"
  */
 
 /** The structure containing the user data.
- * 
+ *
  *  Via this structure the user "communicates" with the solver code.
  */
 typedef struct @MODULE_PREFIX@variables_
@@ -36,24 +36,24 @@ int dummy;
 } @MODULE_PREFIX@variables;
 
 /** Private workspace used by the auto-generated code.
- * 
+ *
  *  Data members of this structure are private to the solver.
- *  In other words, the user code should not modify values of this 
- *  structure. 
+ *  In other words, the user code should not modify values of this
+ *  structure.
  */
 typedef struct @MODULE_PREFIX@workspace_
 {
 @WORKSPACE_DECLARATION@
 } @MODULE_PREFIX@workspace;
 
-/* 
- * Forward function declarations. 
+/*
+ * Forward function declarations.
  */
 
 @FUNCTION_DECLARATIONS@
 
-/* 
- * Extern declarations. 
+/*
+ * Extern declarations.
  */
 
 extern @MODULE_PREFIX@workspace @MODULE_NAME@Workspace;

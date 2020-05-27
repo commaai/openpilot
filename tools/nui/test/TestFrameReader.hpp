@@ -5,4 +5,3 @@ Q_OBJECT
 private slots:
   void frameread();
 };
-

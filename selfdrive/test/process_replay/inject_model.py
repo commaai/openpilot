@@ -3,12 +3,12 @@ import os
 import subprocess
 import time
 
-from cereal.messaging import PubMaster
-from cereal.messaging import recv_one
-from cereal.messaging import sub_sock
 from tqdm import tqdm
 
 import selfdrive.manager as manager
+from cereal.messaging import PubMaster
+from cereal.messaging import recv_one
+from cereal.messaging import sub_sock
 from tools.lib.framereader import FrameReader
 
 

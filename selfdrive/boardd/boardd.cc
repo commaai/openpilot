@@ -597,7 +597,7 @@ void *can_send_thread(void *crap) {
       can_send(sm["sendcan"]);
     }
   }
-  
+
   return NULL;
 }
 

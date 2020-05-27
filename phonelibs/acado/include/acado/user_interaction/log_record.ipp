@@ -142,7 +142,7 @@ inline returnValue LogRecord::setAll(	LogName _name,
 inline returnValue LogRecord::setAll(	const Expression& _name,
 										const MatrixVariablesGrid& values
 										)
-{	
+{
 	return setAll( _name.getComponent( 0 ),LRT_VARIABLE,values );
 }
 
@@ -161,7 +161,7 @@ inline returnValue LogRecord::setLast(	const Expression& _name,
 										const DMatrix& value,
 										double time
 										)
-{	
+{
 	return setLast( _name.getComponent( 0 ),LRT_VARIABLE,value,time );
 }
 
@@ -228,7 +228,7 @@ inline BooleanType LogRecord::hasItem(	LogName _name
 {
 	if (items.count(std::make_pair(_name, LRT_ENUM)))
 		return true;
-	
+
 	return false;
 }
 
@@ -238,7 +238,7 @@ inline BooleanType LogRecord::hasItem(	const Expression& _name
 {
 	if (items.count(std::make_pair(_name.getComponent( 0 ), LRT_VARIABLE)))
 		return true;
-	
+
 	return false;
 }
 
@@ -252,7 +252,7 @@ inline BooleanType LogRecord::hasNonEmptyItem(	LogName _name
 		return false;
 	if (it->second.values.isEmpty( ) == false)
 		return true;
-		
+
 	return false;
 }
 
@@ -266,7 +266,7 @@ inline BooleanType LogRecord::hasNonEmptyItem(	const Expression& _name
 		return false;
 	if (it->second.values.isEmpty( ) == false)
 		return true;
-		
+
 	return false;
 }
 
@@ -288,9 +288,9 @@ inline returnValue LogRecord::enableWriteProtection(        LogName _name
 	it = items.find(std::make_pair(_name, LRT_ENUM));
 	if (it == items.end())
 		return SUCCESSFUL_RETURN;
-	
-	it->second.writeProtection = true;	
-	
+
+	it->second.writeProtection = true;
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -302,9 +302,9 @@ inline returnValue LogRecord::enableWriteProtection(        const Expression& _n
 	it = items.find(std::make_pair(_name.getComponent( 0 ), LRT_VARIABLE));
 	if (it == items.end())
 		return SUCCESSFUL_RETURN;
-	
-	it->second.writeProtection = true;	
-	
+
+	it->second.writeProtection = true;
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -316,9 +316,9 @@ inline returnValue LogRecord::disableWriteProtection(        LogName _name
 	it = items.find(std::make_pair(_name, LRT_ENUM));
 	if (it == items.end())
 		return SUCCESSFUL_RETURN;
-	
-	it->second.writeProtection = false;	
-	
+
+	it->second.writeProtection = false;
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -330,9 +330,9 @@ inline returnValue LogRecord::disableWriteProtection(        const Expression& _
 	it = items.find(std::make_pair(_name.getComponent( 0 ), LRT_VARIABLE));
 	if (it == items.end())
 		return SUCCESSFUL_RETURN;
-	
-	it->second.writeProtection = false;	
-	
+
+	it->second.writeProtection = false;
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -348,7 +348,7 @@ inline BooleanType LogRecord::hasItem(	uint _name,
 {
 	if (items.count(std::make_pair(_name, _type)))
 		return true;
-	
+
 	return false;
 }
 

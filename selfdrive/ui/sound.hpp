@@ -14,4 +14,3 @@ void play_alert_sound(AudibleAlert alert);
 void stop_alert_sound(AudibleAlert alert);
 
 #endif
-

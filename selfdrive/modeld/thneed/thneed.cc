@@ -455,4 +455,3 @@ void *dlsym(void *handle, const char *symbol) {
     return my_dlsym(handle, symbol);
   }
 }
-

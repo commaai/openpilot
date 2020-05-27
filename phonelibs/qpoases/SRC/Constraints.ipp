@@ -27,7 +27,7 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Declaration of inlined member functions of the Constraints class designed 
+ *	Declaration of inlined member functions of the Constraints class designed
  *	to manage working sets of constraints within a QProblem.
  */
 
@@ -44,7 +44,7 @@ inline int Constraints::getNC( ) const
 {
  	return nC;
 }
- 
+
 
 /*
  *	g e t N E C
@@ -53,7 +53,7 @@ inline int Constraints::getNEC( ) const
 {
  	return nEC;
 }
- 
+
 
 /*
  *	g e t N I C
@@ -62,7 +62,7 @@ inline int Constraints::getNIC( ) const
 {
  	return nIC;
 }
- 
+
 
 /*
  *	g e t N U C
@@ -81,7 +81,7 @@ inline returnValue Constraints::setNEC( int n )
  	nEC = n;
 	return SUCCESSFUL_RETURN;
 }
- 
+
 
 /*
  *	s e t N I C

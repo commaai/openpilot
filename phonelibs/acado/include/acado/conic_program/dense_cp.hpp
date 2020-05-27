@@ -121,7 +121,7 @@ class DenseCP{
 
 
 		/** Prints CP to standard ouput stream. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] name				Name label to be printed before the numerical values.
 		 *	@param[in] startString		Prefix before printing the numerical values.
@@ -144,7 +144,7 @@ class DenseCP{
 							) const;
 
 		/** Prints CP to standard ouput stream. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] name				Name label to be printed before the numerical values.
 		 *	@param[in] printScheme		Print scheme defining the output format of the information.
@@ -156,9 +156,9 @@ class DenseCP{
 							PrintScheme printScheme
 							) const;
 
-							
+
 		/** Prints CP to file with given name. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] filename			Filename for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -184,7 +184,7 @@ class DenseCP{
 									) const;
 
 		/** Prints CP to given file. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] stream			File for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -210,7 +210,7 @@ class DenseCP{
 									) const;
 
 		/** Prints CP to file with given name. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] filename			Filename for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -226,7 +226,7 @@ class DenseCP{
 									) const;
 
 		/** Prints CP to given file. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] stream			File for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -243,7 +243,7 @@ class DenseCP{
 
 
 		/** Prints CP solution to standard ouput stream. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] name				Name label to be printed before the numerical values.
 		 *	@param[in] startString		Prefix before printing the numerical values.
@@ -266,7 +266,7 @@ class DenseCP{
 									) const;
 
 		/** Prints CP solution to standard ouput stream. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] name				Name label to be printed before the numerical values.
 		 *	@param[in] printScheme		Print scheme defining the output format of the information.
@@ -279,7 +279,7 @@ class DenseCP{
 									) const;
 
 		/** Prints CP solution to file with given name. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] filename			Filename for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -305,7 +305,7 @@ class DenseCP{
 											) const;
 
 		/** Prints CP solution to given file. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] stream			File for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -331,7 +331,7 @@ class DenseCP{
 											) const;
 
 		/** Prints CP solution to file with given name. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] filename			Filename for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.
@@ -347,7 +347,7 @@ class DenseCP{
 											) const;
 
 		/** Prints CP solution to given file. Various settings can
-		 *	be specified defining its output format. 
+		 *	be specified defining its output format.
 		 *
 		 *	@param[in] stream			File for printing.
 		 *	@param[in] name				Name label to be printed before the numerical values.

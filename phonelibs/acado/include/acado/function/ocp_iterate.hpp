@@ -83,7 +83,7 @@ class OCPiterate{
 
 
 		returnValue allocateAll( );
-		
+
 		returnValue init(	const VariablesGrid* const _x,
 							const VariablesGrid* const _xa,
 							const VariablesGrid* const _p,
@@ -209,7 +209,7 @@ class OCPiterate{
     // PUBLIC DATA MEMBERS:
     //
     protected:
-		
+
 		BooleanType inSimulationMode;
 };
 

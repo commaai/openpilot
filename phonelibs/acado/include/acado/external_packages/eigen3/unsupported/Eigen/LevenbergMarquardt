@@ -15,7 +15,7 @@
 #include <Eigen/Core>
 #include <Eigen/Jacobi>
 #include <Eigen/QR>
-#include <unsupported/Eigen/NumericalDiff> 
+#include <unsupported/Eigen/NumericalDiff>
 
 #include <Eigen/SparseQR>
 
@@ -26,7 +26,7 @@
   * #include </Eigen/LevenbergMarquardt>
   * \endcode
   *
-  * 
+  *
   */
 
 #include "Eigen/SparseCore"

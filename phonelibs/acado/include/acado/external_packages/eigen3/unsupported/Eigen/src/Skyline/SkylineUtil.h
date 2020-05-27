@@ -10,7 +10,7 @@
 #ifndef EIGEN_SKYLINEUTIL_H
 #define EIGEN_SKYLINEUTIL_H
 
-namespace Eigen { 
+namespace Eigen {
 
 #ifdef NDEBUG
 #define EIGEN_DBG_SKYLINE(X)

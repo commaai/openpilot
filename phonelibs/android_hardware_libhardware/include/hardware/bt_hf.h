@@ -306,7 +306,7 @@ typedef struct {
      */
     bt_status_t (*at_response) (bthf_at_response_t response_code, int error_code, bt_bdaddr_t *bd_addr );
 
-    /** response for CLCC command 
+    /** response for CLCC command
      *  Can be iteratively called for each call index
      *  Call index of 0 will be treated as NULL termination (Completes response)
      */
@@ -316,7 +316,7 @@ typedef struct {
                                 bthf_call_addrtype_t type, bt_bdaddr_t *bd_addr );
 
     /** notify of a call state change
-     *  Each update notifies 
+     *  Each update notifies
      *    1. Number of active/held/ringing calls
      *    2. call_state: This denotes the state change that triggered this msg
      *                   This will take one of the values from BtHfCallState

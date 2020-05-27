@@ -11,7 +11,7 @@
 #ifndef EIGEN_ORTHOMETHODS_H
 #define EIGEN_ORTHOMETHODS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \geometry_module
   *

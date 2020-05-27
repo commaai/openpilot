@@ -36,9 +36,9 @@ template<> struct CompileTimeAssert<true> {};
 
 #ifdef __cplusplus
 template<bool C, typename LSH, typename RHS> struct CompileTimeIfElse;
-template<typename LHS, typename RHS> 
+template<typename LHS, typename RHS>
 struct CompileTimeIfElse<true,  LHS, RHS> { typedef LHS TYPE; };
-template<typename LHS, typename RHS> 
+template<typename LHS, typename RHS>
 struct CompileTimeIfElse<false, LHS, RHS> { typedef RHS TYPE; };
 #endif
 

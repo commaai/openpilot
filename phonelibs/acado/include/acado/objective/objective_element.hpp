@@ -42,12 +42,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for all kind of objective function terms within optimal control problems.
  *
  *	\ingroup BasicDataStructures
  *
- *	The class ObjectiveElement serves as base class for all kind of different 
+ *	The class ObjectiveElement serves as base class for all kind of different
  *  objective function terms within optimal control problems.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

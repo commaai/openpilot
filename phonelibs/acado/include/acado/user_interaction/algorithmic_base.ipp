@@ -215,7 +215,7 @@ inline returnValue AlgorithmicBase::setLast(	LogName _name,
 												double time
 												)
 {
-	return userInteraction->setLast( _name, value,time );	
+	return userInteraction->setLast( _name, value,time );
 }
 
 
@@ -243,7 +243,7 @@ inline returnValue AlgorithmicBase::printLogRecord(	std::ostream& _stream,
 {
 	if ( ( idx < 0 ) || ( idx >= (int)userInteraction->logCollection.size( ) ) )
 		return ACADOERROR( RET_INDEX_OUT_OF_BOUNDS );
-		
+
 	return userInteraction->logCollection[ idx ].print(_stream, _mode);
 }
 

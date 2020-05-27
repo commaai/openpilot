@@ -42,4 +42,3 @@ extern "C" {
 #include "src/Core/util/ReenableStupidWarnings.h"
 
 #endif // EIGEN_CHOLMODSUPPORT_MODULE_H
-

@@ -1461,4 +1461,3 @@ OMX_API OMX_ERRORTYPE OMX_GetRolesOfComponent (
 
 #endif
 /* File EOF */
-

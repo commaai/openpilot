@@ -29,4 +29,3 @@ int64_t elapsedRealtimeNano();
 }; // namespace android
 
 #endif // ANDROID_UTILS_SYSTEMCLOCK_H
-

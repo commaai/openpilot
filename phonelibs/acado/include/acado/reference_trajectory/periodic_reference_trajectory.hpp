@@ -34,7 +34,7 @@
 #define ACADO_TOOLKIT_PERIODIC_REFERENCE_TRAJECTORY_HPP
 
 
-#include <acado/reference_trajectory/static_reference_trajectory.hpp> 
+#include <acado/reference_trajectory/static_reference_trajectory.hpp>
 #include <acado/variables_grid/variables_grid.hpp>
 #include <acado/curve/curve.hpp>
 
@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup UserDataStructures
  *
- *  The class PeriodicReferenceTrajectory allows to define a static periodic reference trajectory 
+ *  The class PeriodicReferenceTrajectory allows to define a static periodic reference trajectory
  *	(given beforehand) that the ControlLaw aims to track while computing its control action.
  *
  *	The user-specified static reference trajectory is repeated as often as necessary to yield an

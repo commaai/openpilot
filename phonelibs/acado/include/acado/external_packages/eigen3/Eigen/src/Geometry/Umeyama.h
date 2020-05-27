@@ -10,13 +10,13 @@
 #ifndef EIGEN_UMEYAMA_H
 #define EIGEN_UMEYAMA_H
 
-// This file requires the user to include 
+// This file requires the user to include
 // * Eigen/Core
-// * Eigen/LU 
+// * Eigen/LU
 // * Eigen/SVD
 // * Eigen/Array
 
-namespace Eigen { 
+namespace Eigen {
 
 #ifndef EIGEN_PARSED_BY_DOXYGEN
 
@@ -69,11 +69,11 @@ struct umeyama_transform_matrix_type
 *
 * The algorithm is based on the analysis of the covariance matrix
 * \f$ \Sigma_{\mathbf{x}\mathbf{y}} \in \mathbb{R}^{d \times d} \f$
-* of the input point sets \f$ \mathbf{x} \f$ and \f$ \mathbf{y} \f$ where 
+* of the input point sets \f$ \mathbf{x} \f$ and \f$ \mathbf{y} \f$ where
 * \f$d\f$ is corresponding to the dimension (which is typically small).
 * The analysis is involving the SVD having a complexity of \f$O(d^3)\f$
 * though the actual computational effort lies in the covariance
-* matrix computation which has an asymptotic lower bound of \f$O(dm)\f$ when 
+* matrix computation which has an asymptotic lower bound of \f$O(dm)\f$ when
 * the input point sets have dimension \f$d \times m\f$.
 *
 * Currently the method is working only for floating point matrices.
@@ -83,11 +83,11 @@ struct umeyama_transform_matrix_type
 * \param src Source points \f$ \mathbf{x} = \left( x_1, \hdots, x_n \right) \f$.
 * \param dst Destination points \f$ \mathbf{y} = \left( y_1, \hdots, y_n \right) \f$.
 * \param with_scaling Sets \f$ c=1 \f$ when <code>false</code> is passed.
-* \return The homogeneous transformation 
+* \return The homogeneous transformation
 * \f{align*}
 *   T = \begin{bmatrix} c\mathbf{R} & \mathbf{t} \\ \mathbf{0} & 1 \end{bmatrix}
 * \f}
-* minimizing the resudiual above. This transformation is always returned as an 
+* minimizing the resudiual above. This transformation is always returned as an
 * Eigen::Matrix.
 */
 template <typename Derived, typename OtherDerived>

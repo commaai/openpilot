@@ -208,7 +208,7 @@ inline returnValue MultiObjectiveAlgorithm::getWeights( const char*fileName ) co
 
     DMatrix Weights;
     Weights = getWeights();
-    
+
     Weights.print( fileName );
 
     return SUCCESSFUL_RETURN;

@@ -13,41 +13,41 @@
 //   Davis (davis@cise.ufl.edu), University of Florida.  The algorithm was
 //   developed in collaboration with John Gilbert, Xerox PARC, and Esmond
 //   Ng, Oak Ridge National Laboratory.
-// 
+//
 //     Date:
-// 
+//
 //   September 8, 2003.  Version 2.3.
-// 
+//
 //     Acknowledgements:
-// 
+//
 //   This work was supported by the National Science Foundation, under
 //   grants DMS-9504974 and DMS-9803599.
-// 
+//
 //     Notice:
-// 
+//
 //   Copyright (c) 1998-2003 by the University of Florida.
 //   All Rights Reserved.
-// 
+//
 //   THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
 //   EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
-// 
+//
 //   Permission is hereby granted to use, copy, modify, and/or distribute
 //   this program, provided that the Copyright, this License, and the
 //   Availability of the original version is retained on all copies and made
 //   accessible to the end-user of any code or package that includes COLAMD
-//   or any modified version of COLAMD. 
-// 
+//   or any modified version of COLAMD.
+//
 //     Availability:
-// 
+//
 //   The colamd/symamd library is available at
-// 
+//
 //       http://www.cise.ufl.edu/research/sparse/colamd/
 
 //   This is the http://www.cise.ufl.edu/research/sparse/colamd/colamd.h
 //   file.  It is required by the colamd.c, colamdmex.c, and symamdmex.c
 //   files, and by any C code that calls the routines whose prototypes are
 //   listed below, or that uses the colamd/symamd definitions listed below.
-  
+
 #ifndef EIGEN_COLAMD_H
 #define EIGEN_COLAMD_H
 
@@ -64,7 +64,7 @@ namespace internal {
 #define COLAMD_KNOBS 20
 
 /* number of output statistics.  Only stats [0..6] are currently used. */
-#define COLAMD_STATS 20 
+#define COLAMD_STATS 20
 
 /* knobs [0] and stats [0]: dense row knob and output statistic. */
 #define COLAMD_DENSE_ROW 0
@@ -78,7 +78,7 @@ namespace internal {
 /* stats [3]: colamd status:  zero OK, > 0 warning or notice, < 0 error */
 #define COLAMD_STATUS 3
 
-/* stats [4..6]: error info, or info on jumbled columns */ 
+/* stats [4..6]: error info, or info on jumbled columns */
 #define COLAMD_INFO1 4
 #define COLAMD_INFO2 5
 #define COLAMD_INFO3 6
@@ -166,9 +166,9 @@ struct colamd_col
     Index degree_next ; /* next column, if col is in a degree list */
     Index hash_next ;   /* next column, if col is in a hash list */
   } shared4 ;
-  
+
 };
- 
+
 template <typename Index>
 struct Colamd_Row
 {
@@ -184,13 +184,13 @@ struct Colamd_Row
     Index mark ;  /* for computing set differences and marking dead rows*/
     Index first_column ;/* first column in row (used in garbage collection) */
   } shared2 ;
-  
+
 };
- 
+
 /* ========================================================================== */
 /* === Colamd recommended memory size ======================================= */
 /* ========================================================================== */
- 
+
 /*
   The recommended length Alen of the array A passed to colamd is given by
   the COLAMD_RECOMMENDED (nnz, n_row, n_col) macro.  It returns -1 if any
@@ -199,14 +199,14 @@ struct Colamd_Row
   required for the Col and Row arrays, respectively, which are internal to
   colamd.  An additional n_col space is the minimal amount of "elbow room",
   and nnz/5 more space is recommended for run time efficiency.
-  
+
   This macro is not needed when using symamd.
-  
+
   Explicit typecast to Index added Sept. 23, 2002, COLAMD version 2.2, to avoid
   gcc -pedantic warning messages.
 */
 template <typename Index>
-inline Index colamd_c(Index n_col) 
+inline Index colamd_c(Index n_col)
 { return Index( ((n_col) + 1) * sizeof (colamd_col<Index>) / sizeof (Index) ) ; }
 
 template <typename Index>
@@ -215,7 +215,7 @@ inline Index  colamd_r(Index n_row)
 
 // Prototypes of non-user callable routines
 template <typename Index>
-static Index init_rows_cols (Index n_row, Index n_col, Colamd_Row<Index> Row [], colamd_col<Index> col [], Index A [], Index p [], Index stats[COLAMD_STATS] ); 
+static Index init_rows_cols (Index n_row, Index n_col, Colamd_Row<Index> Row [], colamd_col<Index> col [], Index A [], Index p [], Index stats[COLAMD_STATS] );
 
 template <typename Index>
 static void init_scoring (Index n_row, Index n_col, Colamd_Row<Index> Row [], colamd_col<Index> Col [], Index A [], Index head [], double knobs[COLAMD_KNOBS], Index *p_n_row2, Index *p_n_col2, Index *p_max_deg);
@@ -247,14 +247,14 @@ static inline  Index clear_mark (Index n_row, Colamd_Row<Index> Row [] ) ;
 
 
 /**
- * \brief Returns the recommended value of Alen 
- * 
- * Returns recommended value of Alen for use by colamd.  
- * Returns -1 if any input argument is negative.  
- * The use of this routine or macro is optional.  
- * Note that the macro uses its arguments   more than once, 
- * so be careful for side effects, if you pass expressions as arguments to COLAMD_RECOMMENDED.  
- * 
+ * \brief Returns the recommended value of Alen
+ *
+ * Returns recommended value of Alen for use by colamd.
+ * Returns -1 if any input argument is negative.
+ * The use of this routine or macro is optional.
+ * Note that the macro uses its arguments   more than once,
+ * so be careful for side effects, if you pass expressions as arguments to COLAMD_RECOMMENDED.
+ *
  * \param nnz nonzeros in A
  * \param n_row number of rows in A
  * \param n_col number of columns in A
@@ -266,16 +266,16 @@ inline Index colamd_recommended ( Index nnz, Index n_row, Index n_col)
   if ((nnz) < 0 || (n_row) < 0 || (n_col) < 0)
     return (-1);
   else
-    return (2 * (nnz) + colamd_c (n_col) + colamd_r (n_row) + (n_col) + ((nnz) / 5)); 
+    return (2 * (nnz) + colamd_c (n_col) + colamd_r (n_row) + (n_col) + ((nnz) / 5));
 }
 
 /**
  * \brief set default parameters  The use of this routine is optional.
- * 
+ *
  * Colamd: rows with more than (knobs [COLAMD_DENSE_ROW] * n_col)
  * entries are removed prior to ordering.  Columns with more than
  * (knobs [COLAMD_DENSE_COL] * n_row) entries are removed prior to
- * ordering, and placed last in the output column ordering. 
+ * ordering, and placed last in the output column ordering.
  *
  * COLAMD_DENSE_ROW and COLAMD_DENSE_COL are defined as 0 and 1,
  * respectively, in colamd.h.  Default values of these two knobs
@@ -286,14 +286,14 @@ inline Index colamd_recommended ( Index nnz, Index n_row, Index n_col)
  * not need to change, assuming that you either use
  * colamd_set_defaults, or pass a (double *) NULL pointer as the
  * knobs array to colamd or symamd.
- * 
+ *
  * \param knobs parameter settings for colamd
  */
 
 static inline void colamd_set_defaults(double knobs[COLAMD_KNOBS])
 {
   /* === Local variables ================================================== */
-  
+
   int i ;
 
   if (!knobs)
@@ -308,15 +308,15 @@ static inline void colamd_set_defaults(double knobs[COLAMD_KNOBS])
   knobs [COLAMD_DENSE_COL] = 0.5 ;  /* ignore columns over 50% dense */
 }
 
-/** 
+/**
  * \brief  Computes a column ordering using the column approximate minimum degree ordering
- * 
+ *
  * Computes a column ordering (Q) of A such that P(AQ)=LU or
  * (AQ)'AQ=LL' have less fill-in and require fewer floating point
  * operations than factorizing the unpermuted matrix A or A'A,
  * respectively.
- * 
- * 
+ *
+ *
  * \param n_row number of rows in A
  * \param n_col number of columns in A
  * \param Alen, size of the array A
@@ -329,7 +329,7 @@ template <typename Index>
 static bool colamd(Index n_row, Index n_col, Index Alen, Index *A, Index *p, double knobs[COLAMD_KNOBS], Index stats[COLAMD_STATS])
 {
   /* === Local variables ================================================== */
-  
+
   Index i ;     /* loop index */
   Index nnz ;     /* nonzeros in A */
   Index Row_size ;    /* size of Row [], in integers */
@@ -342,10 +342,10 @@ static bool colamd(Index n_row, Index n_col, Index Alen, Index *A, Index *p, dou
   Index ngarbage ;    /* number of garbage collections performed */
   Index max_deg ;   /* maximum row degree */
   double default_knobs [COLAMD_KNOBS] ; /* default knobs array */
-  
-  
+
+
   /* === Check the input arguments ======================================== */
-  
+
   if (!stats)
   {
     COLAMD_DEBUG0 (("colamd: stats not present\n")) ;
@@ -358,21 +358,21 @@ static bool colamd(Index n_row, Index n_col, Index Alen, Index *A, Index *p, dou
   stats [COLAMD_STATUS] = COLAMD_OK ;
   stats [COLAMD_INFO1] = -1 ;
   stats [COLAMD_INFO2] = -1 ;
-  
+
   if (!A)   /* A is not present */
   {
     stats [COLAMD_STATUS] = COLAMD_ERROR_A_not_present ;
     COLAMD_DEBUG0 (("colamd: A not present\n")) ;
     return (false) ;
   }
-  
+
   if (!p)   /* p is not present */
   {
     stats [COLAMD_STATUS] = COLAMD_ERROR_p_not_present ;
     COLAMD_DEBUG0 (("colamd: p not present\n")) ;
     return (false) ;
   }
-  
+
   if (n_row < 0)  /* n_row must be >= 0 */
   {
     stats [COLAMD_STATUS] = COLAMD_ERROR_nrow_negative ;
@@ -380,7 +380,7 @@ static bool colamd(Index n_row, Index n_col, Index Alen, Index *A, Index *p, dou
     COLAMD_DEBUG0 (("colamd: nrow negative %d\n", n_row)) ;
     return (false) ;
   }
-  
+
   if (n_col < 0)  /* n_col must be >= 0 */
   {
     stats [COLAMD_STATUS] = COLAMD_ERROR_ncol_negative ;
@@ -388,7 +388,7 @@ static bool colamd(Index n_row, Index n_col, Index Alen, Index *A, Index *p, dou
     COLAMD_DEBUG0 (("colamd: ncol negative %d\n", n_col)) ;
     return (false) ;
   }
-  
+
   nnz = p [n_col] ;
   if (nnz < 0)  /* nnz must be >= 0 */
   {
@@ -397,7 +397,7 @@ static bool colamd(Index n_row, Index n_col, Index Alen, Index *A, Index *p, dou
     COLAMD_DEBUG0 (("colamd: number of entries negative %d\n", nnz)) ;
     return (false) ;
   }
-  
+
   if (p [0] != 0)
   {
     stats [COLAMD_STATUS] = COLAMD_ERROR_p0_nonzero ;
@@ -405,21 +405,21 @@ static bool colamd(Index n_row, Index n_col, Index Alen, Index *A, Index *p, dou
     COLAMD_DEBUG0 (("colamd: p[0] not zero %d\n", p [0])) ;
     return (false) ;
   }
-  
+
   /* === If no knobs, set default knobs =================================== */
-  
+
   if (!knobs)
   {
     colamd_set_defaults (default_knobs) ;
     knobs = default_knobs ;
   }
-  
+
   /* === Allocate the Row and Col arrays from array A ===================== */
-  
+
   Col_size = colamd_c (n_col) ;
   Row_size = colamd_r (n_row) ;
   need = 2*nnz + n_col + Col_size + Row_size ;
-  
+
   if (need > Alen)
   {
     /* not enough space in array A to perform the ordering */
@@ -429,40 +429,40 @@ static bool colamd(Index n_row, Index n_col, Index Alen, Index *A, Index *p, dou
     COLAMD_DEBUG0 (("colamd: Need Alen >= %d, given only Alen = %d\n", need,Alen));
     return (false) ;
   }
-  
+
   Alen -= Col_size + Row_size ;
   Col = (colamd_col<Index> *) &A [Alen] ;
   Row = (Colamd_Row<Index> *) &A [Alen + Col_size] ;
 
   /* === Construct the row and column data structures ===================== */
-  
+
   if (!Eigen::internal::init_rows_cols (n_row, n_col, Row, Col, A, p, stats))
   {
     /* input matrix is invalid */
     COLAMD_DEBUG0 (("colamd: Matrix invalid\n")) ;
     return (false) ;
   }
-  
+
   /* === Initialize scores, kill dense rows/columns ======================= */
 
   Eigen::internal::init_scoring (n_row, n_col, Row, Col, A, p, knobs,
 		&n_row2, &n_col2, &max_deg) ;
-  
+
   /* === Order the supercolumns =========================================== */
-  
+
   ngarbage = Eigen::internal::find_ordering (n_row, n_col, Alen, Row, Col, A, p,
 			    n_col2, max_deg, 2*nnz) ;
-  
+
   /* === Order the non-principal columns ================================== */
-  
+
   Eigen::internal::order_children (n_col, Col, p) ;
-  
+
   /* === Return statistics in stats ======================================= */
-  
+
   stats [COLAMD_DENSE_ROW] = n_row - n_row2 ;
   stats [COLAMD_DENSE_COL] = n_col - n_col2 ;
   stats [COLAMD_DEFRAG_COUNT] = ngarbage ;
-  COLAMD_DEBUG0 (("colamd: done.\n")) ; 
+  COLAMD_DEBUG0 (("colamd: done.\n")) ;
   return (true) ;
 }
 
@@ -496,7 +496,7 @@ static Index init_rows_cols  /* returns true if OK, or false otherwise */
     colamd_col<Index> Col [],    /* of size n_col+1 */
     Index A [],     /* row indices of A, of size Alen */
     Index p [],     /* pointers to columns in A, of size n_col+1 */
-    Index stats [COLAMD_STATS]  /* colamd statistics */ 
+    Index stats [COLAMD_STATS]  /* colamd statistics */
     )
 {
   /* === Local variables ================================================== */
@@ -1554,7 +1554,7 @@ template <typename Index>
 static void detect_super_cols
 (
   /* === Parameters ======================================================= */
-  
+
   colamd_col<Index> Col [],    /* of size n_col+1 */
   Index A [],     /* row indices of A */
   Index head [],    /* head of degree lists and hash buckets */
@@ -1705,7 +1705,7 @@ template <typename Index>
 static Index garbage_collection  /* returns the new value of pfree */
   (
     /* === Parameters ======================================================= */
-    
+
     Index n_row,      /* number of rows */
     Index n_col,      /* number of columns */
     Colamd_Row<Index> Row [],    /* row info */
@@ -1846,5 +1846,5 @@ static inline  Index clear_mark  /* return the new value for tag_mark */
 }
 
 
-} // namespace internal 
+} // namespace internal
 #endif

@@ -33,7 +33,7 @@
 #ifndef EIGEN_TRIANGULAR_MATRIX_VECTOR_MKL_H
 #define EIGEN_TRIANGULAR_MATRIX_VECTOR_MKL_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

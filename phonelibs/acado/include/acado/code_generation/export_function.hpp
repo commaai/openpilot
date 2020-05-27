@@ -47,7 +47,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export code of an arbitrary function.
  *
  *	\ingroup AuxiliaryFunctionality

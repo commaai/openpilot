@@ -11,7 +11,7 @@
 #ifndef EIGEN_HOUSEHOLDER_H
 #define EIGEN_HOUSEHOLDER_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 template<int n> struct decrement_size
@@ -30,7 +30,7 @@ template<int n> struct decrement_size
   * \f$ v^T = [1 essential^T] \f$
   *
   * The essential part of the vector \c v is stored in *this.
-  * 
+  *
   * On output:
   * \param tau the scaling factor of the Householder transformation
   * \param beta the result of H * \c *this
@@ -69,10 +69,10 @@ void MatrixBase<Derived>::makeHouseholder(
 {
   using std::sqrt;
   using numext::conj;
-  
+
   EIGEN_STATIC_ASSERT_VECTOR_ONLY(EssentialPart)
   VectorBlock<const Derived, EssentialPart::SizeAtCompileTime> tail(derived(), 1, size()-1);
-  
+
   RealScalar tailSqNorm = size()==1 ? RealScalar(0) : tail.squaredNorm();
   Scalar c0 = coeff(0);
 
@@ -104,7 +104,7 @@ void MatrixBase<Derived>::makeHouseholder(
   * \param workspace a pointer to working space with at least
   *                  this->cols() * essential.size() entries
   *
-  * \sa MatrixBase::makeHouseholder(), MatrixBase::makeHouseholderInPlace(), 
+  * \sa MatrixBase::makeHouseholder(), MatrixBase::makeHouseholderInPlace(),
   *     MatrixBase::applyHouseholderOnTheRight()
   */
 template<typename Derived>
@@ -141,7 +141,7 @@ void MatrixBase<Derived>::applyHouseholderOnTheLeft(
   * \param workspace a pointer to working space with at least
   *                  this->cols() * essential.size() entries
   *
-  * \sa MatrixBase::makeHouseholder(), MatrixBase::makeHouseholderInPlace(), 
+  * \sa MatrixBase::makeHouseholder(), MatrixBase::makeHouseholderInPlace(),
   *     MatrixBase::applyHouseholderOnTheLeft()
   */
 template<typename Derived>

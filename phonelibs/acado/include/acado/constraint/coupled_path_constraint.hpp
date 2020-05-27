@@ -42,14 +42,14 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Stores and evaluates coupled path constraints within optimal control problems.
  *
  *	\ingroup BasicDataStructures
  *
  *	The class CoupledPathConstraint allows to manage and evaluate constraints
- *	along the whole horizon within optimal control problems that are coupled 
- *  across control intervals. If the contraints are decoupled, the class 
+ *	along the whole horizon within optimal control problems that are coupled
+ *  across control intervals. If the contraints are decoupled, the class
  *	PathConstraint should be used.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

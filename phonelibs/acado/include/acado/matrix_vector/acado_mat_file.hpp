@@ -38,7 +38,7 @@ BEGIN_NAMESPACE_ACADO
 
 /**
  *	\brief Simple class for writing binary data file that are compatible with Matlab.
- *	
+ *
  *  Simple class for writing binary data file that are compatible with Matlab.
  *
  *	\author Carlo Savorgnan, Hans Joachim Ferreau, Boris Houska, Milan Vukov
@@ -58,7 +58,7 @@ class MatFile
 		long namelen;
 	} Fmatrix;
 
-		
+
 	/*
 	 *	PUBLIC MEMBER FUNCTIONS
 	 */

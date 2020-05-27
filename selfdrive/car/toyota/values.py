@@ -1,5 +1,4 @@
 from cereal import car
-
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 

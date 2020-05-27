@@ -11,4 +11,3 @@ void TestFrameReader::frameread() {
 }
 
 QTEST_MAIN(TestFrameReader)
-

@@ -42,12 +42,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to setup and evaluate differential equations (ODEs and DAEs) based on SymbolicExpressions.
  *
  *	\ingroup BasicDataStructures
  *
- *  The class DifferentialEquation allows to setup and evaluate 
+ *  The class DifferentialEquation allows to setup and evaluate
  *	differential equations (ODEs and DAEs) based on SymbolicExpressions.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -224,7 +224,7 @@ class DifferentialEquation : public Function{
 		/** Returning an Expression that contains a Taylor expansion              \n
 		  * of the ODE-solution trajectory.                                       \n
 		  *                                                                       \n
-		  * \param order the order of Taylor expansion. 
+		  * \param order the order of Taylor expansion.
 		  *
 		  * \return A matrix valued expression C of dimension                     \n
 		  *         n_x times (order+2) ,                                         \n
@@ -232,12 +232,12 @@ class DifferentialEquation : public Function{
 		  *         C = [ x,f(x),f'(x)f(x),f''(x)f(x)f(x)+f'(x)f'(x)f(x), ... ].  \n
 		  **/
 		Expression getODEexpansion( const int &order ) const;
-		
-		
+
+
 		inline int* getComponents() const;
-		
-		
-		
+
+
+
 	// PROTECTED MEMBER FUNCTIONS:
 	// ---------------------------
 	protected:

@@ -11,7 +11,7 @@
 #ifndef EIGEN_REDUX_H
 #define EIGEN_REDUX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

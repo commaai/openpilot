@@ -43,12 +43,12 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief Implements a Gauss-Newton approximation as second-order derivatives within NLPsolvers.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class GaussNewtonApproximation implements a Gauss-Newton approximation as second-order 
+ *  The class GaussNewtonApproximation implements a Gauss-Newton approximation as second-order
  *	derivative information within iterative NLPsolvers.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -62,7 +62,7 @@ class GaussNewtonApproximation : public NLPderivativeApproximation
 
         /** Default constructor. */
         GaussNewtonApproximation( );
-		
+
 		/** Default constructor. */
         GaussNewtonApproximation(	UserInteraction* _userInteraction
 									);

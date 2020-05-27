@@ -26,7 +26,7 @@ template<typename T> struct add_const_on_value_type_if_arithmetic
   *
   * This class defines the \c operator() \c const function and friends, which can be used to read specific
   * entries of a matrix or array.
-  * 
+  *
   * \sa DenseCoeffsBase<Derived, WriteAccessors>, DenseCoeffsBase<Derived, DirectAccessors>,
   *     \ref TopicClassHierarchy
   */
@@ -267,7 +267,7 @@ class DenseCoeffsBase<Derived,ReadOnlyAccessors> : public EigenBase<Derived>
   * This class defines the non-const \c operator() function and friends, which can be used to write specific
   * entries of a matrix or array. This class inherits DenseCoeffsBase<Derived, ReadOnlyAccessors> which
   * defines the const variant for reading specific entries.
-  * 
+  *
   * \sa DenseCoeffsBase<Derived, DirectAccessors>, \ref TopicClassHierarchy
   */
 template<typename Derived>

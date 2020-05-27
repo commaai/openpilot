@@ -31,7 +31,7 @@
  *
  *    This file collects several macros which can be used to
  *    define the ACADO namespace. By default this namespace
- *    is used. However, as some ugly C++ compiler versions 
+ *    is used. However, as some ugly C++ compiler versions
  *    complain about namespaces you can turn them off by
  *    using the following compiler option:
  *
@@ -64,4 +64,3 @@
 #endif   // ACADO_TOOLKIT_ACADO_NAMESPACE_MACROS_HPP
 
 // end of file
-

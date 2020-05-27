@@ -11,7 +11,7 @@
 #ifndef EIGEN_GENERAL_PRODUCT_H
 #define EIGEN_GENERAL_PRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class GeneralProduct
   * \ingroup Core_Module
@@ -258,7 +258,7 @@ class GeneralProduct<Lhs, Rhs, OuterProduct>
   : public ProductBase<GeneralProduct<Lhs,Rhs,OuterProduct>, Lhs, Rhs>
 {
     template<typename T> struct IsRowMajor : internal::conditional<(int(T::Flags)&RowMajorBit), internal::true_type, internal::false_type>::type {};
-    
+
   public:
     EIGEN_PRODUCT_PUBLIC_INTERFACE(GeneralProduct)
 
@@ -267,7 +267,7 @@ class GeneralProduct<Lhs, Rhs, OuterProduct>
       EIGEN_STATIC_ASSERT((internal::is_same<typename Lhs::RealScalar, typename Rhs::RealScalar>::value),
         YOU_MIXED_DIFFERENT_NUMERIC_TYPES__YOU_NEED_TO_USE_THE_CAST_METHOD_OF_MATRIXBASE_TO_CAST_NUMERIC_TYPES_EXPLICITLY)
     }
-    
+
     struct set  { template<typename Dst, typename Src> void operator()(const Dst& dst, const Src& src) const { dst.const_cast_derived()  = src; } };
     struct add  { template<typename Dst, typename Src> void operator()(const Dst& dst, const Src& src) const { dst.const_cast_derived() += src; } };
     struct sub  { template<typename Dst, typename Src> void operator()(const Dst& dst, const Src& src) const { dst.const_cast_derived() -= src; } };
@@ -278,12 +278,12 @@ class GeneralProduct<Lhs, Rhs, OuterProduct>
         dst.const_cast_derived() += m_scale * src;
       }
     };
-    
+
     template<typename Dest>
     inline void evalTo(Dest& dest) const {
       internal::outer_product_selector_run(*this, dest, set(), IsRowMajor<Dest>());
     }
-    
+
     template<typename Dest>
     inline void addTo(Dest& dest) const {
       internal::outer_product_selector_run(*this, dest, add(), IsRowMajor<Dest>());
@@ -437,12 +437,12 @@ template<> struct gemv_selector<OnTheRight,ColMajor,true>
 
     bool alphaIsCompatible = (!ComplexByReal) || (numext::imag(actualAlpha)==RealScalar(0));
     bool evalToDest = EvalToDestAtCompileTime && alphaIsCompatible;
-    
+
     RhsScalar compatibleAlpha = get_factor<ResScalar,RhsScalar>::run(actualAlpha);
 
     ei_declare_aligned_stack_constructed_variable(ResScalar,actualDestPtr,dest.size(),
                                                   evalToDest ? dest.data() : static_dest.data());
-    
+
     if(!evalToDest)
     {
       #ifdef EIGEN_DENSE_STORAGE_CTOR_PLUGIN

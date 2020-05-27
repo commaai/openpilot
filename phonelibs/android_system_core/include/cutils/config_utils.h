@@ -20,7 +20,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 typedef struct cnode cnode;
 
 

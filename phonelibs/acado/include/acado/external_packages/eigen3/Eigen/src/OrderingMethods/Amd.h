@@ -31,10 +31,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef EIGEN_SPARSE_AMD_H
 #define EIGEN_SPARSE_AMD_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
-  
+
 template<typename T> inline T amd_flip(const T& i) { return -i-2; }
 template<typename T> inline T amd_unflip(const T& i) { return i<0 ? amd_flip(i) : i; }
 template<typename T0, typename T1> inline bool amd_marked(const T0* w, const T1& j) { return w[j]<0; }
@@ -82,7 +82,7 @@ Index cs_tdfs(Index j, Index k, Index *head, const Index *next, Index *post, Ind
 
 
 /** \internal
-  * \ingroup OrderingMethods_Module 
+  * \ingroup OrderingMethods_Module
   * Approximate minimum degree ordering algorithm.
   * \returns the permutation P reducing the fill-in of the input matrix \a C
   * The input matrix \a C must be a selfadjoint compressed column major SparseMatrix object. Both the upper and lower parts have to be stored, but the diagonal entries are optional.
@@ -91,21 +91,21 @@ template<typename Scalar, typename Index>
 void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, PermutationMatrix<Dynamic,Dynamic,Index>& perm)
 {
   using std::sqrt;
-  
+
   int d, dk, dext, lemax = 0, e, elenk, eln, i, j, k, k1,
       k2, k3, jlast, ln, dense, nzmax, mindeg = 0, nvi, nvj, nvk, mark, wnvi,
       ok, nel = 0, p, p1, p2, p3, p4, pj, pk, pk1, pk2, pn, q, t;
   unsigned int h;
-  
+
   Index n = C.cols();
   dense = std::max<Index> (16, Index(10 * sqrt(double(n))));   /* find dense threshold */
   dense = std::min<Index> (n-2, dense);
-  
+
   Index cnz = C.nonZeros();
   perm.resize(n+1);
   t = cnz + cnz/5 + 2*n;                 /* add elbow room to C */
   C.resizeNonZeros(t);
-  
+
   Index* W       = new Index[8*(n+1)]; /* get workspace */
   Index* len     = W;
   Index* nv      = W +   (n+1);
@@ -116,7 +116,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
   Index* w       = W + 6*(n+1);
   Index* hhead   = W + 7*(n+1);
   Index* last    = perm.indices().data();                              /* use P as workspace for last */
-  
+
   /* --- Initialize quotient graph ---------------------------------------- */
   Index* Cp = C.outerIndexPtr();
   Index* Ci = C.innerIndexPtr();
@@ -124,13 +124,13 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
     len[k] = Cp[k+1] - Cp[k];
   len[n] = 0;
   nzmax = t;
-  
+
   for(i = 0; i <= n; i++)
   {
     head[i]   = -1;                     // degree list i is empty
     last[i]   = -1;
     next[i]   = -1;
-    hhead[i]  = -1;                     // hash list i is empty 
+    hhead[i]  = -1;                     // hash list i is empty
     nv[i]     = 1;                      // node i is just one node
     w[i]      = 1;                      // node i is alive
     elen[i]   = 0;                      // Ek of node i is empty
@@ -140,7 +140,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
   elen[n] = -2;                         /* n is a dead element */
   Cp[n] = -1;                           /* n is a root of assembly tree */
   w[n] = 0;                             /* n is a dead element */
-  
+
   /* --- Initialize degree lists ------------------------------------------ */
   for(i = 0; i < n; i++)
   {
@@ -167,7 +167,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
       head[d] = i;
     }
   }
-  
+
   while (nel < n)                         /* while (selecting pivots) do */
   {
     /* --- Select node of minimum approximate degree -------------------- */
@@ -177,7 +177,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
     elenk = elen[k];                  /* elenk = |Ek| */
     nvk = nv[k];                      /* # of nodes k represents */
     nel += nvk;                        /* nv[k] nodes of A eliminated */
-    
+
     /* --- Garbage collection ------------------------------------------- */
     if(elenk > 0 && cnz + mindeg >= nzmax)
     {
@@ -200,7 +200,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
       }
       cnz = q;                       /* Ci[cnz...nzmax-1] now free */
     }
-    
+
     /* --- Construct new element ---------------------------------------- */
     dk = 0;
     nv[k] = -nvk;                     /* flag k as in Lk */
@@ -249,7 +249,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
     Cp[k] = pk1;                      /* element k is in Ci[pk1..pk2-1] */
     len[k] = pk2 - pk1;
     elen[k] = -2;                     /* k is now an element */
-    
+
     /* --- Find set differences ----------------------------------------- */
     mark = internal::cs_wclear<Index>(mark, lemax, w, n);  /* clear w if necessary */
     for(pk = pk1; pk < pk2; pk++)    /* scan 1: find |Le\Lk| */
@@ -271,7 +271,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
         }
       }
     }
-    
+
     /* --- Degree update ------------------------------------------------ */
     for(pk = pk1; pk < pk2; pk++)    /* scan2: degree update */
     {
@@ -335,7 +335,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
     degree[k] = dk;                   /* finalize |Lk| */
     lemax = std::max<Index>(lemax, dk);
     mark = internal::cs_wclear<Index>(mark+lemax, lemax, w, n);    /* clear w */
-    
+
     /* --- Supernode detection ------------------------------------------ */
     for(pk = pk1; pk < pk2; pk++)
     {
@@ -374,7 +374,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
         }
       }
     }
-    
+
     /* --- Finalize new element------------------------------------------ */
     for(p = pk1, pk = pk1; pk < pk2; pk++)   /* finalize Lk */
     {
@@ -399,7 +399,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
     }
     if(elenk != 0) cnz = p;           /* free unused space in Lk */
   }
-  
+
   /* --- Postordering ----------------------------------------------------- */
   for(i = 0; i < n; i++) Cp[i] = amd_flip (Cp[i]);/* fix assembly tree */
   for(j = 0; j <= n; j++) head[j] = -1;
@@ -422,7 +422,7 @@ void minimum_degree_ordering(SparseMatrix<Scalar,ColMajor,Index>& C, Permutation
   {
     if(Cp[i] == -1) k = internal::cs_tdfs<Index>(i, k, head, next, perm.indices().data(), w);
   }
-  
+
   perm.indices().conservativeResize(n);
 
   delete[] W;

@@ -1,4 +1,4 @@
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -13,7 +13,7 @@ DenseIndex fdjac1(
 {
     using std::sqrt;
     using std::abs;
-    
+
     typedef DenseIndex Index;
 
     /* Local variables */

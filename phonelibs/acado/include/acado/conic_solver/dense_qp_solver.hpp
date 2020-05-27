@@ -214,8 +214,8 @@ class DenseQPsolver : public DenseCPsolver
     protected:
 
 		virtual returnValue setupLogging( );
-	  
-	  
+
+
 		/** Setups QP object.
 		 *  \return SUCCESSFUL_RETURN \n
 		 *          RET_QP_INIT_FAILED */

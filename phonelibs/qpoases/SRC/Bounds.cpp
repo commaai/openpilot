@@ -123,7 +123,7 @@ returnValue Bounds::setupBound(	int _number, SubjectToStatus _status
 	/* consistency check */
 	if ( ( _number < 0 ) || ( _number >= getNV( ) ) )
 		return THROWERROR( RET_INDEX_OUT_OF_BOUNDS );
-	
+
 	/* Add bound index to respective index list. */
 	switch ( _status )
 	{

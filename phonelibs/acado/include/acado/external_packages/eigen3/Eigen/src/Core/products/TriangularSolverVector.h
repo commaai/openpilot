@@ -10,7 +10,7 @@
 #ifndef EIGEN_TRIANGULAR_SOLVER_VECTOR_H
 #define EIGEN_TRIANGULAR_SOLVER_VECTOR_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -25,7 +25,7 @@ struct triangular_solve_vector<LhsScalar, RhsScalar, Index, OnTheRight, Mode, Co
       >::run(size, _lhs, lhsStride, rhs);
   }
 };
-    
+
 // forward and backward substitution, row-major, rhs is a vector
 template<typename LhsScalar, typename RhsScalar, typename Index, int Mode, bool Conjugate>
 struct triangular_solve_vector<LhsScalar, RhsScalar, Index, OnTheLeft, Mode, Conjugate, RowMajor>
@@ -72,7 +72,7 @@ struct triangular_solve_vector<LhsScalar, RhsScalar, Index, OnTheLeft, Mode, Con
         Index s = IsLower ? pi   : i+1;
         if (k>0)
           rhs[i] -= (cjLhs.row(i).segment(s,k).transpose().cwiseProduct(Map<const Matrix<RhsScalar,Dynamic,1> >(rhs+s,k))).sum();
-        
+
         if(!(Mode & UnitDiag))
           rhs[i] /= cjLhs(i,i);
       }

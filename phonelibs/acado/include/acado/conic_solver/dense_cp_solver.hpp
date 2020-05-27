@@ -113,7 +113,7 @@ class DenseCPsolver : public AlgorithmicBase
         virtual uint getNumberOfIterations( ) const = 0;
 
 
-		
+
     //
     // PROTECTED MEMBER FUNCTIONS:
     //

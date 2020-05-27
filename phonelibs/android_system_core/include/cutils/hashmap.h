@@ -73,13 +73,13 @@ void* hashmapGet(Hashmap* map, void* key);
 bool hashmapContainsKey(Hashmap* map, void* key);
 
 /**
- * Gets the value for a key. If a value is not found, this function gets a 
+ * Gets the value for a key. If a value is not found, this function gets a
  * value and creates an entry using the given callback.
  *
  * If memory allocation fails, the callback is not called, this function
  * returns NULL, and errno is set to ENOMEM.
  */
-void* hashmapMemoize(Hashmap* map, void* key, 
+void* hashmapMemoize(Hashmap* map, void* key,
         void* (*initialValue)(void* key, void* context), void* context);
 
 /**
@@ -97,7 +97,7 @@ size_t hashmapSize(Hashmap* map);
  * Invokes the given callback on each entry in the map. Stops iterating if
  * the callback returns false.
  */
-void hashmapForEach(Hashmap* map, 
+void hashmapForEach(Hashmap* map,
         bool (*callback)(void* key, void* value, void* context),
         void* context);
 
@@ -147,4 +147,4 @@ size_t hashmapCountCollisions(Hashmap* map);
 }
 #endif
 
-#endif /* __HASHMAP_H */ 
+#endif /* __HASHMAP_H */

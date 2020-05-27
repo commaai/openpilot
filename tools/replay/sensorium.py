@@ -2,10 +2,10 @@
 # Question: Can a human drive from this data?
 import os
 
-import cereal.messaging as messaging
 import cv2
 import numpy as np
 
+import cereal.messaging as messaging
 from common.window import Window
 if os.getenv("BIG") is not None:
   from common.transformations.model import BIGMODEL_INPUT_SIZE as MEDMODEL_INPUT_SIZE

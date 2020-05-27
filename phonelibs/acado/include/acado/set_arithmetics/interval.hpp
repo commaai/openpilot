@@ -65,7 +65,7 @@ BEGIN_NAMESPACE_ACADO
 
 
 class Interval{
- 
+
   // friends of class Interval for operator overloading
   friend Interval operator+( const Interval& );
   friend Interval operator+( const Interval&, const Interval& );
@@ -151,29 +151,29 @@ public:
 
   //! @brief Returns the lower bounding value.
   const double& l() const{ return _l; }
-  
+
   //! @brief Returns the upper bounding value.
   const double& u() const{ return _u; }
 
   //! @brief Sets the lower bound.
   void l ( const double lb ){ _l = lb; }
-  
+
   //! @brief Sets the upper bound.
   void u ( const double ub ){ _u = ub; }
-  /** @} */  
+  /** @} */
 
   void print() const{ std::cout << *this << "\n"; }
 
 	//! Routine which returns BT_FALSE if the lower or upper bounds is equal to "nan" or "INFTY".\n
 	//! Otherwise, BT_TRUE is returned.
 	BooleanType isCompact() const;
-	
-	
+
+
 private:
 
   double mid( const double convRel, const double concRel, const double valCut, int &indexMid ) const;
   double xlog( const double x ) const{ return x*(::log(x)); }
- 
+
   //! @brief Lower bound
   double _l;
   //! @brief Upper bound
@@ -185,4 +185,3 @@ CLOSE_NAMESPACE_ACADO
 #include <acado/set_arithmetics/interval.ipp>
 
 #endif  // ACADO_TOOLKIT_INTERVAL_HPP
-

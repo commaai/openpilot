@@ -58,7 +58,7 @@ class MatrixVariable : public DMatrix, public VariableSettings
     // PUBLIC MEMBER FUNCTIONS:
     //
     public:
-        /** Default constructor. 
+        /** Default constructor.
 		 */
         MatrixVariable( );
 
@@ -102,7 +102,7 @@ class MatrixVariable : public DMatrix, public VariableSettings
 						VariableType _type = VT_UNKNOWN
 						);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         ~MatrixVariable( );
 
@@ -121,7 +121,7 @@ class MatrixVariable : public DMatrix, public VariableSettings
 									);
 
 
-		/** Initializes object with given dimensions of the matrix and 
+		/** Initializes object with given dimensions of the matrix and
 		 *	given variable settings.
 		 *
 		 *	@param[in] _nRows		Number of rows of each matrix.

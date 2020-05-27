@@ -167,20 +167,20 @@ enum {
  */
 typedef struct gralloc_module_t {
     struct hw_module_t common;
-    
+
     /*
      * (*registerBuffer)() must be called before a buffer_handle_t that has not
      * been created with (*alloc_device_t::alloc)() can be used.
-     * 
+     *
      * This is intended to be used with buffer_handle_t's that have been
      * received in this process through IPC.
-     * 
+     *
      * This function checks that the handle is indeed a valid one and prepares
      * it for use with (*lock)() and (*unlock)().
-     * 
-     * It is not necessary to call (*registerBuffer)() on a handle created 
+     *
+     * It is not necessary to call (*registerBuffer)() on a handle created
      * with (*alloc_device_t::alloc)().
-     * 
+     *
      * returns an error if this buffer_handle_t is not valid.
      */
     int (*registerBuffer)(struct gralloc_module_t const* module,
@@ -190,25 +190,25 @@ typedef struct gralloc_module_t {
      * (*unregisterBuffer)() is called once this handle is no longer needed in
      * this process. After this call, it is an error to call (*lock)(),
      * (*unlock)(), or (*registerBuffer)().
-     * 
+     *
      * This function doesn't close or free the handle itself; this is done
      * by other means, usually through libcutils's native_handle_close() and
-     * native_handle_free(). 
-     * 
+     * native_handle_free().
+     *
      * It is an error to call (*unregisterBuffer)() on a buffer that wasn't
      * explicitly registered first.
      */
     int (*unregisterBuffer)(struct gralloc_module_t const* module,
             buffer_handle_t handle);
-    
+
     /*
-     * The (*lock)() method is called before a buffer is accessed for the 
+     * The (*lock)() method is called before a buffer is accessed for the
      * specified usage. This call may block, for instance if the h/w needs
      * to finish rendering or if CPU caches need to be synchronized.
-     * 
-     * The caller promises to modify only pixels in the area specified 
+     *
+     * The caller promises to modify only pixels in the area specified
      * by (l,t,w,h).
-     * 
+     *
      * The content of the buffer outside of the specified area is NOT modified
      * by this call.
      *
@@ -221,9 +221,9 @@ typedef struct gralloc_module_t {
      *
      * THREADING CONSIDERATIONS:
      *
-     * It is legal for several different threads to lock a buffer from 
+     * It is legal for several different threads to lock a buffer from
      * read access, none of the threads are blocked.
-     * 
+     *
      * However, locking a buffer simultaneously for write or read/write is
      * undefined, but:
      * - shall not result in termination of the process
@@ -232,21 +232,21 @@ typedef struct gralloc_module_t {
      * into an indeterminate state.
      *
      * If the buffer was created with a usage mask incompatible with the
-     * requested usage flags here, -EINVAL is returned. 
-     * 
+     * requested usage flags here, -EINVAL is returned.
+     *
      */
-    
+
     int (*lock)(struct gralloc_module_t const* module,
             buffer_handle_t handle, int usage,
             int l, int t, int w, int h,
             void** vaddr);
 
-    
+
     /*
      * The (*unlock)() method must be called after all changes to the buffer
      * are completed.
      */
-    
+
     int (*unlock)(struct gralloc_module_t const* module,
             buffer_handle_t handle);
 
@@ -343,32 +343,32 @@ typedef struct gralloc_module_t {
 typedef struct alloc_device_t {
     struct hw_device_t common;
 
-    /* 
+    /*
      * (*alloc)() Allocates a buffer in graphic memory with the requested
      * parameters and returns a buffer_handle_t and the stride in pixels to
      * allow the implementation to satisfy hardware constraints on the width
-     * of a pixmap (eg: it may have to be multiple of 8 pixels). 
+     * of a pixmap (eg: it may have to be multiple of 8 pixels).
      * The CALLER TAKES OWNERSHIP of the buffer_handle_t.
      *
      * If format is HAL_PIXEL_FORMAT_YCbCr_420_888, the returned stride must be
      * 0, since the actual strides are available from the android_ycbcr
      * structure.
-     * 
+     *
      * Returns 0 on success or -errno on error.
      */
-    
+
     int (*alloc)(struct alloc_device_t* dev,
             int w, int h, int format, int usage,
             buffer_handle_t* handle, int* stride);
 
     /*
-     * (*free)() Frees a previously allocated buffer. 
+     * (*free)() Frees a previously allocated buffer.
      * Behavior is undefined if the buffer is still mapped in any process,
      * but shall not result in termination of the program or security breaches
      * (allowing a process to get access to another process' buffers).
      * THIS FUNCTION TAKES OWNERSHIP of the buffer_handle_t which becomes
-     * invalid after the call. 
-     * 
+     * invalid after the call.
+     *
      * Returns 0 on success or -errno on error.
      */
     int (*free)(struct alloc_device_t* dev,
@@ -386,9 +386,9 @@ typedef struct alloc_device_t {
 
 /** convenience API for opening and closing a supported device */
 
-static inline int gralloc_open(const struct hw_module_t* module, 
+static inline int gralloc_open(const struct hw_module_t* module,
         struct alloc_device_t** device) {
-    return module->methods->open(module, 
+    return module->methods->open(module,
             GRALLOC_HARDWARE_GPU0, (struct hw_device_t**)device);
 }
 

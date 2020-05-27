@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELFADJOINT_MATRIX_MATRIX_H
 #define EIGEN_SELFADJOINT_MATRIX_MATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

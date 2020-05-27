@@ -10,7 +10,7 @@
 #ifndef EIGEN_POLYNOMIAL_SOLVER_H
 #define EIGEN_POLYNOMIAL_SOLVER_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup Polynomials_Module
  *  \class PolynomialSolverBase.

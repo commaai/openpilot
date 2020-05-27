@@ -90,7 +90,7 @@ inline returnValue SimulationEnvironment::getSampledProcessOutput(	VariablesGrid
 	tmp << LOG_PROCESS_OUTPUT;
 	process->updateLogRecord( tmp );
     tmp.getAll( LOG_PROCESS_OUTPUT,sampledProcessOutput );
-	
+
 	DMatrix sampledProcessOutputMatrix( sampledProcessOutput.getMatrix(0) );
 
 	for( uint i=1; i<sampledProcessOutput.getNumPoints()-1; ++i )
@@ -112,12 +112,12 @@ inline returnValue SimulationEnvironment::getProcessDifferentialStates(	Variable
 		return ACADOERROR( RET_MEMBER_NOT_INITIALISED );
 
 	_diffStates.init( );
-	
+
 	for( int i=0; i<(int)tmp.getNumPoints()-1; ++i )
 		_diffStates.appendTimes( tmp.getMatrix( i ) );
 
 	_diffStates.setType( VT_DIFFERENTIAL_STATE );
-	
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -130,12 +130,12 @@ inline returnValue SimulationEnvironment::getProcessAlgebraicStates(	VariablesGr
 		return ACADOERROR( RET_MEMBER_NOT_INITIALISED );
 
 	_algStates.init( );
-	
+
 	for( int i=0; i<(int)tmp.getNumPoints()-1; ++i )
 		_algStates.appendTimes( tmp.getMatrix( i ) );
 
 	_algStates.setType( VT_ALGEBRAIC_STATE );
-	
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -153,7 +153,7 @@ inline returnValue SimulationEnvironment::getProcessIntermediateStates(	Variable
 		_interStates.appendTimes( tmp.getMatrix( i ) );
 
 	_interStates.setType( VT_INTERMEDIATE_STATE );
-	
+
 	return SUCCESSFUL_RETURN;
 }
 
@@ -172,7 +172,7 @@ inline returnValue SimulationEnvironment::getFeedbackControl(	VariablesGrid& _sa
 {
 	if ( feedbackControl.isEmpty( ) == BT_TRUE )
 		return ACADOERROR( RET_MEMBER_NOT_INITIALISED );
-	
+
 	Grid _samplingGrid( startTime,endTime, 10*(getNumSteps()+1) );
 
 	feedbackControl.discretize( _samplingGrid,_sampledFeedbackControl );

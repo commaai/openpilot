@@ -41,12 +41,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to simulate the behaviour of sensors within the Process.
  *
  *	\ingroup UserDataStructures
  *
- *  The class Sensor allows to simulate the behaviour of sensors within 
+ *  The class Sensor allows to simulate the behaviour of sensors within
  *	the Process.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -58,11 +58,11 @@ class Sensor : public TransferDevice
     //
     public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 */
         Sensor( );
 
-		/** Constructor which takes the number of process outputs and the sampling time. 
+		/** Constructor which takes the number of process outputs and the sampling time.
 		 *
 		 *	@param[in] _nY				Number of proces outputs.
 		 *	@param[in] _samplingTime	Sampling time.
@@ -90,7 +90,7 @@ class Sensor : public TransferDevice
 							);
 
 
-		/** Assigns new additive noise with given sampling time to all 
+		/** Assigns new additive noise with given sampling time to all
 		 *	components of the sensor signal.
 		 *
 		 *	@param[in]  _noise				New additive noise.
@@ -155,7 +155,7 @@ class Sensor : public TransferDevice
 										);
 
 
-		/** Initializes all components of the sensor and the 
+		/** Initializes all components of the sensor and the
 		 *	lastSignal member based on the given start information.
 		 *
 		 *	@param[in]  _startTime		Start time.
@@ -231,7 +231,7 @@ class Sensor : public TransferDevice
 		returnValue delaySensorOutput(	VariablesGrid& _y
 										);
 
-		/** Returns time grid for representing the given sensor signal in 
+		/** Returns time grid for representing the given sensor signal in
 		 *	delayed form.
 		 *
 		 *	@param[in]  _y			Sensor signal to be delayed.

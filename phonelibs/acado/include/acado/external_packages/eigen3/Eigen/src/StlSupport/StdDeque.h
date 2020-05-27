@@ -98,10 +98,10 @@ namespace std {
       deque_base::erase(deque_base::begin() + new_size, deque_base::end());
   }
   void push_back(const value_type& x)
-  { deque_base::push_back(x); } 
+  { deque_base::push_back(x); }
   void push_front(const value_type& x)
   { deque_base::push_front(x); }
-  using deque_base::insert;  
+  using deque_base::insert;
   iterator insert(const_iterator position, const value_type& x)
   { return deque_base::insert(position,x); }
   void insert(const_iterator position, size_type new_size, const value_type& x)

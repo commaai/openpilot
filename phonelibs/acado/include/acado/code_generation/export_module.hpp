@@ -41,13 +41,13 @@ BEGIN_NAMESPACE_ACADO
 
 class ExportStatementBlock;
 
-/** 
+/**
  *	\brief User-interface to automatically generate algorithms for fast model predictive control
  *
  *	\ingroup UserInterfaces
  *
  *  The class ExportModule is a user-interface to automatically generate tailored
- *  algorithms for fast model predictive control. It takes an optimal control 
+ *  algorithms for fast model predictive control. It takes an optimal control
  *  problem (OCP) formulation and generates code based on given user options.
  *
  *	\author Hans Joachim Ferreau, Boris Houska

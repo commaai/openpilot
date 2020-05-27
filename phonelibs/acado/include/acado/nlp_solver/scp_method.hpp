@@ -59,7 +59,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class SCPmethod implements different sequential convex programming methods 
+ *  The class SCPmethod implements different sequential convex programming methods
  *  for solving nonlinear programming problems.
  *
  *	 \author Boris Houska, Hans Joachim Ferreau
@@ -119,7 +119,7 @@ class SCPmethod : public NLPsolver
 											);
 
 		virtual returnValue performCurrentStep( );
-		
+
 
 		/** Executes a real-time preparation step */
         virtual returnValue prepareNextStep( );
@@ -137,8 +137,8 @@ class SCPmethod : public NLPsolver
 											);
 
 // 		virtual returnValue enableNeedToReevaluate( );
-		
-											
+
+
 		/** Shifts the data for preparating the next real-time step.
 		 *
 		 *	\return RET_NOT_YET_IMPLEMENTED
@@ -150,7 +150,7 @@ class SCPmethod : public NLPsolver
 									DVector lastU     =  emptyVector,
 									DVector lastW     =  emptyVector  );
 
-		
+
         /** Returns a variance-covariance estimate if possible or an error message otherwise.
          *
          *  \return SUCCESSFUL_RETURN
@@ -176,16 +176,16 @@ class SCPmethod : public NLPsolver
 
 
 		returnValue setup( );
-		
+
 
         /** Prints the actual values of x, xa, p, u, and w.
          */
         returnValue printIterate( ) const;
 
 		returnValue printIteration( );
-		
+
         returnValue checkForConvergence( );
-		
+
 
 		returnValue computeHessianMatrix(	const BlockMatrix& oldLagrangeGradient,
 											const BlockMatrix& newLagrangeGradient
@@ -235,7 +235,7 @@ class SCPmethod : public NLPsolver
 		virtual returnValue getAnySensitivities(	BlockMatrix& _sens,
 													uint idx
 													) const;
-											
+
 
 		inline uint getNumPoints( ) const;
 
@@ -266,10 +266,10 @@ class SCPmethod : public NLPsolver
 
 		BandedCP        bandedCP;
 		BandedCPsolver* bandedCPsolver;
-		
+
 		BlockStatus status;
 		BooleanType isCP;
-		
+
 		BooleanType hasPerformedStep;
 		BooleanType isInRealTimeMode;
 		BooleanType needToReevaluate;

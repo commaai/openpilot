@@ -23,9 +23,9 @@
 /**
   * \defgroup MatrixFunctions_Module Matrix functions module
   * \brief This module aims to provide various methods for the computation of
-  * matrix functions. 
+  * matrix functions.
   *
-  * To use this module, add 
+  * To use this module, add
   * \code
   * #include <unsupported/Eigen/MatrixFunctions>
   * \endcode
@@ -42,7 +42,7 @@
   *  - \ref matrixbase_sinh "MatrixBase::sinh()", for computing the matrix hyperbolic sine
   *  - \ref matrixbase_sqrt "MatrixBase::sqrt()", for computing the matrix square root
   *
-  * These methods are the main entry points to this module. 
+  * These methods are the main entry points to this module.
   *
   * %Matrix functions are defined as follows.  Suppose that \f$ f \f$
   * is an entire function (that is, a function on the complex plane
@@ -62,7 +62,7 @@
 #include "src/MatrixFunctions/MatrixPower.h"
 
 
-/** 
+/**
 \page matrixbaseextra_page
 \ingroup MatrixFunctions_Module
 
@@ -173,7 +173,7 @@ const MatrixLogarithmReturnValue<Derived> MatrixBase<Derived>::log() const
 \param[in]  M  invertible matrix whose logarithm is to be computed.
 \returns    expression representing the matrix logarithm root of \p M.
 
-The matrix logarithm of \f$ M \f$ is a matrix \f$ X \f$ such that 
+The matrix logarithm of \f$ M \f$ is a matrix \f$ X \f$ such that
 \f$ \exp(X) = M \f$ where exp denotes the matrix exponential. As for
 the scalar logarithm, the equation \f$ \exp(X) = M \f$ may have
 multiple solutions; this function returns a matrix whose eigenvalues
@@ -197,14 +197,14 @@ Nicholas J. Higham,
 SIAM 2008. ISBN 978-0-898716-46-7.
 
 Example: The following program checks that
-\f[ \log \left[ \begin{array}{ccc} 
+\f[ \log \left[ \begin{array}{ccc}
       \frac12\sqrt2 & -\frac12\sqrt2 & 0 \\
       \frac12\sqrt2 & \frac12\sqrt2 & 0 \\
       0 & 0 & 1
     \end{array} \right] = \left[ \begin{array}{ccc}
-      0 & \frac14\pi & 0 \\ 
+      0 & \frac14\pi & 0 \\
       -\frac14\pi & 0 & 0 \\
-      0 & 0 & 0 
+      0 & 0 & 0
     \end{array} \right]. \f]
 This corresponds to a rotation of \f$ \frac14\pi \f$ radians around
 the z-axis. This is the inverse of the example used in the
@@ -217,7 +217,7 @@ Output: \verbinclude MatrixLogarithm.out
 double</tt>, \c complex<float>, \c complex<double>, or \c complex<long
 double> .
 
-\sa MatrixBase::exp(), MatrixBase::matrixFunction(), 
+\sa MatrixBase::exp(), MatrixBase::matrixFunction(),
     class MatrixLogarithmAtomic, MatrixBase::sqrt().
 
 
@@ -296,10 +296,10 @@ const MatrixFunctionReturnValue<Derived> MatrixBase<Derived>::matrixFunction(typ
 derivative of f at x.
 \returns  expression representing \p f applied to \p M.
 
-Suppose that \p M is a matrix whose entries have type \c Scalar. 
+Suppose that \p M is a matrix whose entries have type \c Scalar.
 Then, the second argument, \p f, should be a function with prototype
-\code 
-ComplexScalar f(ComplexScalar, int) 
+\code
+ComplexScalar f(ComplexScalar, int)
 \endcode
 where \c ComplexScalar = \c std::complex<Scalar> if \c Scalar is
 real (e.g., \c float or \c double) and \c ComplexScalar =
@@ -307,17 +307,17 @@ real (e.g., \c float or \c double) and \c ComplexScalar =
 should be \f$ f^{(n)}(x) \f$, the n-th derivative of f at x.
 
 This routine uses the algorithm described in:
-Philip Davies and Nicholas J. Higham, 
-"A Schur-Parlett algorithm for computing matrix functions", 
+Philip Davies and Nicholas J. Higham,
+"A Schur-Parlett algorithm for computing matrix functions",
 <em>SIAM J. %Matrix Anal. Applic.</em>, <b>25</b>:464&ndash;485, 2003.
 
 The actual work is done by the MatrixFunction class.
 
 Example: The following program checks that
-\f[ \exp \left[ \begin{array}{ccc} 
-      0 & \frac14\pi & 0 \\ 
+\f[ \exp \left[ \begin{array}{ccc}
+      0 & \frac14\pi & 0 \\
       -\frac14\pi & 0 & 0 \\
-      0 & 0 & 0 
+      0 & 0 & 0
     \end{array} \right] = \left[ \begin{array}{ccc}
       \frac12\sqrt2 & -\frac12\sqrt2 & 0 \\
       \frac12\sqrt2 & \frac12\sqrt2 & 0 \\
@@ -330,7 +330,7 @@ of \ref matrixbase_exp "exp()".
 \include MatrixFunction.cpp
 Output: \verbinclude MatrixFunction.out
 
-Note that the function \c expfn is defined for complex numbers 
+Note that the function \c expfn is defined for complex numbers
 \c x, even though the matrix \c A is over the reals. Instead of
 \c expfn, we could also have used StdStemFunctions::exp:
 \code
@@ -387,13 +387,13 @@ const MatrixSquareRootReturnValue<Derived> MatrixBase<Derived>::sqrt() const
 
 The matrix square root of \f$ M \f$ is the matrix \f$ M^{1/2} \f$
 whose square is the original matrix; so if \f$ S = M^{1/2} \f$ then
-\f$ S^2 = M \f$. 
+\f$ S^2 = M \f$.
 
 In the <b>real case</b>, the matrix \f$ M \f$ should be invertible and
 it should have no eigenvalues which are real and negative (pairs of
 complex conjugate eigenvalues are allowed). In that case, the matrix
 has a square root which is also real, and this is the square root
-computed by this function. 
+computed by this function.
 
 The matrix square root is computed by first reducing the matrix to
 quasi-triangular form with the real Schur decomposition. The square
@@ -425,12 +425,12 @@ square root of a matrix", <em>Linear Algebra Appl.</em>,
 52/53:127&ndash;140, 1983.
 
 Example: The following program checks that the square root of
-\f[ \left[ \begin{array}{cc} 
+\f[ \left[ \begin{array}{cc}
               \cos(\frac13\pi) & -\sin(\frac13\pi) \\
               \sin(\frac13\pi) & \cos(\frac13\pi)
     \end{array} \right], \f]
 corresponding to a rotation over 60 degrees, is a rotation over 30 degrees:
-\f[ \left[ \begin{array}{cc} 
+\f[ \left[ \begin{array}{cc}
               \cos(\frac16\pi) & -\sin(\frac16\pi) \\
               \sin(\frac16\pi) & \cos(\frac16\pi)
     \end{array} \right]. \f]
@@ -444,4 +444,3 @@ Output: \verbinclude MatrixSquareRoot.out
 */
 
 #endif // EIGEN_MATRIX_FUNCTIONS
-

@@ -28,7 +28,7 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Implementation of some inlined utilities for working with the different QProblem 
+ *	Implementation of some inlined utilities for working with the different QProblem
  *  classes.
  */
 

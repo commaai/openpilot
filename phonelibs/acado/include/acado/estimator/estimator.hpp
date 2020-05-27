@@ -43,12 +43,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for interfacing online state/parameter estimators.
  *
  *	\ingroup UserInterfaces
  *
- *  The class Estimator serves as a base class for interfacing online 
+ *  The class Estimator serves as a base class for interfacing online
  *	state/parameter estimators.
  *
  *	\author Hans Joachim Ferreau, Boris Houska

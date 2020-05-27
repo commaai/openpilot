@@ -2,11 +2,11 @@
 import json
 import math
 
-import cereal.messaging as messaging
 import numpy as np
+
+import cereal.messaging as messaging
 from cereal import car
 from cereal import log
-
 from common.params import Params
 from common.params import put_nonblocking
 from selfdrive.locationd.models.car_kf import CarKalman

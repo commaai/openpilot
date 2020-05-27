@@ -88,4 +88,3 @@ fail:
 void ui_sound_destroy() {
   slplay_destroy();
 }
-

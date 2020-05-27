@@ -11,7 +11,7 @@
 #ifndef EIGEN_VECTORBLOCK_H
 #define EIGEN_VECTORBLOCK_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class VectorBlock
   * \ingroup Core_Module

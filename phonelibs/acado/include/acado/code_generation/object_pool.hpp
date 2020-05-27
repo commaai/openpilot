@@ -44,11 +44,11 @@ public:
 	/** Default constructor */
 	ObjectPool()
 	{}
-	
+
 	/** Default destructor */
 	~ObjectPool()
 	{}
-	
+
 	/** This function enables one to explicitly put an object into the pool.
 	 *
 	 *  In case the object is already in the pool, the function returns false.
@@ -94,7 +94,7 @@ public:
 				if (it->second == false)
 					break;
 			}
-			
+
 			if (it != pool.end())
 			{
 				obj = it->first;
@@ -102,11 +102,11 @@ public:
 
 				return true;
 			}
-		}	
-			
+		}
+
 		return false;
 	}
-	
+
 	/** This function releases an object in the pool */
 	bool release(const T& obj)
 	{
@@ -120,7 +120,7 @@ public:
 
 		return false;
 	}
-	
+
 	/** This function return a vector containing all objects in the pool */
 	std::vector< T > getPool() const
 	{

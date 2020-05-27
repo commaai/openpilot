@@ -107,4 +107,3 @@ void TFModel::execute(float *net_input_buf, int buf_size) {
   }
   pread(output, output_size);
 }
-

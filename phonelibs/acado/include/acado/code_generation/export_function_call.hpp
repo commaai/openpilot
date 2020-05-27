@@ -45,7 +45,7 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief Allows to export code of a function call.
  *
  *	\ingroup AuxiliaryFunctionality
@@ -120,7 +120,7 @@ class ExportFunctionCall : public ExportStatement
 		ExportFunctionCall(	const ExportFunctionCall& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
 		virtual ~ExportFunctionCall( );
 
@@ -194,7 +194,7 @@ class ExportFunctionCall : public ExportStatement
 							);
 
 
-		/** Exports source code of the function call into given file. Its appearance can 
+		/** Exports source code of the function call into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream			Name of file to be used to export function call.

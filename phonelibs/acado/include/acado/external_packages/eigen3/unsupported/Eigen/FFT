@@ -1,5 +1,5 @@
 // This file is part of Eigen, a lightweight C++ template library
-// for linear algebra. 
+// for linear algebra.
 //
 // Copyright (C) 2009 Mark Borgerding mark a borgerding net
 //
@@ -47,26 +47,26 @@
   *
   * 1) %Scaling:
   * Other libraries (FFTW,IMKL,KISSFFT)  do not perform scaling, so there
-  * is a constant gain incurred after the forward&inverse transforms , so 
-  * IFFT(FFT(x)) = Kx;  this is done to avoid a vector-by-value multiply.  
-  * The downside is that algorithms that worked correctly in Matlab/octave 
+  * is a constant gain incurred after the forward&inverse transforms , so
+  * IFFT(FFT(x)) = Kx;  this is done to avoid a vector-by-value multiply.
+  * The downside is that algorithms that worked correctly in Matlab/octave
   * don't behave the same way once implemented in C++.
   *
-  * How Eigen/FFT differs: invertible scaling is performed so IFFT( FFT(x) ) = x. 
+  * How Eigen/FFT differs: invertible scaling is performed so IFFT( FFT(x) ) = x.
   *
   * 2) Real FFT half-spectrum
-  * Other libraries use only half the frequency spectrum (plus one extra 
-  * sample for the Nyquist bin) for a real FFT, the other half is the 
-  * conjugate-symmetric of the first half.  This saves them a copy and some 
-  * memory.  The downside is the caller needs to have special logic for the 
+  * Other libraries use only half the frequency spectrum (plus one extra
+  * sample for the Nyquist bin) for a real FFT, the other half is the
+  * conjugate-symmetric of the first half.  This saves them a copy and some
+  * memory.  The downside is the caller needs to have special logic for the
   * number of bins in complex vs real.
   *
-  * How Eigen/FFT differs: The full spectrum is returned from the forward 
-  * transform.  This facilitates generic template programming by obviating 
+  * How Eigen/FFT differs: The full spectrum is returned from the forward
+  * transform.  This facilitates generic template programming by obviating
   * separate specializations for real vs complex.  On the inverse
   * transform, only half the spectrum is actually used if the output type is real.
   */
- 
+
 
 #ifdef EIGEN_FFTW_DEFAULT
 // FFTW: faster, GPL -- incompatible with Eigen in LGPL form, bigger code size
@@ -77,7 +77,7 @@
      template <typename T> struct default_fft_impl : public internal::fftw_impl<T> {};
    }
 #elif defined EIGEN_MKL_DEFAULT
-// TODO 
+// TODO
 // intel Math Kernel Library: fastest, commercial -- may be incompatible with Eigen in GPL form
 #  include "src/FFT/ei_imklfft_impl.h"
    namespace Eigen {
@@ -88,15 +88,15 @@
 //
 # include "src/FFT/ei_kissfft_impl.h"
   namespace Eigen {
-     template <typename T> 
+     template <typename T>
        struct default_fft_impl : public internal::kissfft_impl<T> {};
   }
 #endif
 
 namespace Eigen {
 
- 
-// 
+
+//
 template<typename T_SrcMat,typename T_FftIfc> struct fft_fwd_proxy;
 template<typename T_SrcMat,typename T_FftIfc> struct fft_inv_proxy;
 
@@ -113,7 +113,7 @@ struct traits< fft_inv_proxy<T_SrcMat,T_FftIfc> >
 };
 }
 
-template<typename T_SrcMat,typename T_FftIfc> 
+template<typename T_SrcMat,typename T_FftIfc>
 struct fft_fwd_proxy
  : public ReturnByValue<fft_fwd_proxy<T_SrcMat,T_FftIfc> >
 {
@@ -133,7 +133,7 @@ private:
   fft_fwd_proxy& operator=(const fft_fwd_proxy&);
 };
 
-template<typename T_SrcMat,typename T_FftIfc> 
+template<typename T_SrcMat,typename T_FftIfc>
 struct fft_inv_proxy
  : public ReturnByValue<fft_inv_proxy<T_SrcMat,T_FftIfc> >
 {
@@ -198,7 +198,7 @@ class FFT
     }
 
     /*
-    inline 
+    inline
     void fwd2(Complex * dst, const Complex * src, int n0,int n1)
     {
       m_impl.fwd2(dst,src,n0,n1);
@@ -207,7 +207,7 @@ class FFT
 
     template <typename _Input>
     inline
-    void fwd( std::vector<Complex> & dst, const std::vector<_Input> & src) 
+    void fwd( std::vector<Complex> & dst, const std::vector<_Input> & src)
     {
       if ( NumTraits<_Input>::IsComplex == 0 && HasFlag(HalfSpectrum) )
         dst.resize( (src.size()>>1)+1); // half the bins + Nyquist bin
@@ -251,7 +251,7 @@ class FFT
         fwd( &dst[0],&src[0],nfft );
       }
     }
- 
+
     template<typename InputDerived>
     inline
     fft_fwd_proxy< MatrixBase<InputDerived>, FFT<T_Scalar,T_Impl> >
@@ -300,7 +300,7 @@ class FFT
             THIS_METHOD_IS_ONLY_FOR_EXPRESSIONS_WITH_DIRECT_MEMORY_ACCESS_SUCH_AS_MAP_OR_PLAIN_MATRICES)
 
       if (nfft<1) { //automatic FFT size determination
-        if ( realfft && HasFlag(HalfSpectrum) ) 
+        if ( realfft && HasFlag(HalfSpectrum) )
           nfft = 2*(src.size()-1); //assume even fft size
         else
           nfft = src.size();
@@ -357,7 +357,7 @@ class FFT
 
     /*
     // TODO: multi-dimensional FFTs
-    inline 
+    inline
     void inv2(Complex * dst, const Complex * src, int n0,int n1)
     {
       m_impl.inv2(dst,src,n0,n1);
@@ -383,7 +383,7 @@ class FFT
       else
         Matrix<T_Data, Dynamic, 1>::MapAligned(x,nx) *= s;
          //Matrix<T_Data, Dynamic, Dynamic>::Map(x,nx) * s;
-#endif  
+#endif
     }
 
     inline
@@ -399,15 +399,15 @@ class FFT
     int m_flag;
 };
 
-template<typename T_SrcMat,typename T_FftIfc> 
-template<typename T_DestMat> inline 
+template<typename T_SrcMat,typename T_FftIfc>
+template<typename T_DestMat> inline
 void fft_fwd_proxy<T_SrcMat,T_FftIfc>::evalTo(T_DestMat& dst) const
 {
     m_ifc.fwd( dst, m_src, m_nfft);
 }
 
-template<typename T_SrcMat,typename T_FftIfc> 
-template<typename T_DestMat> inline 
+template<typename T_SrcMat,typename T_FftIfc>
+template<typename T_DestMat> inline
 void fft_inv_proxy<T_SrcMat,T_FftIfc>::evalTo(T_DestMat& dst) const
 {
     m_ifc.inv( dst, m_src, m_nfft);

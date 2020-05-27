@@ -46,31 +46,31 @@ BEGIN_NAMESPACE_ACADO
  *	\brief Base class for all algorithmic modules within the ACADO Toolkit providing some basic functionality.
  *
  *	\ingroup AuxiliaryFunctionality
- *	
+ *
  *  The class AlgorithmicBase is a base class for all algorithmic modules
  *	within the ACADO Toolkit. It provides a number of basic functionality
  *	such as routines to cope with options, logging and plotting objects.
  *
- *	The class AlgorithmicBase only tunnels this functionality to a pointer 
- *	of the UserInteraction class. There are two different possibilities for 
+ *	The class AlgorithmicBase only tunnels this functionality to a pointer
+ *	of the UserInteraction class. There are two different possibilities for
  *	using this class: \n
  *
- *	(i)  Using this class stand-alone: if no pointer to an instance of the 
- *	     UserInteraction class is provided, an object of this class is 
+ *	(i)  Using this class stand-alone: if no pointer to an instance of the
+ *	     UserInteraction class is provided, an object of this class is
  *	     automatically allocated (with default options and logging information
  *	     as specified within each algorithmic module). \n
  *
  *	(ii) Using this class as (possibly nested) member of a top-level user interface:
  *	     Usually an user interacts with a top-level user interface derived from
- *	     the class UserInteraction. This interface does always have algorithmic 
- *	     modules as members for doing the actual computations. For ensuring that 
+ *	     the class UserInteraction. This interface does always have algorithmic
+ *	     modules as members for doing the actual computations. For ensuring that
  *	     options, logging and plotting information specified by the user is actually
- *	     handled by the algorithmic modules, they are provided with a pointer 
+ *	     handled by the algorithmic modules, they are provided with a pointer
  *	     to this top-level user interface. \n
  *
- *	\note This class tunnels parts of the public functionality of the 
- *	Options/OptionsList, Logging/LogCollection and Plotting/PlotCollection 
- *	classes, respectively. In case their public functionality is modified, 
+ *	\note This class tunnels parts of the public functionality of the
+ *	Options/OptionsList, Logging/LogCollection and Plotting/PlotCollection
+ *	classes, respectively. In case their public functionality is modified,
  *	the AlgorithmicBase class has to be adapted accordingly.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -87,7 +87,7 @@ class AlgorithmicBase
 		AlgorithmicBase( );
 
 		/** Constructor which takes a pointer to an instance of the
-		 *	UserInterface class. If this pointer is NULL, this constructor 
+		 *	UserInterface class. If this pointer is NULL, this constructor
 		 *	is equivalent to the default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to top-level user interface.
@@ -159,7 +159,7 @@ class AlgorithmicBase
 							const std::string& value
 							);
 
-		/** Sets value of an existing option item of integer type 
+		/** Sets value of an existing option item of integer type
 		 *	within the option list of given index to a given value.
 		 *
 		 *	@param[in]  idx		Index of option list.
@@ -176,7 +176,7 @@ class AlgorithmicBase
 							int value
 							);
 
-		/** Sets value of an existing option item of double type 
+		/** Sets value of an existing option item of double type
 		 *	within the option list of given index to a given value.
 		 *
 		 *	@param[in]  idx		Index of option list.
@@ -206,7 +206,7 @@ class AlgorithmicBase
         returnValue setOptions(	const Options &arg
 								);
 
-        /** Assigns the option list with given index of a given Options object 
+        /** Assigns the option list with given index of a given Options object
 		 *	to option list with given index of this object.
 		 *
 		 *	@param[in] idx		Index of option list.
@@ -342,7 +342,7 @@ class AlgorithmicBase
 								std::string& value
 								) const;
 
-		/** Returns value of an existing option item of integer type 
+		/** Returns value of an existing option item of integer type
 		 *	within the option list of given index.
 		 *
 		 *	@param[in]  idx		Index of option list.
@@ -358,7 +358,7 @@ class AlgorithmicBase
 								int& value
 								) const;
 
-		/** Returns value of an existing option item of double type 
+		/** Returns value of an existing option item of double type
 		 *	within the option list of given index.
 		 *
 		 *	@param[in]  idx		Index of option list.
@@ -437,7 +437,7 @@ class AlgorithmicBase
 		/** Determines whether options of at least one option list have been modified.
 		 *
 		 *	\return BT_TRUE  iff options have been modified, \n
-		 *	        BT_FALSE otherwise 
+		 *	        BT_FALSE otherwise
 		 */
 		inline BooleanType haveOptionsChanged( ) const;
 
@@ -446,7 +446,7 @@ class AlgorithmicBase
 		 *	@param[in] idx		Index of option list.
 		 *
 		 *	\return BT_TRUE  iff options have been modified, \n
-		 *	        BT_FALSE otherwise 
+		 *	        BT_FALSE otherwise
 		 */
 		inline BooleanType haveOptionsChanged(	uint idx
 												) const;
@@ -579,7 +579,7 @@ class AlgorithmicBase
 		inline returnValue plot(	PlotFrequency _frequency = PLOT_IN_ANY_CASE
 									);
 
-        /** Plots all windows of the plot collection, each one into the 
+        /** Plots all windows of the plot collection, each one into the
 		 *	corresponding existing figure, if possible.
 		 *
 		 *	@param[in] _frequency	Frequency determining at which time instants the window is to be plotted.
@@ -596,7 +596,7 @@ class AlgorithmicBase
 	protected:
 		UserInteraction* userInteraction;				/**< Pointer to top-level user interface.. */
 		BooleanType useModuleStandalone;				/**< Flag indicating whether algorithmic module is used stand-alone. */
-		
+
 		int outputLoggingIdx;							/**< Index of log record for algorithmic standard output to be optionally used within derived classes. */
 };
 

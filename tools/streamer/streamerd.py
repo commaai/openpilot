@@ -4,10 +4,11 @@ import struct
 import sys
 
 import av
-import cereal.messaging as messaging
 import cv2
 import numpy as np
 import zmq
+
+import cereal.messaging as messaging
 from cereal.services import service_list
 # sudo pip install git+git://github.com/mikeboers/PyAV.git
 

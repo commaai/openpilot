@@ -41,12 +41,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to simulate the behaviour of actuators within the Process.
  *
  *	\ingroup UserDataStructures
  *
- *  The class Actuator allows to simulate the behaviour of actuators within 
+ *  The class Actuator allows to simulate the behaviour of actuators within
  *	the Process.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -62,7 +62,7 @@ class Actuator : public TransferDevice
 		 */
 		Actuator( );
 
-		/** Constructor which takes the number of process inputs and the sampling time. 
+		/** Constructor which takes the number of process inputs and the sampling time.
 		 *
 		 *	@param[in] _nU				Number of control inputs to the process.
 		 *	@param[in] _nP				Number of parameter inputs to the process.
@@ -92,7 +92,7 @@ class Actuator : public TransferDevice
 								);
 
 
-		/** Assigns new additive noise with given sampling time to all 
+		/** Assigns new additive noise with given sampling time to all
 		 *	components of the actuator control signal.
 		 *
 		 *	@param[in]  _noise				New additive noise.
@@ -121,7 +121,7 @@ class Actuator : public TransferDevice
 										);
 
 
-		/** Assigns new additive noise with given sampling time to all 
+		/** Assigns new additive noise with given sampling time to all
 		 *	components of the actuator parameter signal.
 		 *
 		 *	@param[in]  _noise				New additive noise.
@@ -222,7 +222,7 @@ class Actuator : public TransferDevice
 											);
 
 
-		/** Initializes all components of the actuator and the 
+		/** Initializes all components of the actuator and the
 		 *	lastSignal member based on the given start information.
 		 *
 		 *	@param[in]  _startTime		Start time.
@@ -350,7 +350,7 @@ class Actuator : public TransferDevice
 										VariablesGrid& _p
 										);
 
-		/** Returns time grids for representing the given actuator signals in 
+		/** Returns time grids for representing the given actuator signals in
 		 *	delayed form.
 		 *
 		 *	@param[in]  _u			Actuator control signal to be delayed.

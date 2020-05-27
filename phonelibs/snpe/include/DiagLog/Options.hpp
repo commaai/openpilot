@@ -40,12 +40,12 @@ public:
    }
 
    /// @brief .
-   /// 
+   ///
    /// Enables diag logging only on the specified area mask (DNN_RUNTIME=ON | OFF)
    std::string DiagLogMask;
 
    /// @brief .
-   /// 
+   ///
    /// The path to the directory where log files will be written.
    /// The path may be relative or absolute. Relative paths are interpreted
    /// from the current working directory.
@@ -53,15 +53,15 @@ public:
    std::string LogFileDirectory;
 
    /// @brief .
-   /// 
+   ///
    //// The name used for log files. If this value is empty then BaseName will be
    /// used as the default file name.
    /// Default value is "DiagLog"
    std::string LogFileName;
 
    /// @brief .
-   /// 
-   /// The maximum number of log files to create. If set to 0 no log rotation 
+   ///
+   /// The maximum number of log files to create. If set to 0 no log rotation
    /// will be used and the log file name specified will be used each time, overwriting
    /// any existing log file that may exist.
    /// Default value is 20

@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_CWISE_BINARY_OP_H
 #define EIGEN_SPARSE_CWISE_BINARY_OP_H
 
-namespace Eigen { 
+namespace Eigen {
 
 // Here we have to handle 3 cases:
 //  1 - sparse op dense

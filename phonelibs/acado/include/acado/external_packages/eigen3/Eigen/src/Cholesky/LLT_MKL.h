@@ -36,7 +36,7 @@
 #include "Eigen/src/Core/util/MKL_support.h"
 #include <iostream>
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

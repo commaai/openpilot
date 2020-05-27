@@ -50,7 +50,7 @@ class ConstraintComponent;
  *
  *	\ingroup BasicDataStructures
  *
- *	The class TreeProjection implements a tree projection within the 
+ *	The class TreeProjection implements a tree projection within the
  *	family of SymbolicOperators.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -259,9 +259,9 @@ protected:
                                                TreeProjection ***newSIS , /**< the new SIS-pointer   */
                                                int            &nNewHIS  , /**< the number of newHIS  */
                                                TreeProjection ***newHIS   /**< the new HIS-pointer   */ );
-       
-       
-       
+
+
+
     /** Copy function. */
     virtual void copy( const Projection &arg );
 

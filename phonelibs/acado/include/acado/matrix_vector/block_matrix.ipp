@@ -85,9 +85,9 @@ inline returnValue BlockMatrix::setIdentity( uint rowIdx, uint colIdx, uint dim 
     ASSERT( colIdx < getNumCols( ) );
 
            types   [rowIdx][colIdx] = SBMT_ONE   ;
-           elements[rowIdx][colIdx] = DMatrix(dim, dim);     
+           elements[rowIdx][colIdx] = DMatrix(dim, dim);
     elements[rowIdx][colIdx].setIdentity();
-    
+
     return SUCCESSFUL_RETURN;
 }
 
@@ -99,7 +99,7 @@ inline returnValue BlockMatrix::setZero( uint rowIdx, uint colIdx ){
 
            types   [rowIdx][colIdx] = SBMT_ZERO;
            elements[rowIdx][colIdx].setZero()  ;
-    return SUCCESSFUL_RETURN; 
+    return SUCCESSFUL_RETURN;
 }
 
 

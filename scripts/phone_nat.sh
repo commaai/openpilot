@@ -14,4 +14,3 @@ iptables -t nat -A POSTROUTING -o rmnet_data0 -j MASQUERADE
 #iptables -A OUTPUT -j ACCEPT
 #iptables -A FORWARD -i rmnet_data0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
 #iptables -A FORWARD -i eth0 -o v4-rmnet_data0 -j ACCEPT
-

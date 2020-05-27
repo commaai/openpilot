@@ -56,7 +56,7 @@ public:
 	/** Default constructor. */
 	EvaluationTemplate();
 	EvaluationTemplate( Tmatrix<T> *_val );
-	
+
 	virtual ~EvaluationTemplate();
 
 	virtual void addition   ( Operator &arg1, Operator &arg2 );
@@ -76,10 +76,10 @@ public:
 	virtual void Log        ( Operator &arg );
 	virtual void Sin        ( Operator &arg );
 	virtual void Tan        ( Operator &arg );
-	
+
 	Tmatrix<T> *val;
 	T           res;
-	
+
 };
 
 
@@ -98,7 +98,7 @@ template <typename T> EvaluationTemplate<T>::EvaluationTemplate( Tmatrix<T> *_va
 template <typename T> EvaluationTemplate<T>::~EvaluationTemplate(){}
 
 template <typename T> void EvaluationTemplate<T>::addition( Operator &arg1, Operator &arg2 ){
-	
+
 	EvaluationTemplate<T> r(val);
 	arg1.evaluate( this );
 	arg2.evaluate( &r );
@@ -106,7 +106,7 @@ template <typename T> void EvaluationTemplate<T>::addition( Operator &arg1, Oper
 }
 
 template <typename T> void EvaluationTemplate<T>::subtraction( Operator &arg1, Operator &arg2 ){
- 
+
 	EvaluationTemplate<T> r(val);
 	arg1.evaluate( this );
 	arg2.evaluate( &r );
@@ -114,7 +114,7 @@ template <typename T> void EvaluationTemplate<T>::subtraction( Operator &arg1, O
 }
 
 template <typename T> void EvaluationTemplate<T>::product( Operator &arg1, Operator &arg2 ){
- 
+
 	EvaluationTemplate<T> r(val);
 	arg1.evaluate( this );
 	arg2.evaluate( &r );
@@ -130,7 +130,7 @@ template <typename T> void EvaluationTemplate<T>::quotient( Operator &arg1, Oper
 }
 
 template <typename T> void EvaluationTemplate<T>::power( Operator &arg1, Operator &arg2 ){
- 
+
 	EvaluationTemplate<T> r(val);
 	arg1.evaluate( this );
 	arg2.evaluate( &r );
@@ -138,7 +138,7 @@ template <typename T> void EvaluationTemplate<T>::power( Operator &arg1, Operato
 }
 
 template <typename T> void EvaluationTemplate<T>::powerInt( Operator &arg1, int &arg2 ){
- 
+
 	arg1.evaluate( this );
 	res = pow( res, arg2 );
 }

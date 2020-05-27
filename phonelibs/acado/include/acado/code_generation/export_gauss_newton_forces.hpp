@@ -39,7 +39,7 @@ BEGIN_NAMESPACE_ACADO
 class ExportForcesInterface;
 class ExportForcesGenerator;
 
-/** 
+/**
  *	\brief A class for export of an OCP solver using sparse QP solver FORCES
  *
  *	\ingroup NumericalAlgorithms
@@ -47,7 +47,7 @@ class ExportForcesGenerator;
  *	The class ExportGaussNewtonForces allows export of and OCP solver using
  *	the generalized Gauss-Newton method. The underlying QP is solved using the
  *	structured sparse QP solver FORCES.
- * 
+ *
  *	\author Milan Vukov
  */
 class ExportGaussNewtonForces : public ExportNLPSolver

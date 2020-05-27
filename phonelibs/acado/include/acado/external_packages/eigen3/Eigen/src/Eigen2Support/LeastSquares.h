@@ -10,7 +10,7 @@
 #ifndef EIGEN2_LEASTSQUARES_H
 #define EIGEN2_LEASTSQUARES_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup LeastSquares_Module
   *

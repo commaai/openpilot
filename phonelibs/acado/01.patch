@@ -12,17 +12,15 @@ index d6450b50..46a3269f 100644
 --- a/acado/code_generation/export_function_declaration.cpp
 +++ b/acado/code_generation/export_function_declaration.cpp
 @@ -36,12 +36,12 @@
- 
+
  BEGIN_NAMESPACE_ACADO
- 
+
 -
 +const ExportFunction& _ff = ExportFunction();
  //
  // PUBLIC MEMBER FUNCTIONS:
  //
- 
+
 -ExportFunctionDeclaration::ExportFunctionDeclaration( ) : ExportStatement( ), f( ExportFunction() )
 +ExportFunctionDeclaration::ExportFunctionDeclaration( ) : ExportStatement( ), f( _ff )
  {}
- 
- 

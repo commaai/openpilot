@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSEPRODUCT_H
 #define EIGEN_SPARSEPRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Lhs, typename Rhs>
 struct SparseSparseProductReturnType

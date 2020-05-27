@@ -13,7 +13,7 @@
 #include "Core"
 #include <list>
 
-#if (defined(_MSC_VER) && defined(_WIN64)) /* MSVC auto aligns in 64 bit builds */    
+#if (defined(_MSC_VER) && defined(_WIN64)) /* MSVC auto aligns in 64 bit builds */
 
 #define EIGEN_DEFINE_STL_LIST_SPECIALIZATION(...)
 

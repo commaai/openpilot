@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export code writing a string.
  *
  *	\ingroup AuxiliaryFunctionality
@@ -76,7 +76,7 @@ class ExportStatementString : public ExportStatement
 		virtual ExportStatement* clone( ) const;
 
 
-		/** Exports source code of the string into given file. Its appearance can 
+		/** Exports source code of the string into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream				Name of file to be used to export string.

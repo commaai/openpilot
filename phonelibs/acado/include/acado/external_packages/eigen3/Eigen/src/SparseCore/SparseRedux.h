@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSEREDUX_H
 #define EIGEN_SPARSEREDUX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Derived>
 typename internal::traits<Derived>::Scalar

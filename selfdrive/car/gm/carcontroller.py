@@ -1,8 +1,7 @@
 from cereal import car
-from opendbc.can.packer import CANPacker
-
 from common.numpy_fast import interp
 from common.realtime import DT_CTRL
+from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import CanBus

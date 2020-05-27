@@ -1,4 +1,13 @@
 repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: master
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-ast
+    -   id: check-json
+    -   id: check-xml
+    -   id: check-yaml
 -   repo: https://github.com/asottile/reorder_python_imports
     rev: master
     hooks:

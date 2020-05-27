@@ -10,7 +10,7 @@
 #ifndef EIGEN_REPLICATE_H
 #define EIGEN_REPLICATE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /**
   * \class Replicate
@@ -115,8 +115,8 @@ template<typename MatrixType,int RowFactor,int ColFactor> class Replicate
     }
 
     const _MatrixTypeNested& nestedExpression() const
-    { 
-      return m_matrix; 
+    {
+      return m_matrix;
     }
 
   protected:

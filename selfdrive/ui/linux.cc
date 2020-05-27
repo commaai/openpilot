@@ -104,4 +104,3 @@ GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
 void visionimg_destroy_gl(EGLImageKHR khr, void *ph) {
   // empty
 }
-

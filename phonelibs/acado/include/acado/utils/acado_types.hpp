@@ -111,7 +111,7 @@ enum VariableType{
 };
 
 
-/** Defines all possible methods of merging variables grids in case a grid point 
+/** Defines all possible methods of merging variables grids in case a grid point
  *	exists in both grids. */
 enum MergeMethod
 {

@@ -28,4 +28,3 @@ cd ffmpeg-4.2.2
 ./configure --enable-shared
 make -j8
 make install
-

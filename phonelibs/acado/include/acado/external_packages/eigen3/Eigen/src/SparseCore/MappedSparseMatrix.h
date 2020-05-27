@@ -10,7 +10,7 @@
 #ifndef EIGEN_MAPPED_SPARSEMATRIX_H
 #define EIGEN_MAPPED_SPARSEMATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class MappedSparseMatrix
   *

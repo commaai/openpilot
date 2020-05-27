@@ -39,25 +39,25 @@ namespace zdl { namespace DlSystem
 @{ */
 
 /**
- * A bidirectional iterator (with limited random access 
+ * A bidirectional iterator (with limited random access
  * capabilities) for the zdl::DlSystem::ITensor class.
- *  
+ *
  * This is a standard bidrectional iterator and is compatible
- * with standard algorithm functions that operate on bidirectional 
+ * with standard algorithm functions that operate on bidirectional
  * access iterators (e.g., std::copy, std::fill, etc.). It uses a
- * template parameter to create const and non-const iterators 
- * from the same code. Iterators are easiest to declare via the 
- * typedefs iterator and const_iterator in the ITensor class 
- * (e.g., zdl::DlSystem::ITensor::iterator). 
- *  
- * Note that if the tensor the iterator is traversing was 
- * created with nondefault (i.e., nontrivial) strides, the 
- * iterator will obey the strides when traversing the tensor 
- * data. 
- *  
+ * template parameter to create const and non-const iterators
+ * from the same code. Iterators are easiest to declare via the
+ * typedefs iterator and const_iterator in the ITensor class
+ * (e.g., zdl::DlSystem::ITensor::iterator).
+ *
+ * Note that if the tensor the iterator is traversing was
+ * created with nondefault (i.e., nontrivial) strides, the
+ * iterator will obey the strides when traversing the tensor
+ * data.
+ *
  * Also note that nontrivial strides dramatically affect the
- * performance of the iterator (on the order of 20x slower). 
- */ 
+ * performance of the iterator (on the order of 20x slower).
+ */
 template<bool IS_CONST=true>
 class ZDL_EXPORT ITensorItr : public std::iterator<std::bidirectional_iterator_tag, float>
 {
@@ -68,8 +68,8 @@ public:
    ITensorItr() = delete;
    virtual ~ITensorItr() {}
 
-   ITensorItr(std::unique_ptr<::DlSystem::ITensorItrImpl> impl, 
-              bool isTrivial = false, 
+   ITensorItr(std::unique_ptr<::DlSystem::ITensorItrImpl> impl,
+              bool isTrivial = false,
               float* data = nullptr)
       : m_Impl(impl->clone())
       , m_IsTrivial(isTrivial)

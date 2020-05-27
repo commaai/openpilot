@@ -14,7 +14,7 @@
 #include "MatrixFunctionAtomic.h"
 
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup MatrixFunctions_Module
   * \brief Class for computing matrix functions.
@@ -31,14 +31,14 @@ namespace Eigen {
   *
   * \sa class MatrixFunctionAtomic, class MatrixLogarithmAtomic
   */
-template <typename MatrixType, 
-	  typename AtomicType,  
+template <typename MatrixType,
+	  typename AtomicType,
           int IsComplex = NumTraits<typename internal::traits<MatrixType>::Scalar>::IsComplex>
 class MatrixFunction
-{  
+{
   public:
 
-    /** \brief Constructor. 
+    /** \brief Constructor.
       *
       * \param[in]  A       argument of matrix function, should be a square matrix.
       * \param[in]  atomic  class for computing matrix function of atomic blocks.
@@ -56,17 +56,17 @@ class MatrixFunction
       * See MatrixBase::matrixFunction() for details on how this computation
       * is implemented.
       */
-    template <typename ResultType> 
-    void compute(ResultType &result);    
+    template <typename ResultType>
+    void compute(ResultType &result);
 };
 
 
-/** \internal \ingroup MatrixFunctions_Module 
+/** \internal \ingroup MatrixFunctions_Module
   * \brief Partial specialization of MatrixFunction for real matrices
   */
 template <typename MatrixType, typename AtomicType>
 class MatrixFunction<MatrixType, AtomicType, 0>
-{  
+{
   private:
 
     typedef internal::traits<MatrixType> Traits;
@@ -82,7 +82,7 @@ class MatrixFunction<MatrixType, AtomicType, 0>
 
   public:
 
-    /** \brief Constructor. 
+    /** \brief Constructor.
       *
       * \param[in]  A       argument of matrix function, should be a square matrix.
       * \param[in]  atomic  class for computing matrix function of atomic blocks.
@@ -99,7 +99,7 @@ class MatrixFunction<MatrixType, AtomicType, 0>
       * a real matrix.
       */
     template <typename ResultType>
-    void compute(ResultType& result) 
+    void compute(ResultType& result)
     {
       ComplexMatrix CA = m_A.template cast<ComplexScalar>();
       ComplexMatrix Cresult;
@@ -115,8 +115,8 @@ class MatrixFunction<MatrixType, AtomicType, 0>
     MatrixFunction& operator=(const MatrixFunction&);
 };
 
-      
-/** \internal \ingroup MatrixFunctions_Module 
+
+/** \internal \ingroup MatrixFunctions_Module
   * \brief Partial specialization of MatrixFunction for complex matrices
   */
 template <typename MatrixType, typename AtomicType>
@@ -180,7 +180,7 @@ class MatrixFunction<MatrixType, AtomicType, 1>
     MatrixFunction& operator=(const MatrixFunction&);
 };
 
-/** \brief Constructor. 
+/** \brief Constructor.
  *
  * \param[in]  A       argument of matrix function, should be a square matrix.
  * \param[in]  atomic  class for computing matrix function of atomic blocks.
@@ -199,7 +199,7 @@ MatrixFunction<MatrixType,AtomicType,1>::MatrixFunction(const MatrixType& A, Ato
   */
 template <typename MatrixType, typename AtomicType>
 template <typename ResultType>
-void MatrixFunction<MatrixType,AtomicType,1>::compute(ResultType& result) 
+void MatrixFunction<MatrixType,AtomicType,1>::compute(ResultType& result)
 {
   computeSchurDecomposition();
   partitionEigenvalues();
@@ -216,13 +216,13 @@ void MatrixFunction<MatrixType,AtomicType,1>::compute(ResultType& result)
 template <typename MatrixType, typename AtomicType>
 void MatrixFunction<MatrixType,AtomicType,1>::computeSchurDecomposition()
 {
-  const ComplexSchur<MatrixType> schurOfA(m_A);  
+  const ComplexSchur<MatrixType> schurOfA(m_A);
   m_T = schurOfA.matrixT();
   m_U = schurOfA.matrixU();
 }
 
 /** \brief Partition eigenvalues in clusters of ei'vals close to each other
-  * 
+  *
   * This function computes #m_clusters. This is a partition of the
   * eigenvalues of #m_T in clusters, such that
   * # Any eigenvalue in a certain cluster is at most separation() away
@@ -230,7 +230,7 @@ void MatrixFunction<MatrixType,AtomicType,1>::computeSchurDecomposition()
   * # The distance between two eigenvalues in different clusters is
   *   more than separation().
   * The implementation follows Algorithm 4.1 in the paper of Davies
-  * and Higham. 
+  * and Higham.
   */
 template <typename MatrixType, typename AtomicType>
 void MatrixFunction<MatrixType,AtomicType,1>::partitionEigenvalues()
@@ -265,7 +265,7 @@ void MatrixFunction<MatrixType,AtomicType,1>::partitionEigenvalues()
   }
 }
 
-/** \brief Find cluster in #m_clusters containing some value 
+/** \brief Find cluster in #m_clusters containing some value
   * \param[in] key Value to find
   * \returns Iterator to cluster containing \c key, or
   * \c m_clusters.end() if no cluster in m_clusters contains \c key.
@@ -287,7 +287,7 @@ template <typename MatrixType, typename AtomicType>
 void MatrixFunction<MatrixType,AtomicType,1>::computeClusterSize()
 {
   const Index rows = m_T.rows();
-  VectorType diag = m_T.diagonal(); 
+  VectorType diag = m_T.diagonal();
   const Index numClusters = static_cast<Index>(m_clusters.size());
 
   m_clusterSize.setZero(numClusters);
@@ -326,7 +326,7 @@ void MatrixFunction<MatrixType,AtomicType,1>::constructPermutation()
     m_permutation[i] = indexNextEntry[cluster];
     ++indexNextEntry[cluster];
   }
-}  
+}
 
 /** \brief Permute Schur decomposition in #m_U and #m_T according to #m_permutation */
 template <typename MatrixType, typename AtomicType>
@@ -355,7 +355,7 @@ void MatrixFunction<MatrixType,AtomicType,1>::swapEntriesInSchur(Index index)
   m_T.applyOnTheLeft(index, index+1, rotation.adjoint());
   m_T.applyOnTheRight(index, index+1, rotation);
   m_U.applyOnTheRight(index, index+1, rotation);
-}  
+}
 
 /** \brief Compute block diagonal part of #m_fT.
   *
@@ -365,7 +365,7 @@ void MatrixFunction<MatrixType,AtomicType,1>::swapEntriesInSchur(Index index)
   */
 template <typename MatrixType, typename AtomicType>
 void MatrixFunction<MatrixType,AtomicType,1>::computeBlockAtomic()
-{ 
+{
   m_fT.resize(m_T.rows(), m_T.cols());
   m_fT.setZero();
   for (Index i = 0; i < m_clusterSize.rows(); ++i) {
@@ -389,7 +389,7 @@ Block<MatrixType> MatrixFunction<MatrixType,AtomicType,1>::block(MatrixType& A, 
   */
 template <typename MatrixType, typename AtomicType>
 void MatrixFunction<MatrixType,AtomicType,1>::computeOffDiagonal()
-{ 
+{
   for (Index diagIndex = 1; diagIndex < m_clusterSize.rows(); diagIndex++) {
     for (Index blockIndex = 0; blockIndex < m_clusterSize.rows() - diagIndex; blockIndex++) {
       // compute (blockIndex, blockIndex+diagIndex) block
@@ -406,7 +406,7 @@ void MatrixFunction<MatrixType,AtomicType,1>::computeOffDiagonal()
   }
 }
 
-/** \brief Solve a triangular Sylvester equation AX + XB = C 
+/** \brief Solve a triangular Sylvester equation AX + XB = C
   *
   * \param[in]  A  the matrix A; should be square and upper triangular
   * \param[in]  B  the matrix B; should be square and upper triangular
@@ -414,13 +414,13 @@ void MatrixFunction<MatrixType,AtomicType,1>::computeOffDiagonal()
   *
   * \returns the solution X.
   *
-  * If A is m-by-m and B is n-by-n, then both C and X are m-by-n. 
+  * If A is m-by-m and B is n-by-n, then both C and X are m-by-n.
   * The (i,j)-th component of the Sylvester equation is
-  * \f[ 
-  *     \sum_{k=i}^m A_{ik} X_{kj} + \sum_{k=1}^j X_{ik} B_{kj} = C_{ij}. 
+  * \f[
+  *     \sum_{k=i}^m A_{ik} X_{kj} + \sum_{k=1}^j X_{ik} B_{kj} = C_{ij}.
   * \f]
   * This can be re-arranged to yield:
-  * \f[ 
+  * \f[
   *     X_{ij} = \frac{1}{A_{ii} + B_{jj}} \Bigl( C_{ij}
   *     - \sum_{k=i+1}^m A_{ik} X_{kj} - \sum_{k=1}^{j-1} X_{ik} B_{kj} \Bigr).
   * \f]
@@ -431,8 +431,8 @@ void MatrixFunction<MatrixType,AtomicType,1>::computeOffDiagonal()
   */
 template <typename MatrixType, typename AtomicType>
 typename MatrixFunction<MatrixType,AtomicType,1>::DynMatrixType MatrixFunction<MatrixType,AtomicType,1>::solveTriangularSylvester(
-  const DynMatrixType& A, 
-  const DynMatrixType& B, 
+  const DynMatrixType& A,
+  const DynMatrixType& B,
   const DynMatrixType& C)
 {
   eigen_assert(A.rows() == A.cols());
@@ -452,7 +452,7 @@ typename MatrixFunction<MatrixType,AtomicType,1>::DynMatrixType MatrixFunction<M
       // Compute AX = \sum_{k=i+1}^m A_{ik} X_{kj}
       Scalar AX;
       if (i == m - 1) {
-	AX = 0; 
+	AX = 0;
       } else {
 	Matrix<Scalar,1,1> AXmatrix = A.row(i).tail(m-1-i) * X.col(j).tail(m-1-i);
 	AX = AXmatrix(0,0);
@@ -461,7 +461,7 @@ typename MatrixFunction<MatrixType,AtomicType,1>::DynMatrixType MatrixFunction<M
       // Compute XB = \sum_{k=1}^{j-1} X_{ik} B_{kj}
       Scalar XB;
       if (j == 0) {
-	XB = 0; 
+	XB = 0;
       } else {
 	Matrix<Scalar,1,1> XBmatrix = X.row(i).head(j) * B.col(j).head(j);
 	XB = XBmatrix(0,0);

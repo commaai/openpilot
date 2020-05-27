@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for building-blocks of the SimulationEnvironment.
  *
  *	\ingroup AuxiliaryFunctionality
@@ -71,18 +71,18 @@ class SimulationBlock : public UserInteraction
 		SimulationBlock(	BlockName _name,
 							double _samplingTime = DEFAULT_SAMPLING_TIME
 							);
-	
+
 		/** Copy constructor (deep copy).
 		 *
 		 *	@param[in] rhs	Right-hand side object.
 		 */
 		SimulationBlock(	const SimulationBlock& rhs
 							);
-	
-		/** Destructor. 
+
+		/** Destructor.
 		 */
 		virtual ~SimulationBlock( );
-	
+
 		/** Assignment Operator (deep copy).
 		 *
 		 *	@param[in] rhs	Right-hand side object.
@@ -116,7 +116,7 @@ class SimulationBlock : public UserInteraction
 		 *
 		 *	@param[in]  _name			New name.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
 		inline returnValue setName(	BlockName _name
 									);
@@ -137,8 +137,8 @@ class SimulationBlock : public UserInteraction
 	//  PROTECTED MEMBER FUNCTIONS:
 	//
 	protected:
-	
-	
+
+
 	//
 	//  PROTECTED MEMBERS:
 	//

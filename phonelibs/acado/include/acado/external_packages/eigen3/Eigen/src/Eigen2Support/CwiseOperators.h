@@ -10,7 +10,7 @@
 #ifndef EIGEN_ARRAY_CWISE_OPERATORS_H
 #define EIGEN_ARRAY_CWISE_OPERATORS_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /***************************************************************************
 * The following functions were defined in Core

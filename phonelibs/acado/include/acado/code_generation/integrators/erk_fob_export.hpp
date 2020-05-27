@@ -41,7 +41,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored explicit Runge-Kutta integrator with forward-over-backward second order sensitivity propagation for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -59,7 +59,7 @@ class ForwardOverBackwardERKExport : public AdjointERKExport
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -75,7 +75,7 @@ class ForwardOverBackwardERKExport : public AdjointERKExport
         ForwardOverBackwardERKExport(	const ForwardOverBackwardERKExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ForwardOverBackwardERKExport( );
 

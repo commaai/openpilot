@@ -161,4 +161,3 @@ extern "C" {
 }
 
 #endif  // HDCP_API_H_
-

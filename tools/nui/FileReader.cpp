@@ -71,7 +71,7 @@ LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* event
     while (1) {
       mergeEvents(cdled.get());
     }
-  }); 
+  });
 }
 
 void LogReader::mergeEvents(int dled) {
@@ -136,4 +136,3 @@ void LogReader::readyRead() {
   int dled = raw.size() - bStream.avail_out;
   cdled.put(dled);
 }
-

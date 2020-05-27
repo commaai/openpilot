@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 import capnp
+
 import cereal.messaging as messaging
 
 

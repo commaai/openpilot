@@ -119,4 +119,3 @@ private:
 
 
 #endif // DL_SYSTEM_TENSOR_MAP_HPP
-

@@ -11,7 +11,7 @@
 #ifndef EIGEN_BICGSTAB_H
 #define EIGEN_BICGSTAB_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -23,7 +23,7 @@ namespace internal {
   *                approximation of Ax=b (regardless of b)
   * \param iters On input the max number of iteration, on output the number of performed iterations.
   * \param tol_error On input the tolerance error, on output an estimation of the relative error.
-  * \return false in the case of numerical issue, for example a break down of BiCGSTAB. 
+  * \return false in the case of numerical issue, for example a break down of BiCGSTAB.
   */
 template<typename MatrixType, typename Rhs, typename Dest, typename Preconditioner>
 bool bicgstab(const MatrixType& mat, const Rhs& rhs, Dest& x,
@@ -42,7 +42,7 @@ bool bicgstab(const MatrixType& mat, const Rhs& rhs, Dest& x,
   x = precond.solve(x);
   VectorType r  = rhs - mat * x;
   VectorType r0 = r;
-  
+
   RealScalar r0_sqnorm = r0.squaredNorm();
   RealScalar rhs_sqnorm = rhs.squaredNorm();
   if(rhs_sqnorm == 0)
@@ -53,7 +53,7 @@ bool bicgstab(const MatrixType& mat, const Rhs& rhs, Dest& x,
   Scalar rho    = 1;
   Scalar alpha  = 1;
   Scalar w      = 1;
-  
+
   VectorType v = VectorType::Zero(n), p = VectorType::Zero(n);
   VectorType y(n),  z(n);
   VectorType kt(n), ks(n);
@@ -80,9 +80,9 @@ bool bicgstab(const MatrixType& mat, const Rhs& rhs, Dest& x,
     }
     Scalar beta = (rho/rho_old) * (alpha / w);
     p = r + beta * (p - w * v);
-    
+
     y = precond.solve(p);
-    
+
     v.noalias() = mat * y;
 
     alpha = rho / r0.dot(v);
@@ -102,7 +102,7 @@ bool bicgstab(const MatrixType& mat, const Rhs& rhs, Dest& x,
   }
   tol_error = sqrt(r.squaredNorm()/rhs_sqnorm);
   iters = i;
-  return true; 
+  return true;
 }
 
 }
@@ -134,7 +134,7 @@ struct traits<BiCGSTAB<_MatrixType,_Preconditioner> >
   * The maximal number of iterations and tolerance value can be controlled via the setMaxIterations()
   * and setTolerance() methods. The defaults are the size of the problem for the maximal number of iterations
   * and NumTraits<Scalar>::epsilon() for the tolerance.
-  * 
+  *
   * This class can be used as the direct solver classes. Here is a typical usage example:
   * \code
   * int n = 10000;
@@ -149,7 +149,7 @@ struct traits<BiCGSTAB<_MatrixType,_Preconditioner> >
   * // update b, and solve again
   * x = solver.solve(b);
   * \endcode
-  * 
+  *
   * By default the iterations start with x=0 as an initial guess of the solution.
   * One can control the start using the solveWithGuess() method. Here is a step by
   * step execution example starting with a random guess and printing the evolution
@@ -165,7 +165,7 @@ struct traits<BiCGSTAB<_MatrixType,_Preconditioner> >
   * } while (solver.info()!=Success && i<100);
   * \endcode
   * Note that such a step by step excution is slightly slower.
-  * 
+  *
   * \sa class SimplicialCholesky, DiagonalPreconditioner, IdentityPreconditioner
   */
 template< typename _MatrixType, typename _Preconditioner>
@@ -190,10 +190,10 @@ public:
   BiCGSTAB() : Base() {}
 
   /** Initialize the solver with matrix \a A for further \c Ax=b solving.
-    * 
+    *
     * This constructor is a shortcut for the default constructor followed
     * by a call to compute().
-    * 
+    *
     * \warning this class stores a reference to the matrix A as well as some
     * precomputed values that depend on it. Therefore, if \a A is changed
     * this class becomes invalid. Call compute() to update it with the new
@@ -202,7 +202,7 @@ public:
   BiCGSTAB(const MatrixType& A) : Base(A) {}
 
   ~BiCGSTAB() {}
-  
+
   /** \returns the solution x of \f$ A x = b \f$ using the current decomposition of A
     * \a x0 as an initial solution.
     *
@@ -218,17 +218,17 @@ public:
     return internal::solve_retval_with_guess
             <BiCGSTAB, Rhs, Guess>(*this, b.derived(), x0);
   }
-  
+
   /** \internal */
   template<typename Rhs,typename Dest>
   void _solveWithGuess(const Rhs& b, Dest& x) const
-  {    
+  {
     bool failed = false;
     for(int j=0; j<b.cols(); ++j)
     {
       m_iterations = Base::maxIterations();
       m_error = Base::m_tolerance;
-      
+
       typename Dest::ColXpr xj(x,j);
       if(!internal::bicgstab(*mp_matrix, b.col(j), xj, Base::m_preconditioner, m_iterations, m_error))
         failed = true;

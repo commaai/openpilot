@@ -62,4 +62,3 @@ struct cam_lrme_acquire_args {
 };
 
 #endif /* __UAPI_CAM_LRME_H__ */
-

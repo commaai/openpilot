@@ -10,7 +10,7 @@
 #ifndef EIGEN2_MEMORY_H
 #define EIGEN2_MEMORY_H
 
-namespace Eigen { 
+namespace Eigen {
 
 inline void* ei_aligned_malloc(size_t size) { return internal::aligned_malloc(size); }
 inline void  ei_aligned_free(void *ptr) { internal::aligned_free(ptr); }

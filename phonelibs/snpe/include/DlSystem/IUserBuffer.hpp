@@ -320,7 +320,7 @@ private:
 class ZDL_EXPORT IUserBuffer {
 public:
     virtual ~IUserBuffer() = default;
-    
+
     /**
       * @brief Retrieves the total number of bytes between elements in each dimension if
       * the buffer were to be interpreted as a multi-dimensional array.

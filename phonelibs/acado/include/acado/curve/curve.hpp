@@ -26,7 +26,7 @@
 
 /**
  *    \file include/acado/curve/curve.hpp
- *    \author Boris Houska, Hans Joachim Ferreau 
+ *    \author Boris Houska, Hans Joachim Ferreau
  */
 
 
@@ -39,12 +39,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
   *	\brief Allows to work with piecewise-continous function defined over a scalar time interval.
  *
  *	\ingroup BasicDataStructures
  *
- *  The class Curve allows to setup and evaluate piecewise-continous functions that 
+ *  The class Curve allows to setup and evaluate piecewise-continous functions that
  *  are defined over a scalar time interval and map into an Vectorspace of given dimension.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -68,7 +68,7 @@ class Curve{
         /** Assignment operator (deep copy). */
         Curve& operator=( const Curve& arg );
 
-		
+
 		Curve operator()(	uint idx
 							) const;
 
@@ -175,13 +175,13 @@ class Curve{
         /** Evaluates the curve at a given time point. This routine will store          \n
          *  the result of the evaluation into the double *result. Note that             \n
          *  this double pointer must be allocated by the user. Otherwise,               \n
-         *  segmentation faults might occur, which can not be prevented by              \n 
+         *  segmentation faults might occur, which can not be prevented by              \n
          *  this routine. For not time critical operations it is recommended to         \n
          *  use the routine                                                             \n
          *                                                                              \n
          *  evaluate( const double t, const DVector &result )                           \n
          *                                                                              \n
-         *  instead, which will throw  an error if a dimension mismatch occurs.         \n 
+         *  instead, which will throw  an error if a dimension mismatch occurs.         \n
          *  However, the routine based on double* is slightly more efficient.           \n
          *  In order to make the allocation correct, use the routines isEmpty()         \n
          *  and getDim() first to obtain (or check) the dimension.                      \n
@@ -235,7 +235,7 @@ class Curve{
 
          /** Evaluates the curve at specified grid points and stores the result in form of a             \n
           *  VariablesGrid. Note that all time points of the grid, at which the curve should be          \n
-          *  evaluated, must be contained in the domain of the curve. This domain can be                 \n 
+          *  evaluated, must be contained in the domain of the curve. This domain can be                 \n
           *  obtained with the routine  "getTimeDomain( double tStart, double tEnd )".                 \n
           *                                                                                              \n
           *  \param  discretizationGrid  (input) the grid points at which the curve should be evaluated. \n

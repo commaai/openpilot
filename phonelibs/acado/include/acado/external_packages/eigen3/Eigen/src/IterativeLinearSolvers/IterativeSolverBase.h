@@ -10,7 +10,7 @@
 #ifndef EIGEN_ITERATIVE_SOLVER_BASE_H
 #define EIGEN_ITERATIVE_SOLVER_BASE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \ingroup IterativeLinearSolvers_Module
   * \brief Base class for linear iterative solvers
@@ -40,10 +40,10 @@ public:
   }
 
   /** Initialize the solver with matrix \a A for further \c Ax=b solving.
-    * 
+    *
     * This constructor is a shortcut for the default constructor followed
     * by a call to compute().
-    * 
+    *
     * \warning this class stores a reference to the matrix A as well as some
     * precomputed values that depend on it. Therefore, if \a A is changed
     * this class becomes invalid. Call compute() to update it with the new
@@ -56,7 +56,7 @@ public:
   }
 
   ~IterativeSolverBase() {}
-  
+
   /** Initializes the iterative solver for the sparcity pattern of the matrix \a A for further solving \c Ax=b problems.
     *
     * Currently, this function mostly call analyzePattern on the preconditioner. In the future
@@ -70,7 +70,7 @@ public:
     m_info = Success;
     return derived();
   }
-  
+
   /** Initializes the iterative solver with the numerical values of the matrix \a A for further solving \c Ax=b problems.
     *
     * Currently, this function mostly call factorize on the preconditioner.
@@ -82,7 +82,7 @@ public:
     */
   Derived& factorize(const MatrixType& A)
   {
-    eigen_assert(m_analysisIsOk && "You must first call analyzePattern()"); 
+    eigen_assert(m_analysisIsOk && "You must first call analyzePattern()");
     mp_matrix = &A;
     m_preconditioner.factorize(A);
     m_factorizationIsOk = true;
@@ -118,7 +118,7 @@ public:
 
   /** \returns the tolerance threshold used by the stopping criteria */
   RealScalar tolerance() const { return m_tolerance; }
-  
+
   /** Sets the tolerance threshold used by the stopping criteria */
   Derived& setTolerance(const RealScalar& tolerance)
   {
@@ -128,7 +128,7 @@ public:
 
   /** \returns a read-write reference to the preconditioner for custom configuration. */
   Preconditioner& preconditioner() { return m_preconditioner; }
-  
+
   /** \returns a read-only reference to the preconditioner. */
   const Preconditioner& preconditioner() const { return m_preconditioner; }
 
@@ -137,7 +137,7 @@ public:
   {
     return (mp_matrix && m_maxIterations<0) ? mp_matrix->cols() : m_maxIterations;
   }
-  
+
   /** Sets the max number of iterations */
   Derived& setMaxIterations(int maxIters)
   {
@@ -171,7 +171,7 @@ public:
               && "IterativeSolverBase::solve(): invalid number of rows of the right hand side matrix b");
     return internal::solve_retval<Derived, Rhs>(derived(), b.derived());
   }
-  
+
   /** \returns the solution x of \f$ A x = b \f$ using the current decomposition of A.
     *
     * \sa compute()
@@ -192,13 +192,13 @@ public:
     eigen_assert(m_isInitialized && "IterativeSolverBase is not initialized.");
     return m_info;
   }
-  
+
   /** \internal */
   template<typename Rhs, typename DestScalar, int DestOptions, typename DestIndex>
   void _solve_sparse(const Rhs& b, SparseMatrix<DestScalar,DestOptions,DestIndex> &dest) const
   {
     eigen_assert(rows()==b.rows());
-    
+
     int rhsCols = b.cols();
     int size = b.rows();
     Eigen::Matrix<DestScalar,Dynamic,1> tb(size);
@@ -225,7 +225,7 @@ protected:
 
   int m_maxIterations;
   RealScalar m_tolerance;
-  
+
   mutable RealScalar m_error;
   mutable int m_iterations;
   mutable ComputationInfo m_info;
@@ -233,7 +233,7 @@ protected:
 };
 
 namespace internal {
- 
+
 template<typename Derived, typename Rhs>
 struct sparse_solve_retval<IterativeSolverBase<Derived>, Rhs>
   : sparse_solve_retval_base<IterativeSolverBase<Derived>, Rhs>

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from cereal import car
-
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car import scale_rot_inertia
 from selfdrive.car import scale_tire_stiffness

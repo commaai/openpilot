@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup UserDataStructures
  *
- *  The class StaticReferenceTrajectory allows to define a static reference trajectory 
+ *  The class StaticReferenceTrajectory allows to define a static reference trajectory
  *	(given beforehand) that the ControlLaw aims to track while computing its control action.
  *
  *	 \author Hans Joachim Ferreau, Boris Houska
@@ -58,7 +58,7 @@ class StaticReferenceTrajectory : public ReferenceTrajectory
 	// PUBLIC MEMBER FUNCTIONS:
 	//
 	public:
-		/** Default constructor. 
+		/** Default constructor.
 		 */
 		StaticReferenceTrajectory( );
 

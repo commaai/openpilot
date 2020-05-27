@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
-from cereal import car
 
+from cereal import car
 from common.numpy_fast import clip
 from common.numpy_fast import interp
 from common.realtime import DT_CTRL

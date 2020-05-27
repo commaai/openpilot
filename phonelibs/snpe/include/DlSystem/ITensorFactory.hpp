@@ -37,16 +37,16 @@ public:
    virtual ~ITensorFactory() = default;
 
    /**
-    * Creates a new ITensor with uninitialized data. 
-    *  
-    * The strides for the tensor will match the tensor dimensions 
+    * Creates a new ITensor with uninitialized data.
+    *
+    * The strides for the tensor will match the tensor dimensions
     * (i.e., the tensor data is contiguous in memory).
-    *  
+    *
     * @param[in] shape The dimensions for the tensor in which the last
     * element of the vector represents the fastest varying
     * dimension and the zeroth element represents the slowest
     * varying, etc.
-    * 
+    *
     * @return A pointer to the created tensor or nullptr if creating failed.
     */
    virtual std::unique_ptr<ITensor>
@@ -54,10 +54,10 @@ public:
 
    /**
     * Creates a new ITensor by loading it from a file.
-    *  
-    * @param[in] input The input stream from which to read the tensor 
+    *
+    * @param[in] input The input stream from which to read the tensor
     *                  data.
-    *  
+    *
     * @return A pointer to the created tensor or nullptr if creating failed.
     *
     */

@@ -40,7 +40,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored IRK solver based on Gaussian elimination of specific dimensions.
  *
  *	\ingroup NumericalAlgorithms
@@ -58,7 +58,7 @@ class ExportIRK3StageSimplifiedNewton : public ExportGaussElim
     //
     public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -184,7 +184,7 @@ class ExportIRK3StageSimplifiedNewton : public ExportGaussElim
 		ExportVariable rk_swap_complex;				/**< Variable that is used to swap rows for pivoting. */
 		ExportVariable rk_bPerm_complex;			/**< Variable containing the reordered right-hand side. */
 		ExportVariable rk_bPerm_complex_trans;		/**< Variable containing ... */
-		
+
 		ExportFunction solve_complex;				/**< Function that solves the complex linear system. */
 		ExportFunction solveReuse_complex;			/**< Function that solves a complex linear system with the same matrix, reusing previous results. */
 		ExportFunction solveReuse_complexTranspose;	/**< Function that solves a complex linear system with the same matrix, reusing previous results. */

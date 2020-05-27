@@ -46,7 +46,7 @@ BEGIN_NAMESPACE_ACADO
 class OCP;
 class Objective;
 
-/** 
+/**
  *	\brief Base class for export of NLP/OCP solvers.
  *
  *	\ingroup NumericalAlgorithms
@@ -54,7 +54,7 @@ class Objective;
  *	This base class is basically used to extract information from an OCP
  *	object and prepare low level structures. Later, a derived class is
  *	actually building the solver to solve an OCP problem.
- * 
+ *
  *	\author Milan Vukov
  *
  *	\note Based on code originally developed by Boris Houska and Hand Joachim Ferreau.

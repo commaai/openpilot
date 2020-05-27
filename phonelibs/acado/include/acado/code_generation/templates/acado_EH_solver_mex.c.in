@@ -41,7 +41,7 @@ output
 		kktValue
 		objValue
 		nIterations: works only for qpOASES
-	}	
+	}
 }
 */
 
@@ -96,10 +96,10 @@ void mexErrMsgTxtAdv(	char* string,
 						)
 {
 	static char buffer[ 128 ];
-	
+
 	va_list printArgs;
 	va_start(printArgs, string);
-	
+
 	vsprintf(buffer, string, printArgs);
 	va_end( printArgs );
 
@@ -136,7 +136,7 @@ int getArray(	const unsigned mandatory,
 	mxArray* mxPtr = mxGetField(source, index, name);
 	unsigned i, j;
 	double* dPtr;
-	
+
 	if (mxPtr == NULL)
 	{
 		if ( !mandatory )
@@ -152,7 +152,7 @@ int getArray(	const unsigned mandatory,
 		mexErrMsgTxtAdv("Field %s must be of size: %d x %d.", name, nRows, nCols);
 
 	dPtr = mxGetPr( mxPtr );
-	
+
 	if (destination == NULL)
 		destination = (real_t*)mxCalloc(nRows * nCols, sizeof( real_t ));
 
@@ -162,7 +162,7 @@ int getArray(	const unsigned mandatory,
 		for (i = 0; i < nRows; ++i)
 			for (j = 0; j < nCols; ++j)
 				destination[i * nCols + j] = (real_t)dPtr[j * nRows + i];
-			
+
 	return 0;
 }
 
@@ -177,7 +177,7 @@ void setArray( 	mxArray* destination,
 	mxArray* mxPtr = mxCreateDoubleMatrix(nRows, nCols, mxREAL);
 	double* dPtr = mxGetPr( mxPtr );
 	unsigned i, j;
-	
+
 	if (nRows == 1 && nCols == 1)
 		*dPtr = *source;
 	else
@@ -203,7 +203,7 @@ void mexFunction(	int nlhs,
 	real_t* xEnd = NULL;
 	real_t* uEnd = NULL;
 	const mxArray* src = prhs[ 0 ];
-	
+
 	const char *infoNames[ 5 ] = {"status", "cpuTime", "kktValue", "objValue", "nIterations"};
 	mxArray* info;
 	double status, cpuTime, kktValue, objValue;
@@ -211,7 +211,7 @@ void mexFunction(	int nlhs,
 	mxArray* shPtr;
 	@MODULE_NAME@_timer tmr;
 	double nIterations = 0;
-	
+
 	const char *outNames[ NOO_4 ];
 	outNames[ 0 ] = "info";
 	outNames[ 1 ] = "x";
@@ -219,8 +219,8 @@ void mexFunction(	int nlhs,
 	outNames[ 3 ] = "mu";
 #if @MODULE_PREFIX@_NXA
 	outNames[ NOO ] = "z";
-#endif	
-		
+#endif
+
 #if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1
 	outNames[ NOO_2 ] = "xAC";
 	outNames[NOO_2  + 1] = "SAC";
@@ -228,39 +228,39 @@ void mexFunction(	int nlhs,
 #if @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX == 1
 	outNames[ NOO_3 ] = "sigmaN";
 #endif
-	
+
 	if (nrhs != 1)
 		mexErrMsgTxt(
 			"This function requires exactly one input: a structure with parameters.");
-			
+
 	if (nlhs != 1)
 		mexErrMsgTxt(
 			"This function returns one output.");
-			
+
 	if( !mxIsStruct( src ) )
 		mexErrMsgTxt("The function argument must be a structure.");
-	
+
 	/* Get the control flag. */
 	if (getArray(0, src, 0, "control", tmp, 1, 1) == 0)
 		ctrl = (unsigned)tmp[ 0 ];
 	else
 		ctrl = 0;
-		
+
 	/* Get the initialization flag. */
 	if (getArray(0, src, 0, "initialization", tmp, 1, 1) == 0)
 		initType = (unsigned)tmp[ 0 ];
 	else
 		initType = 0;
-		
+
 	/* Copy MATLAB arrays to C arrays. */
 	getArray(1, src, 0, "x",  @MODULE_NAME@Variables.x, @MODULE_PREFIX@_N + 1, @MODULE_PREFIX@_NX);
 	getArray(1, src, 0, "u",  @MODULE_NAME@Variables.u, @MODULE_PREFIX@_N, @MODULE_PREFIX@_NU);
 	getArray(1, src, 0, "mu", @MODULE_NAME@Variables.mu, @MODULE_PREFIX@_N, @MODULE_PREFIX@_NX);
-	
-#if @MODULE_PREFIX@_NXA	
+
+#if @MODULE_PREFIX@_NXA
 	getArray(1, src, 0, "z",  @MODULE_NAME@Variables.z, @MODULE_PREFIX@_N, @MODULE_PREFIX@_NXA);
-#endif	
-	
+#endif
+
 #if @MODULE_PREFIX@_NOD
 	getArray(1, src, 0, "od", @MODULE_NAME@Variables.od, @MODULE_PREFIX@_N + 1, @MODULE_PREFIX@_NOD);
 #endif
@@ -275,7 +275,7 @@ void mexFunction(	int nlhs,
 	{
 		@MODULE_NAME@_initializeSolver();
 	}
-	
+
 	/* Bounds */
 #if @MODULE_PREFIX@_INITIAL_STATE_FIXED == 1
 	getArray(1, src, 0, "lbValues", @MODULE_NAME@Variables.lbValues, @MODULE_PREFIX@_N * @MODULE_PREFIX@_NU, 1);
@@ -311,145 +311,145 @@ void mexFunction(	int nlhs,
 	{
 		if( !mxIsStruct( shPtr ) )
 			mexErrMsgTxt("Field \"shifting\" must be defined with a structure.");
-		
+
 		/* Get the shifting strategy flag */
 		getArray(1, shPtr, 0, "strategy", tmp, 1, 1);
 		strategy = (unsigned)tmp[ 0 ];
-		
+
 		if (strategy > 2)
 			mexErrMsgTxt("Valid options for the shifting strategy are 1 or 2.");
-	
+
 		getArray(0, shPtr, 0, "xEnd", xEnd, @MODULE_PREFIX@_NX, 1);
 		getArray(0, shPtr, 0, "uEnd", uEnd, @MODULE_PREFIX@_NU, 1);
 	}
 	else
 		strategy = 0;
-		
+
 	@MODULE_NAME@_tic( &tmr );
-	
+
 	/* Call solver */
 	switch ( ctrl )
 	{
 		case 0:
 			/* Simple operational mode. Run one RTI with optional shifting. */
-			
+
 			if ( !initialized )
 			{
 				memset(&@MODULE_NAME@Workspace, 0, sizeof( @MODULE_NAME@Workspace ));
-			
+
 #if @MODULE_PREFIX@_HARDCODED_CONSTRAINT_VALUES == 1
 				@MODULE_NAME@_initializeSolver();
 #endif /* @MODULE_PREFIX@_HARDCODED_CONSTRAINT_VALUES == 1 */
-                
+
                 /*for( i = 0; i < ACADO_N*ACADO_RK_NIS; i++ ) {
                     for( j = 0; j < ACADO_RK_NSTAGES*(ACADO_NX+ACADO_NXA); j++ ) {
                         acadoWorkspace.rk_A_traj[i*ACADO_RK_NSTAGES*(ACADO_NX+ACADO_NXA)*ACADO_RK_NSTAGES*(ACADO_NX+ACADO_NXA)+j*ACADO_RK_NSTAGES*(ACADO_NX+ACADO_NXA)+j] = 1.0;
                     }
                 }*/
-				
+
 				if (initType == 1)
 				{
 					@MODULE_NAME@_initializeNodesByForwardSimulation();
 				}
-				
-#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 
+
+#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1
                 	@MODULE_NAME@_updateArrivalCost( 1 );
 #endif /* @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 */
-				
+
 				initialized = 1;
 			}
 			else if (strategy == 1 || strategy == 2)
 			{
-#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 
+#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1
                 @MODULE_NAME@_updateArrivalCost( 0 );
 #endif /* @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 */
-				
+
 				@MODULE_NAME@_shiftStates(strategy, xEnd, uEnd);
 				@MODULE_NAME@_shiftControls(uEnd);
 			}
-			
+
 			@MODULE_NAME@_preparationStep();
-			
+
 			status = (double)@MODULE_NAME@_feedbackStep();
-			
+
 			kktValue = @MODULE_NAME@_getKKT();
 			objValue = @MODULE_NAME@_getObjective();
 
 #if ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) )
 			nIterations = (double)@MODULE_NAME@_getNWSR();
 #endif /* ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) ) */
-			
+
 			break;
-		
+
 		case 1:
 			/* Initialize */
-			
+
 			memset(&@MODULE_NAME@Workspace, 0, sizeof( @MODULE_NAME@Workspace ));
-			
+
 			@MODULE_NAME@_initializeSolver();
-				
+
 			if (initType == 1)
 			{
 				@MODULE_NAME@_initializeNodesByForwardSimulation();
 			}
-			
-#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 
+
+#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1
                 @MODULE_NAME@_updateArrivalCost( 1 );
-#endif /* @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 */			
-			
+#endif /* @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 */
+
 			break;
-		
+
 		case 2:
 			/* Preparation step */
-			
+
 			@MODULE_NAME@_preparationStep();
-			
+
 			break;
-		
+
 		case 3:
 			/* Feedback step */
-			
+
 			status = (double)@MODULE_NAME@_feedbackStep();
-			
+
 			kktValue = @MODULE_NAME@_getKKT();
 			objValue = @MODULE_NAME@_getObjective();
-			
+
 #if ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) )
 			nIterations = (double)@MODULE_NAME@_getNWSR();
 #endif /* ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) ) */
-			
+
 			break;
-		
+
 		case 4:
 			/* Shifting */
-			
-#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 
+
+#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1
                 @MODULE_NAME@_updateArrivalCost( 0 );
-#endif /* @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 */			
-			
+#endif /* @MODULE_PREFIX@_USE_ARRIVAL_COST == 1 */
+
 			@MODULE_NAME@_shiftStates(strategy, xEnd, uEnd);
 			@MODULE_NAME@_shiftControls( uEnd );
-			
+
 			break;
-			
+
 		default:
 			/* Return an error */
 			mexErrMsgTxt("Unknown control code.");
 	}
-	
+
 	cpuTime = @MODULE_NAME@_toc( &tmr );
-	
+
 	/* Prepare return argument */
-	
+
 	plhs[ 0 ] = mxCreateStructMatrix(1, 1, NOO_4, outNames);
-		
+
 	setArray(plhs[ 0 ], 0, "x", @MODULE_NAME@Variables.x, @MODULE_PREFIX@_N + 1, @MODULE_PREFIX@_NX);
 	setArray(plhs[ 0 ], 0, "u", @MODULE_NAME@Variables.u, @MODULE_PREFIX@_N, @MODULE_PREFIX@_NU);
 	setArray(plhs[ 0 ], 0, "mu", @MODULE_NAME@Variables.mu, @MODULE_PREFIX@_N, @MODULE_PREFIX@_NX);
 #if @MODULE_PREFIX@_NXA > 0
 	setArray(plhs[ 0 ], 0, "z", @MODULE_NAME@Variables.z, @MODULE_PREFIX@_N, @MODULE_PREFIX@_NXA);
-#endif	
-		
+#endif
+
 #if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1
 	setArray(plhs[ 0 ], 0, "xAC", @MODULE_NAME@Variables.xAC, @MODULE_PREFIX@_NX, 1);
 	setArray(plhs[ 0 ], 0, "SAC", @MODULE_NAME@Variables.SAC, @MODULE_PREFIX@_NX, @MODULE_PREFIX@_NX);
@@ -461,18 +461,18 @@ void mexFunction(	int nlhs,
 
 	/* Create the info structure. */
 	info = mxCreateStructMatrix(1, 1, 5, infoNames);
-		
+
 	setArray(info, 0, "status", &status, 1, 1);
 	setArray(info, 0, "cpuTime", &cpuTime, 1, 1);
 	setArray(info, 0, "kktValue", &kktValue, 1, 1);
 	setArray(info, 0, "objValue", &objValue, 1, 1);
-	
+
 #if ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) )
 	setArray(info, 0, "nIterations", &nIterations, 1, 1);
 #endif /* ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) ) */
-		
+
 	mxSetField(plhs[ 0 ], 0, "info", info);
-	
+
 	/* Cleanup of the allocated memory */
 	FREE( xEnd );
 	FREE( uEnd );

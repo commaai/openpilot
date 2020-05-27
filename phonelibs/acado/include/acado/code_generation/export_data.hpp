@@ -42,7 +42,7 @@ BEGIN_NAMESPACE_ACADO
 // Forward declaration
 class ExportDataInternal;
 
-/** 
+/**
  *	\brief Abstract base class to define variables to be used for exporting code
  *
  *	\ingroup AuxiliaryFunctionality
@@ -58,7 +58,7 @@ class ExportData : public CasADi::SharedObject
     // PUBLIC MEMBER FUNCTIONS:
     //
     public:
-		/** Default constructor. 
+		/** Default constructor.
 		 */
         ExportData( );
 
@@ -91,7 +91,7 @@ class ExportData : public CasADi::SharedObject
 		 */
 		returnValue	setType(	ExportType _type
 								);
-								
+
 		/** Sets the global data struct to which the data object belongs to.
 		 *
 		 *	@param[in] _dataStruct		New global data struct to which the data object belongs to.
@@ -142,14 +142,14 @@ class ExportData : public CasADi::SharedObject
 		 *	\return std::string containing the global data struct to which the data object belongs to.
 		 */
 		std::string getDataStructString( ) const;
-		
+
 		/** Returns a string which contains a prefix name.
 		 *
 		 *  \return Prefix name
 		 */
 		std::string getPrefix( ) const;
 
-		/** Returns the full name of the data object including the possible prefix 
+		/** Returns the full name of the data object including the possible prefix
 		 *	of the global data struct.
 		 *
 		 *	\return Full name of the data object
@@ -157,7 +157,7 @@ class ExportData : public CasADi::SharedObject
 		std::string getFullName( ) const;
 
 
-		/** Exports declaration of the index variable. Its appearance can 
+		/** Exports declaration of the index variable. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream				Name of file to be used to export function.

@@ -33,7 +33,7 @@ namespace zdl { namespace DlSystem {
 
 /**
  * @brief .
- * 
+ *
  * Convenient typedef for user defined layer creation factory
  *
  * @param[out] void* Cookie - a user opaque data that was passed during SNPE's runtime's
@@ -56,7 +56,7 @@ using UDLFactoryFunc = std::function<zdl::DlSystem::IUDL* (void*, const zdl::DlS
  *
  * @param[out] void* Cookie - a user opaque data that was passed during SNPE's runtime's
  *        CreateInstance. SNPE's runtime is passing this back to the user.
- * 
+ *
  * @return IUDL* - nullptr to indicate SNPE's runtime that there is no specific
  *         implementation for UDL. When SNPE's runtime sees nullptr as a return
  *         value from the factory, it will halt execution if model has an unknown layer
@@ -66,7 +66,7 @@ inline ZDL_EXPORT zdl::DlSystem::IUDL* DefaultUDLFunc(void*, const zdl::DlSystem
 
 /**
  * @brief .
- * 
+ *
  * Simple struct to bundle 2 elements.
  * A user defined cookie that would be returned for each
  * IUDL call. The user can place anything there and the

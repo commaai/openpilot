@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSEUTIL_H
 #define EIGEN_SPARSEUTIL_H
 
-namespace Eigen { 
+namespace Eigen {
 
 #ifdef NDEBUG
 #define EIGEN_DBG_SPARSE(X)

@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class IPmethod implements different interior-point methods 
+ *  The class IPmethod implements different interior-point methods
  *  for solving nonlinear programming problems.
  *
  *	 \author Boris Houska, Hans Joachim Ferreau
@@ -64,7 +64,7 @@ class IPmethod : public NLPsolver
 
         IPmethod(	UserInteraction* _userInteraction
 					);
-					
+
         /** Default constructor. */
         IPmethod( const NLP& nlp_ );
 

@@ -105,7 +105,7 @@ inline returnValue PlotWindowSubplot::getTitle(	std::string& _title
 												)
 {
 	_title = title;
-	return SUCCESSFUL_RETURN; 
+	return SUCCESSFUL_RETURN;
 }
 
 inline returnValue PlotWindowSubplot::getXLabel(	std::string& _xLabel

@@ -12,7 +12,7 @@
 #ifndef KRONECKER_TENSOR_PRODUCT_H
 #define KRONECKER_TENSOR_PRODUCT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename Scalar, int Options, typename Index> class SparseMatrix;
 
@@ -42,7 +42,7 @@ class KroneckerProduct : public ReturnByValue<KroneckerProduct<Lhs,Rhs> >
 
     /*! \brief Evaluate the Kronecker tensor product. */
     template<typename Dest> void evalTo(Dest& dst) const;
-    
+
     inline Index rows() const { return m_A.rows() * m_B.rows(); }
     inline Index cols() const { return m_A.cols() * m_B.cols(); }
 
@@ -90,7 +90,7 @@ class KroneckerProductSparse : public EigenBase<KroneckerProductSparse<Lhs,Rhs> 
 
     /*! \brief Evaluate the Kronecker tensor product. */
     template<typename Dest> void evalTo(Dest& dst) const;
-    
+
     inline Index rows() const { return m_A.rows() * m_B.rows(); }
     inline Index cols() const { return m_A.cols() * m_B.cols(); }
 

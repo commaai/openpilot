@@ -4,7 +4,6 @@ import os
 import sys
 
 from cereal import log
-
 from common.basedir import BASEDIR
 os.environ['BASEDIR'] = BASEDIR
 

@@ -36,7 +36,7 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *	\brief A class for configuration and export for interface to the FORCES QP solver
  *
  *	\ingroup AuxiliaryFunctionality

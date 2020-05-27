@@ -57,8 +57,8 @@ const BooleanType defaultAutoInit = BT_TRUE;
  *
  *	\ingroup BasicDataStructures
  *
- *  The class VariableSettings provides variable-specific settings for 
- *	enhancing a DVector or a DMatrix to vector- or matrix-valued 
+ *  The class VariableSettings provides variable-specific settings for
+ *	enhancing a DVector or a DMatrix to vector- or matrix-valued
  *	optimization variables. It is intended for internal use only.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -70,7 +70,7 @@ class VariableSettings
     //
     public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 */
         VariableSettings( );
 
@@ -102,7 +102,7 @@ class VariableSettings
 		VariableSettings(	const VariableSettings& rhs
 							);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		~VariableSettings( );
 
@@ -405,7 +405,7 @@ class VariableSettings
 		 */
 		inline BooleanType hasScaling( ) const;
 
-		/** Returns whether VariableSettings comprises lower bounds 
+		/** Returns whether VariableSettings comprises lower bounds
 		 *	(at at least one of its grid points).
 		 *
 		 *  \return BT_TRUE  iff VariableSettings comprises lower bounds, \n

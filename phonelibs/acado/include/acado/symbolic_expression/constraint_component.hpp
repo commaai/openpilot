@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Data class for symbolically formulating constraints within optimal control problems.
  *
  *	\ingroup AuxiliaryFunctionality

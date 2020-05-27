@@ -10,7 +10,7 @@
 #ifndef EIGEN_SELECT_H
 #define EIGEN_SELECT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class Select
   * \ingroup Core_Module

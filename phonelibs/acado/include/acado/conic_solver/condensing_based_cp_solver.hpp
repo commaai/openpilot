@@ -66,7 +66,7 @@ class CondensingBasedCPsolver: public BandedCPsolver {
 
         /** Default constructor. */
         CondensingBasedCPsolver( );
-		
+
         CondensingBasedCPsolver(	UserInteraction* _userInteraction,
 									uint nConstraints_,
         							const DVector& blockDims_
@@ -135,7 +135,7 @@ class CondensingBasedCPsolver: public BandedCPsolver {
          */
         virtual returnValue getVarianceCovariance( DMatrix &var );
 
-		
+
 		virtual returnValue setRealTimeParameters(	const DVector& DeltaX,
 													const DVector& DeltaP = emptyConstVector
 													);
@@ -161,7 +161,7 @@ class CondensingBasedCPsolver: public BandedCPsolver {
 												);
 
 
-        /** Solves current QP (or relaxation) using not more than the 
+        /** Solves current QP (or relaxation) using not more than the
 		 *  given number of iterations.
 		 *  \return SUCCESSFUL_RETURN \n
 		 *          RET_QP_INIT_FAILED */
@@ -214,7 +214,7 @@ class CondensingBasedCPsolver: public BandedCPsolver {
 
 
         returnValue initializeCondensingOperator( );
-		
+
 		returnValue computeCondensingOperator(	BandedCP& cp
 												);
 

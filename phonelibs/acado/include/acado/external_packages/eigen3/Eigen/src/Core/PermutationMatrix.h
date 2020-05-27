@@ -11,7 +11,7 @@
 #ifndef EIGEN_PERMUTATIONMATRIX_H
 #define EIGEN_PERMUTATIONMATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<int RowCol,typename IndicesType,typename MatrixType, typename StorageKind> class PermutedImpl;
 
@@ -209,7 +209,7 @@ class PermutationBase : public EigenBase<Derived>
 
     /**** multiplication helpers to hopefully get RVO ****/
 
-  
+
 #ifndef EIGEN_PARSED_BY_DOXYGEN
   protected:
     template<typename OtherDerived>

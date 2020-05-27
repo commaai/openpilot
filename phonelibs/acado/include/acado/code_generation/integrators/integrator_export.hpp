@@ -44,7 +44,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored integrator for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -62,7 +62,7 @@ class IntegratorExport : public ExportAlgorithm
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -78,7 +78,7 @@ class IntegratorExport : public ExportAlgorithm
         IntegratorExport(	const IntegratorExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~IntegratorExport( );
 
@@ -103,7 +103,7 @@ class IntegratorExport : public ExportAlgorithm
 		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
-		
+
 		virtual returnValue setDifferentialEquation( const Expression& rhs ) = 0;
 
 
@@ -289,8 +289,8 @@ class IntegratorExport : public ExportAlgorithm
 		 */
 		virtual returnValue getCode(	ExportStatementBlock& code
 										) = 0;
-							
-        
+
+
         /** Sets up the output with the grids for the different output functions.									\n
 		*                                                                      										\n
 		*  \param outputGrids_	  	The vector containing a grid for each output function.			  				\n
@@ -335,35 +335,35 @@ class IntegratorExport : public ExportAlgorithm
 
 
 		/** Returns the grid of the integrator. 	\n
-		* 
+		*
 		*  \return SUCCESSFUL_RETURN          		\n
 		*/
 		virtual returnValue getGrid( Grid& grid_ ) const;
 
 
 		/** Returns the number of integration steps along the prediction horizon. 	\n
-		* 
+		*
 		*  \return SUCCESSFUL_RETURN          		\n
 		*/
 		virtual returnValue getNumSteps( DVector& _numSteps ) const;
-		
-		
+
+
 		/** Returns the output expressions. 	\n
-		* 
+		*
 		*  \return SUCCESSFUL_RETURN          	\n
 		*/
 		virtual returnValue getOutputExpressions( std::vector<Expression>& outputExpressions_ ) const;
 
 
 		/** Returns the output grids. 			\n
-		* 
+		*
 		*  \return SUCCESSFUL_RETURN          	\n
 		*/
 		virtual returnValue getOutputGrids( std::vector<Grid>& outputGrids_ ) const;
 
 
 		/** Returns whether the grid is equidistant.	\n
-		 *  
+		 *
 		 * \return true  iff the grid is equidistant, false otherwise. \n
 		 */
 		virtual bool equidistantControlGrid( ) const;
@@ -452,7 +452,7 @@ class IntegratorExport : public ExportAlgorithm
 		ExportFunction fullRhs;				/**< Function that evaluates the full right-hand side. */
 		ExportVariable	rhs_in;
 		ExportVariable	rhs_out;
-		
+
 		ExportFunction integrate;			/**< Function that integrates the exported ODE. */
 		ExportAcadoFunction rhs;			/**< Module to export ODE. */
 		ExportAcadoFunction diffs_rhs;		/**< Module to export the evaluation of the derivatives of the ordinary differential equations. */
@@ -471,7 +471,7 @@ class IntegratorExport : public ExportAlgorithm
 
 		ExportVariable	rk_diffsPrev1;
 		ExportVariable	rk_diffsNew1;
-		
+
 		ExportVariable  rk_diffsPrev2;			/**< Variable containing the sensitivities from the previous integration step. */
 		ExportVariable  rk_diffsNew2;			/**< Variable containing the derivatives wrt the previous values. */
 		ExportVariable  rk_diffsTemp2;			/**< Variable containing intermediate results of evaluations of the derivatives of the differential equations (ordinary and algebraic). */

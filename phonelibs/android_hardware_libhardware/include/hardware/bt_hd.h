@@ -126,4 +126,3 @@ typedef struct {
 __END_DECLS
 
 #endif /* ANDROID_INCLUDE_BT_HD_H */
-

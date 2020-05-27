@@ -50,10 +50,10 @@ static PlotWindow emptyPlotWindow;
  *	\brief Provides a generic way to plot algorithmic outputs during runtime.
  *
  *	\ingroup AuxiliaryFunctionality
- *	
+ *
  *  The class Plotting provides a generic way to plot algorithmic outputs
- *	during runtime. This class is part of the UserInterface class, i.e. all classes 
- *	that are intended to interact with the user inherit the public functionality 
+ *	during runtime. This class is part of the UserInterface class, i.e. all classes
+ *	that are intended to interact with the user inherit the public functionality
  *	of the Plotting class.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -61,7 +61,7 @@ static PlotWindow emptyPlotWindow;
 class Plotting
 {
 	friend class AlgorithmicBase;
-	
+
 	//
 	// PUBLIC MEMBER FUNCTIONS:
 	//
@@ -78,7 +78,7 @@ class Plotting
 		Plotting(	const Plotting& rhs
 					);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~Plotting( );
 
@@ -94,11 +94,11 @@ class Plotting
 		 *
 		 *	@param[in] _window	Window to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addPlotWindow member function and is introduced for syntax reasons only.
 		 *
 		 *  \return >= 0: index of added record, \n
-		 *	        -RET_PLOT_COLLECTION_CORRUPTED 
+		 *	        -RET_PLOT_COLLECTION_CORRUPTED
 		 */
 		inline int operator<<(	PlotWindow& _window
 								);
@@ -108,7 +108,7 @@ class Plotting
 		 *	@param[in] _window	Window to be added.
 		 *
 		 *  \return >= 0: index of added record, \n
-		 *	        -RET_PLOT_COLLECTION_CORRUPTED 
+		 *	        -RET_PLOT_COLLECTION_CORRUPTED
 		 */
 		inline int addPlotWindow(	PlotWindow& _window
 									);
@@ -120,21 +120,21 @@ class Plotting
 		 *	@param[out] _window		Desired window.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_INDEX_OUT_OF_BOUNDS 
+		 *	        RET_INDEX_OUT_OF_BOUNDS
 		 */
 		inline returnValue getPlotWindow(	uint idx,
 											PlotWindow& _window
 											) const;
 
-		/** Returns the window with certain index from the plot collection. 
-		 *	This index is not provided when calling the function, but 
+		/** Returns the window with certain index from the plot collection.
+		 *	This index is not provided when calling the function, but
 		 *	rather obtained by using the alias index of the window. If the
 		 *	window is no alias window, the error RET_INDEX_OUT_OF_BOUNDS is thrown.
 		 *
 		 *	@param[out] _window		Desired window.
 		 *
 		 *  \return SUCCESSFUL_RETURN, \n
-		 *	        RET_INDEX_OUT_OF_BOUNDS 
+		 *	        RET_INDEX_OUT_OF_BOUNDS
 		 */
 		inline returnValue getPlotWindow(	PlotWindow& _window
 											) const;
@@ -149,7 +149,7 @@ class Plotting
 		virtual returnValue plot(	PlotFrequency _frequency = PLOT_IN_ANY_CASE
 									);
 
-        /** Plots all windows of the plot collection, each one into the 
+        /** Plots all windows of the plot collection, each one into the
 		 *	corresponding existing figure, if possible.
 		 *
 		 *	@param[in] _frequency	Frequency determining at which time instants the window is to be plotted.

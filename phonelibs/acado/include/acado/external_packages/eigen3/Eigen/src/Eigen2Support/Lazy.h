@@ -10,7 +10,7 @@
 #ifndef EIGEN_LAZY_H
 #define EIGEN_LAZY_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \deprecated it is only used by lazy() which is deprecated
   *

@@ -35,7 +35,7 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
  *	\brief Data class for defining static optimization problems.
  *
  *	\ingroup BasicDataStructures

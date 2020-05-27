@@ -685,7 +685,7 @@ inline const Block<const Derived, BlockRows, BlockCols> block(Index startRow, In
   * \sa class Block, block(Index,Index,Index,Index)
   */
 template<int BlockRows, int BlockCols>
-inline Block<Derived, BlockRows, BlockCols> block(Index startRow, Index startCol, 
+inline Block<Derived, BlockRows, BlockCols> block(Index startRow, Index startCol,
                                                   Index blockRows, Index blockCols)
 {
   return Block<Derived, BlockRows, BlockCols>(derived(), startRow, startCol, blockRows, blockCols);

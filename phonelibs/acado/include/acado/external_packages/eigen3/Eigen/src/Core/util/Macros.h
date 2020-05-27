@@ -23,7 +23,7 @@
 #else
   #define EIGEN_GNUC_AT_LEAST(x,y) 0
 #endif
- 
+
 #ifdef __GNUC__
   #define EIGEN_GNUC_AT_MOST(x,y) ((__GNUC__==x && __GNUC_MINOR__<=y) || __GNUC__<x)
 #else

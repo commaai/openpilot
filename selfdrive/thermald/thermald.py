@@ -4,11 +4,11 @@ import datetime
 import json
 import os
 
-import cereal.messaging as messaging
 import psutil
-from cereal import log
 from smbus2 import SMBus
 
+import cereal.messaging as messaging
+from cereal import log
 from common.android import ANDROID
 from common.android import get_network_strength
 from common.android import get_network_type

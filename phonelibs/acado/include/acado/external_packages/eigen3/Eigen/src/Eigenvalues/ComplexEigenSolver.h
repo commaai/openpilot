@@ -14,7 +14,7 @@
 
 #include "./ComplexSchur.h"
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \eigenvalues_module \ingroup Eigenvalues_Module
   *
@@ -248,7 +248,7 @@ template<typename _MatrixType> class ComplexEigenSolver
 
 
 template<typename MatrixType>
-ComplexEigenSolver<MatrixType>& 
+ComplexEigenSolver<MatrixType>&
 ComplexEigenSolver<MatrixType>::compute(const MatrixType& matrix, bool computeEigenvectors)
 {
   // this code is inspired from Jampack

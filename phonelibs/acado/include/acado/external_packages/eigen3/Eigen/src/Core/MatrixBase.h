@@ -237,7 +237,7 @@ template<typename Derived> class MatrixBase
     #ifdef EIGEN2_SUPPORT
     template<unsigned int Mode> typename internal::eigen2_part_return_type<Derived, Mode>::type part();
     template<unsigned int Mode> const typename internal::eigen2_part_return_type<Derived, Mode>::type part() const;
-    
+
     // huuuge hack. make Eigen2's matrix.part<Diagonal>() work in eigen3. Problem: Diagonal is now a class template instead
     // of an integer constant. Solution: overload the part() method template wrt template parameters list.
     template<template<typename T, int N> class U>
@@ -338,7 +338,7 @@ template<typename Derived> class MatrixBase
     #if EIGEN2_SUPPORT_STAGE > STAGE20_RESOLVE_API_CONFLICTS
     const PartialPivLU<PlainObject> lu() const;
     #endif
-    
+
     #ifdef EIGEN2_SUPPORT
     template<typename ResultType>
     void computeInverse(MatrixBase<ResultType> *result) const {
@@ -372,7 +372,7 @@ template<typename Derived> class MatrixBase
     const HouseholderQR<PlainObject> householderQr() const;
     const ColPivHouseholderQR<PlainObject> colPivHouseholderQr() const;
     const FullPivHouseholderQR<PlainObject> fullPivHouseholderQr() const;
-    
+
     #ifdef EIGEN2_SUPPORT
     const QR<PlainObject> qr() const;
     #endif
@@ -404,7 +404,7 @@ template<typename Derived> class MatrixBase
     PlainObject cross3(const MatrixBase<OtherDerived>& other) const;
     PlainObject unitOrthogonal(void) const;
     Matrix<Scalar,3,1> eulerAngles(Index a0, Index a1, Index a2) const;
-    
+
     #if EIGEN2_SUPPORT_STAGE > STAGE20_RESOLVE_API_CONFLICTS
     ScalarMultipleReturnType operator*(const UniformScaling<Scalar>& s) const;
     // put this as separate enum value to work around possible GCC 4.3 bug (?)
@@ -412,7 +412,7 @@ template<typename Derived> class MatrixBase
     typedef Homogeneous<Derived, HomogeneousReturnTypeDirection> HomogeneousReturnType;
     HomogeneousReturnType homogeneous() const;
     #endif
-    
+
     enum {
       SizeMinusOne = SizeAtCompileTime==Dynamic ? Dynamic : SizeAtCompileTime-1
     };

@@ -49,21 +49,21 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief  Simulates the process to be controlled based on a dynamic model.
  *
  *	\ingroup UserInterfaces
  *
- *  The class Process is one of the two main building-blocks within the 
- *  SimulationEnvironment and complements the Controller. It simulates the 
+ *  The class Process is one of the two main building-blocks within the
+ *  SimulationEnvironment and complements the Controller. It simulates the
  *	process to be controlled based on a dynamic model.
  *
- *	The Process simulates the dynamic model based on the controls, and optionally 
+ *	The Process simulates the dynamic model based on the controls, and optionally
  *	parameters, passed. Before using these inputs, they can be transformed by an
  *	Actuator. After the simulation, the outputs can be transformed by a Sensor.
  *	That way, actuator/sensor delays or noise can be introduced to yield more
- *	realistic simulation results. Moreover, in case the dynamic model depends on 
- *	Disturbances, their values are specified by the user by assigning the 
+ *	realistic simulation results. Moreover, in case the dynamic model depends on
+ *	Disturbances, their values are specified by the user by assigning the
  *	processDisturbance member.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -75,18 +75,18 @@ class Process : public SimulationBlock
 	//
 	public:
 
-        /** Default constructor. 
+        /** Default constructor.
 		 */
         Process( );
 
-		/** Constructor which takes the dynamic system and the type of the 
+		/** Constructor which takes the dynamic system and the type of the
 		 *	integrator used for simulation.
 		 *
 		 *	@param[in] _dynamicSystem	Dynamic system to be used for simulation.
 		 *	@param[in] _integratorType	Type of integrator to be used for simulation.
 		 *
 		 *	\note This constructor takes the dynamic system of the first model stage,
-		 *	      multi-stage models can be simulated by adding further dynamic systems 
+		 *	      multi-stage models can be simulated by adding further dynamic systems
 		 *	      (however, this feature is not functional yet!).
 		 */
 		Process(	const DynamicSystem& _dynamicSystem,
@@ -100,7 +100,7 @@ class Process : public SimulationBlock
         Process(	const Process& rhs
 					);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~Process( );
 
@@ -209,7 +209,7 @@ class Process : public SimulationBlock
 												);
 
 
-		/** Initializes the simulation with given start values and 
+		/** Initializes the simulation with given start values and
 		 *	performs a number of consistency checks.
 		 *
 		 *	@param[in]  _startTime	Start time of simulation.
@@ -340,7 +340,7 @@ class Process : public SimulationBlock
 		 *
 		 *	@param[out]  _y			Output of the process.
 		 *
-		 *  \return SUCCESSFUL_RETURN 
+		 *  \return SUCCESSFUL_RETURN
 		 */
         inline returnValue getY(	VariablesGrid& _y
 									) const;
@@ -606,7 +606,7 @@ class Process : public SimulationBlock
 		DynamicSystem** dynamicSystems;				/**< Dynamic system to be used for simulation. */
 
 		ShootingMethod* integrationMethod;			/**< Integration method to be used for simulation. */
-	
+
 		Actuator* actuator;							/**< Actuator. */
 		Sensor* sensor;								/**< Sensor. */
 		Curve* processDisturbance;					/**< Process disturbance block. */

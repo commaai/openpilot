@@ -5,7 +5,6 @@ import sys
 from collections import defaultdict
 
 import cereal.messaging as messaging
-
 from common.realtime import sec_since_boot
 
 

@@ -33,23 +33,23 @@ public:
                     int clock = SYSTEM_TIME_MONOTONIC,
                     uint32_t flags = 0);
         ~StopWatch();
-        
+
         const char* name() const;
         nsecs_t     lap();
         nsecs_t     elapsedTime() const;
 
         void        reset();
-        
+
 private:
     const char*     mName;
     int             mClock;
     uint32_t        mFlags;
-    
+
     struct lap_t {
         nsecs_t     soFar;
         nsecs_t     thisLap;
     };
-    
+
     nsecs_t         mStartTime;
     lap_t           mLaps[8];
     int             mNumLaps;

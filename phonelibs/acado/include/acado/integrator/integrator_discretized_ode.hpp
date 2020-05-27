@@ -44,7 +44,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements a scheme for evaluating discretized ODEs.
  *
  *	\ingroup NumericalAlgorithms
@@ -84,7 +84,7 @@ public:
 
 
 	virtual returnValue init( const DifferentialEquation &rhs_ );
-	
+
     virtual returnValue step(	int number  /**< the step number */
 								);
 

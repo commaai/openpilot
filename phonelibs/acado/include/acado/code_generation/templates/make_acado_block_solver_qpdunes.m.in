@@ -6,10 +6,10 @@ function make_acado_solver( name, extern )
 	else
 		fileOut = 'acado_solver';
 	end;
-		
+
 	% Root folder of code generation
-	CGRoot = '.';	
-	
+	CGRoot = '.';
+
 	% qpDUNES embedded source files
 	qpDUNESSources = [ ...
 		'CGRoot/qpdunes/src/dual_qp.c ' ...
@@ -19,7 +19,7 @@ function make_acado_solver( name, extern )
 		'CGRoot/qpdunes/src/stage_qp_solver_clipping.c ' ...
 		'CGRoot/qpdunes/src/stage_qp_solver_qpoases.cpp ' ...
 		];
-		
+
 	% qpOASES embedded source files
 	qpOASESSources = [ ...
 		'CGRoot/qpdunes/externals/qpOASES-3.0beta/src/BLASReplacement.cpp ' ...
@@ -40,7 +40,7 @@ function make_acado_solver( name, extern )
 		'CGRoot/qpdunes/externals/qpOASES-3.0beta/src/SubjectTo.cpp ' ...
 		'CGRoot/qpdunes/externals/qpOASES-3.0beta/src/Utils.cpp ' ...
 		];
-		
+
 	% Auto-generated files
 	CGSources = [ ...
 		'CGRoot/acado_solver_mex.c ' ...
@@ -51,7 +51,7 @@ function make_acado_solver( name, extern )
 	if (nargin > 1)
 		CGSources = [CGSources extern];
 	end
-		
+
 	% Adding additional linker flags for Linux
 	ldFlags = '';
 	if (isunix() && ~ismac())
@@ -59,11 +59,11 @@ function make_acado_solver( name, extern )
     elseif (ispc)
         ldFlags = '-DWIN32';
 	end;
-	
+
 	if ( ispc == 0 )
 		CPPFLAGS  = [ '-largeArrayDims -D__DEBUG__ -D__cpluplus -cxx -O -D__NO_COPYRIGHT__ -DLINUX', ' ' ];
 	else
-		CPPFLAGS  = [ '-largeArrayDims -D__cpluplus -cxx -O -DWIN32', ' ' ]; 
+		CPPFLAGS  = [ '-largeArrayDims -D__cpluplus -cxx -O -DWIN32', ' ' ];
 	end
 
 	% Recipe for compilation
@@ -87,7 +87,7 @@ CGRecipe = regexprep(CGRecipe, 'qpOASESSources', qpOASESSources);
 CGRecipe = regexprep(CGRecipe, 'ldFlags', ldFlags);
 CGRecipe = regexprep(CGRecipe, 'CPPFLAGS', CPPFLAGS);
 
-% disp( sprintf( CGRecipe, fileOut, mexext ) ); 
+% disp( sprintf( CGRecipe, fileOut, mexext ) );
 fprintf( 'compiling... ' );
 eval( sprintf(CGRecipe, fileOut, mexext) );
 fprintf( ['done! --> ' fileOut '.' mexext '\n'] );

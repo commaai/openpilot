@@ -13,7 +13,7 @@
 #ifndef EIGEN_LDLT_H
 #define EIGEN_LDLT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 template<typename MatrixType, int UpLo> struct LDLT_Traits;
@@ -141,7 +141,7 @@ template<typename _MatrixType, int _UpLo> class LDLT
       eigen_assert(m_isInitialized && "LDLT is not initialized.");
       return m_sign == 1;
     }
-    
+
     #ifdef EIGEN2_SUPPORT
     inline bool isPositiveDefinite() const
     {
@@ -163,7 +163,7 @@ template<typename _MatrixType, int _UpLo> class LDLT
       * \note_about_checking_solutions
       *
       * More precisely, this method solves \f$ A x = b \f$ using the decomposition \f$ A = P^T L D L^* P \f$
-      * by solving the systems \f$ P^T y_1 = b \f$, \f$ L y_2 = y_1 \f$, \f$ D y_3 = y_2 \f$, 
+      * by solving the systems \f$ P^T y_1 = b \f$, \f$ L y_2 = y_1 \f$, \f$ D y_3 = y_2 \f$,
       * \f$ L^* y_4 = y_3 \f$ and \f$ P x = y_4 \f$ in succession. If the matrix \f$ A \f$ is singular, then
       * \f$ D \f$ will also be singular (all the other matrices are invertible). In that case, the
       * least-square solution of \f$ D y_3 = y_2 \f$ is computed. This does not mean that this function
@@ -325,7 +325,7 @@ template<> struct ldlt_inplace<Lower>
       }
       if((rs>0) && (abs(mat.coeffRef(k,k)) > cutoff))
         A21 /= mat.coeffRef(k,k);
-      
+
       if(sign)
       {
         // LDLT is not guaranteed to work for indefinite matrices, but let's try to get the sign right
@@ -466,7 +466,7 @@ LDLT<MatrixType,_UpLo>& LDLT<MatrixType,_UpLo>::rankUpdate(const MatrixBase<Deri
     eigen_assert(m_matrix.rows()==size);
   }
   else
-  {    
+  {
     m_matrix.resize(size,size);
     m_matrix.setZero();
     m_transpositions.resize(size);

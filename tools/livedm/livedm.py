@@ -2,12 +2,13 @@
 import argparse
 import os
 
-import cereal.messaging as messaging
 import cv2
 import numpy as np
 import pygame
-from cereal import log
 from helpers import draw_pose
+
+import cereal.messaging as messaging
+from cereal import log
 
 if __name__ == "__main__":
 

@@ -27,7 +27,7 @@
  *	\version 1.3embedded
  *	\date 2007-2008
  *
- *	Implementation of the inlined member functions of the SubjectTo class 
+ *	Implementation of the inlined member functions of the SubjectTo class
  *	designed to manage working sets of constraints and bounds within a QProblem.
  */
 
@@ -35,7 +35,7 @@
 /*****************************************************************************
  *  P U B L I C                                                              *
  *****************************************************************************/
- 
+
 
 /*
  *	g e t T y p e
@@ -98,7 +98,7 @@ inline void SubjectTo::setNoLower( BooleanType _status )
 {
 	noLower = _status;
 }
- 
+
 
 /*
  *	s e t N o U p p e r
@@ -117,7 +117,7 @@ inline BooleanType SubjectTo::isNoLower( ) const
 	return noLower;
 }
 
- 
+
 /*
  *	i s N o L o w e r
  */

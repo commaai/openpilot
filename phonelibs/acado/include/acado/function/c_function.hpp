@@ -290,11 +290,11 @@ protected:
         cFcnDPtr  cFcnDForward ;
         cFcnDPtr  cFcnDBackward;
 
-  
+
 	void* user_data        ;    /**< pointer specified by the setUserData function, passed to the c function when being called */
 
 
-        uint     nn            ;    /**< size of the argument (input)     */ 
+        uint     nn            ;    /**< size of the argument (input)     */
         uint     dim           ;    /**< size of the function (output)    */
 
         uint     maxAlloc      ;    /**< actual memory allocation         */
@@ -313,4 +313,3 @@ CLOSE_NAMESPACE_ACADO
 /*
  *   end of file
  */
-

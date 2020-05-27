@@ -10,7 +10,7 @@
 #ifndef EIGEN_CHOLMODSUPPORT_H
 #define EIGEN_CHOLMODSUPPORT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -71,7 +71,7 @@ cholmod_sparse viewAsCholmod(SparseMatrix<_Scalar,_Options,_Index>& mat)
 
   res.dtype   = 0;
   res.stype   = -1;
-  
+
   if (internal::is_same<_Index,int>::value)
   {
     res.itype = CHOLMOD_INT;
@@ -87,9 +87,9 @@ cholmod_sparse viewAsCholmod(SparseMatrix<_Scalar,_Options,_Index>& mat)
 
   // setup res.xtype
   internal::cholmod_configure_matrix<_Scalar>(res);
-  
+
   res.stype = 0;
-  
+
   return res;
 }
 
@@ -106,7 +106,7 @@ template<typename _Scalar, int _Options, typename _Index, unsigned int UpLo>
 cholmod_sparse viewAsCholmod(const SparseSelfAdjointView<SparseMatrix<_Scalar,_Options,_Index>, UpLo>& mat)
 {
   cholmod_sparse res = viewAsCholmod(mat.matrix().const_cast_derived());
-  
+
   if(UpLo==Upper) res.stype =  1;
   if(UpLo==Lower) res.stype = -1;
 
@@ -187,13 +187,13 @@ class CholmodBase : internal::noncopyable
         cholmod_free_factor(&m_cholmodFactor, &m_cholmod);
       cholmod_finish(&m_cholmod);
     }
-    
+
     inline Index cols() const { return m_cholmodFactor->n; }
     inline Index rows() const { return m_cholmodFactor->n; }
-    
+
     Derived& derived() { return *static_cast<Derived*>(this); }
     const Derived& derived() const { return *static_cast<const Derived*>(this); }
-    
+
     /** \brief Reports whether previous computation was successful.
       *
       * \returns \c Success if computation was succesful,
@@ -212,7 +212,7 @@ class CholmodBase : internal::noncopyable
       factorize(matrix);
       return derived();
     }
-    
+
     /** \returns the solution x of \f$ A x = b \f$ using the current decomposition of A.
       *
       * \sa compute()
@@ -226,7 +226,7 @@ class CholmodBase : internal::noncopyable
                 && "CholmodDecomposition::solve(): invalid number of rows of the right hand side matrix b");
       return internal::solve_retval<CholmodBase, Rhs>(*this, b.derived());
     }
-    
+
     /** \returns the solution x of \f$ A x = b \f$ using the current decomposition of A.
       *
       * \sa compute()
@@ -240,11 +240,11 @@ class CholmodBase : internal::noncopyable
                 && "CholmodDecomposition::solve(): invalid number of rows of the right hand side matrix b");
       return internal::sparse_solve_retval<CholmodBase, Rhs>(*this, b.derived());
     }
-    
+
     /** Performs a symbolic decomposition on the sparcity of \a matrix.
       *
       * This function is particularly useful when solving for several problems having the same structure.
-      * 
+      *
       * \sa factorize()
       */
     void analyzePattern(const MatrixType& matrix)
@@ -256,13 +256,13 @@ class CholmodBase : internal::noncopyable
       }
       cholmod_sparse A = viewAsCholmod(matrix.template selfadjointView<UpLo>());
       m_cholmodFactor = cholmod_analyze(&A, &m_cholmod);
-      
+
       this->m_isInitialized = true;
       this->m_info = Success;
       m_analysisIsOk = true;
       m_factorizationIsOk = false;
     }
-    
+
     /** Performs a numeric decomposition of \a matrix
       *
       * The given matrix must has the same sparcity than the matrix on which the symbolic decomposition has been performed.
@@ -274,16 +274,16 @@ class CholmodBase : internal::noncopyable
       eigen_assert(m_analysisIsOk && "You must first call analyzePattern()");
       cholmod_sparse A = viewAsCholmod(matrix.template selfadjointView<UpLo>());
       cholmod_factorize_p(&A, m_shiftOffset, 0, 0, m_cholmodFactor, &m_cholmod);
-      
+
       // If the factorization failed, minor is the column at which it did. On success minor == n.
       this->m_info = (m_cholmodFactor->minor == m_cholmodFactor->n ? Success : NumericalIssue);
       m_factorizationIsOk = true;
     }
-    
+
     /** Returns a reference to the Cholmod's configuration structure to get a full control over the performed operations.
      *  See the Cholmod user guide for details. */
     cholmod_common& cholmod() { return m_cholmod; }
-    
+
     #ifndef EIGEN_PARSED_BY_DOXYGEN
     /** \internal */
     template<typename Rhs,typename Dest>
@@ -306,7 +306,7 @@ class CholmodBase : internal::noncopyable
       dest = Matrix<Scalar,Dest::RowsAtCompileTime,Dest::ColsAtCompileTime>::Map(reinterpret_cast<Scalar*>(x_cd->x),b.rows(),b.cols());
       cholmod_free_dense(&x_cd, &m_cholmod);
     }
-    
+
     /** \internal */
     template<typename RhsScalar, int RhsOptions, typename RhsIndex, typename DestScalar, int DestOptions, typename DestIndex>
     void _solve(const SparseMatrix<RhsScalar,RhsOptions,RhsIndex> &b, SparseMatrix<DestScalar,DestOptions,DestIndex> &dest) const
@@ -328,8 +328,8 @@ class CholmodBase : internal::noncopyable
       cholmod_free_sparse(&x_cs, &m_cholmod);
     }
     #endif // EIGEN_PARSED_BY_DOXYGEN
-    
-    
+
+
     /** Sets the shift parameter that will be used to adjust the diagonal coefficients during the numerical factorization.
       *
       * During the numerical factorization, an offset term is added to the diagonal coefficients:\n
@@ -344,11 +344,11 @@ class CholmodBase : internal::noncopyable
       m_shiftOffset[0] = offset;
       return derived();
     }
-    
+
     template<typename Stream>
     void dumpMemory(Stream& /*s*/)
     {}
-    
+
   protected:
     mutable cholmod_common m_cholmod;
     cholmod_factor* m_cholmodFactor;
@@ -382,11 +382,11 @@ class CholmodSimplicialLLT : public CholmodBase<_MatrixType, _UpLo, CholmodSimpl
 {
     typedef CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLLT> Base;
     using Base::m_cholmod;
-    
+
   public:
-    
+
     typedef _MatrixType MatrixType;
-    
+
     CholmodSimplicialLLT() : Base() { init(); }
 
     CholmodSimplicialLLT(const MatrixType& matrix) : Base()
@@ -429,11 +429,11 @@ class CholmodSimplicialLDLT : public CholmodBase<_MatrixType, _UpLo, CholmodSimp
 {
     typedef CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT> Base;
     using Base::m_cholmod;
-    
+
   public:
-    
+
     typedef _MatrixType MatrixType;
-    
+
     CholmodSimplicialLDLT() : Base() { init(); }
 
     CholmodSimplicialLDLT(const MatrixType& matrix) : Base()
@@ -474,11 +474,11 @@ class CholmodSupernodalLLT : public CholmodBase<_MatrixType, _UpLo, CholmodSuper
 {
     typedef CholmodBase<_MatrixType, _UpLo, CholmodSupernodalLLT> Base;
     using Base::m_cholmod;
-    
+
   public:
-    
+
     typedef _MatrixType MatrixType;
-    
+
     CholmodSupernodalLLT() : Base() { init(); }
 
     CholmodSupernodalLLT(const MatrixType& matrix) : Base()
@@ -521,11 +521,11 @@ class CholmodDecomposition : public CholmodBase<_MatrixType, _UpLo, CholmodDecom
 {
     typedef CholmodBase<_MatrixType, _UpLo, CholmodDecomposition> Base;
     using Base::m_cholmod;
-    
+
   public:
-    
+
     typedef _MatrixType MatrixType;
-    
+
     CholmodDecomposition() : Base() { init(); }
 
     CholmodDecomposition(const MatrixType& matrix) : Base()
@@ -535,7 +535,7 @@ class CholmodDecomposition : public CholmodBase<_MatrixType, _UpLo, CholmodDecom
     }
 
     ~CholmodDecomposition() {}
-    
+
     void setMode(CholmodMode mode)
     {
       switch(mode)
@@ -570,7 +570,7 @@ class CholmodDecomposition : public CholmodBase<_MatrixType, _UpLo, CholmodDecom
 };
 
 namespace internal {
-  
+
 template<typename _MatrixType, int _UpLo, typename Derived, typename Rhs>
 struct solve_retval<CholmodBase<_MatrixType,_UpLo,Derived>, Rhs>
   : solve_retval_base<CholmodBase<_MatrixType,_UpLo,Derived>, Rhs>

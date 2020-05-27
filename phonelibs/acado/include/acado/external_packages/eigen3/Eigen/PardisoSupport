@@ -20,7 +20,7 @@
   *
   * In order to use this module, the MKL headers must be accessible from the include paths, and your binary must be linked to the MKL library and its dependencies.
   * See this \ref TopicUsingIntelMKL "page" for more information on MKL-Eigen integration.
-  * 
+  *
   */
 
 #include "src/PardisoSupport/PardisoSupport.h"

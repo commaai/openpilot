@@ -11,7 +11,7 @@
 #ifndef EIGEN_FULLPIVOTINGHOUSEHOLDERQR_H
 #define EIGEN_FULLPIVOTINGHOUSEHOLDERQR_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -34,11 +34,11 @@ struct traits<FullPivHouseholderQRMatrixQReturnType<MatrixType> >
   * \param MatrixType the type of the matrix of which we are computing the QR decomposition
   *
   * This class performs a rank-revealing QR decomposition of a matrix \b A into matrices \b P, \b Q and \b R
-  * such that 
+  * such that
   * \f[
   *  \mathbf{A} \, \mathbf{P} = \mathbf{Q} \, \mathbf{R}
   * \f]
-  * by using Householder transformations. Here, \b P is a permutation matrix, \b Q a unitary matrix and \b R an 
+  * by using Householder transformations. Here, \b P is a permutation matrix, \b Q a unitary matrix and \b R an
   * upper triangular matrix.
   *
   * This decomposition performs a very prudent full pivoting in order to be rank-revealing and achieve optimal
@@ -104,12 +104,12 @@ template<typename _MatrixType> class FullPivHouseholderQR
       *
       * This constructor computes the QR factorization of the matrix \a matrix by calling
       * the method compute(). It is a short cut for:
-      * 
+      *
       * \code
       * FullPivHouseholderQR<MatrixType> qr(matrix.rows(), matrix.cols());
       * qr.compute(matrix);
       * \endcode
-      * 
+      *
       * \sa compute()
       */
     FullPivHouseholderQR(const MatrixType& matrix)
@@ -289,9 +289,9 @@ template<typename _MatrixType> class FullPivHouseholderQR
 
     inline Index rows() const { return m_qr.rows(); }
     inline Index cols() const { return m_qr.cols(); }
-    
+
     /** \returns a const reference to the vector of Householder coefficients used to represent the factor \c Q.
-      * 
+      *
       * For advanced uses only.
       */
     const HCoeffsType& hCoeffs() const { return m_hCoeffs; }

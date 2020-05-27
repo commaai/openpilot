@@ -10,7 +10,7 @@
 #ifndef EIGEN_TRIANGULAR_MATRIX_MATRIX_H
 #define EIGEN_TRIANGULAR_MATRIX_MATRIX_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
@@ -83,7 +83,7 @@ struct product_triangular_matrix_matrix<Scalar,Index,Mode,true,
                                            LhsStorageOrder,ConjugateLhs,
                                            RhsStorageOrder,ConjugateRhs,ColMajor,Version>
 {
-  
+
   typedef gebp_traits<Scalar,Scalar> Traits;
   enum {
     SmallPanelWidth   = 2 * EIGEN_PLAIN_ENUM_MAX(Traits::mr,Traits::nr),
@@ -116,7 +116,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
     Index rows      = IsLower ? _rows : diagSize;
     Index depth     = IsLower ? diagSize : _depth;
     Index cols      = _cols;
-    
+
     const_blas_data_mapper<Scalar, Index, LhsStorageOrder> lhs(_lhs,lhsStride);
     const_blas_data_mapper<Scalar, Index, RhsStorageOrder> rhs(_rhs,rhsStride);
 
@@ -257,7 +257,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
     Index rows      = _rows;
     Index depth     = IsLower ? _depth : diagSize;
     Index cols      = IsLower ? diagSize : _cols;
-    
+
     const_blas_data_mapper<Scalar, Index, LhsStorageOrder> lhs(_lhs,lhsStride);
     const_blas_data_mapper<Scalar, Index, RhsStorageOrder> rhs(_rhs,rhsStride);
 

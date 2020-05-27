@@ -10,7 +10,7 @@
 #ifndef EIGEN_INCOMPLETE_LU_H
 #define EIGEN_INCOMPLETE_LU_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template <typename _Scalar>
 class IncompleteLU

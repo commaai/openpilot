@@ -99,7 +99,7 @@ class CwiseUnaryViewImpl<ViewOp,MatrixType,Dense>
 
     EIGEN_DENSE_PUBLIC_INTERFACE(Derived)
     EIGEN_INHERIT_ASSIGNMENT_OPERATORS(CwiseUnaryViewImpl)
-    
+
     inline Scalar* data() { return &coeffRef(0); }
     inline const Scalar* data() const { return &coeff(0); }
 

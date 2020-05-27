@@ -42,7 +42,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export a tailored explicit Runge-Kutta integrator with a lifted Newton method to efficiently support (implicit) DAE systems for fast model predictive control.
  *
  *	\ingroup NumericalAlgorithms
@@ -60,7 +60,7 @@ class LiftedERKExport : public ExplicitRungeKuttaExport
 
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] _userInteraction		Pointer to corresponding user interface.
 		 *	@param[in] _commonHeaderName	Name of common header file to be included.
@@ -76,7 +76,7 @@ class LiftedERKExport : public ExplicitRungeKuttaExport
         LiftedERKExport(	const LiftedERKExport& arg
 							);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~LiftedERKExport( );
 

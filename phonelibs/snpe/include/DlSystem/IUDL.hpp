@@ -77,7 +77,7 @@ public:
    /**
     * @brief Execute the user defined layer
     *
-    * @param cookie User provided opaque data returned by the SNPE 
+    * @param cookie User provided opaque data returned by the SNPE
     *               runtime
     *
     * @param input Const pointer to a float buffer that contains

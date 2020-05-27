@@ -42,7 +42,7 @@ BEGIN_NAMESPACE_ACADO
 
 
 
-/** 
+/**
  *	\brief Allows to setup and evaluate output functions based on SymbolicExpressions.
  *
  *	\ingroup BasicDataStructures

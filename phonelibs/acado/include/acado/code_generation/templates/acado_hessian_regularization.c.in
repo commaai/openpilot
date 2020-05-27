@@ -130,7 +130,7 @@ static void @MODULE_NAME@_tred2(real_t *V, real_t *d, real_t *e) {
   }
   V[(DIM-1)*DIM+DIM-1] = 1.0;
   e[0] = 0.0;
-} 
+}
 
 /* Symmetric tridiagonal QL algorithm. */
 
@@ -263,13 +263,13 @@ void @MODULE_NAME@_reconstruct_A(real_t *A, real_t *V, real_t *d) {
   int i;
   real_t V[DIM*DIM];
   real_t d[DIM];
-  
+
   @MODULE_NAME@_eigen_decomposition(A, V, d);
-  
+
   for (i = 0; i < DIM; i++) {
     if( d[i] <= @MODULE_PREFIX@_EPS ) d[i] = @MODULE_PREFIX@_EPS;
   }
-  
+
   @MODULE_NAME@_reconstruct_A(A, V, d);
 }*/
 
@@ -278,13 +278,13 @@ void @MODULE_NAME@_regularize(real_t *A) {
   int i;
   real_t V[DIM*DIM];
   real_t d[DIM];
-  
+
   @MODULE_NAME@_eigen_decomposition(A, V, d);
-  
+
   for (i = 0; i < DIM; i++) {
     if( d[i] >= -@MODULE_PREFIX@_EPS && d[i] <= @MODULE_PREFIX@_EPS ) d[i] = @MODULE_PREFIX@_EPS;
     else if( d[i] < 0 ) d[i] = -d[i];
   }
-  
+
   @MODULE_NAME@_reconstruct_A(A, V, d);
 }

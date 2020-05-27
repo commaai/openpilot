@@ -49,12 +49,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Base class for discretizing a DifferentialEquation for use in optimal control algorithms.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class DynamicDiscretization serves as a base class for discretizing 
+ *  The class DynamicDiscretization serves as a base class for discretizing
  *	a DifferentialEquation for use in optimal control algorithms.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

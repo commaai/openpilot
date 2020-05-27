@@ -41,12 +41,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to store a list of calling arguments of an ExportFunction.
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class ExportArgumentList allows to store a list of calling 
+ *	The class ExportArgumentList allows to store a list of calling
  *	arguments of an ExportFunction.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -58,7 +58,7 @@ class ExportArgumentList
 	//
 	public:
 
-		/**< Default Constructor. 
+		/**< Default Constructor.
 		 */
 		ExportArgumentList( );
 
@@ -84,7 +84,7 @@ class ExportArgumentList
 							const ExportArgument& _argument8 = emptyConstExportArgument,
 							const ExportArgument& _argument9 = emptyConstExportArgument
 							);
-		
+
 		/** Copy constructor (deep copy).
 		 *
 		 *	@param[in] arg	Right-hand side object.
@@ -159,15 +159,15 @@ class ExportArgumentList
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		returnValue clear( );
-		
-		
+
+
 		/** Specifies to include variable types into calling arguments.
 		 *
 		 *	\return SUCCESSFUL_RETURN
 		 */
 		returnValue doIncludeType( );
-		
-		
+
+
 		/** Specifies not to include variable types into calling arguments.
 		 *
 		 *	\return SUCCESSFUL_RETURN
@@ -202,7 +202,7 @@ class ExportArgumentList
 
 		/** Array containing all calling arguments. */
 		std::vector< ExportArgument > arguments;
-		
+
 		/** Flag indicating whether variable types are to be included in calling arguments. */
 		bool includeType;
 };

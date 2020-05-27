@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import cereal.messaging as messaging
 import numpy as np
 import sympy as sp
 from rednose.helpers import KalmanError
 from rednose.helpers.sympy_helpers import euler_rotate
 from sympy.utilities.lambdify import lambdify
 
+import cereal.messaging as messaging
 import common.transformations.coordinates as coord
 from common.transformations.orientation import ecef_euler_from_ned
 from common.transformations.orientation import euler_from_quat

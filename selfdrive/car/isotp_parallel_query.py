@@ -7,7 +7,6 @@ from panda.python.uds import CanClient
 from panda.python.uds import FUNCTIONAL_ADDRS
 from panda.python.uds import get_rx_addr_for_tx_addr
 from panda.python.uds import IsoTpMessage
-
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.swaglog import cloudlog
 

@@ -39,7 +39,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements the backward-differentiation formula for integrating DAEs.
  *
  *	\ingroup NumericalAlgorithms
@@ -237,7 +237,7 @@ protected:
 
 
     /**< Integrates forward and/or backward depending on the specified seeds. \n
-      *  
+      *
       *  \return SUCCESSFUL_RETURN                                            \n
       *          RET_NO_SEED_ALLOCATED                                        \n
       */

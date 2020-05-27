@@ -48,8 +48,8 @@ BEGIN_NAMESPACE_ACADO
  *	\brief Encapsulates all user interaction for setting options, logging data and plotting results.
  *
  *	\ingroup AuxiliaryFunctionality
- *	
- *  The class UserInteraction encapsulates all user interaction for 
+ *
+ *  The class UserInteraction encapsulates all user interaction for
  *	setting options, logging data and plotting results.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -88,11 +88,11 @@ class UserInteraction : public Options, public Logging, public Plotting
 		 *
 		 *	@param[in] _window	Window to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addPlotWindow member function and is introduced for syntax reasons only.
 		 *
 		 *  \return >= 0: index of added record, \n
-		 *	        -RET_PLOT_COLLECTION_CORRUPTED 
+		 *	        -RET_PLOT_COLLECTION_CORRUPTED
 		 */
 		virtual int operator<<(	PlotWindow& _window
 								);
@@ -104,7 +104,7 @@ class UserInteraction : public Options, public Logging, public Plotting
 		 *	@param[in] _window	Window to be added.
 		 *
 		 *  \return >= 0: index of added record, \n
-		 *	        -RET_PLOT_COLLECTION_CORRUPTED 
+		 *	        -RET_PLOT_COLLECTION_CORRUPTED
 		 */
 		virtual int addPlotWindow(	PlotWindow& _window
 									);
@@ -113,11 +113,11 @@ class UserInteraction : public Options, public Logging, public Plotting
 		 *
 		 *	@param[in] record	Record to be added.
 		 *
-		 *	\note This function tunnels the corresponding function of 
+		 *	\note This function tunnels the corresponding function of
 		 *	      the Logging class. It is introduced to avoid syntax ambiguity only.
 		 *
 		 *  \return >= 0: index of added record, \n
-		 *	        -RET_LOG_COLLECTION_CORRUPTED 
+		 *	        -RET_LOG_COLLECTION_CORRUPTED
 		 */
 		virtual int operator<<(	LogRecord& _record
 								);
@@ -129,8 +129,8 @@ class UserInteraction : public Options, public Logging, public Plotting
     protected:
 
 		/** Copies all collected logging information required to plot a given window.
-		 *	This function is overloaded within the UserInterface class to syncronize 
-		 *	the logging information collected elsewhere within the algorithm with the 
+		 *	This function is overloaded within the UserInterface class to syncronize
+		 *	the logging information collected elsewhere within the algorithm with the
 		 *	one stored within the given window for plotting.
 		 *
 		 *	@param[in] _window	Window to be plotted.

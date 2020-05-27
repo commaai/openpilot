@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Projection implements the scalar-valued 
+ *	The class Projection implements the scalar-valued
  *	projection operator within the symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -93,8 +93,8 @@ public:
 
 	/** Evaluates the expression (templated version) */
 	virtual returnValue evaluate( EvaluationBase *x );
-	
-	
+
+
     /** Returns the derivative of the expression with respect     \n
      *  to the variable var(index).                               \n
      *  \return The expression for the derivative.                \n
@@ -131,8 +131,8 @@ public:
                                      int           &nNewIS  , /**< the number of new IS  */
                                      TreeProjection ***newIS  /**< the new IS-pointer    */ );
 
-    
-    
+
+
     /** Automatic Differentiation in symmetric mode on the symbolic \n
      *  level. This function generates an expression for a          \n
      *  second order derivative.                                    \n
@@ -507,7 +507,7 @@ protected:
                                               int            &nNewIS  , /**< the number of new IS  */
                                               TreeProjection ***newIS    /**< the new IS-pointer   */ );
 
-     
+
     /** Automatic Differentiation in symmetric mode on the symbolic \n
      *  level. This function generates an expression for a          \n
      *  second order derivative.                                    \n

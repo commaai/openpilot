@@ -10,7 +10,7 @@
 #ifndef EIGEN_SWAP_H
 #define EIGEN_SWAP_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class SwapWrapper
   * \ingroup Core_Module
@@ -39,13 +39,13 @@ template<typename ExpressionType> class SwapWrapper
     inline Index cols() const { return m_expression.cols(); }
     inline Index outerStride() const { return m_expression.outerStride(); }
     inline Index innerStride() const { return m_expression.innerStride(); }
-    
+
     typedef typename internal::conditional<
                        internal::is_lvalue<ExpressionType>::value,
                        Scalar,
                        const Scalar
                      >::type ScalarWithConstIfNotLvalue;
-                     
+
     inline ScalarWithConstIfNotLvalue* data() { return m_expression.data(); }
     inline const Scalar* data() const { return m_expression.data(); }
 

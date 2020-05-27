@@ -10,7 +10,7 @@
 #ifndef EIGEN_FLAGGED_H
 #define EIGEN_FLAGGED_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class Flagged
   * \ingroup Core_Module
@@ -42,7 +42,7 @@ template<typename ExpressionType, unsigned int Added, unsigned int Removed> clas
   public:
 
     typedef MatrixBase<Flagged> Base;
-    
+
     EIGEN_DENSE_PUBLIC_INTERFACE(Flagged)
     typedef typename internal::conditional<internal::must_nest_by_value<ExpressionType>::ret,
         ExpressionType, const ExpressionType&>::type ExpressionTypeNested;
@@ -64,7 +64,7 @@ template<typename ExpressionType, unsigned int Added, unsigned int Removed> clas
     {
       return m_matrix.coeff(index);
     }
-    
+
     inline const Scalar& coeffRef(Index row, Index col) const
     {
       return m_matrix.const_cast_derived().coeffRef(row, col);

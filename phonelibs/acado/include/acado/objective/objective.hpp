@@ -97,7 +97,7 @@ struct LsqLinearData
 /** A vector of LSQ data linear elements. */
 typedef std::vector< LsqLinearData > LsqLinearElements;
 
-/** 
+/**
  *	\brief Stores and evaluates the objective function of optimal control problems.
  *
  *	\ingroup BasicDataStructures

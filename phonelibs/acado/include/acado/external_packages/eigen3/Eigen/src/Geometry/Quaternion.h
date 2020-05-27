@@ -10,7 +10,7 @@
 
 #ifndef EIGEN_QUATERNION_H
 #define EIGEN_QUATERNION_H
-namespace Eigen { 
+namespace Eigen {
 
 
 /***************************************************************************
@@ -282,7 +282,7 @@ public:
 
 protected:
   Coefficients m_coeffs;
-  
+
 #ifndef EIGEN_PARSED_BY_DOXYGEN
     static EIGEN_STRONG_INLINE void _check_template_params()
     {

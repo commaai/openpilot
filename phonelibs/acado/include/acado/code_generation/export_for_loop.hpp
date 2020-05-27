@@ -44,7 +44,7 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Allows to export code of a for-loop.
  *
  *	\ingroup AuxiliaryFunctionality
@@ -116,7 +116,7 @@ class ExportForLoop : public ExportStatementBlock
 							);
 
 
-		/** Exports data declaration of the statement into given file. Its appearance can 
+		/** Exports data declaration of the statement into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream			Name of file to be used to export statement.
@@ -132,7 +132,7 @@ class ExportForLoop : public ExportStatementBlock
 													int _precision = 16
 													) const;
 
-		/** Exports source code of the statement into given file. Its appearance can 
+		/** Exports source code of the statement into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] file				Name of file to be used to export statement.
@@ -188,7 +188,7 @@ class ExportForLoop : public ExportStatementBlock
 		ExportIndex startValue;			/**< Start value of the loop counter. */
 		ExportIndex finalValue;			/**< Final value of the loop counter. */
 		ExportIndex increment;			/**< Increment of the loop counter. */
-		
+
 		bool doLoopUnrolling;	/**< Flag indicating whether loop shall be unrolled when exporting the code. */
 };
 

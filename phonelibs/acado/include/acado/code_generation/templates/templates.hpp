@@ -2,7 +2,7 @@
 #define ACADO_TOOLKIT_TEMPLATES_HPP
 
 #define TEMPLATE_PATHS "/home/batman/tmpbld/acado/acado/code_generation/templates;/home/batman/one/phonelibs/acado/include/acado/code_generation/templates;/data/data/com.termux/files/home/one/phonelibs/acado/include/acado/code_generation/templates"
- 
+
 #define INTEGRATOR_MEX_TEMPLATE "integrator_mex.c.in"
 #define RHS_MEX_TEMPLATE "rhs_mex.c.in"
 

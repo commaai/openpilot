@@ -168,18 +168,18 @@ public:
     *
     * @param[in] layer input name.
     *
-    * @note Note that this function only makes sense for networks 
+    * @note Note that this function only makes sense for networks
     *       that have a fixed input size. For networks in which the
     *       input size varies with each call of Execute(), this
     *       function should not be used.
     *
     * @note Because the returned type is an Optional instance, it must
     *       be verified as a boolean true value before being dereferenced.
-    * 
+    *
     * @return An Optional instance of TensorShape that maintains dimensions,
     *         matching the tensor dimensions for input to the model,
     *         where the last entry is the fastest varying dimension, etc.
-    *  
+    *
     * @see zdl::DlSystem::ITensor
     * @see zdl::DlSystem::TensorShape
     * @see zdl::DlSystem::Optional
@@ -190,12 +190,12 @@ public:
       getInputDimensions(const char *name) const noexcept;
 
    /**
-    * @brief Gets the output layer(s) for the network. 
-    *  
-    * Note that the output layers returned by this function may be 
-    * different than those specified when the network was created 
+    * @brief Gets the output layer(s) for the network.
+    *
+    * Note that the output layers returned by this function may be
+    * different than those specified when the network was created
     * via the zdl::SNPE::SNPEBuilder. For example, if the
-    * network was created in debug mode with no explicit output 
+    * network was created in debug mode with no explicit output
     * layers specified, this will contain all layers.
     *
     * @note Note that because the returned value is an Optional StringList,

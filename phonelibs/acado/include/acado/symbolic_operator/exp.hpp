@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Exp implements the scalar exponential operator within the 
+ *	The class Exp implements the scalar exponential operator within the
  *	symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

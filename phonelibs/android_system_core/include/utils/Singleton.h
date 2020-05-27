@@ -43,7 +43,7 @@ public:
         Mutex::Autolock _l(sLock);
         return sInstance != 0;
     }
-    
+
 protected:
     ~Singleton() { };
     Singleton() { };
@@ -75,4 +75,3 @@ private:
 }; // namespace android
 
 #endif // ANDROID_UTILS_SINGLETON_H
-

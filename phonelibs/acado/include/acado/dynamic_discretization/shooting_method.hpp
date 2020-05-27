@@ -41,12 +41,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Discretizes a DifferentialEquation by means of single or multiple shooting.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class ShootingMethod allows to discretize a DifferentialEquation 
+ *  The class ShootingMethod allows to discretize a DifferentialEquation
  *	for use in optimal control algorithms by means of an (online) integrator
  *	using either single or multiple shooting.
  *

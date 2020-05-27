@@ -11,7 +11,7 @@
 #ifndef EIGEN_BLOCK_H
 #define EIGEN_BLOCK_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class Block
   * \ingroup Core_Module
@@ -94,7 +94,7 @@ struct traits<Block<XprType, BlockRows, BlockCols, InnerPanel> > : traits<XprTyp
 
 template<typename XprType, int BlockRows=Dynamic, int BlockCols=Dynamic, bool InnerPanel = false,
          bool HasDirectAccess = internal::has_direct_access<XprType>::ret> class BlockImpl_dense;
-         
+
 } // end namespace internal
 
 template<typename XprType, int BlockRows, int BlockCols, bool InnerPanel, typename StorageKind> class BlockImpl;
@@ -108,7 +108,7 @@ template<typename XprType, int BlockRows, int BlockCols, bool InnerPanel> class 
     typedef Impl Base;
     EIGEN_GENERIC_PUBLIC_INTERFACE(Block)
     EIGEN_INHERIT_ASSIGNMENT_OPERATORS(Block)
-  
+
     /** Column or Row constructor
       */
     inline Block(XprType& xpr, Index i) : Impl(xpr,i)
@@ -141,7 +141,7 @@ template<typename XprType, int BlockRows, int BlockCols, bool InnerPanel> class 
           && a_startCol >= 0 && blockCols >= 0 && a_startCol <= xpr.cols() - blockCols);
     }
 };
-         
+
 // The generic default implementation for dense block simplu forward to the internal::BlockImpl_dense
 // that must be specialized for direct and non-direct access...
 template<typename XprType, int BlockRows, int BlockCols, bool InnerPanel>
@@ -284,19 +284,19 @@ template<typename XprType, int BlockRows, int BlockCols, bool InnerPanel, bool H
     inline Index outerStride() const;
     #endif
 
-    const typename internal::remove_all<typename XprType::Nested>::type& nestedExpression() const 
-    { 
-      return m_xpr; 
+    const typename internal::remove_all<typename XprType::Nested>::type& nestedExpression() const
+    {
+      return m_xpr;
     }
-      
-    Index startRow() const 
-    { 
-      return m_startRow.value(); 
+
+    Index startRow() const
+    {
+      return m_startRow.value();
     }
-      
-    Index startCol() const 
-    { 
-      return m_startCol.value(); 
+
+    Index startCol() const
+    {
+      return m_startCol.value();
     }
 
   protected:
@@ -352,11 +352,11 @@ class BlockImpl_dense<XprType,BlockRows,BlockCols, InnerPanel,true>
       init();
     }
 
-    const typename internal::remove_all<typename XprType::Nested>::type& nestedExpression() const 
-    { 
-      return m_xpr; 
+    const typename internal::remove_all<typename XprType::Nested>::type& nestedExpression() const
+    {
+      return m_xpr;
     }
-      
+
     /** \sa MapBase::innerStride() */
     inline Index innerStride() const
     {

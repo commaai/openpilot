@@ -339,7 +339,7 @@ public:
 
     static const char* getLabel(int32_t keyCode);
     static int32_t getKeyCodeFromLabel(const char* label);
-    
+
     void initialize(
             int32_t deviceId,
             int32_t source,

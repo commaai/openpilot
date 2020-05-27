@@ -225,7 +225,7 @@ inline int SymbolicIndexList::index( VariableType variableType_, int index_ ) co
                  }
              }
              return variableCounter;
-             
+
         case VT_ONLINE_DATA:
              if( index_ < maxNumberOfEntries[10] ){
                  if(  entryExists[10][index_] == BT_TRUE ){
@@ -294,7 +294,7 @@ inline double SymbolicIndexList::scale( VariableType variableType_, int index_ )
              if( index_ < maxNumberOfEntries[9] )
                  return variableScale[9][index_];
              return 1.0;
-             
+
         case VT_ONLINE_DATA:
              if( index_ < maxNumberOfEntries[10] )
                  return variableScale[10][index_];

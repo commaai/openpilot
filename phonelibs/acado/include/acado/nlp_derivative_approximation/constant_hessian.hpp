@@ -42,12 +42,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief Implements a constant Hessian as approximation of second-order derivatives within NLPsolvers.
  *
  *	\ingroup NumericalAlgorithms
  *
- *  The class ConstantHessian implements a constant Hessian as approximation of 
+ *  The class ConstantHessian implements a constant Hessian as approximation of
  *	second-order derivatives within iterative NLPsolvers.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -62,7 +62,7 @@ class ConstantHessian : public NLPderivativeApproximation
 
         /** Default constructor. */
         ConstantHessian( );
-		
+
 		/** Default constructor. */
         ConstantHessian(	UserInteraction* _userInteraction
 							);

@@ -48,4 +48,3 @@ __kernel void gemm(const int M, const int N, const int K,
     c_off += skip;
   }
 }
-

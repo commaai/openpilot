@@ -7,10 +7,10 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-/* 
- 
- * NOTE: This file is the modified version of [s,d,c,z]memory.c files in SuperLU 
- 
+/*
+
+ * NOTE: This file is the modified version of [s,d,c,z]memory.c files in SuperLU
+
  * -- SuperLU routine (version 3.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
@@ -33,7 +33,7 @@
 
 namespace Eigen {
 namespace internal {
-  
+
 enum { LUNoMarker = 3 };
 enum {emptyIdxLU = -1};
 template<typename Index>
@@ -51,7 +51,7 @@ inline Index LUTempSpace(Index&m, Index& w)
 
 
 
-/** 
+/**
   * Expand the existing storage to accomodate more fill-ins
   * \param vec Valid pointer to the vector to allocate or expand
   * \param[in,out] length  At input, contain the current length of the vector that is to be increased. At output, length of the newly allocated vector
@@ -61,25 +61,25 @@ inline Index LUTempSpace(Index&m, Index& w)
   */
 template <typename Scalar, typename Index>
 template <typename VectorType>
-Index  SparseLUImpl<Scalar,Index>::expand(VectorType& vec, Index& length, Index nbElts, Index keep_prev, Index& num_expansions) 
+Index  SparseLUImpl<Scalar,Index>::expand(VectorType& vec, Index& length, Index nbElts, Index keep_prev, Index& num_expansions)
 {
-  
-  float alpha = 1.5; // Ratio of the memory increase 
+
+  float alpha = 1.5; // Ratio of the memory increase
   Index new_len; // New size of the allocated memory
-  
-  if(num_expansions == 0 || keep_prev) 
+
+  if(num_expansions == 0 || keep_prev)
     new_len = length ; // First time allocate requested
-  else 
+  else
     new_len = Index(alpha * length);
-  
-  VectorType old_vec; // Temporary vector to hold the previous values   
+
+  VectorType old_vec; // Temporary vector to hold the previous values
   if (nbElts > 0 )
-    old_vec = vec.segment(0,nbElts); 
-  
+    old_vec = vec.segment(0,nbElts);
+
   //Allocate or expand the current vector
-  try 
+  try
   {
-    vec.resize(new_len); 
+    vec.resize(new_len);
   }
   catch(std::bad_alloc& )
   {
@@ -93,41 +93,41 @@ Index  SparseLUImpl<Scalar,Index>::expand(VectorType& vec, Index& length, Index 
       // In this case, the memory length should not not be reduced
       return new_len;
     }
-    else 
+    else
     {
-      // Reduce the size and increase again 
+      // Reduce the size and increase again
       Index tries = 0; // Number of attempts
-      do 
+      do
       {
         alpha = (alpha + 1)/2;
         new_len = Index(alpha * length);
         try
         {
-          vec.resize(new_len); 
+          vec.resize(new_len);
         }
         catch(std::bad_alloc& )
         {
-          tries += 1; 
-          if ( tries > 10) return new_len; 
+          tries += 1;
+          if ( tries > 10) return new_len;
         }
       } while (!vec.size());
     }
   }
-  //Copy the previous values to the newly allocated space 
+  //Copy the previous values to the newly allocated space
   if (nbElts > 0)
-    vec.segment(0, nbElts) = old_vec;   
-   
-  
+    vec.segment(0, nbElts) = old_vec;
+
+
   length  = new_len;
   if(num_expansions) ++num_expansions;
-  return 0; 
+  return 0;
 }
 
 /**
  * \brief  Allocate various working space for the numerical factorization phase.
- * \param m number of rows of the input matrix 
- * \param n number of columns 
- * \param annz number of initial nonzeros in the matrix 
+ * \param m number of rows of the input matrix
+ * \param n number of columns
+ * \param annz number of initial nonzeros in the matrix
  * \param lwork  if lwork=-1, this routine returns an estimated size of the required memory
  * \param glu persistent data to facilitate multiple factors : will be deleted later ??
  * \param fillratio estimated ratio of fill in the factors
@@ -139,23 +139,23 @@ template <typename Scalar, typename Index>
 Index SparseLUImpl<Scalar,Index>::memInit(Index m, Index n, Index annz, Index lwork, Index fillratio, Index panel_size,  GlobalLU_t& glu)
 {
   Index& num_expansions = glu.num_expansions; //No memory expansions so far
-  num_expansions = 0; 
-  glu.nzumax = glu.nzlumax = (std::max)(fillratio * annz, m*n); // estimated number of nonzeros in U 
+  num_expansions = 0;
+  glu.nzumax = glu.nzlumax = (std::max)(fillratio * annz, m*n); // estimated number of nonzeros in U
   glu.nzlmax = (std::max)(Index(4), fillratio) * annz / 4; // estimated  nnz in L factor
 
   // Return the estimated size to the user if necessary
   Index tempSpace;
   tempSpace = (2*panel_size + 4 + LUNoMarker) * m * sizeof(Index) + (panel_size + 1) * m * sizeof(Scalar);
-  if (lwork == emptyIdxLU) 
+  if (lwork == emptyIdxLU)
   {
     Index estimated_size;
     estimated_size = (5 * n + 5) * sizeof(Index)  + tempSpace
-                    + (glu.nzlmax + glu.nzumax) * sizeof(Index) + (glu.nzlumax+glu.nzumax) *  sizeof(Scalar) + n; 
+                    + (glu.nzlmax + glu.nzumax) * sizeof(Index) + (glu.nzlumax+glu.nzumax) *  sizeof(Scalar) + n;
     return estimated_size;
   }
-  
-  // Setup the required space 
-  
+
+  // Setup the required space
+
   // First allocate Integer pointers for L\U factors
   glu.xsup.resize(n+1);
   glu.supno.resize(n+1);
@@ -164,14 +164,14 @@ Index SparseLUImpl<Scalar,Index>::memInit(Index m, Index n, Index annz, Index lw
   glu.xusub.resize(n+1);
 
   // Reserve memory for L/U factors
-  do 
+  do
   {
     try
     {
-      expand<ScalarVector>(glu.lusup, glu.nzlumax, 0, 0, num_expansions); 
-      expand<ScalarVector>(glu.ucol,glu.nzumax, 0, 0, num_expansions); 
-      expand<IndexVector>(glu.lsub,glu.nzlmax, 0, 0, num_expansions); 
-      expand<IndexVector>(glu.usub,glu.nzumax, 0, 1, num_expansions); 
+      expand<ScalarVector>(glu.lusup, glu.nzlumax, 0, 0, num_expansions);
+      expand<ScalarVector>(glu.ucol,glu.nzumax, 0, 0, num_expansions);
+      expand<IndexVector>(glu.lsub,glu.nzlmax, 0, 0, num_expansions);
+      expand<IndexVector>(glu.usub,glu.nzumax, 0, 1, num_expansions);
     }
     catch(std::bad_alloc& )
     {
@@ -179,41 +179,41 @@ Index SparseLUImpl<Scalar,Index>::memInit(Index m, Index n, Index annz, Index lw
       glu.nzlumax /= 2;
       glu.nzumax /= 2;
       glu.nzlmax /= 2;
-      if (glu.nzlumax < annz ) return glu.nzlumax; 
+      if (glu.nzlumax < annz ) return glu.nzlumax;
     }
-    
+
   } while (!glu.lusup.size() || !glu.ucol.size() || !glu.lsub.size() || !glu.usub.size());
 
-  
-  
+
+
   ++num_expansions;
   return 0;
-  
+
 } // end LuMemInit
 
-/** 
- * \brief Expand the existing storage 
- * \param vec vector to expand 
+/**
+ * \brief Expand the existing storage
+ * \param vec vector to expand
  * \param[in,out] maxlen On input, previous size of vec (Number of elements to copy ). on output, new size
  * \param nbElts current number of elements in the vector.
  * \param memtype Type of the element to expand
- * \param num_expansions Number of expansions 
+ * \param num_expansions Number of expansions
  * \return 0 on success, > 0 size of the memory allocated so far
  */
 template <typename Scalar, typename Index>
 template <typename VectorType>
 Index SparseLUImpl<Scalar,Index>::memXpand(VectorType& vec, Index& maxlen, Index nbElts, MemType memtype, Index& num_expansions)
 {
-  Index failed_size; 
+  Index failed_size;
   if (memtype == USUB)
      failed_size = this->expand<VectorType>(vec, maxlen, nbElts, 1, num_expansions);
   else
     failed_size = this->expand<VectorType>(vec, maxlen, nbElts, 0, num_expansions);
 
   if (failed_size)
-    return failed_size; 
-  
-  return 0 ;  
+    return failed_size;
+
+  return 0 ;
 }
 
 } // end namespace internal

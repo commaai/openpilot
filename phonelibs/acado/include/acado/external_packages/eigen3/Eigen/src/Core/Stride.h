@@ -10,7 +10,7 @@
 #ifndef EIGEN_STRIDE_H
 #define EIGEN_STRIDE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \class Stride
   * \ingroup Core_Module

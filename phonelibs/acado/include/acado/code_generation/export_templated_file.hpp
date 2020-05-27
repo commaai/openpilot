@@ -42,7 +42,7 @@ class ExportQpOasesInterface;
 class ExportSimulinkInterface;
 class ExportAuxiliaryFunctions;
 
-/** 
+/**
  *	\brief Allows export of template files.
  *
  *	\ingroup AuxiliaryFunctionality
@@ -65,8 +65,8 @@ public:
     /** Default constructor.
 	 */
 	ExportTemplatedFile( );
-    
-            
+
+
 	/** Standard constructor.
 	 *
 	 *	@param[in] _templateName		Name of a template.
@@ -90,7 +90,7 @@ public:
 	virtual ~ExportTemplatedFile( )
 	{}
 
-    
+
 	/** Default constructor.
 	 *
 	 *	@param[in] _templateName		Name of a template.
@@ -112,7 +112,7 @@ public:
                                 const std::string& _commentString = std::string()
                                 );
 
-    
+
 	/** Configure the template
 	 *
 	 *  \return SUCCESSFUL_RETURN

@@ -42,22 +42,22 @@ BEGIN_NAMESPACE_ACADO
  *	\brief Provides a generic way to set and pass user-specified options.
  *
  *	\ingroup AuxiliaryFunctionality
- *	
+ *
  *  The class Options provides a generic way to set and pass user-specified
- *	options. This class is part of the UserInterface class, i.e. all classes 
- *	that are intended to interact with the user inherit the public functionality 
+ *	options. This class is part of the UserInterface class, i.e. all classes
+ *	that are intended to interact with the user inherit the public functionality
  *	of the Options class.
  *
- *	The class Options holds an array of OptionsLists, where only one OptionsList 
+ *	The class Options holds an array of OptionsLists, where only one OptionsList
  *	is allocated by default. This list contains all available options and their
  *	respective values. The array can be extended by calling the addOptionsList()
  *	member function. This allows to handle more than one options list, that can
- *	be accessed via its index. This feature is, e.g., intended to manage a 
+ *	be accessed via its index. This feature is, e.g., intended to manage a
  *	seperate options list for each stage of a multi-stage optimal control problem.
  *
- *	\note Parts of the functionality of the Options class are tunnelled into the 
- *	AlgorithmicBase class to be used in derived developer classes. In case this 
- *	functionality is modified or new functionality is added to this class, the 
+ *	\note Parts of the functionality of the Options class are tunnelled into the
+ *	AlgorithmicBase class to be used in derived developer classes. In case this
+ *	functionality is modified or new functionality is added to this class, the
  *	AlgorithmicBase class has to be adapted accordingly.
  *
  *	\author Hans Joachim Ferreau, Boris Houska, Milan Vukov
@@ -65,7 +65,7 @@ BEGIN_NAMESPACE_ACADO
 class Options
 {
 	friend class AlgorithmicBase;
-	
+
 	//
 	// PUBLIC MEMBER FUNCTIONS:
 	//
@@ -129,7 +129,7 @@ class Options
 							std::string& value
 							) const;
 
-		/** Returns value of an existing option item of integer type 
+		/** Returns value of an existing option item of integer type
 		 *	within the option list of given index.
 		 *
 		 *	@param[in]  idx		Index of option list.
@@ -145,7 +145,7 @@ class Options
 							int& value
 							) const;
 
-		/** Returns value of an existing option item of double type 
+		/** Returns value of an existing option item of double type
 		 *	within the option list of given index.
 		 *
 		 *	@param[in]  idx		Index of option list.
@@ -216,7 +216,7 @@ class Options
 							const std::string& value
 							);
 
-		/** Sets value of an existing option item of integer type 
+		/** Sets value of an existing option item of integer type
 		 *	within the option list of given index to a given value.
 		 *
 		 *	@param[in]  idx		Index of option list.
@@ -233,7 +233,7 @@ class Options
 							int value
 							);
 
-		/** Sets value of an existing option item of double type 
+		/** Sets value of an existing option item of double type
 		 *	within the option list of given index to a given value.
 		 *
 		 *	@param[in]  idx		Index of option list.
@@ -280,7 +280,7 @@ class Options
         returnValue setOptions(	const Options &arg
 								);
 
-        /** Assigns the option list with given index of a given Options object 
+        /** Assigns the option list with given index of a given Options object
 		 *	to option list with given index of this object.
 		 *
 		 *	@param[in] idx		Index of option list.
@@ -349,7 +349,7 @@ class Options
 		/** Determines whether options of at least one option list have been modified.
 		 *
 		 *	\return BT_TRUE  iff options have been modified, \n
-		 *	        BT_FALSE otherwise 
+		 *	        BT_FALSE otherwise
 		 */
 		BooleanType haveOptionsChanged( ) const;
 
@@ -358,7 +358,7 @@ class Options
 		 *	@param[in] idx		Index of option list.
 		 *
 		 *	\return BT_TRUE  iff options have been modified, \n
-		 *	        BT_FALSE otherwise 
+		 *	        BT_FALSE otherwise
 		 */
 		BooleanType haveOptionsChanged(	uint idx
 										) const;
@@ -369,7 +369,7 @@ class Options
 		 *  \return SUCCESSFUL_RETURN
 		 */
 		returnValue declareOptionsUnchanged( );
-		
+
 		/** Declares all options of option list with given index to be unchanged.
 		 *
 		 *	@param[in] idx		Index of option list.

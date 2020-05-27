@@ -42,18 +42,18 @@ BEGIN_NAMESPACE_ACADO
 
 class IntegratorExport;
 
-/** 
+/**
  *	\brief User-interface to automatically generate simulation algorithms for fast optimal control.
  *
  *	\ingroup UserInterfaces
  *
  *  The class SIMexport is a user-interface to automatically generate tailored
- *  simulation algorithms for fast optimal control. It takes an optimal control 
- *  problem (OCP) formulation and generates code based on given user options, 
+ *  simulation algorithms for fast optimal control. It takes an optimal control
+ *  problem (OCP) formulation and generates code based on given user options,
  *  e.g specifying the integrator and the number of integration steps.
  * 	In addition to the export of such a simulation algorithm, the performance
  * 	of this integrator will be evaluated on accuracy of the results and the time
- * 	complexity. 
+ * 	complexity.
  *
  *	\author Rien Quirynen
  */
@@ -64,7 +64,7 @@ class SIMexport : public ExportModule, public ModelContainer
     //
     public:
 
-		/** Default constructor. 
+		/** Default constructor.
 		 *
 		 *	@param[in] simIntervals		The number of simulation intervals.
 		 *	@param[in] totalTime		The total simulation time.
@@ -79,7 +79,7 @@ class SIMexport : public ExportModule, public ModelContainer
 		SIMexport(	const SIMexport& arg
 					);
 
-		/** Destructor. 
+		/** Destructor.
 		 */
 		virtual ~SIMexport( );
 
@@ -145,8 +145,8 @@ class SIMexport : public ExportModule, public ModelContainer
 											const std::string& results = std::string( "results.txt" ),
 											const std::string& ref = std::string( "ref.txt" )
 										);
-			
-			
+
+
 		/** This function should be used if the user wants to provide the file containing the
 		 * 	reference solution, to which the results of the integrator are compared.
 		 *
@@ -154,28 +154,28 @@ class SIMexport : public ExportModule, public ModelContainer
 		 * 	@param[in] outputReference	The names of the files containing the reference for the output results if any.
 		 *
 		 *	\return SUCCESSFUL_RETURN
-		 */							
+		 */
 		virtual returnValue setReference(	const std::string& reference, const std::vector<std::string>& outputReference = *(new std::vector<std::string>())
 										);
-			
-			
+
+
 		/** This function sets the number of integration steps performed for the timing results.
 		 *
 		 *	@param[in] _timingSteps		The new number of integration steps performed for the timing results.
 		 *
 		 *	\return SUCCESSFUL_RETURN
-		 */							
+		 */
 		virtual returnValue setTimingSteps( uint _timingSteps
 										);
-										
-			
+
+
 		/** This function sets a boolean if the exported simulation code should print all the details
 		 * 	about the results or not.
 		 *
 		 *	@param[in] details		true if the exported simulation code should print all the details, otherwise false
 		 *
 		 *	\return SUCCESSFUL_RETURN
-		 */								
+		 */
 		virtual returnValue printDetails( bool details );
 
 
@@ -226,7 +226,7 @@ class SIMexport : public ExportModule, public ModelContainer
 		returnValue checkConsistency( ) const;
 
 
-		/** Collects all data declarations of the auto-generated sub-modules to given 
+		/** Collects all data declarations of the auto-generated sub-modules to given
 		 *	list of declarations.
 		 *
 		 *	@param[in] declarations		List of declarations.
@@ -238,7 +238,7 @@ class SIMexport : public ExportModule, public ModelContainer
 												ExportStruct dataStruct = ACADO_ANY
 												) const;
 
-		/** Collects all function (forward) declarations of the auto-generated sub-modules 
+		/** Collects all function (forward) declarations of the auto-generated sub-modules
 		 *	to given list of declarations.
 		 *
 		 *	@param[in] declarations		List of declarations.
@@ -250,7 +250,7 @@ class SIMexport : public ExportModule, public ModelContainer
 													) const;
 
 
-		/** Exports test file with template main function for using the 
+		/** Exports test file with template main function for using the
 		 *  exported simulation algorithm.
 		 *
 		 *	@param[in] _dirName			Name of directory to be used to export file.
@@ -322,21 +322,21 @@ class SIMexport : public ExportModule, public ModelContainer
 
         double T;								/**< The total simulation time. */
 		IntegratorExport*  integrator;			/**< Module for exporting a tailored integrator. */
-		
+
 		bool referenceProvided;			/**< True if the user provided a file with the reference solution. */
 		bool PRINT_DETAILS;				/**< True if the user wants all the details about the results being printed. */
-		
+
 		static const uint factorRef = 10;		/**< The used factor in the number of integration steps to get the reference. */
 		uint timingSteps;						/**< The number of integration steps performed for the timing results. */
-		
+
 		std::string _initStates;						/**< Name of the file containing the initial values of all the states. */
 		std::string _controls;						/**< Name of the file containing the control values over the OCP grid. */
 		std::string _results;						/**< Name of the file in which the integration results will be written. */
-		std::string _ref;							/**< Name of the file in which the reference will be written, 
+		std::string _ref;							/**< Name of the file in which the reference will be written,
 													 to which the results of the integrator will be compared. */
 		std::vector<std::string> _refOutputFiles;	/**< Names of the files in which the outputs will be written for the reference. */
 		std::vector<std::string> _outputFiles;		/**< Names of the files in which the outputs will be written for the integrator. */
-		
+
 };
 
 

@@ -73,7 +73,7 @@ class BandedCPsolver: public AlgorithmicBase
 
 		BandedCPsolver(	UserInteraction* _userInteraction
 						);
-		
+
         /** Copy constructor (deep copy). */
         BandedCPsolver( const BandedCPsolver& rhs );
 

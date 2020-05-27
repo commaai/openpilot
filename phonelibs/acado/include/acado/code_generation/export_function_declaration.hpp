@@ -41,12 +41,12 @@
 
 BEGIN_NAMESPACE_ACADO
 
-/** 
+/**
 *	\brief Allows to export code containing function (forward) declarations.
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class ExportDataDeclaration allows to export code containing function 
+ *	The class ExportDataDeclaration allows to export code containing function
  *	(forward) declarations.
  *
  *	\author Hans Joachim Ferreau, Boris Houska, Milan Vukov
@@ -72,7 +72,7 @@ class ExportFunctionDeclaration : public ExportStatement
 		ExportFunctionDeclaration(	const ExportAcadoFunction& _f
 									);
 
-        /** Destructor. 
+        /** Destructor.
 		 */
         virtual ~ExportFunctionDeclaration( );
 
@@ -82,7 +82,7 @@ class ExportFunctionDeclaration : public ExportStatement
 		 */
 		virtual ExportStatement* clone( ) const;
 
-		/** Exports source code of the statement into given file. Its appearance can 
+		/** Exports source code of the statement into given file. Its appearance can
 		 *  can be adjusted by various options.
 		 *
 		 *	@param[in] stream			Name of file to be used to export statement.

@@ -11,7 +11,7 @@
 #ifndef EIGEN_CWISE_H
 #define EIGEN_CWISE_H
 
-namespace Eigen { 
+namespace Eigen {
 
 /** \internal
   * convenient macro to defined the return type of a cwise binary operation */

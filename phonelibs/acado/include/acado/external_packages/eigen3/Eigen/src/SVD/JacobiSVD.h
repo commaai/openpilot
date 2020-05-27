@@ -10,7 +10,7 @@
 #ifndef EIGEN_JACOBISVD_H
 #define EIGEN_JACOBISVD_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 // forward declaration (needed by ICC)
@@ -732,7 +732,7 @@ void JacobiSVD<MatrixType, QRPreconditioner>::allocate(Index rows, Index cols, u
                             : m_computeThinV ? m_diagSize
                             : 0);
   m_workMatrix.resize(m_diagSize, m_diagSize);
-  
+
   if(m_cols>m_rows) m_qr_precond_morecols.allocate(*this);
   if(m_rows>m_cols) m_qr_precond_morerows.allocate(*this);
 }
@@ -852,7 +852,7 @@ struct solve_retval<JacobiSVD<_MatrixType, QRPreconditioner>, Rhs>
 
     Matrix<Scalar, Dynamic, Rhs::ColsAtCompileTime, 0, _MatrixType::MaxRowsAtCompileTime, Rhs::MaxColsAtCompileTime> tmp;
     Index nonzeroSingVals = dec().nonzeroSingularValues();
-    
+
     tmp.noalias() = dec().matrixU().leftCols(nonzeroSingVals).adjoint() * rhs();
     tmp = dec().singularValues().head(nonzeroSingVals).asDiagonal().inverse() * tmp;
     dst = dec().matrixV().leftCols(nonzeroSingVals) * tmp;

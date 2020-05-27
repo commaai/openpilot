@@ -47,7 +47,7 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup BasicDataStructures
  *
- *	The class Asin implements the scalar inverse sine operator (arcsin) within the 
+ *	The class Asin implements the scalar inverse sine operator (arcsin) within the
  *	symbolic operators family.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

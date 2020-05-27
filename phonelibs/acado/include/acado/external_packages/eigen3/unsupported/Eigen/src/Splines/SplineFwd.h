@@ -37,16 +37,16 @@ namespace Eigen
 
       /** \brief The data type used to store the values of the basis function derivatives. */
       typedef Array<Scalar,Dynamic,Dynamic,RowMajor,NumOfDerivativesAtCompileTime,OrderAtCompileTime> BasisDerivativeType;
-      
+
       /** \brief The data type used to store the spline's derivative values. */
       typedef Array<Scalar,Dimension,Dynamic,ColMajor,Dimension,NumOfDerivativesAtCompileTime> DerivativeType;
 
       /** \brief The point type the spline is representing. */
       typedef Array<Scalar,Dimension,1> PointType;
-      
+
       /** \brief The data type used to store knot vectors. */
       typedef Array<Scalar,1,Dynamic> KnotVectorType;
-      
+
       /** \brief The data type representing the spline's control points. */
       typedef Array<Scalar,Dimension,Dynamic> ControlPointVectorType;
     };
@@ -65,20 +65,20 @@ namespace Eigen
 
       /** \brief The data type used to store the values of the basis function derivatives. */
       typedef Array<_Scalar,Dynamic,Dynamic,RowMajor,NumOfDerivativesAtCompileTime,OrderAtCompileTime> BasisDerivativeType;
-      
-      /** \brief The data type used to store the spline's derivative values. */      
+
+      /** \brief The data type used to store the spline's derivative values. */
       typedef Array<_Scalar,_Dim,Dynamic,ColMajor,_Dim,NumOfDerivativesAtCompileTime> DerivativeType;
     };
 
     /** \brief 2D float B-spline with dynamic degree. */
     typedef Spline<float,2> Spline2f;
-    
+
     /** \brief 3D float B-spline with dynamic degree. */
     typedef Spline<float,3> Spline3f;
 
     /** \brief 2D double B-spline with dynamic degree. */
     typedef Spline<double,2> Spline2d;
-    
+
     /** \brief 3D double B-spline with dynamic degree. */
     typedef Spline<double,3> Spline3d;
 }

@@ -10,7 +10,7 @@
 #ifndef EIGEN_AMBIVECTOR_H
 #define EIGEN_AMBIVECTOR_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008 The Khronos Group Inc.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -10,7 +10,7 @@
  * to the following conditions:
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -24,7 +24,7 @@
 /** OMX_Types.h - OpenMax IL version 1.1.2
  *  The OMX_Types header file contains the primitive type definitions used by
  *  the core, the application and the component.  This file may need to be
- *  modified to be used on systems that do not have "char" set to 8 bits, 
+ *  modified to be used on systems that do not have "char" set to 8 bits,
  *  "short" set to 16 bits and "long" set to 32 bits.
  */
 
@@ -103,11 +103,11 @@ extern "C" {
 /** @defgroup core OpenMAX IL core
  * Functions and structure related to the OMX IL core
  */
- 
+
  /** @defgroup comp OpenMAX IL component
  * Functions and structure related to the OMX IL component
  */
- 
+
 /** @defgroup rpm Resource and Policy Management
  * Structures for resource and policy management of components
  */
@@ -115,19 +115,19 @@ extern "C" {
 /** @defgroup buf Buffer Management
  * Buffer handling functions and structures
  */
-  
+
 /** @defgroup tun Tunneling
  * @ingroup core comp
  * Structures and functions to manage tunnels among component ports
  */
- 
+
 /** @defgroup cp Content Pipes
  *  @ingroup core
  */
- 
+
  /** @defgroup metadata Metadata handling
-  * 
-  */ 
+  *
+  */
 
 /** OMX_U8 is an 8 bit unsigned quantity that is byte aligned */
 typedef unsigned char OMX_U8;
@@ -191,7 +191,7 @@ typedef enum OMX_BOOL {
     OMX_TRUE = !OMX_FALSE,
     OMX_BOOL_MAX = 0x7FFFFFFF
 } OMX_BOOL;
- 
+
 #ifdef OMX_ANDROID_COMPILE_AS_32BIT_ON_64BIT_PLATFORMS
 
 typedef OMX_U32 OMX_PTR;
@@ -283,7 +283,7 @@ typedef struct OMX_BS32 {
   *  negative deltas and preroll scenarios. The quantity is represented in microseconds
   *  to accomodate high resolution timestamps (e.g. DVD presentation timestamps based
   *  on a 90kHz clock) and to allow more accurate and synchronized delivery (e.g.
-  *  individual audio samples delivered at 192 kHz). The quantity is 64 bit to 
+  *  individual audio samples delivered at 192 kHz). The quantity is 64 bit to
   *  accommodate a large dynamic range (signed 32 bit values would allow only for plus
   *  or minus 35 minutes).
   *
@@ -311,14 +311,14 @@ typedef struct OMX_MARKTYPE
     OMX_HANDLETYPE hMarkTargetComponent;   /**< The component that will
                                                 generate a mark event upon
                                                 processing the mark. */
-    OMX_PTR pMarkData;   /**< Application specific data associated with 
+    OMX_PTR pMarkData;   /**< Application specific data associated with
                               the mark sent on a mark event to disambiguate
                               this mark from others. */
 } OMX_MARKTYPE;
 
 
 /** OMX_NATIVE_DEVICETYPE is used to map a OMX video port to the
- *  platform & operating specific object used to reference the display 
+ *  platform & operating specific object used to reference the display
  *  or can be used by a audio port for native audio rendering */
 typedef void* OMX_NATIVE_DEVICETYPE;
 

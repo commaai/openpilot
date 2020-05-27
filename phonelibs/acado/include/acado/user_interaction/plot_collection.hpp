@@ -49,9 +49,9 @@ BEGIN_NAMESPACE_ACADO
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *  The class PlotCollection manages a basic singly-linked list of plot windows 
- *  that allows to plot algorithmic outputs during runtime. It is intended for 
- *	internal use only, as all user-functionality is encapsulated within the 
+ *  The class PlotCollection manages a basic singly-linked list of plot windows
+ *  that allows to plot algorithmic outputs during runtime. It is intended for
+ *	internal use only, as all user-functionality is encapsulated within the
  *	classes Plotting and PlotWindow.
  *
  *	\author Hans Joachim Ferreau, Boris Houska
@@ -89,7 +89,7 @@ class PlotCollection
 		 *
 		 *	@param[in] idx	Index of desired window.
 		 *
-		 *  \return Window with given index. 
+		 *  \return Window with given index.
 		 */
 		inline PlotWindow& operator()(	uint idx
 										);
@@ -98,7 +98,7 @@ class PlotCollection
 		 *
 		 *	@param[in] idx	Index of desired window.
 		 *
-		 *  \return Window with given index. 
+		 *  \return Window with given index.
 		 */
 		inline PlotWindow operator()(	uint idx
 										) const;
@@ -108,11 +108,11 @@ class PlotCollection
 		 *
 		 *	@param[in] window	Window to be added.
 		 *
-		 *	\note This function is doing the same as the corresponding 
+		 *	\note This function is doing the same as the corresponding
 		 *	      addPlotWindow member function and is introduced for syntax reasons only.
 		 *
 		 *  \return >= 0: index of added window, \n
-		 *	        -RET_PLOT_COLLECTION_CORRUPTED 
+		 *	        -RET_PLOT_COLLECTION_CORRUPTED
 		 */
 		int operator<<(	PlotWindow& window
 						);
@@ -122,7 +122,7 @@ class PlotCollection
 		 *	@param[in] window	Window to be added.
 		 *
 		 *  \return >= 0: index of added window, \n
-		 *	        -RET_PLOT_COLLECTION_CORRUPTED 
+		 *	        -RET_PLOT_COLLECTION_CORRUPTED
 		 */
 		int addPlotWindow(	PlotWindow& window
 							);
@@ -143,17 +143,17 @@ class PlotCollection
 
 
 		returnValue enableNominalControls( );
-		
+
 		returnValue disableNominalControls( );
 
 
 		returnValue enableNominalParameters( );
-		
+
 		returnValue disableNominalParameters( );
 
 
 		returnValue enableNominalOutputs( );
-		
+
 		returnValue disableNominalOutputs( );
 
 

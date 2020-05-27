@@ -44,8 +44,8 @@ class Expression;
  *
  *	\ingroup AuxiliaryFunctionality
  *
- *	The class MultiObjectiveFunctionality is a data class that encapsulates 
- *	all functionality for defining optimal control problems having multiple 
+ *	The class MultiObjectiveFunctionality is a data class that encapsulates
+ *	all functionality for defining optimal control problems having multiple
  *	objectives.
  *
  *	\author Boris Houska, Hans Joachim Ferreau

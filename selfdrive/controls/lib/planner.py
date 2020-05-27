@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import math
 
-import cereal.messaging as messaging
 import numpy as np
-from cereal import car
 
+import cereal.messaging as messaging
+from cereal import car
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import sec_since_boot

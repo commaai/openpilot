@@ -43,12 +43,12 @@
 BEGIN_NAMESPACE_ACADO
 
 
-/** 
+/**
  *	\brief User-interface to integrate a DynamicSystem, possibly over multiple stages.
  *
  *	\ingroup UserInterfaces
  *
- *  The class IntegrationAlgorithm serves as a user-interface to integrate 
+ *  The class IntegrationAlgorithm serves as a user-interface to integrate
  *  a DynamicSystem, possibly over multiple stages.
  *
  *	\author Boris Houska, Hans Joachim Ferreau
@@ -266,20 +266,20 @@ class IntegrationAlgorithm : public UserInteraction
 		BooleanType isAffine( ) const;
 
 
-		/** Returns the result for the differential states at 
-		*  time tend.                                         
-		*                                                     
+		/** Returns the result for the differential states at
+		*  time tend.
+		*
 		*  \param xEnd the result for the states at time tend.
-		*                                                     
+		*
 		*  \return SUCCESSFUL_RETURN
 		*/
 		returnValue getX(	DVector& xEnd
 							) const;
 
-		/** Returns the result for the algebraic states at 
+		/** Returns the result for the algebraic states at
 		*  time tend.
 		*
-		*  \param xaEnd the result for the algebraic states at time tend. 
+		*  \param xaEnd the result for the algebraic states at time tend.
 		*
 		*  \return SUCCESSFUL_RETURN
 		*/

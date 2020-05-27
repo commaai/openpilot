@@ -10,7 +10,7 @@
 #ifndef EIGEN_SPARSE_BLOCK_H
 #define EIGEN_SPARSE_BLOCK_H
 
-namespace Eigen { 
+namespace Eigen {
 
 template<typename XprType, int BlockRows, int BlockCols>
 class BlockImpl<XprType,BlockRows,BlockCols,true,Sparse>
@@ -24,7 +24,7 @@ protected:
     enum { OuterSize = IsRowMajor ? BlockRows : BlockCols };
 public:
     EIGEN_SPARSE_PUBLIC_INTERFACE(BlockType)
-    
+
     class InnerIterator: public XprType::InnerIterator
     {
         typedef typename BlockImpl::Index Index;
@@ -86,7 +86,7 @@ public:
 protected:
     enum { OuterSize = IsRowMajor ? BlockRows : BlockCols };
 public:
-    
+
     class InnerIterator: public SparseMatrixType::InnerIterator
     {
       public:
@@ -135,12 +135,12 @@ public:
       Index end           = m_matrix.outerIndexPtr()[m_outerStart+m_outerSize.value()]; // ending posiiton of the current block
       Index block_size    = end - start;                                                // available room in the current block
       Index tail_size     = m_matrix.outerIndexPtr()[m_matrix.outerSize()] - end;
-      
+
       Index free_size     = m_matrix.isCompressed()
                           ? Index(matrix.data().allocatedSize()) + block_size
                           : block_size;
 
-      if(nnz>free_size) 
+      if(nnz>free_size)
       {
         // realloc manually to reduce copies
         typename SparseMatrixType::Storage newdata(m_matrix.data().allocatedSize() - block_size + nnz);
@@ -153,7 +153,7 @@ public:
 
         std::memcpy(&newdata.value(start+nnz), &matrix.data().value(end), tail_size*sizeof(Scalar));
         std::memcpy(&newdata.index(start+nnz), &matrix.data().index(end), tail_size*sizeof(Index));
-        
+
         newdata.resize(m_matrix.outerIndexPtr()[m_matrix.outerSize()] - block_size + nnz);
 
         matrix.data().swap(newdata);
@@ -169,7 +169,7 @@ public:
         std::memcpy(&matrix.data().value(start), &tmp.data().value(0), nnz*sizeof(Scalar));
         std::memcpy(&matrix.data().index(start), &tmp.data().index(0), nnz*sizeof(Index));
       }
-      
+
       // update innerNonZeros
       if(!m_matrix.isCompressed())
         for(Index j=0; j<m_outerSize.value(); ++j)
@@ -268,7 +268,7 @@ Block<Derived,Dynamic,Dynamic,true> SparseMatrixBase<Derived>::innerVectors(Inde
   return Block<Derived,Dynamic,Dynamic,true>(derived(),
                                              IsRowMajor ? outerStart : 0, IsRowMajor ? 0 : outerStart,
                                              IsRowMajor ? outerSize : rows(), IsRowMajor ? cols() : outerSize);
-  
+
 }
 
 /** \returns the \a outer -th column (resp. row) of the matrix \c *this if \c *this
@@ -280,11 +280,11 @@ const Block<const Derived,Dynamic,Dynamic,true> SparseMatrixBase<Derived>::inner
   return Block<const Derived,Dynamic,Dynamic,true>(derived(),
                                                   IsRowMajor ? outerStart : 0, IsRowMajor ? 0 : outerStart,
                                                   IsRowMajor ? outerSize : rows(), IsRowMajor ? cols() : outerSize);
-  
+
 }
 
 /** Generic implementation of sparse Block expression.
-  * Real-only. 
+  * Real-only.
   */
 template<typename XprType, int BlockRows, int BlockCols, bool InnerPanel>
 class BlockImpl<XprType,BlockRows,BlockCols,InnerPanel,Sparse>
@@ -339,9 +339,9 @@ public:
              .coeff(m_startRow.value() + (RowsAtCompileTime == 1 ? 0 : index),
                     m_startCol.value() + (RowsAtCompileTime == 1 ? index : 0));
     }
-    
+
     inline const _MatrixTypeNested& nestedExpression() const { return m_matrix; }
-    
+
     class InnerIterator : public _MatrixTypeNested::InnerIterator
     {
       typedef typename _MatrixTypeNested::InnerIterator Base;
@@ -362,7 +362,7 @@ public:
       inline Index outer()  const { return Base::outer() - (IsRowMajor ? m_block.m_startRow.value() : m_block.m_startCol.value()); }
       inline Index row()    const { return Base::row()   - m_block.m_startRow.value(); }
       inline Index col()    const { return Base::col()   - m_block.m_startCol.value(); }
-      
+
       inline operator bool() const { return Base::operator bool() && Base::index() < m_end; }
     };
     class ReverseInnerIterator : public _MatrixTypeNested::ReverseInnerIterator
@@ -385,7 +385,7 @@ public:
       inline Index outer()  const { return Base::outer() - (IsRowMajor ? m_block.m_startRow.value() : m_block.m_startCol.value()); }
       inline Index row()    const { return Base::row()   - m_block.m_startRow.value(); }
       inline Index col()    const { return Base::col()   - m_block.m_startCol.value(); }
-      
+
       inline operator bool() const { return Base::operator bool() && Base::index() >= m_begin; }
     };
   protected:

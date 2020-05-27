@@ -26,7 +26,7 @@ namespace DiagLog
 @{ */
 
 /// @brief .
-/// 
+///
 /// Interface for controlling logging for zdl components.
 
 class ZDL_LOGGING_EXPORT IDiagLog
@@ -48,7 +48,7 @@ public:
    ///
    /// @return Diag log options object.
    virtual Options getOptions() = 0;
-   
+
    /// @brief .
    ///
    /// Allows for setting the log mask once diag logging has started

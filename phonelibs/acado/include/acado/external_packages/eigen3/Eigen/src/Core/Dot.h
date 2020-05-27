@@ -10,7 +10,7 @@
 #ifndef EIGEN_DOT_H
 #define EIGEN_DOT_H
 
-namespace Eigen { 
+namespace Eigen {
 
 namespace internal {
 
