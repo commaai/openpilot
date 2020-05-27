@@ -78,6 +78,8 @@ class LocalCoord():
                                      [-np.sin(lat)*np.sin(lon), np.cos(lon), -np.cos(lat)*np.sin(lon)],
                                      [np.cos(lat), 0, -np.sin(lat)]])
     self.ecef2ned_matrix = self.ned2ecef_matrix.T
+    self.ecef_from_ned_matrix = self.ned2ecef_matrix
+    self.ned_from_ecef_matrix = self.ecef2ned_matrix
 
   @classmethod
   def from_geodetic(cls, init_geodetic):
