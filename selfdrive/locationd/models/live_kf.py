@@ -46,7 +46,7 @@ class LiveKalman():
                         0, 0, 0])
 
   # state covariance
-  initial_P_diag = np.array([1e14, 1e14, 1e14,
+  initial_P_diag = np.array([1e16, 1e16, 1e16,
                              1e6, 1e6, 1e6,
                              1e4, 1e4, 1e4,
                              1**2, 1**2, 1**2,

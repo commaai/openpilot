@@ -28,15 +28,15 @@ class GNSSKalman():
                         0, 0])
 
   # state covariance
-  P_initial = np.diag([10000**2, 10000**2, 10000**2,
+  P_initial = np.diag([1e16, 1e16, 1e16,
                        10**2, 10**2, 10**2,
-                       (2000000)**2, (100)**2, (0.5)**2,
+                       1e14, (100)**2, (0.2)**2,
                        (10)**2, (1)**2])
 
   # process noise
-  Q = np.diag([0.3**2, 0.3**2, 0.3**2,
+  Q = np.diag([0.03**2, 0.03**2, 0.03**2,
                3**2, 3**2, 3**2,
-               (.1)**2, (0)**2, (0.01)**2,
+               (.1)**2, (0)**2, (0.005)**2,
                .1**2, (.01)**2])
 
   maha_test_kinds = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
@@ -119,6 +119,7 @@ class GNSSKalman():
 
     # init filter
     self.filter = EKF_sym(generated_dir, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds)
+    self.init_state(GNSSKalman.x_initial, covs=GNSSKalman.P_initial)
 
   @property
   def x(self):
