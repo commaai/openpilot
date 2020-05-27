@@ -55,9 +55,10 @@ typedef struct CameraState {
 
   int buf0_handle;
   int buf_handle[FRAME_BUF_COUNT];
-  int sched_request_id;
   int request_ids[FRAME_BUF_COUNT];
+  int sched_request_id;
   int sync_objs[FRAME_BUF_COUNT];
+  int buf_index;
 
   struct cam_req_mgr_session_info req_mgr_session_info;
 } CameraState;
@@ -75,10 +76,12 @@ typedef struct DualCameraState {
 #ifdef NOSCREEN
   zsock_t *rgb_sock;
 #endif
+
+  pthread_mutex_t isp_lock;
 } DualCameraState;
 
 void cameras_init(DualCameraState *s);
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front);
+void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
 void cameras_run(DualCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
 #ifdef NOSCREEN
