@@ -288,7 +288,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->limit_set_speed_timeout = UI_FREQ;
 }
 
-static void read_path(PathData& p, cereal::ModelData::PathData::Reader pathp) {
+static void read_path(PathData& p, const cereal::ModelData::PathData::Reader &pathp) {
   p = {};
 
   p.prob = pathp.getProb();
@@ -305,7 +305,7 @@ static void read_path(PathData& p, cereal::ModelData::PathData::Reader pathp) {
   }
 }
 
-static void read_model(ModelData &d, cereal::ModelData::Reader model) {
+static void read_model(ModelData &d, const cereal::ModelData::Reader &model) {
   d = {};
   read_path(d.path, model.getPath());
   read_path(d.left_lane, model.getLeftLane());
