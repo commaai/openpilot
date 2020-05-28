@@ -90,12 +90,6 @@ const uint8_t bg_colors[][4] = {
   [STATUS_ALERT] = {0xC9, 0x22, 0x31, 0xff},
 };
 
-
-typedef struct {
-  bool status = false;
-  float d_rel=0, y_rel=0, v_rel=0;
-}LeadStatus;
-
 typedef struct UIScene {
   int frontview;
   int fullview;
@@ -132,7 +126,7 @@ typedef struct UIScene {
   int ui_viz_rw;
   int ui_viz_ro;
 
-  LeadStatus lead_status[2];
+  cereal::RadarState::LeadData::Reader lead_data[2];
 
   float face_prob;
   bool is_rhd;
