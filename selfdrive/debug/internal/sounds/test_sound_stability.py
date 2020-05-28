@@ -6,7 +6,7 @@ import datetime
 import random
 
 from common.basedir import BASEDIR
-from selfdrive import messaging
+import cereal.messaging as messaging
 
 if __name__ == "__main__":
 

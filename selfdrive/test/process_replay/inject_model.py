@@ -85,8 +85,3 @@ def inject_model(msgs, segment_name):
   assert abs(len(new_msgs) - len(list(msgs))) < 2
 
   return new_msgs
-
-
-
-if __name__ == "__main__":
-  inject_model("0375fdf7b1ce594d|2019-06-13--08-32-25/3")

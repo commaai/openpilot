@@ -4,7 +4,7 @@ import random
 import math
 
 # Simple hacky Matroska generator
-# Reads mp3 file "q.mp3" and jpeg images from img/0.jpg, img/1.jpg and so on and 
+# Reads mp3 file "q.mp3" and jpeg images from img/0.jpg, img/1.jpg and so on and
 # writes Matroska file with mjpeg and mp3 to stdout
 
 # License=MIT
@@ -71,7 +71,7 @@ def random_uid():
     def rint():
         return int(random.random()*(0x100**4))
     return ben(rint()) + ben(rint()) + ben(rint()) + ben(rint())
-    
+
 
 def example():
     write_ebml_header(sys.stdout, "matroska", 2, 2)
@@ -133,7 +133,7 @@ def example():
     def mp3framesgenerator(f):
         debt=""
         while True:
-            for i in xrange(0,len(debt)+1):
+            for i in range(0,len(debt)+1):
                 if i >= len(debt)-1:
                     debt = debt + f.read(8192)
                     break
@@ -144,13 +144,13 @@ def example():
                         #   sys.stderr.write("len="+str(i)+"\n")
                         debt = debt[i:]
                         break
-                    
+
 
     mp3 = mp3framesgenerator(mp3file)
-    mp3.next()
+    next(mp3)
 
 
-    for i in xrange(0,530):
+    for i in range(0,530):
         framefile = open("img/"+str(i)+".jpg", "rb")
         framedata = framefile.read()
         framefile.close()
@@ -168,8 +168,8 @@ def example():
                     + framedata
                     )))
 
-        for u in xrange(0,4):
-            mp3f=mp3.next()
+        for u in range(0,4):
+            mp3f=next(mp3)
             if random.random()<1:
                 sys.stdout.write(ebml_element(0x1F43B675, "" # Cluster
                     + ebml_element(0xE7, ben(i*26*4+u*26)) # TimeCode, uint, milliseconds

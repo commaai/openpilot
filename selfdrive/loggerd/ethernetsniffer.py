@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: skip-file
+
 import cereal.messaging as messaging
 import pcap
 
@@ -13,4 +15,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-

@@ -132,8 +132,8 @@ def wheel_poll_thread(q):
   print('%d buttons found: %s' % (num_buttons, ', '.join(button_map)))
 
   # Enable FF
-  import evdev
-  from evdev import ecodes, InputDevice, ff
+  import evdev  # pylint: disable=import-error
+  from evdev import ecodes, InputDevice, ff  # pylint: disable=import-error
   device = evdev.list_devices()[0]
   evtdev = InputDevice(device)
   val = 24000

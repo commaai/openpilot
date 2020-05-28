@@ -443,8 +443,6 @@ class LocKalman():
       r = self.predict_and_update_orb_features(data, t, kind)
     elif kind == ObservationKind.MSCKF_TEST:
       r = self.predict_and_update_msckf_test(data, t, kind)
-    elif kind == ObservationKind.FEATURE_TRACK_TEST:
-      r = self.predict_and_update_feature_track_test(data, t, kind)
     elif kind == ObservationKind.ODOMETRIC_SPEED:
       r = self.predict_and_update_odo_speed(data, t, kind)
     else:

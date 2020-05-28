@@ -79,7 +79,7 @@ def go(q):
   threading.Thread(target=health_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
 
-  import carla
+  import carla  # pylint: disable=import-error
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(5.0)
   world = client.load_world('Town04')
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     print("WARNING: NO CARLA")
     while 1:
       time.sleep(1)
-    
+
   from multiprocessing import Process, Queue
   q = Queue()
   p = Process(target=go, args=(q,))
@@ -246,4 +246,3 @@ if __name__ == "__main__":
     # start input poll for keyboard
     from lib.keyboard_ctrl import keyboard_poll_thread
     keyboard_poll_thread(q)
-

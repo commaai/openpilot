@@ -6,11 +6,17 @@ repos:
     -   id: check-json
     -   id: check-xml
     -   id: check-yaml
--   repo: https://gitlab.com/PyCQA/flake8 
-    rev: master
-    hooks:
-    -   id: flake8
--   repo: https://github.com/PyCQA/pylint
-    rev: master
+# -   repo: https://gitlab.com/PyCQA/flake8
+#     rev: master
+#     hooks:
+#     -   id: flake8
+-   repo: local
     hooks:
     -   id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        exclude: '^(pyextra)|(external)/'
+        args:
+        - --disable=R,C,W

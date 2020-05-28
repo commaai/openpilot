@@ -2,7 +2,7 @@
 
 import sys
 import time
-from selfdrive.thermald import setup_eon_fan, set_eon_fan
+from selfdrive.thermald.thermald import setup_eon_fan, set_eon_fan
 
 if __name__ == "__main__":
   val = 0
@@ -18,5 +18,3 @@ if __name__ == "__main__":
     time.sleep(2)
     val += 1
     val %= 4
-
-

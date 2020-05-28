@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2016, Comma.ai, Inc.
+# flake8: noqa
 
 import re
 import binascii
@@ -15,7 +15,7 @@ class MatroskaIndex(mkvparse.MatroskaHandler):
     self.frameindex = []
 
   def tracks_available(self):
-    _, self.config_record = self.tracks[1]['CodecPrivate']
+    _, self.config_record = self.tracks[1]['CodecPrivate']  # pylint: disable=no-member
 
   def frame(self, track_id, timestamp, pos, length, more_laced_frames, duration,
         keyframe, invisible, discardable):
@@ -62,4 +62,3 @@ def simple_gen(of, config_record, w, h, framedata):
     + ebml_element(0xE7, ben(0)) # TimeCode, uint, milliseconds
     # + ebml_element(0xA7, ben(0)) # Position, uint
     + ''.join(blocks)))
-
