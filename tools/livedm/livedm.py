@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import os
 import argparse
-import pygame
+import pygame  # pylint: disable=import-error
 import numpy as np
-import cv2
+import cv2  # pylint: disable=import-error
 
 from cereal import log
 import cereal.messaging as messaging
