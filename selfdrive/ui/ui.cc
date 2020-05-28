@@ -352,10 +352,10 @@ void handle_message(UIState *s, SubMaster &sm) {
     const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     if (alert_sound != s->alert_sound){
       if (s->alert_sound != sound_none){
-        stop_alert_sound(s->alert_sound);
+        s->sound.stop(s->alert_sound);
       }
       if (alert_sound != sound_none){
-        play_alert_sound(alert_sound);
+        s->sound.play(alert_sound);
         s->alert_type = data.getAlertType();
       }
       s->alert_sound = alert_sound;
@@ -829,7 +829,7 @@ int main(int argc, char* argv[]) {
   TouchState touch = {0};
   touch_init(&touch);
   s->touch_fd = touch.fd;
-  ui_sound_init();
+  assert(s->sound.init());
 
   // light sensor scaling params
   const int LEON = is_leon();
@@ -850,7 +850,7 @@ int main(int argc, char* argv[]) {
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
 
-  set_volume(MIN_VOLUME);
+  s->sound.set_volume(MIN_VOLUME);
   s->volume_timeout = 5 * UI_FREQ;
   int draws = 0;
 
@@ -937,7 +937,7 @@ int main(int argc, char* argv[]) {
       s->volume_timeout--;
     } else {
       int volume = fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5);  // up one notch every 5 m/s
-      set_volume(volume);
+      s->sound.set_volume(volume);
       s->volume_timeout = 5 * UI_FREQ;
     }
 
@@ -957,7 +957,7 @@ int main(int argc, char* argv[]) {
 
         s->alert_sound_timeout = 2 * UI_FREQ;
         s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT;
-        play_alert_sound(s->alert_sound);
+        s->sound.play(s->alert_sound);
       }
 
       s->alert_sound_timeout--;
@@ -967,7 +967,7 @@ int main(int argc, char* argv[]) {
     // stop playing alert sound
     if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
         s->alert_sound != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
-      stop_alert_sound(s->alert_sound);
+      s->sound.stop(s->alert_sound);
       s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     }
 
@@ -1003,7 +1003,6 @@ int main(int argc, char* argv[]) {
   }
 
   set_awake(s, true);
-  ui_sound_destroy();
 
   // wake up bg thread to exit
   pthread_mutex_lock(&s->lock);

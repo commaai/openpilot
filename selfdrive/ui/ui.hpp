@@ -283,6 +283,8 @@ typedef struct UIState {
   model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 
   track_vertices_data track_vertices[2];
+
+  Sound sound;
 } UIState;
 
 // API
