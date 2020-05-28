@@ -12,7 +12,7 @@ repos:
     -   id: flake8
         exclude: '^(pyextra)|(external)/'
         args:
-        - --select=F
+        - --ignore=E121,E127,E501,E114,E111
 -   repo: local
     hooks:
     -   id: pylint
