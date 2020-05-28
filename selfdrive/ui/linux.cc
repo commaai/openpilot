@@ -83,8 +83,7 @@ int touch_read(TouchState *s, int* out_x, int* out_y) {
 bool Sound::init() { return true; }
 bool Sound::play(AudibleAlert alert) { return true; }
 bool Sound::stop(AudibleAlert alert) { return true; }
-void Sound::set_volume(int volume) {}
-void Sound::destroy() {}
+void Sound::set_volume(int volume, double current_time) {}
 Sound::~Sound() {}
 
 #include "common/visionimg.h"

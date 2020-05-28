@@ -241,8 +241,7 @@ typedef struct UIState {
 
   // timeouts
   int awake_timeout;
-  int volume_timeout;
-  int controls_timeout;
+    int controls_timeout;
   int alert_sound_timeout;
   int speed_lim_off_timeout;
   int is_metric_timeout;

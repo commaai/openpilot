@@ -88,65 +88,48 @@ bool Sound::create_player_for_uri(soud_file* s) {
 }
 
 bool Sound::play(AudibleAlert alert) {
-  sound_file* sound = get_sound_file(alert);
-  SLPlayItf playInterface = sound->playInterface;
+  sound_file* sound = get_sound_file(alert)->playInterface;
+  auto playInterface = s->playInterface;
   if (sound->loop) {
-    loop_start_ = nanos_since_boot();
-    loop_start_ctx_ = loop_start_;
+    loop_start_ctx_ = loop_start_ = nanos_since_boot();
     CHECK_RESULT((*playInterface)->RegisterCallback(playInterface, slplay_callback, this), "Failed to register callback");
     CHECK_RESULT((*playInterface)->SetCallbackEventsMask(playInterface, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
   }
 
   // Reset the audio player
   CHECK_RESULT((*playInterface)->ClearMarkerPosition(playInterface), "Failed to clear marker position");
-
-  auto setState = [&playInterface](auto state) {
+  uint32_t states[] = {SL_PLAYSTATE_PAUSED, SL_PLAYSTATE_STOPPED, SL_PLAYSTATE_PLAYING};
+  for (auto state : states) {
     CHECK_RESULT((*playInterface)->SetPlayState(playInterface, state), "Failed to set SL_PLAYSTATE_PLAYING");
-  };
-  setState(SL_PLAYSTATE_PAUSED);
-  setState(SL_PLAYSTATE_STOPPED);
-  setState(SL_PLAYSTATE_PLAYING);
+  }
   return true;
 }
 
 bool Sound::stop(AudibleAlert alert) {
   sound_file* sound = get_sound_file(alert);
-  SLPlayItf playInterface = sound->playInterface;
   // stop a loop
   loop_start_ = 0;
-  CHECK_RESULT((*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_STOPPED");
+  CHECK_RESULT((*sound->playInterface)->SetPlayState(sound->playInterface, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_STOPPED");
   return true;
 }
 
-void Sound::set_volume(int volume) {
+void Sound::set_volume(int volume, double current_time) {
   static int last_volume = 0;
-  if (last_volume != volume) {
+  static double prev_time = 0;
+  // 5 second timeout
+  if (last_volume != volume && (current_time - prev_time) > 5 * (1e+9)) {
     char volume_change_cmd[64];
     snprintf(volume_change_cmd, sizeof(volume_change_cmd), "service call audio 3 i32 3 i32 %d i32 1 &", volume);
-
-    // 5 second timeout at 60fps
-    int volume_changed = system(volume_change_cmd);
+    system(volume_change_cmd);
     last_volume = volume;
-  }
-}
-
-void Sound::destroy() {
-  for (sound_file* s = sound_table; s->alert != cereal::CarControl::HUDControl::AudibleAlert::NONE; s++) {
-    if (s->player) {
-      (*(s->player))->Destroy(s->player);
-      s->player = NULL;
-    }
-  }
-  if (outputMix_) {
-    (*outputMix_)->Destroy(outputMix_);
-    outputMix_ = NULL;
-  }
-  if (engine_) {
-    (*engine_)->Destroy(engine_);
-    engine_ = NULL;
+    prev_time = current_time;
   }
 }
 
 Sound::~Sound() {
-  destroy();
+  for (sound_file* s = sound_table; s->alert != cereal::CarControl::HUDControl::AudibleAlert::NONE; s++) {
+    if (s->player) (*(s->player))->Destroy(s->player);
+  }
+  if (outputMix_) (*outputMix_)->Destroy(outputMix_);
+  if (engine_) (*engine_)->Destroy(engine_);
 }

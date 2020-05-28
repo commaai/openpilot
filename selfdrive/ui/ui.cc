@@ -850,8 +850,7 @@ int main(int argc, char* argv[]) {
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
 
-  s->sound.set_volume(MIN_VOLUME);
-  s->volume_timeout = 5 * UI_FREQ;
+  s->sound.set_volume(MIN_VOLUME, millis_since_boot());
   int draws = 0;
 
   s->scene.satelliteCount = -1;
@@ -933,14 +932,9 @@ int main(int argc, char* argv[]) {
       should_swap = true;
     }
 
-    if (s->volume_timeout > 0) {
-      s->volume_timeout--;
-    } else {
-      int volume = fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5);  // up one notch every 5 m/s
-      s->sound.set_volume(volume);
-      s->volume_timeout = 5 * UI_FREQ;
-    }
-
+    int volume = fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5);  // up one notch every 5 m/s
+    s->sound.set_volume(volume, u1);
+  
     // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
