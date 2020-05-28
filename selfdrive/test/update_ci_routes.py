@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import tempfile
-import shutil
 import subprocess
 from common.basedir import BASEDIR
 from azure.storage.blob import BlockBlobService
@@ -8,8 +6,7 @@ from azure.storage.blob import BlockBlobService
 from selfdrive.test.test_car_models import routes as test_car_models_routes
 from selfdrive.test.process_replay.test_processes import segments as replay_segments
 from xx.chffr.lib import azureutil
-from xx.chffr.lib.storage import upload_dir_serial, download_dir_tpe
-from xx.chffr.lib.storage import _DATA_ACCOUNT_PRODUCTION, _DATA_ACCOUNT_CI, _DATA_BUCKET_PRODUCTION, _DATA_BUCKET_CI
+from xx.chffr.lib.storage import _DATA_ACCOUNT_PRODUCTION, _DATA_ACCOUNT_CI, _DATA_BUCKET_PRODUCTION
 
 SOURCES = [
   (_DATA_ACCOUNT_PRODUCTION, _DATA_BUCKET_PRODUCTION),

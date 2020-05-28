@@ -6,6 +6,13 @@ repos:
     -   id: check-json
     -   id: check-xml
     -   id: check-yaml
+-   repo: https://gitlab.com/PyCQA/flake8
+    rev: master
+    hooks:
+    -   id: flake8
+        exclude: '^(pyextra)|(external)/'
+        args:
+        - --select=F
 -   repo: local
     hooks:
     -   id: pylint

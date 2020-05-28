@@ -8,6 +8,7 @@
 
 # See "mkvuser.py" for the example
 # pylint: skip-file
+# flake8: noqa
 
 import traceback
 from struct import unpack

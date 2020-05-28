@@ -340,7 +340,7 @@ class LocKalman():
 
       for n in range(N):
         idx = dim_main + n * dim_augment
-        err_idx = dim_main_err + n * dim_augment_err  # FIXME: Why is this not used?
+        # err_idx = dim_main_err + n * dim_augment_err  # FIXME: Why is this not used?
         x, y, z = state[idx:idx + 3]
         q = state[idx + 3:idx + 7]
         quat_rot = quat_rotate(*q)

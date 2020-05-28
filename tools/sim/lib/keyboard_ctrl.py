@@ -1,7 +1,8 @@
-import time
 import sys
 import termios
-from termios import *
+import time
+from termios import (BRKINT, VMIN, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN,
+                     INPCK, ISIG, ISTRIP, IXON, PARENB, VTIME)
 
 # Indexes for termios list.
 IFLAG = 0
@@ -58,4 +59,3 @@ if __name__ == '__main__':
   p.start()
 
   keyboard_poll_thread(q)
-
