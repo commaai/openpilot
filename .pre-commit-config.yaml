@@ -15,7 +15,7 @@ repos:
     rev: master
     hooks:
     -   id: flake8
-        exclude: '^(pyextra)|(external)/'
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'
         args:
         - --select=F
 -   repo: local
@@ -25,6 +25,6 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        exclude: '^(pyextra)|(external)/'
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'
         args:
         - --disable=R,C,W

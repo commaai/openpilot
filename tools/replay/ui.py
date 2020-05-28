@@ -5,9 +5,9 @@ import sys
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
-import cv2
+import cv2  # pylint: disable=import-error
 import numpy as np
-import pygame
+import pygame  # pylint: disable=import-error
 
 from common.basedir import BASEDIR
 from common.transformations.camera import FULL_FRAME_SIZE, eon_intrinsics

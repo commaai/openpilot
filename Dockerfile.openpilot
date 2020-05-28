@@ -71,7 +71,8 @@ RUN pyenv install 3.8.2 && \
       azure-storage-common==2.1.0 \
       azure-storage-nspkg==3.1.0 \
       pycurl==7.43.0.3 \
-      coverage==5.1
+      coverage==5.1 \
+      pre-commit==2.4.0
 
 RUN mkdir -p /tmp/openpilot
 
@@ -80,6 +81,7 @@ COPY SConstruct \
      flake8_openpilot.sh \
      pylint_openpilot.sh \
      .pylintrc \
+     .pre-commit-config.yaml \
      .coveragerc-app \
      /tmp/openpilot/
 

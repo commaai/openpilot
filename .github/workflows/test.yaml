@@ -37,7 +37,7 @@ jobs:
 
         # need these so docker copy won't fail
         cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
-           cppcheck_openpilot.sh .coveragerc-app $TEST_DIR
+           cppcheck_openpilot.sh .coveragerc-app .pre-commit-config.yaml $TEST_DIR
         cd $TEST_DIR
         mkdir pyextra laika laika_repo tools release
     - name: Build Docker image
@@ -77,6 +77,8 @@ jobs:
         run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
         run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
+      - name: pre-commit
+        run: $RUN "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
       - name: cppcheck
         run: $PERSIST "cd /tmp/openpilot/ && ./cppcheck_openpilot.sh 2> cppcheck_report.txt"
       - name: Print cppcheck report

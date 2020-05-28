@@ -6,9 +6,9 @@ os.environ['BASEDIR'] = BASEDIR
 SCALE = float(os.getenv("SCALE", 1.0))
 
 import argparse
-import pygame
+import pygame  # pylint: disable=import-error
 import numpy as np
-import cv2
+import cv2  # pylint: disable=import-error
 import sys
 import cereal.messaging as messaging
 

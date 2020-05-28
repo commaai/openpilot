@@ -6,7 +6,7 @@
 
 ### this process needs pygame and can't run on the EON ###
 
-import pygame
+import pygame  # pylint: disable=import-error
 import cereal.messaging as messaging
 
 def joystick_thread():
