@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
-import time
 import os
-import sys
 import signal
 import subprocess
+import sys
+import time
+from typing import List, cast
+
 import requests
-from cereal import car
 
-import selfdrive.manager as manager
 import cereal.messaging as messaging
-from common.params import Params
+import selfdrive.manager as manager
+from cereal import car
 from common.basedir import BASEDIR
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.ford.values import CAR as FORD
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
+from common.params import Params
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.subaru.values import CAR as SUBARU
-from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
+from selfdrive.car.fingerprints import all_known_cars
+from selfdrive.car.ford.values import CAR as FORD
+from selfdrive.car.gm.values import CAR as GM
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.nissan.values import CAR as NISSAN
-
+from selfdrive.car.subaru.values import CAR as SUBARU
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
 os.environ['NOCRASH'] = '1'
 
@@ -363,7 +364,7 @@ routes = {
   },
 }
 
-passive_routes = [
+passive_routes: List[str] = [
 ]
 
 forced_dashcam_routes = [
@@ -436,7 +437,7 @@ if __name__ == "__main__":
 
     os.environ['SKIP_FW_QUERY'] = "1"
     if checks.get('fingerprintSource', None) == 'fixed':
-      os.environ['FINGERPRINT'] = checks['carFingerprint']
+      os.environ['FINGERPRINT'] = cast(str, checks['carFingerprint'])
     else:
       os.environ['FINGERPRINT'] = ""
 

@@ -9,7 +9,9 @@ import shutil
 import subprocess
 import datetime
 import textwrap
+from typing import Dict, List
 from selfdrive.swaglog import cloudlog, add_logentries_handler
+
 
 from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
@@ -99,7 +101,7 @@ if not prebuilt:
     # Read progress from stderr and update spinner
     while scons.poll() is None:
       try:
-        line = scons.stderr.readline()
+        line = scons.stderr.readline()  # type: ignore
         if line is None:
           continue
         line = line.rstrip()
@@ -117,7 +119,7 @@ if not prebuilt:
 
     if scons.returncode != 0:
       # Read remaining output
-      r = scons.stderr.read().split(b'\n')
+      r = scons.stderr.read().split(b'\n')   # type: ignore
       compile_output += r
 
       if retry:
@@ -194,7 +196,7 @@ daemon_processes = {
   "manage_athenad": ("selfdrive.athena.manage_athenad", "AthenadPid"),
 }
 
-running = {}
+running: Dict[str, Process] = {}
 def get_running():
   return running
 
@@ -202,7 +204,7 @@ def get_running():
 unkillable_processes = ['camerad']
 
 # processes to end with SIGINT instead of SIGTERM
-interrupt_processes = []
+interrupt_processes: List[str] = []
 
 # processes to end with SIGKILL instead of SIGTERM
 kill_processes = ['sensord', 'paramsd']

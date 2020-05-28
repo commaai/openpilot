@@ -2,12 +2,13 @@
 import argparse
 import os
 import sys
+from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
 from selfdrive.test.process_replay.compare_logs import compare_logs
+from selfdrive.test.process_replay.process_replay import (CONFIGS,
+                                                          replay_process)
 from tools.lib.logreader import LogReader
-
 
 INJECT_MODEL = 0
 
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
 
-  results = {}
+  results: Any = {}
   for car_brand, segment in segments:
     if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
         (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
