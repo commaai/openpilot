@@ -10,7 +10,7 @@ repos:
     rev: master
     hooks:
     -   id: mypy
-        exclude: '^(pyextra)|(external)|(panda)'
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'
 -   repo: https://gitlab.com/PyCQA/flake8
     rev: master
     hooks:

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 import psutil
 import time
 import os

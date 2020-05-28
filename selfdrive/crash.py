@@ -9,7 +9,7 @@ from selfdrive.swaglog import cloudlog
 from common.android import ANDROID
 
 if os.getenv("NOLOG") or os.getenv("NOCRASH") or not ANDROID:
-  def capture_exception(*exc_info):
+  def capture_exception(*args, **kwargs):
     pass
   def bind_user(**kwargs):
     pass
