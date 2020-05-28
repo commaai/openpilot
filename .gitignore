@@ -61,3 +61,4 @@ cppcheck_report.txt
 htmlcov
 pandaextra
 
+.mypy_cache/
