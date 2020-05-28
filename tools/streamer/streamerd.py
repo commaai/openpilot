@@ -40,12 +40,12 @@ def receiver_thread():
   ctx = av.codec.codec.Codec('hevc', 'r').create()
   ctx.decode(av.packet.Packet(start.decode("hex")))
 
-  import time
+  # import time
   while 1:
-    t1 = time.time()
+    # t1 = time.time()
     ts, raw = s.recv_multipart()
     ts = struct.unpack('q', ts)[0] * 1000
-    t1, t2 = time.time(), t1
+    # t1, t2 = time.time(), t1
     #print 'ms to get frame:', (t1-t2)*1000
 
     pkt = av.packet.Packet(raw)
@@ -53,14 +53,14 @@ def receiver_thread():
     if not f:
       continue
     f = f[0]
-    t1, t2 = time.time(), t1
+    # t1, t2 = time.time(), t1
     #print 'ms to decode:', (t1-t2)*1000
 
     y_plane = np.frombuffer(f.planes[0], np.uint8).reshape((874, 1216))[:, 0:1164]
     u_plane = np.frombuffer(f.planes[1], np.uint8).reshape((437, 608))[:, 0:582]
     v_plane = np.frombuffer(f.planes[2], np.uint8).reshape((437, 608))[:, 0:582]
     yuv_img = y_plane.tobytes() + u_plane.tobytes() + v_plane.tobytes()
-    t1, t2 = time.time(), t1
+    # t1, t2 = time.time(), t1
     #print 'ms to make yuv:', (t1-t2)*1000
     #print 'tsEof:', ts
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 import random
-import math
 
 # Simple hacky Matroska generator
 # Reads mp3 file "q.mp3" and jpeg images from img/0.jpg, img/1.jpg and so on and

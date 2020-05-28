@@ -8,6 +8,7 @@ import tempfile
 import threading
 import xml.etree.ElementTree as ET
 import numpy as np
+import _io
 if sys.version_info >= (3,0):
   import queue
   import pickle
@@ -83,7 +84,7 @@ def ffprobe(fn, fmt=None):
 
   try:
     ffprobe_output = subprocess.check_output(cmd)
-  except subprocess.CalledProcessError as e:
+  except subprocess.CalledProcessError:
     raise DataUnreadableError(fn)
 
   return json.loads(ffprobe_output)
@@ -99,7 +100,7 @@ def vidindex(fn, typ):
        tempfile.NamedTemporaryFile() as index_f:
     try:
       subprocess.check_call([vidindex, typ, fn, prefix_f.name, index_f.name])
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
       raise DataUnreadableError("vidindex failed on file %s" % fn)
     with open(index_f.name, "rb") as f:
       index = f.read()
@@ -388,8 +389,6 @@ def index_pstream(fns, typ, cache_prefix=None):
     assert frame_b >= 0
     assert index[frame_b, 0] == H264_SLICE_I
 
-    end_len = len(index)-frame_b
-
     with FileReader(fns[i]) as vid:
       vid.seek(index[frame_b, 1])
       end_data = vid.read()
@@ -433,7 +432,7 @@ def _set_pdeathsig(sig=signal.SIGTERM):
 def vidindex_mp4(fn):
   try:
     xmls = subprocess.check_output(["MP4Box", fn, "-diso", "-out", "/dev/stdout"])
-  except subprocess.CalledProcessError as e:
+  except subprocess.CalledProcessError:
     raise DataUnreadableError(fn)
 
   tree = ET.fromstring(xmls)

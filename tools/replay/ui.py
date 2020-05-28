@@ -63,7 +63,6 @@ def ui_thread(addr, frame_address):
 
   camera_surface = pygame.surface.Surface((640, 480), 0, 24).convert()
   cameraw_surface = pygame.surface.Surface(MODEL_INPUT_SIZE, 0, 24).convert()
-  cameraw_test_surface = pygame.surface.Surface(MODEL_INPUT_SIZE, 0, 24)
   top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y),0,8)
 
   frame = messaging.sub_sock('frame', addr=addr, conflate=True)

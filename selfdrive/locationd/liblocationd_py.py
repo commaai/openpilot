@@ -1,5 +1,4 @@
 import os
-from common.basedir import BASEDIR
 
 from cffi import FFI
 

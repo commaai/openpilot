@@ -133,7 +133,7 @@ def wheel_poll_thread(q):
 
   # Enable FF
   import evdev  # pylint: disable=import-error
-  from evdev import ecodes, InputDevice, ff  # pylint: disable=import-error
+  from evdev import ecodes, InputDevice  # pylint: disable=import-error
   device = evdev.list_devices()[0]
   evtdev = InputDevice(device)
   val = 24000
