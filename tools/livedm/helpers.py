@@ -1,5 +1,5 @@
 import numpy as np
-import cv2
+import cv2  # pylint: disable=import-error
 
 def rot_matrix(roll, pitch, yaw):
   cr, sr = np.cos(roll), np.sin(roll)
@@ -27,4 +27,3 @@ def draw_pose(img, pose, loc, W=160, H=320, xyoffset=(0,0), faceprob=0):
   else:
     color = (64,64,64)
   cv2.circle(img, tr, 7, color=color)
-  
