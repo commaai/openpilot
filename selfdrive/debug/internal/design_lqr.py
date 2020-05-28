@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-import control
+import control # pylint: disable=import-error
 
 dt = 0.01
 A = np.array([[ 0.        ,  1.        ],       [-0.78823806,  1.78060701]])

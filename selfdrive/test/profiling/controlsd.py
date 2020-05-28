@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import os
-import cProfile
-import pprofile
-import pyprof2calltree
+import cProfile  # pylint: disable=import-error
+import pprofile  # pylint: disable=import-error
+import pyprof2calltree  # pylint: disable=import-error
 
 from tools.lib.logreader import LogReader
 from selfdrive.controls.controlsd import main as controlsd_thread
