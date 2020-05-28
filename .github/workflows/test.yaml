@@ -77,7 +77,7 @@ jobs:
         run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
       - name: cppcheck
         run: $PERSIST "cd /tmp/openpilot/ && ./cppcheck_openpilot.sh 2> cppcheck_report.txt"
-      - name: Print diff
+      - name: Print cppcheck report
         if: always()
         run: |
           docker cp tmppilot:/tmp/openpilot/cppcheck_report.txt cppcheck_report.txt
