@@ -2,7 +2,7 @@
 
 import sys
 from tools.lib.logreader import MultiLogIterator
-from xx.chffr.lib.route import Route
+from xx.chffr.lib.route import Route  # pylint: disable=import-error
 
 
 def get_fingerprint(lr):
