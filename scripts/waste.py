@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from multiprocessing import Process
-from setproctitle import setproctitle
+from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 import os
 import numpy as np
 from common.realtime import sec_since_boot
@@ -32,4 +32,3 @@ def main(gctx=None):
 
 if __name__ == "__main__":
   main()
-

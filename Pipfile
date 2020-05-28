@@ -72,6 +72,7 @@ scikit-image = "*"
 pygame = "==2.0.0.dev8"
 pprofile = "*"
 pyprof2calltree = "*"
+pre-commit = "*"
 
 [packages]
 atomicwrites = "*"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import cereal.messaging as messaging
 from opendbc.can.packer import CANPacker
-from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
+from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module
 from selfdrive.car.honda.values import FINGERPRINTS, CAR
 from selfdrive.car import crc8_pedal
 import math
@@ -88,4 +88,3 @@ def sendcan_function(sendcan):
     steer_torque = 0.0
 
   return (gas, brake, steer_torque)
-
