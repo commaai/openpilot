@@ -133,7 +133,6 @@ typedef struct UIScene {
 
   cereal::ThermalData::Reader thermal;
   cereal::HealthData::HwType hwType;
-  int satelliteCount;
   uint8_t athenaStatus;
 } UIScene;
 

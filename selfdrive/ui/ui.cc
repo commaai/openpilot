@@ -336,10 +336,12 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.frontview = scene.controls_state.getRearViewCam();
     if (!scene.frontview){ s->controls_seen = true; }
 
-    if (scene.controls_state.getVCruise() != scene.v_cruise) {
+    auto v_curise = scene.controls_state.getVCruise();
+    if (v_curise != scene.v_cruise) {
       scene.v_cruise_update_ts = event.getLogMonoTime();
+      scene.v_cruise = v_curise;
     }
-    scene.v_cruise = scene.controls_state.getVCruise();
+    
     auto alert_sound = scene.controls_state.getAlertSound();
     const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     if (alert_sound != s->alert_sound){
@@ -424,12 +426,6 @@ void handle_message(UIState *s, SubMaster &sm) {
 #endif
   if (sm.updated("thermal")) {
      scene.thermal = sm["thermal"].getThermal();
-  }
-  if (sm.updated("ubloxGnss")) {
-    auto data = sm["ubloxGnss"].getUbloxGnss();
-    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
-    }
   }
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();

@@ -136,19 +136,27 @@ static void ui_draw_sidebar_temp_metric(UIState *s) {
 }
 
 static void ui_draw_sidebar_panda_metric(UIState *s) {
+  static int satelliteCount = 0;
   int panda_severity;
   char panda_message_str[32];
   const int panda_y_offset = 32 + 148;
+
+  if (s->sm->updated("ubloxGnss")) {
+    auto data = (*s->sm)["ubloxGnss"].getUbloxGnss();
+    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+      satelliteCount = data.getMeasurementReport().getNumMeas();
+    }
+  }
 
   if (s->scene.hwType == cereal::HealthData::HwType::UNKNOWN) {
     panda_severity = 2;
     snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO\nVEHICLE");
   } else {
     if (s->started){
-      if (s->scene.satelliteCount < 6) {
+      if (satelliteCount < 6) {
         panda_severity = 1;
         snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nNO GPS");
-      } else if (s->scene.satelliteCount >= 6) {
+      } else if (satelliteCount >= 6) {
         panda_severity = 0;
         snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nGOOD GPS");
       }
