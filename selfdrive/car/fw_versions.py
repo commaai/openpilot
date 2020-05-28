@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-import traceback
 import struct
+import traceback
+from typing import Any
+
 from tqdm import tqdm
 
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.swaglog import cloudlog
-from selfdrive.car.fingerprints import get_attr_from_cars, FW_VERSIONS
-from selfdrive.car.toyota.values import CAR as TOYOTA
 import panda.python.uds as uds
-
 from cereal import car
+from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
+from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.swaglog import cloudlog
+
 Ecu = car.CarParams.Ecu
 
 
@@ -213,7 +215,7 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   sendcan = messaging.pub_sock('sendcan')
 
-  extra = None
+  extra: Any = None
   if args.scan:
     extra = {}
     # Honda

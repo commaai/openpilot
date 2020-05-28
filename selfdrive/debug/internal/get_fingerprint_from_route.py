@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 
 import sys
 from tools.lib.logreader import MultiLogIterator

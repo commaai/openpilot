@@ -40,7 +40,7 @@ class Spinner():
     self.close()
 
 
-class FakeSpinner():
+class FakeSpinner(Spinner):
   def __init__(self):
     pass
 

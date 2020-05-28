@@ -5,9 +5,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlencode, parse_qs
 from tools.lib.api import CommaApi, APIError
 from tools.lib.auth_config import set_token
+from typing import Dict, Any
 
 class ClientRedirectServer(HTTPServer):
-  query_params = {}
+  query_params: Dict[str, Any] = {}
 
 class ClientRedirectHandler(BaseHTTPRequestHandler):
   def do_GET(self):

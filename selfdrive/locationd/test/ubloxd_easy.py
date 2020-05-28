@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 
 import os
 from selfdrive.locationd.test import ublox

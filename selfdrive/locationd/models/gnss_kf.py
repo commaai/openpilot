@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import sys
+from typing import List
 
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.models.constants import ObservationKind
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
+from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.locationd.models.loc_kf import parse_pr, parse_prr
 
 
@@ -39,7 +40,7 @@ class GNSSKalman():
                (.1)**2, (0)**2, (0.005)**2,
                .1**2, (.01)**2])
 
-  maha_test_kinds = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
+  maha_test_kinds: List[int] = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
 
   @staticmethod
   def generate_code(generated_dir):

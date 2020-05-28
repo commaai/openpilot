@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+# type: ignore
+
 import numpy as np
 from collections import OrderedDict
 import matplotlib.pyplot as plt

@@ -6,6 +6,11 @@ repos:
     -   id: check-json
     -   id: check-xml
     -   id: check-yaml
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: master
+    hooks:
+    -   id: mypy
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'
 -   repo: https://gitlab.com/PyCQA/flake8
     rev: master
     hooks:

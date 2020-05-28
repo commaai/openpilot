@@ -1,15 +1,16 @@
 from collections import namedtuple
+from typing import Any, Dict, Tuple
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 
-from tools.lib.lazy_property import lazy_property
-from selfdrive.config import UIParams as UP
 from selfdrive.config import RADAR_TO_CAMERA
+from selfdrive.config import UIParams as UP
 from selfdrive.controls.lib.lane_planner import (compute_path_pinv,
                                                  model_polyfit)
+from tools.lib.lazy_property import lazy_property
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -34,7 +35,7 @@ METER_WIDTH = 20
 
 ModelUIData = namedtuple("ModelUIData", ["cpath", "lpath", "rpath", "lead", "lead_future"])
 
-_COLOR_CACHE = {}
+_COLOR_CACHE : Dict[Tuple[int, int, int], Any] = {}
 def find_color(lidar_surface, color):
   if color in _COLOR_CACHE:
     return _COLOR_CACHE[color]
