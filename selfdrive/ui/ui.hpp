@@ -91,6 +91,11 @@ const uint8_t bg_colors[][4] = {
 };
 
 
+typedef struct {
+  bool status = false;
+  float d_rel=0, y_rel=0, v_rel=0;
+}LeadStatus;
+
 typedef struct UIScene {
   int frontview;
   int fullview;
@@ -127,11 +132,7 @@ typedef struct UIScene {
   int ui_viz_rw;
   int ui_viz_ro;
 
-  int lead_status;
-  float lead_d_rel, lead_y_rel, lead_v_rel;
-
-  int lead_status2;
-  float lead_d_rel2, lead_y_rel2, lead_v_rel2;
+  LeadStatus lead_status[2];
 
   float face_prob;
   bool is_rhd;

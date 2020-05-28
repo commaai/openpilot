@@ -394,16 +394,14 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (sm.updated("radarState")) {
     auto data = sm["radarState"].getRadarState();
 
-    auto leaddatad = data.getLeadOne();
-    scene.lead_status = leaddatad.getStatus();
-    scene.lead_d_rel = leaddatad.getDRel();
-    scene.lead_y_rel = leaddatad.getYRel();
-    scene.lead_v_rel = leaddatad.getVRel();
-    auto leaddatad2 = data.getLeadTwo();
-    scene.lead_status2 = leaddatad2.getStatus();
-    scene.lead_d_rel2 = leaddatad2.getDRel();
-    scene.lead_y_rel2 = leaddatad2.getYRel();
-    scene.lead_v_rel2 = leaddatad2.getVRel();
+    auto update = [](LeadStatus &state, auto lead_data){
+      state.status = lead_data.getStatus();
+      state.d_rel = lead_data.getDRel();
+      state.y_rel = lead_data.getYRel();
+      state.v_rel = lead_data.getVRel();
+    };
+    update(scene.lead_status[0], data.getLeadOne());
+    update(scene.lead_status[1], data.getLeadTwo());
     s->livempc_or_radarstate_changed = true;
   }
   if (sm.updated("liveCalibration")) {

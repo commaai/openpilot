@@ -110,19 +110,19 @@ static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int
   ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
+static void draw_lead(UIState *s, const LeadStatus & lead) {
   // Draw lead car indicator
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
-  if (d_rel < leadBuff) {
-    fillAlpha = 255*(1.0-(d_rel/leadBuff));
-    if (v_rel < 0) {
-      fillAlpha += 255*(-1*(v_rel/speedBuff));
+  if (lead.d_rel < leadBuff) {
+    fillAlpha = 255*(1.0-(lead.d_rel/leadBuff));
+    if (lead.v_rel < 0) {
+      fillAlpha += 255*(-1*(lead.v_rel/speedBuff));
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
-  draw_chevron(s, d_rel, y_rel, 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  draw_chevron(s, lead.d_rel, lead.y_rel, 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
@@ -154,7 +154,7 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
 
   bool started = false;
   float off = is_mpc?0.3:0.5;
-  float lead_d = scene->lead_d_rel*2.;
+  float lead_d = scene->lead_status[0].d_rel*2.;
   float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
                             :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
   pvd->cnt = 0;
@@ -394,11 +394,13 @@ static void ui_draw_world(UIState *s) {
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
 
-  if (scene->lead_status) {
-    draw_lead(s, scene->lead_d_rel, scene->lead_v_rel, scene->lead_y_rel);
+  const LeadStatus &lead1 = scene->lead_status[0];
+  const LeadStatus &lead2 = scene->lead_status[1];
+  if (lead1.status) {
+    draw_lead(s, lead1);
   }
-  if ((scene->lead_status2) && (std::abs(scene->lead_d_rel - scene->lead_d_rel2) > 3.0)) {
-    draw_lead(s, scene->lead_d_rel2, scene->lead_v_rel2, scene->lead_y_rel2);
+  if (lead2.status && (std::abs(lead1.d_rel - lead2.d_rel) > 3.0)) {
+    draw_lead(s, lead2);
   }
   nvgRestore(s->vg);
 }
