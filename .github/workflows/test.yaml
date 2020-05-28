@@ -37,7 +37,7 @@ jobs:
 
         # need these so docker copy won't fail
         cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
-           .coveragerc-app $TEST_DIR
+           cppcheck_openpilot.sh .coveragerc-app $TEST_DIR
         cd $TEST_DIR
         mkdir pyextra laika laika_repo tools release
     - name: Build Docker image
@@ -49,7 +49,7 @@ jobs:
     name: docker push
     runs-on: ubuntu-16.04
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: linter # hack to ensure slow tests run first since this and linter are fast
+    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
       - uses: actions/checkout@v2
         with:
@@ -62,8 +62,8 @@ jobs:
           docker tag tmppilot docker.io/commaai/openpilot:latest
           docker push docker.io/commaai/openpilot:latest
 
-  linter:
-    name: linter
+  static_analysis:
+    name: static analysis
     runs-on: ubuntu-16.04
     steps:
       - uses: actions/checkout@v2
@@ -75,6 +75,18 @@ jobs:
         run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
         run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
+      - name: cppcheck
+        run: $PERSIST "cd /tmp/openpilot/ && ./cppcheck_openpilot.sh 2> cppcheck_report.txt"
+      - name: Print cppcheck report
+        if: always()
+        run: |
+          docker cp tmppilot:/tmp/openpilot/cppcheck_report.txt cppcheck_report.txt
+          cat cppcheck_report.txt
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cppcheck_report.txt
+          path: cppcheck_report.txt
 
   unit_tests:
     name: unit tests
@@ -123,13 +135,11 @@ jobs:
         run: |
           docker commit tmppilot tmppilotci
           $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -Z -F process_replay"
-      - name: Copy diff
+      - name: Print diff
         if: always()
         run: |
           docker cp tmppilot:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
-      - name: Print diff
-        if: always()
-        run: cat diff.txt
+          cat diff.txt
       - uses: actions/upload-artifact@v2
         if: always()
         with:
