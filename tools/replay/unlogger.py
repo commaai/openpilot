@@ -421,7 +421,7 @@ def main(argv):
         if not p.is_alive():
           [p.terminate() for p in subprocesses.values()]
           exit()
-      signal.signal(signal.SIGCHLD, signal.SIGIGN)
+      signal.signal(signal.SIGCHLD, signal.SIG_IGN)
     signal.signal(signal.SIGCHLD, exit_if_children_dead)
 
     if args.interactive:

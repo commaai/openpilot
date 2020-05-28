@@ -27,10 +27,10 @@ class Window():
   def getkey(self):
     while 1:
       event = pygame.event.wait()
-      if event.type == QUIT:
+      if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
-      if event.type == KEYDOWN:
+      if event.type == pygame.KEYDOWN:
         return event.key
 
   def getclick(self):
@@ -47,4 +47,3 @@ if __name__ == "__main__":
     print("draw")
     img += 1
     win.draw(img)
-

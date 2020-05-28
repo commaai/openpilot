@@ -1,18 +1,17 @@
 #!/usr/bin/env python
-import os
 import sys
 import termios
 import atexit
 from select import select
 
+
 class KBHit:
-  
   def __init__(self):
     '''Creates a KBHit object that you can call to do various keyboard things.
     '''
 
-    self.set_kbhit_terminal()      
-  
+    self.set_kbhit_terminal()
+
   def set_kbhit_terminal(self):
     # Save the terminal settings
     self.fd = sys.stdin.fileno()
@@ -29,12 +28,8 @@ class KBHit:
   def set_normal_term(self):
     ''' Resets to normal terminal.  On Windows this is a no-op.
     '''
-    
-    if os.name == 'nt':
-      pass
-    
-    else:
-      termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
+
+    termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
 
 
   def getch(self):
@@ -42,7 +37,7 @@ class KBHit:
       Should not be called in the same program as getarrow().
     '''
     return sys.stdin.read(1)
-            
+
 
   def getarrow(self):
     ''' Returns an arrow-key code after kbhit() has been called. Codes are
@@ -52,29 +47,23 @@ class KBHit:
     3 : left
     Should not be called in the same program as getch().
     '''
-    
-    if os.name == 'nt':
-      msvcrt.getch() # skip 0xE0
-      c = msvcrt.getch()
-      vals = [72, 77, 80, 75]
-      
-    else:
-      c = sys.stdin.read(3)[2]
-      vals = [65, 67, 66, 68]
-    
+
+    c = sys.stdin.read(3)[2]
+    vals = [65, 67, 66, 68]
+
     return vals.index(ord(c.decode('utf-8')))
-    
+
 
   def kbhit(self):
     ''' Returns True if keyboard character was hit, False otherwise.
-    '''    
+    '''
     dr,dw,de = select([sys.stdin], [], [], 0)
     return dr != []
-  
-  
-# Test    
+
+
+# Test
 if __name__ == "__main__":
-  
+
   kb = KBHit()
 
   print('Hit any key, or ESC to exit')
@@ -86,7 +75,5 @@ if __name__ == "__main__":
       if ord(c) == 27: # ESC
         break
       print(c)
-       
-  kb.set_normal_term()
-    
 
+  kb.set_normal_term()

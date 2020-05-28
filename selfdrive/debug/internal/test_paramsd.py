@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: skip-file
+
 import numpy as np
 import math
 from tqdm import tqdm
