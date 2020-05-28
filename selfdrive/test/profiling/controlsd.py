@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import time
 import cProfile
 import pprofile
 import pyprof2calltree

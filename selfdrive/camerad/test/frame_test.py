@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import time
 import numpy as np
 import cereal.messaging as messaging
 from PIL import ImageFont, ImageDraw, Image
@@ -36,4 +35,3 @@ if __name__ == "__main__":
     idx += 1
     rk.keep_time()
     #time.sleep(1.0)
-
