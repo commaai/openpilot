@@ -75,12 +75,11 @@ class CarState(CarStateBase):
                 cp.vl["CRZ_BTNS"]['SET_M']]):
       self.cruise_speed = ret.vEgoRaw
 
-    ret.cruiseState.available = cp.vl["CRZ_CTRL"]['CRZ_ACTIVE'] == 1
-    self.acc_active = ret.cruiseState.available
-    ret.cruiseState.enabled = self.acc_active
+    ret.cruiseState.available = True
+    ret.cruiseState.enabled =  cp.vl["CRZ_CTRL"]['CRZ_ACTIVE'] == 1
     ret.cruiseState.speed = self.cruise_speed
 
-    if self.acc_active:
+    if ret.cruiseState.enabled:
       if not self.lkas_on:
         if not self.acc_active_last:
           self.low_speed_lockout = True
@@ -92,7 +91,7 @@ class CarState(CarStateBase):
 
       ret.steerWarning = handsoff
 
-    self.acc_active_last = self.acc_active
+    self.acc_active_last = ret.cruiseState.enabled
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     ret.steerError = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1
@@ -170,14 +169,14 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.CX5:
       signals += [
         # sig_name, sig_address, default
-        ("LKAS_REQUEST",     "CAM_LKAS", 2048),
+        ("LKAS_REQUEST",     "CAM_LKAS", 0),
         ("CTR",              "CAM_LKAS", 0),
         ("ERR_BIT_1",        "CAM_LKAS", 0),
         ("LINE_NOT_VISIBLE", "CAM_LKAS", 0),
         ("LDW",              "CAM_LKAS", 0),
         ("BIT_1",            "CAM_LKAS", 1),
         ("ERR_BIT_2",        "CAM_LKAS", 0),
-        ("STEERING_ANGLE",   "CAM_LKAS", 2048),
+        ("STEERING_ANGLE",   "CAM_LKAS", 0),
         ("ANGLE_ENABLED",    "CAM_LKAS", 0),
         ("CHKSUM",           "CAM_LKAS", 0),
       ]

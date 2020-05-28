@@ -22,6 +22,13 @@ class LKAS_LIMITS:
   DISABLE_SPEED   = 45  #kph
   ENABLE_SPEED    = 52  #kph
 
+class Buttons:
+  NONE = 0
+  SET_PLUS = 1
+  SET_MINUS = 2
+  RESUME = 3
+  CANCEL = 4
+
 FINGERPRINTS = {
   CAR.CX5: [
     # CX-5 2017 GT

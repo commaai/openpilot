@@ -1,5 +1,5 @@
 from selfdrive.car.mazda import mazdacan
-from selfdrive.car.mazda.values import SteerLimitParams
+from selfdrive.car.mazda.values import SteerLimitParams, Buttons
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 
@@ -9,7 +9,8 @@ class CarController():
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
 
-  def update(self, enabled, CS, frame, actuators):
+  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
+             left_lane, right_lane, left_lane_depart, right_lane_depart):
     """ Controls thread """
 
     can_sends = []
@@ -22,11 +23,18 @@ class CarController():
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last,
                                                   CS.out.steeringTorque, SteerLimitParams)
       self.steer_rate_limited = new_steer != apply_steer
+
+      if CS.out.standstill and frame % 50 == 0:
+        # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
+        # Send Resume button at 2hz if we're engaged at standstill to support full stop and go!
+        # TODO: improve the resume trigger logic by looking at actual radar data
+        can_sends.append(mazdacan.create_cancel_acc(self.packer, CS.CP.carFingerprint, Buttons.RESUME))
     else:
       apply_steer = 0
-      self.steer_rate_limited = False
-      if CS.acc_active and frame % 10 == 0:
-        can_sends.append(mazdacan.create_cancel_acc(self.packer, CS.CP.carFingerprint))
+      if CS.out.cruiseState.enabled and frame % 10 == 0:
+        # Cancel Stock ACC if it's engaged with OP disengaged
+        # Match stock message rate which is sent at 10hz
+        can_sends.append(mazdacan.create_cancel_acc(self.packer, CS.CP.carFingerprint, Buttons.CANCEL))
 
 
     self.apply_steer_last = apply_steer

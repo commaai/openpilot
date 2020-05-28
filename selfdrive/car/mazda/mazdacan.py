@@ -1,4 +1,4 @@
-from selfdrive.car.mazda.values import CAR
+from selfdrive.car.mazda.values import CAR, Buttons
 
 def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
 
@@ -57,17 +57,28 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
   return packer.make_can_msg("CAM_LKAS", 0, values)
 
 
-def create_cancel_acc(packer, car_fingerprint):
+def create_cancel_acc(packer, car_fingerprint, button):
+
+  if button == Buttons.CANCEL:
+    can = 1
+    res = 0
+  elif button == Buttons.RESUME:
+    can = 0
+    res = 1
+  else:
+    can = 0
+    res = 0
+
   if car_fingerprint == CAR.CX5:
     values = {
-      "CAN_OFF"           : 1,
-      "CAN_OFF_INV"       : 0,
+      "CAN_OFF"           : can,
+      "CAN_OFF_INV"       : (can + 1) % 2,
 
       "SET_P"             : 0,
       "SET_P_INV"         : 1,
 
-      "RES"               : 0,
-      "RES_INV"           : 1,
+      "RES"               : res,
+      "RES_INV"           : (res + 1) % 2,
 
       "SET_M"             : 0,
       "SET_M_INV"         : 1,

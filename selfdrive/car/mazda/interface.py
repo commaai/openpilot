@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.mazda.values import CAR,  FINGERPRINTS, ECU_FINGERPRINT, Ecu
+from selfdrive.car.mazda.values import CAR, LKAS_LIMITS, FINGERPRINTS, ECU_FINGERPRINT, Ecu
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, is_ecu_disconnected
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -40,8 +40,8 @@ class CarInterface(CarInterfaceBase):
 
       ret.lateralTuning.pid.kf = 0.00006
 
-      # No steer below 45kph
-      ret.minSteerSpeed = 45 * CV.KPH_TO_MS
+      # No steer below disable speed
+      ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS
 
 
     ret.centerToFront = ret.wheelbase * 0.41
@@ -86,6 +86,9 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators)
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+                               c.cruiseControl.cancel, c.hudControl.visualAlert,
+                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible,
+                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
     self.frame += 1
     return can_sends
