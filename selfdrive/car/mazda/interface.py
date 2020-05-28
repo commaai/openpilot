@@ -20,6 +20,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "mazda"
     ret.safetyModel = car.CarParams.SafetyModel.mazda
+
+    ret.dashcamOnly = True
+
     ret.radarOffCan = True
 
     # Mazda port is a community feature for now
