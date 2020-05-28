@@ -331,9 +331,7 @@ selfdrive/test/process_replay/ref_commit
 selfdrive/test/process_replay/README.md
 
 selfdrive/ui/SConscript
-selfdrive/ui/*.c
 selfdrive/ui/*.cc
-selfdrive/ui/*.h
 selfdrive/ui/*.hpp
 selfdrive/ui/ui
 selfdrive/ui/spinner/Makefile
