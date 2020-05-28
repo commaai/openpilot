@@ -110,7 +110,7 @@ static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int
   ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, const LeadStatus & lead) {
+static void draw_lead(UIState *s, const LeadStatus &lead) {
   // Draw lead car indicator
   float fillAlpha = 0;
   float speedBuff = 10.;
