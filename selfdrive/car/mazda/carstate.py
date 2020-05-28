@@ -16,7 +16,7 @@ class CarState(CarStateBase):
     self.acc_active_last = False
     self.low_speed_lockout = True
     self.low_speed_alert = False
-    self.lkas_on = False
+    self.lkas_allowed = False
 
   def update(self, cp, cp_cam):
 
@@ -56,18 +56,12 @@ class CarState(CarStateBase):
     ret.gas = cp.vl["ENGINE_DATA"]['PEDAL_GAS']
     ret.gasPressed = ret.gas > 0
 
-    # No steer if block signal is on
-    # block = cp.vl["STEER_RATE"]['LKAS_BLOCK'] == 1
-
-    # On if no driver torque the last 5 seconds
-    handsoff = cp.vl["STEER_RATE"]['HANDS_OFF_5_SECONDS'] == 1
 
     # LKAS is enabled at 52kph going up and disabled at 45kph going down
-
     if speed_kph > LKAS_LIMITS.ENABLE_SPEED:
-      self.lkas_on = True
+      self.lkas_allowed = True
     elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
-      self.lkas_on = False
+      self.lkas_allowed = False
 
     # if any of the cruize buttons is pressed force state update
     if any([cp.vl["CRZ_BTNS"]['RES'],
@@ -80,7 +74,7 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = self.cruise_speed
 
     if ret.cruiseState.enabled:
-      if not self.lkas_on:
+      if not self.lkas_allowed:
         if not self.acc_active_last:
           self.low_speed_lockout = True
         else:
@@ -89,7 +83,8 @@ class CarState(CarStateBase):
         self.low_speed_lockout = False
         self.low_speed_alert = False
 
-      ret.steerWarning = handsoff
+    # On if no driver torque the last 5 seconds
+    ret.steerWarning = cp.vl["STEER_RATE"]['HANDS_OFF_5_SECONDS'] == 1
 
     self.acc_active_last = ret.cruiseState.enabled
 

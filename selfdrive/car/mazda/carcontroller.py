@@ -9,8 +9,7 @@ class CarController():
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
-             left_lane, right_lane, left_lane_depart, right_lane_depart):
+  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd):
     """ Controls thread """
 
     can_sends = []
@@ -28,13 +27,14 @@ class CarController():
         # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
         # Send Resume button at 2hz if we're engaged at standstill to support full stop and go!
         # TODO: improve the resume trigger logic by looking at actual radar data
-        can_sends.append(mazdacan.create_cancel_acc(self.packer, CS.CP.carFingerprint, Buttons.RESUME))
+        can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, Buttons.RESUME))
     else:
       apply_steer = 0
-      if CS.out.cruiseState.enabled and frame % 10 == 0:
+      self.steer_rate_limited = False
+      if pcm_cancel_cmd and frame % 10 == 0:
         # Cancel Stock ACC if it's engaged with OP disengaged
         # Match stock message rate which is sent at 10hz
-        can_sends.append(mazdacan.create_cancel_acc(self.packer, CS.CP.carFingerprint, Buttons.CANCEL))
+        can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, Buttons.CANCEL))
 
 
     self.apply_steer_last = apply_steer
