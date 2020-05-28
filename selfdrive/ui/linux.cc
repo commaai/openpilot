@@ -80,7 +80,7 @@ int touch_read(TouchState *s, int* out_x, int* out_y) {
 
 #include "sound.hpp"
 
-bool Sound::init() { return true; }
+bool Sound::init(int volumn) { return true; }
 bool Sound::play(AudibleAlert alert) { return true; }
 bool Sound::stop(AudibleAlert alert) { return true; }
 void Sound::set_volume(int volume, double current_time) {}

@@ -55,7 +55,7 @@ void SLAPIENTRY slplay_callback(SLPlayItf playItf, void* context, SLuint32 event
   }
 }
 
-bool Sound::init() {
+bool Sound::init(int volumn) {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
   const SLboolean req[1] = {SL_BOOLEAN_FALSE};
@@ -69,6 +69,7 @@ bool Sound::init() {
       return false;
     }
   }
+  set_volume(volumn ,0);
   return true;
 }
 
@@ -117,7 +118,7 @@ void Sound::set_volume(int volume, double current_time) {
   static int last_volume = 0;
   static double prev_time = 0;
   // 5 second timeout
-  if (last_volume != volume && (current_time - prev_time) > 5 * (1e+9)) {
+  if (last_volume != volume && (current_time == 0 || (current_time - prev_time) > 5 * (1e+9))) {
     char volume_change_cmd[64];
     snprintf(volume_change_cmd, sizeof(volume_change_cmd), "service call audio 3 i32 3 i32 %d i32 1 &", volume);
     system(volume_change_cmd);

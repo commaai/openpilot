@@ -9,7 +9,7 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 class Sound {
  public:
   Sound() = default;
-  bool init();
+  bool init(int volumn);
   bool play(AudibleAlert alert);
   bool stop(AudibleAlert alert);
   void set_volume(int volume, double current_time);
