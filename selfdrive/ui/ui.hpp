@@ -150,13 +150,7 @@ typedef struct UIScene {
   // Used to show gps planner status
   bool gps_planner_active;
 
-  cereal::ThermalData::NetworkType networkType;
-  cereal::ThermalData::NetworkStrength networkStrength;
-  int batteryPercent;
-  bool batteryCharging;
-  float freeSpace;
-  cereal::ThermalData::ThermalStatus thermalStatus;
-  int paTemp;
+  cereal::ThermalData::Reader thermal;
   cereal::HealthData::HwType hwType;
   int satelliteCount;
   uint8_t athenaStatus;
@@ -266,7 +260,7 @@ typedef struct UIState {
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
-  bool thermal_started, preview_started;
+  bool preview_started;
   bool vision_seen;
 
   std::atomic<float> light_sensor;

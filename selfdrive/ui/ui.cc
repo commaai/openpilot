@@ -441,16 +441,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
 #endif
   if (sm.updated("thermal")) {
-    auto data = sm["thermal"].getThermal();
-    scene.networkType = data.getNetworkType();
-    scene.networkStrength = data.getNetworkStrength();
-    scene.batteryPercent = data.getBatteryPercent();
-    scene.batteryCharging = data.getBatteryStatus() == "Charging";
-    scene.freeSpace = data.getFreeSpace();
-    scene.thermalStatus = data.getThermalStatus();
-    scene.paTemp = data.getPa0();
-
-    s->thermal_started = data.getStarted();
+     scene.thermal = sm["thermal"].getThermal();
   }
   if (sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();
@@ -476,7 +467,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     s->preview_started = data.getIsPreview();
   }
 
-  s->started = s->thermal_started || s->preview_started ;
+  s->started = scene.thermal.getStarted() || s->preview_started ;
   // Handle onroad/offroad transition
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {
