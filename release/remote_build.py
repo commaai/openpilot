@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import paramiko
+import paramiko # pylint: disable=import-error
 import os
 import sys
 import re

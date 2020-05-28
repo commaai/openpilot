@@ -18,7 +18,7 @@ webcam_intrinsics = np.array([
 cam_id = 2
 
 if __name__ == "__main__":
-  import cv2
+  import cv2  # pylint: disable=import-error
 
   trans_webcam_to_eon_front = np.dot(eon_dcam_intrinsics,np.linalg.inv(webcam_intrinsics))
 

@@ -3,7 +3,7 @@
 # Question: Can a human drive from this data?
 
 import os
-import cv2
+import cv2  # pylint: disable=import-error
 import numpy as np
 import cereal.messaging as messaging
 from common.window import Window
@@ -49,5 +49,3 @@ if __name__ == "__main__":
         flags=cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC)
 
       win.draw(imgw)
-
-

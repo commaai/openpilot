@@ -4,7 +4,7 @@ from typing import Any, Dict, Tuple
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import pygame
+import pygame  # pylint: disable=import-error
 
 from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.config import UIParams as UP
