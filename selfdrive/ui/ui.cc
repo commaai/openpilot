@@ -288,38 +288,32 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->limit_set_speed_timeout = UI_FREQ;
 }
 
-static PathData read_path(cereal::ModelData::PathData::Reader pathp) {
-  PathData ret = {0};
+static void read_path(PathData& p, const cereal::ModelData::PathData::Reader &pathp) {
+  p = {};
 
-  ret.prob = pathp.getProb();
-  ret.std = pathp.getStd();
+  p.prob = pathp.getProb();
+  p.std = pathp.getStd();
 
   auto polyp = pathp.getPoly();
   for (int i = 0; i < POLYFIT_DEGREE; i++) {
-    ret.poly[i] = polyp[i];
+    p.poly[i] = polyp[i];
   }
 
   // Compute points locations
   for (int i = 0; i < MODEL_PATH_DISTANCE; i++) {
-    ret.points[i] = ret.poly[0] * (i*i*i) + ret.poly[1] * (i*i)+ ret.poly[2] * i + ret.poly[3];
+    p.points[i] = p.poly[0] * (i*i*i) + p.poly[1] * (i*i)+ p.poly[2] * i + p.poly[3];
   }
-
-  return ret;
 }
 
-static ModelData read_model(cereal::ModelData::Reader model) {
-  ModelData d = {0};
-
-  d.path = read_path(model.getPath());
-  d.left_lane = read_path(model.getLeftLane());
-  d.right_lane = read_path(model.getRightLane());
-
+static void read_model(ModelData &d, const cereal::ModelData::Reader &model) {
+  d = {};
+  read_path(d.path, model.getPath());
+  read_path(d.left_lane, model.getLeftLane());
+  read_path(d.right_lane, model.getRightLane());
   auto leadd = model.getLead();
   d.lead = (LeadData){
       .dist = leadd.getDist(), .prob = leadd.getProb(), .std = leadd.getStd(),
   };
-
-  return d;
 }
 
 static void update_status(UIState *s, int status) {
@@ -414,7 +408,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     }
   }
   if (sm.updated("model")) {
-    scene.model = read_model(sm["model"].getModel());
+    read_model(scene.model, sm["model"].getModel());
     s->model_changed = true;
   }
   // else if (which == cereal::Event::LIVE_MPC) {
