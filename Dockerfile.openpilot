@@ -80,6 +80,7 @@ COPY SConstruct \
      flake8_openpilot.sh \
      pylint_openpilot.sh \
      .pylintrc \
+     .pre-commit-config.yaml \
      .coveragerc-app \
      /tmp/openpilot/
 
