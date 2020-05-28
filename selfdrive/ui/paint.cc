@@ -205,7 +205,7 @@ static void update_all_track_data(UIState *s) {
   // Draw vision path
   update_track_data(s, false, &s->track_vertices[0]);
 
-  if (scene->engaged) {
+  if (scene->controls_state.getEnabled()) {
     // Draw MPC path when engaged
     update_track_data(s, true, &s->track_vertices[1]);
   }
@@ -363,7 +363,7 @@ static void ui_draw_vision_lanes(UIState *s) {
   }
   // Draw vision path
   ui_draw_track(s, false, &s->track_vertices[0]);
-  if (scene->engaged) {
+  if (scene->controls_state.getEnabled()) {
     // Draw MPC path when engaged
     ui_draw_track(s, true, &s->track_vertices[1]);
   }
@@ -423,7 +423,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 
   bool is_cruise_set = (maxspeed != 0 && maxspeed != SET_SPEED_NA);
   bool is_speedlim_valid = s->scene.speedlimit_valid;
-  bool is_set_over_limit = is_speedlim_valid && s->scene.engaged &&
+  bool is_set_over_limit = is_speedlim_valid && s->scene.controls_state.getEnabled() &&
                        is_cruise_set && maxspeed_calc > (speedlim_calc + speed_lim_off);
 
   int viz_maxspeed_w = 184;
@@ -478,7 +478,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   if (s->is_ego_over_limit) {
     hysteresis_offset = 0.0;
   }
-  s->is_ego_over_limit = is_speedlim_valid && s->scene.v_ego > (speedlimit + s->speed_lim_off + hysteresis_offset);
+  s->is_ego_over_limit = is_speedlim_valid && s->scene.controls_state.getVEgo() > (speedlimit + s->speed_lim_off + hysteresis_offset);
 
   int viz_speedlim_w = 180;
   int viz_speedlim_h = 202;
@@ -524,9 +524,10 @@ static void ui_draw_vision_speedlimit(UIState *s) {
 
 static void ui_draw_vision_speed(UIState *s) {
   const UIScene *scene = &s->scene;
-  float speed = s->scene.v_ego * 2.2369363 + 0.5;
+  float v_ego = s->scene.controls_state.getVEgo();
+  float speed = v_ego * 2.2369363 + 0.5;
   if (s->is_metric){
-    speed = s->scene.v_ego * 3.6 + 0.5;
+    speed = v_ego * 3.6 + 0.5;
   }
   const int viz_speed_w = 280;
   const int viz_speed_x = scene->ui_viz_rx+((scene->ui_viz_rw/2)-(viz_speed_w/2));
@@ -545,7 +546,7 @@ static void ui_draw_vision_event(UIState *s) {
   const int viz_event_w = 220;
   const int viz_event_x = ((s->scene.ui_viz_rx + s->scene.ui_viz_rw) - (viz_event_w + (bdr_s*2)));
   const int viz_event_y = (box_y + (bdr_s*1.5));
-  if (s->scene.decel_for_model && s->scene.engaged) {
+  if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
     ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size, s->img_turn, 1.0f);
@@ -563,7 +564,7 @@ static void ui_draw_vision_event(UIState *s) {
       color = nvgRGBA(23, 51, 73, 255);
     }
 
-    if (s->scene.engageable){
+    if (s->scene.controls_state.getEngageable()){
       ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
     }
   }
@@ -580,7 +581,7 @@ static void ui_draw_vision_face(UIState *s) {
   const int face_size = 96;
   const int face_x = (s->scene.ui_viz_rx + face_size + (bdr_s * 2));
   const int face_y = (footer_y + ((footer_h - face_size) / 2));
-  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.monitoring_active);
+  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.controls_state.getDriverMonitoringOn());
 }
 
 static void ui_draw_driver_view(UIState *s) {
@@ -590,7 +591,9 @@ static void ui_draw_driver_view(UIState *s) {
   const int frame_w = scene->ui_viz_rw;
   const int valid_frame_w = 4 * box_h / 3;
   const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
-
+  auto fxy_list = scene->driver_state.getFacePosition();
+  float face_x = fxy_list[0];
+  float face_y = fxy_list[1];
   // blackout
   if (!scene->is_rhd) {
     NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x + valid_frame_w,
@@ -612,17 +615,17 @@ static void ui_draw_driver_view(UIState *s) {
   ui_draw_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
 
   // draw face box
-  if (scene->face_prob > 0.4) {
+  if (scene->driver_state.getFaceProb() > 0.4) {
     int fbox_x;
-    int fbox_y = box_y + (scene->face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
+    int fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
     if (!scene->is_rhd) {
-      fbox_x = valid_frame_x + (1 - (scene->face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
+      fbox_x = valid_frame_x + (1 - (face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     } else {
-      fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
+      fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     }
-    if (std::abs(scene->face_x) <= 0.35 && std::abs(scene->face_y) <= 0.4) {
+    if (std::abs(face_x) <= 0.35 && std::abs(face_y) <= 0.4) {
       ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2,
-                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((std::abs(scene->face_x) > std::abs(scene->face_y) ? std::abs(scene->face_x) : std::abs(scene->face_y))) * 0.6 / 0.375),
+                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((std::abs(face_x) > std::abs(face_y) ? std::abs(face_x) : std::abs(face_y))) * 0.6 / 0.375),
                    35, 10);
     } else {
       ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 35, 10);
@@ -633,9 +636,9 @@ static void ui_draw_driver_view(UIState *s) {
 
   // draw face icon
   const int face_size = 85;
-  const int face_x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
-  const int face_y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, scene->face_prob > 0.4);
+  const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
+  const int y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
+  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->driver_state.getFaceProb() > 0.4);
 }
 
 static void ui_draw_vision_header(UIState *s) {
