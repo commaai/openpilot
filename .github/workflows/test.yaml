@@ -48,6 +48,7 @@ jobs:
   docker_push:
     name: docker push
     runs-on: ubuntu-16.04
+    timeout-minutes: 50
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
@@ -65,6 +66,7 @@ jobs:
   static_analysis:
     name: static analysis
     runs-on: ubuntu-16.04
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:
@@ -91,6 +93,7 @@ jobs:
   unit_tests:
     name: unit tests
     runs-on: ubuntu-16.04
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:
