@@ -932,7 +932,7 @@ int main(int argc, char* argv[]) {
     }
 
     int volume = fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5);  // up one notch every 5 m/s
-    s->sound.set_volume(volume, u1);
+    s->sound.setVolume(volume, u1);
   
     // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
