@@ -105,9 +105,9 @@ bool Sound::stop() {
   // stop a loop
   repeat_ = 0;
   if (currentSound_ != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
+    currentSound_ = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     auto playerItf = player_.at(currentSound_)->playInterface;
     ReturnOnError((*playerItf)->SetPlayState(playerItf, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_STOPPED");
-    currentSound_ = cereal::CarControl::HUDControl::AudibleAlert::NONE;
   }
   return true;
 }
