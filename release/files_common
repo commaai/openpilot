@@ -157,6 +157,13 @@ selfdrive/car/subaru/radar_interface.py
 selfdrive/car/subaru/values.py
 selfdrive/car/subaru/carcontroller.py
 selfdrive/car/subaru/subarucan.py
+selfdrive/car/mazda/__init__.py
+selfdrive/car/mazda/carstate.py
+selfdrive/car/mazda/interface.py
+selfdrive/car/mazda/radar_interface.py
+selfdrive/car/mazda/values.py
+selfdrive/car/mazda/carcontroller.py
+selfdrive/car/mazda/mazdacan.py
 selfdrive/car/mock/*.py
 
 selfdrive/clocksd/.gitignore
