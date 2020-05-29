@@ -117,6 +117,7 @@ class Controls:
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.can_error_counter = 0
+    self.consecutive_can_error_count = 0
     self.last_blinker_frame = 0
     self.saturated_count = 0
     self.events_prev = []
@@ -188,8 +189,13 @@ class Controls:
                                         LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
 
-    if self.can_rcv_error:
+    if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
+      self.consecutive_can_error_count += 1
+    else:
+      self.consecutive_can_error_count = 0
+    if self.consecutive_can_error_count > 2 / DT_CTRL:
+      self.events.add(EventName.canErrorPersistent)
     if self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
     if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
@@ -210,8 +216,6 @@ class Controls:
       self.events.add(EventName.radarFault)
     if self.sm['plan'].radarCanError:
       self.events.add(EventName.radarCanError)
-    if not CS.canValid and self.sm.frame > 5 / DT_CTRL:
-        self.events.add(EventName.canError)
     if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
       self.events.add(EventName.relayMalfunction)
     if self.sm['plan'].fcw:
