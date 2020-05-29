@@ -2,6 +2,7 @@ Version 0.7.6 (2020-06-05)
 ========================
 * White panda is deprecated, upgrade to comma two or black panda
 * 2019 Nissan X-Trail and 2018 Nissan Leaf support thanks to avolmensky!
+* 2017 Mazda CX-5 support in dashcam mode thanks to Jafaral!
 * Huge CPU savings in modeld by using thneed!
 * Lots of code cleanup and refactors
 
