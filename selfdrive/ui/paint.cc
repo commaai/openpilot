@@ -340,10 +340,9 @@ static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_d
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
   model_path_vertices_data *pvd = &s->model_path_vertices[0];
-  if(s->model_changed) {
+  if(s->sm->updated("model")) {
     update_all_lane_lines_data(s, scene->model.left_lane, pvd);
     update_all_lane_lines_data(s, scene->model.right_lane, pvd + MODEL_LANE_PATH_CNT);
-    s->model_changed = false;
   }
   // Draw left lane edge
   ui_draw_lane(
@@ -410,7 +409,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     return;
   }*/
   char maxspeed_str[32];
-  float maxspeed = s->scene.v_cruise;
+  float maxspeed = s->scene.controls_state.getVCruise();
   int maxspeed_calc = maxspeed * 0.6225 + 0.5;
   float speedlimit = s->scene.speedlimit;
   int speedlim_calc = speedlimit * 2.2369363 + 0.5;

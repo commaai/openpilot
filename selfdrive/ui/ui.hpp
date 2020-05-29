@@ -103,8 +103,6 @@ typedef struct UIScene {
 
   bool world_objects_visible;
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
-  float v_cruise;
-  uint64_t v_cruise_update_ts;
 
   float speedlimit;
   bool speedlimit_valid;
@@ -113,27 +111,25 @@ typedef struct UIScene {
 
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
-  bool uilayout_mockengaged;
   // responsive layout
   int ui_viz_rx;
   int ui_viz_rw;
   int ui_viz_ro;
   bool is_rhd;
 
-  cereal::ControlsState::Reader controls_state;
-  cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::DriverState::Reader driver_state;
-
   int front_box_x, front_box_y, front_box_width, front_box_height;
 
   std::string alert_text1;
   std::string alert_text2;
   cereal::ControlsState::AlertSize alert_size;
-  float alert_blinkingrate;
 
   cereal::ThermalData::Reader thermal;
   cereal::HealthData::HwType hwType;
   uint8_t athenaStatus;
+
+  cereal::ControlsState::Reader controls_state;
+  cereal::RadarState::LeadData::Reader lead_data[2];
+  cereal::DriverState::Reader driver_state;
 } UIScene;
 
 typedef struct {
@@ -248,7 +244,6 @@ typedef struct UIState {
   int touch_fd;
 
   // Hints for re-calculations and redrawing
-  bool model_changed;
   bool livempc_or_radarstate_changed;
 
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];

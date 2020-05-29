@@ -136,7 +136,7 @@ static void ui_draw_sidebar_temp_metric(UIState *s) {
 }
 
 static void ui_draw_sidebar_panda_metric(UIState *s) {
-  static int satelliteCount = 0;
+  static int satelliteCount = -1;
   int panda_severity;
   char panda_message_str[32];
   const int panda_y_offset = 32 + 148;

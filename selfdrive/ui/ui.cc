@@ -226,9 +226,6 @@ static void ui_init(UIState *s) {
 
   set_awake(s, true);
 
-  s->model_changed = false;
-  s->livempc_or_radarstate_changed = false;
-
   ui_nvg_init(s);
 }
 
@@ -247,17 +244,16 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->cur_vision_idx = -1;
   s->cur_vision_front_idx = -1;
 
-  s->scene = (UIScene){
-      .frontview = getenv("FRONTVIEW") != NULL,
-      .fullview = getenv("FULLVIEW") != NULL,
-      .transformed_width = ui_info.transformed_width,
-      .transformed_height = ui_info.transformed_height,
-      .front_box_x = ui_info.front_box_x,
-      .front_box_y = ui_info.front_box_y,
-      .front_box_width = ui_info.front_box_width,
-      .front_box_height = ui_info.front_box_height,
-      .world_objects_visible = false,  // Invisible until we receive a calibration message.
-  };
+  s->scene.frontview = getenv("FRONTVIEW") != NULL;
+  s->scene.fullview = getenv("FULLVIEW") != NULL;
+  s->scene.transformed_width = ui_info.transformed_width;
+  s->scene.transformed_height = ui_info.transformed_height;
+  s->scene.front_box_x = ui_info.front_box_x;
+  s->scene.front_box_y = ui_info.front_box_y;
+  s->scene.front_box_width = ui_info.front_box_width;
+  s->scene.front_box_height = ui_info.front_box_height;
+  s->scene.world_objects_visible = false;  // Invisible until we receive a calibration message.
+  s->scene.gps_planner_active = false;
 
   s->rgb_width = back_bufs.width;
   s->rgb_height = back_bufs.height;
@@ -336,12 +332,6 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.frontview = scene.controls_state.getRearViewCam();
     if (!scene.frontview){ s->controls_seen = true; }
 
-    auto v_curise = scene.controls_state.getVCruise();
-    if (v_curise != scene.v_cruise) {
-      scene.v_cruise_update_ts = event.getLogMonoTime();
-      scene.v_cruise = v_curise;
-    }
-    
     auto alert_sound = scene.controls_state.getAlertSound();
     const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     if (alert_sound != s->alert_sound){
@@ -366,17 +356,17 @@ void handle_message(UIState *s, SubMaster &sm) {
       update_status(s, scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED);
     }
 
-    scene.alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
-    if (scene.alert_blinkingrate > 0.) {
+    float alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
+    if (alert_blinkingrate > 0.) {
       if (s->alert_blinked) {
         if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
-          s->alert_blinking_alpha += (0.05*scene.alert_blinkingrate);
+          s->alert_blinking_alpha += (0.05*alert_blinkingrate);
         } else {
           s->alert_blinked = false;
         }
       } else {
         if (s->alert_blinking_alpha > 0.25) {
-          s->alert_blinking_alpha -= (0.05*scene.alert_blinkingrate);
+          s->alert_blinking_alpha -= (0.05*alert_blinkingrate);
         } else {
           s->alert_blinking_alpha += 0.25;
           s->alert_blinked = true;
@@ -399,7 +389,6 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
   if (sm.updated("model")) {
     scene.model = read_model(sm["model"].getModel());
-    s->model_changed = true;
   }
   // else if (which == cereal::Event::LIVE_MPC) {
   //   auto data = event.getLiveMpc();
@@ -415,9 +404,6 @@ void handle_message(UIState *s, SubMaster &sm) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
     s->active_app = data.getActiveApp();
     scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
-    if (data.getMockEngaged() != scene.uilayout_mockengaged) {
-      scene.uilayout_mockengaged = data.getMockEngaged();
-    }
   }
 #ifdef SHOW_SPEEDLIMIT
   if (sm.updated("liveMapData")) {
@@ -460,9 +446,7 @@ void handle_message(UIState *s, SubMaster &sm) {
 }
 
 static void check_messages(UIState *s) {
-  while (true) {
-    if (s->sm->update(0) == 0)
-      break;
+  if (s->sm->update(0) > 0){
     handle_message(s, *(s->sm));
   }
 }
@@ -818,7 +802,6 @@ int main(int argc, char* argv[]) {
   s->volume_timeout = 5 * UI_FREQ;
   int draws = 0;
 
-  s->scene.satelliteCount = -1;
   s->started = false;
   s->vision_seen = false;
 
