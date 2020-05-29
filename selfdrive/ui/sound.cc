@@ -12,7 +12,7 @@
 #define CHECK_RESULT(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; } \
 
-struct Sound::sound_player {
+struct Sound::Player {
   SLObjectItf player;
   SLPlayItf playInterface;
 };
@@ -34,8 +34,8 @@ sound_file sound_table[] = {
     {cereal::CarControl::HUDControl::AudibleAlert::NONE, nullptr},
 };
 
-static bool create_player(SLEngineItf engineItf, std::map<AudibleAlert, Sound::sound_player*>& player, sound_file *s ) {
-  SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar*)s->uri};
+bool Sound::createPlayer(AudibleAlert alert, const char* uri) {
+  SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar*)uri};
   SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
   SLDataSource audioSrc = {&locUri, &formatMime};
 
@@ -44,12 +44,12 @@ static bool create_player(SLEngineItf engineItf, std::map<AudibleAlert, Sound::s
 
   SLObjectItf player = NULL;
   SLPlayItf playInterface = NULL;
-  CHECK_RESULT((*engineItf)->CreateAudioPlayer(engineItf, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
+  CHECK_RESULT((*engineInterface_)->CreateAudioPlayer(engineInterface_, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
   CHECK_RESULT((*player)->Realize(player, SL_BOOLEAN_FALSE), "Failed to realize audio player");
   CHECK_RESULT((*player)->GetInterface(player, SL_IID_PLAY, &playInterface), "Failed to get player interface");
   CHECK_RESULT((*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
 
-  player[s->alert] = new Sound::sound_player{player, playInterface};
+  player_[alert] = new Sound::Player{player, playInterface};
   return true;
 }
 
@@ -64,7 +64,7 @@ bool Sound::init(int volumn) {
   CHECK_RESULT((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
 
   for (sound_file* s = sound_table; s->uri != nullptr; s++) {
-    if (!create_player(engine_, player_, s)) {
+    if (!createPlayer(s->alert, s->uri)) {
       return false;
     }
   }
@@ -72,9 +72,9 @@ bool Sound::init(int volumn) {
   return true;
 }
 
-void SLAPIENTRY Sound::slplay_callback(SLPlayItf playItf, void* context, SLuint32 event) {
-  Sound* s = (Sound*)context;
-  if (event == SL_PLAYEVENT_HEADATEND && s->repeat_-- > 0) {
+void SLAPIENTRY slplay_callback(SLPlayItf playItf, void* context, SLuint32 event) {
+  int *repeat  = (int*)context;
+  if (event == SL_PLAYEVENT_HEADATEND && --(*repeat) > 0) {
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
     (*playItf)->SetMarkerPosition(playItf, 0);
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
@@ -87,7 +87,7 @@ bool Sound::play(AudibleAlert alert, int repeat) {
   auto playerItf = player_.at(alert)->playInterface;
   if (repeat > 0) {
     repeat_ = repeat;
-    CHECK_RESULT((*playerItf)->RegisterCallback(playerItf, slplay_callback, this), "Failed to register callback");
+    CHECK_RESULT((*playerItf)->RegisterCallback(playerItf, slplay_callback, &repeat_), "Failed to register callback");
     CHECK_RESULT((*playerItf)->SetCallbackEventsMask(playerItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
   }
 

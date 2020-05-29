@@ -16,14 +16,14 @@ class Sound {
   inline AudibleAlert currentSound() const { return currentSound_; }
   ~Sound();
 #if defined(QCOM) || defined(QCOM2)
-  struct sound_player;
+  struct Player;
  private:
-  static void SLAPIENTRY slplay_callback(SLPlayItf playItf, void* context, SLuint32 event);
+  bool createPlayer(AudibleAlert alert, const char* uri);
   SLEngineItf engineInterface_ = NULL;
   SLObjectItf outputMix_ = NULL;
   SLObjectItf engine_ = NULL;
   int repeat_ = 0;
-  std::map<AudibleAlert, sound_player*> player_;
+  std::map<AudibleAlert, Player*> player_;
 #endif
   AudibleAlert currentSound_ = cereal::CarControl::HUDControl::AudibleAlert::NONE;
 };

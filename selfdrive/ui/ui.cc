@@ -348,6 +348,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.gps_planner_active = data.getGpsPlannerActive();
     scene.monitoring_active = data.getDriverMonitoringOn();
     scene.decel_for_model = data.getDecelForModel();
+    
     auto alert_sound = data.getAlertSound();
     if (alert_sound != s->sound.currentSound()) {
       if (alert_sound == cereal::CarControl::HUDControl::AudibleAlert::NONE) {
