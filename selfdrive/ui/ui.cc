@@ -349,14 +349,12 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.monitoring_active = data.getDriverMonitoringOn();
     scene.decel_for_model = data.getDecelForModel();
     auto alert_sound = data.getAlertSound();
-    const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
-    if (alert_sound != s->alert_sound) {
-      if (alert_sound != sound_none) {
+    if (alert_sound != s->sound.currentSound()) {
+      if (alert_sound != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
         s->sound.play(alert_sound);
-      } else if (s->alert_sound != sound_none) {
+      } else if (s->sound.currentSound() != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
         s->sound.stop();
       }
-      s->alert_sound = alert_sound;
     }
     scene.alert_text1 = data.getAlertText1();
     scene.alert_text2 = data.getAlertText2();
@@ -479,7 +477,6 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {
       update_status(s, STATUS_STOPPED);
-      // s->alert_sound_timeout = 0;
       s->vision_seen = false;
       s->controls_seen = false;
       s->active_app = cereal::UiLayoutState::App::HOME;
@@ -929,14 +926,13 @@ int main(int argc, char* argv[]) {
       should_swap = true;
     }
 
-    int volume = fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5);  // up one notch every 5 m/s
-    s->sound.setVolume(volume, u1);
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5), u1); // up one notch every 5 m/s
   
     // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      if (s->started && s->controls_seen && s->alert_sound != cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT) {
+      if (s->started && s->controls_seen && s->sound.currentSound() != cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT) {
         LOGE("Controls unresponsive");
         s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);
@@ -946,8 +942,7 @@ int main(int argc, char* argv[]) {
 
         ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
 
-        s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT;
-        s->sound.play(s->alert_sound, 3);
+        s->sound.play(cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT, 3);
       }
       s->controls_seen = false;
     }

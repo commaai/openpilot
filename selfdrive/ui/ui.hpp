@@ -1,6 +1,4 @@
-#ifndef _UI_H
-#define _UI_H
-
+#pragma once
 #include "messaging.hpp"
 
 #ifdef __APPLE__
@@ -89,7 +87,6 @@ const uint8_t bg_colors[][4] = {
   [STATUS_WARNING] = {0xDA, 0x6F, 0x25, 0xff},
   [STATUS_ALERT] = {0xC9, 0x22, 0x31, 0xff},
 };
-
 
 typedef struct UIScene {
   int frontview;
@@ -259,7 +256,6 @@ typedef struct UIState {
   bool limit_set_speed;
   float speed_lim_off;
   bool is_ego_over_limit;
-  AudibleAlert alert_sound;
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
@@ -293,5 +289,3 @@ void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r = 0, int width = 0);
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r = 0);
 void ui_nvg_init(UIState *s);
-
-#endif

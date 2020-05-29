@@ -9,7 +9,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-#define CHECK_RESULT(func, msg)      \
+#define CHECK_RESULT(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; } \
 
 struct Sound::sound_player {
@@ -82,22 +82,20 @@ void SLAPIENTRY Sound::slplay_callback(SLPlayItf playItf, void* context, SLuint3
 }
 
 bool Sound::play(AudibleAlert alert, int repeat) {
-  if (currentPlayer_) {
-    stop();
-  }
-  sound_player* sound = player_.at(alert);
-  currentPlayer_ = sound->playInterface;
+  stop();
+  currentSound_ = alert;
+  auto playerItf = player_.at(alert)->playInterface;
   if (repeat > 0) {
     repeat_ = repeat;
-    CHECK_RESULT((*currentPlayer_)->RegisterCallback(currentPlayer_, slplay_callback, this), "Failed to register callback");
-    CHECK_RESULT((*currentPlayer_)->SetCallbackEventsMask(currentPlayer_, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
+    CHECK_RESULT((*playerItf)->RegisterCallback(playerItf, slplay_callback, this), "Failed to register callback");
+    CHECK_RESULT((*playerItf)->SetCallbackEventsMask(playerItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
   }
 
   // Reset the audio player
-  CHECK_RESULT((*currentPlayer_)->ClearMarkerPosition(currentPlayer_), "Failed to clear marker position");
+  CHECK_RESULT((*playerItf)->ClearMarkerPosition(playerItf), "Failed to clear marker position");
   uint32_t states[] = {SL_PLAYSTATE_PAUSED, SL_PLAYSTATE_STOPPED, SL_PLAYSTATE_PLAYING};
   for (auto state : states) {
-    CHECK_RESULT((*currentPlayer_)->SetPlayState(currentPlayer_, state), "Failed to set SL_PLAYSTATE_PLAYING");
+    CHECK_RESULT((*playerItf)->SetPlayState(playerItf, state), "Failed to set SL_PLAYSTATE_PLAYING");
   }
   return true;
 }
@@ -105,9 +103,10 @@ bool Sound::play(AudibleAlert alert, int repeat) {
 bool Sound::stop() {
   // stop a loop
   repeat_ = 0;
-  if (currentPlayer_) {
-    CHECK_RESULT((*currentPlayer_)->SetPlayState(currentPlayer_, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_STOPPED");
-    currentPlayer_ = nullptr;
+  if (currentSound_ != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
+    auto playerItf = player_.at(currentSound_)->playInterface;
+    CHECK_RESULT((*playerItf)->SetPlayState(playerItf, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_STOPPED");
+    currentSound_ = cereal::CarControl::HUDControl::AudibleAlert::NONE;
   }
   return true;
 }
