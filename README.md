@@ -153,8 +153,8 @@ Community Maintained Cars and Features
 | Kia       | Optima 2019<sup>2</sup>       | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Nissan    | Leaf 2019<sup>2</sup>         | Propilot          | Stock            | 0mph               | 0mph         |
-| Nissan    | X-Trail 2018<sup>2</sup>      | Propilot          | Stock            | 0mph               | 0mph         |
+| Nissan    | Leaf 2018<sup>2</sup>         | Propilot          | Stock            | 0mph               | 0mph         |
+| Nissan    | X-Trail 2017<sup>2</sup>      | Propilot          | Stock            | 0mph               | 0mph         |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Impreza 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
