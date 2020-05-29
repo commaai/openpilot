@@ -9,7 +9,7 @@ class CarController():
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd):
+  def update(self, enabled, CS, frame, actuators):
     """ Controls thread """
 
     can_sends = []
@@ -31,8 +31,8 @@ class CarController():
     else:
       apply_steer = 0
       self.steer_rate_limited = False
-      if pcm_cancel_cmd and frame % 10 == 0:
-        # Cancel Stock ACC if it's engaged with OP disengaged
+      if CS.out.cruiseState.enabled and frame % 10 == 0:
+        # Cancel Stock ACC if it's enabled while OP is disengaged
         # Match stock message rate which is sent at 10hz
         can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, Buttons.CANCEL))
 
