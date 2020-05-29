@@ -350,13 +350,11 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.decel_for_model = data.getDecelForModel();
     auto alert_sound = data.getAlertSound();
     const auto sound_none = cereal::CarControl::HUDControl::AudibleAlert::NONE;
-    if (alert_sound != s->alert_sound){
-      if (s->alert_sound != sound_none){
-        s->sound.stop(s->alert_sound);
-      }
-      if (alert_sound != sound_none){
+    if (alert_sound != s->alert_sound) {
+      if (alert_sound != sound_none) {
         s->sound.play(alert_sound);
-        s->alert_type = data.getAlertType();
+      } else if (s->alert_sound != sound_none) {
+        s->sound.stop();
       }
       s->alert_sound = alert_sound;
     }
@@ -481,7 +479,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {
       update_status(s, STATUS_STOPPED);
-      s->alert_sound_timeout = 0;
+      // s->alert_sound_timeout = 0;
       s->vision_seen = false;
       s->controls_seen = false;
       s->active_app = cereal::UiLayoutState::App::HOME;
@@ -938,7 +936,7 @@ int main(int argc, char* argv[]) {
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      if (s->started && s->controls_seen && s->scene.alert_text2 != "Controls Unresponsive") {
+      if (s->started && s->controls_seen && s->alert_sound != cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT) {
         LOGE("Controls unresponsive");
         s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);
@@ -948,20 +946,10 @@ int main(int argc, char* argv[]) {
 
         ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
 
-        s->alert_sound_timeout = 2 * UI_FREQ;
         s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT;
-        s->sound.play(s->alert_sound);
+        s->sound.play(s->alert_sound, 3);
       }
-
-      s->alert_sound_timeout--;
       s->controls_seen = false;
-    }
-
-    // stop playing alert sound
-    if ((!s->started || (s->started && s->alert_sound_timeout == 0)) &&
-        s->alert_sound != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
-      s->sound.stop(s->alert_sound);
-      s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     }
 
     read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);

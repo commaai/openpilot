@@ -242,7 +242,6 @@ typedef struct UIState {
   // timeouts
   int awake_timeout;
   int controls_timeout;
-  int alert_sound_timeout;
   int speed_lim_off_timeout;
   int is_metric_timeout;
   int longitudinal_control_timeout;
@@ -260,7 +259,6 @@ typedef struct UIState {
   bool limit_set_speed;
   float speed_lim_off;
   bool is_ego_over_limit;
-  std::string alert_type;
   AudibleAlert alert_sound;
   float alert_blinking_alpha;
   bool alert_blinked;

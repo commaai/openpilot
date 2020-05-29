@@ -10,8 +10,8 @@ class Sound {
  public:
   Sound() = default;
   bool init(int volumn);
-  bool play(AudibleAlert alert);
-  bool stop(AudibleAlert alert);
+  bool play(AudibleAlert alert, int repeat = 0);
+  bool stop();
   void setVolume(int volume, double current_time = 0);
   ~Sound();
 #if defined(QCOM) || defined(QCOM2)
@@ -22,10 +22,9 @@ class Sound {
   SLEngineItf engineInterface_ = NULL;
   SLObjectItf outputMix_ = NULL;
   SLObjectItf engine_ = NULL;
-  uint64_t loop_start_ = 0;
-  uint64_t loop_start_ctx_ = 0;
-  int last_volume_ = 0;
-  double last_set_volume_time_ = 0;
+  int repeat_ = 0;
   std::map<AudibleAlert, sound_player*> player_;
+  SLPlayItf currentPlayer_ = nullptr;
+
 #endif
 };
