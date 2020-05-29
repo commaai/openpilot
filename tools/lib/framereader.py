@@ -210,24 +210,24 @@ def rgb24toyuv420(rgb):
   return yuv420.clip(0,255).astype('uint8')
 
 
-def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt, multithreaded=None):
+def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
   # using a tempfile is much faster than proc.communicate for some reason
-
-  if multithreaded is None:
-    multithreaded = not os.getenv('SINGLETHREADED')
 
   with tempfile.TemporaryFile() as tmpf:
     tmpf.write(rawdat)
     tmpf.seek(0)
 
+    threads = os.getenv("FFMPEG_THREADS", "0")
+    cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
     proc = subprocess.Popen(
       ["ffmpeg",
-       "-threads", "0" if multithreaded else "1",
+       "-threads", threads,
+       "-c:v", "hevc" if not cuda else "hevc_cuvid",
        "-vsync", "0",
        "-f", vid_fmt,
        "-flags2", "showall",
        "-i", "pipe:0",
-       "-threads", "0" if multithreaded else "1",
+       "-threads", threads,
        "-f", "rawvideo",
        "-pix_fmt", pix_fmt,
        "pipe:1"],
@@ -266,14 +266,14 @@ class BaseFrameReader:
     raise NotImplementedError
 
 
-def FrameReader(fn, cache_prefix=None, readahead=False, readbehind=False, multithreaded=None, index_data=None):
+def FrameReader(fn, cache_prefix=None, readahead=False, readbehind=False, index_data=None):
   frame_type = fingerprint_video(fn)
   if frame_type == FrameType.raw:
     return RawFrameReader(fn)
   elif frame_type in (FrameType.h265_stream,):
     if not index_data:
       index_data = get_video_index(fn, frame_type, cache_prefix)
-    return StreamFrameReader(fn, frame_type, index_data, readahead=readahead, readbehind=readbehind, multithreaded=multithreaded)
+    return StreamFrameReader(fn, frame_type, index_data, readahead=readahead, readbehind=readbehind)
   else:
     raise NotImplementedError(frame_type)
 
@@ -325,14 +325,11 @@ class RawFrameReader(BaseFrameReader):
 
 
 class VideoStreamDecompressor:
-  def __init__(self, vid_fmt, w, h, pix_fmt, multithreaded=None):
+  def __init__(self, vid_fmt, w, h, pix_fmt):
     self.vid_fmt = vid_fmt
     self.w = w
     self.h = h
     self.pix_fmt = pix_fmt
-
-    if multithreaded is None:
-      multithreaded = not os.getenv('SINGLETHREADED')
 
     if pix_fmt == "yuv420p":
       self.out_size = w*h*3//2 # yuv420p
@@ -343,9 +340,12 @@ class VideoStreamDecompressor:
 
     self.out_q = queue.Queue()
 
+    threads = os.getenv("FFMPEG_THREADS", "0")
+    cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
     self.proc = subprocess.Popen(
       ["ffmpeg",
-       "-threads", "0" if multithreaded else "1",
+       "-threads", threads,
+       "-c:v", "hevc" if not cuda else "hevc_cuvid",
        # "-avioflags", "direct",
        "-analyzeduration", "0",
        "-probesize", "32",
@@ -354,7 +354,7 @@ class VideoStreamDecompressor:
        "-vsync", "0",
        "-f", vid_fmt,
        "-i", "pipe:0",
-       "-threads", "0" if multithreaded else "1",
+       "-threads", threads,
        "-f", "rawvideo",
        "-pix_fmt", pix_fmt,
        "pipe:1"],
@@ -479,10 +479,9 @@ class StreamGOPReader(GOPReader):
 class GOPFrameReader(BaseFrameReader):
   #FrameReader with caching and readahead for formats that are group-of-picture based
 
-  def __init__(self, readahead=False, readbehind=False, multithreaded=None):
+  def __init__(self, readahead=False, readbehind=False):
     self.open_ = True
 
-    self.multithreaded = multithreaded
     self.readahead = readahead
     self.readbehind = readbehind
     self.frame_cache = LRU(64)
@@ -542,8 +541,7 @@ class GOPFrameReader(BaseFrameReader):
 
       frame_b, num_frames, skip_frames, rawdat = self.get_gop(num)
 
-      ret = decompress_video_data(rawdat, self.vid_fmt, self.w, self.h, pix_fmt,
-                                  multithreaded=self.multithreaded)
+      ret = decompress_video_data(rawdat, self.vid_fmt, self.w, self.h, pix_fmt)
       ret = ret[skip_frames:]
       assert ret.shape[0] == num_frames
 
@@ -573,17 +571,17 @@ class GOPFrameReader(BaseFrameReader):
 
 
 class StreamFrameReader(StreamGOPReader, GOPFrameReader):
-  def __init__(self, fn, frame_type, index_data, readahead=False, readbehind=False, multithreaded=None):
+  def __init__(self, fn, frame_type, index_data, readahead=False, readbehind=False):
     StreamGOPReader.__init__(self, fn, frame_type, index_data)
-    GOPFrameReader.__init__(self, readahead, readbehind, multithreaded)
+    GOPFrameReader.__init__(self, readahead, readbehind)
 
 
-def GOPFrameIterator(gop_reader, pix_fmt, multithreaded=None):
+def GOPFrameIterator(gop_reader, pix_fmt):
   # this is really ugly. ill think about how to refactor it when i can think good
 
   IN_FLIGHT_GOPS = 6  # should be enough that the stream decompressor starts returning data
 
-  with VideoStreamDecompressor(gop_reader.vid_fmt, gop_reader.w, gop_reader.h, pix_fmt, multithreaded) as dec:
+  with VideoStreamDecompressor(gop_reader.vid_fmt, gop_reader.w, gop_reader.h, pix_fmt) as dec:
     read_work = []
 
     def readthing():
@@ -621,7 +619,7 @@ def GOPFrameIterator(gop_reader, pix_fmt, multithreaded=None):
 def FrameIterator(fn, pix_fmt, **kwargs):
   fr = FrameReader(fn, **kwargs)
   if isinstance(fr, GOPReader):
-    for v in GOPFrameIterator(fr, pix_fmt, kwargs.get("multithreaded", None)):
+    for v in GOPFrameIterator(fr, pix_fmt):
       yield v
   else:
     for i in range(fr.frame_count):
