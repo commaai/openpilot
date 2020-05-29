@@ -43,7 +43,7 @@ class TextWindow():
     self.close()
 
 
-class FakeTextWindow(TextWindow):
+class FakeTextWindow():
   def __init__(self, s):
     pass
 
