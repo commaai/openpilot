@@ -18,6 +18,6 @@ int main(int argc, char *argv[]) {
   }
   printf("setting volume to %d\n", volume);
 
-  play_sound(argv[1], volume);
+  play_sound((AudibleAlert)(atoi(argv[1])), volume);
   return 0;
 }
