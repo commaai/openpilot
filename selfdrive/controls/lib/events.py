@@ -396,11 +396,7 @@ EVENTS = {
   },
 
   EventName.belowSteerSpeed: {
-    ET.WARNING: Alert(
-      "TAKE CONTROL",
-      "Steer Unavailable Below ",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3),
+    ET.WARNING: below_steer_speed_alert,
   },
 
   EventName.preLaneChangeLeft: {
