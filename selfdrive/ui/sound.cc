@@ -34,6 +34,25 @@ sound_file sound_table[] = {
     {cereal::CarControl::HUDControl::AudibleAlert::NONE, nullptr},
 };
 
+static bool create_player(SLEngineItf engineItf, std::map<AudibleAlert, Sound::sound_player*>& player, sound_file *s ) {
+  SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar*)s->uri};
+  SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
+  SLDataSource audioSrc = {&locUri, &formatMime};
+
+  SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
+  SLDataSink audioSnk = {&outMix, NULL};
+
+  SLObjectItf player = NULL;
+  SLPlayItf playInterface = NULL;
+  CHECK_RESULT((*engineItf)->CreateAudioPlayer(engineItf, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
+  CHECK_RESULT((*player)->Realize(player, SL_BOOLEAN_FALSE), "Failed to realize audio player");
+  CHECK_RESULT((*player)->GetInterface(player, SL_IID_PLAY, &playInterface), "Failed to get player interface");
+  CHECK_RESULT((*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
+
+  player[s->alert] = new Sound::sound_player{player, playInterface};
+  return true;
+}
+
 bool Sound::init(int volumn) {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
@@ -45,30 +64,11 @@ bool Sound::init(int volumn) {
   CHECK_RESULT((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
 
   for (sound_file* s = sound_table; s->uri != nullptr; s++) {
-    if (!create_player(s->alert, s->uri)) {
+    if (!create_player(engine_, player_, s)) {
       return false;
     }
   }
   setVolume(volumn);
-  return true;
-}
-
-bool Sound::create_player(AudibleAlert alert, const char* uri) {
-  SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar*)uri};
-  SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
-  SLDataSource audioSrc = {&locUri, &formatMime};
-
-  SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
-  SLDataSink audioSnk = {&outMix, NULL};
-
-  SLObjectItf player = NULL;
-  SLPlayItf playInterface = NULL;
-  CHECK_RESULT((*engineInterface_)->CreateAudioPlayer(engineInterface_, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
-  CHECK_RESULT((*player)->Realize(player, SL_BOOLEAN_FALSE), "Failed to realize audio player");
-  CHECK_RESULT((*player)->GetInterface(player, SL_IID_PLAY, &playInterface), "Failed to get player interface");
-  CHECK_RESULT((*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
-
-  player_[alert] = new sound_player{player, playInterface};
   return true;
 }
 

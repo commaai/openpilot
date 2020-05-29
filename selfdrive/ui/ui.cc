@@ -350,10 +350,10 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.decel_for_model = data.getDecelForModel();
     auto alert_sound = data.getAlertSound();
     if (alert_sound != s->sound.currentSound()) {
-      if (alert_sound != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
-        s->sound.play(alert_sound);
-      } else if (s->sound.currentSound() != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
+      if (alert_sound == cereal::CarControl::HUDControl::AudibleAlert::NONE) {
         s->sound.stop();
+      } else {
+        s->sound.play(alert_sound);
       }
     }
     scene.alert_text1 = data.getAlertText1();
@@ -939,7 +939,6 @@ int main(int argc, char* argv[]) {
 
         s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
         s->scene.alert_text2 = "Controls Unresponsive";
-
         ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
 
         s->sound.play(cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT, 3);
