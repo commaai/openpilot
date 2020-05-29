@@ -363,7 +363,7 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
-  "32a319f057902bb3|2020-04-27--15-18-58": {
+  "32a319f057902bb3|2020-05-29--02-21-48": {
     'carFingerprint': MAZDA.CX5,
     'enableCamera': True,
   },
@@ -377,7 +377,7 @@ forced_dashcam_routes = [
   "f1b4c567731f4a1b|2018-04-18--11-29-37",
   "f1b4c567731f4a1b|2018-04-30--10-15-35",
   # Mazda
-  "32a319f057902bb3|2020-04-27--15-18-58",
+  "32a319f057902bb3|2020-05-29--02-21-48",
 ]
 
 # TODO: add routes for these cars
