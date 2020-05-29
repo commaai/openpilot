@@ -18,10 +18,9 @@ class Sound {
 #if defined(QCOM) || defined(QCOM2)
   struct Player;
  private:
-  bool createPlayer(AudibleAlert alert, const char* uri);
-  SLEngineItf engineInterface_ = NULL;
-  SLObjectItf outputMix_ = NULL;
+  bool createPlayer(SLEngineItf engineInterface, AudibleAlert alert, const char* uri);
   SLObjectItf engine_ = NULL;
+  SLObjectItf outputMix_ = NULL;
   int repeat_ = 0;
   std::map<AudibleAlert, Player*> player_;
 #endif
