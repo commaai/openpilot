@@ -15,8 +15,8 @@ ACCEL_MAX = 1.5  # 1.5 m/s2
 ACCEL_MIN = -3.0 # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 # SPAS steering limits
-STEER_ANG_MAX = 90          # SPAS Max Angle
-STEER_ANG_MAX_RATE = 0.4    # SPAS Degrees per ms
+STEER_ANG_MAX = 360          # SPAS Max Angle
+STEER_ANG_MAX_RATE = 1.5    # SPAS Degrees per ms
 
 def accel_hysteresis(accel, accel_steady):
 
@@ -100,11 +100,11 @@ class CarController():
     if CS.spas_enabled:
       apply_steer_ang_req = clip(actuators.steerAngle, -1*(STEER_ANG_MAX), STEER_ANG_MAX)
       # SPAS limit angle rate for safety
-      if abs(self.apply_steer_ang - apply_steer_ang_req) > 0.6:
+      if abs(self.apply_steer_ang - apply_steer_ang_req) > STEER_ANG_MAX_RATE:
         if apply_steer_ang_req > self.apply_steer_ang:
-          self.apply_steer_ang += 0.5
+          self.apply_steer_ang += STEER_ANG_MAX_RATE
         else:
-          self.apply_steer_ang -= 0.5
+          self.apply_steer_ang -= STEER_ANG_MAX_RATE
       else:
         self.apply_steer_ang = apply_steer_ang_req
     spas_active = CS.spas_enabled and enabled and (self.spas_always or CS.out.vEgo < 7.0) # 25km/h
