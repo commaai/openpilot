@@ -1,38 +1,48 @@
 
 #include "sound.hpp"
 #include <assert.h>
-#include <getopt.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include "common/swaglog.h"
 #include "common/timing.h"
 
 #define ReturnOnError(func, msg) \
-  if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; } \
+  if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; }
+
+std::map<AudibleAlert, const char*> sound_map{
+  {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav"},
+  {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav"},
+  {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav"},
+  {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav"},
+  {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav"},
+  {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav"},
+  {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav"},
+  {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav"},
+};
 
 struct Sound::Player {
   SLObjectItf player;
   SLPlayItf playInterface;
 };
 
-struct sound_file {
-  AudibleAlert alert;
-  const char* uri;
-};
+bool Sound::init(int volumn) {
+  SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
+  const SLInterfaceID ids[1] = {SL_IID_VOLUME};
+  const SLboolean req[1] = {SL_BOOLEAN_FALSE};
+  SLEngineItf engineInterface = NULL;
+  ReturnOnError(slCreateEngine(&engine_, 1, engineOptions, 0, NULL, NULL), "Failed to create OpenSL engine");
+  ReturnOnError((*engine_)->Realize(engine_, SL_BOOLEAN_FALSE), "Failed to realize OpenSL engine");
+  ReturnOnError((*engine_)->GetInterface(engine_, SL_IID_ENGINE, &engineInterface), "Failed to realize OpenSL engine");
+  ReturnOnError((*engineInterface)->CreateOutputMix(engineInterface, &outputMix_, 1, ids, req), "Failed to create output mix");
+  ReturnOnError((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
 
-sound_file sound_table[] = {
-    {cereal::CarControl::HUDControl::AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav"},
-    {cereal::CarControl::HUDControl::AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav"},
-    {cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav"},
-    {cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav"},
-    {cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav"},
-    {cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav"},
-    {cereal::CarControl::HUDControl::AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav"},
-    {cereal::CarControl::HUDControl::AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav"},
-    {cereal::CarControl::HUDControl::AudibleAlert::NONE, nullptr},
-};
+  for (auto &kv : sound_map) {
+    if (!createPlayer(engineInterface, kv.first, kv.second)) {
+      return false;
+    }
+  }
+  setVolume(volumn);
+  return true;
+}
 
 bool Sound::createPlayer(SLEngineItf engineInterface, AudibleAlert alert, const char* uri) {
   SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar*)uri};
@@ -50,26 +60,6 @@ bool Sound::createPlayer(SLEngineItf engineInterface, AudibleAlert alert, const 
   ReturnOnError((*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
 
   player_[alert] = new Sound::Player{player, playInterface};
-  return true;
-}
-
-bool Sound::init(int volumn) {
-  SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
-  const SLInterfaceID ids[1] = {SL_IID_VOLUME};
-  const SLboolean req[1] = {SL_BOOLEAN_FALSE};
-  SLEngineItf engineInterface = NULL;
-  ReturnOnError(slCreateEngine(&engine_, 1, engineOptions, 0, NULL, NULL), "Failed to create OpenSL engine");
-  ReturnOnError((*engine_)->Realize(engine_, SL_BOOLEAN_FALSE), "Failed to realize OpenSL engine");
-  ReturnOnError((*engine_)->GetInterface(engine_, SL_IID_ENGINE, &engineInterface), "Failed to realize OpenSL engine");
-  ReturnOnError((*engineInterface)->CreateOutputMix(engineInterface, &outputMix_, 1, ids, req), "Failed to create output mix");
-  ReturnOnError((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
-
-  for (sound_file* s = sound_table; s->uri != nullptr; s++) {
-    if (!createPlayer(engineInterface, s->alert, s->uri)) {
-      return false;
-    }
-  }
-  setVolume(volumn);
   return true;
 }
 
@@ -102,26 +92,26 @@ bool Sound::play(AudibleAlert alert, int repeat) {
 }
 
 bool Sound::stop() {
-  // stop a loop
   repeat_ = 0;
-  if (currentSound_ != cereal::CarControl::HUDControl::AudibleAlert::NONE) {
-    currentSound_ = cereal::CarControl::HUDControl::AudibleAlert::NONE;
+  if (currentSound_ != AudibleAlert::NONE) {
     auto playerItf = player_.at(currentSound_)->playInterface;
+    currentSound_ = AudibleAlert::NONE;
     ReturnOnError((*playerItf)->SetPlayState(playerItf, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_STOPPED");
   }
   return true;
 }
 
-void Sound::setVolume(int volume, double current_time) {
-  static int last_volume = 0;
-  static double last_set_volume_time = 0;
-  // 5 second timeout
-  if (last_volume != volume && (current_time == 0 || (current_time - last_set_volume_time) > 5 * (1e+9))) {
+void Sound::setVolume(int volume, int timeout_seconds) {
+  if (last_volume_ == volume) {
+    return;
+  }
+  double current_time = nanos_since_boot();
+  if ((current_time - last_set_volume_time_) > (timeout_seconds * (1e+9))) {
     char volume_change_cmd[64];
     snprintf(volume_change_cmd, sizeof(volume_change_cmd), "service call audio 3 i32 3 i32 %d i32 1 &", volume);
     system(volume_change_cmd);
-    last_volume = volume;
-    last_set_volume_time = current_time;
+    last_volume_ = volume;
+    last_set_volume_time_ = current_time;
   }
 }
 

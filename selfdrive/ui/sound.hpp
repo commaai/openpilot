@@ -12,17 +12,19 @@ class Sound {
   bool init(int volumn);
   bool play(AudibleAlert alert, int repeat = 0);
   bool stop();
-  void setVolume(int volume, double current_time = 0);
+  void setVolume(int volume, int timeout_seconds = 0);
   inline AudibleAlert currentSound() const { return currentSound_; }
   ~Sound();
 #if defined(QCOM) || defined(QCOM2)
   struct Player;
+
  private:
   bool createPlayer(SLEngineItf engineInterface, AudibleAlert alert, const char* uri);
   SLObjectItf engine_ = NULL;
   SLObjectItf outputMix_ = NULL;
-  int repeat_ = 0;
+  int repeat_ = 0, last_volume_ = 0;
+  double last_set_volume_time_ = 0;
   std::map<AudibleAlert, Player*> player_;
 #endif
-  AudibleAlert currentSound_ = cereal::CarControl::HUDControl::AudibleAlert::NONE;
+  AudibleAlert currentSound_ = AudibleAlert::NONE;
 };

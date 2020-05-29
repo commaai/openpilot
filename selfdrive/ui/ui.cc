@@ -348,10 +348,10 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.gps_planner_active = data.getGpsPlannerActive();
     scene.monitoring_active = data.getDriverMonitoringOn();
     scene.decel_for_model = data.getDecelForModel();
-    
+
     auto alert_sound = data.getAlertSound();
     if (alert_sound != s->sound.currentSound()) {
-      if (alert_sound == cereal::CarControl::HUDControl::AudibleAlert::NONE) {
+      if (alert_sound == AudibleAlert::NONE) {
         s->sound.stop();
       } else {
         s->sound.play(alert_sound);
@@ -927,13 +927,13 @@ int main(int argc, char* argv[]) {
       should_swap = true;
     }
 
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5), u1); // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5), 5); // up one notch every 5 m/s
   
     // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      if (s->started && s->controls_seen && s->sound.currentSound() != cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT) {
+      if (s->started && s->controls_seen && s->sound.currentSound() != AudibleAlert::CHIME_WARNING_REPEAT) {
         LOGE("Controls unresponsive");
         s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);
@@ -942,7 +942,7 @@ int main(int argc, char* argv[]) {
         s->scene.alert_text2 = "Controls Unresponsive";
         ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
 
-        s->sound.play(cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT, 3);
+        s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT, 3); // loop sound 3 times
       }
       s->controls_seen = false;
     }
