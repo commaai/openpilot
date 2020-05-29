@@ -251,7 +251,7 @@ void* frontview_thread(void *arg) {
     }
 
 #ifdef NOSCREEN
-    if ((frame_data.frame_id / 40) % 3 == 1) {
+    if (frame_data.frame_id % 5 == 1) {
       sendrgb(&s->cameras, (void*) s->rgb_front_bufs[rgb_idx].addr, s->rgb_front_bufs[rgb_idx].len);
     }
 #endif
@@ -315,7 +315,12 @@ void* frontview_thread(void *arg) {
         x_start = s->rhd_front ? 0:s->rgb_front_width * 3 / 5;
         x_end = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
-
+#ifdef QCOM2
+      x_start = 0.2*s->rgb_front_width;
+      x_end = 0.8*s->rgb_front_width;
+      y_start = 0.2*s->rgb_front_height;
+      y_end = 0.8*s->rgb_front_height;
+#endif
       uint32_t lum_binning[256] = {0,};
       for (int y = y_start; y < y_end; ++y) {
         for (int x = x_start; x < x_end; x += 2) { // every 2nd col
@@ -470,8 +475,8 @@ void* wideview_thread(void *arg) {
     visionbuf_sync(&s->rgb_wide_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
 #ifdef NOSCREEN
-    if ((frame_data.frame_id / 40) % 3 == 0) {
-      sendrgb(&s->cameras, (void*) s->rgb_wide_bufs[rgb_idx].addr, s->rgb_wide_bufs[rgb_idx].len);
+    if (frame_data.frame_id % 5 == 0) {
+      //sendrgb(&s->cameras, (void*) s->rgb_wide_bufs[rgb_idx].addr, s->rgb_wide_bufs[rgb_idx].len);
     }
 #endif
 
@@ -640,8 +645,8 @@ void* processing_thread(void *arg) {
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
 #ifdef NOSCREEN
-  if ((frame_data.frame_id / 40) % 3 == 2) {
-    sendrgb(&s->cameras, (void*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len);
+  if (frame_data.frame_id % 5 == 2) {
+    //sendrgb(&s->cameras, (void*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len);
   }
 #endif
 
@@ -981,6 +986,20 @@ void* visionserver_client_thread(void* arg) {
           } else {
             assert(false);
           }
+        } else if (stream_type == VISION_STREAM_RGB_WIDE) {
+          stream_bufs->width = s->rgb_wide_width;
+          stream_bufs->height = s->rgb_wide_height;
+          stream_bufs->stride = s->rgb_wide_stride;
+          stream_bufs->buf_len = s->rgb_wide_bufs[0].len;
+          rep.num_fds = UI_BUF_COUNT;
+          for (int i=0; i<rep.num_fds; i++) {
+            rep.fds[i] = s->rgb_wide_bufs[i].fd;
+          }
+          if (stream->tb) {
+            stream->tbuffer = &s->ui_wide_tb;
+          } else {
+            assert(false);
+          }
         } else if (stream_type == VISION_STREAM_YUV) {
           stream_bufs->width = s->yuv_width;
           stream_bufs->height = s->yuv_height;
@@ -1009,6 +1028,21 @@ void* visionserver_client_thread(void* arg) {
           } else {
             stream->queue = pool_get_queue(&s->yuv_front_pool);
           }
+        } else if (stream_type == VISION_STREAM_YUV_WIDE) {
+          stream_bufs->width = s->yuv_wide_width;
+          stream_bufs->height = s->yuv_wide_height;
+          stream_bufs->stride = s->yuv_wide_width;
+          stream_bufs->buf_len = s->yuv_wide_buf_size;
+          rep.num_fds = YUV_COUNT;
+          for (int i=0; i<rep.num_fds; i++) {
+            rep.fds[i] = s->yuv_wide_ion[i].fd;
+          }
+          if (stream->tb) {
+            stream->tbuffer = s->yuv_wide_tb;
+          } else {
+            stream->queue = pool_get_queue(&s->yuv_wide_pool);
+          }
+
         } else {
           assert(false);
         }
@@ -1061,6 +1095,9 @@ void* visionserver_client_thread(void* arg) {
         } else if (stream_i == VISION_STREAM_YUV_FRONT) {
           rep.d.stream_acq.extra.frame_id = s->yuv_front_metas[idx].frame_id;
           rep.d.stream_acq.extra.timestamp_eof = s->yuv_front_metas[idx].timestamp_eof;
+        } else if (stream_i == VISION_STREAM_YUV_WIDE) {
+          rep.d.stream_acq.extra.frame_id = s->yuv_wide_metas[idx].frame_id;
+          rep.d.stream_acq.extra.timestamp_eof = s->yuv_wide_metas[idx].timestamp_eof;
         }
         vipc_send(fd, &rep);
       }
@@ -1335,11 +1372,11 @@ void init_buffers(VisionState *s) {
   tbuffer_init(&s->ui_front_tb, UI_BUF_COUNT, "frontrgb");
 
   for (int i=0; i<UI_BUF_COUNT; i++) {
-    VisionImg img = visionimg_alloc_rgb24(s->rgb_front_width, s->rgb_front_height, &s->rgb_wide_bufs[i]);
+    VisionImg img = visionimg_alloc_rgb24(s->rgb_wide_width, s->rgb_wide_height, &s->rgb_wide_bufs[i]);
     s->rgb_wide_bufs_cl[i] = visionbuf_to_cl(&s->rgb_wide_bufs[i], s->device_id, s->context);
     if (i == 0){
-      s->rgb_front_stride = img.stride;
-      s->rgb_front_buf_size = img.size;
+      s->rgb_wide_stride = img.stride;
+      s->rgb_wide_buf_size = img.size;
     }
   }
   tbuffer_init(&s->ui_wide_tb, UI_BUF_COUNT, "widergb");
@@ -1384,10 +1421,10 @@ void init_buffers(VisionState *s) {
   s->yuv_wide_buf_size = s->rgb_wide_width * s->rgb_wide_height * 3 / 2;
 
   for (int i=0; i<YUV_COUNT; i++) {
-    s->yuv_wide_ion[i] = visionbuf_allocate_cl(s->yuv_front_buf_size, s->device_id, s->context, &s->yuv_wide_cl[i]);
+    s->yuv_wide_ion[i] = visionbuf_allocate_cl(s->yuv_wide_buf_size, s->device_id, s->context, &s->yuv_wide_cl[i]);
     s->yuv_wide_bufs[i].y = (uint8_t*)s->yuv_wide_ion[i].addr;
-    s->yuv_wide_bufs[i].u = s->yuv_wide_bufs[i].y + (s->yuv_front_width * s->yuv_front_height);
-    s->yuv_wide_bufs[i].v = s->yuv_wide_bufs[i].u + (s->yuv_front_width/2 * s->yuv_front_height/2);
+    s->yuv_wide_bufs[i].u = s->yuv_wide_bufs[i].y + (s->yuv_wide_width * s->yuv_wide_height);
+    s->yuv_wide_bufs[i].v = s->yuv_wide_bufs[i].u + (s->yuv_wide_width/2 * s->yuv_wide_height/2);
   }
 
 

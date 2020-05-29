@@ -29,6 +29,8 @@ typedef struct CameraState {
 
   int frame_size;
   float digital_gain;
+  float analog_gain_frac;
+  int exposure_time;
   mat3 transform;
 
   int device_iommu;

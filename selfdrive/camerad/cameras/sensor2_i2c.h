@@ -296,8 +296,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30BA, 0x11F3}, // DIGITAL_CTRL
 
   // FPS = 88e6 / 0x09C4 / 0x06E0 = 20
-  {0x300C, 0x09C4}, // LINE_LENGTH_PCK_
-  {0x300A, 0x06E0}, // FRAME_LENGTH_LINES_
+  {0x300C, 0x09B4}, // LINE_LENGTH_PCK_
+  {0x300A, 0x06EB}, // FRAME_LENGTH_LINES_
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
@@ -322,7 +322,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   // HDR Settings
   {0x3082, 0x0004}, // OPERATION_MODE_CTRL
-  {0x3238, 0x0222}, // EXPOSURE_RATIO
+  {0x3238, 0x0444}, // EXPOSURE_RATIO
   {0x3014, 0x098E}, // FINE_INTEGRATION_TIME_
   {0x321E, 0x098E}, // FINE_INTEGRATION_TIME2
   {0x3222, 0x098E}, // FINE_INTEGRATION_TIME3
@@ -331,6 +331,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x32EA, 0x3C0E}, // RESERVED_MFR_32EA
   {0x32EC, 0x72A1}, // RESERVED_MFR_32EC
   {0x31D0, 0x0001}, // COMPANDING
+  {0x3362, 0x0001}, // DC GAIN
+  {0x3370, 0x0001}, // DBLC
 
    // Initial Gains
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
@@ -341,6 +343,9 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3056, 0x0080}, // GREEN1_GAIN
   {0x305C, 0x0080}, // GREEN2_GAIN
   {0x3022, 0x00}, // GROUPED_PARAMETER_HOLD_
+
+  // Initial Integration Time
+  {0x3012, 0x256},
 };
 
 struct i2c_random_wr_payload poke_array_ov7750[] = {
