@@ -1,5 +1,4 @@
 from cereal import car
-from selfdrive.config import Conversions as CV
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
 from common.params import put_nonblocking
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
