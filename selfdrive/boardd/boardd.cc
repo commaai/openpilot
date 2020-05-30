@@ -230,7 +230,7 @@ bool usb_connect() {
     time_t rawtime;
     time(&rawtime);
 
-    struct tm * sys_time;
+    struct tm sys_time;
     gmtime_r(&rawtime, &sys_time);
 
     // Get time from RTC
@@ -473,7 +473,7 @@ void can_health(PubMaster &pm) {
     time_t rawtime;
     time(&rawtime);
 
-    struct tm * sys_time;
+    struct tm sys_time;
     gmtime_r(&rawtime, &sys_time);
 
     // Write time to RTC if it looks reasonable
