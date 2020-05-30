@@ -26,6 +26,14 @@ void dmonitoring_init(DMonitoringModelState* s) {
   s->is_rhd_checked = false;
 }
 
+template <class T>
+static T *get_buffer(kj::Array<T> &buf, size_t size) {
+  if (size > buf.size()) {
+    buf = kj::heapArray<T>(size);
+  }
+  return buf.begin();
+}
+
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
 
   uint8_t *raw_buf = (uint8_t*) stream_buf;
@@ -39,11 +47,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
 
-  size_t buf_size = cropped_width*cropped_height*3/2;
-  if (buf_size > s->cropped_buf.size()){
-    s->cropped_buf = kj::heapArray<uint8_t>(buf_size);
-  }
-  uint8_t *cropped_y_buf = s->cropped_buf.begin();
+  uint8_t *cropped_y_buf = get_buffer(s->cropped_buf, cropped_width*cropped_height*3/2);
   uint8_t *cropped_u_buf = cropped_y_buf + (cropped_width * cropped_height);
   uint8_t *cropped_v_buf = cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
 
@@ -56,11 +60,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
     }
   } else {
     // not tested
-    buf_size = cropped_width*cropped_height*3/2;
-    if (buf_size > s->premirror_cropped_buf.size()){
-      s->premirror_cropped_buf =  kj::heapArray<uint8_t>(buf_size);
-    }
-    uint8_t *premirror_cropped_y_buf = s->premirror_cropped_buf.begin();
+    uint8_t *premirror_cropped_y_buf = get_buffer(s->premirror_cropped_buf, cropped_width*cropped_height*3/2);
     uint8_t *premirror_cropped_u_buf = premirror_cropped_y_buf + (cropped_width * cropped_height);
     uint8_t *premirror_cropped_v_buf = premirror_cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
     for (int r = 0; r < height/2; r++) {
@@ -78,11 +78,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                        cropped_width, cropped_height);
   }
 
-  buf_size = resized_width*resized_height*3/2;
-  if (buf_size > s->resized_buf.size()){
-    s->resized_buf = kj::heapArray<uint8_t>(buf_size);
-  }
-  uint8_t *resized_buf = s->resized_buf.begin();
+  uint8_t *resized_buf = get_buffer(s->resized_buf, resized_width*resized_height*3/2);
   uint8_t *resized_y_buf = resized_buf;
   uint8_t *resized_u_buf = resized_y_buf + (resized_width * resized_height);
   uint8_t *resized_v_buf = resized_u_buf + ((resized_width/2) * (resized_height/2));
@@ -99,10 +95,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     mode);
 
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
-  if (yuv_buf_len > s->net_input_buf.size()){
-    s->net_input_buf = kj::heapArray<float>(yuv_buf_len);
-  }
-  float *net_input_buf = s->net_input_buf.begin();
+  float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
   // one shot conversion, O(n) anyway
   // yuvframe2tensor, normalize
   for (int r = 0; r < MODEL_HEIGHT/2; r++) {
