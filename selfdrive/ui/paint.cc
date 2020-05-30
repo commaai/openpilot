@@ -791,7 +791,7 @@ void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor c
   }
 }
 
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r){
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r){
   nvgBeginPath(vg);
   r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
   nvgFillPaint(vg, paint);
