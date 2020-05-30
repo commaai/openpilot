@@ -28,8 +28,8 @@ def can_function(pm, speed, angle, idx, cruise_button=0, is_engaged=False):
 
   msg.append(packer.make_can_msg("SCM_BUTTONS", 0, {"CRUISE_BUTTONS": cruise_button}, idx))
 
-  values = {"COUNTER_PEDAL": idx&0xF}
-  checksum = crc8_pedal(packer.make_can_msg("GAS_SENSOR", 0, {"COUNTER_PEDAL": idx&0xF}, -1)[2][:-1])
+  values = {"COUNTER_PEDAL": idx & 0xF}
+  checksum = crc8_pedal(packer.make_can_msg("GAS_SENSOR", 0, {"COUNTER_PEDAL": idx & 0xF}, -1)[2][:-1])
   values["CHECKSUM_PEDAL"] = checksum
   msg.append(packer.make_can_msg("GAS_SENSOR", 0, values, -1))
 

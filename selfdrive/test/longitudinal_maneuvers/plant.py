@@ -29,7 +29,7 @@ CP = CarInterface.get_params(CAR.CIVIC, {0: {0x201: 6}, 1: {}, 2: {}, 3: {}})
 def can_cksum(mm):
   s = 0
   for c in mm:
-    s += (c>>4)
+    s += (c >> 4)
     s += c & 0xF
   s = 8-s
   s %= 0x10
@@ -339,9 +339,9 @@ class Plant():
     # TODO: use the DBC
     if self.frame % 5 == 0:
       radar_state_msg = b'\x79\x00\x00\x00\x00\x00\x00\x00'
-      radar_msg = to_3_byte(d_rel*16.0) + \
-                  to_3_byte(int(lateral_pos_rel*16.0)&0x3ff) + \
-                  to_3s_byte(int(v_rel*32.0)) + \
+      radar_msg = to_3_byte(d_rel * 16.0) + \
+                  to_3_byte(int(lateral_pos_rel * 16.0) & 0x3ff) + \
+                  to_3s_byte(int(v_rel * 32.0)) + \
                   b"0f00000"
 
       radar_msg = binascii.unhexlify(radar_msg)

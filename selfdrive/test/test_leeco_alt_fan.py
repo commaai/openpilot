@@ -14,7 +14,7 @@ def setup_leon_fan():
       bus.write_i2c_block_data(0x67, 0xa, [0])
     else:
       bus.write_i2c_block_data(0x67, 0xa, [0x20])
-      bus.write_i2c_block_data(0x67, 0x8, [(i-1)<<6])
+      bus.write_i2c_block_data(0x67, 0x8, [(i - 1) << 6])
     time.sleep(1)
 
   bus.close()

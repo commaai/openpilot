@@ -83,7 +83,7 @@ def configure_ublox(dev):
 
 def int_to_bool_list(num):
   # for parsing bool bytes
-  return [bool(num & (1<<n)) for n in range(8)]
+  return [bool(num & (1 << n)) for n in range(8)]
 
 
 def gen_ephemeris(ephem_data):
