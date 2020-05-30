@@ -803,7 +803,7 @@ FW_VERSIONS = {
       b'\x01896630852100\x00\x00\x00\x00',
       b'\x01896630859000\x00\x00\x00\x00',
     ],
-    (Ecu.eps, 0x7a1, None):	[
+    (Ecu.eps, 0x7a1, None): [
       b'8965B45070\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
