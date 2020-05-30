@@ -133,7 +133,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
     ax.patch.set_facecolor((0.4, 0.4, 0.4))
     axs.append(ax)
 
-  plots = [] ;idxs = [] ;plot_select = []
+  plots, idxs, plot_select = [], [], []
   for i, pl_list in enumerate(plot_names):
     for j, item in enumerate(pl_list):
       plot, = axs[i].plot(arr[:, name_to_arr_idx[item]],

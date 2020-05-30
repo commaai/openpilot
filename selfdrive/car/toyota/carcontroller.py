@@ -42,8 +42,10 @@ class CarController():
     self.steer_rate_limited = False
 
     self.fake_ecus = set()
-    if CP.enableCamera: self.fake_ecus.add(Ecu.fwdCamera)
-    if CP.enableDsu: self.fake_ecus.add(Ecu.dsu)
+    if CP.enableCamera:
+      self.fake_ecus.add(Ecu.fwdCamera)
+    if CP.enableDsu:
+      self.fake_ecus.add(Ecu.dsu)
 
     self.packer = CANPacker(dbc_name)
 
