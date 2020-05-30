@@ -108,6 +108,7 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, int align, int flags, uint32_t *ha
   }
 
   LOGD("alloced: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
+  printf("alloced: %x %d %llx mapped %p\n", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
   // close(mem_mgr_alloc_cmd.out.fd);
 
   return ptr;
@@ -125,7 +126,6 @@ void release(int video0_fd, uint32_t handle) {
   ret = cam_control(video0_fd, CAM_REQ_MGR_RELEASE_BUF, &mem_mgr_release_cmd, sizeof(mem_mgr_release_cmd));
   assert(ret == 0);
 }
-
 
 void release_fd(int video0_fd, uint32_t handle) {
   // handle to fd
@@ -158,6 +158,7 @@ void sensors_poke(struct CameraState *s, int request_id) {
   assert(ret == 0);
 
   // printf("-  poke releasing for req_id %d -\n", request_id);
+  munmap(pkt, size);
   release_fd(s->video0_fd, cam_packet_handle);
 }
 
@@ -194,8 +195,10 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   assert(ret == 0);
 
   // printf("-  I2C releasing 1 -\n");
+  munmap(power, buf_desc[0].size);
   release_fd(s->video0_fd, buf_desc[0].mem_handle);
   // printf("-  I2C releasing 2 -\n");
+  munmap(pkt, size);
   release_fd(s->video0_fd, cam_packet_handle);
 }
 
@@ -478,9 +481,11 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   }
 
   // printf("-  ispc releasing 1 for sync_obj %d, req_id %d -\n", fence, request_id);
+  munmap(buf2, buf_desc[1].size);
   release_fd(s->video0_fd, buf_desc[1].mem_handle);
   // release_fd(s->video0_fd, buf_desc[0].mem_handle);
   // printf("-  ispc releasing 2 for sync_obj %d, req_id %d -\n", fence, request_id);
+  munmap(pkt, size);
   release_fd(s->video0_fd, cam_packet_handle);
 }
 
@@ -1009,6 +1014,9 @@ void cameras_run(DualCameraState *s) {
             q0 = 1;
             q1 = 1;
             q2 = 2;
+          } else {
+            printf("Unknown vidioc event source\n");
+            assert(false);
           }
           int bi = (event_data->frame_id + 3) % FRAME_BUF_COUNT;
           //int bi=0;
