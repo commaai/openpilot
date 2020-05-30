@@ -292,7 +292,7 @@ class UBloxDescriptor:
     fields = self.fields[:]
     for f in fields:
       (fieldname, alen) = ArrayParse(f)
-      if not fieldname in msg._fields:
+      if fieldname not in msg._fields:
         break
       if alen == -1:
         f1.append(msg._fields[fieldname])
@@ -328,7 +328,7 @@ class UBloxDescriptor:
     ret = self.name + ': '
     for f in self.fields:
       (fieldname, alen) = ArrayParse(f)
-      if not fieldname in msg._fields:
+      if fieldname not in msg._fields:
         continue
       v = msg._fields[fieldname]
       if isinstance(v, list):
@@ -592,7 +592,7 @@ class UBloxMessage:
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
     type = self.msg_type()
-    if not type in msg_types:
+    if type not in msg_types:
       raise UBloxError('Unknown message %s length=%u' % (str(type), len(self._buf)))
     msg_types[type].unpack(self)
     return self._fields, self._recs
@@ -602,7 +602,7 @@ class UBloxMessage:
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
     type = self.msg_type()
-    if not type in msg_types:
+    if type not in msg_types:
       raise UBloxError('Unknown message %s' % str(type))
     msg_types[type].pack(self)
 
@@ -611,7 +611,7 @@ class UBloxMessage:
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
     type = self.msg_type()
-    if not type in msg_types:
+    if type not in msg_types:
       raise UBloxError('Unknown message %s length=%u' % (str(type), len(self._buf)))
     return msg_types[type].name
 
