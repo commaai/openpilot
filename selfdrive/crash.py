@@ -11,10 +11,13 @@ from common.android import ANDROID
 if os.getenv("NOLOG") or os.getenv("NOCRASH") or not ANDROID:
   def capture_exception(*args, **kwargs):
     pass
+
   def bind_user(**kwargs):
     pass
+
   def bind_extra(**kwargs):
     pass
+
   def install():
     pass
 else:
