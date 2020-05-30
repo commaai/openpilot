@@ -14,7 +14,7 @@ class CarControllerParams():
       self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
       self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
     if car_fingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
-      self.STEER_DRIVER_ALLOWANCE = 600  # allowed driver torque before start limiting
+      self.STEER_DRIVER_ALLOWANCE = 75  # allowed driver torque before start limiting
       self.STEER_DRIVER_MULTIPLIER = 1   # weight driver torque
     self.STEER_DRIVER_FACTOR = 1         # from dbc
 
