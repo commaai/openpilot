@@ -195,7 +195,8 @@ class DBReader(DBAccessor):
     finally:
       lock.release()
 
-  def __exit__(self, type, value, traceback): pass
+  def __exit__(self, type, value, traceback):
+    pass
 
 
 class DBWriter(DBAccessor):
