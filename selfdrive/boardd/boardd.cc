@@ -477,15 +477,15 @@ void can_health(PubMaster &pm) {
     gmtime_r(&rawtime, &sys_time);
 
     // Write time to RTC if it looks reasonable
-      if (1900 + sys_time.tm_year >= 2019){
+    if (1900 + sys_time.tm_year >= 2019){
       pthread_mutex_lock(&usb_lock);
-          libusb_control_transfer(dev_handle, 0x40, 0xa1, (uint16_t)(1900 + sys_time.tm_year), 0, NULL, 0, TIMEOUT);
-          libusb_control_transfer(dev_handle, 0x40, 0xa2, (uint16_t)(1 + sys_time.tm_mon), 0, NULL, 0, TIMEOUT);
-          libusb_control_transfer(dev_handle, 0x40, 0xa3, (uint16_t)sys_time.tm_mday, 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa1, (uint16_t)(1900 + sys_time.tm_year), 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa2, (uint16_t)(1 + sys_time.tm_mon), 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa3, (uint16_t)sys_time.tm_mday, 0, NULL, 0, TIMEOUT);
       // libusb_control_transfer(dev_handle, 0x40, 0xa4, (uint16_t)(1 + sys_time.tm_wday), 0, NULL, 0, TIMEOUT);
-          libusb_control_transfer(dev_handle, 0x40, 0xa5, (uint16_t)sys_time.tm_hour, 0, NULL, 0, TIMEOUT);
-          libusb_control_transfer(dev_handle, 0x40, 0xa6, (uint16_t)sys_time.tm_min, 0, NULL, 0, TIMEOUT);
-          libusb_control_transfer(dev_handle, 0x40, 0xa7, (uint16_t)sys_time.tm_sec, 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa5, (uint16_t)sys_time.tm_hour, 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa6, (uint16_t)sys_time.tm_min, 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa7, (uint16_t)sys_time.tm_sec, 0, NULL, 0, TIMEOUT);
       pthread_mutex_unlock(&usb_lock);
     }
   }
