@@ -17,10 +17,10 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
   b2 = int(lkas["ANGLE_ENABLED"])
 
   tmp = steering_angle + 2048
-  ahi =  tmp >> 10
-  amd =  (tmp  & 0x3FF) >> 2
-  amd =  (amd >> 4) | (( amd & 0xF) << 4)
-  alo =  (tmp & 0x3) << 2
+  ahi = tmp >> 10
+  amd = (tmp  & 0x3FF) >> 2
+  amd = (amd >> 4) | (( amd & 0xF) << 4)
+  alo = (tmp & 0x3) << 2
 
   ctr = frame % 16
   # bytes:     [    1  ] [ 2 ] [             3               ]  [           4         ]

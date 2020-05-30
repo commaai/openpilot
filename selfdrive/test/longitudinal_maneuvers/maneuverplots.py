@@ -10,7 +10,7 @@ class ManeuverPlot():
   def __init__(self, title = None):
     self.time_array = []
 
-    self.gas_array =  []
+    self.gas_array = []
     self.brake_array = []
     self.steer_torque_array = []
 

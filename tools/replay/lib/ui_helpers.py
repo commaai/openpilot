@@ -88,7 +88,7 @@ def draw_path(y, x, color, img, calibration, top_down, lid_color=None):
 def draw_steer_path(speed_ms, curvature, color, img,
                     calibration, top_down, VM, lid_color=None):
   path_x = np.arange(101.)
-  path_y =  np.multiply(path_x, np.tan(np.arcsin(np.clip(path_x * curvature, -0.999, 0.999)) / 2.))
+  path_y = np.multiply(path_x, np.tan(np.arcsin(np.clip(path_x * curvature, -0.999, 0.999)) / 2.))
 
   draw_path(path_y, path_x, color, img, calibration, top_down, lid_color)
 

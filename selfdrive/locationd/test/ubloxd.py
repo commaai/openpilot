@@ -164,8 +164,8 @@ def gen_nav_data(msg, nav_frame_buffer):
   # parse GPS ephem
   gnssId = msg_meta_data['gnssId']
   if gnssId  == 0:
-    svId =  msg_meta_data['svid']
-    subframeId =  GET_FIELD_U(measurements[1]['dwrd'], 3, 8)
+    svId = msg_meta_data['svid']
+    subframeId = GET_FIELD_U(measurements[1]['dwrd'], 3, 8)
     words = []
     for m in measurements:
       words.append(m['dwrd'])

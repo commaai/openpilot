@@ -34,7 +34,7 @@ class CarInterface(CarInterfaceBase):
     tire_stiffness_factor = 0.70   # not optimized yet
 
     if candidate in [CAR.CX5]:
-      ret.mass =  3655 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3655 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 15.5
 

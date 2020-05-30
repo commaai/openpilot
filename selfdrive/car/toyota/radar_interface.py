@@ -62,7 +62,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    rr =  self._update(self.updated_messages)
+    rr = self._update(self.updated_messages)
     self.updated_messages.clear()
 
     return rr
