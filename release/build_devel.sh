@@ -65,7 +65,6 @@ git clean -xdf
 add_subtree "cereal" "cereal" master
 add_subtree "panda" "panda" master
 add_subtree "opendbc" "opendbc" master
-add_subtree "openpilot-pyextra" "pyextra" master
 
 # leave .git alone
 echo "[-] erasing old openpilot T=$SECONDS"
@@ -75,7 +74,7 @@ rm -rf $TARGET_DIR/* $TARGET_DIR/.gitmodules
 find . -maxdepth 1 -type f -delete
 
 # dont delete our subtrees
-git checkout -- cereal panda opendbc pyextra
+git checkout -- cereal panda opendbc
 
 # reset tree and get version
 cd $SOURCE_DIR

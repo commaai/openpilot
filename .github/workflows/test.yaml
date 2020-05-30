@@ -39,7 +39,7 @@ jobs:
         cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
            cppcheck_openpilot.sh .coveragerc-app .pre-commit-config.yaml $TEST_DIR
         cd $TEST_DIR
-        mkdir pyextra laika laika_repo tools release
+        mkdir laika laika_repo tools release
     - name: Build Docker image
       run: cd $TEST_DIR && eval "$BUILD"
     - name: Build openpilot
