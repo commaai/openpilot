@@ -18,6 +18,7 @@ repos:
         exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'
         args:
         - --ignore=E111,E114,E115,E116,E121,E122,E123,E124,E125,E126,E127,E128,E129,E131,E201,E202,E203,E221,E222,E225,E226,E227,E231,E241,E251,E261,E262,E265,E266,E301,E302,E303,E305,E306,E401,E402,E501,E502,E701,E702,E704,E711,E712,E713,E722,E731,E741,W503,W504
+        #- --ignore=E121,E127,E501,E114,E111
         - --statistics
 -   repo: local
     hooks:
