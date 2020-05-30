@@ -331,8 +331,9 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x32EA, 0x3C0E}, // RESERVED_MFR_32EA
   {0x32EC, 0x72A1}, // RESERVED_MFR_32EC
   {0x31D0, 0x0001}, // COMPANDING
-  {0x3362, 0x0001}, // DC GAIN
+  {0x3362, 0x0003}, // DC GAIN
   {0x3370, 0x0001}, // DBLC
+  {0x318E, 0x0100}, // PRE_HDR_GAIN_EN
 
    // Initial Gains
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_

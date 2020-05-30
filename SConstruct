@@ -215,19 +215,19 @@ if arch != "Darwin":
   SConscript(['selfdrive/camerad/SConscript'])
   SConscript(['selfdrive/modeld/SConscript'])
 
-SConscript(['selfdrive/controls/lib/cluster/SConscript'])
-SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc_model/SConscript'])
+#SConscript(['selfdrive/controls/lib/cluster/SConscript'])
+#SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
+#SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
+#SConscript(['selfdrive/controls/lib/longitudinal_mpc_model/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
-SConscript(['selfdrive/proclogd/SConscript'])
+#SConscript(['selfdrive/proclogd/SConscript'])
 
-SConscript(['selfdrive/ui/SConscript'])
+#SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
-SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/locationd/models/SConscript'])
+#SConscript(['selfdrive/locationd/SConscript'])
+#SConscript(['selfdrive/locationd/models/SConscript'])
 
 if arch == "aarch64":
   SConscript(['selfdrive/logcatd/SConscript'])
