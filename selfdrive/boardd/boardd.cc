@@ -230,8 +230,7 @@ bool usb_connect() {
     time_t rawtime;
     time(&rawtime);
 
-    struct tm sys_time;
-    gmtime_r(&rawtime, &sys_time);
+    struct tm * sys_time = gmtime(&rawtime);
 
     // Get time from RTC
     timestamp_t rtc_time;
@@ -473,8 +472,7 @@ void can_health(PubMaster &pm) {
     time_t rawtime;
     time(&rawtime);
 
-    struct tm sys_time;
-    gmtime_r(&rawtime, &sys_time);
+    struct tm * sys_time = gmtime(&rawtime);
 
     // Write time to RTC if it looks reasonable
     if (1900 + sys_time->tm_year >= 2019){
