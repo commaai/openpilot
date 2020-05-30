@@ -60,7 +60,7 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
 
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)
 
-def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight):
+def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight, fcw):
   # Not a bit shift, dash can round up based on low 4 bits.
   target_speed = int(target_speed_kph * 16) & 0xfff
 
@@ -71,7 +71,8 @@ def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lea
     "ACCGapLevel" : 3 * acc_engaged, # 3 "far", 0 "inactive"
     "ACCCmdActive" : acc_engaged,
     "ACCAlwaysOne2" : 1,
-    "ACCLeadCar" : lead_car_in_sight
+    "ACCLeadCar" : lead_car_in_sight,
+    "FCWAlert": fcw
   }
 
   return packer.make_can_msg("ASCMActiveCruiseControlStatus", bus, values)
