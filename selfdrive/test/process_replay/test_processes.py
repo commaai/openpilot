@@ -139,7 +139,7 @@ if __name__ == "__main__":
   results: Any = {}
   for car_brand, segment in segments:
     if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
-        (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
+       (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
       continue
 
     print("***** testing route segment %s *****\n" % segment)
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
-          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
+         (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
