@@ -72,7 +72,7 @@ class URLFile(object):
         print("get %s %r %.f slow" % (self._url, trange, t2-t1))
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
-    if response_code == 416: #  Requested Range Not Satisfiable
+    if response_code == 416:  # Requested Range Not Satisfiable
       return ""
     if response_code != 206 and response_code != 200:
       raise Exception("Error {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
