@@ -247,7 +247,7 @@ void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float 
 }
 
 void model_publish(PubMaster &pm, uint32_t frame_id,
-                   const ModelDataRaw net_outputs, uint64_t timestamp_eof) {
+                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
     // make msg
     capnp::MallocMessageBuilder msg;
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -296,7 +296,7 @@ void model_publish(PubMaster &pm, uint32_t frame_id,
   }
 
 void posenet_publish(PubMaster &pm, uint32_t frame_id,
-                   const ModelDataRaw net_outputs, uint64_t timestamp_eof) {
+                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
