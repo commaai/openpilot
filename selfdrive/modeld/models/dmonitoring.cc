@@ -27,11 +27,11 @@ void dmonitoring_init(DMonitoringModelState* s) {
 }
 
 template <class T>
-static inline T *get_buffer(kj::Array<T> &buf, const size_t size) {
+static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
   if (buf.size() < size) {
-    buf = kj::heapArray<T>(size);
+    buf.resize(size);
   }
-  return buf.begin();
+  return buf.data();
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
