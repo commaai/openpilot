@@ -5,7 +5,8 @@ import threading
 import importlib
 
 if "CI" in os.environ:
-  tqdm = lambda x: x
+  def tqdm(x):
+    return x
 else:
   from tqdm import tqdm   # type: ignore
 
