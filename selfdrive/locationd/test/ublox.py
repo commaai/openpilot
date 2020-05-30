@@ -12,7 +12,8 @@ for ublox version 8, not all functions may work.
 
 
 import struct
-import time, os
+import os
+import time
 
 # protocol constants
 PREAMBLE1 = 0xb5
