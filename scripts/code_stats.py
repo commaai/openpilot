@@ -38,4 +38,3 @@ for f in sorted(pyf):
 
 print("%d lines of parsed openpilot python" % tlns)
 #print(sorted(list(imps)))
-

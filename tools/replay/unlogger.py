@@ -341,7 +341,7 @@ def get_arg_parser():
   parser.add_argument("route_name", type=(lambda x: x.replace("#", "|")), nargs="?",
                       help="The route whose messages will be published.")
   parser.add_argument("data_dir", nargs='?', default=os.getenv('UNLOGGER_DATA_DIR'),
-		      help="Path to directory in which log and camera files are located.")
+          help="Path to directory in which log and camera files are located.")
 
   parser.add_argument("--no-loop", action="store_true", help="Stop at the end of the replay.")
 
