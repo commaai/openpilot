@@ -138,51 +138,58 @@ FW_VERSIONS = {
     # 2018 Subaru Forester 2.5i Touring - UDM / @Oreo
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
-      b'}\x97\x14@',
+      b'\x7d\x97\x14\x40',
     ],
     (Ecu.eps, 0x746, None): [
-      b'}\xc0\x10\x00',
+      b'\x7d\xc0\x10\x00',
     ],
     (Ecu.srs, 0x780, None): [
-      b'\x90\x00%\x00',
+      b'\x90\x00\x25\x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
-      b'\x00\x00d5\x1f@ \t',
+      b'\x00\x00\x64\x35\x1f\x40\x20\x09',
     ],
     (Ecu.engine, 0x7e0, None): [
-      b'\xba"@p\x07',
+      b'\xba\x22\x40\x70\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xdc\xf2``\x00'
+      b'\xdc\xf2\x60\x60\x00',
     ],
   },
   CAR.OUTBACK: {
     # 2017 Outback Limited 3.6r - UDM / @Anthony
     # 2016 Outback Limited 2.5 - UDM / @aeiro
+    # 2015 Outback Limited 2.5 - ADM / @Bugsy
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
-      b'{\x9a\xac\x00',
-      b'k\x97\xac\x00',
+      b'\x7b\x9a\xac\x00',
+      b'\x5b\xb0\x00\x00',
+      b'\x5b\xf7\xbc\x03',
     ],
     (Ecu.eps, 0x746, None): [
-      b'k\xb0\x00\x00',
-      b'[\xb0\x00\x00',
+      b'\x6b\xb0\x00\x00',
+      b'\x5b\xb0\x00\x00',
+      b'\x4b\xb0\x00\x02',
     ],
     (Ecu.srs, 0x780, None): [
-      b'\xf1\x00X\x06\x00',
+      b'\xf1\x00\x58\x06\x00',
       b'\x93\x12\x07\x01\x00',
+      b'\x93\x12\x05\x08\x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
-      b'\x00\x00c\xec\x1f@ \x04',
-      b'\x00\x00c\xd1\x1f@\x10\x17',
+      b'\x00\x00\x63\xec\x1f\x40\x20\x04',
+      b'\x00\x00\x63\xd1\x1f\x40\x10\x17',
+      b'\xf1\x00\xf0\xe0\x0e',
     ],
     (Ecu.engine, 0x7e0, None): [
-      b'\xb4+@p\x07',
-      b'\xab"@@\x07',
+      b'\xb4\x2b\x40\x70\x07',
+      b'\xab\x22\x40\x40\x07',
+      b'\xa0\x62\x41\x71\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00\xa4\x10@',
-      b'\xbe\xf2@\x80\x00',
+      b'\xf1\x00\xa4\x10\x40',
+      b'\xbe\xf2\x40\x80\x00',
+      b'\xbf\xe2\x40\x80\x00',
     ],
   },
 }
