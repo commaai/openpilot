@@ -27,7 +27,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
 }
 
 template <class T>
-static T *get_buffer(kj::Array<T> &buf, size_t size) {
+static inline T *get_buffer(kj::Array<T> &buf, size_t size) {
   if (size > buf.size()) {
     buf = kj::heapArray<T>(size);
   }
