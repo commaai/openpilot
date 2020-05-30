@@ -132,6 +132,7 @@ def get_network_type():
 
 def get_network_strength(network_type):
   network_strength = NetworkStrength.unknown
+
   # from SignalStrength.java
   def get_lte_level(rsrp, rssnr):
     INT_MAX = 2147483647

@@ -50,12 +50,16 @@ class URLFile(object):
 
     if self._debug:
       print("downloading", self._url)
+
       def header(x):
         if b'MISS' in x:
           print(x.strip())
+
       c.setopt(pycurl.HEADERFUNCTION, header)
+
       def test(debug_type, debug_msg):
        print("  debug(%d): %s" % (debug_type, debug_msg.strip()))
+
       c.setopt(pycurl.VERBOSE, 1)
       c.setopt(pycurl.DEBUGFUNCTION, test)
       t1 = time.time()

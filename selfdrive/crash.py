@@ -41,6 +41,7 @@ else:
   def install():
     # installs a sys.excepthook
     __excepthook__ = sys.excepthook
+
     def handle_exception(*exc_info):
       if exc_info[0] not in (KeyboardInterrupt, SystemExit):
         capture_exception()
