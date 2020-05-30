@@ -93,7 +93,7 @@ def draw_steer_path(speed_ms, curvature, color, img,
   draw_path(path_y, path_x, color, img, calibration, top_down, lid_color)
 
 def draw_lead_car(closest, top_down):
-  if closest != None:
+  if closest is not None:
     closest_y = int(round(UP.lidar_car_y - closest * UP.lidar_zoom))
     if closest_y > 0:
       top_down[1][int(round(UP.lidar_car_x - METER_WIDTH * 2)):int(
@@ -118,12 +118,10 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
                     "p": (0,1,1),
                     "m": (1,0,1) }
 
-  if bigplots == True:
+  if bigplots:
     fig = plt.figure(figsize=(6.4, 7.0))
-  elif bigplots == False:
-    fig = plt.figure()
   else:
-    fig = plt.figure(figsize=bigplots)
+    fig = plt.figure()
 
   fig.set_facecolor((0.2,0.2,0.2))
 
