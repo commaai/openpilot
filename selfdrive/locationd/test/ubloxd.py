@@ -244,7 +244,7 @@ def init_reader():
       return dev
     except serial.serialutil.SerialException as e:
       print(e)
-      port_counter = (port_counter + 1)%len(ports)
+      port_counter = (port_counter + 1) % len(ports)
       time.sleep(2)
 
 def handle_msg(dev, msg, nav_frame_buffer):

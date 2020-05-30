@@ -56,7 +56,7 @@ def can_function(pm, speed, angle, idx, cruise_button=0, is_engaged=False):
   msg.append(packer.make_can_msg("BRAKE_COMMAND", 2, {}, idx))
 
   # radar
-  if idx%5 == 0:
+  if idx % 5 == 0:
     msg.append(rpacker.make_can_msg("RADAR_DIAGNOSTIC", 1, {"RADAR_STATE": 0x79}, -1))
     for i in range(16):
       msg.append(rpacker.make_can_msg("TRACK_%d" % i, 1, {"LONG_DIST": 255.5}, -1))

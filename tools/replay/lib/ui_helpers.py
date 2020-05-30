@@ -73,7 +73,7 @@ def draw_path(y, x, color, img, calibration, top_down, lid_color=None):
     uv_model > 0, axis=1), uv_model[:, 0] < img.shape[1] - 1, uv_model[:, 1] <
                                                   img.shape[0] - 1))]
 
-  for i, j  in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)):
+  for i, j in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)):
     img[uv_model_dots[:, 1] + i, uv_model_dots[:, 0] + j] = color
 
   # draw lidar path point on lidar
