@@ -134,9 +134,9 @@ def gen_solution(msg):
                                       msg_data['day'],
                                       msg_data['hour'],
                                       msg_data['min'],
-                                      msg_data['sec'])
-                 - datetime.datetime(1970,1,1)).total_seconds())*1e+03
-                 + msg_data['nano']*1e-06)
+                                      msg_data['sec']) -
+                 datetime.datetime(1970,1,1)).total_seconds())*1e+03 +
+                 msg_data['nano']*1e-06)
   gps_fix = {'bearing': msg_data['headMot']*1e-05,  # heading of motion in degrees
              'altitude': msg_data['height']*1e-03,  # altitude above ellipsoid
              'latitude': msg_data['lat']*1e-07,  # latitude in degrees
