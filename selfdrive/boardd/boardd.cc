@@ -241,7 +241,7 @@ bool usb_connect() {
     //printf("RTC: %d-%d-%d\t%d:%d:%d\n", rtc_time.year, rtc_time.month, rtc_time.day, rtc_time.hour, rtc_time.minute, rtc_time.second);
 
     // Update system time from RTC if it looks off, and RTC time is good
-      if (1900 + sys_time.tm_year < 2019 && rtc_time.year >= 2019){
+    if (1900 + sys_time.tm_year < 2019 && rtc_time.year >= 2019){
       LOGE("System time wrong, setting from RTC");
 
       struct tm new_time = { 0 };
@@ -599,7 +599,7 @@ void *can_send_thread(void *crap) {
       can_send(sm["sendcan"]);
     }
   }
-  
+
   return NULL;
 }
 
