@@ -1215,10 +1215,10 @@ void party(VisionState *s) {
 
   zsock_signal(s->terminate_pub, 0);
 
-#ifndef QCOM2
-  //LOG("joining frontview_thread");
-  //err = pthread_join(frontview_thread_handle, NULL);
-  //assert(err == 0);
+#if !defined(QCOM2) || !defined(QCOM_REPLAY)
+  LOG("joining frontview_thread");
+  err = pthread_join(frontview_thread_handle, NULL);
+  assert(err == 0);
 #endif
 
   LOG("joining visionserver_thread");
