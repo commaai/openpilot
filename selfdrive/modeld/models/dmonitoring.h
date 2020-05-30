@@ -31,6 +31,10 @@ typedef struct DMonitoringModelState {
   bool is_rhd;
   bool is_rhd_checked;
   float output[OUTPUT_SIZE];
+  kj::Array<uint8_t> resized_buf;
+  kj::Array<uint8_t> cropped_buf;
+  kj::Array<uint8_t> premirror_cropped_buf;
+  kj::Array<float> net_input_buf;
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);
