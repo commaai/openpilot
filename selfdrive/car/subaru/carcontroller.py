@@ -12,10 +12,9 @@ class CarControllerParams():
     self.STEER_DELTA_DOWN = 70           # torque decrease per refresh
     if car_fingerprint == CAR.IMPREZA:
       self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
-      self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
-    if car_fingerprint in (CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER):
-      self.STEER_DRIVER_ALLOWANCE = 600  # allowed driver torque before start limiting
-      self.STEER_DRIVER_MULTIPLIER = 1   # weight driver torque
+    if car_fingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
+      self.STEER_DRIVER_ALLOWANCE = 75   # allowed driver torque before start limiting
+    self.STEER_DRIVER_MULTIPLIER = 10    # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1         # from dbc
 
 class CarController():
@@ -62,7 +61,7 @@ class CarController():
     ### DISENGAGE ###
 
     # button control
-    if CS.CP.carFingerprint in (CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER):
+    if CS.CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
       if self.es_accel_cnt != CS.es_accel_msg["Counter"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged

@@ -92,9 +92,9 @@ FINGERPRINTS = {
 STEER_THRESHOLD = {
   CAR.IMPREZA: 80,
   CAR.FORESTER: 80,
-  CAR.OUTBACK_2015: 600,
-  CAR.LEGACY_2015: 600,
-  CAR.FORESTER_2017: 600,
+  CAR.OUTBACK_2015: 75,
+  CAR.LEGACY_2015: 75,
+  CAR.FORESTER_2017: 75,
 }
 
 ECU_FINGERPRINT = {
@@ -104,7 +104,7 @@ ECU_FINGERPRINT = {
 DBC = {
   CAR.IMPREZA: dbc_dict('subaru_global_2017', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017', None),
-  CAR.FORESTER_2017: dbc_dict('subaru_outback_2015_eyesight', None),
-  CAR.OUTBACK_2015: dbc_dict('subaru_outback_2015_eyesight', None),
-  CAR.LEGACY_2015: dbc_dict('subaru_outback_2015_eyesight', None),
+  CAR.FORESTER_2017: dbc_dict('subaru_forester_2017_generated', None),
+  CAR.OUTBACK_2015: dbc_dict('subaru_outback_2015_generated', None),
+  CAR.LEGACY_2015: dbc_dict('subaru_outback_2015_generated', None),
 }
