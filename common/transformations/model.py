@@ -100,7 +100,7 @@ def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height=model
 
   # This function is super slow, so skip it if height is very close to canonical
   # TODO: speed it up!
-  if abs(height - model_height) > 0.001: #
+  if abs(height - model_height) > 0.001:
     camera_from_model_camera = get_model_height_transform(camera_frame_from_road_frame, height)
   else:
     camera_from_model_camera = np.eye(3)

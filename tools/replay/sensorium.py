@@ -31,7 +31,7 @@ if __name__ == "__main__":
     sm.update(timeout=1)
     rgb_img_raw = fpkt.frame.image
     imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3))
-    imgff = imgff[:, :, ::-1] # Convert BGR to RGB
+    imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
 
     if sm.updated['liveCalibration']:
       intrinsic_matrix = eon_intrinsics

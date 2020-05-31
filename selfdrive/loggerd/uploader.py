@@ -134,7 +134,7 @@ class Uploader():
           is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME)
         except OSError:
           cloudlog.event("uploader_getxattr_failed", exc=self.last_exc, key=key, fn=fn)
-          is_uploaded = True # deleter could have deleted
+          is_uploaded = True  # deleter could have deleted
         if is_uploaded:
           continue
 

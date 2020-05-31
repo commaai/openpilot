@@ -23,31 +23,31 @@ _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
 _FACE_THRESHOLD = 0.4
 _EYE_THRESHOLD = 0.6
-_BLINK_THRESHOLD = 0.5 # 0.225
+_BLINK_THRESHOLD = 0.5  # 0.225
 _BLINK_THRESHOLD_SLACK = 0.65
 _BLINK_THRESHOLD_STRICT = 0.5
-_PITCH_WEIGHT = 1.35 # 1.5  # pitch matters a lot more
+_PITCH_WEIGHT = 1.35  # 1.5  # pitch matters a lot more
 _POSESTD_THRESHOLD = 0.14
 _METRIC_THRESHOLD = 0.4
 _METRIC_THRESHOLD_SLACK = 0.55
 _METRIC_THRESHOLD_STRICT = 0.4
-_PITCH_POS_ALLOWANCE = 0.12 # rad, to not be too sensitive on positive pitch
-_PITCH_NATURAL_OFFSET = 0.02 # people don't seem to look straight when they drive relaxed, rather a bit up
-_YAW_NATURAL_OFFSET = 0.08 # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
+_PITCH_POS_ALLOWANCE = 0.12  # rad, to not be too sensitive on positive pitch
+_PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
+_YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
 _HI_STD_TIMEOUT = 5
-_HI_STD_FALLBACK_TIME = 10 # fall back to wheel touch if model is uncertain for a long time
+_HI_STD_FALLBACK_TIME = 10  # fall back to wheel touch if model is uncertain for a long time
 _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
-_POSE_CALIB_MIN_SPEED = 13 # 30 mph
-_POSE_OFFSET_MIN_COUNT = 600 # valid data counts before calibration completes, 1 seg is 600 counts
-_POSE_OFFSET_MAX_COUNT = 3600 # stop deweighting new data after 6 min, aka "short term memory"
+_POSE_CALIB_MIN_SPEED = 13  # 30 mph
+_POSE_OFFSET_MIN_COUNT = 600  # valid data counts before calibration completes, 1 seg is 600 counts
+_POSE_OFFSET_MAX_COUNT = 3600  # stop deweighting new data after 6 min, aka "short term memory"
 
-_RECOVERY_FACTOR_MAX = 5. # relative to minus step change
-_RECOVERY_FACTOR_MIN = 1.25 # relative to minus step change
+_RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
+_RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
 
-MAX_TERMINAL_ALERTS = 3 # not allowed to engage after 3 terminal alerts
-MAX_TERMINAL_DURATION = 300 # 30s
+MAX_TERMINAL_ALERTS = 3  # not allowed to engage after 3 terminal alerts
+MAX_TERMINAL_DURATION = 300  # 30s
 
 # model output refers to center of cropped image, so need to apply the x displacement offset
 RESIZED_FOCAL = 320.0
@@ -76,7 +76,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
 
   # no calib for roll
   pitch -= rpy_calib[1]
-  yaw -= rpy_calib[2] * (1 - 2 * int(is_rhd)) # lhd -> -=, rhd -> +=
+  yaw -= rpy_calib[2] * (1 - 2 * int(is_rhd))  # lhd -> -=, rhd -> +=
   return roll, pitch, yaw
 
 class DriverPose():
@@ -128,7 +128,7 @@ class DriverStatus():
         self.step_change = DT_DMON / _DISTRACTED_TIME
       else:
         self.step_change = 0.
-      return # no exploit after orange alert
+      return  # no exploit after orange alert
     elif self.awareness <= 0.:
       return
 

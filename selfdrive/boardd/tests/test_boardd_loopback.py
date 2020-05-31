@@ -14,9 +14,9 @@ def get_test_string():
 BUS = 0
 
 def main():
-  rcv = sub_sock('can') # port 8006
-  snd = pub_sock('sendcan') # port 8017
-  time.sleep(0.3) # wait to bind before send/recv
+  rcv = sub_sock('can')  # port 8006
+  snd = pub_sock('sendcan')  # port 8017
+  time.sleep(0.3)  # wait to bind before send/recv
 
   for i in range(10):
     print("Loop %d" % i)

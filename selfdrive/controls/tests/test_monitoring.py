@@ -11,7 +11,7 @@ from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALE
 
 EventName = car.CarEvent.EventName
 
-_TEST_TIMESPAN = 120 # seconds
+_TEST_TIMESPAN = 120  # seconds
 _DISTRACTED_SECONDS_TO_ORANGE = _DISTRACTED_TIME - _DISTRACTED_PROMPT_TIME_TILL_TERMINAL + 1
 _DISTRACTED_SECONDS_TO_RED = _DISTRACTED_TIME + 1
 _INVISIBLE_SECONDS_TO_ORANGE = _AWARENESS_TIME - _AWARENESS_PROMPT_TIME_TILL_TERMINAL + 1
@@ -121,7 +121,7 @@ class TestMonitoring(unittest.TestCase):
   #                          driver dodges, and then touches wheel to no avail, disengages and reengages
   #  - orange/red alert should remain after disappearance, and only disengaging clears red
   def test_biggest_comma_fan(self):
-    _invisible_time = 2 # seconds
+    _invisible_time = 2  # seconds
     ds_vector = always_distracted[:]
     interaction_vector = always_false[:]
     op_vector = always_true[:]
@@ -138,7 +138,7 @@ class TestMonitoring(unittest.TestCase):
   # 5. op engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
   #  - both actions should clear the alert, but momentary appearence should not
   def test_sometimes_transparent_commuter(self):
-      _visible_time = np.random.choice([1,10]) # seconds
+      _visible_time = np.random.choice([1,10])  # seconds
       # print _visible_time
       ds_vector = always_no_face[:]*2
       interaction_vector = always_false[:]*2
@@ -160,7 +160,7 @@ class TestMonitoring(unittest.TestCase):
   # 6. op engaged, invisible driver, down to red, driver appears and then touches wheel, then disengages/reengages
   #  - only disengage will clear the alert
   def test_last_second_responder(self):
-    _visible_time = 2 # seconds
+    _visible_time = 2  # seconds
     ds_vector = always_no_face[:]
     interaction_vector = always_false[:]
     op_vector = always_true[:]
@@ -184,7 +184,7 @@ class TestMonitoring(unittest.TestCase):
   # 8. op engaged, car stops at traffic light, down to orange, no action, then car starts moving
   #  - should only reach green when stopped, but continues counting down on launch
   def test_long_traffic_light_victim(self):
-    _redlight_time = 60 # seconds
+    _redlight_time = 60  # seconds
     standstill_vector = always_true[:]
     standstill_vector[int(_redlight_time/DT_DMON):] = [False] * int((_TEST_TIMESPAN-_redlight_time)/DT_DMON)
     events_output = run_DState_seq(always_distracted, always_false, always_true, standstill_vector)[0]
@@ -217,7 +217,7 @@ class TestMonitoring(unittest.TestCase):
     self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL))/DT_DMON)].names[1], EventName.preDriverDistracted)
     self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL))/DT_DMON)].names[1], EventName.promptDriverDistracted)
     self.assertEqual(events_output[int((_DISTRACTED_TIME+1)/DT_DMON)].names[1], EventName.promptDriverDistracted)
-    self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)].names[1], EventName.promptDriverDistracted) # set_timer blocked
+    self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)].names[1], EventName.promptDriverDistracted)  # set_timer blocked
 
 if __name__ == "__main__":
   print('MAX_TERMINAL_ALERTS', MAX_TERMINAL_ALERTS)

@@ -134,7 +134,7 @@ def ui_thread(addr, frame_address):
 
     if rgb_img_raw and len(rgb_img_raw) == FULL_FRAME_SIZE[0] * FULL_FRAME_SIZE[1] * 3:
       imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3))
-      imgff = imgff[:, :, ::-1] # Convert BGR to RGB
+      imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
       cv2.warpAffine(imgff, np.dot(img_transform, _BB_TO_FULL_FRAME)[:2],
         (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
 

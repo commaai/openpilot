@@ -179,7 +179,7 @@ class CarState(CarStateBase):
     self.prev_cruise_setting = self.cruise_setting
 
     # ******************* parse out can *******************
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT): # TODO: find wheels moving bit in dbc
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT):  # TODO: find wheels moving bit in dbc
       ret.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN'])
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -252,7 +252,7 @@ class CarState(CarStateBase):
     # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
       self.user_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
-      self.user_gas_pressed = self.user_gas > 1e-5 # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
+      self.user_gas_pressed = self.user_gas > 1e-5  # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
       ret.gasPressed = self.user_gas_pressed
     else:
       ret.gasPressed = self.pedal_gas > 1e-5

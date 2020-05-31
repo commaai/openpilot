@@ -64,7 +64,7 @@ class VisionTest():
       raise ValueError("Bad model name: {}".format(model))
 
     prevdir = os.getcwd()
-    os.chdir(_visiond_dir) # tmp hack to find kernels
+    os.chdir(_visiond_dir)  # tmp hack to find kernels
     os.environ['BASEDIR'] = BASEDIR
     self._visiontest_c = self.clib.visiontest_create(
       temporal_model, disable_model, self._input_size[0], self._input_size[1],

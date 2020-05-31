@@ -60,9 +60,9 @@ def car_plant(pos, speed, grade, gas, brake):
   #*** longitudinal model ***
   # find speed where peak torque meets peak power
   force_brake = brake * force_brake_peak * brake_to_peak_linear_slope
-  if speed < speed_base: # torque control
+  if speed < speed_base:  # torque control
     force_gas = gas * force_peak * gas_to_peak_linear_slope
-  else: # power control
+  else:  # power control
     force_gas = gas * power_peak / speed * gas_to_peak_linear_slope
 
   force_grade = - grade * mass  # positive grade means uphill

@@ -343,7 +343,7 @@ routes = {
     'enableDsu': False,
   },
   "1dd19ceed0ee2b48|2018-12-22--17-36-49": {
-    'carFingerprint': TOYOTA.LEXUS_IS, # 300 hybrid
+    'carFingerprint': TOYOTA.LEXUS_IS,  # 300 hybrid
     'enableCamera': True,
     'enableDsu': False,
   },

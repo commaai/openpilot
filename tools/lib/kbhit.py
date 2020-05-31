@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     if kb.kbhit():
       c = kb.getch()
-      if ord(c) == 27: # ESC
+      if ord(c) == 27:  # ESC
         break
       print(c)
 
