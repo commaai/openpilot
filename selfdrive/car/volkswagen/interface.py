@@ -1,5 +1,4 @@
 from cereal import car
-from selfdrive.config import Conversions as CV
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
 from common.params import put_nonblocking
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
@@ -33,35 +32,23 @@ class CarInterface(CarInterfaceBase):
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
 
       # Additional common MQB parameters that may be overridden per-vehicle
-      ret.steerRateCost = 0.5
-      ret.steerActuatorDelay = 0.05 # Hopefully all MQB racks are similar here
+      ret.steerRateCost = 1.0
+      ret.steerActuatorDelay = 0.05  # Hopefully all MQB racks are similar here
       ret.steerLimitTimer = 0.4
 
-      # As a starting point for speed-adjusted lateral tuning, use the example
-      # map speed breakpoints from a VW Tiguan (SSP 399 page 9). It's unclear
-      # whether the driver assist map breakpoints have any direct bearing on
-      # HCA assist torque, but if they're good breakpoints for the driver,
-      # they're probably good breakpoints for HCA as well. OP won't be driving
-      # 250kph/155mph but it provides interpolation scaling above 100kmh/62mph.
-      ret.lateralTuning.pid.kpBP = [0., 15 * CV.KPH_TO_MS, 50 * CV.KPH_TO_MS]
-      ret.lateralTuning.pid.kiBP = [0., 15 * CV.KPH_TO_MS, 50 * CV.KPH_TO_MS]
+      ret.lateralTuning.pid.kpBP = [0.]
+      ret.lateralTuning.pid.kiBP = [0.]
 
-      # FIXME: Per-vehicle parameters need to be reintegrated.
-      # For the time being, per-vehicle stuff is being archived since we
-      # can't auto-detect very well yet. Now that tuning is figured out,
-      # averaged params should work reasonably on a range of cars. Owners
-      # can tweak here, as needed, until we have car type auto-detection.
-
-      ret.mass = 1700 + STD_CARGO_KG
-      ret.wheelbase = 2.75
+      ret.mass = 1500 + STD_CARGO_KG
+      ret.wheelbase = 2.64
       ret.centerToFront = ret.wheelbase * 0.45
       ret.steerRatio = 15.6
       ret.lateralTuning.pid.kf = 0.00006
-      ret.lateralTuning.pid.kpV = [0.15, 0.25, 0.60]
-      ret.lateralTuning.pid.kiV = [0.05, 0.05, 0.05]
-      tire_stiffness_factor = 0.6
+      ret.lateralTuning.pid.kpV = [0.6]
+      ret.lateralTuning.pid.kiV = [0.2]
+      tire_stiffness_factor = 1.0
 
-    ret.enableCamera = True # Stock camera detection doesn't apply to VW
+    ret.enableCamera = True  # Stock camera detection doesn't apply to VW
     ret.transmissionType = car.CarParams.TransmissionType.automatic
 
     # TODO: get actual value, for now starting with reasonable value for
