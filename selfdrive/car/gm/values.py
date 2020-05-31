@@ -11,24 +11,24 @@ class CAR:
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
 
 class CruiseButtons:
-  INIT        = 0
-  UNPRESS     = 1
-  RES_ACCEL   = 2
-  DECEL_SET   = 3
-  MAIN        = 5
-  CANCEL      = 6
+  INIT = 0
+  UNPRESS = 1
+  RES_ACCEL = 2
+  DECEL_SET = 3
+  MAIN = 5
+  CANCEL = 6
 
 class AccState:
-  OFF        = 0
-  ACTIVE     = 1
-  FAULTED    = 3
+  OFF = 0
+  ACTIVE = 1
+  FAULTED = 3
   STANDSTILL = 4
 
 class CanBus:
   POWERTRAIN = 0
-  OBSTACLE   = 1
-  CHASSIS    = 2
-  SW_GMLAN   = 3
+  OBSTACLE = 1
+  CHASSIS = 2
+  SW_GMLAN = 3
 
 def is_eps_status_ok(eps_status, car_fingerprint):
   return eps_status in [0, 1]

@@ -2,8 +2,8 @@
 import pygame  # pylint: disable=import-error
 
 # Define some colors
-BLACK    = (   0,   0,   0)
-WHITE    = ( 255, 255, 255)
+BLACK = (   0,   0,   0)
+WHITE = ( 255, 255, 255)
 
 # This is a simple class that will help us print to the screen
 # It has nothing to do with the joysticks, just outputting the
