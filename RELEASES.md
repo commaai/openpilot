@@ -1,3 +1,7 @@
+Version 0.8 (2020-xx-xx)
+========================
+ * White panda is no longer supported, upgrade to comma two or black panda
+
 Version 0.7.6 (2020-06-05)
 ========================
 * White panda is deprecated, upgrade to comma two or black panda

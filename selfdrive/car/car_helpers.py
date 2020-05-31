@@ -22,8 +22,6 @@ def get_startup_event(car_recognized, controller_available, hw_type):
     event = EventName.startupNoCar
   elif car_recognized and not controller_available:
     event = EventName.startupNoControl
-  elif hw_type == HwType.whitePanda:
-    event = EventName.startupWhitePanda
   return event
 
 
