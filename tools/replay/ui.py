@@ -63,7 +63,7 @@ def ui_thread(addr, frame_address):
 
   camera_surface = pygame.surface.Surface((640, 480), 0, 24).convert()
   cameraw_surface = pygame.surface.Surface(MODEL_INPUT_SIZE, 0, 24).convert()
-  top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y),0,8)
+  top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
 
   frame = messaging.sub_sock('frame', addr=addr, conflate=True)
   sm = messaging.SubMaster(['carState', 'plan', 'carControl', 'radarState', 'liveCalibration', 'controlsState', 'liveTracks', 'model', 'liveMpc', 'liveParameters', 'pathPlan'], addr=addr)
@@ -113,7 +113,7 @@ def ui_thread(addr, frame_address):
   while 1:
     list(pygame.event.get())
 
-    screen.fill((64,64,64))
+    screen.fill((64, 64, 64))
     lid_overlay = lid_overlay_blank.copy()
     top_down = top_down_surface, lid_overlay
 
@@ -122,7 +122,7 @@ def ui_thread(addr, frame_address):
     rgb_img_raw = fpkt.frame.image
 
     if fpkt.frame.transform:
-      img_transform = np.array(fpkt.frame.transform).reshape(3,3)
+      img_transform = np.array(fpkt.frame.transform).reshape(3, 3)
     else:
       # assume frame is flipped
       img_transform = np.array([
@@ -200,17 +200,17 @@ def ui_thread(addr, frame_address):
     for lead in [sm['radarState'].leadOne, sm['radarState'].leadTwo]:
       if lead.status:
         if calibration is not None:
-          draw_lead_on(img, lead.dRel, lead.yRel, calibration, color=(192,0,0))
+          draw_lead_on(img, lead.dRel, lead.yRel, calibration, color=(192, 0, 0))
 
         draw_lead_car(lead.dRel, top_down)
 
     # *** blits ***
-    pygame.surfarray.blit_array(camera_surface, img.swapaxes(0,1))
+    pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
     screen.blit(camera_surface, (0, 0))
 
     # display alerts
-    alert_line1 = alert1_font.render(sm['controlsState'].alertText1, True, (255,0,0))
-    alert_line2 = alert2_font.render(sm['controlsState'].alertText2, True, (255,0,0))
+    alert_line1 = alert1_font.render(sm['controlsState'].alertText1, True, (255, 0, 0))
+    alert_line2 = alert2_font.render(sm['controlsState'].alertText2, True, (255, 0, 0))
     screen.blit(alert_line1, (180, 150))
     screen.blit(alert_line2, (180, 190))
 
@@ -229,7 +229,7 @@ def ui_thread(addr, frame_address):
     screen.blit(cameraw_surface, (320, 480))
 
     pygame.surfarray.blit_array(*top_down)
-    screen.blit(top_down[0], (640,0))
+    screen.blit(top_down[0], (640, 0))
 
     i = 0
     SPACING = 25

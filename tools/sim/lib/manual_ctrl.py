@@ -167,19 +167,19 @@ def wheel_poll_thread(q):
         q.put(str("steer_%f" % normalized))
 
     if mtype & 0x01: # buttons
-      if number in [0,19]: # X
+      if number in [0, 19]: # X
         if value == 1: # press down
           q.put(str("cruise_down"))
 
-      if number in [3,18]: # triangle
+      if number in [3, 18]: # triangle
         if value == 1: # press down
           q.put(str("cruise_up"))
 
-      if number in [1,6]: # square
+      if number in [1, 6]: # square
         if value == 1: # press down
           q.put(str("cruise_cancel"))
 
-      if number in [10,21]: # R3
+      if number in [10, 21]: # R3
         if value == 1: # press down
           q.put(str("reverse_switch"))
 

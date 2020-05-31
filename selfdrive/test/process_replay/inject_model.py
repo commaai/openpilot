@@ -28,7 +28,7 @@ def regen_model(msgs, pm, frame_reader, model_sock):
     if w == 'frame':
       msg = msg.as_builder()
 
-      img = frame_reader.get(fidx, pix_fmt="rgb24")[0][:,::-1]
+      img = frame_reader.get(fidx, pix_fmt="rgb24")[0][:, ::-1]
 
       msg.frame.image = img.flatten().tobytes()
 

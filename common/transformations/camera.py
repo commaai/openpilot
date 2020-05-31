@@ -59,7 +59,7 @@ def vp_from_ke(m):
 
   The vanishing point is defined as lim x->infinity C (x, 0, 0, 1).T
   """
-  return (m[0, 0]/m[2,0], m[1,0]/m[2,0])
+  return (m[0, 0]/m[2, 0], m[1, 0]/m[2, 0])
 
 
 def vp_from_rpy(rpy):
@@ -81,10 +81,10 @@ def normalize(img_pts, intrinsics=eon_intrinsics):
   img_pts = np.array(img_pts)
   input_shape = img_pts.shape
   img_pts = np.atleast_2d(img_pts)
-  img_pts = np.hstack((img_pts, np.ones((img_pts.shape[0],1))))
+  img_pts = np.hstack((img_pts, np.ones((img_pts.shape[0], 1))))
   img_pts_normalized = img_pts.dot(intrinsics_inv.T)
   img_pts_normalized[(img_pts < 0).any(axis=1)] = np.nan
-  return img_pts_normalized[:,:2].reshape(input_shape)
+  return img_pts_normalized[:, :2].reshape(input_shape)
 
 
 def denormalize(img_pts, intrinsics=eon_intrinsics):
@@ -93,13 +93,13 @@ def denormalize(img_pts, intrinsics=eon_intrinsics):
   img_pts = np.array(img_pts)
   input_shape = img_pts.shape
   img_pts = np.atleast_2d(img_pts)
-  img_pts = np.hstack((img_pts, np.ones((img_pts.shape[0],1))))
+  img_pts = np.hstack((img_pts, np.ones((img_pts.shape[0], 1))))
   img_pts_denormalized = img_pts.dot(intrinsics.T)
-  img_pts_denormalized[img_pts_denormalized[:,0] > W] = np.nan
-  img_pts_denormalized[img_pts_denormalized[:,0] < 0] = np.nan
-  img_pts_denormalized[img_pts_denormalized[:,1] > H] = np.nan
-  img_pts_denormalized[img_pts_denormalized[:,1] < 0] = np.nan
-  return img_pts_denormalized[:,:2].reshape(input_shape)
+  img_pts_denormalized[img_pts_denormalized[:, 0] > W] = np.nan
+  img_pts_denormalized[img_pts_denormalized[:, 0] < 0] = np.nan
+  img_pts_denormalized[img_pts_denormalized[:, 1] > H] = np.nan
+  img_pts_denormalized[img_pts_denormalized[:, 1] < 0] = np.nan
+  return img_pts_denormalized[:, :2].reshape(input_shape)
 
 
 def device_from_ecef(pos_ecef, orientation_ecef, pt_ecef):
@@ -124,10 +124,10 @@ def img_from_device(pt_device):
   pt_view = np.einsum('jk,ik->ij', view_frame_from_device_frame, pt_device)
 
   # This function should never return negative depths
-  pt_view[pt_view[:,2] < 0] = np.nan
+  pt_view[pt_view[:, 2] < 0] = np.nan
 
-  pt_img = pt_view/pt_view[:,2:3]
-  return pt_img.reshape(input_shape)[:,:2]
+  pt_img = pt_view/pt_view[:, 2:3]
+  return pt_img.reshape(input_shape)[:, :2]
 
 
 def get_camera_frame_from_calib_frame(camera_frame_from_road_frame):

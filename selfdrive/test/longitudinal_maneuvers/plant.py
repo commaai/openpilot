@@ -129,7 +129,7 @@ class Plant():
     self.esp_disabled = 0
     self.main_on = 1
     self.user_gas = 0
-    self.computer_brake,self.user_brake = 0,0
+    self.computer_brake, self.user_brake = 0, 0
     self.brake_pressed = 0
     self.angle_steer_rate = 0
     self.distance, self.distance_prev = 0., 0.

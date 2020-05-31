@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     if sm.updated['liveCalibration']:
       intrinsic_matrix = eon_intrinsics
-      img_transform = np.array(fpkt.frame.transform).reshape(3,3)
+      img_transform = np.array(fpkt.frame.transform).reshape(3, 3)
       extrinsic_matrix = np.asarray(sm['liveCalibration'].extrinsicMatrix).reshape(3, 4)
       ke = intrinsic_matrix.dot(extrinsic_matrix)
       warp_matrix = get_camera_frame_from_medmodel_frame(ke)

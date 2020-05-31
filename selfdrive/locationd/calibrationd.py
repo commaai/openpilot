@@ -30,15 +30,15 @@ DEBUG = os.getenv("DEBUG") is not None
 
 
 def is_calibration_valid(vp):
-  return vp[0] > VP_VALIDITY_CORNERS[0,0] and vp[0] < VP_VALIDITY_CORNERS[1,0] and \
-         vp[1] > VP_VALIDITY_CORNERS[0,1] and vp[1] < VP_VALIDITY_CORNERS[1,1]
+  return vp[0] > VP_VALIDITY_CORNERS[0, 0] and vp[0] < VP_VALIDITY_CORNERS[1, 0] and \
+         vp[1] > VP_VALIDITY_CORNERS[0, 1] and vp[1] < VP_VALIDITY_CORNERS[1, 1]
 
 
 def sanity_clip(vp):
   if np.isnan(vp).any():
     vp = VP_INIT
-  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 5, VP_VALIDITY_CORNERS[1,0] + 5),
-                   np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 5, VP_VALIDITY_CORNERS[1,1] + 5)])
+  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0, 0] - 5, VP_VALIDITY_CORNERS[1, 0] + 5),
+                   np.clip(vp[1], VP_VALIDITY_CORNERS[0, 1] - 5, VP_VALIDITY_CORNERS[1, 1] + 5)])
 
 
 def intrinsics_from_vp(vp):

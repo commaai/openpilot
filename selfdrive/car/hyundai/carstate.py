@@ -11,7 +11,7 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    ret.doorOpen = any([cp.vl["CGW1"]['CF_Gway_DrvDrSw'],cp.vl["CGW1"]['CF_Gway_AstDrSw'],
+    ret.doorOpen = any([cp.vl["CGW1"]['CF_Gway_DrvDrSw'], cp.vl["CGW1"]['CF_Gway_AstDrSw'],
                         cp.vl["CGW2"]['CF_Gway_RLDrSw'], cp.vl["CGW2"]['CF_Gway_RRDrSw']])
 
     ret.seatbeltUnlatched = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw'] == 0
@@ -212,7 +212,7 @@ class CarState(CarStateBase):
       ]
     elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
       signals += [
-        ("CUR_GR", "TCU12",0)
+        ("CUR_GR", "TCU12", 0)
       ]
       checks += [
         ("TCU12", 100)
@@ -222,7 +222,7 @@ class CarState(CarStateBase):
       checks += [("ELECT_GEAR", 20)]
     else:
       signals += [
-        ("CF_Lvr_Gear","LVR12",0)
+        ("CF_Lvr_Gear", "LVR12", 0)
       ]
       checks += [
         ("LVR12", 100)

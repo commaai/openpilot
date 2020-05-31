@@ -21,7 +21,7 @@ print_dB = os.getenv("PRINT_DB") is not None     # print antenna dB
 timeout = 1
 dyn_model = 4 # auto model
 baudrate = 460800
-ports = ["/dev/ttyACM0","/dev/ttyACM1"]
+ports = ["/dev/ttyACM0", "/dev/ttyACM1"]
 rate = 100 # send new data every 100ms
 
 # which SV IDs we have seen and when we got iono
@@ -135,7 +135,7 @@ def gen_solution(msg):
                                       msg_data['hour'],
                                       msg_data['min'],
                                       msg_data['sec']) -
-                 datetime.datetime(1970,1,1)).total_seconds())*1e+03 +
+                 datetime.datetime(1970, 1, 1)).total_seconds())*1e+03 +
                  msg_data['nano']*1e-06)
   gps_fix = {'bearing': msg_data['headMot']*1e-05,  # heading of motion in degrees
              'altitude': msg_data['height']*1e-03,  # altitude above ellipsoid
@@ -281,7 +281,7 @@ def main():
   global gpsLocationExternal, ubloxGnss
   nav_frame_buffer = {}
   nav_frame_buffer[0] = {}
-  for i in range(1,33):
+  for i in range(1, 33):
     nav_frame_buffer[0][i] = {}
 
 

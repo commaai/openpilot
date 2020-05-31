@@ -69,7 +69,7 @@ if __name__ == "__main__":
       k = ' '.join(p.cmdline())
       print('Add monitored proc:', k)
       stats[k] = {'cpu_samples': defaultdict(list), 'min': defaultdict(lambda: None), 'max': defaultdict(lambda: None),
-                  'avg': defaultdict(lambda: 0.0), 'last_cpu_times': None, 'last_sys_time':None}
+                  'avg': defaultdict(lambda: 0.0), 'last_cpu_times': None, 'last_sys_time': None}
       stats[k]['last_sys_time'] = timer()
       stats[k]['last_cpu_times'] = p.cpu_times()
       monitored_procs.append(p)

@@ -9,10 +9,10 @@ def get_frame(idx):
   img[100:400, 100:100+(idx % 10) * 100] = 255
 
   # big number
-  im2 = Image.new("RGB", (200,200))
+  im2 = Image.new("RGB", (200, 200))
   draw = ImageDraw.Draw(im2)
   draw.text((10, 100), "%02d" % idx, font=font)
-  img[400:600, 400:600] = np.array(im2.getdata()).reshape((200,200,3))
+  img[400:600, 400:600] = np.array(im2.getdata()).reshape((200, 200, 3))
   return img.tostring()
 
 if __name__ == "__main__":

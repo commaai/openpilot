@@ -72,16 +72,16 @@ class TestNED(unittest.TestCase):
   def test_ecef_geodetic(self):
     # testing single
     np.testing.assert_allclose(ecef_positions[0], coord.geodetic2ecef(geodetic_positions[0]), rtol=1e-9)
-    np.testing.assert_allclose(geodetic_positions[0,:2], coord.ecef2geodetic(ecef_positions[0])[:2], rtol=1e-9)
-    np.testing.assert_allclose(geodetic_positions[0,2], coord.ecef2geodetic(ecef_positions[0])[2], rtol=1e-9, atol=1e-4)
+    np.testing.assert_allclose(geodetic_positions[0, :2], coord.ecef2geodetic(ecef_positions[0])[:2], rtol=1e-9)
+    np.testing.assert_allclose(geodetic_positions[0, 2], coord.ecef2geodetic(ecef_positions[0])[2], rtol=1e-9, atol=1e-4)
 
-    np.testing.assert_allclose(geodetic_positions[:,:2], coord.ecef2geodetic(ecef_positions)[:,:2], rtol=1e-9)
-    np.testing.assert_allclose(geodetic_positions[:,2], coord.ecef2geodetic(ecef_positions)[:,2], rtol=1e-9, atol=1e-4)
+    np.testing.assert_allclose(geodetic_positions[:, :2], coord.ecef2geodetic(ecef_positions)[:, :2], rtol=1e-9)
+    np.testing.assert_allclose(geodetic_positions[:, 2], coord.ecef2geodetic(ecef_positions)[:, 2], rtol=1e-9, atol=1e-4)
     np.testing.assert_allclose(ecef_positions, coord.geodetic2ecef(geodetic_positions), rtol=1e-9)
 
     np.testing.assert_allclose(geodetic_positions_radians[0], coord.ecef2geodetic(ecef_positions[0], radians=True), rtol=1e-5)
-    np.testing.assert_allclose(geodetic_positions_radians[:,:2], coord.ecef2geodetic(ecef_positions, radians=True)[:,:2], rtol=1e-7)
-    np.testing.assert_allclose(geodetic_positions_radians[:,2], coord.ecef2geodetic(ecef_positions, radians=True)[:,2], rtol=1e-7, atol=1e-4)
+    np.testing.assert_allclose(geodetic_positions_radians[:, :2], coord.ecef2geodetic(ecef_positions, radians=True)[:, :2], rtol=1e-7)
+    np.testing.assert_allclose(geodetic_positions_radians[:, 2], coord.ecef2geodetic(ecef_positions, radians=True)[:, 2], rtol=1e-7, atol=1e-4)
 
 
 
@@ -95,7 +95,7 @@ class TestNED(unittest.TestCase):
     for geo_pos in geodetic_positions:
       converter = coord.LocalCoord.from_geodetic(geo_pos)
       geo_pos_moved = geo_pos + np.array([0, 0, 10])
-      geo_pos_double_converted_moved = converter.ned2geodetic(converter.geodetic2ned(geo_pos) + np.array([0,0,-10]))
+      geo_pos_double_converted_moved = converter.ned2geodetic(converter.geodetic2ned(geo_pos) + np.array([0, 0, -10]))
       np.testing.assert_allclose(geo_pos_moved[:2], geo_pos_double_converted_moved[:2], rtol=1e-9, atol=1e-6)
       np.testing.assert_allclose(geo_pos_moved[2], geo_pos_double_converted_moved[2], rtol=1e-9, atol=1e-4)
 

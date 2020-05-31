@@ -26,8 +26,8 @@ def receiver_thread():
   if PYGAME:
     pygame.init()
     pygame.display.set_caption("vnet debug UI")
-    screen = pygame.display.set_mode((1164,874), pygame.DOUBLEBUF)
-    camera_surface = pygame.surface.Surface((1164,874), 0, 24).convert()
+    screen = pygame.display.set_mode((1164, 874), pygame.DOUBLEBUF)
+    camera_surface = pygame.surface.Surface((1164, 874), 0, 24).convert()
 
   addr = "192.168.5.11"
   if len(sys.argv) >= 2:
@@ -77,7 +77,7 @@ def receiver_thread():
 
       #scipy.misc.imsave("tmp.png", imgff)
 
-      pygame.surfarray.blit_array(camera_surface, imgff.swapaxes(0,1))
+      pygame.surfarray.blit_array(camera_surface, imgff.swapaxes(0, 1))
       screen.blit(camera_surface, (0, 0))
       pygame.display.flip()
 
