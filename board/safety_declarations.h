@@ -17,17 +17,25 @@ struct lookup_t {
 typedef struct {
   int addr;
   int bus;
-} AddrBus;
+  int len;
+} CanMsg;
+
+typedef struct {
+  const int addr;
+  const int bus;
+  const int len;
+  const bool check_checksum;         // true is checksum check is performed
+  const uint8_t max_counter;         // maximum value of the counter. 0 means that the counter check is skipped
+  const uint32_t expected_timestep;  // expected time between message updates [us]
+} CanMsgCheck;
 
 // params and flags about checksum, counter and frequency checks for each monitored address
 typedef struct {
   // const params
-  const int addr[3];                 // check either messages (e.g. honda steer). Array MUST terminate with a zero to know its length.
-  const int bus;                     // bus where to expect the addr. Temp hack: -1 means skip the bus check
-  const bool check_checksum;         // true is checksum check is performed
-  const uint8_t max_counter;         // maximum value of the counter. 0 means that the counter check is skipped
-  const uint32_t expected_timestep;  // expected time between message updates [us]
+  const CanMsgCheck msg[3];          // check either messages (e.g. honda steer). Array MUST terminate with an empty struct to know its length.
   // dynamic flags
+  bool msg_seen;
+  int index;                         // if multiple messages are allowed to be checked, this stores the index of the first one seen. only msg[msg_index] will be used
   bool valid_checksum;               // true if and only if checksum check is passed
   int wrong_counters;                // counter of wrong counters, saturated between 0 and MAX_WRONG_COUNTERS
   uint8_t last_counter;              // last counter value
@@ -50,7 +58,7 @@ bool driver_limit_check(int val, int val_last, struct sample_t *val_driver,
 bool rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA);
 float interpolate(struct lookup_t xy, float x);
 void gen_crc_lookup_table(uint8_t poly, uint8_t crc_lut[]);
-bool msg_allowed(int addr, int bus, const AddrBus addr_list[], int len);
+bool msg_allowed(CAN_FIFOMailBox_TypeDef *to_send, const CanMsg msg_list[], int len);
 int get_addr_check_index(CAN_FIFOMailBox_TypeDef *to_push, AddrCheckStruct addr_list[], const int len);
 void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter);
 void update_addr_timestamp(AddrCheckStruct addr_list[], int index);
@@ -90,14 +98,20 @@ int gas_interceptor_prev = 0;
 bool gas_pressed_prev = false;
 bool brake_pressed_prev = false;
 bool cruise_engaged_prev = false;
+float vehicle_speed = 0;
 bool vehicle_moving = false;
 
-// for torque-based safety modes
+// for safety modes with torque steering control
 int desired_torque_last = 0;       // last desired steer torque
 int rt_torque_last = 0;            // last desired torque for real time check
 struct sample_t torque_meas;       // last 3 motor torques produced by the eps
 struct sample_t torque_driver;     // last 3 driver torques measured
 uint32_t ts_last = 0;
+
+// for safety modes with angle steering control
+uint32_t ts_angle_last = 0;
+int desired_angle_last = 0;
+struct sample_t angle_meas;         // last 3 steer angles
 
 // This can be set with a USB command
 // It enables features we consider to be unsafe, but understand others may have different opinions

@@ -1,21 +1,13 @@
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi python python-pip gcc g++ git autoconf gperf bison flex automake texinfo wget help2man gawk libtool libtool-bin ncurses-dev unzip unrar-free libexpat-dev sed bzip2 locales curl zlib1g-dev libffi-dev libssl-dev
+RUN apt-get update && apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi python python-pip gcc g++ git autoconf gperf bison flex automake texinfo wget help2man gawk libtool libtool-bin ncurses-dev unzip unrar-free libexpat-dev sed bzip2 locales curl zlib1g-dev libffi-dev libssl-dev python3 python3-pip
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-
-ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-RUN pyenv install 2.7.12
-RUN pyenv install 3.7.3
-RUN pyenv global 3.7.3
-RUN pyenv rehash
-
-RUN pip install pycrypto==2.6.1
+RUN pip3 install pycrypto==2.6.1
 
 # Build esp toolchain
 RUN mkdir -p /panda/boardesp

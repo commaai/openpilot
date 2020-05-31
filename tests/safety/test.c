@@ -71,6 +71,7 @@ void fault_recovered(uint32_t fault) {
 #define GET_BYTE(msg, b) (((int)(b) > 3) ? (((msg)->RDHR >> (8U * ((unsigned int)(b) % 4U))) & 0XFFU) : (((msg)->RDLR >> (8U * (unsigned int)(b))) & 0xFFU))
 #define GET_BYTES_04(msg) ((msg)->RDLR)
 #define GET_BYTES_48(msg) ((msg)->RDHR)
+#define GET_FLAG(value, mask) (((__typeof__(mask))param & mask) == mask)
 
 #define UNUSED(x) (void)(x)
 
@@ -179,8 +180,16 @@ void set_desired_torque_last(int t){
   desired_torque_last = t;
 }
 
+void set_desired_angle_last(int t){
+  desired_angle_last = t;
+}
+
 void set_honda_alt_brake_msg(bool c){
   honda_alt_brake_msg = c;
+}
+
+void set_honda_bosch_long(bool c){
+  honda_bosch_long = c;
 }
 
 int get_honda_hw(void) {
@@ -191,44 +200,17 @@ void set_honda_fwd_brake(bool c){
   honda_fwd_brake = c;
 }
 
-void set_nissan_desired_angle_last(int t){
-  nissan_desired_angle_last = t;
-}
-
 void init_tests(void){
   // get HW_TYPE from env variable set in test.sh
   hw_type = atoi(getenv("HW_TYPE"));
   safety_mode_cnt = 2U;  // avoid ignoring relay_malfunction logic
-  gas_pressed_prev = false;
-  brake_pressed_prev = false;
-  desired_torque_last = 0;
-  rt_torque_last = 0;
-  ts_last = 0;
-  torque_driver.min = 0;
-  torque_driver.max = 0;
-  torque_meas.min = 0;
-  torque_meas.max = 0;
-  vehicle_moving = false;
   unsafe_mode = 0;
   set_timer(0);
-}
-
-void init_tests_chrysler(void){
-  init_tests();
-  chrysler_speed = 0;
 }
 
 void init_tests_honda(void){
   init_tests();
   honda_fwd_brake = false;
-}
-
-void init_tests_nissan(void){
-  init_tests();
-  nissan_angle_meas.min = 0;
-  nissan_angle_meas.max = 0;
-  nissan_desired_angle_last = 0;
-  set_timer(0);
 }
 
 void set_gmlan_digital_output(int to_set){

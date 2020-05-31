@@ -1,0 +1,128 @@
+name: panda tests
+on: [push, pull_request]
+
+env:
+  RUN: docker run --rm panda /bin/bash -c
+  PERSIST: docker run --name panda panda /bin/sh -c
+  BUILD: |
+      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.panda) || true
+      docker pull docker.io/commaai/panda:latest || true
+      docker build --cache-from docker.io/commaai/panda:latest -t panda -f Dockerfile.panda .
+
+jobs:
+  docker_push:
+    name: docker push
+    runs-on: ubuntu-16.04
+    timeout-minutes: 45
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/panda'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Login to dockerhub
+        run: docker login -u wmelching -p ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Tag image
+        run: docker tag panda docker.io/commaai/panda:latest
+      - name: Push image
+        run: docker push docker.io/commaai/panda:latest
+
+  build:
+    name: build
+    runs-on: ubuntu-16.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Test python package installer
+        run: $RUN "cd /tmp/openpilot/panda && python setup.py install"
+      - name: Build panda STM image
+        run: $RUN "cd /tmp/openpilot/panda/board && make bin"
+      - name: Build panda STM bootstub image
+        run: $RUN "cd /tmp/openpilot/panda/board && make obj/bootstub.panda.bin"
+      - name: Build pedal STM image
+        run: $RUN "cd /tmp/openpilot/panda/board/pedal && make obj/comma.bin"
+      - name: Build pedal STM bootstub image
+        run: $RUN "cd /tmp/openpilot/panda/board/pedal && make obj/bootstub.bin"
+
+  build_esp:
+    name: build esp
+    runs-on: ubuntu-16.04
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: |
+        docker pull $(grep -ioP '(?<=^from)\s+\S+' tests/build/Dockerfile.panda_esp) || true
+        docker pull docker.io/commaai/panda_esp:latest || true
+        docker build --cache-from docker.io/commaai/panda_esp:latest -t panda_esp -f tests/build/Dockerfile.panda_esp .
+    - name: Build ESP image
+      run: docker run --rm panda_esp /bin/sh -c "cd /panda/boardesp && make user1.bin"
+    - name: Push image
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/panda'
+      run:  |
+        docker login -u wmelching -p ${{ secrets.DOCKERHUB_TOKEN }}
+        docker tag panda_esp docker.io/commaai/panda_esp:latest
+        docker push docker.io/commaai/panda_esp:latest
+
+  safety:
+    name: safety
+    runs-on: ubuntu-16.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run safety tests
+        run: |
+          $RUN "cd /tmp/openpilot && \
+                scons -c && \
+                scons -j$(nproc) opendbc/ cereal/ && \
+                cd panda/tests/safety && \
+                ./test.sh"
+
+  safety_replay:
+    name: safety replay
+    runs-on: ubuntu-16.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run safety replay
+        run: $RUN "cd /tmp/openpilot/panda/tests/safety_replay && ./test_safety_replay.py"
+
+  misra:
+    name: misra c2012
+    runs-on: ubuntu-16.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run Misra C 2012 analysis
+        run: $PERSIST "cd /tmp/openpilot/panda/tests/misra && ./test_misra.sh"
+      - name: Copy analysis outputs
+        run: docker cp panda:/tmp/misra /tmp
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cppcheck.txt
+          path: /tmp/misra/cppcheck_output.txt
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: misra.txt
+          path: /tmp/misra/misra_output.txt
+
+  python_linter:
+    name: python linter
+    runs-on: ubuntu-16.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run static analysis
+        run: |
+          $RUN "cd /tmp/openpilot/panda && git init && git add -A && MYPYPATH=/tmp/openpilot pre-commit run --all"

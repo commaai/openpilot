@@ -18,18 +18,18 @@ const int GM_DRIVER_TORQUE_FACTOR = 4;
 const int GM_MAX_GAS = 3072;
 const int GM_MAX_REGEN = 1404;
 const int GM_MAX_BRAKE = 350;
-const AddrBus GM_TX_MSGS[] = {{384, 0}, {1033, 0}, {1034, 0}, {715, 0}, {880, 0},  // pt bus
-                              {161, 1}, {774, 1}, {776, 1}, {784, 1},   // obs bus
-                              {789, 2},  // ch bus
-                              {0x104c006c, 3}, {0x10400060, 3}};  // gmlan
+const CanMsg GM_TX_MSGS[] = {{384, 0, 4}, {1033, 0, 7}, {1034, 0, 7}, {715, 0, 8}, {880, 0, 6},  // pt bus
+                             {161, 1, 7}, {774, 1, 8}, {776, 1, 7}, {784, 1, 2},   // obs bus
+                             {789, 2, 5},  // ch bus
+                             {0x104c006c, 3, 3}, {0x10400060, 3, 5}};  // gmlan
 
 // TODO: do checksum and counter checks. Add correct timestep, 0.1s for now.
 AddrCheckStruct gm_rx_checks[] = {
-  {.addr = {388}, .bus = 0, .expected_timestep = 100000U},
-  {.addr = {842}, .bus = 0, .expected_timestep = 100000U},
-  {.addr = {481}, .bus = 0, .expected_timestep = 100000U},
-  {.addr = {241}, .bus = 0, .expected_timestep = 100000U},
-  {.addr = {417}, .bus = 0, .expected_timestep = 100000U},
+  {.msg = {{388, 0, 8, .expected_timestep = 100000U}}},
+  {.msg = {{842, 0, 5, .expected_timestep = 100000U}}},
+  {.msg = {{481, 0, 7, .expected_timestep = 100000U}}},
+  {.msg = {{241, 0, 6, .expected_timestep = 100000U}}},
+  {.msg = {{417, 0, 7, .expected_timestep = 100000U}}},
 };
 const int GM_RX_CHECK_LEN = sizeof(gm_rx_checks) / sizeof(gm_rx_checks[0]);
 
@@ -122,9 +122,8 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
-  int bus = GET_BUS(to_send);
 
-  if (!msg_allowed(addr, bus, GM_TX_MSGS, sizeof(GM_TX_MSGS)/sizeof(GM_TX_MSGS[0]))) {
+  if (!msg_allowed(to_send, GM_TX_MSGS, sizeof(GM_TX_MSGS)/sizeof(GM_TX_MSGS[0]))) {
     tx = 0;
   }
 

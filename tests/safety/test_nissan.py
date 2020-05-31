@@ -29,7 +29,7 @@ class TestNissanSafety(common.PandaSafetyTest):
     self.packer = CANPackerPanda("nissan_x_trail_2017")
     self.safety = libpandasafety_py.libpandasafety
     self.safety.set_safety_hooks(Panda.SAFETY_NISSAN, 0)
-    self.safety.init_tests_nissan()
+    self.safety.init_tests()
 
   def _angle_meas_msg(self, angle):
     values = {"STEER_ANGLE": angle}
@@ -37,7 +37,7 @@ class TestNissanSafety(common.PandaSafetyTest):
 
   def _set_prev_angle(self, t):
     t = int(t * -100)
-    self.safety.set_nissan_desired_angle_last(t)
+    self.safety.set_desired_angle_last(t)
 
   def _angle_meas_msg_array(self, angle):
     for i in range(6):

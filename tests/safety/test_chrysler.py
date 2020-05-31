@@ -30,7 +30,7 @@ class TestChryslerSafety(common.PandaSafetyTest, common.TorqueSteeringSafetyTest
     self.packer = CANPackerPanda("chrysler_pacifica_2017_hybrid")
     self.safety = libpandasafety_py.libpandasafety
     self.safety.set_safety_hooks(Panda.SAFETY_CHRYSLER, 0)
-    self.safety.init_tests_chrysler()
+    self.safety.init_tests()
 
   def _button_msg(self, cancel):
     values = {"ACC_CANCEL": cancel}

@@ -14,7 +14,7 @@ def test_gps_version(p):
   for i in range(2):
     # Reset GPS
     p.set_esp_power(0)
-    time.sleep(0.5)
+    time.sleep(2)
     p.set_esp_power(1)
     time.sleep(1)
 

@@ -1,0 +1,30 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: master
+    hooks:
+    -   id: check-ast
+    -   id: check-json
+    -   id: check-xml
+    -   id: check-yaml
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: master
+    hooks:
+    -   id: mypy
+        exclude: '^(tests/automated)/'
+-   repo: https://github.com/PyCQA/flake8
+    rev: master
+    hooks:
+    -   id: flake8
+        exclude: '^(tests/automated)/'
+        args:
+        - --select=F
+-   repo: local
+    hooks:
+    -   id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        exclude: '^(tests/automated)/'
+        args:
+        - --disable=R,C,W

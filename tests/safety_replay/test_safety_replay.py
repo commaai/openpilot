@@ -37,6 +37,6 @@ if __name__ == "__main__":
     if not replay_drive(lr, mode, int(param)):
       failed.append(route)
 
-    for f in failed:
-      print("\n**** failed on %s ****" % f)
+    for f in failed: # type: ignore
+      print(f"\n**** failed on {f} ****")
     assert len(failed) == 0, "\nfailed on %d logs" % len(failed)
