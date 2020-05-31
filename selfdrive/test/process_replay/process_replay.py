@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+import capnp
 import os
 import sys
 import threading
 import importlib
 
 if "CI" in os.environ:
-  tqdm = lambda x: x
+  def tqdm(x):
+    return x
 else:
   from tqdm import tqdm   # type: ignore
 
@@ -110,7 +112,7 @@ class FakePubMaster(messaging.PubMaster):
     for s in services:
       try:
         data = messaging.new_message(s)
-      except:
+      except capnp.lib.capnp.KjException:
         data = messaging.new_message(s, 0)
       self.data[s] = data.as_reader()
       self.sock[s] = DumbSocket()

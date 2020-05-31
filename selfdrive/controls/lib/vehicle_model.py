@@ -194,4 +194,3 @@ class VehicleModel():
       Yaw rate [rad/s]
     """
     return self.calc_curvature(sa, u) * u
-

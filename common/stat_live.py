@@ -32,7 +32,7 @@ class RunningStat():
       self.S_last = 0.
     else:
       self.M = self.M_last + (new_data - self.M_last) / self.n
-      self.S = self.S_last + (new_data - self.M_last) * (new_data - self.M);
+      self.S = self.S_last + (new_data - self.M_last) * (new_data - self.M)
       self.M_last = self.M
       self.S_last = self.S
 

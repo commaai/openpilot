@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # set up wheel
-import os, struct, array
+import array
+import os
+import struct
 from fcntl import ioctl
 
 # Iterate over the joystick devices.

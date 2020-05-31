@@ -113,7 +113,7 @@ class CarState(CarStateBase):
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
-    self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
+    self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] # 0 NOT ACTIVE, 1 ACTIVE
     self.lead_distance = cp.vl["SCC11"]['ACC_ObjDist']
 
     return ret
@@ -163,7 +163,7 @@ class CarState(CarStateBase):
 
       ("ESC_Off_Step", "TCS15", 0),
 
-      ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
+      ("CF_Lvr_GearInf", "LVR11", 0),        # Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
       ("CR_Mdps_StrColTq", "MDPS12", 0),
       ("CF_Mdps_ToiActive", "MDPS12", 0),

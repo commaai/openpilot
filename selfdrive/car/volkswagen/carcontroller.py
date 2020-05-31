@@ -67,7 +67,7 @@ class CarController():
           self.hcaEnabledFrameCount = 0
         else:
           self.hcaEnabledFrameCount += 1
-          if self.hcaEnabledFrameCount >=  118 * (100 / P.HCA_STEP):  # 118s
+          if self.hcaEnabledFrameCount >= 118 * (100 / P.HCA_STEP):  # 118s
             # The Kansas I-70 Crosswind Problem: if we truly do need to steer
             # in one direction for > 360 seconds, we have to disable HCA for a
             # frame while actively steering. Testing shows we can just set the

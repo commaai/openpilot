@@ -200,7 +200,7 @@ def go(q):
     speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
     can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button, is_engaged=is_openpilot_engaged)
 
-    if rk.frame%1 == 0: # 20Hz?
+    if rk.frame % 1 == 0: # 20Hz?
       throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
       # print(" === torq, ",steer_torque_op, " ===")
       if is_openpilot_engaged:

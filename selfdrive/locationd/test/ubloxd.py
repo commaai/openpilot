@@ -83,7 +83,7 @@ def configure_ublox(dev):
 
 def int_to_bool_list(num):
   # for parsing bool bytes
-  return [bool(num & (1<<n)) for n in range(8)]
+  return [bool(num & (1 << n)) for n in range(8)]
 
 
 def gen_ephemeris(ephem_data):
@@ -134,9 +134,9 @@ def gen_solution(msg):
                                       msg_data['day'],
                                       msg_data['hour'],
                                       msg_data['min'],
-                                      msg_data['sec'])
-                 - datetime.datetime(1970,1,1)).total_seconds())*1e+03
-                 + msg_data['nano']*1e-06)
+                                      msg_data['sec']) -
+                 datetime.datetime(1970,1,1)).total_seconds())*1e+03 +
+                 msg_data['nano']*1e-06)
   gps_fix = {'bearing': msg_data['headMot']*1e-05,  # heading of motion in degrees
              'altitude': msg_data['height']*1e-03,  # altitude above ellipsoid
              'latitude': msg_data['lat']*1e-07,  # latitude in degrees
@@ -164,8 +164,8 @@ def gen_nav_data(msg, nav_frame_buffer):
   # parse GPS ephem
   gnssId = msg_meta_data['gnssId']
   if gnssId  == 0:
-    svId =  msg_meta_data['svid']
-    subframeId =  GET_FIELD_U(measurements[1]['dwrd'], 3, 8)
+    svId = msg_meta_data['svid']
+    subframeId = GET_FIELD_U(measurements[1]['dwrd'], 3, 8)
     words = []
     for m in measurements:
       words.append(m['dwrd'])
@@ -244,7 +244,7 @@ def init_reader():
       return dev
     except serial.serialutil.SerialException as e:
       print(e)
-      port_counter = (port_counter + 1)%len(ports)
+      port_counter = (port_counter + 1) % len(ports)
       time.sleep(2)
 
 def handle_msg(dev, msg, nav_frame_buffer):

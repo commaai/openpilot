@@ -38,7 +38,7 @@ class CarState(CarStateBase):
     ret.leftBlinker = cp.vl["BLINK_INFO"]['LEFT_BLINK'] == 1
     ret.rightBlinker = cp.vl["BLINK_INFO"]['RIGHT_BLINK'] == 1
 
-    ret.steeringAngle =  cp.vl["STEER"]['STEER_ANGLE']
+    ret.steeringAngle = cp.vl["STEER"]['STEER_ANGLE']
     ret.steeringTorque = cp.vl["STEER_TORQUE"]['STEER_TORQUE_SENSOR']
     ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.STEER_THRESHOLD
 
@@ -70,7 +70,7 @@ class CarState(CarStateBase):
       self.cruise_speed = ret.vEgoRaw
 
     ret.cruiseState.available = True
-    ret.cruiseState.enabled =  cp.vl["CRZ_CTRL"]['CRZ_ACTIVE'] == 1
+    ret.cruiseState.enabled = cp.vl["CRZ_CTRL"]['CRZ_ACTIVE'] == 1
     ret.cruiseState.speed = self.cruise_speed
 
     if ret.cruiseState.enabled:
@@ -182,4 +182,3 @@ class CarState(CarStateBase):
       ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
-

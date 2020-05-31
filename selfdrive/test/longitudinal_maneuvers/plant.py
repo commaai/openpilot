@@ -29,7 +29,7 @@ CP = CarInterface.get_params(CAR.CIVIC, {0: {0x201: 6}, 1: {}, 2: {}, 3: {}})
 def can_cksum(mm):
   s = 0
   for c in mm:
-    s += (c>>4)
+    s += (c >> 4)
     s += c & 0xF
   s = 8-s
   s %= 0x10
@@ -45,7 +45,7 @@ def car_plant(pos, speed, grade, gas, brake):
   mass = 1700
   aero_cd = 0.3
   force_peak = mass*3.
-  force_brake_peak = -mass*10.     #1g
+  force_brake_peak = -mass*10.  # 1g
   power_peak = 100000   # 100kW
   speed_base = power_peak/force_peak
   rolling_res = 0.01
@@ -277,13 +277,13 @@ class Plant():
     vls = vls_tuple(
            self.speed_sensor(speed),
            self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
-           self.angle_steer, self.angle_steer_rate, 0, 0,#Steer torque sensor
+           self.angle_steer, self.angle_steer_rate, 0, 0,  # Steer torque sensor
            0, 0,  # Blinkers
            self.gear_choice,
            speed != 0,
            self.brake_error, self.brake_error,
            not self.seatbelt, self.seatbelt,  # Seatbelt
-           self.brake_pressed, 0., #Brake pressed, Brake switch
+           self.brake_pressed, 0.,  # Brake pressed, Brake switch
            cruise_buttons,
            self.esp_disabled,
            0,  # HUD lead
@@ -339,9 +339,9 @@ class Plant():
     # TODO: use the DBC
     if self.frame % 5 == 0:
       radar_state_msg = b'\x79\x00\x00\x00\x00\x00\x00\x00'
-      radar_msg = to_3_byte(d_rel*16.0) + \
-                  to_3_byte(int(lateral_pos_rel*16.0)&0x3ff) + \
-                  to_3s_byte(int(v_rel*32.0)) + \
+      radar_msg = to_3_byte(d_rel * 16.0) + \
+                  to_3_byte(int(lateral_pos_rel * 16.0) & 0x3ff) + \
+                  to_3s_byte(int(v_rel * 32.0)) + \
                   b"0f00000"
 
       radar_msg = binascii.unhexlify(radar_msg)

@@ -52,7 +52,7 @@ def ecef2geodetic(ecef, radians=False):
   S = np.cbrt(1 + C + np.sqrt(C * C + 2 * C))
   P = F / (3 * pow((S + 1 / S + 1), 2) * G * G)
   Q = np.sqrt(1 + 2 * esq * esq * P)
-  r_0 =  -(P * esq * r) / (1 + Q) + np.sqrt(0.5 * a * a*(1 + 1.0 / Q) - \
+  r_0 = -(P * esq * r) / (1 + Q) + np.sqrt(0.5 * a * a*(1 + 1.0 / Q) - \
         P * (1 - esq) * z * z / (Q * (1 + Q)) - 0.5 * P * r * r)
   U = np.sqrt(pow((r - esq * r_0), 2) + z * z)
   V = np.sqrt(pow((r - esq * r_0), 2) + (1 - esq) * z * z)

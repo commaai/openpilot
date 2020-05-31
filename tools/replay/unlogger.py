@@ -341,15 +341,19 @@ def get_arg_parser():
   parser.add_argument("route_name", type=(lambda x: x.replace("#", "|")), nargs="?",
                       help="The route whose messages will be published.")
   parser.add_argument("data_dir", nargs='?', default=os.getenv('UNLOGGER_DATA_DIR'),
-		      help="Path to directory in which log and camera files are located.")
+          help="Path to directory in which log and camera files are located.")
 
   parser.add_argument("--no-loop", action="store_true", help="Stop at the end of the replay.")
 
-  key_value_pair = lambda x: x.split("=")
+  def key_value_pair(x):
+    return x.split("=")
+
   parser.add_argument("address_mapping", nargs="*", type=key_value_pair,
       help="Pairs <service>=<zmq_addr> to publish <service> on <zmq_addr>.")
 
-  comma_list = lambda x: x.split(",")
+  def comma_list(x):
+    return x.split(",")
+
   to_mock_group = parser.add_mutually_exclusive_group()
   to_mock_group.add_argument("--min", action="store_true", default=os.getenv("MIN"))
   to_mock_group.add_argument("--enabled", default=os.getenv("ENABLED"), type=comma_list)

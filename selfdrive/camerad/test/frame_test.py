@@ -6,7 +6,7 @@ from PIL import ImageFont, ImageDraw, Image
 font = ImageFont.truetype("arial", size=72)
 def get_frame(idx):
   img = np.zeros((874, 1164, 3), np.uint8)
-  img[100:400, 100:100+(idx%10)*100] = 255
+  img[100:400, 100:100+(idx % 10)* 100] = 255
 
   # big number
   im2 = Image.new("RGB", (200,200))
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     dat.valid = True
     dat.frame = {
       "frameId": idx,
-      "image": frm[idx%len(frm)],
+      "image": frm[idx % len(frm)],
     }
     pm.send('frame', dat)
 

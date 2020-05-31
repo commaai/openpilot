@@ -52,7 +52,8 @@ class TestAlerts(unittest.TestCase):
         continue
 
       for i, txt in enumerate([alert.alert_text_1, alert.alert_text_2]):
-        if i >= len(fonts[alert.alert_size]): break
+        if i >= len(fonts[alert.alert_size]):
+          break
 
         font = fonts[alert.alert_size][i]
         w, h = draw.textsize(txt, font)
