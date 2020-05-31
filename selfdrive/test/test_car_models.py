@@ -261,7 +261,7 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-    "7e34a988419b5307|2019-12-18--19-13-30": {
+  "7e34a988419b5307|2019-12-18--19-13-30": {
     'carFingerprint': TOYOTA.RAV4H_TSS2,
     'enableCamera': True,
     'fingerprintSource': 'fixed'
@@ -286,12 +286,12 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-    "886fcd8408d570e9|2020-01-29--05-11-22": {
+  "886fcd8408d570e9|2020-01-29--05-11-22": {
       'carFingerprint': TOYOTA.LEXUS_RX,
       'enableCamera': True,
       'enableDsu': True,
     },
-    "886fcd8408d570e9|2020-01-29--02-18-55": {
+  "886fcd8408d570e9|2020-01-29--02-18-55": {
       'carFingerprint': TOYOTA.LEXUS_RX,
       'enableCamera': True,
       'enableDsu': False,
@@ -301,12 +301,12 @@ routes = {
     'enableCamera': True,
     'enableDsu': True,
   },
-    "01b22eb2ed121565|2020-02-02--11-25-51": {
+  "01b22eb2ed121565|2020-02-02--11-25-51": {
     'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
     'enableCamera': True,
     'fingerprintSource': 'fixed',
   },
-    "b74758c690a49668|2020-05-20--15-58-57": {
+  "b74758c690a49668|2020-05-20--15-58-57": {
     'carFingerprint': TOYOTA.LEXUS_RXH_TSS2,
     'enableCamera': True,
     'fingerprintSource': 'fixed',

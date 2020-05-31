@@ -161,8 +161,7 @@ class CarController():
     lka_active = CS.lkas_status == 1
     lka_critical = lka_active and abs(actuators.steer) > 0.9
     lka_icon_status = (lka_active, lka_critical)
-    if frame % P.CAMERA_KEEPALIVE_STEP == 0 \
-        or lka_icon_status != self.lka_icon_status_last:
+    if frame % P.CAMERA_KEEPALIVE_STEP == 0 or lka_icon_status != self.lka_icon_status_last:
       steer_alert = hud_alert == VisualAlert.steerRequired
       can_sends.append(gmcan.create_lka_icon_command(CanBus.SW_GMLAN, lka_active, lka_critical, steer_alert))
       self.lka_icon_status_last = lka_icon_status

@@ -73,7 +73,7 @@ def draw_path(y, x, color, img, calibration, top_down, lid_color=None):
     uv_model > 0, axis=1), uv_model[:, 0] < img.shape[1] - 1, uv_model[:, 1] <
                                                   img.shape[0] - 1))]
 
-  for i, j  in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)):
+  for i, j in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)):
     img[uv_model_dots[:, 1] + i, uv_model_dots[:, 0] + j] = color
 
   # draw lidar path point on lidar
@@ -88,12 +88,12 @@ def draw_path(y, x, color, img, calibration, top_down, lid_color=None):
 def draw_steer_path(speed_ms, curvature, color, img,
                     calibration, top_down, VM, lid_color=None):
   path_x = np.arange(101.)
-  path_y =  np.multiply(path_x, np.tan(np.arcsin(np.clip(path_x * curvature, -0.999, 0.999)) / 2.))
+  path_y = np.multiply(path_x, np.tan(np.arcsin(np.clip(path_x * curvature, -0.999, 0.999)) / 2.))
 
   draw_path(path_y, path_x, color, img, calibration, top_down, lid_color)
 
 def draw_lead_car(closest, top_down):
-  if closest != None:
+  if closest is not None:
     closest_y = int(round(UP.lidar_car_y - closest * UP.lidar_zoom))
     if closest_y > 0:
       top_down[1][int(round(UP.lidar_car_x - METER_WIDTH * 2)):int(
@@ -118,12 +118,10 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
                     "p": (0,1,1),
                     "m": (1,0,1) }
 
-  if bigplots == True:
+  if bigplots:
     fig = plt.figure(figsize=(6.4, 7.0))
-  elif bigplots == False:
-    fig = plt.figure()
   else:
-    fig = plt.figure(figsize=bigplots)
+    fig = plt.figure()
 
   fig.set_facecolor((0.2,0.2,0.2))
 
@@ -135,7 +133,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
     ax.patch.set_facecolor((0.4, 0.4, 0.4))
     axs.append(ax)
 
-  plots = [] ;idxs = [] ;plot_select = []
+  plots, idxs, plot_select = [], [], []
   for i, pl_list in enumerate(plot_names):
     for j, item in enumerate(pl_list):
       plot, = axs[i].plot(arr[:, name_to_arr_idx[item]],

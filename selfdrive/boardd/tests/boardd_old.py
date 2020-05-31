@@ -21,7 +21,7 @@ SafetyModel = car.CarParams.SafetyModel
 # USB is optional
 try:
   import usb1
-  from usb1 import USBErrorIO, USBErrorOverflow  #pylint: disable=no-name-in-module
+  from usb1 import USBErrorIO, USBErrorOverflow  # pylint: disable=no-name-in-module
 except Exception:
   pass
 
@@ -57,7 +57,7 @@ def __parse_can_buffer(dat):
   for j in range(0, len(dat), 0x10):
     ddat = dat[j:j+0x10]
     f1, f2 = struct.unpack("II", ddat[0:8])
-    ret.append((f1 >> 21, f2>>16, ddat[8:8+(f2&0xF)], (f2>>4)&0xFF))
+    ret.append((f1 >> 21, f2 >> 16, ddat[8:8 + (f2 & 0xF)], (f2 >> 4) & 0xFF))
   return ret
 
 def can_send_many(arr):

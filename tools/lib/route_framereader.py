@@ -82,5 +82,8 @@ class RouteFrameReader(object):
     for fr in frs:
       fr.close()
 
-  def __enter__(self): return self
-  def __exit__(self, type, value, traceback): self.close()
+  def __enter__(self):
+    return self
+
+  def __exit__(self, type, value, traceback):
+    self.close()

@@ -50,12 +50,16 @@ class URLFile(object):
 
     if self._debug:
       print("downloading", self._url)
+
       def header(x):
         if b'MISS' in x:
           print(x.strip())
+
       c.setopt(pycurl.HEADERFUNCTION, header)
+
       def test(debug_type, debug_msg):
        print("  debug(%d): %s" % (debug_type, debug_msg.strip()))
+
       c.setopt(pycurl.VERBOSE, 1)
       c.setopt(pycurl.DEBUGFUNCTION, test)
       t1 = time.time()
@@ -68,7 +72,7 @@ class URLFile(object):
         print("get %s %r %.f slow" % (self._url, trange, t2-t1))
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
-    if response_code == 416: #  Requested Range Not Satisfiable
+    if response_code == 416:  # Requested Range Not Satisfiable
       return ""
     if response_code != 206 and response_code != 200:
       raise Exception("Error {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))

@@ -65,7 +65,7 @@ def run_DState_seq(driver_state_msgs, driver_car_interaction, openpilot_status, 
   for idx in range(len(driver_state_msgs)):
     e = Events()
     DS.get_pose(driver_state_msgs[idx], [0,0,0], 0, openpilot_status[idx])
-                # cal_rpy and car_speed don't matter here
+    # cal_rpy and car_speed don't matter here
 
     # evaluate events at 10Hz for tests
     DS.update(e, driver_car_interaction[idx], openpilot_status[idx], car_standstill_status[idx])
