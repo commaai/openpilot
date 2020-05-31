@@ -11,6 +11,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    self.seatbeltUnlatched = True
 
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
