@@ -413,11 +413,8 @@ phonelibs/nanovg/*.h
 phonelibs/libgralloc/**
 phonelibs/linux/**
 phonelibs/opencl/**
-phonelibs/curl/*
 phonelibs/zlib/*
-phonelibs/boringssl/*
 phonelibs/bzip2/*
-phonelibs/openmax/**
 
 phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
