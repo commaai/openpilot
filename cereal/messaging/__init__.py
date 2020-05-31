@@ -155,7 +155,7 @@ class SubMaster():
 
       try:
         data = new_message(s)
-      except capnp.lib.capnp.KjException:
+      except capnp.lib.capnp.KjException:  # pylint: disable=c-extension-no-member
         # lists
         data = new_message(s, 0)
 
