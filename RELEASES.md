@@ -1,6 +1,7 @@
 Version 0.8 (2020-xx-xx)
 ========================
  * White panda is no longer supported, upgrade to comma two or black panda
+ * Improved vehicle model estimation using high precision localizer
 
 Version 0.7.6 (2020-06-05)
 ========================
