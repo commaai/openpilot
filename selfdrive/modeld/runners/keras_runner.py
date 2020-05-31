@@ -5,10 +5,10 @@ from __future__ import print_function
 import tensorflow as tf  # pylint: disable=import-error
 import os
 import sys
-import tensorflow.keras as keras # pylint: disable=import-error
+import tensorflow.keras as keras  # pylint: disable=import-error
 import numpy as np
-from tensorflow.keras.models import Model # pylint: disable=import-error
-from tensorflow.keras.models import load_model # pylint: disable=import-error
+from tensorflow.keras.models import Model  # pylint: disable=import-error
+from tensorflow.keras.models import load_model  # pylint: disable=import-error
 
 def read(sz):
   dd = []

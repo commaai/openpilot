@@ -87,7 +87,7 @@ class CarInterface(CarInterfaceBase):
 
     # normalized max accel. Allowing max accel at low speed causes speed overshoots
     max_accel_bp = [10, 20]    # m/s
-    max_accel_v = [0.714, 1.0] # unit of max accel
+    max_accel_v = [0.714, 1.0]  # unit of max accel
     max_accel = interp(v_ego, max_accel_bp, max_accel_v)
 
     # limit the pcm accel cmd if:
@@ -144,7 +144,7 @@ class CarInterface(CarInterfaceBase):
     # For modeling details, see p.198-200 in "The Science of Vehicle Dynamics (2014), M. Guiggiani"
     ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0], [0]]
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-    ret.lateralTuning.pid.kf = 0.00006 # conservative feed-forward
+    ret.lateralTuning.pid.kf = 0.00006  # conservative feed-forward
 
     eps_modified = False
     for fw in car_fw:
@@ -182,7 +182,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 1.
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -192,13 +192,13 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
-      if not candidate == CAR.ACCORDH: # Hybrid uses same brake msg as hatch
+      if not candidate == CAR.ACCORDH:  # Hybrid uses same brake msg as hatch
         ret.safetyParam = 1  # Accord and CRV 5G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 16.33  # 11.82 is spec end-to-end
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.8467
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
@@ -216,7 +216,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.37
       ret.steerRatio = 18.61  # 15.3 is spec end-to-end
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.72
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -230,7 +230,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.89  # as spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -263,11 +263,11 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
       ret.safetyParam = 1  # Accord and CRV 5G use an alternate user brake msg
-      ret.mass = 1667. + STD_CARGO_KG # mean of 4 models in kg
+      ret.mass = 1667. + STD_CARGO_KG  # mean of 4 models in kg
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0  # 12.3 is spec end-to-end
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.677
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -281,7 +281,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.53
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.06
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.75
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.06]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -309,7 +309,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.68
       ret.centerToFront = ret.wheelbase * 0.38
       ret.steerRatio = 15.0  # as spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -323,7 +323,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35  # as spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.45], [0.135]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -337,7 +337,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.90
       ret.centerToFront = ret.wheelbase * 0.41  # from CAR.ODYSSEY
       ret.steerRatio = 14.35
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 32767], [0, 32767]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 32767], [0, 32767]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.45], [0.135]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -347,11 +347,11 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.PILOT, CAR.PILOT_2019):
       stop_and_go = False
-      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG # average weight
+      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
       ret.wheelbase = 2.82
       ret.centerToFront = ret.wheelbase * 0.428
       ret.steerRatio = 17.25  # as spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -365,7 +365,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.18
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.59  # as spec
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -379,7 +379,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.7
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 15.0  # 12.58 is spec end-to-end
-      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]] # TODO: determine if there is a dead zone at the top end
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -406,7 +406,7 @@ class CarInterface(CarInterfaceBase):
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
     ret.gasMaxBP = [0.]  # m/s
-    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.] # max gas allowed
+    ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.]  # max gas allowed
     ret.brakeMaxBP = [5., 20.]  # m/s
     ret.brakeMaxV = [1., 0.8]   # max brake allowed
 

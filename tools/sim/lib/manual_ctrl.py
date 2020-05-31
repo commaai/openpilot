@@ -99,22 +99,22 @@ def wheel_poll_thread(q):
   # Get the device name.
   #buf = bytearray(63)
   buf = array.array('B', [0] * 64)
-  ioctl(jsdev, 0x80006a13 + (0x10000 * len(buf)), buf) # JSIOCGNAME(len)
+  ioctl(jsdev, 0x80006a13 + (0x10000 * len(buf)), buf)  # JSIOCGNAME(len)
   js_name = buf.tobytes().rstrip(b'\x00').decode('utf-8')
   print('Device name: %s' % js_name)
 
   # Get number of axes and buttons.
   buf = array.array('B', [0])
-  ioctl(jsdev, 0x80016a11, buf) # JSIOCGAXES
+  ioctl(jsdev, 0x80016a11, buf)  # JSIOCGAXES
   num_axes = buf[0]
 
   buf = array.array('B', [0])
-  ioctl(jsdev, 0x80016a12, buf) # JSIOCGBUTTONS
+  ioctl(jsdev, 0x80016a12, buf)  # JSIOCGBUTTONS
   num_buttons = buf[0]
 
   # Get the axis map.
   buf = array.array('B', [0] * 0x40)
-  ioctl(jsdev, 0x80406a32, buf) # JSIOCGAXMAP
+  ioctl(jsdev, 0x80406a32, buf)  # JSIOCGAXMAP
 
   for axis in buf[:num_axes]:
       axis_name = axis_names.get(axis, 'unknown(0x%02x)' % axis)
@@ -123,7 +123,7 @@ def wheel_poll_thread(q):
 
   # Get the button map.
   buf = array.array('H', [0] * 200)
-  ioctl(jsdev, 0x80406a34, buf) # JSIOCGBTNMAP
+  ioctl(jsdev, 0x80406a34, buf)  # JSIOCGBTNMAP
 
   for btn in buf[:num_buttons]:
       btn_name = button_names.get(btn, 'unknown(0x%03x)' % btn)
@@ -145,42 +145,42 @@ def wheel_poll_thread(q):
     evbuf = jsdev.read(8)
     time, value, mtype, number = struct.unpack('IhBB', evbuf)
     # print(mtype, number, value)
-    if mtype & 0x02: # wheel & paddles
+    if mtype & 0x02:  # wheel & paddles
       axis = axis_map[number]
 
-      if axis == "z": # gas
+      if axis == "z":  # gas
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
         q.put(str("throttle_%f" % normalized))
 
-      if axis == "rz": # brake
+      if axis == "rz":  # brake
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
         q.put(str("brake_%f" % normalized))
 
-      if axis == "x": # steer angle
+      if axis == "x":  # steer angle
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = fvalue
         q.put(str("steer_%f" % normalized))
 
-    if mtype & 0x01: # buttons
-      if number in [0, 19]: # X
-        if value == 1: # press down
+    if mtype & 0x01:  # buttons
+      if number in [0, 19]:  # X
+        if value == 1:  # press down
           q.put(str("cruise_down"))
 
-      if number in [3, 18]: # triangle
-        if value == 1: # press down
+      if number in [3, 18]:  # triangle
+        if value == 1:  # press down
           q.put(str("cruise_up"))
 
-      if number in [1, 6]: # square
-        if value == 1: # press down
+      if number in [1, 6]:  # square
+        if value == 1:  # press down
           q.put(str("cruise_cancel"))
 
-      if number in [10, 21]: # R3
-        if value == 1: # press down
+      if number in [10, 21]:  # R3
+        if value == 1:  # press down
           q.put(str("reverse_switch"))
 
 if __name__ == '__main__':

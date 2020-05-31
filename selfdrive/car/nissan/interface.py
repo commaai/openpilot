@@ -31,7 +31,7 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kf = 0.00006
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.0], [0.0]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]
-    ret.steerMaxBP = [0.] # m/s
+    ret.steerMaxBP = [0.]  # m/s
     ret.steerMaxV = [1.]
 
     if candidate in [CAR.ROGUE, CAR.XTRAIL]:

@@ -47,7 +47,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.69
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
-      ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+      ret.centerToFront = ret.wheelbase * 0.4  # wild guess
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -56,7 +56,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.83
       ret.steerRatio = 15.8
       ret.steerRatioRear = 0.
-      ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+      ret.centerToFront = ret.wheelbase * 0.4  # wild guess
 
     elif candidate == CAR.HOLDEN_ASTRA:
       ret.mass = 1363. + STD_CARGO_KG
@@ -68,7 +68,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
 
     elif candidate == CAR.ACADIA:
-      ret.minEnableSpeed = -1. # engage speed is decided by pcm
+      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.86
       ret.steerRatio = 14.4  # end to end is 13.46
@@ -77,11 +77,11 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
+      ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
       ret.wheelbase = 2.83  # 111.4 inches in meters
       ret.steerRatio = 14.4  # guess for tourx
       ret.steerRatioRear = 0.
-      ret.centerToFront = ret.wheelbase * 0.4 # guess for tourx
+      ret.centerToFront = ret.wheelbase * 0.4  # guess for tourx
 
     elif candidate == CAR.CADILLAC_ATS:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -135,7 +135,7 @@ class CarInterface(CarInterfaceBase):
         but = self.CS.prev_cruise_buttons
       if but == CruiseButtons.RES_ACCEL:
         if not (ret.cruiseState.enabled and ret.standstill):
-          be.type = ButtonType.accelCruise # Suppress resume button if we're resuming from stop so we don't adjust speed.
+          be.type = ButtonType.accelCruise  # Suppress resume button if we're resuming from stop so we don't adjust speed.
       elif but == CruiseButtons.DECEL_SET:
         be.type = ButtonType.decelCruise
       elif but == CruiseButtons.CANCEL:

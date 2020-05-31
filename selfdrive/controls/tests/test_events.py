@@ -27,9 +27,9 @@ class TestAlerts(unittest.TestCase):
     bold_font_path = os.path.join(font_path, "opensans_semibold.ttf")
     semibold_font_path = os.path.join(font_path, "opensans_semibold.ttf")
 
-    max_text_width = 1920 - 300 # full screen width is useable, minus sidebar
+    max_text_width = 1920 - 300  # full screen width is useable, minus sidebar
     # TODO: get exact scale factor. found this empirically, works well enough
-    font_scale_factor = 1.85 # factor to scale from nanovg units to PIL
+    font_scale_factor = 1.85  # factor to scale from nanovg units to PIL
 
     draw = ImageDraw.Draw(Image.new('RGB', (0, 0)))
 

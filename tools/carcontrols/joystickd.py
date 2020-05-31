@@ -30,8 +30,8 @@ def joystick_thread():
   # -------- Main Program Loop -----------
   while True:
     # EVENT PROCESSING STEP
-    for event in pygame.event.get(): # User did something
-      if event.type == pygame.QUIT: # If user clicked close
+    for event in pygame.event.get():  # User did something
+      if event.type == pygame.QUIT:  # If user clicked close
         pass
       # Available joystick events: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
       if event.type == pygame.JOYBUTTONDOWN:

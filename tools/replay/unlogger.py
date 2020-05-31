@@ -110,7 +110,7 @@ class UnloggerWorker(object):
           print("FRAME(%d) LAG -- %.2f ms" % (frame_id, fr_time*1000.0))
 
         if img is not None:
-          img = img[:, :, ::-1] # Convert RGB to BGR, which is what the camera outputs
+          img = img[:, :, ::-1]  # Convert RGB to BGR, which is what the camera outputs
           img = img.flatten()
           smsg.frame.image = img.tobytes()
 
@@ -259,7 +259,7 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
         msg_time_offset = msg_time_seconds - msg_start_time
         real_time_offset = realtime.sec_since_boot() - real_start_time
         lag = msg_time_offset - real_time_offset
-        if lag > 0 and lag < 30: # a large jump is OK, likely due to an out of order segment
+        if lag > 0 and lag < 30:  # a large jump is OK, likely due to an out of order segment
           if lag > 1:
             print("sleeping for", lag)
           time.sleep(lag)
@@ -312,17 +312,17 @@ def keyboard_controller_thread(q, route_start_time):
   kb = KBHit()
   while 1:
     c = kb.getch()
-    if c == 'm': # Move forward by 1m
+    if c == 'm':  # Move forward by 1m
       q.send_pyobj(SeekRelativeTime(60))
-    elif c == 'M': # Move backward by 1m
+    elif c == 'M':  # Move backward by 1m
       q.send_pyobj(SeekRelativeTime(-60))
-    elif c == 's': # Move forward by 10s
+    elif c == 's':  # Move forward by 10s
       q.send_pyobj(SeekRelativeTime(10))
-    elif c == 'S': # Move backward by 10s
+    elif c == 'S':  # Move backward by 10s
       q.send_pyobj(SeekRelativeTime(-10))
-    elif c == 'G': # Move backward by 10s
+    elif c == 'G':  # Move backward by 10s
       q.send_pyobj(SeekAbsoluteTime(0.))
-    elif c == "\x20": # Space bar.
+    elif c == "\x20":  # Space bar.
       q.send_pyobj(TogglePause())
     elif c == "\n":
       try:

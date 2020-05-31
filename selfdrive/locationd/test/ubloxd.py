@@ -19,10 +19,10 @@ debug = os.getenv("DEBUG") is not None   # debug prints
 print_dB = os.getenv("PRINT_DB") is not None     # print antenna dB
 
 timeout = 1
-dyn_model = 4 # auto model
+dyn_model = 4  # auto model
 baudrate = 460800
 ports = ["/dev/ttyACM0", "/dev/ttyACM1"]
-rate = 100 # send new data every 100ms
+rate = 100  # send new data every 100ms
 
 # which SV IDs we have seen and when we got iono
 svid_seen = {}
@@ -32,17 +32,17 @@ iono_seen = 0
 def configure_ublox(dev):
   # configure ports  and solution parameters and rate
   # TODO: configure constellations and channels to allow for 10Hz and high precision
-  dev.configure_port(port=ublox.PORT_USB, inMask=1, outMask=1) # enable only UBX on USB
-  dev.configure_port(port=0, inMask=0, outMask=0) # disable DDC
+  dev.configure_port(port=ublox.PORT_USB, inMask=1, outMask=1)  # enable only UBX on USB
+  dev.configure_port(port=0, inMask=0, outMask=0)  # disable DDC
 
   if panda:
     payload = struct.pack('<BBHIIHHHBB', 1, 0, 0, 2240, baudrate, 1, 1, 0, 0, 0)
-    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload) # enable UART
+    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload)  # enable UART
   else:
     payload = struct.pack('<BBHIIHHHBB', 1, 0, 0, 2240, baudrate, 0, 0, 0, 0, 0)
-    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload) # disable UART
+    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload)  # disable UART
 
-  dev.configure_port(port=4, inMask=0, outMask=0) # disable SPI
+  dev.configure_port(port=4, inMask=0, outMask=0)  # disable SPI
   dev.configure_poll_port()
   dev.configure_poll_port(ublox.PORT_SERIAL1)
   dev.configure_poll_port(ublox.PORT_SERIAL2)
@@ -128,7 +128,7 @@ def gen_ephemeris(ephem_data):
 
 
 def gen_solution(msg):
-  msg_data = msg.unpack()[0] # Solutions do not have any data in repeated blocks
+  msg_data = msg.unpack()[0]  # Solutions do not have any data in repeated blocks
   timestamp = int(((datetime.datetime(msg_data['year'],
                                       msg_data['month'],
                                       msg_data['day'],
@@ -204,9 +204,9 @@ def gen_raw(msg):
         'glonassFrequencyIndex': m['freqId'],
         'locktime': m['locktime'],
         'cno': m['cno'],
-        'pseudorangeStdev': 0.01*(2**(m['prStdev'] & 15)), # weird scaling, might be wrong
+        'pseudorangeStdev': 0.01*(2**(m['prStdev'] & 15)),  # weird scaling, might be wrong
         'carrierPhaseStdev': 0.004*(m['cpStdev'] & 15),
-        'dopplerStdev': 0.002*(2**(m['doStdev'] & 15)), # weird scaling, might be wrong
+        'dopplerStdev': 0.002*(2**(m['doStdev'] & 15)),  # weird scaling, might be wrong
         'trackingStatus': trackingStatus})
   if print_dB:
     cnos = {}
