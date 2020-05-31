@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import capnp
 import os
 import sys
 import threading
@@ -111,7 +112,7 @@ class FakePubMaster(messaging.PubMaster):
     for s in services:
       try:
         data = messaging.new_message(s)
-      except:
+      except capnp.lib.capnp.KjException:
         data = messaging.new_message(s, 0)
       self.data[s] = data.as_reader()
       self.sock[s] = DumbSocket()

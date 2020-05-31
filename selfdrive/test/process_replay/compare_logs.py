@@ -33,7 +33,7 @@ def remove_ignored_fields(msg, ignore):
     for k in keys[:-1]:
       try:
         attr = getattr(msg, k)
-      except:
+      except AttributeError:
         break
     else:
       v = getattr(attr, keys[-1])

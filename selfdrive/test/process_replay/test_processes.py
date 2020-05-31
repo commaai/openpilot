@@ -124,7 +124,7 @@ if __name__ == "__main__":
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
   try:
     ref_commit = open(os.path.join(process_replay_dir, "ref_commit")).read().strip()
-  except:
+  except FileNotFoundError:
     print("couldn't find reference commit")
     sys.exit(1)
 
