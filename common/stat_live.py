@@ -64,7 +64,7 @@ class RunningStatFilter():
     _std_last = self.raw_stat.std()
     self.raw_stat.push_data(new_data)
     _delta_std = self.raw_stat.std() - _std_last
-    if _delta_std<=0:
+    if _delta_std <= 0:
       self.filtered_stat.push_data(new_data)
     else:
       pass

@@ -6,10 +6,10 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # Car button codes
 class CruiseButtons:
-  RES_ACCEL   = 4
-  DECEL_SET   = 3
-  CANCEL      = 2
-  MAIN        = 1
+  RES_ACCEL = 4
+  DECEL_SET = 3
+  CANCEL = 2
+  MAIN = 1
 
 # See dbc files for info on values"
 VISUAL_HUD = {

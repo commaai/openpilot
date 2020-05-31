@@ -25,5 +25,5 @@ class UIParams:
   lidar_car_x, lidar_car_y = lidar_x/2., lidar_y/1.1
   car_hwidth = 1.7272/2 * lidar_zoom
   car_front = 2.6924 * lidar_zoom
-  car_back  = 1.8796 * lidar_zoom
+  car_back = 1.8796 * lidar_zoom
   car_color = 110

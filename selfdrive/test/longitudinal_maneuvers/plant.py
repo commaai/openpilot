@@ -163,7 +163,7 @@ class Plant():
     Plant.live_params.close()
 
   def speed_sensor(self, speed):
-    if speed<0.3:
+    if speed < 0.3:
       return 0
     else:
       return speed * CV.MS_TO_KPH
