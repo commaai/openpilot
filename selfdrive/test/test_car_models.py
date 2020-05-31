@@ -368,7 +368,7 @@ routes = {
     'enableCamera': True,
   },
   "059ab9162e23198e|2020-05-30--09-41-01": {
-    'carFingerprint': NISSAN.XTRAIL,
+    'carFingerprint': NISSAN.ROGUE,
     'enableCamera': True,
   },
 }
