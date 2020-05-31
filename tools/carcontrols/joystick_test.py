@@ -2,8 +2,8 @@
 import pygame  # pylint: disable=import-error
 
 # Define some colors
-BLACK    = (   0,   0,   0)
-WHITE    = ( 255, 255, 255)
+BLACK = (   0,   0,   0)
+WHITE = ( 255, 255, 255)
 
 # This is a simple class that will help us print to the screen
 # It has nothing to do with the joysticks, just outputting the
@@ -55,7 +55,7 @@ while not done:
     # EVENT PROCESSING STEP
     for event in pygame.event.get(): # User did something
         if event.type == pygame.QUIT: # If user clicked close
-            done=True # Flag that we are done so we exit this loop
+            done = True # Flag that we are done so we exit this loop
 
         # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
         if event.type == pygame.JOYBUTTONDOWN:

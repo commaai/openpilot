@@ -312,19 +312,19 @@ def keyboard_controller_thread(q, route_start_time):
   kb = KBHit()
   while 1:
     c = kb.getch()
-    if c=='m': # Move forward by 1m
+    if c == 'm': # Move forward by 1m
       q.send_pyobj(SeekRelativeTime(60))
-    elif c=='M': # Move backward by 1m
+    elif c == 'M': # Move backward by 1m
       q.send_pyobj(SeekRelativeTime(-60))
-    elif c=='s': # Move forward by 10s
+    elif c == 's': # Move forward by 10s
       q.send_pyobj(SeekRelativeTime(10))
-    elif c=='S': # Move backward by 10s
+    elif c == 'S': # Move backward by 10s
       q.send_pyobj(SeekRelativeTime(-10))
-    elif c=='G': # Move backward by 10s
+    elif c == 'G': # Move backward by 10s
       q.send_pyobj(SeekAbsoluteTime(0.))
-    elif c=="\x20": # Space bar.
+    elif c == "\x20": # Space bar.
       q.send_pyobj(TogglePause())
-    elif c=="\n":
+    elif c == "\n":
       try:
         seek_time_input = input('time: ')
         seek_time = absolute_time_str(seek_time_input, route_start_time)
