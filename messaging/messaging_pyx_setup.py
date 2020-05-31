@@ -30,7 +30,7 @@ class BuildExtWithoutPlatformSuffix(build_ext):
 
 
 sourcefiles = ['messaging_pyx.pyx']
-extra_compile_args = ["-std=c++11"]
+extra_compile_args = ["-std=c++14"]
 libraries = ['zmq']
 ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()  # pylint: disable=unexpected-keyword-arg
 

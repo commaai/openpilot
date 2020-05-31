@@ -1,7 +1,10 @@
 #pragma once
 #include <cstddef>
-#include <vector>
+#include <map>
 #include <string>
+#include <vector>
+#include <capnp/serialize.h>
+#include "../gen/cpp/log.capnp.h"
 
 #define MSG_MULTIPLE_PUBLISHERS 100
 
@@ -53,4 +56,37 @@ public:
   static Poller * create();
   static Poller * create(std::vector<SubSocket*> sockets);
   virtual ~Poller(){};
+};
+
+class SubMaster {
+ public:
+  SubMaster(const std::initializer_list<const char *> &service_list,
+            const char *address = nullptr, const std::initializer_list<const char *> &ignore_alive = {});
+  int update(int timeout = 1000);
+  inline bool allAlive(const std::initializer_list<const char *> &service_list = {}) { return all_(service_list, false, true); }
+  inline bool allValid(const std::initializer_list<const char *> &service_list = {}) { return all_(service_list, true, false); }
+  inline bool allAliveAndValid(const std::initializer_list<const char *> &service_list = {}) { return all_(service_list, true, true); }
+  bool updated(const char *name) const;
+  void drain();
+  cereal::Event::Reader &operator[](const char *name);
+  ~SubMaster();
+
+ private:
+  bool all_(const std::initializer_list<const char *> &service_list, bool valid, bool alive);
+  Poller *poller_ = nullptr;
+  uint64_t frame_ = 0;
+  struct SubMessage;
+  std::map<SubSocket *, SubMessage *> messages_;
+  std::map<std::string, SubMessage *> services_;
+};
+
+class PubMaster {
+ public:
+  PubMaster(const std::initializer_list<const char *> &service_list);
+  inline int send(const char *name, capnp::byte *data, size_t size) { return sockets_.at(name)->send((char *)data, size); }
+  int send(const char *name, capnp::MessageBuilder &msg);
+  ~PubMaster();
+
+ private:
+  std::map<std::string, PubSocket *> sockets_;
 };

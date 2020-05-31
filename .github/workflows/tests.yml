@@ -11,6 +11,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build docker image
       run: docker build -t cereal .
+    - name: Static analysis
+      run: |
+        docker run cereal bash -c "git init && git add -A && pre-commit run --all"
     - name: Unit Tests
       run: |
         docker run cereal bash -c "scons --test --asan -j$(nproc) && messaging/test_runner"
@@ -20,4 +23,3 @@ jobs:
     - name: Test MSGQ
       run: |
         docker run cereal bash -c "MSGQ=1 python -m unittest discover ."
-
