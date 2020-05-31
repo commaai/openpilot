@@ -17,7 +17,7 @@ repos:
     -   id: flake8
         exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'
         args:
-        - --ignore=E111,E114,E121,E122,E123,E124,E126,E127,E128,E201,E202,E203,E226,E241,E251,E261,E265,E266,E302,E303,E305,E402,E501,E502,E722,E741,W504
+        - --ignore=E111,E114,E121,E122,E123,E124,E126,E127,E128,E201,E202,E203,E226,E241,E251,E265,E266,E302,E303,E305,E402,E501,E502,E722,E741,W504
         - --statistics
 -   repo: local
     hooks:

@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
 
     # Speed conversion:              20, 45 mph
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
-    ret.steerRatio = 16.2 # Pacifica Hybrid 2017
+    ret.steerRatio = 16.2  # Pacifica Hybrid 2017
     ret.mass = 2858. + STD_CARGO_KG  # kg curb weight Pacifica Hybrid 2017
     ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
@@ -88,7 +88,7 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
 
     if (self.CS.frame == -1):
-      return [] # if we haven't seen a frame 220, then do not update.
+      return []  # if we haven't seen a frame 220, then do not update.
 
     can_sends = self.CC.update(c.enabled, self.CS, c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert)
 

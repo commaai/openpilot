@@ -36,7 +36,7 @@ if ANDROID:
 def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
-  if child_pid != 0: # parent
+  if child_pid != 0:  # parent
 
     # child is in its own process group, manually pass kill signals
     signal.signal(signal.SIGINT, lambda signum, frame: os.kill(child_pid, signal.SIGINT))

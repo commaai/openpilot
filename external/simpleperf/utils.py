@@ -101,7 +101,7 @@ def get_host_binary_path(binary_name):
         elif '.' not in binary_name:
             binary_name += '.exe'
         dir = os.path.join(dir, 'windows')
-    elif sys.platform == 'darwin': # OSX
+    elif sys.platform == 'darwin':  # OSX
         if binary_name.endswith('.so'):
             binary_name = binary_name[0:-3] + '.dylib'
         dir = os.path.join(dir, 'darwin')

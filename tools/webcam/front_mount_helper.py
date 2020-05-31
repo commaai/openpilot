@@ -2,8 +2,8 @@
 import numpy as np
 
 # copied from common.transformations/camera.py
-eon_dcam_focal_length = 860.0 # pixels
-webcam_focal_length = 908.0 # pixels
+eon_dcam_focal_length = 860.0  # pixels
+webcam_focal_length = 908.0  # pixels
 
 eon_dcam_intrinsics = np.array([
   [eon_dcam_focal_length,   0,   1152/2.],
