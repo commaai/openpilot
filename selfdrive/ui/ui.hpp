@@ -123,13 +123,13 @@ typedef struct UIScene {
   std::string alert_text2;
   cereal::ControlsState::AlertSize alert_size;
 
-  cereal::ThermalData::Reader thermal;
   cereal::HealthData::HwType hwType;
   uint8_t athenaStatus;
 
   cereal::ControlsState::Reader controls_state;
   cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::DriverState::Reader driver_state;
+  cereal::ThermalData::Reader thermal;
 } UIScene;
 
 typedef struct {

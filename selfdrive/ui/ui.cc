@@ -253,7 +253,6 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->scene.front_box_width = ui_info.front_box_width;
   s->scene.front_box_height = ui_info.front_box_height;
   s->scene.world_objects_visible = false;  // Invisible until we receive a calibration message.
-  s->scene.gps_planner_active = false;
 
   s->rgb_width = back_bufs.width;
   s->rgb_height = back_bufs.height;
