@@ -5,6 +5,7 @@ Version 0.7.6 (2020-06-05)
 * 2017 Mazda CX-5 support in dashcam mode thanks to Jafaral!
 * Huge CPU savings in modeld by using thneed!
 * Lots of code cleanup and refactors
+* Added support to 2019 Sonata thanks to [AskAlice](https://github.com/askalice)
 
 Version 0.7.5 (2020-05-13)
 ========================
