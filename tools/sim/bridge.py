@@ -22,12 +22,12 @@ args = parser.parse_args()
 
 pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
 
-W,H = 1164, 874
+W, H = 1164, 874
 
 def cam_callback(image):
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
   img = np.reshape(img, (H, W, 4))
-  img = img[:, :, [0,1,2]].copy()
+  img = img[:, :, [0, 1, 2]].copy()
 
   dat = messaging.new_message('frame')
   dat.frame = {

@@ -48,7 +48,7 @@ if __name__ == "__main__":
   acc = 0
   for i, ii in enumerate(m.inputs):
     print(ii, file=sys.stderr)
-    ti = keras.layers.Lambda(lambda x: x[:,acc:acc+bs[i]], output_shape=(1, bs[i]))(ri)
+    ti = keras.layers.Lambda(lambda x: x[:, acc:acc+bs[i]], output_shape=(1, bs[i]))(ri)
     acc += bs[i]
     tr = keras.layers.Reshape(ii.shape[1:])(ti)
     tii.append(tr)

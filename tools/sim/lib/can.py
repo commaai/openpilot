@@ -37,7 +37,7 @@ def can_function(pm, speed, angle, idx, cruise_button=0, is_engaged=False):
   msg.append(packer.make_can_msg("GAS_PEDAL_2", 0, {}, idx))
   msg.append(packer.make_can_msg("SEATBELT_STATUS", 0, {"SEATBELT_DRIVER_LATCHED": 1}, idx))
   msg.append(packer.make_can_msg("STEER_STATUS", 0, {}, idx))
-  msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE":angle_to_sangle(angle)}, idx))
+  msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": angle_to_sangle(angle)}, idx))
   msg.append(packer.make_can_msg("POWERTRAIN_DATA", 0, {}, idx))
   msg.append(packer.make_can_msg("VSA_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("STANDSTILL", 0, {}, idx))
@@ -63,7 +63,7 @@ def can_function(pm, speed, angle, idx, cruise_button=0, is_engaged=False):
 
   # fill in the rest for fingerprint
   done = set([x[0] for x in msg])
-  for k,v in FINGERPRINTS[CAR.CIVIC][0].items():
+  for k, v in FINGERPRINTS[CAR.CIVIC][0].items():
     if k not in done and k not in [0xE4, 0x194]:
       msg.append([k, 0, b'\x00'*v, 0])
   pm.send('can', can_list_to_can_capnp(msg))

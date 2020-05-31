@@ -207,7 +207,7 @@ def rgb24toyuv420(rgb):
   yuv420[y_len:y_len + uv_len] = us.reshape(-1)
   yuv420[y_len + uv_len:y_len + 2 * uv_len] = vs.reshape(-1)
 
-  return yuv420.clip(0,255).astype('uint8')
+  return yuv420.clip(0, 255).astype('uint8')
 
 
 def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):

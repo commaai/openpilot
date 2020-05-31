@@ -176,7 +176,7 @@ class LocKalman():
     state_dot[13, 0] = cd
     state_dot[14, 0] = ca
     #state_dot[States.CLOCK_BIAS, 0][0,0] = cd
-    state_dot[States.CLOCK_DRIFT, 0][0,0] = ca
+    state_dot[States.CLOCK_DRIFT, 0][0, 0] = ca
 
     # Basic descretization, 1st order intergrator
     # Can be pretty bad if dt is big
@@ -201,8 +201,8 @@ class LocKalman():
     state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
     #state_err_dot[States.CLOCK_BIAS_ERR, :][0,:] = cd_err
     #state_err_dot[States.CLOCK_DRIFT_ERR, :][0,:] = ca_err
-    state_err_dot[12, :][0,:] = cd_err
-    state_err_dot[13, :][0,:] = ca_err
+    state_err_dot[12, :][0, :] = cd_err
+    state_err_dot[13, :][0, :] = ca_err
     f_err_sym = state_err + dt * state_err_dot
 
     # convenient indexing

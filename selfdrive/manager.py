@@ -124,7 +124,7 @@ if not prebuilt:
 
       if retry:
         print("scons build failed, cleaning in")
-        for i in range(3,-1,-1):
+        for i in range(3, -1, -1):
           print("....%d" % i)
           time.sleep(1)
         subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)

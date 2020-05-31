@@ -61,9 +61,9 @@ class TestUploader(UploaderTestCase):
     keys = [f"{self.seg_format.format(i)}/qlog.bz2" for i in seg1]
     keys += [f"{self.seg_format2.format(i)}/qlog.bz2" for i in seg2]
     for i in seg1:
-      keys += [f"{self.seg_format.format(i)}/{f}" for f in ['rlog.bz2','fcamera.hevc','dcamera.hevc']]
+      keys += [f"{self.seg_format.format(i)}/{f}" for f in ['rlog.bz2', 'fcamera.hevc', 'dcamera.hevc']]
     for i in seg2:
-      keys += [f"{self.seg_format2.format(i)}/{f}" for f in ['rlog.bz2','fcamera.hevc','dcamera.hevc']]
+      keys += [f"{self.seg_format2.format(i)}/{f}" for f in ['rlog.bz2', 'fcamera.hevc', 'dcamera.hevc']]
     keys += [f"{self.seg_format.format(i)}/bootlog.bz2" for i in seg1]
     keys += [f"{self.seg_format2.format(i)}/bootlog.bz2" for i in seg2]
     return keys
@@ -103,11 +103,11 @@ class TestUploader(UploaderTestCase):
 
   def test_upload_files_in_create_order(self):
     f_paths = list()
-    seg1_nums = [0,1,2,10,20]
+    seg1_nums = [0, 1, 2, 10, 20]
     for i in seg1_nums:
       self.seg_dir = self.seg_format.format(i)
       f_paths += self.gen_files()
-    seg2_nums = [5,50,51]
+    seg2_nums = [5, 50, 51]
     for i in seg2_nums:
       self.seg_dir = self.seg_format2.format(i)
       f_paths += self.gen_files()

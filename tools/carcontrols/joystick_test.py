@@ -104,7 +104,7 @@ while not done:
 
     for i in range( buttons ):
         button = joystick.get_button( i )
-        textPrint.printf(screen, "Button {:>2} value: {}".format(i,button) )
+        textPrint.printf(screen, "Button {:>2} value: {}".format(i, button) )
     textPrint.unindent()
 
 

@@ -18,9 +18,9 @@ def geodetic2ecef(geodetic, radians=False):
   geodetic = np.atleast_2d(geodetic)
 
   ratio = 1.0 if radians else (np.pi / 180.0)
-  lat = ratio*geodetic[:,0]
-  lon = ratio*geodetic[:,1]
-  alt = geodetic[:,2]
+  lat = ratio*geodetic[:, 0]
+  lon = ratio*geodetic[:, 1]
+  alt = geodetic[:, 2]
 
   xi = np.sqrt(1 - esq * np.sin(lat)**2)
   x = (a / xi + alt) * np.cos(lat) * np.cos(lon)

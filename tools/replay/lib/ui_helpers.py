@@ -23,7 +23,7 @@ _PATH_X = np.arange(192.)
 _PATH_XD = np.arange(192.)
 _PATH_PINV = compute_path_pinv(50)
 #_BB_OFFSET = 290, 332
-_BB_OFFSET = 0,0
+_BB_OFFSET = 0, 0
 _BB_SCALE = 1164/640.
 _BB_TO_FULL_FRAME = np.asarray([
     [_BB_SCALE, 0., _BB_OFFSET[0]],
@@ -110,24 +110,24 @@ def draw_lead_on(img, closest_x_m, closest_y_m, calibration, color, sz=10, img_o
 
 
 def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=False):
-  color_palette = { "r": (1,0,0),
-                    "g": (0,1,0),
-                    "b": (0,0,1),
-                    "k": (0,0,0),
-                    "y": (1,1,0),
-                    "p": (0,1,1),
-                    "m": (1,0,1) }
+  color_palette = { "r": (1, 0, 0),
+                    "g": (0, 1, 0),
+                    "b": (0, 0, 1),
+                    "k": (0, 0, 0),
+                    "y": (1, 1, 0),
+                    "p": (0, 1, 1),
+                    "m": (1, 0, 1) }
 
   if bigplots:
     fig = plt.figure(figsize=(6.4, 7.0))
   else:
     fig = plt.figure()
 
-  fig.set_facecolor((0.2,0.2,0.2))
+  fig.set_facecolor((0.2, 0.2, 0.2))
 
   axs = []
   for pn in range(len(plot_ylims)):
-    ax = fig.add_subplot(len(plot_ylims),1,len(axs)+1)
+    ax = fig.add_subplot(len(plot_ylims), 1, len(axs)+1)
     ax.set_xlim(plot_xlims[pn][0], plot_xlims[pn][1])
     ax.set_ylim(plot_ylims[pn][0], plot_ylims[pn][1])
     ax.patch.set_facecolor((0.4, 0.4, 0.4))

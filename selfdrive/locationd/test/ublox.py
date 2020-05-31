@@ -717,7 +717,7 @@ class UBlox:
       self.dev = PandaSerial(self.panda, 1, self.baudrate)
 
       self.baudrate = 460800
-      print("upping baud:",self.baudrate)
+      print("upping baud:", self.baudrate)
       self.send_nmea("$PUBX,41,1,0007,0003,%u,0" % self.baudrate)
       time.sleep(0.1)
 
