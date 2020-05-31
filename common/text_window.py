@@ -59,6 +59,9 @@ class FakeTextWindow(TextWindow):
   def update(self, _):
     pass
 
+  def close(self):
+    pass
+
   def __exit__(self, type, value, traceback):
     pass
 
