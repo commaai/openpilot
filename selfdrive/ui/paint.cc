@@ -590,11 +590,10 @@ static void ui_draw_driver_view(UIState *s) {
   const int frame_w = scene->ui_viz_rw;
   const int valid_frame_w = 4 * box_h / 3;
   const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
-  auto fxy_list = scene->driver_state.getFacePosition();
-  float face_x = fxy_list[0];
-  float face_y = fxy_list[1];
+
   // blackout
-  if (!scene->is_rhd) {
+  const bool is_rhd = (*s->sm)["dMonitoringState"].getDMonitoringState().getIsRHD();
+  if (!is_rhd) {
     NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x + valid_frame_w,
                           box_y,
                           valid_frame_x + box_h / 2, box_y,
@@ -607,17 +606,21 @@ static void ui_draw_driver_view(UIState *s) {
                           nvgRGBAf(0,0,0,1), nvgRGBAf(0,0,0,0));
     ui_draw_rect(s->vg, valid_frame_x, box_y, valid_frame_w - box_h / 2, box_h, gradient);
   }
-  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
+  ui_draw_rect(s->vg, is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
 
   // borders
   ui_draw_rect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h, nvgRGBA(23, 51, 73, 255));
   ui_draw_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
 
   // draw face box
-  if (scene->driver_state.getFaceProb() > 0.4) {
+  auto driver_state = (*s->sm)["driverState"].getDriverState();
+  if (driver_state.getFaceProb() > 0.4) {
+    auto fxy_list = driver_state.getFacePosition();
+    const int face_x = fxy_list[0];
+    const int face_y = fxy_list[1];
     int fbox_x;
     int fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
-    if (!scene->is_rhd) {
+    if (!is_rhd) {
       fbox_x = valid_frame_x + (1 - (face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     } else {
       fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
@@ -635,9 +638,9 @@ static void ui_draw_driver_view(UIState *s) {
 
   // draw face icon
   const int face_size = 85;
-  const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
+  const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (is_rhd ? valid_frame_w - box_h / 2:0);
   const int y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->driver_state.getFaceProb() > 0.4);
+  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, driver_state.getFaceProb() > 0.4);
 }
 
 static void ui_draw_vision_header(UIState *s) {

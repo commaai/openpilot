@@ -416,13 +416,8 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.hwType = sm["health"].getHealth().getHwType();
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
   }
-  if (sm.updated("driverState")) {
-    scene.driver_state = sm["driverState"].getDriverState();
-  }
   if (sm.updated("dMonitoringState")) {
-    auto data = sm["dMonitoringState"].getDMonitoringState();
-    scene.is_rhd = data.getIsRHD();
-    s->preview_started = data.getIsPreview();
+    s->preview_started = sm["dMonitoringState"].getDMonitoringState().getIsPreview();
   }
 
   s->started = scene.thermal.getStarted() || s->preview_started ;

@@ -115,7 +115,6 @@ typedef struct UIScene {
   int ui_viz_rx;
   int ui_viz_rw;
   int ui_viz_ro;
-  bool is_rhd;
 
   int front_box_x, front_box_y, front_box_width, front_box_height;
 
@@ -128,7 +127,6 @@ typedef struct UIScene {
 
   cereal::ControlsState::Reader controls_state;
   cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::DriverState::Reader driver_state;
   cereal::ThermalData::Reader thermal;
 } UIScene;
 
