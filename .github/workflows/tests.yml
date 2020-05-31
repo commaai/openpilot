@@ -12,6 +12,9 @@ jobs:
           set -e
           docker build -t opendbc .
         name: "Build"
+      - name: Static analysis
+        run: |
+          docker run opendbc bash -c "cd opendbc && git init && git add -A && pre-commit run --all"
       - run: |
           docker run opendbc bash -c "python -m unittest discover opendbc"
         name: "Unit tests"

@@ -402,23 +402,26 @@ BO_ 158 MSG_05: 8 XXX
  SG_ NEW_SIGNAL_3 : 55|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 157 CRZ_BTNS: 8 XXX
- SG_ SET_P_INV : 21|1@0+ (1,0) [0|3] "" XXX
- SG_ CAN_OFF_INV : 17|1@1+ (1,0) [0|3] "" XXX
- SG_ CAN_OFF : 0|1@1+ (1,0) [0|3] "" XXX
- SG_ SET_M_INV : 22|1@0+ (1,0) [0|255] "" XXX
- SG_ SET_M : 5|1@0+ (1,0) [0|3] "" XXX
- SG_ SET_P : 4|1@0+ (1,0) [0|3] "" XXX
- SG_ RES_INV : 19|1@1+ (1,0) [0|3] "" XXX
- SG_ RES : 2|1@1+ (1,0) [0|3] "" XXX
+ SG_ BIT1 : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ BIT2 : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ BIT3 : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_P_INV : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ CAN_OFF_INV : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ CAN_OFF : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_M_INV : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_M : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_P : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ RES_INV : 19|1@0+ (1,0) [0|1] "" XXX
+ SG_ RES : 2|1@0+ (1,0) [0|1] "" XXX
  SG_ DISTANCE_LESS : 7|1@0+ (1,0) [0|1] "" XXX
- SG_ DISTANCE_LESS_INV : 8|1@0+ (1,0) [0|31] "" XXX
- SG_ DISTANCE_MORE : 6|1@0+ (1,0) [0|3] "" XXX
+ SG_ DISTANCE_LESS_INV : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ DISTANCE_MORE : 6|1@0+ (1,0) [0|1] "" XXX
  SG_ DISTANCE_MORE_INV : 23|1@0+ (1,0) [0|1] "" XXX
- SG_ MODE_Y : 13|1@1+ (1,0) [0|3] "" XXX
- SG_ MODE_X : 14|1@0+ (1,0) [0|255] "" XXX
- SG_ MODE_Y_INV : 30|1@0+ (1,0) [0|3] "" XXX
- SG_ MODE_X_INV : 31|1@0+ (1,0) [0|3] "" XXX
- SG_ CTR : 29|4@0+ (1,0) [0|255] "" XXX
+ SG_ MODE_Y : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_X : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_Y_INV : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_X_INV : 31|1@0+ (1,0) [0|1] "" XXX
+ SG_ CTR : 29|4@0+ (1,0) [0|15] "" XXX
 
 BO_ 154 BLINK_INFO: 8 XXX
  SG_ LEFT_BLINK : 18|1@1+ (1,0) [0|3] "" XXX
