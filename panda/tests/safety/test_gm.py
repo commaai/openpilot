@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+from typing import Dict, List
 import numpy as np
 from panda import Panda
 from panda.tests.safety import libpandasafety_py
@@ -27,8 +28,8 @@ class TestGmSafety(common.PandaSafetyTest):
   STANDSTILL_THRESHOLD = 0
   RELAY_MALFUNCTION_ADDR = 384
   RELAY_MALFUNCTION_BUS = 0
-  FWD_BLACKLISTED_ADDRS = {}
-  FWD_BUS_LOOKUP = {}
+  FWD_BLACKLISTED_ADDRS: Dict[int, List[int]] = {}
+  FWD_BUS_LOOKUP: Dict[int, int] = {}
 
   def setUp(self):
     self.packer = CANPackerPanda("gm_global_a_powertrain")

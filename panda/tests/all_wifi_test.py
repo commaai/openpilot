@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import requests
 import json
-from .automated.helpers import _connect_wifi
+from .automated.helpers import _connect_wifi  # pylint: disable=import-error
 from panda import Panda
 from nose.tools import assert_equal
 
@@ -25,5 +25,3 @@ if __name__ == "__main__":
     assert_equal(str(dongle_id), wifi_dongle_id)
     assert_equal(latest_version, st_version)
     assert_equal(latest_version, esp_version)
-
-

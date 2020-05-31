@@ -16,6 +16,22 @@ RT_INTERVAL = 250000
 DRIVER_TORQUE_ALLOWANCE = 50
 DRIVER_TORQUE_FACTOR = 2
 
+# 4 bit checkusm used in some hyundai messages
+# lives outside the can packer because we never send this msg
+def checksum(msg):
+  addr, t, dat, bus = msg
+
+  chksum = 0
+  for i, b in enumerate(dat):
+    if addr in [608, 1057] and i == 7:
+      b &= 0x0F if addr == 1057 else 0xF0
+    elif addr == 916 and i == 6:
+      b &= 0xF0
+    chksum += sum(divmod(b, 16))
+  chksum = (16 - chksum) % 16
+  ret = bytearray(dat)
+  ret[6 if addr == 916 else 7] |= chksum << (4 if addr == 1057 else 0)
+  return addr, t, ret, bus
 
 class TestHyundaiSafety(common.PandaSafetyTest):
   TX_MSGS = [[832, 0], [1265, 0], [1157, 0]]
@@ -43,24 +59,25 @@ class TestHyundaiSafety(common.PandaSafetyTest):
   def _gas_msg(self, val):
     values = {"CF_Ems_AclAct": val, "AliveCounter": self.cnt_gas % 4}
     self.__class__.cnt_gas += 1
-    return self.packer.make_can_msg_panda("EMS16", 0, values)
+    return self.packer.make_can_msg_panda("EMS16", 0, values, fix_checksum=checksum)
 
   def _brake_msg(self, brake):
     values = {"DriverBraking": brake, "AliveCounterTCS": self.cnt_brake % 8}
     self.__class__.cnt_brake += 1
-    return self.packer.make_can_msg_panda("TCS13", 0, values)
+    return self.packer.make_can_msg_panda("TCS13", 0, values, fix_checksum=checksum)
 
   def _speed_msg(self, speed):
     # panda safety doesn't scale, so undo the scaling
     values = {"WHL_SPD_%s"%s: speed*0.03125 for s in ["FL", "FR", "RL", "RR"]}
-    values["WHL_SPD_AliveCounter_LSB"] = self.cnt_speed % 4
+    values["WHL_SPD_AliveCounter_LSB"] = (self.cnt_speed % 16) & 0x3
+    values["WHL_SPD_AliveCounter_MSB"] = (self.cnt_speed % 16) >> 2
     self.__class__.cnt_speed += 1
     return self.packer.make_can_msg_panda("WHL_SPD11", 0, values)
 
   def _pcm_status_msg(self, enabled):
     values = {"ACCMode": enabled, "CR_VSM_Alive": self.cnt_cruise % 16}
     self.__class__.cnt_cruise += 1
-    return self.packer.make_can_msg_panda("SCC12", 0, values)
+    return self.packer.make_can_msg_panda("SCC12", 0, values, fix_checksum=checksum)
 
   def _set_prev_torque(self, t):
     self.safety.set_desired_torque_last(t)

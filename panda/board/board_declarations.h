@@ -39,6 +39,7 @@ struct board {
 #define HW_TYPE_BLACK_PANDA 3U
 #define HW_TYPE_PEDAL 4U
 #define HW_TYPE_UNO 5U
+#define HW_TYPE_DOS 6U
 
 // LED colors
 #define LED_RED 0U

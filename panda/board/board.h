@@ -13,6 +13,7 @@
   #include "boards/grey.h"
   #include "boards/black.h"
   #include "boards/uno.h"
+  #include "boards/dos.h"
 #else
   #include "boards/pedal.h"
 #endif
@@ -22,7 +23,10 @@ void detect_board_type(void) {
     // SPI lines floating: white (TODO: is this reliable? Not really, we have to enable ESP/GPS to be able to detect this on the UART)
     set_gpio_output(GPIOC, 14, 1);
     set_gpio_output(GPIOC, 5, 1);
-    if((detect_with_pull(GPIOA, 4, PULL_DOWN)) || (detect_with_pull(GPIOA, 5, PULL_DOWN)) || (detect_with_pull(GPIOA, 6, PULL_DOWN)) || (detect_with_pull(GPIOA, 7, PULL_DOWN))){
+    if(!detect_with_pull(GPIOB, 1, PULL_UP)){
+      hw_type = HW_TYPE_DOS;
+      current_board = &board_dos;
+    } else if((detect_with_pull(GPIOA, 4, PULL_DOWN)) || (detect_with_pull(GPIOA, 5, PULL_DOWN)) || (detect_with_pull(GPIOA, 6, PULL_DOWN)) || (detect_with_pull(GPIOA, 7, PULL_DOWN))){
       hw_type = HW_TYPE_WHITE_PANDA;
       current_board = &board_white;
     } else if(detect_with_pull(GPIOA, 13, PULL_DOWN)) { // Rev AB deprecated, so no pullup means black. In REV C, A13 is pulled up to 5V with a 10K
@@ -78,7 +82,7 @@ bool board_has_gmlan(void) {
 }
 
 bool board_has_obd(void) {
-  return ((hw_type == HW_TYPE_BLACK_PANDA) || (hw_type == HW_TYPE_UNO));
+  return ((hw_type == HW_TYPE_BLACK_PANDA) || (hw_type == HW_TYPE_UNO) || (hw_type == HW_TYPE_DOS));
 }
 
 bool board_has_lin(void) {
@@ -86,9 +90,9 @@ bool board_has_lin(void) {
 }
 
 bool board_has_rtc(void) {
-  return (hw_type == HW_TYPE_UNO);
+  return ((hw_type == HW_TYPE_UNO) || (hw_type == HW_TYPE_DOS));
 }
 
 bool board_has_relay(void) {
-  return ((hw_type == HW_TYPE_BLACK_PANDA) || (hw_type == HW_TYPE_UNO));
+  return ((hw_type == HW_TYPE_BLACK_PANDA) || (hw_type == HW_TYPE_UNO) || (hw_type == HW_TYPE_DOS));
 }

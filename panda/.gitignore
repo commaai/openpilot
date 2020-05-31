@@ -15,3 +15,4 @@ examples/output.csv
 .DS_Store
 .vscode
 nosetests.xml
+.mypy_cache/
