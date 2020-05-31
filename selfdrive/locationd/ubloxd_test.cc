@@ -12,14 +12,10 @@
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <map>
-#include <vector>
 #include <iostream>
 
 #include "messaging.hpp"
 #include "impl_zmq.hpp"
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/params.h"
 #include "common/swaglog.h"
@@ -30,13 +26,13 @@
 using namespace ublox;
 extern volatile sig_atomic_t do_exit;
 
-void write_file(std::string fpath, uint8_t *data, int len) {
+void write_file(std::string fpath, uint8_t *to_write, int len) {
   FILE* f = fopen(fpath.c_str(), "wb");
   if (!f) {
     std::cout << "Open " << fpath << " failed" << std::endl;
     return;
   }
-  fwrite(data, len, 1, f);
+  fwrite(to_write, len, 1, f);
   fclose(f);
 }
 
@@ -72,11 +68,11 @@ Message * poll_ubloxraw_msg(Poller * poller) {
   }
 }
 
-int send_gps_event(PubSocket *s, const void *buf, size_t len) {
+int send_gps_event(PubSocket *s, const void *buf, size_t length) {
   assert(s);
-  write_file(prefix + "/" + std::to_string(save_idx), (uint8_t *)buf, len);
+  write_file(prefix + "/" + std::to_string(save_idx), (uint8_t *)buf, length);
   save_idx++;
-  return len;
+  return length;
 }
 
 int main(int argc, char** argv) {

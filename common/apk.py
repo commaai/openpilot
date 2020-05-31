@@ -13,7 +13,7 @@ def get_installed_apks():
   ret = {}
   for x in dat:
     if x.startswith("package:"):
-      v,k = x.split("package:")[1].split("=")
+      v, k = x.split("package:")[1].split("=")
       ret[k] = v
   return ret
 

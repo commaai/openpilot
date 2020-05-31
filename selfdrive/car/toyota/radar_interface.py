@@ -62,7 +62,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    rr =  self._update(self.updated_messages)
+    rr = self._update(self.updated_messages)
     self.updated_messages.clear()
 
     return rr
@@ -78,12 +78,12 @@ class RadarInterface(RadarInterfaceBase):
       if ii in self.RADAR_A_MSGS:
         cpt = self.rcp.vl[ii]
 
-        if cpt['LONG_DIST'] >=255 or cpt['NEW_TRACK']:
+        if cpt['LONG_DIST'] >= 255 or cpt['NEW_TRACK']:
           self.valid_cnt[ii] = 0    # reset counter
         if cpt['VALID'] and cpt['LONG_DIST'] < 255:
           self.valid_cnt[ii] += 1
         else:
-          self.valid_cnt[ii] = max(self.valid_cnt[ii] -1, 0)
+          self.valid_cnt[ii] = max(self.valid_cnt[ii] - 1, 0)
 
         score = self.rcp.vl[ii+16]['SCORE']
         # print ii, self.valid_cnt[ii], score, cpt['VALID'], cpt['LONG_DIST'], cpt['LAT_DIST']

@@ -44,9 +44,9 @@ class CarState(CarStateBase):
 
     # 1 - open, 0 - closed
     ret.doorOpen = (pt_cp.vl["BCMDoorBeltStatus"]['FrontLeftDoor'] == 1 or
-      pt_cp.vl["BCMDoorBeltStatus"]['FrontRightDoor'] == 1 or
-      pt_cp.vl["BCMDoorBeltStatus"]['RearLeftDoor'] == 1 or
-      pt_cp.vl["BCMDoorBeltStatus"]['RearRightDoor'] == 1)
+                    pt_cp.vl["BCMDoorBeltStatus"]['FrontRightDoor'] == 1 or
+                    pt_cp.vl["BCMDoorBeltStatus"]['RearLeftDoor'] == 1 or
+                    pt_cp.vl["BCMDoorBeltStatus"]['RearRightDoor'] == 1)
 
     # 1 - latched
     ret.seatbeltUnlatched = pt_cp.vl["BCMDoorBeltStatus"]['LeftSeatBelt'] == 0

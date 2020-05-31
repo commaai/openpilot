@@ -1,2 +1,2 @@
-Import('env', 'messaging')
-env.Program('proclogd.cc', LIBS=[messaging, 'pthread', 'zmq', 'czmq', 'capnp', 'kj'])
+Import('env', 'cereal', 'messaging')
+env.Program('proclogd.cc', LIBS=[cereal, messaging, 'pthread', 'zmq', 'czmq', 'capnp', 'kj'])

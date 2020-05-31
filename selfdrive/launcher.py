@@ -1,5 +1,5 @@
 import importlib
-from setproctitle import setproctitle  #pylint: disable=no-name-in-module
+from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
 import cereal.messaging as messaging
 import selfdrive.crash as crash

@@ -5,6 +5,7 @@ import copy
 import json
 import numpy as np
 import cereal.messaging as messaging
+from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibration_helpers import Calibration
 from selfdrive.swaglog import cloudlog
 from common.params import Params, put_nonblocking
@@ -12,8 +13,7 @@ from common.transformations.model import model_height
 from common.transformations.camera import view_frame_from_device_frame, get_view_frame_from_road_frame, \
                                           get_calib_from_vp, vp_from_rpy, H, W, FOCAL
 
-MPH_TO_MS = 0.44704
-MIN_SPEED_FILTER = 15 * MPH_TO_MS
+MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
@@ -24,22 +24,21 @@ INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 WRITE_CYCLES = 10  # write every 1000 cycles
 VP_INIT = np.array([W/2., H/2.])
 
-# These validity corners were chosen by looking at 1000
-# and taking most extreme cases with some margin.
-VP_VALIDITY_CORNERS = np.array([[W//2 - 120, 300], [W//2 + 120, 520]])
+# These values are needed to accomodate biggest modelframe
+VP_VALIDITY_CORNERS = np.array([[W//2 - 63, 300], [W//2 + 63, 520]])
 DEBUG = os.getenv("DEBUG") is not None
 
 
 def is_calibration_valid(vp):
-  return vp[0] > VP_VALIDITY_CORNERS[0,0] and vp[0] < VP_VALIDITY_CORNERS[1,0] and \
-         vp[1] > VP_VALIDITY_CORNERS[0,1] and vp[1] < VP_VALIDITY_CORNERS[1,1]
+  return vp[0] > VP_VALIDITY_CORNERS[0, 0] and vp[0] < VP_VALIDITY_CORNERS[1, 0] and \
+         vp[1] > VP_VALIDITY_CORNERS[0, 1] and vp[1] < VP_VALIDITY_CORNERS[1, 1]
 
 
 def sanity_clip(vp):
   if np.isnan(vp).any():
     vp = VP_INIT
-  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 20, VP_VALIDITY_CORNERS[1,0] + 20),
-                   np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 20, VP_VALIDITY_CORNERS[1,1] + 20)])
+  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0, 0] - 5, VP_VALIDITY_CORNERS[1, 0] + 5),
+                   np.clip(vp[1], VP_VALIDITY_CORNERS[0, 1] - 5, VP_VALIDITY_CORNERS[1, 1] + 5)])
 
 
 def intrinsics_from_vp(vp):
@@ -69,10 +68,7 @@ class Calibrator():
     if calibration_params:
       try:
         calibration_params = json.loads(calibration_params)
-        if 'calib_radians' in calibration_params:
-          self.vp = vp_from_rpy(calibration_params["calib_radians"])
-        else:
-          self.vp = np.array(calibration_params["vanishing_point"])
+        self.vp = vp_from_rpy(calibration_params["calib_radians"])
         if not np.isfinite(self.vp).all():
           self.vp = copy.copy(VP_INIT)
         self.vps = np.tile(self.vp, (INPUTS_WANTED, 1))

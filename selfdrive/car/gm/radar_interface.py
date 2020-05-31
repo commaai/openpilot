@@ -103,7 +103,7 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[targetId].yvRel = float('nan')
 
     for oldTarget in list(self.pts.keys()):
-      if not oldTarget in currentTargets:
+      if oldTarget not in currentTargets:
         del self.pts[oldTarget]
 
     ret.points = list(self.pts.values())

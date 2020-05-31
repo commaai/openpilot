@@ -8,4 +8,3 @@ class Calibration:
   UNCALIBRATED = 0
   CALIBRATED = 1
   INVALID = 2
-

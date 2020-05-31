@@ -6,13 +6,13 @@ def print_cpu_usage(first_proc, last_proc):
   r = 0
   procs = [
       ("selfdrive.controls.controlsd", 59.46),
-      ("./_modeld", 48.94),
+      ("./_modeld", 6.75),
       ("./loggerd", 28.49),
       ("selfdrive.controls.plannerd", 19.77),
       ("selfdrive.controls.radard", 9.54),
       ("./_ui", 9.54),
       ("./camerad", 7.07),
-      ("selfdrive.locationd.locationd", 7.13),
+      ("selfdrive.locationd.locationd", 27.46),
       ("./_sensord", 6.17),
       ("selfdrive.controls.dmonitoringd", 5.48),
       ("./boardd", 3.63),

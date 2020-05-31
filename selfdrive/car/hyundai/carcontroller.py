@@ -13,7 +13,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
   # initialize to no line visible
   sys_state = 1
-  if left_lane and right_lane or sys_warning:  #HUD alert only display when LKAS status is active
+  if left_lane and right_lane or sys_warning:  # HUD alert only display when LKAS status is active
     if enabled or sys_warning:
       sys_state = 3
     else:

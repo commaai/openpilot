@@ -57,6 +57,8 @@ panda_jungle
 
 .coverage*
 coverage.xml
+cppcheck_report.txt
 htmlcov
 pandaextra
 
+.mypy_cache/
