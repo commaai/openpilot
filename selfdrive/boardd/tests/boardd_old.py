@@ -90,7 +90,7 @@ def can_init():
   cloudlog.info("attempting can init")
 
   context = usb1.USBContext()
-  #context.setDebug(9)
+  # context.setDebug(9)
 
   for device in context.getDeviceList(skip_on_error=True):
     if device.getVendorID() == 0xbbaa and device.getProductID() == 0xddcc:
@@ -139,8 +139,8 @@ def boardd_test_loop():
   cnt = 0
   while 1:
     can_send_many([[0xbb,0,"\xaa\xaa\xaa\xaa",0], [0xaa,0,"\xaa\xaa\xaa\xaa"+struct.pack("!I", cnt),1]])
-    #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",0]])
-    #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",1]])
+    # can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",0]])
+    # can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",1]])
     # recv @ 100hz
     can_msgs = can_recv()
     print("got %d" % (len(can_msgs)))
@@ -211,7 +211,7 @@ def boardd_proxy_loop(rate=100, address="192.168.2.251"):
   while 1:
     # recv @ 100hz
     can_msgs = can_recv()
-    #for m in can_msgs:
+    # for m in can_msgs:
     #  print("R: {0} {1}".format(hex(m[0]), str(m[2]).encode("hex")))
 
     # publish to logger
@@ -224,7 +224,7 @@ def boardd_proxy_loop(rate=100, address="192.168.2.251"):
     tsc = messaging.recv_sock(logcan)
     if tsc is not None:
       cl = can_capnp_to_can_list(tsc.can)
-      #for m in cl:
+      # for m in cl:
       #  print("S: {0} {1}".format(hex(m[0]), str(m[2]).encode("hex")))
       can_send_many(cl)
 

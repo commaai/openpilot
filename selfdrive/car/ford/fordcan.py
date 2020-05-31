@@ -5,7 +5,7 @@ from selfdrive.car.ford.values import MAX_ANGLE
 def create_steer_command(packer, angle_cmd, enabled, lkas_state, angle_steers, curvature, lkas_action):
   """Creates a CAN message for the Ford Steer Command."""
 
-  #if enabled and lkas available:
+  # if enabled and lkas available:
   if enabled and lkas_state in [2,3]:  # and (frame % 500) >= 3:
     action = lkas_action
   else:
@@ -18,7 +18,7 @@ def create_steer_command(packer, angle_cmd, enabled, lkas_state, angle_steers, c
     "Lkas_Action": action,
     "Lkas_Alert": 0xf,             # no alerts
     "Lane_Curvature": clip(curvature, -0.01, 0.01),   # is it just for debug?
-    #"Lane_Curvature": 0,   # is it just for debug?
+    # "Lane_Curvature": 0,   # is it just for debug?
     "Steer_Angle_Req": angle_cmd
   }
   return packer.make_can_msg("Lane_Keep_Assist_Control", 0, values)

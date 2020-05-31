@@ -58,7 +58,7 @@ class Maneuver():
 
       if last_controls_state:
         # print(last_controls_state)
-        #develop plots
+        # develop plots
         plot.add_data(
           time=plant.current_time(),
           gas=log['gas'], brake=log['brake'], steer_torque=log['steer_torque'],

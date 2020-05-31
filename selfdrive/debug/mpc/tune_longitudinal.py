@@ -16,7 +16,7 @@ def RW(v_ego, v_l):
 
 def NORM_RW_ERROR(v_ego, v_l, p):
     return (RW(v_ego, v_l) + 4.0 - p)
-    #return (RW(v_ego, v_l) + 4.0 - p) / (np.sqrt(v_ego + 0.5) + 0.1)
+    # return (RW(v_ego, v_l) + 4.0 - p) / (np.sqrt(v_ego + 0.5) + 0.1)
 
 
 v_ego = 20.0

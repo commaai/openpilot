@@ -477,7 +477,7 @@ class StreamGOPReader(GOPReader):
 
 
 class GOPFrameReader(BaseFrameReader):
-  #FrameReader with caching and readahead for formats that are group-of-picture based
+  # FrameReader with caching and readahead for formats that are group-of-picture based
 
   def __init__(self, readahead=False, readbehind=False):
     self.open_ = True

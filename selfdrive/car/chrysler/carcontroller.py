@@ -46,7 +46,7 @@ class CarController():
 
     can_sends = []
 
-    #*** control msgs ***
+    # *** control msgs ***
 
     if pcm_cancel_cmd:
       # TODO: would be better to start from frame_2b3

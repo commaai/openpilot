@@ -38,7 +38,7 @@ screen = pygame.display.set_mode(size)
 
 pygame.display.set_caption("My Game")
 
-#Loop until the user clicks the close button.
+# Loop until the user clicks the close button.
 done = False
 
 # Used to manage how fast the screen updates

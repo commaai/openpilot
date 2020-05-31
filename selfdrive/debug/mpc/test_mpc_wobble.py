@@ -79,52 +79,52 @@ plt.grid(True)
 plt.show()
 
 
-####  UNCOMMENT TO CHECK ITERATIVE SOLUTION
+# UNCOMMENT TO CHECK ITERATIVE SOLUTION
 ####
-####for i in range(100):
-####  libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob,
-####                 curvature_factor, v_ref, LANE_WIDTH)
-####  print "x", list(mpc_solution[0].x)
-####  print "y", list(mpc_solution[0].y)
-####  print "delta", list(mpc_solution[0].delta)
-####  print "psi", list(mpc_solution[0].psi)
-####  # cur_state[0].x = mpc_solution[0].x[1]
-####  # cur_state[0].y = mpc_solution[0].y[1]
-####  # cur_state[0].psi = mpc_solution[0].psi[1]
-####  cur_state[0].delta = radians(200 / 13.)#mpc_solution[0].delta[1]
+# for i in range(100):
+# libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob,
+# curvature_factor, v_ref, LANE_WIDTH)
+# print "x", list(mpc_solution[0].x)
+# print "y", list(mpc_solution[0].y)
+# print "delta", list(mpc_solution[0].delta)
+# print "psi", list(mpc_solution[0].psi)
+# cur_state[0].x = mpc_solution[0].x[1]
+# cur_state[0].y = mpc_solution[0].y[1]
+# cur_state[0].psi = mpc_solution[0].psi[1]
+# cur_state[0].delta = radians(200 / 13.)#mpc_solution[0].delta[1]
 ####
-####  xx.append(cur_state[0].x)
-####  yy.append(cur_state[0].y)
-####  psis.append(cur_state[0].psi)
-####  deltas.append(cur_state[0].delta)
+# xx.append(cur_state[0].x)
+# yy.append(cur_state[0].y)
+# psis.append(cur_state[0].psi)
+# deltas.append(cur_state[0].delta)
 ####  times.append(i * 0.05)
 ####
 ####
-####def f(x):
-####  return p_poly[0] * x**3 + p_poly[1] * x**2 + p_poly[2] * x + p_poly[3]
+# def f(x):
+# return p_poly[0] * x**3 + p_poly[1] * x**2 + p_poly[2] * x + p_poly[3]
 ####
 ####
 ##### planned = map(f, xx)
-##### plt.figure(1)
+# plt.figure(1)
 ##### plt.plot(yy, xx, 'r-')
 ##### plt.plot(planned, xx, 'b--', linewidth=0.5)
 ##### plt.axes().set_aspect('equal', 'datalim')
-##### plt.gca().invert_xaxis()
+# plt.gca().invert_xaxis()
 ####
 ##### planned = map(f, map(float, list(mpc_solution[0].x)[1:]))
-##### plt.figure(1)
+# plt.figure(1)
 ##### plt.plot(map(float, list(mpc_solution[0].y)[1:]), map(float, list(mpc_solution[0].x)[1:]), 'r-')
 ##### plt.plot(planned, map(float, list(mpc_solution[0].x)[1:]), 'b--', linewidth=0.5)
 ##### plt.axes().set_aspect('equal', 'datalim')
-##### plt.gca().invert_xaxis()
+# plt.gca().invert_xaxis()
 ####
-####plt.figure(2)
+# plt.figure(2)
 ####plt.subplot(2, 1, 1)
 ####plt.plot(times, psis)
-####plt.ylabel('psi')
+# plt.ylabel('psi')
 ####plt.subplot(2, 1, 2)
 ####plt.plot(times, deltas)
-####plt.ylabel('delta')
+# plt.ylabel('delta')
 ####
 ####
-####plt.show()
+# plt.show()

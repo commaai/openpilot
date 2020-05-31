@@ -28,7 +28,7 @@ class CarController():
     if self.enable_camera:
 
       if pcm_cancel:
-        #print "CANCELING!!!!"
+        # print "CANCELING!!!!"
         can_sends.append(spam_cancel_button(self.packer))
 
       if (frame % 3) == 0:

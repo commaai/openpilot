@@ -7,7 +7,7 @@ import cereal.messaging as messaging
 import time
 
 # tool to plot one or more signals live. Call ex:
-#./rqplot.py log.carState.vEgo log.carState.aEgo
+# ./rqplot.py log.carState.vEgo log.carState.aEgo
 
 # TODO: can this tool consume 10x less cpu?
 

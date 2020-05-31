@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     # TODO: Check this
     ret.brakeLights = bool(cp.vl["TCS13"]['BrakeLight'] or ret.brakePressed)
 
-    #TODO: find pedal signal for EV/HYBRID Cars
+    # TODO: find pedal signal for EV/HYBRID Cars
     ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100
     ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 

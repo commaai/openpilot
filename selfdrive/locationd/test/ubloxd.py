@@ -61,7 +61,7 @@ def configure_ublox(dev):
                                             0, 0, 0, 0, 0,
                                             0, 0, 0, 0, 0)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ODO, payload)
-  #payload = struct.pack('<HHIBBBBBBBBBBH6BBB2BH4B3BB', 0, 8192, 0, 0, 0,
+  # payload = struct.pack('<HHIBBBBBBBBBBH6BBB2BH4B3BB', 0, 8192, 0, 0, 0,
   #                                                     0, 0, 0, 0, 0, 0,
   #                                                     0, 0, 0, 0, 0, 0,
   #                                                     0, 0, 0, 0, 0, 0,
@@ -274,7 +274,7 @@ def handle_msg(dev, msg, nav_frame_buffer):
   except ublox.UBloxError as e:
     print(e)
 
-  #if dev is not None and dev.dev is not None:
+  # if dev is not None and dev.dev is not None:
   #  dev.close()
 
 def main():

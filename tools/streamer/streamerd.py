@@ -46,7 +46,7 @@ def receiver_thread():
     ts, raw = s.recv_multipart()
     ts = struct.unpack('q', ts)[0] * 1000
     # t1, t2 = time.time(), t1
-    #print 'ms to get frame:', (t1-t2)*1000
+    # print 'ms to get frame:', (t1-t2)*1000
 
     pkt = av.packet.Packet(raw)
     f = ctx.decode(pkt)
@@ -54,15 +54,15 @@ def receiver_thread():
       continue
     f = f[0]
     # t1, t2 = time.time(), t1
-    #print 'ms to decode:', (t1-t2)*1000
+    # print 'ms to decode:', (t1-t2)*1000
 
     y_plane = np.frombuffer(f.planes[0], np.uint8).reshape((874, 1216))[:, 0:1164]
     u_plane = np.frombuffer(f.planes[1], np.uint8).reshape((437, 608))[:, 0:582]
     v_plane = np.frombuffer(f.planes[2], np.uint8).reshape((437, 608))[:, 0:582]
     yuv_img = y_plane.tobytes() + u_plane.tobytes() + v_plane.tobytes()
     # t1, t2 = time.time(), t1
-    #print 'ms to make yuv:', (t1-t2)*1000
-    #print 'tsEof:', ts
+    # print 'ms to make yuv:', (t1-t2)*1000
+    # print 'tsEof:', ts
 
     dat = messaging.new_message('frame')
     dat.frame.image = yuv_img
@@ -73,7 +73,7 @@ def receiver_thread():
     if PYGAME:
       yuv_np = np.frombuffer(yuv_img, dtype=np.uint8).reshape(874 * 3 // 2, -1)
       cv2.cvtColor(yuv_np, cv2.COLOR_YUV2RGB_I420, dst=imgff)
-      #print yuv_np.shape, imgff.shape
+      # print yuv_np.shape, imgff.shape
 
       #scipy.misc.imsave("tmp.png", imgff)
 

@@ -90,7 +90,7 @@ class UnloggerWorker(object):
         # this assumes the encodeIdx always comes before the frame
         self._frame_id_lookup[
           msg.encodeIdx.frameId] = msg.encodeIdx.segmentNum, msg.encodeIdx.segmentId
-        #print "encode", msg.encodeIdx.frameId, len(self._readahead), route_time
+        # print "encode", msg.encodeIdx.frameId, len(self._readahead), route_time
       self._readahead.appendleft((typ, msg, route_time, cookie))
 
   def _send_logs(self, data_socket):

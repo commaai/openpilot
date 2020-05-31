@@ -129,8 +129,8 @@ class SwagLogger(logging.Logger):
     file name, line number and function name.
     """
     f = sys._getframe(3)
-    #On some versions of IronPython, currentframe() returns None if
-    #IronPython isn't run with -X:Frames.
+    # On some versions of IronPython, currentframe() returns None if
+    # IronPython isn't run with -X:Frames.
     if f is not None:
         f = f.f_back
     orig_f = f

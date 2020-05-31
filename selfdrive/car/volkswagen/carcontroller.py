@@ -30,11 +30,11 @@ class CarController():
     # Send CAN commands.
     can_sends = []
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #                                                                         #
     # Prepare HCA_01 Heading Control Assist messages with steering torque.    #
     #                                                                         #
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     # The factory camera sends at 50Hz while steering and 1Hz when not. When
     # OP is active, Panda filters HCA_01 from the factory camera and OP emits
@@ -101,12 +101,12 @@ class CarController():
       can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer,
                                                                  idx, hcaEnabled))
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #                                                                         #
     # Prepare LDW_02 HUD messages with lane borders, confidence levels, and   #
     # the LKAS status LED.                                                    #
     #                                                                         #
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     # The factory camera emits this message at 10Hz. When OP is active, Panda
     # filters LDW_02 from the factory camera and OP emits LDW_02 at 10Hz.
@@ -123,11 +123,11 @@ class CarController():
                                                             CS.out.steeringPressed, hud_alert, leftLaneVisible,
                                                             rightLaneVisible))
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     #                                                                         #
     # Prepare GRA_ACC_01 ACC control messages with button press events.       #
     #                                                                         #
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     # The car sends this message at 33hz. OP sends it on-demand only for
     # virtual button presses.

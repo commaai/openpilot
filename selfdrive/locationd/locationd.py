@@ -177,7 +177,7 @@ class Localizer():
       self.reset_kalman()
     #idx = bisect_right([x[0] for x in self.observation_buffer], time)
     #self.observation_buffer.insert(idx, (time, kind, meas))
-    #while len(self.observation_buffer) > 0 and self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
+    # while len(self.observation_buffer) > 0 and self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
     #  else:
     #    self.observation_buffer.pop(0)
 

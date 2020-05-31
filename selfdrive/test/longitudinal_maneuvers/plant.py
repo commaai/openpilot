@@ -57,7 +57,7 @@ def car_plant(pos, speed, grade, gas, brake):
   creep_accel_v = [1., 0.]
   creep_accel_bp = [0., 1.5]
 
-  #*** longitudinal model ***
+  # *** longitudinal model ***
   # find speed where peak torque meets peak power
   force_brake = brake * force_brake_peak * brake_to_peak_linear_slope
   if speed < speed_base:  # torque control
