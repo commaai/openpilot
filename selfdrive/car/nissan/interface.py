@@ -34,7 +34,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerMaxBP = [0.] # m/s
     ret.steerMaxV = [1.]
 
-    if candidate == CAR.XTRAIL:
+    if candidate in [CAR.ROGUE, CAR.XTRAIL]:
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44

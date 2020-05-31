@@ -17,19 +17,19 @@ class CarState(CarStateBase):
   def update(self, cp, cp_adas, cp_cam):
     ret = car.CarState.new_message()
 
-    if self.CP.carFingerprint == CAR.XTRAIL:
+    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
     elif self.CP.carFingerprint == CAR.LEAF:
       ret.gas = cp.vl["CRUISE_THROTTLE"]["GAS_PEDAL"]
 
     ret.gasPressed = bool(ret.gas > 3)
 
-    if self.CP.carFingerprint == CAR.XTRAIL:
+    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
     elif self.CP.carFingerprint == CAR.LEAF:
       ret.brakePressed = bool(cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL"] > 3)
 
-    if self.CP.carFingerprint == CAR.XTRAIL:
+    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       ret.brakeLights = bool(cp.vl["DOORS_LIGHTS"]["BRAKE_LIGHT"])
 
     ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"] * CV.KPH_TO_MS
@@ -43,7 +43,7 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
 
     ret.cruiseState.enabled = bool(cp_adas.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
-    if self.CP.carFingerprint == CAR.XTRAIL:
+    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
     elif self.CP.carFingerprint == CAR.LEAF:
       ret.cruiseState.available = bool(cp.vl["CRUISE_THROTTLE"]["CRUISE_AVAILABLE"])
@@ -54,6 +54,8 @@ class CarState(CarStateBase):
     if speed != 255:
       if self.CP.carFingerprint == CAR.XTRAIL:
         conversion = CV.KPH_TO_MS
+      elif self.CP.carFingerprint == CAR.ROGUE:
+        conversion = CV.MPH_TO_MS
       else:
         conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
       speed -= 1  # Speed on HUD is always 1 lower than actually sent on can bus
@@ -129,7 +131,7 @@ class CarState(CarStateBase):
       ("DOORS_LIGHTS", 10),
     ]
 
-    if CP.carFingerprint == CAR.XTRAIL:
+    if CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       signals += [
         ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
         ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
@@ -271,7 +273,7 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     signals = []
-    if CP.carFingerprint == CAR.XTRAIL:
+    if CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       signals += [
         ("CRUISE_ON", "PRO_PILOT", 0),
       ]
