@@ -131,7 +131,6 @@ def ui_thread(addr, frame_address):
         [ 0.0,  0.0, 1.0]
       ])
 
-
     if rgb_img_raw and len(rgb_img_raw) == FULL_FRAME_SIZE[0] * FULL_FRAME_SIZE[1] * 3:
       imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3))
       imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
@@ -188,7 +187,6 @@ def ui_thread(addr, frame_address):
 
     # draw all radar points
     maybe_update_radar_points(sm['liveTracks'], top_down[1])
-
 
     if sm.updated['liveCalibration']:
       extrinsic_matrix = np.asarray(sm['liveCalibration'].extrinsicMatrix).reshape(3, 4)

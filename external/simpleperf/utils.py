@@ -220,10 +220,8 @@ class AdbHelper(object):
         self.adb_path = adb_path
         self.enable_switch_to_root = enable_switch_to_root
 
-
     def run(self, adb_args):
         return self.run_and_return_output(adb_args)[0]
-
 
     def run_and_return_output(self, adb_args, stdout_file=None, log_output=True):
         adb_args = [self.adb_path] + adb_args
@@ -247,13 +245,11 @@ class AdbHelper(object):
     def check_run(self, adb_args):
         self.check_run_and_return_output(adb_args)
 
-
     def check_run_and_return_output(self, adb_args, stdout_file=None, log_output=True):
         result, stdoutdata = self.run_and_return_output(adb_args, stdout_file, log_output)
         if not result:
             log_exit('run "adb %s" failed' % adb_args)
         return stdoutdata
-
 
     def _unroot(self):
         result, stdoutdata = self.run_and_return_output(['shell', 'whoami'])
@@ -265,7 +261,6 @@ class AdbHelper(object):
         self.run(['unroot'])
         self.run(['wait-for-device'])
         time.sleep(1)
-
 
     def switch_to_root(self):
         if not self.enable_switch_to_root:
@@ -292,7 +287,6 @@ class AdbHelper(object):
     def set_property(self, name, value):
         return self.run(['shell', 'setprop', name, value])
 
-
     def get_device_arch(self):
         output = self.check_run_and_return_output(['shell', 'uname', '-m'])
         if 'aarch64' in output:
@@ -304,7 +298,6 @@ class AdbHelper(object):
         if '86' in output:
             return 'x86'
         log_fatal('unsupported architecture: %s' % output.strip())
-
 
     def get_android_version(self):
         build_version = self.get_property('ro.build.version.release')

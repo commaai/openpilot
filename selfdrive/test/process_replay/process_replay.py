@@ -94,7 +94,6 @@ class FakeSubMaster(messaging.SubMaster):
     wait_for_event(self.update_ready)
     self.update_ready.clear()
 
-
   def update_msgs(self, cur_time, msgs):
     wait_for_event(self.update_called)
     self.update_called.clear()

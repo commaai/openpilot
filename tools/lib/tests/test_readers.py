@@ -18,7 +18,6 @@ class TestReaders(unittest.TestCase):
       self.assertEqual(hist['carControl'], 6000)
       self.assertEqual(hist['logMessage'], 6857)
 
-
     with tempfile.NamedTemporaryFile(suffix=".bz2") as fp:
       r = requests.get("https://github.com/commaai/comma2k19/blob/master/Example_1/b0c9d2329ad1606b%7C2018-08-02--08-34-47/40/raw_log.bz2?raw=true")
       fp.write(r.content)
@@ -36,10 +35,8 @@ class TestReaders(unittest.TestCase):
       self.assertEqual(f.w, 1164)
       self.assertEqual(f.h, 874)
 
-
       frame_first_30 = f.get(0, 30)
       self.assertEqual(len(frame_first_30), 30)
-
 
       print(frame_first_30[15])
 

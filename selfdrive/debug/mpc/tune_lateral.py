@@ -151,7 +151,6 @@ ys.append(sol_y)
 deltas.append(delta)
 
 
-
 plt.figure()
 
 for i in range(len(xs)):

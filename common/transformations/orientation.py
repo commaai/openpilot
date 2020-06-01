@@ -132,10 +132,6 @@ rot_from_euler = euler2rot
 quat_from_euler = euler2quat
 
 
-
-
-
-
 '''
 Random helpers below
 '''

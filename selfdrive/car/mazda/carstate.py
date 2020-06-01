@@ -56,7 +56,6 @@ class CarState(CarStateBase):
     ret.gas = cp.vl["ENGINE_DATA"]['PEDAL_GAS']
     ret.gasPressed = ret.gas > 0
 
-
     # LKAS is enabled at 52kph going up and disabled at 45kph going down
     if speed_kph > LKAS_LIMITS.ENABLE_SPEED:
       self.lkas_allowed = True
@@ -154,7 +153,6 @@ class CarState(CarStateBase):
       ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
-
 
   @staticmethod
   def get_cam_can_parser(CP):

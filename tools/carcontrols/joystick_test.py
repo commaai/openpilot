@@ -63,7 +63,6 @@ while not done:
         if event.type == pygame.JOYBUTTONUP:
             print("Joystick button released.")
 
-
     # DRAWING STEP
     # First, clear the screen to white. Don't put other drawing commands
     # above this, or they will be erased with this command.
@@ -107,9 +106,7 @@ while not done:
         textPrint.printf(screen, "Button {:>2} value: {}".format(i, button) )
     textPrint.unindent()
 
-
     textPrint.unindent()
-
 
     # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
 

@@ -46,8 +46,5 @@ class TestParamsLearner(unittest.TestCase):
     self.assertAlmostEqual(sr_target, sr, places=1)
 
 
-
-
-
 if __name__ == "__main__":
   unittest.main()

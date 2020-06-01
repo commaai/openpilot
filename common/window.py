@@ -23,7 +23,6 @@ class Window():
       pygame.surfarray.blit_array(self.screen, out.swapaxes(0, 1))
     pygame.display.flip()
 
-
   def getkey(self):
     while 1:
       event = pygame.event.wait()

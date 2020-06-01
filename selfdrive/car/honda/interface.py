@@ -387,7 +387,6 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
 
-
     else:
       raise ValueError("unsupported car %s" % candidate)
 

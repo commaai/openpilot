@@ -94,7 +94,6 @@ class CarController():
     elif self.last_lead_distance != 0:
       self.last_lead_distance = 0
 
-
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE]:
       can_sends.append(create_lfa_mfa(self.packer, frame, enabled))

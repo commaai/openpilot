@@ -160,7 +160,6 @@ class CarState(CarStateBase):
       signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
       checks.append(("PCM_CRUISE_2", 33))
 
-
     if CP.carFingerprint == CAR.PRIUS:
       signals += [("STATE", "AUTOPARK_STATUS", 0)]
 

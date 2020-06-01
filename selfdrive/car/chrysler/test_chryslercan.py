@@ -8,7 +8,6 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 GearShifter = car.CarState.GearShifter
 
 
-
 class TestChryslerCan(unittest.TestCase):
 
   def test_hud(self):

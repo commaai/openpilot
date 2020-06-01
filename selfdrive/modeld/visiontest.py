@@ -103,7 +103,6 @@ class VisionTest():
                                  transform)
     return result
 
-
   def transform_output_buffer(self, yuv_data, y_out, u_out, v_out,
                               transform):
     assert len(yuv_data) == self.input_size[0] * self.input_size[1] * 3/2

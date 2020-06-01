@@ -146,7 +146,6 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
 
-
   def update_events(self, CS):
     """Compute carEvents from carState"""
 
@@ -226,7 +225,6 @@ class Controls:
        and not self.CP.radarOffCan and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
 
-
   def data_sample(self):
     """Receive data from sockets and update carState"""
 
@@ -254,7 +252,6 @@ class Controls:
       self.mismatch_counter += 1
 
     return CS
-
 
   def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
@@ -331,7 +328,6 @@ class Controls:
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
 
-
   def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
 
@@ -381,7 +377,6 @@ class Controls:
         self.events.add(EventName.steerSaturated)
 
     return actuators, v_acc_sol, a_acc_sol, lac_log
-
 
   def publish_logs(self, CS, start_time, actuators, v_acc, a_acc, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""

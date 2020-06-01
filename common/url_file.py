@@ -77,7 +77,6 @@ class URLFile(object):
     if response_code != 206 and response_code != 200:
       raise Exception("Error {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
 
-
     ret = dats.getvalue()
     self._pos += len(ret)
     return ret

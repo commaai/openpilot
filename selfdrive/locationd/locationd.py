@@ -194,7 +194,6 @@ class Localizer():
     ecef_pos_R = np.diag([(3*log.verticalAccuracy)**2]*3)
     ecef_vel_R = np.diag([(log.speedAccuracy)**2]*3)
 
-
     #self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
     self.unix_timestamp_millis = log.timestamp
     gps_est_error = np.sqrt((self.kf.x[0] - ecef_pos[0])**2 +

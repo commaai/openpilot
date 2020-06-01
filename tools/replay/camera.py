@@ -19,7 +19,6 @@ _FULL_FRAME_TO_BB = np.linalg.inv(_BB_TO_FULL_FRAME)
 _FULL_FRAME_SIZE = 1164, 874
 
 
-
 def pygame_modules_have_loaded():
   return pygame.display.get_init() and pygame.font.get_init()
 
