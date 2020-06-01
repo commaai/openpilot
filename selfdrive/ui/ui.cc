@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/mman.h>
+#include <string>
 #include <sstream>
 #include <sys/resource.h>
 #include <czmq.h>
@@ -138,12 +139,24 @@ static void set_do_exit(int sig) {
 
 template <class T>
 static int read_param(T* param, const char *param_name, bool persistent_param = false){
-  char *s;
-  int result = read_db_value(param_name, &s, NULL, persistent_param);
+  T param_orig = *param;
+  char *value;
+  size_t sz;
+
+  int result = read_db_value(param_name, &value, &sz, persistent_param);
   if (result == 0){
+    std::string s = std::string(value, sz); // value is not null terminated
+    free(value);
+
+    // Parse result
     std::istringstream iss(s);
     iss >> *param;
-    free(s);
+
+    // Restore original value if parsing failed
+    if (iss.fail()) {
+      *param = param_orig;
+      result = -1;
+    }
   }
   return result;
 }
