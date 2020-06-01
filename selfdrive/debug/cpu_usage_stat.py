@@ -113,7 +113,7 @@ if __name__ == "__main__":
           for stat_type in ['avg', 'min', 'max']:
             msg += '\n {}: {}'.format(stat_type, [name + ':' + str(round(stat[stat_type][name]*100, 2)) for name in cpu_time_names])
         l.append((os.path.basename(k), stat['avg']['total'], msg))
-      l.sort(key= lambda x: -x[1])
+      l.sort(key=lambda x: -x[1])
       for x in l:
         print(x[2])
       print('avg sum: {0:.2%} over {1} samples {2} seconds\n'.format(
