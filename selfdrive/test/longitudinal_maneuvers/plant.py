@@ -113,6 +113,7 @@ class Plant():
       Plant.sendcan = messaging.sub_sock('sendcan')
       Plant.model = messaging.pub_sock('model')
       Plant.live_params = messaging.pub_sock('liveParameters')
+      Plant.live_location_kalman = messaging.pub_sock('liveLocationKalman')
       Plant.health = messaging.pub_sock('health')
       Plant.thermal = messaging.pub_sock('thermal')
       Plant.driverState = messaging.pub_sock('driverState')
@@ -161,6 +162,7 @@ class Plant():
     Plant.logcan.close()
     Plant.model.close()
     Plant.live_params.close()
+    Plant.live_location_kalman.close()
 
   def speed_sensor(self, speed):
     if speed < 0.3:
@@ -377,6 +379,11 @@ class Plant():
     thermal.thermal.freeSpace = 1.
     thermal.thermal.batteryPercent = 100
     Plant.thermal.send(thermal.to_bytes())
+
+    live_location_kalman = messaging.new_message('liveLocationKalman')
+    live_location_kalman.liveLocationKalman.inputsOK = True
+    live_location_kalman.liveLocationKalman.gpsOK = True
+    Plant.live_location_kalman.send(live_location_kalman.to_bytes())
 
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
