@@ -44,12 +44,12 @@ class Controls:
     # Setup sockets
     self.pm = pm
     if self.pm is None:
-      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', \
+      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
                                      'carControl', 'carEvents', 'carParams'])
 
     self.sm = sm
     if self.sm is None:
-      self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', \
+      self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
 
     self.can_sock = can_sock
@@ -76,8 +76,8 @@ class Controls:
               internet_needed or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
-    sounds_available = not os.path.isfile('/EON') or (os.path.isfile('/proc/asound/card0/state') \
-                            and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
+    sounds_available = (not os.path.isfile('/EON') or (os.path.isfile('/proc/asound/card0/state') and
+                        open('/proc/asound/card0/state').read().strip() == 'ONLINE'))
 
     car_recognized = self.CP.carName != 'mock'
     # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
@@ -184,7 +184,7 @@ class Controls:
         self.events.add(EventName.preLaneChangeLeft)
       else:
         self.events.add(EventName.preLaneChangeRight)
-    elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting, \
+    elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
                                         LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
 

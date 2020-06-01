@@ -67,7 +67,7 @@ class CarController():
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
-  def update(self, enabled, CS, frame, actuators, \
+  def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params

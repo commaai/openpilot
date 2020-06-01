@@ -106,7 +106,7 @@ class PathPlanner():
       self.lane_change_direction = LaneChangeDirection.none
     else:
       torque_applied = sm['carState'].steeringPressed and \
-                       ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or \
+                       ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                         (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
 
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
