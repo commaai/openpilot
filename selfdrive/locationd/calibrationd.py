@@ -167,7 +167,6 @@ def calibrationd_thread(sm=None, pm=None):
                                           sm['cameraOdometry'].transStd,
                                           sm['cameraOdometry'].rotStd)
 
-
       if DEBUG and new_vp is not None:
         print('got new vp', new_vp)
 

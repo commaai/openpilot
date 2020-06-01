@@ -339,7 +339,6 @@ class CarState(CarStateBase):
                   ("FCM_PROBLEM", "ACC_HUD", 0),
                   ("ICONS", "ACC_HUD", 0)]
 
-
     # all hondas except CRV, RDX and 2019 Odyssey@China use 0xe4 for steering
     checks = [(0xe4, 100)]
     if CP.carFingerprint in [CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:

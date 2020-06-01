@@ -42,7 +42,6 @@ if __name__ == "__main__":
       calibration = CalibrationTransformsForWarpMatrix(warp_matrix, intrinsic_matrix, extrinsic_matrix)
       transform = np.dot(img_transform, calibration.model_to_full_frame)
 
-
     if calibration is not None:
       imgw = cv2.warpAffine(imgff, transform[:2],
         (MEDMODEL_INPUT_SIZE[0], MEDMODEL_INPUT_SIZE[1]),

@@ -31,13 +31,11 @@ class KBHit:
 
     termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
 
-
   def getch(self):
     ''' Returns a keyboard character after kbhit() has been called.
       Should not be called in the same program as getarrow().
     '''
     return sys.stdin.read(1)
-
 
   def getarrow(self):
     ''' Returns an arrow-key code after kbhit() has been called. Codes are
@@ -52,7 +50,6 @@ class KBHit:
     vals = [65, 67, 66, 68]
 
     return vals.index(ord(c.decode('utf-8')))
-
 
   def kbhit(self):
     ''' Returns True if keyboard character was hit, False otherwise.

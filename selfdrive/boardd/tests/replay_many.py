@@ -56,7 +56,6 @@ if __name__ == "__main__":
     serials = Panda.list()
   num_senders = len(serials)
 
-
   if num_senders == 0:
     print("No senders found. Exiting")
     sys.exit(1)

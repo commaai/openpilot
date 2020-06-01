@@ -133,7 +133,6 @@ class RadarD():
     idens = list(sorted(self.tracks.keys()))
     track_pts = list([self.tracks[iden].get_key_for_cluster() for iden in idens])
 
-
     # If we have multiple points, cluster them
     if len(track_pts) > 1:
       cluster_idxs = cluster_points_centroid(track_pts, 2.5)

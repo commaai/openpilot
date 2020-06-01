@@ -65,7 +65,6 @@ if __name__ == "__main__":
     if not sync_to_ci_public(r):
       failed_routes.append(r)
 
-
   if len(failed_routes):
     print("failed routes:")
     print(failed_routes)

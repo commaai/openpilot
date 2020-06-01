@@ -6,11 +6,9 @@ import cereal.messaging as messaging
 if __name__ == "__main__":
   sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan'])
 
-
   i = 0
   while True:
     sm.update(0)
-
 
     i += 1
     if i % 100 == 0:

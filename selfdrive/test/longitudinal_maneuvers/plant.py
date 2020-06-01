@@ -355,7 +355,6 @@ class Plant():
     msg_data = fix(msg_data, 0xe4)
     can_msgs.append([0xe4, 0, msg_data, 2])
 
-
     # Fake sockets that controlsd subscribes to
     live_parameters = messaging.new_message('liveParameters')
     live_parameters.liveParameters.valid = True

@@ -80,7 +80,6 @@ def configure_ublox(dev):
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW, 1)
 
 
-
 def int_to_bool_list(num):
   # for parsing bool bytes
   return [bool(num & (1 << n)) for n in range(8)]
@@ -179,8 +178,6 @@ def gen_nav_data(msg, nav_frame_buffer):
     if len(nav_frame_buffer[gnssId][svId]) == 5:
       ephem_data = EphemerisData(svId, nav_frame_buffer[gnssId][svId])
       return gen_ephemeris(ephem_data)
-
-
 
 
 def gen_raw(msg):
@@ -283,7 +280,6 @@ def main():
   nav_frame_buffer[0] = {}
   for i in range(1, 33):
     nav_frame_buffer[0][i] = {}
-
 
   gpsLocationExternal = messaging.pub_sock('gpsLocationExternal')
   ubloxGnss = messaging.pub_sock('ubloxGnss')

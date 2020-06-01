@@ -737,7 +737,6 @@ class UBlox:
           self.buf = self.buf[n:]
           return ret
 
-
         def write(self, dat):
           pass
 

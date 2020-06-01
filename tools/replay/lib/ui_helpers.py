@@ -187,7 +187,6 @@ def draw_mpc(liveMpc, top_down):
     top_down[1][px, py] = mpc_color
 
 
-
 class CalibrationTransformsForWarpMatrix(object):
   def __init__(self, model_to_full_frame, K, E):
     self._model_to_full_frame = model_to_full_frame

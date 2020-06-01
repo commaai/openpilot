@@ -55,7 +55,6 @@ def mpc_vwr_thread(addr="127.0.0.1"):
   aa.invert_xaxis()
   plt.show()
 
-
   # *** log ***
   livempc = messaging.sub_sock('liveMpc', addr=addr)
   model = messaging.sub_sock('model', addr=addr)

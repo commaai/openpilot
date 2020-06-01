@@ -75,7 +75,6 @@ class RouteFrameReader(object):
 
     return self._frame_readers[segment_num].get(segment_id, **kwargs)[0]
 
-
   def close(self):
     frs = self._frame_readers
     self._frame_readers.clear()

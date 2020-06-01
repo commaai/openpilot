@@ -16,7 +16,6 @@ class CarControllerParams():
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
 
-
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.lkas_active = False

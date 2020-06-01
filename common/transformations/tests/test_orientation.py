@@ -64,6 +64,5 @@ class TestOrientation(unittest.TestCase):
     np.testing.assert_allclose(ned_eulers, ned_euler_from_ecef(ecef_positions, eulers), rtol=1e-7)
 
 
-
 if __name__ == "__main__":
   unittest.main()

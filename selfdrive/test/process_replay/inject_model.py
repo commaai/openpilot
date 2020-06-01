@@ -65,7 +65,6 @@ def inject_model(msgs, segment_name):
   time.sleep(2)
   manager.kill_managed_process('camerad')
 
-
   new_msgs = []
   midx = 0
   for msg in msgs:

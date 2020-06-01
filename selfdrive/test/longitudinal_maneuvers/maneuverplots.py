@@ -61,7 +61,6 @@ class ManeuverPlot():
     self.a_target_array.append(a_target)
     self.fcw_array.append(fcw)
 
-
   def write_plot(self, path, maneuver_name):
     # title = self.title or maneuver_name
     # TODO: Missing plots from the old one:
