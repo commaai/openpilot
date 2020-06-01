@@ -71,7 +71,7 @@ if __name__ == "__main__":
       else:
         cv2.putText(img, 'you not found', (int(facePosition[0]*160+40), int(facePosition[1]*320+110)), cv2.FONT_ITALIC, 0.5, (64, 64, 64))
       draw_pose(img, faceOrientation, facePosition,
-              W = 160, H = 320, xyoffset = (0, 0), faceprob=faceProb)
+              W=160, H=320, xyoffset=(0, 0), faceprob=faceProb)
 
       pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
       camera_surface_2x = pygame.transform.scale2x(camera_surface)
