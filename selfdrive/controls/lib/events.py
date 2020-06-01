@@ -681,7 +681,7 @@ EVENTS = {
   },
 
   EventName.speedTooHigh: {
-    ET.IMMEDIATE_DISABLE: Alert(
+    ET.WARNING: Alert(
       "Speed Too High",
       "Slow down to resume operation",
       AlertStatus.normal, AlertSize.mid,
