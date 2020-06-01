@@ -12,6 +12,7 @@ from common.basedir import BASEDIR
 
 KILL_TIMEOUT = 15
 
+
 def send_controls_packet(pm):
   while True:
     dat = messaging.new_message('controlsState')
@@ -19,6 +20,8 @@ def send_controls_packet(pm):
       "rearViewCam": True,
     }
     pm.send('controlsState', dat)
+    time.sleep(0.01)
+
 
 def send_dmon_packet(pm, d):
   dat = messaging.new_message('dMonitoringState')
@@ -28,6 +31,7 @@ def send_dmon_packet(pm, d):
     "isPreview": d[2],
   }
   pm.send('dMonitoringState', dat)
+
 
 def main():
   pm = messaging.PubMaster(['controlsState', 'dMonitoringState'])
@@ -69,6 +73,9 @@ def main():
     if not is_rhd_checked:
       is_rhd = params.get("IsRHD") == b"1"
       is_rhd_checked = True
+
+    time.sleep(0.01)
+
 
 if __name__ == '__main__':
   main()
