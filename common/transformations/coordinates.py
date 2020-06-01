@@ -64,6 +64,11 @@ def ecef2geodetic(ecef, radians=False):
   geodetic = np.column_stack((lat, lon, h))
   return geodetic.reshape(input_shape)
 
+
+geodetic_from_ecef = ecef2geodetic
+ecef_from_geodetic = geodetic2ecef
+
+
 class LocalCoord():
   """
    Allows conversions to local frames. In this case NED.
