@@ -326,7 +326,6 @@ selfdrive/test/longitudinal_maneuvers/*.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_car_models.py
-selfdrive/test/openpilotci_upload.py
 
 selfdrive/test/process_replay/.gitignore
 selfdrive/test/process_replay/__init__.py
@@ -413,9 +412,7 @@ phonelibs/nanovg/*.h
 phonelibs/libgralloc/**
 phonelibs/linux/**
 phonelibs/opencl/**
-phonelibs/curl/*
 phonelibs/zlib/*
-phonelibs/boringssl/*
 phonelibs/bzip2/*
 phonelibs/openmax/**
 
