@@ -10,18 +10,21 @@ import numpy as np
 from tensorflow.keras.models import Model  # pylint: disable=import-error
 from tensorflow.keras.models import load_model  # pylint: disable=import-error
 
+
 def read(sz):
   dd = []
   gt = 0
-  while gt < sz*4:
-    st = os.read(0, sz*4 - gt)
+  while gt < sz * 4:
+    st = os.read(0, sz * 4 - gt)
     assert(len(st) > 0)
     dd.append(st)
     gt += len(st)
   return np.fromstring(b''.join(dd), dtype=np.float32)
 
+
 def write(d):
   os.write(1, d.tobytes())
+
 
 def run_loop(m):
   isize = m.inputs[0].shape[1]
@@ -31,6 +34,7 @@ def run_loop(m):
     idata = read(isize).reshape((1, isize))
     ret = m.predict_on_batch(idata)
     write(ret)
+
 
 if __name__ == "__main__":
   print(tf.__version__, file=sys.stderr)
@@ -48,7 +52,7 @@ if __name__ == "__main__":
   acc = 0
   for i, ii in enumerate(m.inputs):
     print(ii, file=sys.stderr)
-    ti = keras.layers.Lambda(lambda x: x[:, acc:acc+bs[i]], output_shape=(1, bs[i]))(ri)
+    ti = keras.layers.Lambda(lambda x, i=i: x[:, acc:acc + bs[i]], output_shape=(1, bs[i]))(ri)
     acc += bs[i]
     tr = keras.layers.Reshape(ii.shape[1:])(ti)
     tii.append(tr)

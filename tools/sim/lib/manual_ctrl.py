@@ -143,7 +143,7 @@ def wheel_poll_thread(q):
 
   while True:
     evbuf = jsdev.read(8)
-    time, value, mtype, number = struct.unpack('IhBB', evbuf)
+    _, value, mtype, number = struct.unpack('IhBB', evbuf)
     # print(mtype, number, value)
     if mtype & 0x02:  # wheel & paddles
       axis = axis_map[number]

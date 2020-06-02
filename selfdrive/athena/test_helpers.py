@@ -8,6 +8,7 @@ import time
 from functools import wraps
 from multiprocessing import Process
 
+
 class EchoSocket():
   def __init__(self, port):
     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,7 +16,7 @@ class EchoSocket():
     self.socket.listen(1)
 
   def run(self):
-    conn, client_address = self.socket.accept()
+    conn, _ = self.socket.accept()
     conn.settimeout(5.0)
 
     try:
@@ -32,12 +33,14 @@ class EchoSocket():
       self.socket.shutdown(0)
       self.socket.close()
 
+
 class MockApi():
   def __init__(self, dongle_id):
     pass
 
   def get_token(self):
     return "fake-token"
+
 
 class MockParams():
   def __init__(self):
@@ -51,6 +54,7 @@ class MockParams():
     if ret is not None and encoding is not None:
       ret = ret.decode(encoding)
     return ret
+
 
 class MockWebsocket():
   def __init__(self, recv_queue, send_queue):
@@ -66,12 +70,14 @@ class MockWebsocket():
   def send(self, data, opcode):
     self.send_queue.put_nowait((data, opcode))
 
+
 class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
   def do_PUT(self):
     length = int(self.headers['Content-Length'])
     self.rfile.read(length)
     self.send_response(201, "Created")
     self.end_headers()
+
 
 def http_server(port_queue, **kwargs):
   while 1:
@@ -82,6 +88,7 @@ def http_server(port_queue, **kwargs):
     except OSError as e:
       if e.errno == 98:
         continue
+
 
 def with_http_server(func):
   @wraps(func)

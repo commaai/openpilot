@@ -11,7 +11,12 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 3.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
+  def get_params(candidate, fingerprint=None, has_relay=False, car_fw=None):
+    if fingerprint is None:
+      fingerprint = gen_empty_fingerprint()
+    if car_fw is None:
+      car_fw = []
+
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "chrysler"
     ret.safetyModel = car.CarParams.SafetyModel.chrysler

@@ -97,11 +97,9 @@ def go(q):
   world.set_weather(weather)
 
   blueprint_library = world.get_blueprint_library()
-  """
-  for blueprint in blueprint_library.filter('sensor.*'):
-     print(blueprint.id)
-  exit(0)
-  """
+  # for blueprint in blueprint_library.filter('sensor.*'):
+  #    print(blueprint.id)
+  # exit(0)
 
   world_map = world.get_map()
   vehicle_bp = random.choice(blueprint_library.filter('vehicle.tesla.*'))

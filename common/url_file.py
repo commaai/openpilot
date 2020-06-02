@@ -9,6 +9,7 @@ import pycurl
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
+
 class URLFile(object):
   _tlocal = threading.local()
 
@@ -26,7 +27,7 @@ class URLFile(object):
   def __enter__(self):
     return self
 
-  def __exit__(self, type, value, traceback):
+  def __exit__(self, exc_type, exc_value, traceback):
     if self._local_file is not None:
       os.remove(self._local_file.name)
       self._local_file.close()
@@ -37,7 +38,7 @@ class URLFile(object):
     if ll is None:
       trange = 'bytes=%d-' % self._pos
     else:
-      trange = 'bytes=%d-%d' % (self._pos, self._pos+ll-1)
+      trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
 
     dats = BytesIO()
     c = self._curl
@@ -68,8 +69,8 @@ class URLFile(object):
 
     if self._debug:
       t2 = time.time()
-      if t2-t1 > 0.1:
-        print("get %s %r %.f slow" % (self._url, trange, t2-t1))
+      if t2 - t1 > 0.1:
+        print("get %s %r %.f slow" % (self._url, trange, t2 - t1))
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable
@@ -96,7 +97,7 @@ class URLFile(object):
       try:
         os.write(local_fd, self.read())
         local_file = open(local_path, "rb")
-      except:
+      except Exception:
         os.remove(local_path)
         raise
       finally:
