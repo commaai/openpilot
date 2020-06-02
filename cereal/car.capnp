@@ -106,6 +106,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     whitePandaUnsupported @81;
     startupWhitePanda @82;
     canErrorPersistent @83;
+    belowEngageSpeed @84;
   }
 }
 
