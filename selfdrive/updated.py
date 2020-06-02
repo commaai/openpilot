@@ -195,7 +195,7 @@ def inodes_in_tree(search_dir):
   """Given a search root, produce a dictionary mapping of inodes to relative
   pathnames of regular files (no directories, symlinks, or special files)."""
   inode_map = {}
-  for root, dirs, files in os.walk(search_dir, topdown=True):
+  for root, _, files in os.walk(search_dir, topdown=True):
     for file_name in files:
       full_path_name = os.path.join(root, file_name)
       st = os.lstat(full_path_name)

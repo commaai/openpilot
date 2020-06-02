@@ -47,7 +47,10 @@ def get_H():
 
 
 class Localizer():
-  def __init__(self, disabled_logs=[], dog=None):
+  def __init__(self, disabled_logs=None, dog=None):
+    if disabled_logs is None:
+      disabled_logs = []
+
     self.kf = LiveKalman(GENERATED_DIR)
     self.reset_kalman()
     self.max_age = .2  # seconds
@@ -279,7 +282,11 @@ class Localizer():
     self.speed_counter = 0
     self.cam_counter = 0
 
-def locationd_thread(sm, pm, disabled_logs=[]):
+
+def locationd_thread(sm, pm, disabled_logs=None):
+  if disabled_logs is None:
+    disabled_logs = []
+
   if sm is None:
     socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration', 'carState']
     sm = messaging.SubMaster(socks, ignore_alive=['gpsLocationExternal'])

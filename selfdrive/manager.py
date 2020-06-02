@@ -305,11 +305,11 @@ def start_daemon_process(name):
       pass
 
   cloudlog.info("starting daemon %s" % name)
-  proc = subprocess.Popen(['python', '-m', proc],
-                         stdin=open('/dev/null', 'r'),
-                         stdout=open('/dev/null', 'w'),
-                         stderr=open('/dev/null', 'w'),
-                         preexec_fn=os.setpgrp)
+  proc = subprocess.Popen(['python', '-m', proc],  # pylint: disable=subprocess-popen-preexec-fn
+                          stdin=open('/dev/null', 'r'),
+                          stdout=open('/dev/null', 'w'),
+                          stderr=open('/dev/null', 'w'),
+                          preexec_fn=os.setpgrp)
 
   params.put(pid_param, str(proc.pid))
 
@@ -590,8 +590,6 @@ def main():
 
   try:
     manager_thread()
-  except SystemExit:
-    raise
   except Exception:
     traceback.print_exc()
     crash.capture_exception()

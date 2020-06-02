@@ -1,14 +1,14 @@
-import numpy as np
-from numpy import dot, inner, array, linalg
-from common.transformations.coordinates import LocalCoord
-
-
 '''
 Vectorized functions that transform between
 rotation matrices, euler angles and quaternions.
 All support lists, array or array of arrays as inputs.
 Supports both x2y and y_from_x format (y_from_x preferred!).
 '''
+
+import numpy as np
+from numpy import dot, inner, array, linalg
+from common.transformations.coordinates import LocalCoord
+
 
 def euler2quat(eulers):
   eulers = array(eulers)

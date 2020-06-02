@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-import numpy as np
-from numpy.linalg import solve
-
 """
 Dynamic bycicle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani"
 
@@ -15,6 +12,8 @@ x_dot = A*x + B*u
 
 A depends on longitudinal speed, u [m/s], and vehicle parameters CP
 """
+import numpy as np
+from numpy.linalg import solve
 
 
 def create_dyn_state_matrices(u, VM):
