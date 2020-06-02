@@ -34,7 +34,7 @@
 #include "common/utilpp.h"
 #include "common/util.h"
 
-#include "logger.h"
+#include "logger.hpp"
 #include "messaging.hpp"
 #include "services.h"
 
@@ -75,14 +75,12 @@ static void set_do_exit(int sig) {
 }
 struct LoggerdState {
   Context *ctx;
-  LoggerState logger;
+  Logger logger;
 
   std::mutex lock;
   std::condition_variable cv;
-  char segment_path[4096];
   uint32_t last_frame_id;
   uint32_t rotate_last_frame_id;
-  int rotate_segment;
 };
 LoggerdState s;
 
@@ -188,10 +186,10 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
                  && !do_exit) {
             s.cv.wait(lk);
           }
-          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.rotate_segment;
+          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.logger.getPart();
         } else {
           // front camera is best effort
-          should_rotate = encoder_segment < s.rotate_segment;
+          should_rotate = encoder_segment < s.logger.getPart();
         }
         if (do_exit) break;
 
@@ -199,20 +197,20 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
         if (should_rotate) {
           LOG("rotate encoder to %s", s.segment_path);
 
-          encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
+          encoder_rotate(&encoder, s.segment_path, s.logger.getPart());
           if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
+            encoder_rotate(&encoder_alt, s.segment_path, s.logger.getPart());
           }
 
           if (raw_clips) {
-            rawlogger->Rotate(s.segment_path, s.rotate_segment);
+            rawlogger->Rotate(s.segment_path, s.logger.getPart());
           }
 
-          encoder_segment = s.rotate_segment;
+          encoder_segment = s.logger.getPart();
           if (lh) {
-            lh_close(lh);
+            lh->close();
           }
-          lh = logger_get_handle(&s.logger);
+          lh = s.logger.getHandle();
         }
       }
 
@@ -249,7 +247,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
         if (lh) {
-          lh_log(lh, bytes.begin(), bytes.size(), false);
+          lh->log(bytes.begin(), bytes.size(), false);
         }
       }
 
@@ -278,7 +276,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
           auto words = capnp::messageToFlatArray(msg);
           auto bytes = words.asBytes();
           if (lh) {
-            lh_log(lh, bytes.begin(), bytes.size(), false);
+            lh->log(bytes.begin(), bytes.size(), false);
           }
 
           // close rawlogger if clip ended
@@ -298,7 +296,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
     }
 
     if (lh) {
-      lh_close(lh);
+      lh->close();
       lh = NULL;
     }
 
@@ -532,12 +530,12 @@ static void bootlog() {
   {
     auto words = gen_init_data();
     auto bytes = words.asBytes();
-    logger_init(&s.logger, "bootlog", bytes.begin(), bytes.size(), false);
+    s.logger.init("bootlog", bytes.begin(), bytes.size(), false);
   }
 
-  err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+  err = s.logger.next(LOG_ROOT);
   assert(err == 0);
-  LOGW("bootlog to %s", s.segment_path);
+  LOGW("bootlog to %s", s.logger.getSegmentPath());
 
   {
     capnp::MallocMessageBuilder msg;
@@ -556,10 +554,10 @@ static void bootlog() {
 
     auto words = capnp::messageToFlatArray(msg);
     auto bytes = words.asBytes();
-    logger_log(&s.logger, bytes.begin(), bytes.size(), false);
+    s.logger.log(bytes.begin(), bytes.size(), false);
   }
 
-  logger_close(&s.logger);
+  s.logger.close();
 }
 
 int main(int argc, char** argv) {
@@ -611,7 +609,7 @@ int main(int argc, char** argv) {
   {
     auto words = gen_init_data();
     auto bytes = words.asBytes();
-    logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
+    s.logger.init("rlog", bytes.begin(), bytes.size(), true);
   }
 
   bool is_streaming = false;
@@ -625,9 +623,9 @@ int main(int argc, char** argv) {
   }
 
   if (is_logging) {
-    err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+    err = s.logger.next(LOG_ROOT);
     assert(err == 0);
-    LOGW("logging to %s", s.segment_path);
+    LOGW("logging to %s", s.logger.getSegmentPath());
   }
 
   double start_ts = seconds_since_boot();
@@ -674,7 +672,7 @@ int main(int argc, char** argv) {
           }
         }
 
-        logger_log(&s.logger, data, len, qlog_counter[sock] == 0);
+        s.logger.log(data, len, qlog_counter[sock] == 0);
         delete msg;
 
         if (qlog_counter[sock] != -1) {
@@ -698,9 +696,9 @@ int main(int argc, char** argv) {
       s.rotate_last_frame_id = s.last_frame_id;
 
       if (is_logging) {
-        err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+        err = s.logger.next(LOG_ROOT);
         assert(err == 0);
-        LOGW("rotated to %s", s.segment_path);
+        LOGW("rotated to %s", s.logger.getSegmentPath());
       }
     }
 
@@ -724,7 +722,7 @@ int main(int argc, char** argv) {
   LOGW("lidar joined");
 #endif
 
-  logger_close(&s.logger);
+  s.logger.close();
 
   for (auto s : socks){
     delete s;
