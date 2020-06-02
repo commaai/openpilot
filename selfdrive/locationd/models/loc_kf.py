@@ -284,7 +284,7 @@ class LocKalman():
                                         los_vector[2] * (sat_vz - vz) +
                                         cd])
 
-    imu_rot = euler_rotate(*imu_angles)
+    #imu_rot = euler_rotate(*imu_angles)
     h_gyro_sym = sp.Matrix([vroll + roll_bias,
                                       vpitch + pitch_bias,
                                       vyaw + yaw_bias])
