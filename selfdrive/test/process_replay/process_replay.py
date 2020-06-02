@@ -21,6 +21,7 @@ from collections import namedtuple
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback'])
 
+
 def wait_for_event(evt):
   if not evt.wait(15):
     if threading.currentThread().getName() == "MainThread":
@@ -29,6 +30,7 @@ def wait_for_event(evt):
     else:
       # done testing this process, let it die
       sys.exit(0)
+
 
 class FakeSocket:
   def __init__(self, wait=True):
@@ -60,6 +62,7 @@ class FakeSocket:
   def wait_for_recv(self):
     wait_for_event(self.recv_called)
 
+
 class DumbSocket:
   def __init__(self, s=None):
     if s is not None:
@@ -71,6 +74,7 @@ class DumbSocket:
 
   def send(self, dat):
     pass
+
 
 class FakeSubMaster(messaging.SubMaster):
   def __init__(self, services):
@@ -103,8 +107,9 @@ class FakeSubMaster(messaging.SubMaster):
   def wait_for_update(self):
     wait_for_event(self.update_called)
 
+
 class FakePubMaster(messaging.PubMaster):
-  def __init__(self, services):
+  def __init__(self, services):  # pylint: disable=super-init-not-called
     self.data = {}
     self.sock = {}
     self.last_updated = None

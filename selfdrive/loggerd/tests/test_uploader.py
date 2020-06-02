@@ -38,9 +38,6 @@ class TestUploader(UploaderTestCase):
     super(TestUploader, self).setUp()
     log_handler.reset()
 
-  def tearDown(self):
-    super(TestUploader, self).tearDown()
-
   def start_thread(self):
     self.end_event = threading.Event()
     self.up_thread = threading.Thread(target=uploader.uploader_fn, args=[self.end_event])

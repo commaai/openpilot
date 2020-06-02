@@ -31,7 +31,7 @@ class TestParamsLearner(unittest.TestCase):
     steering_angles = np.radians(10 * np.sin(2 * np.pi * times / 100.)) + angle_offset
     speeds = 10 * np.sin(2 * np.pi * times / 1000.) + 25
 
-    for i, t in enumerate(times):
+    for i, _ in enumerate(times):
       u = speeds[i]
       sa = steering_angles[i]
       psi = VM_sim.yaw_rate(sa - angle_offset, u)

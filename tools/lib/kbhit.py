@@ -54,7 +54,7 @@ class KBHit:
   def kbhit(self):
     ''' Returns True if keyboard character was hit, False otherwise.
     '''
-    dr, dw, de = select([sys.stdin], [], [], 0)
+    dr, _, _ = select([sys.stdin], [], [], 0)
     return dr != []
 
 

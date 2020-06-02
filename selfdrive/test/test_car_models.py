@@ -40,6 +40,7 @@ def wait_for_sockets(socks, timeout=10.0):
         recvd.append(s)
   return recvd
 
+
 def get_route_log(route_name):
   log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), "rlog.bz2"))
 
@@ -49,7 +50,7 @@ def get_route_log(route_name):
     # if request fails, try again once and let it throw exception if fails again
     try:
       r = requests.get(log_url, timeout=15)
-    except:
+    except Exception:
       r = requests.get(log_url, timeout=15)
 
     if r.status_code == 200:
@@ -460,7 +461,7 @@ if __name__ == "__main__":
     # Start unlogger
     print("Start unlogger")
     unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
-    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)
+    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams', '--no-interactive'], preexec_fn=os.setsid)  # pylint: disable=subprocess-popen-preexec-fn
 
     print("Check sockets")
     extra_socks = []

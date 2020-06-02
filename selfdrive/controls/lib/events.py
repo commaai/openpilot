@@ -59,7 +59,10 @@ class Events:
         return True
     return False
 
-  def create_alerts(self, event_types, callback_args=[]):
+  def create_alerts(self, event_types, callback_args=None):
+    if callback_args is None:
+      callback_args = []
+
     ret = []
     for e in self.events:
       types = EVENTS[e].keys()
