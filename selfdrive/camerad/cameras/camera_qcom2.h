@@ -58,11 +58,20 @@ typedef struct CameraState {
   int buf0_handle;
   int buf_handle[FRAME_BUF_COUNT];
   int request_ids[FRAME_BUF_COUNT];
-  int sched_request_id;
   int sync_objs[FRAME_BUF_COUNT];
-  int buf_index;
+  int frame_id;
 
   struct cam_req_mgr_session_info req_mgr_session_info;
+
+  // static packet handles for runtime
+  uint32_t poke_cam_pkt_handle;
+  struct cam_packet *poke_cam_pkt;
+  uint32_t i2c_cam_pkt_handle;
+  struct cam_packet *i2c_cam_pkt;
+  struct cam_cmd_power *i2c_cam_pwr;
+  struct cam_packet *isp_cam_pkt;
+  uint32_t *isp_config_buf1;
+
 } CameraState;
 
 typedef struct DualCameraState {
