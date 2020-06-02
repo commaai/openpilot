@@ -48,6 +48,7 @@ class States():
   GLONASS_BIAS = slice(26, 27)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   GLONASS_FREQ_SLOPE = slice(27, 28)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   CLOCK_ACCELERATION = slice(28, 29)  # clock acceleration in light-meters/s**2,
+  ACCELEROMETER_SCALE = slice(29, 30)  # scale of mems accelerometer
 
   # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
@@ -64,6 +65,7 @@ class States():
   GLONASS_BIAS_ERR = slice(25, 26)
   GLONASS_FREQ_SLOPE_ERR = slice(26, 27)
   CLOCK_ACCELERATION_ERR = slice(27, 28)
+  ACCELEROMETER_SCALE_ERR = slice(28, 29)
 
 
 class LocKalman():
@@ -79,7 +81,8 @@ class LocKalman():
                         1,
                         0, 0, 0,
                         0, 0,
-                        0])
+                        0,
+                        1])
 
   # state covariance
   P_initial = np.diag([1e16, 1e16, 1e16,
@@ -93,7 +96,8 @@ class LocKalman():
                        0.01**2,
                        (0.01)**2, (0.01)**2, (0.01)**2,
                        10**2, 1**2,
-                       0.2**2])
+                       0.2**2,
+                       0.05**2])
 
   # process noise
   Q = np.diag([0.03**2, 0.03**2, 0.03**2,
@@ -107,7 +111,8 @@ class LocKalman():
                0.001**2,
                (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
                (.1)**2, (.01)**2,
-               0.005**2])
+               0.005**2,
+               (0.02 / 100)**2])
 
   # measurements that need to pass mahalanobis distance outlier rejector
   maha_test_kinds = [ObservationKind.ORB_FEATURES]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
@@ -152,6 +157,7 @@ class LocKalman():
     #glonass_bias = state[States.GLONASS_BIAS, :][0,0]
     #glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :][0,0]
     #ca = state[States.CLOCK_ACCELERATION, :][0,0]
+    accel_scale = state[States.ACCELEROMETER_SCALE, :][0]
 
     dt = sp.Symbol('dt')
 
@@ -291,7 +297,7 @@ class LocKalman():
 
     pos = sp.Matrix([x, y, z])
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
-    h_acc_sym = (gravity + acceleration)
+    h_acc_sym = accel_scale * (gravity + acceleration)
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2)
