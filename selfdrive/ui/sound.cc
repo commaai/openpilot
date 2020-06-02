@@ -8,7 +8,7 @@
 #define ReturnOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; }
 
-std::map<AudibleAlert, const char*> sound_map{
+static std::map<AudibleAlert, const char*> sound_map{
   {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav"},
   {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav"},
   {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav"},
@@ -36,30 +36,24 @@ bool Sound::init(int volumn) {
   ReturnOnError((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
 
   for (auto &kv : sound_map) {
-    if (!createPlayer(engineInterface, kv.first, kv.second)) {
-      return false;
-    }
+    SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar*)kv.second};
+    SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
+    SLDataSource audioSrc = {&locUri, &formatMime};
+
+    SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
+    SLDataSink audioSnk = {&outMix, NULL};
+
+    SLObjectItf player = NULL;
+    SLPlayItf playInterface = NULL;
+    ReturnOnError((*engineInterface)->CreateAudioPlayer(engineInterface, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
+    ReturnOnError((*player)->Realize(player, SL_BOOLEAN_FALSE), "Failed to realize audio player");
+    ReturnOnError((*player)->GetInterface(player, SL_IID_PLAY, &playInterface), "Failed to get player interface");
+    ReturnOnError((*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
+
+    player_[kv.first] = new Sound::Player{player, playInterface};
   }
+  
   setVolume(volumn);
-  return true;
-}
-
-bool Sound::createPlayer(SLEngineItf engineInterface, AudibleAlert alert, const char* uri) {
-  SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar*)uri};
-  SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
-  SLDataSource audioSrc = {&locUri, &formatMime};
-
-  SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
-  SLDataSink audioSnk = {&outMix, NULL};
-
-  SLObjectItf player = NULL;
-  SLPlayItf playInterface = NULL;
-  ReturnOnError((*engineInterface)->CreateAudioPlayer(engineInterface, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
-  ReturnOnError((*player)->Realize(player, SL_BOOLEAN_FALSE), "Failed to realize audio player");
-  ReturnOnError((*player)->GetInterface(player, SL_IID_PLAY, &playInterface), "Failed to get player interface");
-  ReturnOnError((*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
-
-  player_[alert] = new Sound::Player{player, playInterface};
   return true;
 }
 

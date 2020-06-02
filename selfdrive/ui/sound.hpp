@@ -16,14 +16,12 @@ class Sound {
   inline AudibleAlert currentSound() const { return currentSound_; }
   ~Sound();
 #if defined(QCOM) || defined(QCOM2)
-  struct Player;
-
  private:
-  bool createPlayer(SLEngineItf engineInterface, AudibleAlert alert, const char* uri);
   SLObjectItf engine_ = NULL;
   SLObjectItf outputMix_ = NULL;
   int repeat_ = 0, last_volume_ = 0;
   double last_set_volume_time_ = 0;
+  struct Player;
   std::map<AudibleAlert, Player*> player_;
 #endif
   AudibleAlert currentSound_ = AudibleAlert::NONE;
