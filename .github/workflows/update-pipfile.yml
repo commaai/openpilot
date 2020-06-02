@@ -10,8 +10,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
     - run: pip install wheel
-    - run: pip install pipenv
-    - run: rm Pipfile.lock
+    - run: pip install pipenv==2018.11.26
     - run: pipenv lock
     - uses: actions/upload-artifact@v2
       with:
