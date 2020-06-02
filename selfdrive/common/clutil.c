@@ -85,7 +85,7 @@ void cl_print_info(cl_platform_id platform, cl_device_id device) {
 
   size_t sz;
   clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(sz), &sz, NULL);
-  printf("max work group size: %u\n", sz);
+  printf("max work group size: %zu\n", sz);
 
   cl_device_type type;
   clGetDeviceInfo(device, CL_DEVICE_TYPE, sizeof(type), &type, NULL);

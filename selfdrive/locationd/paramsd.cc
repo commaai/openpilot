@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
   LOGW("waiting for params to set vehicle model");
   while (true) {
-    read_db_value(NULL, "CarParams", &value, &value_sz);
+    read_db_value("CarParams", &value, &value_sz);
     if (value_sz > 0) break;
     usleep(100*1000);
   }
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
   // Read params from previous run
-  const int result = read_db_value(NULL, "LiveParameters", &value, &value_sz);
+  const int result = read_db_value("LiveParameters", &value, &value_sz);
 
   std::string fingerprint = car_params.getCarFingerprint();
   std::string vin = car_params.getCarVin();
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
           std::string out = json.dump();
           std::async(std::launch::async,
                      [out]{
-                       write_db_value(NULL, "LiveParameters", out.c_str(), out.length());
+                       write_db_value("LiveParameters", out.c_str(), out.length());
                      });
         }
       }

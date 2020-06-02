@@ -6,7 +6,6 @@ from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALE
                                   _AWARENESS_PROMPT_TIME_TILL_TERMINAL, _DISTRACTED_TIME, \
                                   _DISTRACTED_PRE_TIME_TILL_TERMINAL, _DISTRACTED_PROMPT_TIME_TILL_TERMINAL, \
                                   _POSESTD_THRESHOLD, _HI_STD_TIMEOUT
-from selfdrive.controls.lib.gps_helpers import is_rhd_region
 
 _TEST_TIMESPAN = 120 # seconds
 _DISTRACTED_SECONDS_TO_ORANGE = _DISTRACTED_TIME - _DISTRACTED_PROMPT_TIME_TILL_TERMINAL + 1
@@ -70,19 +69,6 @@ def run_DState_seq(driver_state_msgs, driver_car_interaction, openpilot_status, 
   return events_from_DM, DS
 
 class TestMonitoring(unittest.TestCase):
-  # -1. rhd parser sanity check
-  def test_rhd_parser(self):
-    cities = [[32.7, -117.1, 0],\
-              [51.5, 0.129, 1],\
-              [35.7, 139.7, 1],\
-              [-37.8, 144.9, 1],\
-              [32.1, 41.74, 0],\
-              [55.7, 12.69, 0]]
-    result = []
-    for city in cities:
-      result.append(int(is_rhd_region(city[0],city[1])))
-    self.assertEqual(result,[int(city[2]) for city in cities])
-
   # 0. op engaged, driver is doing fine all the time
   def test_fully_aware_driver(self):
     events_output = run_DState_seq(always_attentive, always_false, always_true, always_false)[0]

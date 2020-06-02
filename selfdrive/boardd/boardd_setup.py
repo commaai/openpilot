@@ -21,7 +21,10 @@ if ARCH == "x86_64":
     ARCH_DIR = 'x64'
 else:
   libraries = [':libcan_list_to_can_capnp.a', 'capnp', 'kj']
-  ARCH_DIR = 'aarch64'
+  if os.path.isdir("/system"):
+    ARCH_DIR = 'aarch64'
+  else:
+    ARCH_DIR = 'larch64'
 
 setup(name='Boardd API Implementation',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},
@@ -32,7 +35,6 @@ setup(name='Boardd API Implementation',
           library_dirs=[
             './',
             PHONELIBS + '/capnp-cpp/' + ARCH_DIR + '/lib/',
-            PHONELIBS + '/capnp-c/' + ARCH_DIR + '/lib/'
           ],
           sources=['boardd_api_impl.pyx'],
           language="c++",

@@ -1,6 +1,6 @@
 //=============================================================================
 //
-//  Copyright (c) 2015 Qualcomm Technologies, Inc.
+//  Copyright (c) 2015,2019 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -43,7 +43,15 @@ struct ZDL_EXPORT DlcRecord
       : name(std::move(other.name))
       , data(std::move(other.data))
    {}
-
+   DlcRecord(const std::string& new_name)
+      : name(new_name)
+      , data()
+   {
+      if(name.empty())
+      {
+         name.reserve(1);
+      }
+   }
    DlcRecord(const DlcRecord&) = delete;
 };
 
@@ -63,9 +71,9 @@ class ZDL_EXPORT IDlContainer
 public:
    /**
     * Initializes a container from a container archive file.
-    * 
+    *
     * @param[in] filename Container archive file path.
-    * 
+    *
     * @return A pointer to the initialized container
     */
    ZDL_EXPORT static std::unique_ptr<IDlContainer>
@@ -83,10 +91,10 @@ public:
 
    /**
     * Initializes a container from a byte buffer.
-    * 
-    * @param[in] buffer Byte buffer holding the contents of an archive 
+    *
+    * @param[in] buffer Byte buffer holding the contents of an archive
     *                   file.
-    * 
+    *
     * @return A pointer to the initialized container
     */
    ZDL_EXPORT static std::unique_ptr<IDlContainer>
@@ -94,12 +102,12 @@ public:
 
    /**
     * Initializes a container from a byte buffer.
-    * 
-    * @param[in] buffer Byte buffer holding the contents of an archive 
+    *
+    * @param[in] buffer Byte buffer holding the contents of an archive
     *                   file.
     *
     * @param[in] size Size of the byte buffer.
-    * 
+    *
     * @return A pointer to the initialized container
     */
    ZDL_EXPORT static std::unique_ptr<IDlContainer>
@@ -110,8 +118,8 @@ public:
 
    /**
     * Get the record catalog for a container.
-    * 
-    * @param[out] catalog Buffer that will hold the record names on 
+    *
+    * @param[out] catalog Buffer that will hold the record names on
     *                    return.
     */
    virtual void getCatalog(std::set<std::string> &catalog) const = 0;
@@ -126,7 +134,7 @@ public:
 
    /**
     * Get a record from a container by name.
-    * 
+    *
     * @param[in] name Name of the record to fetch.
     * @param[out] record The passed in record will be populated with the
     *                   record data on return. Note that the caller
@@ -145,6 +153,34 @@ public:
     *                   responsible for freeing it if needed.
     */
    virtual void getRecord(const zdl::DlSystem::String &name, DlcRecord &record) const = 0;
+
+   /**
+    * Save the container to an archive on disk. This function will save the
+    * container if the filename is different from the file that it was opened
+    * from, or if at least one record was modified since the container was
+    * opened.
+    *
+    * It will truncate any existing file at the target path.
+    *
+    * @param filename Container archive file path.
+    *
+    * @return indication of success/failure
+    */
+   virtual bool save(const std::string &filename) = 0;
+
+   /**
+    * Save the container to an archive on disk. This function will save the
+    * container if the filename is different from the file that it was opened
+    * from, or if at least one record was modified since the container was
+    * opened.
+    *
+    * It will truncate any existing file at the target path.
+    *
+    * @param filename Container archive file path.
+    *
+    * @return indication of success/failure
+    */
+   virtual bool save (const zdl::DlSystem::String &filename) = 0;
 
    virtual ~IDlContainer() {}
 };

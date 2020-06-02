@@ -61,8 +61,7 @@ class FakeSocket:
 class DumbSocket:
   def __init__(self, s=None):
     if s is not None:
-      dat = messaging.new_message()
-      dat.init(s)
+      dat = messaging.new_message(s)
       self.data = dat.to_bytes()
 
   def receive(self, non_blocking=False):
@@ -93,6 +92,7 @@ class FakeSubMaster(messaging.SubMaster):
     wait_for_event(self.update_ready)
     self.update_ready.clear()
 
+
   def update_msgs(self, cur_time, msgs):
     wait_for_event(self.update_called)
     self.update_called.clear()
@@ -108,11 +108,10 @@ class FakePubMaster(messaging.PubMaster):
     self.sock = {}
     self.last_updated = None
     for s in services:
-      data = messaging.new_message()
       try:
-        data.init(s)
+        data = messaging.new_message(s)
       except:
-        data.init(s, 0)
+        data = messaging.new_message(s, 0)
       self.data[s] = data.as_reader()
       self.sock[s] = DumbSocket()
     self.send_called = threading.Event()
@@ -188,8 +187,14 @@ def radar_rcv_callback(msg, CP, cfg, fsm):
 def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
-  recv_socks = ["liveCalibration"] if (fsm.frame + 1) % 5 == 0 else []
-  return recv_socks, True
+  if msg.which() == 'carState':
+    if ((fsm.frame +1)% 25) == 0:
+      recv_socks = ["liveCalibration"]
+    else:
+      recv_socks = []
+    return recv_socks, True
+  else:
+    return [], False
 
 
 CONFIGS = [
@@ -200,7 +205,7 @@ CONFIGS = [
       "thermal": [], "health": [], "liveCalibration": [], "dMonitoringState": [], "plan": [], "pathPlan": [], "gpsLocation": [],
       "model": [],
     },
-    ignore=[("logMonoTime", 0), ("valid", True), ("controlsState.startMonoTime", 0), ("controlsState.cumLagMs", 0)],
+    ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
     should_recv_callback=None,
   ),
@@ -210,7 +215,7 @@ CONFIGS = [
       "can": ["radarState", "liveTracks"],
       "liveParameters":  [], "controlsState":  [], "model":  [],
     },
-    ignore=[("logMonoTime", 0), ("valid", True), ("radarState.cumLagMs", 0)],
+    ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
   ),
@@ -220,16 +225,17 @@ CONFIGS = [
       "model": ["pathPlan"], "radarState": ["plan"],
       "carState": [], "controlsState": [], "liveParameters": [],
     },
-    ignore=[("logMonoTime", 0), ("valid", True), ("plan.processingDelay", 0)],
+    ignore=["logMonoTime", "valid", "plan.processingDelay"],
     init_callback=get_car_params,
     should_recv_callback=None,
   ),
   ProcessConfig(
     proc_name="calibrationd",
     pub_sub={
-      "cameraOdometry": ["liveCalibration"]
+      "carState": ["liveCalibration"],
+      "cameraOdometry": []
     },
-    ignore=[("logMonoTime", 0), ("valid", True)],
+    ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
   ),
@@ -239,7 +245,7 @@ CONFIGS = [
       "driverState": ["dMonitoringState"],
       "liveCalibration": [], "carState": [], "model": [], "gpsLocation": [],
     },
-    ignore=[("logMonoTime", 0), ("valid", True)],
+    ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=None,
   ),

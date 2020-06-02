@@ -1,13 +1,13 @@
-import os
 import time
 import threading
+import unittest
 import logging
 import json
 
 from selfdrive.swaglog import cloudlog
 import selfdrive.loggerd.uploader as uploader
 
-from common.timeout import Timeout
+from common.xattr import getxattr
 
 from selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
@@ -18,13 +18,16 @@ class TestLogHandler(logging.Handler):
 
   def reset(self):
     self.upload_order = list()
+    self.upload_ignored = list()
 
   def emit(self, record):
     try:
       j = json.loads(record.message)
       if j["event"] == "upload_success":
         self.upload_order.append(j["key"])
-    except BaseException:
+      if j["event"] == "upload_ignored":
+        self.upload_ignored.append(j["key"])
+    except Exception:
       pass
 
 log_handler = TestLogHandler()
@@ -69,16 +72,34 @@ class TestUploader(UploaderTestCase):
     f_paths = self.gen_files(lock=False)
 
     self.start_thread()
-
-    with Timeout(5, "Timeout waiting for file to be uploaded"):
-      while len(os.listdir(self.root)):
-        time.sleep(0.01)
+    # allow enough time that files could upload twice if there is a bug in the logic
+    time.sleep(5)
     self.join_thread()
 
+    self.assertTrue(len(log_handler.upload_ignored) == 0, "Some files were ignored")
+    self.assertFalse(len(log_handler.upload_order) < len(f_paths), "Some files failed to upload")
+    self.assertFalse(len(log_handler.upload_order) > len(f_paths), "Some files were uploaded twice")
     for f_path in f_paths:
-      self.assertFalse(os.path.exists(f_path), "All files not uploaded")
+      self.assertTrue(getxattr(f_path, uploader.UPLOAD_ATTR_NAME), "All files not uploaded")
     exp_order = self.gen_order([self.seg_num], [])
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
+
+  def test_upload_ignored(self):
+    self.set_ignore()
+    f_paths = self.gen_files(lock=False)
+
+    self.start_thread()
+    # allow enough time that files could upload twice if there is a bug in the logic
+    time.sleep(5)
+    self.join_thread()
+
+    self.assertTrue(len(log_handler.upload_order) == 0, "Some files were not ignored")
+    self.assertFalse(len(log_handler.upload_ignored) < len(f_paths), "Some files failed to ignore")
+    self.assertFalse(len(log_handler.upload_ignored) > len(f_paths), "Some files were ignored twice")
+    for f_path in f_paths:
+      self.assertTrue(getxattr(f_path, uploader.UPLOAD_ATTR_NAME), "All files not ignored")
+    exp_order = self.gen_order([self.seg_num], [])
+    self.assertTrue(log_handler.upload_ignored == exp_order, "Files ignored in wrong order")
 
   def test_upload_files_in_create_order(self):
     f_paths = list()
@@ -92,15 +113,15 @@ class TestUploader(UploaderTestCase):
       f_paths += self.gen_files()
 
     self.start_thread()
-
-    with Timeout(5, "Timeout waiting for file to be upload"):
-      while len(os.listdir(self.root)):
-        time.sleep(0.01)
-
+    # allow enough time that files could upload twice if there is a bug in the logic
+    time.sleep(5)
     self.join_thread()
 
+    self.assertTrue(len(log_handler.upload_ignored) == 0, "Some files were ignored")
+    self.assertFalse(len(log_handler.upload_order) < len(f_paths), "Some files failed to upload")
+    self.assertFalse(len(log_handler.upload_order) > len(f_paths), "Some files were uploaded twice")
     for f_path in f_paths:
-      self.assertFalse(os.path.exists(f_path), "All files not uploaded")
+      self.assertTrue(getxattr(f_path, uploader.UPLOAD_ATTR_NAME), "All files not uploaded")
     exp_order = self.gen_order(seg1_nums, seg2_nums)
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
 
@@ -113,4 +134,8 @@ class TestUploader(UploaderTestCase):
     self.join_thread()
 
     for f_path in f_paths:
-      self.assertTrue(os.path.exists(f_path), "File upload when locked")
+      self.assertFalse(getxattr(f_path, uploader.UPLOAD_ATTR_NAME), "File upload when locked")
+
+
+if __name__ == "__main__":
+  unittest.main()

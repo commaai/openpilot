@@ -41,7 +41,7 @@
 #include "messaging.hpp"
 #include "services.h"
 
-#ifndef QCOM
+#if !(defined(QCOM) || defined(QCOM2))
 // no encoder on PC
 #define DISABLE_ENCODER
 #endif
@@ -95,7 +95,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
   if (front) {
     char *value;
-    const int result = read_db_value(NULL, "RecordFront", &value, NULL);
+    const int result = read_db_value("RecordFront", &value, NULL);
     if (result != 0) return;
     if (value[0] != '1') { free(value); return; }
     free(value);
@@ -137,10 +137,14 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
       encoder_init(&encoder, front ? "dcamera.hevc" : "fcamera.hevc", buf_info.width, buf_info.height, CAMERA_FPS, front ? 2500000 : 5000000, true, false);
+
+      #ifndef QCOM2
+      // TODO: fix qcamera on tici
       if (!front) {
         encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
         has_encoder_alt = true;
       }
+      #endif
       encoder_inited = true;
       if (is_streaming) {
         encoder.zmq_ctx = zmq_ctx_new();
@@ -164,6 +168,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
       VIPCBuf* buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
         LOG("visionstream get failed");
+        visionstream_destroy(&stream);
         break;
       }
 
@@ -454,32 +459,32 @@ kj::Array<capnp::word> gen_init_data() {
 
   char* git_commit = NULL;
   size_t size;
-  read_db_value(NULL, "GitCommit", &git_commit, &size);
+  read_db_value("GitCommit", &git_commit, &size);
   if (git_commit) {
     init.setGitCommit(capnp::Text::Reader(git_commit, size));
   }
 
   char* git_branch = NULL;
-  read_db_value(NULL, "GitBranch", &git_branch, &size);
+  read_db_value("GitBranch", &git_branch, &size);
   if (git_branch) {
     init.setGitBranch(capnp::Text::Reader(git_branch, size));
   }
 
   char* git_remote = NULL;
-  read_db_value(NULL, "GitRemote", &git_remote, &size);
+  read_db_value("GitRemote", &git_remote, &size);
   if (git_remote) {
     init.setGitRemote(capnp::Text::Reader(git_remote, size));
   }
 
   char* passive = NULL;
-  read_db_value(NULL, "Passive", &passive, NULL);
+  read_db_value("Passive", &passive, NULL);
   init.setPassive(passive && strlen(passive) && passive[0] == '1');
 
 
   {
     // log params
     std::map<std::string, std::string> params;
-    read_db_all(NULL, &params);
+    read_db_all(&params);
     auto lparams = init.initParams().initEntries(params.size());
     int i = 0;
     for (auto& kv : params) {
@@ -727,7 +732,8 @@ int main(int argc, char** argv) {
   for (auto s : socks){
     delete s;
   }
-
+  
+  delete poller;
   delete s.ctx;
   return 0;
 }

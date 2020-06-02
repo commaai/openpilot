@@ -1,0 +1,291 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX EON Vector__XXX
+
+
+BO_ 170 AccPedal: 8 XXX
+ SG_ KickDownPressed : 53|1@0+ (1,0) [0|3] "" XXX
+ SG_ CruisePedalActive : 54|1@0+ (1,0) [0|1] "" XXX
+ SG_ CruisePedalInactive : 55|1@0+ (1,0) [0|1] "" XXX
+ SG_ ThrottlelPressed : 50|1@0+ (1,0) [0|1] "" XXX
+ SG_ AcceleratorPedalPressed : 52|1@0+ (1,0) [0|7] "" XXX
+ SG_ AcceleratorPedalPercentage : 16|16@1+ (0.01,0) [0|100] "" XXX
+ SG_ Counter1 : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ EngineSpeed : 32|16@1- (1,0) [0|65535] "" XXX
+ SG_ uknown : 7|8@0- (1,0) [0|65535] "" XXX
+
+BO_ 404 CruiseControl: 4 XXX
+ SG_ plus1mph_request : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ minus1mph_request : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ Cancel_request_up_stalk : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ Cancel_request_up_or_down_stalk : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ Resume_request : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ Counter1 : 3|4@0+ (1,0) [0|15] "" XXX
+ SG_ Counter2 : 11|4@0+ (1,0) [0|15] "" XXX
+ SG_ notCancel_0xF : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ setMe_0xFC : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ requests_0xF : 15|4@0+ (1,0) [0|15] "" XXX
+ SG_ plus5mph_request : 17|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ minus5mph_request : 19|1@0+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 512 CruiseControlStatus: 8 XXX
+ SG_ CruiseControlInactiveFlag : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ CruiseCoontrolActiveFlag : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ CruiseControlSetpointSpeed : 7|8@0+ (0.25,0) [0|255] "mph" XXX
+
+BO_ 168 EngineAndBrake: 8 XXX
+ SG_ Brake_active2 : 62|1@0+ (1,0) [0|1] "" XXX
+ SG_ BrakePressed : 61|1@0+ (1,0) [0|1] "" XXX
+ SG_ EngineTorque : 8|16@1- (1,0) [0|65535] "" XXX
+ SG_ EngineTorqueWoInterv : 24|16@1- (1,0) [0|65535] "" XXX
+
+BO_ 470 SteeringButtons: 2 XXX
+ SG_ Volume_DOWN : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ Volume_UP : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ VoiceControl : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ Telephone : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ Next_up : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ Previous_down : 4|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 403 DynamicCruiseControlStatus: 8 XXX
+ SG_ Counter : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ CruiseActive : 43|1@0+ (1,0) [0|1] "" XXX
+ SG_ CruiseSpeedChangeRequest : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ CruiseControlSetpointSpeed : 15|8@0+ (1,-2) [0|255] "mph" XXX
+
+BO_ 201 SteeringWheelAngle_DSC: 8 XXX
+ SG_ Counter1 : 23|4@0+ (1,0) [0|15] "" XXX
+ SG_ WeirdCounter : 44|4@1+ (1,0) [0|3] "" XXX
+ SG_ SteeringPositionComplementLow : 24|11@1- (1,0) [0|1] "" XXX
+ SG_ SteeringPosition : 0|16@1- (0.0439453125,0) [-600|600] "deg" XXX
+
+BO_ 206 WheelSpeeds: 8 XXX
+ SG_ Wheel1 : 0|16@1- (0.0643699,0) [0|255] "kph" XXX
+ SG_ Wheel2 : 16|16@1- (0.0643699,0) [0|255] "kph" XXX
+ SG_ Wheel4 : 48|16@1- (0.0643699,0) [0|255] "kph" XXX
+ SG_ Wheel3 : 32|16@1- (0.0643699,0) [0|255] "kph" XXX
+
+BO_ 884 WheelToleranceAdjustment: 8 XXX
+
+BO_ 678 WiperSwitch: 8 XXX
+ SG_ AutoWipersOn : 0|1@1+ (1,0) [0|3] "" XXX
+
+BO_ 304 TerminalStatus: 8 XXX
+ SG_ AccOn : 23|1@0+ (1,0) [0|255] "" XXX
+ SG_ IgnitionOff : 22|1@0+ (1,0) [0|3] "" XXX
+
+BO_ 169 Torque2: 8 XXX
+
+BO_ 184 TorqueTransmisionRequest: 8 XXX
+
+BO_ 196 SteeringWheelAngle: 7 XXX
+ SG_ SteeringPosition : 0|16@1- (0.0439453125,0) [-600|600] "degree" XXX
+ SG_ SteeringSpeed : 24|16@1- (0.0439453125,0) [0|255] "degree/s" XXX
+
+BO_ 180 WheelTorqueDriveTrain1: 8 XXX
+
+BO_ 182 DynamicCruiseControlTorqueDemand: 8 XXX
+
+BO_ 186 TransmissionData: 8 XXX
+
+BO_ 191 RequestedWheelTorqueDriveTrainActiveCruiseControl: 8 XXX
+ SG_ Counter : 11|4@0- (1,0) [0|255] "" XXX
+ SG_ TorqueReq : 16|11@1+ (1,0) [0|65535] "" XXX
+
+BO_ 414 Status_DSC: 8 XXX
+
+BO_ 416 Speed: 8 XXX
+ SG_ VehicleSpeed : 0|12@1+ (0.103,0) [0|255] "kph" XXX
+
+BO_ 418 TransimissionData2: 8 XXX
+
+BO_ 690 WheelPressure: 8 XXX
+
+BO_ 691 AccelerationData: 8 XXX
+
+BO_ 408 GearSelectorSwitch: 8 XXX
+ SG_ Gear : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 422 Distance: 8 XXX
+
+BO_ 436 InstrumentClusterStatus_KOMBI: 8 XXX
+
+BO_ 464 EngineData: 8 XXX
+
+BO_ 945 TransmissionData3: 8 XXX
+
+BO_ 200 SteeringWheelAngle_slow: 8 XXX
+ SG_ SteeringPosition : 0|16@1- (0.0439453125,0) [-600|600] "degree" XXX
+ SG_ SteeringSpeed : 24|16@1- (0.0439453125,0) [-65535|65535] "degree/s" XXX
+
+BO_ 466 TransmissionDataDisplay: 8 XXX
+
+BO_ 437 HeatFlow_LoadMomentClimate: 8 XXX
+
+BO_ 1152 NetworkManagment1: 8 XXX
+
+BO_ 1170 NetworkManagment2: 8 XXX
+
+BO_ 1175 NetworkManagment3: 8 XXX
+
+BO_ 1176 NetworkManagment4: 8 XXX
+
+BO_ 1193 NetworkManagment5: 8 XXX
+
+BO_ 1246 NetworkManagment6: 8 XXX
+
+BO_ 438 HeatFlowEngine: 8 XXX
+
+BO_ 784 AmbientTemperature: 8 XXX
+
+BO_ 821 ElectricFuelPumpStatus: 8 XXX
+
+BO_ 1007 EngineOBD_data: 8 XXX
+
+BO_ 1432 ServicesDKG: 8 XXX
+
+BO_ 309 CrashDisconnectControl: 8 XXX
+
+BO_ 502 TurnSignals: 2 XXX
+ SG_ TurnSignalIdle : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ TurnSignalActive : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ RightTurn : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ LeftTurn : 4|1@1+ (1,0) [0|1] "" XXX
+ SG_ HoldActivated : 0|1@1+ (1,0) [0|1] "" XXX
+
+BO_ 514 Dimming: 8 XXX
+
+BO_ 538 LampsCondition: 8 XXX
+
+BO_ 550 RainSensorWiperSpeed: 8 XXX
+
+BO_ 578 ClimateFrontStatus: 8 XXX
+
+BO_ 704 LCD_lighting: 8 XXX
+
+BO_ 758 LightControl: 8 XXX
+
+BO_ 760 Time_Date: 8 XXX
+
+BO_ 762 SeatBeltContact: 8 XXX
+
+BO_ 764 TrunkStatus: 8 XXX
+
+BO_ 797 TirePressureStatus: 8 XXX
+
+BO_ 816 Range_Mileage: 8 XXX
+
+BO_ 823 StatusFuelControl: 8 XXX
+
+BO_ 897 EngineOilLevelStatus: 8 XXX
+
+BO_ 940 Terminal30Eerror: 8 XXX
+
+BO_ 947 PowerManagmentConsumptionControl: 8 XXX
+
+BO_ 948 PowerBatteryVoltage: 8 XXX
+ SG_ BatteryVoltage : 7|24@0+ (0.001,0) [0|65535] "" XXX
+
+BO_ 958 PowerRunningTime: 8 XXX
+
+BO_ 1408 ServicesKGM: 8 XXX
+
+BO_ 1426 ServicesDME: 8 XXX
+
+BO_ 1449 ServicesDSC: 8 XXX
+
+BO_ 1504 ServicesKOMBI: 8 XXX
+
+BO_ 1522 ServicesKBM: 8 XXX
+
+BO_ 209 Accelerometer: 8 XXX
+ SG_ LateralAcceleration : 0|16@1- (1,0) [0|7] "" XXX
+ SG_ LongitudalAcceleration : 32|16@1- (1,0) [0|65535] "" XXX
+
+BO_ 172 WheelTorqueDrivetrain2: 8 XXX
+
+BO_ 128 Unknown80: 5 XXX
+ SG_ State2 : 24|4@1+ (1,0) [0|15] "" XXX
+ SG_ State1 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ Counter1 : 31|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 320 Unknown140: 2 XXX
+ SG_ State : 7|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 212 Unknown_d4: 8 XXX
+ SG_ State1 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ Counter1 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ Counter2 : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 205 Unknown_cd: 8 XXX
+ SG_ NEW_SIGNAL_2 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_5 : 39|8@0- (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_6 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ Counter1 : 55|4@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_7 : 63|8@0- (1,0) [0|255] "" XXX
+
+BO_ 1577 NEW_MSG_1: 8 XXX
+
+
+
+
+CM_ SG_ 170 ThrottlelPressed "Active when accelerator pedal pressed or cruise control drives";
+CM_ SG_ 170 AcceleratorPedalPressed "Active only when driver actually presses the pedal";
+CM_ SG_ 170 AcceleratorPedalPercentage "ToDo Factor to be adjusted";
+CM_ SG_ 170 EngineSpeed "It's hard to say that is even a rate";
+CM_ SG_ 404 plus1mph_request "Appears when +1mph/kph stalk is depressed";
+CM_ SG_ 404 minus1mph_request "Appears when -1mph/kph stalk is depressed";
+CM_ SG_ 404 Cancel_request_up_stalk "Appears when cancel stalk (up) is depressed";
+CM_ SG_ 404 Cancel_request_up_or_down_stalk "Appears when cancel stalk (up or down) is depressed";
+CM_ SG_ 404 Resume_request "It appears when resume stalk button is depressed";
+CM_ SG_ 404 Counter1 "It accelerates when requests are being sent";
+CM_ SG_ 404 Counter2 "It accelerates when requests are being sent";
+CM_ SG_ 404 notCancel_0xF "0xF unless cancel is requested then 0x0";
+CM_ SG_ 168 Brake_active2 "";
+CM_ SG_ 168 BrakePressed "Brake when driver presses the brake";
+CM_ SG_ 168 EngineTorque "Engine torque without inertia - combustion torque";
+CM_ SG_ 168 EngineTorqueWoInterv "Engine torque without inertia and without shift intervention";
+CM_ SG_ 403 CruiseControlSetpointSpeed "Speed target";
+CM_ SG_ 408 Gear "This is just provision, needs to be reverse engineered";
+CM_ SG_ 502 TurnSignalIdle "Turn signal off";
+CM_ SG_ 502 TurnSignalActive "Turn signal on or transitioning";
+CM_ SG_ 502 RightTurn "Indicates right blinker or when steering returning right clears left blinker";
+CM_ SG_ 502 LeftTurn "Indicates left blinker or when steering returning left clears right blinker";
+CM_ SG_ 502 HoldActivated "Spikes down if blinker cleared with timeout or turn. Stays off if blinker cleared with stalk";
+VAL_ 408 Gear 1 "D" 2 "S" 3 "N" 4 "R" 5 "P" ;
