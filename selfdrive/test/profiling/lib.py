@@ -82,6 +82,8 @@ class SubMaster(messaging.SubMaster):
       self.logMonoTime[w] = msg.logMonoTime
 
       self.i += 1
+      if self.i == self.max_i:
+        raise ReplayDone
 
       if w == self.trigger:
         break
