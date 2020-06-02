@@ -24,11 +24,14 @@ def create_dir(path):
 def check_no_collision(log):
   return min(log['d_rel']) > 0
 
+
 def check_fcw(log):
   return any(log['fcw'])
 
+
 def check_engaged(log):
   return log['controls_state_msgs'][-1][-1].active
+
 
 maneuvers = [
   Maneuver(
@@ -36,8 +39,8 @@ maneuvers = [
     duration=30.,
     initial_speed=40. * CV.MPH_TO_MS,
     cruise_button_presses=[(CB.DECEL_SET, 2.), (0, 2.3),
-                             (CB.RES_ACCEL, 10.), (0, 10.1),
-                             (CB.RES_ACCEL, 10.2), (0, 10.3)],
+                           (CB.RES_ACCEL, 10.), (0, 10.1),
+                           (CB.RES_ACCEL, 10.2), (0, 10.3)],
     checks=[check_engaged],
   ),
   Maneuver(
@@ -45,8 +48,8 @@ maneuvers = [
     duration=30.,
     initial_speed=60. * CV.MPH_TO_MS,
     cruise_button_presses=[(CB.DECEL_SET, 2.), (0, 2.3),
-                             (CB.DECEL_SET, 10.), (0, 10.1),
-                             (CB.DECEL_SET, 10.2), (0, 10.3)],
+                           (CB.DECEL_SET, 10.), (0, 10.1),
+                           (CB.DECEL_SET, 10.2), (0, 10.3)],
     checks=[check_engaged],
   ),
   Maneuver(
@@ -73,7 +76,7 @@ maneuvers = [
     initial_speed=60. * CV.MPH_TO_MS,
     lead_relevancy=True,
     initial_distance_lead=100.,
-    speed_lead_values=[40.*CV.MPH_TO_MS, 40.*CV.MPH_TO_MS],
+    speed_lead_values=[40. * CV.MPH_TO_MS, 40. * CV.MPH_TO_MS],
     speed_lead_breakpoints=[0., 100.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
     checks=[check_engaged, check_no_collision],
@@ -84,7 +87,7 @@ maneuvers = [
     initial_speed=40. * CV.MPH_TO_MS,
     lead_relevancy=True,
     initial_distance_lead=150.,
-    speed_lead_values=[0.*CV.MPH_TO_MS, 0.*CV.MPH_TO_MS],
+    speed_lead_values=[0. * CV.MPH_TO_MS, 0. * CV.MPH_TO_MS],
     speed_lead_breakpoints=[0., 100.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
     checks=[check_engaged, check_no_collision],
@@ -140,9 +143,9 @@ maneuvers = [
     lead_relevancy=True,
     initial_distance_lead=100.,
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                             (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                             (CB.RES_ACCEL, 1.6), (0.0, 1.7),
-                             (CB.RES_ACCEL, 1.8), (0.0, 1.9)],
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7),
+                           (CB.RES_ACCEL, 1.8), (0.0, 1.9)],
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
@@ -154,8 +157,8 @@ maneuvers = [
     speed_lead_values=[30., 30., 29., 31., 29., 31., 29.],
     speed_lead_breakpoints=[0., 6., 8., 12., 16., 20., 24.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                             (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                             (CB.RES_ACCEL, 1.6), (0.0, 1.7)],
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7)],
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
@@ -167,8 +170,8 @@ maneuvers = [
     speed_lead_values=[10., 0., 0., 10., 0., 10.],
     speed_lead_breakpoints=[10., 20., 30., 40., 50., 60.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                             (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                             (CB.RES_ACCEL, 1.6), (0.0, 1.7)],
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7)],
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
@@ -177,14 +180,14 @@ maneuvers = [
     initial_speed=0.,
     lead_relevancy=True,
     initial_distance_lead=4.,
-    speed_lead_values=[0,  0 , 45],
+    speed_lead_values=[0, 0, 45],
     speed_lead_breakpoints=[0, 10., 40.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                             (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                             (CB.RES_ACCEL, 1.6), (0.0, 1.7),
-                             (CB.RES_ACCEL, 1.8), (0.0, 1.9),
-                             (CB.RES_ACCEL, 2.0), (0.0, 2.1),
-                             (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7),
+                           (CB.RES_ACCEL, 1.8), (0.0, 1.9),
+                           (CB.RES_ACCEL, 2.0), (0.0, 2.1),
+                           (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
@@ -193,11 +196,11 @@ maneuvers = [
     initial_speed=0.,
     lead_relevancy=True,
     initial_distance_lead=20.,
-    speed_lead_values=[10., 0., 0., 10., 0., 0.] ,
+    speed_lead_values=[10., 0., 0., 10., 0., 0.],
     speed_lead_breakpoints=[10., 20., 30., 40., 50., 60.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                            (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                             (CB.RES_ACCEL, 1.6), (0.0, 1.7)],
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7)],
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
@@ -206,11 +209,11 @@ maneuvers = [
     initial_speed=0.,
     lead_relevancy=True,
     initial_distance_lead=20.,
-    speed_lead_values=[10., 0., 0., 10., 0., 0.] ,
+    speed_lead_values=[10., 0., 0., 10., 0., 0.],
     speed_lead_breakpoints=[10., 13., 26., 33., 36., 45.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                             (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                             (CB.RES_ACCEL, 1.6), (0.0, 1.7)],
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7)],
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
@@ -222,11 +225,11 @@ maneuvers = [
     speed_lead_values=[20., 10.],
     speed_lead_breakpoints=[1., 11.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                             (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                             (CB.RES_ACCEL, 1.6), (0.0, 1.7),
-                             (CB.RES_ACCEL, 1.8), (0.0, 1.9),
-                             (CB.RES_ACCEL, 2.0), (0.0, 2.1),
-                             (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7),
+                           (CB.RES_ACCEL, 1.8), (0.0, 1.9),
+                           (CB.RES_ACCEL, 2.0), (0.0, 2.1),
+                           (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
@@ -238,11 +241,11 @@ maneuvers = [
     speed_lead_values=[20., 0.],
     speed_lead_breakpoints=[1., 11.],
     cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                             (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                             (CB.RES_ACCEL, 1.6), (0.0, 1.7),
-                             (CB.RES_ACCEL, 1.8), (0.0, 1.9),
-                             (CB.RES_ACCEL, 2.0), (0.0, 2.1),
-                             (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7),
+                           (CB.RES_ACCEL, 1.8), (0.0, 1.9),
+                           (CB.RES_ACCEL, 2.0), (0.0, 2.1),
+                           (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
@@ -291,8 +294,6 @@ maneuvers = [
   )
 ]
 
-# maneuvers = [maneuvers[-11]]
-# maneuvers = [maneuvers[6]]
 
 def setup_output():
   output_dir = os.path.join(os.getcwd(), 'out/longitudinal')
@@ -313,12 +314,13 @@ def setup_output():
     for i, man in enumerate(maneuvers):
       view_html += "<tr><td class='maneuver_title' colspan=5><div>%s</div></td></tr><tr>" % (man.title,)
       for c in ['distance.svg', 'speeds.svg', 'acceleration.svg', 'pedals.svg', 'pid.svg']:
-        view_html += "<td><img class='maneuver_graph' src='%s'/></td>" % (os.path.join("maneuver" + str(i+1).zfill(2), c), )
+        view_html += "<td><img class='maneuver_graph' src='%s'/></td>" % (os.path.join("maneuver" + str(i + 1).zfill(2), c), )
       view_html += "</tr>"
 
     create_dir(output_dir)
     with open(os.path.join(output_dir, "index.html"), "w") as f:
       f.write(view_html)
+
 
 class LongitudinalControl(unittest.TestCase):
   @classmethod
@@ -355,7 +357,7 @@ def run_maneuver_worker(k):
     print(man.title)
     valid = False
 
-    for retries in range(3):
+    for _ in range(3):
       manager.start_managed_process('radard')
       manager.start_managed_process('controlsd')
       manager.start_managed_process('plannerd')
