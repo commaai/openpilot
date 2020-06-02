@@ -6,28 +6,27 @@ def print_cpu_usage(first_proc, last_proc):
   r = 0
   procs = [
       ("selfdrive.controls.controlsd", 59.46),
-      ("./_modeld", 6.75),
+      ("./_modeld", 12.74),
       ("./loggerd", 28.49),
       ("selfdrive.controls.plannerd", 19.77),
       ("selfdrive.controls.radard", 9.54),
       ("./_ui", 9.54),
       ("./camerad", 7.07),
-      ("selfdrive.locationd.locationd", 27.46),
-      ("selfdrive.locationd.paramsd", 10.0),
+      ("selfdrive.locationd.locationd", 34.38),
+      ("selfdrive.locationd.paramsd", 11.53),
       ("./_sensord", 6.17),
       ("selfdrive.controls.dmonitoringd", 5.48),
       ("./boardd", 3.63),
       ("./_dmonitoringmodeld", 2.67),
       ("selfdrive.logmessaged", 2.71),
       ("selfdrive.thermald", 2.41),
-      ("selfdrive.locationd.calibrationd", 1.76),
+      ("selfdrive.locationd.calibrationd", 6.81),
       ("./proclogd", 1.54),
       ("./_gpsd", 0.09),
       ("./clocksd", 0.02),
       ("./ubloxd", 0.02),
       ("selfdrive.tombstoned", 0),
       ("./logcatd", 0),
-      ("selfdrive.updated", 0),
   ]
 
   dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
