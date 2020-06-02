@@ -27,7 +27,6 @@ def print_cpu_usage(first_proc, last_proc):
       ("./ubloxd", 0.02),
       ("selfdrive.tombstoned", 0),
       ("./logcatd", 0),
-      ("selfdrive.updated", 60.0),  # Shouldn't run, but sometimes starts just before going onroad
   ]
 
   dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
