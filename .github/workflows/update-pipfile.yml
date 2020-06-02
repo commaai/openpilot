@@ -11,6 +11,7 @@ jobs:
     - uses: actions/setup-python@v2
     - run: pip install wheel
     - run: pip install pipenv
+    - run: rm Pipfile.lock
     - run: pipenv lock
     - uses: actions/upload-artifact@v2
       with:
