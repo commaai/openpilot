@@ -51,6 +51,7 @@ To add new car or fingerprint, please make Pull Requset or send me the fingerpri
 | Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2018<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2019<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
+| Kia       | Ceed 2019                          | SCC + LKAS + LFA  | Stock            | 0mph               | 0mph         |
 | Kia       | Optima 2017<sup>5</sup>            | SCC + LKAS/LDWS   | Stock            | 0mph               | 34mph        |
 | Kia       | Optima 2019<sup>5</sup>            | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018<sup>5</sup>           | All               | Stock            | 0mph               | 0mph         |
