@@ -126,8 +126,6 @@ typedef struct UIScene {
   uint8_t athenaStatus;
 
   cereal::ControlsState::Reader controls_state;
-  cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::ThermalData::Reader thermal;
 } UIScene;
 
 typedef struct {
@@ -242,7 +240,6 @@ typedef struct UIState {
   int touch_fd;
 
   // Hints for re-calculations and redrawing
-  bool livempc_or_radarstate_changed;
 
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
   mat4 rear_frame_mat, front_frame_mat;

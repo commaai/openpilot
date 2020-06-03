@@ -373,12 +373,6 @@ void handle_message(UIState *s, SubMaster &sm) {
       }
     }
   }
-  if (sm.updated("radarState")) {
-    auto data = sm["radarState"].getRadarState();
-    scene.lead_data[0] = data.getLeadOne();
-    scene.lead_data[1] = data.getLeadTwo();
-    s->livempc_or_radarstate_changed = true;
-  }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
     auto extrinsicl = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
@@ -409,9 +403,6 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.map_valid = sm["liveMapData"].getLiveMapData().getMapValid();
   }
 #endif
-  if (sm.updated("thermal")) {
-     scene.thermal = sm["thermal"].getThermal();
-  }
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
@@ -420,7 +411,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     s->preview_started = sm["dMonitoringState"].getDMonitoringState().getIsPreview();
   }
 
-  s->started = scene.thermal.getStarted() || s->preview_started ;
+  s->started = sm["thermal"].getThermal().getStarted() || s->preview_started ;
   // Handle onroad/offroad transition
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {

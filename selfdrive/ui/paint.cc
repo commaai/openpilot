@@ -154,7 +154,7 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
 
   bool started = false;
   float off = is_mpc?0.3:0.5;
-  float lead_d = scene->lead_data[0].getDRel()*2.;
+  float lead_d = (*s->sm)["radarState"].getRadarState().getLeadOne().getDRel()*2.;
   float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
                             :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
   pvd->cnt = 0;
@@ -356,9 +356,8 @@ static void ui_draw_vision_lanes(UIState *s) {
       pvd + MODEL_LANE_PATH_CNT,
       nvgRGBAf(1.0, 1.0, 1.0, scene->model.right_lane.prob));
 
-  if(s->livempc_or_radarstate_changed) {
+  if(s->sm->updated("radarState")) {
     update_all_track_data(s);
-    s->livempc_or_radarstate_changed = false;
   }
   // Draw vision path
   ui_draw_track(s, false, &s->track_vertices[0]);
@@ -393,13 +392,14 @@ static void ui_draw_world(UIState *s) {
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
 
-  auto lead1 = scene->lead_data[0];
-  auto lead2 = scene->lead_data[1];
-  if (lead1.getStatus()) {
-    draw_lead(s, lead1.getDRel(), lead1.getVRel(), lead1.getYRel());
+  auto radar_state = (*s->sm)["radarState"].getRadarState();
+  auto lead_one = radar_state.getLeadOne();
+  auto lead_two = radar_state.getLeadTwo();
+  if (lead_one.getStatus()) {
+    draw_lead(s, lead_one.getDRel(), lead_one.getVRel(), lead_one.getYRel());
   }
-  if (lead2.getStatus() && (std::abs(lead1.getDRel() - lead2.getDRel()) > 3.0)) {
-    draw_lead(s, lead2.getDRel(), lead2.getVRel(), lead2.getYRel());
+  if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
+    draw_lead(s, lead_two.getDRel(), lead_two.getVRel(), lead_two.getYRel());
   }
   nvgRestore(s->vg);
 }
