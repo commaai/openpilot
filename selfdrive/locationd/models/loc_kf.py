@@ -252,13 +252,13 @@ class LocKalman():
     # extra args
     sat_pos_freq_sym = sp.MatrixSymbol('sat_pos', 4, 1)
     sat_pos_vel_sym = sp.MatrixSymbol('sat_pos_vel', 6, 1)
-    sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1)
+    # sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1)
     orb_epos_sym = sp.MatrixSymbol('orb_epos_sym', 3, 1)
 
     # expand extra args
     sat_x, sat_y, sat_z, glonass_freq = sat_pos_freq_sym
     sat_vx, sat_vy, sat_vz = sat_pos_vel_sym[3:]
-    los_x, los_y, los_z = sat_los_sym
+    # los_x, los_y, los_z = sat_los_sym
     orb_x, orb_y, orb_z = orb_epos_sym
 
     h_pseudorange_sym = sp.Matrix([
@@ -377,7 +377,7 @@ class LocKalman():
     self.dim_state_err = self.dim_main_err + self.dim_augment_err * self.N
 
     if self.N > 0:
-      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)
+      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # pylint: disable=unbalanced-tuple-unpacking
       self.computer = LstSqComputer(generated_dir, N)
       self.max_tracks = max_tracks
 
@@ -569,14 +569,14 @@ class LocKalman():
 
   def maha_test_pseudorange(self, x, P, meas, kind, maha_thresh=.3):
     bools = []
-    for i, m in enumerate(meas):
+    for m in meas:
       z, R, sat_pos_freq = parse_pr(m)
       bools.append(self.filter.maha_test(x, P, kind, z, R, extra_args=sat_pos_freq, maha_thresh=maha_thresh))
     return np.array(bools)
 
   def maha_test_pseudorange_rate(self, x, P, meas, kind, maha_thresh=.999):
     bools = []
-    for i, m in enumerate(meas):
+    for m in meas:
       z, R, sat_pos_vel = parse_prr(m)
       bools.append(self.filter.maha_test(x, P, kind, z, R, extra_args=sat_pos_vel, maha_thresh=maha_thresh))
     return np.array(bools)

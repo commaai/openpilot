@@ -44,7 +44,7 @@ void* live_thread(void *arg) {
 
   while (!do_exit) {
     if (sm.update(10) > 0){
-      
+
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
       for (int i = 0; i < 4*3; i++){

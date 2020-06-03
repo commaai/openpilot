@@ -8,10 +8,11 @@ _visiond_dir = os.path.dirname(os.path.abspath(__file__))
 _libvisiontest = "libvisiontest.so"
 try:  # bacause this crashes somtimes when running pipeline
   subprocess.check_output(["make", "-C", _visiond_dir, "-f",
-                         os.path.join(_visiond_dir, "visiontest.mk"),
-                         _libvisiontest])
+                           os.path.join(_visiond_dir, "visiontest.mk"),
+                           _libvisiontest])
 except Exception:
   pass
+
 
 class VisionTest():
   """A version of the vision model that can be run on a desktop.
@@ -105,7 +106,7 @@ class VisionTest():
 
   def transform_output_buffer(self, yuv_data, y_out, u_out, v_out,
                               transform):
-    assert len(yuv_data) == self.input_size[0] * self.input_size[1] * 3/2
+    assert len(yuv_data) == self.input_size[0] * self.input_size[1] * 3 / 2
 
     cast = self.ffi.cast
     from_buffer = self.ffi.from_buffer
@@ -126,7 +127,7 @@ class VisionTest():
   def __enter__(self):
     return self
 
-  def __exit__(self, type, value, traceback):
+  def __exit__(self, exc_type, exc_value, traceback):
     self.close()
 
 

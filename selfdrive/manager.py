@@ -207,7 +207,7 @@ unkillable_processes = ['camerad']
 interrupt_processes: List[str] = []
 
 # processes to end with SIGKILL instead of SIGTERM
-kill_processes = ['sensord', 'paramsd']
+kill_processes = ['sensord']
 
 # processes to end if thermal conditions exceed Green parameters
 green_temp_processes = ['uploader']
@@ -224,6 +224,7 @@ if ANDROID:
     'logcatd',
     'tombstoned',
     'updated',
+    'deleter',
   ]
 
 car_started_processes = [
@@ -252,7 +253,6 @@ if ANDROID:
     'clocksd',
     'gpsd',
     'dmonitoringmodeld',
-    'deleter',
   ]
 
 def register_managed_process(name, desc, car_started=False):
@@ -305,11 +305,11 @@ def start_daemon_process(name):
       pass
 
   cloudlog.info("starting daemon %s" % name)
-  proc = subprocess.Popen(['python', '-m', proc],
-                         stdin=open('/dev/null', 'r'),
-                         stdout=open('/dev/null', 'w'),
-                         stderr=open('/dev/null', 'w'),
-                         preexec_fn=os.setpgrp)
+  proc = subprocess.Popen(['python', '-m', proc],  # pylint: disable=subprocess-popen-preexec-fn
+                          stdin=open('/dev/null', 'r'),
+                          stdout=open('/dev/null', 'w'),
+                          stderr=open('/dev/null', 'w'),
+                          preexec_fn=os.setpgrp)
 
   params.put(pid_param, str(proc.pid))
 
@@ -590,8 +590,6 @@ def main():
 
   try:
     manager_thread()
-  except SystemExit:
-    raise
   except Exception:
     traceback.print_exc()
     crash.capture_exception()

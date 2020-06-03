@@ -13,6 +13,7 @@ else:
 
 from tools.lib.logreader import LogReader
 
+
 def save_log(dest, log_msgs):
   dat = b""
   for msg in tqdm(log_msgs):
@@ -21,6 +22,7 @@ def save_log(dest, log_msgs):
 
   with open(dest, "wb") as f:
    f.write(dat)
+
 
 def remove_ignored_fields(msg, ignore):
   msg = msg.as_builder()
@@ -46,7 +48,13 @@ def remove_ignored_fields(msg, ignore):
       setattr(attr, keys[-1], val)
   return msg.as_reader()
 
-def compare_logs(log1, log2, ignore_fields=[], ignore_msgs=[]):
+
+def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None):
+  if ignore_fields is None:
+    ignore_fields = []
+
+  if ignore_msgs is None:
+    ignore_msgs = []
   log1, log2 = [list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2)]
   assert len(log1) == len(log2), "logs are not same length: " + str(len(log1)) + " VS " + str(len(log2))
 
@@ -65,6 +73,7 @@ def compare_logs(log1, log2, ignore_fields=[], ignore_msgs=[]):
       dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields, tolerance=0)
       diff.extend(dd)
   return diff
+
 
 if __name__ == "__main__":
   log1 = list(LogReader(sys.argv[1]))

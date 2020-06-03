@@ -36,7 +36,7 @@ class PubSocket():
 
 
 class SubMaster(messaging.SubMaster):
-  def __init__(self, msgs, trigger, services):
+  def __init__(self, msgs, trigger, services):  # pylint: disable=super-init-not-called
     self.max_i = len(msgs) - 1
     self.i = 0
     self.frame = 0
@@ -82,11 +82,13 @@ class SubMaster(messaging.SubMaster):
       self.logMonoTime[w] = msg.logMonoTime
 
       self.i += 1
+      if self.i == self.max_i:
+        raise ReplayDone
 
       if w == self.trigger:
         break
 
 
 class PubMaster(messaging.PubMaster):
-  def __init__(self):
+  def __init__(self):  # pylint: disable=super-init-not-called
     self.sock = defaultdict(PubSocket)

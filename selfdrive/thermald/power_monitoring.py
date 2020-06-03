@@ -114,7 +114,7 @@ class PowerMonitoring:
             # Measure for a few sec to get a good average
             voltages = []
             currents = []
-            for i in range(6):
+            for _ in range(6):
               voltages.append(get_battery_voltage())
               currents.append(get_battery_current())
               time.sleep(1)

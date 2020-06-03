@@ -5,10 +5,10 @@ import sys
 import zmq
 import time
 import signal
+import multiprocessing
 from uuid import uuid4
 from collections import namedtuple
 from collections import deque
-from multiprocessing import Process, TimeoutError
 from datetime import datetime
 
 # strat 1: script to copy files
@@ -404,11 +404,11 @@ def main(argv):
 
   subprocesses = {}
   try:
-    subprocesses["data"] = Process(
+    subprocesses["data"] = multiprocessing.Process(
       target=UnloggerWorker().run,
       args=(forward_commands_address, data_address, address_mapping.copy()))
 
-    subprocesses["control"] = Process(
+    subprocesses["control"] = multiprocessing.Process(
       target=unlogger_thread,
       args=(command_address, forward_commands_address, data_address, args.realtime,
             _get_address_mapping(args), args.publish_time_length, args.bind_early, args.no_loop))
@@ -421,7 +421,7 @@ def main(argv):
 
     # Exit if any of the children die.
     def exit_if_children_dead(*_):
-      for name, p in subprocesses.items():
+      for _, p in subprocesses.items():
         if not p.is_alive():
           [p.terminate() for p in subprocesses.values()]
           exit()
@@ -439,7 +439,7 @@ def main(argv):
       if p.is_alive():
         try:
           p.join(3.)
-        except TimeoutError:
+        except multiprocessing.TimeoutError:
           p.terminate()
           continue
   return 0
