@@ -49,8 +49,8 @@
 #ifdef NO_INCLUDE_FENV
 #pragma message("Do not use fenv header.")
 #else
-#pragma message("Use fenv header. If there is a warning about unknown #pragma STDC FENV_ACCESS, this can be ignored.")
-#pragma STDC FENV_ACCESS on
+//#pragma message("Use fenv header. If there is a warning about unknown #pragma STDC FENV_ACCESS, this can be ignored.")
+//#pragma STDC FENV_ACCESS on
 #include <fenv.h>
 #endif
 

@@ -22,10 +22,10 @@ def get_imei(slot):
   if slot not in ("0", "1"):
     raise ValueError("SIM slot must be 0 or 1")
 
-  ret = parse_service_call_string(service_call(["iphonesubinfo", "3" ,"i32", str(slot)]))
+  ret = parse_service_call_string(service_call(["iphonesubinfo", "3" , "i32", str(slot)]))
   if not ret:
     # allow non android to be identified differently
-    ret = "%015d" % random.randint(0, 1<<32)
+    ret = "%015d" % random.randint(0, 1 << 32)
   return ret
 
 def get_serial():
@@ -132,6 +132,7 @@ def get_network_type():
 
 def get_network_strength(network_type):
   network_strength = NetworkStrength.unknown
+
   # from SignalStrength.java
   def get_lte_level(rsrp, rssnr):
     INT_MAX = 2147483647

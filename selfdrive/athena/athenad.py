@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
-import json
-import os
+import base64
 import hashlib
 import io
+import json
+import os
+import queue
 import random
 import select
 import socket
-import time
 import threading
-import base64
-import requests
-import queue
+import time
 from collections import namedtuple
 from functools import partial
+from typing import Any
+
+import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import create_connection, WebSocketTimeoutException, ABNF
-from selfdrive.loggerd.config import ROOT
+from websocket import ABNF, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
+from cereal.services import service_list
 from common import android
-from common.basedir import PERSIST
 from common.api import Api
+from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from cereal.services import service_list
+from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -31,10 +33,10 @@ HANDLER_THREADS = os.getenv('HANDLER_THREADS', 4)
 LOCAL_PORT_WHITELIST = set([8022])
 
 dispatcher["echo"] = lambda s: s
-payload_queue = queue.Queue()
-response_queue = queue.Queue()
-upload_queue = queue.Queue()
-cancelled_uploads = set()
+payload_queue: Any = queue.Queue()
+response_queue: Any = queue.Queue()
+upload_queue: Any = queue.Queue()
+cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
 
 def handle_long_poll(ws):

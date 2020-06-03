@@ -1,10 +1,15 @@
+
 #include <string.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <eigen3/Eigen/Dense>
+
 #include "common/timing.h"
 #include "common/params.h"
 #include "driving.h"
+
+
 
 
 #define PATH_IDX 0
@@ -31,10 +36,10 @@ Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> vander;
 void model_init(ModelState* s, cl_device_id device_id, cl_context context, int temporal) {
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
   s->input_frames = (float*)calloc(MODEL_FRAME_SIZE * 2, sizeof(float));
-  
+
   const int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output = (float*)calloc(output_size, sizeof(float));
-  
+
   s->m = new DefaultRunModel("../../models/supercombo.dlc", s->output, output_size, USE_GPU_RUNTIME);
 
 #ifdef TEMPORAL
@@ -153,8 +158,7 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   lhs = lhs * scale.asDiagonal();
 
   // Solve inplace
-  Eigen::ColPivHouseholderQR<Eigen::Ref<Eigen::MatrixXf> > qr(lhs);
-  p = qr.solve(rhs);
+  p = lhs.colPivHouseholderQr().solve(rhs);
 
   // Apply scale to output
   p = p.transpose() * scale.asDiagonal();
@@ -174,14 +178,14 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   valid_len =  fmin(192, fmax(5, data[MODEL_PATH_DISTANCE*2]));
   for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
     points_arr[i] = data[i] + offset;
-    stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]);
+    stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]) + 1e-6;
   }
   if (has_prob) {
     prob =  sigmoid(data[MODEL_PATH_DISTANCE*2 + 1]);
   } else {
     prob = 1.0;
   }
-  std = softplus(data[MODEL_PATH_DISTANCE]);
+  std = softplus(data[MODEL_PATH_DISTANCE]) + 1e-6;
   poly_fit(points_arr, stds_arr, poly_arr, valid_len);
 
   if (std::getenv("DEBUG")){
@@ -201,7 +205,7 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, int mdn_max_idx, int t_offset) {
   const double x_scale = 10.0;
   const double y_scale = 10.0;
- 
+
   lead.setProb(sigmoid(data[LEAD_MDN_N*MDN_GROUP_SIZE + t_offset]));
   lead.setDist(x_scale * data[mdn_max_idx*MDN_GROUP_SIZE]);
   lead.setStd(x_scale * softplus(data[mdn_max_idx*MDN_GROUP_SIZE + MDN_VALS]));
@@ -242,13 +246,13 @@ void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float 
   longi.setAccelerations(accel);
 }
 
-void model_publish(PubSocket *sock, uint32_t frame_id,
-                   const ModelDataRaw net_outputs, uint64_t timestamp_eof) {
+void model_publish(PubMaster &pm, uint32_t frame_id,
+                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
     // make msg
     capnp::MallocMessageBuilder msg;
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(nanos_since_boot());
-  
+
     auto framed = event.initModel();
     framed.setFrameId(frame_id);
     framed.setTimestampEof(timestamp_eof);
@@ -288,15 +292,11 @@ void model_publish(PubSocket *sock, uint32_t frame_id,
     auto meta = framed.initMeta();
     fill_meta(meta, net_outputs.meta);
 
-
-    // send message
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    sock->send((char*)bytes.begin(), bytes.size());
+    pm.send("model", msg);
   }
 
-void posenet_publish(PubSocket *sock, uint32_t frame_id,
-                   const ModelDataRaw net_outputs, uint64_t timestamp_eof) {
+void posenet_publish(PubMaster &pm, uint32_t frame_id,
+                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
@@ -323,11 +323,9 @@ void posenet_publish(PubSocket *sock, uint32_t frame_id,
   posenetd.setTransStd(trans_std_vs);
   kj::ArrayPtr<const float> rot_std_vs(&rot_std_arr[0], 3);
   posenetd.setRotStd(rot_std_vs);
-  
+
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(frame_id);
 
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  sock->send((char*)bytes.begin(), bytes.size());
-  }
+  pm.send("cameraOdometry", msg);
+}

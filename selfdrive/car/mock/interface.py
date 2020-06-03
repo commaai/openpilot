@@ -15,8 +15,7 @@ LPG = 2 * 3.1415 * YAW_FR * TS / (1 + 2 * 3.1415 * YAW_FR * TS)
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
-    self.CP = CP
-    self.CC = CarController
+    super().__init__(CP, CarController, CarState)
 
     cloudlog.debug("Using Mock Car Interface")
 

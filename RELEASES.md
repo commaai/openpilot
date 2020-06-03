@@ -1,3 +1,11 @@
+Version 0.7.6 (2020-06-05)
+========================
+* White panda is deprecated, upgrade to comma two or black panda
+* 2017 Nissan X-Trail, 2018-19 Leaf and 2019 Rogue support thanks to avolmensky!
+* 2017 Mazda CX-5 support in dashcam mode thanks to Jafaral!
+* Huge CPU savings in modeld by using thneed!
+* Lots of code cleanup and refactors
+
 Version 0.7.5 (2020-05-13)
 ========================
 * Right-Hand Drive support for both driving and driver monitoring!
@@ -5,7 +13,6 @@ Version 0.7.5 (2020-05-13)
 * New driver monitoring model: overall improvement on comma two
 * Driver camera preview in settings to improve mounting position
 * Added support for many Hyundai, Kia, Genesis models thanks to xx979xx!
-* 2019 Nissan X-Trail and 2018 Nissan Leaf support thanks to avolmensky!
 * Improved lateral tuning for 2020 Toyota Rav 4 (hybrid)
 
 Version 0.7.4 (2020-03-20)

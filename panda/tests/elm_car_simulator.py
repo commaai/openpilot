@@ -299,10 +299,10 @@ class ELMCarSimulator():
 
 if __name__ == "__main__":
     serial = os.getenv("SERIAL") if os.getenv("SERIAL") else None
-    kbaud = int(os.getenv("CANKBAUD")) if os.getenv("CANKBAUD") else 500
-    bitwidth = int(os.getenv("CANBITWIDTH")) if os.getenv("CANBITWIDTH") else 0
-    canenable = bool(int(os.getenv("CANENABLE"))) if os.getenv("CANENABLE") else True
-    linenable = bool(int(os.getenv("LINENABLE"))) if os.getenv("LINENABLE") else True
+    kbaud = int(os.getenv("CANKBAUD")) if os.getenv("CANKBAUD") else 500  # type: ignore
+    bitwidth = int(os.getenv("CANBITWIDTH")) if os.getenv("CANBITWIDTH") else 0  # type: ignore
+    canenable = bool(int(os.getenv("CANENABLE"))) if os.getenv("CANENABLE") else True  # type: ignore
+    linenable = bool(int(os.getenv("LINENABLE"))) if os.getenv("LINENABLE") else True  # type: ignore
     sim = ELMCarSimulator(serial, can_kbaud=kbaud, can=canenable, lin=linenable)
     if(bitwidth == 0):
         sim.can_mode_11b_29b()

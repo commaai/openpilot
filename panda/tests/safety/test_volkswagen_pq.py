@@ -82,7 +82,7 @@ class TestVolkswagenPqSafety(common.PandaSafetyTest):
 
   # Driver steering input torque
   def _lenkhilfe_3_msg(self, torque):
-    to_send = make_msg(0, MSG_LENKHILFE_3)
+    to_send = make_msg(0, MSG_LENKHILFE_3, 6)
     t = abs(torque)
     to_send[0].RDLR = ((t & 0x3FF) << 16)
     if torque < 0:
@@ -94,7 +94,7 @@ class TestVolkswagenPqSafety(common.PandaSafetyTest):
 
   # openpilot steering output torque
   def _hca_1_msg(self, torque):
-    to_send = make_msg(0, MSG_HCA_1)
+    to_send = make_msg(0, MSG_HCA_1, 5)
     t = abs(torque) << 5  # DBC scale from centi-Nm to PQ network (approximated)
     to_send[0].RDLR = (t & 0x7FFF) << 16
     if torque < 0:
@@ -120,7 +120,7 @@ class TestVolkswagenPqSafety(common.PandaSafetyTest):
 
   # Cruise control buttons
   def _gra_neu_msg(self, bit):
-    to_send = make_msg(2, MSG_GRA_NEU)
+    to_send = make_msg(2, MSG_GRA_NEU, 4)
     to_send[0].RDLR = 1 << bit
     to_send[0].RDLR |= volkswagen_pq_checksum(to_send[0], MSG_GRA_NEU, 8)
     return to_send

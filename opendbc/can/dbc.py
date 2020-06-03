@@ -55,7 +55,7 @@ class dbc():
 
         name = dat.group(2)
         size = int(dat.group(3))
-        ids = int(dat.group(1), 0) # could be hex
+        ids = int(dat.group(1), 0)  # could be hex
         if ids in self.msgs:
           sys.exit("Duplicate address detected %d %s" % (ids, self.name))
 
@@ -73,15 +73,15 @@ class dbc():
           print("bad SG {0}".format(l))
 
         sgname = dat.group(1)
-        start_bit = int(dat.group(go+2))
-        signal_size = int(dat.group(go+3))
-        is_little_endian = int(dat.group(go+4))==1
-        is_signed = dat.group(go+5)=='-'
-        factor = int_or_float(dat.group(go+6))
-        offset = int_or_float(dat.group(go+7))
-        tmin = int_or_float(dat.group(go+8))
-        tmax = int_or_float(dat.group(go+9))
-        units = dat.group(go+10)
+        start_bit = int(dat.group(go + 2))
+        signal_size = int(dat.group(go + 3))
+        is_little_endian = int(dat.group(go + 4)) == 1
+        is_signed = dat.group(go + 5) == '-'
+        factor = int_or_float(dat.group(go + 6))
+        offset = int_or_float(dat.group(go + 7))
+        tmin = int_or_float(dat.group(go + 8))
+        tmax = int_or_float(dat.group(go + 9))
+        units = dat.group(go + 10)
 
         self.msgs[ids][1].append(
           DBCSignal(sgname, start_bit, signal_size, is_little_endian,
@@ -94,15 +94,15 @@ class dbc():
         if dat is None:
           print("bad VAL {0}".format(l))
 
-        ids = int(dat.group(1), 0) # could be hex
+        ids = int(dat.group(1), 0)  # could be hex
         sgname = dat.group(2)
         defvals = dat.group(3)
 
-        defvals = defvals.replace("?",r"\?") #escape sequence in C++
+        defvals = defvals.replace("?", r"\?")  # escape sequence in C++
         defvals = defvals.split('"')[:-1]
 
         # convert strings to UPPER_CASE_WITH_UNDERSCORES
-        defvals[1::2] = [d.strip().upper().replace(" ","_") for d in defvals[1::2]]
+        defvals[1::2] = [d.strip().upper().replace(" ", "_") for d in defvals[1::2]]
         defvals = '"'+"".join(str(i) for i in defvals)+'"'
 
         self.def_vals[ids].append((sgname, defvals))

@@ -21,10 +21,7 @@
 #include <random>
 
 #include <ftw.h>
-
 #include <zmq.h>
-#include <capnp/serialize.h>
-
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
