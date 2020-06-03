@@ -119,7 +119,8 @@ class GNSSKalman():
     self.dim_state = self.x_initial.shape[0]
 
     # init filter
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds)
+    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state,
+                          self.dim_state, maha_test_kinds=self.maha_test_kinds)
     self.init_state(GNSSKalman.x_initial, covs=GNSSKalman.P_initial)
 
   @property
