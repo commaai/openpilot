@@ -173,7 +173,7 @@ CHECKSUM = {
 FEATURES = {
   "use_cluster_gears": [CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30],     # Use Cluster for Gear Selection, rather than Transmission
   "use_tcu_gears": [CAR.KIA_OPTIMA, CAR.SONATA_2019],                                    # Use TCU Message for Gear Selection
-  "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.SONATA_H, CAR.KIA_NIRO_EV], # Use E_GEAR Message for Gear Selection
+  "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.KONA_EV, CAR.SONATA_H, CAR.KIA_NIRO_EV], # Use E_GEAR Message for Gear Selection
   "use_elect_ems": [CAR.SONATA_H],                                      # Use E_EMS11 Message for Gas and Brake for Hybrid/ELectric
 }
 
