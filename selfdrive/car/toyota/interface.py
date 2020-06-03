@@ -323,7 +323,7 @@ class CarInterface(CarInterfaceBase):
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.add(EventName.lowSpeedLockout)
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
-      events.add(EventName.speedTooLow)
+      events.add(EventName.belowEngageSpeed)
       if c.actuators.gas > 0.1:
         # some margin on the actuator to not false trigger cancellation while stopping
         events.add(EventName.speedTooLow)
