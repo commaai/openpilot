@@ -34,7 +34,8 @@ class ET:
   PERMANENT = 'permanent'
 
 # get event name from enum
-EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
+EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}  # type: ignore
+
 
 class Events:
   def __init__(self):
