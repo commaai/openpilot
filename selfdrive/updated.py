@@ -280,7 +280,8 @@ def attempt_update():
   upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
   new_version = cur_hash != upstream_hash
 
-  git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n")
+  err_msg = "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n"
+  git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != err_msg)
 
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
   if new_version or git_fetch_result:

@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import unittest
 import numpy as np
 from cereal import car

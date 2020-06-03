@@ -1,3 +1,5 @@
+# flake8: noqa
+
 from cereal import car
 from selfdrive.car import dbc_dict
 
