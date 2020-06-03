@@ -506,6 +506,10 @@ EVENTS = {
                               duration_hud_alert=0.),
   },
 
+  EventName.belowEngageSpeed: {
+    ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
+  },
+
   EventName.sensorDataInvalid: {
     ET.PERMANENT: Alert(
       "No Data from Device Sensors",
@@ -680,7 +684,6 @@ EVENTS = {
       "Speed too low",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
-    ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
   },
 
   EventName.speedTooHigh: {

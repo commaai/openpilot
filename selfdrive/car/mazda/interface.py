@@ -77,7 +77,7 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret)
 
     if self.CS.low_speed_lockout:
-      events.add(EventName.speedTooLow)
+      events.add(EventName.belowEngageSpeed)
 
     if self.CS.low_speed_alert:
       events.add(EventName.belowSteerSpeed)
