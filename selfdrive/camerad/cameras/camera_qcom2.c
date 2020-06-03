@@ -571,7 +571,8 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
     0.0, 0.0, 1.0,
   }};
   s->digital_gain = 1.0;
-  s->analog_gain_frac = 1.5;
+  s->digital_gain_pre = 4; // for WB
+  s->analog_gain_frac = 1.0;
   s->exposure_time = 598;
 }
 
@@ -801,7 +802,7 @@ void cameras_init(DualCameraState *s) {
   camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
   printf("front initted \n");
 #ifdef NOSCREEN
-  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.2.221:7768");
+  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.5.1:7768");
   assert(rgb_sock);
   s->rgb_sock = rgb_sock;
 #endif
@@ -1006,15 +1007,18 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor
 
   const float target_grey = 0.3;
-  const float analog_gain_frac_min = 0.125;
+  const float analog_gain_frac_min = 0.25;
   const float analog_gain_frac_max = 8.0;
+  const float digital_gain_min = 1.0;
+  const float digital_gain_max = 3.99; // is the correct?
   const int exposure_time_min = 16;
-  const int exposure_time_max = 1417; // no slower than 1/25 sec. calculated from 0x300C and clock freq, changed
+  const int exposure_time_max = 1417; // no slower than 1/25 sec. calculated from 0x300C and clock freq
 
   float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.1 ); // TODO: to be calibrated
 
   
-  if (s->analog_gain_frac >= 8 && exposure_factor < 1) { // set gain down if full gain and over exposed
+  printf("cam %d grey_frac is %f, ef is %f\n", s->camera_num, grey_frac, exposure_factor);
+  if (s->analog_gain_frac >= 3 && exposure_factor < 1) { // set gain down if full gain and over exposed
     s->analog_gain_frac *= exposure_factor;
   } else if (s->exposure_time * exposure_factor <= exposure_time_max && s->exposure_time * exposure_factor >= exposure_time_min) { // adjust exposure time first
     s->exposure_time *= exposure_factor;
@@ -1034,9 +1038,9 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     AG = AG * 4096 + AG * 256 + AG * 16 + AG; 
     printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time);
   }
-  struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
-                                                  {0x305A, 0x00BB}, // RED_GAIN BB
-                                                  {0x3058, 0x012A}, // BLUE_GAIN 12A
+  struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, 0x1111}, // analog gain
+                                                  {0x305A, 0x0075}, // RED_GAIN BB
+                                                  {0x3058, 0x00FA}, // BLUE_GAIN 12A
                                                   {0x3056, 0x0080}, // GREEN1_GAIN
                                                   {0x305C, 0x0080}, // GREEN2_GAIN
                                                   {0x3012, s->exposure_time}}; // integ time
@@ -1071,9 +1075,23 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 }
 
 #ifdef NOSCREEN
-void sendrgb(DualCameraState *s, void* dat, int len) {
+void sendrgb(DualCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   int err, err2;
-  err = zmq_send(zsock_resolve(s->rgb_sock), dat, len, ZMQ_DONTWAIT);
+  int scale = 3;
+  int old_width = FRAME_WIDTH / 2;
+  int old_height = FRAME_HEIGHT / 2;
+  int new_width = FRAME_WIDTH / 2 / scale;
+  int new_height = FRAME_HEIGHT / 2 / scale;
+  uint8_t resized_dat[new_width*new_height*3];
+  memset(&resized_dat, cam_id, 3);
+  for (uint32_t r=1;r<new_height;r++) {
+    for (uint32_t c=1;c<new_width;c++) {
+      resized_dat[(r*new_width+c)*3] = dat[(r*old_width + c)*scale*3];
+      resized_dat[(r*new_width+c)*3+1] = dat[(r*old_width + c)*scale*3+1];
+      resized_dat[(r*new_width+c)*3+2] = dat[(r*old_width + c)*scale*3+2];
+    }
+  }
+  err = zmq_send(zsock_resolve(s->rgb_sock), &resized_dat, new_width*new_height*3, ZMQ_DONTWAIT);
   err2 = zmq_errno();
   //printf("zmq errcode %d, %d\n", err ,err2);
 }

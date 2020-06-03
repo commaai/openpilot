@@ -251,8 +251,8 @@ void* frontview_thread(void *arg) {
     }
 
 #ifdef NOSCREEN
-    if (frame_data.frame_id % 5 == 1) {
-      sendrgb(&s->cameras, (void*) s->rgb_front_bufs[rgb_idx].addr, s->rgb_front_bufs[rgb_idx].len);
+    if (frame_data.frame_id % 2 == 0) {
+      sendrgb(&s->cameras, (uint8_t*) s->rgb_front_bufs[rgb_idx].addr, s->rgb_front_bufs[rgb_idx].len, 2);
     }
 #endif
 
@@ -475,8 +475,8 @@ void* wideview_thread(void *arg) {
     visionbuf_sync(&s->rgb_wide_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
 #ifdef NOSCREEN
-    if (frame_data.frame_id % 5 == 0) {
-      //sendrgb(&s->cameras, (void*) s->rgb_wide_bufs[rgb_idx].addr, s->rgb_wide_bufs[rgb_idx].len);
+    if (frame_data.frame_id % 2 == 0) {
+      sendrgb(&s->cameras, (uint8_t*) s->rgb_wide_bufs[rgb_idx].addr, s->rgb_wide_bufs[rgb_idx].len, 1);
     }
 #endif
 
@@ -539,10 +539,10 @@ void* wideview_thread(void *arg) {
     tbuffer_dispatch(&s->ui_wide_tb, ui_idx);
 
     // auto exposure over big box
-    const int exposure_x = 290;
-    const int exposure_y = 282 + 40;
-    const int exposure_height = 314;
-    const int exposure_width = 560;
+    const int exposure_x = 2;//290;
+    const int exposure_y = 200;//282 + 40; // TODO: fix this? should not use med imo
+    const int exposure_height = 250;// 314;
+    const int exposure_width = 450;//560;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
@@ -645,8 +645,8 @@ void* processing_thread(void *arg) {
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
 #ifdef NOSCREEN
-  if (frame_data.frame_id % 5 == 2) {
-    //sendrgb(&s->cameras, (void*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len);
+  if (frame_data.frame_id % 2 == 1) {
+    sendrgb(&s->cameras, (uint8_t*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, 0);
   }
 #endif
 
@@ -856,10 +856,10 @@ void* processing_thread(void *arg) {
     tbuffer_dispatch(&s->ui_tb, ui_idx);
 
     // auto exposure over big box
-    const int exposure_x = 290;
-    const int exposure_y = 282 + 40;
-    const int exposure_height = 314;
-    const int exposure_width = 560;
+    const int exposure_x = 2;
+    const int exposure_y = 200;// + 40;
+    const int exposure_height = 250;// 314;
+    const int exposure_width = 450;//560;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};

@@ -29,6 +29,7 @@ typedef struct CameraState {
 
   int frame_size;
   float digital_gain;
+  int digital_gain_pre;
   float analog_gain_frac;
   int exposure_time;
   mat3 transform;
@@ -63,15 +64,6 @@ typedef struct CameraState {
 
   struct cam_req_mgr_session_info req_mgr_session_info;
 
-  // static packet handles for runtime
-  uint32_t poke_cam_pkt_handle;
-  struct cam_packet *poke_cam_pkt;
-  uint32_t i2c_cam_pkt_handle;
-  struct cam_packet *i2c_cam_pkt;
-  struct cam_cmd_power *i2c_cam_pwr;
-  struct cam_packet *isp_cam_pkt;
-  uint32_t *isp_config_buf1;
-
 } CameraState;
 
 typedef struct DualCameraState {
@@ -96,7 +88,7 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *ca
 void cameras_run(DualCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
 #ifdef NOSCREEN
-void sendrgb(DualCameraState *s, void* dat, int len);
+void sendrgb(DualCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
 #endif
 
 #ifdef __cplusplus
