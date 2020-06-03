@@ -106,9 +106,9 @@ typedef struct UIScene {
 
   float speedlimit;
   bool speedlimit_valid;
+
+  bool is_rhd;
   bool map_valid;
-
-
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
   // responsive layout
@@ -122,10 +122,17 @@ typedef struct UIScene {
   std::string alert_text2;
   cereal::ControlsState::AlertSize alert_size;
 
+  // Used to show gps planner status
+  bool gps_planner_active;
+
   cereal::HealthData::HwType hwType;
+  int satelliteCount;
   uint8_t athenaStatus;
 
+  cereal::ThermalData::Reader thermal;
+  cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::ControlsState::Reader controls_state;
+  cereal::DriverState::Reader driver_state;
 } UIScene;
 
 typedef struct {

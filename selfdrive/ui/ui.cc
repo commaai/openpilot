@@ -253,6 +253,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->scene.front_box_width = ui_info.front_box_width;
   s->scene.front_box_height = ui_info.front_box_height;
   s->scene.world_objects_visible = false;  // Invisible until we receive a calibration message.
+  s->scene.gps_planner_active = false;
 
   s->rgb_width = back_bufs.width;
   s->rgb_height = back_bufs.height;
@@ -373,6 +374,11 @@ void handle_message(UIState *s, SubMaster &sm) {
       }
     }
   }
+  if (sm.updated("radarState")) {
+    auto data = sm["radarState"].getRadarState();
+    scene.lead_data[0] = data.getLeadOne();
+    scene.lead_data[1] = data.getLeadTwo();
+  }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
     auto extrinsicl = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
@@ -402,16 +408,30 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (sm.updated("liveMapData")) {
     scene.map_valid = sm["liveMapData"].getLiveMapData().getMapValid();
   }
-#endif
+#endif  
+  if (sm.updated("thermal")) {
+    scene.thermal = sm["thermal"].getThermal();
+  }
+  if (sm.updated("ubloxGnss")) {
+    auto data = sm["ubloxGnss"].getUbloxGnss();
+    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+    }
+  }
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
     s->hardware_timeout = 5*30; // 5 seconds at 30 fps
   }
+  if (sm.updated("driverState")) {
+    scene.driver_state = sm["driverState"].getDriverState();
+  }
   if (sm.updated("dMonitoringState")) {
-    s->preview_started = sm["dMonitoringState"].getDMonitoringState().getIsPreview();
+    auto data = sm["dMonitoringState"].getDMonitoringState();
+    scene.is_rhd = data.getIsRHD();
+    s->preview_started = data.getIsPreview();
   }
 
-  s->started = sm["thermal"].getThermal().getStarted() || s->preview_started ;
+  s->started = scene.thermal.getStarted() || s->preview_started ;
   // Handle onroad/offroad transition
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {
@@ -787,6 +807,7 @@ int main(int argc, char* argv[]) {
   s->volume_timeout = 5 * UI_FREQ;
   int draws = 0;
 
+  s->scene.satelliteCount = -1;
   s->started = false;
   s->vision_seen = false;
 

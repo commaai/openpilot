@@ -110,11 +110,13 @@ static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int
   ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
+static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &lead){
   // Draw lead car indicator
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
+  float d_rel = lead.getDRel();
+  float v_rel = lead.getVRel();
   if (d_rel < leadBuff) {
     fillAlpha = 255*(1.0-(d_rel/leadBuff));
     if (v_rel < 0) {
@@ -122,7 +124,7 @@ static void draw_lead(UIState *s, float d_rel, float v_rel, float y_rel){
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
-  draw_chevron(s, d_rel, y_rel, 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
@@ -154,7 +156,7 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
 
   bool started = false;
   float off = is_mpc?0.3:0.5;
-  float lead_d = (*s->sm)["radarState"].getRadarState().getLeadOne().getDRel()*2.;
+  float lead_d = scene->lead_data[0].getDRel()*2.;
   float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
                             :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
   pvd->cnt = 0;
@@ -392,14 +394,11 @@ static void ui_draw_world(UIState *s) {
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
 
-  auto radar_state = (*s->sm)["radarState"].getRadarState();
-  auto lead_one = radar_state.getLeadOne();
-  auto lead_two = radar_state.getLeadTwo();
-  if (lead_one.getStatus()) {
-    draw_lead(s, lead_one.getDRel(), lead_one.getVRel(), lead_one.getYRel());
+  if (scene->lead_data[0].getStatus()) {
+    draw_lead(s, scene->lead_data[0]);
   }
-  if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
-    draw_lead(s, lead_two.getDRel(), lead_two.getVRel(), lead_two.getYRel());
+  if (scene->lead_data[1].getStatus() && (std::abs(scene->lead_data[0].getDRel() - scene->lead_data[1].getDRel()) > 3.0)) {
+    draw_lead(s, scene->lead_data[1]);
   }
   nvgRestore(s->vg);
 }
@@ -592,8 +591,7 @@ static void ui_draw_driver_view(UIState *s) {
   const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
 
   // blackout
-  const bool is_rhd = (*s->sm)["dMonitoringState"].getDMonitoringState().getIsRHD();
-  if (!is_rhd) {
+  if (!scene->is_rhd) {
     NVGpaint gradient = nvgLinearGradient(s->vg, valid_frame_x + valid_frame_w,
                           box_y,
                           valid_frame_x + box_h / 2, box_y,
@@ -606,21 +604,20 @@ static void ui_draw_driver_view(UIState *s) {
                           nvgRGBAf(0,0,0,1), nvgRGBAf(0,0,0,0));
     ui_draw_rect(s->vg, valid_frame_x, box_y, valid_frame_w - box_h / 2, box_h, gradient);
   }
-  ui_draw_rect(s->vg, is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
+  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
 
   // borders
   ui_draw_rect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h, nvgRGBA(23, 51, 73, 255));
   ui_draw_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
 
   // draw face box
-  auto driver_state = (*s->sm)["driverState"].getDriverState();
-  if (driver_state.getFaceProb() > 0.4) {
-    auto fxy_list = driver_state.getFacePosition();
+  if (scene->driver_state.getFaceProb() > 0.4) {
+    auto fxy_list = scene->driver_state.getFacePosition();
     const int face_x = fxy_list[0];
     const int face_y = fxy_list[1];
     int fbox_x;
     int fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
-    if (!is_rhd) {
+    if (!scene->is_rhd) {
       fbox_x = valid_frame_x + (1 - (face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     } else {
       fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
@@ -632,15 +629,13 @@ static void ui_draw_driver_view(UIState *s) {
     } else {
       ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 35, 10);
     }
-  } else {
-    ;
   }
 
   // draw face icon
   const int face_size = 85;
-  const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (is_rhd ? valid_frame_w - box_h / 2:0);
+  const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
   const int y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, driver_state.getFaceProb() > 0.4);
+  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->driver_state.getFaceProb() > 0.4);
 }
 
 static void ui_draw_vision_header(UIState *s) {
