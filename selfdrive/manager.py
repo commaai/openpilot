@@ -224,6 +224,7 @@ if ANDROID:
     'logcatd',
     'tombstoned',
     'updated',
+    'deleter',
   ]
 
 car_started_processes = [
@@ -252,7 +253,6 @@ if ANDROID:
     'clocksd',
     'gpsd',
     'dmonitoringmodeld',
-    'deleter',
   ]
 
 def register_managed_process(name, desc, car_started=False):
