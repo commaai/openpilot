@@ -102,7 +102,8 @@ int main(int argc, char **argv) {
     #else
       // don't use nvidia on pc, it's broken
       // TODO: write this nicely
-      int clPlatform = num_platforms-1;
+      //int clPlatform = num_platforms-1;
+      int clPlatform = 0;
     #endif
 
     char cBuffer[1024];

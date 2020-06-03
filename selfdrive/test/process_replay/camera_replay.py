@@ -6,15 +6,19 @@ from tqdm import tqdm
 import cereal.messaging as messaging
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
+from selfdrive.test.openpilotci import get_url
+from selfdrive.test.process_replay.compare_logs import save_log
 
-os.environ['QCOM_REPLAY'] = "1"
+if os.path.isfile("/EON"):
+  os.environ['QCOM_REPLAY'] = "1"
 import selfdrive.manager as manager
+
+TEST_ROUTE = "5b7c365c50084530|2020-04-15--16-13-24"
 
 def camera_replay(lr, fr):
 
   pm = messaging.PubMaster(['frame', 'liveCalibration'])
   sm = messaging.SubMaster(['model'])
-
 
   # TODO: add dmonitoringmodeld
   print("preparing procs")
@@ -37,12 +41,11 @@ def camera_replay(lr, fr):
       if msg.which() == "liveCalibrationd":
         pm.send(msg.which(), msg.as_builder())
       elif msg.which() == "frame":
-        # recv one
         f = msg.as_builder()
         img = fr.get(frame_idx, pix_fmt="rgb24")[0][:, ::, -1]
         f.frame.image = img.flatten().tobytes()
         frame_idx += 1
-        
+
         pm.send(msg.which(), f)
         log_msgs.append(messaging.recv_one(sm.sock['model']))
 
@@ -57,22 +60,15 @@ def camera_replay(lr, fr):
   manager.kill_managed_process('camerad')
   return log_msgs
 
-def msg_bytes(msgs):
-  b = b""
-  for m in msgs:
-    print(m)
-    m = m.as_builder()
-    m.valid = True
-    m.logMonoTime = 0
-    b += m.to_bytes()
-  return b
 
 if __name__ == "__main__":
-  lr = LogReader("77611a1fac303767_2020-05-11--16-37-07--0--rlog.bz2")
-  fr = FrameReader("77611a1fac303767_2020-05-11--16-37-07--0--fcamera.hevc")
-  
+
+  lr = LogReader(get_url(TEST_ROUTE, 0))
+  fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
+
   lr = list(lr)
   ref = camera_replay(lr, fr)
-  comp = camera_replay(lr, fr)
-  print("same logs", msg_bytes(ref)==msg_bytes(comp))
+  print(ref)
+  #comp = camera_replay(lr, fr)
+  #print("same logs", msg_bytes(ref)==msg_bytes(comp))
 
