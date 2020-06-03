@@ -15,7 +15,7 @@ public:
 
   int LogFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, int *frame_segment) {
     std::lock_guard<std::recursive_mutex> guard(lock);
-    
+
     if (opening) {
       Open(next_path);
       opening = false;

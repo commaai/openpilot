@@ -98,7 +98,7 @@ extern "C" FramebufferState* framebuffer_init(
   assert(success);
 
   printf("egl version %d.%d\n", s->egl_major, s->egl_minor);
-  
+
   EGLint num_configs;
   success = eglChooseConfig(s->display, attribs, &s->config, 1, &num_configs);
   assert(success);

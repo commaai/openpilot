@@ -25,14 +25,14 @@ by generating a rotation matrix and multiplying.
 
 Orientation Conventations
 ------
-Quaternions, rotation matrices and euler angles are three 
+Quaternions, rotation matrices and euler angles are three
 equivalent representations of orientation and all three are
 used throughout the code base.
 
 For euler angles the preferred convention is [roll, pitch, yaw]
 which corresponds to rotations around the [x, y, z] axes. All
 euler angles should always be in radians or radians/s unless
-for plotting or display purposes. For quaternions the hamilton 
+for plotting or display purposes. For quaternions the hamilton
 notations is preferred which is [q<sub>w</sub>, q<sub>x</sub>, q<sub>y</sub>, q<sub>z</sub>]. All quaternions
 should always be normalized with a strictly positive q<sub>w</sub>. **These
 quaternions are a unique representation of orientation whereas euler angles
@@ -49,7 +49,7 @@ EONs are not all mounted in the exact same way. To compensate for the effects of
 
 Example
 ------
-To transform global Mesh3D positions and orientations (positions_ecef, quats_ecef) into the local frame described by the 
+To transform global Mesh3D positions and orientations (positions_ecef, quats_ecef) into the local frame described by the
 first position and orientation from Mesh3D one would do:
 ```
 ecef_from_local = rot_from_quat(quats_ecef[0])
