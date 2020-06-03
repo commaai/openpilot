@@ -67,7 +67,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
   // check if we have a MDPS on Bus1 and LCAN not on the bus
   if (bus == 1 && (addr == 593 || addr == 897) && !hyundai_LCAN_on_bus1) {
-    if (!hyundai_forward_bus1) {
+    if (hyundai_mdps_bus != bus || !hyundai_forward_bus1) {
       hyundai_mdps_bus = bus;
       hyundai_forward_bus1 = true;
     }
