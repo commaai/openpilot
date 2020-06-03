@@ -1,3 +1,5 @@
+# flake8: noqa
+
 from selfdrive.car import dbc_dict
 
 class CarControllerParams:
