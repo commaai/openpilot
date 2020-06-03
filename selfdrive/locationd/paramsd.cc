@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     }
     if (sm.updated("cameraOdometry")){
       localizer.handle_log(sm["cameraOdometry"]);
-    } 
+    }
   }
   return 0;
 }

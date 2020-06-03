@@ -1,6 +1,6 @@
 // calculate variance in each subregion
 __kernel void var_pool(
-  const __global char * input, 
+  const __global char * input,
   __global ushort * output // should not be larger than 128*128 so uint16
 )
 {
@@ -11,7 +11,7 @@ __kernel void var_pool(
 
   float fsum = 0;
   char mean, max;
-  
+
   for (int i = 0; i < size; i++) {
     int x_offset = i % X_PITCH;
     int y_offset = i / X_PITCH;

@@ -261,7 +261,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->power_settings[2].power_seq_type = 2; // digital
   power->power_settings[3].power_seq_type = 8; // reset low
   power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
-  
+
   unconditional_wait = (void*)power;
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
   unconditional_wait->delay = 5;
@@ -424,7 +424,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}; 
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
   memcpy(buf2, tmp, sizeof(tmp));
 
   if (io_mem_handle != 0) {
@@ -610,7 +610,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   acquire_dev_cmd.handle_type = CAM_HANDLE_USER_POINTER;
   acquire_dev_cmd.num_resources = 1;
   acquire_dev_cmd.resource_hdl = (uint64_t)&isp_resource;
-  
+
   isp_resource.resource_id = CAM_ISP_RES_ID_PORT;
   isp_resource.length = sizeof(struct cam_isp_in_port_info) + sizeof(struct cam_isp_out_port_info)*(1-1);
   isp_resource.handle_type = CAM_HANDLE_USER_POINTER;
@@ -643,7 +643,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
 
   in_port_info->test_pattern = 0x2; // 0x3?
   in_port_info->usage_type = 0x0;
-  
+
   in_port_info->left_start = 0x0;
   in_port_info->left_stop = FRAME_WIDTH - 1;
   in_port_info->left_width = FRAME_WIDTH;
@@ -664,10 +664,10 @@ static void camera_open(CameraState *s, VisionBuf* b) {
 
   in_port_info->num_out_res = 0x1;
   in_port_info->data[0] = (struct cam_isp_out_port_info){
-    .res_type = CAM_ISP_IFE_OUT_RES_RDI_0, 
+    .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
     //.format = CAM_FORMAT_MIPI_RAW_12,
     .format = CAM_FORMAT_MIPI_RAW_10,
-    .width = FRAME_WIDTH, 
+    .width = FRAME_WIDTH,
     .height = FRAME_HEIGHT,
     .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
   };
@@ -700,7 +700,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
     CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
   sensors_i2c(s, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
     CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
-  sensors_i2c(s, stop_reg_array, sizeof(stop_reg_array)/sizeof(struct i2c_random_wr_payload), 
+  sensors_i2c(s, stop_reg_array, sizeof(stop_reg_array)/sizeof(struct i2c_random_wr_payload),
     CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
 
   // config csiphy
@@ -817,7 +817,7 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *ca
   s->rear.device_iommu = s->front.device_iommu = s->wide.device_iommu = device_iommu;
   s->rear.cdm_iommu = s->front.cdm_iommu = s->wide.cdm_iommu = cdm_iommu;
 
-  // subscribe  
+  // subscribe
   LOG("-- Subscribing");
   static struct v4l2_event_subscription sub = {0};
   sub.type = 0x8000000;

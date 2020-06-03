@@ -14,8 +14,8 @@
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 __kernel void gemm(const int M, const int N, const int K,
-  read_only image2d_t A, 
-  read_only image2d_t B, 
+  read_only image2d_t A,
+  read_only image2d_t B,
   write_only image2d_t C)
 {
   const sampler_t smp = CLK_NORMALIZED_COORDS_FALSE |
