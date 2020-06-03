@@ -9,4 +9,3 @@ if [ $# -gt 0 ]; then
 else
     echo "Please Enter a Route"
 fi
- 
