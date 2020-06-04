@@ -12,7 +12,7 @@ def dmonitoringd_thread(sm=None, pm=None):
   gc.disable()
 
   # start the loop
-  set_realtime_priority(3)
+  set_realtime_priority(53)
 
   params = Params()
 

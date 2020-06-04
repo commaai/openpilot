@@ -7,6 +7,7 @@
 #ifdef __linux__
 #include <sys/prctl.h>
 #include <sys/syscall.h>
+#define __USE_GNU
 #include <sched.h>
 #endif
 
@@ -61,3 +62,16 @@ int set_realtime_priority(int level) {
 #endif
 }
 
+int set_core_affinity(int core) {
+#ifdef QCOM
+
+  long tid = syscall(SYS_gettid);
+  cpu_set_t rt_cpu;
+
+  CPU_ZERO(&rt_cpu);
+  CPU_SET(core, &rt_cpu);
+  return sched_setaffinity(tid, sizeof(rt_cpu), &rt_cpu);
+#else
+  return -1;
+#endif
+}
