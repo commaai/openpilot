@@ -142,23 +142,18 @@ class LocKalman():
     vx, vy, vz = v
     omega = state[States.ANGULAR_VELOCITY, :]
     vroll, vpitch, vyaw = omega
-    #cb = state[States.CLOCK_BIAS, :][0, 0]
-    #cd = state[States.CLOCK_DRIFT, :][0, 0]
-    cb, cd = state[13:15, :]
+    cb = state[States.CLOCK_BIAS, :][0]
+    cd = state[States.CLOCK_DRIFT, :][0]
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
-    #odo_scale = state[States.ODO_SCALE, :][0,0]
-    odo_scale = state[18, :]
+    odo_scale = state[States.ODO_SCALE, :][0]
     acceleration = state[States.ACCELERATION, :]
-    #focal_scale = state[States.FOCAL_SCALE, :][0,0]
-    focal_scale = state[22, :]
+    focal_scale = state[States.FOCAL_SCALE, :][0]
     imu_angles = state[States.IMU_OFFSET, :]
     imu_angles[0, 0] = 0
     imu_angles[2, 0] = 0
-    glonass_bias, glonass_freq_slope = state[26:28, :]
-    ca = state[28, 0]
-    #glonass_bias = state[States.GLONASS_BIAS, :][0,0]
-    #glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :][0,0]
-    #ca = state[States.CLOCK_ACCELERATION, :][0,0]
+    glonass_bias = state[States.GLONASS_BIAS, :][0]
+    glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :][0]
+    ca = state[States.CLOCK_ACCELERATION, :][0]
     accel_scale = state[States.ACCELEROMETER_SCALE, :][0]
 
     dt = sp.Symbol('dt')
@@ -333,7 +328,7 @@ class LocKalman():
 
     # MSCKF configuration
     if N > 0:
-      focal_scale = 1
+      focal_scale = 1.01
       # Add observation functions for orb feature tracks
       track_epos_sym = sp.MatrixSymbol('track_epos_sym', 3, 1)
       track_x, track_y, track_z = track_epos_sym
