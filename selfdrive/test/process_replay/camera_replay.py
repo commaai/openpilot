@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 import os
+import sys
 import time
 from tqdm import tqdm
 
 import cereal.messaging as messaging
+from common.android import ANDROID
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
-from selfdrive.test.openpilotci import get_url
-from selfdrive.test.process_replay.compare_logs import save_log
+from selfdrive.test.openpilotci import BASE_URL, get_url
+from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
+from selfdrive.version import get_git_commit
 
-if os.path.isfile("/EON"):
+if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
 import selfdrive.manager as manager
 
@@ -63,12 +66,22 @@ def camera_replay(lr, fr):
 
 if __name__ == "__main__":
 
+  update = "--update" in sys.argv
+
   lr = LogReader(get_url(TEST_ROUTE, 0))
   fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
 
-  lr = list(lr)
-  ref = camera_replay(lr, fr)
-  print(ref)
-  #comp = camera_replay(lr, fr)
-  #print("same logs", msg_bytes(ref)==msg_bytes(comp))
+  log_msgs = camera_replay(list(lr), fr)
+
+  if update:
+    ref_commit = get_git_commit()
+    log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
+    save_log(log_fn, log_msgs)
+    with open("model_replay_ref_commit", "w") as f:
+      f.write(ref_commit)
+  else:
+    ref_commit = open("model_replay_ref_commit").read().strip()
+    log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
+    cmp_log = LogReader(BASE_URL + log_fn)
+    print(compare_logs(cmp_log, log_msgs, ignore_fields=['logMonoTime', 'valid']))
 
