@@ -70,7 +70,7 @@ class States():
 
 class LocKalman():
   name = "loc"
-  x_initial = np.array([0, 0, 0,
+  x_initial = np.array([-2.7e6, 4.2e6, 3.8e6,
                         1, 0, 0, 0,
                         0, 0, 0,
                         0, 0, 0,
@@ -142,19 +142,21 @@ class LocKalman():
     vx, vy, vz = v
     omega = state[States.ANGULAR_VELOCITY, :]
     vroll, vpitch, vyaw = omega
-    cb = state[States.CLOCK_BIAS, :][0]
-    cd = state[States.CLOCK_DRIFT, :][0]
+    #cb = state[States.CLOCK_BIAS, :][0, 0]
+    #cd = state[States.CLOCK_DRIFT, :][0, 0]
+    cb, cd = state[13:15, :]
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
-    odo_scale = state[States.ODO_SCALE, :][0]
+    #odo_scale = state[States.ODO_SCALE, :][0,0]
+    odo_scale = state[18, :]
     acceleration = state[States.ACCELERATION, :]
-    focal_scale = state[States.FOCAL_SCALE, :][0]
+    #focal_scale = state[States.FOCAL_SCALE, :][0,0]
+    focal_scale = state[22, :]
     imu_angles = state[States.IMU_OFFSET, :]
-    # better to set to 0, only pitch matters
-    imu_angles[0,0] = 0
-    imu_angles[2,0] = 0
-    glonass_bias = state[States.GLONASS_BIAS, :][0]
-    glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :][0]
-    ca = state[States.CLOCK_ACCELERATION, :][0]
+    glonass_bias, glonass_freq_slope = state[26:28, :]
+    ca = state[28, 0]
+    #glonass_bias = state[States.GLONASS_BIAS, :][0,0]
+    #glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :][0,0]
+    #ca = state[States.CLOCK_ACCELERATION, :][0,0]
     accel_scale = state[States.ACCELEROMETER_SCALE, :][0]
 
     dt = sp.Symbol('dt')
@@ -177,8 +179,10 @@ class LocKalman():
     state_dot[States.ECEF_POS, :] = v
     state_dot[States.ECEF_ORIENTATION, :] = q_dot
     state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
-    state_dot[States.CLOCK_BIAS, 0][0] = cd
-    state_dot[States.CLOCK_DRIFT, 0][0] = ca
+    state_dot[13, 0] = cd
+    state_dot[14, 0] = ca
+    #state_dot[States.CLOCK_BIAS, 0][0,0] = cd
+    state_dot[States.CLOCK_DRIFT, 0][0, 0] = ca
 
     # Basic descretization, 1st order intergrator
     # Can be pretty bad if dt is big
@@ -189,9 +193,10 @@ class LocKalman():
     quat_err = state_err[States.ECEF_ORIENTATION_ERR, :]
     v_err = state_err[States.ECEF_VELOCITY_ERR, :]
     omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
-    cd_err = state_err[States.CLOCK_DRIFT_ERR, :][0]
+    #cd_err = state_err[States.CLOCK_DRIFT_ERR, :][0,:]
+    cd_err = state_err[13, :]
     acceleration_err = state_err[States.ACCELERATION_ERR, :]
-    ca_err = state_err[States.CLOCK_ACCELERATION_ERR, :]
+    ca_err = state_err[27, :]
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])
@@ -200,8 +205,10 @@ class LocKalman():
     state_err_dot[States.ECEF_POS_ERR, :] = v_err
     state_err_dot[States.ECEF_ORIENTATION_ERR, :] = q_err_dot
     state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
-    state_err_dot[States.CLOCK_BIAS_ERR, :][0] = cd_err
-    state_err_dot[States.CLOCK_DRIFT_ERR, :][0] = ca_err
+    #state_err_dot[States.CLOCK_BIAS_ERR, :][0,:] = cd_err
+    #state_err_dot[States.CLOCK_DRIFT_ERR, :][0,:] = ca_err
+    state_err_dot[12, :][0, :] = cd_err
+    state_err_dot[13, :][0, :] = ca_err
     f_err_sym = state_err + dt * state_err_dot
 
     # convenient indexing
@@ -283,14 +290,14 @@ class LocKalman():
                                         los_vector[2] * (sat_vz - vz) +
                                         cd])
 
-    imu_rot = euler_rotate(*imu_angles)
-    h_gyro_sym = imu_rot * sp.Matrix([vroll + roll_bias,
+    #imu_rot = euler_rotate(*imu_angles)
+    h_gyro_sym = sp.Matrix([vroll + roll_bias,
                                       vpitch + pitch_bias,
                                       vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
-    h_acc_sym = imu_rot * (accel_scale * (gravity + acceleration))
+    h_acc_sym = accel_scale * (gravity + acceleration)
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2)
@@ -324,8 +331,7 @@ class LocKalman():
 
     # MSCKF configuration
     if N > 0:
-      # experimentally found for imx298 with 910 focal length
-      focal_scale = 1.01
+      focal_scale = 1
       # Add observation functions for orb feature tracks
       track_epos_sym = sp.MatrixSymbol('track_epos_sym', 3, 1)
       track_x, track_y, track_z = track_epos_sym
