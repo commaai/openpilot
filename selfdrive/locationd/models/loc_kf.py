@@ -325,6 +325,7 @@ class LocKalman():
     # MSCKF configuration
     if N > 0:
       # experimentally found this is correct value for imx298 with 910 focal length
+      # this is a variable so it can change with focus, but we disregard that for now
       focal_scale = 1.01
       # Add observation functions for orb feature tracks
       track_epos_sym = sp.MatrixSymbol('track_epos_sym', 3, 1)
