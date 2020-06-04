@@ -10,6 +10,7 @@ from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
+from selfdrive.test.process_replay.test_processes import format_diff
 from selfdrive.version import get_git_commit
 
 if ANDROID:
@@ -83,5 +84,9 @@ if __name__ == "__main__":
     ref_commit = open("model_replay_ref_commit").read().strip()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
-    print(compare_logs(cmp_log, log_msgs, ignore_fields=['logMonoTime', 'valid']))
+    result = compare_logs(cmp_log, log_msgs, ignore_fields=['logMonoTime', 'valid'])
+    diff1, diff2, failed = format_diff(result)
+
+    print(diff1)
+    sys.exit(int(failed))
 
