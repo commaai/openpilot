@@ -90,4 +90,4 @@ class VisionIPC():
     buf = self.clib.visionstream_get(self.s, ffi.NULL)
     pbuf = ffi.buffer(buf.addr, buf.len)
     ret = np.frombuffer(pbuf, dtype=np.uint8).reshape((-1, self.buf_info.stride//3, 3))
-    return ret[:self.buf_info.height, :self.buf_info.width, [2,1,0]]
+    return ret[:self.buf_info.height, :self.buf_info.width, [2, 1, 0]]

@@ -5,10 +5,10 @@ import sys
 import zmq
 import time
 import signal
+import multiprocessing
 from uuid import uuid4
 from collections import namedtuple
 from collections import deque
-from multiprocessing import Process, TimeoutError
 from datetime import datetime
 
 # strat 1: script to copy files
@@ -110,7 +110,7 @@ class UnloggerWorker(object):
           print("FRAME(%d) LAG -- %.2f ms" % (frame_id, fr_time*1000.0))
 
         if img is not None:
-          img = img[:, :, ::-1] # Convert RGB to BGR, which is what the camera outputs
+          img = img[:, :, ::-1]  # Convert RGB to BGR, which is what the camera outputs
           img = img.flatten()
           smsg.frame.image = img.tobytes()
 
@@ -259,7 +259,7 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
         msg_time_offset = msg_time_seconds - msg_start_time
         real_time_offset = realtime.sec_since_boot() - real_start_time
         lag = msg_time_offset - real_time_offset
-        if lag > 0 and lag < 30: # a large jump is OK, likely due to an out of order segment
+        if lag > 0 and lag < 30:  # a large jump is OK, likely due to an out of order segment
           if lag > 1:
             print("sleeping for", lag)
           time.sleep(lag)
@@ -312,19 +312,19 @@ def keyboard_controller_thread(q, route_start_time):
   kb = KBHit()
   while 1:
     c = kb.getch()
-    if c=='m': # Move forward by 1m
+    if c == 'm':  # Move forward by 1m
       q.send_pyobj(SeekRelativeTime(60))
-    elif c=='M': # Move backward by 1m
+    elif c == 'M':  # Move backward by 1m
       q.send_pyobj(SeekRelativeTime(-60))
-    elif c=='s': # Move forward by 10s
+    elif c == 's':  # Move forward by 10s
       q.send_pyobj(SeekRelativeTime(10))
-    elif c=='S': # Move backward by 10s
+    elif c == 'S':  # Move backward by 10s
       q.send_pyobj(SeekRelativeTime(-10))
-    elif c=='G': # Move backward by 10s
+    elif c == 'G':  # Move backward by 10s
       q.send_pyobj(SeekAbsoluteTime(0.))
-    elif c=="\x20": # Space bar.
+    elif c == "\x20":  # Space bar.
       q.send_pyobj(TogglePause())
-    elif c=="\n":
+    elif c == "\n":
       try:
         seek_time_input = input('time: ')
         seek_time = absolute_time_str(seek_time_input, route_start_time)
@@ -341,15 +341,19 @@ def get_arg_parser():
   parser.add_argument("route_name", type=(lambda x: x.replace("#", "|")), nargs="?",
                       help="The route whose messages will be published.")
   parser.add_argument("data_dir", nargs='?', default=os.getenv('UNLOGGER_DATA_DIR'),
-		      help="Path to directory in which log and camera files are located.")
+          help="Path to directory in which log and camera files are located.")
 
   parser.add_argument("--no-loop", action="store_true", help="Stop at the end of the replay.")
 
-  key_value_pair = lambda x: x.split("=")
+  def key_value_pair(x):
+    return x.split("=")
+
   parser.add_argument("address_mapping", nargs="*", type=key_value_pair,
       help="Pairs <service>=<zmq_addr> to publish <service> on <zmq_addr>.")
 
-  comma_list = lambda x: x.split(",")
+  def comma_list(x):
+    return x.split(",")
+
   to_mock_group = parser.add_mutually_exclusive_group()
   to_mock_group.add_argument("--min", action="store_true", default=os.getenv("MIN"))
   to_mock_group.add_argument("--enabled", default=os.getenv("ENABLED"), type=comma_list)
@@ -400,11 +404,11 @@ def main(argv):
 
   subprocesses = {}
   try:
-    subprocesses["data"] = Process(
+    subprocesses["data"] = multiprocessing.Process(
       target=UnloggerWorker().run,
       args=(forward_commands_address, data_address, address_mapping.copy()))
 
-    subprocesses["control"] = Process(
+    subprocesses["control"] = multiprocessing.Process(
       target=unlogger_thread,
       args=(command_address, forward_commands_address, data_address, args.realtime,
             _get_address_mapping(args), args.publish_time_length, args.bind_early, args.no_loop))
@@ -417,7 +421,7 @@ def main(argv):
 
     # Exit if any of the children die.
     def exit_if_children_dead(*_):
-      for name, p in subprocesses.items():
+      for _, p in subprocesses.items():
         if not p.is_alive():
           [p.terminate() for p in subprocesses.values()]
           exit()
@@ -435,7 +439,7 @@ def main(argv):
       if p.is_alive():
         try:
           p.join(3.)
-        except TimeoutError:
+        except multiprocessing.TimeoutError:
           p.terminate()
           continue
   return 0

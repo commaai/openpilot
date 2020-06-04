@@ -28,7 +28,7 @@ def regen_model(msgs, pm, frame_reader, model_sock):
     if w == 'frame':
       msg = msg.as_builder()
 
-      img = frame_reader.get(fidx, pix_fmt="rgb24")[0][:,::-1]
+      img = frame_reader.get(fidx, pix_fmt="rgb24")[0][:, ::-1]
 
       msg.frame.image = img.flatten().tobytes()
 
@@ -64,7 +64,6 @@ def inject_model(msgs, segment_name):
   manager.kill_managed_process('modeld')
   time.sleep(2)
   manager.kill_managed_process('camerad')
-
 
   new_msgs = []
   midx = 0

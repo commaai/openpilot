@@ -324,7 +324,7 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
   }
 }
 
-static void update_all_lane_lines_data(UIState *s, const PathData path, model_path_vertices_data *pstart) {
+static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
   update_lane_line_data(s, path.points, 0.025*path.prob, false, pstart);
   float var = fmin(path.std, 0.7);
   update_lane_line_data(s, path.points, -var, true, pstart + 1);
@@ -793,7 +793,7 @@ void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor c
   }
 }
 
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r){
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r){
   nvgBeginPath(vg);
   r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
   nvgFillPaint(vg, paint);

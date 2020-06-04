@@ -6,13 +6,19 @@ repos:
     -   id: check-json
     -   id: check-xml
     -   id: check-yaml
--   repo: https://gitlab.com/PyCQA/flake8
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: master
+    hooks:
+    -   id: mypy
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)/'
+-   repo: https://github.com/PyCQA/flake8
     rev: master
     hooks:
     -   id: flake8
-        exclude: '^(pyextra)|(external)/'
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)/'
         args:
-        - --select=F
+        - --ignore=E111,E114,E121,E122,E123,E124,E126,E127,E128,E201,E202,E203,E226,E241,E265,E266,E302,E305,E402,E501,E722,E741,W504
+        - --statistics
 -   repo: local
     hooks:
     -   id: pylint
@@ -20,6 +26,4 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        exclude: '^(pyextra)|(external)/'
-        args:
-        - --disable=R,C,W
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'

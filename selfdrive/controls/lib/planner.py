@@ -23,7 +23,7 @@ AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distract
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MIN_V  = [-1.0, -.8, -.67, -.5, -.30]
+_A_CRUISE_MIN_V = [-1.0, -.8, -.67, -.5, -.30]
 _A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
@@ -147,7 +147,7 @@ class Planner():
       a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
       v_curvature = np.sqrt(a_y_max / np.clip(np.abs(curv), 1e-4, None))
       model_speed = np.min(v_curvature)
-      model_speed = max(20.0 * CV.MPH_TO_MS, model_speed) # Don't slow down below 20mph
+      model_speed = max(20.0 * CV.MPH_TO_MS, model_speed)  # Don't slow down below 20mph
     else:
       model_speed = MAX_SPEED
 

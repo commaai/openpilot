@@ -9,7 +9,9 @@ import shutil
 import subprocess
 import datetime
 import textwrap
+from typing import Dict, List
 from selfdrive.swaglog import cloudlog, add_logentries_handler
+
 
 from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
@@ -34,7 +36,7 @@ if ANDROID:
 def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
-  if child_pid != 0: # parent
+  if child_pid != 0:  # parent
 
     # child is in its own process group, manually pass kill signals
     signal.signal(signal.SIGINT, lambda signum, frame: os.kill(child_pid, signal.SIGINT))
@@ -99,7 +101,7 @@ if not prebuilt:
     # Read progress from stderr and update spinner
     while scons.poll() is None:
       try:
-        line = scons.stderr.readline()
+        line = scons.stderr.readline()  # type: ignore
         if line is None:
           continue
         line = line.rstrip()
@@ -117,12 +119,12 @@ if not prebuilt:
 
     if scons.returncode != 0:
       # Read remaining output
-      r = scons.stderr.read().split(b'\n')
+      r = scons.stderr.read().split(b'\n')   # type: ignore
       compile_output += r
 
       if retry:
         print("scons build failed, cleaning in")
-        for i in range(3,-1,-1):
+        for i in range(3, -1, -1):
           print("....%d" % i)
           time.sleep(1)
         subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
@@ -179,7 +181,7 @@ managed_processes = {
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
-  "paramsd": ("selfdrive/locationd", ["./paramsd"]),
+  "paramsd": "selfdrive.locationd.paramsd",
   "camerad": ("selfdrive/camerad", ["./camerad"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "clocksd": ("selfdrive/clocksd", ["./clocksd"]),
@@ -194,7 +196,7 @@ daemon_processes = {
   "manage_athenad": ("selfdrive.athena.manage_athenad", "AthenadPid"),
 }
 
-running = {}
+running: Dict[str, Process] = {}
 def get_running():
   return running
 
@@ -202,7 +204,7 @@ def get_running():
 unkillable_processes = ['camerad']
 
 # processes to end with SIGINT instead of SIGTERM
-interrupt_processes = []
+interrupt_processes: List[str] = []
 
 # processes to end with SIGKILL instead of SIGTERM
 kill_processes = ['sensord', 'paramsd']
@@ -222,6 +224,7 @@ if ANDROID:
     'logcatd',
     'tombstoned',
     'updated',
+    'deleter',
   ]
 
 car_started_processes = [
@@ -250,7 +253,6 @@ if ANDROID:
     'clocksd',
     'gpsd',
     'dmonitoringmodeld',
-    'deleter',
   ]
 
 def register_managed_process(name, desc, car_started=False):
@@ -303,11 +305,11 @@ def start_daemon_process(name):
       pass
 
   cloudlog.info("starting daemon %s" % name)
-  proc = subprocess.Popen(['python', '-m', proc],
-                         stdin=open('/dev/null', 'r'),
-                         stdout=open('/dev/null', 'w'),
-                         stderr=open('/dev/null', 'w'),
-                         preexec_fn=os.setpgrp)
+  proc = subprocess.Popen(['python', '-m', proc],  # pylint: disable=subprocess-popen-preexec-fn
+                          stdin=open('/dev/null', 'r'),
+                          stdout=open('/dev/null', 'w'),
+                          stderr=open('/dev/null', 'w'),
+                          preexec_fn=os.setpgrp)
 
   params.put(pid_param, str(proc.pid))
 
@@ -588,8 +590,6 @@ def main():
 
   try:
     manager_thread()
-  except SystemExit:
-    raise
   except Exception:
     traceback.print_exc()
     crash.capture_exception()

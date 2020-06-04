@@ -1,10 +1,8 @@
-#ifndef DMONITORING_H
-#define DMONITORING_H
-
+#pragma once
+#include <vector>
 #include "common/util.h"
 #include "commonmodel.h"
 #include "runners/run.h"
-
 #include "messaging.hpp"
 
 #ifdef __cplusplus
@@ -31,6 +29,10 @@ typedef struct DMonitoringModelState {
   bool is_rhd;
   bool is_rhd_checked;
   float output[OUTPUT_SIZE];
+  std::vector<uint8_t> resized_buf;
+  std::vector<uint8_t> cropped_buf;
+  std::vector<uint8_t> premirror_cropped_buf;
+  std::vector<float> net_input_buf;
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);
@@ -42,4 +44,3 @@ void dmonitoring_free(DMonitoringModelState* s);
 }
 #endif
 
-#endif

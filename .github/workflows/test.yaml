@@ -37,9 +37,9 @@ jobs:
 
         # need these so docker copy won't fail
         cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
-           cppcheck_openpilot.sh .coveragerc-app $TEST_DIR
+           cppcheck_openpilot.sh .coveragerc-app .pre-commit-config.yaml $TEST_DIR
         cd $TEST_DIR
-        mkdir pyextra laika laika_repo tools release
+        mkdir laika laika_repo tools release
     - name: Build Docker image
       run: cd $TEST_DIR && eval "$BUILD"
     - name: Build openpilot
@@ -48,6 +48,7 @@ jobs:
   docker_push:
     name: docker push
     runs-on: ubuntu-16.04
+    timeout-minutes: 50
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
@@ -65,6 +66,7 @@ jobs:
   static_analysis:
     name: static analysis
     runs-on: ubuntu-16.04
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:
@@ -75,6 +77,8 @@ jobs:
         run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
         run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
+      - name: pre-commit
+        run: $RUN "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
       - name: cppcheck
         run: $PERSIST "cd /tmp/openpilot/ && ./cppcheck_openpilot.sh 2> cppcheck_report.txt"
       - name: Print cppcheck report
@@ -91,6 +95,7 @@ jobs:
   unit_tests:
     name: unit tests
     runs-on: ubuntu-16.04
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:

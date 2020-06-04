@@ -2,12 +2,13 @@
 import argparse
 import os
 import sys
+from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
 from selfdrive.test.process_replay.compare_logs import compare_logs
+from selfdrive.test.process_replay.process_replay import (CONFIGS,
+                                                          replay_process)
 from tools.lib.logreader import LogReader
-
 
 INJECT_MODEL = 0
 
@@ -20,14 +21,15 @@ segments = [
   ("HYUNDAI", "5b7c365c50084530|2020-04-15--16-13-24--3"),    # HYUNDAI.SONATA
   #("CHRYSLER", "b6e1317e1bfbefa6|2020-03-04--13-11-40"),   # CHRYSLER.JEEP_CHEROKEE
   ("SUBARU", "7873afaf022d36e2|2019-07-03--18-46-44--0"),     # SUBARU.IMPREZA
-  ("VOLKSWAGEN", "76b83eb0245de90e|2020-03-05--19-16-05--3"), # VW.GOLF
+  ("VOLKSWAGEN", "76b83eb0245de90e|2020-03-05--19-16-05--3"),  # VW.GOLF
+  ("NISSAN", "fbbfa6af821552b9|2020-03-03--08-09-43--0"),     # NISSAN.XTRAIL
 
   # Enable when port is tested and dascamOnly is no longer set
-  ("NISSAN", "fbbfa6af821552b9|2020-03-03--08-09-43--0"),     # NISSAN.XTRAIL
+  #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
 ]
 
 # ford doesn't need to be tested until a full port is done
-excluded_interfaces = ["mock", "ford"]
+excluded_interfaces = ["mock", "ford", "mazda"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
@@ -47,7 +49,11 @@ def get_segment(segment_name, original=True):
   return rlog_url
 
 
-def test_process(cfg, lr, cmp_log_fn, ignore_fields=[], ignore_msgs=[]):
+def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
+  if ignore_fields is None:
+    ignore_fields = []
+  if ignore_msgs is None:
+    ignore_msgs = []
   url = BASE_URL + os.path.basename(cmp_log_fn)
   cmp_log_msgs = list(LogReader(url))
 
@@ -122,7 +128,7 @@ if __name__ == "__main__":
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
   try:
     ref_commit = open(os.path.join(process_replay_dir, "ref_commit")).read().strip()
-  except:
+  except FileNotFoundError:
     print("couldn't find reference commit")
     sys.exit(1)
 
@@ -134,10 +140,10 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
 
-  results = {}
+  results: Any = {}
   for car_brand, segment in segments:
     if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
-        (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
+       (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
       continue
 
     print("***** testing route segment %s *****\n" % segment)
@@ -149,7 +155,7 @@ if __name__ == "__main__":
 
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
-          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
+         (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))

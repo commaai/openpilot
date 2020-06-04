@@ -59,7 +59,10 @@ class Events:
         return True
     return False
 
-  def create_alerts(self, event_types, callback_args=[]):
+  def create_alerts(self, event_types, callback_args=None):
+    if callback_args is None:
+      callback_args = []
+
     ret = []
     for e in self.events:
       types = EVENTS[e].keys()
@@ -305,6 +308,14 @@ EVENTS = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   },
 
+  EventName.canErrorPersistent: {
+    ET.PERMANENT: Alert(
+      "CAN Error: Check Connections",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+  },
+
   # ********** events only containing alerts that display while engaged **********
 
   EventName.vehicleModelInvalid: {
@@ -396,11 +407,7 @@ EVENTS = {
   },
 
   EventName.belowSteerSpeed: {
-    ET.WARNING: Alert(
-      "TAKE CONTROL",
-      "Steer Unavailable Below ",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3),
+    ET.WARNING: below_steer_speed_alert,
   },
 
   EventName.preLaneChangeLeft: {
@@ -497,6 +504,10 @@ EVENTS = {
   EventName.outOfSpace: {
     ET.NO_ENTRY: NoEntryAlert("Out of Storage Space",
                               duration_hud_alert=0.),
+  },
+
+  EventName.belowEngageSpeed: {
+    ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
   },
 
   EventName.sensorDataInvalid: {
@@ -607,11 +618,6 @@ EVENTS = {
   EventName.canError: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error: Check Connections"),
     ET.NO_ENTRY: NoEntryAlert("CAN Error: Check Connections"),
-    ET.PERMANENT: Alert(
-      "CAN Error: Check Connections",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
   EventName.steerUnavailable: {
@@ -678,11 +684,10 @@ EVENTS = {
       "Speed too low",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
-    ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
   },
 
   EventName.speedTooHigh: {
-    ET.IMMEDIATE_DISABLE: Alert(
+    ET.WARNING: Alert(
       "Speed Too High",
       "Slow down to resume operation",
       AlertStatus.normal, AlertSize.mid,

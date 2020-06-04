@@ -9,8 +9,8 @@ from selfdrive.controls.lib.events import Alert, EVENTS
 
 AlertSize = log.ControlsState.AlertSize
 
-class TestAlerts(unittest.TestCase):
 
+class TestAlerts(unittest.TestCase):
   def test_events_defined(self):
     # Ensure all events in capnp schema are defined in events.py
     events = car.CarEvent.EventName.schema.enumerants
@@ -27,16 +27,16 @@ class TestAlerts(unittest.TestCase):
     bold_font_path = os.path.join(font_path, "opensans_semibold.ttf")
     semibold_font_path = os.path.join(font_path, "opensans_semibold.ttf")
 
-    max_text_width = 1920 - 300 # full screen width is useable, minus sidebar
+    max_text_width = 1920 - 300  # full screen width is useable, minus sidebar
     # TODO: get exact scale factor. found this empirically, works well enough
-    font_scale_factor = 1.85 # factor to scale from nanovg units to PIL
+    font_scale_factor = 1.85  # factor to scale from nanovg units to PIL
 
     draw = ImageDraw.Draw(Image.new('RGB', (0, 0)))
 
     fonts = {
-      AlertSize.small: [ImageFont.truetype(semibold_font_path, int(40*font_scale_factor))],
-      AlertSize.mid: [ImageFont.truetype(bold_font_path, int(48*font_scale_factor)),
-                      ImageFont.truetype(regular_font_path, int(36*font_scale_factor))],
+      AlertSize.small: [ImageFont.truetype(semibold_font_path, int(40 * font_scale_factor))],
+      AlertSize.mid: [ImageFont.truetype(bold_font_path, int(48 * font_scale_factor)),
+                      ImageFont.truetype(regular_font_path, int(36 * font_scale_factor))],
     }
 
     alerts = []
@@ -52,12 +52,14 @@ class TestAlerts(unittest.TestCase):
         continue
 
       for i, txt in enumerate([alert.alert_text_1, alert.alert_text_2]):
-        if i >= len(fonts[alert.alert_size]): break
+        if i >= len(fonts[alert.alert_size]):
+          break
 
         font = fonts[alert.alert_size][i]
-        w, h = draw.textsize(txt, font)
+        w, _ = draw.textsize(txt, font)
         msg = "type: %s msg: %s" % (alert.alert_type, txt)
         self.assertLessEqual(w, max_text_width, msg=msg)
+
 
 if __name__ == "__main__":
   unittest.main()

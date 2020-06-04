@@ -22,16 +22,14 @@ file in place without messing with <params_dir>/d.
 """
 import time
 import os
-import string
-import binascii
 import errno
-import sys
 import shutil
 import fcntl
 import tempfile
 import threading
 from enum import Enum
 from common.basedir import PARAMS
+
 
 def mkdirs_exists_ok(path):
   try:
@@ -146,6 +144,10 @@ class DBAccessor():
 
   def get(self, key):
     self._check_entered()
+
+    if self._vals is None:
+      return None
+
     try:
       return self._vals[key]
     except KeyError:
@@ -198,7 +200,8 @@ class DBReader(DBAccessor):
     finally:
       lock.release()
 
-  def __exit__(self, type, value, traceback): pass
+  def __exit__(self, exc_type, exc_value, traceback):
+    pass
 
 
 class DBWriter(DBAccessor):
@@ -223,14 +226,14 @@ class DBWriter(DBAccessor):
       os.chmod(self._path, 0o777)
       self._lock = self._get_lock(True)
       self._vals = self._read_values_locked()
-    except:
+    except Exception:
       os.umask(self._prev_umask)
       self._prev_umask = None
       raise
 
     return self
 
-  def __exit__(self, type, value, traceback):
+  def __exit__(self, exc_type, exc_value, traceback):
     self._check_entered()
 
     try:
@@ -304,12 +307,13 @@ def read_db(params_path, key):
   except IOError:
     return None
 
+
 def write_db(params_path, key, value):
   if isinstance(value, str):
     value = value.encode('utf8')
 
   prev_umask = os.umask(0)
-  lock = FileLock(params_path+"/.lock", True)
+  lock = FileLock(params_path + "/.lock", True)
   lock.acquire()
 
   try:
@@ -326,12 +330,13 @@ def write_db(params_path, key, value):
     os.umask(prev_umask)
     lock.release()
 
+
 class Params():
   def __init__(self, db=PARAMS):
     self.db = db
 
     # create the database if it doesn't exist...
-    if not os.path.exists(self.db+"/d"):
+    if not os.path.exists(self.db + "/d"):
       with self.transaction(write=True):
         pass
 
@@ -401,22 +406,3 @@ def put_nonblocking(key, val):
   t = threading.Thread(target=f, args=(key, val))
   t.start()
   return t
-
-
-if __name__ == "__main__":
-  params = Params()
-  if len(sys.argv) > 2:
-    params.put(sys.argv[1], sys.argv[2])
-  else:
-    for k in keys:
-      pp = params.get(k)
-      if pp is None:
-        print("%s is None" % k)
-      elif all(chr(c) in string.printable for c in pp):
-        print("%s = %s" % (k, pp))
-      else:
-        print("%s = %s" % (k, binascii.hexlify(pp)))
-
-  # Test multiprocess:
-  # seq 0 100000 | xargs -P20 -I{} python common/params.py DongleId {} && sleep 0.05
-  # while python common/params.py DongleId; do sleep 0.05; done

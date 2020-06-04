@@ -37,7 +37,7 @@ def dmonitoringd_thread(sm=None, pm=None):
   sm['carState'].steeringPressed = False
   sm['carState'].standstill = True
 
-  cal_rpy = [0,0,0]
+  cal_rpy = [0, 0, 0]
   v_cruise_last = 0
   driver_engaged = False
 

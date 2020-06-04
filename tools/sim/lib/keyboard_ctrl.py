@@ -1,8 +1,9 @@
 import sys
 import termios
 import time
-from termios import (BRKINT, VMIN, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN,
-                     INPCK, ISIG, ISTRIP, IXON, PARENB, VTIME)
+from termios import (BRKINT, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN, INPCK,
+                     ISIG, ISTRIP, IXON, PARENB, VMIN, VTIME)
+from typing import Any
 
 # Indexes for termios list.
 IFLAG = 0
@@ -53,7 +54,7 @@ def test(q):
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue
-  q = Queue()
+  q : Any = Queue()
   p = Process(target=test, args=(q,))
   p.daemon = True
   p.start()

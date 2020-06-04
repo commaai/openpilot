@@ -34,7 +34,6 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
@@ -50,7 +49,7 @@ class RadarInterface(RadarInterfaceBase):
       if cpt['X_Rel'] > 0.00001:
         self.validCnt[ii] += 1
       else:
-        self.validCnt[ii] = max(self.validCnt[ii] -1, 0)
+        self.validCnt[ii] = max(self.validCnt[ii] - 1, 0)
       #print ii, self.validCnt[ii], cpt['VALID'], cpt['X_Rel'], cpt['Angle']
 
       # radar point only valid if there have been enough valid measurements

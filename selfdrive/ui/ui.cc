@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/mman.h>
+#include <string>
+#include <sstream>
 #include <sys/resource.h>
 #include <czmq.h>
 #include "common/util.h"
@@ -135,61 +137,40 @@ static void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-static void read_param_bool(bool* param, const char* param_name, bool persistent_param = false) {
-  char *s;
-  const int result = read_db_value(param_name, &s, NULL, persistent_param);
-  if (result == 0) {
-    *param = s[0] == '1';
-    free(s);
-  }
-}
+template <class T>
+static int read_param(T* param, const char *param_name, bool persistent_param = false){
+  T param_orig = *param;
+  char *value;
+  size_t sz;
 
-static int read_param_float(float* param, const char* param_name, bool persistent_param = false) {
-  char *s;
-  const int result = read_db_value(param_name, &s, NULL, persistent_param);
-  if (result == 0) {
-    *param = strtod(s, NULL);
-    free(s);
+  int result = read_db_value(param_name, &value, &sz, persistent_param);
+  if (result == 0){
+    std::string s = std::string(value, sz); // value is not null terminated
+    free(value);
+
+    // Parse result
+    std::istringstream iss(s);
+    iss >> *param;
+
+    // Restore original value if parsing failed
+    if (iss.fail()) {
+      *param = param_orig;
+      result = -1;
+    }
   }
   return result;
 }
 
-static int read_param_uint64(uint64_t* dest, const char* param_name, bool persistent_param = false) {
-  char *s;
-  const int result = read_db_value(param_name, &s, NULL, persistent_param);
-  if (result == 0) {
-    *dest = strtoull(s, NULL, 0);
-    free(s);
+template <class T>
+static int read_param_timeout(T* param, const char* param_name, int* timeout, bool persistent_param = false) {
+  int result = -1;
+  if (*timeout > 0){
+    (*timeout)--;
+  } else {
+    *timeout = 2 * UI_FREQ; // 0.5Hz
+    result = read_param(param, param_name, persistent_param);
   }
   return result;
-}
-
-static void read_param_bool_timeout(bool* param, const char* param_name, int* timeout, bool persistent_param = false) {
-  if (*timeout > 0){
-    (*timeout)--;
-  } else {
-    read_param_bool(param, param_name, persistent_param);
-    *timeout = 2 * UI_FREQ; // 0.5Hz
-  }
-}
-
-static void read_param_float_timeout(float* param, const char* param_name, int* timeout, bool persistent_param = false) {
-  if (*timeout > 0){
-    (*timeout)--;
-  } else {
-    read_param_float(param, param_name, persistent_param);
-    *timeout = 2 * UI_FREQ; // 0.5Hz
-  }
-}
-
-static int read_param_uint64_timeout(uint64_t* dest, const char* param_name, int* timeout, bool persistent_param = false) {
-  if (*timeout > 0){
-    (*timeout)--;
-    return -1;
-  } else {
-    *timeout = 2 * UI_FREQ; // 0.5Hz
-    return read_param_uint64(dest, param_name, persistent_param);
-  }
 }
 
 static int write_param_float(float param, const char* param_name, bool persistent_param = false) {
@@ -272,10 +253,10 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
     0.0f, 0.0f, 0.0f, 1.0f,
   }};
 
-  read_param_float(&s->speed_lim_off, "SpeedLimitOffset");
-  read_param_bool(&s->is_metric, "IsMetric");
-  read_param_bool(&s->longitudinal_control, "LongitudinalControl");
-  read_param_bool(&s->limit_set_speed, "LimitSetSpeed");
+  read_param(&s->speed_lim_off, "SpeedLimitOffset");
+  read_param(&s->is_metric, "IsMetric");
+  read_param(&s->longitudinal_control, "LongitudinalControl");
+  read_param(&s->limit_set_speed, "LimitSetSpeed");
 
   // Set offsets so params don't get read at the same time
   s->longitudinal_control_timeout = UI_FREQ / 3;
@@ -283,38 +264,32 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->limit_set_speed_timeout = UI_FREQ;
 }
 
-static PathData read_path(cereal::ModelData::PathData::Reader pathp) {
-  PathData ret = {0};
+static void read_path(PathData& p, const cereal::ModelData::PathData::Reader &pathp) {
+  p = {};
 
-  ret.prob = pathp.getProb();
-  ret.std = pathp.getStd();
+  p.prob = pathp.getProb();
+  p.std = pathp.getStd();
 
   auto polyp = pathp.getPoly();
   for (int i = 0; i < POLYFIT_DEGREE; i++) {
-    ret.poly[i] = polyp[i];
+    p.poly[i] = polyp[i];
   }
 
   // Compute points locations
   for (int i = 0; i < MODEL_PATH_DISTANCE; i++) {
-    ret.points[i] = ret.poly[0] * (i*i*i) + ret.poly[1] * (i*i)+ ret.poly[2] * i + ret.poly[3];
+    p.points[i] = p.poly[0] * (i*i*i) + p.poly[1] * (i*i)+ p.poly[2] * i + p.poly[3];
   }
-
-  return ret;
 }
 
-static ModelData read_model(cereal::ModelData::Reader model) {
-  ModelData d = {0};
-
-  d.path = read_path(model.getPath());
-  d.left_lane = read_path(model.getLeftLane());
-  d.right_lane = read_path(model.getRightLane());
-
+static void read_model(ModelData &d, const cereal::ModelData::Reader &model) {
+  d = {};
+  read_path(d.path, model.getPath());
+  read_path(d.left_lane, model.getLeftLane());
+  read_path(d.right_lane, model.getRightLane());
   auto leadd = model.getLead();
   d.lead = (LeadData){
       .dist = leadd.getDist(), .prob = leadd.getProb(), .std = leadd.getStd(),
   };
-
-  return d;
 }
 
 static void update_status(UIState *s, int status) {
@@ -387,8 +362,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     }
   }
   if (sm.updated("model")) {
-    scene.model=read_model(sm["model"].getModel());
-    // s->model_changed = true;
+    read_model(scene.model, sm["model"].getModel());
   }
   // else if (which == cereal::Event::LIVE_MPC) {
   //   auto data = event.getLiveMpc();
@@ -789,8 +763,8 @@ int main(int argc, char* argv[]) {
   const int LEON = is_leon();
 
   float brightness_b, brightness_m;
-  int result = read_param_float(&brightness_b, "BRIGHTNESS_B", true);
-  result += read_param_float(&brightness_m, "BRIGHTNESS_M", true);
+  int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
+  result += read_param(&brightness_m, "BRIGHTNESS_M", true);
 
   if(result != 0){
     brightness_b = LEON ? 10.0 : 5.0;
@@ -925,11 +899,11 @@ int main(int argc, char* argv[]) {
       s->alert_sound = cereal::CarControl::HUDControl::AudibleAlert::NONE;
     }
 
-    read_param_bool_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
-    read_param_bool_timeout(&s->longitudinal_control, "LongitudinalControl", &s->longitudinal_control_timeout);
-    read_param_bool_timeout(&s->limit_set_speed, "LimitSetSpeed", &s->limit_set_speed_timeout);
-    read_param_float_timeout(&s->speed_lim_off, "SpeedLimitOffset", &s->limit_set_speed_timeout);
-    int param_read = read_param_uint64_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
+    read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
+    read_param_timeout(&s->longitudinal_control, "LongitudinalControl", &s->longitudinal_control_timeout);
+    read_param_timeout(&s->limit_set_speed, "LimitSetSpeed", &s->limit_set_speed_timeout);
+    read_param_timeout(&s->speed_lim_off, "SpeedLimitOffset", &s->limit_set_speed_timeout);
+    int param_read = read_param_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
     if (param_read != -1) { // Param was updated this loop
       if (param_read != 0) { // Failed to read param
         s->scene.athenaStatus = NET_DISCONNECTED;

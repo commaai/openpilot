@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import sys
+from typing import List
 
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.models.constants import ObservationKind
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
+from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.locationd.models.loc_kf import parse_pr, parse_prr
 
 
@@ -39,7 +40,7 @@ class GNSSKalman():
                (.1)**2, (0)**2, (0.005)**2,
                .1**2, (.01)**2])
 
-  maha_test_kinds = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
+  maha_test_kinds: List[int] = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
 
   @staticmethod
   def generate_code(generated_dir):
@@ -75,14 +76,14 @@ class GNSSKalman():
     # extra args
     sat_pos_freq_sym = sp.MatrixSymbol('sat_pos', 4, 1)
     sat_pos_vel_sym = sp.MatrixSymbol('sat_pos_vel', 6, 1)
-    sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1)
-    orb_epos_sym = sp.MatrixSymbol('orb_epos_sym', 3, 1)
+    # sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1)
+    # orb_epos_sym = sp.MatrixSymbol('orb_epos_sym', 3, 1)
 
     # expand extra args
     sat_x, sat_y, sat_z, glonass_freq = sat_pos_freq_sym
     sat_vx, sat_vy, sat_vz = sat_pos_vel_sym[3:]
-    los_x, los_y, los_z = sat_los_sym
-    orb_x, orb_y, orb_z = orb_epos_sym
+    # los_x, los_y, los_z = sat_los_sym
+    # orb_x, orb_y, orb_z = orb_epos_sym
 
     h_pseudorange_sym = sp.Matrix([
       sp.sqrt(

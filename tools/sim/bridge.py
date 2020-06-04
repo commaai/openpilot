@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 import time
 import math
 import atexit
@@ -21,12 +22,12 @@ args = parser.parse_args()
 
 pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
 
-W,H = 1164, 874
+W, H = 1164, 874
 
 def cam_callback(image):
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
   img = np.reshape(img, (H, W, 4))
-  img = img[:, :, [0,1,2]].copy()
+  img = img[:, :, [0, 1, 2]].copy()
 
   dat = messaging.new_message('frame')
   dat.frame = {
@@ -96,11 +97,9 @@ def go(q):
   world.set_weather(weather)
 
   blueprint_library = world.get_blueprint_library()
-  """
-  for blueprint in blueprint_library.filter('sensor.*'):
-     print(blueprint.id)
-  exit(0)
-  """
+  # for blueprint in blueprint_library.filter('sensor.*'):
+  #    print(blueprint.id)
+  # exit(0)
 
   world_map = world.get_map()
   vehicle_bp = random.choice(blueprint_library.filter('vehicle.tesla.*'))
@@ -168,7 +167,7 @@ def go(q):
       m = message.split('_')
       if m[0] == "steer":
         steer_angle_out = float(m[1])
-        fake_wheel.set_angle(steer_angle_out) # touching the wheel overrides fake wheel angle
+        fake_wheel.set_angle(steer_angle_out)  # touching the wheel overrides fake wheel angle
         # print(" === steering overriden === ")
       if m[0] == "throttle":
         throttle_out = float(m[1]) / 100.
@@ -199,7 +198,7 @@ def go(q):
     speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
     can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button, is_engaged=is_openpilot_engaged)
 
-    if rk.frame%1 == 0: # 20Hz?
+    if rk.frame % 1 == 0:  # 20Hz?
       throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
       # print(" === torq, ",steer_torque_op, " ===")
       if is_openpilot_engaged:

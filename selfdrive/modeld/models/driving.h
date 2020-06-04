@@ -72,7 +72,7 @@ void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 
 void model_publish(PubMaster &pm, uint32_t frame_id,
-                   const ModelDataRaw data, uint64_t timestamp_eof);
+                   const ModelDataRaw &data, uint64_t timestamp_eof);
 void posenet_publish(PubMaster &pm, uint32_t frame_id,
-                   const ModelDataRaw data, uint64_t timestamp_eof);
+                   const ModelDataRaw &data, uint64_t timestamp_eof);
 #endif

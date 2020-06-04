@@ -9,8 +9,8 @@ def waste(pid):
   # set affinity
   os.system("taskset -p %d %d" % (1 << pid, os.getpid()))
 
-  m1 = np.zeros((200,200)) + 0.8
-  m2 = np.zeros((200,200)) + 1.2
+  m1 = np.zeros((200, 200)) + 0.8
+  m2 = np.zeros((200, 200)) + 1.2
 
   i = 1
   st = sec_since_boot()
