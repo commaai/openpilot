@@ -4,6 +4,8 @@
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 
+#include "coordinates.hpp"
+
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 #define RAD2DEG(x) ((x) * 180.0 / M_PI)
 
@@ -13,20 +15,8 @@ double b = 6356752.3142;
 double esq = 6.69437999014 * 0.001;
 double e1sq = 6.73949674228 * 0.001;
 
-struct ECEF {
-  double x, y, z;
-};
 
-struct NED {
-  double n, e, d;
-};
-
-struct Geodetic {
-  double lat, lon, alt;
-  bool radians=false;
-};
-
-Geodetic ensure_degrees(Geodetic geodetic){
+static Geodetic ensure_degrees(Geodetic geodetic){
   if (geodetic.radians) {
     geodetic.lat = RAD2DEG(geodetic.lat);
     geodetic.lon = RAD2DEG(geodetic.lon);
@@ -35,7 +25,7 @@ Geodetic ensure_degrees(Geodetic geodetic){
   return geodetic;
 }
 
-Geodetic ensure_radians(Geodetic geodetic){
+static Geodetic ensure_radians(Geodetic geodetic){
   if (!geodetic.radians) {
     geodetic.lat = DEG2RAD(geodetic.lat);
     geodetic.lon = DEG2RAD(geodetic.lon);
@@ -81,53 +71,43 @@ Geodetic ecef2geodetic(ECEF e){
   return ensure_degrees({lat, lon, h, true});
 }
 
-class LocalCoord {
-private:
-  Eigen::Matrix3d ned2ecef_matrix;
-  Eigen::Matrix3d ecef2ned_matrix;
-  Eigen::Vector3d init_ecef;
-public:
-  LocalCoord(Geodetic g, ECEF e){
-    init_ecef <<  e.x, e.y, e.z;
+LocalCoord::LocalCoord(Geodetic g, ECEF e){
+  init_ecef <<  e.x, e.y, e.z;
 
-    g = ensure_radians(g);
+  g = ensure_radians(g);
 
-    ned2ecef_matrix <<
-      -sin(g.lat)*cos(g.lon), -sin(g.lon), -cos(g.lat)*cos(g.lon),
-      -sin(g.lat)*sin(g.lon), cos(g.lon), -cos(g.lat)*sin(g.lon),
-      cos(g.lat), 0, -sin(g.lat);
-    ecef2ned_matrix = ned2ecef_matrix.transpose();
-  }
-  LocalCoord(Geodetic g) : LocalCoord(g, ::geodetic2ecef(g)) {}
-  LocalCoord(ECEF e) : LocalCoord(::ecef2geodetic(e), e) {}
+  ned2ecef_matrix <<
+    -sin(g.lat)*cos(g.lon), -sin(g.lon), -cos(g.lat)*cos(g.lon),
+    -sin(g.lat)*sin(g.lon), cos(g.lon), -cos(g.lat)*sin(g.lon),
+    cos(g.lat), 0, -sin(g.lat);
+  ecef2ned_matrix = ned2ecef_matrix.transpose();
+}
 
-  NED ecef2ned(ECEF e) {
-    Eigen::Vector3d ecef;
-    ecef << e.x, e.y, e.z;
+NED LocalCoord::ecef2ned(ECEF e) {
+  Eigen::Vector3d ecef;
+  ecef << e.x, e.y, e.z;
 
-    Eigen::Vector3d ned = (ecef2ned_matrix * (ecef - init_ecef));
-    return {ned[0], ned[1], ned[2]};
-  }
+  Eigen::Vector3d ned = (ecef2ned_matrix * (ecef - init_ecef));
+  return {ned[0], ned[1], ned[2]};
+}
 
-  ECEF ned2ecef(NED n) {
-    Eigen::Vector3d ned;
-    ned << n.n, n.e, n.d;
+ECEF LocalCoord::ned2ecef(NED n) {
+  Eigen::Vector3d ned;
+  ned << n.n, n.e, n.d;
 
-    Eigen::Vector3d ecef = (ned2ecef_matrix * ned) + init_ecef;
-    return {ecef[0], ecef[1], ecef[2]};
-  }
+  Eigen::Vector3d ecef = (ned2ecef_matrix * ned) + init_ecef;
+  return {ecef[0], ecef[1], ecef[2]};
+}
 
-  NED geodetic2ecef(Geodetic g) {
-    ECEF e = ::geodetic2ecef(g);
-    return ecef2ned(e);
-  }
+NED LocalCoord::geodetic2ecef(Geodetic g) {
+  ECEF e = ::geodetic2ecef(g);
+  return ecef2ned(e);
+}
 
-  Geodetic ned2geodetic(NED n){
-    ECEF e = ned2ecef(n);
-    return ::ecef2geodetic(e);
-  }
-
-};
+Geodetic LocalCoord::ned2geodetic(NED n){
+  ECEF e = ned2ecef(n);
+  return ::ecef2geodetic(e);
+}
 
 
 int main(void){
