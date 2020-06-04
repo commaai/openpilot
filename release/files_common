@@ -1,9 +1,6 @@
 README.md
 SAFETY.md
 
-codecov.yml
-lgtm.yml
-
 .gitignore
 LICENSE
 launch_chffrplus.sh
@@ -43,7 +40,6 @@ common/manager_helpers.py
 
 common/kalman/.gitignore
 common/kalman/*
-common/kalman/tests/*
 
 common/transformations/__init__.py
 common/transformations/camera.py
@@ -73,8 +69,6 @@ selfdrive/updated.py
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
 selfdrive/athena/manage_athenad.py
-selfdrive/athena/test.py
-selfdrive/athena/test_helpers.py
 
 selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript
@@ -84,7 +78,6 @@ selfdrive/boardd/boardd.py
 selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/boardd_setup.py
 selfdrive/boardd/can_list_to_can_capnp.cc
-selfdrive/boardd/tests/**
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
@@ -100,7 +93,6 @@ selfdrive/car/chrysler/radar_interface.py
 selfdrive/car/chrysler/values.py
 selfdrive/car/chrysler/carcontroller.py
 selfdrive/car/chrysler/chryslercan.py
-selfdrive/car/chrysler/test_chryslercan.py
 selfdrive/car/honda/__init__.py
 selfdrive/car/honda/carstate.py
 selfdrive/car/honda/interface.py
@@ -169,9 +161,6 @@ selfdrive/car/mock/*.py
 selfdrive/clocksd/.gitignore
 selfdrive/clocksd/SConscript
 selfdrive/clocksd/clocksd.cc
-
-selfdrive/debug/mpc/*
-selfdrive/debug/*.py
 
 selfdrive/common/SConscript
 selfdrive/common/version.h
@@ -269,7 +258,6 @@ selfdrive/locationd/ubloxd_main.cc
 selfdrive/locationd/ubloxd_test.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
-selfdrive/locationd/test/*.py
 
 selfdrive/locationd/locationd.py
 selfdrive/locationd/paramsd.py
@@ -308,7 +296,6 @@ selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py
 selfdrive/loggerd/uploader.py
 selfdrive/loggerd/deleter.py
-selfdrive/loggerd/tests/*
 
 selfdrive/sensord/SConscript
 selfdrive/sensord/gpsd.cc
@@ -325,14 +312,6 @@ selfdrive/test/longitudinal_maneuvers/*.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_car_models.py
-
-selfdrive/test/process_replay/__init__.py
-selfdrive/test/process_replay/compare_logs.py
-selfdrive/test/process_replay/process_replay.py
-selfdrive/test/process_replay/test_processes.py
-selfdrive/test/process_replay/update_refs.py
-selfdrive/test/process_replay/ref_commit
-selfdrive/test/process_replay/README.md
 
 selfdrive/ui/SConscript
 selfdrive/ui/*.c
@@ -437,6 +416,6 @@ installer/updater/Makefile
 scripts/update_now.sh
 scripts/stop_updater.sh
 
-pyextra/**
+pyextra/logentries/**
 
 rednose/**
