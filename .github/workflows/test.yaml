@@ -36,7 +36,7 @@ jobs:
                          external/bin selfdrive/modeld/runners $TEST_DIR
 
         # need these so docker copy won't fail
-        cp Pipfile Pipfile.lock flake8_openpilot.sh pylint_openpilot.sh .pylintrc \
+        cp Pipfile Pipfile.lock pylint_openpilot.sh .pylintrc \
            cppcheck_openpilot.sh .coveragerc-app .pre-commit-config.yaml $TEST_DIR
         cd $TEST_DIR
         mkdir laika laika_repo tools release
@@ -73,8 +73,6 @@ jobs:
           submodules: true
       - name: Build Docker image
         run: eval "$BUILD"
-      - name: flake8
-        run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
       - name: pylint
         run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
       - name: pre-commit

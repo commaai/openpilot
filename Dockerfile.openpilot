@@ -78,7 +78,6 @@ RUN mkdir -p /tmp/openpilot
 
 COPY SConstruct \
      cppcheck_openpilot.sh \
-     flake8_openpilot.sh \
      pylint_openpilot.sh \
      .pylintrc \
      .pre-commit-config.yaml \
