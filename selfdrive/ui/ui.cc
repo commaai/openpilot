@@ -387,7 +387,8 @@ void handle_message(UIState *s, SubMaster &sm) {
     }
   }
   if (sm.updated("model")) {
-    scene.model = read_model(sm["model"].getModel());
+    scene.model=read_model(sm["model"].getModel());
+    // s->model_changed = true;
   }
   // else if (which == cereal::Event::LIVE_MPC) {
   //   auto data = event.getLiveMpc();
