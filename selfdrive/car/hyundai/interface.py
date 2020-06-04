@@ -271,10 +271,10 @@ class CarInterface(CarInterfaceBase):
     if self.lkas_button_alert:
       events.add(EventName.lkasButtonOff)
     #TODO Varible for min Speed for LCA
-    if ret.rightBlinker and ret.rightBlindspot and ret.vEgo > (45 * CV.MPH_TO_MS):
-      events.add(EventName.rightLCAbsm)
-    if ret.leftBlinker and ret.leftBlindspot and ret.vEgo > (45 * CV.MPH_TO_MS):
-      events.add(EventName.leftLCAbsm)
+    # if ret.rightBlinker and ret.rightBlindspot and ret.vEgo > (45 * CV.MPH_TO_MS):
+      # events.add(EventName.rightLCAbsm)
+    # if ret.leftBlinker and ret.leftBlindspot and ret.vEgo > (45 * CV.MPH_TO_MS):
+      # events.add(EventName.leftLCAbsm)
     if not self.CC.longcontrol and EventName.pedalPressed in events.events:
       events.events.remove(EventName.pedalPressed)
 
