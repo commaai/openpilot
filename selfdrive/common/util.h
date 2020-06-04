@@ -44,6 +44,7 @@ void* read_file(const char* path, size_t* out_len);
 void set_thread_name(const char* name);
 
 int set_realtime_priority(int level);
+int set_core_affinity(int core);
 
 #ifdef __cplusplus
 }
