@@ -82,7 +82,8 @@ class LocKalman():
                         0, 0, 0,
                         0, 0,
                         0,
-                        1])
+                        1],
+                        dtype=np.float64)
 
   # state covariance
   P_initial = np.diag([1e16, 1e16, 1e16,
@@ -289,7 +290,7 @@ class LocKalman():
                                       vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
-    gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
+    gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2 + 1)**(3.0 / 2.0))) * pos)
     h_acc_sym = imu_rot * (accel_scale * (gravity + acceleration))
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
