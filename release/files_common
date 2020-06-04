@@ -190,7 +190,6 @@ selfdrive/common/util.[c,h]
 selfdrive/common/efd.[c,h]
 selfdrive/common/cqueue.[c,h]
 selfdrive/common/clutil.[c,h]
-selfdrive/common/messaging.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
 selfdrive/common/mutex.h
