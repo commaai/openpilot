@@ -22,7 +22,7 @@ ffi.cdef("long syscall(long number, ...);")
 libc = ffi.dlopen(None)
 
 def _get_tid():
-  platform.machine() == "x86_64":
+  if platform.machine() == "x86_64":
     NR_gettid = 186
   elif platform.machine() == "aarch64":
     NR_gettid = 178
