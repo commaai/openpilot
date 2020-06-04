@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <eigen3/Eigen/Dense>
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 #define RAD2DEG(x) ((x) * 180.0 / M_PI)
@@ -29,6 +30,7 @@ Geodetic ensure_degrees(Geodetic geodetic){
   if (geodetic.radians) {
     geodetic.lat = RAD2DEG(geodetic.lat);
     geodetic.lon = RAD2DEG(geodetic.lon);
+    geodetic.radians = false;
   }
   return geodetic;
 }
@@ -37,6 +39,7 @@ Geodetic ensure_radians(Geodetic geodetic){
   if (!geodetic.radians) {
     geodetic.lat = DEG2RAD(geodetic.lat);
     geodetic.lon = DEG2RAD(geodetic.lon);
+    geodetic.radians = true;
   }
   return geodetic;
 }
@@ -78,14 +81,70 @@ Geodetic ecef2geodetic(ECEF e){
   return ensure_degrees({lat, lon, h, true});
 }
 
+class LocalCoord {
+private:
+  Eigen::Matrix3d ned2ecef_matrix;
+  Eigen::Matrix3d ecef2ned_matrix;
+  Eigen::Vector3d init_ecef;
+public:
+  LocalCoord(Geodetic g, ECEF e){
+    init_ecef <<  e.x, e.y, e.z;
+
+    g = ensure_radians(g);
+
+    ned2ecef_matrix <<
+      -sin(g.lat)*cos(g.lon), -sin(g.lon), -cos(g.lat)*cos(g.lon),
+      -sin(g.lat)*sin(g.lon), cos(g.lon), -cos(g.lat)*sin(g.lon),
+      cos(g.lat), 0, -sin(g.lat);
+    ecef2ned_matrix = ned2ecef_matrix.transpose();
+  }
+  LocalCoord(Geodetic g) : LocalCoord(g, ::geodetic2ecef(g)) {}
+  LocalCoord(ECEF e) : LocalCoord(::ecef2geodetic(e), e) {}
+
+  NED ecef2ned(ECEF e) {
+    Eigen::Vector3d ecef;
+    ecef << e.x, e.y, e.z;
+
+    Eigen::Vector3d ned = (ecef2ned_matrix * (ecef - init_ecef));
+    return {ned[0], ned[1], ned[2]};
+  }
+
+  ECEF ned2ecef(NED n) {
+    Eigen::Vector3d ned;
+    ned << n.n, n.e, n.d;
+
+    Eigen::Vector3d ecef = (ned2ecef_matrix * ned) + init_ecef;
+    return {ecef[0], ecef[1], ecef[2]};
+  }
+
+  NED geodetic2ecef(Geodetic g) {
+    ECEF e = ::geodetic2ecef(g);
+    return ecef2ned(e);
+  }
+
+  Geodetic ned2geodetic(NED n){
+    ECEF e = ned2ecef(n);
+    return ::ecef2geodetic(e);
+  }
+
+};
+
 
 int main(void){
   std::cout << "Hello, Transformations" << std::endl;
-  ECEF e = geodetic2ecef({37.7610403, -122.4778699, 115});
-  Geodetic g = ecef2geodetic(e);
-  std::cout << e.x << "\t" << e.y << "\t" << e.z << std::endl;
-  std::cout << g.lat << "\t" << g.lon << "\t" << g.alt << std::endl;
+  // ECEF e = geodetic2ecef({37.7610403, -122.4778699, 115});
+  // Geodetic g = ecef2geodetic(e);
+  // std::cout << e.x << "\t" << e.y << "\t" << e.z << std::endl;
+  // std::cout << g.lat << "\t" << g.lon << "\t" << g.alt << std::endl;
 
-  e = geodetic2ecef({0.65905448, -2.13764209, 115, true});
-  std::cout << e.x << "\t" << e.y << "\t" << e.z << std::endl;
+  // e = geodetic2ecef({0.65905448, -2.13764209, 115, true});
+  // std::cout << e.x << "\t" << e.y << "\t" << e.z << std::endl;
+
+  ECEF ecef_pos = {2068042.69652729, -5273435.40316622,  2927004.89190746};
+  ECEF ecef_pos_offset = {2068089.41454771, -5273434.46829148,  2927074.04783672};
+  LocalCoord converter = LocalCoord(ecef_pos);
+  NED ned = converter.ecef2ned(ecef_pos_offset);
+  std::cout << ned.n << "\t" << ned.e << "\t" << ned.d << std::endl;
+  ECEF ecef = converter.ned2ecef(ned);
+  std::cout << ecef.x << "\t" << ecef.y << "\t" << ecef.z << std::endl;
 }
