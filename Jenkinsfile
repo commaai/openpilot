@@ -25,7 +25,7 @@ pipeline {
     stage('EON Replay tests') {
       steps {
         lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_name', quantity: 1){
-          timeout(time: 30, unit: 'MINUTES') {
+          timeout(time: 90, unit: 'MINUTES') {
             dir(path: 'selfdrive/test') {
               sh 'pip install paramiko'
               sh 'python phone_ci.py'
