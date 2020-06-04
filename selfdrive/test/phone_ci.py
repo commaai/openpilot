@@ -59,7 +59,7 @@ def run_test(name, test_func):
   return conn
 
 def test_modeld(conn):
-  conn.send("cd selfdrive/test/process_replay && ./camera_replay.py\n")
+  conn.send(f"cd selfdrive/test/process_replay && PYTHONPATH={TEST_DIR}./camera_replay.py\n")
 
 if __name__ == "__main__":
   eon_name = os.environ.get('eon_name', None)
