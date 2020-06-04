@@ -176,8 +176,6 @@ class LocKalman():
     state_dot[States.ECEF_POS, :] = v
     state_dot[States.ECEF_ORIENTATION, :] = q_dot
     state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
-    #state_dot[13, 0] = cd
-    #state_dot[14, 0] = ca
     state_dot[States.CLOCK_BIAS, :] = cd
     state_dot[States.CLOCK_DRIFT, :] = ca
 
@@ -191,10 +189,8 @@ class LocKalman():
     v_err = state_err[States.ECEF_VELOCITY_ERR, :]
     omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
     cd_err = state_err[States.CLOCK_DRIFT_ERR, :]
-    #cd_err = state_err[13, :]
     acceleration_err = state_err[States.ACCELERATION_ERR, :]
     ca_err = state_err[States.CLOCK_ACCELERATION_ERR, :]
-    #ca_err = state_err[27, :]
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])
@@ -292,6 +288,7 @@ class LocKalman():
                                       vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
+    # add 1 for stability, prevent division by 0
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2 + 1)**(3.0 / 2.0))) * pos)
     h_acc_sym = imu_rot * (accel_scale[0] * (gravity + acceleration))
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
