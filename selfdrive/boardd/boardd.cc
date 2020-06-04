@@ -18,7 +18,6 @@
 #include "cereal/gen/cpp/car.capnp.h"
 
 #include "common/util.h"
-#include "common/messaging.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
