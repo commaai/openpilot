@@ -108,23 +108,3 @@ Geodetic LocalCoord::ned2geodetic(NED n){
   ECEF e = ned2ecef(n);
   return ::ecef2geodetic(e);
 }
-
-
-int main(void){
-  std::cout << "Hello, Transformations" << std::endl;
-  // ECEF e = geodetic2ecef({37.7610403, -122.4778699, 115});
-  // Geodetic g = ecef2geodetic(e);
-  // std::cout << e.x << "\t" << e.y << "\t" << e.z << std::endl;
-  // std::cout << g.lat << "\t" << g.lon << "\t" << g.alt << std::endl;
-
-  // e = geodetic2ecef({0.65905448, -2.13764209, 115, true});
-  // std::cout << e.x << "\t" << e.y << "\t" << e.z << std::endl;
-
-  ECEF ecef_pos = {2068042.69652729, -5273435.40316622,  2927004.89190746};
-  ECEF ecef_pos_offset = {2068089.41454771, -5273434.46829148,  2927074.04783672};
-  LocalCoord converter = LocalCoord(ecef_pos);
-  NED ned = converter.ecef2ned(ecef_pos_offset);
-  std::cout << ned.n << "\t" << ned.e << "\t" << ned.d << std::endl;
-  ECEF ecef = converter.ned2ecef(ned);
-  std::cout << ecef.x << "\t" << ecef.y << "\t" << ecef.z << std::endl;
-}

@@ -2,6 +2,9 @@
 
 struct ECEF {
   double x, y, z;
+  Eigen::Vector3d to_vector(){
+    return Eigen::Vector3d(x, y, z);
+  }
 };
 
 struct NED {

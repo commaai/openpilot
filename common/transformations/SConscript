@@ -1,5 +1,5 @@
 Import('env')
 
-src = ['coordinates.cc']
+src = ['coordinates.cc', 'orientation.cc']
 
 env.Program('transformations', src)
