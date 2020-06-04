@@ -34,9 +34,9 @@ def run_test(name, test_func):
   branch = os.environ['GIT_BRANCH']
   commit = os.environ.get('GIT_COMMIT', branch)
 
-  conn.send('uname -a\n')
+  conn.send("uname -a\n")
 
-  conn.send('cd /data/openpilot_source\n')
+  conn.send("cd /data/openpilot_source\n")
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")
   conn.send("git checkout %s\n" % commit)
@@ -44,8 +44,6 @@ def run_test(name, test_func):
   conn.send("git submodule update --init\n")
   conn.send("git submodule foreach --recursive git reset --hard\n")
   conn.send("git submodule foreach --recursive git clean -xdf\n")
-  conn.send("echo \"git took $SECONDS seconds\"\n")
-
   conn.send("echo \"git took $SECONDS seconds\"\n")
 
   conn.send("cd /\n")
@@ -59,7 +57,7 @@ def run_test(name, test_func):
   return conn
 
 def test_modeld(conn):
-  conn.send(f"cd selfdrive/test/process_replay && PYTHONPATH={TEST_DIR}./camera_replay.py\n")
+  conn.send(f"cd selfdrive/test/process_replay && PYTHONPATH={TEST_DIR} ./camera_replay.py\n")
 
 if __name__ == "__main__":
   eon_name = os.environ.get('eon_name', None)
