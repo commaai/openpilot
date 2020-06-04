@@ -45,11 +45,16 @@ Eigen::Vector3d rot2euler(Eigen::Matrix3d rot){
   return quat2euler(rot2quat(rot));
 }
 
+Eigen::Matrix3d rot_matrix(double roll, double pitch, double yaw){
+  return euler2rot({roll, pitch, yaw});
+}
+
 Eigen::Matrix3d rot(Eigen::Vector3d axis, double angle){
   Eigen::Quaterniond q;
   q = Eigen::AngleAxisd(angle, axis);
   return q.toRotationMatrix();
 }
+
 
 Eigen::Vector3d ecef_euler_from_ned(ECEF ecef_init, Eigen::Vector3d ned_pose) {
   LocalCoord converter = LocalCoord(ecef_init);

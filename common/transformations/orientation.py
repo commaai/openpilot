@@ -6,7 +6,7 @@ Supports both x2y and y_from_x format (y_from_x preferred!).
 '''
 
 import numpy as np
-from numpy import dot, inner, array, linalg
+from numpy import inner, array, linalg
 from common.transformations.coordinates import LocalCoord
 
 
@@ -17,7 +17,7 @@ def euler2quat(eulers):
   else:
     output_shape = (4,)
   eulers = np.atleast_2d(eulers)
-  gamma, theta, psi = eulers[:, 0],  eulers[:, 1],  eulers[:, 2]
+  gamma, theta, psi = eulers[:, 0], eulers[:, 1], eulers[:, 2]
 
   q0 = np.cos(gamma / 2) * np.cos(theta / 2) * np.cos(psi / 2) + \
        np.sin(gamma / 2) * np.sin(theta / 2) * np.sin(psi / 2)
@@ -137,15 +137,6 @@ Random helpers below
 '''
 
 
-def quat_product(q, r):
-  t = np.zeros(4)
-  t[0] = r[0] * q[0] - r[1] * q[1] - r[2] * q[2] - r[3] * q[3]
-  t[1] = r[0] * q[1] + r[1] * q[0] - r[2] * q[3] + r[3] * q[2]
-  t[2] = r[0] * q[2] + r[1] * q[3] + r[2] * q[0] - r[3] * q[1]
-  t[3] = r[0] * q[3] - r[1] * q[2] + r[2] * q[1] + r[3] * q[0]
-  return t
-
-
 def rot_matrix(roll, pitch, yaw):
   cr, sr = np.cos(roll), np.sin(roll)
   cp, sp = np.cos(pitch), np.sin(pitch)
@@ -252,40 +243,3 @@ def ned_euler_from_ecef(ned_ecef_init, ecef_poses):
     ned_poses[i] = array([phi, theta, psi])
 
   return ned_poses.reshape(output_shape)
-
-
-def ecef2car(car_ecef, psi, theta, points_ecef, ned_converter):
-  """
-  TODO: add roll rotation
-  Converts an array of points in ecef coordinates into
-  x-forward, y-left, z-up coordinates
-  Parameters
-  ----------
-  psi: yaw, radian
-  theta: pitch, radian
-  Returns
-  -------
-  [x, y, z] coordinates in car frame
-  """
-
-  # input is an array of points in ecef cocrdinates
-  # output is an array of points in car's coordinate (x-front, y-left, z-up)
-
-  # convert points to NED
-  points_ned = []
-  for p in points_ecef:
-    points_ned.append(ned_converter.ecef2ned_matrix.dot(array(p) - car_ecef))
-
-  points_ned = np.vstack(points_ned).T
-
-  # n, e, d -> x, y, z
-  # Calculate relative postions and rotate wrt to heading and pitch of car
-  invert_R = array([[1., 0., 0.], [0., -1., 0.], [0., 0., -1.]])
-
-  c, s = np.cos(psi), np.sin(psi)
-  yaw_R = array([[c, s, 0.], [-s, c, 0.], [0., 0., 1.]])
-
-  c, s = np.cos(theta), np.sin(theta)
-  pitch_R = array([[c, 0., -s], [0., 1., 0.], [s, 0., c]])
-
-  return dot(pitch_R, dot(yaw_R, dot(invert_R, points_ned)))
