@@ -342,7 +342,7 @@ void* processing_thread(void *arg) {
 
   set_thread_name("processing");
 
-  err = set_realtime_priority(1);
+  err = set_realtime_priority(51);
   LOG("setpriority returns %d", err);
 
   // init cl stuff
@@ -1203,7 +1203,7 @@ void party(VisionState *s) {
 #endif
 
   // priority for cameras
-  err = set_realtime_priority(1);
+  err = set_realtime_priority(51);
   LOG("setpriority returns %d", err);
 
   cameras_run(&s->cameras);
@@ -1234,7 +1234,7 @@ void party(VisionState *s) {
 
 int main(int argc, char *argv[]) {
   int err;
-  set_realtime_priority(1);
+  set_realtime_priority(51);
 
   zsys_handler_set(NULL);
   signal(SIGINT, (sighandler_t)set_do_exit);
