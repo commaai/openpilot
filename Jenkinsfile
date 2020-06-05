@@ -21,8 +21,8 @@ pipeline {
           }
         }
       }
-    },
-    stage('EON Replay tests') {
+    }
+    stage('EON Replay Tests') {
       steps {
         lock(resource: "", label: 'eon2', inversePrecedence: true, variable: 'eon_name', quantity: 1){
           timeout(time: 90, unit: 'MINUTES') {
