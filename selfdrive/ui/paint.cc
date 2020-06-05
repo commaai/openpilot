@@ -213,7 +213,7 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
     nvgLineTo(s->vg, pvd->v[i].x, pvd->v[i].y);
   }
   nvgClosePath(s->vg);
-  
+
   NVGpaint track_bg;
   if (is_mpc) {
     // Draw colored MPC track
