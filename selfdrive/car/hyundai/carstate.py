@@ -291,10 +291,10 @@ class CarState(CarStateBase):
         ("ACCMode", "SCC12", 0),
         ("StopReq", "SCC12", 0),
         ("CR_VSM_DecCmd", "SCC12", 0),
-        ("aReqMax", "SCC12", 0),
+        ("aReqRaw", "SCC12", 0), #aReqMax
         ("TakeOverReq", "SCC12", 0),
         ("PreFill", "SCC12", 0),
-        ("aReqMin", "SCC12", 0),
+        ("aReqValue", "SCC12", 0), #aReqMin
         ("CF_VSM_ConfMode", "SCC12", 0),
         ("AEB_Failinfo", "SCC12", 0),
         ("AEB_Status", "SCC12", 0),
