@@ -3,7 +3,7 @@ import os
 import gc
 from cereal import car, log
 from common.numpy_fast import clip
-from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper, DT_CTRL
+from common.realtime import sec_since_boot, set_realtime_priority, set_core_affinity, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
@@ -39,7 +39,8 @@ EventName = car.CarEvent.EventName
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     gc.disable()
-    set_realtime_priority(3)
+    set_realtime_priority(53)
+    set_core_affinity(3)
 
     # Setup sockets
     self.pm = pm

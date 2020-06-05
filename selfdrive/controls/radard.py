@@ -174,7 +174,7 @@ class RadarD():
 
 # fuses camera and radar data for best lead detection
 def radard_thread(sm=None, pm=None, can_sock=None):
-  set_realtime_priority(2)
+  set_realtime_priority(52)
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
