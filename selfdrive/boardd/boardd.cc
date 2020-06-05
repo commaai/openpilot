@@ -588,16 +588,28 @@ void can_send(cereal::Event::Reader &event) {
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
-  SubMaster sm({"sendcan"});
 
-  // drain sendcan to delete any stale messages from previous runs
-  sm.drain();
+  Context * context = Context::create();
+  SubSocket * subscriber = SubSocket::create(context, "sendcan");
+  assert(subscriber != NULL);
+
   // run as fast as messages come in
   while (!do_exit) {
-    if (sm.update(1000) > 0){
-      can_send(sm["sendcan"]);
+    Message * msg = subscriber->receive();
+
+    if (msg){
+      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+      memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+      capnp::FlatArrayMessageReader cmsg(amsg);
+      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+      can_send(event);
+      delete msg;
     }
   }
+
+  delete subscriber;
+  delete context;
 
   return NULL;
 }
