@@ -36,7 +36,7 @@ def run_test(name, test_func):
 
   conn.send("uname -a\n")
 
-  conn.send("cd /data/openpilot_source\n")
+  conn.send(f"cd {TEST_DIR}\n")
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")
   conn.send("git checkout %s\n" % commit)
@@ -45,10 +45,6 @@ def run_test(name, test_func):
   conn.send("git submodule foreach --recursive git reset --hard\n")
   conn.send("git submodule foreach --recursive git clean -xdf\n")
   conn.send("echo \"git took $SECONDS seconds\"\n")
-
-  conn.send("cd /\n")
-  conn.send(f"rm -rf {TEST_DIR}\n")
-  conn.send(f"cp -r /data/openpilot_source {TEST_DIR} && cd {TEST_DIR}\n")
 
   test_func(conn)
 
