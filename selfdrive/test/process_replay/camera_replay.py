@@ -96,5 +96,8 @@ if __name__ == "__main__":
     diff1, diff2, failed = format_diff(results, ref_commit)
 
     print(diff1)
+    with open("model_diff.txt", "w") as f:
+      f.write(diff2)
+
     sys.exit(int(failed))
 
