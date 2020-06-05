@@ -45,7 +45,7 @@ def camera_replay(lr, fr):
 
     log_msgs = []
     frame_idx = 0
-    for i, msg in enumerate(tqdm(lr)):
+    for msg in tqdm(lr):
       if msg.which() == "liveCalibrationd":
         pm.send(msg.which(), msg.as_builder())
       elif msg.which() == "frame":
@@ -57,7 +57,7 @@ def camera_replay(lr, fr):
         pm.send(msg.which(), f)
         log_msgs.append(messaging.recv_one(sm.sock['model']))
 
-        spinner.update("modeld replay %d/%d" % (i, len(lr)))
+        spinner.update("modeld replay %d/%d" % (frame_idx, fr.frame_count))
 
         if frame_idx >= fr.frame_count:
           break
