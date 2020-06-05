@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 # put 2 fingeprints and print the diffs
 f1 = {

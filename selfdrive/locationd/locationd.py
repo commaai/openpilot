@@ -95,7 +95,8 @@ class Localizer():
     device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
     vel_device = device_from_ecef.dot(vel_ecef)
     device_from_ecef_eul = euler_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
-    idxs = list(range(States.ECEF_ORIENTATION_ERR.start, States.ECEF_ORIENTATION_ERR.stop)) + list(range(States.ECEF_VELOCITY_ERR.start, States.ECEF_VELOCITY_ERR.stop))
+    idxs = list(range(States.ECEF_ORIENTATION_ERR.start, States.ECEF_ORIENTATION_ERR.stop)) + \
+           list(range(States.ECEF_VELOCITY_ERR.start, States.ECEF_VELOCITY_ERR.stop))
     condensed_cov = predicted_cov[idxs][:, idxs]
     HH = H(*list(np.concatenate([device_from_ecef_eul, vel_ecef])))
     vel_device_cov = HH.dot(condensed_cov).dot(HH.T)
