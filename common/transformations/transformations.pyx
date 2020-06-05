@@ -5,6 +5,9 @@ from transformations cimport euler2quat as euler2quat_c
 from transformations cimport quat2euler as quat2euler_c
 from transformations cimport quat2rot as quat2rot_c
 from transformations cimport rot2quat as rot2quat_c
+from transformations cimport euler2rot as euler2rot_c
+from transformations cimport rot2euler as rot2euler_c
+
 
 import cython
 import numpy as np
@@ -43,3 +46,14 @@ def rot2quat_single(rot):
     cdef Matrix3 r = numpy2matrix(np.asfortranarray(rot, dtype=np.double))
     cdef Quaternion q = rot2quat_c(r)
     return [q.w(), q.x(), q.y(), q.z()]
+
+
+def euler2rot_single(euler):
+    cdef Vector3 e = Vector3(euler[0], euler[1], euler[2])
+    cdef Matrix3 r = euler2rot_c(e)
+    return matrix2numpy(r)
+
+def rot2euler_single(rot):
+    cdef Matrix3 r = numpy2matrix(np.asfortranarray(rot, dtype=np.double))
+    cdef Vector3 e = rot2euler_c(r)
+    return [e(0), e(1), e(2)]

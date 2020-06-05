@@ -27,6 +27,7 @@ cdef extern from "orientation.hpp":
   Vector3 quat2euler(Quaternion)
   Matrix3 quat2rot(Quaternion)
   Quaternion rot2quat(Matrix3)
+  Vector3 rot2euler(Matrix3)
   Matrix3 euler2rot(Vector3)
   Matrix3 rot_matrix(double, double, double)
   Vector3 ecef_euler_from_ned(ECEF, Vector3)
