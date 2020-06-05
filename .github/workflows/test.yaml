@@ -106,6 +106,7 @@ jobs:
                     $UNIT_TEST opendbc/can && \
                     $UNIT_TEST selfdrive/boardd && \
                     $UNIT_TEST selfdrive/controls && \
+                    $UNIT_TEST selfdrive/monitoring && \
                     $UNIT_TEST selfdrive/loggerd && \
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
