@@ -10,6 +10,7 @@ if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
 import selfdrive.manager as manager
 
+from common.spinner import Spinner
 import cereal.messaging as messaging
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -21,6 +22,8 @@ from selfdrive.version import get_git_commit
 TEST_ROUTE = "5b7c365c50084530|2020-04-15--16-13-24"
 
 def camera_replay(lr, fr):
+
+  spinner = Spinner()
 
   pm = messaging.PubMaster(['frame', 'liveCalibration'])
   sm = messaging.SubMaster(['model'])
@@ -42,7 +45,8 @@ def camera_replay(lr, fr):
 
     log_msgs = []
     frame_idx = 0
-    for msg in tqdm(lr):
+    for i, msg in enumerate(tqdm(lr)):
+      spinner.update("modeld replay %d/%d" % (i, len(lr)))
       if msg.which() == "liveCalibrationd":
         pm.send(msg.which(), msg.as_builder())
       elif msg.which() == "frame":
