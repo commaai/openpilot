@@ -90,11 +90,11 @@ void run_frame_stream(DualCameraState *s) {
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
-      .frame_width = FRAME_WIDTH,
-      .frame_height = FRAME_HEIGHT,
-      .frame_stride = FRAME_WIDTH*3,
-      .bayer = false,
-      .bayer_flip = false,
+    .frame_width = FRAME_WIDTH,
+    .frame_height = FRAME_HEIGHT,
+    .frame_stride = FRAME_WIDTH*3,
+    .bayer = false,
+    .bayer_flip = false,
   },
   [CAMERA_ID_OV8865] = {
     .frame_width = 1632,

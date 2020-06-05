@@ -2,7 +2,7 @@
 #include <signal.h>
 #include <cassert>
 
-#ifdef QCOM
+#if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "cameras/camera_qcom.h"
 #elif QCOM2
 #include "cameras/camera_qcom2.h"
@@ -403,7 +403,7 @@ void* processing_thread(void *arg) {
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
-#ifdef QCOM
+#if defined(QCOM) && !defined(QCOM_REPLAY)
     /*FILE *dump_rgb_file = fopen("/tmp/process_dump.rgb", "wb");
     fwrite(s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, sizeof(uint8_t), dump_rgb_file);
     fclose(dump_rgb_file);
@@ -515,7 +515,7 @@ void* processing_thread(void *arg) {
         framed.setLensTruePos(frame_data.lens_true_pos);
         framed.setGainFrac(frame_data.gain_frac);
 
-#ifdef QCOM
+#if defined(QCOM) && !defined(QCOM_REPLAY)
         kj::ArrayPtr<const int16_t> focus_vals(&s->cameras.rear.focus[0], NUM_FOCUS);
         kj::ArrayPtr<const uint8_t> focus_confs(&s->cameras.rear.confidence[0], NUM_FOCUS);
         framed.setFocusVal(focus_vals);
@@ -1215,7 +1215,7 @@ void party(VisionState *s) {
 
   zsock_signal(s->terminate_pub, 0);
 
-#ifndef QCOM2
+#if !defined(QCOM2) && !defined(QCOM_REPLAY)
   LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
   assert(err == 0);
@@ -1255,7 +1255,7 @@ int main(int argc, char *argv[]) {
 
   init_buffers(s);
 
-#if defined(QCOM) || defined(QCOM2)
+#if (defined(QCOM) && !defined(QCOM_REPLAY)) || defined(QCOM2)
   s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 #endif
 
@@ -1263,9 +1263,9 @@ int main(int argc, char *argv[]) {
 
   party(s);
 
-#if defined(QCOM) || defined(QCOM2)
-  delete s->pm;
-#endif
+  if (s->pm != NULL) {
+    delete s->pm;
+  }
 
   free_buffers(s);
   cl_free(s);
