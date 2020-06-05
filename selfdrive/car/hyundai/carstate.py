@@ -143,6 +143,7 @@ class CarState(CarStateBase):
     # save the entire LKAS11, CLU11, SCC12 and MDPS12
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
+    self.scc11 = cp_scc.vl["SCC11"]
     self.scc12 = cp_scc.vl["SCC12"]
     self.mdps12 = cp_mdps.vl["MDPS12"]
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
@@ -252,10 +253,21 @@ class CarState(CarStateBase):
     elif not CP.sccBus:
       signals += [
         ("MainMode_ACC", "SCC11", 0),
-        ("VSetDis", "SCC11", 0),
         ("SCCInfoDisplay", "SCC11", 0),
-        ("ACC_ObjDist", "SCC11", 0),
+        ("AliveCounterACC", "SCC11", 0),
+        ("VSetDis", "SCC11", 0),
+        ("ObjValid", "SCC11", 0),
+        ("DriverAlertDisplay", "SCC11", 0),
         ("TauGapSet", "SCC11", 0),
+        ("ACC_ObjStatus", "SCC11", 0),
+        ("ACC_ObjLatPos", "SCC11", 0),
+        ("ACC_ObjDist", "SCC11", 0),
+        ("ACC_ObjRelSpd", "SCC11", 0),
+        ("Navi_SCC_Curve_Status", "SCC11", 0),
+        ("Navi_SCC_Curve_Act", "SCC11", 0),
+        ("Navi_SCC_Camera_Act", "SCC11", 0),
+        ("Navi_SCC_Camera_Status", "SCC11", 0),
+
 
         ("ACCMode", "SCC12", 0),
         ("CF_VSM_Prefill", "SCC12", 0),
@@ -355,10 +367,21 @@ class CarState(CarStateBase):
     if CP.sccBus == 1:
       signals += [
         ("MainMode_ACC", "SCC11", 0),
-        ("VSetDis", "SCC11", 0),
         ("SCCInfoDisplay", "SCC11", 0),
-        ("ACC_ObjDist", "SCC11", 0),
+        ("AliveCounterACC", "SCC11", 0),
+        ("VSetDis", "SCC11", 0),
+        ("ObjValid", "SCC11", 0),
+        ("DriverAlertDisplay", "SCC11", 0),
         ("TauGapSet", "SCC11", 0),
+        ("ACC_ObjStatus", "SCC11", 0),
+        ("ACC_ObjLatPos", "SCC11", 0),
+        ("ACC_ObjDist", "SCC11", 0),
+        ("ACC_ObjRelSpd", "SCC11", 0),
+        ("Navi_SCC_Curve_Status", "SCC11", 0),
+        ("Navi_SCC_Curve_Act", "SCC11", 0),
+        ("Navi_SCC_Camera_Act", "SCC11", 0),
+        ("Navi_SCC_Camera_Status", "SCC11", 0),
+
 
         ("ACCMode", "SCC12", 0),
         ("CF_VSM_Prefill", "SCC12", 0),
@@ -417,10 +440,20 @@ class CarState(CarStateBase):
     if CP.sccBus == 2:
       signals += [
         ("MainMode_ACC", "SCC11", 0),
-        ("VSetDis", "SCC11", 0),
         ("SCCInfoDisplay", "SCC11", 0),
-        ("ACC_ObjDist", "SCC11", 0),
+        ("AliveCounterACC", "SCC11", 0),
+        ("VSetDis", "SCC11", 0),
+        ("ObjValid", "SCC11", 0),
+        ("DriverAlertDisplay", "SCC11", 0),
         ("TauGapSet", "SCC11", 0),
+        ("ACC_ObjStatus", "SCC11", 0),
+        ("ACC_ObjLatPos", "SCC11", 0),
+        ("ACC_ObjDist", "SCC11", 0),
+        ("ACC_ObjRelSpd", "SCC11", 0),
+        ("Navi_SCC_Curve_Status", "SCC11", 0),
+        ("Navi_SCC_Curve_Act", "SCC11", 0),
+        ("Navi_SCC_Camera_Act", "SCC11", 0),
+        ("Navi_SCC_Camera_Status", "SCC11", 0),
 
         ("ACCMode", "SCC12", 0),
         ("CF_VSM_Prefill", "SCC12", 0),
