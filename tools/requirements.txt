@@ -10,4 +10,4 @@ pygame
 hexdump
 pycurl
 tenacity
-av==0.5.0
+av==8.0.2
