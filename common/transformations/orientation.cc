@@ -18,15 +18,16 @@ Eigen::Quaterniond ensure_unique(Eigen::Quaterniond quat){
 Eigen::Quaterniond euler2quat(Eigen::Vector3d euler){
   Eigen::Quaterniond q;
 
-  q = Eigen::AngleAxisd(euler(0), Eigen::Vector3d::UnitX())
+  q = Eigen::AngleAxisd(euler(2), Eigen::Vector3d::UnitZ())
     * Eigen::AngleAxisd(euler(1), Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(euler(2), Eigen::Vector3d::UnitZ());
+    * Eigen::AngleAxisd(euler(0), Eigen::Vector3d::UnitX());
   return ensure_unique(q);
 }
 
 
 Eigen::Vector3d quat2euler(Eigen::Quaterniond quat){
-  return quat.toRotationMatrix().eulerAngles(0, 1, 2);
+  Eigen::Vector3d euler = quat.toRotationMatrix().eulerAngles(2, 1, 0);
+  return {euler(2), euler(1), euler(0)};
 }
 
 Eigen::Matrix3d quat2rot(Eigen::Quaterniond quat){
