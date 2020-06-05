@@ -383,7 +383,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (sm.updated("liveMapData")) {
     scene.map_valid = sm["liveMapData"].getLiveMapData().getMapValid();
   }
-#endif  
+#endif
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
   }
