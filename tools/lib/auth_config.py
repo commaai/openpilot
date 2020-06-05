@@ -1,11 +1,15 @@
 import json
 import os
+from common.android import ANDROID
 from common.file_helpers import mkdirs_exists_ok
 
 class MissingAuthConfigError(Exception):
   pass
 
-CONFIG_DIR = os.path.expanduser('~/.comma')
+if ANDROID:
+  CONFIG_DIR = "/tmp/.comma"
+else:
+  CONFIG_DIR = os.path.expanduser('~/.comma')
 mkdirs_exists_ok(CONFIG_DIR)
 
 def get_token():

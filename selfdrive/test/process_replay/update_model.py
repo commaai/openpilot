@@ -2,7 +2,7 @@
 import os
 import sys
 
-from selfdrive.test.openpilotci_upload import upload_file
+from selfdrive.test.openpilotci import upload_file
 from selfdrive.test.process_replay.compare_logs import save_log
 from selfdrive.test.process_replay.test_processes import segments, get_segment
 from selfdrive.version import get_git_commit

@@ -18,6 +18,7 @@ if arch == "aarch64" and not os.path.isdir("/system"):
   arch = "larch64"
 
 webcam = bool(ARGUMENTS.get("use_webcam", 0))
+QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
 if arch == "aarch64" or arch == "larch64":
   lenv = {
@@ -55,6 +56,10 @@ if arch == "aarch64" or arch == "larch64":
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
     rpath = ["/system/vendor/lib64"]
+
+    if QCOM_REPLAY:
+      cflags += ["-DQCOM_REPLAY"]
+      cxxflags += ["-DQCOM_REPLAY"]
 
 else:
   lenv = {
@@ -179,7 +184,7 @@ def abspath(x):
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'arch', 'zmq', 'SHARED', 'webcam')
+Export('env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
