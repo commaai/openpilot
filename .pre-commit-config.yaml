@@ -8,8 +8,6 @@ repos:
     -   id: check-yaml
     -   id: check-merge-conflict
     -   id: check-symlinks
-    -   id: trailing-whitespace
-        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)|(phonelibs)|(lib_mpc_export)/'
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: master
     hooks:
