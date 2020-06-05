@@ -59,7 +59,7 @@ function launch {
   # NEOS installed app processes can run anywhere
   echo 0-2 > /dev/cpuset/background/cpus
   echo 0-2 > /dev/cpuset/system-background/cpus
-  echo 0-2 > /dev/cpuset/foreground/boost/cpus
+  [ -d "/dev/cpuset/foreground/boost/cpus" ] && echo 0-2 > /dev/cpuset/foreground/boost/cpus  # Not present in < NEOS 15
   echo 0-2 > /dev/cpuset/foreground/cpus
   echo 0-2 > /dev/cpuset/android/cpus
   echo 0-3 > /dev/cpuset/app/cpus
