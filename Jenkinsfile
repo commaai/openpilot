@@ -10,7 +10,7 @@ pipeline {
     COMMA_JWT = credentials('athena-test-jwt')
   }
   stages {
-    /*stage('EON Build/Test') {
+    stage('EON Build/Test') {
       steps {
         lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_name', quantity: 1){
           timeout(time: 30, unit: 'MINUTES') {
@@ -21,7 +21,7 @@ pipeline {
           }
         }
       }
-    },*/
+    },
     stage('EON Replay tests') {
       steps {
         lock(resource: "", label: 'eon2', inversePrecedence: true, variable: 'eon_name', quantity: 1){
