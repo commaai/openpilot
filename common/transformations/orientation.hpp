@@ -4,6 +4,7 @@
 
 
 Eigen::Quaterniond ensure_unique(Eigen::Quaterniond quat);
+
 Eigen::Quaterniond euler2quat(Eigen::Vector3d euler);
 Eigen::Vector3d quat2euler(Eigen::Quaterniond quat);
 Eigen::Matrix3d quat2rot(Eigen::Quaterniond quat);

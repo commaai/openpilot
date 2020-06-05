@@ -1,5 +1,9 @@
 Import('env')
 
-src = ['coordinates.cc', 'orientation.cc']
+d = Dir('.')
 
-env.Program('transformations', src)
+env.Command(
+  ['transformations.so'],
+  ['transformations.pxd', 'transformations.pyx',
+   'coordinates.cc', 'orientation.cc', 'coordinates.hpp', 'orientation.hpp'],
+  'cd ' + d.path + ' && python3 setup.py build_ext --inplace')
