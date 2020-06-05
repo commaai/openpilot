@@ -49,7 +49,7 @@ VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf) {
   visionimg_compute_aligned_width_and_height(width, height, &aligned_w, &aligned_h);
 
   int stride = aligned_w * 3;
-  size_t size = aligned_w * aligned_h * 3;
+  size_t size = (size_t) aligned_w * aligned_h * 3;
 
   VisionBuf buf = visionbuf_allocate(size);
 
