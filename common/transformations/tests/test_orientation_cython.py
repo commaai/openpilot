@@ -32,19 +32,17 @@ ned_eulers = np.array([[ 0.46806039, -0.4881889 ,  1.65697808],
 
 class TestOrientationCython(unittest.TestCase):
   def test_euler2quat_quat2euler(self):
-    for euler in eulers:
-      quat = euler2quat_single(euler)
-      euler_new = quat2euler_single(quat)
-      np.testing.assert_allclose(euler, euler_new, rtol=1e-7)
+    """Euler angle representation is not unique, so they can't be compared directly.
+    To test quat2euler we need to convert the euler angle back to quaternions and check with the input.
+    euler2quat needs to be verified to be correct by a different test."""
+    for quat in quats:
+      euler = quat2euler_single(quat)
+      quat_new = euler2quat_single(euler)
+      np.testing.assert_allclose(quat, quat_new, rtol=1e-7)
 
   def test_euler2quat_single(self):
     for i in range(len(eulers)):
       np.testing.assert_allclose(quats[i], euler2quat_single(eulers[i]), rtol=1e-7)
-
-  def test_quat2eueler_single(self):
-    for i in range(len(eulers)):
-      print(eulers[i])
-      np.testing.assert_allclose(eulers[i], quat2euler_single(quats[i]), rtol=1e-7)
 
 
 if __name__ == "__main__":
