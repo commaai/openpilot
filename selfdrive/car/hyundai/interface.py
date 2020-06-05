@@ -270,7 +270,7 @@ class CarInterface(CarInterfaceBase):
         but = self.CS.prev_cruise_buttons
       if but == Buttons.RES_ACCEL:
         be.type = ButtonType.accelCruise
-      elif but == Buttons.DECEL_SET:
+      elif but == Buttons.SET_DECEL:
         be.type = ButtonType.decelCruise
       elif but == Buttons.CANCEL:
         be.type = ButtonType.cancel
