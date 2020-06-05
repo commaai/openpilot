@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
+# pylint: skip-file
 
-import numpy as np
 import unittest
 
-from common.transformations.transformations import euler2quat_single, quat2euler_single  # pylint: disable=no-name-in-module
+import numpy as np
+
+from common.transformations.transformations import (euler2quat_single,
+                                                    quat2euler_single,
+                                                    quat2rot_single,
+                                                    rot2quat_single)
+from common.transformations.orientation import quat2rot
 
 eulers = np.array([[ 1.46520501,  2.78688383,  2.92780854],
                    [ 4.86909526,  3.60618161,  4.30648981],
@@ -43,6 +49,13 @@ class TestOrientationCython(unittest.TestCase):
   def test_euler2quat_single(self):
     for i in range(len(eulers)):
       np.testing.assert_allclose(quats[i], euler2quat_single(eulers[i]), rtol=1e-7)
+
+  def test_quat2rot_rot2_quat(self):
+    """Tests round trip of rotation matrix to quaternion conversion"""
+    for quat in quats:
+      rot = quat2rot_single(quat)
+      quat_new = rot2quat_single(rot)
+      np.testing.assert_allclose(quat, quat_new, rtol=1e-7)
 
 
 if __name__ == "__main__":

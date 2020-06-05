@@ -18,7 +18,10 @@ cdef extern from "orientation.hpp":
     double operator()(int)
 
   cdef cppclass Matrix3 "Eigen::Matrix3d":
-    double operator()(int)
+    Matrix3()
+    Matrix3(double*)
+
+    double operator()(int, int)
 
   Quaternion euler2quat(Vector3)
   Vector3 quat2euler(Quaternion)

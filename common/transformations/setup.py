@@ -1,4 +1,5 @@
 import os
+import numpy
 import sysconfig
 
 from Cython.Build import cythonize
@@ -36,5 +37,6 @@ setup(
     sources=["transformations.pyx"],
     language="c++",
     extra_compile_args=["-std=c++14"],
+    include_dirs=[numpy.get_include()],
   )
 ))
