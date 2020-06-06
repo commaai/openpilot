@@ -43,6 +43,11 @@ jobs:
       run: cd $TEST_DIR && eval "$BUILD"
     - name: Build openpilot
       run: $RUN "cd /tmp/openpilot && scons -j$(nproc)"
+    - name: Run tests
+      run: |
+          $RUN "cd /tmp/openpilot && \
+                scons -j$(nproc) && \
+                $UNIT_TEST tools/lib/tests"
 
   docker_push:
     name: docker push
