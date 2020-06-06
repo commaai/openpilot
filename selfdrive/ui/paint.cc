@@ -30,7 +30,7 @@ const uint8_t alert_colors[][4] = {
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
-vec3 car_space_to_full_frame(const UIState *s, vec4 car_space_projective) {
+vec3 car_space_to_full_frame(const UIState *s, const vec4 &car_space_projective) {
   const UIScene *scene = &s->scene;
 
   // We'll call the car space point p.
@@ -127,25 +127,23 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
   draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
-static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
+static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color, bool is_ghost) {
+  if (pvd->cnt == 0) return;
+  
   nvgBeginPath(s->vg);
-  bool started = false;
-  for (int i=0; i<pvd->cnt; i++) {
-    float x = pvd->v[i].x;
-    float y = pvd->v[i].y;
-    if (x < 0 || y < 0.) {
-      continue;
-    }
-    if (!started) {
-      nvgMoveTo(s->vg, x, y);
-      started = true;
-    } else {
-      nvgLineTo(s->vg, x, y);
-    }
+  nvgMoveTo(s->vg, pvd->v[0].x, pvd->v[0].y);
+  for (int i=1; i<pvd->cnt; i++) {
+    nvgLineTo(s->vg, pvd->v[i].x, pvd->v[i].y);
   }
-  nvgClosePath(s->vg);
-  nvgFillColor(s->vg, color);
-  nvgFill(s->vg);
+  if (is_ghost){
+    nvgStrokeWidth(s->vg, 1.0);
+    nvgStrokeColor(s->vg, color);
+    nvgStroke(s->vg);
+  } else {
+    nvgClosePath(s->vg);
+    nvgFillColor(s->vg, color);
+    nvgFill(s->vg);
+  }
 }
 
 static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd) {
@@ -302,16 +300,18 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
     pvd->v[pvd->cnt].y = p_full_frame.v[1];
     pvd->cnt += 1;
   }
-  for (int i = rcount; i > 0; i--) {
-    float px = (float)i;
-    float py = is_ghost?(points[i]-off):(points[i]+off);
-    const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
-    const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
-    if(!valid_frame_pt(s, p_full_frame.v[0], p_full_frame.v[1]))
-      continue;
-    pvd->v[pvd->cnt].x = p_full_frame.v[0];
-    pvd->v[pvd->cnt].y = p_full_frame.v[1];
-    pvd->cnt += 1;
+  if (!is_ghost){
+    for (int i = rcount; i > 0; i--) {
+      float px = (float)i;
+      float py = points[i]+off;
+      const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
+      const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+      if(!valid_frame_pt(s, p_full_frame.v[0], p_full_frame.v[1]))
+        continue;
+      pvd->v[pvd->cnt].x = p_full_frame.v[0];
+      pvd->v[pvd->cnt].y = p_full_frame.v[1];
+      pvd->cnt += 1;
+    }
   }
 }
 
@@ -323,11 +323,10 @@ static void update_all_lane_lines_data(UIState *s, const PathData &path, model_p
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
-  ui_draw_lane_line(s, pstart, color);
-  float var = fmin(path->std, 0.7);
+  ui_draw_lane_line(s, pstart, color, false);
   color.a /= 4;
-  ui_draw_lane_line(s, pstart + 1, color);
-  ui_draw_lane_line(s, pstart + 2, color);
+  ui_draw_lane_line(s, pstart + 1, color, true);
+  ui_draw_lane_line(s, pstart + 2, color, true);
 }
 
 static void ui_draw_vision_lanes(UIState *s) {
