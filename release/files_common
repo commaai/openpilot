@@ -197,7 +197,6 @@ selfdrive/common/spinner.h
 
 
 selfdrive/controls/__init__.py
-selfdrive/controls/tests/*
 selfdrive/controls/controlsd.py
 selfdrive/controls/plannerd.py
 selfdrive/controls/radard.py
@@ -306,12 +305,6 @@ selfdrive/sensord/gpsd
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
-
-selfdrive/test/__init__.py
-selfdrive/test/longitudinal_maneuvers/*.py
-selfdrive/test/test_openpilot.py
-selfdrive/test/test_fingerprints.py
-selfdrive/test/test_car_models.py
 
 selfdrive/ui/SConscript
 selfdrive/ui/*.c
