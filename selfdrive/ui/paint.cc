@@ -47,7 +47,7 @@ vec3 car_space_to_full_frame(const UIState *s, vec4 car_space_projective) {
 }
 
 // Calculate an interpolation between two numbers at a specific increment
-static float lerp(float v0, float v1, float t) {
+static inline float lerp(float v0, float v1, float t) {
   return (1 - t) * v0 + t * v1;
 }
 
