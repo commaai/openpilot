@@ -35,12 +35,10 @@ cdef ECEF list2ecef(ecef):
     e.z = ecef[2]
     return e
 
-
 def euler2quat_single(euler):
     cdef Vector3 e = Vector3(euler[0], euler[1], euler[2])
     cdef Quaternion q = euler2quat_c(e)
     return [q.w(), q.x(), q.y(), q.z()]
-
 
 def quat2euler_single(quat):
     cdef Quaternion q = Quaternion(quat[0], quat[1], quat[2], quat[3])
@@ -56,7 +54,6 @@ def rot2quat_single(rot):
     cdef Matrix3 r = numpy2matrix(np.asfortranarray(rot, dtype=np.double))
     cdef Quaternion q = rot2quat_c(r)
     return [q.w(), q.x(), q.y(), q.z()]
-
 
 def euler2rot_single(euler):
     cdef Vector3 e = Vector3(euler[0], euler[1], euler[2])
