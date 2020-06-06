@@ -86,6 +86,7 @@ selfdrive/car/interfaces.py
 selfdrive/car/vin.py
 selfdrive/car/fw_versions.py
 selfdrive/car/isotp_parallel_query.py
+selfdrive/car/tests/__init__.py
 selfdrive/car/tests/test_car_interfaces.py
 selfdrive/car/chrysler/__init__.py
 selfdrive/car/chrysler/carstate.py
@@ -414,6 +415,7 @@ pyextra/logentries/**
 
 rednose/**
 
+cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
 cereal/log.capnp
@@ -421,7 +423,21 @@ cereal/services.py
 cereal/service_list.yaml
 cereal/SConscript
 cereal/include/**
-cereal/messaging/**
+cereal/messaging/.gitignore
+cereal/messaging/__init__.py
+cereal/messaging/bridge.cc
+cereal/messaging/impl_msgq.cc
+cereal/messaging/impl_msgq.hpp
+cereal/messaging/impl_zmq.cc
+cereal/messaging/impl_zmq.hpp
+cereal/messaging/messaging.cc
+cereal/messaging/messaging.hpp
+cereal/messaging/messaging.pxd
+cereal/messaging/messaging_pyx.pyx
+cereal/messaging/messaging_pyx_setup.py
+cereal/messaging/msgq.cc
+cereal/messaging/msgq.hpp
+cereal/messaging/socketmaster.cc
 
 panda/__init__.py
 panda/VERSION
@@ -432,7 +448,27 @@ panda/crypto/**
 panda/python/**
 
 opendbc/__init__.py
-opendbc/can/**
+opendbc/can/__init__.py
+opendbc/can/SConscript
+opendbc/can/can_define.py
+opendbc/can/common.cc
+opendbc/can/common.h
+opendbc/can/common.pxd
+opendbc/can/common_dbc.h
+opendbc/can/dbc.cc
+opendbc/can/dbc.py
+opendbc/can/dbc_template.cc
+opendbc/can/packer.cc
+opendbc/can/packer.py
+opendbc/can/packer_pyx.pyx
+opendbc/can/packer_pyx_setup.py
+opendbc/can/parser.cc
+opendbc/can/parser.py
+opendbc/can/parser_pyx.pyx
+opendbc/can/parser_pyx_setup.py
+opendbc/can/process_dbc.py
+opendbc/can/dbc_out/.gitkeep
+opendbc/can/dbc_out/.gitignore
 
 opendbc/chrysler_pacifica_2017_hybrid.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
@@ -453,6 +489,7 @@ opendbc/honda_crv_ex_2017_can_generated.dbc
 opendbc/honda_crv_executive_2016_can_generated.dbc
 opendbc/honda_crv_hybrid_2019_can_generated.dbc
 opendbc/honda_fit_ex_2018_can_generated.dbc
+opendbc/honda_hrv_touring_2019_can_generated.dbc
 opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
 opendbc/honda_pilot_touring_2017_can_generated.dbc
@@ -480,6 +517,10 @@ opendbc/toyota_nodsu_hybrid_pt_generated.dbc
 opendbc/toyota_camry_hybrid_2018_pt_generated.dbc
 opendbc/toyota_highlander_2017_pt_generated.dbc
 opendbc/toyota_highlander_hybrid_2018_pt_generated.dbc
+opendbc/toyota_avalon_2017_pt_generated.dbc
+opendbc/toyota_sienna_xle_2018_pt_generated.dbc
+opendbc/lexus_is_2018_pt_generated.dbc
+opendbc/lexus_ct200h_2018_pt_generated.dbc
 opendbc/lexus_nx300h_2018_pt_generated.dbc
 opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
