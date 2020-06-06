@@ -1,6 +1,7 @@
 """RouteFrameReader indexes and reads frames across routes, by frameId or segment indices."""
 from tools.lib.framereader import FrameReader
 
+
 class _FrameReaderDict(dict):
   def __init__(self, camera_paths, cache_paths, framereader_kwargs, *args, **kwargs):
     super(_FrameReaderDict, self).__init__(*args, **kwargs)
@@ -8,7 +9,7 @@ class _FrameReaderDict(dict):
     if cache_paths is None:
       cache_paths = {}
     if not isinstance(cache_paths, dict):
-      cache_paths = { k: v for k, v in enumerate(cache_paths) }
+      cache_paths = {k: v for k, v in enumerate(cache_paths)}
 
     self._camera_paths = camera_paths
     self._cache_paths = cache_paths
@@ -84,5 +85,5 @@ class RouteFrameReader(object):
   def __enter__(self):
     return self
 
-  def __exit__(self, type, value, traceback):
+  def __exit__(self, exc_type, exc_value, traceback):
     self.close()

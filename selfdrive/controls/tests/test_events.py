@@ -9,8 +9,8 @@ from selfdrive.controls.lib.events import Alert, EVENTS
 
 AlertSize = log.ControlsState.AlertSize
 
-class TestAlerts(unittest.TestCase):
 
+class TestAlerts(unittest.TestCase):
   def test_events_defined(self):
     # Ensure all events in capnp schema are defined in events.py
     events = car.CarEvent.EventName.schema.enumerants
@@ -34,9 +34,9 @@ class TestAlerts(unittest.TestCase):
     draw = ImageDraw.Draw(Image.new('RGB', (0, 0)))
 
     fonts = {
-      AlertSize.small: [ImageFont.truetype(semibold_font_path, int(40*font_scale_factor))],
-      AlertSize.mid: [ImageFont.truetype(bold_font_path, int(48*font_scale_factor)),
-                      ImageFont.truetype(regular_font_path, int(36*font_scale_factor))],
+      AlertSize.small: [ImageFont.truetype(semibold_font_path, int(40 * font_scale_factor))],
+      AlertSize.mid: [ImageFont.truetype(bold_font_path, int(48 * font_scale_factor)),
+                      ImageFont.truetype(regular_font_path, int(36 * font_scale_factor))],
     }
 
     alerts = []
@@ -56,9 +56,10 @@ class TestAlerts(unittest.TestCase):
           break
 
         font = fonts[alert.alert_size][i]
-        w, h = draw.textsize(txt, font)
+        w, _ = draw.textsize(txt, font)
         msg = "type: %s msg: %s" % (alert.alert_type, txt)
         self.assertLessEqual(w, max_text_width, msg=msg)
+
 
 if __name__ == "__main__":
   unittest.main()

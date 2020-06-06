@@ -1,3 +1,5 @@
+# flake8: noqa
+
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -715,6 +717,7 @@ FW_VERSIONS = {
       b'\x01896634A19000\x00\x00\x00\x00',
       b'\x01896634A22000\x00\x00\x00\x00',
       b'\x018966342U4000\x00\x00\x00\x00',
+      b'\x018966342T9000\x00\x00\x00\x00',
       b'\x01F152642551\x00\x00\x00\x00\x00\x00',
       b'\x028966342Y8000\x00\x00\x00\x00897CF1201001\x00\x00\x00\x00',
       b'\x02896634A18000\x00\x00\x00\x00897CF1201001\x00\x00\x00\x00',

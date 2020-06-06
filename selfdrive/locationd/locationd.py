@@ -47,7 +47,10 @@ def get_H():
 
 
 class Localizer():
-  def __init__(self, disabled_logs=[], dog=None):
+  def __init__(self, disabled_logs=None, dog=None):
+    if disabled_logs is None:
+      disabled_logs = []
+
     self.kf = LiveKalman(GENERATED_DIR)
     self.reset_kalman()
     self.max_age = .2  # seconds
@@ -92,7 +95,8 @@ class Localizer():
     device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
     vel_device = device_from_ecef.dot(vel_ecef)
     device_from_ecef_eul = euler_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
-    idxs = list(range(States.ECEF_ORIENTATION_ERR.start, States.ECEF_ORIENTATION_ERR.stop)) + list(range(States.ECEF_VELOCITY_ERR.start, States.ECEF_VELOCITY_ERR.stop))
+    idxs = list(range(States.ECEF_ORIENTATION_ERR.start, States.ECEF_ORIENTATION_ERR.stop)) + \
+           list(range(States.ECEF_VELOCITY_ERR.start, States.ECEF_VELOCITY_ERR.stop))
     condensed_cov = predicted_cov[idxs][:, idxs]
     HH = H(*list(np.concatenate([device_from_ecef_eul, vel_ecef])))
     vel_device_cov = HH.dot(condensed_cov).dot(HH.T)
@@ -279,7 +283,11 @@ class Localizer():
     self.speed_counter = 0
     self.cam_counter = 0
 
-def locationd_thread(sm, pm, disabled_logs=[]):
+
+def locationd_thread(sm, pm, disabled_logs=None):
+  if disabled_logs is None:
+    disabled_logs = []
+
   if sm is None:
     socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration', 'carState']
     sm = messaging.SubMaster(socks, ignore_alive=['gpsLocationExternal'])

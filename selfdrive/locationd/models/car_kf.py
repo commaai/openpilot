@@ -12,6 +12,7 @@ from selfdrive.locationd.models.constants import ObservationKind
 
 i = 0
 
+
 def _slice(n):
   global i
   s = slice(i, i + n)
@@ -48,7 +49,7 @@ class CarKalman(KalmanFilter):
 
   # process noise
   Q = np.diag([
-    (.05/100)**2,
+    (.05 / 100)**2,
     .01**2,
     math.radians(0.02)**2,
     math.radians(0.25)**2,
@@ -59,7 +60,7 @@ class CarKalman(KalmanFilter):
   ])
   P_initial = Q.copy()
 
-  obs_noise : Dict[int, Any] = {
+  obs_noise: Dict[int, Any] = {
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
@@ -138,7 +139,7 @@ class CarKalman(KalmanFilter):
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, global_vars=CarKalman.global_vars)
 
-  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0):
+  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0):  # pylint: disable=super-init-not-called
     dim_state = self.initial_x.shape[0]
     dim_state_err = self.P_initial.shape[0]
     x_init = self.initial_x

@@ -81,7 +81,7 @@ assert(font >= 0);
 
     float lineh;
     nvgTextMetrics(vg, NULL, NULL, &lineh);
-    
+
     // nvgTextBox strips leading whitespace. We have to reimplement
     char * next = strtok(text, "\n");
     while (next != NULL){

@@ -49,7 +49,11 @@ def get_segment(segment_name, original=True):
   return rlog_url
 
 
-def test_process(cfg, lr, cmp_log_fn, ignore_fields=[], ignore_msgs=[]):
+def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
+  if ignore_fields is None:
+    ignore_fields = []
+  if ignore_msgs is None:
+    ignore_msgs = []
   url = BASE_URL + os.path.basename(cmp_log_fn)
   cmp_log_msgs = list(LogReader(url))
 

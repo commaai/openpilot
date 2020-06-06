@@ -239,7 +239,8 @@ class Plant():
 
     # print at 5hz
     if (self.frame % (self.rate//5)) == 0:
-      print("%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s" % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel))
+      print("%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s"
+            % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel))
 
     # ******** publish the car ********
     vls_tuple = namedtuple('vls', [

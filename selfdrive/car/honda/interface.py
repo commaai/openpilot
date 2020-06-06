@@ -83,6 +83,10 @@ class CarInterface(CarInterfaceBase):
       self.compute_gb = compute_gb_honda
 
   @staticmethod
+  def compute_gb(accel, speed):
+    raise NotImplementedError
+
+  @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
 
     # normalized max accel. Allowing max accel at low speed causes speed overshoots
@@ -115,8 +119,7 @@ class CarInterface(CarInterfaceBase):
     return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
-
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "honda"
 
@@ -479,12 +482,12 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.parkBrake)
 
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
-      events.add(EventName.speedTooLow)
+      events.add(EventName.belowEngageSpeed)
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
     if self.CP.enableCruise and not ret.cruiseState.enabled \
-       and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl) and (self.CP.minEnableSpeed > 0):
+       and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
       # non loud alert if cruise disables below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
         events.add(EventName.speedTooLow)

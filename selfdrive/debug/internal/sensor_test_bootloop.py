@@ -32,7 +32,7 @@ except Exception:
   sys.exit(-1)
 
 sensord_env = {**os.environ, 'SENSOR_TEST': '1'}
-process = subprocess.run("./sensord", cwd="/data/openpilot/selfdrive/sensord", env=sensord_env)
+process = subprocess.run("./sensord", cwd="/data/openpilot/selfdrive/sensord", env=sensord_env)  # pylint: disable=subprocess-run-check
 
 if process.returncode == 40:
   text = "Current run: SUCCESS\n"

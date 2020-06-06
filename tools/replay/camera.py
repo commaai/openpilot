@@ -3,7 +3,7 @@ import os
 
 from common.basedir import BASEDIR
 os.environ['BASEDIR'] = BASEDIR
-SCALE = float(os.getenv("SCALE", 1.0))
+SCALE = float(os.getenv("SCALE", "1"))
 
 import argparse
 import pygame  # pylint: disable=import-error

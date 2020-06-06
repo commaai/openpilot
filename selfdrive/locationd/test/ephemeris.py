@@ -1,3 +1,5 @@
+import math
+
 def GET_FIELD_U(w, nb, pos):
   return (((w) >> (pos)) & ((1 << (nb)) - 1))
 
@@ -35,7 +37,6 @@ on of this parser
     '''
 
   def __init__(self, svId, subframes):
-    from math import pow
     self.svId = svId
     week_no = GET_FIELD_U(subframes[1][2+0], 10, 20)
     # code_on_l2 = GET_FIELD_U(subframes[1][0],  2, 12)
@@ -84,30 +85,30 @@ on of this parser
     gpsPi = 3.1415926535898
 
     # now form variables in radians, meters and seconds etc
-    self.Tgd = t_gd * pow(2, -31)
-    self.A = pow(a_powhalf * pow(2, -19), 2.0)
-    self.cic = c_ic * pow(2, -29)
-    self.cis = c_is * pow(2, -29)
-    self.crc = c_rc * pow(2, -5)
-    self.crs = c_rs * pow(2, -5)
-    self.cuc = c_uc * pow(2, -29)
-    self.cus = c_us * pow(2, -29)
-    self.deltaN = delta_n * pow(2, -43) * gpsPi
-    self.ecc = e * pow(2, -33)
-    self.i0 = i_0 * pow(2, -31) * gpsPi
-    self.idot = idot * pow(2, -43) * gpsPi
-    self.M0 = m_0 * pow(2, -31) * gpsPi
-    self.omega = w * pow(2, -31) * gpsPi
-    self.omega_dot = omega_dot * pow(2, -43) * gpsPi
-    self.omega0 = omega_0 * pow(2, -31) * gpsPi
-    self.toe = t_oe * pow(2, 4)
+    self.Tgd = t_gd * math.pow(2, -31)
+    self.A = math.pow(a_powhalf * math.pow(2, -19), 2.0)
+    self.cic = c_ic * math.pow(2, -29)
+    self.cis = c_is * math.pow(2, -29)
+    self.crc = c_rc * math.pow(2, -5)
+    self.crs = c_rs * math.pow(2, -5)
+    self.cuc = c_uc * math.pow(2, -29)
+    self.cus = c_us * math.pow(2, -29)
+    self.deltaN = delta_n * math.pow(2, -43) * gpsPi
+    self.ecc = e * math.pow(2, -33)
+    self.i0 = i_0 * math.pow(2, -31) * gpsPi
+    self.idot = idot * math.pow(2, -43) * gpsPi
+    self.M0 = m_0 * math.pow(2, -31) * gpsPi
+    self.omega = w * math.pow(2, -31) * gpsPi
+    self.omega_dot = omega_dot * math.pow(2, -43) * gpsPi
+    self.omega0 = omega_0 * math.pow(2, -31) * gpsPi
+    self.toe = t_oe * math.pow(2, 4)
 
     # clock correction information
-    self.toc = t_oc * pow(2, 4)
+    self.toc = t_oc * math.pow(2, 4)
     self.gpsWeek = week_no
-    self.af0 = a_f0 * pow(2, -31)
-    self.af1 = a_f1 * pow(2, -43)
-    self.af2 = a_f2 * pow(2, -55)
+    self.af0 = a_f0 * math.pow(2, -31)
+    self.af1 = a_f1 * math.pow(2, -43)
+    self.af2 = a_f2 * math.pow(2, -55)
 
     iode1 = GET_FIELD_U(subframes[2][2+0], 8, 22)
     iode2 = GET_FIELD_U(subframes[3][2+7], 8, 22)
@@ -117,14 +118,14 @@ on of this parser
     if GET_FIELD_U(subframes[4][2+0], 6, 22) == 56 and \
        GET_FIELD_U(subframes[4][2+0], 2, 28) == 1 and \
        GET_FIELD_U(subframes[5][2+0], 2, 28) == 1:
-      a0 = GET_FIELD_S(subframes[4][2], 8, 14) * pow(2, -30)
-      a1 = GET_FIELD_S(subframes[4][2], 8, 6) * pow(2, -27)
-      a2 = GET_FIELD_S(subframes[4][3], 8, 22) * pow(2, -24)
-      a3 = GET_FIELD_S(subframes[4][3], 8, 14) * pow(2, -24)
-      b0 = GET_FIELD_S(subframes[4][3], 8, 6) * pow(2, 11)
-      b1 = GET_FIELD_S(subframes[4][4], 8, 22) * pow(2, 14)
-      b2 = GET_FIELD_S(subframes[4][4], 8, 14) * pow(2, 16)
-      b3 = GET_FIELD_S(subframes[4][4], 8, 6) * pow(2, 16)
+      a0 = GET_FIELD_S(subframes[4][2], 8, 14) * math.pow(2, -30)
+      a1 = GET_FIELD_S(subframes[4][2], 8, 6) * math.pow(2, -27)
+      a2 = GET_FIELD_S(subframes[4][3], 8, 22) * math.pow(2, -24)
+      a3 = GET_FIELD_S(subframes[4][3], 8, 14) * math.pow(2, -24)
+      b0 = GET_FIELD_S(subframes[4][3], 8, 6) * math.pow(2, 11)
+      b1 = GET_FIELD_S(subframes[4][4], 8, 22) * math.pow(2, 14)
+      b2 = GET_FIELD_S(subframes[4][4], 8, 14) * math.pow(2, 16)
+      b3 = GET_FIELD_S(subframes[4][4], 8, 6) * math.pow(2, 16)
 
       self.ionoAlpha = [a0, a1, a2, a3]
       self.ionoBeta = [b0, b1, b2, b3]

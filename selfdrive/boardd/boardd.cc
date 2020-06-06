@@ -18,7 +18,6 @@
 #include "cereal/gen/cpp/car.capnp.h"
 
 #include "common/util.h"
-#include "common/messaging.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -589,16 +588,28 @@ void can_send(cereal::Event::Reader &event) {
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
-  SubMaster sm({"sendcan"});
 
-  // drain sendcan to delete any stale messages from previous runs
-  sm.drain();
+  Context * context = Context::create();
+  SubSocket * subscriber = SubSocket::create(context, "sendcan");
+  assert(subscriber != NULL);
+
   // run as fast as messages come in
   while (!do_exit) {
-    if (sm.update(1000) > 0){
-      can_send(sm["sendcan"]);
+    Message * msg = subscriber->receive();
+
+    if (msg){
+      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+      memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+      capnp::FlatArrayMessageReader cmsg(amsg);
+      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+      can_send(event);
+      delete msg;
     }
   }
+
+  delete subscriber;
+  delete context;
 
   return NULL;
 }
@@ -857,9 +868,11 @@ int main() {
   int err;
   LOGW("starting boardd");
 
-  // set process priority
-  err = set_realtime_priority(4);
-  LOG("setpriority returns %d", err);
+  // set process priority and affinity
+  err = set_realtime_priority(54);
+  LOG("set priority returns %d", err);
+  err = set_core_affinity(3);
+  LOG("set affinity returns %d", err);
 
   // check the environment
   if (getenv("STARTED")) {

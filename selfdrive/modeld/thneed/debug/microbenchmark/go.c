@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
   M = N = K = 1024;
   //M = 128; K = 2112; N = 352;
-  
+
   cl_kernel kern = clCreateKernel(prog, "gemm", &err);
   assert(err == 0);
   printf("creating kernel %p\n", kern);
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
   clSetKernelArg(kern, 20, sizeof(n), &n);
   clSetKernelArg(kern, 21, sizeof(n), &n);
   v = 16; clSetKernelArg(kern, 22, sizeof(v), &v);
-  
+
   size_t global_work_size[3] = {88, 4, 8};
   size_t local_work_size[3] = {4, 4, 8};
 #endif

@@ -39,7 +39,7 @@ inline int GET_FIELD_S(uint32_t w, uint32_t nb, uint32_t pos) {
 
 class EphemerisData {
   public:
-    EphemerisData(uint8_t svId, subframes_map subframes) {
+    EphemerisData(uint8_t svId, subframes_map &subframes) {
       this->svId = svId;
       int week_no = GET_FIELD_U(subframes[1][2+0], 10, 20);
       int t_gd = GET_FIELD_S(subframes[1][2+4], 8, 6);

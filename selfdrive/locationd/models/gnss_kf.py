@@ -76,14 +76,14 @@ class GNSSKalman():
     # extra args
     sat_pos_freq_sym = sp.MatrixSymbol('sat_pos', 4, 1)
     sat_pos_vel_sym = sp.MatrixSymbol('sat_pos_vel', 6, 1)
-    sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1)
-    orb_epos_sym = sp.MatrixSymbol('orb_epos_sym', 3, 1)
+    # sat_los_sym = sp.MatrixSymbol('sat_los', 3, 1)
+    # orb_epos_sym = sp.MatrixSymbol('orb_epos_sym', 3, 1)
 
     # expand extra args
     sat_x, sat_y, sat_z, glonass_freq = sat_pos_freq_sym
     sat_vx, sat_vy, sat_vz = sat_pos_vel_sym[3:]
-    los_x, los_y, los_z = sat_los_sym
-    orb_x, orb_y, orb_z = orb_epos_sym
+    # los_x, los_y, los_z = sat_los_sym
+    # orb_x, orb_y, orb_z = orb_epos_sym
 
     h_pseudorange_sym = sp.Matrix([
       sp.sqrt(
@@ -119,7 +119,8 @@ class GNSSKalman():
     self.dim_state = self.x_initial.shape[0]
 
     # init filter
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds)
+    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state,
+                          self.dim_state, maha_test_kinds=self.maha_test_kinds)
     self.init_state(GNSSKalman.x_initial, covs=GNSSKalman.P_initial)
 
   @property

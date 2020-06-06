@@ -4,6 +4,7 @@
 import numpy as np
 import math
 from tqdm import tqdm
+from typing import cast
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -34,7 +35,7 @@ speeds = 10 * np.sin(2 * np.pi * ts / 200.) + 25
 
 angle_offsets = math.radians(1.0) * np.ones_like(ts)
 angle_offsets[ts > 60] = 0
-steering_angles = np.radians(5 * np.cos(2 * np.pi * ts / 100.))
+steering_angles = cast(np.ndarray, np.radians(5 * np.cos(2 * np.pi * ts / 100.)))
 
 xs = []
 ys = []
