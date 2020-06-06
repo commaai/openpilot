@@ -308,6 +308,11 @@ selfdrive/sensord/gpsd
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 
+selfdrive/test/__init__.py
+selfdrive/test/test_openpilot.py
+selfdrive/test/test_fingerprints.py
+selfdrive/test/test_car_models.pyj
+
 selfdrive/ui/SConscript
 selfdrive/ui/*.c
 selfdrive/ui/*.cc
