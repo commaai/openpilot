@@ -5,8 +5,10 @@ import unittest
 
 import numpy as np
 
-from common.transformations.transformations import (euler2quat_single,
+from common.transformations.transformations import (ecef_euler_from_ned_single,
+                                                    euler2quat_single,
                                                     euler2rot_single,
+                                                    ned_euler_from_ecef_single,
                                                     quat2euler_single,
                                                     quat2rot_single,
                                                     rot2euler_single,
@@ -81,6 +83,18 @@ class TestOrientationCython(unittest.TestCase):
       roll, pitch, yaw = euler
       rot = rot_matrix(roll, pitch, yaw)
       np.testing.assert_allclose(rot_matrix_py(roll, pitch, yaw), rot, rtol=1e-7)
+
+  def test_ecef_euler_from_ned(self):
+    for i in range(len(eulers)):
+      np.testing.assert_allclose(euler2quat_single(eulers[i]),
+                                 euler2quat_single(ecef_euler_from_ned_single(ecef_positions[i], ned_eulers[i])),
+                                 rtol=1e-7)
+
+  def test_ned_euler_from_ecef(self):
+    for i in range(len(eulers)):
+      np.testing.assert_allclose(euler2quat_single(ned_eulers[i]),
+                                 euler2quat_single(ned_euler_from_ecef_single(ecef_positions[i], eulers[i])), rtol=1e-7)
+
 
 if __name__ == "__main__":
   unittest.main()

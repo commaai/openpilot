@@ -94,7 +94,6 @@ Eigen::Vector3d ecef_euler_from_ned(ECEF ecef_init, Eigen::Vector3d ned_pose) {
 
 Eigen::Vector3d ned_euler_from_ecef(ECEF ecef_init, Eigen::Vector3d ecef_pose){
   LocalCoord converter = LocalCoord(ecef_init);
-  Eigen::Vector3d zero = ecef_init.to_vector();
 
   Eigen::Vector3d x0 = Eigen::Vector3d(1, 0, 0);
   Eigen::Vector3d y0 = Eigen::Vector3d(0, 1, 0);
@@ -111,9 +110,10 @@ Eigen::Vector3d ned_euler_from_ecef(ECEF ecef_init, Eigen::Vector3d ecef_pose){
   Eigen::Vector3d x3 = rot(x2, ecef_pose(0)) * x2;
   Eigen::Vector3d y3 = rot(x2, ecef_pose(0)) * y2;
 
+  Eigen::Vector3d zero = ecef_init.to_vector();
   x0 = converter.ned2ecef({1, 0, 0}).to_vector() - zero;
   y0 = converter.ned2ecef({0, 1, 0}).to_vector() - zero;
-  z0 = converter.ned2ecef({1, 0, 1}).to_vector() - zero;
+  z0 = converter.ned2ecef({0, 0, 1}).to_vector() - zero;
 
   double psi = atan2(x3.dot(y0), x3.dot(x0));
   double theta = atan2(-x3.dot(z0), sqrt(pow(x3.dot(x0), 2) + pow(x3.dot(y0), 2)));
