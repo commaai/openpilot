@@ -43,7 +43,7 @@ FramebufferState* framebuffer_init(
   }
 
   glfwMakeContextCurrent(window);
-  glfwSwapInterval(0);
+  glfwSwapInterval(1);
 
   // clear screen
   glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
