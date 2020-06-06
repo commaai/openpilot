@@ -279,6 +279,8 @@ static void read_path(PathData& p, const cereal::ModelData::PathData::Reader &pa
   for (int i = 0; i < MODEL_PATH_DISTANCE; i++) {
     p.points[i] = p.poly[0] * (i*i*i) + p.poly[1] * (i*i)+ p.poly[2] * i + p.poly[3];
   }
+
+  p.validLen = pathp.getValidLen();
 }
 
 static void read_model(ModelData &d, const cereal::ModelData::Reader &model) {
