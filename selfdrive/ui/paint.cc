@@ -245,16 +245,6 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
   nvgFill(s->vg);
 }
 
-static void draw_steering(UIState *s, float curvature) {
-  float points[50];
-  for (int i = 0; i < 50; i++) {
-    float y_actual = i * tan(asin(clamp(i * curvature, -0.999, 0.999)) / 2.);
-    points[i] = y_actual;
-  }
-
-  // ui_draw_lane_edge(s, points, 0.0, nvgRGBA(0, 0, 255, 128), 5);
-}
-
 static void draw_frame(UIState *s) {
   const UIScene *scene = &s->scene;
 
@@ -296,9 +286,10 @@ static inline bool valid_frame_pt(UIState *s, float x, float y) {
   return x >= 0 && x <= s->rgb_width && y >= 0 && y <= s->rgb_height;
 
 }
-static void update_lane_line_data(UIState *s, const float *points, float off, bool is_ghost, model_path_vertices_data *pvd) {
+static void update_lane_line_data(UIState *s, const float *points, float off, bool is_ghost, model_path_vertices_data *pvd, float valid_len) {
   pvd->cnt = 0;
-  for (int i = 0; i < MODEL_PATH_MAX_VERTICES_CNT / 2; i++) {
+  int rcount = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, valid_len);
+  for (int i = 0; i < rcount; i++) {
     float px = (float)i;
     float py = points[i] - off;
     const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
@@ -309,7 +300,7 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
     pvd->v[pvd->cnt].y = p_full_frame.v[1];
     pvd->cnt += 1;
   }
-  for (int i = MODEL_PATH_MAX_VERTICES_CNT / 2; i > 0; i--) {
+  for (int i = rcount; i > 0; i--) {
     float px = (float)i;
     float py = is_ghost?(points[i]-off):(points[i]+off);
     const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
@@ -323,10 +314,10 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
 }
 
 static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
-  update_lane_line_data(s, path.points, 0.025*path.prob, false, pstart);
+  update_lane_line_data(s, path.points, 0.025*path.prob, false, pstart, path.validLen);
   float var = fmin(path.std, 0.7);
-  update_lane_line_data(s, path.points, -var, true, pstart + 1);
-  update_lane_line_data(s, path.points, var, true, pstart + 2);
+  update_lane_line_data(s, path.points, -var, true, pstart + 1, path.validLen);
+  update_lane_line_data(s, path.points, var, true, pstart + 2, path.validLen);
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
