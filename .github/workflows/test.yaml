@@ -47,7 +47,7 @@ jobs:
       run: |
           $RUN "cd /tmp/openpilot && \
                 scons -j$(nproc) && \
-                $UNIT_TEST tools/lib/tests"
+                $UNIT_TEST selfdrive/car"
 
   docker_push:
     name: docker push
