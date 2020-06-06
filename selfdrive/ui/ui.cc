@@ -754,7 +754,7 @@ int main(int argc, char* argv[]) {
   TouchState touch = {0};
   touch_init(&touch);
   s->touch_fd = touch.fd;
-  
+
   // light sensor scaling params
   const int LEON = is_leon();
 
@@ -774,7 +774,7 @@ int main(int argc, char* argv[]) {
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
   assert(s->sound.init(MIN_VOLUME));
-  
+
   int draws = 0;
 
   s->scene.satelliteCount = -1;
