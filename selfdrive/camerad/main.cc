@@ -346,8 +346,12 @@ void* processing_thread(void *arg) {
   LOG("setpriority returns %d", err);
 
   // init cl stuff
+#ifdef __APPLE__
+  cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
+#else
   const cl_queue_properties props[] = {0}; //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
   cl_command_queue q = clCreateCommandQueueWithProperties(s->context, s->device_id, props, &err);
+#endif
   assert(err == 0);
 
   // init the net
@@ -542,7 +546,7 @@ void* processing_thread(void *arg) {
     // one thumbnail per 5 seconds (instead of %5 == 0 posenet)
     if (cnt % 100 == 3) {
       uint8_t* thumbnail_buffer = NULL;
-      uint64_t thumbnail_len = 0;
+      unsigned long thumbnail_len = 0;
 
       unsigned char *row = (unsigned char *)malloc(s->rgb_width/4*3);
 
@@ -1134,9 +1138,10 @@ void init_buffers(VisionState *s) {
                                             3);
   s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
   assert(err == 0);
-  s->rgb_conv_roi_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
+  // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
+  s->rgb_conv_roi_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE,
       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, NULL);
-  s->rgb_conv_result_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
+  s->rgb_conv_result_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE,
       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, NULL);
   s->rgb_conv_filter_cl = clCreateBuffer(s->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
       9 * sizeof(int16_t), (void*)&lapl_conv_krnl, NULL);
