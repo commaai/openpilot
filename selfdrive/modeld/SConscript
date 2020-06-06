@@ -27,6 +27,15 @@ else:
   # tell runners to use it
   lenv['CFLAGS'].append("-DUSE_TF_MODEL")
   lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
+  if arch == "Darwin":
+    # fix OpenCL
+    del libs[libs.index('OpenCL')]
+    lenv['FRAMEWORKS'] = ['OpenCL']
+
+    # no SNPE on Mac
+    del libs[libs.index('SNPE')]
+    del libs[libs.index('symphony-cpu')]
+    del common_src[common_src.index('runners/snpemodel.cc')]
 
 common = lenv.Object(common_src)
 
