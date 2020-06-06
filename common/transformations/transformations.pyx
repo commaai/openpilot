@@ -7,6 +7,7 @@ from transformations cimport quat2rot as quat2rot_c
 from transformations cimport rot2quat as rot2quat_c
 from transformations cimport euler2rot as euler2rot_c
 from transformations cimport rot2euler as rot2euler_c
+from transformations cimport rot_matrix as rot_matrix_c
 
 
 import cython
@@ -57,3 +58,6 @@ def rot2euler_single(rot):
     cdef Matrix3 r = numpy2matrix(np.asfortranarray(rot, dtype=np.double))
     cdef Vector3 e = rot2euler_c(r)
     return [e(0), e(1), e(2)]
+
+def rot_matrix(roll, pitch, yaw):
+    return matrix2numpy(rot_matrix_c(roll, pitch, yaw))

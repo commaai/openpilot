@@ -10,7 +10,8 @@ from common.transformations.transformations import (euler2quat_single,
                                                     quat2euler_single,
                                                     quat2rot_single,
                                                     rot2euler_single,
-                                                    rot2quat_single)
+                                                    rot2quat_single,
+                                                    rot_matrix)
 
 eulers = np.array([[ 1.46520501,  2.78688383,  2.92780854],
                    [ 4.86909526,  3.60618161,  4.30648981],
@@ -35,6 +36,16 @@ ned_eulers = np.array([[ 0.46806039, -0.4881889 ,  1.65697808],
                        [-1.39523364, -0.58540761, -1.77376356],
                        [-1.84220435,  0.61828016, -1.03310421],
                        [ 2.50450101,  0.36304151,  0.33136365]])
+
+
+def rot_matrix_py(roll, pitch, yaw):
+  cr, sr = np.cos(roll), np.sin(roll)
+  cp, sp = np.cos(pitch), np.sin(pitch)
+  cy, sy = np.cos(yaw), np.sin(yaw)
+  rr = np.array([[1, 0, 0], [0, cr, -sr], [0, sr, cr]])
+  rp = np.array([[cp, 0, sp], [0, 1, 0], [-sp, 0, cp]])
+  ry = np.array([[cy, -sy, 0], [sy, cy, 0], [0, 0, 1]])
+  return ry.dot(rp.dot(rr))
 
 
 class TestOrientationCython(unittest.TestCase):
@@ -64,6 +75,12 @@ class TestOrientationCython(unittest.TestCase):
       rot = euler2rot_single(euler)
       euler_new = rot2euler_single(rot)
       np.testing.assert_allclose(euler2quat_single(euler), euler2quat_single(euler_new), rtol=1e-7)
+
+  def test_rot_matrix(self):
+    for euler in eulers:
+      roll, pitch, yaw = euler
+      rot = rot_matrix(roll, pitch, yaw)
+      np.testing.assert_allclose(rot_matrix_py(roll, pitch, yaw), rot, rtol=1e-7)
 
 if __name__ == "__main__":
   unittest.main()
