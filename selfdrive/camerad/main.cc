@@ -15,6 +15,7 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 
+#include "common/ipc.h"
 #include "common/visionipc.h"
 #include "common/visionbuf.h"
 #include "common/visionimg.h"
@@ -856,21 +857,7 @@ void* visionserver_thread(void* arg) {
   assert(terminate);
   void* terminate_raw = zsock_resolve(terminate);
 
-  unlink(VIPC_SOCKET_PATH);
-
-  int sock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
-  struct sockaddr_un addr = {
-    .sun_family = AF_UNIX,
-    .sun_path = VIPC_SOCKET_PATH,
-  };
-  err = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
-  assert(err == 0);
-
-  err = listen(sock, 3);
-  assert(err == 0);
-
-  // printf("waiting\n");
-
+  int sock = ipc_bind(VIPC_SOCKET_PATH);
   while (!do_exit) {
     zmq_pollitem_t polls[2] = {{0}};
     polls[0].socket = terminate_raw;
