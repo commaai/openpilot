@@ -7,9 +7,17 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#include <fstream>
+#include <streambuf>
+#include <vector>
+#include <string>
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "common/swaglog.h"
+#include "common/version.h"
+#include "common/util.h"
+#include "common/utilpp.h"
+#include "common/params.h"
 
 static void log_sentinel(Logger* s, cereal::Sentinel::SentinelType type) {
   capnp::MallocMessageBuilder msg;
@@ -39,11 +47,87 @@ static int mkpath(char* file_path) {
   return 0;
 }
 
-void Logger::init(const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog) {
-  if (init_data) {
-    init_data_.resize(init_data_len);
-    memcpy(init_data_.data(), init_data, init_data_len);
+static std::string read_param(const char* name){
+  std::string str;
+  char* v = NULL;
+  read_db_value(name, &v, NULL);
+  if (v) {
+    str = v;
+    free(v);
   }
+  return str;
+}
+
+static kj::Array<capnp::word> gen_init_data() {
+  capnp::MallocMessageBuilder msg;
+  auto event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto init = event.initInitData();
+
+  init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
+
+  std::ifstream cmdline_stream("/proc/cmdline");
+  std::vector<std::string> kernel_args;
+  std::string buf;
+  while (cmdline_stream >> buf) {
+    kernel_args.push_back(buf);
+  }
+
+  auto lkernel_args = init.initKernelArgs(kernel_args.size());
+  for (int i=0; i<kernel_args.size(); i++) {
+    lkernel_args.set(i, kernel_args[i]);
+  }
+
+  init.setKernelVersion(util::read_file("/proc/version"));
+
+#ifdef QCOM
+  {
+    std::vector<std::pair<std::string, std::string> > properties;
+    property_list(append_property, (void*)&properties);
+
+    auto lentries = init.initAndroidProperties().initEntries(properties.size());
+    for (int i=0; i<properties.size(); i++) {
+      auto lentry = lentries[i];
+      lentry.setKey(properties[i].first);
+      lentry.setValue(properties[i].second);
+    }
+  }
+#endif
+
+  const char* dongle_id = getenv("DONGLE_ID");
+  if (dongle_id) {
+    init.setDongleId(std::string(dongle_id));
+  }
+
+  const char* clean = getenv("CLEAN");
+  if (!clean) {
+    init.setDirty(true);
+  }
+
+  init.setGitCommit(read_param("GitCommit"));
+  init.setGitBranch(read_param("GitBranch"));
+  init.setGitRemote(read_param("GitRemote"));
+  init.setPassive(read_param("Passive") == "1");
+
+  {
+    // log params
+    std::map<std::string, std::string> params;
+    read_db_all(&params);
+    auto lparams = init.initParams().initEntries(params.size());
+    int i = 0;
+    for (auto& kv : params) {
+      auto lentry = lparams[i];
+      lentry.setKey(kv.first);
+      lentry.setValue(kv.second);
+      i++;
+    }
+  }
+  return capnp::messageToFlatArray(msg);
+}
+
+void Logger::init(const char* log_name,  bool has_qlog) {
+  init_data_ = gen_init_data();
 
   umask(0);
 
@@ -69,7 +153,8 @@ LoggerHandle* Logger::open(const char* root_path) {
   snprintf(segment_path, sizeof(segment_path), "%s/%s--%d", root_path, route_name, part);
   h->open(segment_path, log_name_.c_str(), part, has_qlog);
   if (init_data_.size() > 0) {
-    h->log(init_data_.data(), init_data_.size(), has_qlog);
+    auto bytes = init_data_.asBytes();
+    h->log(bytes.begin(), bytes.size(), has_qlog);
   }
   return h;
 }
@@ -121,7 +206,6 @@ void Logger::log(uint8_t* data, size_t data_size, bool in_qlog) {
 
 bool LoggerHandle::open(const char* segment_path, const char* log_name, int part, bool has_qlog) {
   char log_path[4096] = {};
-
   char qlog_path[4096] = {};
 
   snprintf(log_path, sizeof(log_path), "%s/%s.bz2", segment_path, log_name);
@@ -135,18 +219,16 @@ bool LoggerHandle::open(const char* segment_path, const char* log_name, int part
   if (lock_file == NULL) return false;
   fclose(lock_file);
 
-  int bzerror;
-
   log_file = fopen(log_path, "wb");
   if (log_file == NULL) goto fail;
-  bz_file = BZ2_bzWriteOpen(&bzerror, log_file, 9, 0, 30);
-  if (bzerror != BZ_OK) goto fail;
+  bz_file = BZ2_bzWriteOpen(&err, log_file, 9, 0, 30);
+  if (err != BZ_OK) goto fail;
 
   if (has_qlog) {
     qlog_file = fopen(qlog_path, "wb");
     if (qlog_file == NULL) goto fail;
-    bz_qlog = BZ2_bzWriteOpen(&bzerror, qlog_file, 9, 0, 30);
-    if (bzerror != BZ_OK) goto fail;
+    bz_qlog = BZ2_bzWriteOpen(&err, qlog_file, 9, 0, 30);
+    if (err != BZ_OK) goto fail;
   }
   refcnt++;
   return true;
@@ -161,7 +243,6 @@ void LoggerHandle::log(uint8_t* data, size_t data_size, bool in_qlog) {
   assert(refcnt > 0);
   int bzerror;
   BZ2_bzWrite(&bzerror, bz_file, data, data_size);
-
   if (in_qlog && bz_qlog != NULL) {
     BZ2_bzWrite(&bzerror, bz_qlog, data, data_size);
   }

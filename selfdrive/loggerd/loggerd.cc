@@ -13,8 +13,6 @@
 
 #include <string>
 #include <iostream>
-#include <fstream>
-#include <streambuf>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -26,13 +24,10 @@
 #include <cutils/properties.h>
 #endif
 
-#include "common/version.h"
 #include "common/timing.h"
-#include "common/params.h"
 #include "common/swaglog.h"
 #include "common/visionipc.h"
 #include "common/utilpp.h"
-#include "common/util.h"
 
 #include "logger.hpp"
 #include "messaging.hpp"
@@ -48,8 +43,6 @@
 #include "encoder.h"
 #include "raw_logger.h"
 #endif
-
-#include "cereal/gen/cpp/log.capnp.h"
 
 #define CAMERA_FPS 20
 #define SEGMENT_LENGTH 60
@@ -118,11 +111,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
 
   while (!do_exit) {
     VisionStreamBufs buf_info;
-    if (front) {
-      err = visionstream_init(&stream, VISION_STREAM_YUV_FRONT, false, &buf_info);
-    } else {
-      err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
-    }
+    err = visionstream_init(&stream, front ? VISION_STREAM_YUV_FRONT : VISION_STREAM_YUV, false, &buf_info);
     if (err != 0) {
       LOGD("visionstream connect fail");
       usleep(100000);
@@ -405,113 +394,6 @@ void append_property(const char* key, const char* value, void *cookie) {
   properties->push_back(std::make_pair(std::string(key), std::string(value)));
 }
 
-kj::Array<capnp::word> gen_init_data() {
-  capnp::MallocMessageBuilder msg;
-  auto event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto init = event.initInitData();
-
-  init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
-
-  std::ifstream cmdline_stream("/proc/cmdline");
-  std::vector<std::string> kernel_args;
-  std::string buf;
-  while (cmdline_stream >> buf) {
-    kernel_args.push_back(buf);
-  }
-
-  auto lkernel_args = init.initKernelArgs(kernel_args.size());
-  for (int i=0; i<kernel_args.size(); i++) {
-    lkernel_args.set(i, kernel_args[i]);
-  }
-
-  init.setKernelVersion(util::read_file("/proc/version"));
-
-#ifdef QCOM
-  {
-    std::vector<std::pair<std::string, std::string> > properties;
-    property_list(append_property, (void*)&properties);
-
-    auto lentries = init.initAndroidProperties().initEntries(properties.size());
-    for (int i=0; i<properties.size(); i++) {
-      auto lentry = lentries[i];
-      lentry.setKey(properties[i].first);
-      lentry.setValue(properties[i].second);
-    }
-  }
-#endif
-
-  const char* dongle_id = getenv("DONGLE_ID");
-  if (dongle_id) {
-    init.setDongleId(std::string(dongle_id));
-  }
-
-  const char* clean = getenv("CLEAN");
-  if (!clean) {
-    init.setDirty(true);
-  }
-
-  char* git_commit = NULL;
-  size_t size;
-  read_db_value("GitCommit", &git_commit, &size);
-  if (git_commit) {
-    init.setGitCommit(capnp::Text::Reader(git_commit, size));
-  }
-
-  char* git_branch = NULL;
-  read_db_value("GitBranch", &git_branch, &size);
-  if (git_branch) {
-    init.setGitBranch(capnp::Text::Reader(git_branch, size));
-  }
-
-  char* git_remote = NULL;
-  read_db_value("GitRemote", &git_remote, &size);
-  if (git_remote) {
-    init.setGitRemote(capnp::Text::Reader(git_remote, size));
-  }
-
-  char* passive = NULL;
-  read_db_value("Passive", &passive, NULL);
-  init.setPassive(passive && strlen(passive) && passive[0] == '1');
-
-
-  {
-    // log params
-    std::map<std::string, std::string> params;
-    read_db_all(&params);
-    auto lparams = init.initParams().initEntries(params.size());
-    int i = 0;
-    for (auto& kv : params) {
-      auto lentry = lparams[i];
-      lentry.setKey(kv.first);
-      lentry.setValue(kv.second);
-      i++;
-    }
-  }
-
-
-  auto words = capnp::messageToFlatArray(msg);
-
-  if (git_commit) {
-    free((void*)git_commit);
-  }
-
-  if (git_branch) {
-    free((void*)git_branch);
-  }
-
-  if (git_remote) {
-    free((void*)git_remote);
-  }
-
-  if (passive) {
-    free((void*)passive);
-  }
-
-  return words;
-}
-
 static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
   const char* dot = strrchr(fpath, '.');
   if (dot && strcmp(dot, ".lock") == 0) {
@@ -526,12 +408,7 @@ static void clear_locks() {
 
 static void bootlog() {
   int err;
-
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    s.logger.init("bootlog", bytes.begin(), bytes.size(), false);
-  }
+  s.logger.init("bootlog", false);
 
   err = s.logger.next(LOG_ROOT);
   assert(err == 0);
@@ -604,13 +481,8 @@ int main(int argc, char** argv) {
       qlog_freqs[sock] = it.decimation;
     }
   }
-
-
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    s.logger.init("rlog", bytes.begin(), bytes.size(), true);
-  }
+  
+  s.logger.init("rlog", true);
 
   bool is_streaming = false;
   bool is_logging = true;
@@ -709,7 +581,6 @@ int main(int argc, char** argv) {
 
   LOGW("joining threads");
   s.cv.notify_all();
-
 
 #ifndef DISABLE_ENCODER
   front_encoder_thread_handle.join();
