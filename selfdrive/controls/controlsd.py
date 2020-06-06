@@ -34,7 +34,7 @@ LongitudinalPlanSource = log.Plan.LongitudinalPlanSource
 Desire = log.PathPlan.Desire
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
-LaneChangeBSM = log.PathPlan.LaneChangeBSM
+LaneChangeBlocked = log.PathPlan.LaneChangeBlocked
 EventName = car.CarEvent.EventName
 
 class Controls:
@@ -140,8 +140,8 @@ class Controls:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if self.read_only and not passive:
       self.events.add(EventName.carUnrecognized, static=True)
-    # if hw_type == HwType.whitePanda:
-    #   self.events.add(EventName.whitePandaUnsupported, static=True)
+    if hw_type == HwType.whitePanda:
+      self.events.add(EventName.whitePandaUnsupported, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -190,10 +190,10 @@ class Controls:
                                         LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
     # lane change bsm alerts 
-    # if self.sm['pathPlan'].laneChangeBSM == laneChangeBSM.left:
-      # self.events.add(EventName.preventLCA)
-    # if self.sm['pathPlan'].LaneChangeBSM == laneChangeBSM.right:
-      # self.events.add(EventName.preventLCA)
+    if self.sm['pathPlan'].laneChangeBlocked == LaneChangeBlocked.right:
+      events.add(car.CarEvent.EventName.rightBlindspot)
+    if self.sm['pathPlan'].laneChangeBlocked == LaneChangeBlocked.left:
+      events.add(car.CarEvent.EventName.leftBlindspot)
 
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
