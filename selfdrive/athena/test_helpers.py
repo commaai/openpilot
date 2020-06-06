@@ -8,6 +8,7 @@ import time
 from functools import wraps
 from multiprocessing import Process
 
+
 class EchoSocket():
   def __init__(self, port):
     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,7 +16,7 @@ class EchoSocket():
     self.socket.listen(1)
 
   def run(self):
-    conn, client_address = self.socket.accept()
+    conn, _ = self.socket.accept()
     conn.settimeout(5.0)
 
     try:
@@ -32,6 +33,7 @@ class EchoSocket():
       self.socket.shutdown(0)
       self.socket.close()
 
+
 class MockApi():
   def __init__(self, dongle_id):
     pass
@@ -39,11 +41,12 @@ class MockApi():
   def get_token(self):
     return "fake-token"
 
+
 class MockParams():
   def __init__(self):
     self.params = {
       "DongleId": b"0000000000000000",
-      "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private"
+      "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private"  # noqa: E501
     }
 
   def get(self, k, encoding=None):
@@ -51,6 +54,7 @@ class MockParams():
     if ret is not None and encoding is not None:
       ret = ret.decode(encoding)
     return ret
+
 
 class MockWebsocket():
   def __init__(self, recv_queue, send_queue):
@@ -66,12 +70,14 @@ class MockWebsocket():
   def send(self, data, opcode):
     self.send_queue.put_nowait((data, opcode))
 
+
 class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
   def do_PUT(self):
     length = int(self.headers['Content-Length'])
     self.rfile.read(length)
     self.send_response(201, "Created")
     self.end_headers()
+
 
 def http_server(port_queue, **kwargs):
   while 1:
@@ -82,6 +88,7 @@ def http_server(port_queue, **kwargs):
     except OSError as e:
       if e.errno == 98:
         continue
+
 
 def with_http_server(func):
   @wraps(func)

@@ -5,9 +5,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlencode, parse_qs
 from tools.lib.api import CommaApi, APIError
 from tools.lib.auth_config import set_token
+from typing import Dict, Any
 
 class ClientRedirectServer(HTTPServer):
-  query_params = {}
+  query_params: Dict[str, Any] = {}
 
 class ClientRedirectHandler(BaseHTTPRequestHandler):
   def do_GET(self):
@@ -24,7 +25,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler):
     self.end_headers()
     self.wfile.write(b'Return to the CLI to continue')
 
-  def log_message(self, format, *args):
+  def log_message(self, format, *args):  # pylint: disable=redefined-builtin
     pass  # this prevent http server from dumping messages to stdout
 
 def auth_redirect_link(port):

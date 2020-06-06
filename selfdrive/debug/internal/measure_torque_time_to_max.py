@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# type: ignore
+
 import os
 import argparse
 import struct

@@ -6,7 +6,7 @@ import unittest
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.car.honda.values import CAR
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.locationd.liblocationd_py import liblocationd # pylint: disable=no-name-in-module, import-error
+from selfdrive.locationd.liblocationd_py import liblocationd  # pylint: disable=no-name-in-module, import-error
 
 
 class TestParamsLearner(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestParamsLearner(unittest.TestCase):
     steering_angles = np.radians(10 * np.sin(2 * np.pi * times / 100.)) + angle_offset
     speeds = 10 * np.sin(2 * np.pi * times / 1000.) + 25
 
-    for i, t in enumerate(times):
+    for i, _ in enumerate(times):
       u = speeds[i]
       sa = steering_angles[i]
       psi = VM_sim.yaw_rate(sa - angle_offset, u)
@@ -44,9 +44,6 @@ class TestParamsLearner(unittest.TestCase):
     self.assertAlmostEqual(x_target, x, places=1)
     self.assertAlmostEqual(ao_target, ao_slow, places=1)
     self.assertAlmostEqual(sr_target, sr, places=1)
-
-
-
 
 
 if __name__ == "__main__":

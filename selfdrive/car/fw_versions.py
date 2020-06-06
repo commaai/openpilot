@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-import traceback
 import struct
+import traceback
+from typing import Any
+
 from tqdm import tqdm
 
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.swaglog import cloudlog
-from selfdrive.car.fingerprints import get_attr_from_cars, FW_VERSIONS
-from selfdrive.car.toyota.values import CAR as TOYOTA
 import panda.python.uds as uds
-
 from cereal import car
+from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
+from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.swaglog import cloudlog
+
 Ecu = car.CarParams.Ecu
 
 
@@ -40,9 +42,9 @@ UDS_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) 
 
 
 HYUNDAI_VERSION_REQUEST_SHORT = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf1a0) # 4 Byte version number
+  p16(0xf1a0)  # 4 Byte version number
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf100) # Long description
+  p16(0xf100)  # Long description
 HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
@@ -213,7 +215,7 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   sendcan = messaging.pub_sock('sendcan')
 
-  extra = None
+  extra: Any = None
   if args.scan:
     extra = {}
     # Honda

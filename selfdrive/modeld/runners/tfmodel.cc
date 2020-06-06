@@ -62,20 +62,20 @@ void TFModel::pwrite(float *buf, int size) {
     cbuf += err;
     tw -= err;
   }
-  //printf("host write done\n");
+  LOGD("host write of size %d done", size);
 }
 
 void TFModel::pread(float *buf, int size) {
   char *cbuf = (char *)buf;
   int tr = size*sizeof(float);
   while (tr > 0) {
+    LOGD("host read remaining %d/%d", tr, size*sizeof(float));
     int err = read(pipeout[0], cbuf, tr);
-    //printf("host read %d/%d\n", err, tr);
     assert(err >= 0);
     cbuf += err;
     tr -= err;
   }
-  //printf("host read done\n");
+  LOGD("host read done");
 }
 
 void TFModel::addRecurrent(float *state, int state_size) {
@@ -99,11 +99,11 @@ void TFModel::execute(float *net_input_buf, int buf_size) {
   if (desire_input_buf != NULL) {
     pwrite(desire_input_buf, desire_state_size);
   }
-  if (rnn_input_buf != NULL) {
-    pwrite(rnn_input_buf, rnn_state_size);
-  }
   if (traffic_convention_input_buf != NULL) {
     pwrite(traffic_convention_input_buf, traffic_convention_size);
+  }
+  if (rnn_input_buf != NULL) {
+    pwrite(rnn_input_buf, rnn_state_size);
   }
   pread(output, output_size);
 }

@@ -157,6 +157,13 @@ selfdrive/car/subaru/radar_interface.py
 selfdrive/car/subaru/values.py
 selfdrive/car/subaru/carcontroller.py
 selfdrive/car/subaru/subarucan.py
+selfdrive/car/mazda/__init__.py
+selfdrive/car/mazda/carstate.py
+selfdrive/car/mazda/interface.py
+selfdrive/car/mazda/radar_interface.py
+selfdrive/car/mazda/values.py
+selfdrive/car/mazda/carcontroller.py
+selfdrive/car/mazda/mazdacan.py
 selfdrive/car/mock/*.py
 
 selfdrive/clocksd/.gitignore
@@ -183,7 +190,6 @@ selfdrive/common/util.[c,h]
 selfdrive/common/efd.[c,h]
 selfdrive/common/cqueue.[c,h]
 selfdrive/common/clutil.[c,h]
-selfdrive/common/messaging.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
 selfdrive/common/mutex.h
@@ -319,9 +325,7 @@ selfdrive/test/longitudinal_maneuvers/*.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_car_models.py
-selfdrive/test/openpilotci_upload.py
 
-selfdrive/test/process_replay/.gitignore
 selfdrive/test/process_replay/__init__.py
 selfdrive/test/process_replay/compare_logs.py
 selfdrive/test/process_replay/process_replay.py
@@ -404,9 +408,7 @@ phonelibs/nanovg/*.h
 phonelibs/libgralloc/**
 phonelibs/linux/**
 phonelibs/opencl/**
-phonelibs/curl/*
 phonelibs/zlib/*
-phonelibs/boringssl/*
 phonelibs/bzip2/*
 phonelibs/openmax/**
 
@@ -432,5 +434,7 @@ installer/updater/Makefile
 
 scripts/update_now.sh
 scripts/stop_updater.sh
+
+pyextra/**
 
 rednose/**

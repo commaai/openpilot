@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: skip-file
 
 # This file is not used by OpenPilot. Only boardd.cc is used.
 # The python version is slower, but has more options for development.
@@ -21,7 +22,7 @@ SafetyModel = car.CarParams.SafetyModel
 # USB is optional
 try:
   import usb1
-  from usb1 import USBErrorIO, USBErrorOverflow  #pylint: disable=no-name-in-module
+  from usb1 import USBErrorIO, USBErrorOverflow  # pylint: disable=no-name-in-module
 except Exception:
   pass
 
@@ -57,7 +58,7 @@ def __parse_can_buffer(dat):
   for j in range(0, len(dat), 0x10):
     ddat = dat[j:j+0x10]
     f1, f2 = struct.unpack("II", ddat[0:8])
-    ret.append((f1 >> 21, f2>>16, ddat[8:8+(f2&0xF)], (f2>>4)&0xFF))
+    ret.append((f1 >> 21, f2 >> 16, ddat[8:8 + (f2 & 0xF)], (f2 >> 4) & 0xFF))
   return ret
 
 def can_send_many(arr):
@@ -138,7 +139,7 @@ def boardd_test_loop():
   can_init()
   cnt = 0
   while 1:
-    can_send_many([[0xbb,0,"\xaa\xaa\xaa\xaa",0], [0xaa,0,"\xaa\xaa\xaa\xaa"+struct.pack("!I", cnt),1]])
+    can_send_many([[0xbb, 0, "\xaa\xaa\xaa\xaa", 0], [0xaa, 0, "\xaa\xaa\xaa\xaa"+struct.pack("!I", cnt), 1]])
     #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",0]])
     #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",1]])
     # recv @ 100hz

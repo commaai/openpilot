@@ -111,10 +111,12 @@ class RouteSegment(object):
     self.camera_path = camera_path
 
   @property
-  def name(self): return str(self._name)
+  def name(self):
+    return str(self._name)
 
   @property
-  def canonical_name(self): return self._name
+  def canonical_name(self):
+    return self._name
 
 class RouteSegmentName(object):
   def __init__(self, name_str):
@@ -123,6 +125,8 @@ class RouteSegmentName(object):
     self._num = int(num_str)
 
   @property
-  def segment_num(self): return self._num
+  def segment_num(self):
+    return self._num
 
-  def __str__(self): return self._segment_name_str
+  def __str__(self):
+    return self._segment_name_str

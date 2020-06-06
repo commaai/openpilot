@@ -180,7 +180,7 @@ if (intercept) {
       //disassemble((uint32_t *)qcmd.data(), qcmd.size()/4);
       //queue_cmds.push_back(qcmd);
     }
-    
+
     #ifdef DUMP
       char tmp[0x100];
       snprintf(tmp, sizeof(tmp), "/tmp/thneed/run_%d_%d", run_num, ioctl_num++);
@@ -515,7 +515,7 @@ cl_mem clCreateImage(cl_context context, cl_mem_flags flags, const cl_image_form
   assert(image_desc->image_array_size == 0);
   assert(image_desc->image_slice_pitch == 0);
   //assert(image_desc->image_width * image_desc->image_height * 2 == image_desc->image_row_pitch);
-  
+
   image img;
   img.image_width = image_desc->image_width;
   img.image_height = image_desc->image_height;
@@ -689,7 +689,7 @@ int main(int argc, char* argv[]) {
   maps[len] = '\0';
   fclose(f);
   printf("%s\n", maps);*/
-  
+
   printf("buffers: %lu images: %lu\n", buffers.size(), images.size());
   printf("queues: %lu\n", queue_cmds.size());
 

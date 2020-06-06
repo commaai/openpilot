@@ -18,7 +18,6 @@
 #include "cereal/gen/cpp/car.capnp.h"
 
 #include "common/util.h"
-#include "common/messaging.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -230,17 +229,18 @@ bool usb_connect() {
     time_t rawtime;
     time(&rawtime);
 
-    struct tm * sys_time = gmtime(&rawtime);
+    struct tm sys_time;
+    gmtime_r(&rawtime, &sys_time);
 
     // Get time from RTC
     timestamp_t rtc_time;
     libusb_control_transfer(dev_handle, 0xc0, 0xa0, 0, 0, (unsigned char*)&rtc_time, sizeof(rtc_time), TIMEOUT);
 
-    //printf("System: %d-%d-%d\t%d:%d:%d\n", 1900 + sys_time->tm_year, 1 + sys_time->tm_mon, sys_time->tm_mday, sys_time->tm_hour, sys_time->tm_min, sys_time->tm_sec);
+    //printf("System: %d-%d-%d\t%d:%d:%d\n", 1900 + sys_time.tm_year, 1 + sys_time.tm_mon, sys_time.tm_mday, sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec);
     //printf("RTC: %d-%d-%d\t%d:%d:%d\n", rtc_time.year, rtc_time.month, rtc_time.day, rtc_time.hour, rtc_time.minute, rtc_time.second);
 
     // Update system time from RTC if it looks off, and RTC time is good
-    if (1900 + sys_time->tm_year < 2019 && rtc_time.year >= 2019){
+    if (1900 + sys_time.tm_year < 2019 && rtc_time.year >= 2019){
       LOGE("System time wrong, setting from RTC");
 
       struct tm new_time = { 0 };
@@ -472,18 +472,19 @@ void can_health(PubMaster &pm) {
     time_t rawtime;
     time(&rawtime);
 
-    struct tm * sys_time = gmtime(&rawtime);
+    struct tm sys_time;
+    gmtime_r(&rawtime, &sys_time);
 
     // Write time to RTC if it looks reasonable
-    if (1900 + sys_time->tm_year >= 2019){
+    if (1900 + sys_time.tm_year >= 2019){
       pthread_mutex_lock(&usb_lock);
-      libusb_control_transfer(dev_handle, 0x40, 0xa1, (uint16_t)(1900 + sys_time->tm_year), 0, NULL, 0, TIMEOUT);
-      libusb_control_transfer(dev_handle, 0x40, 0xa2, (uint16_t)(1 + sys_time->tm_mon), 0, NULL, 0, TIMEOUT);
-      libusb_control_transfer(dev_handle, 0x40, 0xa3, (uint16_t)sys_time->tm_mday, 0, NULL, 0, TIMEOUT);
-      // libusb_control_transfer(dev_handle, 0x40, 0xa4, (uint16_t)(1 + sys_time->tm_wday), 0, NULL, 0, TIMEOUT);
-      libusb_control_transfer(dev_handle, 0x40, 0xa5, (uint16_t)sys_time->tm_hour, 0, NULL, 0, TIMEOUT);
-      libusb_control_transfer(dev_handle, 0x40, 0xa6, (uint16_t)sys_time->tm_min, 0, NULL, 0, TIMEOUT);
-      libusb_control_transfer(dev_handle, 0x40, 0xa7, (uint16_t)sys_time->tm_sec, 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa1, (uint16_t)(1900 + sys_time.tm_year), 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa2, (uint16_t)(1 + sys_time.tm_mon), 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa3, (uint16_t)sys_time.tm_mday, 0, NULL, 0, TIMEOUT);
+      // libusb_control_transfer(dev_handle, 0x40, 0xa4, (uint16_t)(1 + sys_time.tm_wday), 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa5, (uint16_t)sys_time.tm_hour, 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa6, (uint16_t)sys_time.tm_min, 0, NULL, 0, TIMEOUT);
+      libusb_control_transfer(dev_handle, 0x40, 0xa7, (uint16_t)sys_time.tm_sec, 0, NULL, 0, TIMEOUT);
       pthread_mutex_unlock(&usb_lock);
     }
   }
@@ -587,17 +588,29 @@ void can_send(cereal::Event::Reader &event) {
 
 void *can_send_thread(void *crap) {
   LOGD("start send thread");
-  SubMaster sm({"sendcan"});
 
-  // drain sendcan to delete any stale messages from previous runs
-  sm.drain();
+  Context * context = Context::create();
+  SubSocket * subscriber = SubSocket::create(context, "sendcan");
+  assert(subscriber != NULL);
+
   // run as fast as messages come in
   while (!do_exit) {
-    if (sm.update(1000) > 0){
-      can_send(sm["sendcan"]);
+    Message * msg = subscriber->receive();
+
+    if (msg){
+      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+      memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+      capnp::FlatArrayMessageReader cmsg(amsg);
+      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+      can_send(event);
+      delete msg;
     }
   }
-  
+
+  delete subscriber;
+  delete context;
+
   return NULL;
 }
 
@@ -855,9 +868,11 @@ int main() {
   int err;
   LOGW("starting boardd");
 
-  // set process priority
-  err = set_realtime_priority(4);
-  LOG("setpriority returns %d", err);
+  // set process priority and affinity
+  err = set_realtime_priority(54);
+  LOG("set priority returns %d", err);
+  err = set_core_affinity(3);
+  LOG("set affinity returns %d", err);
 
   // check the environment
   if (getenv("STARTED")) {

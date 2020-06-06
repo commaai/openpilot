@@ -38,7 +38,6 @@ class ObservationKind:
   STEER_RATIO = 29  # [-]
   ROAD_FRAME_X_SPEED = 30  # (x) [m/s]
 
-
   names = [
     'Unknown',
     'No observation',

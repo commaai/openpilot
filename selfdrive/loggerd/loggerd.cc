@@ -729,7 +729,7 @@ int main(int argc, char** argv) {
   for (auto s : socks){
     delete s;
   }
-  
+
   delete poller;
   delete s.ctx;
   return 0;

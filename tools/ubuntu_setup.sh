@@ -85,13 +85,7 @@ pyenv rehash
 pip install pipenv==2018.11.26
 
 # pipenv setup (in openpilot dir)
-pipenv install --system --deploy
-
-# to make tools work
-pip install -r tools/requirements.txt
-
-# to make modeld work on PC with nvidia GPU
-pip install tensorflow==2.2
+pipenv install --dev --system --deploy
 
 # for loggerd to work on ubuntu
 # TODO: PC should log somewhere else

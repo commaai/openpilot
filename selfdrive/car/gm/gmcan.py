@@ -28,7 +28,7 @@ def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_st
   }
 
   dat = packer.make_can_msg("ASCMGasRegenCmd", bus, values)[2]
-  values["GasRegenChecksum"] = (((0xff -dat[1]) & 0xff) << 16) | \
+  values["GasRegenChecksum"] = (((0xff - dat[1]) & 0xff) << 16) | \
                                (((0xff - dat[2]) & 0xff) << 8) | \
                                ((0x100 - dat[3] - idx) & 0xff)
 
@@ -60,7 +60,7 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
 
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)
 
-def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight):
+def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight, fcw):
   # Not a bit shift, dash can round up based on low 4 bits.
   target_speed = int(target_speed_kph * 16) & 0xfff
 
@@ -68,10 +68,11 @@ def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lea
     "ACCAlwaysOne" : 1,
     "ACCResumeButton" : 0,
     "ACCSpeedSetpoint" : target_speed,
-    "ACCGapLevel" : 3 * acc_engaged, # 3 "far", 0 "inactive"
+    "ACCGapLevel" : 3 * acc_engaged,  # 3 "far", 0 "inactive"
     "ACCCmdActive" : acc_engaged,
     "ACCAlwaysOne2" : 1,
-    "ACCLeadCar" : lead_car_in_sight
+    "ACCLeadCar" : lead_car_in_sight,
+    "FCWAlert": fcw
   }
 
   return packer.make_can_msg("ASCMActiveCruiseControlStatus", bus, values)
@@ -120,4 +121,3 @@ def create_lka_icon_command(bus, active, critical, steer):
   else:
     dat = b"\x00\x00\x00"
   return make_can_msg(0x104c006c, dat, bus)
-

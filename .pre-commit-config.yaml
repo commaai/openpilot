@@ -6,13 +6,23 @@ repos:
     -   id: check-json
     -   id: check-xml
     -   id: check-yaml
--   repo: https://gitlab.com/PyCQA/flake8
+    -   id: check-merge-conflict
+    -   id: check-symlinks
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: master
+    hooks:
+    -   id: mypy
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)/'
+        additional_dependencies: ['git+https://github.com/numpy/numpy-stubs']
+-   repo: https://github.com/PyCQA/flake8
     rev: master
     hooks:
     -   id: flake8
-        exclude: '^(pyextra)|(external)/'
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)|(selfdrive/debug)/'
         args:
-        - --select=F
+        - --select=E112,E113,E304,E501,E502,E701,E702,E703,E71,E72,E731,W191,W6
+        - --max-line-length=240
+        - --statistics
 -   repo: local
     hooks:
     -   id: pylint
@@ -20,6 +30,4 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        exclude: '^(pyextra)|(external)/'
-        args:
-        - --disable=R,C,W
+        exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'

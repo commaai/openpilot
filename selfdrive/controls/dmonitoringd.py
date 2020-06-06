@@ -12,7 +12,7 @@ def dmonitoringd_thread(sm=None, pm=None):
   gc.disable()
 
   # start the loop
-  set_realtime_priority(3)
+  set_realtime_priority(53)
 
   params = Params()
 
@@ -37,7 +37,7 @@ def dmonitoringd_thread(sm=None, pm=None):
   sm['carState'].steeringPressed = False
   sm['carState'].standstill = True
 
-  cal_rpy = [0,0,0]
+  cal_rpy = [0, 0, 0]
   v_cruise_last = 0
   driver_engaged = False
 
