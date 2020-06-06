@@ -72,11 +72,18 @@ class TestOrientationCython(unittest.TestCase):
       np.testing.assert_allclose(quat, quat_new, rtol=1e-7)
 
   def test_euler2rot_rot2euler(self):
-    """Tests euler to rotation matrix conversion. Converts to quaternions to verify results"""
+    """Tests round trip of rotation matrix to euler conversion. Converts to quaternions to verify results"""
     for euler in eulers:
       rot = euler2rot_single(euler)
       euler_new = rot2euler_single(rot)
       np.testing.assert_allclose(euler2quat_single(euler), euler2quat_single(euler_new), rtol=1e-7)
+
+  def test_rot2euler_quat2rot(self):
+    for quat in quats:
+      rot = quat2rot_single(quat)
+      euler = rot2euler_single(rot)
+      quat_new = euler2quat_single(euler)
+      np.testing.assert_allclose(quat, quat_new, rtol=1e-7)
 
   def test_rot_matrix(self):
     for euler in eulers:
