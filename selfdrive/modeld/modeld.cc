@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
 
     char cBuffer[1024];
     clGetPlatformInfo(platform_id[clPlatform], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
-    LOGD("got %d opencl platform(s), using %s", num_platforms, cBuffer);
+    LOG("got %d opencl platform(s), using %s", num_platforms, cBuffer);
 
     err = clGetDeviceIDs(platform_id[clPlatform], CL_DEVICE_TYPE_DEFAULT, 1,
                          &device_id, &num_devices);
@@ -118,6 +118,7 @@ int main(int argc, char **argv) {
 
     q = clCreateCommandQueue(context, device_id, 0, &err);
     assert(err == 0);
+    LOGD("opencl init complete");
   }
 
   // init the models
@@ -192,7 +193,7 @@ int main(int argc, char **argv) {
         model_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
         posenet_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
 
-        LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
+        LOG("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
         last = mt1;
       }
 
