@@ -419,3 +419,24 @@ scripts/stop_updater.sh
 pyextra/logentries/**
 
 rednose/**
+
+cereal/__init__.py
+cereal/car.capnp
+cereal/log.capnp
+cereal/services.py
+cereal/service_list.yaml
+cereal/SConscript
+cereal/include/**
+cereal/messaging/**
+
+panda/__init__.py
+panda/VERSION
+panda/board/**
+panda/certs/**
+panda/common/**
+panda/crypto/**
+panda/python/**
+
+opendbc/__init__.py
+opendbc/*.dbc
+opendbc/can/**
