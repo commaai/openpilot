@@ -856,7 +856,7 @@ int main(int argc, char* argv[]) {
       should_swap = true;
     }
 
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5), 5); // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5), 5); // up one notch every 5 m/s
 
     // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
@@ -875,7 +875,6 @@ int main(int argc, char* argv[]) {
       }
       s->controls_seen = false;
     }
-
 
     read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
     read_param_timeout(&s->longitudinal_control, "LongitudinalControl", &s->longitudinal_control_timeout);
