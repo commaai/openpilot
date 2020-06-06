@@ -9,9 +9,8 @@ echo $$ > /dev/cpuset/app/tasks
 echo $PPID > /dev/cpuset/app/tasks
 
 
-SOURCE_DIR=/data/openpilot
-TARGET_DIR=/data/openpilot_test
-
+SOURCE_DIR=/data/openpilot_source
+TARGET_DIR=/data/openpilot
 
 ln -sf $TARGET_DIR /data/pythonpath
 
@@ -19,7 +18,7 @@ export GIT_COMMITTER_NAME="Vehicle Researcher"
 export GIT_COMMITTER_EMAIL="user@comma.ai"
 export GIT_AUTHOR_NAME="Vehicle Researcher"
 export GIT_AUTHOR_EMAIL="user@comma.ai"
-export GIT_SSH_COMMAND="ssh -i /data/gitkey"
+export GIT_SSH_COMMAND="ssh -i /tmp/deploy_key"
 
 echo "[-] Setting up repo T=$SECONDS"
 if [ ! -d "$TARGET_DIR" ]; then
@@ -97,10 +96,10 @@ pushd panda/board/pedal
 make obj/comma.bin
 popd
 
-#if [ ! -z "$PUSH" ]; then
-#    echo "[-] Pushing to $PUSH T=$SECONDS"
-#    git push -f origin master-ci:$PUSH
-#fi
+if [ ! -z "$PUSH" ]; then
+    echo "[-] Pushing to $PUSH T=$SECONDS"
+    git push -f origin master-ci:$PUSH
+fi
 
 echo "[-] done pushing T=$SECONDS"
 

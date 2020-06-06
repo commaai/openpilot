@@ -162,6 +162,8 @@ selfdrive/clocksd/.gitignore
 selfdrive/clocksd/SConscript
 selfdrive/clocksd/clocksd.cc
 
+selfdrive/debug/*.py
+
 selfdrive/common/SConscript
 selfdrive/common/version.h
 
