@@ -64,6 +64,7 @@ def create_clu11(packer, frame, bus, clu11, button, speed):
 def create_scc12(packer, apply_accel, enabled, cnt, scc12):
   values = scc12
   if enabled:
+    values["ACCMode"] = 1
     values["aReqRaw"] = apply_accel #aReqMax
     values["aReqValue"] = apply_accel #aReqMin
   values["CR_VSM_Alive"] = cnt
@@ -108,11 +109,12 @@ def create_lfa_mfa(packer, frame, enabled):
 
 def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc11):
   values = scc11
-  values["MainMode_ACC"] = 1 if enabled else 0
+  values["MainMode_ACC"] = 1
   values["AliveCounterACC"] = frame % 0x10
-  values["VSetDis"] = set_speed * 3.6 # km/h velosity
-  values["ObjValid"] = lead_visible
-  values["ACC_ObjStatus"] = lead_visible
+  if enabled:
+    values["VSetDis"] = set_speed / 3.6 # km/h velosity
+    values["ObjValid"] = 1
+    values["ACC_ObjStatus"] = lead_visible
 
   return packer.make_can_msg("SCC11", 0, values)
 
