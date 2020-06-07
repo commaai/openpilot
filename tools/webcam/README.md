@@ -5,7 +5,7 @@ What's needed:
 - Python 3.7.3
 - GPU (recommended)
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)
-- [Car harness](https://comma.ai/shop/products/comma-car-harness) w/ black panda (or the outdated grey panda/giraffe combo) to connect to your car
+- [Car harness](https://comma.ai/shop/products/comma-car-harness) with black panda (or the outdated grey panda/giraffe combo) to connect to your car
 - [Panda paw](https://comma.ai/shop/products/panda-paw) (or USB-A to USB-A cable) to connect panda to your computer
 - Tape, Charger, ...
 That's it!
@@ -17,7 +17,7 @@ git clone https://github.com/commaai/openpilot.git
 ```
 - Follow [this readme](https://github.com/commaai/openpilot/tree/master/tools) to install the requirements
 - Add line "export PYTHONPATH=$HOME/openpilot" to your ~/.bashrc
-- You also need to install tensorflow 2.2 and nvidia drivers: nvidia-xxx/cuda10.0/cudnn7.6.5
+- Install tensorflow 2.2 and nvidia drivers: nvidia-xxx/cuda10.0/cudnn7.6.5
 - Install [OpenCL Driver](http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532/l_opencl_p_18.1.0.015.tgz)
 - (Note: the code assumes cl platforms order to be 0.GPU/1.CPU when running clinfo; if reverse, change the -1 to -2 in selfdrive/modeld/modeld.cc#L130; helping us refactor this mess is encouraged)
 - Install [OpenCV4](https://www.pyimagesearch.com/2018/08/15/how-to-install-opencv-4-on-ubuntu/) (ignore the Python part)
@@ -26,13 +26,13 @@ git clone https://github.com/commaai/openpilot.git
 ```
 cd ~/openpilot
 ```
-- check out selfdrive/camerad/cameras/camera_webcam.cc line72&146 before building if any camera is upside down
+- check out selfdrive/camerad/cameras/camera_webcam.cc lines 72 and 146 before building if any camera is upside down
 ```
 scons use_webcam=1
 touch prebuilt
 ```
 
-## Connect the hardwares
+## Connect the hardware
 - Connect the road facing camera first, then the driver facing camera
 - (default indexes are 1 and 2; can be modified in selfdrive/camerad/cameras/camera_webcam.cc)
 - Connect your computer to panda
