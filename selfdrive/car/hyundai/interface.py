@@ -311,7 +311,7 @@ class CarInterface(CarInterfaceBase):
         if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
           events.add(EventName.buttonEnable)
         # do disable on button down
-        if b.type == "cancel" and b.pressed:
+        if b.type == ButtonType.cancel and b.pressed:
           events.add(EventName.buttonCancel)
 
     ret.events = events.to_msg()
