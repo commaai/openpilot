@@ -129,7 +129,7 @@ class CarController():
       self.scc_update_frame = frame
 
     # check if SCC on bus 0 is live
-    if frame % 10 == 0 and CS.scc_bus == 0:
+    if frame % 7 == 0 and CS.scc_bus == 0:
       if CS.scc11["AliveCounterACC"] == self.prev_scc_cnt:
         if frame - self.scc_update_frame > 15 and self.scc_live:
           self.scc_live = False
