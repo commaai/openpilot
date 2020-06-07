@@ -798,7 +798,7 @@ struct PathPlan {
   desire @17 :Desire;
   laneChangeState @18 :LaneChangeState;
   laneChangeDirection @19 :LaneChangeDirection;
-  laneChangeBSM @20 :LaneChangeBSM;
+  laneChangeBlocked @20 :LaneChangeBlocked;
 
   enum Desire {
     none @0;
@@ -822,7 +822,7 @@ struct PathPlan {
     left @1;
     right @2;
   }
-  enum LaneChangeBSM {
+  enum LaneChangeBlocked {
     off @0;
     left @1;
     right @2;
