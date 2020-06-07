@@ -137,7 +137,7 @@ class CarController():
       can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
                                    CS.lkas11, sys_warning, sys_state, enabled, left_lane, right_lane,
                                    left_lane_warning, right_lane_warning, 1))
-    if CS.mdps_bus: # send clu11 to mdps if it is not on bus 0
+    if frame % 2 and CS.mdps_bus: # send clu11 to mdps if it is not on bus 0
       can_sends.append(create_clu11(self.packer, frame, CS.mdps_bus, CS.clu11, Buttons.NONE, enabled_speed))
 
     if pcm_cancel_cmd and self.longcontrol:
@@ -167,7 +167,7 @@ class CarController():
         # interval after 6 msgs
         if self.resume_cnt > 5:
           self.last_resume_frame = frame
-          self.clu11_cnt = 0
+          self.resume_cnt = 0
     # reset lead distnce after the car starts moving
     elif self.last_lead_distance != 0:
       self.last_lead_distance = 0  
