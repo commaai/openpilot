@@ -12,6 +12,7 @@ from cereal import log
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
+LaneChangeBlocked = log.PathPlan.LaneChangeBlocked
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
@@ -58,6 +59,7 @@ class PathPlanner():
     self.lane_change_enabled = Params().get('LaneChangeEnabled') == b'1'
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
+    self.lane_change_Blocked = LaneChangeBlocked.clear
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
@@ -216,6 +218,7 @@ class PathPlanner():
     plan_send.pathPlan.desire = desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
     plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
+    plan_send.pathPlan.laneChangeBlocked = self.lane_change_Blocked
 
     pm.send('pathPlan', plan_send)
 
