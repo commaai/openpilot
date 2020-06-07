@@ -157,31 +157,13 @@ class PathPlanner():
           if self.pre_auto_LCA_timer > 10.3:
             self.prev_torque_applied = True
 
-      # bsm
-      elif self.lane_change_state == LaneChangeState.laneChangeStarting:
-        if lca_left and self.lane_change_direction == LaneChangeDirection.left and not self.prev_torque_applied:
-          self.lane_change_BSM = LaneChangeBSM.left
-          self.lane_change_state = LaneChangeState.preLaneChange
-        elif lca_right and self.lane_change_direction == LaneChangeDirection.right and not self.prev_torque_applied:
-          self.lane_change_BSM = LaneChangeBSM.right
-          self.lane_change_state = LaneChangeState.preLaneChange
-        else:
-          # starting
-          self.lane_change_BSM = LaneChangeBSM.off
-          if self.lane_change_state == LaneChangeState.laneChangeStarting:
-            # fade out over .5s
-            self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2*DT_MDL, 0.0)
-            # 98% certainty
-            if lane_change_prob < 0.02 and self.lane_change_ll_prob < 0.01:
-              self.lane_change_state = LaneChangeState.laneChangeFinishing
-
       # starting
-      #elif self.lane_change_state == LaneChangeState.laneChangeStarting:
+      elif self.lane_change_state == LaneChangeState.laneChangeStarting:
         # fade out over .5s
-        #self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2*DT_MDL, 0.0)
+        self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2*DT_MDL, 0.0)
         # 98% certainty
-        #if lane_change_prob < 0.02 and self.lane_change_ll_prob < 0.01:
-          #self.lane_change_state = LaneChangeState.laneChangeFinishing
+        if lane_change_prob < 0.02 and self.lane_change_ll_prob < 0.01:
+          self.lane_change_state = LaneChangeState.laneChangeFinishing
 
       # finishing
       elif self.lane_change_state == LaneChangeState.laneChangeFinishing:
@@ -194,12 +176,6 @@ class PathPlanner():
 
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
       self.lane_change_timer = 0.0
-      if self.lane_change_BSM == LaneChangeBSM.right:
-        if not lca_right:
-          self.lane_change_BSM = LaneChangeBSM.off
-      if self.lane_change_BSM == LaneChangeBSM.left:
-        if not lca_left:
-          self.lane_change_BSM = LaneChangeBSM.off
     else:
       self.lane_change_timer += DT_MDL
 
