@@ -475,6 +475,7 @@ void* processing_thread(void *arg) {
     if (is_blur(&s->lapres[0]) && (s->cameras.rear.lens_true_pos < (DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN)+1||s->cameras.rear.lens_true_pos > (DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP)-1) && s->cameras.rear.self_recover < 2) {
       s->cameras.rear.self_recover -= 1;
       if (s->cameras.rear.self_recover < -FOCUS_RECOVER_PATIENCE) {
+        LOG("rear camera bad state detected. attempting recovery");
         s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS + ((s->cameras.rear.lens_true_pos < (DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN)+50)?1:0); // parity determined by which end is stuck at
       }
     } else if (s->cameras.rear.self_recover < 0) {
