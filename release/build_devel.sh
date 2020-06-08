@@ -22,12 +22,11 @@ export GIT_SSH_COMMAND="ssh -i /tmp/deploy_key"
 
 echo "[-] Setting up repo T=$SECONDS"
 if [ ! -d "$TARGET_DIR" ]; then
-    mkdir -p $TARGET_DIR
-    cd $TARGET_DIR
-    git init
-    git remote add origin git@github.com:commaai/openpilot.git
+  mkdir -p $TARGET_DIR
+  cd $TARGET_DIR
+  git init
+  git remote add origin git@github.com:commaai/openpilot.git
 fi
-
 
 echo "[-] fetching public T=$SECONDS"
 cd $TARGET_DIR
@@ -97,8 +96,8 @@ make obj/comma.bin
 popd
 
 if [ ! -z "$PUSH" ]; then
-    echo "[-] Pushing to $PUSH T=$SECONDS"
-    git push -f origin master-ci:$PUSH
+  echo "[-] Pushing to $PUSH T=$SECONDS"
+  git push -f origin master-ci:$PUSH
 fi
 
 echo "[-] done pushing T=$SECONDS"

@@ -137,6 +137,13 @@ selfdrive/car/gm/radar_interface.py
 selfdrive/car/gm/values.py
 selfdrive/car/gm/carcontroller.py
 selfdrive/car/gm/gmcan.py
+selfdrive/car/ford/__init__.py
+selfdrive/car/ford/carstate.py
+selfdrive/car/ford/interface.py
+selfdrive/car/ford/radar_interface.py
+selfdrive/car/ford/values.py
+selfdrive/car/ford/carcontroller.py
+selfdrive/car/ford/fordcan.py
 selfdrive/car/subaru/__init__.py
 selfdrive/car/subaru/carstate.py
 selfdrive/car/subaru/interface.py
