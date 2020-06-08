@@ -123,6 +123,8 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   s->max_gain = max_gain;
   s->fps = fps;
 
+  s->self_recover = 0;
+
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
   s->ops_sock = zsock_resolve(ops_sock);
@@ -1745,8 +1747,13 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
       avg_focus += s->focus[i];
     }
   }
+  // self recover override
+  if (s->self_recover > 1) {
+    s->focus_err = 200 * ((s->self_recover % 2 == 0) ? 1:-1); // far for even numbers, close for odd
+    s->self_recover -= 2;
+    return;
+  }
 
-  //printf("\n");
   if (good_count < 4) {
     s->focus_err = nan("");
     return;
@@ -1770,8 +1777,8 @@ static void do_autofocus(CameraState *s) {
   float err = s->focus_err;
   float sag = (s->last_sag_acc_z/9.8) * 128;
 
-  const int dac_up = s->device == DEVICE_LP3? 634:456;
-  const int dac_down = s->device == DEVICE_LP3? 366:224;
+  const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
+  const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
 
   if (!isnan(err))  {
     // learn lens_true_pos
