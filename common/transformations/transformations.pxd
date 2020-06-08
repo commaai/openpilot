@@ -54,14 +54,14 @@ cdef extern from "coordinates.cc":
   ECEF geodetic2ecef(Geodetic)
   Geodetic ecef2geodetic(ECEF)
 
-  cdef cppclass LocalCoord:
-    LocalCoord(Geodetic, ECEF)
-    LocalCoord(Geodetic)
-    LocalCoord(ECEF)
+  cdef cppclass LocalCoord_c "LocalCoord":
+    LocalCoord_c(Geodetic, ECEF)
+    LocalCoord_c(Geodetic)
+    LocalCoord_c(ECEF)
 
     NED ecef2ned(ECEF)
     ECEF ned2ecef(NED)
-    NED geodetic2ecef(Geodetic)
+    NED geodetic2ned(Geodetic)
     Geodetic ned2geodetic(NED)
 
 cdef extern from "coordinates.hpp":

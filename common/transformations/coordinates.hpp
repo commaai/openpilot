@@ -31,6 +31,6 @@ public:
 
   NED ecef2ned(ECEF e);
   ECEF ned2ecef(NED n);
-  NED geodetic2ecef(Geodetic g);
+  NED geodetic2ned(Geodetic g);
   Geodetic ned2geodetic(NED n);
 };

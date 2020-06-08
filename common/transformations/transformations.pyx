@@ -10,6 +10,9 @@ from transformations cimport rot2euler as rot2euler_c
 from transformations cimport rot_matrix as rot_matrix_c
 from transformations cimport ecef_euler_from_ned as ecef_euler_from_ned_c
 from transformations cimport ned_euler_from_ecef as ned_euler_from_ecef_c
+from transformations cimport geodetic2ecef as geodetic2ecef_c
+from transformations cimport ecef2geodetic as ecef2geodetic_c
+from transformations cimport LocalCoord_c
 
 
 import cython
@@ -95,3 +98,59 @@ def ned_euler_from_ecef_single(ecef_init, ecef_pose):
 
     cdef Vector3 e = ned_euler_from_ecef_c(init, pose)
     return [e(0), e(1), e(2)]
+
+def geodetic2ecef_single(geodetic):
+    cdef Geodetic g = list2geodetic(geodetic)
+    cdef ECEF e = geodetic2ecef_c(g)
+    return [e.x, e.y, e.z]
+
+def ecef2geodetic_single(ecef):
+    cdef ECEF e = list2ecef(ecef)
+    cdef Geodetic g = ecef2geodetic_c(e)
+    return [g.lat, g.lon, g.alt]
+
+
+cdef class LocalCoord:
+    cdef LocalCoord_c * lc
+
+    def __init__(self, geodetic=None, ecef=None):
+        assert (geodetic is not None) or (ecef is not None)
+        if geodetic is not None:
+            self.lc = new LocalCoord_c(list2geodetic(geodetic))
+        elif ecef is not None:
+            self.lc = new LocalCoord_c(list2ecef(ecef))
+
+    @classmethod
+    def from_geodetic(cls, geodetic):
+        return cls(geodetic=geodetic)
+
+    @classmethod
+    def from_ecef(cls, ecef):
+        return cls(ecef=ecef)
+
+    def ecef2ned_single(self, ecef):
+        assert self.lc
+        cdef ECEF e = list2ecef(ecef)
+        cdef NED n = self.lc.ecef2ned(e)
+        return [n.n, n.e, n.d]
+
+    def ned2ecef_single(self, ned):
+        assert self.lc
+        cdef NED n = list2ned(ned)
+        cdef ECEF e = self.lc.ned2ecef(n)
+        return [e.x, e.y, e.z]
+
+    def geodetic2ned_single(self, geodetic):
+        assert self.lc
+        cdef Geodetic g = list2geodetic(geodetic)
+        cdef NED n = self.lc.geodetic2ned(g)
+        return [n.n, n.e, n.d]
+
+    def ned2geodetic_single(self, ned):
+        assert self.lc
+        cdef NED n = list2ned(ned)
+        cdef Geodetic g = self.lc.ned2geodetic(n)
+        return [g.lat, g.lon, g.alt]
+
+    def __dealloc__(self):
+        del self.lc

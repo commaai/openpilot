@@ -93,7 +93,7 @@ ECEF LocalCoord::ned2ecef(NED n) {
   return {ecef[0], ecef[1], ecef[2]};
 }
 
-NED LocalCoord::geodetic2ecef(Geodetic g) {
+NED LocalCoord::geodetic2ned(Geodetic g) {
   ECEF e = ::geodetic2ecef(g);
   return ecef2ned(e);
 }
