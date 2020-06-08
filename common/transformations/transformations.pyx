@@ -35,6 +35,20 @@ cdef ECEF list2ecef(ecef):
     e.z = ecef[2]
     return e
 
+cdef NED list2ned(ned):
+    cdef NED n;
+    n.n = ned[0]
+    n.e = ned[1]
+    n.d = ned[2]
+    return n
+
+cdef Geodetic list2geodetic(geodetic):
+    cdef Geodetic g
+    g.lat = geodetic[0]
+    g.lon = geodetic[1]
+    g.alt = geodetic[2]
+    return g
+
 def euler2quat_single(euler):
     cdef Vector3 e = Vector3(euler[0], euler[1], euler[2])
     cdef Quaternion q = euler2quat_c(e)

@@ -16,27 +16,21 @@ double esq = 6.69437999014 * 0.001;
 double e1sq = 6.73949674228 * 0.001;
 
 
-static Geodetic ensure_degrees(Geodetic geodetic){
-  if (geodetic.radians) {
-    geodetic.lat = RAD2DEG(geodetic.lat);
-    geodetic.lon = RAD2DEG(geodetic.lon);
-    geodetic.radians = false;
-  }
+static Geodetic to_degrees(Geodetic geodetic){
+  geodetic.lat = RAD2DEG(geodetic.lat);
+  geodetic.lon = RAD2DEG(geodetic.lon);
   return geodetic;
 }
 
-static Geodetic ensure_radians(Geodetic geodetic){
-  if (!geodetic.radians) {
-    geodetic.lat = DEG2RAD(geodetic.lat);
-    geodetic.lon = DEG2RAD(geodetic.lon);
-    geodetic.radians = true;
-  }
+static Geodetic to_radians(Geodetic geodetic){
+  geodetic.lat = DEG2RAD(geodetic.lat);
+  geodetic.lon = DEG2RAD(geodetic.lon);
   return geodetic;
 }
 
 
 ECEF geodetic2ecef(Geodetic g){
-  g = ensure_radians(g);
+  g = to_radians(g);
   double xi = sqrt(1.0 - esq * pow(sin(g.lat), 2));
   double x = (a / xi + g.alt) * cos(g.lat) * cos(g.lon);
   double y = (a / xi + g.alt) * cos(g.lat) * sin(g.lon);
@@ -68,13 +62,13 @@ Geodetic ecef2geodetic(ECEF e){
   double lat = atan((z + e1sq * Z_0) / r);
   double lon = atan2(y, x);
 
-  return ensure_degrees({lat, lon, h, true});
+  return to_degrees({lat, lon, h});
 }
 
 LocalCoord::LocalCoord(Geodetic g, ECEF e){
   init_ecef <<  e.x, e.y, e.z;
 
-  g = ensure_radians(g);
+  g = to_radians(g);
 
   ned2ecef_matrix <<
     -sin(g.lat)*cos(g.lon), -sin(g.lon), -cos(g.lat)*cos(g.lon),
