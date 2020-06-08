@@ -486,6 +486,9 @@ opendbc/gm_global_a_powertrain.dbc
 opendbc/gm_global_a_object.dbc
 opendbc/gm_global_a_chassis.dbc
 
+opendbc/ford_fusion_2018_pt.dbc
+opendbc/ford_fusion_2018_adas.dbc
+
 opendbc/honda_accord_s2t_2018_can_generated.dbc
 opendbc/honda_accord_lx15t_2018_can_generated.dbc
 opendbc/acura_ilx_2016_can_generated.dbc
