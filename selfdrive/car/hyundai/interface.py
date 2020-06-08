@@ -56,10 +56,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.90
       ret.steerRatio = 13.75 * 1.15
       ret.lateralTuning.init('indi')
-      ret.lateralTuning.innerLoopGain = 3.6
-      ret.lateralTuning.outerLoopGain = 2.6
-      ret.lateralTuning.timeConstant = 1.0
-      ret.actuatorEffectiveness = 1.5
+      ret.lateralTuning.indi.innerLoopGain = 3.6
+      ret.lateralTuning.indi.outerLoopGain = 2.6
+      ret.lateralTuning.indi.timeConstant = 1.0
+      ret.lateralTuning.indi.actuatorEffectiveness = 1.5
     elif candidate == CAR.KIA_SORENTO:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1985. + STD_CARGO_KG
