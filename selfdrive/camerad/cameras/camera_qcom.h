@@ -31,7 +31,7 @@
 #define OP3T_AF_DAC_UP 456
 
 #define FOCUS_RECOVER_PATIENCE 50 // 2.5 seconds of complete blur
-#define FOCUS_RECOVER_STEPS 120 // 6 seconds
+#define FOCUS_RECOVER_STEPS 240 // 6 seconds
 
 #ifdef __cplusplus
 extern "C" {
