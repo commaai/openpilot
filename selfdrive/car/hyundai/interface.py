@@ -52,11 +52,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.PALISADE:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1999. + STD_CARGO_KG
+      ret.mass = 2449. + STD_CARGO_KG
       ret.wheelbase = 2.90
       ret.steerRatio = 13.75 * 1.15
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.lateralTuning.init('indi')
+      ret.lateralTuning.innerLoopGain = 3.6
+      ret.lateralTuning.outerLoopGain = 2.6
+      ret.lateralTuning.timeConstant = 1.0
+      ret.actuatorEffectiveness = 1.5
     elif candidate == CAR.KIA_SORENTO:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1985. + STD_CARGO_KG
