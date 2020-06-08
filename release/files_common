@@ -439,6 +439,7 @@ cereal/messaging/msgq.cc
 cereal/messaging/msgq.hpp
 cereal/messaging/socketmaster.cc
 
+panda/.gitignore
 panda/__init__.py
 panda/VERSION
 panda/board/**
@@ -447,6 +448,7 @@ panda/common/**
 panda/crypto/**
 panda/python/**
 
+opendbc/.gitignore
 opendbc/__init__.py
 opendbc/can/__init__.py
 opendbc/can/SConscript
