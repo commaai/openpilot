@@ -9,7 +9,7 @@ https://www.youtube.com/c/ku7tech</b>
 
 support:
 ------
-<b>I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=JX92RNKXRPJKN&currency_code=USD&source=url)</b>
+<b>I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://paypal.me/xx979xx)</b>
 
 Changes:
 ------
@@ -57,9 +57,7 @@ To add new car or fingerprint, please make Pull Requset or send me the fingerpri
 | Kia       | Sorento 2018<sup>5</sup>           | All               | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018<sup>5</sup>           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 
-
-----------------------------------------------------
-
+-----------------------------------------------------------------------------------------------------------------------------
 [![](https://i.imgur.com/UelUjKAh.png)](#)
 
 Table of Contents
