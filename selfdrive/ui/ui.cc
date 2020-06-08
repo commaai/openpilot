@@ -57,7 +57,7 @@ static void set_awake(UIState *s, bool awake) {
     } else {
       LOGW("awake off");
       set_brightness(s, 0);
-      framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
+      framebuffer_set_power(s->fb, HWC_POWER_MODE_DOZE);
       enable_event_processing(false);
     }
   }
