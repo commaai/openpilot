@@ -14,6 +14,7 @@
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
+#include "common/utilpp.h"
 #include "ui.hpp"
 
 static int last_brightness = -1;
@@ -716,22 +717,6 @@ fail:
 
 #endif
 
-int is_leon() {
-  #define MAXCHAR 1000
-  FILE *fp;
-  char str[MAXCHAR];
-  const char* filename = "/proc/cmdline";
-
-  fp = fopen(filename, "r");
-  if (fp == NULL){
-    printf("Could not open file %s",filename);
-    return 0;
-  }
-  fgets(str, MAXCHAR, fp);
-  fclose(fp);
-  return strstr(str, "letv") != NULL;
-}
-
 int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
@@ -762,7 +747,7 @@ int main(int argc, char* argv[]) {
   ui_sound_init();
 
   // light sensor scaling params
-  const int LEON = is_leon();
+  const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
 
   float brightness_b, brightness_m;
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
