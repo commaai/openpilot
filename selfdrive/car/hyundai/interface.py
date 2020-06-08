@@ -268,21 +268,18 @@ class CarInterface(CarInterfaceBase):
     buttonEvents = []
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
       be = car.CarState.ButtonEvent.new_message()
-      be.type = ButtonType.unknown
-      if self.CS.cruise_buttons != 0:
-        be.pressed = True
-        but = self.CS.cruise_buttons
-      else:
-        be.pressed = False
-        but = self.CS.prev_cruise_buttons
+      be.pressed = self.CS.cruise_buttons != 0 
+      but = self.CS.cruise_buttons if be.pressed else self.CS.prev_cruise_buttons
       if but == Buttons.RES_ACCEL:
         be.type = ButtonType.accelCruise
       elif but == Buttons.SET_DECEL:
         be.type = ButtonType.decelCruise
-      elif but == Buttons.CANCEL:
-        be.type = ButtonType.cancel
       elif but == Buttons.GAP_DIST:
         be.type = ButtonType.gapAdjustCruise
+      elif but == Buttons.CANCEL:
+        be.type = ButtonType.cancel
+      else:
+        be.type = ButtonType.unknown
       buttonEvents.append(be)
     if self.CS.cruise_main_button != self.CS.prev_cruise_main_button:
       be = car.CarState.ButtonEvent.new_message()
@@ -306,6 +303,8 @@ class CarInterface(CarInterfaceBase):
 
     # handle button presses
     if not self.CP.enableCruise:
+      if EventName.pcmDisable in events.events:
+        events.events.remove(EventName.pcmDisable)
       for b in ret.buttonEvents:
         # do enable on both accel and decel buttons
         if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
