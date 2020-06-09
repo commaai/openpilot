@@ -85,13 +85,19 @@ class CarState(CarStateBase):
     # * - Preglobal Foresters do not support units change
 
     # TODO:
-    # - Add OBD2 PID 28 query to get target market (UDM/ADM/EDM) for car
+    # - Implement OBD2 PID 28 query to get target market (UDM/ADM/EDM) for Global models
     # - Add market and model based conditional checks
     # - Analyze Eyesight OBD Mode22 scans to find better units bit
 
-    # EDM Impreza: 1,2 = mph, UDM Forester: 7 = mph
-    if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
-      ret.cruiseState.speed *= CV.MPH_TO_KPH
+    # EDM Global: mph = 1, 2; All Outback: mph = 1, UDM Forester: mph = 7
+    if self.car_fingerprint in [CAR.FORESTER, CAR.IMPREZA, CAR.ASCENT, CAR.OUTBACK]:
+      if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
+        ret.cruiseState.speed *= CV.MPH_TO_KPH
+
+    # UDM Forester, Legacy: mph = 0
+    if self.car_fingerprint in [CAR.FORESTER, CAR.LEGACY]:
+      if (cp.vl["Dash_State"]['Units'] == 0):
+        ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     ret.doorOpen = any([cp.vl["BodyInfo"]['DOOR_OPEN_RR'],
