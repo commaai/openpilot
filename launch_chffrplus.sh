@@ -73,7 +73,7 @@ function launch {
   IRQ_AFFINE_CORE_0=""
   IRQ_AFFINE_CORE_1="13 16 25 33 35 78"  # I2C, NGD, ufshcd (flash storage), wlan_pci (WiFi)
   IRQ_AFFINE_CORE_2="6 15 26"  # SPS, MDSS
-  IRQ_AFFINE_CORE_3="733 736"  # USB for LeEco and OP35 respectively
+  IRQ_AFFINE_CORE_3="733 736"  # USB for LeEco and OP3T mainboards respectively
 
   for CORE in {0..3}
     do
