@@ -64,13 +64,28 @@ function launch {
   echo 0-2 > /dev/cpuset/android/cpus
   echo 0-3 > /dev/cpuset/app/cpus
 
-  # Collect RIL and other possibly long-running I/O interrupts onto CPU 1
-  echo 1 > /proc/irq/78/smp_affinity_list # qcom,smd-modem (LTE radio)
-  echo 1 > /proc/irq/33/smp_affinity_list # ufshcd (flash storage)
-  echo 1 > /proc/irq/35/smp_affinity_list # wifi (wlan_pci)
-  # USB traffic needs realtime handling on cpu 3
-  [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
-  [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
+  # Configure interrupt affinities for NEOS platforms
+  # Slight differences between OP3T and LeEco for I2C, SPS, and USB, trying both for now
+  # TODO: abstract this into per-platform and per-mainboard startup scripts
+  #
+  # Move RIL and other possibly long-running I/O interrupts onto core 1
+  # Move USB to core 3 for better realtime handling
+  IRQ_AFFINE_CORE_0=""
+  IRQ_AFFINE_CORE_1="13 16 25 33 35 78"  # I2C, NGD, ufshcd (flash storage), wlan_pci (WiFi)
+  IRQ_AFFINE_CORE_2="6 15 26"  # SPS, MDSS
+  IRQ_AFFINE_CORE_3="733 736"  # USB for LeEco and OP35 respectively
+
+  for CORE in {0..3}
+    do
+      CORE_IRQS=IRQ_AFFINE_CORE_$CORE
+      for IRQ in ${!CORE_IRQS}
+        do
+          if [ -d "/proc/irq/$IRQ" ]; then
+            echo "Setting IRQ affinity: IRQ $IRQ to core $CORE"
+            echo $CORE > /proc/irq/$IRQ/smp_affinity_list
+          fi
+        done
+    done
 
   DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
