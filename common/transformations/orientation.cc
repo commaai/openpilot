@@ -26,8 +26,13 @@ Eigen::Quaterniond euler2quat(Eigen::Vector3d euler){
 
 
 Eigen::Vector3d quat2euler(Eigen::Quaterniond quat){
-  Eigen::Vector3d euler = quat.toRotationMatrix().eulerAngles(2, 1, 0);
-  return {euler(2), euler(1), euler(0)};
+  // TODO: switch to eigen implementation if the range of the Euler angles doesn't matter anymore
+  // Eigen::Vector3d euler = quat.toRotationMatrix().eulerAngles(2, 1, 0);
+  // return {euler(2), euler(1), euler(0)};
+  double gamma = atan2(2 * (quat.w() * quat.x() + quat.y() * quat.z()), 1 - 2 * (quat.x()*quat.x() + quat.y()*quat.y()));
+  double theta = asin(2 * (quat.w() * quat.y() - quat.z() * quat.x()));
+  double psi = atan2(2 * (quat.w() * quat.z() + quat.x() * quat.y()), 1 - 2 * (quat.y()*quat.y() + quat.z()*quat.z()));
+  return {gamma, theta, psi};
 }
 
 Eigen::Matrix3d quat2rot(Eigen::Quaterniond quat){
