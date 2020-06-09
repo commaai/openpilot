@@ -433,22 +433,6 @@ EVENTS = {
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1),
   },
-  
-  EventName.rightBlindspot: {
-    ET.WARNING: Alert(
-      "Vehicle in Right Lane",
-      "Waiting for Lane to be clear",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
-   },
-
-   EventName.leftBlindspot: {
-     ET.WARNING: Alert(
-       "Vehicle in Left Lane",
-       "Waiting for Lane to be clear",
-       AlertStatus.userPrompt, AlertSize.mid,
-       Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
-   },
 
   EventName.steerSaturated: {
     ET.WARNING: Alert(
