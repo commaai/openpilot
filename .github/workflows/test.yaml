@@ -28,9 +28,6 @@ jobs:
         cp -pR --parents $(cat release/files_common) $TEST_DIR
         cp Dockerfile.openpilot $TEST_DIR
 
-        # copy submodules
-        cp -pR panda/ opendbc/ cereal/ $TEST_DIR
-
         # need this to build on x86
         cp -pR --parents phonelibs/libyuv phonelibs/snpe \
                          external/bin selfdrive/modeld/runners $TEST_DIR
@@ -41,8 +38,11 @@ jobs:
         mkdir laika laika_repo tools release
     - name: Build Docker image
       run: cd $TEST_DIR && eval "$BUILD"
-    - name: Build openpilot
-      run: $RUN "cd /tmp/openpilot && scons -j$(nproc)"
+    - name: Build openpiot and run quick check
+      run: |
+          $RUN "cd /tmp/openpilot && \
+                scons -j$(nproc) && \
+                $UNIT_TEST selfdrive/car"
 
   docker_push:
     name: docker push
