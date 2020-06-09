@@ -49,7 +49,7 @@ common/transformations/__init__.py
 common/transformations/camera.py
 common/transformations/model.py
 
-common/transformations/SConscript.py
+common/transformations/SConscript
 common/transformations/setup.py
 common/transformations/coordinates.py
 common/transformations/coordinates.cc
