@@ -64,15 +64,15 @@ function launch {
   echo 0-2 > /dev/cpuset/android/cpus
   echo 0-3 > /dev/cpuset/app/cpus
 
-  # Configure interrupt affinities for NEOS platforms
+  # Configure non-default interrupt affinities for NEOS platforms
   # Slight differences between OP3T and LeEco for I2C, SPS, and USB, trying both for now
   # TODO: abstract this into per-platform and per-mainboard startup scripts
   #
   # Move RIL and other possibly long-running I/O interrupts onto core 1
   # Move USB to core 3 for better realtime handling
   IRQ_AFFINE_CORE_0=""
-  IRQ_AFFINE_CORE_1="13 16 25 33 35 78"  # I2C, NGD, ufshcd (flash storage), wlan_pci (WiFi)
-  IRQ_AFFINE_CORE_2="6 15 26"  # SPS, MDSS
+  IRQ_AFFINE_CORE_1="13 16 25 78"  # I2C, NGD, qcom,smd-modem
+  IRQ_AFFINE_CORE_2="6 15 26 33 35 193"  # SPS, MDSS, ufshcd (flash storage), wlan_pci (WiFi), kgsl-3d0 (GPU)
   IRQ_AFFINE_CORE_3="733 736"  # USB for LeEco and OP3T mainboards respectively
 
   for CORE in {0..3}
