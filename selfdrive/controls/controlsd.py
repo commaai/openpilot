@@ -34,7 +34,6 @@ LongitudinalPlanSource = log.Plan.LongitudinalPlanSource
 Desire = log.PathPlan.Desire
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
-LaneChangeBlocked = log.PathPlan.LaneChangeBlocked
 EventName = car.CarEvent.EventName
 
 class Controls:
@@ -189,11 +188,6 @@ class Controls:
     elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
                                         LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
-      
-    if self.sm['pathPlan'].laneChangeBlocked == LaneChangeBlocked.right:
-      events.add(car.CarEvent.EventName.rightBlindspot)
-    if self.sm['pathPlan'].laneChangeBlocked == LaneChangeBlocked.left:
-      events.add(car.CarEvent.EventName.leftBlindspot)
 
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
