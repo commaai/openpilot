@@ -14,3 +14,6 @@ class LocalCoord(LocalCoord_single):
 
 geodetic2ecef = numpy_wrap(geodetic2ecef_single, (3,), (3,))
 ecef2geodetic = numpy_wrap(ecef2geodetic_single, (3,), (3,))
+
+geodetic_from_ecef = ecef2geodetic
+ecef_from_geodetic = geodetic2ecef
