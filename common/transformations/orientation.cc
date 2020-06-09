@@ -58,6 +58,11 @@ Eigen::Matrix3d rot(Eigen::Vector3d axis, double angle){
 
 
 Eigen::Vector3d ecef_euler_from_ned(ECEF ecef_init, Eigen::Vector3d ned_pose) {
+  /*
+    Using Rotations to Build Aerospace Coordinate Systems
+    Don Koks
+    https://apps.dtic.mil/dtic/tr/fulltext/u2/a484864.pdf
+  */
   LocalCoord converter = LocalCoord(ecef_init);
   Eigen::Vector3d zero = ecef_init.to_vector();
 
@@ -93,6 +98,11 @@ Eigen::Vector3d ecef_euler_from_ned(ECEF ecef_init, Eigen::Vector3d ned_pose) {
 }
 
 Eigen::Vector3d ned_euler_from_ecef(ECEF ecef_init, Eigen::Vector3d ecef_pose){
+  /*
+    Using Rotations to Build Aerospace Coordinate Systems
+    Don Koks
+    https://apps.dtic.mil/dtic/tr/fulltext/u2/a484864.pdf
+  */
   LocalCoord converter = LocalCoord(ecef_init);
 
   Eigen::Vector3d x0 = Eigen::Vector3d(1, 0, 0);
