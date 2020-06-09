@@ -1,6 +1,4 @@
-#ifndef _SELFDRIVE_COMMON_PARAMS_H_
-#define _SELFDRIVE_COMMON_PARAMS_H_
-
+#pragma once
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -39,7 +37,7 @@ void read_db_value_blocking(const char* key, char** value, size_t* value_sz, boo
 #ifdef __cplusplus
 #include <map>
 #include <string>
+#include <vector>
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param = false);
+std::vector<char> read_db_bytes(const char* param_name, bool persistent_param = false);
 #endif
-
-#endif  // _SELFDRIVE_COMMON_PARAMS_H_

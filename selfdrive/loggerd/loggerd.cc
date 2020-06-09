@@ -91,11 +91,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
   int err;
 
   if (front) {
-    char *value;
-    const int result = read_db_value("RecordFront", &value, NULL);
-    if (result != 0) return;
-    if (value[0] != '1') { free(value); return; }
-    free(value);
+    std::vector<char> value = read_db_bytes("RecordFront");
+    if (value.size() == 0 || value[0] != '1') return;
     LOGW("recording front camera");
 
     set_thread_name("FrontCameraEncoder");
@@ -454,30 +451,23 @@ kj::Array<capnp::word> gen_init_data() {
     init.setDirty(true);
   }
 
-  char* git_commit = NULL;
-  size_t size;
-  read_db_value("GitCommit", &git_commit, &size);
-  if (git_commit) {
-    init.setGitCommit(capnp::Text::Reader(git_commit, size));
+  std::vector<char> git_commit = read_db_bytes("GitCommit");
+  if (git_commit.size() > 0) {
+    init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
   }
 
-  char* git_branch = NULL;
-  read_db_value("GitBranch", &git_branch, &size);
-  if (git_branch) {
-    init.setGitBranch(capnp::Text::Reader(git_branch, size));
+  std::vector<char> git_branch = read_db_bytes("GitBranch");
+  if (git_branch.size() > 0) {
+    init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
   }
 
-  char* git_remote = NULL;
-  read_db_value("GitRemote", &git_remote, &size);
-  if (git_remote) {
-    init.setGitRemote(capnp::Text::Reader(git_remote, size));
+  std::vector<char> git_remote = read_db_bytes("GitRemote");
+  if (git_remote.size() > 0) {
+    init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
   }
 
-  char* passive = NULL;
-  read_db_value("Passive", &passive, NULL);
-  init.setPassive(passive && strlen(passive) && passive[0] == '1');
-
-
+  std::vector<char> passive = read_db_bytes("Passive");
+  init.setPassive(passive.size() > 0 && passive[0] == '1');
   {
     // log params
     std::map<std::string, std::string> params;
@@ -491,27 +481,7 @@ kj::Array<capnp::word> gen_init_data() {
       i++;
     }
   }
-
-
-  auto words = capnp::messageToFlatArray(msg);
-
-  if (git_commit) {
-    free((void*)git_commit);
-  }
-
-  if (git_branch) {
-    free((void*)git_branch);
-  }
-
-  if (git_remote) {
-    free((void*)git_remote);
-  }
-
-  if (passive) {
-    free((void*)passive);
-  }
-
-  return words;
+  return capnp::messageToFlatArray(msg);
 }
 
 static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
