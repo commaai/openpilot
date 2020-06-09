@@ -102,9 +102,6 @@ class PathPlanner():
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
-    
-    left_BlindSpot = sm['carState'].leftBlindspot
-    right_BlindSpot = sm['carState'].rightBlindspot
 
     if sm['carState'].leftBlinker:
       self.lane_change_direction = LaneChangeDirection.left
@@ -131,14 +128,8 @@ class PathPlanner():
       elif self.lane_change_state == LaneChangeState.preLaneChange:
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
-        elif self.lane_change_direction == LaneChangeDirection.left and left_BlindSpot:
-          self.lane_change_Blocked = LaneChangeBlocked.left # for testing, left is off right is pre
-        elif self.lane_change_direction == LaneChangeDirection.right and right_BlindSpot:
-          self.lane_change_Blocked = LaneChangeBlocked.right
-        else:
-          self.lane_change_Blocked = LaneChangeBlocked.clear
-          if torque_applied:
-            self.lane_change_state = LaneChangeState.laneChangeStarting
+        elif torque_applied:
+          self.lane_change_state = LaneChangeState.laneChangeStarting
 
       # starting
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
@@ -159,12 +150,6 @@ class PathPlanner():
 
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
       self.lane_change_timer = 0.0
-      if self.lane_change_direction == LaneChangeDirection.left and left_BlindSpot:
-        self.lane_change_Blocked = LaneChangeBlocked.left
-      elif self.lane_change_direction == LaneChangeDirection.right and right_BlindSpot:
-        self.lane_change_Blocked = LaneChangeBlocked.right
-      else:
-        self.lane_change_Blocked = LaneChangeBlocked.clear
     else:
       self.lane_change_timer += DT_MDL
 
