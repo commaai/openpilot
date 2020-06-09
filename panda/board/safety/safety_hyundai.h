@@ -286,7 +286,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   }
 
   if (addr == 593) {OP_MDPS_live = 20;}
-  if ((addr == 1265 && bus == 1) {OP_CLU_live = 20;} // check if OP create clu11 for MDPS
+  if (addr == 1265 && bus == 1) {OP_CLU_live = 20;} // check if OP create clu11 for MDPS
   if (addr == 1057) {OP_SCC_live = 20;}
 
   // 1 allows the message through
