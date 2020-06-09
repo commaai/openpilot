@@ -93,6 +93,7 @@ def ecef_euler_from_ned_single(ecef_init, ned_pose):
     return [e(0), e(1), e(2)]
 
 def ned_euler_from_ecef_single(ecef_init, ecef_pose):
+    print(ecef_init, ecef_pose)
     cdef ECEF init = list2ecef(ecef_init)
     cdef Vector3 pose = Vector3(ecef_pose[0], ecef_pose[1], ecef_pose[2])
 
