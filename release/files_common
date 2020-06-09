@@ -204,13 +204,11 @@ selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
 selfdrive/controls/plannerd.py
 selfdrive/controls/radard.py
-selfdrive/controls/dmonitoringd.py
 selfdrive/controls/lib/__init__.py
 selfdrive/controls/lib/alertmanager.py
 selfdrive/controls/lib/alerts_offroad.json
 selfdrive/controls/lib/events.py
 selfdrive/controls/lib/drive_helpers.py
-selfdrive/controls/lib/driver_monitor.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_lqr.py
@@ -225,7 +223,6 @@ selfdrive/controls/lib/speed_smoother.py
 selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
 selfdrive/controls/lib/long_mpc_model.py
-selfdrive/controls/lib/driverview.py
 
 selfdrive/controls/lib/cluster/*
 
@@ -379,6 +376,10 @@ selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
 selfdrive/modeld/runners/runmodel.h
 selfdrive/modeld/runners/run.h
+
+selfdrive/monitoring/dmonitoringd.py
+selfdrive/monitoring/driver_monitor.py
+selfdrive/monitoring/driverview.py
 
 selfdrive/assets
 selfdrive/assets/fonts/*.ttf
