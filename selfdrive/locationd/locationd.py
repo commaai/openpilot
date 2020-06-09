@@ -270,7 +270,7 @@ class Localizer():
 
   def reset_kalman(self, current_time=None, init_orient=None):
     self.filter_time = current_time
-    init_x = LiveKalman.initial_x
+    init_x = LiveKalman.initial_x.copy()
     # too nonlinear to init on completely wrong
     if init_orient is not None:
       init_x[3:7] = init_orient
