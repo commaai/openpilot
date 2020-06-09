@@ -5,7 +5,7 @@ from atomicwrites import AtomicWriter
 
 
 def mkdirs_exists_ok(path):
-  if path.startswith('http'):
+  if path.startswith('http://') or path.startswith('https://'):
     raise ValueError('URL path')
   try:
     os.makedirs(path)
