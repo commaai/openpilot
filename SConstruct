@@ -212,6 +212,7 @@ SConscript(['opendbc/can/SConscript'])
 
 SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
+SConscript(['common/transformations/SConscript'])
 SConscript(['phonelibs/SConscript'])
 
 if arch != "Darwin":

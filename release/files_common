@@ -43,9 +43,18 @@ common/kalman/*
 
 common/transformations/__init__.py
 common/transformations/camera.py
-common/transformations/coordinates.py
 common/transformations/model.py
+
+common/transformations/SConscript
+common/transformations/setup.py
+common/transformations/coordinates.py
+common/transformations/coordinates.cc
+common/transformations/coordinates.hpp
 common/transformations/orientation.py
+common/transformations/orientation.cc
+common/transformations/orientation.hpp
+common/transformations/transformations.pxd
+common/transformations/transformations.pyx
 
 common/api/__init__.py
 

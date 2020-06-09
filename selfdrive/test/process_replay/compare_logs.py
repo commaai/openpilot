@@ -70,7 +70,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None):
     if msg1_bytes != msg2_bytes:
       msg1_dict = msg1.to_dict(verbose=True)
       msg2_dict = msg2.to_dict(verbose=True)
-      dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields, tolerance=0)
+      dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
       diff.extend(dd)
   return diff
 
