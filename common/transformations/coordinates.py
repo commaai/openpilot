@@ -1,6 +1,4 @@
 # pylint: skip-file
-import numpy as np
-
 from common.transformations.orientation import numpy_wrap
 from common.transformations.transformations import (ecef2geodetic_single,
                                                     geodetic2ecef_single)
