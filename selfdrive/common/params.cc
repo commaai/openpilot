@@ -13,6 +13,7 @@
 
 #include <map>
 #include <string>
+#include <string.h>
 
 #include "common/util.h"
 #include "common/utilpp.h"
@@ -352,4 +353,16 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
 
   close(lock_fd);
   return 0;
+}
+
+std::vector<char> read_db_bytes(const char* param_name, bool persistent_param) {
+  std::vector<char> bytes;
+  char* value;
+  size_t sz;
+  int result = read_db_value(param_name, &value, &sz, persistent_param);
+  if (result == 0) {
+    bytes.assign(value, value+sz);
+    free(value);
+  }
+  return bytes;
 }
