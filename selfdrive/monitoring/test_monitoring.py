@@ -5,7 +5,7 @@ import numpy as np
 from cereal import car
 from common.realtime import DT_DMON
 from selfdrive.controls.lib.events import Events
-from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, \
+from selfdrive.monitoring.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, \
                                   _AWARENESS_TIME, _AWARENESS_PRE_TIME_TILL_TERMINAL, \
                                   _AWARENESS_PROMPT_TIME_TILL_TERMINAL, _DISTRACTED_TIME, \
                                   _DISTRACTED_PRE_TIME_TILL_TERMINAL, _DISTRACTED_PROMPT_TIME_TILL_TERMINAL, \
