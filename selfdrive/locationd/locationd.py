@@ -262,10 +262,11 @@ class Localizer():
           self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
 
   def handle_live_calib(self, current_time, log):
-    self.calib = log.rpyCalib
-    self.device_from_calib = rot_from_euler(self.calib)
-    self.calib_from_device = self.device_from_calib.T
-    self.calibrated = log.calStatus == 1
+    if len(log.rpyCalib):
+      self.calib = log.rpyCalib
+      self.device_from_calib = rot_from_euler(self.calib)
+      self.calib_from_device = self.device_from_calib.T
+      self.calibrated = log.calStatus == 1
 
   def reset_kalman(self, current_time=None, init_orient=None):
     self.filter_time = current_time
