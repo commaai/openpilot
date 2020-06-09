@@ -193,7 +193,7 @@ class Localizer():
 
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
     ecef_pos = self.converter.ned2ecef([0, 0, 0])
-    ecef_vel = self.converter.ned2ecef_matrix.dot(np.array(log.vNED))
+    ecef_vel = self.converter.ned2ecef(np.array(log.vNED)) - ecef_pos
     ecef_pos_R = np.diag([(3*log.verticalAccuracy)**2]*3)
     ecef_vel_R = np.diag([(log.speedAccuracy)**2]*3)
 
