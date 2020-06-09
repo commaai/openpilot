@@ -21,7 +21,6 @@ from sympy.utilities.lambdify import lambdify
 from rednose.helpers.sympy_helpers import euler_rotate
 
 
-OUTPUT_DECIMATION = 2
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
 
@@ -295,7 +294,6 @@ def locationd_thread(sm, pm, disabled_logs=None):
     pm = messaging.PubMaster(['liveLocationKalman'])
 
   localizer = Localizer(disabled_logs=disabled_logs)
-  camera_odometry_cnt = 0
 
   while True:
     sm.update()
@@ -315,19 +313,16 @@ def locationd_thread(sm, pm, disabled_logs=None):
           localizer.handle_live_calib(t, sm[sock])
 
     if sm.updated['cameraOdometry']:
-      camera_odometry_cnt += 1
+      t = sm.logMonoTime['cameraOdometry']
+      msg = messaging.new_message('liveLocationKalman')
+      msg.logMonoTime = t
 
-      if camera_odometry_cnt % OUTPUT_DECIMATION == 0:
-        t = sm.logMonoTime['cameraOdometry']
-        msg = messaging.new_message('liveLocationKalman')
-        msg.logMonoTime = t
+      msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
+      msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
 
-        msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
-        msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
-
-        gps_age = (t / 1e9) - localizer.last_gps_fix
-        msg.liveLocationKalman.gpsOK = gps_age < 1.0
-        pm.send('liveLocationKalman', msg)
+      gps_age = (t / 1e9) - localizer.last_gps_fix
+      msg.liveLocationKalman.gpsOK = gps_age < 1.0
+      pm.send('liveLocationKalman', msg)
 
 
 def main(sm=None, pm=None):
