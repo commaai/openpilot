@@ -33,7 +33,7 @@ class BuildExtWithoutPlatformSuffix(build_ext):
 
 
 sourcefiles = ['packer_pyx.pyx']
-extra_compile_args = ["-std=c++11"]
+extra_compile_args = ["-std=c++14"]
 ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()  # pylint: disable=unexpected-keyword-arg
 
 if ARCH == "aarch64":
@@ -54,7 +54,7 @@ setup(name='CAN packer',
           extra_compile_args=extra_compile_args,
           include_dirs=[
             BASEDIR,
-            os.path.join(BASEDIR, 'phonelibs', 'capnp-cpp/include'),
+            os.path.join(BASEDIR, 'phonelibs'),
           ],
           extra_link_args=[
             os.path.join(BASEDIR, 'opendbc', 'can', libdbc),
@@ -66,4 +66,3 @@ setup(name='CAN packer',
 
 if platform.system() == "Darwin":
   os.system("install_name_tool -change opendbc/can/libdbc.dylib "+BASEDIR+"/opendbc/can/libdbc.dylib packer_pyx.so")
-

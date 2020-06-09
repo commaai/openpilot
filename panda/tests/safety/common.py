@@ -2,7 +2,8 @@ import abc
 import struct
 import unittest
 import numpy as np
-from opendbc.can.packer import CANPacker # pylint: disable=import-error
+from typing import Optional, List, Dict
+from opendbc.can.packer import CANPacker  # pylint: disable=import-error
 from panda.tests.safety import libpandasafety_py
 
 MAX_WRONG_COUNTERS = 5
@@ -32,8 +33,10 @@ def make_msg(bus, addr, length=8):
   return package_can_msg([addr, 0, b'\x00'*length, bus])
 
 class CANPackerPanda(CANPacker):
-  def make_can_msg_panda(self, name_or_addr, bus, values, counter=-1):
+  def make_can_msg_panda(self, name_or_addr, bus, values, counter=-1, fix_checksum=None):
     msg = self.make_can_msg(name_or_addr, bus, values, counter=-1)
+    if fix_checksum is not None:
+      msg = fix_checksum(msg)
     return package_can_msg(msg)
 
 class PandaSafetyTestBase(unittest.TestCase):
@@ -245,13 +248,13 @@ class TorqueSteeringSafetyTest(PandaSafetyTestBase):
 
 
 class PandaSafetyTest(PandaSafetyTestBase):
-  TX_MSGS = None
-  STANDSTILL_THRESHOLD = None
+  TX_MSGS: Optional[List[List[int]]] = None
+  STANDSTILL_THRESHOLD: Optional[float] = None
   GAS_PRESSED_THRESHOLD = 0
-  RELAY_MALFUNCTION_ADDR = None
-  RELAY_MALFUNCTION_BUS = None
-  FWD_BLACKLISTED_ADDRS = {} # {bus: [addr]}
-  FWD_BUS_LOOKUP = {}
+  RELAY_MALFUNCTION_ADDR: Optional[int] = None
+  RELAY_MALFUNCTION_BUS: Optional[int] = None
+  FWD_BLACKLISTED_ADDRS: Dict[int, List[int]] = {} # {bus: [addr]}
+  FWD_BUS_LOOKUP: Dict[int, int] = {}
 
   @classmethod
   def setUpClass(cls):
@@ -396,7 +399,7 @@ class PandaSafetyTest(PandaSafetyTestBase):
 
   def test_sample_speed(self):
     self.assertFalse(self.safety.get_vehicle_moving())
-    
+
     # not moving
     self.safety.safety_rx_hook(self._speed_msg(0))
     self.assertFalse(self.safety.get_vehicle_moving())

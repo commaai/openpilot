@@ -50,6 +50,7 @@ int get_torque_driver_min(void);
 int get_torque_driver_max(void);
 void set_desired_torque_last(int t);
 void set_rt_torque_last(int t);
+void set_desired_angle_last(int t);
 
 bool get_cruise_engaged_prev(void);
 bool get_vehicle_moving(void);
@@ -66,15 +67,10 @@ void init_tests(void);
 void init_tests_honda(void);
 void set_honda_fwd_brake(bool);
 void set_honda_alt_brake_msg(bool);
+void set_honda_bosch_long(bool c);
 int get_honda_hw(void);
 
-void init_tests_chrysler(void);
-
 bool get_subaru_global(void);
-
-void init_tests_nissan(void);
-void set_nissan_desired_angle_last(int t);
-
 """)
 
 libpandasafety = ffi.dlopen(libpandasafety_fn)

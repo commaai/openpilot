@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
-import time
 import os
-import sys
 import signal
 import subprocess
+import sys
+import time
+from typing import List, cast
+
 import requests
-from cereal import car
 
-import selfdrive.manager as manager
 import cereal.messaging as messaging
-from common.params import Params
+import selfdrive.manager as manager
+from cereal import car
 from common.basedir import BASEDIR
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.ford.values import CAR as FORD
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
+from common.params import Params
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.subaru.values import CAR as SUBARU
-from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
+from selfdrive.car.fingerprints import all_known_cars
+from selfdrive.car.ford.values import CAR as FORD
+from selfdrive.car.gm.values import CAR as GM
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.nissan.values import CAR as NISSAN
-
+from selfdrive.car.mazda.values import CAR as MAZDA
+from selfdrive.car.subaru.values import CAR as SUBARU
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
 os.environ['NOCRASH'] = '1'
 
@@ -181,6 +183,10 @@ routes = {
     'carFingerprint': HYUNDAI.SONATA,
     'enableCamera': True,
   },
+  "b2a38c712dcf90bd|2020-05-18--18-12-48": {
+    'carFingerprint': HYUNDAI.SONATA_2019,
+    'enableCamera': True,
+  },
   "9c917ba0d42ffe78|2020-04-17--12-43-19": {
     'carFingerprint': HYUNDAI.PALISADE,
     'enableCamera': True,
@@ -194,6 +200,7 @@ routes = {
     'carFingerprint': TOYOTA.CAMRY,
     'enableCamera': True,
     'enableDsu': False,
+    'fingerprintSource': 'fixed',
   },
   "f7b6be73e3dfd36c|2019-05-11--22-34-20": {
     'carFingerprint': TOYOTA.AVALON,
@@ -247,13 +254,14 @@ routes = {
     'enableCamera': True,
     'enableDsu': True,
     'enableGasInterceptor': False,
+    'fingerprintSource': 'fixed',
   },
   "cdf2f7de565d40ae|2019-04-25--03-53-41": {
     'carFingerprint': TOYOTA.RAV4_TSS2,
     'enableCamera': True,
     'enableDsu': False,
   },
-    "7e34a988419b5307|2019-12-18--19-13-30": {
+  "7e34a988419b5307|2019-12-18--19-13-30": {
     'carFingerprint': TOYOTA.RAV4H_TSS2,
     'enableCamera': True,
     'fingerprintSource': 'fixed'
@@ -278,12 +286,12 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-    "886fcd8408d570e9|2020-01-29--05-11-22": {
+  "886fcd8408d570e9|2020-01-29--05-11-22": {
       'carFingerprint': TOYOTA.LEXUS_RX,
       'enableCamera': True,
       'enableDsu': True,
     },
-    "886fcd8408d570e9|2020-01-29--02-18-55": {
+  "886fcd8408d570e9|2020-01-29--02-18-55": {
       'carFingerprint': TOYOTA.LEXUS_RX,
       'enableCamera': True,
       'enableDsu': False,
@@ -293,9 +301,15 @@ routes = {
     'enableCamera': True,
     'enableDsu': True,
   },
-    "01b22eb2ed121565|2020-02-02--11-25-51": {
+  "01b22eb2ed121565|2020-02-02--11-25-51": {
     'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
     'enableCamera': True,
+    'fingerprintSource': 'fixed',
+  },
+  "b74758c690a49668|2020-05-20--15-58-57": {
+    'carFingerprint': TOYOTA.LEXUS_RXH_TSS2,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
   },
   "ec429c0f37564e3c|2020-02-01--17-28-12": {
     'carFingerprint': TOYOTA.LEXUS_NXH,
@@ -349,15 +363,25 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
+  "32a319f057902bb3|2020-04-27--15-18-58": {
+    'carFingerprint': MAZDA.CX5,
+    'enableCamera': True,
+  },
+  "059ab9162e23198e|2020-05-30--09-41-01": {
+    'carFingerprint': NISSAN.ROGUE,
+    'enableCamera': True,
+  },
 }
 
-passive_routes = [
+passive_routes: List[str] = [
 ]
 
 forced_dashcam_routes = [
   # Ford fusion
   "f1b4c567731f4a1b|2018-04-18--11-29-37",
   "f1b4c567731f4a1b|2018-04-30--10-15-35",
+  # Mazda
+  "32a319f057902bb3|2020-04-27--15-18-58",
 ]
 
 # TODO: add routes for these cars
@@ -378,8 +402,6 @@ non_tested_cars = [
   HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.HYUNDAI_GENESIS,
-  HYUNDAI.IONIQ,
-  HYUNDAI.IONIQ_EV_LTD,
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_OPTIMA_H,
@@ -415,9 +437,7 @@ if __name__ == "__main__":
 
   results = {}
   for route, checks in routes.items():
-    print("GETTING ROUTE LOGS")
     get_route_log(route)
-    print("DONE GETTING ROUTE LOGS")
 
     params = Params()
     params.clear_all()
@@ -426,8 +446,9 @@ if __name__ == "__main__":
     params.put("CommunityFeaturesToggle", "1")
     params.put("Passive", "1" if route in passive_routes else "0")
 
+    os.environ['SKIP_FW_QUERY'] = "1"
     if checks.get('fingerprintSource', None) == 'fixed':
-      os.environ['FINGERPRINT'] = checks['carFingerprint']
+      os.environ['FINGERPRINT'] = cast(str, checks['carFingerprint'])
     else:
       os.environ['FINGERPRINT'] = ""
 

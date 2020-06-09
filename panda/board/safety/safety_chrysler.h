@@ -6,19 +6,16 @@ const int CHRYSLER_MAX_RATE_DOWN = 3;
 const int CHRYSLER_MAX_TORQUE_ERROR = 80;    // max torque cmd in excess of torque motor
 const int CHRYSLER_GAS_THRSLD = 30;  // 7% more than 2m/s
 const int CHRYSLER_STANDSTILL_THRSLD = 10;  // about 1m/s
-const AddrBus CHRYSLER_TX_MSGS[] = {{571, 0}, {658, 0}, {678, 0}};
+const CanMsg CHRYSLER_TX_MSGS[] = {{571, 0, 3}, {658, 0, 6}, {678, 0, 8}};
 
-// TODO: do checksum and counter checks
 AddrCheckStruct chrysler_rx_checks[] = {
-  {.addr = {544}, .bus = 0, .check_checksum = true, .max_counter = 15U, .expected_timestep = 10000U},
-  {.addr = {514}, .bus = 0, .check_checksum = false, .max_counter = 0U, .expected_timestep = 10000U},
-  {.addr = {500}, .bus = 0, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U},
-  {.addr = {308}, .bus = 0, .check_checksum = false, .max_counter = 15U,  .expected_timestep = 20000U},
-  {.addr = {320}, .bus = 0, .check_checksum = true, .max_counter = 15U,  .expected_timestep = 20000U},
+  {.msg = {{544, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 10000U}}},
+  {.msg = {{514, 0, 8, .check_checksum = false, .max_counter = 0U, .expected_timestep = 10000U}}},
+  {.msg = {{500, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}}},
+  {.msg = {{308, 0, 8, .check_checksum = false, .max_counter = 15U,  .expected_timestep = 20000U}}},
+  {.msg = {{320, 0, 8, .check_checksum = true, .max_counter = 15U,  .expected_timestep = 20000U}}},
 };
 const int CHRYSLER_RX_CHECK_LEN = sizeof(chrysler_rx_checks) / sizeof(chrysler_rx_checks[0]);
-
-int chrysler_speed = 0;
 
 static uint8_t chrysler_get_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
   int checksum_byte = GET_LEN(to_push) - 1;
@@ -98,14 +95,14 @@ static int chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (addr == 514) {
       int speed_l = (GET_BYTE(to_push, 0) << 4) + (GET_BYTE(to_push, 1) >> 4);
       int speed_r = (GET_BYTE(to_push, 2) << 4) + (GET_BYTE(to_push, 3) >> 4);
-      chrysler_speed = (speed_l + speed_r) / 2;
-      vehicle_moving = chrysler_speed > CHRYSLER_STANDSTILL_THRSLD;
+      vehicle_speed = (speed_l + speed_r) / 2;
+      vehicle_moving = (int)vehicle_speed > CHRYSLER_STANDSTILL_THRSLD;
     }
 
     // exit controls on rising edge of gas press
     if (addr == 308) {
       bool gas_pressed = (GET_BYTE(to_push, 5) & 0x7F) != 0;
-      if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev && (chrysler_speed > CHRYSLER_GAS_THRSLD)) {
+      if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev && ((int)vehicle_speed > CHRYSLER_GAS_THRSLD)) {
         controls_allowed = 0;
       }
       gas_pressed_prev = gas_pressed;
@@ -132,9 +129,8 @@ static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
-  int bus = GET_BUS(to_send);
 
-  if (!msg_allowed(addr, bus, CHRYSLER_TX_MSGS, sizeof(CHRYSLER_TX_MSGS) / sizeof(CHRYSLER_TX_MSGS[0]))) {
+  if (!msg_allowed(to_send, CHRYSLER_TX_MSGS, sizeof(CHRYSLER_TX_MSGS) / sizeof(CHRYSLER_TX_MSGS[0]))) {
     tx = 0;
   }
 

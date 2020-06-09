@@ -2,9 +2,15 @@
 #include "impl_zmq.hpp"
 #include "impl_msgq.hpp"
 
+#ifdef __APPLE__
+const bool MUST_USE_ZMQ = true;
+#else
+const bool MUST_USE_ZMQ = false;
+#endif
+
 Context * Context::create(){
   Context * c;
-  if (std::getenv("ZMQ")){
+  if (std::getenv("ZMQ") || MUST_USE_ZMQ){
     c = new ZMQContext();
   } else {
     c = new MSGQContext();
@@ -14,7 +20,7 @@ Context * Context::create(){
 
 SubSocket * SubSocket::create(){
   SubSocket * s;
-  if (std::getenv("ZMQ")){
+  if (std::getenv("ZMQ") || MUST_USE_ZMQ){
     s = new ZMQSubSocket();
   } else {
     s = new MSGQSubSocket();
@@ -60,7 +66,7 @@ SubSocket * SubSocket::create(Context * context, std::string endpoint, std::stri
 
 PubSocket * PubSocket::create(){
   PubSocket * s;
-  if (std::getenv("ZMQ")){
+  if (std::getenv("ZMQ") || MUST_USE_ZMQ){
     s = new ZMQPubSocket();
   } else {
     s = new MSGQPubSocket();
@@ -82,7 +88,7 @@ PubSocket * PubSocket::create(Context * context, std::string endpoint){
 
 Poller * Poller::create(){
   Poller * p;
-  if (std::getenv("ZMQ")){
+  if (std::getenv("ZMQ") || MUST_USE_ZMQ){
     p = new ZMQPoller();
   } else {
     p = new MSGQPoller();

@@ -1,6 +1,7 @@
 #include "ui.hpp"
 #include <assert.h>
 #include <map>
+#include <cmath>
 #include "common/util.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
@@ -72,7 +73,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   sz /= (x_in / 3 + 30);
   if (sz > 30) sz = 30;
   if (sz < 15) sz = 15;
-  
+
   // glow
   float g_xo = sz/5;
   float g_yo = sz/10;
@@ -321,7 +322,7 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
   }
 }
 
-static void update_all_lane_lines_data(UIState *s, const PathData path, model_path_vertices_data *pstart) {
+static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
   update_lane_line_data(s, path.points, 0.025*path.prob, false, pstart);
   float var = fmin(path.std, 0.7);
   update_lane_line_data(s, path.points, -var, true, pstart + 1);
@@ -382,7 +383,7 @@ static void ui_draw_world(UIState *s) {
 
   nvgSave(s->vg);
   nvgScissor(s->vg, ui_viz_rx, box_y, ui_viz_rw, box_h);
-  
+
   nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
   nvgTranslate(s->vg, 240.0f, 0.0);
@@ -396,7 +397,7 @@ static void ui_draw_world(UIState *s) {
   if (scene->lead_status) {
     draw_lead(s, scene->lead_d_rel, scene->lead_v_rel, scene->lead_y_rel);
   }
-  if ((scene->lead_status2) && (fabs(scene->lead_d_rel - scene->lead_d_rel2) > 3.0)) {
+  if ((scene->lead_status2) && (std::abs(scene->lead_d_rel - scene->lead_d_rel2) > 3.0)) {
     draw_lead(s, scene->lead_d_rel2, scene->lead_v_rel2, scene->lead_y_rel2);
   }
   nvgRestore(s->vg);
@@ -556,10 +557,13 @@ static void ui_draw_vision_event(UIState *s) {
       color = nvgRGBA(23, 134, 68, 255);
     } else if (s->status == STATUS_WARNING) {
       color = COLOR_OCHRE;
-    } else if (s->scene.engageable) {
+    } else {
       color = nvgRGBA(23, 51, 73, 255);
     }
-    ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
+
+    if (s->scene.engageable){
+      ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
+    }
   }
 }
 
@@ -614,9 +618,9 @@ static void ui_draw_driver_view(UIState *s) {
     } else {
       fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (scene->face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     }
-    if (abs(scene->face_x) <= 0.35 && abs(scene->face_y) <= 0.4) {
+    if (std::abs(scene->face_x) <= 0.35 && std::abs(scene->face_y) <= 0.4) {
       ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2,
-                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((abs(scene->face_x) > abs(scene->face_y) ? abs(scene->face_x) : abs(scene->face_y))) * 0.6 / 0.375),
+                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((std::abs(scene->face_x) > std::abs(scene->face_y) ? std::abs(scene->face_x) : std::abs(scene->face_y))) * 0.6 / 0.375),
                    35, 10);
     } else {
       ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 35, 10);
@@ -761,7 +765,7 @@ void ui_draw(UIState *s) {
   ui_draw_sidebar(s);
   if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED && s->vision_seen) {
       ui_draw_vision(s);
-  } 
+  }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
@@ -787,7 +791,7 @@ void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor c
   }
 }
 
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint paint, float r){
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r){
   nvgBeginPath(vg);
   r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
   nvgFillPaint(vg, paint);
@@ -956,9 +960,9 @@ void ui_nvg_init(UIState *s) {
   s->rear_frame_mat = matmul(device_transform, frame_transform);
 
   for(int i = 0;i < UI_BUF_COUNT; i++) {
-    s->khr[i] = NULL;
+    s->khr[i] = 0;
     s->priv_hnds[i] = NULL;
-    s->khr_front[i] = NULL;
+    s->khr_front[i] = 0;
     s->priv_hnds_front[i] = NULL;
   }
 }

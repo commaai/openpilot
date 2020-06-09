@@ -13,7 +13,7 @@ It uses an [STM32F413](http://www.st.com/en/microcontrollers/stm32f413-423.html?
 
 It is 2nd gen hardware, reusing code and parts from the [NEO](https://github.com/commaai/neo) interface board.
 
-[![CircleCI](https://circleci.com/gh/commaai/panda.svg?style=svg)](https://circleci.com/gh/commaai/panda)
+![panda tests](https://github.com/commaai/panda/workflows/panda%20tests/badge.svg)
 
 Usage (Python)
 ------
@@ -99,7 +99,7 @@ When compiled from an [EON Dev Kit](https://comma.ai/shop/products/eon-gold-dash
 conjuction with [openpilot](https://github.com/commaai/openpilot). The panda FW, through its safety model, provides and enforces the
 [openpilot Safety](https://github.com/commaai/openpilot/blob/devel/SAFETY.md). Due to its critical function, it's important that the application code rigor within the `board` folder is held to high standards.
 
-These are the [CI regression tests](https://circleci.com/gh/commaai/panda) we have in place:
+These are the [CI regression tests](https://github.com/commaai/panda/actions) we have in place:
 * A generic static code analysis is performed by [Cppcheck](https://github.com/danmar/cppcheck/).
 * In addition, [Cppcheck](https://github.com/danmar/cppcheck/) has a specific addon to check for [MISRA C:2012](https://www.misra.org.uk/MISRAHome/MISRAC2012/tabid/196/Default.aspx) violations. See [current coverage](https://github.com/commaai/panda/blob/master/tests/misra/coverage_table).
 * Compiler options are relatively strict: the flags `-Wall -Wextra -Wstrict-prototypes -Werror` are enforced on board and pedal makefiles.

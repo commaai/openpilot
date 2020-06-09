@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.car.gm.values import CAR, Ecu, ECU_FINGERPRINT, CruiseButtons, \
                                     AccState, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
+EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
 
@@ -71,15 +71,15 @@ class CarInterface(CarInterfaceBase):
       ret.minEnableSpeed = -1. # engage speed is decided by pcm
       ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.86
-      ret.steerRatio = 14.4  #end to end is 13.46
+      ret.steerRatio = 14.4  # end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
-      ret.wheelbase = 2.83 #111.4 inches in meters
-      ret.steerRatio = 14.4 # guess for tourx
+      ret.wheelbase = 2.83  # 111.4 inches in meters
+      ret.steerRatio = 14.4  # guess for tourx
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4 # guess for tourx
 
@@ -149,24 +149,24 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, pcm_enable=False)
 
     if ret.vEgo < self.CP.minEnableSpeed:
-      events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
+      events.add(EventName.belowEngageSpeed)
     if self.CS.park_brake:
-      events.append(create_event('parkBrake', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      events.add(EventName.parkBrake)
     if ret.cruiseState.standstill:
-      events.append(create_event('resumeRequired', [ET.WARNING]))
+      events.add(EventName.resumeRequired)
     if self.CS.pcm_acc_status == AccState.FAULTED:
-      events.append(create_event('controlsFailed', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      events.add(EventName.controlsFailed)
 
     # handle button presses
     for b in ret.buttonEvents:
       # do enable on both accel and decel buttons
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
-        events.append(create_event('buttonEnable', [ET.ENABLE]))
+        events.add(EventName.buttonEnable)
       # do disable on button down
       if b.type == ButtonType.cancel and b.pressed:
-        events.append(create_event('buttonCancel', [ET.USER_DISABLE]))
+        events.add(EventName.buttonCancel)
 
-    ret.events = events
+    ret.events = events.to_msg()
 
     # copy back carState packet to CS
     self.CS.out = ret.as_reader()

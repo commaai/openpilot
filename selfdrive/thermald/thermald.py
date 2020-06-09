@@ -100,7 +100,7 @@ def set_eon_fan(val):
         else:
           #bus.write_i2c_block_data(0x67, 0x45, [0])
           bus.write_i2c_block_data(0x67, 0xa, [0x20])
-          bus.write_i2c_block_data(0x67, 0x8, [(val-1)<<6])
+          bus.write_i2c_block_data(0x67, 0x8, [(val - 1) << 6])
     else:
       bus.write_byte_data(0x21, 0x04, 0x2)
       bus.write_byte_data(0x21, 0x03, (val*2)+1)

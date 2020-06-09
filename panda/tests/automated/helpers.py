@@ -13,7 +13,7 @@ from .wifi_helpers import _connect_wifi
 SPEED_NORMAL = 500
 SPEED_GMLAN = 33.3
 BUS_SPEEDS = [(0, SPEED_NORMAL), (1, SPEED_NORMAL), (2, SPEED_NORMAL), (3, SPEED_GMLAN)]
-TIMEOUT = 30
+TIMEOUT = 45
 GEN2_HW_TYPES = [Panda.HW_TYPE_BLACK_PANDA, Panda.HW_TYPE_UNO]
 GPS_HW_TYPES = [Panda.HW_TYPE_GREY_PANDA, Panda.HW_TYPE_BLACK_PANDA, Panda.HW_TYPE_UNO]
 
@@ -41,16 +41,17 @@ init_panda_serials()
 test_all_types = parameterized([
     param(panda_type=Panda.HW_TYPE_WHITE_PANDA),
     param(panda_type=Panda.HW_TYPE_GREY_PANDA),
-    param(panda_type=Panda.HW_TYPE_BLACK_PANDA)
+    param(panda_type=Panda.HW_TYPE_BLACK_PANDA),
+    param(panda_type=Panda.HW_TYPE_UNO)
   ])
 test_all_pandas = parameterized(
-    list(map(lambda x: x[0], _panda_serials))
+    list(map(lambda x: x[0], _panda_serials))  # type: ignore
   )
 test_all_gen2_pandas = parameterized(
-    list(map(lambda x: x[0], filter(lambda x: x[1] in GEN2_HW_TYPES, _panda_serials)))
+    list(map(lambda x: x[0], filter(lambda x: x[1] in GEN2_HW_TYPES, _panda_serials)))  # type: ignore
   )
 test_all_gps_pandas = parameterized(
-    list(map(lambda x: x[0], filter(lambda x: x[1] in GPS_HW_TYPES, _panda_serials)))
+    list(map(lambda x: x[0], filter(lambda x: x[1] in GPS_HW_TYPES, _panda_serials)))  # type: ignore
   )
 test_white_and_grey = parameterized([
     param(panda_type=Panda.HW_TYPE_WHITE_PANDA),
@@ -64,6 +65,9 @@ test_grey = parameterized([
   ])
 test_black = parameterized([
     param(panda_type=Panda.HW_TYPE_BLACK_PANDA)
+  ])
+test_uno = parameterized([
+    param(panda_type=Panda.HW_TYPE_UNO)
   ])
 
 def connect_wifi(serial=None):
@@ -112,7 +116,7 @@ def time_many_sends(p, bus, p_recv=None, msg_count=100, msg_id=None, two_pandas=
 
 def reset_pandas():
   panda_jungle.set_panda_power(False)
-  time.sleep(2)
+  time.sleep(3)
   panda_jungle.set_panda_power(True)
   time.sleep(5)
 
@@ -198,7 +202,7 @@ def panda_connect_and_init(fn):
     finally:
       # Close all connections
       for panda in pandas:
-        panda.close()        
+        panda.close()
   return wrapper
 
 def clear_can_buffers(panda):

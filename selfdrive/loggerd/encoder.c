@@ -1,3 +1,5 @@
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -23,6 +25,7 @@
 #include "common/swaglog.h"
 
 #include "encoder.h"
+
 
 //#define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
 
@@ -226,7 +229,7 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   in_port.format.video.xFramerate = (s->fps * 65536);
   in_port.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
   // in_port.format.video.eColorFormat = OMX_COLOR_FormatYUV420SemiPlanar;
-  in_port.format.video.eColorFormat = QOMX_COLOR_FORMATYUV420PackedSemiPlanar32m;
+  in_port.format.video.eColorFormat = (OMX_COLOR_FORMATTYPE)QOMX_COLOR_FORMATYUV420PackedSemiPlanar32m;
 
   err = OMX_SetParameter(s->handle, OMX_IndexParamPortDefinition,
                          (OMX_PTR) &in_port);

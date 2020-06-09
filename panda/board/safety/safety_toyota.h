@@ -29,16 +29,17 @@ const int TOYOTA_STANDSTILL_THRSLD = 100;  // 1kph
 const int TOYOTA_GAS_INTERCEPTOR_THRSLD = 845;
 #define TOYOTA_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2) // avg between 2 tracks
 
-const AddrBus TOYOTA_TX_MSGS[] = {{0x283, 0}, {0x2E6, 0}, {0x2E7, 0}, {0x33E, 0}, {0x344, 0}, {0x365, 0}, {0x366, 0}, {0x4CB, 0},  // DSU bus 0
-                                  {0x128, 1}, {0x141, 1}, {0x160, 1}, {0x161, 1}, {0x470, 1},  // DSU bus 1
-                                  {0x2E4, 0}, {0x411, 0}, {0x412, 0}, {0x343, 0}, {0x1D2, 0},  // LKAS + ACC
-                                  {0x200, 0}, {0x750, 0}};  // interceptor + Blindspot monitor
+const CanMsg TOYOTA_TX_MSGS[] = {{0x283, 0, 7}, {0x2E6, 0, 8}, {0x2E7, 0, 8}, {0x33E, 0, 7}, {0x344, 0, 8}, {0x365, 0, 7}, {0x366, 0, 7}, {0x4CB, 0, 8},  // DSU bus 0
+                                  {0x128, 1, 6}, {0x141, 1, 4}, {0x160, 1, 8}, {0x161, 1, 7}, {0x470, 1, 4},  // DSU bus 1
+                                  {0x2E4, 0, 5}, {0x411, 0, 8}, {0x412, 0, 8}, {0x343, 0, 8}, {0x1D2, 0, 8},  // LKAS + ACC
+                                  {0x200, 0, 6}, {0x750, 0, 8}};  // interceptor + Blindspot monitor
 
 AddrCheckStruct toyota_rx_checks[] = {
-  {.addr = { 0xaa}, .bus = 0, .check_checksum = false, .expected_timestep = 12000U},
-  {.addr = {0x260}, .bus = 0, .check_checksum = true, .expected_timestep = 20000U},
-  {.addr = {0x1D2}, .bus = 0, .check_checksum = true, .expected_timestep = 30000U},
-  {.addr = {0x224, 0x226}, .bus = 0, .check_checksum = false, .expected_timestep = 25000U},
+  {.msg = {{ 0xaa, 0, 8, .check_checksum = false, .expected_timestep = 12000U}}},
+  {.msg = {{0x260, 0, 8, .check_checksum = true, .expected_timestep = 20000U}}},
+  {.msg = {{0x1D2, 0, 8, .check_checksum = true, .expected_timestep = 30000U}}},
+  {.msg = {{0x224, 0, 8, .check_checksum = false, .expected_timestep = 25000U},
+           {0x226, 0, 8, .check_checksum = false, .expected_timestep = 25000U}}},
 };
 const int TOYOTA_RX_CHECKS_LEN = sizeof(toyota_rx_checks) / sizeof(toyota_rx_checks[0]);
 
@@ -153,7 +154,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
-  if (!msg_allowed(addr, bus, TOYOTA_TX_MSGS, sizeof(TOYOTA_TX_MSGS)/sizeof(TOYOTA_TX_MSGS[0]))) {
+  if (!msg_allowed(to_send, TOYOTA_TX_MSGS, sizeof(TOYOTA_TX_MSGS)/sizeof(TOYOTA_TX_MSGS[0]))) {
     tx = 0;
   }
 

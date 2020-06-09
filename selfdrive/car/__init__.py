@@ -128,4 +128,3 @@ def is_ecu_disconnected(fingerprint, fingerprint_list, ecu_fingerprint, car, ecu
 
 def make_can_msg(addr, dat, bus):
   return [addr, 0, dat, bus]
-

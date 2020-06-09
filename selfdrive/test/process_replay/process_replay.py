@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
+import capnp
 import os
 import sys
 import threading
 import importlib
 
 if "CI" in os.environ:
-  tqdm = lambda x: x
+  def tqdm(x):
+    return x
 else:
-  from tqdm import tqdm
+  from tqdm import tqdm   # type: ignore
 
 from cereal import car, log
 from selfdrive.car.car_helpers import get_car
@@ -110,7 +112,7 @@ class FakePubMaster(messaging.PubMaster):
     for s in services:
       try:
         data = messaging.new_message(s)
-      except:
+      except capnp.lib.capnp.KjException:
         data = messaging.new_message(s, 0)
       self.data[s] = data.as_reader()
       self.sock[s] = DumbSocket()
@@ -188,7 +190,7 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
   if msg.which() == 'carState':
-    if ((fsm.frame +1)% 25) == 0:
+    if ((fsm.frame + 1) % 25) == 0:
       recv_socks = ["liveCalibration"]
     else:
       recv_socks = []
@@ -202,7 +204,7 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "thermal": [], "health": [], "liveCalibration": [], "dMonitoringState": [], "plan": [], "pathPlan": [], "gpsLocation": [],
+      "thermal": [], "health": [], "liveCalibration": [], "dMonitoringState": [], "plan": [], "pathPlan": [], "gpsLocation": [], "liveLocationKalman": [],
       "model": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],

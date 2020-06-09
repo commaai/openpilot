@@ -1,3 +1,4 @@
+.mypy_cache/
 *.pyc
 *.os
 *.tmp
