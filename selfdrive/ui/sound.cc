@@ -24,14 +24,14 @@ struct Sound::Player {
   SLPlayItf playInterface;
 };
 
-bool Sound::init(int volumn) {
+bool Sound::init(int volume) {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
   const SLboolean req[1] = {SL_BOOLEAN_FALSE};
   SLEngineItf engineInterface = NULL;
   ReturnOnError(slCreateEngine(&engine_, 1, engineOptions, 0, NULL, NULL), "Failed to create OpenSL engine");
   ReturnOnError((*engine_)->Realize(engine_, SL_BOOLEAN_FALSE), "Failed to realize OpenSL engine");
-  ReturnOnError((*engine_)->GetInterface(engine_, SL_IID_ENGINE, &engineInterface), "Failed to realize OpenSL engine");
+  ReturnOnError((*engine_)->GetInterface(engine_, SL_IID_ENGINE, &engineInterface), "Failed to get OpenSL engine interface");
   ReturnOnError((*engineInterface)->CreateOutputMix(engineInterface, &outputMix_, 1, ids, req), "Failed to create output mix");
   ReturnOnError((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
 
@@ -53,7 +53,7 @@ bool Sound::init(int volumn) {
     player_[kv.first] = new Sound::Player{player, playInterface};
   }
   
-  setVolume(volumn);
+  setVolume(volume);
   return true;
 }
 

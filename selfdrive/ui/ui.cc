@@ -862,7 +862,7 @@ int main(int argc, char* argv[]) {
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
     } else {
-      if (s->started && s->controls_seen && s->sound.currentSound() != AudibleAlert::CHIME_WARNING_REPEAT) {
+      if (s->started && s->controls_seen && s->scene.alert_text2 != "Controls Unresponsive") {
         LOGE("Controls unresponsive");
         s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);

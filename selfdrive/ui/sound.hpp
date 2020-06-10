@@ -1,22 +1,26 @@
 #pragma once
 #include <map>
 #include "cereal/gen/cpp/log.capnp.h"
-typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
+
 #if defined(QCOM) || defined(QCOM2)
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #endif
+
+typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
+
 class Sound {
  public:
   Sound() = default;
-  bool init(int volumn);
+  bool init(int volume);
   bool play(AudibleAlert alert, int repeat = 0);
   bool stop();
   void setVolume(int volume, int timeout_seconds = 0);
   inline AudibleAlert currentSound() const { return currentSound_; }
   ~Sound();
-#if defined(QCOM) || defined(QCOM2)
+
  private:
+#if defined(QCOM) || defined(QCOM2)
   SLObjectItf engine_ = NULL;
   SLObjectItf outputMix_ = NULL;
   int repeat_ = 0, last_volume_ = 0;
