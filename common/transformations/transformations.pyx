@@ -120,6 +120,22 @@ cdef class LocalCoord:
         elif ecef is not None:
             self.lc = new LocalCoord_c(list2ecef(ecef))
 
+    @property
+    def ned2ecef_matrix(self):
+        return matrix2numpy(self.lc.ned2ecef_matrix)
+
+    @property
+    def ecef2ned_matrix(self):
+        return matrix2numpy(self.lc.ecef2ned_matrix)
+
+    @property
+    def ned_from_ecef_matrix(self):
+        return self.ecef2ned_matrix
+
+    @property
+    def ecef_from_ned_matrix(self):
+        return self.ned2ecef_matrix
+
     @classmethod
     def from_geodetic(cls, geodetic):
         return cls(geodetic=geodetic)
