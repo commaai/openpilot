@@ -127,7 +127,7 @@ def main(sm=None, pm=None):
       msg.liveParameters.valid = all((
         abs(msg.liveParameters.angleOffsetAverage) < 10.0,
         abs(msg.liveParameters.angleOffset) < 10.0,
-        0.5 <= msg.liveParameters.stiffnessFactor <= 2.0,
+        0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
         min_sr <= msg.liveParameters.steerRatio <= max_sr,
       ))
 
