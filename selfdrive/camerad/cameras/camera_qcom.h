@@ -27,8 +27,12 @@
 
 #define LP3_AF_DAC_DOWN 366
 #define LP3_AF_DAC_UP 634
+#define LP3_AF_DAC_M 440
+#define LP3_AF_DAC_3SIG 52
 #define OP3T_AF_DAC_DOWN 224
 #define OP3T_AF_DAC_UP 456
+#define OP3T_AF_DAC_M 300
+#define OP3T_AF_DAC_3SIG 96
 
 #define FOCUS_RECOVER_PATIENCE 50 // 2.5 seconds of complete blur
 #define FOCUS_RECOVER_STEPS 240 // 6 seconds
