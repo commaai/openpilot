@@ -73,7 +73,7 @@ void* live_thread(void *arg) {
 
 int main(int argc, char **argv) {
   int err;
-  set_realtime_priority(1);
+  set_realtime_priority(51);
 
   // start calibration thread
   pthread_t live_thread_handle;
