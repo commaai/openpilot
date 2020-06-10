@@ -64,6 +64,8 @@ void framebuffer_swap(FramebufferState *s) {
   glfwPollEvents();
 }
 
+bool set_brightness(int brightness) { return true; }
+
 void touch_init(TouchState *s) {
   printf("touch_init\n");
 }

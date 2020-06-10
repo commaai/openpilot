@@ -12,7 +12,6 @@
 #include <GLES2/gl2.h>
 #include <EGL/eglext.h>
 
-#define BACKLIGHT_CONTROL "/sys/class/leds/lcd-backlight/brightness"
 #define BACKLIGHT_LEVEL "205"
 
 using namespace android;
@@ -123,14 +122,7 @@ extern "C" FramebufferState* framebuffer_init(
 
   printf("gl version %s\n", glGetString(GL_VERSION));
 
-
-  // set brightness
-  int brightness_fd = open(BACKLIGHT_CONTROL, O_RDWR);
-  if (brightness_fd != -1){
-    const char brightness_level[] = BACKLIGHT_LEVEL;
-    write(brightness_fd, brightness_level, strlen(brightness_level));
-    close(brightness_fd);
-  }
+  set_brightness(BACKLIGHT_LEVEL);
 
   if (out_w) *out_w = w;
   if (out_h) *out_h = h;
@@ -143,3 +135,12 @@ extern "C" void framebuffer_swap(FramebufferState *s) {
   assert(glGetError() == GL_NO_ERROR);
 }
 
+extern "C" bool set_brightness(int brightness) {
+  FILE *f = fopen("/sys/class/leds/lcd-backlight/brightness", "wb");
+  if (f != NULL) {
+    fprintf(f, "%d", brightness);
+    fclose(f);
+    return true;
+  }
+  return false;
+}
