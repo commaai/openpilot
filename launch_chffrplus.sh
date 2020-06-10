@@ -101,6 +101,7 @@ function launch {
       echo "Clearing build products and resetting scons state prior to NEOS update"
       cd $BASEDIR && scons --clean
       rm -rf /tmp/scons_cache
+      rm -r $BASEDIR/.sconsign.dblite
     fi
     "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update.json"
   fi
