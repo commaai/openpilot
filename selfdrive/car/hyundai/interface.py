@@ -4,6 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINTS, Buttons
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.controls.lib.pathplanner import LANE_CHANGE_SPEED_MIN
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
@@ -244,7 +245,7 @@ class CarInterface(CarInterfaceBase):
       ret.rightBlinker = self.CS.right_blinker_flash or self.CS.prev_right_blinker and self.CC.turning_signal_timer
 
     # turning indicator alert logic
-    if (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < 16.7:
+    if (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 3:
       self.turning_indicator_alert = True 
     else:
       self.turning_indicator_alert = False
