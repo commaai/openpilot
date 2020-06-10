@@ -43,10 +43,8 @@ function launch {
           mv "${STAGING_ROOT}/finalized" $BASEDIR
 
           # The mv changed our working directory to /data/safe_staging/old_openpilot
-          cd "${BASEDIR}"
-
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
-          exec "${LAUNCHER_LOCATION}"
+          cd "${BASEDIR}" && exec "${LAUNCHER_LOCATION}"
         else
           echo "openpilot backup found, not updating"
           # TODO: restore backup? This means the updater didn't start after swapping
@@ -87,8 +85,6 @@ function launch {
     done
   done
 
-  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-
   # Remove old NEOS update file
   # TODO: move this code to the updater
   if [ -d /data/neoupdate ]; then
@@ -97,8 +93,8 @@ function launch {
 
   # Check for NEOS update
   if [ "$(< /VERSION)" != "15" ]; then
-    if [ -f "$DIR/scripts/continue.sh" ]; then
-      cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
+    if [ -f "$BASEDIR/scripts/continue.sh" ]; then
+      cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
     if [ ! -f "$BASEDIR/prebuilt" ]; then
@@ -117,12 +113,11 @@ function launch {
 
 
   # handle pythonpath
-  ln -sfn $(pwd) /data/pythonpath
+  ln -sfn "$(pwd)" /data/pythonpath
   export PYTHONPATH="$PWD"
 
   # start manager
-  cd selfdrive
-  ./manager.py
+  cd selfdrive && ./manager.py
 
   # if broken, keep on screen error
   while true; do sleep 1; done
