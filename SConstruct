@@ -37,9 +37,6 @@ if arch == "aarch64" or arch == "larch64":
 
   libpath = [
     "/usr/lib",
-    "/data/data/com.termux/files/usr/lib",
-    "/system/vendor/lib64",
-    "/system/comma/usr/lib",
     "#phonelibs/nanovg",
   ]
 
@@ -53,9 +50,9 @@ if arch == "aarch64" or arch == "larch64":
   else:
     libpath += ["#phonelibs/snpe/aarch64"]
     libpath += ["#phonelibs/libyuv/lib"]
+    libpath += ["/system/vendor/lib64"]
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
-    rpath = ["/system/vendor/lib64"]
 
     if QCOM_REPLAY:
       cflags += ["-DQCOM_REPLAY"]
@@ -106,6 +103,11 @@ ldflags_asan = ["-fsanitize=address"] if GetOption('asan') else []
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
+
+try:
+  rpath
+except:
+  rpath=[]
 
 env = Environment(
   ENV=lenv,
