@@ -20,11 +20,10 @@ ECEF geodetic2ecef(Geodetic g);
 Geodetic ecef2geodetic(ECEF e);
 
 class LocalCoord {
-private:
+public:
   Eigen::Matrix3d ned2ecef_matrix;
   Eigen::Matrix3d ecef2ned_matrix;
   Eigen::Vector3d init_ecef;
-public:
   LocalCoord(Geodetic g, ECEF e);
   LocalCoord(Geodetic g) : LocalCoord(g, ::geodetic2ecef(g)) {}
   LocalCoord(ECEF e) : LocalCoord(::ecef2geodetic(e), e) {}
