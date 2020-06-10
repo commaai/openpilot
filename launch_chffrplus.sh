@@ -76,16 +76,16 @@ function launch {
   IRQ_AFFINE_CORE_3="733 736"  # USB for LeEco and OP3T mainboards respectively
 
   for CORE in {0..3}
+  do
+    CORE_IRQ_LIST=IRQ_AFFINE_CORE_$CORE
+    for IRQ in ${!CORE_IRQ_LIST}
     do
-      CORE_IRQS=IRQ_AFFINE_CORE_$CORE
-      for IRQ in ${!CORE_IRQS}
-        do
-          if [ -d "/proc/irq/$IRQ" ]; then
-            echo "Setting IRQ affinity: IRQ $IRQ to core $CORE"
-            echo $CORE > /proc/irq/$IRQ/smp_affinity_list
-          fi
-        done
+      if [ -d "/proc/irq/$IRQ" ]; then
+        echo "Setting IRQ affinity: IRQ $IRQ to core $CORE"
+        echo $CORE > /proc/irq/$IRQ/smp_affinity_list
+      fi
     done
+  done
 
   DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
@@ -107,6 +107,7 @@ function launch {
       rm -rf /tmp/scons_cache
       rm -r $BASEDIR/.sconsign.dblite
     fi
+
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
   else
     if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
