@@ -314,7 +314,7 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     }
     if (bus_num == 1 && hyundai_forward_bus1) {
       if (!OP_MDPS_live || addr != 593) {
-        if (!OP_SCC_live || addr != 1056 || addr != 1057 || addr != 1290 || addr != 905) {
+        if (!OP_SCC_live || addr != 1056 && addr != 1057 && addr != 1290 && addr != 905) {
           bus_fwd = 20;
         } else {
           bus_fwd = 2;  // EON create SCC11 SCC12 SCC13 SCC14 for Car
@@ -327,7 +327,7 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     }
     if (bus_num == 2) {
       if (addr != 832 || !OP_LKAS_live) {
-        if (!OP_SCC_live || addr != 1056 || addr != 1057 || addr != 1290 || addr != 905) {
+        if (!OP_SCC_live || addr != 1056 && addr != 1057 && addr != 1290 && addr != 905) {
           bus_fwd = hyundai_forward_bus1 ? 10 : 0;
         } else {
           bus_fwd = fwd_to_bus1;  // EON create SCC12 for Car
