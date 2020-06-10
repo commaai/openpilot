@@ -96,12 +96,15 @@ function launch {
   fi
 
   # Check for NEOS update
-  if [ $(< /VERSION) != "15" ]; then
+  if [ "$(< /VERSION)" != "15" ]; then
     if [ -f "$DIR/scripts/continue.sh" ]; then
       cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
-
+    echo "Clearing build products and resetting scons state prior to NEOS update"
+    cd $BASEDIR && scons --clean
+    rm -f .sconsign.dblite
+    rm -rf /tmp/scons_cache
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
   fi
 
