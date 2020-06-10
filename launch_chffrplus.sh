@@ -72,7 +72,7 @@ function launch {
   # Move USB to core 3 for better realtime handling
   IRQ_AFFINE_CORE_0=""
   IRQ_AFFINE_CORE_1="13 16 25 78"  # I2C, NGD, qcom,smd-modem
-  IRQ_AFFINE_CORE_2="6 15 26 33 35 193"  # SPS, MDSS, ufshcd (flash storage), wlan_pci (WiFi), kgsl-3d0 (GPU)
+  IRQ_AFFINE_CORE_2="6 15 26 33 35"  # SPS, MDSS, ufshcd (flash storage), wlan_pci (WiFi)
   IRQ_AFFINE_CORE_3="733 736"  # USB for LeEco and OP3T mainboards respectively
 
   for CORE in {0..3}
