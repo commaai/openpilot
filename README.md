@@ -15,9 +15,9 @@ Changes:
 ------
 - <b>  HKG longitudinal control:</b> warrings: it is beta, be carful!! Openpilot will control the speed of your car, you can engage with cruise button.
 if your car has SCC on bus0 (CAN1) you have to disable it, otherwise this won't works.
-To enable long control, change line 54 in selfdrive/car/hyundai/carcontroller.py to:
+To enable long control, change line 255 in selfdrive/car/hyundai/interface.py to:
 ```python
-    self.longcontrol = True
+        ret.openpilotLongitudinalControl = True
 ```
 - <b>  Auto LCA:</b> credit to @SiGmAX666: Auto Lane change assist, no need for steering nudge. LCA will abort if driver override steering wheel. To enable Auto LCA(disabled by default),  change line 189 in selfdrive/car/hyundai/interface.py to:
 ```python

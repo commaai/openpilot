@@ -222,8 +222,8 @@ class CarInterface(CarInterfaceBase):
     ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] and 1296 not in fingerprint[1] \
                                                                      else 2 if 1056 in fingerprint[2] else -1
     ret.radarOffCan = ret.sccBus == -1
-    ret.openpilotLongitudinalControl = True
-    ret.enableCruise = not ret.radarOffCan or ret.sccBus != 0
+    ret.openpilotLongitudinalControl = True #TODO make ui toggle
+    ret.enableCruise = not ret.radarOffCan
     ret.autoLcaEnabled = False
 
     return ret
@@ -242,7 +242,7 @@ class CarInterface(CarInterfaceBase):
       self.CP.enableCruise = True
 
     # most HKG cars has no long control, it is safer and easier to engage by main on
-    if not self.CC.longcontrol:
+    if not self.CP.openpilotLongitudinalControl:
       ret.cruiseState.enabled = ret.cruiseState.available
     # some Optima only has blinker flash signal
     if self.CP.carFingerprint == CAR.KIA_OPTIMA:
@@ -303,7 +303,7 @@ class CarInterface(CarInterfaceBase):
       events.events.remove(EventName.pedalPressed)
 
     # handle button presses
-    if not self.CP.enableCruise:
+    if not self.CC.scc_live:
       for b in ret.buttonEvents:
         # do enable on both accel and decel buttons
         if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:

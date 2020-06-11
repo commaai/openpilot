@@ -70,7 +70,7 @@ class CarController():
     self.last_lead_distance = 0
     self.turning_signal_timer = 0
     self.lkas_button_on = True
-    self.longcontrol = True #TODO: make auto
+    self.longcontrol = CP.openpilotLongitudinalControl
     self.scc_live = not CP.radarOffCan
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
@@ -132,7 +132,7 @@ class CarController():
       self.scc_update_frame = frame
 
     # check if SCC on bus 0 is live
-    if frame % 7 == 0 and not CS.no_radar:
+    if frame % 7 == 0:
       if CS.scc11["AliveCounterACC"] == self.prev_scc_cnt:
         if frame - self.scc_update_frame > 20 and self.scc_live:
           self.scc_live = False

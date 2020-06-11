@@ -316,13 +316,6 @@ class CarState(CarStateBase):
         ("CRUISE_LAMP_M", "EMS16", 0),
         ("CF_Lvr_CruiseSet", "LVR12", 0),
       ]
-    elif not CP.sccBus:
-      signals += [
-      ]
-      checks += [
-        ("SCC11", 50),
-        ("SCC12", 50),
-      ]
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
       signals += [
         ("CF_Clu_InhibitD", "CLU15", 0),
