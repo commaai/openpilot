@@ -6,6 +6,7 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create
                                              create_scc13, create_scc14
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
+from selfdrive.config import Conversions as CV
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -121,6 +122,11 @@ class CarController():
     enabled_speed = 38 if CS.is_set_speed_in_mph  else 60
     if clu11_speed > enabled_speed or not lkas_active:
       enabled_speed = clu11_speed
+      
+    if CS.is_set_speed_in_mph:
+      self.op_set_speed = set_speed * CV.MS_TO_MPH
+    else:
+      self.op_set_speed = set_speed * CV.MS_TO_KPH
 
     if frame == 0: # initialize counts from last received count signals
       self.lkas11_cnt = CS.lkas11["CF_Lkas_MsgCount"]
@@ -163,7 +169,7 @@ class CarController():
     # send scc to car if longcontrol enabled and SCC not on bus 0 or ont live
     if self.longcontrol and (CS.scc_bus or not self.scc_live) and frame % 2 == 0: 
       can_sends.append(create_scc12(self.packer, apply_accel, enabled, self.scc12_cnt, CS.scc12))
-      can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, lead_visible, CS.scc11))
+      can_sends.append(create_scc11(self.packer, frame, enabled, self.op_set_speed, lead_visible, CS.scc11))
       if CS.has_scc13 and frame % 20 == 0:
         can_sends.append(create_scc13(self.packer, CS.scc13))
       if CS.has_scc14:
