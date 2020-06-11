@@ -151,8 +151,10 @@ FW_VERSIONS = {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-6A0-A640\x00\x00',
       b'37805-6B2-A550\x00\x00',
+      b'37805-6B2-A560\x00\x00',
       b'37805-6B2-A650\x00\x00',
       b'37805-6B2-A660\x00\x00',
+      b'37805-6B2-A720\x00\x00',
       b'37805-6B2-M520\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
@@ -160,14 +162,20 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28102-6B8-A560\x00\x00',
+      b'28102-6B8-A570\x00\x00',
+      b'28102-6B8-A800\x00\x00',
+      b'28102-6B8-C570\x00\x00',
       b'28102-6B8-M520\x00\x00',
     ],
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
       b'46114-TVA-A060\x00\x00',
       b'46114-TVA-A080\x00\x00',
+      b'46114-TVA-A120\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TVA-C040\x00\x00',
       b'57114-TVA-C050\x00\x00',
+      b'57114-TVA-C060\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TVA-A150\x00\x00',
@@ -184,8 +192,10 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TVA-A210\x00\x00',
       b'78109-TVC-A010\x00\x00',
+      b'78109-TVC-A020\x00\x00',
       b'78109-TVC-A110\x00\x00',
       b'78109-TVC-A210\x00\x00',
+      b'78109-TVC-C110\x00\x00',
       b'78109-TVC-M510\x00\x00',
     ],
     (Ecu.hud, 0x18da61f1, None): [
@@ -519,6 +529,12 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x18dab5f1, None): [b'36161-TFK-G130\x00\x00'],
     (Ecu.gateway, 0x18daeff1, None): [b'38897-TBA-A020\x00\x00'],
   },
+  CAR.CRV: {
+    (Ecu.vsa, 0x18da28f1, None): [b'57114-T1W-A230\x00\x00',],
+    (Ecu.srs, 0x18da53f1, None): [b'77959-T0A-A230\x00\x00',],
+    (Ecu.combinationMeter, 0x18da60f1, None): [b'78109-T1W-A210\x00\x00',],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [b'36161-T1W-A830\x00\x00',],
+  },
   CAR.CRV_5G: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-5PA-3060\x00\x00',
@@ -619,30 +635,61 @@ FW_VERSIONS = {
   CAR.CRV_HYBRID: {
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TPA-G020\x00\x00',
+      b'57114-TPG-A020\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TPA-G030\x00\x00',
+      b'39990-TPG-A020\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TMA-H110\x00\x00',
+      b'38897-TPG-A110\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TMB-H510\x00\x00',
+      b'54008-TMB-H610\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TPA-E050\x00\x00',
+      b'36161-TPG-A030\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TPA-G520\x00\x00',
+      b'78109-TPG-A110\x00\x00',
     ],
     (Ecu.hud, 0x18da61f1, None): [
       b'78209-TLA-X010\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TPA-E040\x00\x00',
+      b'36802-TPG-A020\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TLA-G220\x00\x00',
+      b'77959-TLA-C320\x00\x00',
+    ],
+  },
+  CAR.FIT: {
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-T5R-L220\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-T5R-C020\x00\x00',
+      b'39990-T5R-C030\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-T5A-J010\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-T5A-A420\x00\x00',
+      b'78109-T5A-A910\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-T5R-A240\x00\x00',
+      b'36161-T5R-A520\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-T5R-A230\x00\x00',
     ],
   },
   CAR.ODYSSEY: {
@@ -760,8 +807,9 @@ FW_VERSIONS = {
       b'39990-TGS-A230\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TG7-A110\x00\x00',
       b'38897-TG7-A030\x00\x00',
+      b'38897-TG7-A110\x00\x00',
+      b'38897-TG7-A210\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab0f1, None): [
       b'36161-TG7-A630\x00\x00',
@@ -776,6 +824,8 @@ FW_VERSIONS = {
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TG7-AJ20\x00\x00',
+      b'78109-TG7-AK10\x00\x00',
+      b'78109-TG7-AK20\x00\x00',
       b'78109-TG7-AP10\x00\x00',
       b'78109-TG7-AP20\x00\x00',
       b'78109-TG8-AJ20\x00\x00',
@@ -797,6 +847,7 @@ FW_VERSIONS = {
       b'39990-T6Z-A030\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab0f1, None): [
+      b'36161-T6Z-A020\x00\x00',
       b'36161-T6Z-A310\x00\x00',
       b'36161-T6Z-A520\x00\x00',
     ],
@@ -812,6 +863,7 @@ FW_VERSIONS = {
       b'77959-T6Z-A020\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-T6Z-A120\x00\x00',
       b'57114-T6Z-A130\x00\x00',
       b'57114-T6Z-A520\x00\x00',
     ],
