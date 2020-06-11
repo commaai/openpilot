@@ -95,7 +95,7 @@ class CarController():
     lkas_active = enabled and abs(CS.out.steeringAngle) < 90. and self.lkas_button_on
 
     # fix for Genesis hard fault at low speed
-    if CS.out.vEgo < 60 * CV.MS_TO_KPH and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
+    if CS.out.vEgo < 60 * CV.KPH_TO_MS and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
       lkas_active = 0
 
     # Disable steering while turning blinker on and speed below 60 kph
@@ -104,10 +104,11 @@ class CarController():
         self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
       elif CS.left_blinker_flash or CS.right_blinker_flash: # Optima has blinker flash signal only
         self.turning_signal_timer = 100
-    if self.turning_signal_timer and CS.out.vEgo < 60 * CV.MS_TO_KPH:
+    if self.turning_indicator_alert: # set and clear by interface
       lkas_active = 0
-    if self.turning_signal_timer:
+    if self.turning_signal_timer > 0:
       self.turning_signal_timer -= 1
+
     if not lkas_active:
       apply_steer = 0
 

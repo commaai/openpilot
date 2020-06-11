@@ -250,10 +250,10 @@ class CarInterface(CarInterfaceBase):
       ret.rightBlinker = self.CS.right_blinker_flash or self.CS.prev_right_blinker and self.CC.turning_signal_timer
 
     # turning indicator alert logic
-    if (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 3:
-      self.turning_indicator_alert = True 
+    if (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 1.2:
+      self.CC.turning_indicator_alert = True 
     else:
-      self.turning_indicator_alert = False
+      self.CC.turning_indicator_alert = False
 
     # LKAS button alert logic: reverse on/off
     #if not self.CS.lkas_error and self.CS.lkas_button_on != self.CS.prev_lkas_button_on:
@@ -295,7 +295,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.steerTempUnavailable)
     if self.low_speed_alert and not self.CS.mdps_bus:
       events.add(EventName.belowSteerSpeed)
-    if self.turning_indicator_alert:
+    if self.CC.turning_indicator_alert:
       events.add(EventName.turningIndicatorOn)
     if self.lkas_button_alert:
       events.add(EventName.lkasButtonOff)
