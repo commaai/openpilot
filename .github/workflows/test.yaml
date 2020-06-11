@@ -58,7 +58,7 @@ jobs:
         run: eval "$BUILD"
       - name: Push to dockerhub
         run: |
-          docker login -u wmelching -p ${{ secrets.DOCKERHUB_TOKEN }}
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
           docker tag tmppilot docker.io/commaai/openpilot:latest
           docker push docker.io/commaai/openpilot:latest
 
