@@ -86,6 +86,12 @@ function launch {
       cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
+    if [ ! -f "$BASEDIR/prebuilt" ]; then
+      echo "Clearing build products and resetting scons state prior to NEOS update"
+      cd $BASEDIR && scons --clean
+      rm -rf /tmp/scons_cache
+      rm -r $BASEDIR/.sconsign.dblite
+    fi
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
   fi
 
