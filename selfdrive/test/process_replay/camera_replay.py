@@ -6,6 +6,7 @@ from typing import Any
 from tqdm import tqdm
 
 from common.android import ANDROID
+os.environ['CI'] = "1"
 if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
 import selfdrive.manager as manager
