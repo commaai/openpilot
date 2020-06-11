@@ -159,7 +159,7 @@ class EngagementAlert(Alert):
 
 def below_steer_speed_alert(CP, sm, metric):
   speed = CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)
-  unit = "kph" if metric else "mph"
+  unit = "km/h" if metric else "mi/h"
   return Alert(
     "TAKE CONTROL",
     "Steer Unavailable Below %d %s" % (speed, unit),
@@ -168,7 +168,7 @@ def below_steer_speed_alert(CP, sm, metric):
 
 def calibration_incomplete_alert(CP, sm, metric):
   speed = int(Filter.MIN_SPEED * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
-  unit = "kph" if metric else "mph"
+  unit = "km/h" if metric else "mi/h"
   return Alert(
     "Calibration in Progress: %d%%" % sm['liveCalibration'].calPerc,
     "Drive Above %d %s" % (speed, unit),

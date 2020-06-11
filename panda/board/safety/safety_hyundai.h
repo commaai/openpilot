@@ -112,7 +112,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
   // check if we have a MDPS on Bus1 and LCAN not on the bus
   if (bus == 1 && (addr == 593 || addr == 897) && !hyundai_LCAN_on_bus1) {
-    if (!hyundai_forward_bus1) {
+    if (hyundai_mdps_bus != bus || !hyundai_forward_bus1) {
       hyundai_mdps_bus = bus;
       hyundai_forward_bus1 = true;
     }
@@ -283,7 +283,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   }
 
   if (addr == 593) {OP_MDPS_live = 20;}
-  if ((addr == 1265) && bus == 1) {OP_CLU_live = 20;} // only count mesage to mdps
+  if (addr == 1265 && bus == 1) {OP_CLU_live = 20;} // only count mesage created for MDPS
   if (addr == 1057) {OP_SCC_live = 20; if (car_SCC_live > 0) {car_SCC_live -= 1;}}
 
   // 1 allows the message through
