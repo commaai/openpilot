@@ -125,8 +125,8 @@ class CarController():
     if clu11_speed > enabled_speed or not lkas_active:
       enabled_speed = clu11_speed
 
-    if set_speed < mini_set_speed:
-      set_speed = mini_set_speed
+    if set_speed < min_set_speed:
+      set_speed = min_set_speed 
     set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
     if frame == 0: # initialize counts from last received count signals
