@@ -6,6 +6,7 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create
                                              create_scc13, create_scc14
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
+from selfdrive.config import Conversions as CV
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -93,7 +94,7 @@ class CarController():
     lkas_active = enabled and abs(CS.out.steeringAngle) < 90. and self.lkas_button_on
 
     # fix for Genesis hard fault at low speed
-    if CS.out.vEgo < 16.7 and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
+    if CS.out.vEgo < 60 * CV.MS_TO_KPH and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
       lkas_active = 0
 
     # Disable steering while turning blinker on and speed below 60 kph
@@ -102,7 +103,7 @@ class CarController():
         self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
       elif CS.left_blinker_flash or CS.right_blinker_flash: # Optima has blinker flash signal only
         self.turning_signal_timer = 100
-    if self.turning_signal_timer and CS.out.vEgo < 16.7:
+    if self.turning_signal_timer and CS.out.vEgo < 60 * CV.MS_TO_KPH:
       lkas_active = 0
     if self.turning_signal_timer:
       self.turning_signal_timer -= 1
@@ -121,6 +122,8 @@ class CarController():
     enabled_speed = 38 if CS.is_set_speed_in_mph  else 60
     if clu11_speed > enabled_speed or not lkas_active:
       enabled_speed = clu11_speed
+      
+    set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
     if frame == 0: # initialize counts from last received count signals
       self.lkas11_cnt = CS.lkas11["CF_Lkas_MsgCount"]
