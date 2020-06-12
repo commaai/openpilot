@@ -20,9 +20,9 @@ void* read_file(const char* path, size_t* out_len) {
   long f_len = ftell(f);
   rewind(f);
 
-  // calloc one extra byte so the file will always be NULL terminated
+  // malloc one extra byte so the file will always be NULL terminated
   // cl_cached_program_from_file relies on this
-  char* buf = (char*)calloc(f_len+1, 1);
+  char* buf = (char*)malloc(f_len+1);
   assert(buf);
 
   size_t num_read = fread(buf, f_len, 1, f);
@@ -33,6 +33,7 @@ void* read_file(const char* path, size_t* out_len) {
     return NULL;
   }
 
+  buf[f_len] = '\0';
   if (out_len) {
     *out_len = f_len;
   }
