@@ -60,7 +60,7 @@ def health_function():
     dat.valid = True
     dat.health = {
       'ignitionLine': True,
-      'hwType': "whitePanda",
+      'hwType': "greyPanda",
       'controlsAllowed': True
     }
     pm.send('health', dat)
