@@ -99,14 +99,14 @@ int main() {
       uint64_t mem_cached = 0, mem_active = 0, mem_inactive = 0, mem_shared = 0;
 
       while (std::getline(smem, mem_line)) {
-        if (util::starts_with(mem_line, "MemTotal:")) sscanf(mem_line.data(), "MemTotal: %lu kB", &mem_total);
-        else if (util::starts_with(mem_line, "MemFree:")) sscanf(mem_line.data(), "MemFree: %lu kB", &mem_free);
-        else if (util::starts_with(mem_line, "MemAvailable:")) sscanf(mem_line.data(), "MemAvailable: %lu kB", &mem_available);
-        else if (util::starts_with(mem_line, "Buffers:")) sscanf(mem_line.data(), "Buffers: %lu kB", &mem_buffers);
-        else if (util::starts_with(mem_line, "Cached:")) sscanf(mem_line.data(), "Cached: %lu kB", &mem_cached);
-        else if (util::starts_with(mem_line, "Active:")) sscanf(mem_line.data(), "Active: %lu kB", &mem_active);
-        else if (util::starts_with(mem_line, "Inactive:")) sscanf(mem_line.data(), "Inactive: %lu kB", &mem_inactive);
-        else if (util::starts_with(mem_line, "Shmem:")) sscanf(mem_line.data(), "Shmem: %lu kB", &mem_shared);
+        if (util::starts_with(mem_line, "MemTotal:")) sscanf(mem_line.data(), "MemTotal: %" SCNu64 " kB", &mem_total);
+        else if (util::starts_with(mem_line, "MemFree:")) sscanf(mem_line.data(), "MemFree: %" SCNu64 " kB", &mem_free);
+        else if (util::starts_with(mem_line, "MemAvailable:")) sscanf(mem_line.data(), "MemAvailable: %" SCNu64 " kB", &mem_available);
+        else if (util::starts_with(mem_line, "Buffers:")) sscanf(mem_line.data(), "Buffers: %" SCNu64 " kB", &mem_buffers);
+        else if (util::starts_with(mem_line, "Cached:")) sscanf(mem_line.data(), "Cached: %" SCNu64 " kB", &mem_cached);
+        else if (util::starts_with(mem_line, "Active:")) sscanf(mem_line.data(), "Active: %" SCNu64 " kB", &mem_active);
+        else if (util::starts_with(mem_line, "Inactive:")) sscanf(mem_line.data(), "Inactive: %" SCNu64 " kB", &mem_inactive);
+        else if (util::starts_with(mem_line, "Shmem:")) sscanf(mem_line.data(), "Shmem: %" SCNu64 " kB", &mem_shared);
       }
 
       mem.setTotal(mem_total * 1024);

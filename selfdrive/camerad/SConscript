@@ -22,6 +22,10 @@ else:
   else:
     libs += []
     cameras = ['cameras/camera_frame_stream.cc']
+  if arch == "Darwin":
+    del libs[libs.index('OpenCL')]
+    env = env.Clone()
+    env['FRAMEWORKS'] = ['OpenCL']
 
 env.SharedLibrary('snapshot/visionipc',
   ["#selfdrive/common/visionipc.c", "#selfdrive/common/ipc.c"])

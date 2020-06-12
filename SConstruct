@@ -62,6 +62,9 @@ if arch == "aarch64" or arch == "larch64":
       cxxflags += ["-DQCOM_REPLAY"]
 
 else:
+  cflags = []
+  cxxflags = []
+
   lenv = {
     "PATH": "#external/bin:" + os.environ['PATH'],
   }
@@ -77,6 +80,8 @@ else:
       "/usr/local/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
+    cflags.append("-DGL_SILENCE_DEPRECATION")
+    cxxflags.append("-DGL_SILENCE_DEPRECATION")
   else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
@@ -95,9 +100,6 @@ else:
 
   # allows shared libraries to work globally
   rpath = [os.path.join(os.getcwd(), x) for x in rpath]
-
-  cflags = []
-  cxxflags = []
 
 ccflags_asan = ["-fsanitize=address", "-fno-omit-frame-pointer"] if GetOption('asan') else []
 ldflags_asan = ["-fsanitize=address"] if GetOption('asan') else []
@@ -215,9 +217,8 @@ SConscript(['common/kalman/SConscript'])
 SConscript(['common/transformations/SConscript'])
 SConscript(['phonelibs/SConscript'])
 
-if arch != "Darwin":
-  SConscript(['selfdrive/camerad/SConscript'])
-  SConscript(['selfdrive/modeld/SConscript'])
+SConscript(['selfdrive/camerad/SConscript'])
+SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])

@@ -1,11 +1,18 @@
-#!/bin/sh
+#!/bin/bash -e
 
 if [ $# -gt 0 ]; then
-    if [ "$INTERNAL" = 1 ]; then
-        ./_nui "$1"
+  if [ "$INTERNAL" = 1 ]; then
+    ./_nui "$1"
+  else
+    ./get_files_comma_api.py $1 
+    if [ -f ./_nui ]; then
+      ./_nui use_api
+    elif [ -f _nui.app/Contents/MacOS/_nui ]; then
+      ./_nui.app/Contents/MacOS/_nui use_api
     else
-        python get_files_comma_api.py $1 && ./_nui use_api
+      echo "nui not found, please build it"
     fi
+  fi
 else
-    echo "Please Enter a Route"
+  echo "Please Enter a Route"
 fi

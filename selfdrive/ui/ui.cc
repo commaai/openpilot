@@ -406,7 +406,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     s->preview_started = data.getIsPreview();
   }
 
-  s->started = scene.thermal.getStarted() || s->preview_started ;
+  s->started = scene.thermal.getStarted() || s->preview_started;
   // Handle onroad/offroad transition
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {
@@ -415,6 +415,13 @@ void handle_message(UIState *s, SubMaster &sm) {
       s->vision_seen = false;
       s->controls_seen = false;
       s->active_app = cereal::UiLayoutState::App::HOME;
+
+      #ifndef QCOM
+      // disconnect from visionipc on PC
+      close(s->ipc_fd);
+      s->ipc_fd = -1;
+      #endif
+
       update_offroad_layout_state(s);
     }
   } else if (s->status == STATUS_STOPPED) {
@@ -514,8 +521,14 @@ static void ui_update(UIState *s) {
 
   zmq_pollitem_t polls[1] = {{0}};
   // Take an rgb image from visiond if there is one
+  assert(s->ipc_fd >= 0);
   while(true) {
-    assert(s->ipc_fd >= 0);
+    if (s->ipc_fd < 0) {
+      // TODO: rethink this, for now it should only trigger on PC
+      LOGW("vision disconnected by other thread");
+      s->vision_connected = false;
+      return;
+    }
     polls[0].fd = s->ipc_fd;
     polls[0].events = ZMQ_POLLIN;
     #ifdef UI_60FPS

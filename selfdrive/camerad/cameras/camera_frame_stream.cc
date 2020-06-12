@@ -70,18 +70,8 @@ void run_frame_stream(DualCameraState *s) {
 
     cl_command_queue q = rear_camera->camera_bufs[buf_idx].copy_q;
     cl_mem yuv_cl = rear_camera->camera_bufs[buf_idx].buf_cl;
-    cl_event map_event;
-    void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
-                                                CL_MAP_WRITE, 0, frame.getImage().size(),
-                                                0, NULL, &map_event, &err);
-    assert(err == 0);
-    clWaitForEvents(1, &map_event);
-    clReleaseEvent(map_event);
-    memcpy(yuv_buf, frame.getImage().begin(), frame.getImage().size());
 
-    clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
-    clWaitForEvents(1, &map_event);
-    clReleaseEvent(map_event);
+    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, frame.getImage().size(), frame.getImage().begin(), 0, NULL, NULL);
     tbuffer_dispatch(tb, buf_idx);
   }
 }
