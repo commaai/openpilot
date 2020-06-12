@@ -496,9 +496,15 @@ def manager_thread():
       elif "driverview" in running and params.get("IsDriverViewEnabled") == b"0":
         kill_managed_process("driverview")
 
-    # check the status of all processes, did any of them die?
-    running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
-    cloudlog.debug(' '.join(running_list))
+    # check the status of all processes, did any of them die?'
+    process_dead = False
+    for p in running:
+      if not running[p].is_alive():
+        process_dead = True
+    # If a process is dead, log the status of every process
+    if process_dead:
+      running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
+      cloudlog.debug(' '.join(running_list))
 
     # Exit main loop when uninstall is needed
     if params.get("DoUninstall", encoding='utf8') == "1":
