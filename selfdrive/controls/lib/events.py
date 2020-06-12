@@ -74,7 +74,7 @@ class Events:
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
 
-          if DT_CTRL * (self.events_prev + 1) >= alert.creation_delay:
+          if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
             alert.alert_type = EVENT_NAME[e]
             ret.append(alert)
     return ret
@@ -314,14 +314,6 @@ EVENTS = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   },
 
-  EventName.canErrorPersistent: {
-    ET.PERMANENT: Alert(
-      "CAN Error: Check Connections",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-  },
-
   # ********** events only containing alerts that display while engaged **********
 
   EventName.vehicleModelInvalid: {
@@ -521,7 +513,7 @@ EVENTS = {
       "No Data from Device Sensors",
       "Reboot your Device",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=1.),
     ET.NO_ENTRY: NoEntryAlert("No Data from Device Sensors"),
   },
 
@@ -623,6 +615,11 @@ EVENTS = {
 
   EventName.canError: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error: Check Connections"),
+    ET.PERMANENT: Alert(
+      "CAN Error: Check Connections",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=1.),
     ET.NO_ENTRY: NoEntryAlert("CAN Error: Check Connections"),
   },
 
