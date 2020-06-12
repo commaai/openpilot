@@ -67,7 +67,7 @@ jobs:
           docker push docker.io/commaai/openpilot:latest
 
   docker_push_prebuilt:
-    name: docker push
+    name: docker push prebuilt
     runs-on: ubuntu-16.04
     timeout-minutes: 50
     #if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
@@ -77,7 +77,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: echo "RUN scons -c && scons -j3" >> Dockerfile.openpilot && eval "$BUILD"
+        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j3" >> Dockerfile.openpilot && eval "$BUILD"
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
