@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "74a23e7ac1a5e8835d3d8c97f917cda7edaa53934d3cfa89c4cc8bc03da1b0d5"
+            "sha256": "96924e487a9d20b4fb06eea1e6536816a157a9606051da58741c66fa6630371a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1237,11 +1237,11 @@
         },
         "google-auth": {
             "hashes": [
-                "sha256:1c96c33ad94a492cf21016ac69285d7409d7d046b5cda0a46793e1323a97d657",
-                "sha256:846feb49ccdd86f74f86fc01f5d679c0b7256af1680fc985db26021b037fbc4e"
+                "sha256:25d3c4e457db5504c62b3e329e8e67d2c29a0cecec3aa5347ced030d8700a75d",
+                "sha256:e634b649967d83c02dd386ecae9ce4a571528d59d51a4228757e45f5404a060b"
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
-            "version": "==1.17.1"
+            "version": "==1.17.2"
         },
         "google-auth-oauthlib": {
             "hashes": [
@@ -2030,11 +2030,11 @@
         },
         "pre-commit": {
             "hashes": [
-                "sha256:5559e09afcac7808933951ffaf4ff9aac524f31efbc3f24d021540b6c579813c",
-                "sha256:703e2e34cbe0eedb0d319eff9f7b83e2022bb5a3ab5289a6a8841441076514d0"
+                "sha256:c5c8fd4d0e1c363723aaf0a8f9cba0f434c160b48c4028f4bae6d219177945b3",
+                "sha256:da463cf8f0e257f9af49047ba514f6b90dbd9b4f92f4c8847a3ccd36834874c7"
             ],
             "index": "pypi",
-            "version": "==2.4.0"
+            "version": "==2.5.1"
         },
         "prometheus-client": {
             "hashes": [
@@ -2892,11 +2892,11 @@
         },
         "virtualenv": {
             "hashes": [
-                "sha256:27ee4f826a432a2a0933a762829c4dda15b728dd89b43d4ee354461e245acc93",
-                "sha256:c518b120bfdbbb111e52700fbb80f56c923a3f228d9140baa02d043da2949809"
+                "sha256:5102fbf1ec57e80671ef40ed98a84e980a71194cedf30c87c2b25c3a9e0b0107",
+                "sha256:ccfb8e1e05a1174f7bd4c163700277ba730496094fe1a58bea9d4ac140a207c8"
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
-            "version": "==20.0.22"
+            "version": "==20.0.23"
         },
         "wcwidth": {
             "hashes": [
