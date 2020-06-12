@@ -100,6 +100,10 @@ def main(sm=None, pm=None):
     }
     cloudlog.info("Parameter learner resetting to default values")
 
+  # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
+  # Without a way to detect this we have to reset the stiffness every drive
+  params['stiffnessFactor'] = 1.0
+
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverage']))
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
 
