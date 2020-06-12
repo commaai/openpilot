@@ -268,8 +268,10 @@ def thermald_thread():
       fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
       msg.thermal.fanSpeed = fan_speed
 
-    # thermal logic with hysterisis
-    if max_cpu_temp > 107. or bat_temp >= 63.:
+    # If device is offroad we want to cool down before going onroad
+    # since going onroad will increase temperatures significantly
+    # and could cause it go over 107. Cooling down will also be faster
+    if max_cpu_temp > 107. or bat_temp >= 63. or (started_ts is None and max_cpu_temp > 75.0):
       # onroad not allowed
       thermal_status = ThermalStatus.danger
     elif max_comp_temp > 100.0 or bat_temp > 60.:
