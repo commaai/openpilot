@@ -2116,6 +2116,7 @@ static void* ops_thread(void* arg) {
       capnp::FlatArrayMessageReader cmsg(amsg);
       auto event = cmsg.getRoot<cereal::Event>();
       s->rear.recover_blocked = event.getControlsState().getEnabled();
+      zmq_msg_close(&msg);
     }
   }
 
