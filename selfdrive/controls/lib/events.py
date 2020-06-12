@@ -517,6 +517,14 @@ EVENTS = {
     ET.NO_ENTRY: NoEntryAlert("No Data from Device Sensors"),
   },
 
+  EventName.noGps: {
+    ET.PERMANENT: Alert(
+      "Poor GPS reception",
+      "Check GPS antenna placement",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.),
+  },
+
   EventName.soundsUnavailable: {
     ET.PERMANENT: Alert(
       "Speaker not found",

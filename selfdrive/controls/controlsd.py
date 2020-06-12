@@ -202,6 +202,8 @@ class Controls:
     if not self.sm['liveLocationKalman'].inputsOK and os.getenv("NOSENSOR") is None:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].gpsOK and os.getenv("NOSENSOR") is None:
+        self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
