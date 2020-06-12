@@ -1,7 +1,7 @@
 from cereal import log, car
 
+from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
-
 from selfdrive.locationd.calibration_helpers import Filter
 
 AlertSize = log.ControlsState.AlertSize
@@ -37,6 +37,7 @@ class Events:
   def __init__(self):
     self.events = []
     self.static_events = []
+    self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
 
   @property
   def names(self):
@@ -51,6 +52,7 @@ class Events:
     self.events.append(event_name)
 
   def clear(self):
+    self.events_prev = {k: (v+1 if k in self.events else 0) for k, v in self.events_prev.items()}
     self.events = self.static_events.copy()
 
   def any(self, event_type):
@@ -71,8 +73,10 @@ class Events:
           alert = EVENTS[e][et]
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
-          alert.alert_type = EVENT_NAME[e]
-          ret.append(alert)
+
+          if DT_CTRL * (self.events_prev + 1) >= alert.creation_delay:
+            alert.alert_type = EVENT_NAME[e]
+            ret.append(alert)
     return ret
 
   def add_from_msg(self, events):
@@ -101,7 +105,8 @@ class Alert:
                duration_sound,
                duration_hud_alert,
                duration_text,
-               alert_rate=0.):
+               alert_rate=0.,
+               creation_delay=0.):
 
     self.alert_type = ""
     self.alert_text_1 = alert_text_1
@@ -118,6 +123,7 @@ class Alert:
 
     self.start_time = 0.
     self.alert_rate = alert_rate
+    self.creation_delay = creation_delay
 
     # typecheck that enums are valid on startup
     tst = car.CarControl.new_message()
