@@ -15,6 +15,7 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 
+#include "common/ipc.h"
 #include "common/visionipc.h"
 #include "common/visionbuf.h"
 #include "common/visionimg.h"
@@ -346,8 +347,12 @@ void* processing_thread(void *arg) {
   LOG("setpriority returns %d", err);
 
   // init cl stuff
+#ifdef __APPLE__
+  cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
+#else
   const cl_queue_properties props[] = {0}; //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
   cl_command_queue q = clCreateCommandQueueWithProperties(s->context, s->device_id, props, &err);
+#endif
   assert(err == 0);
 
   // init the net
@@ -542,7 +547,7 @@ void* processing_thread(void *arg) {
     // one thumbnail per 5 seconds (instead of %5 == 0 posenet)
     if (cnt % 100 == 3) {
       uint8_t* thumbnail_buffer = NULL;
-      uint64_t thumbnail_len = 0;
+      unsigned long thumbnail_len = 0;
 
       unsigned char *row = (unsigned char *)malloc(s->rgb_width/4*3);
 
@@ -852,21 +857,7 @@ void* visionserver_thread(void* arg) {
   assert(terminate);
   void* terminate_raw = zsock_resolve(terminate);
 
-  unlink(VIPC_SOCKET_PATH);
-
-  int sock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
-  struct sockaddr_un addr = {
-    .sun_family = AF_UNIX,
-    .sun_path = VIPC_SOCKET_PATH,
-  };
-  err = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
-  assert(err == 0);
-
-  err = listen(sock, 3);
-  assert(err == 0);
-
-  // printf("waiting\n");
-
+  int sock = ipc_bind(VIPC_SOCKET_PATH);
   while (!do_exit) {
     zmq_pollitem_t polls[2] = {{0}};
     polls[0].socket = terminate_raw;
@@ -1134,9 +1125,10 @@ void init_buffers(VisionState *s) {
                                             3);
   s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
   assert(err == 0);
-  s->rgb_conv_roi_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
+  // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
+  s->rgb_conv_roi_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE,
       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, NULL);
-  s->rgb_conv_result_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER,
+  s->rgb_conv_result_cl = clCreateBuffer(s->context, CL_MEM_READ_WRITE,
       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, NULL);
   s->rgb_conv_filter_cl = clCreateBuffer(s->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
       9 * sizeof(int16_t), (void*)&lapl_conv_krnl, NULL);
@@ -1194,7 +1186,7 @@ void party(VisionState *s) {
                        processing_thread, s);
   assert(err == 0);
 
-#ifndef QCOM2
+#if !defined(QCOM2) && !defined(__APPLE__)
   // TODO: fix front camera on qcom2
   pthread_t frontview_thread_handle;
   err = pthread_create(&frontview_thread_handle, NULL,
@@ -1215,7 +1207,7 @@ void party(VisionState *s) {
 
   zsock_signal(s->terminate_pub, 0);
 
-#if !defined(QCOM2) && !defined(QCOM_REPLAY)
+#if !defined(QCOM2) && !defined(QCOM_REPLAY) && !defined(__APPLE__)
   LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
   assert(err == 0);

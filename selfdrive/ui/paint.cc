@@ -269,6 +269,7 @@ static void draw_frame(UIState *s) {
     glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
     #ifndef QCOM
       // TODO: a better way to do this?
+      //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
     #endif
   }
@@ -807,10 +808,10 @@ static const char frame_fragment_shader[] =
   "#version 150 core\n"
   "precision mediump float;\n"
   "uniform sampler2D uTexture;\n"
-  "out vec4 vTexCoord;\n"
-  "out vec4 outColor;\n"
+  "in vec4 vTexCoord;\n"
+  "out vec4 colorOut;\n"
   "void main() {\n"
-  "  outColor = texture(uTexture, vTexCoord.xy);\n"
+  "  colorOut = texture(uTexture, vTexCoord.xy);\n"
   "}\n";
 #else
 static const char frame_vertex_shader[] =
