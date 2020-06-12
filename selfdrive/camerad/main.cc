@@ -1186,15 +1186,12 @@ void party(VisionState *s) {
                        processing_thread, s);
   assert(err == 0);
 
-#ifndef __APPLE__
-  // TODO: should this be for Linux too?
-#ifndef QCOM2
+#if !defined(QCOM2) && !defined(__APPLE__)
   // TODO: fix front camera on qcom2
   pthread_t frontview_thread_handle;
   err = pthread_create(&frontview_thread_handle, NULL,
                        frontview_thread, s);
   assert(err == 0);
-#endif
 #endif
 
   // priority for cameras
@@ -1210,12 +1207,10 @@ void party(VisionState *s) {
 
   zsock_signal(s->terminate_pub, 0);
 
-#ifndef __APPLE__
-#if !defined(QCOM2) && !defined(QCOM_REPLAY)
+#if !defined(QCOM2) && !defined(QCOM_REPLAY) && !defined(__APPLE__)
   LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
   assert(err == 0);
-#endif
 #endif
 
   LOG("joining visionserver_thread");
