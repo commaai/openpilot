@@ -501,6 +501,15 @@ EVENTS = {
     ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
   },
 
+  EventName.focusRecoverActive: {
+    ET.WARNING: Alert(
+      "Disengage to Refocus",
+      "Camera Focus Invalid",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
+    ET.NO_ENTRY: NoEntryAlert("Camera Focus Invalid"),
+  },
+
   EventName.outOfSpace: {
     ET.NO_ENTRY: NoEntryAlert("Out of Storage Space",
                               duration_hud_alert=0.),

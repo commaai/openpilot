@@ -548,6 +548,7 @@ void* processing_thread(void *arg) {
         framed.setFocusConf(focus_confs);
         kj::ArrayPtr<const uint16_t> sharpness_score(&s->lapres[0], (ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1));
         framed.setSharpnessScore(sharpness_score);
+        framed.setRecoverState(s->cameras.rear.self_recover);
 #endif
 
 // TODO: add this back

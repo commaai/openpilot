@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include "messaging.hpp"
 
 #include "msmb_isp.h"
 #include "msmb_ispif.h"
@@ -113,6 +114,7 @@ typedef struct CameraState {
   float lens_true_pos;
 
   int self_recover; // af recovery counter, neg is patience, pos is active
+  bool recover_blocked;
 
   int fps;
 

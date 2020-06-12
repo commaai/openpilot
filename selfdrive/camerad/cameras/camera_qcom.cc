@@ -124,6 +124,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   s->fps = fps;
 
   s->self_recover = 0;
+  s->recover_blocked = false;
 
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
@@ -1748,7 +1749,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
     }
   }
   // self recover override
-  if (s->self_recover > 1) {
+  if (s->self_recover > 1 && !s->recover_blocked) {
     s->focus_err = 200 * ((s->self_recover % 2 == 0) ? 1:-1); // far for even numbers, close for odd
     s->self_recover -= 2;
     return;
@@ -2046,10 +2047,13 @@ static void* ops_thread(void* arg) {
   zsock_t *sensor_sock = zsock_new_sub(">tcp://127.0.0.1:8003", "");
   assert(sensor_sock);
 
+  zsock_t *controls_sock = zsock_new_sub(">tcp://127.0.0.1:8007", "");
+  assert(controls_sock);
+
   zsock_t *terminate = zsock_new_sub(">inproc://terminate", "");
   assert(terminate);
 
-  zpoller_t *poller = zpoller_new(cameraops, sensor_sock, terminate, NULL);
+  zpoller_t *poller = zpoller_new(cameraops, sensor_sock, controls_sock, terminate, NULL);
   assert(poller);
 
   while (!do_exit) {
@@ -2097,12 +2101,28 @@ static void* ops_thread(void* arg) {
         s->rear.last_sag_ts = ts;
         s->rear.last_sag_acc_z = -vs[2];
       }
+    } else if (which == controls_sock) {
+      int err;
+      bool ret = false;
+      zmq_msg_t msg;
+      err = zmq_msg_init(&msg);
+      assert(err == 0);
+      err = zmq_msg_recv(&msg, sockraw, 0);
+      assert(err >= 0);
+      void *data = zmq_msg_data(&msg);
+      size_t size = zmq_msg_size(&msg);
+      auto amsg = kj::heapArray<capnp::word>(size / sizeof(capnp::word) + 1);
+      memcpy(amsg.begin(), data, size);
+      capnp::FlatArrayMessageReader cmsg(amsg);
+      auto event = cmsg.getRoot<cereal::Event>();
+      s->rear.recover_blocked = event.getControlsState().getEnabled();
     }
   }
 
   zpoller_destroy(&poller);
   zsock_destroy(&cameraops);
   zsock_destroy(&sensor_sock);
+  zsock_destroy(&controls_sock);
   zsock_destroy(&terminate);
 
   return NULL;
