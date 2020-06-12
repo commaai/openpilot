@@ -178,6 +178,14 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00DE  MDPS C 1.00 1.09 56310G5301\x00 4DEHC109',],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.01 95740-G5010 170424',],
     (Ecu.transmission, 0x7e1, None): [b"\xf1\x816U3J2051\x00\x00\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00PDE0G16NS2\xf4'\\\x91",],
+  },
+  CAR.PALISADE: {
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00LX2_ SCC FHCUP      1.00 1.04 99110-S8100         \xf1\xa01.04',],
+    (Ecu.esp, 0x7d1, None): [b'\xf1\x00LX ESC \x0b 102\x19\x05\x07 58910-S8330',],
+    (Ecu.engine, 0x7e0, None): [b'\xf1\x81640J0051\x00\x00\x00\x00\x00\x00\x00\x00',],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8020 4LXDC103',],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 190125',],
+    (Ecu.transmission, 0x7e1, None): [b'\xf1\x87LDKVBN424201KF26\xba\xaa\x9a\xa9\x99\x99\x89\x98\x89\x99\xa8\x99\x88\x99\x98\x89\x88\x99\xa8\x89v\x7f\xf7\xffwf_\xffq\xa6\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX4G38NB2\xafL]\xe7',],
   }
 }
 
