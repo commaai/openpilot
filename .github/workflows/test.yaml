@@ -1,5 +1,9 @@
 name: openpilot tests
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron: '0 * * * *'
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
@@ -61,6 +65,24 @@ jobs:
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
           docker tag tmppilot docker.io/commaai/openpilot:latest
           docker push docker.io/commaai/openpilot:latest
+
+  docker_push_prebuilt:
+    name: docker push prebuilt
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
+    needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Docker image
+        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j3" >> Dockerfile.openpilot && eval "$BUILD"
+      - name: Push to dockerhub
+        run: |
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag tmppilot docker.io/commaai/openpilot_prebuilt:latest
+          docker push docker.io/commaai/openpilot_prebuilt:latest
 
   static_analysis:
     name: static analysis
