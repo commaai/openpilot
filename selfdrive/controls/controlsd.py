@@ -270,7 +270,7 @@ class Controls:
     # if stock cruise is completely disabled, then we can use our own set speed logic
     self.CP.enableCruise = self.CI.CP.enableCruise
     if not self.CP.enableCruise:
-      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.enabled)
+      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.enabled, self.is_metric)
     elif self.CP.enableCruise and CS.cruiseState.enabled:
       self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
