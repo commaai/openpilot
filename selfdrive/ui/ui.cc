@@ -856,7 +856,7 @@ int main(int argc, char* argv[]) {
       should_swap = true;
     }
 
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + (s->scene.controls_state.getVEgo() / 5) * 0.1)); // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + (s->scene.controls_state.getVEgo() / 5.0) * 0.1)); // up one notch every 5 m/s
 
     // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
