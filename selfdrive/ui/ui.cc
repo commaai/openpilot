@@ -771,9 +771,9 @@ int main(int argc, char* argv[]) {
 
   float smooth_brightness = brightness_b;
 
-  const float MIN_VOLUME = .5;
-  const float MAX_VOLUME = 1.0;
-  s->sound.init(MIN_VOLUME);
+  const int MIN_VOLUME = LEON ? 12 : 9;
+  const int MAX_VOLUME = LEON ? 15 : 12;
+  assert(s->sound.init(MIN_VOLUME));
 
   int draws = 0;
 
@@ -856,7 +856,7 @@ int main(int argc, char* argv[]) {
       should_swap = true;
     }
 
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + (s->scene.controls_state.getVEgo() / 5.0) * 0.1)); // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5), 5); // up one notch every 5 m/s
 
     // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {

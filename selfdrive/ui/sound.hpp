@@ -12,10 +12,10 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 class Sound {
  public:
   Sound() = default;
-  bool init(float volume);
+  bool init(int volume);
   bool play(AudibleAlert alert, int repeat = 0);
   void stop();
-  void setVolume(float volume); // volume is 0.~1.
+  void setVolume(int volume, int timeout_seconds = 5);
   AudibleAlert currentPlaying();
   ~Sound();
 
@@ -23,10 +23,11 @@ class Sound {
 #if defined(QCOM) || defined(QCOM2)
   SLObjectItf engine_ = nullptr;
   SLObjectItf outputMix_ = nullptr;
+  int last_volume_ = 0;
+  double last_set_volume_time_ = 0.;
+  AudibleAlert currentSound_ = AudibleAlert::NONE;
   struct Player;
-  std::map<AudibleAlert, Player*> player_;
+  std::map<AudibleAlert, Player *> player_;
   friend void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event);
 #endif
-  AudibleAlert currentSound_ = AudibleAlert::NONE;
-  float volume_ = 0;
 };

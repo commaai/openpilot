@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <atomic>
 #include "common/swaglog.h"
+#include "common/timing.h"
 
 #define LogOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); }
@@ -24,12 +25,11 @@ static std::map<AudibleAlert, const char *> sound_map{
 struct Sound::Player {
   SLObjectItf player;
   SLPlayItf playItf;
-  SLVolumeItf volumeItf;
-  float volume;
-  std::atomic<int> repeat;
+  // slplay_callback runs on a background thread,use atomic to ensure thread safe.
+  std::atomic<int> repeat; 
 };
 
-bool Sound::init(float volume) {
+bool Sound::init(int volume) {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
   const SLboolean req[1] = {SL_BOOLEAN_FALSE};
@@ -44,21 +44,17 @@ bool Sound::init(float volume) {
     SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar *)kv.second};
     SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
     SLDataSource audioSrc = {&locUri, &formatMime};
-    const SLInterfaceID ids[1] = {SL_IID_VOLUME};
-    const SLboolean req[1] = {SL_BOOLEAN_TRUE};
     SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
     SLDataSink audioSnk = {&outMix, NULL};
 
     SLObjectItf player = NULL;
     SLPlayItf playItf = NULL;
-    SLVolumeItf volumeItf = NULL;
-    ReturnOnError((*engineInterface)->CreateAudioPlayer(engineInterface, &player, &audioSrc, &audioSnk, 1, ids, req), "Failed to create audio player");
+    ReturnOnError((*engineInterface)->CreateAudioPlayer(engineInterface, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
     ReturnOnError((*player)->Realize(player, SL_BOOLEAN_FALSE), "Failed to realize audio player");
     ReturnOnError((*player)->GetInterface(player, SL_IID_PLAY, &playItf), "Failed to get player interface");
-    ReturnOnError((*player)->GetInterface(player, SL_IID_VOLUME, &volumeItf), "Failed to get player volume interface");
     ReturnOnError((*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
 
-    player_[kv.first] = new Sound::Player{player, playItf, volumeItf, 0};
+    player_[kv.first] = new Sound::Player{player, playItf};
   }
 
   setVolume(volume);
@@ -99,20 +95,12 @@ bool Sound::play(AudibleAlert alert, int repeat) {
     ReturnOnError((*playItf)->SetCallbackEventsMask(playItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
   }
 
-  // Sets the player's volume
-  if (player->volume != volume_) {
-    SLmillibel vol = (volume_ < 0.01F ? -96.0F : 20 * log10(volume_)) * 100;
-    LogOnError((*(player->volumeItf))->SetVolumeLevel(player->volumeItf, vol), "Failed to set player volume");
-    player->volume = volume_;
-  }
-
   // Reset the audio player
   ReturnOnError((*playItf)->ClearMarkerPosition(playItf), "Failed to clear marker position");
   uint32_t states[] = {SL_PLAYSTATE_PAUSED, SL_PLAYSTATE_STOPPED, SL_PLAYSTATE_PLAYING};
   for (auto state : states) {
     ReturnOnError((*playItf)->SetPlayState(playItf, state), "Failed to set SL_PLAYSTATE_PLAYING");
   }
-
   currentSound_ = alert;
   return true;
 }
@@ -126,11 +114,17 @@ void Sound::stop() {
   }
 }
 
-void Sound::setVolume(float volume) {
-  if (volume < 0.) volume = 0.;
-  if (volume > 1.) volume = 1.;
+void Sound::setVolume(int volume, int timeout_seconds) {
+  if (last_volume_ == volume) return;
   
-  volume_ = volume;
+  double current_time = nanos_since_boot();
+  if ((current_time - last_set_volume_time_) > (timeout_seconds * (1e+9))) {
+    char volume_change_cmd[64];
+    snprintf(volume_change_cmd, sizeof(volume_change_cmd), "service call audio 3 i32 3 i32 %d i32 1 &", volume);
+    system(volume_change_cmd);
+    last_volume_ = volume;
+    last_set_volume_time_ = current_time;
+  }
 }
 
 Sound::~Sound() {
