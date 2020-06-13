@@ -1,5 +1,9 @@
 name: openpilot tests
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron: '0 * * * *'
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
@@ -8,8 +12,8 @@ env:
   UNIT_TEST: coverage run --append -m unittest discover
   BUILD: |
       docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
-      docker pull docker.io/commaai/openpilot:latest || true
-      docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
+      docker pull docker.io/commaai/openpilotci:latest || true
+      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilot .
 
 jobs:
   build_release:
@@ -28,9 +32,6 @@ jobs:
         cp -pR --parents $(cat release/files_common) $TEST_DIR
         cp Dockerfile.openpilot $TEST_DIR
 
-        # copy submodules
-        cp -pR panda/ opendbc/ cereal/ $TEST_DIR
-
         # need this to build on x86
         cp -pR --parents phonelibs/libyuv phonelibs/snpe \
                          external/bin selfdrive/modeld/runners $TEST_DIR
@@ -41,8 +42,11 @@ jobs:
         mkdir laika laika_repo tools release
     - name: Build Docker image
       run: cd $TEST_DIR && eval "$BUILD"
-    - name: Build openpilot
-      run: $RUN "cd /tmp/openpilot && scons -j$(nproc)"
+    - name: Build openpilot and run quick check
+      run: |
+          $RUN "cd /tmp/openpilot && \
+                scons -j$(nproc) && \
+                $UNIT_TEST selfdrive/car"
 
   docker_push:
     name: docker push
@@ -58,7 +62,25 @@ jobs:
         run: eval "$BUILD"
       - name: Push to dockerhub
         run: |
-          docker login -u wmelching -p ${{ secrets.DOCKERHUB_TOKEN }}
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag tmppilot docker.io/commaai/openpilotci:latest
+          docker push docker.io/commaai/openpilotci:latest
+
+  docker_push_prebuilt:
+    name: docker push prebuilt
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
+    needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Docker image
+        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j3" >> Dockerfile.openpilot && eval "$BUILD"
+      - name: Push to dockerhub
+        run: |
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
           docker tag tmppilot docker.io/commaai/openpilot:latest
           docker push docker.io/commaai/openpilot:latest
 
@@ -106,6 +128,7 @@ jobs:
                     $UNIT_TEST opendbc/can && \
                     $UNIT_TEST selfdrive/boardd && \
                     $UNIT_TEST selfdrive/controls && \
+                    $UNIT_TEST selfdrive/monitoring && \
                     $UNIT_TEST selfdrive/loggerd && \
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \

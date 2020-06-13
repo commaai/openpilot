@@ -123,12 +123,16 @@ if not prebuilt:
       compile_output += r
 
       if retry:
-        print("scons build failed, cleaning in")
-        for i in range(3, -1, -1):
-          print("....%d" % i)
-          time.sleep(1)
-        subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
-        shutil.rmtree("/tmp/scons_cache")
+        if not os.getenv("CI"):
+          print("scons build failed, cleaning in")
+          for i in range(3, -1, -1):
+            print("....%d" % i)
+            time.sleep(1)
+          subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
+          shutil.rmtree("/tmp/scons_cache")
+        else:
+          print("scons build failed after retry")
+          sys.exit(1)
       else:
         # Build failed log errors
         errors = [line.decode('utf8', 'replace') for line in compile_output
@@ -169,7 +173,7 @@ managed_processes = {
   "controlsd": "selfdrive.controls.controlsd",
   "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
-  "dmonitoringd": "selfdrive.controls.dmonitoringd",
+  "dmonitoringd": "selfdrive.monitoring.dmonitoringd",
   "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
@@ -189,7 +193,7 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
-  "driverview": "selfdrive.controls.lib.driverview",
+  "driverview": "selfdrive.monitoring.driverview",
 }
 
 daemon_processes = {
@@ -359,9 +363,11 @@ def kill_managed_process(name):
         cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
         join_process(running[name], 15)
         if running[name].exitcode is None:
-          cloudlog.critical("FORCE REBOOTING PHONE!")
-          os.system("date >> /sdcard/unkillable_reboot")
-          os.system("reboot")
+          cloudlog.critical("unkillable process %s failed to die!" % name)
+          if ANDROID:
+            cloudlog.critical("FORCE REBOOTING PHONE!")
+            os.system("date >> /sdcard/unkillable_reboot")
+            os.system("reboot")
           raise RuntimeError
       else:
         cloudlog.info("killing %s with SIGKILL" % name)

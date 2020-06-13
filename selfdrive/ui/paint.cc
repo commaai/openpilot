@@ -269,6 +269,7 @@ static void draw_frame(UIState *s) {
     glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
     #ifndef QCOM
       // TODO: a better way to do this?
+      //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
     #endif
   }
@@ -604,10 +605,10 @@ static void ui_draw_driver_view(UIState *s) {
   // draw face box
   if (scene->driver_state.getFaceProb() > 0.4) {
     auto fxy_list = scene->driver_state.getFacePosition();
-    const int face_x = fxy_list[0];
-    const int face_y = fxy_list[1];
-    int fbox_x;
-    int fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
+    const float face_x = fxy_list[0];
+    const float face_y = fxy_list[1];
+    float fbox_x;
+    float fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
     if (!scene->is_rhd) {
       fbox_x = valid_frame_x + (1 - (face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     } else {
@@ -807,10 +808,10 @@ static const char frame_fragment_shader[] =
   "#version 150 core\n"
   "precision mediump float;\n"
   "uniform sampler2D uTexture;\n"
-  "out vec4 vTexCoord;\n"
-  "out vec4 outColor;\n"
+  "in vec4 vTexCoord;\n"
+  "out vec4 colorOut;\n"
   "void main() {\n"
-  "  outColor = texture(uTexture, vTexCoord.xy);\n"
+  "  colorOut = texture(uTexture, vTexCoord.xy);\n"
   "}\n";
 #else
 static const char frame_vertex_shader[] =

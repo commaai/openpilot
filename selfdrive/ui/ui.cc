@@ -14,15 +14,13 @@
 #include "common/touch.h"
 #include "common/visionimg.h"
 #include "common/params.h"
+#include "common/utilpp.h"
 #include "ui.hpp"
 
-static int last_brightness = -1;
-static void set_brightness(UIState *s, int brightness) {
+static void ui_set_brightness(UIState *s, int brightness) {
+  static int last_brightness = -1;
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
-    FILE *f = fopen("/sys/class/leds/lcd-backlight/brightness", "wb");
-    if (f != NULL) {
-      fprintf(f, "%d", brightness);
-      fclose(f);
+    if (set_brightness(brightness)) {
       last_brightness = brightness;
     }
   }
@@ -55,7 +53,7 @@ static void set_awake(UIState *s, bool awake) {
       enable_event_processing(true);
     } else {
       LOGW("awake off");
-      set_brightness(s, 0);
+      ui_set_brightness(s, 0);
       framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
       enable_event_processing(false);
     }
@@ -408,7 +406,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     s->preview_started = data.getIsPreview();
   }
 
-  s->started = scene.thermal.getStarted() || s->preview_started ;
+  s->started = scene.thermal.getStarted() || s->preview_started;
   // Handle onroad/offroad transition
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {
@@ -417,6 +415,13 @@ void handle_message(UIState *s, SubMaster &sm) {
       s->vision_seen = false;
       s->controls_seen = false;
       s->active_app = cereal::UiLayoutState::App::HOME;
+
+      #ifndef QCOM
+      // disconnect from visionipc on PC
+      close(s->ipc_fd);
+      s->ipc_fd = -1;
+      #endif
+
       update_offroad_layout_state(s);
     }
   } else if (s->status == STATUS_STOPPED) {
@@ -516,8 +521,14 @@ static void ui_update(UIState *s) {
 
   zmq_pollitem_t polls[1] = {{0}};
   // Take an rgb image from visiond if there is one
+  assert(s->ipc_fd >= 0);
   while(true) {
-    assert(s->ipc_fd >= 0);
+    if (s->ipc_fd < 0) {
+      // TODO: rethink this, for now it should only trigger on PC
+      LOGW("vision disconnected by other thread");
+      s->vision_connected = false;
+      return;
+    }
     polls[0].fd = s->ipc_fd;
     polls[0].events = ZMQ_POLLIN;
     #ifdef UI_60FPS
@@ -716,22 +727,6 @@ fail:
 
 #endif
 
-int is_leon() {
-  #define MAXCHAR 1000
-  FILE *fp;
-  char str[MAXCHAR];
-  const char* filename = "/proc/cmdline";
-
-  fp = fopen(filename, "r");
-  if (fp == NULL){
-    printf("Could not open file %s",filename);
-    return 0;
-  }
-  fgets(str, MAXCHAR, fp);
-  fclose(fp);
-  return strstr(str, "letv") != NULL;
-}
-
 int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
@@ -762,7 +757,7 @@ int main(int argc, char* argv[]) {
   ui_sound_init();
 
   // light sensor scaling params
-  const int LEON = is_leon();
+  const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
 
   float brightness_b, brightness_m;
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
@@ -803,7 +798,7 @@ int main(int argc, char* argv[]) {
     if (clipped_brightness > 512) clipped_brightness = 512;
     smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
     if (smooth_brightness > 255) smooth_brightness = 255;
-    set_brightness(s, (int)smooth_brightness);
+    ui_set_brightness(s, (int)smooth_brightness);
 
     // resize vision for collapsing sidebar
     const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;

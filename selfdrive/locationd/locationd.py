@@ -21,7 +21,6 @@ from sympy.utilities.lambdify import lambdify
 from rednose.helpers.sympy_helpers import euler_rotate
 
 
-OUTPUT_DECIMATION = 2
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
 
@@ -194,7 +193,7 @@ class Localizer():
 
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
     ecef_pos = self.converter.ned2ecef([0, 0, 0])
-    ecef_vel = self.converter.ned2ecef_matrix.dot(np.array(log.vNED))
+    ecef_vel = self.converter.ned2ecef(np.array(log.vNED)) - ecef_pos
     ecef_pos_R = np.diag([(3*log.verticalAccuracy)**2]*3)
     ecef_vel_R = np.diag([(log.speedAccuracy)**2]*3)
 
@@ -263,14 +262,15 @@ class Localizer():
           self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
 
   def handle_live_calib(self, current_time, log):
-    self.calib = log.rpyCalib
-    self.device_from_calib = rot_from_euler(self.calib)
-    self.calib_from_device = self.device_from_calib.T
-    self.calibrated = log.calStatus == 1
+    if len(log.rpyCalib):
+      self.calib = log.rpyCalib
+      self.device_from_calib = rot_from_euler(self.calib)
+      self.calib_from_device = self.device_from_calib.T
+      self.calibrated = log.calStatus == 1
 
   def reset_kalman(self, current_time=None, init_orient=None):
     self.filter_time = current_time
-    init_x = LiveKalman.initial_x
+    init_x = LiveKalman.initial_x.copy()
     # too nonlinear to init on completely wrong
     if init_orient is not None:
       init_x[3:7] = init_orient
@@ -295,7 +295,6 @@ def locationd_thread(sm, pm, disabled_logs=None):
     pm = messaging.PubMaster(['liveLocationKalman'])
 
   localizer = Localizer(disabled_logs=disabled_logs)
-  camera_odometry_cnt = 0
 
   while True:
     sm.update()
@@ -315,19 +314,16 @@ def locationd_thread(sm, pm, disabled_logs=None):
           localizer.handle_live_calib(t, sm[sock])
 
     if sm.updated['cameraOdometry']:
-      camera_odometry_cnt += 1
+      t = sm.logMonoTime['cameraOdometry']
+      msg = messaging.new_message('liveLocationKalman')
+      msg.logMonoTime = t
 
-      if camera_odometry_cnt % OUTPUT_DECIMATION == 0:
-        t = sm.logMonoTime['cameraOdometry']
-        msg = messaging.new_message('liveLocationKalman')
-        msg.logMonoTime = t
+      msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
+      msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
 
-        msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
-        msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
-
-        gps_age = (t / 1e9) - localizer.last_gps_fix
-        msg.liveLocationKalman.gpsOK = gps_age < 1.0
-        pm.send('liveLocationKalman', msg)
+      gps_age = (t / 1e9) - localizer.last_gps_fix
+      msg.liveLocationKalman.gpsOK = gps_age < 1.0
+      pm.send('liveLocationKalman', msg)
 
 
 def main(sm=None, pm=None):

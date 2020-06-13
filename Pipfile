@@ -19,7 +19,6 @@ control = "*"
 datadog = "*"
 dlib = "*"
 elasticsearch = "*"
-pycocotools = {git = "https://github.com/cocodataset/cocoapi.git",subdirectory = "PythonAPI"}
 gunicorn = "*"
 "h5py" = "*"
 hexdump = "*"

@@ -66,7 +66,11 @@ class FakeSocket:
 class DumbSocket:
   def __init__(self, s=None):
     if s is not None:
-      dat = messaging.new_message(s)
+      try:
+        dat = messaging.new_message(s)
+      except capnp.lib.capnp.KjException:  # pylint: disable=c-extension-no-member
+        # lists
+        dat = messaging.new_message(s, 0)
       self.data = dat.to_bytes()
 
   def receive(self, non_blocking=False):
@@ -255,6 +259,17 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
   ),
+  ProcessConfig(
+    proc_name="locationd",
+    pub_sub={
+      "cameraOdometry": ["liveLocationKalman"],
+      "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+    },
+    ignore=["logMonoTime", "valid"],
+    init_callback=get_car_params,
+    should_recv_callback=None,
+  ),
+
 ]
 
 def replay_process(cfg, lr):

@@ -9,23 +9,6 @@ echo $$ > /dev/cpuset/app/tasks
 echo $PPID > /dev/cpuset/app/tasks
 
 
-add_subtree() {
-  echo "[-] adding $2 subtree T=$SECONDS"
-  if [ -d "$2" ]; then
-    if git subtree pull --prefix "$2" https://github.com/commaai/"$1".git "$3" --squash -m "Merge $2 subtree"; then
-      echo "git subtree pull succeeds"
-    else
-      echo "git subtree pull failed, fixing"
-      git merge --abort || true
-      git rm -r $2
-      git commit -m "Remove old $2 subtree"
-      git subtree add --prefix "$2" https://github.com/commaai/"$1".git "$3" --squash
-    fi
-  else
-    git subtree add --prefix "$2" https://github.com/commaai/"$1".git "$3" --squash
-  fi
-}
-
 SOURCE_DIR=/data/openpilot_source
 TARGET_DIR=/data/openpilot
 
@@ -39,12 +22,11 @@ export GIT_SSH_COMMAND="ssh -i /tmp/deploy_key"
 
 echo "[-] Setting up repo T=$SECONDS"
 if [ ! -d "$TARGET_DIR" ]; then
-    mkdir -p $TARGET_DIR
-    cd $TARGET_DIR
-    git init
-    git remote add origin git@github.com:commaai/openpilot.git
+  mkdir -p $TARGET_DIR
+  cd $TARGET_DIR
+  git init
+  git remote add origin git@github.com:commaai/openpilot.git
 fi
-
 
 echo "[-] fetching public T=$SECONDS"
 cd $TARGET_DIR
@@ -61,20 +43,12 @@ git checkout master-ci
 git reset --hard origin/devel
 git clean -xdf
 
-# subtrees to make updates more reliable. updating them needs a clean tree
-add_subtree "cereal" "cereal" master
-add_subtree "panda" "panda" master
-add_subtree "opendbc" "opendbc" master
-
 # leave .git alone
 echo "[-] erasing old openpilot T=$SECONDS"
 rm -rf $TARGET_DIR/* $TARGET_DIR/.gitmodules
 
 # delete dotfiles in root
 find . -maxdepth 1 -type f -delete
-
-# dont delete our subtrees
-git checkout -- cereal panda opendbc
 
 # reset tree and get version
 cd $SOURCE_DIR
@@ -122,8 +96,8 @@ make obj/comma.bin
 popd
 
 if [ ! -z "$PUSH" ]; then
-    echo "[-] Pushing to $PUSH T=$SECONDS"
-    git push -f origin master-ci:$PUSH
+  echo "[-] Pushing to $PUSH T=$SECONDS"
+  git push -f origin master-ci:$PUSH
 fi
 
 echo "[-] done pushing T=$SECONDS"

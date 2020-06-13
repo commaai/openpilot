@@ -118,7 +118,6 @@ class Controls:
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.can_error_counter = 0
-    self.consecutive_can_error_count = 0
     self.last_blinker_frame = 0
     self.saturated_count = 0
     self.events_prev = []
@@ -191,11 +190,6 @@ class Controls:
 
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
-      self.consecutive_can_error_count += 1
-    else:
-      self.consecutive_can_error_count = 0
-    if self.consecutive_can_error_count > 2 / DT_CTRL:
-      self.events.add(EventName.canErrorPersistent)
     if self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
     if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
@@ -208,6 +202,8 @@ class Controls:
     if not self.sm['liveLocationKalman'].inputsOK and os.getenv("NOSENSOR") is None:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].gpsOK and os.getenv("NOSENSOR") is None:
+        self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:

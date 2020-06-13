@@ -222,7 +222,8 @@ def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
     proc = subprocess.Popen(
       ["ffmpeg",
        "-threads", threads,
-       "-c:v", "hevc" if not cuda else "hevc_cuvid",
+       "-hwaccel", "none" if not cuda else "cuda",
+       "-c:v", "hevc",
        "-vsync", "0",
        "-f", vid_fmt,
        "-flags2", "showall",
@@ -345,7 +346,8 @@ class VideoStreamDecompressor:
     self.proc = subprocess.Popen(
       ["ffmpeg",
        "-threads", threads,
-       "-c:v", "hevc" if not cuda else "hevc_cuvid",
+       "-hwaccel", "none" if not cuda else "cuda",
+       "-c:v", "hevc",
        # "-avioflags", "direct",
        "-analyzeduration", "0",
        "-probesize", "32",
