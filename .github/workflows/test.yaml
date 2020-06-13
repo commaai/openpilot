@@ -12,8 +12,8 @@ env:
   UNIT_TEST: coverage run --append -m unittest discover
   BUILD: |
       docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
-      docker pull docker.io/commaai/openpilot:latest || true
-      docker build --cache-from docker.io/commaai/openpilot:latest -t tmppilot -f Dockerfile.openpilot .
+      docker pull docker.io/commaai/openpilotci:latest || true
+      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilot .
 
 jobs:
   build_release:
@@ -63,8 +63,8 @@ jobs:
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
-          docker tag tmppilot docker.io/commaai/openpilot:latest
-          docker push docker.io/commaai/openpilot:latest
+          docker tag tmppilot docker.io/commaai/openpilotci:latest
+          docker push docker.io/commaai/openpilotci:latest
 
   docker_push_prebuilt:
     name: docker push prebuilt
@@ -81,8 +81,8 @@ jobs:
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
-          docker tag tmppilot docker.io/commaai/openpilot_prebuilt:latest
-          docker push docker.io/commaai/openpilot_prebuilt:latest
+          docker tag tmppilot docker.io/commaai/openpilot:latest
+          docker push docker.io/commaai/openpilot:latest
 
   static_analysis:
     name: static analysis
