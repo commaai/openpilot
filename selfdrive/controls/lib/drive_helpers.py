@@ -5,6 +5,7 @@ from cereal import car
 ButtonType = car.CarState.ButtonEvent.Type
 button_pressed_cnt = 0
 long_pressed = False
+button_prev = ButtonType.unknown
 
 # kph
 V_CRUISE_MAX = 144
@@ -39,6 +40,7 @@ def get_steer_max(CP, v_ego):
 def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
   # handle button presses. TODO: this should be in state_control, but a decelCruise press
   # would have the effect of both enabling and changing speed is checked after the state transition
+  global button_pressed_cnt, long_pressed, button_prev
   if enabled:
     if button_pressed_cnt:
       button_pressed_cnt += 1
@@ -46,17 +48,21 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
       if b.type == ButtonType.accelCruise or b.type == ButtonType.decelCruise:
         if b.pressed and not button_pressed_cnt:
           button_pressed_cnt = 1
-        elif b.pressed and button_pressed_cnt > 199:
+          button_prev = b.type
+        elif b.pressed and button_pressed_cnt > 200:
           long_pressed = True
           V_CRUISE_DELTA = V_CRUISE_DELTA_KM if metric else V_CRUISE_DELTA_MI
-          d = button_pressed_cnt // 200 * V_CRUISE_DELTA
+          if b.type == ButtonType.accelCruise:
+            v_cruise_kph += V_CRUISE_DELTA - v_cruise_kph % V_CRUISE_DELTA
           if b.type == ButtonType.decelCruise:
-            d = -d
+            v_cruise_kph -= V_CRUISE_DELTA - -v_cruise_kph % V_CRUISE_DELTA
           v_cruise_kph += d - v_cruise_kph % V_CRUISE_DELTA
           button_pressed_cnt %= 200
         elif not b.pressed:
-          if not long_pressed:
+          if not long_pressed and b.type == ButtonType.accelCruise:
             v_cruise_kph += 1 if metric else 1 * CV.MPH_TO_KPH
+          elif not long_pressed and b.type == ButtonType.decelCruise:
+            v_cruise_kph -= 1 if metric else 1 * CV.MPH_TO_KPH
           long_pressed = False
           button_pressed_cnt = 0
     v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
