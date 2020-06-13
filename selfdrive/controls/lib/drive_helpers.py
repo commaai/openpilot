@@ -49,15 +49,6 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
         if b.pressed and not button_pressed_cnt:
           button_pressed_cnt = 1
           button_prev = b.type
-        elif b.pressed and button_pressed_cnt > 200:
-          long_pressed = True
-          V_CRUISE_DELTA = V_CRUISE_DELTA_KM if metric else V_CRUISE_DELTA_MI
-          if b.type == ButtonType.accelCruise:
-            v_cruise_kph += V_CRUISE_DELTA - v_cruise_kph % V_CRUISE_DELTA
-          if b.type == ButtonType.decelCruise:
-            v_cruise_kph -= V_CRUISE_DELTA - -v_cruise_kph % V_CRUISE_DELTA
-          v_cruise_kph += d - v_cruise_kph % V_CRUISE_DELTA
-          button_pressed_cnt %= 200
         elif not b.pressed:
           if not long_pressed and b.type == ButtonType.accelCruise:
             v_cruise_kph += 1 if metric else 1 * CV.MPH_TO_KPH
@@ -65,6 +56,15 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
             v_cruise_kph -= 1 if metric else 1 * CV.MPH_TO_KPH
           long_pressed = False
           button_pressed_cnt = 0
+    if button_pressed_cnt > 200:
+      long_pressed = True
+      V_CRUISE_DELTA = V_CRUISE_DELTA_KM if metric else V_CRUISE_DELTA_MI
+      if button_prev == ButtonType.accelCruise:
+        v_cruise_kph += V_CRUISE_DELTA - v_cruise_kph % V_CRUISE_DELTA
+      elif button_prev == ButtonType.decelCruise:
+        v_cruise_kph -= V_CRUISE_DELTA - -v_cruise_kph % V_CRUISE_DELTA
+      v_cruise_kph += d - v_cruise_kph % V_CRUISE_DELTA
+      button_pressed_cnt %= 200
     v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
@@ -73,7 +73,7 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
 def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
   for b in buttonEvents:
     # 250kph or above probably means we never had a set speed
-    if b.type == car.CarState.ButtonEvent.Type.accelCruise and v_cruise_last < 250:
+    if b.type == ButtonType.accelCruise and v_cruise_last < 250:
       return v_cruise_last
 
   return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
