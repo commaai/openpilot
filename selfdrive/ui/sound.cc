@@ -1,30 +1,35 @@
 
 #include "sound.hpp"
-#include <assert.h>
+#include <math.h>
 #include <stdlib.h>
+#include <atomic>
 #include "common/swaglog.h"
-#include "common/timing.h"
+
+#define LogOnError(func, msg) \
+  if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); }
 
 #define ReturnOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; }
 
-static std::map<AudibleAlert, const char*> sound_map{
-  {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav"},
-  {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav"},
-  {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav"},
-  {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav"},
-  {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav"},
-  {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav"},
-  {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav"},
-  {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav"},
-};
+static std::map<AudibleAlert, const char *> sound_map{
+    {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav"},
+    {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav"},
+    {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav"},
+    {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav"},
+    {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav"},
+    {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav"},
+    {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav"},
+    {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav"}};
 
 struct Sound::Player {
   SLObjectItf player;
-  SLPlayItf playInterface;
+  SLPlayItf playItf;
+  SLVolumeItf volumeItf;
+  float volume;
+  std::atomic<int> repeat;
 };
 
-bool Sound::init(int volume) {
+bool Sound::init(float volume) {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
   const SLboolean req[1] = {SL_BOOLEAN_FALSE};
@@ -36,30 +41,46 @@ bool Sound::init(int volume) {
   ReturnOnError((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
 
   for (auto &kv : sound_map) {
-    SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar*)kv.second};
+    SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar *)kv.second};
     SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
     SLDataSource audioSrc = {&locUri, &formatMime};
-
+    const SLInterfaceID ids[1] = {SL_IID_VOLUME};
+    const SLboolean req[1] = {SL_BOOLEAN_TRUE};
     SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
     SLDataSink audioSnk = {&outMix, NULL};
 
     SLObjectItf player = NULL;
-    SLPlayItf playInterface = NULL;
-    ReturnOnError((*engineInterface)->CreateAudioPlayer(engineInterface, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
+    SLPlayItf playItf = NULL;
+    SLVolumeItf volumeItf = NULL;
+    ReturnOnError((*engineInterface)->CreateAudioPlayer(engineInterface, &player, &audioSrc, &audioSnk, 1, ids, req), "Failed to create audio player");
     ReturnOnError((*player)->Realize(player, SL_BOOLEAN_FALSE), "Failed to realize audio player");
-    ReturnOnError((*player)->GetInterface(player, SL_IID_PLAY, &playInterface), "Failed to get player interface");
-    ReturnOnError((*playInterface)->SetPlayState(playInterface, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
+    ReturnOnError((*player)->GetInterface(player, SL_IID_PLAY, &playItf), "Failed to get player interface");
+    ReturnOnError((*player)->GetInterface(player, SL_IID_VOLUME, &volumeItf), "Failed to get player volume interface");
+    ReturnOnError((*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
 
-    player_[kv.first] = new Sound::Player{player, playInterface};
+    player_[kv.first] = new Sound::Player{player, playItf, volumeItf, 0};
   }
-  
+
   setVolume(volume);
   return true;
 }
 
-void SLAPIENTRY slplay_callback(SLPlayItf playItf, void* context, SLuint32 event) {
-  int *repeat  = (int*)context;
-  if (event == SL_PLAYEVENT_HEADATEND && --(*repeat) > 0) {
+AudibleAlert Sound::currentPlaying() {
+  if (currentSound_ != AudibleAlert::NONE) {
+    auto playItf = player_.at(currentSound_)->playItf;
+    SLuint32 state;
+    if (SL_RESULT_SUCCESS == (*playItf)->GetPlayState(playItf, &state) &&
+        (state == SL_PLAYSTATE_STOPPED || state == SL_PLAYSTATE_PAUSED)) {
+      currentSound_ = AudibleAlert::NONE;
+    }
+  }
+  return currentSound_;
+}
+
+void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event) {
+  Sound::Player *s = reinterpret_cast<Sound::Player *>(context);
+  if (event == SL_PLAYEVENT_HEADATEND && s->repeat > 1) {
+    --s->repeat;
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
     (*playItf)->SetMarkerPosition(playItf, 0);
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
@@ -67,50 +88,53 @@ void SLAPIENTRY slplay_callback(SLPlayItf playItf, void* context, SLuint32 event
 }
 
 bool Sound::play(AudibleAlert alert, int repeat) {
-  stop();
-  currentSound_ = alert;
-  auto playerItf = player_.at(alert)->playInterface;
-  if (repeat > 0) {
-    repeat_ = repeat;
-    ReturnOnError((*playerItf)->RegisterCallback(playerItf, slplay_callback, &repeat_), "Failed to register callback");
-    ReturnOnError((*playerItf)->SetCallbackEventsMask(playerItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
+  if (currentSound_ != AudibleAlert::NONE) {
+    stop();
+  }
+  auto player = player_.at(alert);
+  SLPlayItf playItf = player->playItf;
+  player->repeat = repeat;
+  if (player->repeat > 0) {
+    ReturnOnError((*playItf)->RegisterCallback(playItf, slplay_callback, player), "Failed to register callback");
+    ReturnOnError((*playItf)->SetCallbackEventsMask(playItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
+  }
+
+  // Sets the player's volume
+  if (player->volume != volume_) {
+    SLmillibel vol = (volume_ < 0.01F ? -96.0F : 20 * log10(volume_)) * 100;
+    LogOnError((*(player->volumeItf))->SetVolumeLevel(player->volumeItf, vol), "Failed to set player volume");
+    player->volume = volume_;
   }
 
   // Reset the audio player
-  ReturnOnError((*playerItf)->ClearMarkerPosition(playerItf), "Failed to clear marker position");
+  ReturnOnError((*playItf)->ClearMarkerPosition(playItf), "Failed to clear marker position");
   uint32_t states[] = {SL_PLAYSTATE_PAUSED, SL_PLAYSTATE_STOPPED, SL_PLAYSTATE_PLAYING};
   for (auto state : states) {
-    ReturnOnError((*playerItf)->SetPlayState(playerItf, state), "Failed to set SL_PLAYSTATE_PLAYING");
+    ReturnOnError((*playItf)->SetPlayState(playItf, state), "Failed to set SL_PLAYSTATE_PLAYING");
   }
+
+  currentSound_ = alert;
   return true;
 }
 
-bool Sound::stop() {
-  repeat_ = 0;
+void Sound::stop() {
   if (currentSound_ != AudibleAlert::NONE) {
-    auto playerItf = player_.at(currentSound_)->playInterface;
+    auto player = player_.at(currentSound_);
+    player->repeat = 0;
+    LogOnError((*(player->playItf))->SetPlayState(player->playItf, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_PAUSED");
     currentSound_ = AudibleAlert::NONE;
-    ReturnOnError((*playerItf)->SetPlayState(playerItf, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_STOPPED");
   }
-  return true;
 }
 
-void Sound::setVolume(int volume, int timeout_seconds) {
-  if (last_volume_ == volume) {
-    return;
-  }
-  double current_time = nanos_since_boot();
-  if ((current_time - last_set_volume_time_) > (timeout_seconds * (1e+9))) {
-    char volume_change_cmd[64];
-    snprintf(volume_change_cmd, sizeof(volume_change_cmd), "service call audio 3 i32 3 i32 %d i32 1 &", volume);
-    system(volume_change_cmd);
-    last_volume_ = volume;
-    last_set_volume_time_ = current_time;
-  }
+void Sound::setVolume(float volume) {
+  if (volume < 0.) volume = 0.;
+  if (volume > 1.) volume = 1.;
+  
+  volume_ = volume;
 }
 
 Sound::~Sound() {
-  for (auto& kv : player_) {
+  for (auto &kv : player_) {
     (*(kv.second->player))->Destroy(kv.second->player);
     delete kv.second;
   }
