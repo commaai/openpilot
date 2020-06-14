@@ -13,7 +13,6 @@
 
 #include <pthread.h>
 #include <czmq.h>
-#include <capnp/serialize.h>
 #include "msmb_isp.h"
 #include "msmb_ispif.h"
 #include "msmb_camera.h"
@@ -24,11 +23,10 @@
 #include "common/swaglog.h"
 #include "common/params.h"
 
-#include "cereal/gen/cpp/log.capnp.h"
-
 #include "sensor_i2c.h"
 
 #include "camera_qcom.h"
+#include "messaging.hpp"
 
 
 // enable this to run the camera at 60fps and sample every third frame
@@ -1993,9 +1991,7 @@ static bool acceleration_from_sensor_sock(void *sock, float *vs) {
   void *data = zmq_msg_data(&msg);
   size_t size = zmq_msg_size(&msg);
 
-  auto amsg = kj::heapArray<capnp::word>(size / sizeof(capnp::word) + 1);
-  memcpy(amsg.begin(), data, size);
-  capnp::FlatArrayMessageReader cmsg(amsg);
+  MessageReader cmsg((const char*)data, size);
   auto event = cmsg.getRoot<cereal::Event>();
   if (event.which() == cereal::Event::SENSOR_EVENTS) {
     auto sensor_events = event.getSensorEvents();

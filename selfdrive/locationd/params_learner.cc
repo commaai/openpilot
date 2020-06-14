@@ -2,11 +2,9 @@
 #include <cmath>
 #include <iostream>
 
-#include <capnp/message.h>
-#include <capnp/serialize-packed.h>
-#include "cereal/gen/cpp/log.capnp.h"
 #include "cereal/gen/cpp/car.capnp.h"
 #include "params_learner.h"
+#include "messaging.hpp"
 
 // #define DEBUG
 
@@ -80,14 +78,8 @@ bool ParamsLearner::update(double psi, double u, double sa) {
 
 extern "C" {
   void *params_learner_init(size_t len, char * params, double angle_offset, double stiffness_factor, double steer_ratio, double learning_rate) {
-
-    auto amsg = kj::heapArray<capnp::word>((len / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), params, len);
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
-
-    ParamsLearner * p = new ParamsLearner(car_params, angle_offset, stiffness_factor, steer_ratio, learning_rate);
+    MessageReader cmsg(params, len);
+    ParamsLearner * p = new ParamsLearner(cmsg.getRoot<cereal::CarParams>(), angle_offset, stiffness_factor, steer_ratio, learning_rate);
     return (void*)p;
   }
 

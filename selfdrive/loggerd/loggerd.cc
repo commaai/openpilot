@@ -631,10 +631,7 @@ int main(int argc, char** argv) {
 
         if (sock == frame_sock) {
           // track camera frames to sync to encoder
-          auto amsg = kj::heapArray<capnp::word>((len / sizeof(capnp::word)) + 1);
-          memcpy(amsg.begin(), data, len);
-
-          capnp::FlatArrayMessageReader cmsg(amsg);
+          MessageReader cmsg((const char*)data, len);
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
           if (event.isFrame()) {
             std::unique_lock<std::mutex> lk(s.lock);

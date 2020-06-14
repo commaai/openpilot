@@ -115,11 +115,7 @@ void *safety_setter_thread(void *s) {
   }
   LOGW("got %d bytes CarParams", params.size());
 
-  // format for board, make copy due to alignment issues, will be freed on out of scope
-  auto amsg = kj::heapArray<capnp::word>((params.size() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), params.data(), params.size());
-
-  capnp::FlatArrayMessageReader cmsg(amsg);
+  MessageReader cmsg(params.data(), params.size());
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
   int safety_model = int(car_params.getSafetyModel());
@@ -589,12 +585,8 @@ void *can_send_thread(void *crap) {
     Message * msg = subscriber->receive();
 
     if (msg){
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-      can_send(event);
+      MessageReader cmsg(msg->getData(), msg->getSize());
+      can_send(cmsg.getRoot<cereal::Event>());
       delete msg;
     }
   }

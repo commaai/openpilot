@@ -16,6 +16,7 @@
 #include "params_learner.h"
 
 #include "common/util.h"
+#include "messaging.hpp"
 
 void sigpipe_handler(int sig) {
   LOGE("SIGPIPE received");
@@ -40,11 +41,7 @@ int main(int argc, char *argv[]) {
   }
   LOGW("got %d bytes CarParams", params.size());
 
-  // make copy due to alignment issues
-  auto amsg = kj::heapArray<capnp::word>((params.size() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), params.data(), params.size());
-  
-  capnp::FlatArrayMessageReader cmsg(amsg);
+  MessageReader cmsg(params.data(), params.size());
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
   // Read params from previous run
