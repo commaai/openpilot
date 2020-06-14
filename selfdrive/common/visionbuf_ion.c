@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include <unistd.h>
 #include <linux/ion.h>
 #include <CL/cl_ext.h>
 
@@ -73,6 +73,7 @@ VisionBuf visionbuf_allocate(size_t len) {
 VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx, cl_mem *out_mem) {
   VisionBuf r = visionbuf_allocate(len);
   *out_mem = visionbuf_to_cl(&r, device_id, ctx);
+  r.buf_cl = *out_mem;
   return r;
 }
 
@@ -137,6 +138,9 @@ void visionbuf_sync(const VisionBuf* buf, int dir) {
 }
 
 void visionbuf_free(const VisionBuf* buf) {
+  clReleaseMemObject(buf->buf_cl);
+  munmap(buf->addr, buf->len + PADDING_CL);
+  close(buf->fd);
   struct ion_handle_data handle_data = {
     .handle = buf->handle,
   };
