@@ -192,6 +192,10 @@ routes = {
     'carFingerprint': HYUNDAI.PALISADE,
     'enableCamera': True,
   },
+  "610ebb9faaad6b43|2020-06-13--15-28-36": {
+    'carFingerprint': HYUNDAI.IONIQ_EV_LTD,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -364,12 +368,12 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
-  "32a319f057902bb3|2020-04-27--15-18-58": {
-    'carFingerprint': MAZDA.CX5,
-    'enableCamera': True,
-  },
   "059ab9162e23198e|2020-05-30--09-41-01": {
     'carFingerprint': NISSAN.ROGUE,
+    'enableCamera': True,
+  },
+  "32a319f057902bb3|2020-04-27--15-18-58": {
+    'carFingerprint': MAZDA.CX5,
     'enableCamera': True,
   },
 }
