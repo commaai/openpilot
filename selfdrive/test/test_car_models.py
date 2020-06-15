@@ -380,10 +380,10 @@ routes = {
     'carFingerprint': SUBARU.FORESTER,
     'enableCamera': True,
   },
-  "5ab784f361e19b78|2020-06-08--16-30-41": {
-    'carFingerprint': SUBARU.OUTBACK,
-    'enableCamera': True,
-  },
+  #"5ab784f361e19b78|2020-06-08--16-30-41": {
+  #  'carFingerprint': SUBARU.OUTBACK,
+  #  'enableCamera': True,
+  #},
   "791340bc01ed993d|2019-03-10--16-28-08": {
     'carFingerprint': SUBARU.IMPREZA,
     'enableCamera': True,
@@ -449,6 +449,7 @@ non_tested_cars = [
   SUBARU.LEGACY,
   SUBARU.FORESTER,
   SUBARU.ASCENT,
+  SUBARU.OUTBACK,
   SUBARU.OUTBACK_2019,
 ]
 
