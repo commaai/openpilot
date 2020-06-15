@@ -90,7 +90,7 @@ class CarState(CarStateBase):
     # - Analyze Eyesight OBD Mode22 scans to find better units bit
 
     # EDM Global: mph = 1, 2; All Outback: mph = 1, UDM Forester: mph = 7
-    if self.car_fingerprint in [CAR.FORESTER, CAR.IMPREZA, CAR.ASCENT, CAR.OUTBACK]:
+    if self.car_fingerprint in [CAR.FORESTER, CAR.IMPREZA, CAR.ASCENT, CAR.OUTBACK, CAR.OUTBACK_2019]:
       if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
@@ -109,7 +109,7 @@ class CarState(CarStateBase):
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
-    if self.car_fingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
+    if self.car_fingerprint in [CAR.OUTBACK, CAR.OUTBACK_2019, CAR.LEGACY, CAR.FORESTER]:
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
@@ -168,7 +168,7 @@ class CarState(CarStateBase):
         ("CruiseControl", 50),
       ]
 
-    if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY]:
+    if CP.carFingerprint in [CAR.OUTBACK, CAR.OUTBACK_2019, CAR.LEGACY]:
       checks += [
         ("Dashlights", 10),
         ("CruiseControl", 50),
@@ -224,7 +224,7 @@ class CarState(CarStateBase):
         ("ES_DashStatus", 10),
       ]
 
-    if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
+    if CP.carFingerprint in [CAR.OUTBACK, CAR.OUTBACK_2019, CAR.LEGACY, CAR.FORESTER]:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
         ("Not_Ready_Startup", "ES_DashStatus", 0),

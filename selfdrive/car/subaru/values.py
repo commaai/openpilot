@@ -8,7 +8,8 @@ class CAR:
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
   FORESTER = "SUBARU FORESTER 2019"
-  OUTBACK = "SUBARU OUTBACK 2015 - 2019"
+  OUTBACK = "SUBARU OUTBACK 2015 - 2018"
+  OUTBACK_2019 = "SUBARU OUTBACK 2019"
   LEGACY = "SUBARU LEGACY 2015 - 2018"
   FORESTER = "SUBARU FORESTER 2017"
   ASCENT = "SUBARU ASCENT 2020"
@@ -75,11 +76,13 @@ FINGERPRINTS = {
   #{
   #  2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 316: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 392: 8, 604: 8, 640: 8, 642: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 977: 8, 1614: 8, 1632: 8, 1640: 8, 1657: 8, 1658: 8, 1672: 8, 1743: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8
   #},
+  ],
+  CAR.OUTBACK_2019: [
   # OUTBACK LIMITED 3.6R 2019 (jpevarnek)
   {
     2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 316: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 352: 8, 353: 8, 354: 8, 356: 8, 358: 8, 359: 8, 392: 8, 554: 8, 604: 8, 640: 8, 642: 8, 644: 8, 805: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 886: 2, 977: 8, 1614: 8, 1632: 8, 1657: 8, 1658: 8, 1672: 8, 1736: 8, 1743: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8, 1862: 8, 1870: 8, 1920: 8, 1927: 8, 1928: 8, 1935: 8, 1968: 8, 1976: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
   },
-  # END OUTBACK
+  # END OUTBACK 2019
   ],
   CAR.FORESTER: [
   # FORESTER PREMIUM 2.5i 2017
@@ -209,6 +212,7 @@ STEER_THRESHOLD = {
   CAR.FORESTER: 80,
   CAR.ASCENT: 80,
   CAR.OUTBACK: 75,
+  CAR.OUTBACK_2019: 75,
   CAR.LEGACY: 75,
   CAR.FORESTER: 75,
 }
@@ -222,6 +226,7 @@ DBC = {
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_outback_2015_generated', None),
+  CAR.OUTBACK_2019: dbc_dict('subaru_outback_2019_generated', None),
   CAR.LEGACY: dbc_dict('subaru_outback_2015_generated', None),
   CAR.FORESTER: dbc_dict('subaru_forester_2017_generated', None),
 }
