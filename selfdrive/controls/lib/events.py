@@ -501,11 +501,10 @@ EVENTS = {
 
   EventName.focusRecoverActive: {
     ET.WARNING: Alert(
-      "Disengage to Refocus",
-      "Camera Focus Invalid",
+      "TAKE CONTROL",
+      "Attempting Refocus: Camera Focus Invalid",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
-    ET.NO_ENTRY: NoEntryAlert("Camera Focus Invalid"),
   },
 
   EventName.outOfSpace: {
