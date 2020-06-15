@@ -439,6 +439,14 @@ EVENTS = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
   },
 
+  EventName.laneChangeBlocked: {
+    ET.WARNING: Alert(
+      "Car Detected in Blindspot",
+      "Monitor Other Vehicles",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1),
+  },
+
   EventName.laneChange: {
     ET.WARNING: Alert(
       "Changing Lane",
