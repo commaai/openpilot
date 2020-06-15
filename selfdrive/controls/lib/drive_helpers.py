@@ -3,9 +3,9 @@ from selfdrive.config import Conversions as CV
 from cereal import car
 
 ButtonType = car.CarState.ButtonEvent.Type
-button_pressed_cnt = 0
-long_pressed = False
-button_prev = ButtonType.unknown
+ButtonCnt = 0
+LongPressed = False
+ButtonPrev = ButtonType.unknown
 
 # kph
 V_CRUISE_MAX = 144
@@ -40,30 +40,30 @@ def get_steer_max(CP, v_ego):
 def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
   # handle button presses. TODO: this should be in state_control, but a decelCruise press
   # would have the effect of both enabling and changing speed is checked after the state transition
-  global button_pressed_cnt, long_pressed, button_prev
+  global ButtonCnt, LongPressed, ButtonPrev
   if enabled:
-    if button_pressed_cnt:
-      button_pressed_cnt += 1
+    if ButtonCnt:
+      ButtonCnt += 1
     for b in buttonEvents:
       if b.type == ButtonType.accelCruise or b.type == ButtonType.decelCruise:
-        if b.pressed and not button_pressed_cnt:
-          button_pressed_cnt = 1
-          button_prev = b.type
-        elif not b.pressed and button_pressed_cnt:
-          if not long_pressed and b.type == ButtonType.accelCruise:
+        if b.pressed and not ButtonCnt:
+          ButtonCnt = 1
+          ButtonPrev = b.type
+        elif not b.pressed and ButtonCnt:
+          if not LongPressed and b.type == ButtonType.accelCruise:
             v_cruise_kph += 1 if metric else 1 * CV.MPH_TO_KPH
-          elif not long_pressed and b.type == ButtonType.decelCruise:
+          elif not LongPressed and b.type == ButtonType.decelCruise:
             v_cruise_kph -= 1 if metric else 1 * CV.MPH_TO_KPH
-          long_pressed = False
-          button_pressed_cnt = 0
-    if button_pressed_cnt > 25:
-      long_pressed = True
+          LongPressed = False
+          ButtonCnt = 0
+    if ButtonCnt > 25:
+      LongPressed = True
       V_CRUISE_DELTA = V_CRUISE_DELTA_KM if metric else V_CRUISE_DELTA_MI
-      if button_prev == ButtonType.accelCruise:
+      if ButtonPrev == ButtonType.accelCruise:
         v_cruise_kph += V_CRUISE_DELTA - v_cruise_kph % V_CRUISE_DELTA
-      elif button_prev == ButtonType.decelCruise:
+      elif ButtonPrev == ButtonType.decelCruise:
         v_cruise_kph -= V_CRUISE_DELTA - -v_cruise_kph % V_CRUISE_DELTA
-      button_pressed_cnt %= 25
+      ButtonCnt %= 25
     v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
