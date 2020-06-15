@@ -106,10 +106,13 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
     if self.car_fingerprint in [CAR.IMPREZA, CAR.ASCENT]:
+      ret.steerError = cp.vl["Steering_Torque"]['Steer_Error_1'] == 1
+      ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     if self.car_fingerprint in [CAR.OUTBACK, CAR.OUTBACK_2019, CAR.LEGACY, CAR.FORESTER]:
+      ret.steerError = cp.vl["Steering_Torque"]["LKA_Lockout"] == 1
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
@@ -155,11 +158,19 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in [CAR.IMPREZA, CAR.ASCENT]:
+      signals += [
+        ("Steer_Error_1", "Steering_Torque", 0),
+        ("Steer_Warning", "Steering_Torque", 0),
+      ]
       checks += [
         ("Dashlights", 10),
         ("BodyInfo", 10),
         ("CruiseControl", 20),
      ]
+    else:
+      signals += [
+        ("LKA_Lockout", "Steering_Torque", 0),
+      ]
 
     if CP.carFingerprint == CAR.FORESTER:
       checks += [
