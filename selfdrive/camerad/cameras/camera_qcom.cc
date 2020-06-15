@@ -124,7 +124,6 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   s->fps = fps;
 
   s->self_recover = 0;
-  s->recover_blocked = false;
 
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
@@ -1749,7 +1748,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
     }
   }
   // self recover override
-  if (s->self_recover > 1 && !s->recover_blocked) {
+  if (s->self_recover > 1) {
     s->focus_err = 200 * ((s->self_recover % 2 == 0) ? 1:-1); // far for even numbers, close for odd
     s->self_recover -= 2;
     return;
@@ -1988,43 +1987,6 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
   };
 }
 
-static bool acceleration_from_sensor_sock(void *sock, float *vs) {
-  int err;
-  bool ret = false;
-  zmq_msg_t msg;
-  err = zmq_msg_init(&msg);
-  assert(err == 0);
-
-  err = zmq_msg_recv(&msg, sock, 0);
-  assert(err >= 0);
-
-  void *data = zmq_msg_data(&msg);
-  size_t size = zmq_msg_size(&msg);
-
-  auto amsg = kj::heapArray<capnp::word>(size / sizeof(capnp::word) + 1);
-  memcpy(amsg.begin(), data, size);
-  capnp::FlatArrayMessageReader cmsg(amsg);
-  auto event = cmsg.getRoot<cereal::Event>();
-  if (event.which() == cereal::Event::SENSOR_EVENTS) {
-    auto sensor_events = event.getSensorEvents();
-    for (auto sensor_event : sensor_events) {
-      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-        auto v = sensor_event.getAcceleration().getV();
-        if (v.size() < 3) {
-          continue;  //wtf
-        }
-        for (int j = 0; j < 3; j++) {
-          vs[j] = v[j];
-        }
-        ret = true;
-        break;
-      }
-    }
-  }
-  zmq_msg_close(&msg);
-  return ret;
-}
-
 static void ops_term() {
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
@@ -2044,20 +2006,16 @@ static void* ops_thread(void* arg) {
   zsock_t *cameraops = zsock_new_pull("@inproc://cameraops");
   assert(cameraops);
 
-  zsock_t *sensor_sock = zsock_new_sub(">tcp://127.0.0.1:8003", "");
-  assert(sensor_sock);
-
-  zsock_t *controls_sock = zsock_new_sub(">tcp://127.0.0.1:8007", "");
-  assert(controls_sock);
-
   zsock_t *terminate = zsock_new_sub(">inproc://terminate", "");
   assert(terminate);
 
-  zpoller_t *poller = zpoller_new(cameraops, sensor_sock, controls_sock, terminate, NULL);
+  zpoller_t *poller = zpoller_new(cameraops, terminate, NULL);
   assert(poller);
 
-  while (!do_exit) {
+  SubMaster sm({"sensorEvents"}); // msgq submaster
 
+  while (!do_exit) {
+    // zmq handling
     zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
     if (which == terminate || which == NULL) {
       break;
@@ -2091,39 +2049,38 @@ static void* ops_thread(void* arg) {
       }
 
       zmq_msg_close(&msg);
+    }
 
-    } else if (which == sensor_sock) {
-      float vs[3] = {0.0};
-      bool got_accel = acceleration_from_sensor_sock(sockraw, vs);
+    // msgq handling
+    if (sm.updated("sensorEvents")) {
+      float vals[3] = {0.0};
+      bool got_accel = false;
+
+      auto sensor_events = sm["sensorEvents"].getSensorEvents();
+      for (auto sensor_event : sensor_events) {
+        if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
+          auto v = sensor_event.getAcceleration().getV();
+          if (v.size() < 3) {
+            continue;  //wtf
+          }
+          for (int j = 0; j < 3; j++) {
+            vals[j] = v[j];
+          }
+          got_accel = true;
+          break;
+        }
+      }
 
       uint64_t ts = nanos_since_boot();
       if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
         s->rear.last_sag_ts = ts;
-        s->rear.last_sag_acc_z = -vs[2];
+        s->rear.last_sag_acc_z = -vals[2];
       }
-    } else if (which == controls_sock) {
-      int err;
-      bool ret = false;
-      zmq_msg_t msg;
-      err = zmq_msg_init(&msg);
-      assert(err == 0);
-      err = zmq_msg_recv(&msg, sockraw, 0);
-      assert(err >= 0);
-      void *data = zmq_msg_data(&msg);
-      size_t size = zmq_msg_size(&msg);
-      auto amsg = kj::heapArray<capnp::word>(size / sizeof(capnp::word) + 1);
-      memcpy(amsg.begin(), data, size);
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      auto event = cmsg.getRoot<cereal::Event>();
-      s->rear.recover_blocked = event.getControlsState().getEnabled();
-      zmq_msg_close(&msg);
     }
   }
 
   zpoller_destroy(&poller);
   zsock_destroy(&cameraops);
-  zsock_destroy(&sensor_sock);
-  zsock_destroy(&controls_sock);
   zsock_destroy(&terminate);
 
   return NULL;

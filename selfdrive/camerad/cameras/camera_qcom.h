@@ -114,7 +114,6 @@ typedef struct CameraState {
   float lens_true_pos;
 
   int self_recover; // af recovery counter, neg is patience, pos is active
-  bool recover_blocked;
 
   int fps;
 
