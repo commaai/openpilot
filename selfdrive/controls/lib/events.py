@@ -485,6 +485,12 @@ EVENTS = {
                               duration_hud_alert=0.),
   },
 
+  # TODO: make sure wrongCruiseMode shows instead of wrongCarMode when appropriate
+  EventName.wrongCruiseMode: {
+    #ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+    ET.NO_ENTRY: NoEntryAlert("Wrong Cruise Mode"),
+  },
+
   EventName.steerTempUnavailable: {
     ET.WARNING: Alert(
       "TAKE CONTROL",
