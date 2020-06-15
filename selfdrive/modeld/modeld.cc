@@ -85,9 +85,9 @@ int main(int argc, char **argv) {
   SubMaster sm({"pathPlan"});
 
   // cl init
+  cl_device_id device_id;
   cl_context context;
   cl_command_queue q;
-  cl_device_id device_id;
   {
     cl_uint num_platforms;
     err = clGetPlatformIDs(0, NULL, &num_platforms);
@@ -98,7 +98,6 @@ int main(int argc, char **argv) {
     assert(err == 0);
 
     LOGD("got %d opencl platform(s)", num_platforms);
-    printf("got %d opencl platform(s)\n", num_platforms);
 
     char cBuffer[1024];
     bool opencl_platform_found = false;
@@ -107,7 +106,6 @@ int main(int argc, char **argv) {
       err = clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
       assert(err == 0);
       LOGD("platform[%zu] CL_PLATFORM_NAME: %s", i, cBuffer);
-      printf("platform[%zu] CL_PLATFORM_NAME: %s\n", i, cBuffer);
 
       cl_uint num_devices;
       err = clGetDeviceIDs(platform_ids[i], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices);
