@@ -84,6 +84,12 @@ int main(int argc, char **argv) {
   PubMaster pm({"model", "cameraOdometry"});
   SubMaster sm({"pathPlan"});
 
+#ifdef QCOM
+  cl_device_type device_type = CL_DEVICE_TYPE_GPU;
+#else
+  cl_device_type device_type = CL_DEVICE_TYPE_CPU;
+#endif
+
   // cl init
   cl_device_id device_id;
   cl_context context;
@@ -108,13 +114,13 @@ int main(int argc, char **argv) {
       LOGD("platform[%zu] CL_PLATFORM_NAME: %s", i, cBuffer);
 
       cl_uint num_devices;
-      err = clGetDeviceIDs(platform_ids[i], CL_DEVICE_TYPE_GPU, 0, NULL, &num_devices);
+      err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
       if (err != 0|| !num_devices){
         continue;
       }
 
       // Get first device
-      err = clGetDeviceIDs(platform_ids[i], CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
+      err = clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL);
       assert(err == 0);
 
       context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
