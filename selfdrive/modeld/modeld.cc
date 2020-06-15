@@ -84,40 +84,63 @@ int main(int argc, char **argv) {
   PubMaster pm({"model", "cameraOdometry"});
   SubMaster sm({"pathPlan"});
 
+#ifdef QCOM
+  cl_device_type device_type = CL_DEVICE_TYPE_DEFAULT;
+#else
+  cl_device_type device_type = CL_DEVICE_TYPE_CPU;
+#endif
+
   // cl init
   cl_device_id device_id;
   cl_context context;
   cl_command_queue q;
   {
-    // TODO: refactor this
-    cl_platform_id platform_id[2];
-    cl_uint num_devices;
     cl_uint num_platforms;
-
-    err = clGetPlatformIDs(sizeof(platform_id)/sizeof(cl_platform_id), platform_id, &num_platforms);
+    err = clGetPlatformIDs(0, NULL, &num_platforms);
     assert(err == 0);
 
-    #ifdef QCOM
-      int clPlatform = 0;
-    #else
-      // don't use nvidia on pc, it's broken
-      // TODO: write this nicely
-      int clPlatform = num_platforms-1;
-    #endif
+    cl_platform_id * platform_ids = new cl_platform_id[num_platforms];
+    err = clGetPlatformIDs(num_platforms, platform_ids, NULL);
+    assert(err == 0);
+
+    LOGD("got %d opencl platform(s)", num_platforms);
 
     char cBuffer[1024];
-    clGetPlatformInfo(platform_id[clPlatform], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
-    LOG("got %d opencl platform(s), using %s", num_platforms, cBuffer);
+    bool opencl_platform_found = false;
 
-    err = clGetDeviceIDs(platform_id[clPlatform], CL_DEVICE_TYPE_DEFAULT, 1,
-                         &device_id, &num_devices);
-    assert(err == 0);
+    for (size_t i = 0; i < num_platforms; i++){
+      err = clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
+      assert(err == 0);
+      LOGD("platform[%zu] CL_PLATFORM_NAME: %s", i, cBuffer);
 
-    context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
-    assert(err == 0);
+      cl_uint num_devices;
+      err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
+      if (err != 0|| !num_devices){
+        continue;
+      }
 
-    q = clCreateCommandQueue(context, device_id, 0, &err);
-    assert(err == 0);
+      // Get first device
+      err = clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL);
+      assert(err == 0);
+
+      context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
+      assert(err == 0);
+
+      q = clCreateCommandQueue(context, device_id, 0, &err);
+      assert(err == 0);
+
+      opencl_platform_found = true;
+      break;
+    }
+
+    delete[] platform_ids;
+
+    if (!opencl_platform_found){
+      LOGE("No valid openCL platform found");
+      assert(opencl_platform_found);
+    }
+
+
     LOGD("opencl init complete");
   }
 
