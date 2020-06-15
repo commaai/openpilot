@@ -7,13 +7,9 @@
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git
-[submodule "apks"]
-	path = apks
-	url = ../../commaai/openpilot-apks.git
 [submodule "cereal"]
 	path = cereal
 	url = ../../commaai/cereal.git
-
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = ../../commaai/rednose.git
