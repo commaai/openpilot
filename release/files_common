@@ -322,9 +322,7 @@ selfdrive/test/test_fingerprints.py
 selfdrive/test/test_car_models.py
 
 selfdrive/ui/SConscript
-selfdrive/ui/*.c
 selfdrive/ui/*.cc
-selfdrive/ui/*.h
 selfdrive/ui/*.hpp
 selfdrive/ui/ui
 selfdrive/ui/spinner/Makefile

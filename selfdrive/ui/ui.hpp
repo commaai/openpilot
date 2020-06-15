@@ -1,6 +1,4 @@
-#ifndef _UI_H
-#define _UI_H
-
+#pragma once
 #include "messaging.hpp"
 
 #ifdef __APPLE__
@@ -214,9 +212,7 @@ typedef struct UIState {
 
   // timeouts
   int awake_timeout;
-  int volume_timeout;
   int controls_timeout;
-  int alert_sound_timeout;
   int speed_lim_off_timeout;
   int is_metric_timeout;
   int longitudinal_control_timeout;
@@ -234,8 +230,6 @@ typedef struct UIState {
   bool limit_set_speed;
   float speed_lim_off;
   bool is_ego_over_limit;
-  std::string alert_type;
-  AudibleAlert alert_sound;
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
@@ -252,6 +246,8 @@ typedef struct UIState {
   model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 
   track_vertices_data track_vertices[2];
+
+  Sound sound;
 } UIState;
 
 // API
@@ -263,5 +259,3 @@ void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r = 0, int width = 0);
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r = 0);
 void ui_nvg_init(UIState *s);
-
-#endif

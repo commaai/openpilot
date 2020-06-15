@@ -1,91 +1,137 @@
-#include <stdlib.h>
+
 #include "sound.hpp"
-
+#include <math.h>
+#include <stdlib.h>
+#include <atomic>
 #include "common/swaglog.h"
+#include "common/timing.h"
 
-typedef struct {
-  AudibleAlert alert;
-  const char* uri;
-  bool loop;
-} sound_file;
+#define LogOnError(func, msg) \
+  if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); }
 
-extern "C"{
-#include "slplay.h"
-}
+#define ReturnOnError(func, msg) \
+  if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; }
 
-int last_volume = 0;
+static std::map<AudibleAlert, const char *> sound_map{
+    {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav"},
+    {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav"},
+    {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav"},
+    {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav"},
+    {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav"},
+    {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav"},
+    {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav"},
+    {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav"}};
 
-void set_volume(int volume) {
-  if (last_volume != volume) {
-    char volume_change_cmd[64];
-    sprintf(volume_change_cmd, "service call audio 3 i32 3 i32 %d i32 1 &", volume);
-
-    // 5 second timeout at 60fps
-    int volume_changed = system(volume_change_cmd);
-    last_volume = volume;
-  }
-}
-
-
-sound_file sound_table[] = {
-  { cereal::CarControl::HUDControl::AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav", false },
-  { cereal::CarControl::HUDControl::AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav", false },
-  { cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav", false },
-  { cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav", false },
-  { cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav", true },
-  { cereal::CarControl::HUDControl::AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav", true },
-  { cereal::CarControl::HUDControl::AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav", false },
-  { cereal::CarControl::HUDControl::AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav", false },
-  { cereal::CarControl::HUDControl::AudibleAlert::NONE, NULL, false },
+struct Sound::Player {
+  SLObjectItf player;
+  SLPlayItf playItf;
+  // slplay_callback runs on a background thread,use atomic to ensure thread safe.
+  std::atomic<int> repeat; 
 };
 
-sound_file* get_sound_file(AudibleAlert alert) {
-  for (sound_file *s = sound_table; s->alert != cereal::CarControl::HUDControl::AudibleAlert::NONE; s++) {
-    if (s->alert == alert) {
-      return s;
+bool Sound::init(int volume) {
+  SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
+  const SLInterfaceID ids[1] = {SL_IID_VOLUME};
+  const SLboolean req[1] = {SL_BOOLEAN_FALSE};
+  SLEngineItf engineInterface = NULL;
+  ReturnOnError(slCreateEngine(&engine_, 1, engineOptions, 0, NULL, NULL), "Failed to create OpenSL engine");
+  ReturnOnError((*engine_)->Realize(engine_, SL_BOOLEAN_FALSE), "Failed to realize OpenSL engine");
+  ReturnOnError((*engine_)->GetInterface(engine_, SL_IID_ENGINE, &engineInterface), "Failed to get OpenSL engine interface");
+  ReturnOnError((*engineInterface)->CreateOutputMix(engineInterface, &outputMix_, 1, ids, req), "Failed to create output mix");
+  ReturnOnError((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
+
+  for (auto &kv : sound_map) {
+    SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar *)kv.second};
+    SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
+    SLDataSource audioSrc = {&locUri, &formatMime};
+    SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
+    SLDataSink audioSnk = {&outMix, NULL};
+
+    SLObjectItf player = NULL;
+    SLPlayItf playItf = NULL;
+    ReturnOnError((*engineInterface)->CreateAudioPlayer(engineInterface, &player, &audioSrc, &audioSnk, 0, NULL, NULL), "Failed to create audio player");
+    ReturnOnError((*player)->Realize(player, SL_BOOLEAN_FALSE), "Failed to realize audio player");
+    ReturnOnError((*player)->GetInterface(player, SL_IID_PLAY, &playItf), "Failed to get player interface");
+    ReturnOnError((*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
+
+    player_[kv.first] = new Sound::Player{player, playItf};
+  }
+
+  setVolume(volume);
+  return true;
+}
+
+AudibleAlert Sound::currentPlaying() {
+  if (currentSound_ != AudibleAlert::NONE) {
+    auto playItf = player_.at(currentSound_)->playItf;
+    SLuint32 state;
+    if (SL_RESULT_SUCCESS == (*playItf)->GetPlayState(playItf, &state) &&
+        (state == SL_PLAYSTATE_STOPPED || state == SL_PLAYSTATE_PAUSED)) {
+      currentSound_ = AudibleAlert::NONE;
     }
   }
-
-  return NULL;
+  return currentSound_;
 }
 
-void play_alert_sound(AudibleAlert alert) {
-  sound_file* sound = get_sound_file(alert);
-  char* error = NULL;
-
-  slplay_play(sound->uri, sound->loop, &error);
-  if(error) {
-    LOGW("error playing sound: %s", error);
+void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event) {
+  Sound::Player *s = reinterpret_cast<Sound::Player *>(context);
+  if (event == SL_PLAYEVENT_HEADATEND && s->repeat > 1) {
+    --s->repeat;
+    (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
+    (*playItf)->SetMarkerPosition(playItf, 0);
+    (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
   }
 }
 
-void stop_alert_sound(AudibleAlert alert) {
-  sound_file* sound = get_sound_file(alert);
-  char* error = NULL;
+bool Sound::play(AudibleAlert alert, int repeat) {
+  if (currentSound_ != AudibleAlert::NONE) {
+    stop();
+  }
+  auto player = player_.at(alert);
+  SLPlayItf playItf = player->playItf;
+  player->repeat = repeat;
+  if (player->repeat > 0) {
+    ReturnOnError((*playItf)->RegisterCallback(playItf, slplay_callback, player), "Failed to register callback");
+    ReturnOnError((*playItf)->SetCallbackEventsMask(playItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
+  }
 
-  slplay_stop_uri(sound->uri, &error);
-  if(error) {
-    LOGW("error stopping sound: %s", error);
+  // Reset the audio player
+  ReturnOnError((*playItf)->ClearMarkerPosition(playItf), "Failed to clear marker position");
+  uint32_t states[] = {SL_PLAYSTATE_PAUSED, SL_PLAYSTATE_STOPPED, SL_PLAYSTATE_PLAYING};
+  for (auto state : states) {
+    ReturnOnError((*playItf)->SetPlayState(playItf, state), "Failed to set SL_PLAYSTATE_PLAYING");
+  }
+  currentSound_ = alert;
+  return true;
+}
+
+void Sound::stop() {
+  if (currentSound_ != AudibleAlert::NONE) {
+    auto player = player_.at(currentSound_);
+    player->repeat = 0;
+    LogOnError((*(player->playItf))->SetPlayState(player->playItf, SL_PLAYSTATE_PAUSED), "Failed to set SL_PLAYSTATE_PAUSED");
+    currentSound_ = AudibleAlert::NONE;
   }
 }
 
-void ui_sound_init() {
-  char *error = NULL;
-  slplay_setup(&error);
-  if (error) goto fail;
-
-  for (sound_file *s = sound_table; s->alert != cereal::CarControl::HUDControl::AudibleAlert::NONE; s++) {
-    slplay_create_player_for_uri(s->uri, &error);
-    if (error) goto fail;
+void Sound::setVolume(int volume, int timeout_seconds) {
+  if (last_volume_ == volume) return;
+  
+  double current_time = nanos_since_boot();
+  if ((current_time - last_set_volume_time_) > (timeout_seconds * (1e+9))) {
+    char volume_change_cmd[64];
+    snprintf(volume_change_cmd, sizeof(volume_change_cmd), "service call audio 3 i32 3 i32 %d i32 1 &", volume);
+    system(volume_change_cmd);
+    last_volume_ = volume;
+    last_set_volume_time_ = current_time;
   }
-  return;
-
-fail:
-  LOGW(error);
-  exit(1);
 }
 
-void ui_sound_destroy() {
-  slplay_destroy();
+Sound::~Sound() {
+  for (auto &kv : player_) {
+    (*(kv.second->player))->Destroy(kv.second->player);
+    delete kv.second;
+  }
+  if (outputMix_) (*outputMix_)->Destroy(outputMix_);
+  if (engine_) (*engine_)->Destroy(engine_);
 }
-
