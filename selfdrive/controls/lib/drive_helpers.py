@@ -3,9 +3,9 @@ from selfdrive.config import Conversions as CV
 from cereal import car
 
 ButtonType = car.CarState.ButtonEvent.Type
+ButtonPrev = ButtonType.unknown
 ButtonCnt = 0
 LongPressed = False
-ButtonPrev = ButtonType.unknown
 
 # kph
 V_CRUISE_MAX = 144
@@ -45,7 +45,8 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
     if ButtonCnt:
       ButtonCnt += 1
     for b in buttonEvents:
-      if b.pressed and not ButtonCnt:
+      if b.pressed and not ButtonCnt and (b.type == ButtonType.accelCruise or \
+                                          b.type == ButtonType.decelCruise):
         ButtonCnt = 1
         ButtonPrev = b.type
       elif not b.pressed and ButtonCnt:
