@@ -291,6 +291,8 @@ class CarInterface(CarInterfaceBase):
 
     events = self.create_common_events(ret)
 
+    if self.CS.cruise_unavail:
+      events.add(EventName.brakeUnavailable)
     if abs(ret.steeringAngle) > 90. and EventName.steerTempUnavailable not in events.events:
       events.add(EventName.steerTempUnavailable)
     if self.low_speed_alert and not self.CS.mdps_bus:
