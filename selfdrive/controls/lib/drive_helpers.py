@@ -45,25 +45,24 @@ def update_v_cruise(v_cruise_kph, buttonEvents, enabled, metric):
     if ButtonCnt:
       ButtonCnt += 1
     for b in buttonEvents:
-      if b.type == ButtonType.accelCruise or b.type == ButtonType.decelCruise:
-        if b.pressed and not ButtonCnt:
-          ButtonCnt = 1
-          ButtonPrev = b.type
-        elif not b.pressed and ButtonCnt:
-          if not LongPressed and b.type == ButtonType.accelCruise:
-            v_cruise_kph += 1 if metric else 1 * CV.MPH_TO_KPH
-          elif not LongPressed and b.type == ButtonType.decelCruise:
-            v_cruise_kph -= 1 if metric else 1 * CV.MPH_TO_KPH
-          LongPressed = False
-          ButtonCnt = 0
-    if ButtonCnt > 25:
+      if b.pressed and not ButtonCnt:
+        ButtonCnt = 1
+        ButtonPrev = b.type
+      elif not b.pressed and ButtonCnt:
+        if not LongPressed and b.type == ButtonType.accelCruise:
+          v_cruise_kph += 1 if metric else 1 * CV.MPH_TO_KPH
+        elif not LongPressed and b.type == ButtonType.decelCruise:
+          v_cruise_kph -= 1 if metric else 1 * CV.MPH_TO_KPH
+        LongPressed = False
+        ButtonCnt = 0
+    if ButtonCnt > 50:
       LongPressed = True
       V_CRUISE_DELTA = V_CRUISE_DELTA_KM if metric else V_CRUISE_DELTA_MI
       if ButtonPrev == ButtonType.accelCruise:
         v_cruise_kph += V_CRUISE_DELTA - v_cruise_kph % V_CRUISE_DELTA
       elif ButtonPrev == ButtonType.decelCruise:
         v_cruise_kph -= V_CRUISE_DELTA - -v_cruise_kph % V_CRUISE_DELTA
-      ButtonCnt %= 25
+      ButtonCnt %= 50
     v_cruise_kph = clip(v_cruise_kph, V_CRUISE_MIN, V_CRUISE_MAX)
 
   return v_cruise_kph
