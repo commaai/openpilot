@@ -2017,42 +2017,42 @@ static void* ops_thread(void* arg) {
   while (!do_exit) {
     // zmq handling
     zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
-    if (which == terminate || which == NULL) {
+    if (which == terminate) {
       break;
-    }
-    void* sockraw = zsock_resolve(which);
+    } else if (which != NULL) {
+      void* sockraw = zsock_resolve(which);
 
-    if (which == cameraops) {
-      zmq_msg_t msg;
-      err = zmq_msg_init(&msg);
-      assert(err == 0);
+      if (which == cameraops) {
+        zmq_msg_t msg;
+        err = zmq_msg_init(&msg);
+        assert(err == 0);
 
-      err = zmq_msg_recv(&msg, sockraw, 0);
-      assert(err >= 0);
+        err = zmq_msg_recv(&msg, sockraw, 0);
+        assert(err >= 0);
 
-      CameraMsg cmsg;
-      if (zmq_msg_size(&msg) == sizeof(cmsg)) {
-        memcpy(&cmsg, zmq_msg_data(&msg), zmq_msg_size(&msg));
+        CameraMsg cmsg;
+        if (zmq_msg_size(&msg) == sizeof(cmsg)) {
+          memcpy(&cmsg, zmq_msg_data(&msg), zmq_msg_size(&msg));
 
-        //LOGD("cameraops %d", cmsg.type);
+          //LOGD("cameraops %d", cmsg.type);
 
-        if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
-          if (cmsg.camera_num == 0) {
-            do_autoexposure(&s->rear, cmsg.grey_frac);
-            do_autofocus(&s->rear);
-          } else {
-            do_autoexposure(&s->front, cmsg.grey_frac);
+          if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
+            if (cmsg.camera_num == 0) {
+              do_autoexposure(&s->rear, cmsg.grey_frac);
+              do_autofocus(&s->rear);
+            } else {
+              do_autoexposure(&s->front, cmsg.grey_frac);
+            }
+          } else if (cmsg.type == -1) {
+            break;
           }
-        } else if (cmsg.type == -1) {
-          break;
         }
+
+        zmq_msg_close(&msg);
       }
-
-      zmq_msg_close(&msg);
     }
-
     // msgq handling
-    if (sm.updated("sensorEvents")) {
+    if (sm.update(0) > 0) {
       float vals[3] = {0.0};
       bool got_accel = false;
 
