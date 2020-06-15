@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
     delete[] platform_ids;
 
     if (!opencl_platform_found){
-      LOGE("No valid openCL platform found. GPU required");
+      LOGE("No valid openCL platform found");
       assert(opencl_platform_found);
     }
 
