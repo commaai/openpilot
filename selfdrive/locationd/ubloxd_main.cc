@@ -27,7 +27,6 @@ void set_do_exit(int sig) {
 }
 
 using namespace ublox;
-const long ZMQ_POLL_TIMEOUT = 1000; // In miliseconds
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
   signal(SIGINT, (sighandler_t) set_do_exit);
@@ -35,13 +34,25 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   UbloxMsgParser parser;
 
-  SubMaster sm({"ubloxRaw"});
+  Context * context = Context::create();
+  SubSocket * subscriber = SubSocket::create(context, "ubloxRaw");
+  assert(subscriber != NULL);
+
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
   while (!do_exit) {
-    if (sm.update(ZMQ_POLL_TIMEOUT) == 0) continue;
+    Message * msg = subscriber->receive();
+    if (!msg){
+      continue;
+    }
 
-    auto ubloxRaw = sm["ubloxRaw"].getUbloxRaw();
+    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+    memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+    capnp::FlatArrayMessageReader cmsg(amsg);
+    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+    auto ubloxRaw = event.getUbloxRaw();
+
     const uint8_t *data = ubloxRaw.begin();
     size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;
@@ -93,7 +104,11 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       }
       bytes_consumed += bytes_consumed_this_time;
     }
+    free(msg);
   }
+
+  delete subscriber;
+  delete context;
 
   return 0;
 }
