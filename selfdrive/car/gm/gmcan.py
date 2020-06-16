@@ -109,7 +109,7 @@ def create_adas_headlights_status(packer, bus):
     "Always42": 0x42,
     "Always4": 0x4,
   }
-  return packer.make_can_msg("ASCMHeadlight", values, bus)
+  return packer.make_can_msg("ASCMHeadlight", bus, values)
 
 def create_lka_icon_command(bus, active, critical, steer):
   if active and steer == 1:
