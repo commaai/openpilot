@@ -93,6 +93,10 @@ function launch {
       rm -r $BASEDIR/.sconsign.dblite
     fi
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+  else
+    if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
+      "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
+    fi
   fi
 
 
