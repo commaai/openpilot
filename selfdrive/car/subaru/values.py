@@ -114,7 +114,7 @@ FINGERPRINTS = {
 }
 
 # Use only FPv2
-#IGNORED_FINGERPRINTS = [CAR.IMPREZA]
+IGNORED_FINGERPRINTS = [CAR.IMPREZA]
 
 FW_VERSIONS = {
   CAR.IMPREZA: {
@@ -140,10 +140,12 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',
       b'\xbe\x61\x63\x72\x07',
+      b'\x01XH3J2B0R\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe3\xe5\x46\x31\x00',
       b'\xf1\x00\xa4\x10\x40',
+      b'\x01R3E54631\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.FORESTER: {
