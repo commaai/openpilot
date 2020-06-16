@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import gc
+import subprocess
 from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, set_realtime_priority, set_core_affinity, Ratekeeper, DT_CTRL
@@ -141,6 +142,10 @@ class Controls:
       self.events.add(EventName.carUnrecognized, static=True)
     if hw_type == HwType.whitePanda:
       self.events.add(EventName.whitePandaUnsupported, static=True)
+
+    uname = subprocess.check_output(["uname", "-v"], encoding='utf8').strip()
+    if uname == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020":
+      self.events.add(EventName.neosUpdateRequired, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)

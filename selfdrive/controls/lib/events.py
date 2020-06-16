@@ -517,6 +517,15 @@ EVENTS = {
     ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
   },
 
+  EventName.neosUpdateRequired: {
+    ET.PERMANENT: Alert(
+      "NEOS Update Required",
+      "Please Wait for Update",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.HIGHEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.NO_ENTRY: NoEntryAlert("NEOS Update Required"),
+  },
+
   EventName.sensorDataInvalid: {
     ET.PERMANENT: Alert(
       "No Data from Device Sensors",
