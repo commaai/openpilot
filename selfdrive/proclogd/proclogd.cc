@@ -14,8 +14,6 @@
 #include <unordered_map>
 
 #include "messaging.hpp"
-
-#include "common/timing.h"
 #include "common/utilpp.h"
 
 namespace {
@@ -39,10 +37,8 @@ int main() {
 
   while (1) {
 
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto procLog = event.initProcLog();
+    MessageBuilder msg;
+    auto procLog = msg.initEvent().initProcLog();
 
     auto orphanage = msg.getOrphanage();
 

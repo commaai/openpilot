@@ -4,12 +4,10 @@
 #include <csignal>
 #include <unistd.h>
 
-#include <capnp/serialize-packed.h>
 #include "json11.hpp"
 
 #include "common/swaglog.h"
 #include "common/params.h"
-#include "common/timing.h"
 
 #include "messaging.hpp"
 #include "locationd_yawrate.h"
@@ -94,10 +92,8 @@ int main(int argc, char *argv[]) {
       double angle_offset_degrees = RADIANS_TO_DEGREES * learner.ao;
       double angle_offset_average_degrees = RADIANS_TO_DEGREES * learner.slow_ao;
 
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-      auto live_params = event.initLiveParameters();
+      MessageBuilder msg;
+      auto live_params = msg.initEvent().initLiveParameters();
       live_params.setValid(valid);
       live_params.setYawRate(localizer.x[0]);
       live_params.setGyroBias(localizer.x[1]);

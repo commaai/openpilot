@@ -230,18 +230,15 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
         }
 
         // publish encode index
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-        auto eidx = event.initEncodeIdx();
+        MessageBuilder msg;
+        auto eidx = msg.initEvent().initEncodeIdx();
         eidx.setFrameId(extra.frame_id);
         eidx.setType(front ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
         eidx.setEncodeId(cnt);
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
+        auto bytes = msg.toBytes();
         if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
@@ -262,18 +259,15 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
           }
 
           // publish encode index
-          capnp::MallocMessageBuilder msg;
-          cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-          event.setLogMonoTime(nanos_since_boot());
-          auto eidx = event.initEncodeIdx();
+          MessageBuilder msg;
+          auto eidx = msg.initEvent().initEncodeIdx();
           eidx.setFrameId(extra.frame_id);
           eidx.setType(cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP);
           eidx.setEncodeId(cnt);
           eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
 
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
+          auto bytes = msg.toBytes();
           if (lh) {
             lh_log(lh, bytes.begin(), bytes.size(), false);
           }
@@ -376,10 +370,8 @@ int lidar_thread() {
     }
 
     // create message for log
-    capnp::MallocMessageBuilder msg;
-    auto event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto lidar_pts = event.initLidarPts();
+    MessageBuilder msg;
+    auto lidar_pts = msg.initEvent().initLidarPts();
 
     // copy in the buffer
     // TODO: can we remove this copy? does it matter?
@@ -387,8 +379,7 @@ int lidar_thread() {
     lidar_pts.setPkt(bufferPtr);
 
     // log it
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
+    auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size());
   }
   return 0;
@@ -405,10 +396,8 @@ void append_property(const char* key, const char* value, void *cookie) {
 }
 
 kj::Array<capnp::word> gen_init_data() {
-  capnp::MallocMessageBuilder msg;
-  auto event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto init = event.initInitData();
+  MessageBuilder msg;
+  auto init = msg.initEvent().initInitData();
 
   init.setDeviceType(cereal::InitData::DeviceType::NEO);
   init.setVersion(capnp::Text::Reader(COMMA_VERSION));
@@ -481,7 +470,7 @@ kj::Array<capnp::word> gen_init_data() {
       i++;
     }
   }
-  return capnp::messageToFlatArray(msg);
+  return msg.toArray();
 }
 
 static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
@@ -510,11 +499,8 @@ static void bootlog() {
   LOGW("bootlog to %s", s.segment_path);
 
   {
-    capnp::MallocMessageBuilder msg;
-    auto event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-
-    auto boot = event.initBoot();
+    MessageBuilder msg;
+    auto boot = msg.initEvent().initBoot();
 
     boot.setWallTimeNanos(nanos_since_epoch());
 
@@ -524,8 +510,7 @@ static void bootlog() {
     std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
     boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
+    auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size(), false);
   }
 

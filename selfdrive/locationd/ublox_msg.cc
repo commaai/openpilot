@@ -193,10 +193,8 @@ inline bool UbloxMsgParser::valid_so_far() {
 
 kj::Array<capnp::word> UbloxMsgParser::gen_solution() {
   nav_pvt_msg *msg = (nav_pvt_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
-  capnp::MallocMessageBuilder msg_builder;
-  cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto gpsLoc = event.initGpsLocationExternal();
+  MessageBuilder msg_builder;
+  auto gpsLoc = msg_builder.initEvent().initGpsLocationExternal();
   gpsLoc.setSource(cereal::GpsLocationData::SensorSource::UBLOX);
   gpsLoc.setFlags(msg->flags);
   gpsLoc.setLatitude(msg->lat * 1e-07);
@@ -220,7 +218,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_solution() {
   gpsLoc.setVerticalAccuracy(msg->vAcc * 1e-03);
   gpsLoc.setSpeedAccuracy(msg->sAcc * 1e-03);
   gpsLoc.setBearingAccuracy(msg->headAcc * 1e-05);
-  return capnp::messageToFlatArray(msg_builder);
+  return msg_builder.toArray();
 }
 
 inline bool bit_to_bool(uint8_t val, int shifts) {
@@ -236,30 +234,29 @@ kj::Array<capnp::word> UbloxMsgParser::gen_raw() {
     return kj::Array<capnp::word>();
   }
   rxm_raw_msg_extra *measurements = (rxm_raw_msg_extra *)&msg_parse_buf[UBLOX_HEADER_SIZE + sizeof(rxm_raw_msg)];
-  capnp::MallocMessageBuilder msg_builder;
-  cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto gnss = event.initUbloxGnss();
+  MessageBuilder msg_builder;
+  auto gnss = msg_builder.initEvent().initUbloxGnss();
   auto mr = gnss.initMeasurementReport();
   mr.setRcvTow(msg->rcvTow);
   mr.setGpsWeek(msg->week);
   mr.setLeapSeconds(msg->leapS);
   mr.setGpsWeek(msg->week);
-  auto mb = mr.initMeasurements(msg->numMeas);
+  auto mb_list = mr.initMeasurements(msg->numMeas);
   for(int8_t i = 0; i < msg->numMeas; i++) {
-    mb[i].setSvId(measurements[i].svId);
-    mb[i].setSigId(measurements[i].sigId);
-    mb[i].setPseudorange(measurements[i].prMes);
-    mb[i].setCarrierCycles(measurements[i].cpMes);
-    mb[i].setDoppler(measurements[i].doMes);
-    mb[i].setGnssId(measurements[i].gnssId);
-    mb[i].setGlonassFrequencyIndex(measurements[i].freqId);
-    mb[i].setLocktime(measurements[i].locktime);
-    mb[i].setCno(measurements[i].cno);
-    mb[i].setPseudorangeStdev(0.01*(pow(2, (measurements[i].prStdev & 15)))); // weird scaling, might be wrong
-    mb[i].setCarrierPhaseStdev(0.004*(measurements[i].cpStdev & 15));
-    mb[i].setDopplerStdev(0.002*(pow(2, (measurements[i].doStdev & 15)))); // weird scaling, might be wrong
-    auto ts = mb[i].initTrackingStatus();
+    auto mb = mb_list[i];
+    mb.setSvId(measurements[i].svId);
+    mb.setSigId(measurements[i].sigId);
+    mb.setPseudorange(measurements[i].prMes);
+    mb.setCarrierCycles(measurements[i].cpMes);
+    mb.setDoppler(measurements[i].doMes);
+    mb.setGnssId(measurements[i].gnssId);
+    mb.setGlonassFrequencyIndex(measurements[i].freqId);
+    mb.setLocktime(measurements[i].locktime);
+    mb.setCno(measurements[i].cno);
+    mb.setPseudorangeStdev(0.01*(pow(2, (measurements[i].prStdev & 15)))); // weird scaling, might be wrong
+    mb.setCarrierPhaseStdev(0.004*(measurements[i].cpStdev & 15));
+    mb.setDopplerStdev(0.002*(pow(2, (measurements[i].doStdev & 15)))); // weird scaling, might be wrong
+    auto ts = mb.initTrackingStatus();
     ts.setPseudorangeValid(bit_to_bool(measurements[i].trkStat, 0));
     ts.setCarrierPhaseValid(bit_to_bool(measurements[i].trkStat, 1));
     ts.setHalfCycleValid(bit_to_bool(measurements[i].trkStat, 2));
@@ -270,7 +267,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_raw() {
   auto rs = mr.initReceiverStatus();
   rs.setLeapSecValid(bit_to_bool(msg->recStat, 0));
   rs.setClkReset(bit_to_bool(msg->recStat, 2));
-  return capnp::messageToFlatArray(msg_builder);
+  return msg_builder.toArray();
 }
 
 kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
@@ -295,10 +292,8 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
       nav_frame_buffer[msg->gnssId][msg->svid][subframeId] = words;
     if(nav_frame_buffer[msg->gnssId][msg->svid].size() == 5) {
       EphemerisData ephem_data(msg->svid, nav_frame_buffer[msg->gnssId][msg->svid]);
-      capnp::MallocMessageBuilder msg_builder;
-      cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-      auto gnss = event.initUbloxGnss();
+      MessageBuilder msg_builder;
+      auto gnss = msg_builder.initEvent().initUbloxGnss();
       auto eph = gnss.initEphemeris();
       eph.setSvId(ephem_data.svId);
       eph.setToc(ephem_data.toc);
@@ -334,7 +329,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
         eph.setIonoAlpha(kj::ArrayPtr<const double>());
         eph.setIonoBeta(kj::ArrayPtr<const double>());
       }
-      return capnp::messageToFlatArray(msg_builder);
+      return msg_builder.toArray();
     }
   }
   return kj::Array<capnp::word>();
@@ -343,17 +338,15 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
 kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw() {
   mon_hw_msg *msg = (mon_hw_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
 
-  capnp::MallocMessageBuilder msg_builder;
-  cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto gnss = event.initUbloxGnss();
+  MessageBuilder msg_builder;
+  auto gnss = msg_builder.initEvent().initUbloxGnss();
   auto hwStatus = gnss.initHwStatus();
   hwStatus.setNoisePerMS(msg->noisePerMS);
   hwStatus.setAgcCnt(msg->agcCnt);
   hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->aStatus);
   hwStatus.setAPower((cereal::UbloxGnss::HwStatus::AntennaPowerStatus) msg->aPower);
   hwStatus.setJamInd(msg->jamInd);
-  return capnp::messageToFlatArray(msg_builder);
+  return msg_builder.toArray();
 }
 
 bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
