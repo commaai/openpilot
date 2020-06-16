@@ -1,8 +1,15 @@
 from common.numpy_fast import interp
+from common.realtime import DT_MDL
+
 import numpy as np
 from cereal import log
+import time
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
+PLOT = False
+
+if PLOT:
+  import matplotlib.pyplot as plt
 
 
 def compute_path_pinv(l=50):
@@ -47,10 +54,10 @@ def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego):
 
 class LanePlanner():
   def __init__(self):
-    self.l_poly = [0., 0., 0., 0.]
-    self.r_poly = [0., 0., 0., 0.]
-    self.p_poly = [0., 0., 0., 0.]
-    self.d_poly = [0., 0., 0., 0.]
+    self.l_poly = np.array([0., 0., 0., 0.])
+    self.r_poly = np.array([0., 0., 0., 0.])
+    self.p_poly = np.array([0., 0., 0., 0.])
+    self.d_poly = np.array([0., 0., 0., 0.])
 
     self.lane_width_estimate = 3.7
     self.lane_width_certainty = 1.0
@@ -64,22 +71,97 @@ class LanePlanner():
 
     self._path_pinv = compute_path_pinv()
     self.x_points = np.arange(50)
+    self.cnt = 0
+
+    self.ll_time = None
+
+    if PLOT:
+      plt.ion()
+      self.fig = plt.figure(figsize=(15, 20))
+      self.ax = self.fig.add_subplot(111)
+      # self.ax.set_xlim([-150, 150])
+      self.ax.set_xlim([-5, 5])
+      self.ax.set_ylim([-50., 200.])
+      self.ax.set_xlabel('x [m]')
+      self.ax.set_ylabel('y [m]')
+      self.ax.grid(True)
+
+      self.points_l_x = np.arange(192)
+      self.points_l_y = 0 * self.points_l_x
+      self.line_l, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C0.', markersize=1)
+      self.line_r, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C1.', markersize=1)
+
+      self.line_l_poly, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C0--')
+      self.line_r_poly, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C1--')
+      plt.show()
+
+  def move_points(self, sm):
+    ll = sm['liveLocationKalman']
+    t = sm.logMonoTime['liveLocationKalman'] / 1e9
+    if self.ll_time is None:
+      self.ll_time = t
+      return
+
+    dt = t - self.ll_time
+    self.ll_time = t
+    yaw_rate = float(ll.angularVelocityCalibrated.value[2])
+    yaw = yaw_rate * dt
+
+    R = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
+
+    pts = np.vstack([-self.points_l_y, self.points_l_x])
+    pts = R.dot(pts)
+    self.points_l_y = -pts[0, :]
+    self.points_r_x = pts[1, :]
+
+    pts = np.vstack([-self.points_r_y, self.points_r_x])
+    pts = R.dot(pts)
+    self.points_r_y = -pts[0, :]
+    self.points_r_x = pts[1, :]
+
+    v = ll.velocityCalibrated.value
+    vx = float(v[0])
+    self.points_l_x -= vx * dt
+    self.points_r_x -= vx * dt
+
+    vy = float(v[1])
+    self.points_l_y -= vy * dt
+    self.points_r_y -= vy * dt
 
   def parse_model(self, md):
-    if len(md.leftLane.poly):
-      self.l_poly = np.array(md.leftLane.poly)
-      self.r_poly = np.array(md.rightLane.poly)
-      self.p_poly = np.array(md.path.poly)
-    else:
-      self.l_poly = model_polyfit(md.leftLane.points, self._path_pinv)  # left line
-      self.r_poly = model_polyfit(md.rightLane.points, self._path_pinv)  # right line
-      self.p_poly = model_polyfit(md.path.points, self._path_pinv)  # predicted path
-    self.l_prob = md.leftLane.prob  # left line prob
-    self.r_prob = md.rightLane.prob  # right line prob
-
     if len(md.meta.desireState):
       self.l_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeLeft - 1]
       self.r_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeRight - 1]
+
+    if self.cnt % int(2.0 / DT_MDL) == 0:
+      print("update", time.time())
+      self.l_prob = 1
+      self.r_prob = 1
+
+      self.points_l_x = np.arange(192, dtype=np.float32)
+      self.points_l_y = np.polyval(md.leftLane.poly, self.points_l_x)
+
+      self.points_r_x = np.arange(192, dtype=np.float32)
+      self.points_r_y = np.polyval(md.rightLane.poly, self.points_r_x)
+
+    self.l_poly = np.polyfit(self.points_l_x, self.points_l_y, 3)
+    self.r_poly = np.polyfit(self.points_r_x, self.points_r_y, 3)
+
+    if PLOT:
+      self.line_l.set_xdata(-self.points_l_y)
+      self.line_l.set_ydata(self.points_l_x)
+
+      self.line_r.set_xdata(-self.points_r_y)
+      self.line_r.set_ydata(self.points_r_x)
+
+      x = np.arange(192)
+      self.line_l_poly.set_xdata(-np.polyval(self.l_poly, x))
+      self.line_r_poly.set_xdata(-np.polyval(self.r_poly, x))
+
+      self.fig.canvas.draw()
+      self.fig.canvas.flush_events()
+
+    self.cnt += 1
 
   def update_d_poly(self, v_ego):
     # only offset left and right lane lines; offsetting p_poly does not make sense
@@ -94,8 +176,6 @@ class LanePlanner():
     self.lane_width = self.lane_width_certainty * self.lane_width_estimate + \
                       (1 - self.lane_width_certainty) * speed_lane_width
 
-    self.d_poly = calc_d_poly(self.l_poly, self.r_poly, self.p_poly, self.l_prob, self.r_prob, self.lane_width, v_ego)
-
-  def update(self, v_ego, md):
-    self.parse_model(md)
-    self.update_d_poly(v_ego)
+    self.d_poly = (self.l_poly + self.r_poly) / 2
+    # self.d_poly = self.r_poly
+    # self.d_poly = self.l_poly

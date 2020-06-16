@@ -186,7 +186,7 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   std = softplus(data[MODEL_PATH_DISTANCE]) + 1e-6;
   poly_fit(points_arr, stds_arr, poly_arr, valid_len);
 
-  if (std::getenv("DEBUG")){
+  if (true || std::getenv("DEBUG")){
     kj::ArrayPtr<const float> stds(&stds_arr[0], ARRAYSIZE(stds_arr));
     path.setStds(stds);
 

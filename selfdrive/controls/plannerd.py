@@ -27,7 +27,7 @@ def plannerd_thread(sm=None, pm=None):
   VM = VehicleModel(CP)
 
   if sm is None:
-    sm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'model', 'liveParameters'])
+    sm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'model', 'liveParameters', 'liveLocationKalman'])
 
   if pm is None:
     pm = messaging.PubMaster(['plan', 'liveLongitudinalMpc', 'pathPlan', 'liveMpc'])
@@ -44,6 +44,9 @@ def plannerd_thread(sm=None, pm=None):
       PP.update(sm, pm, CP, VM)
     if sm.updated['radarState']:
       PL.update(sm, pm, CP, VM, PP)
+
+    if sm.updated['liveLocationKalman']:
+      PP.LP.move_points(sm)
 
 
 def main(sm=None, pm=None):
