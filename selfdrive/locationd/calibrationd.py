@@ -88,7 +88,7 @@ class Calibrator():
     end_status = self.cal_status
 
     self.just_calibrated = False
-    if start_status == Calibration.UNCALIBRATED and end_status == Calibration.CALIBRATED:
+    if start_status == Calibration.UNCALIBRATED and end_status != Calibration.UNCALIBRATED:
       self.just_calibrated = True
 
   def handle_v_ego(self, v_ego):
