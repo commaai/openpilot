@@ -45,9 +45,6 @@ def plannerd_thread(sm=None, pm=None):
     if sm.updated['radarState']:
       PL.update(sm, pm, CP, VM, PP)
 
-    if sm.updated['liveLocationKalman']:
-      PP.LP.move_points(sm)
-
 
 def main(sm=None, pm=None):
   plannerd_thread(sm, pm)

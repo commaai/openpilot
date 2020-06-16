@@ -1,9 +1,9 @@
 from common.numpy_fast import interp
 from common.realtime import DT_MDL
+from common.transformations.orientation import rot_from_euler
 
 import numpy as np
 from cereal import log
-import time
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
 PLOT = False
@@ -95,46 +95,19 @@ class LanePlanner():
       self.line_r_poly, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C1--')
       plt.show()
 
-  def move_points(self, sm):
-    ll = sm['liveLocationKalman']
-    t = sm.logMonoTime['liveLocationKalman'] / 1e9
-    if self.ll_time is None:
-      self.ll_time = t
+  def parse_model(self, md, ll):
+    if len(ll.angularVelocityCalibrated.value) == 0:
       return
 
-    dt = t - self.ll_time
-    self.ll_time = t
-    yaw_rate = float(ll.angularVelocityCalibrated.value[2])
-    yaw = yaw_rate * dt
-
-    R = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
-
-    pts = np.vstack([-self.points_l_y, self.points_l_x])
-    pts = R.dot(pts)
-    self.points_l_y = -pts[0, :]
-    self.points_r_x = pts[1, :]
-
-    pts = np.vstack([-self.points_r_y, self.points_r_x])
-    pts = R.dot(pts)
-    self.points_r_y = -pts[0, :]
-    self.points_r_x = pts[1, :]
-
-    v = ll.velocityCalibrated.value
-    vx = float(v[0])
-    self.points_l_x -= vx * dt
-    self.points_r_x -= vx * dt
-
-    vy = float(v[1])
-    self.points_l_y -= vy * dt
-    self.points_r_y -= vy * dt
-
-  def parse_model(self, md):
     if len(md.meta.desireState):
       self.l_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeLeft - 1]
       self.r_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeRight - 1]
 
+    orient = np.array(ll.calibratedOrientationECEF.value)
+    ecef = np.atleast_2d(np.array(ll.positionECEF.value)).T
+    ecef_from_local = rot_from_euler(orient).T
+
     if self.cnt % int(2.0 / DT_MDL) == 0:
-      print("update", time.time())
       self.l_prob = 1
       self.r_prob = 1
 
@@ -143,6 +116,21 @@ class LanePlanner():
 
       self.points_r_x = np.arange(192, dtype=np.float32)
       self.points_r_y = np.polyval(md.rightLane.poly, self.points_r_x)
+
+      z = np.zeros_like(self.points_l_x)
+      points_l = np.vstack([self.points_l_x, -self.points_l_y, z])
+      self.points_l_ecef = ecef_from_local.dot(points_l) + ecef
+
+      points_r = np.vstack([self.points_r_x, -self.points_r_y, z])
+      self.points_r_ecef = ecef_from_local.dot(points_r) + ecef
+
+    points_l = ecef_from_local.T.dot(self.points_l_ecef - ecef)
+    self.points_l_x = points_l[0, :]
+    self.points_l_y = -points_l[1, :]
+
+    points_r = ecef_from_local.T.dot(self.points_r_ecef - ecef)
+    self.points_r_x = points_r[0, :]
+    self.points_r_y = -points_r[1, :]
 
     self.l_poly = np.polyfit(self.points_l_x, self.points_l_y, 3)
     self.r_poly = np.polyfit(self.points_r_x, self.points_r_y, 3)
@@ -177,5 +165,3 @@ class LanePlanner():
                       (1 - self.lane_width_certainty) * speed_lane_width
 
     self.d_poly = (self.l_poly + self.r_poly) / 2
-    # self.d_poly = self.r_poly
-    # self.d_poly = self.l_poly

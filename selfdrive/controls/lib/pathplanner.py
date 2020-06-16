@@ -95,7 +95,7 @@ class PathPlanner():
 
     curvature_factor = VM.curvature_factor(v_ego)
 
-    self.LP.parse_model(sm['model'])
+    self.LP.parse_model(sm['model'], sm['liveLocationKalman'])
 
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
