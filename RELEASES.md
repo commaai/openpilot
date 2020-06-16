@@ -1,3 +1,7 @@
+Version 0.7.6.1 (2020-06-16)
+========================
+* Hotfix: update kernel on some comma twos (orders #8553-#8680)
+
 Version 0.7.6 (2020-06-05)
 ========================
 * White panda is deprecated, upgrade to comma two or black panda
