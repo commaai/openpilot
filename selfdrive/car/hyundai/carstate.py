@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_HYBRID
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -30,9 +30,7 @@ def get_can_parser(CP):
     ("CF_Gway_TurnSigRh", "CGW1", 0),
     ("CF_Gway_ParkBrakeSw", "CGW1", 0),   # Parking Brake
 
-    ("BRAKE_ACT", "EMS12", 0),
-    ("PV_AV_CAN", "EMS12", 0),
-    ("TPS", "EMS12", 0),
+
 
     ("CYL_PRES", "ESP12", 0),
 
@@ -137,6 +135,22 @@ def get_can_parser(CP):
     checks += [
       ("SCC11", 50),
       ("SCC12", 50),
+    ]
+  if CP.carFingerprint in EV_HYBRID:
+    signals += [
+      ("Accel_Pedal_Pos", "E_EMS11", 0),
+    ]
+    checks += [
+      ("E_EMS11", 50),
+    ]
+  else:
+    signals += [
+      ("BRAKE_ACT", "EMS12", 0),
+      ("PV_AV_CAN", "EMS12", 0),
+      ("TPS", "EMS12", 0),
+    ]
+    checks += [
+      ("EMS12", 100),
     ]
   if CP.carFingerprint in FEATURES["use_cluster_gears"]:
     signals += [
@@ -352,11 +366,21 @@ class CarState(CarStateBase):
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.brake_lights = bool(cp.vl["TCS13"]['BrakeLight'] or self.brake_pressed)
-    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
-      self.pedal_gas = 0
+    if self.CP.carFingerprint in EV_HYBRID:
+      gas_press_amt = cp.vl["E_EMS11"]['Accel_Pedal_Pos'] / 100
+      if cp.vl["E_EMS11"]['Accel_Pedal_Pos'] > 5:
+        self.pedal_gas = gas_press_amt
+      else:
+        self.pedal_gas = 0
     else:
-      self.pedal_gas = cp.vl["EMS12"]['TPS']
-    self.car_gas = cp.vl["EMS12"]['TPS']
+      if cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1:
+        self.pedal_gas = 0
+      else:
+        self.pedal_gas = cp.vl["EMS12"]['TPS']
+    if self.CP.carFingerprint in EV_HYBRID:
+      self.car_gas = cp.vl["E_EMS11"]['Accel_Pedal_Pos'] / 100
+    else:
+      self.car_gas = cp.vl["EMS12"]['TPS']
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
     if self.car_fingerprint in FEATURES["use_cluster_gears"]:
