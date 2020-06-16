@@ -98,16 +98,14 @@ class CarController():
       at_full_stop = enabled and CS.out.standstill
       near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
       can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, apply_brake, idx, near_stop, at_full_stop))
-
-      at_full_stop = enabled and CS.out.standstill
       can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
 
     # Send dashboard UI commands (ACC status), 25hz
     if (frame % 4) == 0:
       # Send FCW if applicable
-      send_fcw = 0
+      send_fcw = False
       if self.fcw_frames > 0:
-        send_fcw = 0x3
+        send_fcw = True
         self.fcw_frames -= 1
 
       can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, send_fcw))
@@ -120,7 +118,7 @@ class CarController():
     if frame % time_and_headlights_step == 0:
       idx = (frame // time_and_headlights_step) % 4
       can_sends.append(gmcan.create_adas_time_status(CanBus.OBSTACLE, int((tt - self.start_time) * 60), idx))
-      can_sends.append(gmcan.create_adas_headlights_status(CanBus.OBSTACLE))
+      can_sends.append(gmcan.create_adas_headlights_status(self.packer_ch, CanBus.OBSTACLE))
 
     speed_and_accelerometer_step = 2
     if frame % speed_and_accelerometer_step == 0:
