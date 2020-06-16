@@ -113,8 +113,8 @@ class Localizer():
 
     fix = messaging.log.LiveLocationKalman.new_message()
     fix.positionGeodetic.value = to_float(fix_pos_geo)
-    #fix.positionGeodetic.std = to_float(fix_pos_geo_std)
-    #fix.positionGeodetic.valid = True
+    fix.positionGeodetic.std = to_float(np.nan*np.zeros(3))
+    fix.positionGeodetic.valid = True
     fix.positionECEF.value = to_float(fix_ecef)
     fix.positionECEF.std = to_float(fix_ecef_std)
     fix.positionECEF.valid = True
@@ -122,8 +122,8 @@ class Localizer():
     fix.velocityECEF.std = to_float(vel_ecef_std)
     fix.velocityECEF.valid = True
     fix.velocityNED.value = to_float(ned_vel)
-    #fix.velocityNED.std = to_float(ned_vel_std)
-    #fix.velocityNED.valid = True
+    fix.velocityNED.std = to_float(np.nan*np.zeros(3))
+    fix.velocityNED.valid = True
     fix.velocityDevice.value = to_float(vel_device)
     fix.velocityDevice.std = to_float(vel_device_std)
     fix.velocityDevice.valid = True
@@ -135,11 +135,11 @@ class Localizer():
     fix.orientationECEF.std = to_float(orientation_ecef_std)
     fix.orientationECEF.valid = True
     fix.calibratedOrientationECEF.value = to_float(calibrated_orientation_ecef)
-    #fix.calibratedOrientationECEF.std = to_float(calibrated_orientation_ecef_std)
-    #fix.calibratedOrientationECEF.valid = True
+    fix.calibratedOrientationECEF.std = to_float(np.nan*np.zeros(3))
+    fix.calibratedOrientationECEF.valid = True
     fix.orientationNED.value = to_float(orientation_ned)
-    #fix.orientationNED.std = to_float(orientation_ned_std)
-    #fix.orientationNED.valid = True
+    fix.orientationNED.std = to_float(np.nan*np.zeros(3))
+    fix.orientationNED.valid = True
     fix.angularVelocityDevice.value = to_float(predicted_state[States.ANGULAR_VELOCITY])
     fix.angularVelocityDevice.std = to_float(predicted_std[States.ANGULAR_VELOCITY_ERR])
     fix.angularVelocityDevice.valid = True
