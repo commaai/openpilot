@@ -178,6 +178,7 @@ FW_VERSIONS = {
       b'57114-TVA-C060\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TVA,A150\x00\x00',
       b'39990-TVA-A150\x00\x00',
       b'39990-TVA-A160\x00\x00',
       b'39990-TVA-X030\x00\x00',
