@@ -117,6 +117,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       ("Cruise_Set_Speed", "ES_DashStatus", 0),
+      ("Conventional_Cruise", "ES_DashStatus", 0),
 
       ("Counter", "ES_Distance", 0),
       ("Signal1", "ES_Distance", 0),
