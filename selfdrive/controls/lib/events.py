@@ -189,7 +189,6 @@ EVENTS = {
 
   EventName.gasPressed: {ET.PRE_ENABLE: None},
 
-  EventName.wrongCruiseMode: {},
   EventName.laneChangeBlocked: {},
 
   EventName.focusRecoverActive: {},
@@ -483,6 +482,11 @@ EVENTS = {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
     ET.NO_ENTRY: NoEntryAlert("Main Switch Off",
                               duration_hud_alert=0.),
+  },
+
+  EventName.wrongCruiseMode: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+    ET.NO_ENTRY: NoEntryAlert("Enable Adaptive Cruise"),
   },
 
   EventName.steerTempUnavailable: {
