@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
         model_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
         posenet_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
 
-        LOG("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
+        LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
         last = mt1;
       }
 
