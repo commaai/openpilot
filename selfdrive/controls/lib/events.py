@@ -518,11 +518,12 @@ EVENTS = {
   },
 
   EventName.neosUpdateRequired: {
-    ET.NO_ENTRY: Alert(
+    ET.PERMANENT: Alert(
       "NEOS Update Required",
       "Please Wait for Update",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGHEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.NO_ENTRY: NoEntryAlert("NEOS Update Required"),
   },
 
   EventName.sensorDataInvalid: {
