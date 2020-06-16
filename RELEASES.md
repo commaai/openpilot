@@ -1,6 +1,6 @@
 Version 0.7.6.1 (2020-06-16)
 ========================
-* Hotfix: update kernel on some comma twos (orders #8553-#8680)
+* Hotfix: update kernel on some comma twos (orders #8570-#8680)
 
 Version 0.7.6 (2020-06-05)
 ========================
