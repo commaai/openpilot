@@ -42,12 +42,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       continue;
     }
 
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-    auto ubloxRaw = event.getUbloxRaw();
+    auto ubloxRaw = message.getEvent().getUbloxRaw();
 
     const uint8_t *data = ubloxRaw.begin();
     size_t len = ubloxRaw.size();
@@ -102,9 +97,6 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
     }
     delete msg;
   }
-
-  delete subscriber;
-  delete context;
 
   return 0;
 }

@@ -203,40 +203,18 @@ void can_recv(PubMaster &pm) {
 void can_send_thread() {
   LOGD("start send thread");
 
-  Context * context = Context::create();
-  SubSocket * subscriber = SubSocket::create(context, "sendcan");
-  assert(subscriber != NULL);
-  subscriber->setTimeout(100);
+  SubMessage message("sendcan");
 
   // run as fast as messages come in
-  while (!do_exit && panda->connected) {
-    Message * msg = subscriber->receive();
-
-    if (!msg){
-      if (errno == EINTR) {
-        do_exit = true;
-      }
-      continue;
-    }
-
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    //Dont send if older than 1 second
-    if (nanos_since_boot() - event.getLogMonoTime() < 1e9) {
-      if (!fake_send){
-        panda->can_send(event.getSendcan());
-      }
+  while (!do_exit) {
+    if (message.receive()){
+      can_send(message.getEvent());
     }
 
     delete msg;
   }
 
-  delete subscriber;
-  delete context;
+  return NULL;
 }
 
 void can_recv_thread() {
