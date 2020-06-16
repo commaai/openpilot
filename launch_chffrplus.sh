@@ -55,18 +55,22 @@ function launch {
     fi
   fi
 
-  # no cpu rationing for now
-  echo 0-3 > /dev/cpuset/background/cpus
-  echo 0-3 > /dev/cpuset/system-background/cpus
-  echo 0-3 > /dev/cpuset/foreground/boost/cpus
-  echo 0-3 > /dev/cpuset/foreground/cpus
-  echo 0-3 > /dev/cpuset/android/cpus
+  # Android and other system processes are not permitted to run on CPU 3
+  # NEOS installed app processes can run anywhere
+  echo 0-2 > /dev/cpuset/background/cpus
+  echo 0-2 > /dev/cpuset/system-background/cpus
+  [ -d "/dev/cpuset/foreground/boost/cpus" ] && echo 0-2 > /dev/cpuset/foreground/boost/cpus  # Not present in < NEOS 15
+  echo 0-2 > /dev/cpuset/foreground/cpus
+  echo 0-2 > /dev/cpuset/android/cpus
+  echo 0-3 > /dev/cpuset/app/cpus
 
-  # change interrupt affinity
-  echo 3 > /proc/irq/6/smp_affinity_list # MDSS
-  echo 1 > /proc/irq/78/smp_affinity_list # Modem, can potentially lock up
-  echo 2 > /proc/irq/733/smp_affinity_list # USB
-  echo 2 > /proc/irq/736/smp_affinity_list # USB
+  # Collect RIL and other possibly long-running I/O interrupts onto CPU 1
+  echo 1 > /proc/irq/78/smp_affinity_list # qcom,smd-modem (LTE radio)
+  echo 1 > /proc/irq/33/smp_affinity_list # ufshcd (flash storage)
+  echo 1 > /proc/irq/35/smp_affinity_list # wifi (wlan_pci)
+  # USB traffic needs realtime handling on cpu 3
+  [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
+  [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
   DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
@@ -82,7 +86,17 @@ function launch {
       cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
+    if [ ! -f "$BASEDIR/prebuilt" ]; then
+      echo "Clearing build products and resetting scons state prior to NEOS update"
+      cd $BASEDIR && scons --clean
+      rm -rf /tmp/scons_cache
+      rm -r $BASEDIR/.sconsign.dblite
+    fi
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+  else
+    if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
+      "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
+    fi
   fi
 
 
