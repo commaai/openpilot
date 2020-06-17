@@ -185,7 +185,10 @@ FW_VERSIONS = {
   },
   CAR.PALISADE: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00LX2_ SCC FHCUP      1.00 1.04 99110-S8100         \xf1\xa01.04',],
-    (Ecu.esp, 0x7d1, None): [b'\xf1\x00LX ESC \x0b 102\x19\x05\x07 58910-S8330',],
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00LX ESC \x0b 102\x19\x05\x07 58910-S8330',
+      b'\xf1\x00LX ESC \v 102\x19\x05\a 58910-S8330\xf1\xa01.02',
+    ],
     (Ecu.engine, 0x7e0, None): [b'\xf1\x81640J0051\x00\x00\x00\x00\x00\x00\x00\x00',],
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8020 4LXDC103',],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 190125',],
