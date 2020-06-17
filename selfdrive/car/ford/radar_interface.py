@@ -19,12 +19,9 @@ def _create_radar_can_parser(car_fingerprint):
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
-    # radar
-    self.pts = {}
+    super().__init__(CP)
     self.validCnt = {key: 0 for key in RADAR_MSGS}
     self.track_id = 0
-
-    self.delay = 0  # Delay of radar
 
     self.rcp = _create_radar_can_parser(CP.carFingerprint)
     self.trigger_msg = 0x53f
@@ -53,7 +50,7 @@ class RadarInterface(RadarInterfaceBase):
       if cpt['X_Rel'] > 0.00001:
         self.validCnt[ii] += 1
       else:
-        self.validCnt[ii] = max(self.validCnt[ii] -1, 0)
+        self.validCnt[ii] = max(self.validCnt[ii] - 1, 0)
       #print ii, self.validCnt[ii], cpt['VALID'], cpt['X_Rel'], cpt['Angle']
 
       # radar point only valid if there have been enough valid measurements

@@ -1,6 +1,7 @@
 import os
 import time
 import random
+import threading
 from panda import Panda
 from nose.tools import assert_equal, assert_less, assert_greater
 from .helpers import panda_jungle, start_heartbeat_thread, reset_pandas, time_many_sends, test_all_pandas, test_all_gen2_pandas, clear_can_buffers, panda_connect_and_init
@@ -200,3 +201,44 @@ def test_gen2_loopback(p):
   finally:
     # Set back to silent mode
     p.set_safety_mode(Panda.SAFETY_SILENT)
+
+@test_all_pandas
+@panda_connect_and_init
+def test_bulk_write(p):
+  # The TX buffers on pandas is 0x100 in length.
+  NUM_MESSAGES_PER_BUS = 10000
+
+  def flood_tx(panda):
+    print('Sending!')
+    msg = b"\xaa"*4
+    packet = [[0xaa, None, msg, 0], [0xaa, None, msg, 1], [0xaa, None, msg, 2]] * NUM_MESSAGES_PER_BUS
+
+    # Disable timeout
+    panda.can_send_many(packet, timeout=0)
+    print(f"Done sending {3*NUM_MESSAGES_PER_BUS} messages!")
+  
+  # Start heartbeat
+  start_heartbeat_thread(p)
+
+  # Set safety mode and power saving
+  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_power_save(False)
+  
+  # Start transmisson
+  threading.Thread(target=flood_tx, args=(p,)).start()
+
+  # Receive as much as we can in a few second time period
+  rx = []
+  old_len = 0
+  start_time = time.time()
+  while time.time() - start_time < 2 or len(rx) > old_len:
+    old_len = len(rx)
+    rx.extend(panda_jungle.can_recv())
+  print(f"Received {len(rx)} messages")
+
+  # All messages should have been received
+  if len(rx) != 3*NUM_MESSAGES_PER_BUS:
+    Exception("Did not receive all messages!")
+
+  # Set back to silent mode
+  p.set_safety_mode(Panda.SAFETY_SILENT)

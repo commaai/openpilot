@@ -1,28 +1,31 @@
-#!/usr/bin/env python3.7
-import json
-import os
+#!/usr/bin/env python3
+import base64
 import hashlib
 import io
+import json
+import os
+import queue
 import random
 import select
 import socket
-import time
 import threading
-import base64
-import requests
-import queue
+import time
 from collections import namedtuple
 from functools import partial
+from typing import Any
+
+import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import create_connection, WebSocketTimeoutException, ABNF
-from selfdrive.loggerd.config import ROOT
+from websocket import ABNF, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
-from common import android
-from common.basedir import PERSIST
-from common.api import Api
-from common.params import Params
 from cereal.services import service_list
+from common import android
+from common.api import Api
+from common.basedir import PERSIST
+from common.params import Params
+from common.realtime import sec_since_boot
+from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -30,10 +33,10 @@ HANDLER_THREADS = os.getenv('HANDLER_THREADS', 4)
 LOCAL_PORT_WHITELIST = set([8022])
 
 dispatcher["echo"] = lambda s: s
-payload_queue = queue.Queue()
-response_queue = queue.Queue()
-upload_queue = queue.Queue()
-cancelled_uploads = set()
+payload_queue: Any = queue.Queue()
+response_queue: Any = queue.Queue()
+upload_queue: Any = queue.Queue()
+cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
 
 def handle_long_poll(ws):
@@ -272,8 +275,13 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
 def ws_recv(ws, end_event):
   while not end_event.is_set():
     try:
-      data = ws.recv()
-      payload_queue.put_nowait(data)
+      opcode, data = ws.recv_data(control_frame=True)
+      if opcode in (ABNF.OPCODE_TEXT, ABNF.OPCODE_BINARY):
+        if opcode == ABNF.OPCODE_TEXT:
+          data = data.decode("utf-8")
+        payload_queue.put_nowait(data)
+      elif opcode == ABNF.OPCODE_PING:
+        Params().put("LastAthenaPingTime", str(int(sec_since_boot()*1e9)))
     except WebSocketTimeoutException:
       pass
     except Exception:
@@ -294,7 +302,7 @@ def ws_send(ws, end_event):
 def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
-def main(gctx=None):
+def main():
   params = Params()
   dongle_id = params.get("DongleId").decode('utf-8')
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
@@ -316,6 +324,7 @@ def main(gctx=None):
     except Exception:
       cloudlog.exception("athenad.main.exception")
       conn_retries += 1
+      params.delete("LastAthenaPingTime")
 
     time.sleep(backoff(conn_retries))
 

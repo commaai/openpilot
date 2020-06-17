@@ -6,9 +6,11 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.hyundai.values import DBC
 
+
 def get_radar_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
+    ("ObjValid", "SCC11", 0),
     ("ACC_ObjStatus", "SCC11", 0),
     ("ACC_ObjLatPos", "SCC11", 0),
     ("ACC_ObjDist", "SCC11", 0),
@@ -20,17 +22,15 @@ def get_radar_can_parser(CP):
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
-    # radar
-    self.pts = {}
-    self.delay = 0  # Delay of radar
+    super().__init__(CP)
     self.rcp = get_radar_can_parser(CP)
     self.updated_messages = set()
     self.trigger_msg = 0x420
     self.track_id = 0
-    self.no_radar = CP.sccBus == -1
+    self.radar_off_can = CP.sccBus == -1
 
   def update(self, can_strings):
-    if self.no_radar:
+    if self.radar_off_can:
       if 'NO_RADAR_SLEEP' not in os.environ:
         time.sleep(0.05)  # radard runs on RI updates
 
@@ -42,11 +42,10 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    rr =  self._update(self.updated_messages)
+    rr = self._update(self.updated_messages)
     self.updated_messages.clear()
 
     return rr
-
 
   def _update(self, updated_messages):
     ret = car.RadarData.new_message()
@@ -56,7 +55,7 @@ class RadarInterface(RadarInterfaceBase):
       errors.append("canError")
     ret.errors = errors
 
-    valid = cpt["SCC11"]['ACC_ObjStatus']
+    valid = cpt["SCC11"]['ACC_ObjStatus'] and cpt["SCC11"]['ObjValid']
     if valid:
       for ii in range(2):
         if ii not in self.pts:

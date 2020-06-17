@@ -4,7 +4,6 @@ import os
 import sys
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety_replay.helpers import package_can_msg, init_segment
-from tools.lib.logreader import LogReader  # pylint: disable=import-error
 
 # replay a drive to check for safety violations
 def replay_drive(lr, safety_mode, param):
@@ -65,9 +64,13 @@ def replay_drive(lr, safety_mode, param):
   return tx_controls_blocked == 0 and rx_invalid == 0
 
 if __name__ == "__main__":
+  from tools.lib.route import Route
+  from tools.lib.logreader import MultiLogIterator # pylint: disable=import-error
+
   mode = int(sys.argv[2])
   param = 0 if len(sys.argv) < 4 else int(sys.argv[3])
-  lr = LogReader(sys.argv[1])
+  r = Route(sys.argv[1])
+  lr = MultiLogIterator(r.log_paths(), wraparound=False)
 
   print("replaying drive %s with safety mode %d and param %d" % (sys.argv[1], mode, param))
 

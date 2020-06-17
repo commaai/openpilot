@@ -32,6 +32,7 @@ def test_orientation_detection(p):
     reset_pandas()
     p.reconnect()
     detected_harness_orientation = p.health()['car_harness_status']
+    print(f"Detected orientation: {detected_harness_orientation}")
     if (i == 0 and detected_harness_orientation != 0) or detected_harness_orientation in seen_orientations:
       assert False
     seen_orientations.append(detected_harness_orientation)

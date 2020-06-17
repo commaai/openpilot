@@ -3,15 +3,27 @@
 #include "common/mat.h"
 #include "common/timing.h"
 
-// #include <fastcv.h>
 #include <libyuv.h>
 
 #define MODEL_WIDTH 160
 #define MODEL_HEIGHT 320
 #define FULL_W 426
 
+#if defined(QCOM) || defined(QCOM2)
+#define input_lambda(x) (x - 128.f) * 0.0078125f
+#else
+#define input_lambda(x) x // for non SNPE running platforms, assume keras model instead has lambda layer
+#endif
+
 void dmonitoring_init(DMonitoringModelState* s) {
-  s->m = new DefaultRunModel("../../models/dmonitoring_model_q.dlc", (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
+#if defined(QCOM) || defined(QCOM2)
+  const char* model_path = "../../models/dmonitoring_model_q.dlc";
+#else
+  const char* model_path = "../../models/dmonitoring_model.dlc";
+#endif
+  s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
+  s->is_rhd = false;
+  s->is_rhd_checked = false;
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
@@ -32,7 +44,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   uint8_t *cropped_u_buf = cropped_y_buf + (cropped_width * cropped_height);
   uint8_t *cropped_v_buf = cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
 
-  if (true) {
+  if (!s->is_rhd) {
     for (int r = 0; r < height/2; r++) {
       memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + 2*r*width + (width - cropped_width), cropped_width);
       memcpy(cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r+1)*width + (width - cropped_width), cropped_width);
@@ -58,6 +70,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                        cropped_u_buf, cropped_width/2,
                        cropped_v_buf, cropped_width/2,
                        cropped_width, cropped_height);
+    delete[] premirror_cropped_buf;
   }
 
   uint8_t *resized_buf = new uint8_t[resized_width*resized_height*3/2];
@@ -84,27 +97,28 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   for (int r = 0; r < MODEL_HEIGHT/2; r++) {
     for (int c = 0; c < MODEL_WIDTH/2; c++) {
       // Y_ul
-      net_input_buf[(c*MODEL_HEIGHT/2) + r] = (resized_buf[(2*r*resized_width) + (2*c)] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r] = input_lambda(resized_buf[(2*r*resized_width) + (2*c)]);
       // Y_ur
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width) + (2*c+1)] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width) + (2*c+1)]);
       // Y_dl
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width+1) + (2*c)] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width+1) + (2*c)]);
       // Y_dr
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(2*r*resized_width+1) + (2*c+1)] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width+1) + (2*c+1)]);
       // U
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c]);
       // V
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = (resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c] - 128.f) * 0.0078125f;
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c]);
     }
   }
 
-  // FILE *dump_yuv_file = fopen("/sdcard/rawdump.yuv", "wb");
-  // fwrite(raw_buf, height*width*3/2, sizeof(uint8_t), dump_yuv_file);
-  // fclose(dump_yuv_file);
+  //printf("preprocess completed. %d \n", yuv_buf_len);
+  //FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
+  //fwrite(raw_buf, height*width*3/2, sizeof(uint8_t), dump_yuv_file);
+  //fclose(dump_yuv_file);
 
-  // FILE *dump_yuv_file2 = fopen("/sdcard/inputdump.yuv", "wb");
-  // fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
-  // fclose(dump_yuv_file2);
+  //FILE *dump_yuv_file2 = fopen("/tmp/inputdump.yuv", "wb");
+  //fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
+  //fclose(dump_yuv_file2);
 
   delete[] cropped_buf;
   delete[] resized_buf;
@@ -129,7 +143,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   return ret;
 }
 
-void dmonitoring_publish(PubSocket* sock, uint32_t frame_id, const DMonitoringResult res) {
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult res) {
   // make msg
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -152,10 +166,7 @@ void dmonitoring_publish(PubSocket* sock, uint32_t frame_id, const DMonitoringRe
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
 
-  // send message
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  sock->send((char*)bytes.begin(), bytes.size());
+  pm.send("driverState", msg);
 }
 
 void dmonitoring_free(DMonitoringModelState* s) {

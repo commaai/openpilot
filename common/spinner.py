@@ -40,7 +40,7 @@ class Spinner():
     self.close()
 
 
-class FakeSpinner():
+class FakeSpinner(Spinner):
   def __init__(self):
     pass
 
@@ -48,6 +48,9 @@ class FakeSpinner():
     return self
 
   def update(self, _):
+    pass
+
+  def close(self):
     pass
 
   def __exit__(self, type, value, traceback):

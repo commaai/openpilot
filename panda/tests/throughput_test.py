@@ -19,7 +19,7 @@ if __name__ == "__main__":
   p_in = Panda("WIFI")
   print(p_in.get_serial())
 
-  p_in = PandaWifiStreaming()
+  p_in = PandaWifiStreaming()  # type: ignore
 
   #while True:
   #  p_in.can_recv()

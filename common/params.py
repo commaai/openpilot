@@ -23,7 +23,6 @@ file in place without messing with <params_dir>/d.
 import time
 import os
 import errno
-import sys
 import shutil
 import fcntl
 import tempfile
@@ -50,7 +49,7 @@ class UnknownKeyName(Exception):
 
 
 keys = {
-  "AccessToken": [TxType.PERSISTENT],
+  "AccessToken": [TxType.CLEAR_ON_MANAGER_START],
   "AthenadPid": [TxType.PERSISTENT],
   "CalibrationParams": [TxType.PERSISTENT],
   "CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
@@ -59,6 +58,7 @@ keys = {
   "CommunityFeaturesToggle": [TxType.PERSISTENT],
   "CompletedTrainingVersion": [TxType.PERSISTENT],
   "ControlsParams": [TxType.PERSISTENT],
+  "DisablePowerDown": [TxType.PERSISTENT],
   "DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
   "DongleId": [TxType.PERSISTENT],
   "GitBranch": [TxType.PERSISTENT],
@@ -67,6 +67,7 @@ keys = {
   "GithubSshKeys": [TxType.PERSISTENT],
   "HasAcceptedTerms": [TxType.PERSISTENT],
   "HasCompletedSetup": [TxType.PERSISTENT],
+  "IsDriverViewEnabled": [TxType.CLEAR_ON_MANAGER_START],
   "IsLdwEnabled": [TxType.PERSISTENT],
   "IsGeofenceEnabled": [TxType.PERSISTENT],
   "IsMetric": [TxType.PERSISTENT],
@@ -75,6 +76,7 @@ keys = {
   "IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
   "IsUpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
   "IsUploadRawEnabled": [TxType.PERSISTENT],
+  "LastAthenaPingTime": [TxType.PERSISTENT],
   "LastUpdateTime": [TxType.PERSISTENT],
   "LimitSetSpeed": [TxType.PERSISTENT],
   "LimitSetSpeedNeural": [TxType.PERSISTENT],
@@ -193,7 +195,8 @@ class DBReader(DBAccessor):
     finally:
       lock.release()
 
-  def __exit__(self, type, value, traceback): pass
+  def __exit__(self, type, value, traceback):
+    pass
 
 
 class DBWriter(DBAccessor):
@@ -396,22 +399,3 @@ def put_nonblocking(key, val):
   t = threading.Thread(target=f, args=(key, val))
   t.start()
   return t
-
-
-if __name__ == "__main__":
-  params = Params()
-  if len(sys.argv) > 2:
-    params.put(sys.argv[1], sys.argv[2])
-  else:
-    for k in keys:
-      pp = params.get(k)
-      if pp is None:
-        print("%s is None" % k)
-      elif all(ord(c) < 128 and ord(c) >= 32 for c in pp):
-        print("%s = %s" % (k, pp))
-      else:
-        print("%s = %s" % (k, pp.encode("hex")))
-
-  # Test multiprocess:
-  # seq 0 100000 | xargs -P20 -I{} python common/params.py DongleId {} && sleep 0.05
-  # while python common/params.py DongleId; do sleep 0.05; done

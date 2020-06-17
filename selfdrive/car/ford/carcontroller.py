@@ -8,12 +8,12 @@ MAX_STEER_DELTA = 1
 TOGGLE_DEBUG = False
 
 class CarController():
-  def __init__(self, dbc_name, enable_camera, vehicle_model):
+  def __init__(self, dbc_name, CP, VM):
     self.packer = CANPacker(dbc_name)
-    self.enable_camera = enable_camera
+    self.enable_camera = CP.enableCamera
     self.enabled_last = False
     self.main_on_last = False
-    self.vehicle_model = vehicle_model
+    self.vehicle_model = VM
     self.generic_toggle_last = 0
     self.steer_alert_last = False
     self.lkas_action = 0
@@ -78,7 +78,7 @@ class CarController():
       static_msgs = range(1653, 1658)
       for addr in static_msgs:
         cnt = (frame % 10) + 1
-        can_sends.append(make_can_msg(addr, (cnt<<4).to_bytes(1, 'little') + b'\x00\x00\x00\x00\x00\x00\x00', 1))
+        can_sends.append(make_can_msg(addr, (cnt << 4).to_bytes(1, 'little') + b'\x00\x00\x00\x00\x00\x00\x00', 1))
 
       self.enabled_last = enabled
       self.main_on_last = CS.out.cruiseState.available

@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <eigen3/Eigen/Dense>
 
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
 
 #include "models/driving.h"
-
+#include "messaging.hpp"
 volatile sig_atomic_t do_exit = 0;
 
 static void set_do_exit(int sig) {
@@ -22,12 +23,7 @@ void* live_thread(void *arg) {
   int err;
   set_thread_name("live");
 
-  Context * c = Context::create();
-  SubSocket * live_calibration_sock = SubSocket::create(c, "liveCalibration");
-  assert(live_calibration_sock != NULL);
-
-  Poller * poller = Poller::create({live_calibration_sock});
-
+  SubMaster sm({"liveCalibration"});
   /*
      import numpy as np
      from common.transformations.model import medmodel_frame_from_road_frame
@@ -47,46 +43,31 @@ void* live_thread(void *arg) {
     0.0,   0.0,   1.0;
 
   while (!do_exit) {
-    for (auto sock : poller->poll(10)){
-      Message * msg = sock->receive();
-
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-      if (event.isLiveCalibration()) {
-        pthread_mutex_lock(&transform_lock);
-
-        auto extrinsic_matrix = event.getLiveCalibration().getExtrinsicMatrix();
-        Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
-        for (int i = 0; i < 4*3; i++){
-          extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
-        }
-
-        auto camera_frame_from_road_frame = eon_intrinsics * extrinsic_matrix_eigen;
-        Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
-        camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
-        camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
-        camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
-
-        auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
-
-        for (int i=0; i<3*3; i++) {
-          cur_transform.v[i] = warp_matrix(i / 3, i % 3);
-        }
-
-        run_model = true;
-        pthread_mutex_unlock(&transform_lock);
+    if (sm.update(10) > 0){
+      
+      auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
+      Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
+      for (int i = 0; i < 4*3; i++){
+        extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
 
-      delete msg;
+      auto camera_frame_from_road_frame = eon_intrinsics * extrinsic_matrix_eigen;
+      Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
+      camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
+      camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
+      camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
+
+      auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
+
+      pthread_mutex_lock(&transform_lock);
+      for (int i=0; i<3*3; i++) {
+        cur_transform.v[i] = warp_matrix(i / 3, i % 3);
+      }
+
+      run_model = true;
+      pthread_mutex_unlock(&transform_lock);
     }
-
   }
-
-
   return NULL;
 }
 
@@ -100,14 +81,8 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  Context *msg_context = Context::create();
-  PubSocket *model_sock = PubSocket::create(msg_context, "model");
-  PubSocket *posenet_sock = PubSocket::create(msg_context, "cameraOdometry");
-  SubSocket *pathplan_sock = SubSocket::create(msg_context, "pathPlan", "127.0.0.1", true);
-
-  assert(model_sock != NULL);
-  assert(posenet_sock != NULL);
-  assert(pathplan_sock != NULL);
+  PubMaster pm({"model", "cameraOdometry"});
+  SubMaster sm({"pathPlan"});
 
   // cl init
   cl_device_id device_id;
@@ -121,7 +96,7 @@ int main(int argc, char **argv) {
 
     err = clGetPlatformIDs(sizeof(platform_id)/sizeof(cl_platform_id), platform_id, &num_platforms);
     assert(err == 0);
-    
+
     #ifdef QCOM
       int clPlatform = 0;
     #else
@@ -163,7 +138,7 @@ int main(int argc, char **argv) {
     VisionStreamBufs buf_info;
     err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
     if (err) {
-      printf("visionstream connect fail\n");
+      LOGW("visionstream connect failed");
       usleep(100000);
       continue;
     }
@@ -180,7 +155,8 @@ int main(int argc, char **argv) {
       VIPCBufExtra extra;
       buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
-        printf("visionstream get failed\n");
+        LOGW("visionstream get failed");
+        visionstream_destroy(&stream);
         break;
       }
 
@@ -189,24 +165,15 @@ int main(int argc, char **argv) {
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
-      Message *msg = pathplan_sock->receive(true);
-      if (msg != NULL) {
-        // TODO: copy and pasted from camerad/main.cc
-        auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-        memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-        capnp::FlatArrayMessageReader cmsg(amsg);
-        cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
+      if (sm.update(0) > 0){
         // TODO: path planner timeout?
-        desire = ((int)event.getPathPlan().getDesire()) - 1;
-        delete msg;
+        desire = ((int)sm["pathPlan"].getPathPlan().getDesire()) - 1;
       }
 
       double mt1 = 0, mt2 = 0;
       if (run_model_this_iter) {
-        float vec_desire[DESIRE_SIZE] = {0};
-        if (desire >= 0 && desire < DESIRE_SIZE) {
+        float vec_desire[DESIRE_LEN] = {0};
+        if (desire >= 0 && desire < DESIRE_LEN) {
           vec_desire[desire] = 1.0;
         }
 
@@ -222,8 +189,8 @@ int main(int argc, char **argv) {
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
-        model_publish(model_sock, extra.frame_id, model_buf, extra.timestamp_eof);
-        posenet_publish(posenet_sock, extra.frame_id, model_buf, extra.timestamp_eof);
+        model_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
+        posenet_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
         last = mt1;
@@ -235,8 +202,6 @@ int main(int argc, char **argv) {
 
   visionstream_destroy(&stream);
 
-  delete model_sock;
-  
   model_free(&model);
 
   LOG("joining live_thread");

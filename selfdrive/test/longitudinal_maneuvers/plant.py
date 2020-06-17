@@ -29,7 +29,7 @@ CP = CarInterface.get_params(CAR.CIVIC, {0: {0x201: 6}, 1: {}, 2: {}, 3: {}})
 def can_cksum(mm):
   s = 0
   for c in mm:
-    s += (c>>4)
+    s += (c >> 4)
     s += c & 0xF
   s = 8-s
   s %= 0x10
@@ -45,7 +45,7 @@ def car_plant(pos, speed, grade, gas, brake):
   mass = 1700
   aero_cd = 0.3
   force_peak = mass*3.
-  force_brake_peak = -mass*10.     #1g
+  force_brake_peak = -mass*10.  # 1g
   power_peak = 100000   # 100kW
   speed_base = power_peak/force_peak
   rolling_res = 0.01
@@ -129,7 +129,7 @@ class Plant():
     self.esp_disabled = 0
     self.main_on = 1
     self.user_gas = 0
-    self.computer_brake,self.user_brake = 0,0
+    self.computer_brake, self.user_brake = 0, 0
     self.brake_pressed = 0
     self.angle_steer_rate = 0
     self.distance, self.distance_prev = 0., 0.
@@ -163,7 +163,7 @@ class Plant():
     Plant.live_params.close()
 
   def speed_sensor(self, speed):
-    if speed<0.3:
+    if speed < 0.3:
       return 0
     else:
       return speed * CV.MS_TO_KPH
@@ -277,13 +277,13 @@ class Plant():
     vls = vls_tuple(
            self.speed_sensor(speed),
            self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
-           self.angle_steer, self.angle_steer_rate, 0, 0,#Steer torque sensor
+           self.angle_steer, self.angle_steer_rate, 0, 0,  # Steer torque sensor
            0, 0,  # Blinkers
            self.gear_choice,
            speed != 0,
            self.brake_error, self.brake_error,
            not self.seatbelt, self.seatbelt,  # Seatbelt
-           self.brake_pressed, 0., #Brake pressed, Brake switch
+           self.brake_pressed, 0.,  # Brake pressed, Brake switch
            cruise_buttons,
            self.esp_disabled,
            0,  # HUD lead
@@ -339,9 +339,9 @@ class Plant():
     # TODO: use the DBC
     if self.frame % 5 == 0:
       radar_state_msg = b'\x79\x00\x00\x00\x00\x00\x00\x00'
-      radar_msg = to_3_byte(d_rel*16.0) + \
-                  to_3_byte(int(lateral_pos_rel*16.0)&0x3ff) + \
-                  to_3s_byte(int(v_rel*32.0)) + \
+      radar_msg = to_3_byte(d_rel * 16.0) + \
+                  to_3_byte(int(lateral_pos_rel * 16.0) & 0x3ff) + \
+                  to_3s_byte(int(v_rel * 32.0)) + \
                   b"0f00000"
 
       radar_msg = binascii.unhexlify(radar_msg)
@@ -357,8 +357,7 @@ class Plant():
 
 
     # Fake sockets that controlsd subscribes to
-    live_parameters = messaging.new_message()
-    live_parameters.init('liveParameters')
+    live_parameters = messaging.new_message('liveParameters')
     live_parameters.liveParameters.valid = True
     live_parameters.liveParameters.sensorValid = True
     live_parameters.liveParameters.posenetValid = True
@@ -366,19 +365,16 @@ class Plant():
     live_parameters.liveParameters.stiffnessFactor = 1.0
     Plant.live_params.send(live_parameters.to_bytes())
 
-    driver_state = messaging.new_message()
-    driver_state.init('driverState')
+    driver_state = messaging.new_message('driverState')
     driver_state.driverState.faceOrientation = [0.] * 3
     driver_state.driverState.facePosition = [0.] * 2
     Plant.driverState.send(driver_state.to_bytes())
 
-    health = messaging.new_message()
-    health.init('health')
+    health = messaging.new_message('health')
     health.health.controlsAllowed = True
     Plant.health.send(health.to_bytes())
 
-    thermal = messaging.new_message()
-    thermal.init('thermal')
+    thermal = messaging.new_message('thermal')
     thermal.thermal.freeSpace = 1.
     thermal.thermal.batteryPercent = 100
     Plant.thermal.send(thermal.to_bytes())
@@ -386,10 +382,8 @@ class Plant():
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     if publish_model and self.frame % 5 == 0:
-      md = messaging.new_message()
-      cal = messaging.new_message()
-      md.init('model')
-      cal.init('liveCalibration')
+      md = messaging.new_message('model')
+      cal = messaging.new_message('liveCalibration')
       md.model.frameId = 0
       for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
         x.points = [0.0]*50

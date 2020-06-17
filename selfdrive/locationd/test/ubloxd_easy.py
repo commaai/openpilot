@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 
 import os
 from selfdrive.locationd.test import ublox
@@ -10,7 +11,7 @@ import cereal.messaging as messaging
 
 unlogger = os.getenv("UNLOGGER") is not None   # debug prints
 
-def main(gctx=None):
+def main():
   poller = zmq.Poller()
 
   gpsLocationExternal = messaging.pub_sock('gpsLocationExternal')

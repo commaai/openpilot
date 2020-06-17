@@ -1,3 +1,5 @@
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -15,7 +17,7 @@
 
 #include <libyuv.h>
 
-#include <android/log.h>
+//#include <android/log.h>
 
 #include <msm_media_info.h>
 
@@ -24,7 +26,8 @@
 
 #include "encoder.h"
 
-#define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
+
+//#define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
 
 // encoder: lossey codec using hardware hevc
 static void wait_for_state(EncoderState *s, OMX_STATETYPE state) {
@@ -57,8 +60,6 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
     assert(false);
     break;
   }
-
-  pthread_mutex_unlock(&s->state_lock);
 
   return OMX_ErrorNone;
 }
@@ -204,6 +205,9 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
     err = OMX_GetHandle(&s->handle, (OMX_STRING)"OMX.qcom.video.encoder.avc",
                         s, &omx_callbacks);
   }
+  if (err != OMX_ErrorNone) {
+    LOGE("error getting codec: %x", err);
+  }
   assert(err == OMX_ErrorNone);
   // printf("handle: %p\n", s->handle);
 
@@ -225,7 +229,7 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   in_port.format.video.xFramerate = (s->fps * 65536);
   in_port.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
   // in_port.format.video.eColorFormat = OMX_COLOR_FormatYUV420SemiPlanar;
-  in_port.format.video.eColorFormat = QOMX_COLOR_FORMATYUV420PackedSemiPlanar32m;
+  in_port.format.video.eColorFormat = (OMX_COLOR_FORMATTYPE)QOMX_COLOR_FORMATYUV420PackedSemiPlanar32m;
 
   err = OMX_SetParameter(s->handle, OMX_IndexParamPortDefinition,
                          (OMX_PTR) &in_port);
@@ -283,20 +287,22 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   assert(err == OMX_ErrorNone);
 
   if (h265) {
-    // setup HEVC
-    OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
-    hecv_type.nSize = sizeof(hecv_type);
-    hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
-    err = OMX_GetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
-                           (OMX_PTR) &hecv_type);
-    assert(err == OMX_ErrorNone);
+    #ifndef QCOM2
+      // setup HEVC
+      OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
+      hecv_type.nSize = sizeof(hecv_type);
+      hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
+      err = OMX_GetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
+                             (OMX_PTR) &hecv_type);
+      assert(err == OMX_ErrorNone);
 
-    hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
-    hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
+      hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
+      hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
 
-    err = OMX_SetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
-                           (OMX_PTR) &hecv_type);
-    assert(err == OMX_ErrorNone);
+      err = OMX_SetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
+                             (OMX_PTR) &hecv_type);
+      assert(err == OMX_ErrorNone);
+    #endif
   } else {
     // setup h264
     OMX_VIDEO_PARAM_AVCTYPE avc = { 0 };
@@ -552,6 +558,7 @@ void encoder_open(EncoderState *s, const char* path) {
   pthread_mutex_lock(&s->lock);
 
   snprintf(s->vid_path, sizeof(s->vid_path), "%s/%s", path, s->filename);
+  LOGD("encoder_open %s remuxing:%d", s->vid_path, s->remuxing);
 
   if (s->remuxing) {
     avformat_alloc_output_context2(&s->ofmt_ctx, NULL, NULL, s->vid_path);

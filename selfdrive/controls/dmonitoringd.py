@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import gc
+from cereal import car
 from common.realtime import set_realtime_priority
-from common.params import Params, put_nonblocking
+from common.params import Params
 import cereal.messaging as messaging
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
+from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
 from selfdrive.locationd.calibration_helpers import Calibration
-from selfdrive.controls.lib.gps_helpers import is_rhd_region
 
 def dmonitoringd_thread(sm=None, pm=None):
   gc.disable()
@@ -21,12 +21,13 @@ def dmonitoringd_thread(sm=None, pm=None):
     pm = messaging.PubMaster(['dMonitoringState'])
 
   if sm is None:
-    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model', 'gpsLocation'], ignore_alive=['gpsLocation'])
+    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model'])
 
   driver_status = DriverStatus()
   is_rhd = params.get("IsRHD")
   if is_rhd is not None:
     driver_status.is_rhd_region = bool(int(is_rhd))
+    driver_status.is_rhd_region_checked = True
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
   sm['carState'].vEgo = 0.
@@ -36,20 +37,13 @@ def dmonitoringd_thread(sm=None, pm=None):
   sm['carState'].steeringPressed = False
   sm['carState'].standstill = True
 
-  cal_rpy = [0,0,0]
+  cal_rpy = [0, 0, 0]
   v_cruise_last = 0
   driver_engaged = False
 
   # 10Hz <- dmonitoringmodeld
   while True:
     sm.update()
-
-    # GPS coords RHD parsing, once every restart
-    if not driver_status.is_rhd_region_checked and sm.updated['gpsLocation']:
-      is_rhd = is_rhd_region(sm['gpsLocation'].latitude, sm['gpsLocation'].longitude)
-      driver_status.is_rhd_region = is_rhd
-      driver_status.is_rhd_region_checked = True
-      put_nonblocking("IsRHD", "1" if is_rhd else "0")
 
     # Handle calibration
     if sm.updated['liveCalibration']:
@@ -64,7 +58,7 @@ def dmonitoringd_thread(sm=None, pm=None):
                         v_cruise != v_cruise_last or \
                         sm['carState'].steeringPressed
       if driver_engaged:
-        _ = driver_status.update([], True, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
+        driver_status.update(Events(), True, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
       v_cruise_last = v_cruise
 
     # Get model meta
@@ -73,19 +67,18 @@ def dmonitoringd_thread(sm=None, pm=None):
 
     # Get data from dmonitoringmodeld
     if sm.updated['driverState']:
-      events = []
+      events = Events()
       driver_status.get_pose(sm['driverState'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
       # Block any engage after certain distrations
       if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
-        events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
+        events.add(car.CarEvent.EventName.tooDistracted)
       # Update events from driver state
-      events = driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
+      driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
 
       # dMonitoringState packet
-      dat = messaging.new_message()
-      dat.init('dMonitoringState')
+      dat = messaging.new_message('dMonitoringState')
       dat.dMonitoringState = {
-        "events": events,
+        "events": events.to_msg(),
         "faceDetected": driver_status.face_detected,
         "isDistracted": driver_status.driver_distracted,
         "awarenessStatus": driver_status.awareness,
@@ -100,6 +93,7 @@ def dmonitoringd_thread(sm=None, pm=None):
         "awarenessPassive": driver_status.awareness_passive,
         "isLowStd": driver_status.pose.low_std,
         "hiStdCount": driver_status.hi_stds,
+        "isPreview": False,
       }
       pm.send('dMonitoringState', dat)
 

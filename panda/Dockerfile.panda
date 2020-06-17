@@ -1,0 +1,66 @@
+FROM ubuntu:16.04
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH /tmp/openpilot:$PYTHONPATH
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    autoconf \
+    automake \
+    bzip2 \
+    capnproto \
+    clang \
+    curl \
+    g++ \
+    gcc-arm-none-eabi libnewlib-arm-none-eabi \
+    git \
+    libarchive-dev \
+    libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev \
+    libbz2-dev \
+    libcapnp-dev \
+    libcurl4-openssl-dev \
+    libffi-dev \
+    libtool \
+    libssl-dev \
+    libsqlite3-dev \
+    libusb-1.0-0 \
+    libzmq3-dev \
+    locales \
+    make \
+    pkg-config \
+    python \
+    python-dev \
+    python-pip \
+    unzip \
+    wget \
+    zlib1g-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
+
+COPY requirements.txt /tmp/
+RUN pyenv install 3.7.3 && \
+    pyenv global 3.7.3 && \
+    pyenv rehash && \
+    pip install --no-cache-dir --upgrade pip==18.0 && \
+    pip install --no-cache-dir -r /tmp/requirements.txt
+
+RUN cd /tmp && \
+    git clone https://github.com/commaai/openpilot.git tmppilot || true && \
+    cd /tmp/tmppilot && \
+    git pull && git checkout 44560b5bb74e451767725144c3fa5f1564481a20 && \
+    git submodule update --init cereal opendbc && \
+    mkdir /tmp/openpilot && \
+    cp -pR SConstruct tools/ selfdrive/ common/ cereal/ opendbc/ /tmp/openpilot && \
+    rm -rf /tmp/tmppilot
+
+RUN cd /tmp/openpilot && \
+    pip install --no-cache-dir -r opendbc/requirements.txt && \
+    pip install --no-cache-dir -r tools/requirements.txt
+
+COPY . /tmp/openpilot/panda
+RUN rm -rf /tmp/openpilot/panda/.git

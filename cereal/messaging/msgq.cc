@@ -90,8 +90,10 @@ int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
   auto fd = open(full_path, O_RDWR | O_CREAT, 0777);
   delete[] full_path;
 
-  if (fd < 0)
+  if (fd < 0) {
+    std::cout << "Warning, could not open: " << full_path << std::endl;
     return -1;
+  }
 
   int rc = ftruncate(fd, size + sizeof(msgq_header_t));
   if (rc < 0)

@@ -81,17 +81,28 @@ __kernel void debayer10(__global uchar const * const in,
 
       float4 p = convert_float4(pint);
 
+#if NEW == 1
+      // now it's 0x2a
+      const float black_level = 42.0f;
+      // max on black level
+      p = max(0.0, p - black_level);
+#else
       // 64 is the black level of the sensor, remove
       // (changed to 56 for HDR)
       const float black_level = 56.0f;
+      // TODO: switch to max here?
       p = (p - black_level);
+#endif
 
+
+#if NEW == 0
       // correct vignetting (no pow function?)
       // see https://www.eecis.udel.edu/~jye/lab_research/09/JiUp.pdf the A (4th order)
       const float r = ((oy - RGB_HEIGHT/2)*(oy - RGB_HEIGHT/2) + (ox - RGB_WIDTH/2)*(ox - RGB_WIDTH/2));
       const float fake_f = 700.0f;    // should be 910, but this fits...
       const float lil_a = (1.0f + r/(fake_f*fake_f));
       p = p * lil_a * lil_a;
+#endif
 
       // rescale to 1.0
 #if HDR
@@ -114,8 +125,12 @@ __kernel void debayer10(__global uchar const * const in,
       float3 c1 = (float3)(p.s0, (p.s1+p.s2)/2.0f, p.s3);
 #endif
 
+#if NEW
+      // TODO: new color correction
+#else
       // color correction
       c1 = color_correct(c1);
+#endif
 
 #if HDR
       // srgb gamma isn't right for YUV, so it's disabled for now

@@ -20,7 +20,9 @@ a.out
 .*.un~
 *.tmp
 *.o
+*.o-*
 *.os
+*.os-*
 *.so
 *.a
 *.clb
@@ -54,6 +56,9 @@ xx
 panda_jungle
 
 .coverage*
+coverage.xml
+cppcheck_report.txt
 htmlcov
 pandaextra
 
+.mypy_cache/

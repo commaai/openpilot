@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 
 import os
 import serial
@@ -20,7 +21,7 @@ print_dB = os.getenv("PRINT_DB") is not None     # print antenna dB
 timeout = 1
 dyn_model = 4 # auto model
 baudrate = 460800
-ports = ["/dev/ttyACM0","/dev/ttyACM1"]
+ports = ["/dev/ttyACM0", "/dev/ttyACM1"]
 rate = 100 # send new data every 100ms
 
 # which SV IDs we have seen and when we got iono
@@ -82,7 +83,7 @@ def configure_ublox(dev):
 
 def int_to_bool_list(num):
   # for parsing bool bytes
-  return [bool(num & (1<<n)) for n in range(8)]
+  return [bool(num & (1 << n)) for n in range(8)]
 
 
 def gen_ephemeris(ephem_data):
@@ -133,9 +134,9 @@ def gen_solution(msg):
                                       msg_data['day'],
                                       msg_data['hour'],
                                       msg_data['min'],
-                                      msg_data['sec'])
-                 - datetime.datetime(1970,1,1)).total_seconds())*1e+03
-                 + msg_data['nano']*1e-06)
+                                      msg_data['sec']) -
+                 datetime.datetime(1970, 1, 1)).total_seconds())*1e+03 +
+                 msg_data['nano']*1e-06)
   gps_fix = {'bearing': msg_data['headMot']*1e-05,  # heading of motion in degrees
              'altitude': msg_data['height']*1e-03,  # altitude above ellipsoid
              'latitude': msg_data['lat']*1e-07,  # latitude in degrees
@@ -162,9 +163,9 @@ def gen_nav_data(msg, nav_frame_buffer):
 
   # parse GPS ephem
   gnssId = msg_meta_data['gnssId']
-  if gnssId  == 0:
-    svId =  msg_meta_data['svid']
-    subframeId =  GET_FIELD_U(measurements[1]['dwrd'], 3, 8)
+  if gnssId == 0:
+    svId = msg_meta_data['svid']
+    subframeId = GET_FIELD_U(measurements[1]['dwrd'], 3, 8)
     words = []
     for m in measurements:
       words.append(m['dwrd'])
@@ -243,7 +244,7 @@ def init_reader():
       return dev
     except serial.serialutil.SerialException as e:
       print(e)
-      port_counter = (port_counter + 1)%len(ports)
+      port_counter = (port_counter + 1) % len(ports)
       time.sleep(2)
 
 def handle_msg(dev, msg, nav_frame_buffer):
@@ -276,11 +277,11 @@ def handle_msg(dev, msg, nav_frame_buffer):
   #if dev is not None and dev.dev is not None:
   #  dev.close()
 
-def main(gctx=None):
+def main():
   global gpsLocationExternal, ubloxGnss
   nav_frame_buffer = {}
   nav_frame_buffer[0] = {}
-  for i in range(1,33):
+  for i in range(1, 33):
     nav_frame_buffer[0][i] = {}
 
 
