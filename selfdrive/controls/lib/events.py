@@ -480,7 +480,7 @@ EVENTS = {
 
   EventName.wrongCarMode: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
-    ET.NO_ENTRY: NoEntryAlert("Main Switch Off",
+    ET.NO_ENTRY: NoEntryAlert("Cruise Mode Not Enabled",
                               duration_hud_alert=0.),
   },
 
