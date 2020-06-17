@@ -388,6 +388,10 @@ routes = {
   #  'carFingerprint': SUBARU.FORESTER,
   #  'enableCamera': True,
   #},
+  #"df5ca7660000fba8|2020-06-16--17-37-19": {
+  #  'carFingerprint': SUBARU.LEGACY,
+  #  'enableCamera': True,
+  #},
   "791340bc01ed993d|2019-03-10--16-28-08": {
     'carFingerprint': SUBARU.IMPREZA,
     'enableCamera': True,
