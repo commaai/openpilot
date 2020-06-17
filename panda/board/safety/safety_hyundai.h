@@ -329,7 +329,7 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
       }
     }
     if (bus_num == 2) {
-      if (!OP_LKAS_live || (addr != 832 && addr != 1157) {
+      if (!OP_LKAS_live || (addr != 832 && addr != 1157)) {
         if ((addr != 1057) || (!OP_SCC_live)) {
           bus_fwd = hyundai_forward_bus1 ? 10 : 0;
         } else {
