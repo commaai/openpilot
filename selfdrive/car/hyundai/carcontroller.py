@@ -6,8 +6,10 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create
                                              create_scc13, create_scc14
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
+from selfdrive.config import Conversions as CV
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+min_set_speed = 30 * CV.KPH_TO_MS
 
 # Accel limits
 ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
@@ -69,7 +71,8 @@ class CarController():
     self.last_lead_distance = 0
     self.turning_signal_timer = 0
     self.lkas_button_on = True
-    self.longcontrol = True #TODO: make auto
+    self.longcontrol = CP.openpilotLongitudinalControl
+    self.scc_live = not CP.radarOffCan
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart, set_speed, lead_visible):
@@ -92,7 +95,7 @@ class CarController():
     lkas_active = enabled and abs(CS.out.steeringAngle) < 90. and self.lkas_button_on
 
     # fix for Genesis hard fault at low speed
-    if CS.out.vEgo < 16.7 and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
+    if CS.out.vEgo < 60 * CV.KPH_TO_MS and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
       lkas_active = 0
 
     # Disable steering while turning blinker on and speed below 60 kph
@@ -101,10 +104,11 @@ class CarController():
         self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
       elif CS.left_blinker_flash or CS.right_blinker_flash: # Optima has blinker flash signal only
         self.turning_signal_timer = 100
-    if self.turning_signal_timer and CS.out.vEgo < 16.7:
+    if self.turning_indicator_alert: # set and clear by interface
       lkas_active = 0
-    if self.turning_signal_timer:
+    if self.turning_signal_timer > 0:
       self.turning_signal_timer -= 1
+
     if not lkas_active:
       apply_steer = 0
 
@@ -120,11 +124,30 @@ class CarController():
     enabled_speed = 38 if CS.is_set_speed_in_mph  else 60
     if clu11_speed > enabled_speed or not lkas_active:
       enabled_speed = clu11_speed
-    set_speed *= 2.237 if CS.is_set_speed_in_mph else 3.6
+
+    if not(min_set_speed < set_speed < 255 * CV.KPH_TO_MS):
+      set_speed = min_set_speed 
+    set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
     if frame == 0: # initialize counts from last received count signals
       self.lkas11_cnt = CS.lkas11["CF_Lkas_MsgCount"]
       self.scc12_cnt = CS.scc12["CR_VSM_Alive"] + 1 if not CS.no_radar else 0
+
+      #TODO: fix this
+      # self.prev_scc_cnt = CS.scc11["AliveCounterACC"]
+      # self.scc_update_frame = frame
+
+    # check if SCC is alive
+    # if frame % 7 == 0:
+      # if CS.scc11["AliveCounterACC"] == self.prev_scc_cnt:
+        # if frame - self.scc_update_frame > 20 and self.scc_live:
+          # self.scc_live = False
+      # else:
+        # self.scc_live = True
+        # self.prev_scc_cnt = CS.scc11["AliveCounterACC"]
+        # self.scc_update_frame = frame
+
+    self.prev_scc_cnt = CS.scc11["AliveCounterACC"]
 
     self.lkas11_cnt = (self.lkas11_cnt + 1) % 0x10
     self.scc12_cnt %= 0xF
@@ -146,9 +169,10 @@ class CarController():
     elif CS.mdps_bus: # send mdps12 to LKAS to prevent LKAS error if no cancel cmd
       can_sends.append(create_mdps12(self.packer, frame, CS.mdps12))
 
-    if CS.scc_bus and self.longcontrol and frame % 2 == 0: # send scc12 to car if SCC not on bus 0 and longcontrol enabled
-      can_sends.append(create_scc12(self.packer, apply_accel, enabled, self.scc12_cnt, CS.scc12))
-      can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, lead_visible, CS.scc11))
+    # send scc to car if longcontrol enabled and SCC not on bus 0 or ont live
+    if self.longcontrol and (CS.scc_bus or not self.scc_live) and frame % 2 == 0: 
+      can_sends.append(create_scc12(self.packer, apply_accel, enabled, self.scc12_cnt, self.scc_live, CS.scc12))
+      can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, lead_visible, self.scc_live, CS.scc11))
       if CS.has_scc13 and frame % 20 == 0:
         can_sends.append(create_scc13(self.packer, CS.scc13))
       if CS.has_scc14:
@@ -174,7 +198,7 @@ class CarController():
       self.last_lead_distance = 0  
 
     # 20 Hz LFA MFA message
-    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H]:
-      can_sends.append(create_lfa_mfa(self.packer, frame, enabled))
+    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE]:
+      can_sends.append(create_lfa_mfa(self.packer, frame, lkas_active))
 
     return can_sends
