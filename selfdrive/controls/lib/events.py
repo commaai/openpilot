@@ -188,12 +188,12 @@ def calibration_incomplete_alert(CP, sm, metric):
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
 
 def no_gps_alert(CP, sm, metric):
-  two = sm['thermal'].hwType == log.HealthData.HwType.uno
+  two = sm['health'].hwType == log.HealthData.HwType.uno
   return Alert(
     "Poor GPS reception",
-    "If sky visible, contact support" if two else "Check GPS antenna placement",
+    "If sky is visible, contact support" if two else "Check GPS antenna placement",
     AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.),
+    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.)
 
 EVENTS = {
   # ********** events with no alerts **********
