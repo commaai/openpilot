@@ -91,6 +91,7 @@ def create_mdps12(packer, frame, mdps12):
 def create_lfa_mfa(packer, frame, enabled):
   values = {
     "ACTIVE": enabled,
+    "HDA_USM": 2,
   }
 
   # ACTIVE 1 = Green steering wheel icon
