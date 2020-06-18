@@ -233,7 +233,13 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x8756310L0010\x00\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101\xf1\xa01.01'],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.01 99211-L0000 191016'],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v'],
-  }
+  },
+  CAR.KIA_NIRO_EV: {
+    (Ecu.fwdRadar, 0x7D0, None): [b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         \xf1\xa01.03'],
+    (Ecu.esp, 0x7D1, None): [b'\xf1\xa01.06'],
+    (Ecu.eps, 0x7D4, None): [b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4000\x00 4DEEC105'],
+    (Ecu.fwdCamera, 0x7C4, None): [b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.03 95740-Q4000 180821'],
+  },
 }
 
 CHECKSUM = {
