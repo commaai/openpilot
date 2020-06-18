@@ -166,6 +166,9 @@ class EngagementAlert(Alert):
                      Priority.MID, VisualAlert.none,
                      audible_alert, .2, 0., 0.),
 
+
+# ********** alert callback functions **********
+
 def below_steer_speed_alert(CP, sm, metric):
   speed = int(round(CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
   unit = "kph" if metric else "mph"
@@ -183,6 +186,14 @@ def calibration_incomplete_alert(CP, sm, metric):
     "Drive Above %d %s" % (speed, unit),
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
+
+def no_gps_alert(CP, sm, metric):
+  two = sm['thermal'].hwType == log.HealthData.HwType.uno
+  return Alert(
+    "Poor GPS reception",
+    "Contact Support" if two else "Check GPS antenna placement",
+    AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.),
 
 EVENTS = {
   # ********** events with no alerts **********
@@ -536,11 +547,7 @@ EVENTS = {
   },
 
   EventName.noGps: {
-    ET.PERMANENT: Alert(
-      "Poor GPS reception",
-      "Check GPS antenna placement",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.),
+    ET.PERMANENT: no_gps_alert,
   },
 
   EventName.soundsUnavailable: {
