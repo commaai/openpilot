@@ -41,7 +41,7 @@ rm -rf /data/openpilot/pandaextra
 popd
 
 # Build stuff
-ln -sf /data/openpilot /data/pythonpath
+ln -sfn /data/openpilot /data/pythonpath
 export PYTHONPATH="/data/openpilot:/data/openpilot/pyextra"
 SCONS_CACHE=1 scons -j3
 nosetests -s selfdrive/test/test_openpilot.py
