@@ -38,6 +38,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.3], [0.02, 0.03]]
 
+    if candidate in [CAR.FORESTER_2019]:
+      ret.mass = 1568. + STD_CARGO_KG
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 20           # learned, 14 stock
+      ret.steerActuatorDelay = 0.1
+      ret.lateralTuning.pid.kf = 0.000039
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 10., 20.], [0., 10., 20.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.05, 0.2], [0.003, 0.018, 0.025]]
+
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
