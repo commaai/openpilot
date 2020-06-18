@@ -426,7 +426,7 @@ installer/updater/Makefile
 scripts/update_now.sh
 scripts/stop_updater.sh
 
-pyextra/logentries/**
+pyextra/.gitignore
 
 rednose/**
 
