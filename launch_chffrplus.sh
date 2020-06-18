@@ -104,7 +104,7 @@ function launch {
   # Performed exactly once. Existing registry is preserved just-in-case, and
   # doubles as a flag denoting we've already done the reset once.
   # TODO: we should really grow per-platform detect and setup routines
-  if [ ! $(grep -q "letv" /proc/cmdline) ] && [ ! -f "/persist/comma/op3t-sns-reg-backup" ]; then
+  if ! $(grep -q "letv" /proc/cmdline) && [ ! -f "/persist/comma/op3t-sns-reg-backup" ]; then
     echo "Performing OP3T sensor registry reset"
     mv /persist/sensors/sns.reg /persist/comma/op3t-sns-reg-backup &&
       rm -f /persist/sensors/sensors_settings /persist/sensors/error_log /persist/sensors/gyro_sensitity_cal &&
