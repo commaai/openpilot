@@ -6,6 +6,10 @@ export NUMEXPR_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 
+if [ -z "$NEOS_VERSION" ]; then
+  export NEOS_VERSION="15-RC2"
+fi
+
 if [ -z "$BASEDIR" ]; then
   BASEDIR="/data/openpilot"
 fi
@@ -92,7 +96,7 @@ function launch {
   fi
 
   # Check for NEOS update
-  if [ "$(< /VERSION)" != "15-RC2" ]; then
+  if [ "$(< /VERSION)" != "$NEOS_VERSION" ]; then
     if [ -f "$BASEDIR/scripts/continue.sh" ]; then
       cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
