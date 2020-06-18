@@ -332,54 +332,59 @@ def main():
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
+  
+  try:
+    while True:
+      update_failed_count += 1
+      time_wrong = datetime.datetime.utcnow().year < 2019
+      ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
 
-  while True:
-    update_failed_count += 1
-    time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
+      # Wait until we have a valid datetime to initialize the overlay
+      if not (ping_failed or time_wrong):
+        try:
+          # If the git directory has modifcations after we created the overlay
+          # we need to recreate the overlay
+          if overlay_init_done:
+            overlay_init_fn = os.path.join(BASEDIR, ".overlay_init")
+            git_dir_path = os.path.join(BASEDIR, ".git")
+            new_files = run(["find", git_dir_path, "-newer", overlay_init_fn])
 
-    # Wait until we have a valid datetime to initialize the overlay
-    if not (ping_failed or time_wrong):
-      try:
-        # If the git directory has modifcations after we created the overlay
-        # we need to recreate the overlay
-        if overlay_init_done:
-          overlay_init_fn = os.path.join(BASEDIR, ".overlay_init")
-          git_dir_path = os.path.join(BASEDIR, ".git")
-          new_files = run(["find", git_dir_path, "-newer", overlay_init_fn])
+            if len(new_files.splitlines()):
+              cloudlog.info(".git directory changed, recreating overlay")
+              overlay_init_done = False
 
-          if len(new_files.splitlines()):
-            cloudlog.info(".git directory changed, recreating overlay")
-            overlay_init_done = False
+          if not overlay_init_done:
+            init_ovfs()
+            overlay_init_done = True
 
-        if not overlay_init_done:
-          init_ovfs()
-          overlay_init_done = True
+          if params.get("IsOffroad") == b"1":
+            attempt_update()
+            update_failed_count = 0
+          else:
+            cloudlog.info("not running updater, openpilot running")
 
-        if params.get("IsOffroad") == b"1":
-          attempt_update()
-          update_failed_count = 0
-        else:
-          cloudlog.info("not running updater, openpilot running")
+        except subprocess.CalledProcessError as e:
+          cloudlog.event(
+            "update process failed",
+            cmd=e.cmd,
+            output=e.output,
+            returncode=e.returncode
+          )
+          overlay_init_done = False
+        except Exception:
+          cloudlog.exception("uncaught updated exception, shouldn't happen")
 
-      except subprocess.CalledProcessError as e:
-        cloudlog.event(
-          "update process failed",
-          cmd=e.cmd,
-          output=e.output,
-          returncode=e.returncode
-        )
-        overlay_init_done = False
-      except Exception:
-        cloudlog.exception("uncaught updated exception, shouldn't happen")
+      params.put("UpdateFailedCount", str(update_failed_count))
+      wait_between_updates(wait_helper.ready_event)
+      if wait_helper.shutdown:
+        break
 
-    params.put("UpdateFailedCount", str(update_failed_count))
-    wait_between_updates(wait_helper.ready_event)
-    if wait_helper.shutdown:
-      break
+    # We've been signaled to shut down
+    dismount_ovfs()
 
-  # We've been signaled to shut down
-  dismount_ovfs()
+  finally:
+    fcntl.flock(ov_lock_fd, fcntl.LOCK_UN)
+    ov_lock_fd.close()
 
 if __name__ == "__main__":
   main()
