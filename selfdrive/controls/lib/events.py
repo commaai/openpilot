@@ -191,7 +191,7 @@ def no_gps_alert(CP, sm, metric):
   two = sm['thermal'].hwType == log.HealthData.HwType.uno
   return Alert(
     "Poor GPS reception",
-    "Contact Support" if two else "Check GPS antenna placement",
+    "If sky visible, contact support" if two else "Check GPS antenna placement",
     AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.),
 
