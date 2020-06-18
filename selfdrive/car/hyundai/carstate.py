@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, CAR
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -355,6 +355,8 @@ class CarState(CarStateBase):
       checks += [
         ("E_EMS11", 100),
       ]
+    if CP.carFingerprint in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
+      checks.remove(("TCS13", 50))
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
   @staticmethod
