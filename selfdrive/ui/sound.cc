@@ -62,14 +62,6 @@ bool Sound::init(int volume) {
 }
 
 AudibleAlert Sound::currentPlaying() {
-  if (currentSound_ != AudibleAlert::NONE) {
-    auto playItf = player_.at(currentSound_)->playItf;
-    SLuint32 state;
-    if (SL_RESULT_SUCCESS == (*playItf)->GetPlayState(playItf, &state) &&
-        (state == SL_PLAYSTATE_STOPPED || state == SL_PLAYSTATE_PAUSED)) {
-      currentSound_ = AudibleAlert::NONE;
-    }
-  }
   return currentSound_;
 }
 
