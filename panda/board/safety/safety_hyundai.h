@@ -7,15 +7,18 @@ const int HYUNDAI_DRIVER_TORQUE_ALLOWANCE = 50;
 const int HYUNDAI_DRIVER_TORQUE_FACTOR = 2;
 const int HYUNDAI_STANDSTILL_THRSLD = 30;  // ~1kph
 const CanMsg HYUNDAI_TX_MSGS[] = {
-  {832, 0, 8},  // LKAS11 Bus 0
-  {1265, 0, 4}, // CLU11 Bus 0
+  {832, 0, 8}, {832, 1, 8}, // LKAS11 Bus 0, 1
+  {1265, 0, 4}, {1265, 1, 4}, {1265, 2, 4}, // CLU11 Bus 0, 1, 2
   {1157, 0, 4}, // LFAHDA_MFC Bus 0
-  {832, 1, 8},{1265, 1, 4}, {1265, 2, 4}, {593, 2, 8}, {1057, 0, 8}, {790, 1, 8}, {912, 0, 7}, {912,1, 7}, {1268, 0, 8}, {1268,1, 8},
+  {593, 2, 8},  // MDPS12, Bus 2
   {1056, 0, 8}, //   SCC11,  Bus 0
   {1057, 0, 8}, //   SCC12,  Bus 0
   {1290, 0, 8}, //   SCC13,  Bus 0
   {905, 0, 8},  //   SCC14,  Bus 0
   {1186, 0, 8}  //   4a2SCC, Bus 0
+  {790, 1, 8}, // EMS11, Bus 1
+  {912, 0, 7}, {912,1, 7}, // SPAS11, Bus 0, 1
+  {1268, 0, 8}, {1268,1, 8}, // SPAS12, Bus 0, 1
  };
 
 // TODO: missing checksum for wheel speeds message,worst failure case is
