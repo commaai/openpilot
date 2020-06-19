@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import gc
-import subprocess
 from cereal import car, log
 from common.android import ANDROID
 from common.numpy_fast import clip
@@ -38,17 +37,12 @@ LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 
+
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     gc.disable()
     set_realtime_priority(53)
     set_core_affinity(3)
-
-    try:
-      bad_kernel = subprocess.check_output(["uname", "-v"], encoding='utf8').strip() == \
-                   "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020"
-    except subprocess.CalledProcessError:
-      bad_kernel = True
 
     # Setup sockets
     self.pm = pm
@@ -150,9 +144,6 @@ class Controls:
       self.events.add(EventName.carUnrecognized, static=True)
     if hw_type == HwType.whitePanda:
       self.events.add(EventName.whitePandaUnsupported, static=True)
-
-    if bad_kernel:
-      self.events.add(EventName.neosUpdateRequired, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
