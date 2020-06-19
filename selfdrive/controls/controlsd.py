@@ -129,7 +129,7 @@ class Controls:
     self.last_blinker_frame = 0
     self.saturated_count = 0
     self.events_prev = []
-    self.current_alert_types = []
+    self.current_alert_types = [ET.PERMANENT]
 
     self.sm['liveCalibration'].calStatus = Calibration.INVALID
     self.sm['thermal'].freeSpace = 1.
