@@ -55,6 +55,10 @@ float *frame_prepare(ModelFrame* frame, cl_command_queue q,
 void frame_free(ModelFrame* frame) {
   transform_destroy(&frame->transform);
   loadyuv_destroy(&frame->loadyuv);
+  clReleaseMemObject(frame->net_input);
+  clReleaseMemObject(frame->transformed_v_cl);
+  clReleaseMemObject(frame->transformed_u_cl);
+  clReleaseMemObject(frame->transformed_y_cl);
 }
 
 

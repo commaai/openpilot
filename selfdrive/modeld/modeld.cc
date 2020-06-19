@@ -231,6 +231,8 @@ int main(int argc, char **argv) {
   LOG("joining live_thread");
   err = pthread_join(live_thread_handle, NULL);
   assert(err == 0);
+  clReleaseCommandQueue(q);
+  clReleaseContext(context);
 
   return 0;
 }
