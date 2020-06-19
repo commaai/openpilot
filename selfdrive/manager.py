@@ -515,8 +515,14 @@ def manager_thread():
       if dt > 90:
         last_proc = messaging.recv_sock(proc_sock, wait=True)
 
+        all_running = all(running[p].is_alive() for p in car_started_processes)
+
         cleanup_all_processes(None, None)
-        sys.exit(print_cpu_usage(first_proc, last_proc))
+        return_code = print_cpu_usage(first_proc, last_proc)
+
+        if not all_running:
+          return_code = 1
+        sys.exit(return_code)
 
 def manager_prepare(spinner=None):
   # build all processes
