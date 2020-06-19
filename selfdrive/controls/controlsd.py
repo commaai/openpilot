@@ -3,6 +3,7 @@ import os
 import gc
 import subprocess
 from cereal import car, log
+from common.android import ANDROID
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, set_realtime_priority, set_core_affinity, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
@@ -78,7 +79,7 @@ class Controls:
               internet_needed or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
-    sounds_available = (not os.path.isfile('/EON') or (os.path.isfile('/proc/asound/card0/state') and
+    sounds_available = (not ANDROID or (os.path.isfile('/proc/asound/card0/state') and
                         open('/proc/asound/card0/state').read().strip() == 'ONLINE'))
 
     car_recognized = self.CP.carName != 'mock'
@@ -143,8 +144,13 @@ class Controls:
     if hw_type == HwType.whitePanda:
       self.events.add(EventName.whitePandaUnsupported, static=True)
 
-    uname = subprocess.check_output(["uname", "-v"], encoding='utf8').strip()
-    if uname == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020":
+    try:
+      bad_kernel = subprocess.check_output(["uname", "-v"], encoding='utf8').strip() == \
+                   "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020"
+    except subprocess.CalledProcessError:
+      bad_kernel = True
+
+    if bad_kernel:
       self.events.add(EventName.neosUpdateRequired, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
