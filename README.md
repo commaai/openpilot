@@ -35,9 +35,9 @@ To enable long control, change line 255 in selfdrive/car/hyundai/interface.py to
 Known issues
 ------
 
-- <b>  (temporarily fixed by add 1 sec timer) MDPS fautl periodically for a frame.
-- <b>  (temporarily disabled)LKAS button does not work, give false alert.
-- <b>  (temporarily fixed)LKAS fauls when driver override steering in opposite direction of Openpilot, it cause by Panda safety bolcking LKAS messages.
+- <b>  (temporarily fixed by add 1 sec timer)</b> MDPS fautl periodically for a frame.
+- <b>  (temporarily disabled)</b> LKAS button does not work, give false alert.
+- <b>  (temporarily fixed)</b> LKAS fauls when driver override steering in opposite direction of Openpilot, it cause by Panda safety bolcking LKAS messages.
 
 
 HKG Supported Cars
