@@ -47,8 +47,7 @@ SCONS_CACHE=1 scons -j3
 
 # Run tests
 nosetests -s selfdrive/test/test_openpilot.py
-GET_CPU_USAGE=1 selfdrive/manager.py
-selfdrive/car/tests/test_car_models.py
+selfdrive/car/tests/test_car_interfaces.py
 
 # Cleanup
 find . -name '*.a' -delete
