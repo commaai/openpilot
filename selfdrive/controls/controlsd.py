@@ -128,6 +128,7 @@ class Controls:
     self.can_error_counter = 0
     self.last_blinker_frame = 0
     self.saturated_count = 0
+    self.distance_traveled = 0
     self.events_prev = []
     self.current_alert_types = []
 
@@ -213,8 +214,9 @@ class Controls:
     if not self.sm['liveLocationKalman'].inputsOK and os.getenv("NOSENSOR") is None:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
-    if not self.sm['liveLocationKalman'].gpsOK and os.getenv("NOSENSOR") is None:
-        self.events.add(EventName.noGps)
+    if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
+      # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
+      self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
@@ -258,6 +260,8 @@ class Controls:
 
     if not self.sm['health'].controlsAllowed and self.enabled:
       self.mismatch_counter += 1
+
+    self.distance_traveled += CS.vEgo * DT_CTRL
 
     return CS
 
