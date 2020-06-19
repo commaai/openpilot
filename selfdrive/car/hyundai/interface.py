@@ -240,6 +240,7 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = False #TODO make ui toggle
     ret.enableCruise = not ret.radarOffCan
     ret.autoLcaEnabled = False
+    ret.spasEnabled = False
 
     return ret
 

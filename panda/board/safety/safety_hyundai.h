@@ -90,6 +90,7 @@ int OP_MDPS_live = 0;
 int OP_CLU_live = 0;
 int OP_SCC_live = 0;
 int car_SCC_live = 0;
+int OP_EMS_live = 0;
 int hyundai_mdps_bus = 0;
 bool hyundai_LCAN_on_bus1 = false;
 bool hyundai_forward_bus1 = false;
@@ -296,6 +297,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   if (addr == 593) {OP_MDPS_live = 20;}
   if (addr == 1265 && bus == 1) {OP_CLU_live = 20;} // only count mesage created for MDPS
   if (addr == 1057) {OP_SCC_live = 20; if (car_SCC_live > 0) {car_SCC_live -= 1;}}
+  if (addr == 790) {OP_EMS_live = 20;}
 
   // 1 allows the message through
   return tx;
@@ -313,7 +315,12 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     if (bus_num == 0) {
       if (!OP_CLU_live || addr != 1265 || !hyundai_mdps_bus) {
         if (!OP_MDPS_live || addr != 593) {
-          bus_fwd = hyundai_forward_bus1 ? 12 : 2;
+          if (!OP_EMS_live || addr != 790) {
+            bus_fwd = hyundai_forward_bus1 ? 12 : 2;
+          } else {
+            bus_fwd = 2;  // EON create EMS11 for MDPS
+            OP_EMS_live -= 1;
+          }
         } else {
           bus_fwd = fwd_to_bus1;  // EON create MDPS for LKAS
           OP_MDPS_live -= 1;
