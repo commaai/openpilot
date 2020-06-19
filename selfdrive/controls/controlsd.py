@@ -44,6 +44,12 @@ class Controls:
     set_realtime_priority(53)
     set_core_affinity(3)
 
+    try:
+      bad_kernel = subprocess.check_output(["uname", "-v"], encoding='utf8').strip() == \
+                   "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020"
+    except subprocess.CalledProcessError:
+      bad_kernel = True
+
     # Setup sockets
     self.pm = pm
     if self.pm is None:
@@ -143,12 +149,6 @@ class Controls:
       self.events.add(EventName.carUnrecognized, static=True)
     if hw_type == HwType.whitePanda:
       self.events.add(EventName.whitePandaUnsupported, static=True)
-
-    try:
-      bad_kernel = subprocess.check_output(["uname", "-v"], encoding='utf8').strip() == \
-                   "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020"
-    except subprocess.CalledProcessError:
-      bad_kernel = True
 
     if bad_kernel:
       self.events.add(EventName.neosUpdateRequired, static=True)
