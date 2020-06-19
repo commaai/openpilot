@@ -6,7 +6,9 @@ import numpy as np
 from cereal import log
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
-PLOT = False
+PLOT = True
+
+M = 10
 
 if PLOT:
   import matplotlib.pyplot as plt
@@ -74,13 +76,15 @@ class LanePlanner():
     self.cnt = 0
 
     self.ll_time = None
+    self.points_l_ecef = np.zeros((3, M * 192))
+    self.points_r_ecef = np.zeros((3, M * 192))
 
     if PLOT:
       plt.ion()
       self.fig = plt.figure(figsize=(15, 20))
       self.ax = self.fig.add_subplot(111)
       # self.ax.set_xlim([-150, 150])
-      self.ax.set_xlim([-5, 5])
+      self.ax.set_xlim([-10, 10])
       self.ax.set_ylim([-50., 200.])
       self.ax.set_xlabel('x [m]')
       self.ax.set_ylabel('y [m]')
@@ -91,8 +95,8 @@ class LanePlanner():
       self.line_l, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C0.', markersize=1)
       self.line_r, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C1.', markersize=1)
 
-      self.line_l_poly, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C0--')
-      self.line_r_poly, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C1--')
+      self.line_l_poly, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C0')
+      self.line_r_poly, = self.ax.plot(-self.points_l_y, self.points_l_x, 'C1')
       plt.show()
 
   def parse_model(self, md, ll):
@@ -107,7 +111,7 @@ class LanePlanner():
     ecef = np.atleast_2d(np.array(ll.positionECEF.value)).T
     ecef_from_local = rot_from_euler(orient).T
 
-    if self.cnt % int(2.0 / DT_MDL) == 0:
+    if self.cnt % 2 == 0:
       self.l_prob = 1
       self.r_prob = 1
 
@@ -117,12 +121,15 @@ class LanePlanner():
       self.points_r_x = np.arange(192, dtype=np.float32)
       self.points_r_y = np.polyval(md.rightLane.poly, self.points_r_x)
 
+      self.points_l_ecef[:, 192:] = self.points_l_ecef[:, :-192]
+      self.points_r_ecef[:, 192:] = self.points_r_ecef[:, :-192]
+
       z = np.zeros_like(self.points_l_x)
       points_l = np.vstack([self.points_l_x, -self.points_l_y, z])
-      self.points_l_ecef = ecef_from_local.dot(points_l) + ecef
+      self.points_l_ecef[:, :192] = ecef_from_local.dot(points_l) + ecef
 
       points_r = np.vstack([self.points_r_x, -self.points_r_y, z])
-      self.points_r_ecef = ecef_from_local.dot(points_r) + ecef
+      self.points_r_ecef[:, :192] = ecef_from_local.dot(points_r) + ecef
 
     points_l = ecef_from_local.T.dot(self.points_l_ecef - ecef)
     self.points_l_x = points_l[0, :]
@@ -143,8 +150,10 @@ class LanePlanner():
       self.line_r.set_ydata(self.points_r_x)
 
       x = np.arange(192)
-      self.line_l_poly.set_xdata(-np.polyval(self.l_poly, x))
-      self.line_r_poly.set_xdata(-np.polyval(self.r_poly, x))
+      # self.line_l_poly.set_xdata(-np.polyval(self.l_poly, x))
+      # self.line_r_poly.set_xdata(-np.polyval(self.r_poly, x))
+      self.line_l_poly.set_xdata(-np.polyval(md.leftLane.poly, x))
+      self.line_r_poly.set_xdata(-np.polyval(md.rightLane.poly, x))
 
       self.fig.canvas.draw()
       self.fig.canvas.flush_events()
