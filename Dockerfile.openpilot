@@ -77,7 +77,6 @@ RUN pyenv install 3.8.2 && \
 RUN mkdir -p /tmp/openpilot
 
 COPY SConstruct \
-     cppcheck_openpilot.sh \
      .pylintrc \
      .pre-commit-config.yaml \
      .coveragerc-app \

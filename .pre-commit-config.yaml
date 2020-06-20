@@ -31,3 +31,16 @@ repos:
         language: system
         types: [python]
         exclude: '^(pyextra)|(external)|(cereal)|(rednose)|(panda)|(laika)|(laika_repo)|(rednose_repo)/'
+-   repo: local
+    hooks:
+    -   id: cppcheck
+        name: cppcheck
+        entry: cppcheck
+        language: system
+        types: [c++]
+        exclude: '^(phonelibs)|(external)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/'
+        args:
+        - --error-exitcode=1
+        - --quiet
+        - --force
+        - -j8

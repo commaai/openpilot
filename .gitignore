@@ -59,7 +59,6 @@ openpilot-apks
 
 .coverage*
 coverage.xml
-cppcheck_report.txt
 htmlcov
 pandaextra
 
