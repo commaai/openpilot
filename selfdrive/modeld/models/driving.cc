@@ -30,9 +30,8 @@
 
 Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> vander;
 
-void model_init(ModelState* s, cl::Context &ctx, cl::Device &device, int temporal) {
-  s->frame.init(ctx, device, MODEL_WIDTH, MODEL_HEIGHT);
-  s->input_frames = (float*)calloc(MODEL_FRAME_SIZE * 2, sizeof(float));
+void model_init(ModelState* s, cl::Device &device, cl::Context &ctx, int temporal) {
+  s->frame.init(ctx, device);
 
   const int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output = (float*)calloc(output_size, sizeof(float));
@@ -78,10 +77,8 @@ void model_init(ModelState* s, cl::Context &ctx, cl::Device &device, int tempora
 
 
 
-ModelDataRaw model_eval_frame(ModelState* s,
-                           cl::Buffer &yuv_cl, int width, int height,
-                           mat3 transform, void* sock,
-                           float *desire_in) {
+ModelDataRaw model_eval_frame(ModelState* s, cl::Buffer &yuv_cl, int width, int height,
+                           mat3 transform, void* sock, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 0; i < DESIRE_LEN; i++) {
@@ -99,11 +96,8 @@ ModelDataRaw model_eval_frame(ModelState* s,
 
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
-
-  float *new_frame_buf = s->frame.prepare(yuv_cl, width, height, transform);
-  memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
-  memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
-  s->m->execute(s->input_frames, MODEL_FRAME_SIZE*2);
+  s->frame.prepare(yuv_cl, width, height, transform);
+  s->m->execute(s->frame.getFrame(), s->frame.getFrameSize());
 
   #ifdef DUMP_YUV
     FILE *dump_yuv_file = fopen("/sdcard/dump.yuv", "wb");
@@ -111,7 +105,6 @@ ModelDataRaw model_eval_frame(ModelState* s,
     fclose(dump_yuv_file);
     assert(1==2);
   #endif
- s->frame.unmap(new_frame_buf);
 
   // net outputs
   ModelDataRaw net_outputs;
@@ -129,7 +122,13 @@ ModelDataRaw model_eval_frame(ModelState* s,
 
 void model_free(ModelState* s) {
   free(s->output);
-  free(s->input_frames);
+  #ifdef DESIRE
+  free(s->prev_desire);
+  free(s->pulse_desire);
+#endif
+#ifdef TRAFFIC_CONVENTION
+  free(s->traffic_convention);
+#endif
   delete s->m;
 }
 

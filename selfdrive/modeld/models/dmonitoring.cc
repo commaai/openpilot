@@ -4,8 +4,8 @@
 
 #include <libyuv.h>
 
-#define MODEL_WIDTH 160
-#define MODEL_HEIGHT 320
+#define DMODEL_WIDTH 160
+#define DMODEL_HEIGHT 320
 #define FULL_W 426
 
 #if defined(QCOM) || defined(QCOM2)
@@ -43,8 +43,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   int cropped_width = height/2;
   int cropped_height = height;
 
-  int resized_width = MODEL_WIDTH;
-  int resized_height = MODEL_HEIGHT;
+  int resized_width = DMODEL_WIDTH;
+  int resized_height = DMODEL_HEIGHT;
 
   uint8_t *cropped_y_buf = get_buffer(s->cropped_buf, cropped_width*cropped_height*3/2);
   uint8_t *cropped_u_buf = cropped_y_buf + (cropped_width * cropped_height);
@@ -93,24 +93,24 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     resized_width, resized_height,
                     mode);
 
-  int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
+  int yuv_buf_len = (DMODEL_WIDTH/2) * (DMODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
   // one shot conversion, O(n) anyway
   // yuvframe2tensor, normalize
-  for (int r = 0; r < MODEL_HEIGHT/2; r++) {
-    for (int c = 0; c < MODEL_WIDTH/2; c++) {
+  for (int r = 0; r < DMODEL_HEIGHT/2; r++) {
+    for (int c = 0; c < DMODEL_WIDTH/2; c++) {
       // Y_ul
-      net_input_buf[(c*MODEL_HEIGHT/2) + r] = input_lambda(resized_buf[(2*r*resized_width) + (2*c)]);
+      net_input_buf[(c*DMODEL_HEIGHT/2) + r] = input_lambda(resized_buf[(2*r*resized_width) + (2*c)]);
       // Y_ur
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width) + (2*c+1)]);
+      net_input_buf[(c*DMODEL_HEIGHT/2) + r + ((DMODEL_WIDTH/2)*(DMODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width) + (2*c+1)]);
       // Y_dl
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width+1) + (2*c)]);
+      net_input_buf[(c*DMODEL_HEIGHT/2) + r + (2*(DMODEL_WIDTH/2)*(DMODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width+1) + (2*c)]);
       // Y_dr
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width+1) + (2*c+1)]);
+      net_input_buf[(c*DMODEL_HEIGHT/2) + r + (3*(DMODEL_WIDTH/2)*(DMODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r*resized_width+1) + (2*c+1)]);
       // U
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c]);
+      net_input_buf[(c*DMODEL_HEIGHT/2) + r + (4*(DMODEL_WIDTH/2)*(DMODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + (r*resized_width/2) + c]);
       // V
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c]);
+      net_input_buf[(c*DMODEL_HEIGHT/2) + r + (5*(DMODEL_WIDTH/2)*(DMODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c]);
     }
   }
 
@@ -120,7 +120,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   //fclose(dump_yuv_file);
 
   //FILE *dump_yuv_file2 = fopen("/tmp/inputdump.yuv", "wb");
-  //fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
+  //fwrite(net_input_buf, DMODEL_HEIGHT*DMODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
   //fclose(dump_yuv_file2);
 
   s->m->execute(net_input_buf, yuv_buf_len);

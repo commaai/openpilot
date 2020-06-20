@@ -1,18 +1,18 @@
 #include "commonmodel.h"
-#include "clutil.h"
-void ModelFrame::init(cl::Context &ctx, cl::Device &device, int width, int height) {
-  q_ = cl::CommandQueue(ctx, device);
-  width_ = width;
-  height_ = height;
 
-  transformed_y_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, width_ * height_);
-  transformed_u_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, (width_ / 2) * (height_ / 2));
-  transformed_v_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, (width_ / 2) * (height_ / 2));
+#include "clutil.h"
+void ModelFrame::init(cl::Context &ctx, cl::Device &device) {
+  input_frames_ = (float *)calloc(MODEL_FRAME_SIZE * 2, sizeof(float));
+
+  q_ = cl::CommandQueue(ctx, device);
+
+  transformed_y_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT);
+  transformed_u_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2));
+  transformed_v_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2));
   m_y_cl = cl::Buffer(ctx, CL_MEM_READ_WRITE, 3 * 3 * sizeof(float));
   m_uv_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, 3 * 3 * sizeof(float));
 
-  net_input_size_ = ((width_ * height_ * 3) / 2) * sizeof(float);
-  net_input_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, net_input_size_);
+  net_input_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, MODEL_FRAME_SIZE * sizeof(float));
 
   cl_program program = CLU_LOAD_FROM_FILE(ctx.get(), device.get(), "transforms/transform.cl", "");
   cl::Program prog(program, true);
@@ -22,22 +22,22 @@ void ModelFrame::init(cl::Context &ctx, cl::Device &device, int width, int heigh
   snprintf(args, sizeof(args),
            "-cl-fast-relaxed-math -cl-denorms-are-zero "
            "-DTRANSFORMED_WIDTH=%d -DTRANSFORMED_HEIGHT=%d",
-           width, height);
+           MODEL_WIDTH, MODEL_HEIGHT);
   program = CLU_LOAD_FROM_FILE(ctx.get(), device.get(), "transforms/loadyuv.cl", args);
   cl::Program prog2(program, true);
   loadys_krnl_ = cl::Kernel(prog2, "loadys");
   loaduv_krnl_ = cl::Kernel(prog2, "loaduv");
 }
 
-float *ModelFrame::prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 &transform) {
+void ModelFrame::prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 transform) {
   warpPerspectiveQueue(yuv_cl, in_width, in_height, transform);
   yuvQueue();
-  float *net_input_buf = (float *)q_.enqueueMapBuffer(net_input_, CL_TRUE, CL_MAP_READ, 0, net_input_size_);
   q_.finish();
-  return net_input_buf;
+  memmove(input_frames_, &input_frames_[MODEL_FRAME_SIZE], MODEL_FRAME_SIZE * sizeof(float));
+  q_.enqueueReadBuffer(net_input_, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames_[MODEL_FRAME_SIZE]);
 }
 
-void ModelFrame::warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_height, mat3 &projection) {
+void ModelFrame::warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_height, mat3 projection) {
   const int zero = 0;
 
   // sampled using pixel center origin
@@ -58,10 +58,10 @@ void ModelFrame::warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_h
   const int in_u_offset = in_y_offset + in_y_width * in_y_height;
   const int in_v_offset = in_u_offset + in_uv_width * in_uv_height;
 
-  const int out_y_width = width_;
-  const int out_y_height = height_;
-  const int out_uv_width = width_ / 2;
-  const int out_uv_height = height_ / 2;
+  const int out_y_width = MODEL_WIDTH;
+  const int out_y_height = MODEL_HEIGHT;
+  const int out_uv_width = MODEL_WIDTH / 2;
+  const int out_uv_height = MODEL_HEIGHT / 2;
   kernel_.setArg(0, in_yuv);
   kernel_.setArg(1, in_y_width);
   kernel_.setArg(2, in_y_offset);
@@ -99,21 +99,25 @@ void ModelFrame::yuvQueue() {
   loadys_krnl_.setArg(0, transformed_y_cl_);
   loadys_krnl_.setArg(1, net_input_);
 
-  const size_t loadys_work_size = (width_ * height_) / 8;
+  const size_t loadys_work_size = (MODEL_WIDTH * MODEL_HEIGHT) / 8;
   q_.enqueueNDRangeKernel(loadys_krnl_, cl::NullRange, cl::NDRange(loadys_work_size));
-  const size_t loaduv_work_size = ((width_ / 2) * (height_ / 2)) / 8;
-  cl_int loaduv_out_off = (width_ * height_);
+  const size_t loaduv_work_size = ((MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2)) / 8;
+  cl_int loaduv_out_off = (MODEL_WIDTH * MODEL_HEIGHT);
 
   loaduv_krnl_.setArg(0, transformed_u_cl_);
   loaduv_krnl_.setArg(1, net_input_);
   loaduv_krnl_.setArg(2, loaduv_out_off);
 
   q_.enqueueNDRangeKernel(loaduv_krnl_, cl::NullRange, cl::NDRange(loaduv_work_size));
-  loaduv_out_off += (width_ / 2) * (height_ / 2);
+  loaduv_out_off += (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2);
 
   loaduv_krnl_.setArg(0, transformed_v_cl_);
   loaduv_krnl_.setArg(1, net_input_);
   loaduv_krnl_.setArg(2, loaduv_out_off);
 
   q_.enqueueNDRangeKernel(loaduv_krnl_, cl::NullRange, cl::NDRange(loaduv_work_size));
+}
+
+ModelFrame::~ModelFrame() {
+  free(input_frames_);
 }

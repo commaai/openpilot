@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
 
   // init the models
   ModelState model;
-  model_init(&model, ctx, device, true);
+  model_init(&model, device, ctx, true);
   LOGW("models loaded, modeld starting");
 
   // debayering does a 2x downscale
@@ -134,9 +134,9 @@ int main(int argc, char **argv) {
     LOGW("connected with buffer size: %d", buf_info.buf_len);
 
     // one frame in memory
-    cl_mem yuv_cl1;
-    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device.get(), ctx.get(), &yuv_cl1);
-    cl::Buffer yuv_cl(yuv_cl1, true);
+    cl_mem mem;
+    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device.get(), ctx.get(), &mem);
+    cl::Buffer yuv_cl(mem, true);
     double last = 0;
     int desire = -1;
     while (!do_exit) {

@@ -3,28 +3,33 @@
 #define CL_HPP_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 
-#include <CL/cl2.hpp>
 #include <assert.h>
 #include <czmq.h>
+
+#include <CL/cl2.hpp>
+
 #include "common/mat.h"
 
+#define MODEL_WIDTH 512
+#define MODEL_HEIGHT 256
+#define MODEL_FRAME_SIZE (MODEL_WIDTH * MODEL_HEIGHT * 3 / 2)
 class ModelFrame {
  public:
   ModelFrame() {}
-  void init(cl::Context &ctx, cl::Device &device, int width, int height);
-  float *prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 &transform);
-  void unmap(void *buf) { q_.enqueueUnmapMemObject(net_input_, (void *)buf); }
+  ~ModelFrame();
+  void init(cl::Context &ctx, cl::Device &device);
+  void prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 transform);
+  inline float *getFrame() const { return input_frames_; }
+  inline size_t getFrameSize() const { return MODEL_FRAME_SIZE * 2; }
 
  private:
-  void warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_height, mat3 &projection);
+  void warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_height, mat3 projection);
   void yuvQueue();
-
+  float *input_frames_ = nullptr;
   cl::CommandQueue q_;
   cl::Buffer transformed_y_cl_, transformed_u_cl_, transformed_v_cl_;
   cl::Buffer m_y_cl, m_uv_cl_, net_input_;
-  size_t net_input_size_;
   cl::Kernel kernel_, loadys_krnl_, loaduv_krnl_;
-  int width_, height_;
 };
 
 inline float sigmoid(float input) { return 1 / (1 + expf(-input)); }
