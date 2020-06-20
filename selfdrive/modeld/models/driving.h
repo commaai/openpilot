@@ -42,14 +42,14 @@ struct ModelDataRaw {
 
 typedef struct ModelState {
   ModelFrame frame;
-  float *output;
-  RunModel *m;
+  std::unique_ptr<float[]> output;
+  std::unique_ptr<RunModel> m;
 #ifdef DESIRE
-  float *prev_desire;
-  float *pulse_desire;
+  std::unique_ptr<float[]> prev_desire;
+  std::unique_ptr<float[]> pulse_desire;
 #endif
 #ifdef TRAFFIC_CONVENTION
-  float *traffic_convention;
+  std::unique_ptr<float[]> traffic_convention;
 #endif
 } ModelState;
 

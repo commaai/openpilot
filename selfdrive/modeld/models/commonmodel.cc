@@ -29,9 +29,9 @@ void ModelFrame::init(cl::Context &ctx, cl::Device &device) {
 void ModelFrame::prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 tf) {
   transform(yuv_cl, in_width, in_height, tf);
   loadyuv();
-  q_.finish();
   memmove(input_frames_, &input_frames_[MODEL_FRAME_SIZE], MODEL_FRAME_SIZE * sizeof(float));
   q_.enqueueReadBuffer(net_input_, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames_[MODEL_FRAME_SIZE]);
+  q_.finish();
 }
 
 void ModelFrame::transform(cl::Buffer &in_yuv, int in_width, int in_height, mat3 projection) {

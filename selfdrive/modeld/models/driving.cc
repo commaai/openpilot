@@ -34,9 +34,10 @@ void model_init(ModelState* s, cl::Device &device, cl::Context &ctx, int tempora
   s->frame.init(ctx, device);
 
   const int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
-  s->output = (float*)calloc(output_size, sizeof(float));
+  s->output = std::make_unique<float[]>(output_size);
+  memset(s->output.get(), 0, output_size * sizeof(float));
 
-  s->m = new DefaultRunModel("../../models/supercombo.dlc", s->output, output_size, USE_GPU_RUNTIME);
+  s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", s->output.get(), output_size, USE_GPU_RUNTIME);
 
 #ifdef TEMPORAL
   assert(temporal);
@@ -44,17 +45,17 @@ void model_init(ModelState* s, cl::Device &device, cl::Context &ctx, int tempora
 #endif
 
 #ifdef DESIRE
-  s->prev_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
-  for (int i = 0; i < DESIRE_LEN; i++) s->prev_desire[i] = 0.0;
-  s->pulse_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
-  for (int i = 0; i < DESIRE_LEN; i++) s->pulse_desire[i] = 0.0;
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
+  s->prev_desire = std::make_unique<float[]>(DESIRE_LEN);
+  memset(s->prev_desire.get(), 0, DESIRE_LEN * sizeof(float));
+  s->pulse_desire = std::make_unique<float[]>(DESIRE_LEN);
+  memset(s->pulse_desire.get(), 0, DESIRE_LEN * sizeof(float));
+  s->m->addDesire(s->pulse_desire.get(), DESIRE_LEN);
 #endif
 
 #ifdef TRAFFIC_CONVENTION
-  s->traffic_convention = (float*)malloc(TRAFFIC_CONVENTION_LEN * sizeof(float));
-  for (int i = 0; i < TRAFFIC_CONVENTION_LEN; i++) s->traffic_convention[i] = 0.0;
-  s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
+  s->traffic_convention = std::make_unique<float[]>(TRAFFIC_CONVENTION_LEN);
+  memset(s->traffic_convention.get(), 0, TRAFFIC_CONVENTION_LEN * sizeof(float));
+  s->m->addTrafficConvention(s->traffic_convention.get(), TRAFFIC_CONVENTION_LEN);
 
   std::vector<char> result = read_db_bytes("IsRHD");
   if (result.size() > 0) {
@@ -118,17 +119,7 @@ ModelDataRaw model_eval_frame(ModelState *s, cl::Buffer &yuv_cl, int width, int 
   return net_outputs;
 }
 
-void model_free(ModelState* s) {
-  free(s->output);
-  #ifdef DESIRE
-  free(s->prev_desire);
-  free(s->pulse_desire);
-#endif
-#ifdef TRAFFIC_CONVENTION
-  free(s->traffic_convention);
-#endif
-  delete s->m;
-}
+void model_free(ModelState* s) {}
 
 void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   // References to inputs
