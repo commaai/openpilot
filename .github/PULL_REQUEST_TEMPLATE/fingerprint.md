@@ -1,6 +1,6 @@
 ---
 name: Fingerprint
-about: For new car ports
+about: For adding fingerprints to existing cars
 title: ''
 labels: 'fingerprint'
 assignees: ''

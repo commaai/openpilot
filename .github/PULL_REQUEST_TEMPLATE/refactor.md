@@ -1,6 +1,6 @@
 ---
 name: Refactor
-about: For code refactor
+about: For code refactors
 title: ''
 labels: 'refactor'
 assignees: ''
