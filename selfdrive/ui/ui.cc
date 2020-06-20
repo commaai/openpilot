@@ -864,7 +864,7 @@ int main(int argc, char* argv[]) {
         s->scene.alert_text2 = "Controls Failed to Start";
         s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
         update_status(s, STATUS_WARNING);
-      } else if (s->controls_seen) {
+      } else {
         // car is started, but controls is lagging or died
         LOGE("Controls unresponsive");
 
