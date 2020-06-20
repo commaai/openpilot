@@ -1,6 +1,5 @@
 #include <string.h>
 #include "dmonitoring.h"
-#include "common/mat.h"
 #include "common/timing.h"
 
 #include <libyuv.h>

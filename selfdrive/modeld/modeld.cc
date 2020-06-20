@@ -95,12 +95,9 @@ int main(int argc, char **argv) {
   std::vector<cl::Platform> platforms;
   cl::Platform::get(&platforms);
   for (auto &p : platforms) {
-    std::string platver = p.getInfo<CL_PLATFORM_VERSION>();
-    printf("platform version %s\n", platver.c_str());
     std::vector<cl::Device> all_devices;
     p.getDevices(device_type, &all_devices);
     if (all_devices.size() > 0) {
-      printf("device found\n");
       device = all_devices[0];
       break;
     }
@@ -199,8 +196,5 @@ int main(int argc, char **argv) {
   LOG("joining live_thread");
   err = pthread_join(live_thread_handle, NULL);
   assert(err == 0);
-  // clReleaseCommandQueue(q);
-  // clReleaseContext(context);
-
   return 0;
 }

@@ -4,10 +4,7 @@
 #define DESIRE
 #define TRAFFIC_CONVENTION
 
-
-#include "common/mat.h"
 #include "common/util.h"
-
 #include "commonmodel.h"
 #include "runners/run.h"
 
@@ -34,18 +31,17 @@
 #define POSE_SIZE 12
 
 struct ModelDataRaw {
-    float *path;
-    float *left_lane;
-    float *right_lane;
-    float *lead;
-    float *long_x;
-    float *long_v;
-    float *long_a;
-    float *desire_state;
-    float *meta;
-    float *pose;
-  };
-
+  float *path;
+  float *left_lane;
+  float *right_lane;
+  float *lead;
+  float *long_x;
+  float *long_v;
+  float *long_a;
+  float *desire_state;
+  float *meta;
+  float *pose;
+};
 
 typedef struct ModelState {
   ModelFrame frame;
