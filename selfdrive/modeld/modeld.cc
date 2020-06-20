@@ -99,6 +99,8 @@ int main(int argc, char **argv) {
     p.getDevices(device_type, &all_devices);
     if (all_devices.size() > 0) {
       device = all_devices[0];
+      std::string name = device.getInfo<CL_DEVICE_NAME>();
+      LOGW("OpenCL device:", name.c_str());
       break;
     }
   }
@@ -125,7 +127,7 @@ int main(int argc, char **argv) {
   VisionStream stream;
   while (!do_exit) {
     VisionStreamBufs buf_info;
-    err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
+    err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
     if (err) {
       LOGW("visionstream connect failed");
       usleep(100000);
@@ -173,9 +175,8 @@ int main(int argc, char **argv) {
         // TODO: don't make copies!
         memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
 
-        ModelDataRaw model_buf =
-            model_eval_frame(&model, yuv_cl, buf_info.width, buf_info.height,
-                             model_transform, NULL, vec_desire);
+        ModelDataRaw model_buf = model_eval_frame(&model, yuv_cl, buf_info.width, buf_info.height,
+                                                  model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
         model_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
@@ -184,7 +185,6 @@ int main(int argc, char **argv) {
         LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
         last = mt1;
       }
-
     }
     visionbuf_free(&yuv_ion);
   }

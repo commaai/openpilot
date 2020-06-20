@@ -11,22 +11,19 @@ void ModelFrame::init(cl::Context &ctx, cl::Device &device) {
   transformed_v_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2));
   m_y_cl = cl::Buffer(ctx, CL_MEM_READ_WRITE, 3 * 3 * sizeof(float));
   m_uv_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, 3 * 3 * sizeof(float));
-
   net_input_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, MODEL_FRAME_SIZE * sizeof(float));
 
-  cl_program program = CLU_LOAD_FROM_FILE(ctx.get(), device.get(), "transforms/transform.cl", "");
-  cl::Program prog(program, true);
-  kernel_ = cl::Kernel(prog, "warpPerspective");
+  cl::Program program = cl::Program(CLU_LOAD_FROM_FILE(ctx.get(), device.get(), "transforms/transform.cl", ""));
+  kernel_ = cl::Kernel(program, "warpPerspective");
 
   char args[1024];
   snprintf(args, sizeof(args),
            "-cl-fast-relaxed-math -cl-denorms-are-zero "
            "-DTRANSFORMED_WIDTH=%d -DTRANSFORMED_HEIGHT=%d",
            MODEL_WIDTH, MODEL_HEIGHT);
-  program = CLU_LOAD_FROM_FILE(ctx.get(), device.get(), "transforms/loadyuv.cl", args);
-  cl::Program prog2(program, true);
-  loadys_krnl_ = cl::Kernel(prog2, "loadys");
-  loaduv_krnl_ = cl::Kernel(prog2, "loaduv");
+  program = cl::Program(CLU_LOAD_FROM_FILE(ctx.get(), device.get(), "transforms/loadyuv.cl", args));
+  loadys_krnl_ = cl::Kernel(program, "loadys");
+  loaduv_krnl_ = cl::Kernel(program, "loaduv");
 }
 
 void ModelFrame::prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 transform) {
