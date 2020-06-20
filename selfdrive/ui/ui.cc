@@ -510,6 +510,7 @@ static void ui_update(UIState *s) {
 
     s->vision_connect_firstrun = false;
 
+    s->controls_timeout = 6 * UI_FREQ;
     s->alert_blinking_alpha = 1.0;
     s->alert_blinked = false;
   }
@@ -853,22 +854,30 @@ int main(int argc, char* argv[]) {
 
     s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5), 5); // up one notch every 5 m/s
 
-    // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
-    } else {
-      if (s->started && s->controls_seen && s->scene.alert_text2 != "Controls Unresponsive") {
+    } else if (s->started) {
+      if (!s->controls_seen) {
+        // car is started, but controlsState hasn't been seen at all
+        LOGE("Controls failed to start");
+        s->scene.alert_text1 = "openpilot Unavailable";
+        s->scene.alert_text2 = "Controls Failed to Start";
+        s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
+        update_status(s, STATUS_WARNING);
+      } else {
+        // car is started, but controls is lagging or died
         LOGE("Controls unresponsive");
-        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-        update_status(s, STATUS_ALERT);
+
+        if (s->scene.alert_text2 != "Controls Unresponsive") {
+          s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT, 3); // loop sound 3 times
+        }
 
         s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
         s->scene.alert_text2 = "Controls Unresponsive";
-        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
-
-        s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT, 3); // loop sound 3 times
+        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+        update_status(s, STATUS_ALERT);
       }
-      s->controls_seen = false;
+      ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
 
     read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
