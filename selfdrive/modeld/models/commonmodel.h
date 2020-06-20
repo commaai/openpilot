@@ -29,7 +29,7 @@ class ModelFrame {
   cl::CommandQueue q_;
   cl::Buffer transformed_y_cl_, transformed_u_cl_, transformed_v_cl_;
   cl::Buffer m_y_cl, m_uv_cl_, net_input_;
-  cl::Kernel kernel_, loadys_krnl_, loaduv_krnl_;
+  cl::Kernel transform_krnl_, loadys_krnl_, loaduv_krnl_;
 };
 
 inline float sigmoid(float input) { return 1 / (1 + expf(-input)); }

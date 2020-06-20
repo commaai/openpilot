@@ -8,7 +8,6 @@
 
 #include "models/driving.h"
 #include "messaging.hpp"
-
 volatile sig_atomic_t do_exit = 0;
 
 static void set_do_exit(int sig) {
@@ -21,7 +20,6 @@ mat3 cur_transform;
 pthread_mutex_t transform_lock;
 
 void* live_thread(void *arg) {
-  int err;
   set_thread_name("live");
 
   SubMaster sm({"liveCalibration"});

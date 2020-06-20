@@ -14,7 +14,7 @@ void ModelFrame::init(cl::Context &ctx, cl::Device &device) {
   net_input_ = cl::Buffer(ctx, CL_MEM_READ_WRITE, MODEL_FRAME_SIZE * sizeof(float));
 
   cl::Program program = cl::Program(CLU_LOAD_FROM_FILE(ctx.get(), device.get(), "transforms/transform.cl", ""));
-  kernel_ = cl::Kernel(program, "warpPerspective");
+  transform_krnl_ = cl::Kernel(program, "warpPerspective");
 
   char args[1024];
   snprintf(args, sizeof(args),
@@ -59,37 +59,37 @@ void ModelFrame::transform(cl::Buffer &in_yuv, int in_width, int in_height, mat3
   const int out_y_height = MODEL_HEIGHT;
   const int out_uv_width = MODEL_WIDTH / 2;
   const int out_uv_height = MODEL_HEIGHT / 2;
-  kernel_.setArg(0, in_yuv);
-  kernel_.setArg(1, in_y_width);
-  kernel_.setArg(2, in_y_offset);
-  kernel_.setArg(3, in_y_height);
-  kernel_.setArg(4, in_y_width);
-  kernel_.setArg(5, transformed_y_cl_);
-  kernel_.setArg(6, out_y_width);
-  kernel_.setArg(7, zero);
-  kernel_.setArg(8, out_y_height);
-  kernel_.setArg(9, out_y_width);
-  kernel_.setArg(10, m_y_cl);
+  transform_krnl_.setArg(0, in_yuv);
+  transform_krnl_.setArg(1, in_y_width);
+  transform_krnl_.setArg(2, in_y_offset);
+  transform_krnl_.setArg(3, in_y_height);
+  transform_krnl_.setArg(4, in_y_width);
+  transform_krnl_.setArg(5, transformed_y_cl_);
+  transform_krnl_.setArg(6, out_y_width);
+  transform_krnl_.setArg(7, zero);
+  transform_krnl_.setArg(8, out_y_height);
+  transform_krnl_.setArg(9, out_y_width);
+  transform_krnl_.setArg(10, m_y_cl);
 
-  q_.enqueueNDRangeKernel(kernel_, cl::NullRange, cl::NDRange(out_y_width, out_y_height));
+  q_.enqueueNDRangeKernel(transform_krnl_, cl::NullRange, cl::NDRange(out_y_width, out_y_height));
 
-  kernel_.setArg(1, in_uv_width);
-  kernel_.setArg(2, in_u_offset);
-  kernel_.setArg(3, in_uv_height);
-  kernel_.setArg(4, in_uv_width);
-  kernel_.setArg(5, transformed_u_cl_);
-  kernel_.setArg(6, out_uv_width);
-  kernel_.setArg(7, zero);
-  kernel_.setArg(8, out_uv_height);
-  kernel_.setArg(9, out_uv_width);
-  kernel_.setArg(10, m_uv_cl_);
+  transform_krnl_.setArg(1, in_uv_width);
+  transform_krnl_.setArg(2, in_u_offset);
+  transform_krnl_.setArg(3, in_uv_height);
+  transform_krnl_.setArg(4, in_uv_width);
+  transform_krnl_.setArg(5, transformed_u_cl_);
+  transform_krnl_.setArg(6, out_uv_width);
+  transform_krnl_.setArg(7, zero);
+  transform_krnl_.setArg(8, out_uv_height);
+  transform_krnl_.setArg(9, out_uv_width);
+  transform_krnl_.setArg(10, m_uv_cl_);
 
-  q_.enqueueNDRangeKernel(kernel_, cl::NullRange, cl::NDRange(out_uv_width, out_uv_height));
+  q_.enqueueNDRangeKernel(transform_krnl_, cl::NullRange, cl::NDRange(out_uv_width, out_uv_height));
 
-  kernel_.setArg(2, in_v_offset);
-  kernel_.setArg(5, transformed_v_cl_);
+  transform_krnl_.setArg(2, in_v_offset);
+  transform_krnl_.setArg(5, transformed_v_cl_);
 
-  q_.enqueueNDRangeKernel(kernel_, cl::NullRange, cl::NDRange(out_uv_width, out_uv_height));
+  q_.enqueueNDRangeKernel(transform_krnl_, cl::NullRange, cl::NDRange(out_uv_width, out_uv_height));
 }
 
 void ModelFrame::loadyuv() {
