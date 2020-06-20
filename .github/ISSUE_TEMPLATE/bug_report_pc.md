@@ -7,13 +7,19 @@ assignees: ''
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+
+[A clear and concise description of what the bug is.]
 
 **How to reproduce or log data**
-Steps to reproduce the behavior, or a explorer/cabana link to the exact drive and timestamp of when the bug occurred.
+
+[Steps to reproduce the behavior.]
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+
+[A clear and concise description of what you expected to happen.]
 
 **Additional context**
-Add any other context about the problem here.
+
+[Add any other context about the problem here.]
+
+Operating system: [e.g. Ubuntu 16.04]
