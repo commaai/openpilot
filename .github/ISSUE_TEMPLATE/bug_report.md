@@ -12,7 +12,7 @@ assignees: ''
 
 **How to reproduce or log data**
 
-[Steps to reproduce the behavior, or a explorer/cabana link to the exact drive and timestamp of when the bug occurred.]
+[Steps to reproduce the behavior.]
 
 **Expected behavior**
 
