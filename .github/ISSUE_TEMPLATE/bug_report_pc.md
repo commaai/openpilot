@@ -1,0 +1,19 @@
+---
+name: PC Bug report
+about: For issues with running openpilot on PC
+title: ''
+labels: 'PC'
+assignees: ''
+---
+
+**Describe the bug**
+A clear and concise description of what the bug is.
+
+**How to reproduce or log data**
+Steps to reproduce the behavior, or a explorer/cabana link to the exact drive and timestamp of when the bug occurred.
+
+**Expected behavior**
+A clear and concise description of what you expected to happen.
+
+**Additional context**
+Add any other context about the problem here.

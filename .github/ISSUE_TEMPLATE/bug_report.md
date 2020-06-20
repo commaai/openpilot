@@ -4,7 +4,6 @@ about: Create a report to help us improve openpilot
 title: ''
 labels: ''
 assignees: ''
-
 ---
 
 **Describe the bug**
@@ -17,9 +16,10 @@ Steps to reproduce the behavior, or a explorer/cabana link to the exact drive an
 A clear and concise description of what you expected to happen.
 
 **Device/Version information (please complete the following information):**
- - Device: [e.g. EON/EON Gold]
- - Dongle ID: [e.g. 77611a1fac303767, can be found in Settings -> Device -> Dongle ID]
- - Version: [e.g. 0.6.4], or commit hash when on devel
+ - Device: [e.g. EON/EON Gold/comma two]
+ - Dongle ID: [e.g. 77611a1fac303767, can be found in Settings -> Device -> Dongle ID or my.comma.ai/useradmin]
+ - Route: [e.g. 77611a1fac303767|2020-05-11--16-37-07, can be found in my.comma.ai/useradmin]
+ - Version: [e.g. 0.6.4], or commit hash when on a non-release branch
  - Car make/model [e.g. Toyota Prius 2016]
 
 **Additional context**
