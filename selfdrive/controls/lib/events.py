@@ -195,6 +195,12 @@ def no_gps_alert(CP, sm, metric):
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.)
 
+def wrong_car_mode_alert(CP, sm, metric):
+  text = "Cruise Mode Disabled"
+  if CP.carName == "honda":
+    text = "Main Switch Off"
+  return NoEntryAlert(text, duration_hud_alert=0.),
+
 EVENTS = {
   # ********** events with no alerts **********
 
@@ -491,8 +497,7 @@ EVENTS = {
 
   EventName.wrongCarMode: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
-    ET.NO_ENTRY: NoEntryAlert("Main Switch Off",
-                              duration_hud_alert=0.),
+    ET.NO_ENTRY: wrong_car_mode_alert,
   },
 
   EventName.wrongCruiseMode: {
