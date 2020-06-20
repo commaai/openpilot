@@ -10,9 +10,9 @@
 
 #include "common/mat.h"
 
-#define MODEL_WIDTH 512
-#define MODEL_HEIGHT 256
-#define MODEL_FRAME_SIZE (MODEL_WIDTH * MODEL_HEIGHT * 3 / 2)
+constexpr int MODEL_WIDTH = 512;
+constexpr int MODEL_HEIGHT = 256;
+constexpr int MODEL_FRAME_SIZE = (MODEL_WIDTH * MODEL_HEIGHT * 3 / 2);
 class ModelFrame {
  public:
   ModelFrame() {}
@@ -23,8 +23,8 @@ class ModelFrame {
   inline size_t getFrameSize() const { return MODEL_FRAME_SIZE * 2; }
 
  private:
-  void warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_height, mat3 projection);
-  void yuvQueue();
+  void transform(cl::Buffer &in_yuv, int in_width, int in_height, mat3 projection);
+  void loadyuv();
   float *input_frames_ = nullptr;
   cl::CommandQueue q_;
   cl::Buffer transformed_y_cl_, transformed_u_cl_, transformed_v_cl_;

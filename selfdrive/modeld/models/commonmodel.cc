@@ -26,15 +26,15 @@ void ModelFrame::init(cl::Context &ctx, cl::Device &device) {
   loaduv_krnl_ = cl::Kernel(program, "loaduv");
 }
 
-void ModelFrame::prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 transform) {
-  warpPerspectiveQueue(yuv_cl, in_width, in_height, transform);
-  yuvQueue();
+void ModelFrame::prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 tf) {
+  transform(yuv_cl, in_width, in_height, tf);
+  loadyuv();
   q_.finish();
   memmove(input_frames_, &input_frames_[MODEL_FRAME_SIZE], MODEL_FRAME_SIZE * sizeof(float));
   q_.enqueueReadBuffer(net_input_, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames_[MODEL_FRAME_SIZE]);
 }
 
-void ModelFrame::warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_height, mat3 projection) {
+void ModelFrame::transform(cl::Buffer &in_yuv, int in_width, int in_height, mat3 projection) {
   const int zero = 0;
 
   // sampled using pixel center origin
@@ -92,7 +92,7 @@ void ModelFrame::warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_h
   q_.enqueueNDRangeKernel(kernel_, cl::NullRange, cl::NDRange(out_uv_width, out_uv_height));
 }
 
-void ModelFrame::yuvQueue() {
+void ModelFrame::loadyuv() {
   loadys_krnl_.setArg(0, transformed_y_cl_);
   loadys_krnl_.setArg(1, net_input_);
 
