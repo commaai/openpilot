@@ -867,13 +867,15 @@ int main(int argc, char* argv[]) {
       } else if (s->controls_seen) {
         // car is started, but controls is lagging or died
         LOGE("Controls unresponsive");
+
+        if (s->scene.alert_text2 != "Controls Unresponsive") {
+          s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT, 3); // loop sound 3 times
+        }
+
         s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
         s->scene.alert_text2 = "Controls Unresponsive";
         s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);
-        if (s->scene.alert_text2 != "Controls Unresponsive") {
-          s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT, 3); // loop sound 3 times
-        }
       }
       ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
