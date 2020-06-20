@@ -8,7 +8,7 @@ assignees: ''
 
 **Describe the bug**
 
-[A clear and concise description of what the bug is.]
+[A clear and concise description of what the bug is. Add the `simulation` label if running in an environment like CARLA.]
 
 **How to reproduce or log data**
 
