@@ -1,5 +1,5 @@
 #include "commonmodel.h"
-
+#include "clutil.h"
 void ModelFrame::init(cl::Context &ctx, cl::Device &device, int width, int height) {
   q_ = cl::CommandQueue(ctx, device);
   width_ = width;

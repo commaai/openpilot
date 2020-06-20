@@ -1,13 +1,13 @@
 #pragma once
-#include <assert.h>
-#include <czmq.h>
+
 #define CL_HPP_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 
 #include <CL/cl2.hpp>
-
-#include "clutil.h"
+#include <assert.h>
+#include <czmq.h>
 #include "common/mat.h"
+
 class ModelFrame {
  public:
   ModelFrame() {}
@@ -20,21 +20,11 @@ class ModelFrame {
   void yuvQueue();
 
   cl::CommandQueue q_;
-  cl::Buffer transformed_y_cl_;
-  cl::Buffer transformed_u_cl_;
-  cl::Buffer transformed_v_cl_;
-  cl::Buffer net_input_;
+  cl::Buffer transformed_y_cl_, transformed_u_cl_, transformed_v_cl_;
+  cl::Buffer m_y_cl, m_uv_cl_, net_input_;
   size_t net_input_size_;
-
-  cl::Kernel kernel_;
-  cl::Kernel loadys_krnl_;
-  cl::Kernel loaduv_krnl_;
-
-  cl::Buffer m_y_cl;
-  cl::Buffer m_uv_cl_;
-
-  int width_;
-  int height_;
+  cl::Kernel kernel_, loadys_krnl_, loaduv_krnl_;
+  int width_, height_;
 };
 
 inline float sigmoid(float input) { return 1 / (1 + expf(-input)); }
