@@ -10,7 +10,5 @@ assignees: ''
 
 - [ ] added to README
 - [ ] test route added to [test_car_models](../../selfdrive/test/test_car_models.py)
-
-Route with openpilot: []
-Route with stock system: []
-
+- [ ] route with openpilot:
+- [ ] route with stock system:
