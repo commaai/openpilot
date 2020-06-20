@@ -364,7 +364,7 @@ selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
 selfdrive/modeld/dmonitoringmodeld
 
-selfdrive/modeld/models/commonmodel.c
+selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
 selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
