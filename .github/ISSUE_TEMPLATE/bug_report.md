@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve openpilot
+about: For issues with running openpilot on your comma device
 title: ''
 labels: ''
 assignees: ''
