@@ -14,6 +14,7 @@ extern "C" {
 
 typedef struct VisionBuf {
   size_t len;
+  size_t mmap_len;
   void* addr;
   int handle;
   int fd;

@@ -64,6 +64,7 @@ VisionBuf visionbuf_allocate(size_t len) {
 
   return (VisionBuf){
     .len = len,
+    .mmap_len = ion_alloc.len,
     .addr = addr,
     .handle = ion_alloc.handle,
     .fd = ion_fd_data.fd,
@@ -139,7 +140,7 @@ void visionbuf_sync(const VisionBuf* buf, int dir) {
 
 void visionbuf_free(const VisionBuf* buf) {
   clReleaseMemObject(buf->buf_cl);
-  munmap(buf->addr, buf->len + PADDING_CL);
+  munmap(buf->addr, buf->mmap_len);
   close(buf->fd);
   struct ion_handle_data handle_data = {
     .handle = buf->handle,
