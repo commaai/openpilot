@@ -9,9 +9,6 @@
 #include "common/params.h"
 #include "driving.h"
 
-
-
-
 #define PATH_IDX 0
 #define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2 + 1
 #define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 2
@@ -33,8 +30,8 @@
 
 Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> vander;
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context, int temporal) {
-  frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
+void model_init(ModelState* s, cl::Context &ctx, cl::Device &device, int temporal) {
+  s->frame.init(ctx, device, MODEL_WIDTH, MODEL_HEIGHT);
   s->input_frames = (float*)calloc(MODEL_FRAME_SIZE * 2, sizeof(float));
 
   const int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
@@ -81,8 +78,8 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 
 
 
-ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
-                           cl_mem yuv_cl, int width, int height,
+ModelDataRaw model_eval_frame(ModelState* s,
+                           cl::Buffer &yuv_cl, int width, int height,
                            mat3 transform, void* sock,
                            float *desire_in) {
 #ifdef DESIRE
@@ -103,7 +100,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
-  float *new_frame_buf = frame_prepare(&s->frame, q, yuv_cl, width, height, transform);
+  float *new_frame_buf = s->frame.prepare(yuv_cl, width, height, transform);
   memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
   memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
   s->m->execute(s->input_frames, MODEL_FRAME_SIZE*2);
@@ -114,8 +111,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
     fclose(dump_yuv_file);
     assert(1==2);
   #endif
-
-  clEnqueueUnmapMemObject(q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
+ s->frame.unmap(new_frame_buf);
 
   // net outputs
   ModelDataRaw net_outputs;
@@ -134,7 +130,6 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 void model_free(ModelState* s) {
   free(s->output);
   free(s->input_frames);
-  frame_free(&s->frame);
   delete s->m;
 }
 

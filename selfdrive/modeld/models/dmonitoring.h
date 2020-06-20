@@ -5,10 +5,6 @@
 #include "runners/run.h"
 #include "messaging.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define OUTPUT_SIZE 33
 #define RHD_CHECK_INTERVAL 10
 
@@ -40,7 +36,5 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res);
 void dmonitoring_free(DMonitoringModelState* s);
 
-#ifdef __cplusplus
-}
-#endif
+
 

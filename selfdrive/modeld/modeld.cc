@@ -8,6 +8,7 @@
 
 #include "models/driving.h"
 #include "messaging.hpp"
+
 volatile sig_atomic_t do_exit = 0;
 
 static void set_do_exit(int sig) {
@@ -89,64 +90,31 @@ int main(int argc, char **argv) {
 #else
   cl_device_type device_type = CL_DEVICE_TYPE_CPU;
 #endif
+  cl::Device device;
 
-  // cl init
-  cl_device_id device_id;
-  cl_context context;
-  cl_command_queue q;
-  {
-    cl_uint num_platforms;
-    err = clGetPlatformIDs(0, NULL, &num_platforms);
-    assert(err == 0);
-
-    cl_platform_id * platform_ids = new cl_platform_id[num_platforms];
-    err = clGetPlatformIDs(num_platforms, platform_ids, NULL);
-    assert(err == 0);
-
-    LOGD("got %d opencl platform(s)", num_platforms);
-
-    char cBuffer[1024];
-    bool opencl_platform_found = false;
-
-    for (size_t i = 0; i < num_platforms; i++){
-      err = clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
-      assert(err == 0);
-      LOGD("platform[%zu] CL_PLATFORM_NAME: %s", i, cBuffer);
-
-      cl_uint num_devices;
-      err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
-      if (err != 0|| !num_devices){
-        continue;
-      }
-
-      // Get first device
-      err = clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL);
-      assert(err == 0);
-
-      context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
-      assert(err == 0);
-
-      q = clCreateCommandQueue(context, device_id, 0, &err);
-      assert(err == 0);
-
-      opencl_platform_found = true;
+  std::vector<cl::Platform> platforms;
+  cl::Platform::get(&platforms);
+  for (auto &p : platforms) {
+    std::string platver = p.getInfo<CL_PLATFORM_VERSION>();
+    printf("platform version %s\n", platver.c_str());
+    std::vector<cl::Device> all_devices;
+    p.getDevices(device_type, &all_devices);
+    if (all_devices.size() > 0) {
+      printf("device found\n");
+      device = all_devices[0];
       break;
     }
-
-    delete[] platform_ids;
-
-    if (!opencl_platform_found){
-      LOGE("No valid openCL platform found");
-      assert(opencl_platform_found);
-    }
-
-
-    LOGD("opencl init complete");
   }
+  if (device.get() == nullptr){
+    LOGE("No valid openCL platform found");
+    assert(0);
+  }
+
+  cl::Context ctx (device);
 
   // init the models
   ModelState model;
-  model_init(&model, device_id, context, true);
+  model_init(&model, ctx, device, true);
   LOGW("models loaded, modeld starting");
 
   // debayering does a 2x downscale
@@ -160,7 +128,7 @@ int main(int argc, char **argv) {
   VisionStream stream;
   while (!do_exit) {
     VisionStreamBufs buf_info;
-    err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
+    err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
     if (err) {
       LOGW("visionstream connect failed");
       usleep(100000);
@@ -169,9 +137,9 @@ int main(int argc, char **argv) {
     LOGW("connected with buffer size: %d", buf_info.buf_len);
 
     // one frame in memory
-    cl_mem yuv_cl;
-    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context, &yuv_cl);
-
+    cl_mem yuv_cl1;
+    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device.get(), ctx.get(), &yuv_cl1);
+    cl::Buffer yuv_cl(yuv_cl1, true);
     double last = 0;
     int desire = -1;
     while (!do_exit) {
@@ -209,7 +177,7 @@ int main(int argc, char **argv) {
         memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
 
         ModelDataRaw model_buf =
-            model_eval_frame(&model, q, yuv_cl, buf_info.width, buf_info.height,
+            model_eval_frame(&model, yuv_cl, buf_info.width, buf_info.height,
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
@@ -231,6 +199,8 @@ int main(int argc, char **argv) {
   LOG("joining live_thread");
   err = pthread_join(live_thread_handle, NULL);
   assert(err == 0);
+  // clReleaseCommandQueue(q);
+  // clReleaseContext(context);
 
   return 0;
 }

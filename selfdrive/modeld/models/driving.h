@@ -1,6 +1,4 @@
-#ifndef MODEL_H
-#define MODEL_H
-
+#pragma once
 // gate this here
 #define TEMPORAL
 #define DESIRE
@@ -63,10 +61,8 @@ typedef struct ModelState {
 #endif
 } ModelState;
 
-void model_init(ModelState* s, cl_device_id device_id,
-                cl_context context, int temporal);
-ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
-                           cl_mem yuv_cl, int width, int height,
+void model_init(ModelState* s, cl::Context &ctx, cl::Device &device, int temporal);
+ModelDataRaw model_eval_frame(ModelState* s,  cl::Buffer &yuv_cl, int width, int height,
                            mat3 transform, void* sock, float *desire_in);
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
@@ -75,4 +71,3 @@ void model_publish(PubMaster &pm, uint32_t frame_id,
                    const ModelDataRaw &data, uint64_t timestamp_eof);
 void posenet_publish(PubMaster &pm, uint32_t frame_id,
                    const ModelDataRaw &data, uint64_t timestamp_eof);
-#endif

@@ -6,10 +6,9 @@ libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv'
 TEST_THNEED = False
 
 common_src = [
-  "models/commonmodel.c",
+  "models/commonmodel.cc",
   "runners/snpemodel.cc",
-  "transforms/loadyuv.c",
-  "transforms/transform.c"]
+  ]
 
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'gnustl_shared']

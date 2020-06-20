@@ -1,47 +1,41 @@
-#ifndef COMMONMODEL_H
-#define COMMONMODEL_H
+#pragma once
+#include <assert.h>
+#include <czmq.h>
+#define CL_HPP_ENABLE_EXCEPTIONS
+#define CL_HPP_TARGET_OPENCL_VERSION 200
 
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
+#include <CL/cl2.hpp>
 
+#include "clutil.h"
 #include "common/mat.h"
-#include "transforms/transform.h"
-#include "transforms/loadyuv.h"
+class ModelFrame {
+ public:
+  ModelFrame() {}
+  void init(cl::Context &ctx, cl::Device &device, int width, int height);
+  float *prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 &transform);
+  void unmap(void *buf) { q_.enqueueUnmapMemObject(net_input_, (void *)buf); }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+ private:
+  void warpPerspectiveQueue(cl::Buffer &in_yuv, int in_width, int in_height, mat3 &projection);
+  void yuvQueue();
 
-float softplus(float input);
-float sigmoid(float input);
+  cl::CommandQueue q_;
+  cl::Buffer transformed_y_cl_;
+  cl::Buffer transformed_u_cl_;
+  cl::Buffer transformed_v_cl_;
+  cl::Buffer net_input_;
+  size_t net_input_size_;
 
-typedef struct ModelFrame {
-  cl_device_id device_id;
-  cl_context context;
+  cl::Kernel kernel_;
+  cl::Kernel loadys_krnl_;
+  cl::Kernel loaduv_krnl_;
 
-  // input
-  Transform transform;
-  int transformed_width, transformed_height;
-  cl_mem transformed_y_cl, transformed_u_cl, transformed_v_cl;
-  LoadYUVState loadyuv;
-  cl_mem net_input;
-  size_t net_input_size;
-} ModelFrame;
+  cl::Buffer m_y_cl;
+  cl::Buffer m_uv_cl_;
 
-void frame_init(ModelFrame* frame, int width, int height,
-                      cl_device_id device_id, cl_context context);
-float *frame_prepare(ModelFrame* frame, cl_command_queue q,
-                           cl_mem yuv_cl, int width, int height,
-                           mat3 transform);
-void frame_free(ModelFrame* frame);
+  int width_;
+  int height_;
+};
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif
-
+inline float sigmoid(float input) { return 1 / (1 + expf(-input)); }
+inline float softplus(float input) { return log1p(expf(input)); }
