@@ -6,14 +6,14 @@ labels: 'car bug fix'
 assignees: ''
 ---
 
-** Description **
+**Description**
 
 <!-- A description of the bug and the fix. Also link the issue if it exists. -->
 
-** Verification **
+**Verification**
 
 <!-- Explain how you tested this bug fix. -->
 
-** Route **
+**Route**
 
 Route: [a route with the bug fix]

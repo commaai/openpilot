@@ -6,10 +6,10 @@ labels: 'refactor'
 assignees: ''
 ---
 
-** Description **
+**Description**
 
 <!-- A description of the refactor, including the goals it accomplishes. -->
 
-** Verification **
+**Verification**
 
 <!-- Explain how you tested the refactor for regressions. -->
