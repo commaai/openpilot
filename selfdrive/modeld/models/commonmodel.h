@@ -16,7 +16,7 @@ constexpr int MODEL_FRAME_SIZE = (MODEL_WIDTH * MODEL_HEIGHT * 3 / 2);
 class ModelFrame {
  public:
   ModelFrame() {}
-  ~ModelFrame();
+  ~ModelFrame() {};
   void init(cl::Context &ctx, cl::Device &device);
   void prepare(cl::Buffer &yuv_cl, int in_width, int in_height, mat3 transform);
   inline float *getFrame() const { return input_frames_; }
@@ -25,7 +25,7 @@ class ModelFrame {
  private:
   void transform(cl::Buffer &in_yuv, int in_width, int in_height, mat3 projection);
   void loadyuv();
-  float *input_frames_ = nullptr;
+  std::unique_ptr<float[]> input_frames_;
   cl::CommandQueue q_;
   cl::Buffer transformed_y_cl_, transformed_u_cl_, transformed_v_cl_;
   cl::Buffer m_y_cl, m_uv_cl_, net_input_;

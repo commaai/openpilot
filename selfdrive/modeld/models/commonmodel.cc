@@ -2,7 +2,7 @@
 
 #include "clutil.h"
 void ModelFrame::init(cl::Context &ctx, cl::Device &device) {
-  input_frames_ = (float *)calloc(MODEL_FRAME_SIZE * 2, sizeof(float));
+  input_frames_ = std::make_unique<float[]>(MODEL_FRAME_SIZE * 2);
 
   q_ = cl::CommandQueue(ctx, device);
 
@@ -113,8 +113,4 @@ void ModelFrame::loadyuv() {
   loaduv_krnl_.setArg(2, loaduv_out_off);
 
   q_.enqueueNDRangeKernel(loaduv_krnl_, cl::NullRange, cl::NDRange(loaduv_work_size));
-}
-
-ModelFrame::~ModelFrame() {
-  free(input_frames_);
 }

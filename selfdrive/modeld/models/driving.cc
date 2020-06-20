@@ -35,7 +35,6 @@ void model_init(ModelState* s, cl::Device &device, cl::Context &ctx, int tempora
 
   const int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output = std::make_unique<float[]>(output_size);
-  memset(s->output.get(), 0, output_size * sizeof(float));
 
   s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", s->output.get(), output_size, USE_GPU_RUNTIME);
 
@@ -46,15 +45,12 @@ void model_init(ModelState* s, cl::Device &device, cl::Context &ctx, int tempora
 
 #ifdef DESIRE
   s->prev_desire = std::make_unique<float[]>(DESIRE_LEN);
-  memset(s->prev_desire.get(), 0, DESIRE_LEN * sizeof(float));
   s->pulse_desire = std::make_unique<float[]>(DESIRE_LEN);
-  memset(s->pulse_desire.get(), 0, DESIRE_LEN * sizeof(float));
   s->m->addDesire(s->pulse_desire.get(), DESIRE_LEN);
 #endif
 
 #ifdef TRAFFIC_CONVENTION
   s->traffic_convention = std::make_unique<float[]>(TRAFFIC_CONVENTION_LEN);
-  memset(s->traffic_convention.get(), 0, TRAFFIC_CONVENTION_LEN * sizeof(float));
   s->m->addTrafficConvention(s->traffic_convention.get(), TRAFFIC_CONVENTION_LEN);
 
   std::vector<char> result = read_db_bytes("IsRHD");
