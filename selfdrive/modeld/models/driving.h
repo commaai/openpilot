@@ -6,7 +6,6 @@
 
 #include <czmq.h>
 
-#include "common/mat.h"
 #include "common/util.h"
 #include "commonmodel.h"
 #include "messaging.hpp"
@@ -21,9 +20,9 @@
 #define TRAFFIC_CONVENTION_LEN 2
 #define DESIRE_PRED_SIZE 32
 #define OTHER_META_SIZE 4
-#define LEAD_MDN_N 5  // probs for 5 groups
-#define MDN_VALS 4    // output xyva for each lead group
-#define SELECTION 3   //output 3 group (lead now, in 2s and 6s)
+#define LEAD_MDN_N 5 // probs for 5 groups
+#define MDN_VALS 4 // output xyva for each lead group
+#define SELECTION 3 //output 3 group (lead now, in 2s and 6s)
 #define MDN_GROUP_SIZE 11
 #define TIME_DISTANCE 100
 #define POSE_SIZE 12
@@ -58,6 +57,5 @@ void model_init(ModelState *s, cl::Device &device_id, cl::Context &context, int 
 ModelDataRaw model_eval_frame(ModelState *s, cl::Buffer &yuv_cl, int width, int height, mat3 transform, void *sock, float *desire_in);
 void model_free(ModelState *s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
-
 void model_publish(PubMaster &pm, uint32_t frame_id, const ModelDataRaw &data, uint64_t timestamp_eof);
 void posenet_publish(PubMaster &pm, uint32_t frame_id, const ModelDataRaw &data, uint64_t timestamp_eof);

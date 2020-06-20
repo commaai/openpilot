@@ -75,10 +75,8 @@ void model_init(ModelState* s, cl::Device &device, cl::Context &ctx, int tempora
   }
 }
 
-
-
-ModelDataRaw model_eval_frame(ModelState* s, cl::Buffer &yuv_cl, int width, int height,
-                           mat3 transform, void* sock, float *desire_in) {
+ModelDataRaw model_eval_frame(ModelState *s, cl::Buffer &yuv_cl, int width, int height,
+                              mat3 transform, void *sock, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 0; i < DESIRE_LEN; i++) {
@@ -156,7 +154,6 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   p = p.transpose() * scale.asDiagonal();
   out[3] = y0;
 }
-
 
 void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bool has_prob, const float offset) {
   float points_arr[MODEL_PATH_DISTANCE];
@@ -258,7 +255,6 @@ void model_publish(PubMaster &pm, uint32_t frame_id,
   fill_path(right_lane, net_outputs.right_lane, true, -1.8);
   auto longi = framed.initLongitudinal();
   fill_longi(longi, net_outputs.long_x, net_outputs.long_v, net_outputs.long_a);
-
 
   // Find the distribution that corresponds to the current lead
   int mdn_max_idx = 0;
