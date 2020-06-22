@@ -64,3 +64,5 @@ pandaextra
 
 .mypy_cache/
 flycheck_*
+
+cppcheck_report.txt
