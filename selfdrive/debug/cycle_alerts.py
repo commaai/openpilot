@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+# flake8: noqa
+# pylint: skip-file
+# type: ignore
+
 import argparse
 import time
-import zmq
 
 import cereal.messaging as messaging
-from cereal.services import service_list
 from selfdrive.controls.lib.events import EVENTS, Alert
 
 def now_millis(): return time.time() * 1000
@@ -41,7 +43,7 @@ def cycle_alerts(duration_millis, alerts=None):
     #dat.controlsState.alertStatus = alert.alert_status
     dat.controlsState.alertSound = alert.audible_alert
     controls_state.send(dat.to_bytes())
-    
+
     time.sleep(0.01)
 
 if __name__ == '__main__':
