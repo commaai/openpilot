@@ -304,7 +304,7 @@ def locationd_thread(sm, pm, disabled_logs=None):
     sm.update()
 
     for sock, updated in sm.updated.items():
-      if updated:
+      if updated and sm.valid[sock]:
         t = sm.logMonoTime[sock] * 1e-9
         if sock == "sensorEvents":
           localizer.handle_sensors(t, sm[sock])
