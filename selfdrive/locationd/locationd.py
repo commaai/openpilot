@@ -324,6 +324,7 @@ def locationd_thread(sm, pm, disabled_logs=None):
 
       msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
       msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
+      msg.liveLocationKalman.sensorsOK = sm.alive['sensorEvents'] and sm.valid['sensorEvents']
 
       gps_age = (t / 1e9) - localizer.last_gps_fix
       msg.liveLocationKalman.gpsOK = gps_age < 1.0
