@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 
   // messaging
   PubMaster pm({"model", "cameraOdometry"});
-  SubMaster sm({"pathPlan"});
+  SubMaster sm({"pathPlan", "frame"});
 
 #ifdef QCOM
   cl_device_type device_type = CL_DEVICE_TYPE_DEFAULT;
@@ -202,6 +202,7 @@ int main(int argc, char **argv) {
         }
 
         mat3 model_transform = matmul3(yuv_transform, transform);
+        uint32_t frame_id = sm["frame"].getFrame().getFrameId();
 
         mt1 = millis_since_boot();
 
@@ -213,10 +214,10 @@ int main(int argc, char **argv) {
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
-        model_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
-        posenet_publish(pm, extra.frame_id, model_buf, extra.timestamp_eof);
+        model_publish(pm, extra.frame_id, frame_id, model_buf, extra.timestamp_eof);
+        posenet_publish(pm, extra.frame_id, frame_id, model_buf, extra.timestamp_eof);
 
-        LOGD("model process: %.2fms, from last %.2fms", mt2-mt1, mt1-last);
+        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu", mt2-mt1, mt1-last, extra.frame_id, frame_id);
         last = mt1;
       }
 
