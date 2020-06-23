@@ -75,7 +75,7 @@ class Events:
             alert = alert(*callback_args)
 
           if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
-            alert.alert_type = EVENT_NAME[e]
+            alert.alert_type = f"{EVENT_NAME[e]}/{et}"
             ret.append(alert)
     return ret
 
