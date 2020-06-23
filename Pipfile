@@ -73,6 +73,7 @@ pprofile = "*"
 pyprof2calltree = "*"
 pre-commit = "*"
 mypy = "*"
+parameterized = "*"
 
 [packages]
 atomicwrites = "*"
