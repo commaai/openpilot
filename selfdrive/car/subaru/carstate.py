@@ -52,12 +52,12 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.KPH_TO_MS
 
     # EDM Global: mph = 1, 2; All Outback: mph = 1
-    if self.car_fingerprint in [CAR.IMPREZA, CAR.OUTBACK]:
+    if self.car_fingerprint in [CAR.IMPREZA, CAR.OUTBACK_2015]:
       if cp.vl["Dash_State"]['Units'] in [1, 2]:
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     # UDM Forester, Legacy: mph = 0
-    if self.car_fingerprint in [CAR.FORESTER, CAR.LEGACY]:
+    if self.car_fingerprint in [CAR.LEGACY_2015, CAR.FORESTER_2017]:
       if (cp.vl["Dash_State"]['Units'] == 0):
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
@@ -71,7 +71,7 @@ class CarState(CarStateBase):
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
-    if self.car_fingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
+    if self.car_fingerprint in [CAR.OUTBACK_2015, CAR.LEGACY_2015, CAR.FORESTER_2017]:
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
@@ -119,14 +119,14 @@ class CarState(CarStateBase):
         ("CruiseControl", 20),
      ]
 
-    if CP.carFingerprint == CAR.FORESTER:
+    if CP.carFingerprint == CAR.FORESTER_2017:
       checks += [
         ("Dashlights", 20),
         ("BodyInfo", 1),
         ("CruiseControl", 50),
       ]
 
-    if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY]:
+    if CP.carFingerprint in [CAR.OUTBACK_2015, CAR.LEGACY_2015]:
       checks += [
         ("Dashlights", 10),
         ("CruiseControl", 50),
@@ -174,7 +174,7 @@ class CarState(CarStateBase):
         ("ES_DashStatus", 10),
       ]
 
-    if CP.carFingerprint in [CAR.OUTBACK, CAR.LEGACY, CAR.FORESTER]:
+    if CP.carFingerprint in [CAR.OUTBACK_2015, CAR.LEGACY_2015, CAR.FORESTER_2017]:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
         ("Not_Ready_Startup", "ES_DashStatus", 0),
