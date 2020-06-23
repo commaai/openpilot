@@ -12,21 +12,21 @@
 #define ReturnOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; }
 
-static std::map<AudibleAlert, const char *> sound_map{
-    {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav"},
-    {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav"},
-    {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav"},
-    {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav"},
-    {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav"},
-    {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav"},
-    {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav"},
-    {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav"}};
+static std::map<AudibleAlert, std::pair<const char *, int>> sound_map {
+    {AudibleAlert::CHIME_DISENGAGE, {"../assets/sounds/disengaged.wav", 0}},
+    {AudibleAlert::CHIME_ENGAGE, {"../assets/sounds/engaged.wav", 0}},
+    {AudibleAlert::CHIME_WARNING1, {"../assets/sounds/warning_1.wav", 0}},
+    {AudibleAlert::CHIME_WARNING2, {"../assets/sounds/warning_2.wav", 0}},
+    {AudibleAlert::CHIME_WARNING2_REPEAT, {"../assets/sounds/warning_2.wav", 3}},
+    {AudibleAlert::CHIME_WARNING_REPEAT, {"../assets/sounds/warning_repeat.wav", 3}},
+    {AudibleAlert::CHIME_ERROR, {"../assets/sounds/error.wav", 0}},
+    {AudibleAlert::CHIME_PROMPT, {"../assets/sounds/error.wav", 0}}};
 
 struct Sound::Player {
   SLObjectItf player;
   SLPlayItf playItf;
   // slplay_callback runs on a background thread,use atomic to ensure thread safe.
-  std::atomic<int> repeat; 
+  std::atomic<int> repeat;
 };
 
 bool Sound::init(int volume) {
@@ -41,7 +41,7 @@ bool Sound::init(int volume) {
   ReturnOnError((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
 
   for (auto &kv : sound_map) {
-    SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar *)kv.second};
+    SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar *)kv.second.first};
     SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
     SLDataSource audioSrc = {&locUri, &formatMime};
     SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
@@ -61,10 +61,6 @@ bool Sound::init(int volume) {
   return true;
 }
 
-AudibleAlert Sound::currentPlaying() {
-  return currentSound_;
-}
-
 void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event) {
   Sound::Player *s = reinterpret_cast<Sound::Player *>(context);
   if (event == SL_PLAYEVENT_HEADATEND && s->repeat > 1) {
@@ -75,13 +71,13 @@ void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event
   }
 }
 
-bool Sound::play(AudibleAlert alert, int repeat) {
+bool Sound::play(AudibleAlert alert) {
   if (currentSound_ != AudibleAlert::NONE) {
     stop();
   }
   auto player = player_.at(alert);
   SLPlayItf playItf = player->playItf;
-  player->repeat = repeat;
+  player->repeat = sound_map[alert].second;
   if (player->repeat > 0) {
     ReturnOnError((*playItf)->RegisterCallback(playItf, slplay_callback, player), "Failed to register callback");
     ReturnOnError((*playItf)->SetCallbackEventsMask(playItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
@@ -106,11 +102,11 @@ void Sound::stop() {
   }
 }
 
-void Sound::setVolume(int volume, int timeout_seconds) {
+void Sound::setVolume(int volume) {
   if (last_volume_ == volume) return;
   
   double current_time = nanos_since_boot();
-  if ((current_time - last_set_volume_time_) > (timeout_seconds * (1e+9))) {
+  if ((current_time - last_set_volume_time_) > (5 * (1e+9))) { // 5s timeout on updating the volume
     char volume_change_cmd[64];
     snprintf(volume_change_cmd, sizeof(volume_change_cmd), "service call audio 3 i32 3 i32 %d i32 1 &", volume);
     system(volume_change_cmd);

@@ -308,7 +308,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     if (!scene.frontview){ s->controls_seen = true; }
 
     auto alert_sound = scene.controls_state.getAlertSound();
-    if (alert_sound != s->sound.currentPlaying()) {
+    if (scene.alert_text2.compare(scene.controls_state.getAlertText2()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
         s->sound.stop();
       } else {
@@ -852,7 +852,7 @@ int main(int argc, char* argv[]) {
       should_swap = true;
     }
 
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5), 5); // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
 
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
@@ -869,7 +869,7 @@ int main(int argc, char* argv[]) {
         LOGE("Controls unresponsive");
 
         if (s->scene.alert_text2 != "Controls Unresponsive") {
-          s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT, 3); // loop sound 3 times
+          s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT);
         }
 
         s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
