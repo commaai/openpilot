@@ -204,7 +204,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TVA-A160\x00\x00',
-      b'36802-TVA-A160\x00\x00',
       b'36802-TVA-A170\x00\x00',
       b'36802-TWA-A070\x00\x00',
     ],
@@ -743,7 +742,6 @@ FW_VERSIONS = {
       b'78109-THR-A430\x00\x00',
       b'78109-THR-A820\x00\x00',
       b'78109-THR-A830\x00\x00',
-      b'78109-THR-AB20\x00\x00',
       b'78109-THR-AB20\x00\x00',
       b'78109-THR-AB30\x00\x00',
       b'78109-THR-AB40\x00\x00',

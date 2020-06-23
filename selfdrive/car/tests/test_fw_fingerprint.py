@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import unittest
 from cereal import car
+from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.fw_versions import match_fw_to_car
 from selfdrive.car.toyota.values import CAR as TOYOTA
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
 
+ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
@@ -41,6 +43,16 @@ class TestFwFingerprint(unittest.TestCase):
 
     self.assertFingerprints(match_fw_to_car(CP.carFw), TOYOTA.RAV4_TSS2)
 
+  def test_no_duplicate_fw_versions(self):
+    passed = True
+    for car_name, ecus in FW_VERSIONS.items():
+      for ecu, ecu_fw in ecus.items():
+        duplicates = set([fw for fw in ecu_fw if ecu_fw.count(fw) > 1])
+        if len(duplicates):
+          print(car_name, ECU_NAME[ecu[0]], duplicates)
+          passed = False
+
+    self.assertTrue(passed, "Duplicate FW versions found")
 
 if __name__ == "__main__":
   unittest.main()
