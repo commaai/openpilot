@@ -290,7 +290,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   auto meta = framed.initMeta();
   fill_meta(meta, net_outputs.meta);
-  event.setValid(frame_id - vipc_frame_id < MAX_FRAME_AGE);
+  event.setValid(frame_id < vipc_frame_id + MAX_FRAME_AGE);
 
   pm.send("model", msg);
 }
@@ -326,7 +326,7 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);
-  event.setValid(frame_id - vipc_frame_id < MAX_FRAME_AGE);
+  event.setValid(frame_id < vipc_frame_id + MAX_FRAME_AGE);
 
   pm.send("cameraOdometry", msg);
 }
