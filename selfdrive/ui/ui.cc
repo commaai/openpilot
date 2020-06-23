@@ -308,7 +308,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     if (!scene.frontview){ s->controls_seen = true; }
 
     auto alert_sound = scene.controls_state.getAlertSound();
-    if (scene.alert_text2.compare(scene.controls_state.getAlertText2())) {
+    if (scene.alert_text2.compare(scene.controls_state.getAlertText2()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
         s->sound.stop();
       } else {
