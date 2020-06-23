@@ -30,7 +30,6 @@ def check_fcw(log):
 
 
 def check_engaged(log):
-  import pdb; pdb.set_trace()
   return log['controls_state_msgs'][-1][-1].active
 
 
