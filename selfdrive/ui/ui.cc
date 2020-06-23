@@ -198,6 +198,9 @@ static void ui_init(UIState *s) {
   s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
+  s->scene.satelliteCount = -1;
+  s->started = false;
+  s->vision_seen = false;
 
   // init display
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
@@ -734,6 +737,7 @@ int main(int argc, char* argv[]) {
   UIState uistate = {};
   UIState *s = &uistate;
   ui_init(s);
+
   enable_event_processing(true);
 
   pthread_t connect_thread_handle;
@@ -773,10 +777,6 @@ int main(int argc, char* argv[]) {
   assert(s->sound.init(MIN_VOLUME));
 
   int draws = 0;
-
-  s->scene.satelliteCount = -1;
-  s->started = false;
-  s->vision_seen = false;
 
   while (!do_exit) {
     bool should_swap = false;
