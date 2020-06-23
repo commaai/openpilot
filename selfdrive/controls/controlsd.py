@@ -213,7 +213,7 @@ class Controls:
     if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['frame'].recoverState < 2:
-      # 0/1 is standby, <0 is counting down, >=2 is active
+      # counter>=2 is active
       self.events.add(EventName.focusRecoverActive)
     if not self.sm['plan'].radarValid:
       self.events.add(EventName.radarFault)
