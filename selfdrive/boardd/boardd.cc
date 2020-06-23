@@ -531,8 +531,8 @@ void can_send(cereal::Event::Reader &event) {
     //Older than 1 second. Dont send.
     return;
   }
-  
-  auto can_data_list = event.getSendcan(); 
+
+  auto can_data_list = event.getSendcan();
   int msg_count = can_data_list.size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
@@ -586,20 +586,26 @@ void *can_send_thread(void *crap) {
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "sendcan");
   assert(subscriber != NULL);
+  subscriber->setTimeout(100);
 
   // run as fast as messages come in
   while (!do_exit) {
     Message * msg = subscriber->receive();
 
-    if (msg){
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-      can_send(event);
-      delete msg;
+    if (!msg){
+      if (errno == EINTR) {
+        do_exit = true;
+      }
+      continue;
     }
+
+    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+    memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+    capnp::FlatArrayMessageReader cmsg(amsg);
+    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+    can_send(event);
+    delete msg;
   }
 
   delete subscriber;
