@@ -123,6 +123,8 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   s->max_gain = max_gain;
   s->fps = fps;
 
+  s->self_recover = 0;
+
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
   s->ops_sock = zsock_resolve(ops_sock);
@@ -1745,8 +1747,13 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
       avg_focus += s->focus[i];
     }
   }
+  // self recover override
+  if (s->self_recover > 1) {
+    s->focus_err = 200 * ((s->self_recover % 2 == 0) ? 1:-1); // far for even numbers, close for odd
+    s->self_recover -= 2;
+    return;
+  }
 
-  //printf("\n");
   if (good_count < 4) {
     s->focus_err = nan("");
     return;
@@ -1770,8 +1777,8 @@ static void do_autofocus(CameraState *s) {
   float err = s->focus_err;
   float sag = (s->last_sag_acc_z/9.8) * 128;
 
-  const int dac_up = s->device == DEVICE_LP3? 634:456;
-  const int dac_down = s->device == DEVICE_LP3? 366:224;
+  const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
+  const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
 
   if (!isnan(err))  {
     // learn lens_true_pos
@@ -1980,43 +1987,6 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
   };
 }
 
-static bool acceleration_from_sensor_sock(void *sock, float *vs) {
-  int err;
-  bool ret = false;
-  zmq_msg_t msg;
-  err = zmq_msg_init(&msg);
-  assert(err == 0);
-
-  err = zmq_msg_recv(&msg, sock, 0);
-  assert(err >= 0);
-
-  void *data = zmq_msg_data(&msg);
-  size_t size = zmq_msg_size(&msg);
-
-  auto amsg = kj::heapArray<capnp::word>(size / sizeof(capnp::word) + 1);
-  memcpy(amsg.begin(), data, size);
-  capnp::FlatArrayMessageReader cmsg(amsg);
-  auto event = cmsg.getRoot<cereal::Event>();
-  if (event.which() == cereal::Event::SENSOR_EVENTS) {
-    auto sensor_events = event.getSensorEvents();
-    for (auto sensor_event : sensor_events) {
-      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-        auto v = sensor_event.getAcceleration().getV();
-        if (v.size() < 3) {
-          continue;  //wtf
-        }
-        for (int j = 0; j < 3; j++) {
-          vs[j] = v[j];
-        }
-        ret = true;
-        break;
-      }
-    }
-  }
-  zmq_msg_close(&msg);
-  return ret;
-}
-
 static void ops_term() {
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
@@ -2036,66 +2006,81 @@ static void* ops_thread(void* arg) {
   zsock_t *cameraops = zsock_new_pull("@inproc://cameraops");
   assert(cameraops);
 
-  zsock_t *sensor_sock = zsock_new_sub(">tcp://127.0.0.1:8003", "");
-  assert(sensor_sock);
-
   zsock_t *terminate = zsock_new_sub(">inproc://terminate", "");
   assert(terminate);
 
-  zpoller_t *poller = zpoller_new(cameraops, sensor_sock, terminate, NULL);
+  zpoller_t *poller = zpoller_new(cameraops, terminate, NULL);
   assert(poller);
 
+  SubMaster sm({"sensorEvents"}); // msgq submaster
+
   while (!do_exit) {
-
+    // zmq handling
     zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
-    if (which == terminate || which == NULL) {
+    if (which == terminate) {
       break;
-    }
-    void* sockraw = zsock_resolve(which);
+    } else if (which != NULL) {
+      void* sockraw = zsock_resolve(which);
 
-    if (which == cameraops) {
-      zmq_msg_t msg;
-      err = zmq_msg_init(&msg);
-      assert(err == 0);
+      if (which == cameraops) {
+        zmq_msg_t msg;
+        err = zmq_msg_init(&msg);
+        assert(err == 0);
 
-      err = zmq_msg_recv(&msg, sockraw, 0);
-      assert(err >= 0);
+        err = zmq_msg_recv(&msg, sockraw, 0);
+        assert(err >= 0);
 
-      CameraMsg cmsg;
-      if (zmq_msg_size(&msg) == sizeof(cmsg)) {
-        memcpy(&cmsg, zmq_msg_data(&msg), zmq_msg_size(&msg));
+        CameraMsg cmsg;
+        if (zmq_msg_size(&msg) == sizeof(cmsg)) {
+          memcpy(&cmsg, zmq_msg_data(&msg), zmq_msg_size(&msg));
 
-        //LOGD("cameraops %d", cmsg.type);
+          //LOGD("cameraops %d", cmsg.type);
 
-        if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
-          if (cmsg.camera_num == 0) {
-            do_autoexposure(&s->rear, cmsg.grey_frac);
-            do_autofocus(&s->rear);
-          } else {
-            do_autoexposure(&s->front, cmsg.grey_frac);
+          if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
+            if (cmsg.camera_num == 0) {
+              do_autoexposure(&s->rear, cmsg.grey_frac);
+              do_autofocus(&s->rear);
+            } else {
+              do_autoexposure(&s->front, cmsg.grey_frac);
+            }
+          } else if (cmsg.type == -1) {
+            break;
           }
-        } else if (cmsg.type == -1) {
+        }
+
+        zmq_msg_close(&msg);
+      }
+    }
+    // msgq handling
+    if (sm.update(0) > 0) {
+      float vals[3] = {0.0};
+      bool got_accel = false;
+
+      auto sensor_events = sm["sensorEvents"].getSensorEvents();
+      for (auto sensor_event : sensor_events) {
+        if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
+          auto v = sensor_event.getAcceleration().getV();
+          if (v.size() < 3) {
+            continue;  //wtf
+          }
+          for (int j = 0; j < 3; j++) {
+            vals[j] = v[j];
+          }
+          got_accel = true;
           break;
         }
       }
 
-      zmq_msg_close(&msg);
-
-    } else if (which == sensor_sock) {
-      float vs[3] = {0.0};
-      bool got_accel = acceleration_from_sensor_sock(sockraw, vs);
-
       uint64_t ts = nanos_since_boot();
       if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
         s->rear.last_sag_ts = ts;
-        s->rear.last_sag_acc_z = -vs[2];
+        s->rear.last_sag_acc_z = -vals[2];
       }
     }
   }
 
   zpoller_destroy(&poller);
   zsock_destroy(&cameraops);
-  zsock_destroy(&sensor_sock);
   zsock_destroy(&terminate);
 
   return NULL;

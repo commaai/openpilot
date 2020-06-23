@@ -475,6 +475,32 @@ void* processing_thread(void *arg) {
     /*t11 = millis_since_boot();
     printf("process time: %f ms\n ----- \n", t11 - t10);
     t10 = millis_since_boot();*/
+
+    // setup self recover
+    if (is_blur(&s->lapres[0]) &&
+       (s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN)+1 ||
+        s->cameras.rear.lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP)-1) &&
+       s->cameras.rear.self_recover < 2) {
+      // truly stuck, needs help
+      s->cameras.rear.self_recover -= 1;
+      if (s->cameras.rear.self_recover < -FOCUS_RECOVER_PATIENCE) {
+        LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
+                                      s->cameras.rear.lens_true_pos, s->cameras.rear.self_recover);
+        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS + ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0); // parity determined by which end is stuck at
+      }
+    } else if ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M - LP3_AF_DAC_3SIG:OP3T_AF_DAC_M - OP3T_AF_DAC_3SIG) ||
+               s->cameras.rear.lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M + LP3_AF_DAC_3SIG:OP3T_AF_DAC_M + OP3T_AF_DAC_3SIG)) &&
+              s->cameras.rear.self_recover < 2) {
+      // in suboptimal position with high prob, but may still recover by itself
+      s->cameras.rear.self_recover -= 1;
+      if (s->cameras.rear.self_recover < -(FOCUS_RECOVER_PATIENCE*3)) {
+        LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", s->cameras.rear.lens_true_pos, s->cameras.rear.self_recover);
+        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS/2 + ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0);
+      }
+    } else if (s->cameras.rear.self_recover < 0) {
+      s->cameras.rear.self_recover += 1; // reset if fine
+    }
+
 #endif
 
     double t2 = millis_since_boot();
@@ -527,6 +553,7 @@ void* processing_thread(void *arg) {
         framed.setFocusConf(focus_confs);
         kj::ArrayPtr<const uint16_t> sharpness_score(&s->lapres[0], (ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1));
         framed.setSharpnessScore(sharpness_score);
+        framed.setRecoverState(s->cameras.rear.self_recover);
 #endif
 
 // TODO: add this back

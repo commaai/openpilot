@@ -208,8 +208,6 @@ EVENTS = {
 
   EventName.laneChangeBlocked: {},
 
-  EventName.focusRecoverActive: {},
-
   # ********** events only containing alerts displayed in all states **********
 
   EventName.debugAlert: {
@@ -522,6 +520,14 @@ EVENTS = {
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
     ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
+  },
+
+  EventName.focusRecoverActive: {
+    ET.WARNING: Alert(
+      "TAKE CONTROL",
+      "Attempting Refocus: Camera Focus Invalid",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
   },
 
   EventName.outOfSpace: {
