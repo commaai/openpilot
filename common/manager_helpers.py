@@ -44,6 +44,7 @@ def print_cpu_usage(first_proc, last_proc):
       print(f"{proc_name.ljust(35)}  {cpu_usage:.2f}%")
     except IndexError:
       print(f"{proc_name.ljust(35)}  NO METRICS FOUND")
+      r = 1
   print("------------------------------------------------")
 
   return r
