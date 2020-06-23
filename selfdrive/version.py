@@ -46,6 +46,8 @@ training_version = b"0.2.0"
 terms_version = b"2"
 
 dirty = True
+comma_remote = False
+tested_branch = False
 origin = get_git_remote()
 branch = get_git_full_branchname()
 
@@ -58,6 +60,7 @@ try:
 
   if (origin is not None) and (branch is not None):
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
+    tested_branch = branch in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']
 
     dirty = not comma_remote
     dirty = dirty or ('master' in branch)

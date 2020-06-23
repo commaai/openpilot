@@ -531,13 +531,15 @@ void can_send(cereal::Event::Reader &event) {
     //Older than 1 second. Dont send.
     return;
   }
-  int msg_count = event.getSendcan().size();
+  
+  auto can_data_list = event.getSendcan(); 
+  int msg_count = can_data_list.size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
-    auto cmsg = event.getSendcan()[i];
+    auto cmsg = can_data_list[i];
     if (cmsg.getAddress() >= 0x800) {
       // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
@@ -545,9 +547,10 @@ void can_send(cereal::Event::Reader &event) {
       // normal
       send[i*4] = (cmsg.getAddress() << 21) | 1;
     }
-    assert(cmsg.getDat().size() <= 8);
-    send[i*4+1] = cmsg.getDat().size() | (cmsg.getSrc() << 4);
-    memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
+    auto can_data = cmsg.getDat();
+    assert(can_data.size() <= 8);
+    send[i*4+1] = can_data.size() | (cmsg.getSrc() << 4);
+    memcpy(&send[i*4+2], can_data.begin(), can_data.size());
   }
 
   // send to board

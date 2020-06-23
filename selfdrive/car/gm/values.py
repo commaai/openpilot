@@ -32,9 +32,6 @@ class CanBus:
   CHASSIS = 2
   SW_GMLAN = 3
 
-def is_eps_status_ok(eps_status, car_fingerprint):
-  return eps_status in [0, 1]
-
 FINGERPRINTS = {
   # Astra BK MY17, ASCM unplugged
   CAR.HOLDEN_ASTRA: [{

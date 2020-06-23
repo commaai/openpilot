@@ -104,7 +104,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       }
       bytes_consumed += bytes_consumed_this_time;
     }
-    free(msg);
+    delete msg;
   }
 
   delete subscriber;

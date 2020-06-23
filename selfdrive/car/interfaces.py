@@ -107,6 +107,8 @@ class CarInterfaceBase():
       events.add(EventName.stockAeb)
     if cs_out.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
+    if cs_out.cruiseState.nonAdaptive:
+      events.add(EventName.wrongCruiseMode)
 
     if cs_out.steerError:
       events.add(EventName.steerUnavailable)

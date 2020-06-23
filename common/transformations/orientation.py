@@ -8,8 +8,7 @@ from common.transformations.transformations import (ecef_euler_from_ned_single,
                                                     quat2euler_single,
                                                     quat2rot_single,
                                                     rot2euler_single,
-                                                    rot2quat_single,
-                                                    rot_matrix)
+                                                    rot2quat_single)
 
 
 def numpy_wrap(function, input_shape, output_shape):
