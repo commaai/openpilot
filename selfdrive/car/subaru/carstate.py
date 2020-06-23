@@ -51,8 +51,8 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = cp.vl["CruiseControl"]['Cruise_Activated'] != 0
     ret.cruiseState.available = cp.vl["CruiseControl"]['Cruise_On'] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.KPH_TO_MS
-    # 1 = imperial, 6 = metric
-    if cp.vl["Dash_State"]['Units'] == 1:
+    # EDM Impreza: 1 = mph, UDM Forester: 7 = mph
+    if cp.vl["Dash_State"]['Units'] in [1, 7]:
       ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
