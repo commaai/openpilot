@@ -308,7 +308,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     if (!scene.frontview){ s->controls_seen = true; }
 
     auto alert_sound = scene.controls_state.getAlertSound();
-    if (scene.alert_text2.compare(scene.controls_state.getAlertText2()) != 0) {
+    if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
         s->sound.stop();
       } else {
@@ -318,6 +318,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.alert_text1 = scene.controls_state.getAlertText1();
     scene.alert_text2 = scene.controls_state.getAlertText2();
     scene.alert_size = scene.controls_state.getAlertSize();
+    scene.alert_type = scene.controls_state.getAlertType();
     auto alertStatus = scene.controls_state.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       update_status(s, STATUS_WARNING);
