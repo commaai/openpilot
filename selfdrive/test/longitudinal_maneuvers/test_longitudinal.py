@@ -336,7 +336,6 @@ class LongitudinalControl(unittest.TestCase):
     params.put("CommunityFeaturesToggle", "1")
 
     manager.prepare_managed_process('radard')
-    manager.prepare_managed_process('camerad')
     manager.prepare_managed_process('controlsd')
     manager.prepare_managed_process('plannerd')
     manager.prepare_managed_process('dmonitoringd')
@@ -360,7 +359,6 @@ def run_maneuver_worker(k):
 
     for _ in range(3):
       manager.start_managed_process('radard')
-      manager.start_managed_process('camerad')
       manager.start_managed_process('controlsd')
       manager.start_managed_process('plannerd')
       manager.start_managed_process('dmonitoringd')
@@ -369,7 +367,6 @@ def run_maneuver_worker(k):
       plot.write_plot(output_dir, "maneuver" + str(k + 1).zfill(2))
 
       manager.kill_managed_process('radard')
-      manager.kill_managed_process('camerad')
       manager.kill_managed_process('controlsd')
       manager.kill_managed_process('plannerd')
       manager.kill_managed_process('dmonitoringd')
