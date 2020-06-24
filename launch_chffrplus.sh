@@ -97,15 +97,14 @@ function launch {
 
     if [ ! -f "$BASEDIR/prebuilt" ]; then
       echo "Clearing build products and resetting scons state prior to NEOS update"
-      cd $BASEDIR && scons --clean
+      git clean -xdf
       rm -rf /tmp/scons_cache
-      rm -r $BASEDIR/.sconsign.dblite
     fi
 
-    "$BASEDIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+    "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update.json"
   else
     if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
-      "$BASEDIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
+      "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update_kernel.json"
     fi
   fi
 
