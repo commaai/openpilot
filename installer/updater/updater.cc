@@ -302,13 +302,13 @@ struct Updater {
   void set_progress(std::string text) {
     std::lock_guard<std::mutex> guard(lock);
     progress_text = text;
-    printf("%s\n", text);
+    printf("%s\n", text.c_str());
   }
 
   void set_error(std::string text) {
     std::lock_guard<std::mutex> guard(lock);
     error_text = text;
-    printf("%s\n", text);
+    printf("%s\n", text.c_str());
     state = ERROR;
   }
 
@@ -515,10 +515,6 @@ struct Updater {
 
     // execl("/system/bin/reboot", "recovery");
     // set_error("failed to reboot into recovery");
-  }
-
-  void background_cache() {
-
   }
 
   void draw_ack_screen(const char *title, const char *message, const char *button, const char *altbutton) {
@@ -776,7 +772,10 @@ int main(int argc, char *argv[]) {
   }
   printf("updating from %s\n", manifest_url);
   Updater updater;
-  updater.go();
+  if (background_cache)
+    updater.run_stages();
+  else
+    updater.go();
 
   return 0;
 }
