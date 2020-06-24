@@ -75,7 +75,7 @@ class Events:
             alert = alert(*callback_args)
 
           if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
-            alert.alert_type = EVENT_NAME[e]
+            alert.alert_type = f"{EVENT_NAME[e]}/{et}"
             ret.append(alert)
     return ret
 
@@ -195,12 +195,16 @@ def no_gps_alert(CP, sm, metric):
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.)
 
+def wrong_car_mode_alert(CP, sm, metric):
+  text = "Cruise Mode Disabled"
+  if CP.carName == "honda":
+    text = "Main Switch Off"
+  return NoEntryAlert(text, duration_hud_alert=0.),
+
 EVENTS = {
   # ********** events with no alerts **********
 
   EventName.gasPressed: {ET.PRE_ENABLE: None},
-
-  EventName.focusRecoverActive: {},
 
   # ********** events only containing alerts displayed in all states **********
 
@@ -292,7 +296,7 @@ EVENTS = {
       "Dashcam Mode",
       "Car Unrecognized",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
   EventName.stockAeb: {
@@ -497,8 +501,7 @@ EVENTS = {
 
   EventName.wrongCarMode: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
-    ET.NO_ENTRY: NoEntryAlert("Main Switch Off",
-                              duration_hud_alert=0.),
+    ET.NO_ENTRY: wrong_car_mode_alert,
   },
 
   EventName.wrongCruiseMode: {
@@ -523,6 +526,14 @@ EVENTS = {
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
     ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
+  },
+
+  EventName.focusRecoverActive: {
+    ET.WARNING: Alert(
+      "TAKE CONTROL",
+      "Attempting Refocus: Camera Focus Invalid",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
   },
 
   EventName.outOfSpace: {

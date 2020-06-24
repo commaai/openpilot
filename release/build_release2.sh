@@ -44,11 +44,21 @@ popd
 ln -sfn /data/openpilot /data/pythonpath
 export PYTHONPATH="/data/openpilot:/data/openpilot/pyextra"
 SCONS_CACHE=1 scons -j3
+
+# Run tests
 nosetests -s selfdrive/test/test_openpilot.py
+selfdrive/car/tests/test_car_interfaces.py
 
 # Cleanup
+find . -name '*.a' -delete
+find . -name '*.o' -delete
+find . -name '*.os' -delete
 find . -name '*.pyc' -delete
+find . -name '__pycache__' -delete
 rm .sconsign.dblite
+
+# Restore phonelibs
+git checkout phonelibs/
 
 # Mark as prebuilt release
 touch prebuilt
@@ -56,6 +66,9 @@ touch prebuilt
 # Add built files to git
 git add -f .
 git commit --amend -m "openpilot v$VERSION"
+
+# Print committed files that are normally gitignored
+#git status --ignored
 
 # Push to release2-staging
 git push -f origin release2-staging

@@ -13,14 +13,13 @@ class Sound {
  public:
   Sound() = default;
   bool init(int volume);
-  bool play(AudibleAlert alert, int repeat = 0);
+  bool play(AudibleAlert alert);
   void stop();
-  void setVolume(int volume, int timeout_seconds = 5);
-  AudibleAlert currentPlaying();
+  void setVolume(int volume);
   ~Sound();
 
- private:
 #if defined(QCOM) || defined(QCOM2)
+ private:
   SLObjectItf engine_ = nullptr;
   SLObjectItf outputMix_ = nullptr;
   int last_volume_ = 0;

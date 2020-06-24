@@ -198,6 +198,9 @@ static void ui_init(UIState *s) {
   s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
+  s->scene.satelliteCount = -1;
+  s->started = false;
+  s->vision_seen = false;
 
   // init display
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
@@ -308,7 +311,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     if (!scene.frontview){ s->controls_seen = true; }
 
     auto alert_sound = scene.controls_state.getAlertSound();
-    if (alert_sound != s->sound.currentPlaying()) {
+    if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
         s->sound.stop();
       } else {
@@ -318,6 +321,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.alert_text1 = scene.controls_state.getAlertText1();
     scene.alert_text2 = scene.controls_state.getAlertText2();
     scene.alert_size = scene.controls_state.getAlertSize();
+    scene.alert_type = scene.controls_state.getAlertType();
     auto alertStatus = scene.controls_state.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       update_status(s, STATUS_WARNING);
@@ -732,6 +736,7 @@ int main(int argc, char* argv[]) {
   UIState uistate = {};
   UIState *s = &uistate;
   ui_init(s);
+
   enable_event_processing(true);
 
   pthread_t connect_thread_handle;
@@ -772,10 +777,6 @@ int main(int argc, char* argv[]) {
 
   int draws = 0;
 
-  s->scene.satelliteCount = -1;
-  s->started = false;
-  s->vision_seen = false;
-
   while (!do_exit) {
     bool should_swap = false;
     if (!s->started) {
@@ -811,6 +812,10 @@ int main(int argc, char* argv[]) {
     if (!s->started) {
       // always process events offroad
       check_messages(s);
+
+      if (s->started) {
+        s->controls_timeout = 5 * UI_FREQ;
+      }
     } else {
       set_awake(s, true);
       // Car started, fetch a new rgb image from ipc
@@ -851,24 +856,30 @@ int main(int argc, char* argv[]) {
       should_swap = true;
     }
 
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5), 5); // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
 
-    // If car is started and controlsState times out, display an alert
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
-    } else {
-      if (s->started && s->controls_seen && s->scene.alert_text2 != "Controls Unresponsive") {
+    } else if (s->started) {
+      if (!s->controls_seen) {
+        // car is started, but controlsState hasn't been seen at all
+        s->scene.alert_text1 = "openpilot Unavailable";
+        s->scene.alert_text2 = "Waiting for controls to start";
+        s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
+      } else {
+        // car is started, but controls is lagging or died
         LOGE("Controls unresponsive");
-        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-        update_status(s, STATUS_ALERT);
+
+        if (s->scene.alert_text2 != "Controls Unresponsive") {
+          s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT);
+        }
 
         s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
         s->scene.alert_text2 = "Controls Unresponsive";
-        ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
-
-        s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT, 3); // loop sound 3 times
+        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+        update_status(s, STATUS_ALERT);
       }
-      s->controls_seen = false;
+      ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
 
     read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);

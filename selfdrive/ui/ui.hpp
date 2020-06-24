@@ -118,6 +118,7 @@ typedef struct UIScene {
 
   std::string alert_text1;
   std::string alert_text2;
+  std::string alert_type;
   cereal::ControlsState::AlertSize alert_size;
 
   // Used to show gps planner status

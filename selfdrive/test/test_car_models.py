@@ -356,6 +356,10 @@ routes = {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,
   },
+  "c321c6b697c5a5ff|2020-06-23--11-04-33": {
+    'carFingerprint': SUBARU.FORESTER,
+    'enableCamera': True,
+  },
   "791340bc01ed993d|2019-03-10--16-28-08": {
     'carFingerprint': SUBARU.IMPREZA,
     'enableCamera': True,
