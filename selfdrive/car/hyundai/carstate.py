@@ -113,6 +113,9 @@ class CarState(CarStateBase):
       else:
         ret.gearShifter = GearShifter.unknown
 
+    ret.stockAeb = cp.vl["FCA11"]['FCA_CmdAct'] != 0
+    ret.stockFcw = cp.vl["FCA11"]['CF_VSM_Warn'] == 2
+
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
