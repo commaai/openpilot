@@ -2,7 +2,6 @@
 # type: ignore
 import time
 import math
-import atexit
 import numpy as np
 import threading
 import random
