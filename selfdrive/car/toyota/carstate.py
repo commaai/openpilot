@@ -104,8 +104,8 @@ class CarState(CarStateBase):
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
 
     if self.CP.carFingerprint in TSS2_CAR:
-      ret.leftBlindspot = cp.vl["BSM"]['L_ADJACENT'] == 1
-      ret.rightBlindspot = cp.vl["BSM"]['R_ADJACENT'] == 1
+      ret.leftBlindspot = (cp.vl["BSM"]['L_ADJACENT'] == 1) or (cp.vl["BSM"]['L_APPROACHING'] == 1)
+      ret.rightBlindspot = (cp.vl["BSM"]['R_ADJACENT'] == 1) or (cp.vl["BSM"]['R_APPROACHING'] == 1)
 
     return ret
 
@@ -173,7 +173,9 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in TSS2_CAR:
       signals += [("L_ADJACENT", "BSM", 0)]
+      signals += [("L_APPROACHING", "BSM", 0)]
       signals += [("R_ADJACENT", "BSM", 0)]
+      signals += [("R_APPROACHING", "BSM", 0)]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
