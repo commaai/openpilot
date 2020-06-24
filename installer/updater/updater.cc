@@ -37,6 +37,7 @@
 #define MANIFEST_URL_EON_LOCAL "http://192.168.5.1:8000/neosupdate/update.local.json"
 #define MANIFEST_URL_EON "https://github.com/commaai/eon-neos/raw/master/update.json"
 const char *manifest_url = MANIFEST_URL_EON;
+bool background_cache = false;
 
 #define RECOVERY_DEV "/dev/block/bootdevice/by-name/recovery"
 #define RECOVERY_COMMAND "/cache/recovery/command"
@@ -301,11 +302,13 @@ struct Updater {
   void set_progress(std::string text) {
     std::lock_guard<std::mutex> guard(lock);
     progress_text = text;
+    printf("%s\n", text);
   }
 
   void set_error(std::string text) {
     std::lock_guard<std::mutex> guard(lock);
     error_text = text;
+    printf("%s\n", text);
     state = ERROR;
   }
 
@@ -428,6 +431,10 @@ struct Updater {
       return;
     }
 
+    if (background_cache)
+      // Download-only mode
+      return;
+
     if (!check_battery()) {
       set_battery_low();
       int battery_cap = battery_capacity();
@@ -508,6 +515,10 @@ struct Updater {
 
     // execl("/system/bin/reboot", "recovery");
     // set_error("failed to reboot into recovery");
+  }
+
+  void background_cache() {
+
   }
 
   void draw_ack_screen(const char *title, const char *message, const char *button, const char *altbutton) {
@@ -756,6 +767,9 @@ int main(int argc, char *argv[]) {
       manifest_url = MANIFEST_URL_EON_LOCAL;
     } else if (strcmp(argv[1], "staging") == 0) {
       manifest_url = MANIFEST_URL_EON_STAGING;
+    } else if (strcmp(argv[1], "bgcache") == 0) {
+      manifest_url = argv[2];
+      background_cache = true;
     } else {
       manifest_url = argv[1];
     }
