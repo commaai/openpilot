@@ -181,6 +181,9 @@ class CarState(CarStateBase):
       ("SAS_Angle", "SAS11", 0),
       ("SAS_Speed", "SAS11", 0),
 
+      ("FCA_CmdAct", "FCA11", 0),
+      ("CF_VSM_Warn", "FCA11", 0),
+
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
       ("SCCInfoDisplay", "SCC11", 0),
@@ -201,6 +204,7 @@ class CarState(CarStateBase):
       ("SAS11", 100),
       ("SCC11", 50),
       ("SCC12", 50),
+      ("FCA11", 50),
     ]
 
     if CP.carFingerprint in EV_HYBRID:
