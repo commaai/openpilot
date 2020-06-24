@@ -89,12 +89,6 @@ function launch {
     done
   done
 
-  # Remove old NEOS update file
-  # TODO: move this code to the updater
-  if [ -d /data/neoupdate ]; then
-    rm -rf /data/neoupdate
-  fi
-
   # Check for NEOS update
   if [ "$(< /VERSION)" != "$NEOS_VERSION" ]; then
     if [ -f "$BASEDIR/scripts/continue.sh" ]; then
@@ -115,6 +109,11 @@ function launch {
     fi
   fi
 
+  # Remove old NEOS update file
+  # TODO: move this code to the updater
+  if [ -d /data/neoupdate ]; then
+    rm -rf /data/neoupdate
+  fi
 
   # handle pythonpath
   ln -sfn "$(pwd)" /data/pythonpath
