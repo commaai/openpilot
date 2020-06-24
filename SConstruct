@@ -20,6 +20,8 @@ if arch == "aarch64" and not os.path.isdir("/system"):
 webcam = bool(ARGUMENTS.get("use_webcam", 0))
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
+rpath = []
+
 if arch == "aarch64" or arch == "larch64":
   lenv = {
     "LD_LIBRARY_PATH": '/data/data/com.termux/files/usr/lib',
@@ -103,11 +105,6 @@ ldflags_asan = ["-fsanitize=address"] if GetOption('asan') else []
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
-
-try:
-  rpath
-except:
-  rpath=[]
 
 env = Environment(
   ENV=lenv,
