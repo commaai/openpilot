@@ -3,3 +3,6 @@ contact_links:
   - name: Community Wiki
     url: https://github.com/commaai/openpilot/wiki
     about: Check out our community wiki
+  - name: Community Discord
+    urli: https://discord.comma.ai
+    about: Check out our community discord
