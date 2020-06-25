@@ -45,7 +45,7 @@ def start_build(name):
   conn.send("git submodule foreach --recursive git clean -xdf\n")
   conn.send("echo \"git took $SECONDS seconds\"\n")
 
-  push = "PUSH=master-ci" if branch == "master" else ""
+  push = "PUSH=master-ci" if branch == "master" else "PUSH=master_ci_test"
 
   conn.send("%s /data/openpilot_source/release/build_devel.sh\n" % push)
   conn.send('echo "RESULT:" $?\n')
