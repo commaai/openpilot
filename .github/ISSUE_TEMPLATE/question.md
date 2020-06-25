@@ -1,6 +1,6 @@
 ---
 name: Question
-about: questions about openpilot
+about: For questions about openpilot
 title: ''
 labels: 'question'
 assignees: ''
