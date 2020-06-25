@@ -43,12 +43,9 @@ git checkout master-ci
 git reset --hard origin/devel
 git clean -xdf
 
-# leave .git alone
+# remove everything except .git
 echo "[-] erasing old openpilot T=$SECONDS"
-rm -rf $TARGET_DIR/* $TARGET_DIR/.gitmodules
-
-# delete dotfiles in root
-find . -maxdepth 1 -type f -delete
+find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
 
 # reset tree and get version
 cd $SOURCE_DIR
