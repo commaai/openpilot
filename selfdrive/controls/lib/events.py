@@ -199,7 +199,7 @@ def wrong_car_mode_alert(CP, sm, metric):
   text = "Cruise Mode Disabled"
   if CP.carName == "honda":
     text = "Main Switch Off"
-  return NoEntryAlert(text, duration_hud_alert=0.),
+  return NoEntryAlert(text, duration_hud_alert=0.)
 
 EVENTS = {
   # ********** events with no alerts **********
