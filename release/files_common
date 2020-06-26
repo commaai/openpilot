@@ -1,15 +1,15 @@
-README.md
-SAFETY.md
-
 .gitignore
 LICENSE
 launch_chffrplus.sh
 launch_openpilot.sh
 
-CONTRIBUTING.md
-RELEASES.md
-
+Jenkinsfile
 SConstruct
+
+CONTRIBUTING.md
+README.md
+RELEASES.md
+SAFETY.md
 
 apk/ai.comma*.apk
 
@@ -60,6 +60,8 @@ common/api/__init__.py
 
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
+
+release/build_release2.sh
 
 selfdrive/version.py
 
