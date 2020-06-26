@@ -191,9 +191,9 @@ class Controls:
       self.events.add(EventName.laneChange)
     # lane change bsm alerts 
     if self.sm['pathPlan'].laneChangeBlocked == LaneChangeBlocked.right:
-      events.add(EventName.rightBlindspot)
+      self.events.add(EventName.rightBlindspot)
     if self.sm['pathPlan'].laneChangeBlocked == LaneChangeBlocked.left:
-      events.add(EventName.leftBlindspot)
+      self.events.add(EventName.leftBlindspot)
 
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
