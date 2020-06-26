@@ -7,7 +7,7 @@ Version 0.7.7 (2020-xx-xx)
  * Fix GM ignition detection
  * Block lane change start using blindspot monitor on Toyotas with TSS2
  * Code cleanup and smaller release sizes
- * Hyundai Ioniq Electric Limited 2019 support
+ * Hyundai Ioniq Electric Limited 2019 and Ioniq SE 2020 support thanks to baldwalker!
  * Subaru Forester 2019 support thanks to martinl!
 
 Version 0.7.6.1 (2020-06-16)
