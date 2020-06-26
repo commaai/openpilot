@@ -196,6 +196,10 @@ routes = {
     'carFingerprint': HYUNDAI.IONIQ_EV_LTD,
     'enableCamera': True,
   },
+  "2c5cf2dd6102e5da|2020-06-26--16-00-08": {
+    'carFingerprint': HYUNDAI.IONIQ,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
