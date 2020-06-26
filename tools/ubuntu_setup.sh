@@ -91,3 +91,27 @@ pipenv install --dev --system --deploy
 # TODO: PC should log somewhere else
 #sudo mkdir -p /data/media/0/realdata
 #sudo chown $USER /data/media/0/realdata
+
+#install zqm lib - needed when use_webcam=1
+wget https://github.com/zeromq/libzmq/releases/download/v4.2.1/zeromq-4.2.1.tar.gz
+tar -xvzf zeromq-4.2.1.tar.gz
+cd zeromq-4.2.1/
+
+sudo apt-get install libtool pkg-config build-essential autoconf automake uuid-dev
+sudo apt-get install checkinstall
+
+./configure
+make
+sudo checkinstall
+sudo ldconfig
+
+#install latest CLANG to avoid compilation errors
+sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main"
+sudo apt-get update
+sudo apt install clang
+
+#install capnp
+cd ../cereal/
+sudo ./install_capnp.sh
+
+#if sth fails in the midle, it is worth to reboot the system, and run this script again.

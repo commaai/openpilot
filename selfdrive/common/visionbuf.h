@@ -1,7 +1,9 @@
 #ifndef IONBUF_H
 #define IONBUF_H
 
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifndef CL_USE_DEPRECATED_OPENCL_1_2_APIS
+  #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#endif
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else

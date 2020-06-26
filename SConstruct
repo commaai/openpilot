@@ -116,6 +116,8 @@ env = Environment(
     "-Werror",
     "-Wno-deprecated-register",
     "-Wno-inconsistent-missing-override",
+    "-Wno-c99-designator",
+    "-Wno-reorder-init-list",
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
@@ -159,6 +161,9 @@ env = Environment(
     "#phonelibs",
   ]
 )
+
+if webcam:
+  env.Append(CPPDEFINES=['CL_USE_DEPRECATED_OPENCL_1_2_APIS'])
 
 if os.environ.get('SCONS_CACHE'):
   CacheDir('/tmp/scons_cache')
