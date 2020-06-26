@@ -9,13 +9,6 @@ pipeline {
     COMMA_JWT = credentials('athena-test-jwt')
     PUSH = "${env.BRNACH_NAME == 'master' ? 'master-ci' : ''}"
   }
-  when {
-    not {
-      anyOf {
-        branch 'master-ci'; branch 'devel'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'
-      }
-    }
-  }
 
   stages {
     stage('On-device Tests') {
@@ -27,12 +20,7 @@ pipeline {
               timeout(time: 30, unit: 'MINUTES') {
                 dir(path: 'selfdrive/test') {
                   sh 'pip install paramiko'
-
-                  if (env.BRANCH_NAME != "devel-staging")  {
-                    sh 'python phone_ci.py "cd release && ./build_devel.sh"'
-                  } else {
-                    // build release2-staging and dashcam-staging
-                  }
+                  sh 'python phone_ci.py "cd release && ./build_devel.sh"'
                 }
               }
             }

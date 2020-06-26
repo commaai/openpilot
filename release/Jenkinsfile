@@ -1,0 +1,27 @@
+pipeline {
+  agent {
+    docker {
+      image 'python:3.7.3'
+      args '--user=root'
+    }
+  }
+  environment {
+    COMMA_JWT = credentials('athena-test-jwt')
+    PUSH = "${env.BRNACH_NAME == 'master' ? 'master-ci' : ''}"
+  }
+
+  stages {
+    stage('Release Build') {
+      steps {
+        lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
+          timeout(time: 30, unit: 'MINUTES') {
+            dir(path: 'selfdrive/test') {
+              sh 'pip install paramiko'
+              sh 'python phone_ci.py "cd release && ./build_devel.sh"'
+            }
+          }
+        }
+      }
+    }
+  }
+}
