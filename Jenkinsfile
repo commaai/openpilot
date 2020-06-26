@@ -9,8 +9,9 @@ pipeline {
     COMMA_JWT = credentials('athena-test-jwt')
     PUSH = "${env.BRNACH_NAME == 'master' ? 'master-ci' : ''}"
   }
-  stages {
-    if (!['master-ci', 'devel', 'release2', 'release2-staging', 'dashcam', 'dashcam-staging'].contains(env.BRANCH_NAME)) {
+
+  if (!['master-ci', 'devel', 'release2', 'release2-staging', 'dashcam', 'dashcam-staging'].contains(env.BRANCH_NAME)) {
+    stages {
       stage('On-device Tests') {
 
         parallel {
