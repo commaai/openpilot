@@ -319,14 +319,14 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
 static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
   update_lane_line_data(s, path.points, 0.025*path.prob, false, pstart, path.validLen);
   float var = fmin(path.std, 0.7);
-  update_lane_line_data(s, path.points, -var, true, pstart + 1, path.validLen);
-  update_lane_line_data(s, path.points, var, true, pstart + 2, path.validLen);
+  update_lane_line_data(s, path.points, -var, false, pstart + 1, path.validLen);
+  update_lane_line_data(s, path.points, var, false, pstart + 2, path.validLen);
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
   ui_draw_lane_line(s, pstart, color);
   float var = fmin(path->std, 0.7);
-  color.a /= 4;
+  color.a /= 20;
   ui_draw_lane_line(s, pstart + 1, color);
   ui_draw_lane_line(s, pstart + 2, color);
 }
@@ -758,7 +758,7 @@ void ui_draw(UIState *s) {
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
   if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED && s->vision_seen) {
-      ui_draw_vision(s);
+    ui_draw_vision(s);
   }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
@@ -858,7 +858,13 @@ static const mat4 full_to_wide_frame_transform = {{
 
 void ui_nvg_init(UIState *s) {
   // init drawing
+#ifdef QCOM
+  // on QCOM, we enable MSAA
+  s->vg = nvgCreate(0);
+#else
   s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+#endif
+
   assert(s->vg);
 
   s->font_courbd = nvgCreateFont(s->vg, "courbd", "../assets/fonts/courbd.ttf");

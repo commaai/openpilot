@@ -102,6 +102,9 @@ extern "C" FramebufferState* framebuffer_init(
     EGL_DEPTH_SIZE,   0,
     EGL_STENCIL_SIZE, 8,
     EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT_KHR,
+    // enable MSAA
+    EGL_SAMPLE_BUFFERS, 1,
+    EGL_SAMPLES, 4,
     EGL_NONE,
   };
 
