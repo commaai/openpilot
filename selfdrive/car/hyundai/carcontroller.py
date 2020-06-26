@@ -220,7 +220,7 @@ class CarController():
       self.last_lead_distance = 0  
 
     # 20 Hz LFA MFA message
-    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE]:
+    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE, CAR.KIA_NIRO_EV]:
       can_sends.append(create_lfa_mfa(self.packer, frame, lkas_active))
 
     if CS.spas_enabled:
