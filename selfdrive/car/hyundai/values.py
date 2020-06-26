@@ -40,7 +40,6 @@ class CAR:
   KIA_NIRO_EV = "KIA NIRO EV 2020 PLATINUM"
   KIA_NIRO_HEV = "KIA NIRO HEV 2018"
   KIA_CEED = "KIA CEED 2019"
-  KIA_SPORTAGE = "KIA SPORTAGE S 2020"
   KIA_CARDENZA = "KIA K7 2016-2019"
   KIA_CARDENZA_HEV = "KIA K7 HEV 2016-2019"
   
@@ -204,9 +203,6 @@ FINGERPRINTS = {
     {
     68: 8, 127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 544: 8, 576: 8, 593: 8, 688: 5, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 909: 8, 912: 7, 916: 8, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 6, 1151: 6, 1168: 7, 1173: 8, 1180: 8, 1186: 2, 1191: 2, 1265: 4, 1268: 8, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1371: 8, 1407: 8, 1419: 8, 1420: 8, 1425: 2, 1427: 6, 1429: 8, 1430: 8, 1448: 8, 1456: 4, 1470: 8, 1476: 8, 1535: 8
     }],
-  CAR.KIA_SPORTAGE: [{
-    67: 8, 68: 8, 127: 8, 273: 8, 274: 8, 275: 8, 339: 8, 356: 4, 399: 8, 447: 8, 512: 6, 544: 8, 593: 8, 608: 8, 688: 5, 790: 8, 809: 8, 832: 8, 884: 8, 897: 8, 899: 8, 902: 8, 903: 6, 909: 8, 916: 8, 1040: 8, 1078: 4, 1170: 8, 1191: 2, 1253: 8, 1254: 8, 1255: 8, 1265: 4, 1280: 1, 1282: 4, 1287: 4, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1349: 8, 1351: 8, 1353: 8, 1363: 8, 1365: 8, 1366: 8, 1367: 8, 1369: 8, 1407: 8, 1419: 8, 1427: 6, 1440: 8, 1456: 4, 1470: 8, 1472: 8, 1486: 8, 1487: 8, 1491: 8, 1492: 8, 1530: 8
-    }],
   CAR.KIA_SORENTO: [{
     67: 8, 68: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1168: 7, 1170: 8, 1173: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1331: 8, 1332: 8, 1333: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1370: 8, 1371: 8, 1384: 8, 1407: 8, 1411: 8, 1419: 8, 1425: 2, 1427: 6, 1444: 8, 1456: 4, 1470: 8, 1489: 1
     }],
@@ -314,8 +310,8 @@ FEATURES = {
   # Use E_EMS11 Message for Gas and Brake for Hybrid/ELectric
   "use_elect_ems": [CAR.SONATA_H, CAR.IONIQ_EV_LTD, CAR.KIA_NIRO_EV, CAR.KONA_EV],
   # send LFA MFA message for new HKG models
-  "send_lfa_mfa": [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE, CAR.KIA_NIRO_EV],
-  "has_scc13": [], 
+  "send_lfa_mfa": [CAR.KIA_OPTIMA, CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE, CAR.KIA_NIRO_EV],
+  "has_scc13": [CAR.KIA_OPTIMA], 
   "has_scc14": [], 
 }
 
@@ -343,7 +339,6 @@ DBC = {
   CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_SPORTAGE: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_CEED: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_NIRO_HEV: dbc_dict('hyundai_kia_generic', None),
