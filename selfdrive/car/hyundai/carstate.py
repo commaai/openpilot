@@ -211,6 +211,7 @@ class CarState(CarStateBase):
       ("SCC11", 50),
       ("SCC12", 50),
       ("FCA11", 50),
+      ("LCA11", 50),
     ]
 
     if CP.carFingerprint in EV_HYBRID:
