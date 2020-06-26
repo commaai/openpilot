@@ -53,8 +53,8 @@ def run_on_phone(test_cmd):
   conn.send("git submodule foreach --recursive git clean -xdf\n")
   conn.send("echo \"git took $SECONDS seconds\"\n")
 
-  conn.send(f"rm -rf {TEST_DIR}")
-  conn.send(f"cp -R {SOURCE_DIR} {TEST_DIR}")
+  conn.send(f"rm -rf {TEST_DIR}\n")
+  conn.send(f"cp -R {SOURCE_DIR} {TEST_DIR}\n")
 
   # run the test
   conn.send(test_cmd + "\n")
