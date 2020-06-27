@@ -48,6 +48,19 @@ jobs:
                 scons -j$(nproc) && \
                 $UNIT_TEST selfdrive/car"
 
+  build_mac:
+    name: build macos
+    runs-on: macos-10.15
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Install dependencies
+      run: ./tools/mac_setup.sh
+    - name: Build openpilot
+      run: scons -j$(nproc)
+
   docker_push:
     name: docker push
     runs-on: ubuntu-16.04
