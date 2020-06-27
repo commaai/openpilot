@@ -2049,7 +2049,7 @@ static void* ops_thread(void* arg) {
         } else {
           // skip if zmq is interrupted by msgq
           int err_no = zmq_errno();
-          assert(err_no == EINTR);
+          assert(err_no == EINTR || err_no == EAGAIN);
         }
 
         zmq_msg_close(&msg);
