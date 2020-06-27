@@ -162,7 +162,7 @@ Community Maintained Cars and Features
 | Subaru    | Forester 2017-19              | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Legacy 2015-18                | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Outback 2015-18               | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Outback 2015-19               | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built giraffe](https://github.com/commaai/openpilot/wiki/GM). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
