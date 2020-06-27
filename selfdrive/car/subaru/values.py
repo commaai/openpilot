@@ -7,6 +7,7 @@ Ecu = car.CarParams.Ecu
 class CAR:
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
 <<<<<<< HEAD
+<<<<<<< HEAD
   FORESTER = "SUBARU FORESTER 2019"
   FORESTER_2017 = "SUBARU FORESTER 2017"
   OUTBACK_2015 = "SUBARU OUTBACK 2015 - 2018"
@@ -16,6 +17,12 @@ class CAR:
   OUTBACK_2015 = "SUBARU OUTBACK 2015 - 2018"
   FORESTER_2017 = "SUBARU FORESTER 2017 - 2018"
 >>>>>>> Add model year to preglobal models
+=======
+  FORESTER_2017 = "SUBARU FORESTER 2017 - 2018"
+  LEGACY_2015 = "SUBARU LEGACY 2015 - 2018"
+  OUTBACK_2015 = "SUBARU OUTBACK 2015 - 2018"
+  OUTBACK_2019 = "SUBARU OUTBACK 2019"
+>>>>>>> Add flipped driver torque safety param to Forester, Outback 2019 support
 
 FINGERPRINTS = {
   CAR.IMPREZA: [
@@ -75,6 +82,13 @@ FINGERPRINTS = {
   #},
   # END OUTBACK_2015
   ],
+  CAR.OUTBACK_2019: [
+  # OUTBACK LIMITED 3.6R 2019 (jpevarnek)
+  {
+    2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 316: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 352: 8, 353: 8, 354: 8, 356: 8, 358: 8, 359: 8, 392: 8, 554: 8, 604: 8, 640: 8, 642: 8, 644: 8, 805: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 886: 2, 977: 8, 1614: 8, 1632: 8, 1657: 8, 1658: 8, 1672: 8, 1736: 8, 1743: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8, 1862: 8, 1870: 8, 1920: 8, 1927: 8, 1928: 8, 1935: 8, 1968: 8, 1976: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
+  },
+  # END OUTBACK 2019
+  ],
   CAR.FORESTER_2017: [{
   # FORESTER PREMIUM 2.5i 2017
     2: 8, 112: 8, 117: 8, 128: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 340: 7, 342: 8, 352: 8, 353: 8, 354: 8, 355: 8, 356: 8, 554: 8, 604: 8, 640: 8, 641: 8, 642: 8, 805: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 886: 1, 888: 8, 977: 8, 1398: 8, 1632: 8, 1743: 8, 1744: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8, 1882: 8, 1895: 8, 1903: 8, 1986: 8, 1994: 8, 2015: 8, 2016: 8, 2024: 8
@@ -104,6 +118,7 @@ STEER_THRESHOLD = {
   CAR.FORESTER_2017: 75,
   CAR.LEGACY_2015: 75,
   CAR.OUTBACK_2015: 75,
+  CAR.OUTBACK_2019: 75,
 }
 
 ECU_FINGERPRINT = {
@@ -116,4 +131,5 @@ DBC = {
   CAR.FORESTER_2017: dbc_dict('subaru_forester_2017_generated', None),
   CAR.OUTBACK_2015: dbc_dict('subaru_outback_2015_generated', None),
   CAR.LEGACY_2015: dbc_dict('subaru_outback_2015_generated', None),
+  CAR.OUTBACK_2019: dbc_dict('subaru_outback_2019_generated', None),
 }
