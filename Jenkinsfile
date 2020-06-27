@@ -16,7 +16,7 @@ pipeline {
 
         stage('Build') {
           steps {
-            lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
+            lock(resource: "", label: 'eon_tmp', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
               timeout(time: 30, unit: 'MINUTES') {
                 dir(path: 'selfdrive/test') {
                   sh 'pip install paramiko'
@@ -27,6 +27,7 @@ pipeline {
           }
         }
 
+        /*
         stage('Replay Tests') {
           steps {
             lock(resource: "", label: 'eon2', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
@@ -39,6 +40,7 @@ pipeline {
             }
           }
         }
+        */
 
       }
     }

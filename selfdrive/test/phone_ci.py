@@ -38,10 +38,13 @@ def run_on_phone(test_cmd):
       break
     time.sleep(1)
 
-  # set up environment
-  conn = ssh.invoke_shell()
   branch = os.environ['GIT_BRANCH']
   commit = os.environ.get('GIT_COMMIT', branch)
+
+  # set up environment
+  conn = ssh.invoke_shell()
+
+  #conn.send(f"tmux new-session -s test-{commit}\n")
 
   conn.send(f"cd {SOURCE_DIR}\n")
   conn.send("git reset --hard\n")

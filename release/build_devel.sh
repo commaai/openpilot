@@ -37,7 +37,7 @@ echo "[-] bringing master-ci and devel in sync T=$SECONDS"
 git fetch origin master-ci
 git fetch origin devel
 
-git checkout --track origin/master-ci || true
+git checkout -f --track origin/master-ci || true
 git reset --hard master-ci
 git checkout master-ci
 git reset --hard origin/devel
