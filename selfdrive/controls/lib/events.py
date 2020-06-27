@@ -204,8 +204,6 @@ def wrong_car_mode_alert(CP, sm, metric):
 EVENTS = {
   # ********** events with no alerts **********
 
-  EventName.gasPressed: {ET.PRE_ENABLE: None},
-
   # ********** events only containing alerts displayed in all states **********
 
   EventName.debugAlert: {
@@ -332,6 +330,14 @@ EVENTS = {
   },
 
   # ********** events only containing alerts that display while engaged **********
+
+  EventName.gasPressed: {
+    ET.PRE_ENABLE: Alert(
+      "openpilot will not brake while gas pressed",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .0, .0, .1),
+  },
 
   EventName.vehicleModelInvalid: {
     ET.WARNING: Alert(
