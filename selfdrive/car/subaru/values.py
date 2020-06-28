@@ -6,23 +6,12 @@ Ecu = car.CarParams.Ecu
 
 class CAR:
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
-<<<<<<< HEAD
-<<<<<<< HEAD
   FORESTER = "SUBARU FORESTER 2019"
-  FORESTER_2017 = "SUBARU FORESTER 2017"
-  OUTBACK_2015 = "SUBARU OUTBACK 2015 - 2018"
-  LEGACY_2015 = "SUBARU LEGACY 2015 - 2018"
-=======
-  LEGACY_2015 = "SUBARU LEGACY 2015 - 2018"
-  OUTBACK_2015 = "SUBARU OUTBACK 2015 - 2018"
   FORESTER_2017 = "SUBARU FORESTER 2017 - 2018"
->>>>>>> Add model year to preglobal models
-=======
-  FORESTER_2017 = "SUBARU FORESTER 2017 - 2018"
+  OUTBACK_2015 = "SUBARU OUTBACK 2015 - 2018"
   LEGACY_2015 = "SUBARU LEGACY 2015 - 2018"
   OUTBACK_2015 = "SUBARU OUTBACK 2015 - 2018"
   OUTBACK_2019 = "SUBARU OUTBACK 2019"
->>>>>>> Add flipped driver torque safety param to Forester, Outback 2019 support
 
 FINGERPRINTS = {
   CAR.IMPREZA: [
@@ -40,7 +29,6 @@ FINGERPRINTS = {
   },
   # END IMPREZA
   ],
-<<<<<<< HEAD
   CAR.FORESTER: [{
   # Forester Sport 2019
     2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 552: 8, 557: 8, 576: 8, 577: 8, 722: 8, 808: 8, 811: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1614: 8, 1617: 8, 1632: 8, 1650: 8, 1651: 8, 1657: 8, 1658: 8, 1677: 8, 1697: 8, 1698: 8, 1722: 8, 1743: 8, 1759: 8, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8
@@ -49,8 +37,6 @@ FINGERPRINTS = {
   {
     2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 544: 8, 545: 8, 546: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 811: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1614: 8, 1617: 8, 1632: 8, 1650: 8, 1651: 8, 1657: 8, 1658: 8, 1677: 8, 1722: 8, 1759: 8, 1787: 5, 1788: 8
   }],
-=======
->>>>>>> Add model year to preglobal models
   CAR.OUTBACK_2015: [
   # OUTBACK PREMIUM 2.5i 2015 (Bugsy)
   {
