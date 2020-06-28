@@ -107,6 +107,11 @@ class CarState(CarStateBase):
       ("R_ADJACENT", "BSD_RCTA", 0),
     ]
 
+    if CP.carFingerprint in [CAR.FORESTER_2017, CAR.LEGACY_2015, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
+      signals += [
+        ("LKA_Lockout", "Steering_Torque", 0),
+      ]
+
     checks = [
       # sig_address, frequency
       ("Wheel_Speeds", 50),
