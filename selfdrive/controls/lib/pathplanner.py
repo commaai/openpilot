@@ -40,12 +40,10 @@ DESIRES = {
   },
 }
 
-
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
   states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
   return states
-
 
 class PathPlanner():
   def __init__(self, CP):
@@ -89,9 +87,6 @@ class PathPlanner():
 
     angle_offset = sm['liveParameters'].angleOffset
 
-    lca_left = sm['carState'].leftBlindspot
-    lca_right = sm['carState'].rightBlindspot
-
     # Run MPC
     self.angle_steers_des_prev = self.angle_steers_des_mpc
     VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
@@ -105,7 +100,6 @@ class PathPlanner():
 
     left_BlindSpot = sm['carState'].leftBlindspot
     right_BlindSpot = sm['carState'].rightBlindspot
-
 
     if (not active) or (self.lane_change_timer > LANE_CHANGE_TIME_MAX) or (not one_blinker) or (not self.lane_change_enabled):
       self.lane_change_state = LaneChangeState.off
