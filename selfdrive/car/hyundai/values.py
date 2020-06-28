@@ -4,7 +4,7 @@ Ecu = car.CarParams.Ecu
 
 # Steer torque limits
 class SteerLimitParams:
-  STEER_MAX = 255   # 409 is the max, 255 is stock
+  STEER_MAX = 409   # 409 is the max, 255 is stock
   STEER_DELTA_UP = 3
   STEER_DELTA_DOWN = 7
   STEER_DRIVER_ALLOWANCE = 50
@@ -311,7 +311,7 @@ FEATURES = {
   "use_elect_ems": [CAR.SONATA_H, CAR.IONIQ_EV_LTD, CAR.KIA_NIRO_EV, CAR.KONA_EV],
   # send LFA MFA message for new HKG models
   "send_lfa_mfa": [CAR.KIA_OPTIMA, CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE, CAR.KIA_NIRO_EV],
-  "has_scc13": [CAR.KIA_OPTIMA], 
+  "has_scc13": [], 
   "has_scc14": [], 
 }
 
