@@ -311,7 +311,7 @@ FEATURES = {
   "use_elect_ems": [CAR.SONATA_H, CAR.IONIQ_EV_LTD, CAR.KIA_NIRO_EV, CAR.KONA_EV],
   # send LFA MFA message for new HKG models
   "send_lfa_mfa": [CAR.KIA_SPORTAGE, CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE, CAR.KIA_NIRO_EV],
-  "has_scc13": [], 
+  "has_scc13": [CAR.KIA_SPORTAGE], 
   "has_scc14": [], 
 }
 
