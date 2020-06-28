@@ -100,14 +100,20 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.069
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
-    elif candidate in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
-      if candidate == CAR.KIA_OPTIMA:
+    elif candidate in [CAR.KIA_SPORTAGE, CAR.KIA_OPTIMA_H]:
+      if candidate == CAR.KIA_SPORTAGE:
         ret.lateralTuning.pid.kf = 0.00005
         ret.mass = 1985. + STD_CARGO_KG
         ret.wheelbase = 2.78
-        ret.steerRatio = 13.75
-        ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+        # ret.steerRatio = 13.75
+        ret.lateralTuning.init('indi')
+        ret.lateralTuning.indi.innerLoopGain = 5.5
+        ret.lateralTuning.indi.outerLoopGain = 4.5
+        ret.lateralTuning.indi.timeConstant = 1.0
+        ret.lateralTuning.indi.actuatorEffectiveness = 1.76
+        ret.steerRatio = 24
+        # ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+        # ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
         ret.minSteerSpeed = 0.
         tire_stiffness_factor = 0.5
       else:
@@ -272,7 +278,7 @@ class CarInterface(CarInterfaceBase):
     if not self.CP.openpilotLongitudinalControl:
       ret.cruiseState.enabled = ret.cruiseState.available
     # some Optima only has blinker flash signal
-    if self.CP.carFingerprint == CAR.KIA_OPTIMA:
+    if self.CP.carFingerprint == CAR.KIA_SPORTAGE:
       ret.leftBlinker = bool(self.CS.left_blinker_flash or self.CS.prev_left_blinker and self.CC.turning_signal_timer)
       ret.rightBlinker = bool(self.CS.right_blinker_flash or self.CS.prev_right_blinker and self.CC.turning_signal_timer)
 
