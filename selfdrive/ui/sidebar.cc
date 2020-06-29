@@ -63,7 +63,6 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   const int network_x = !s->scene.uilayout_sidebarcollapsed ? 50 : -(sbr_w);
   const int network_y = 273;
   const int network_w = 100;
-  const int network_h = 100;
   const char *network_type = network_type_map[s->scene.thermal.getNetworkType()];
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);

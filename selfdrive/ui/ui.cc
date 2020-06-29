@@ -115,7 +115,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_driver_view_touch(UIState *s, int touch_x, int touch_y) {
-  int err = write_db_value("IsDriverViewEnabled", "0", 1);
+  write_db_value("IsDriverViewEnabled", "0", 1);
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
@@ -633,7 +633,6 @@ static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
 }
 
 static void* vision_connect_thread(void *args) {
-  int err;
   set_thread_name("vision_connect");
 
   UIState *s = (UIState*)args;
