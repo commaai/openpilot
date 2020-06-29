@@ -102,7 +102,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate in [CAR.KIA_SPORTAGE, CAR.KIA_OPTIMA_H]:
       if candidate == CAR.KIA_SPORTAGE:
-         ret.lateralTuning.pid.kf = 0.00005
+        ret.lateralTuning.pid.kf = 0.00005
         ret.mass = 1499. + STD_CARGO_KG
         ret.wheelbase = 2.66
         ret.steerRatio = 13.75
