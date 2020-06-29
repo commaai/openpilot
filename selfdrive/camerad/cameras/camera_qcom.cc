@@ -425,7 +425,7 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     const unsigned int exposure_time_max = frame_length - 11; // copied from set_exposure()
 
     float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.05);
-    if (s->cur_gain_frac > 0.25 && exposure_factor < 1) {
+    if (s->cur_gain_frac > 0.125 && exposure_factor < 1) {
       s->cur_gain_frac *= exposure_factor;
     } else if (s->cur_integ_lines * exposure_factor <= exposure_time_max && s->cur_integ_lines * exposure_factor >= exposure_time_min) { // adjust exposure time first
       s->cur_exposure_frac *= exposure_factor;
