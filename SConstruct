@@ -17,6 +17,8 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and not os.path.isdir("/system"):
   arch = "larch64"
 
+is_ubuntu = 'ubuntu' in os.getenv('DESKTOP_SESSION', 'unknown')
+
 webcam = bool(ARGUMENTS.get("use_webcam", 0))
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
@@ -116,8 +118,6 @@ env = Environment(
     "-Werror",
     "-Wno-deprecated-register",
     "-Wno-inconsistent-missing-override",
-    "-Wno-c99-designator",
-    "-Wno-reorder-init-list",
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
@@ -164,6 +164,10 @@ env = Environment(
 
 if webcam:
   env.Append(CPPDEFINES=['CL_USE_DEPRECATED_OPENCL_1_2_APIS'])
+
+if is_ubuntu:
+  env.Append(CCFLAGS=["-Wno-c99-designator",
+                      "-Wno-reorder-init-list"])
 
 if os.environ.get('SCONS_CACHE'):
   CacheDir('/tmp/scons_cache')
