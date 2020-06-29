@@ -62,7 +62,7 @@ class Controls:
 
     # wait for one health and one CAN packet
     hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
-    has_relay = hw_type in [HwType.blackPanda, HwType.uno]
+    has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
     print("Waiting for CAN messages...")
     messaging.get_one_can(self.can_sock)
 
