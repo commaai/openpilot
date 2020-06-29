@@ -52,12 +52,12 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.KPH_TO_MS
 
     # EDM Global: mph = 1, 2; All Outback: mph = 1
-    if self.car_fingerprint in [CAR.IMPREZA, CAR.FORESTER, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
+    if self.car_fingerprint in [CAR.FORESTER, CAR.IMPREZA, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
       if cp.vl["Dash_State"]['Units'] in [1, 2]:
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     # UDM Forester, Legacy: mph = 0
-    if self.car_fingerprint in [CAR.LEGACY_2015, CAR.FORESTER_2017]:
+    if self.car_fingerprint in [CAR.FORESTER_2017, CAR.LEGACY_2015]:
       if (cp.vl["Dash_State"]['Units'] == 0):
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
@@ -67,7 +67,7 @@ class CarState(CarStateBase):
       cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
       cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
-    if self.car_fingerprint in [CAR.IMPREZA, CAR.FORESTER]:
+    if self.car_fingerprint in [CAR.FORESTER, CAR.IMPREZA]:
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
@@ -118,7 +118,7 @@ class CarState(CarStateBase):
       ("Steering_Torque", 50),
     ]
 
-    if CP.carFingerprint in [CAR.IMPREZA, CAR.FORESTER]:
+    if CP.carFingerprint in [CAR.FORESTER, CAR.IMPREZA]:
       checks += [
         ("Dashlights", 10),
         ("BodyInfo", 10),
@@ -142,7 +142,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    if CP.carFingerprint in [CAR.IMPREZA, CAR.FORESTER]:
+    if CP.carFingerprint in [CAR.FORESTER, CAR.IMPREZA]:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
 

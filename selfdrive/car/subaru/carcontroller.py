@@ -10,7 +10,7 @@ class CarControllerParams():
     self.STEER_STEP = 2                  # how often we update the steer cmd
     self.STEER_DELTA_UP = 50             # torque increase per refresh, 0.8s to max
     self.STEER_DELTA_DOWN = 70           # torque decrease per refresh
-    if car_fingerprint in [CAR.IMPREZA, CAR.FORESTER]:
+    if car_fingerprint in [CAR.FORESTER, CAR.IMPREZA]:
       self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
     if car_fingerprint in [CAR.FORESTER_2017, CAR.LEGACY_2015, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
       self.STEER_DRIVER_ALLOWANCE = 75   # allowed driver torque before start limiting
@@ -81,7 +81,7 @@ class CarController():
         can_sends.append(subarucan.create_es_throttle_control(self.packer, fake_button, CS.es_accel_msg))
         self.es_accel_cnt = CS.es_accel_msg["Counter"]
 
-    if CS.CP.carFingerprint in [CAR.IMPREZA, CAR.FORESTER]:
+    if CS.CP.carFingerprint in [CAR.FORESTER, CAR.IMPREZA]:
       if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
         self.es_distance_cnt = CS.es_distance_msg["Counter"]
