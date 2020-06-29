@@ -213,7 +213,7 @@ def thermald_thread():
       # Setup fan handler on first connect to panda
       if handle_fan is None and health.health.hwType != log.HealthData.HwType.unknown:
         is_uno = health.health.hwType == log.HealthData.HwType.uno
-        has_relay = health.health.hwType in [log.HealthData.HwType.blackPanda, log.HealthData.HwType.uno]
+        has_relay = health.health.hwType in [log.HealthData.HwType.blackPanda, log.HealthData.HwType.uno, log.HealthData.HwType.dos]
 
         if is_uno or not ANDROID:
           cloudlog.info("Setting up UNO fan handler")
