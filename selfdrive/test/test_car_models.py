@@ -381,15 +381,15 @@ routes = {
     'enableCamera': True,
   },
   #"5ab784f361e19b78|2020-06-08--16-30-41": {
-  #  'carFingerprint': SUBARU.OUTBACK,
+  #  'carFingerprint': SUBARU.OUTBACK_2015,
   #  'enableCamera': True,
   #},
   #"95441c38ae8c130e_2020-06-08--12-10-17": {
-  #  'carFingerprint': SUBARU.FORESTER,
+  #  'carFingerprint': SUBARU.FORESTER_2017,
   #  'enableCamera': True,
   #},
   #"df5ca7660000fba8|2020-06-16--17-37-19": {
-  #  'carFingerprint': SUBARU.LEGACY,
+  #  'carFingerprint': SUBARU.LEGACY_2015,
   #  'enableCamera': True,
   #},
   "791340bc01ed993d|2019-03-10--16-28-08": {
@@ -454,10 +454,11 @@ non_tested_cars = [
   TOYOTA.CHRH,
   TOYOTA.HIGHLANDERH,
   TOYOTA.HIGHLANDERH_TSS2,
-  SUBARU.LEGACY,
-  SUBARU.FORESTER,
   SUBARU.ASCENT,
-  SUBARU.OUTBACK,
+  SUBARU.FORESTER,
+  SUBARU.FORESTER_2017,
+  SUBARU.LEGACY_2015,
+  SUBARU.OUTBACK_2015,
   SUBARU.OUTBACK_2019,
 ]
 
