@@ -390,7 +390,7 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
     if (s->apply_exposure == ov8865_apply_exposure) {
       int sensor_gain = 8 * gain_frac;
-      gain = 100 * sensor_gain; // ISO
+      gain = 800 * gain_frac; // ISO
       err = s->apply_exposure(s, sensor_gain, integ_lines, frame_length);
     } else if (s->apply_exposure) {
       err = s->apply_exposure(s, gain, integ_lines, frame_length);
