@@ -33,8 +33,8 @@
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
-#define CUTOFF_GAIN 0.015625f  // iso400
-#define SATURATE_GAIN 0.0625f  // iso1600
+#define CUTOFF_GAIN 0.125f  // iso100
+#define SATURATE_GAIN 0.4f  // iso320
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 #define VOLTAGE_K 0.091  // LPF gain for 5s tau (dt/tau / (dt/tau + 1))
 
