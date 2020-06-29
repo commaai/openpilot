@@ -203,23 +203,24 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   return err;
 }
 
-static inline int ov8865_get_coarse_gain(int gain) {
-  static const int gains[] = {0, 1, 2, 4, 8};
-  int i;
+static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
+  //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
+  int err, coarse_gain_bitmap, fine_gain_bitmap;
 
+  // get bitmaps from iso
+  static const int gains[] = {0, 100, 200, 400, 800};
+  int i;
   for (i = 1; i < ARRAYSIZE(gains); i++) {
     if (gain >= gains[i - 1] && gain < gains[i])
       break;
   }
+  int coarse_gain = i - 1;
+  float fine_gain = (gain - gains[coarse_gain])/(float)(gains[coarse_gain+1]-gains[coarse_gain]);
+  coarse_gain_bitmap = (1 << coarse_gain) - 1;
+  fine_gain_bitmap = ((int)(16*fine_gain) << 3) + 128; // 7th is always 1, 0-2nd are always 0
 
-  return i - 1;
-}
-
-static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
-  //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
-  int err, gain_bitmap;
-  gain_bitmap = (1 << ov8865_get_coarse_gain(gain)) - 1;
   integ_lines *= 16; // The exposure value in reg is in 16ths of a line
+
   struct msm_camera_i2c_reg_array reg_array[] = {
     //{0x104,0x1,0},
 
@@ -230,7 +231,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     // AEC MANUAL
     {0x3503, 0x4, 0},
     // AEC GAIN
-    {0x3508, (uint16_t)(gain_bitmap), 0}, {0x3509, 0xf8, 0},
+    {0x3508, (uint16_t)(coarse_gain_bitmap), 0}, {0x3509, (uint16_t)(fine_gain_bitmap), 0},
 
     //{0x104,0x0,0},
   };
@@ -389,9 +390,8 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     || frame_length != s->cur_frame_length) {
 
     if (s->apply_exposure == ov8865_apply_exposure) {
-      int sensor_gain = 8 * gain_frac;
       gain = 800 * gain_frac; // ISO
-      err = s->apply_exposure(s, sensor_gain, integ_lines, frame_length);
+      err = s->apply_exposure(s, gain, integ_lines, frame_length);
     } else if (s->apply_exposure) {
       err = s->apply_exposure(s, gain, integ_lines, frame_length);
     }
