@@ -1,24 +1,10 @@
 #!/usr/bin/bash
 
-export OMP_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export NUMEXPR_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-export VECLIB_MAXIMUM_THREADS=1
-
-if [ -z "$NEOS_VERSION" ]; then
-  export NEOS_VERSION="15-RC2"
-fi
-
 if [ -z "$BASEDIR" ]; then
-  BASEDIR="/data/openpilot"
+  export BASEDIR="/data/openpilot"
 fi
 
-if [ -z "$PASSIVE" ]; then
-  export PASSIVE="1"
-fi
-
-STAGING_ROOT="/data/safe_staging"
+source "$BASEDIR/launch_env.sh"
 
 function launch {
   # Wifi scan
@@ -90,7 +76,7 @@ function launch {
   done
 
   # Check for NEOS update
-  if [ "$(< /VERSION)" != "$NEOS_VERSION" ]; then
+  if [ "$(< /VERSION)" != "$REQUIRED_NEOS_VERSION" ]; then
     if [ -f "$BASEDIR/scripts/continue.sh" ]; then
       cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
