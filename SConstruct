@@ -161,7 +161,10 @@ env = Environment(
 )
 
 if os.environ.get('SCONS_CACHE'):
-  CacheDir('/tmp/scons_cache')
+  if QCOM_REPLAY:
+    CacheDir('/tmp/scons_cache_qcom_replay')
+  else:
+    CacheDir('/tmp/scons_cache')
 
 node_interval = 5
 node_count = 0
