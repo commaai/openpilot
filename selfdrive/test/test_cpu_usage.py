@@ -7,9 +7,6 @@ import cereal.messaging as messaging
 import selfdrive.manager as manager
 
 
-TEST_TIME = 90
-
-
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
@@ -73,7 +70,6 @@ if __name__ == "__main__":
   time.sleep(30)
   first_proc = messaging.recv_sock(proc_sock)
 
-
   # run for a minute and get last sample
   time.sleep(60)
   last_proc = messaging.recv_sock(proc_sock, wait=True)
@@ -84,4 +80,3 @@ if __name__ == "__main__":
   if not all_running:
     return_code = 1
   sys.exit(return_code)
-
