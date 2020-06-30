@@ -29,7 +29,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
 
     if candidate == CAR.ASCENT:
-      ret.safetyModel = car.CarParams.SafetyModel.subaru
       ret.mass = 2031. + STD_CARGO_KG
       ret.wheelbase = 2.89
       ret.centerToFront = ret.wheelbase * 0.5
