@@ -84,6 +84,7 @@ function launch {
     if [ ! -f "$BASEDIR/prebuilt" ]; then
       echo "Clearing build products and resetting scons state prior to NEOS update"
       git clean -xdf
+      git submodule foreach --recursive git clean -xdf
       rm -rf /tmp/scons_cache
     fi
 
