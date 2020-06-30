@@ -80,7 +80,7 @@ echo -n "1" > /data/params/d/HasCompletedSetup
 echo -n "1" > /data/params/d/CommunityFeaturesToggle
 
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
-PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" GET_CPU_USAGE=1 selfdrive/manager.py
+PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" selfdrive/test/test_cpu_usage.py
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" selfdrive/car/tests/test_car_interfaces.py
 
 echo "[-] testing panda build T=$SECONDS"
