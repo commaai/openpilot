@@ -95,6 +95,25 @@ FINGERPRINTS = {
 #IGNORED_FINGERPRINTS = [CAR.IMPREZA]
 
 FW_VERSIONS = {
+  CAR.ASCENT: {
+    # 2019 Ascent - UDM / @Adminiuga
+    # Ecu, addr, subaddr: ROM ID
+    (Ecu.esp, 0x7b0, None): [
+      b'\xa5 \x19\x02\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'\x85\xc0\xd0\x00',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00d\xb9\x1f@ \x10',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xbb,\xa0t\a',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\x00\xfe\xf7\x00\x00',
+    ],
+  },
   CAR.IMPREZA: {
     # 2018 Crosstrek - EDM / @martinl
     # 2018 Impreza - ADM / @Michael
