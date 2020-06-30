@@ -211,7 +211,7 @@ FEATURES = {
   "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ], # Use TCU Message for Gear Selection
 }
 
-EV_HYBRID = [CAR.IONIQ_EV_LTD, CAR.IONIQ]
+EV_HYBRID = [CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV]
 
 DBC = {
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
