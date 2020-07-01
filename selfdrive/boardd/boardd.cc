@@ -33,8 +33,8 @@
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
-#define CUTOFF_GAIN 0.015625f  // iso400
-#define SATURATE_GAIN 0.0625f  // iso1600
+#define CUTOFF_IL 200
+#define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 #define VOLTAGE_K 0.091  // LPF gain for 5s tau (dt/tau / (dt/tau + 1))
 
@@ -690,15 +690,15 @@ void *hardware_control_thread(void *crap) {
     }
     if (sm.updated("frontFrame")){
       auto event = sm["frontFrame"];
-      float cur_front_gain = event.getFrontFrame().getGainFrac();
+      int cur_integ_lines = event.getFrontFrame().getIntegLines();
       last_front_frame_t = event.getLogMonoTime();
 
-      if (cur_front_gain <= CUTOFF_GAIN) {
+      if (cur_integ_lines <= CUTOFF_IL) {
         ir_pwr = 100.0 * MIN_IR_POWER;
-      } else if (cur_front_gain > SATURATE_GAIN) {
+      } else if (cur_integ_lines > SATURATE_IL) {
         ir_pwr = 100.0 * MAX_IR_POWER;
       } else {
-        ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
+        ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_integ_lines - CUTOFF_IL) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)));
       }
     }
     // Disable ir_pwr on front frame timeout
