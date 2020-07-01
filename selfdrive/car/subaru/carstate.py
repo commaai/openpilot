@@ -132,7 +132,7 @@ class CarState(CarStateBase):
         ("CruiseControl", 20),
      ]
 
-    if CP.carFingerprint == CAR.LEGACY_2015
+    if CP.carFingerprint == CAR.LEGACY_2015:
       checks += [
         ("Dashlights", 10),
         ("CruiseControl", 50),
