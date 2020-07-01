@@ -319,6 +319,9 @@ def main():
   wait_helper = WaitTimeHelper()
   params = Params()
 
+  if params.get("DisableUpdates") == b"1":
+    raise RuntimeError("updates are disabled by param")
+
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
 
