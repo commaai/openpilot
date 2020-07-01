@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import time
 import threading
+import _thread
+import signal
 import sys
 
 import cereal.messaging as messaging
@@ -59,12 +61,10 @@ def print_cpu_usage(first_proc, last_proc):
 
   return r
 
-
-if __name__ == "__main__":
+return_code = 1
+def test_thread():
+  global return_code
   proc_sock = messaging.sub_sock('procLog', conflate=True)
-
-  # start manager
-  threading.Thread(target=manager.main)
 
   # wait until everything's started and get first sample
   time.sleep(30)
@@ -79,4 +79,15 @@ if __name__ == "__main__":
   return_code = print_cpu_usage(first_proc, last_proc)
   if not all_running:
     return_code = 1
-  sys.exit(return_code)
+  _thread.interrupt_main()
+
+if __name__ == "__main__":
+
+  # setup signal handler to exit with test status
+  def handle_exit(sig, frame):
+    sys.exit(return_code)
+  signal.signal(signal.SIGINT, handle_exit)
+
+  # start manager and test thread
+  threading.Thread(target=test_thread).start()
+  manager.main()
