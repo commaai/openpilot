@@ -72,7 +72,7 @@ class Controls:
     params = Params()
     self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
     self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
-    internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
+    internet_needed = (params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None) and (params.get("DisableUpdates") != b"1")
     community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
     openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
     passive = params.get("Passive", encoding='utf8') == "1" or \
