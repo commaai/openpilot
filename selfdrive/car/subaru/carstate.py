@@ -145,8 +145,8 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_RL", "BodyInfo", 1),
       ("Gear", "Transmission", 0),
       ("L_ADJACENT", "BSD_RCTA", 0),
-      ("R_ADJACENT", "BSD_RCTA", 0),
       ("L_APPROACHING", "BSD_RCTA", 0),
+      ("R_ADJACENT", "BSD_RCTA", 0),
       ("R_APPROACHING", "BSD_RCTA", 0),
       ("Units", "Dash_State", 1),
     ]
