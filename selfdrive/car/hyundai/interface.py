@@ -30,10 +30,10 @@ class CarInterface(CarInterfaceBase):
     # Hyundai port is a community feature for now
     ret.communityFeature = True
 
-    ret.steerActuatorDelay = 0.1  # Default delay
-    ret.steerRateCost = 0.5
-    ret.steerLimitTimer = 0.8
-    tire_stiffness_factor = 1.
+    ret.steerActuatorDelay = 0.08  # 0.1 Default delay
+    ret.steerRateCost = 0.5        # 0.5 Default delay
+    ret.steerLimitTimer = 0.8     # 0.8 Default delay
+    tire_stiffness_factor = 1.     # 1. Default delay
 
     if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
       ret.lateralTuning.pid.kf = 0.00005
@@ -109,7 +109,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
         ret.minSteerSpeed = 0.
-        tire_stiffness_factor = 0.5
+        #tire_stiffness_factor = 0.5
       else:
         ret.lateralTuning.pid.kf = 0.00005
         ret.mass = 3558. * CV.LB_TO_KG
