@@ -52,7 +52,9 @@ def print_cpu_usage(first_proc, last_proc):
       if cpu_usage > max(normal_cpu_usage * 1.1, normal_cpu_usage + 5.0):
         result += f"Warning {proc_name} using more CPU than normal\n"
         r = 1
-
+      elif cpu_usage < normal_cpu_usage * 0.3:
+        result += f"Warning {proc_name} using less CPU than normal\n"
+        r = 1
       result += f"{proc_name.ljust(35)}  {cpu_usage:.2f}%\n"
     except IndexError:
       result += f"{proc_name.ljust(35)}  NO METRICS FOUND\n"
