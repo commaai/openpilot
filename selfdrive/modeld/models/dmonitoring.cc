@@ -167,7 +167,7 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setRightEyeProb(res.right_eye_prob);
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
-  // framed.setSgProb(res.sg_prob);
+  framed.setSgProb(res.sg_prob);
 
   pm.send("driverState", msg);
 }
