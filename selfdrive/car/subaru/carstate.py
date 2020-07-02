@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, GLOBAL_CAR
+from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, GLOBAL_CAR, LEGACY_CAR
 
 
 class CarState(CarStateBase):
