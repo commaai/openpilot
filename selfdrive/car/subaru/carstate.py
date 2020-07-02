@@ -57,9 +57,9 @@ class CarState(CarStateBase):
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     ret.doorOpen = any([cp.vl["BodyInfo"]['DOOR_OPEN_RR'],
-      cp.vl["BodyInfo"]['DOOR_OPEN_RL'],
-      cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
-      cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
+                        cp.vl["BodyInfo"]['DOOR_OPEN_RL'],
+                        cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
+                        cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
     self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
     self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
@@ -137,7 +137,6 @@ class CarState(CarStateBase):
       ("Traffic_light_Ahead", "ES_LKAS_State", 0),
       ("Right_Depart", "ES_LKAS_State", 0),
       ("Signal5", "ES_LKAS_State", 0),
-
     ]
 
     checks = [

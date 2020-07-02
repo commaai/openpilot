@@ -78,11 +78,6 @@ class CarInterface(CarInterfaceBase):
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
-    buttonEvents = []
-    be = car.CarState.ButtonEvent.new_message()
-    be.type = car.CarState.ButtonEvent.Type.accelCruise
-    buttonEvents.append(be)
-
     ret.events = self.create_common_events(ret).to_msg()
 
     self.CS.out = ret.as_reader()
