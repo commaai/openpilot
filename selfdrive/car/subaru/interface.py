@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.subaru.values import CAR, GLOBAL_CAR, LEGACY_CAR
+from selfdrive.car.subaru.values import CAR, PREGLOBAL_CARS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -17,11 +17,10 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "subaru"
     ret.radarOffCan = True
 
-    if candidate in GLOBAL_CAR:
-      ret.safetyModel = car.CarParams.SafetyModel.subaru
-
-    if candidate in LEGACY_CAR:
+    if candidate in PREGLOBAL_CARS:
       ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy
+    else:
+      ret.safetyModel = car.CarParams.SafetyModel.subaru
 
     # Subaru port is a community feature, since we don't own one to test
     ret.communityFeature = True
