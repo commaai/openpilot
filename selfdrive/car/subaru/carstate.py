@@ -51,15 +51,16 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = cp.vl["CruiseControl"]['Cruise_Activated'] != 0
     ret.cruiseState.available = cp.vl["CruiseControl"]['Cruise_On'] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.KPH_TO_MS
-    # EDM Impreza: 1,2 = mph, UDM Forester: 7 = mph
-    if self.car_fingerprint in GLOBAL_CAR:
-      if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
-        ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     # UDM Legacy: mph = 0
     if self.car_fingerprint == CAR.LEGACY_PREGLOBAL:
       if (cp.vl["Dash_State"]['Units'] == 0):
         ret.cruiseState.speed *= CV.MPH_TO_KPH
+    # EDM Global: mph = 1, 2
+    else:
+      if cp.vl["Dash_State"]['Units'] in [1, 2]:
+        ret.cruiseState.speed *= CV.MPH_TO_KPH
+
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     ret.doorOpen = any([cp.vl["BodyInfo"]['DOOR_OPEN_RR'],
@@ -67,18 +68,17 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
                         cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
-    if self.car_fingerprint in GLOBAL_CAR:
-      ret.steerError = cp.vl["Steering_Torque"]['Steer_Error_1'] == 1
-      ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
-      ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]['Conventional_Cruise'] == 1
-      self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
-      self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
-
     if self.car_fingerprint in PREGLOBAL_CARS:
       ret.steerError = cp.vl["Steering_Torque"]["LKA_Lockout"] == 1
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
+    else:
+      ret.steerError = cp.vl["Steering_Torque"]['Steer_Error_1'] == 1
+      ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
+      ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]['Conventional_Cruise'] == 1
+      self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
+      self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     return ret
 
