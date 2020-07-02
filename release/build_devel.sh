@@ -79,8 +79,11 @@ echo -n "0.2.0" > /data/params/d/CompletedTrainingVersion
 echo -n "1" > /data/params/d/HasCompletedSetup
 echo -n "1" > /data/params/d/CommunityFeaturesToggle
 
+echo "[-] test_openpilot T=$SECONDS"
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
+echo "[-] test_cpu_usage T=$SECONDS"
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" selfdrive/test/test_cpu_usage.py
+echo "[-] test_car_interfaces T=$SECONDS"
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" selfdrive/car/tests/test_car_interfaces.py
 
 echo "[-] testing panda build T=$SECONDS"
