@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.subaru.values import CAR
+from selfdrive.car.subaru.values import CAR, GLOBAL_CAR, LEGACY_CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -17,6 +17,12 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "subaru"
     ret.radarOffCan = True
 
+    if candidate in GLOBAL_CAR:
+      ret.safetyModel = car.CarParams.SafetyModel.subaru
+
+    if candidate in LEGACY_CAR:
+      ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy
+
     # Subaru port is a community feature, since we don't own one to test
     ret.communityFeature = True
 
@@ -28,7 +34,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
 
     if candidate == CAR.ASCENT:
-      ret.safetyModel = car.CarParams.SafetyModel.subaru
       ret.mass = 2031. + STD_CARGO_KG
       ret.wheelbase = 2.89
       ret.centerToFront = ret.wheelbase * 0.5
@@ -39,7 +44,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0025, 0.1], [0.00025, 0.01]]
 
     if candidate == CAR.IMPREZA:
-      ret.safetyModel = car.CarParams.SafetyModel.subaru
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
@@ -50,7 +54,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.3], [0.02, 0.03]]
 
     if candidate == CAR.FORESTER:
-      ret.safetyModel = car.CarParams.SafetyModel.subaru
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
@@ -61,7 +64,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
     if candidate == CAR.LEGACY_PREGLOBAL:
-      ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy
       ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
