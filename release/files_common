@@ -61,9 +61,6 @@ common/api/__init__.py
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
 
-release/Jenkinsfile
-release/build_release2.sh
-
 selfdrive/version.py
 
 selfdrive/__init__.py

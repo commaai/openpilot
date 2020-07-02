@@ -27,6 +27,7 @@ pipeline {
           }
         }
 
+        /*
         stage('Replay Tests') {
           steps {
             lock(resource: "", label: 'eon_tmp', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
@@ -39,6 +40,7 @@ pipeline {
             }
           }
         }
+        */
 
       }
     }
