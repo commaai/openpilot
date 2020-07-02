@@ -12,7 +12,6 @@ TEST_DIR = "/data/openpilot"
 
 def run_on_phone(test_cmd):
 
-  # connect to phone over SSH
   eon_ip = os.environ.get('eon_ip', None)
   if eon_ip is None:
     raise Exception("'eon_ip' not set")
@@ -23,9 +22,9 @@ def run_on_phone(test_cmd):
   key_file = open(os.path.join(os.path.dirname(__file__), "../../tools/ssh/key/id_rsa"))
   key = paramiko.RSAKey.from_private_key(key_file)
 
-  print("SSH to phone {}".format(eon_ip))
+  print("SSH to phone at {}".format(eon_ip))
 
-  # Try connecting for one minute
+  # try connecting for one minute
   t_start = time.time()
   while True:
     try:
@@ -42,19 +41,19 @@ def run_on_phone(test_cmd):
   commit = os.environ.get('GIT_COMMIT', branch)
 
   # set up environment
-  conn = ssh.invoke_shell()
-
-  #conn.send(f"tmux new-session -s test-{commit}\n")
+  env = {f"CI_{k}": v for k, v in os.environ.items()}
+  env["CI"] = "1"
+  conn = ssh.invoke_shell(environment=env)
 
   conn.send(f"cd {SOURCE_DIR}\n")
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")
-  conn.send("git checkout %s\n" % commit)
+  conn.send(f"git checkout {commit}\n")
   conn.send("git clean -xdf\n")
   conn.send("git submodule update --init\n")
   conn.send("git submodule foreach --recursive git reset --hard\n")
   conn.send("git submodule foreach --recursive git clean -xdf\n")
-  conn.send("echo \"git took $SECONDS seconds\"\n")
+  conn.send('echo "git took $SECONDS seconds"\n')
 
   conn.send(f"rm -rf {TEST_DIR}\n")
   conn.send(f"cp -R {SOURCE_DIR} {TEST_DIR}\n")
@@ -77,8 +76,8 @@ def run_on_phone(test_cmd):
     sys.stdout.buffer.write(recvd)
     sys.stdout.flush()
 
-  returns = re.findall(rb'^RESULT: (\d+)', dat[-1024:], flags=re.MULTILINE)
-  sys.exit(int(returns[0]))
+  return_code = int(re.findall(rb'^RESULT: (\d+)', dat[-1024:], flags=re.MULTILINE)[0])
+  sys.exit(return_code)
 
 
 if __name__ == "__main__":
