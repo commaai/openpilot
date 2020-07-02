@@ -9,6 +9,8 @@ from common.android import ANDROID
 os.environ['CI'] = "1"
 if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
+else:
+  os.environ['FORCE_SNPE'] = "1"
 import selfdrive.manager as manager
 
 from common.spinner import Spinner
@@ -20,7 +22,7 @@ from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.test_processes import format_diff
 from selfdrive.version import get_git_commit
 
-TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
+TEST_ROUTE = "5b7c365c50084530|2020-04-15--16-13-24"
 
 def camera_replay(lr, fr):
 
@@ -47,11 +49,9 @@ def camera_replay(lr, fr):
     log_msgs = []
     frame_idx = 0
     for msg in tqdm(lr):
-      if msg.which() == "liveCalibrationd":
-        pm.send(msg.which(), msg.as_builder())
-      elif msg.which() == "frame":
+      if msg.which() == "frame":
         f = msg.as_builder()
-        img = fr.get(frame_idx, pix_fmt="rgb24")[0][:, ::, -1]
+        img = fr.get(frame_idx, pix_fmt="rgb24")[0][:, :, ::-1]
         f.frame.image = img.flatten().tobytes()
         frame_idx += 1
 
@@ -62,6 +62,8 @@ def camera_replay(lr, fr):
 
         if frame_idx >= fr.frame_count:
           break
+      elif msg.which() in pm.sock:
+        pm.send(msg.which(), msg.as_builder())
   except KeyboardInterrupt:
     pass
 

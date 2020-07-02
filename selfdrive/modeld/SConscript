@@ -1,4 +1,4 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'FORCE_SNPE')
 lenv = env.Clone()
 
 libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
@@ -22,20 +22,21 @@ elif arch == "larch64":
 else:
   libs += ['symphony-cpu', 'pthread']
 
-  # for tensorflow support
-  common_src += ['runners/tfmodel.cc']
-  # tell runners to use it
-  lenv['CFLAGS'].append("-DUSE_TF_MODEL")
-  lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
-  if arch == "Darwin":
-    # fix OpenCL
-    del libs[libs.index('OpenCL')]
-    lenv['FRAMEWORKS'] = ['OpenCL']
+  if not FORCE_SNPE:
+    # for tensorflow support
+    common_src += ['runners/tfmodel.cc']
+    # tell runners to use it
+    lenv['CFLAGS'].append("-DUSE_TF_MODEL")
+    lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
+    if arch == "Darwin":
+      # fix OpenCL
+      del libs[libs.index('OpenCL')]
+      lenv['FRAMEWORKS'] = ['OpenCL']
 
-    # no SNPE on Mac
-    del libs[libs.index('SNPE')]
-    del libs[libs.index('symphony-cpu')]
-    del common_src[common_src.index('runners/snpemodel.cc')]
+      # no SNPE on Mac
+      del libs[libs.index('SNPE')]
+      del libs[libs.index('symphony-cpu')]
+      del common_src[common_src.index('runners/snpemodel.cc')]
 
 common = lenv.Object(common_src)
 

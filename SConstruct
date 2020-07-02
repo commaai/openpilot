@@ -19,6 +19,7 @@ if arch == "aarch64" and not os.path.isdir("/system"):
 
 webcam = bool(ARGUMENTS.get("use_webcam", 0))
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
+FORCE_SNPE = os.getenv("FORCE_SNPE") is not None
 
 if arch == "aarch64" or arch == "larch64":
   lenv = {
@@ -186,7 +187,7 @@ def abspath(x):
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
+Export('env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY', 'FORCE_SNPE')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
