@@ -220,11 +220,11 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   assert(num_back_fds == UI_BUF_COUNT);
   assert(num_front_fds == UI_BUF_COUNT);
 
-  vipc_bufs_load(s->bufs, &back_bufs, num_back_fds, back_fds);
-  vipc_bufs_load(s->front_bufs, &front_bufs, num_front_fds, front_fds);
+  vipc_bufs_load(s->rear.bufs, &back_bufs, num_back_fds, back_fds);
+  vipc_bufs_load(s->front.bufs, &front_bufs, num_front_fds, front_fds);
 
-  s->cur_vision_idx = -1;
-  s->cur_vision_front_idx = -1;
+  s->rear.cur_vision_idx = -1;
+  s->front.cur_vision_idx = -1;
 
   s->scene.frontview = getenv("FRONTVIEW") != NULL;
   s->scene.fullview = getenv("FULLVIEW") != NULL;
@@ -237,19 +237,19 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->scene.world_objects_visible = false;  // Invisible until we receive a calibration message.
   s->scene.gps_planner_active = false;
 
-  s->rgb_width = back_bufs.width;
-  s->rgb_height = back_bufs.height;
-  s->rgb_stride = back_bufs.stride;
-  s->rgb_buf_len = back_bufs.buf_len;
+  s->rear.rgb_width = back_bufs.width;
+  s->rear.rgb_height = back_bufs.height;
+  s->rear.rgb_stride = back_bufs.stride;
+  s->rear.rgb_buf_len = back_bufs.buf_len;
 
-  s->rgb_front_width = front_bufs.width;
-  s->rgb_front_height = front_bufs.height;
-  s->rgb_front_stride = front_bufs.stride;
-  s->rgb_front_buf_len = front_bufs.buf_len;
+  s->front.rgb_width = front_bufs.width;
+  s->front.rgb_height = front_bufs.height;
+  s->front.rgb_stride = front_bufs.stride;
+  s->front.rgb_buf_len = front_bufs.buf_len;
 
   s->rgb_transform = (mat4){{
-    2.0f/s->rgb_width, 0.0f, 0.0f, -1.0f,
-    0.0f, 2.0f/s->rgb_height, 0.0f, -1.0f,
+    2.0f/s->rear.rgb_width, 0.0f, 0.0f, -1.0f,
+    0.0f, 2.0f/s->rear.rgb_height, 0.0f, -1.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f,
   }};
@@ -437,20 +437,14 @@ static void check_messages(UIState *s) {
   }
 }
 
-static void ui_update(UIState *s) {
-  int err;
+static void init_vision_data(ui_vision_data* s) {
+  for (int i = 0; i < UI_BUF_COUNT; i++) {
+    if (s->khr[i] != 0) {
+      visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
+      glDeleteTextures(1, &s->frame_texs[i]);
+    }
 
-  if (s->vision_connect_firstrun) {
-    // cant run this in connector thread because opengl.
-    // do this here for now in lieu of a run_on_main_thread event
-
-    for (int i=0; i<UI_BUF_COUNT; i++) {
-      if(s->khr[i] != 0) {
-        visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
-        glDeleteTextures(1, &s->frame_texs[i]);
-      }
-
-      VisionImg img = {
+    VisionImg img = {
         .fd = s->bufs[i].fd,
         .format = VISIONIMG_FORMAT_RGB24,
         .width = s->rgb_width,
@@ -458,53 +452,32 @@ static void ui_update(UIState *s) {
         .stride = s->rgb_stride,
         .bpp = 3,
         .size = s->rgb_buf_len,
-      };
-      #ifndef QCOM
-        s->priv_hnds[i] = s->bufs[i].addr;
-      #endif
-      s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
+    };
+#ifndef QCOM
+    s->priv_hnds[i] = s->bufs[i].addr;
+#endif
+    s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
 
-      glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-    }
+    // BGR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+  }
+  assert(glGetError() == GL_NO_ERROR);
+}
 
-    for (int i=0; i<UI_BUF_COUNT; i++) {
-      if(s->khr_front[i] != 0) {
-        visionimg_destroy_gl(s->khr_front[i], s->priv_hnds_front[i]);
-        glDeleteTextures(1, &s->frame_front_texs[i]);
-      }
+static void ui_update(UIState *s) {
+  int err;
 
-      VisionImg img = {
-        .fd = s->front_bufs[i].fd,
-        .format = VISIONIMG_FORMAT_RGB24,
-        .width = s->rgb_front_width,
-        .height = s->rgb_front_height,
-        .stride = s->rgb_front_stride,
-        .bpp = 3,
-        .size = s->rgb_front_buf_len,
-      };
-      #ifndef QCOM
-        s->priv_hnds_front[i] = s->bufs[i].addr;
-      #endif
-      s->frame_front_texs[i] = visionimg_to_gl(&img, &s->khr_front[i], &s->priv_hnds_front[i]);
-
-      glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-    }
-
-    assert(glGetError() == GL_NO_ERROR);
+  if (s->vision_connect_firstrun) {
+    // cant run this in connector thread because opengl.
+    // do this here for now in lieu of a run_on_main_thread event
+    init_vision_data(&s->rear);
+    init_vision_data(&s->front);
 
     s->scene.uilayout_sidebarcollapsed = true;
     update_offroad_layout_state(s);
@@ -560,34 +533,22 @@ static void ui_update(UIState *s) {
       return;
     }
     if (rp.type == VIPC_STREAM_ACQUIRE) {
-      bool front = rp.d.stream_acq.type == VISION_STREAM_RGB_FRONT;
+      ui_vision_data* v = rp.d.stream_acq.type == VISION_STREAM_RGB_FRONT ? &s->front : &s->rear;
       int idx = rp.d.stream_acq.idx;
 
-      int release_idx;
-      if (front) {
-        release_idx = s->cur_vision_front_idx;
-      } else {
-        release_idx = s->cur_vision_idx;
-      }
-      if (release_idx >= 0) {
+      if (v->cur_vision_idx >= 0) {
         VisionPacket rep = {
           .type = VIPC_STREAM_RELEASE,
           .d = { .stream_rel = {
             .type = rp.d.stream_acq.type,
-            .idx = release_idx,
+            .idx = v->cur_vision_idx,
           }},
         };
         vipc_send(s->ipc_fd, &rep);
       }
-
-      if (front) {
-        assert(idx < UI_BUF_COUNT);
-        s->cur_vision_front_idx = idx;
-      } else {
-        assert(idx < UI_BUF_COUNT);
-        s->cur_vision_idx = idx;
-        // printf("v %d\n", ((uint8_t*)s->bufs[idx].addr)[0]);
-      }
+      assert(idx < UI_BUF_COUNT);
+      v->cur_vision_idx = idx;
+      // printf("v %d\n", ((uint8_t*)s->bufs[idx].addr)[0]);
     } else {
       assert(false);
     }

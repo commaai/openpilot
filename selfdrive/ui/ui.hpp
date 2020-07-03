@@ -148,6 +148,15 @@ typedef struct {
   int cnt;
 } track_vertices_data;
 
+typedef struct {
+  int rgb_width, rgb_height, rgb_stride, cur_vision_idx;
+  size_t rgb_buf_len;
+  VIPCBuf bufs[UI_BUF_COUNT];
+  GLuint frame_vao, frame_vbo, frame_ibo, frame_texs[UI_BUF_COUNT];
+  EGLImageKHR khr[UI_BUF_COUNT];
+  void *priv_hnds[UI_BUF_COUNT];
+  mat4 frame_mat;
+} ui_vision_data;
 
 typedef struct UIState {
   pthread_mutex_t lock;
@@ -180,33 +189,19 @@ typedef struct UIState {
 
   cereal::UiLayoutState::App active_app;
 
+  ui_vision_data rear, front;
+
   // vision state
   bool vision_connected;
   bool vision_connect_firstrun;
   int ipc_fd;
 
-  VIPCBuf bufs[UI_BUF_COUNT];
-  VIPCBuf front_bufs[UI_BUF_COUNT];
-  int cur_vision_idx;
-  int cur_vision_front_idx;
-
   GLuint frame_program;
-  GLuint frame_texs[UI_BUF_COUNT];
-  EGLImageKHR khr[UI_BUF_COUNT];
-  void *priv_hnds[UI_BUF_COUNT];
-  GLuint frame_front_texs[UI_BUF_COUNT];
-  EGLImageKHR khr_front[UI_BUF_COUNT];
-  void *priv_hnds_front[UI_BUF_COUNT];
 
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
 
-  int rgb_width, rgb_height, rgb_stride;
-  size_t rgb_buf_len;
   mat4 rgb_transform;
-
-  int rgb_front_width, rgb_front_height, rgb_front_stride;
-  size_t rgb_front_buf_len;
 
   UIScene scene;
   bool awake;
@@ -240,9 +235,6 @@ typedef struct UIState {
   std::atomic<float> light_sensor;
 
   int touch_fd;
-
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
 
   model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 

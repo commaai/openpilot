@@ -249,29 +249,22 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
 static void draw_frame(UIState *s) {
   const UIScene *scene = &s->scene;
 
-  if (s->scene.frontview) {
-    glBindVertexArray(s->frame_vao[1]);
-  } else {
-    glBindVertexArray(s->frame_vao[0]);
-  }
+  ui_vision_data *v = s->scene.frontview ? &s->front : &s->rear;
+  glBindVertexArray(v->frame_vao);
 
-  mat4 *out_mat;
-  if (s->scene.frontview || s->scene.fullview) {
-    out_mat = &s->front_frame_mat;
-  } else {
-    out_mat = &s->rear_frame_mat;
-  }
   glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
-  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
-    #ifndef QCOM
+  if (v->cur_vision_idx >= 0){
+    glBindTexture(GL_TEXTURE_2D, v->frame_texs[v->cur_vision_idx]);
+#ifndef QCOM
+    if (!scene->frontview) {
       // TODO: a better way to do this?
       //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
-    #endif
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->rear.priv_hnds[s->rear.cur_vision_idx]);
+    }
+#endif
   }
+
+  mat4 *out_mat = (s->scene.frontview || s->scene.fullview) ? &s->front.frame_mat : &s->rear.frame_mat;
 
   glUseProgram(s->frame_program);
   glUniform1i(s->frame_texture_loc, 0);
@@ -285,9 +278,9 @@ static void draw_frame(UIState *s) {
 }
 
 static inline bool valid_frame_pt(UIState *s, float x, float y) {
-  return x >= 0 && x <= s->rgb_width && y >= 0 && y <= s->rgb_height;
-
+  return x >= 0 && x <= s->rear.rgb_width && y >= 0 && y <= s->rear.rgb_height;
 }
+
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
   pvd->cnt = 0;
   int rcount = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, valid_len);
@@ -379,7 +372,7 @@ static void ui_draw_world(UIState *s) {
   nvgTranslate(s->vg, 240.0f, 0.0);
   nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
   nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+  nvgScale(s->vg, 1440.0f / s->rear.rgb_width, 1080.0f / s->rear.rgb_height);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
@@ -913,8 +906,9 @@ void ui_nvg_init(UIState *s) {
   glDisable(GL_DEPTH_TEST);
 
   assert(glGetError() == GL_NO_ERROR);
-
+  ui_vision_data *data[] = {&s->rear, &s->front};
   for(int i = 0; i < 2; i++) {
+    ui_vision_data *d = data[i];
     float x1, x2, y1, y2;
     if (i == 1) {
       // flip horizontally so it looks like a mirror
@@ -936,10 +930,10 @@ void ui_nvg_init(UIState *s) {
       { 1.0, -1.0, x1, y1}, //br
     };
 
-    glGenVertexArrays(1,&s->frame_vao[i]);
-    glBindVertexArray(s->frame_vao[i]);
-    glGenBuffers(1, &s->frame_vbo[i]);
-    glBindBuffer(GL_ARRAY_BUFFER, s->frame_vbo[i]);
+    glGenVertexArrays(1,&d->frame_vao);
+    glBindVertexArray(d->frame_vao);
+    glGenBuffers(1, &d->frame_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, d->frame_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
     glEnableVertexAttribArray(s->frame_pos_loc);
     glVertexAttribPointer(s->frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
@@ -947,20 +941,13 @@ void ui_nvg_init(UIState *s) {
     glEnableVertexAttribArray(s->frame_texcoord_loc);
     glVertexAttribPointer(s->frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
                           sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
-    glGenBuffers(1, &s->frame_ibo[i]);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->frame_ibo[i]);
+    glGenBuffers(1, &d->frame_ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d->frame_ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER,0);
     glBindVertexArray(0);
   }
 
-  s->front_frame_mat = matmul(device_transform, full_to_wide_frame_transform);
-  s->rear_frame_mat = matmul(device_transform, frame_transform);
-
-  for(int i = 0;i < UI_BUF_COUNT; i++) {
-    s->khr[i] = 0;
-    s->priv_hnds[i] = NULL;
-    s->khr_front[i] = 0;
-    s->priv_hnds_front[i] = NULL;
-  }
+  s->front.frame_mat = matmul(device_transform, full_to_wide_frame_transform);
+  s->rear.frame_mat = matmul(device_transform, frame_transform);
 }
