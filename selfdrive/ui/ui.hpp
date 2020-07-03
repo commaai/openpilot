@@ -220,7 +220,6 @@ typedef struct UIState {
   int limit_set_speed_timeout;
   int hardware_timeout;
   int last_athena_ping_timeout;
-  int offroad_layout_timeout;
 
   bool controls_seen;
 
