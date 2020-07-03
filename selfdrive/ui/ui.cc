@@ -65,35 +65,26 @@ static void set_awake(UIState *s, bool awake) {
 }
 
 static void update_offroad_layout_state(UIState *s) {
-  capnp::MallocMessageBuilder msg;
-  auto event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto layout = event.initUiLayoutState();
-  layout.setActiveApp(s->active_app);
-  layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
-  s->pm->send("offroadLayout", msg);
-  LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
-}
-
-static void navigate_to_settings(UIState *s) {
 #ifdef QCOM
-  s->active_app = cereal::UiLayoutState::App::SETTINGS;
-  update_offroad_layout_state(s);
-#else
-  // computer UI doesn't have offroad settings
-#endif
-}
-
-static void navigate_to_home(UIState *s) {
-#ifdef QCOM
-  if (s->started) {
-    s->active_app = cereal::UiLayoutState::App::NONE;
-  } else {
-    s->active_app = cereal::UiLayoutState::App::HOME;
+  static int timeout = 0;
+  static bool prev_collapsed = false;
+  static cereal::UiLayoutState::App prev_app = cereal::UiLayoutState::App::NONE;
+  if (timeout > 0) {
+    timeout--;
   }
-  update_offroad_layout_state(s);
-#else
-  // computer UI doesn't have offroad home
+  if (prev_collapsed != s->scene.uilayout_sidebarcollapsed || prev_app != s->active_app || timeout == 0) {
+    capnp::MallocMessageBuilder msg;
+    auto event = msg.initRoot<cereal::Event>();
+    event.setLogMonoTime(nanos_since_boot());
+    auto layout = event.initUiLayoutState();
+    layout.setActiveApp(s->active_app);
+    layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
+    s->pm->send("offroadLayout", msg);
+    LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
+    prev_collapsed = s->scene.uilayout_sidebarcollapsed;
+    prev_app = s->active_app;
+    timeout = 2 * UI_FREQ;
+  }
 #endif
 }
 
@@ -101,21 +92,18 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   if (!s->scene.uilayout_sidebarcollapsed && touch_x <= sbr_w) {
     if (touch_x >= settings_btn_x && touch_x < (settings_btn_x + settings_btn_w)
       && touch_y >= settings_btn_y && touch_y < (settings_btn_y + settings_btn_h)) {
-      navigate_to_settings(s);
+      s->active_app = cereal::UiLayoutState::App::SETTINGS;
     }
-    if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
+    else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
       && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
-      navigate_to_home(s);
       if (s->started) {
+        s->active_app = cereal::UiLayoutState::App::NONE;
         s->scene.uilayout_sidebarcollapsed = true;
-        update_offroad_layout_state(s);
+      } else {
+        s->active_app = cereal::UiLayoutState::App::HOME;
       }
     }
   }
-}
-
-static void handle_driver_view_touch(UIState *s, int touch_x, int touch_y) {
-  write_db_value("IsDriverViewEnabled", "0", 1);
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
@@ -124,9 +112,8 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
     } else {
-      handle_driver_view_touch(s, touch_x, touch_y);
+      write_db_value("IsDriverViewEnabled", "0", 1);
     }
-    update_offroad_layout_state(s);
   }
 }
 
@@ -175,15 +162,6 @@ static int write_param_float(float param, const char* param_name, bool persisten
   char s[16];
   int size = snprintf(s, sizeof(s), "%f", param);
   return write_db_value(param_name, s, MIN(size, sizeof(s)), persistent_param);
-}
-
-static void update_offroad_layout_timeout(UIState *s, int* timeout) {
-  if (*timeout > 0) {
-    (*timeout)--;
-  } else {
-    update_offroad_layout_state(s);
-    *timeout = 2 * UI_FREQ;
-  }
 }
 
 static void ui_init(UIState *s) {
@@ -420,14 +398,10 @@ void handle_message(UIState *s, SubMaster &sm) {
       close(s->ipc_fd);
       s->ipc_fd = -1;
       #endif
-
-      update_offroad_layout_state(s);
     }
   } else if (s->status == STATUS_STOPPED) {
     update_status(s, STATUS_DISENGAGED);
-
     s->active_app = cereal::UiLayoutState::App::NONE;
-    update_offroad_layout_state(s);
   }
 }
 
@@ -507,7 +481,6 @@ static void ui_update(UIState *s) {
     assert(glGetError() == GL_NO_ERROR);
 
     s->scene.uilayout_sidebarcollapsed = true;
-    update_offroad_layout_state(s);
     s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
     s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
     s->scene.ui_viz_ro = 0;
@@ -827,7 +800,6 @@ int main(int argc, char* argv[]) {
       // Visiond process is just stopped, force a redraw to make screen blank again.
       if (!s->started) {
         s->scene.uilayout_sidebarcollapsed = false;
-        update_offroad_layout_state(s);
         ui_draw(s);
         glFinish();
         should_swap = true;
@@ -895,7 +867,7 @@ int main(int argc, char* argv[]) {
         s->scene.athenaStatus = NET_ERROR;
       }
     }
-    update_offroad_layout_timeout(s, &s->offroad_layout_timeout);
+    update_offroad_layout_state(s);
 
     pthread_mutex_unlock(&s->lock);
 
