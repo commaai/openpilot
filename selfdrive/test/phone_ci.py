@@ -66,9 +66,15 @@ def run_on_phone(test_cmd):
   conn.send("exit\n")
 
   dat = b""
+  conn.settimeout(60)
 
   while True:
-    recvd = conn.recv(4096)
+    try:
+      recvd = conn.recv(4096)
+    except socket.timeout:
+      print("connection to phone timed out")
+      sys.exit(1)
+
     if len(recvd) == 0:
       break
 
