@@ -121,22 +121,20 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("Dashlights", 10),
       ("Wheel_Speeds", 50),
       ("Steering_Torque", 50),
     ]
 
     if CP.carFingerprint == CAR.LEGACY_PREGLOBAL:
       checks += [
-        ("Dashlights", 10),
         ("CruiseControl", 50),
       ]
     else:
       checks += [
-        ("Dashlights", 10),
         ("BodyInfo", 10),
         ("CruiseControl", 20),
       ]
-
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
