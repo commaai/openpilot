@@ -40,8 +40,8 @@ static void enable_event_processing(bool yes) {
 static void set_awake(UIState *s, bool awake) {
 #ifdef QCOM
   if (awake) {
-    // 30 second timeout at 30 fps
-    s->awake_timeout = 30*30;
+    // 30 second timeout
+    s->awake_timeout = 30*UI_FREQ;
   }
   if (s->awake != awake) {
     s->awake = awake;
@@ -395,7 +395,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
-    s->hardware_timeout = 5*30; // 5 seconds at 30 fps
+    s->hardware_timeout = 5*UI_FREQ; // 5 seconds
   }
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
