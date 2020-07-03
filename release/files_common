@@ -320,6 +320,7 @@ selfdrive/test/__init__.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_car_models.py
+selfdrive/test/test_cpu_usage.py
 
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
