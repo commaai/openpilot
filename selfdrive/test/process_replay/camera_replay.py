@@ -85,11 +85,15 @@ if __name__ == "__main__":
   log_msgs = camera_replay(list(lr), fr)
 
   if update:
+    from selfdrive.test.openpilotci import upload_file
+
     ref_commit = get_git_commit()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     save_log(log_fn, log_msgs)
     with open("model_replay_ref_commit", "w") as f:
       f.write(ref_commit)
+    upload_file(log_fn, os.path.basename(log_fn))
+    os.remove(log_fn)
   else:
     ref_commit = open("model_replay_ref_commit").read().strip()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)

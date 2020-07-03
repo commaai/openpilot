@@ -1213,7 +1213,7 @@ void party(VisionState *s) {
                        processing_thread, s);
   assert(err == 0);
 
-#if !defined(QCOM2) && !defined(__APPLE__)
+#if false && !defined(QCOM2) && !defined(__APPLE__)
   // TODO: fix front camera on qcom2
   pthread_t frontview_thread_handle;
   err = pthread_create(&frontview_thread_handle, NULL,

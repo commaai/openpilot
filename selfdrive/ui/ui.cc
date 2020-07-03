@@ -406,8 +406,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     s->preview_started = data.getIsPreview();
   }
 
-  //s->started = scene.thermal.getStarted() || s->preview_started;
-  s->started = true;
+  s->started = scene.thermal.getStarted() || s->preview_started;
   // Handle onroad/offroad transition
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {
