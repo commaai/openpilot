@@ -154,7 +154,6 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
   const float *mpc_x_coords = &scene->mpc_x[0];
   const float *mpc_y_coords = &scene->mpc_y[0];
 
-  bool started = false;
   float off = is_mpc?0.3:0.5;
   float lead_d = scene->lead_data[0].getDRel()*2.;
   float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
@@ -289,7 +288,7 @@ static inline bool valid_frame_pt(UIState *s, float x, float y) {
   return x >= 0 && x <= s->rgb_width && y >= 0 && y <= s->rgb_height;
 
 }
-static void update_lane_line_data(UIState *s, const float *points, float off, bool is_ghost, model_path_vertices_data *pvd, float valid_len) {
+static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
   pvd->cnt = 0;
   int rcount = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, valid_len);
   for (int i = 0; i < rcount; i++) {
@@ -305,7 +304,7 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
   }
   for (int i = rcount; i > 0; i--) {
     float px = (float)i;
-    float py = is_ghost?(points[i]-off):(points[i]+off);
+    float py = points[i] + off;
     const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
     const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
     if(!valid_frame_pt(s, p_full_frame.v[0], p_full_frame.v[1]))
@@ -317,16 +316,15 @@ static void update_lane_line_data(UIState *s, const float *points, float off, bo
 }
 
 static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
-  update_lane_line_data(s, path.points, 0.025*path.prob, false, pstart, path.validLen);
+  update_lane_line_data(s, path.points, 0.025*path.prob, pstart, path.validLen);
   float var = fmin(path.std, 0.7);
-  update_lane_line_data(s, path.points, -var, true, pstart + 1, path.validLen);
-  update_lane_line_data(s, path.points, var, true, pstart + 2, path.validLen);
+  update_lane_line_data(s, path.points, -var, pstart + 1, path.validLen);
+  update_lane_line_data(s, path.points, var, pstart + 2, path.validLen);
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
   ui_draw_lane_line(s, pstart, color);
-  float var = fmin(path->std, 0.7);
-  color.a /= 4;
+  color.a /= 25;
   ui_draw_lane_line(s, pstart + 1, color);
   ui_draw_lane_line(s, pstart + 2, color);
 }
@@ -758,7 +756,7 @@ void ui_draw(UIState *s) {
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
   if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED && s->vision_seen) {
-      ui_draw_vision(s);
+    ui_draw_vision(s);
   }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
@@ -858,7 +856,13 @@ static const mat4 full_to_wide_frame_transform = {{
 
 void ui_nvg_init(UIState *s) {
   // init drawing
+#ifdef QCOM
+  // on QCOM, we enable MSAA
+  s->vg = nvgCreate(0);
+#else
   s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+#endif
+
   assert(s->vg);
 
   s->font_courbd = nvgCreateFont(s->vg, "courbd", "../assets/fonts/courbd.ttf");

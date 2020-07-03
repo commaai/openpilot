@@ -203,23 +203,24 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   return err;
 }
 
-static inline int ov8865_get_coarse_gain(int gain) {
-  static const int gains[] = {0, 256, 384, 448, 480};
-  int i;
+static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
+  //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
+  int err, coarse_gain_bitmap, fine_gain_bitmap;
 
+  // get bitmaps from iso
+  static const int gains[] = {0, 100, 200, 400, 800};
+  int i;
   for (i = 1; i < ARRAYSIZE(gains); i++) {
     if (gain >= gains[i - 1] && gain < gains[i])
       break;
   }
+  int coarse_gain = i - 1;
+  float fine_gain = (gain - gains[coarse_gain])/(float)(gains[coarse_gain+1]-gains[coarse_gain]);
+  coarse_gain_bitmap = (1 << coarse_gain) - 1;
+  fine_gain_bitmap = ((int)(16*fine_gain) << 3) + 128; // 7th is always 1, 0-2nd are always 0
 
-  return i - 1;
-}
-
-static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
-  //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
-  int err, gain_bitmap;
-  gain_bitmap = (1 << ov8865_get_coarse_gain(gain)) - 1;
   integ_lines *= 16; // The exposure value in reg is in 16ths of a line
+
   struct msm_camera_i2c_reg_array reg_array[] = {
     //{0x104,0x1,0},
 
@@ -230,7 +231,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     // AEC MANUAL
     {0x3503, 0x4, 0},
     // AEC GAIN
-    {0x3508, (uint16_t)(gain_bitmap), 0}, {0x3509, 0xf8, 0},
+    {0x3508, (uint16_t)(coarse_gain_bitmap), 0}, {0x3509, (uint16_t)(fine_gain_bitmap), 0},
 
     //{0x104,0x0,0},
   };
@@ -388,7 +389,10 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     || integ_lines != s->cur_integ_lines
     || frame_length != s->cur_frame_length) {
 
-    if (s->apply_exposure) {
+    if (s->apply_exposure == ov8865_apply_exposure) {
+      gain = 800 * gain_frac; // ISO
+      err = s->apply_exposure(s, gain, integ_lines, frame_length);
+    } else if (s->apply_exposure) {
       err = s->apply_exposure(s, gain, integ_lines, frame_length);
     }
 
@@ -411,19 +415,40 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
 static void do_autoexposure(CameraState *s, float grey_frac) {
   const float target_grey = 0.3;
+  if (s->apply_exposure == ov8865_apply_exposure) {
+    // gain limits downstream
+    const float gain_frac_min = 0.015625;
+    const float gain_frac_max = 1.0;
+    // exposure time limits
+    unsigned int frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
+    const unsigned int exposure_time_min = 16;
+    const unsigned int exposure_time_max = frame_length - 11; // copied from set_exposure()
 
-  float new_exposure = s->cur_exposure_frac;
-  new_exposure *= pow(1.05, (target_grey - grey_frac) / 0.05 );
-  //LOGD("diff %f: %f to %f", target_grey - grey_frac, s->cur_exposure_frac, new_exposure);
+    float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.05);
+    if (s->cur_gain_frac > 0.125 && exposure_factor < 1) {
+      s->cur_gain_frac *= exposure_factor;
+    } else if (s->cur_integ_lines * exposure_factor <= exposure_time_max && s->cur_integ_lines * exposure_factor >= exposure_time_min) { // adjust exposure time first
+      s->cur_exposure_frac *= exposure_factor;
+    } else if (s->cur_gain_frac * exposure_factor <= gain_frac_max && s->cur_gain_frac * exposure_factor >= gain_frac_min) {
+      s->cur_gain_frac *= exposure_factor;
+    }
 
-  float new_gain = s->cur_gain_frac;
-  if (new_exposure < 0.10) {
-    new_gain *= 0.95;
-  } else if (new_exposure > 0.40) {
-    new_gain *= 1.05;
+    set_exposure(s, s->cur_exposure_frac, s->cur_gain_frac);
+
+  } else { // keep the old for others
+    float new_exposure = s->cur_exposure_frac;
+    new_exposure *= pow(1.05, (target_grey - grey_frac) / 0.05 );
+    //LOGD("diff %f: %f to %f", target_grey - grey_frac, s->cur_exposure_frac, new_exposure);
+
+    float new_gain = s->cur_gain_frac;
+    if (new_exposure < 0.10) {
+      new_gain *= 0.95;
+    } else if (new_exposure > 0.40) {
+      new_gain *= 1.05;
+    }
+
+    set_exposure(s, new_exposure, new_gain);
   }
-
-  set_exposure(s, new_exposure, new_gain);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {

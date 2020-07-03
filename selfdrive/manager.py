@@ -546,11 +546,12 @@ def uninstall():
 def main():
   os.environ['PARAMS_PATH'] = PARAMS
 
-  # the flippening!
-  os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
+  if ANDROID:
+    # the flippening!
+    os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
 
-  # disable bluetooth
-  os.system('service call bluetooth_manager 8')
+    # disable bluetooth
+    os.system('service call bluetooth_manager 8')
 
   params = Params()
   params.manager_start()
