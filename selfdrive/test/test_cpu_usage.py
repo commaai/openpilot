@@ -15,7 +15,6 @@ def cputime_total(ct):
 
 def print_cpu_usage(first_proc, last_proc):
   procs = [
-    # (proc, max time (s))
     ("selfdrive.controls.controlsd", 59.46),
     ("selfdrive.locationd.locationd", 34.38),
     ("./loggerd", 28.49),
@@ -52,7 +51,7 @@ def print_cpu_usage(first_proc, last_proc):
       if cpu_usage > max(normal_cpu_usage * 1.1, normal_cpu_usage + 5.0):
         result += f"Warning {proc_name} using more CPU than normal\n"
         r = 1
-      elif cpu_usage < normal_cpu_usage * 0.3:
+      elif cpu_usage < min(normal_cpu_usage * 0.3, max(normal_cpu_usage - 1.0, 0.0)):
         result += f"Warning {proc_name} using less CPU than normal\n"
         r = 1
       result += f"{proc_name.ljust(35)}  {cpu_usage:.2f}%\n"
