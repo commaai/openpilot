@@ -41,6 +41,7 @@ def run_on_phone(test_cmd):
   commit = os.environ.get('GIT_COMMIT', branch)
 
   # set up environment
+  print(os.environ)
   env = {f"CI_{k}": v for k, v in os.environ.items()}
   env["CI"] = "1"
   conn = ssh.invoke_shell(environment=env)

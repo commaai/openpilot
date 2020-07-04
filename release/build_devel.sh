@@ -8,6 +8,7 @@ chmod 777 /dev/shm
 echo $$ > /dev/cpuset/app/tasks
 echo $PPID > /dev/cpuset/app/tasks
 
+printenv
 
 SOURCE_DIR=/data/openpilot_source
 TARGET_DIR=/data/openpilot
