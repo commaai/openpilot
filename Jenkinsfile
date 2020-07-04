@@ -7,8 +7,8 @@ pipeline {
   }
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
-    //PUSH = "${env.BRNACH_NAME == 'master' ? 'master-ci' : ''}"
-    PUSH = "${env.BRNACH_NAME == 'phone-ci' ? 'master_ci_test' : ''}"
+    //PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
+    PUSH = "${env.BRANCH_NAME == 'phone-ci' ? 'master_ci_test' : ''}"
   }
 
   stages {
