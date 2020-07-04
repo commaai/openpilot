@@ -41,7 +41,7 @@ static void set_awake(UIState *s, bool awake) {
 #ifdef QCOM
   if (awake) {
     // 30 second timeout
-    s->awake_timeout = 30*UI_FREQ;
+    s->awake_timeout = 30*constants::UI_FREQ;
   }
   if (s->awake != awake) {
     s->awake = awake;
@@ -83,19 +83,19 @@ static void update_offroad_layout_state(UIState *s) {
     LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
     prev_collapsed = s->scene.uilayout_sidebarcollapsed;
     prev_app = s->active_app;
-    timeout = 2 * UI_FREQ;
+    timeout = 2 * constants::UI_FREQ;
   }
 #endif
 }
 
 static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
-  if (!s->scene.uilayout_sidebarcollapsed && touch_x <= sbr_w) {
-    if (touch_x >= settings_btn_x && touch_x < (settings_btn_x + settings_btn_w)
-      && touch_y >= settings_btn_y && touch_y < (settings_btn_y + settings_btn_h)) {
+  if (!s->scene.uilayout_sidebarcollapsed && touch_x <= constants::sbr_w) {
+    if (touch_x >= constants::settings_btn_x && touch_x < (constants::settings_btn_x + constants::settings_btn_w)
+      && touch_y >= constants::settings_btn_y && touch_y < (constants::settings_btn_y + constants::settings_btn_h)) {
       s->active_app = cereal::UiLayoutState::App::SETTINGS;
     }
-    else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
-      && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
+    else if (touch_x >= constants::home_btn_x && touch_x < (constants::home_btn_x + constants::home_btn_w)
+      && touch_y >= constants::home_btn_y && touch_y < (constants::home_btn_y + constants::home_btn_h)) {
       if (s->started) {
         s->active_app = cereal::UiLayoutState::App::NONE;
         s->scene.uilayout_sidebarcollapsed = true;
@@ -107,7 +107,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+  if (s->started && (touch_x >= s->scene.ui_viz_rx - constants::bdr_s)
     && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
@@ -152,7 +152,7 @@ static int read_param_timeout(T* param, const char* param_name, int* timeout, bo
   if (*timeout > 0){
     (*timeout)--;
   } else {
-    *timeout = 2 * UI_FREQ; // 0.5Hz
+    *timeout = 2 * constants::UI_FREQ; // 0.5Hz
     result = read_param(param, param_name, persistent_param);
   }
   return result;
@@ -238,9 +238,9 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   read_param(&s->limit_set_speed, "LimitSetSpeed");
 
   // Set offsets so params don't get read at the same time
-  s->longitudinal_control_timeout = UI_FREQ / 3;
-  s->is_metric_timeout = UI_FREQ / 2;
-  s->limit_set_speed_timeout = UI_FREQ;
+  s->longitudinal_control_timeout = constants::UI_FREQ / 3;
+  s->is_metric_timeout = constants::UI_FREQ / 2;
+  s->limit_set_speed_timeout = constants::UI_FREQ;
 }
 
 static void read_path(PathData& p, const cereal::ModelData::PathData::Reader &pathp) {
@@ -284,7 +284,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (s->started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
-    s->controls_timeout = 1 * UI_FREQ;
+    s->controls_timeout = 1 * constants::UI_FREQ;
     scene.frontview = scene.controls_state.getRearViewCam();
     if (!scene.frontview){ s->controls_seen = true; }
 
@@ -373,7 +373,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
-    s->hardware_timeout = 5*UI_FREQ; // 5 seconds
+    s->hardware_timeout = 5*constants::UI_FREQ; // 5 seconds
   }
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
@@ -481,8 +481,8 @@ static void ui_update(UIState *s) {
     assert(glGetError() == GL_NO_ERROR);
 
     s->scene.uilayout_sidebarcollapsed = true;
-    s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
-    s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
+    s->scene.ui_viz_rx = (constants::box_x-constants::sbr_w+constants::bdr_s*2);
+    s->scene.ui_viz_rw = (constants::box_w+constants::sbr_w-(constants::bdr_s*2));
     s->scene.ui_viz_ro = 0;
 
     s->vision_connect_firstrun = false;
@@ -768,9 +768,9 @@ int main(int argc, char* argv[]) {
 
     // resize vision for collapsing sidebar
     const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-    s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
-    s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
-    s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
+    s->scene.ui_viz_rx = hasSidebar ? constants::box_x : (constants::box_x - constants::sbr_w + (constants::bdr_s * 2));
+    s->scene.ui_viz_rw = hasSidebar ? constants::box_w : (constants::box_w + constants::sbr_w - (constants::bdr_s * 2));
+    s->scene.ui_viz_ro = hasSidebar ? -(constants::sbr_w - 6 * constants::bdr_s) : 0;
 
     // poll for touch events
     int touch_x = -1, touch_y = -1;
@@ -786,7 +786,7 @@ int main(int argc, char* argv[]) {
       check_messages(s);
 
       if (s->started) {
-        s->controls_timeout = 5 * UI_FREQ;
+        s->controls_timeout = 5 * constants::UI_FREQ;
       }
     } else {
       set_awake(s, true);

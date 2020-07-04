@@ -47,46 +47,36 @@
 #define UI_BUF_COUNT 4
 //#define SHOW_SPEEDLIMIT 1
 //#define DEBUG_TURN
+namespace constants {
+  const int vwp_w = 1920, vwp_h = 1080;
+  const int nav_w = 640, nav_ww= 760;
+  const int sbr_w = 300;
+  const int bdr_s = 30;
+  const int box_x = sbr_w+bdr_s, box_y = bdr_s, box_w = vwp_w-sbr_w-(bdr_s*2), box_h = vwp_h-(bdr_s*2);
+  const int viz_w = vwp_w-(bdr_s*2);
+  const int ff_xoffset = 32;
+  const int header_h = 420;
+  const int footer_h = 280;
+  const int footer_y = vwp_h-bdr_s-footer_h;
+  const int settings_btn_h = 117, settings_btn_w = 200, settings_btn_x = 50, settings_btn_y = 35;
+  const int home_btn_h = 180, home_btn_w = 180, home_btn_x = 60, home_btn_y = vwp_h - home_btn_h - 40;
 
-const int vwp_w = 1920;
-const int vwp_h = 1080;
-const int nav_w = 640;
-const int nav_ww= 760;
-const int sbr_w = 300;
-const int bdr_s = 30;
-const int box_x = sbr_w+bdr_s;
-const int box_y = bdr_s;
-const int box_w = vwp_w-sbr_w-(bdr_s*2);
-const int box_h = vwp_h-(bdr_s*2);
-const int viz_w = vwp_w-(bdr_s*2);
-const int ff_xoffset = 32;
-const int header_h = 420;
-const int footer_h = 280;
-const int footer_y = vwp_h-bdr_s-footer_h;
-const int settings_btn_h = 117;
-const int settings_btn_w = 200;
-const int settings_btn_x = 50;
-const int settings_btn_y = 35;
-const int home_btn_h = 180;
-const int home_btn_w = 180;
-const int home_btn_x = 60;
-const int home_btn_y = vwp_h - home_btn_h - 40;
+  const int UI_FREQ = 30;   // Hz
 
-const int UI_FREQ = 30;   // Hz
+  const int MODEL_PATH_MAX_VERTICES_CNT = 98;
+  const int MODEL_LANE_PATH_CNT = 3;
+  const int TRACK_POINTS_MAX_CNT = 50 * 2;
 
-const int MODEL_PATH_MAX_VERTICES_CNT = 98;
-const int MODEL_LANE_PATH_CNT = 3;
-const int TRACK_POINTS_MAX_CNT = 50 * 2;
+  const int SET_SPEED_NA = 255;
 
-const int SET_SPEED_NA = 255;
-
-const uint8_t bg_colors[][4] = {
-  [STATUS_STOPPED] = {0x07, 0x23, 0x39, 0xff},
-  [STATUS_DISENGAGED] = {0x17, 0x33, 0x49, 0xff},
-  [STATUS_ENGAGED] = {0x17, 0x86, 0x44, 0xff},
-  [STATUS_WARNING] = {0xDA, 0x6F, 0x25, 0xff},
-  [STATUS_ALERT] = {0xC9, 0x22, 0x31, 0xff},
-};
+  const uint8_t bg_colors[][4] = {
+    [STATUS_STOPPED] = {0x07, 0x23, 0x39, 0xff},
+    [STATUS_DISENGAGED] = {0x17, 0x33, 0x49, 0xff},
+    [STATUS_ENGAGED] = {0x17, 0x86, 0x44, 0xff},
+    [STATUS_WARNING] = {0xDA, 0x6F, 0x25, 0xff},
+    [STATUS_ALERT] = {0xC9, 0x22, 0x31, 0xff},
+  };
+}
 
 typedef struct UIScene {
   int frontview;
@@ -139,12 +129,12 @@ typedef struct {
 }vertex_data;
 
 typedef struct {
-  vertex_data v[MODEL_PATH_MAX_VERTICES_CNT];
+  vertex_data v[constants::MODEL_PATH_MAX_VERTICES_CNT];
   int cnt;
 } model_path_vertices_data;
 
 typedef struct {
-  vertex_data v[TRACK_POINTS_MAX_CNT];
+  vertex_data v[constants::TRACK_POINTS_MAX_CNT];
   int cnt;
 } track_vertices_data;
 
@@ -243,7 +233,7 @@ typedef struct UIState {
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
   mat4 rear_frame_mat, front_frame_mat;
 
-  model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
+  model_path_vertices_data model_path_vertices[constants::MODEL_LANE_PATH_CNT * 2];
 
   track_vertices_data track_vertices[2];
 

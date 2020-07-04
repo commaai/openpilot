@@ -5,22 +5,23 @@
 #include "ui.hpp"
 
 static void ui_draw_sidebar_background(UIState *s) {
-  int sbr_x = !s->scene.uilayout_sidebarcollapsed ? 0 : -(sbr_w) + bdr_s * 2;
-  ui_draw_rect(s->vg, sbr_x, 0, sbr_w, vwp_h, COLOR_BLACK_ALPHA(85));
+  int sbr_x = !s->scene.uilayout_sidebarcollapsed ? 0 : -(constants::sbr_w) + constants::bdr_s * 2;
+  ui_draw_rect(s->vg, sbr_x, 0, constants::sbr_w, constants::vwp_h, COLOR_BLACK_ALPHA(85));
 }
 
 static void ui_draw_sidebar_settings_button(UIState *s) {
   bool settingsActive = s->active_app == cereal::UiLayoutState::App::SETTINGS;
-  const int settings_btn_xr = !s->scene.uilayout_sidebarcollapsed ? settings_btn_x : -(sbr_w);
+  const int settings_btn_xr = !s->scene.uilayout_sidebarcollapsed ? constants::settings_btn_x : -(constants::sbr_w);
 
-  ui_draw_image(s->vg, settings_btn_xr, settings_btn_y, settings_btn_w, settings_btn_h, s->img_button_settings, settingsActive ? 1.0f : 0.65f);
+  ui_draw_image(s->vg, settings_btn_xr, constants::settings_btn_y, constants::settings_btn_w, 
+    constants::settings_btn_h, s->img_button_settings, settingsActive ? 1.0f : 0.65f);
 }
 
 static void ui_draw_sidebar_home_button(UIState *s) {
   bool homeActive = s->active_app == cereal::UiLayoutState::App::HOME;
-  const int home_btn_xr = !s->scene.uilayout_sidebarcollapsed ? home_btn_x : -(sbr_w);
+  const int home_btn_xr = !s->scene.uilayout_sidebarcollapsed ? constants::home_btn_x : -(constants::sbr_w);
 
-  ui_draw_image(s->vg, home_btn_xr, home_btn_y, home_btn_w, home_btn_h, s->img_button_home, homeActive ? 1.0f : 0.65f);
+  ui_draw_image(s->vg, home_btn_xr, constants::home_btn_y, constants::home_btn_w, constants::home_btn_h, s->img_button_home, homeActive ? 1.0f : 0.65f);
 }
 
 static void ui_draw_sidebar_network_strength(UIState *s) {
@@ -32,7 +33,7 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
       {cereal::ThermalData::NetworkStrength::GREAT, 5}};
   const int network_img_h = 27;
   const int network_img_w = 176;
-  const int network_img_x = !s->scene.uilayout_sidebarcollapsed ? 58 : -(sbr_w);
+  const int network_img_x = !s->scene.uilayout_sidebarcollapsed ? 58 : -(constants::sbr_w);
   const int network_img_y = 196;
   const int img_idx = s->scene.thermal.getNetworkType() == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.thermal.getNetworkStrength()];
   ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, s->img_network[img_idx], 1.0f);
@@ -41,7 +42,7 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
 static void ui_draw_sidebar_battery_icon(UIState *s) {
   const int battery_img_h = 36;
   const int battery_img_w = 76;
-  const int battery_img_x = !s->scene.uilayout_sidebarcollapsed ? 160 : -(sbr_w);
+  const int battery_img_x = !s->scene.uilayout_sidebarcollapsed ? 160 : -(constants::sbr_w);
   const int battery_img_y = 255;
 
   int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
@@ -60,7 +61,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
       {cereal::ThermalData::NetworkType::CELL3_G, "3G"},
       {cereal::ThermalData::NetworkType::CELL4_G, "4G"},
       {cereal::ThermalData::NetworkType::CELL5_G, "5G"}};
-  const int network_x = !s->scene.uilayout_sidebarcollapsed ? 50 : -(sbr_w);
+  const int network_x = !s->scene.uilayout_sidebarcollapsed ? 50 : -(constants::sbr_w);
   const int network_y = 273;
   const int network_w = 100;
   const char *network_type = network_type_map[s->scene.thermal.getNetworkType()];
@@ -72,7 +73,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
 }
 
 static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char* value_str, const int severity, const int y_offset, const char* message_str) {
-  const int metric_x = !s->scene.uilayout_sidebarcollapsed ? 30 : -(sbr_w);
+  const int metric_x = !s->scene.uilayout_sidebarcollapsed ? 30 : -(constants::sbr_w);
   const int metric_y = 338 + y_offset;
   const int metric_w = 240;
   const int metric_h = message_str ? strchr(message_str, '\n') ? 124 : 100 : 148;
