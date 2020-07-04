@@ -95,7 +95,8 @@ popd
 
 if [ ! -z "$CI_PUSH" ]; then
   echo "[-] Pushing to $CI_PUSH T=$SECONDS"
-  git push -f git@github.com:commaai/openpilot.git master-ci:$CI_PUSH
+  git remote set-url origin git@github.com:commaai/openpilot.git
+  git push -f origin master-ci:$CI_PUSH
 fi
 
 echo "[-] done pushing T=$SECONDS"
