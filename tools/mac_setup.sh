@@ -12,5 +12,4 @@ pyenv rehash
 eval "$(pyenv init -)"
 
 pip install --no-cache-dir pipenv==2018.11.26
-pipenv install --system --deploy
-
+pipenv install --system --deploy --clear --verbose
