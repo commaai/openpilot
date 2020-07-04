@@ -37,7 +37,7 @@ echo "[-] bringing master-ci and devel in sync T=$SECONDS"
 git fetch origin master-ci
 git fetch origin devel
 
-git checkout --track origin/master-ci || true
+git checkout -f --track origin/master-ci
 git reset --hard master-ci
 git checkout master-ci
 git reset --hard origin/devel
@@ -93,9 +93,9 @@ pushd panda/board/pedal
 make obj/comma.bin
 popd
 
-if [ ! -z "$PUSH" ]; then
-  echo "[-] Pushing to $PUSH T=$SECONDS"
-  git push -f origin master-ci:$PUSH
+if [ ! -z "$CI_PUSH" ]; then
+  echo "[-] Pushing to $CI_PUSH T=$SECONDS"
+  git push -f origin master-ci:$CI_PUSH
 fi
 
 echo "[-] done pushing T=$SECONDS"
