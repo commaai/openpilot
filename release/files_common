@@ -1,15 +1,15 @@
-README.md
-SAFETY.md
-
 .gitignore
 LICENSE
 launch_chffrplus.sh
 launch_openpilot.sh
 
-CONTRIBUTING.md
-RELEASES.md
-
+Jenkinsfile
 SConstruct
+
+CONTRIBUTING.md
+README.md
+RELEASES.md
+SAFETY.md
 
 apk/ai.comma*.apk
 
