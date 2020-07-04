@@ -42,9 +42,12 @@ def run_on_phone(test_cmd):
 
   # set up environment
   print(os.environ)
-  env = {f"CI_{k}": v for k, v in os.environ.items()}
-  env["CI"] = "1"
-  conn = ssh.invoke_shell(environment=env)
+  conn = ssh.invoke_shell()
+  for k, v in os.environ.items():
+    # pass in all environment variables prefixed with 'CI_'
+    if k.startswith("CI_"):
+      conn.send(f"export {k}='{v}'")
+  conn.send("export CI=1")
 
   conn.send(f"cd {SOURCE_DIR}\n")
   conn.send("git reset --hard\n")
