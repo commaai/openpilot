@@ -36,7 +36,6 @@ common/cython_hacks.py
 common/apk.py
 common/SConscript
 common/common_pyx_setup.py
-common/manager_helpers.py
 
 common/kalman/.gitignore
 common/kalman/*
