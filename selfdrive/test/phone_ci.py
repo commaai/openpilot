@@ -47,6 +47,8 @@ def run_on_phone(test_cmd):
     # pass in all environment variables prefixed with 'CI_'
     if k.startswith("CI_"):
       conn.send(f"export {k}='{v}'\n")
+    else:
+      print(f"not setting {k}")
   conn.send("export CI=1\n")
 
   conn.send(f"cd {SOURCE_DIR}\n")
