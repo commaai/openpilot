@@ -7,8 +7,8 @@ import time
 import socket
 
 
-SOURCE_DIR = "/data/openpilot_source"
-TEST_DIR = "/data/openpilot"
+SOURCE_DIR = "/data/openpilot_source/"
+TEST_DIR = "/data/openpilot/"
 
 def run_on_phone(test_cmd):
 
