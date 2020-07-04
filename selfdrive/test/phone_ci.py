@@ -40,17 +40,15 @@ def run_on_phone(test_cmd):
   branch = os.environ['GIT_BRANCH']
   commit = os.environ.get('GIT_COMMIT', branch)
 
-  # set up environment
-  print(os.environ)
   conn = ssh.invoke_shell()
+
+  # pass in all environment variables prefixed with 'CI_'
   for k, v in os.environ.items():
-    # pass in all environment variables prefixed with 'CI_'
     if k.startswith("CI_"):
       conn.send(f"export {k}='{v}'\n")
-    else:
-      print(f"not setting {k}")
   conn.send("export CI=1\n")
 
+  # set up environment
   conn.send(f"cd {SOURCE_DIR}\n")
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")

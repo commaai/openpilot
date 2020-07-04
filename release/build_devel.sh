@@ -8,7 +8,6 @@ chmod 777 /dev/shm
 echo $$ > /dev/cpuset/app/tasks
 echo $PPID > /dev/cpuset/app/tasks
 
-printenv
 
 SOURCE_DIR=/data/openpilot_source
 TARGET_DIR=/data/openpilot
@@ -95,7 +94,7 @@ make obj/comma.bin
 popd
 
 if [ ! -z "$CI_PUSH" ]; then
-  echo "[-] Pushing to $PUSH T=$SECONDS"
+  echo "[-] Pushing to $CI_PUSH T=$SECONDS"
   git push -f origin master-ci:$CI_PUSH
 fi
 
