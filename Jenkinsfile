@@ -40,6 +40,19 @@ pipeline {
           }
         }
 
+        stage('On-device Tests') {
+          steps {
+            lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
+              timeout(time: 30, unit: 'MINUTES') {
+                dir(path: 'selfdrive/test') {
+                  sh 'pip install paramiko'
+                  sh 'python phone_ci.py "cd selfdrive/test && nosetests test_sounds.py"'
+                }
+              }
+            }
+          }
+        }
+
       }
     }
   }
