@@ -1,13 +1,13 @@
-import os
 import subprocess
 from functools import wraps
 from nose.tools import nottest
 
+from common.android import ANDROID
 from common.apk import update_apks, start_offroad, pm_apply_packages, android_packages
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
 
 def phone_only(x):
-  if os.path.isfile("/init.qcom.rc"):
+  if ANDROID:
     return x
   else:
     return nottest(x)

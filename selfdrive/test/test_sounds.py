@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 import time
-
-import selfdrive.manager as manager
-import cereal.messaging as messaging
+import nose
 
 from cereal import car
+import cereal.messaging as messaging
+from common.android import get_sound_card_online
 from common.realtime import DT_CTRL
 from selfdrive.test.helpers import phone_only, with_processes
 
+
+@phone_only
+def test_sound_card_init():
+  assert get_sound_card_online()
+
+
 @phone_only
 @with_processes(['ui', 'camerad'])
-def test_sound():
+def test_alert_sounds():
 
   pm = messaging.PubMaster(['thermal', 'controlsState'])
 
@@ -35,9 +41,6 @@ def test_sound():
       pm.send('controlsState', msg)
       time.sleep(DT_CTRL)
 
-  manager.kill_managed_process('camerad')
-  manager.kill_managed_process('ui')
-
 
 if __name__ == "__main__":
-  test_sound()
+  nose.run()
