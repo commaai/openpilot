@@ -4,9 +4,9 @@ import subprocess
 
 from cereal import car
 import cereal.messaging as messaging
+from selfdrive.test.helpers import phone_only, with_processes
 from common.android import get_sound_card_online
 from common.realtime import DT_CTRL
-from selfdrive.test.helpers import phone_only, with_processes
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 

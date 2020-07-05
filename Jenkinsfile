@@ -46,7 +46,7 @@ pipeline {
               timeout(time: 30, unit: 'MINUTES') {
                 dir(path: 'selfdrive/test') {
                   sh 'pip install paramiko'
-                  sh 'python phone_ci.py "SCONS_CACHE=1 scons -j3 && cd selfdrive/test && nosetests -s test_sounds.py"'
+                  sh 'python phone_ci.py "SCONS_CACHE=1 scons -j3 cereal/ && cd selfdrive/test && nosetests -s test_sounds.py"'
                 }
               }
             }
