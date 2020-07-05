@@ -187,6 +187,7 @@ FW_VERSIONS = {
     # 2016 Outback Limited 2.5 - UDM / @aeiro
     # 2015 Outback Limited 2.5 - ADM / @Bugsy
     # 2015 Outback Premium 3.6i - UDM / @aidrive
+    # 2016 Outback Premium 2.5 - UDM / @Troy
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'{\x9a\xac\x00',
@@ -206,18 +207,21 @@ FW_VERSIONS = {
       b'\xf1\x00\xf0\xe0\x0e',
       b'\x00\x00c\x94\x00\x00\x00\x00',
       b'\x00\x00c\x94\x1f@\x10\b',
+      b'\x00\x00c\xb7\x1f@\x10\x16',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xb4+@p\a',
       b'\xab\"@@\a',
       b'\xa0\x62\x41\x71\x07',
       b'\xa0*@q\a',
+      b'\xab*@@\a',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbd\xfb\xe0\x80\x00',
       b'\xbe\xf2@\x80\x00',
       b'\xbf\xe2\x40\x80\x00',
       b'\xbf\xf2@\x80\x00',
+      b'\xbe\xf2@p\x00',
     ],
   },
 }
