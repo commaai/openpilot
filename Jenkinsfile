@@ -40,13 +40,13 @@ pipeline {
           }
         }
 
-        stage('On-device Tests') {
+        stage('Sound Test') {
           steps {
             lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
               timeout(time: 30, unit: 'MINUTES') {
                 dir(path: 'selfdrive/test') {
                   sh 'pip install paramiko'
-                  sh 'python phone_ci.py "cd selfdrive/test && nosetests test_sounds.py"'
+                  sh 'python phone_ci.py "SCONS_CACHE=1 scons -j3 && cd selfdrive/test && nosetests -s test_sounds.py"'
                 }
               }
             }

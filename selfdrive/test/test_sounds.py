@@ -21,7 +21,7 @@ SOUNDS = {
   AudibleAlert.chimeWarning1: 80,
   AudibleAlert.chimeWarning2: 107,
   AudibleAlert.chimeWarningRepeat: 134,
-  AudibleAlert.chimeWarning2Repeat: 161,
+  AudibleAlert.chimeWarning2Repeat: 177,
 }
 
 def get_total_writes():
@@ -41,8 +41,8 @@ def test_alert_sounds():
   pm = messaging.PubMaster(['thermal', 'controlsState'])
 
   # make sure they're all defined
-  alert_sounds = car.CarControl.HUDControl.AudibleAlert.schema.enumerants.values()
-  diff = set(SOUNDS.keys()).symmetric_difference(alert_sounds)
+  alert_sounds = {v: k for k, v in car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items()}
+  diff = set(SOUNDS.keys()).symmetric_difference(alert_sounds.keys())
   assert len(diff) == 0, f"not all sounds defined in test: {diff}"
 
   # wait for procs to init
@@ -53,9 +53,10 @@ def test_alert_sounds():
   pm.send('thermal', msg)
 
   for sound, expected_writes in SOUNDS.items():
+    print(f"testing {alert_sounds[sound]}")
     start_writes = get_total_writes()
 
-    for _ in range(int(6 / DT_CTRL)):
+    for _ in range(int(9 / DT_CTRL)):
       msg = messaging.new_message('controlsState')
       msg.controlsState.enabled = True
       msg.controlsState.active = True
@@ -65,4 +66,4 @@ def test_alert_sounds():
       time.sleep(DT_CTRL)
 
     actual_writes = get_total_writes() - start_writes
-    assert expected_writes == actual_writes, f"{sound}: expected {expected_writes} writes, got {actual_writes}"
+    assert expected_writes == actual_writes, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
