@@ -13,25 +13,43 @@ def test_sound():
 
   alert_sounds = car.CarControl.HUDControl.AudibleAlert.schema.enumerants
 
-  thermal = messaging.new_message('thermal')
-  thermal.thermal.started = True
-
   manager.prepare_managed_process('ui')
   manager.start_managed_process('ui')
+  
+  # TODO: remove dependency on camerad, needed because UI blocks on frames
+  manager.prepare_managed_process('camerad')
+  manager.start_managed_process('camerad')
+  
+  # wait for procs to start
   time.sleep(3)
 
-  for sound in alert_sounds:
-    pm.send('thermal', thermal)
+  for _ in range(5):
+    for sound in alert_sounds:
+      print(f"testing {sound}")
 
-    for _ in range(5*DT_CTRL):
-      msg = messaging.new_message('controlsState')
-      msg.controlsState.enabled = True
-      msg.controlsState.active = True
-      msg.controlsState.alertSound = sound
-      pm.send('controlsState', msg)
-      time.sleep(DT_CTRL)
+      msg = messaging.new_message('thermal')
+      msg.thermal.started = True
+      pm.send('thermal', msg)
 
+      for _ in range(int(3 / DT_CTRL)):
+        msg = messaging.new_message('controlsState')
+        msg.controlsState.enabled = True
+        msg.controlsState.active = True
+        msg.controlsState.alertSound = sound
+        msg.controlsState.alertType = str(sound)
+        pm.send('controlsState', msg)
+        time.sleep(DT_CTRL)
+
+  manager.kill_managed_process('camerad')
   manager.kill_managed_process('ui')
 
+
+class TestSounds(unittest.TestCase):
+
+  def setUp(self
+
 if __name__ == "__main__":
-  test_sound()
+  try:
+    test_sound()
+  except KeyboardInterrupt:
+    manager.cleanup_all_processes(None, None)
