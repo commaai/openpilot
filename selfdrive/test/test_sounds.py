@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import time
-import nose
 import subprocess
 
 from cereal import car
