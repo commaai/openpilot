@@ -6,9 +6,9 @@ import cereal.messaging as messaging
 
 from cereal import car
 from common.realtime import DT_CTRL
-from selfdrive.test.helpers import with_processes
+from selfdrive.test.helpers import phone_only, with_processes
 
-
+@phone_only
 @with_processes(['ui', 'camerad'])
 def test_sound():
 
