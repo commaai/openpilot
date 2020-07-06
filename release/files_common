@@ -3,7 +3,6 @@ LICENSE
 launch_chffrplus.sh
 launch_openpilot.sh
 
-Jenkinsfile
 SConstruct
 
 CONTRIBUTING.md
