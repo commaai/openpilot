@@ -509,7 +509,7 @@ void can_health(PubMaster &pm) {
 
   size_t i = 0;
   for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
-       f <= size_t(cereal::HealthData::FaultType::REGISTER_DIVERGENT); f++){
+       f <= size_t(cereal::HealthData::FaultType::INTERRUPT_RATE_KLINE_INIT); f++){
     if (fault_bits.test(f)) {
       faults.set(i, cereal::HealthData::FaultType(f));
       i++;
