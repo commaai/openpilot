@@ -65,4 +65,4 @@ def test_alert_sounds():
       time.sleep(DT_CTRL)
 
     actual_writes = get_total_writes() - start_writes
-    assert expected_writes == actual_writes, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
+    assert abs(expected_writes - actual_writes) <= 2, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
