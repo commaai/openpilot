@@ -26,7 +26,6 @@ common/numpy_fast.py
 common/params.py
 common/xattr.py
 common/profiler.py
-common/testing.py
 common/basedir.py
 common/filter_simple.py
 common/stat_live.py
@@ -316,6 +315,7 @@ selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 
 selfdrive/test/__init__.py
+selfdrive/test/helpers.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_car_models.py
