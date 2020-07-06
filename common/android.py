@@ -12,6 +12,10 @@ NetworkStrength = log.ThermalData.NetworkStrength
 
 ANDROID = os.path.isfile('/EON')
 
+def get_sound_card_online():
+  return (os.path.isfile('/proc/asound/card0/state') and
+          open('/proc/asound/card0/state').read().strip() == 'ONLINE')
+
 def getprop(key):
   if not ANDROID:
     return ""
