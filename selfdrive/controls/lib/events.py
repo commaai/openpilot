@@ -188,10 +188,10 @@ def calibration_incomplete_alert(CP, sm, metric):
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
 
 def no_gps_alert(CP, sm, metric):
-  two = sm['health'].hwType == log.HealthData.HwType.uno
+  gps_integrated = sm['health'].hwType in [log.HealthData.HwType.uno, log.HealthData.HwType.dos]
   return Alert(
     "Poor GPS reception",
-    "If sky is visible, contact support" if two else "Check GPS antenna placement",
+    "If sky is visible, contact support" if gps_integrated else "Check GPS antenna placement",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.)
 
@@ -199,14 +199,10 @@ def wrong_car_mode_alert(CP, sm, metric):
   text = "Cruise Mode Disabled"
   if CP.carName == "honda":
     text = "Main Switch Off"
-  return NoEntryAlert(text, duration_hud_alert=0.),
+  return NoEntryAlert(text, duration_hud_alert=0.)
 
 EVENTS = {
   # ********** events with no alerts **********
-
-  EventName.gasPressed: {ET.PRE_ENABLE: None},
-
-  EventName.laneChangeBlocked: {},
 
   # ********** events only containing alerts displayed in all states **********
 
@@ -335,6 +331,14 @@ EVENTS = {
 
   # ********** events only containing alerts that display while engaged **********
 
+  EventName.gasPressed: {
+    ET.PRE_ENABLE: Alert(
+      "openpilot will not brake while gas pressed",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .0, .0, .1),
+  },
+
   EventName.vehicleModelInvalid: {
     ET.WARNING: Alert(
       "Vehicle Parameter Identification Failed",
@@ -441,6 +445,14 @@ EVENTS = {
       "Monitor Other Vehicles",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
+  },
+
+  EventName.laneChangeBlocked: {
+    ET.WARNING: Alert(
+      "Car Detected in Blindspot",
+      "Monitor Other Vehicles",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1),
   },
 
   EventName.laneChange: {

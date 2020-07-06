@@ -113,6 +113,12 @@ class CarState(CarStateBase):
       else:
         ret.gearShifter = GearShifter.unknown
 
+    ret.stockAeb = cp.vl["FCA11"]['FCA_CmdAct'] != 0
+    ret.stockFcw = cp.vl["FCA11"]['CF_VSM_Warn'] == 2
+    
+    ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
+    ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
+
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
@@ -168,6 +174,9 @@ class CarState(CarStateBase):
       ("ESC_Off_Step", "TCS15", 0),
 
       ("CF_Lvr_GearInf", "LVR11", 0),        # Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
+      
+      ("CF_Lca_IndLeft", "LCA11", 0),
+      ("CF_Lca_IndRight", "LCA11", 0),
 
       ("CR_Mdps_StrColTq", "MDPS12", 0),
       ("CF_Mdps_ToiActive", "MDPS12", 0),
@@ -177,6 +186,9 @@ class CarState(CarStateBase):
 
       ("SAS_Angle", "SAS11", 0),
       ("SAS_Speed", "SAS11", 0),
+
+      ("FCA_CmdAct", "FCA11", 0),
+      ("CF_VSM_Warn", "FCA11", 0),
 
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
@@ -198,6 +210,8 @@ class CarState(CarStateBase):
       ("SAS11", 100),
       ("SCC11", 50),
       ("SCC12", 50),
+      ("FCA11", 50),
+      ("LCA11", 50),
     ]
 
     if CP.carFingerprint in EV_HYBRID:

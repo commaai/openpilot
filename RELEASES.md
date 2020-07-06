@@ -1,8 +1,18 @@
-Version 0.8 (2020-xx-xx)
+Version 0.7.7 (2020-xx-xx)
 ========================
  * White panda is no longer supported, upgrade to comma two or black panda
  * Improved vehicle model estimation using high precision localizer
  * Improved thermal management on comma two
+ * Improved autofocus for road-facing camera
+ * Fix GM ignition detection
+ * Block lane change start using blindspot monitor on select Toyota, Hyundai, and Subaru
+ * Code cleanup and smaller release sizes
+ * Hyundai Ioniq Electric Limited 2019 and Ioniq SE 2020 support thanks to baldwalker!
+ * Subaru Forester 2019 and Ascent 2019 support thanks to martinl!
+
+Version 0.7.6.1 (2020-06-16)
+========================
+* Hotfix: update kernel on some comma twos (orders #8570-#8680)
 
 Version 0.7.6 (2020-06-05)
 ========================

@@ -2,7 +2,7 @@
 name: Bug report
 about: For issues with running openpilot on your comma device
 title: ''
-labels: ''
+labels: 'bug'
 assignees: ''
 ---
 

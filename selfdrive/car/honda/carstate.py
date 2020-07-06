@@ -298,7 +298,8 @@ class CarState(CarStateBase):
 
     ret.brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS'] != 0
-    ret.cruiseState.available = bool(main_on) and self.cruise_mode == 0
+    ret.cruiseState.available = bool(main_on)
+    ret.cruiseState.nonAdaptive = self.cruise_mode != 0
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):

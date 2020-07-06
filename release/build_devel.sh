@@ -37,18 +37,15 @@ echo "[-] bringing master-ci and devel in sync T=$SECONDS"
 git fetch origin master-ci
 git fetch origin devel
 
-git checkout --track origin/master-ci || true
+git checkout -f --track origin/master-ci
 git reset --hard master-ci
 git checkout master-ci
 git reset --hard origin/devel
 git clean -xdf
 
-# leave .git alone
+# remove everything except .git
 echo "[-] erasing old openpilot T=$SECONDS"
-rm -rf $TARGET_DIR/* $TARGET_DIR/.gitmodules
-
-# delete dotfiles in root
-find . -maxdepth 1 -type f -delete
+find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
 
 # reset tree and get version
 cd $SOURCE_DIR
@@ -83,7 +80,7 @@ echo -n "1" > /data/params/d/HasCompletedSetup
 echo -n "1" > /data/params/d/CommunityFeaturesToggle
 
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" nosetests -s selfdrive/test/test_openpilot.py
-PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" GET_CPU_USAGE=1 selfdrive/manager.py
+PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" selfdrive/test/test_cpu_usage.py
 PYTHONPATH="$TARGET_DIR:$TARGET_DIR/pyextra" selfdrive/car/tests/test_car_interfaces.py
 
 echo "[-] testing panda build T=$SECONDS"
@@ -96,9 +93,10 @@ pushd panda/board/pedal
 make obj/comma.bin
 popd
 
-if [ ! -z "$PUSH" ]; then
-  echo "[-] Pushing to $PUSH T=$SECONDS"
-  git push -f origin master-ci:$PUSH
+if [ ! -z "$CI_PUSH" ]; then
+  echo "[-] Pushing to $CI_PUSH T=$SECONDS"
+  git remote set-url origin git@github.com:commaai/openpilot.git
+  git push -f origin master-ci:$CI_PUSH
 fi
 
 echo "[-] done pushing T=$SECONDS"

@@ -1,15 +1,14 @@
-README.md
-SAFETY.md
-
 .gitignore
 LICENSE
 launch_chffrplus.sh
 launch_openpilot.sh
 
-CONTRIBUTING.md
-RELEASES.md
-
 SConstruct
+
+CONTRIBUTING.md
+README.md
+RELEASES.md
+SAFETY.md
 
 apk/ai.comma*.apk
 
@@ -26,7 +25,6 @@ common/numpy_fast.py
 common/params.py
 common/xattr.py
 common/profiler.py
-common/testing.py
 common/basedir.py
 common/filter_simple.py
 common/stat_live.py
@@ -36,7 +34,6 @@ common/cython_hacks.py
 common/apk.py
 common/SConscript
 common/common_pyx_setup.py
-common/manager_helpers.py
 
 common/kalman/.gitignore
 common/kalman/*
@@ -317,9 +314,11 @@ selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 
 selfdrive/test/__init__.py
+selfdrive/test/helpers.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_car_models.py
+selfdrive/test/test_cpu_usage.py
 
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc

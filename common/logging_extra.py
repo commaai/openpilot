@@ -115,9 +115,6 @@ class SwagLogger(logging.Logger):
     if args:
       evt['args'] = args
     evt.update(kwargs)
-    ctx = self.get_ctx()
-    if ctx:
-      evt['ctx'] = self.get_ctx()
     if 'error' in kwargs:
       self.error(evt)
     else:

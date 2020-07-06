@@ -624,12 +624,21 @@ FW_VERSIONS = {
     ],
   },
   CAR.CRV_EU: {
-    (Ecu.programmedFuelInjection, 0x18da10f1, None): [b'37805-R5Z-G740\x00\x00'],
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-R5Z-G740\x00\x00',
+      b'37805-R5Z-G780\x00\x00',
+    ],
     (Ecu.vsa, 0x18da28f1, None): [b'57114-T1V-G920\x00\x00'],
     (Ecu.fwdRadar, 0x18dab0f1, None): [b'36161-T1V-G520\x00\x00'],
     (Ecu.shiftByWire, 0x18da0bf1, None): [b'54008-T1V-G010\x00\x00'],
-    (Ecu.transmission, 0x18da1ef1, None): [b'28101-5LH-E120\x00\x00'],
-    (Ecu.combinationMeter, 0x18da60f1, None): [b'78109-T1V-G020\x00\x00'],
+    (Ecu.transmission, 0x18da1ef1, None): [
+      b'28101-5LH-E120\x00\x00',
+      b'28103-5LH-E100\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-T1V-G020\x00\x00',
+      b'78109-T1B-3050\x00\x00',
+    ],
     (Ecu.srs, 0x18da53f1, None): [b'77959-T1G-G940\x00\x00'],
   },
   CAR.CRV_HYBRID: {

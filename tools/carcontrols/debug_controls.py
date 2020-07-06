@@ -26,7 +26,7 @@ def steer_thread():
 
   # wait for health and CAN packets
   hw_type = messaging.recv_one(health).health.hwType
-  has_relay = hw_type in [HwType.blackPanda, HwType.uno]
+  has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
   print("Waiting for CAN messages...")
   messaging.get_one_can(logcan)
 

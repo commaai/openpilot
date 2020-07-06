@@ -196,6 +196,10 @@ routes = {
     'carFingerprint': HYUNDAI.IONIQ_EV_LTD,
     'enableCamera': True,
   },
+  "2c5cf2dd6102e5da|2020-06-26--16-00-08": {
+    'carFingerprint': HYUNDAI.IONIQ,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -354,6 +358,10 @@ routes = {
   },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
     'carFingerprint': VOLKSWAGEN.GOLF,
+    'enableCamera': True,
+  },
+  "3c8f0c502e119c1c|2020-06-30--12-58-02": {
+    'carFingerprint': SUBARU.ASCENT,
     'enableCamera': True,
   },
   "c321c6b697c5a5ff|2020-06-23--11-04-33": {
