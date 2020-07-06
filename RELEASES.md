@@ -5,7 +5,7 @@ Version 0.7.7 (2020-xx-xx)
  * Improved thermal management on comma two
  * Improved autofocus for road-facing camera
  * Fix GM ignition detection
- * Block lane change start using blindspot monitor on Toyotas with TSS2
+ * Block lane change start using blindspot monitor on select Toyota, Hyundai, and Subaru
  * Code cleanup and smaller release sizes
  * Hyundai Ioniq Electric Limited 2019 and Ioniq SE 2020 support thanks to baldwalker!
  * Subaru Forester 2019 and Ascent 2019 support thanks to martinl!
