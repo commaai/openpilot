@@ -38,11 +38,13 @@
 #define MANIFEST_URL_EON "https://github.com/commaai/eon-neos/raw/master/update.json"
 const char *manifest_url = MANIFEST_URL_EON;
 bool background_cache = false;
+bool cache_success_marker = false;
 
 #define RECOVERY_DEV "/dev/block/bootdevice/by-name/recovery"
 #define RECOVERY_COMMAND "/cache/recovery/command"
 
 #define UPDATE_DIR "/data/neoupdate"
+#define UPDATE_CACHE_SUCCESS_MARKER UPDATE_DIR "/cache_success_marker"
 
 extern const uint8_t bin_opensans_regular[] asm("_binary_opensans_regular_ttf_start");
 extern const uint8_t bin_opensans_regular_end[] asm("_binary_opensans_regular_ttf_end");
@@ -325,11 +327,13 @@ struct Updater {
   std::string stage_download(std::string url, std::string hash, std::string name) {
     std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
 
-    set_progress("Downloading " + name + "...");
-    bool r = download_file(url, out_fn);
-    if (!r) {
-      set_error("failed to download " + name);
-      return "";
+    if (!cache_success_marker) {
+      set_progress("Downloading " + name + "...");
+      bool r = download_file(url, out_fn);
+      if (!r) {
+        set_error("failed to download " + name);
+        return "";
+      }
     }
 
     set_progress("Verifying " + name + "...");
@@ -338,6 +342,7 @@ struct Updater {
     if (fn_hash != hash) {
       set_error(name + " was corrupt");
       unlink(out_fn.c_str());
+      unlink(UPDATE_CACHE_SUCCESS_MARKER);
       return "";
     }
 
@@ -431,8 +436,16 @@ struct Updater {
       return;
     }
 
+    FILE *cacheflag_file = fopen(UPDATE_CACHE_SUCCESS_MARKER, "w+b");
+    if (cacheflag_file) {
+      printf("NEOS update cached successfully\n");
+    } else {
+      printf("couldn't write cache success marker file\n");
+    }
+    fclose(cacheflag_file);
+
     if (background_cache)
-      // Download-only mode
+      // Headless download-only mode, we're finished
       return;
 
     if (!check_battery()) {
@@ -642,10 +655,18 @@ struct Updater {
 
     switch (state) {
     case CONFIRMATION:
+      char *user_instr;
+      if (cache_success_marker)
+				const char *user_instr = "Your device will now install a major update. Keep the \
+           device connected to a power source during this process.";
+			else
+				const char *user_instr = "Your device will now download and install a major update. \
+           The update is about 1GB and WiFi connectivity is recommended. Keep the device \
+           connected to a power source during this process.";
       draw_ack_screen("An update to NEOS is required.",
-                      "Your device will now be reset and upgraded. You may want to connect to wifi as download is around 1 GB. Existing data on device should not be lost.",
+											user_instr,
                       "Continue",
-                      "Connect to WiFi");
+                      cache_success_marker ? NULL : "Connect to WiFi");
       break;
     case LOW_BATTERY:
       draw_battery_screen();
@@ -770,12 +791,23 @@ int main(int argc, char *argv[]) {
       manifest_url = argv[1];
     }
   }
+
+  FILE *cacheflag_file = fopen(UPDATE_CACHE_SUCCESS_MARKER, "rb");
+  if (cacheflag_file) {
+    printf("Cached download present, skipping directly to validation\n");
+    cache_success_marker = true;
+  } else {
+    printf("Cached download not present or incomplete, will resume if possible\n");
+    cache_success_marker = false;
+  }
+
   printf("updating from %s\n", manifest_url);
   Updater updater;
-  if (background_cache)
+  if (background_cache) {
     updater.run_stages();
-  else
+  } else {
     updater.go();
+  }
 
   return 0;
 }

@@ -302,6 +302,10 @@ def attempt_update():
 
     finalize_from_ovfs_copy()
 
+    # If a NEOS update is required, download it in the background
+    neos_update_output = run(NICE_LOW_PRIORITY + ["installer/updater/bgcache.sh"], FINALIZED)
+    cloudlog.info("NEOS update check: %S", neos_update_output)
+
     # Make sure the validity flag lands on disk LAST, only when the local git
     # repo and OP install are in a consistent state.
     set_consistent_flag()
