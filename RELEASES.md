@@ -4,6 +4,7 @@ Version 0.7.7 (2020-xx-xx)
  * Improved vehicle model estimation using high precision localizer
  * Improved thermal management on comma two
  * Improved autofocus for road-facing camera
+ * Improved noise performance for driver-facing camera
  * Fix GM ignition detection
  * Block lane change start using blindspot monitor on select Toyota, Hyundai, and Subaru
  * Code cleanup and smaller release sizes
