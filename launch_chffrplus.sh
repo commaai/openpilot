@@ -94,6 +94,7 @@ function launch {
   # Remove old NEOS update files
   if [ -d /data/neoupdate ]; then
     rm -rf /data/neoupdate
+  fi
 
   # One-time fix for a subset of OP3T with gyro orientation offsets.
   # Remove and regenerate qcom sensor registry. Only done on OP3T mainboards.
