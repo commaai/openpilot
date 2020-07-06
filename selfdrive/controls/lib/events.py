@@ -204,6 +204,8 @@ def wrong_car_mode_alert(CP, sm, metric):
 EVENTS = {
   # ********** events with no alerts **********
 
+  EventName.modeldLagging: {},
+
   # ********** events only containing alerts displayed in all states **********
 
   EventName.debugAlert: {
