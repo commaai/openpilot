@@ -649,22 +649,20 @@ struct Updater {
   }
 
   void ui_draw() {
+    const char *cached_instr = "Your device will now install an operating system update. Keep the "
+       "device connected to a power source during this process.";
+    const char *download_instr = "Your device will now download and install an operating system "
+       "update. The update is about 1GB and WiFi connectivity is recommended. Keep the device "
+       "connected to a power source during this process.";
+
     std::lock_guard<std::mutex> guard(lock);
 
     nvgBeginFrame(vg, fb_w, fb_h, 1.0f);
 
     switch (state) {
     case CONFIRMATION:
-      char *user_instr;
-      if (cache_success_marker)
-				const char *user_instr = "Your device will now install a major update. Keep the \
-           device connected to a power source during this process.";
-			else
-				const char *user_instr = "Your device will now download and install a major update. \
-           The update is about 1GB and WiFi connectivity is recommended. Keep the device \
-           connected to a power source during this process.";
       draw_ack_screen("An update to NEOS is required.",
-											user_instr,
+											cache_success_marker ? cached_instr : download_instr,
                       "Continue",
                       cache_success_marker ? NULL : "Connect to WiFi");
       break;
