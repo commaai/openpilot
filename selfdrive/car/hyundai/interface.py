@@ -331,7 +331,7 @@ class CarInterface(CarInterfaceBase):
 
   # handle button presses
     for b in ret.buttonEvents:
-              # do enable on both accel and decel buttons
+      # do enable on both accel and decel buttons
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
         events.add(EventName.buttonEnable)
       if self.CC.longcontrol and not self.CC.scc_live:
