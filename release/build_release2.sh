@@ -87,6 +87,6 @@ if [ ! -z "$PUSH" ]; then
   # Create dashcam release
   git rm selfdrive/car/*/carcontroller.py
 
-  git commit --amend -m "dashcam v$VERSION"
+  git commit -m "create dashcam release from release2"
   git push -f origin release2-staging:dashcam-staging
 fi
