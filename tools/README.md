@@ -52,7 +52,7 @@ Replay driving data
 
 **Hardware needed**: none
 
-`unlogger.py` replays data collected with [chffrplus](https://github.com/commaai/chffrplus) or [openpilot](https://github.com/commaai/openpilot).
+`unlogger.py` replays data collected with [dashcam](https://github.com/commaai/openpilot/tree/dashcam) or [openpilot](https://github.com/commaai/openpilot).
 
 Unlogger with remote data:
 
