@@ -20,7 +20,9 @@ if [ ! -z "$CLEAN" ]; then
   git remote add origin git@github.com:commaai/openpilot.git
   git fetch origin devel-staging
 else
+  cd /data/openpilot
   git clean -xdf
+  git branch -D release2-staging || true
 fi
 
 git fetch origin release2-staging
@@ -67,6 +69,9 @@ rm .sconsign.dblite
 # Restore phonelibs
 git checkout phonelibs/
 
+# Remove the stuff needed to build release
+rm -rf release/
+
 # Mark as prebuilt release
 touch prebuilt
 
@@ -78,9 +83,11 @@ git commit --amend -m "openpilot v$VERSION"
 #git status --ignored
 
 if [ ! -z "$CI_PUSH" ]; then
+  git remote set-url origin git@github.com:commaai/openpilot.git
+
   # Push to release2-staging
   #git push -f origin release2-staging
-  git push -f origin r2_staging_test
+  git push -f origin release2-staging:r2_staging_test
 
   # Create dashcam release
   git rm selfdrive/car/*/carcontroller.py
