@@ -165,7 +165,8 @@ if os.environ.get('SCONS_CACHE'):
 
   CacheDir('/tmp/scons_cache')
 
-  if os.getenv('CI') is not None:
+  if os.getenv('CI'):
+    print('\n\nCI\n\n')
     branch = os.getenv('GIT_BRANCH')
 
     if QCOM_REPLAY:
@@ -175,6 +176,8 @@ if os.environ.get('SCONS_CACHE'):
       if not os.path.isdir(cache_dir) and os.path.isdir('/tmp/scons_cache'):
         shutil.copy_tree('/tmp/scons_cache', cache_dir)
       CacheDir('/tmp/scons_cache_' + branch)
+  else:
+    print('\n\nnot CI\n\n')
 
 
 node_interval = 5
