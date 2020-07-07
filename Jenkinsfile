@@ -13,8 +13,7 @@ pipeline {
 
     stage('Release Build') {
       when {
-        //branch 'devel-staging'
-        branch 'release2_ci_build'
+        branch 'devel-staging'
       }
       steps {
         lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
@@ -32,7 +31,6 @@ pipeline {
       when {
         not {
           anyOf {
-            branch 'release2_ci_build'; branch 'r2_staging_test'; branch 'd_staging_test';
             branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'
           }
         }
