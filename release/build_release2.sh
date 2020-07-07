@@ -83,11 +83,11 @@ if [ ! -z "$PUSH" ]; then
   git remote set-url origin git@github.com:commaai/openpilot.git
 
   # Push to release2-staging
-  #git push -f origin release2-staging
+  git push -f origin release2-staging
 
   # Create dashcam release
   git rm selfdrive/car/*/carcontroller.py
 
   git commit --amend -m "dashcam v$VERSION"
-  #git push -f origin release2-staging:dashcam-staging
+  git push -f origin release2-staging:dashcam-staging
 fi
