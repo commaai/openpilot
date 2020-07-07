@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 import platform
@@ -161,10 +162,20 @@ env = Environment(
 )
 
 if os.environ.get('SCONS_CACHE'):
-  if QCOM_REPLAY:
-    CacheDir('/tmp/scons_cache_qcom_replay')
-  else:
-    CacheDir('/tmp/scons_cache')
+
+  CacheDir('/tmp/scons_cache')
+
+  if os.getenv('CI') is not None:
+    branch = os.getenv('GIT_BRANCH')
+
+    if QCOM_REPLAY:
+      CacheDir('/tmp/scons_cache_qcom_replay')
+    elif branch is not None and branch != 'master':
+      cache_dir = '/tmp/scons_cache_' + branch
+      if not os.path.isdir(cache_dir) and os.path.isdir('/tmp/scons_cache'):
+        shutil.copy_tree('/tmp/scons_cache', cache_dir)
+      CacheDir('/tmp/scons_cache_' + branch)
+
 
 node_interval = 5
 node_count = 0
