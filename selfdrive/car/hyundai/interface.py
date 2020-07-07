@@ -334,10 +334,10 @@ class CarInterface(CarInterfaceBase):
       # do enable on both accel and decel buttons
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed and ret.cruiseState.enabled:
         events.add(EventName.buttonEnable)
+      # do disable on button down
+      if b.type == ButtonType.cancel and b.pressed:
+        events.add(EventName.buttonCancel)  
       if self.CC.longcontrol and not self.CC.scc_live:
-        # do disable on button down
-        if b.type == ButtonType.cancel and b.pressed:
-          events.add(EventName.buttonCancel)
         if EventName.wrongCarMode in events.events:
           events.events.remove(EventName.wrongCarMode)
         if EventName.pcmDisable in events.events:
