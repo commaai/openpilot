@@ -168,7 +168,6 @@ if os.environ.get('SCONS_CACHE'):
     branch = os.getenv('GIT_BRANCH')
 
     if QCOM_REPLAY:
-      CacheDir('/tmp/scons_cache_qcom_replay')
       cache_dir = '/tmp/scons_cache_qcom_replay'
     elif branch is not None and branch != 'master':
       cache_dir_branch = '/tmp/scons_cache_' + branch
