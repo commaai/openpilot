@@ -44,7 +44,7 @@ def run_on_phone(test_cmd):
 
   # pass in all environment variables prefixed with 'CI_'
   for k, v in os.environ.items():
-    if k.startswith("CI_"):
+    if k.startswith("CI_") or k in ["GIT_BRANCH", "GIT_COMMIT"]:
       conn.send(f"export {k}='{v}'\n")
   conn.send("export CI=1\n")
 
