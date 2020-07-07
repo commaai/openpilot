@@ -58,6 +58,8 @@ common/api/__init__.py
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
 
+release/build_release2.sh
+
 selfdrive/version.py
 
 selfdrive/__init__.py
@@ -314,10 +316,11 @@ selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 
 selfdrive/test/__init__.py
+selfdrive/test/id_rsa
 selfdrive/test/helpers.py
+selfdrive/test/phone_ci.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
-selfdrive/test/test_car_models.py
 selfdrive/test/test_cpu_usage.py
 
 selfdrive/ui/SConscript

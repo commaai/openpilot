@@ -19,7 +19,7 @@ def run_on_phone(test_cmd):
   ssh = paramiko.SSHClient()
   ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-  key_file = open(os.path.join(os.path.dirname(__file__), "../../tools/ssh/key/id_rsa"))
+  key_file = open(os.path.join(os.path.dirname(__file__), "id_rsa"))
   key = paramiko.RSAKey.from_private_key(key_file)
 
   print("SSH to phone at {}".format(eon_ip))
@@ -52,6 +52,8 @@ def run_on_phone(test_cmd):
   conn.send(f"cd {SOURCE_DIR}\n")
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")
+  conn.send("find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \\;\n")
+  conn.send(f"git reset --hard {commit}\n")
   conn.send(f"git checkout {commit}\n")
   conn.send("git clean -xdf\n")
   conn.send("git submodule update --init\n")

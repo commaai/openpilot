@@ -7,14 +7,42 @@ pipeline {
   }
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
-    CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
   }
 
   stages {
+
+    stage('Release Build') {
+      when {
+        branch 'devel-staging'
+      }
+      steps {
+        lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
+          timeout(time: 60, unit: 'MINUTES') {
+            dir(path: 'selfdrive/test') {
+              sh 'pip install paramiko'
+              sh 'python phone_ci.py "cd release && PUSH=1 ./build_release2.sh"'
+            }
+          }
+        }
+      }
+    }
+
     stage('On-device Tests') {
+      when {
+        not {
+          anyOf {
+            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'
+          }
+        }
+      }
+
       parallel {
 
         stage('Build') {
+          environment {
+            CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
+          }
+
           steps {
             lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'eon_ip', quantity: 1){
               timeout(time: 30, unit: 'MINUTES') {
