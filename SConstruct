@@ -173,7 +173,6 @@ if os.environ.get('SCONS_CACHE'):
       cache_dir_branch = '/tmp/scons_cache_' + branch
       if not os.path.isdir(cache_dir_branch) and os.path.isdir(cache_dir):
         shutil.copy_tree(cache_dir, cache_dir_branch)
-      CacheDir('/tmp/scons_cache_' + branch)
       cache_dir = cache_dir_branch
   CacheDir(cache_dir)
 
