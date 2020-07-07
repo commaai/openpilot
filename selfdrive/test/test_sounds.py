@@ -2,7 +2,7 @@
 import time
 import subprocess
 
-from cereal import car
+from cereal import log, car
 import cereal.messaging as messaging
 from selfdrive.test.helpers import phone_only, with_processes
 from common.android import get_sound_card_online
@@ -61,6 +61,9 @@ def test_alert_sounds():
       msg.controlsState.active = True
       msg.controlsState.alertSound = sound
       msg.controlsState.alertType = str(sound)
+      msg.controlsState.alertText1 = "Testing Sounds"
+      msg.controlsState.alertText2 = f"playing {alert_sounds[sound]}"
+      msg.controlsState.alertSize = log.ControlsState.AlertSize.mid
       pm.send('controlsState', msg)
       time.sleep(DT_CTRL)
 
