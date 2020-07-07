@@ -52,8 +52,6 @@ def run_on_phone(test_cmd):
   conn.send(f"cd {SOURCE_DIR}\n")
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")
-  conn.send("find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \\;\n")
-  conn.send(f"git reset --hard {commit}\n")
   conn.send(f"git checkout {commit}\n")
   conn.send("git clean -xdf\n")
   conn.send("git submodule update --init\n")

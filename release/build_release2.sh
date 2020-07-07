@@ -8,45 +8,36 @@ export GIT_AUTHOR_EMAIL="user@comma.ai"
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
-# set CLEAN to build outside of CI
-if [ ! -z "$CLEAN" ]; then
-  # Create folders
-  rm -rf /data/openpilot
-  mkdir -p /data/openpilot
-  cd /data/openpilot
+# Create folders
+rm -rf /data/openpilot
+mkdir -p /data/openpilot
+cd /data/openpilot
 
-  # Create git repo
-  git init
-  git remote add origin git@github.com:commaai/openpilot.git
-  git fetch origin devel-staging
-else
-  cd /data/openpilot
-  git clean -xdf
-  git branch -D release2-staging || true
-fi
-
+# Create git repo
+git init
+git remote add origin git@github.com:commaai/openpilot.git
+git fetch origin devel
 git fetch origin release2-staging
 git fetch origin dashcam-staging
 
+# Checkout devel
+#git checkout origin/devel
+#git clean -xdf
+
 # Create release2 with no history
-if [ ! -z "$CLEAN" ]; then
-  git checkout --orphan release2-staging origin/devel-staging
-else
-  git checkout --orphan release2-staging
-fi
+git checkout --orphan release2-staging origin/devel
 
 VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
 git commit -m "openpilot v$VERSION"
 
 # Build signed panda firmware
 pushd panda/board/
-#cp -r /tmp/pandaextra /data/openpilot/
-#RELEASE=1 make obj/panda.bin
-make obj/panda.bin
+cp -r /tmp/pandaextra /data/openpilot/
+RELEASE=1 make obj/panda.bin
 mv obj/panda.bin /tmp/panda.bin
 make clean
 mv /tmp/panda.bin obj/panda.bin.signed
-#rm -rf /data/openpilot/pandaextra
+rm -rf /data/openpilot/pandaextra
 popd
 
 # Build stuff
@@ -69,9 +60,6 @@ rm .sconsign.dblite
 # Restore phonelibs
 git checkout phonelibs/
 
-# Remove the stuff needed to build release
-rm -rf release/
-
 # Mark as prebuilt release
 touch prebuilt
 
@@ -82,17 +70,11 @@ git commit --amend -m "openpilot v$VERSION"
 # Print committed files that are normally gitignored
 #git status --ignored
 
-if [ ! -z "$CI_PUSH" ]; then
-  git remote set-url origin git@github.com:commaai/openpilot.git
+# Push to release2-staging
+git push -f origin release2-staging
 
-  # Push to release2-staging
-  #git push -f origin release2-staging
-  git push -f origin release2-staging:r2_staging_test
+# Create dashcam release
+git rm selfdrive/car/*/carcontroller.py
 
-  # Create dashcam release
-  git rm selfdrive/car/*/carcontroller.py
-
-  git commit -m "create dashcam release from release2"
-  #git push -f origin release2-staging:dashcam-staging
-  git push -f origin release2-staging:d_staging_test
-fi
+git commit -m "create dashcam release from release2"
+git push -f origin release2-staging:dashcam-staging
