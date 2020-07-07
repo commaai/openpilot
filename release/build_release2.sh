@@ -40,13 +40,12 @@ git commit -m "openpilot v$VERSION"
 
 # Build signed panda firmware
 pushd panda/board/
-#cp -r /tmp/pandaextra /data/openpilot/
-#RELEASE=1 make obj/panda.bin
-make obj/panda.bin
+cp -r /tmp/pandaextra /data/openpilot/
+RELEASE=1 make obj/panda.bin
 mv obj/panda.bin /tmp/panda.bin
 make clean
 mv /tmp/panda.bin obj/panda.bin.signed
-#rm -rf /data/openpilot/pandaextra
+rm -rf /data/openpilot/pandaextra
 popd
 
 # Build stuff
@@ -64,13 +63,11 @@ find . -name '*.o' -delete
 find . -name '*.os' -delete
 find . -name '*.pyc' -delete
 find . -name '__pycache__' -delete
-rm .sconsign.dblite
+rm -rf .sconsign.dblite Jenkinsfile release/
+rm -rf Jenkinsfile release/
 
 # Restore phonelibs
 git checkout phonelibs/
-
-# Remove the stuff needed to build release
-rm -rf release/
 
 # Mark as prebuilt release
 touch prebuilt
@@ -82,17 +79,15 @@ git commit --amend -m "openpilot v$VERSION"
 # Print committed files that are normally gitignored
 #git status --ignored
 
-if [ ! -z "$CI_PUSH" ]; then
+if [ ! -z "$PUSH" ]; then
   git remote set-url origin git@github.com:commaai/openpilot.git
 
   # Push to release2-staging
   #git push -f origin release2-staging
-  git push -f origin release2-staging:r2_staging_test
 
   # Create dashcam release
   git rm selfdrive/car/*/carcontroller.py
 
-  git commit -m "create dashcam release from release2"
+  git commit --amend -m "dashcam v$VERSION"
   #git push -f origin release2-staging:dashcam-staging
-  git push -f origin release2-staging:d_staging_test
 fi

@@ -317,9 +317,9 @@ selfdrive/thermald/power_monitoring.py
 
 selfdrive/test/__init__.py
 selfdrive/test/helpers.py
+selfdrive/test/phone_ci.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
-selfdrive/test/test_car_models.py
 selfdrive/test/test_cpu_usage.py
 
 selfdrive/ui/SConscript
