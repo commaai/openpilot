@@ -31,29 +31,28 @@ def test_boardd_loopback():
   time.sleep(2)
 
   for _ in range(20):
-    sent_msgs = defaultdict(list)
+    sent_msgs = defaultdict(set)
     for _ in range(random.randrange(5)):
       to_send = []
       for _ in range(random.randrange(10)):
         bus = random.randrange(3)
         addr = random.randrange(1, 0x800)
         dat = bytes([random.getrandbits(8) for _ in range(random.randrange(1, 9))])
-        sent_msgs[bus].append((addr, dat))
+        sent_msgs[bus].add((addr, dat))
         to_send.append(make_can_msg(addr, dat, bus))
       sendcan.send(can_list_to_can_capnp(to_send, msgtype='sendcan'))
 
-    time.sleep(1)
-    recvd = messaging.drain_sock(can, wait_for_one=True)
+    time.sleep(2)
 
-    recv_msgs = defaultdict(list)
+    recvd = messaging.drain_sock(can, wait_for_one=True)
     for msg in recvd:
       for m in msg.can:
         if m.src >= 128:
-          recv_msgs[m.src].append((m.address, m.dat))
+          k = (m.address, m.dat)
+          assert k in sent_msgs[m.src-128], k
+          sent_msgs[m.src-128].discard(k)
 
-    # check lengths
+    # each set should be empty
     for bus in range(3):
-      assert len(sent_msgs[bus]) == len(recv_msgs[bus+128]), \
-             f"mismatched lengths {bus}: {len(sent_msgs[bus])} {bus+128}: {len(recv_msgs[bus+128])}"
-
+      assert not len(sent_msgs[bus]), f"bus {bus}: missing {len(sent_msgs[bus])} messages"
 

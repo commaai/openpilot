@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: skip-file
 
-# This file is not used by OpenPilot. Only boardd.cc is used.
+# This file is not used by openpilot. Only boardd.cc is used.
 # The python version is slower, but has more options for development.
 
 # TODO: merge the extra functionalities of this file (like MOCK) in boardd.c and
