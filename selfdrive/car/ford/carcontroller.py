@@ -21,7 +21,7 @@ class CarController():
   def update(self, enabled, CS, frame, actuators, visual_alert, pcm_cancel):
 
     can_sends = []
-    steer_alert = visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired
+    steer_alert = visual_alert in [car.CarControl.HUDControl.VisualAlert.steerRequired, car.CarControl.HUDControl.VisualAlert.ldw]
 
     apply_steer = actuators.steer
 

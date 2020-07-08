@@ -141,8 +141,12 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
     commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values, idx))
 
   lkas_hud_values = {
-    'SET_ME_X41': 0x41,
-    'SET_ME_X48': 0x48,
+    'RDM_OFF': 1,
+    'RDM_ON': 0,
+    'RDM_ON_2': 0,
+    'RDM_HUD': hud.ldw,  # this triggers the hud warning
+    'RDM_HUD_2': 0,  # secondary bit for RDM. isn't always set by the car
+    'LKAS_READY': 1,
     'STEERING_REQUIRED': hud.steer_required,
     'SOLID_LANES': hud.lanes,
     'BEEP': 0,

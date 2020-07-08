@@ -58,21 +58,24 @@ def process_hud_alert(hud_alert):
   fcw_display = 0
   steer_required = 0
   acc_alert = 0
+  ldw = 0
 
   # priority is: FCW, steer required, all others
   if hud_alert == VisualAlert.fcw:
     fcw_display = VISUAL_HUD[hud_alert.raw]
   elif hud_alert == VisualAlert.steerRequired:
     steer_required = VISUAL_HUD[hud_alert.raw]
+  elif hud_alert == VisualAlert.ldw:
+    ldw = VISUAL_HUD[hud_alert.raw]
   else:
     acc_alert = VISUAL_HUD[hud_alert.raw]
 
-  return fcw_display, steer_required, acc_alert
+  return fcw_display, steer_required, acc_alert, ldw
 
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise",  "car",
-                     "lanes", "fcw", "acc_alert", "steer_required"])
+                     "lanes", "fcw", "acc_alert", "steer_required", "ldw"])
 
 class CarControllerParams():
   def __init__(self, CP):
@@ -127,10 +130,10 @@ class CarController():
     else:
       hud_car = 0
 
-    fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
+    fcw_display, steer_required, acc_alert, ldw = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
-                  hud_lanes, fcw_display, acc_alert, steer_required)
+                  hud_lanes, fcw_display, acc_alert, steer_required, ldw)
 
     # **** process the car messages ****
 
