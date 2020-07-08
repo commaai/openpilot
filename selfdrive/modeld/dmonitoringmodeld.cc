@@ -17,9 +17,16 @@
 
 volatile sig_atomic_t do_exit = 0;
 
+static void set_do_exit(int sig) {
+  do_exit = 1;
+}
+
 int main(int argc, char **argv) {
   int err;
   set_realtime_priority(51);
+
+  signal(SIGINT, (sighandler_t)set_do_exit);
+  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   // messaging
   SubMaster sm({"dMonitoringState"});
