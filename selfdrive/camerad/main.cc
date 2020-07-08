@@ -513,8 +513,6 @@ void* processing_thread(void *arg) {
     s->yuv_metas[yuv_idx] = frame_data;
 
     uint8_t* yuv_ptr_y = s->yuv_bufs[yuv_idx].y;
-    //uint8_t* yuv_ptr_u = s->yuv_bufs[yuv_idx].u;
-    //uint8_t* yuv_ptr_v = s->yuv_bufs[yuv_idx].v;
     cl_mem yuv_cl = s->yuv_cl[yuv_idx];
     rgb_to_yuv_queue(&s->rgb_to_yuv_state, q, s->rgb_bufs_cl[rgb_idx], yuv_cl);
     visionbuf_sync(&s->yuv_ion[yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);

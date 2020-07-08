@@ -32,9 +32,7 @@ void camera_close(CameraState *s) {
   tbuffer_stop(&s->camera_tb);
 }
 
-void camera_release_buffer(void *cookie, int buf_idx) {
-  //CameraState *s = static_cast<CameraState *>(cookie);
-}
+void camera_release_buffer(void *cookie, int buf_idx) {}
 
 void camera_init(CameraState *s, int camera_id, unsigned int fps) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
