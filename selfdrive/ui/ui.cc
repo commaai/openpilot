@@ -664,7 +664,7 @@ static void* light_sensor_thread(void *args) {
 
   // need to do this
   struct sensor_t const* list;
-  int count = module->get_sensors_list(module, &list);
+  module->get_sensors_list(module, &list);
 
   int SENSOR_LIGHT = 7;
 

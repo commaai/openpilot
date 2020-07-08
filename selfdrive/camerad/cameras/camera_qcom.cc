@@ -163,9 +163,9 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 
   //printf("%5d/%5d %5d %f\n", s->cur_integ_lines, s->cur_frame_length, analog_gain, s->digital_gain);
 
-  int digital_gain = 0x100;
+  //int digital_gain = 0x100;
 
-  float white_balance[] = {0.4609375, 1.0, 0.546875};
+  //float white_balance[] = {0.4609375, 1.0, 0.546875};
   //float white_balance[] = {1.0, 1.0, 1.0};
 
   //int digital_gain_gr = digital_gain / white_balance[1];
