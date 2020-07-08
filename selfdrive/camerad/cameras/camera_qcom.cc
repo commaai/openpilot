@@ -168,10 +168,10 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   float white_balance[] = {0.4609375, 1.0, 0.546875};
   //float white_balance[] = {1.0, 1.0, 1.0};
 
-  int digital_gain_gr = digital_gain / white_balance[1];
-  int digital_gain_gb = digital_gain / white_balance[1];
-  int digital_gain_r = digital_gain / white_balance[0];
-  int digital_gain_b = digital_gain / white_balance[2];
+  //int digital_gain_gr = digital_gain / white_balance[1];
+  //int digital_gain_gb = digital_gain / white_balance[1];
+  //int digital_gain_r = digital_gain / white_balance[0];
+  //int digital_gain_b = digital_gain / white_balance[2];
 
   struct msm_camera_i2c_reg_array reg_array[] = {
     // REG_HOLD
