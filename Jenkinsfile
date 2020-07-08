@@ -75,8 +75,8 @@ pipeline {
                 dir(path: 'selfdrive/test') {
                   sh 'pip install paramiko'
                   sh 'python phone_ci.py "SCONS_CACHE=1 scons -j3 cereal/ && \
-                                          cd selfdrive/test && nosetests -s test_sounds.py && \
-                                          cd selfdrive/boardd/tests && nosetests -s test_boardd.py"'
+                                          nosetests -s selfdrive/test/test_sounds.py && \
+                                          nosetests -s selfdrive/boardd/tests/test_boardd.py"'
                 }
               }
             }
