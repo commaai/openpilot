@@ -759,13 +759,6 @@ int main(int argc, char* argv[]) {
     pthread_mutex_lock(&s->lock);
     double u1 = millis_since_boot();
 
-    // light sensor is only exposed on EONs
-    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
-    if (clipped_brightness > 512) clipped_brightness = 512;
-    smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
-    if (smooth_brightness > 255) smooth_brightness = 255;
-    ui_set_brightness(s, (int)smooth_brightness);
-
     // resize vision for collapsing sidebar
     const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
     s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
@@ -781,29 +774,19 @@ int main(int argc, char* argv[]) {
       handle_vision_touch(s, touch_x, touch_y);
     }
 
-    if (!s->started) {
-      // always process events offroad
-      check_messages(s);
-
-      if (s->started) {
+    bool prev_started = s->started;
+    check_messages(s);
+    if (s->started) {
+      set_awake(s, true);
+      // Car started, fetch a new rgb image from ipc
+      if (s->vision_connected) {
+        ui_update(s);
+      }
+      if (!prev_started) {
         s->controls_timeout = 5 * UI_FREQ;
       }
     } else {
-      set_awake(s, true);
-      // Car started, fetch a new rgb image from ipc
-      if (s->vision_connected){
-        ui_update(s);
-      }
-
-      check_messages(s);
-
-      // Visiond process is just stopped, force a redraw to make screen blank again.
-      if (!s->started) {
-        s->scene.uilayout_sidebarcollapsed = false;
-        ui_draw(s);
-        glFinish();
-        should_swap = true;
-      }
+      s->scene.uilayout_sidebarcollapsed = false;
     }
 
     // manage wakefulness
@@ -819,15 +802,6 @@ int main(int argc, char* argv[]) {
     } else {
       s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
     }
-
-    // Don't waste resources on drawing in case screen is off
-    if (s->awake) {
-      ui_draw(s);
-      glFinish();
-      should_swap = true;
-    }
-
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
 
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
@@ -850,8 +824,15 @@ int main(int argc, char* argv[]) {
         s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);
       }
-      ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
+
+    if (!s->awake) {
+      // Don't waste resources in case screen is off
+      pthread_mutex_unlock(&s->lock);
+      continue;
+    }
+
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
 
     read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
     read_param_timeout(&s->longitudinal_control, "LongitudinalControl", &s->longitudinal_control_timeout);
@@ -869,19 +850,26 @@ int main(int argc, char* argv[]) {
     }
     update_offroad_layout_state(s);
 
+    // light sensor is only exposed on EONs
+    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
+    if (clipped_brightness > 512) clipped_brightness = 512;
+    smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
+    if (smooth_brightness > 255) smooth_brightness = 255;
+    ui_set_brightness(s, (int)smooth_brightness);
+
+    ui_draw(s);
+
     pthread_mutex_unlock(&s->lock);
 
     // the bg thread needs to be scheduled, so the main thread needs time without the lock
     // safe to do this outside the lock?
-    if (should_swap) {
-      double u2 = millis_since_boot();
-      if (u2-u1 > 66) {
-        // warn on sub 15fps
-        LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
-      }
-      draws++;
-      framebuffer_swap(s->fb);
+    double u2 = millis_since_boot();
+    if (u2 - u1 > 66) {
+      // warn on sub 15fps
+      LOGW("slow frame(%d) time: %.2f", draws, u2 - u1);
     }
+    draws++;
+    framebuffer_swap(s->fb);
   }
 
   set_awake(s, true);
