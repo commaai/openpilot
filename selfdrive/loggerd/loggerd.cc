@@ -61,6 +61,7 @@
 
 namespace {
 
+double randrange(double a, double b) __attribute__((unused));
 double randrange(double a, double b) {
   static std::mt19937 gen(millis_since_boot());
 
