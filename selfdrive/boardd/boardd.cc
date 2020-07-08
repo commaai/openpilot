@@ -61,13 +61,16 @@ bool fake_send = false;
 bool loopback_can = false;
 cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
 bool is_pigeon = false;
-//const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
-//const float VBATT_START_CHARGING = 11.5;
-//const float VBATT_PAUSE_CHARGING = 11.0;
 float voltage_f = 12.5;  // filtered voltage
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
 bool ignition_last = false;
+
+#ifndef __x86_64__
+const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
+const float VBATT_START_CHARGING = 11.5;
+const float VBATT_PAUSE_CHARGING = 11.0;
+#endif
 
 bool safety_setter_thread_initialized = false;
 pthread_t safety_setter_thread_handle;
