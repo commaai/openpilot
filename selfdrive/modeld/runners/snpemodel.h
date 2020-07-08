@@ -38,7 +38,9 @@ private:
   Thneed *thneed = NULL;
 #endif
 
+#ifdef QCOM
   zdl::DlSystem::Runtime_t Runtime;
+#endif
 
   // snpe model stuff
   std::unique_ptr<zdl::SNPE::SNPE> snpe;
