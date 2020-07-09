@@ -176,8 +176,7 @@ typedef struct UIState {
 
   // sockets
   SubMaster *sm;
-  SubMaster *sidebar_sm;
-  SubMaster *driver_sm;
+  SubMaster *extra_sm;
   PubMaster *pm;
 
   cereal::UiLayoutState::App active_app;

@@ -172,8 +172,7 @@ static void ui_init(UIState *s) {
                                     , "liveMapData"
 #endif
   });
-  s->sidebar_sm = new SubMaster({"health", "ubloxGnss"});
-  s->driver_sm = new SubMaster({"driverState"});
+  s->extra_sm = new SubMaster({"health", "ubloxGnss", "driverState"});
   s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
@@ -393,7 +392,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
 }
 
-static void handle_sidebar_messages(UIState *s, SubMaster &sm) {
+static void handle_extra_messages(UIState *s, SubMaster &sm) {
   if (sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();
     if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
@@ -404,6 +403,9 @@ static void handle_sidebar_messages(UIState *s, SubMaster &sm) {
     s->scene.hwType = sm["health"].getHealth().getHwType();
     s->hardware_timeout = 5 * UI_FREQ;  // 5 seconds
   }
+  if (sm.updated("driverState")) {
+    s->scene.driver_state = sm["driverState"].getDriverState();
+  }
 }
 
 static void check_messages(UIState *s) {
@@ -411,21 +413,15 @@ static void check_messages(UIState *s) {
     handle_message(s, *(s->sm));
   }
 
-  if (!s->scene.uilayout_sidebarcollapsed) {
-    if (s->sidebar_sm->update(0) > 0) {
-      handle_sidebar_messages(s, *(s->sidebar_sm));
+  if (!s->scene.uilayout_sidebarcollapsed || s->scene.frontview) {
+    if (s->extra_sm->update(0) > 0) {
+      handle_extra_messages(s, *(s->extra_sm));
     }
     // manage hardware disconnect
     if (s->hardware_timeout > 0) {
       s->hardware_timeout--;
     } else {
       s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
-    }
-  }
-
-  if (s->scene.frontview) {
-    if (s->driver_sm->update(0) > 0) {
-      s->scene.driver_state = (*(s->driver_sm))["driverState"].getDriverState();
     }
   }
 }
@@ -909,8 +905,7 @@ int main(int argc, char* argv[]) {
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
   delete s->sm;
-  delete s->sidebar_sm;
-  delete s->driver_sm;
+  delete s->extra_sm;
   delete s->pm;
   return 0;
 }
