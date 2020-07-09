@@ -61,13 +61,16 @@ bool fake_send = false;
 bool loopback_can = false;
 cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
 bool is_pigeon = false;
-const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
-const float VBATT_START_CHARGING = 11.5;
-const float VBATT_PAUSE_CHARGING = 11.0;
 float voltage_f = 12.5;  // filtered voltage
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
 bool ignition_last = false;
+
+#ifndef __x86_64__
+const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
+const float VBATT_START_CHARGING = 11.5;
+const float VBATT_PAUSE_CHARGING = 11.0;
+#endif
 
 bool safety_setter_thread_initialized = false;
 pthread_t safety_setter_thread_handle;
@@ -277,7 +280,6 @@ void can_recv(PubMaster &pm) {
   int err;
   uint32_t data[RECV_SIZE/4];
   int recv;
-  uint32_t f1, f2;
 
   uint64_t start_time = nanos_since_boot();
 
@@ -455,7 +457,7 @@ void can_health(PubMaster &pm) {
   uint16_t fan_speed_rpm = 0;
 
   pthread_mutex_lock(&usb_lock);
-  int sz = libusb_control_transfer(dev_handle, 0xc0, 0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm), TIMEOUT);
+  libusb_control_transfer(dev_handle, 0xc0, 0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm), TIMEOUT);
   pthread_mutex_unlock(&usb_lock);
 
   // Write to rtc once per minute when no ignition present
@@ -721,6 +723,7 @@ void *hardware_control_thread(void *crap) {
 
 #define pigeon_send(x) _pigeon_send(x, sizeof(x)-1)
 
+void hexdump(unsigned char *d, int l) __attribute__((unused));
 void hexdump(unsigned char *d, int l) {
   for (int i = 0; i < l; i++) {
     if (i!=0 && i%0x10 == 0) printf("\n");
