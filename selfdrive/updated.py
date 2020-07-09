@@ -312,10 +312,8 @@ def attempt_update():
     required_neos_version = run(["bash", "-c", r"source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"], FINALIZED)
     if current_neos_version != required_neos_version or DEBUG_FORCE_UPDATE:
       print(f"Beginning background download for NEOS {required_neos_version}")
-      try:
+      if os.path.isdir("/data/neoupdate")
         shutil.rmtree("/data/neoupdate")
-      except FileNotFoundError:
-        pass
       update_json = f'file:///{FINALIZED}/installer/updater/update.json'
       while True:
         Params().put("Offroad_NeosUpdate", "1")
