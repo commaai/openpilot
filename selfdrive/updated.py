@@ -49,6 +49,8 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 SHORT = os.getenv("SHORT") is not None
 
+DEBUG_FORCE_UPDATE = False
+
 # Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
 ffi.cdef("int link(const char *oldpath, const char *newpath);")
@@ -73,6 +75,8 @@ class WaitTimeHelper:
 
   def update_now(self, signum, frame):
     cloudlog.info("caught SIGHUP, running update check immediately")
+    global DEBUG_FORCE_UPDATE
+    DEBUG_FORCE_UPDATE = True
     self.ready_event.set()
 
 
@@ -125,6 +129,11 @@ def set_update_available_params(new_version=False):
     except Exception:
       params.put("ReleaseNotes", "")
     params.put("UpdateAvailable", "1")
+
+
+def set_neos_download_param(downloading=False):
+  params = Params()
+  params.put("Offroad_NeosUpdate", "1" if downloading else "0")
 
 
 def dismount_ovfs():
@@ -285,7 +294,7 @@ def attempt_update():
   git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != err_msg)
 
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
-  if new_version or git_fetch_result:
+  if new_version or git_fetch_result or DEBUG_FORCE_UPDATE:
     cloudlog.info("Running update")
     if new_version:
       cloudlog.info("git reset in progress")
@@ -303,11 +312,33 @@ def attempt_update():
 
     finalize_from_ovfs_copy()
 
+    # If a NEOS update is required, download it in the background
+    with open("/VERSION", "r") as current_neos_file:
+      current_neos_version = current_neos_file.read().replace("\n", "")
+    required_neos_version = run(["bash", "-c", r"source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"], FINALIZED)
+    if current_neos_version != required_neos_version or DEBUG_FORCE_UPDATE:
+      print(f"Beginning background download for NEOS {required_neos_version}")
+      try:
+        shutil.rmtree("/data/neoupdate")
+      except FileNotFoundError:
+        pass
+      update_json = f'file:///{FINALIZED}/installer/updater/update.json'
+      while True:
+        run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], FINALIZED)
+        if os.path.isfile("/data/neoupdate/cache_success_marker"):
+          print("NEOS background download successful!")
+          break
+        else:
+          print("NEOS background download failed, will retry at next wait interval")
+          wait_between_updates(wait_helper.ready_event)
+    else:
+      print("No NEOS update required")
+
     # Make sure the validity flag lands on disk LAST, only when the local git
     # repo and OP install are in a consistent state.
     set_consistent_flag()
 
-    cloudlog.info("update successful!")
+    cloudlog.info("openpilot update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
 
