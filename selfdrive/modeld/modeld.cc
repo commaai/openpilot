@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <eigen3/Eigen/Dense>
 
 #include "common/visionbuf.h"
@@ -20,7 +21,6 @@ mat3 cur_transform;
 pthread_mutex_t transform_lock;
 
 void* live_thread(void *arg) {
-  int err;
   set_thread_name("live");
 
   SubMaster sm({"liveCalibration"});
@@ -74,6 +74,9 @@ void* live_thread(void *arg) {
 int main(int argc, char **argv) {
   int err;
   set_realtime_priority(51);
+
+  signal(SIGINT, (sighandler_t)set_do_exit);
+  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   // start calibration thread
   pthread_t live_thread_handle;

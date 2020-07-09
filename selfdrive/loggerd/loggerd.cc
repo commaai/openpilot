@@ -61,6 +61,7 @@
 
 namespace {
 
+double randrange(double a, double b) __attribute__((unused));
 double randrange(double a, double b) {
   static std::mt19937 gen(millis_since_boot());
 
@@ -165,9 +166,9 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
         break;
       }
 
-      uint64_t current_time = nanos_since_boot();
-      uint64_t diff = current_time - extra.timestamp_eof;
-      double msdiff = (double) diff / 1000000.0;
+      //uint64_t current_time = nanos_since_boot();
+      //uint64_t diff = current_time - extra.timestamp_eof;
+      //double msdiff = (double) diff / 1000000.0;
       // printf("logger latency to tsEof: %f\n", msdiff);
 
       uint8_t *y = (uint8_t*)buf->addr;
