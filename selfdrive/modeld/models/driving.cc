@@ -252,9 +252,11 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, boo
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
 
+  uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
+
   auto framed = event.initModel();
   framed.setFrameId(vipc_frame_id);
-  framed.setFrameAge((frame_id > vipc_frame_id) ? frame_id - vipc_frame_id : 0);
+  framed.setFrameAge(frame_age);
   framed.setTimestampEof(timestamp_eof);
 
   auto lpath = framed.initPath();
@@ -291,7 +293,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, boo
 
   auto meta = framed.initMeta();
   fill_meta(meta, net_outputs.meta);
-  event.setValid((frame_id < vipc_frame_id + MAX_FRAME_AGE) && sm_alive_valid);
+  event.setValid((frame_age < MAX_FRAME_AGE) && sm_alive_valid);
 
   pm.send("model", msg);
 }
@@ -325,9 +327,12 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, b
   kj::ArrayPtr<const float> rot_std_vs(&rot_std_arr[0], 3);
   posenetd.setRotStd(rot_std_vs);
 
+
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);
-  event.setValid((frame_id < vipc_frame_id + MAX_FRAME_AGE) && sm_alive_valid);
+
+  uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
+  event.setValid((frame_age < MAX_FRAME_AGE) && sm_alive_valid);
 
   pm.send("cameraOdometry", msg);
 }
