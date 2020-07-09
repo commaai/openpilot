@@ -9,7 +9,6 @@ import cereal.messaging as messaging
 from cereal import car
 from common.basedir import PARAMS
 from common.params import Params
-from common.realtime import DT_CTRL
 from panda import Panda
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import make_can_msg
@@ -50,7 +49,7 @@ def test_boardd_loopback():
 
   for i in range(1000):
     sent_msgs = defaultdict(set)
-    for _ in range(random.randrange(5)):
+    for _ in range(random.randrange(10)):
       to_send = []
       for __ in range(random.randrange(100)):
         bus = random.randrange(3)
@@ -59,9 +58,8 @@ def test_boardd_loopback():
         sent_msgs[bus].add((addr, dat))
         to_send.append(make_can_msg(addr, dat, bus))
       sendcan.send(can_list_to_can_capnp(to_send, msgtype='sendcan'))
-      time.sleep(DT_CTRL)
 
-    max_recv = 5
+    max_recv = 10
     while max_recv > 0 and any(len(sent_msgs[bus]) for bus in range(3)):
       recvd = messaging.drain_sock(can, wait_for_one=True)
       for msg in recvd:
