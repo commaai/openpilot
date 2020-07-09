@@ -146,7 +146,7 @@ FW_VERSIONS = {
   },
   CAR.FORESTER_2017: {
     # 2018 Subaru Forester 2.5i Touring - UDM / @Oreo
-    # 2018 Subaru Forester / @litobro
+    # 2018 Subaru Forester 2.5 Limited - Canada / @litobro
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
