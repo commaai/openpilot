@@ -32,12 +32,14 @@ import signal
 from pathlib import Path
 import fcntl
 import threading
+import time
 from cffi import FFI
 
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
+WAIT_BETWEEN_ATTEMPTS=600
 STAGING_ROOT = "/data/safe_staging"
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
@@ -81,10 +83,7 @@ class WaitTimeHelper:
 
 def wait_between_updates(ready_event):
   ready_event.clear()
-  if SHORT:
-    ready_event.wait(timeout=10)
-  else:
-    ready_event.wait(timeout=60 * 10)
+  ready_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS)
 
 
 def link(src, dest):
@@ -312,8 +311,6 @@ def attempt_update():
     required_neos_version = run(["bash", "-c", r"source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"], FINALIZED)
     if current_neos_version != required_neos_version or DEBUG_FORCE_UPDATE:
       print(f"Beginning background download for NEOS {required_neos_version}")
-      if os.path.isdir("/data/neoupdate"):
-        shutil.rmtree("/data/neoupdate")
       update_json = f'file:///{FINALIZED}/installer/updater/update.json'
       while True:
         Params().put("Offroad_NeosUpdate", "1")
@@ -324,7 +321,7 @@ def attempt_update():
           break
         else:
           print("NEOS background download failed, will retry at next wait interval")
-          wait_between_updates(wait_helper.ready_event)
+          time.sleep(WAIT_BETWEEN_ATTEMPTS)
     else:
       print("No NEOS update required")
 
