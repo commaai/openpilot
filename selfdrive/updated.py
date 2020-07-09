@@ -119,7 +119,7 @@ def set_update_available_params(new_version=False):
   t = datetime.datetime.utcnow().isoformat()
   params.put("LastUpdateTime", t.encode('utf8'))
 
-  if new_version:
+  if new_version or DEBUG_FORCE_UPDATE:
     try:
       with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
         r = f.read()
