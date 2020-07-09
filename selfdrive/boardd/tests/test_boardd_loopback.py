@@ -1,47 +1,75 @@
 #!/usr/bin/env python3
-"""Run boardd with the BOARDD_LOOPBACK envvar before running this test."""
-
 import os
 import random
 import time
+from collections import defaultdict
+from functools import wraps
 
+import cereal.messaging as messaging
+from cereal import car
+from common.basedir import PARAMS
+from common.params import Params
+from panda import Panda
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from cereal.messaging import drain_sock, pub_sock, sub_sock
+from selfdrive.car import make_can_msg
+from selfdrive.test.helpers import with_processes
 
-def get_test_string():
-  return b"test"+os.urandom(10)
 
-BUS = 0
+def reset_panda(fn):
+  @wraps(fn)
+  def wrapper():
+    p = Panda()
+    for i in [0, 1, 2, 0xFFFF]:
+      p.can_clear(i)
+    p.reset()
+    p.close()
+    fn()
+  return wrapper
 
-def main():
-  rcv = sub_sock('can')  # port 8006
-  snd = pub_sock('sendcan')  # port 8017
-  time.sleep(0.3)  # wait to bind before send/recv
+os.environ['STARTED'] = '1'
+os.environ['BOARDD_LOOPBACK'] = '1'
+os.environ['PARAMS_PATH'] = PARAMS
+@reset_panda
+@with_processes(['boardd'])
+def test_boardd_loopback():
 
-  for i in range(10):
-    print("Loop %d" % i)
-    at = random.randint(1024, 2000)
-    st = get_test_string()[0:8]
-    snd.send(can_list_to_can_capnp([[at, 0, st, 0]], msgtype='sendcan').to_bytes())
-    time.sleep(0.1)
-    res = drain_sock(rcv, True)
-    assert len(res) == 1
+  # wait for boardd to init
+  time.sleep(2)
 
-    res = res[0].can
-    assert len(res) == 2
+  # boardd blocks on CarVin and CarParams
+  cp = car.CarParams.new_message()
+  cp.safetyModel = car.CarParams.SafetyModel.allOutput
+  Params().put("CarVin", b"0"*17)
+  Params().put("CarParams", cp.to_bytes())
 
-    msg0, msg1 = res
+  sendcan = messaging.pub_sock('sendcan')
+  can = messaging.sub_sock('can', conflate=False, timeout=100)
 
-    assert msg0.dat == st
-    assert msg1.dat == st
+  time.sleep(1)
 
-    assert msg0.address == at
-    assert msg1.address == at
+  for i in range(1000):
+    sent_msgs = defaultdict(set)
+    for _ in range(random.randrange(10)):
+      to_send = []
+      for __ in range(random.randrange(100)):
+        bus = random.randrange(3)
+        addr = random.randrange(1, 1<<29)
+        dat = bytes([random.getrandbits(8) for _ in range(random.randrange(1, 9))])
+        sent_msgs[bus].add((addr, dat))
+        to_send.append(make_can_msg(addr, dat, bus))
+      sendcan.send(can_list_to_can_capnp(to_send, msgtype='sendcan'))
 
-    assert msg0.src == 0x80 | BUS
-    assert msg1.src == BUS
+    max_recv = 10
+    while max_recv > 0 and any(len(sent_msgs[bus]) for bus in range(3)):
+      recvd = messaging.drain_sock(can, wait_for_one=True)
+      for msg in recvd:
+        for m in msg.can:
+          if m.src >= 128:
+            k = (m.address, m.dat)
+            assert k in sent_msgs[m.src-128]
+            sent_msgs[m.src-128].discard(k)
+      max_recv -= 1
 
-  print("Success")
-
-if __name__ == "__main__":
-  main()
+    # if a set isn't empty, messages got dropped
+    for bus in range(3):
+      assert not len(sent_msgs[bus]), f"loop {i}: bus {bus} missing {len(sent_msgs[bus])} messages"

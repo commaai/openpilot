@@ -3,7 +3,7 @@
 '''
 System tools like top/htop can only show current cpu usage values, so I write this script to do statistics jobs.
   Features:
-    Use psutil library to sample cpu usage(avergage for all cores) of OpenPilot processes, at a rate of 5 samples/sec.
+    Use psutil library to sample cpu usage(avergage for all cores) of openpilot processes, at a rate of 5 samples/sec.
     Do cpu usage statistics periodically, 5 seconds as a cycle.
     Caculate the average cpu usage within this cycle.
     Caculate minumium/maximium/accumulated_average cpu usage as long term inspections.
