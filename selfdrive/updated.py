@@ -324,7 +324,9 @@ def attempt_update():
         pass
       update_json = f'file:///{FINALIZED}/installer/updater/update.json'
       while True:
+        set_neos_download_param(True)
         run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], FINALIZED)
+        set_neos_download_param(False)
         if os.path.isfile("/data/neoupdate/cache_success_marker"):
           print("NEOS background download successful!")
           break
