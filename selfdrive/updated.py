@@ -130,11 +130,6 @@ def set_update_available_params(new_version=False):
     params.put("UpdateAvailable", "1")
 
 
-def set_neos_download_param(downloading=False):
-  params = Params()
-  params.put("Offroad_NeosUpdate", "1" if downloading else "0")
-
-
 def dismount_ovfs():
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.error("unmounting existing overlay")
@@ -323,9 +318,9 @@ def attempt_update():
         pass
       update_json = f'file:///{FINALIZED}/installer/updater/update.json'
       while True:
-        set_neos_download_param(True)
+        Params().put("Offroad_NeosUpdate", "1")
         run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], FINALIZED)
-        set_neos_download_param(False)
+        Params().put("Offroad_NeosUpdate", "0")
         if os.path.isfile("/data/neoupdate/cache_success_marker"):
           print("NEOS background download successful!")
           break
