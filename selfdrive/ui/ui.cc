@@ -167,12 +167,13 @@ static int write_param_float(float param, const char* param_name, bool persisten
 static void ui_init(UIState *s) {
 
   pthread_mutex_init(&s->lock, NULL);
-  s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
-                         "health", "ubloxGnss", "driverState", "dMonitoringState"
+  s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "dMonitoringState"
 #ifdef SHOW_SPEEDLIMIT
                                     , "liveMapData"
 #endif
   });
+  s->sidebar_sm = new SubMaster({"health", "ubloxGnss"});
+  s->driver_sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
@@ -365,19 +366,6 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
   }
-  if (sm.updated("ubloxGnss")) {
-    auto data = sm["ubloxGnss"].getUbloxGnss();
-    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
-    }
-  }
-  if (sm.updated("health")) {
-    scene.hwType = sm["health"].getHealth().getHwType();
-    s->hardware_timeout = 5*UI_FREQ; // 5 seconds
-  }
-  if (sm.updated("driverState")) {
-    scene.driver_state = sm["driverState"].getDriverState();
-  }
   if (sm.updated("dMonitoringState")) {
     auto data = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = data.getIsRHD();
@@ -405,9 +393,40 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
 }
 
+static void handle_sidebar_messages(UIState *s, SubMaster &sm) {
+  if (sm.updated("ubloxGnss")) {
+    auto data = sm["ubloxGnss"].getUbloxGnss();
+    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+      s->scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+    }
+  }
+  if (sm.updated("health")) {
+    s->scene.hwType = sm["health"].getHealth().getHwType();
+    s->hardware_timeout = 5 * UI_FREQ;  // 5 seconds
+  }
+}
+
 static void check_messages(UIState *s) {
-  if (s->sm->update(0) > 0){
+  if (s->sm->update(0) > 0) {
     handle_message(s, *(s->sm));
+  }
+
+  if (!s->scene.uilayout_sidebarcollapsed) {
+    if (s->sidebar_sm->update(0) > 0) {
+      handle_sidebar_messages(s, *(s->sidebar_sm));
+    }
+    // manage hardware disconnect
+    if (s->hardware_timeout > 0) {
+      s->hardware_timeout--;
+    } else {
+      s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
+    }
+  }
+
+  if (s->scene.frontview) {
+    if (s->driver_sm->update(0) > 0) {
+      s->scene.driver_state = (*(s->driver_sm))["driverState"].getDriverState();
+    }
   }
 }
 
@@ -813,13 +832,6 @@ int main(int argc, char* argv[]) {
       set_awake(s, false);
     }
 
-    // manage hardware disconnect
-    if (s->hardware_timeout > 0) {
-      s->hardware_timeout--;
-    } else {
-      s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
-    }
-
     // Don't waste resources on drawing in case screen is off
     if (s->awake) {
       ui_draw(s);
@@ -897,6 +909,8 @@ int main(int argc, char* argv[]) {
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
   delete s->sm;
+  delete s->sidebar_sm;
+  delete s->driver_sm;
   delete s->pm;
   return 0;
 }
