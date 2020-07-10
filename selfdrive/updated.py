@@ -305,24 +305,23 @@ def attempt_update():
     required_neos_version = run(["bash", "-c", 
                r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
                OVERLAY_MERGED)
-    print(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
+    cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
     if current_neos_version != required_neos_version or DEBUG_FORCE_UPDATE:
-      print(f"Beginning background download for NEOS {required_neos_version}")
       update_json = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
       while True:
         Params().put("Offroad_NeosUpdate", "1")
         try:
+          cloudlog.info("Beginning background download for NEOS {required_neos_version}")
           run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], OVERLAY_MERGED)
           Params().put("Offroad_NeosUpdate", "0")
-          print("NEOS background download successful!")
+          cloudlog.info("NEOS background download successful!")
           break
         except subprocess.CalledProcessError:
-          print("NEOS background download failed, will retry at next wait interval")
+          cloudlog.info("NEOS background download failed, will retry at next wait interval")
           Params().put("Offroad_NeosUpdate", "0")
           time.sleep(WAIT_BETWEEN_ATTEMPTS)
-          print(f"Retrying background download for NEOS {required_neos_version}")
     else:
-      print("No NEOS update required")
+      cloudlog.info("No NEOS update required")
 
     # Un-set the validity flag to prevent the finalized tree from being
     # activated later if the finalize step is interrupted
