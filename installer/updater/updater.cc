@@ -219,9 +219,8 @@ struct Updater {
     b_x = fb_w-b_w-200;
     b_y = 720;
     b_h = 220;
-
+    
     state = CONFIRMATION;
-
   }
 
   int download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno,
@@ -655,8 +654,6 @@ struct Updater {
 
     std::lock_guard<std::mutex> guard(lock);
 
-    printf("ui_draw\n");
-
     nvgBeginFrame(vg, fb_w, fb_h, 1.0f);
 
     switch (state) {
@@ -711,6 +708,8 @@ struct Updater {
 
 
   void start_ui() {
+    state = CONFIRMATION;
+
     while (!do_exit) {
       ui_update();
 
