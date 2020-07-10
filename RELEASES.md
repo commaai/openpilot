@@ -5,9 +5,10 @@ Version 0.7.7 (2020-xx-xx)
  * Improved thermal management on comma two
  * Improved autofocus for road-facing camera
  * Improved noise performance for driver-facing camera
- * Fix GM ignition detection
  * Block lane change start using blindspot monitor on select Toyota, Hyundai, and Subaru
+ * Fix GM ignition detection
  * Code cleanup and smaller release sizes
+ * Hyundai Sonata 2020 promoted to officially supported car
  * Hyundai Ioniq Electric Limited 2019 and Ioniq SE 2020 support thanks to baldwalker!
  * Subaru Forester 2019 and Ascent 2019 support thanks to martinl!
 
