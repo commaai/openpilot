@@ -794,7 +794,7 @@ int main(int argc, char *argv[]) {
   updater.run_stages(!background_cache);
 
   if (background_cache) {
-    return cache_valid;
+    return !cache_valid;
   } else {
     printf("trying to start ui\n");
     updater.start_ui();
