@@ -84,7 +84,6 @@ function launch {
   fi
 
   # Remove old NEOS update file
-  # TODO: move this code to the updater
   if [ -d /data/neoupdate ]; then
     rm -rf /data/neoupdate
   fi
