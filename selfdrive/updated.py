@@ -300,7 +300,7 @@ def attempt_update():
 
     # If a NEOS update is required, download it in the background
     with open("/VERSION", "r") as current_neos_file:
-      current_neos_version = current_neos_file.read().replace("\n", "")
+      current_neos_version = current_neos_file.read().strip()
     required_neos_version = run(["bash", "-c", 
                r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
                OVERLAY_MERGED)
