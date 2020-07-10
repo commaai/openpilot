@@ -48,7 +48,6 @@ OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
-SHORT = os.getenv("SHORT") is not None
 
 DEBUG_FORCE_UPDATE = False
 
