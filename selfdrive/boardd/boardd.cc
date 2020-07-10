@@ -81,18 +81,19 @@ pthread_t pigeon_thread_handle;
 bool pigeon_needs_init;
 
 int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, pthread_mutex_t *lock = NULL, unsigned int timeout = TIMEOUT) {
-  // LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE
+  // LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE = 0x40
   if (lock) pthread_mutex_lock(lock);
-  int cnt = libusb_control_transfer(dev_handle, 0x40, bRequest, wValue, wIndex, NULL, 0, timeout);
+  int err = libusb_control_transfer(dev_handle, 0x40, bRequest, wValue, wIndex, NULL, 0, timeout);
   if (lock) pthread_mutex_unlock(lock);
-  return cnt;
+  return err;
 }
 
 int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, pthread_mutex_t *lock=NULL, unsigned int timeout = TIMEOUT) {
+  // LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE = 0xc0
   if (lock) pthread_mutex_lock(lock);
-  int cnt = libusb_control_transfer(dev_handle, 0xc0, bRequest, wValue, wIndex, data, wLength, timeout);
+  int err = libusb_control_transfer(dev_handle, 0xc0, bRequest, wValue, wIndex, data, wLength, timeout);
   if (lock) pthread_mutex_unlock(lock);
-  return cnt;
+  return err;
 }
 
 void pigeon_init();
