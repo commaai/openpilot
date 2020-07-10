@@ -319,7 +319,7 @@ def attempt_update():
           Params().put("Offroad_NeosUpdate", "0")
           print("NEOS background download successful!")
           break
-        except CalledProcessError:
+        except subprocess.CalledProcessError:
           print("NEOS background download failed, will retry at next wait interval")
           Params().put("Offroad_NeosUpdate", "0")
           time.sleep(WAIT_BETWEEN_ATTEMPTS)
