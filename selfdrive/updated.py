@@ -76,8 +76,8 @@ class WaitTimeHelper:
 
   def update_now(self, signum, frame):
     cloudlog.info("caught SIGHUP, running update check immediately")
-    global DEBUG_FORCE_UPDATE
-    DEBUG_FORCE_UPDATE = True
+    #global DEBUG_FORCE_UPDATE
+    #DEBUG_FORCE_UPDATE = True
     self.ready_event.set()
 
 
