@@ -206,9 +206,13 @@ CHECKSUM = {
 }
 
 FEATURES = {
-  "use_cluster_gears": [CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30],     # Use Cluster for Gear Selection, rather than Transmission
-  "use_tcu_gears": [CAR.KIA_OPTIMA, CAR.SONATA_2019],                                    # Use TCU Message for Gear Selection
-  "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ], # Use TCU Message for Gear Selection
+  # which message has the gear
+  "use_cluster_gears": [CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30],
+  "use_tcu_gears": [CAR.KIA_OPTIMA, CAR.SONATA_2019],
+  "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ],
+
+  # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
+  "use_fca": [CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.KONA, CAR.KONA_EV, CAR.KIA_FORTE, CAR.PALISADE],
 }
 
 EV_HYBRID = [CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV]
