@@ -73,8 +73,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, bool sm_alive_valid,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                    const ModelDataRaw &data, uint64_t timestamp_eof);
-void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, bool sm_alive_valid,
+void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      const ModelDataRaw &data, uint64_t timestamp_eof);
 #endif
