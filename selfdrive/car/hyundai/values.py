@@ -214,7 +214,7 @@ FEATURES = {
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
   "use_fca": [CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.KONA, CAR.KONA_EV, CAR.KIA_FORTE, CAR.PALISADE],
 
-  "use_bsm": [CAR.SONATA],
+  "use_bsm": [CAR.SONATA, CAR.PALISADE],
 }
 
 EV_HYBRID = [CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV]
