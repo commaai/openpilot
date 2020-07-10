@@ -299,26 +299,20 @@ def attempt_update():
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-    # Un-set the validity flag to prevent the finalized tree from being
-    # activated later if the finalize step is interrupted
-    remove_consistent_flag()
-
-    finalize_from_ovfs_copy()
-
     # If a NEOS update is required, download it in the background
     with open("/VERSION", "r") as current_neos_file:
       current_neos_version = current_neos_file.read().replace("\n", "")
     required_neos_version = run(["bash", "-c", 
                r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
-               FINALIZED)
+               OVERLAY_MERGED)
     print(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
     if current_neos_version != required_neos_version or DEBUG_FORCE_UPDATE:
       print(f"Beginning background download for NEOS {required_neos_version}")
-      update_json = f'file:///{FINALIZED}/installer/updater/update.json'
+      update_json = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
       while True:
         Params().put("Offroad_NeosUpdate", "1")
         try:
-          run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], FINALIZED)
+          run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], OVERLAY_MERGED)
           Params().put("Offroad_NeosUpdate", "0")
           print("NEOS background download successful!")
           break
@@ -329,6 +323,12 @@ def attempt_update():
           print(f"Retrying background download for NEOS {required_neos_version}")
     else:
       print("No NEOS update required")
+
+    # Un-set the validity flag to prevent the finalized tree from being
+    # activated later if the finalize step is interrupted
+    remove_consistent_flag()
+
+    finalize_from_ovfs_copy()
 
     # Make sure the validity flag lands on disk LAST, only when the local git
     # repo and OP install are in a consistent state.
