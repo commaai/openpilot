@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <iostream>
 #include <mutex>
 #include <thread>
 
@@ -38,13 +39,12 @@
 #define MANIFEST_URL_EON "https://github.com/commaai/eon-neos/raw/master/update.json"
 const char *manifest_url = MANIFEST_URL_EON;
 bool background_cache = false;
-bool cache_success_marker = false;
+bool cache_valid = false;
 
 #define RECOVERY_DEV "/dev/block/bootdevice/by-name/recovery"
 #define RECOVERY_COMMAND "/cache/recovery/command"
 
 #define UPDATE_DIR "/data/neoupdate"
-#define UPDATE_CACHE_SUCCESS_MARKER UPDATE_DIR "/cache_success_marker"
 
 extern const uint8_t bin_opensans_regular[] asm("_binary_opensans_regular_ttf_start");
 extern const uint8_t bin_opensans_regular_end[] asm("_binary_opensans_regular_ttf_end");
@@ -324,10 +324,10 @@ struct Updater {
     state = RUNNING;
   }
 
-  std::string stage_download(std::string url, std::string hash, std::string name) {
+  std::string stage_download(std::string url, std::string hash, std::string name, bool startup_cache_check) {
     std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
 
-    if (!cache_success_marker) {
+    if (!startup_cache_check && !cache_valid) {
       set_progress("Downloading " + name + "...");
       bool r = download_file(url, out_fn);
       if (!r) {
@@ -339,17 +339,22 @@ struct Updater {
     set_progress("Verifying " + name + "...");
     std::string fn_hash = sha256_file(out_fn);
     printf("got %s hash: %s\n", name.c_str(), hash.c_str());
-    if (fn_hash != hash) {
+
+    if (startup_cache_check && fn_hash == "") {
+      set_progress(name + " was not in cache");
+      return "";
+    } else if (fn_hash != hash) {
       set_error(name + " was corrupt");
       unlink(out_fn.c_str());
-      unlink(UPDATE_CACHE_SUCCESS_MARKER);
       return "";
+    } else {
+      set_progress(name + " hash verified");
+      return out_fn;
     }
-
-    return out_fn;
   }
 
-  void run_stages() {
+  void run_stages(bool startup_cache_check) {
+    printf("run_stages start\n");
     curl = curl_easy_init();
     assert(curl);
 
@@ -406,7 +411,7 @@ struct Updater {
       return;
     }
 
-    // std::string installer_fn = stage_download(installer_url, installer_hash, "installer");
+    // std::string installer_fn = stage_download(installer_url, installer_hash, "installer", startup_cache_check);
     // if (installer_fn.empty()) {
     //   //error'd
     //   return;
@@ -422,7 +427,7 @@ struct Updater {
       printf("existing recovery hash: %s\n", existing_recovery_hash.c_str());
 
       if (existing_recovery_hash != recovery_hash) {
-        recovery_fn = stage_download(recovery_url, recovery_hash, "recovery");
+        recovery_fn = stage_download(recovery_url, recovery_hash, "recovery", startup_cache_check);
         if (recovery_fn.empty()) {
           // error'd
           return;
@@ -430,22 +435,15 @@ struct Updater {
       }
     }
 
-    std::string ota_fn = stage_download(ota_url, ota_hash, "update");
+    std::string ota_fn = stage_download(ota_url, ota_hash, "update", startup_cache_check);
     if (ota_fn.empty()) {
       //error'd
       return;
     }
 
-    FILE *cacheflag_file = fopen(UPDATE_CACHE_SUCCESS_MARKER, "w+b");
-    if (cacheflag_file) {
-      printf("NEOS update cached successfully\n");
-    } else {
-      printf("couldn't write cache success marker file\n");
-    }
-    fclose(cacheflag_file);
-
-    if (background_cache)
-      // Headless download-only mode, we're finished
+    cache_valid = true;
+    if (background_cache or startup_cache_check)
+      // Headless or cache-check only mode, we're finished
       return;
 
     if (!check_battery()) {
@@ -649,22 +647,24 @@ struct Updater {
   }
 
   void ui_draw() {
-    const char *cached_instr = "Your device will now install an operating system update. Keep the "
-       "device connected to a power source during this process.";
+    const char *cached_instr = "Your device needs to install an operating system update. Keep it "
+       "connected to a power source.";
     const char *download_instr = "Your device will now download and install an operating system "
-       "update. The update is about 1GB and WiFi connectivity is recommended. Keep the device "
-       "connected to a power source during this process.";
+       "update. The update is about 1GB and WiFi connectivity is recommended. Keep it connected "
+       "to a power source during this process.";
 
     std::lock_guard<std::mutex> guard(lock);
+
+    printf("ui_draw\n");
 
     nvgBeginFrame(vg, fb_w, fb_h, 1.0f);
 
     switch (state) {
     case CONFIRMATION:
       draw_ack_screen("An update to NEOS is required.",
-											cache_success_marker ? cached_instr : download_instr,
+											cache_valid ? cached_instr : download_instr,
                       "Continue",
-                      cache_success_marker ? NULL : "Connect to WiFi");
+                      cache_valid ? NULL : "Connect to WiFi");
       break;
     case LOW_BATTERY:
       draw_battery_screen();
@@ -692,7 +692,7 @@ struct Updater {
         if (touch_x >= b_x && touch_x < b_x+b_w && touch_y >= b_y && touch_y < b_y+b_h) {
           if (state == CONFIRMATION) {
             state = RUNNING;
-            update_thread_handle = std::thread(&Updater::run_stages, this);
+            update_thread_handle = std::thread(&Updater::run_stages, this, false);
           }
         }
         if (touch_x >= balt_x && touch_x < balt_x+b_w && touch_y >= b_y && touch_y < b_y+b_h) {
@@ -790,22 +790,15 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  FILE *cacheflag_file = fopen(UPDATE_CACHE_SUCCESS_MARKER, "rb");
-  if (cacheflag_file) {
-    printf("Cached download present, will skip directly to validation\n");
-    cache_success_marker = true;
-  } else {
-    printf("Cached download not present or incomplete, will resume if possible\n");
-    cache_success_marker = false;
-  }
-
   printf("updating from %s\n", manifest_url);
   Updater updater;
-  if (background_cache) {
-    updater.run_stages();
-  } else {
-    updater.start_ui();
-  }
+  updater.run_stages(!background_cache);
 
-  return 0;
+  if (background_cache) {
+    return cache_valid;
+  } else {
+    printf("trying to start ui\n");
+    updater.start_ui();
+    return 0;
+  }
 }
