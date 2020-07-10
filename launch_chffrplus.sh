@@ -38,6 +38,7 @@ function launch {
           git submodule foreach --recursive git reset --hard
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
+          unset REQUIRED_NEOS_VERSION
           exec "${LAUNCHER_LOCATION}"
         else
           echo "openpilot backup found, not updating"
