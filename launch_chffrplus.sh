@@ -41,9 +41,12 @@ function launch {
 
           mv $BASEDIR /data/safe_staging/old_openpilot
           mv "${STAGING_ROOT}/finalized" $BASEDIR
+          cd $BASEDIR
 
-          # The mv changed our working directory to /data/safe_staging/old_openpilot
-          cd "${BASEDIR}"
+          # Partial mitigation for symlink-related filesystem corruption
+          # Ensure all files match the repo versions after update
+          git reset --hard
+          git submodule foreach --recursive git reset --hard
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
           exec "${LAUNCHER_LOCATION}"
