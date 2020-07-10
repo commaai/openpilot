@@ -44,7 +44,7 @@ function launch {
           cd $BASEDIR
 
           # Partial mitigation for symlink-related filesystem corruption
-          # Make sure all files match the repo versions after update
+          # Ensure all files match the repo versions after update
           git reset --hard
           git submodule foreach --recursive git reset --hard
 
