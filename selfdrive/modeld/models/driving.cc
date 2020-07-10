@@ -245,15 +245,18 @@ void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float 
   longi.setAccelerations(accel);
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, bool sm_alive_valid,
                    const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   // make msg
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
 
+  uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
+
   auto framed = event.initModel();
   framed.setFrameId(vipc_frame_id);
+  framed.setFrameAge(frame_age);
   framed.setTimestampEof(timestamp_eof);
 
   auto lpath = framed.initPath();
@@ -290,13 +293,13 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   auto meta = framed.initMeta();
   fill_meta(meta, net_outputs.meta);
-  event.setValid(frame_id < vipc_frame_id + MAX_FRAME_AGE);
+  event.setValid((frame_age < MAX_FRAME_AGE) && sm_alive_valid);
 
   pm.send("model", msg);
 }
 
-void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
+void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, bool sm_alive_valid,
+                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
@@ -324,9 +327,12 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   kj::ArrayPtr<const float> rot_std_vs(&rot_std_arr[0], 3);
   posenetd.setRotStd(rot_std_vs);
 
+
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);
-  event.setValid(frame_id < vipc_frame_id + MAX_FRAME_AGE);
+
+  uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
+  event.setValid((frame_age < MAX_FRAME_AGE) && sm_alive_valid);
 
   pm.send("cameraOdometry", msg);
 }

@@ -204,8 +204,6 @@ def wrong_car_mode_alert(CP, sm, metric):
 EVENTS = {
   # ********** events with no alerts **********
 
-  EventName.modeldLagging: {},
-
   # ********** events only containing alerts displayed in all states **********
 
   EventName.debugAlert: {
@@ -649,6 +647,11 @@ EVENTS = {
   EventName.radarFault: {
     ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
     ET.NO_ENTRY : NoEntryAlert("Radar Error: Restart the Car"),
+  },
+
+  EventName.modeldLagging: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Driving model lagging"),
+    ET.NO_ENTRY : NoEntryAlert("Driving model lagging"),
   },
 
   EventName.lowMemory: {
