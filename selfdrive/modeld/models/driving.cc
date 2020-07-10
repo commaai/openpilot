@@ -245,7 +245,7 @@ void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float 
   longi.setAccelerations(accel);
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, bool sm_alive_valid,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                    const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   // make msg
   capnp::MallocMessageBuilder msg;
@@ -293,12 +293,12 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, boo
 
   auto meta = framed.initMeta();
   fill_meta(meta, net_outputs.meta);
-  event.setValid((frame_age < MAX_FRAME_AGE) && sm_alive_valid);
+  event.setValid(frame_age < MAX_FRAME_AGE);
 
   pm.send("model", msg);
 }
 
-void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, bool sm_alive_valid,
+void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();

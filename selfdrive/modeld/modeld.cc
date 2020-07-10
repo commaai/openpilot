@@ -217,8 +217,8 @@ int main(int argc, char **argv) {
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
-        model_publish(pm, extra.frame_id, frame_id, sm.allAliveAndValid(), model_buf, extra.timestamp_eof);
-        posenet_publish(pm, extra.frame_id, frame_id, sm.allAliveAndValid(), model_buf, extra.timestamp_eof);
+        model_publish(pm, extra.frame_id, frame_id,  model_buf, extra.timestamp_eof);
+        posenet_publish(pm, extra.frame_id, frame_id, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu", mt2-mt1, mt1-last, extra.frame_id, frame_id);
         last = mt1;
