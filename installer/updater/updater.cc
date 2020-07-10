@@ -195,7 +195,7 @@ struct Updater {
 
   CURL *curl = NULL;
 
-  Updater() {
+  void ui_init() {
     touch_init(&touch);
 
     fb = framebuffer_init("updater", 0x00001000, false,
@@ -708,7 +708,8 @@ struct Updater {
 
 
   void start_ui() {
-    state = CONFIRMATION;
+
+    ui_init();
 
     while (!do_exit) {
       ui_update();
@@ -796,7 +797,6 @@ int main(int argc, char *argv[]) {
   if (background_cache) {
     return !cache_valid;
   } else {
-    printf("trying to start ui\n");
     updater.start_ui();
     return 0;
   }
