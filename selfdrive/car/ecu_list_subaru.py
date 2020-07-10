@@ -9,7 +9,6 @@ import panda.python.uds as uds
 from cereal import car
 from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
@@ -41,73 +40,17 @@ UDS_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) 
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION)
 
 
-HYUNDAI_VERSION_REQUEST_SHORT = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf1a0)  # 4 Byte version number
-HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf100)  # Long description
-HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
-  p16(0xf100) + \
-  p16(0xf1a0)
-HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
-
-
-TOYOTA_VERSION_REQUEST = b'\x1a\x88\x01'
-TOYOTA_VERSION_RESPONSE = b'\x5a\x88\x01'
-
-OBD_VERSION_REQUEST = b'\x09\x04'
-OBD_VERSION_RESPONSE = b'\x49\x04'
-
-SUBARU_VERSION_REQUEST = b'\x22\xf1\x97'
-SUBARU_VERSION_RESPONSE = b'\x62\xf1\x97'
+SUBARU_ECU_REQUEST = b'\x22\xf1\x97'
+SUBARU_ECU_RESPONSE = b'\x62\xf1\x97'
 
 
 # supports subaddressing, request, response
 REQUESTS = [
-  # Hyundai
-  (
-    "hyundai",
-    [HYUNDAI_VERSION_REQUEST_SHORT],
-    [HYUNDAI_VERSION_RESPONSE],
-  ),
-  (
-    "hyundai",
-    [HYUNDAI_VERSION_REQUEST_LONG],
-    [HYUNDAI_VERSION_RESPONSE],
-  ),
-  (
-    "hyundai",
-    [HYUNDAI_VERSION_REQUEST_MULTI],
-    [HYUNDAI_VERSION_RESPONSE],
-  ),
-  # Honda
-  (
-    "honda",
-    [UDS_VERSION_REQUEST],
-    [UDS_VERSION_RESPONSE],
-  ),
-  # Toyota
-  (
-    "toyota",
-    [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
-    [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
-  ),
-  (
-    "toyota",
-    [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
-    [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
-  ),
-  (
-    "toyota",
-    [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
-  ),
   # Subaru
   (
     "subaru",
-    [TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+    [TESTER_PRESENT_REQUEST, SUBARU_ECU_REQUEST],
+    [TESTER_PRESENT_RESPONSE, SUBARU_ECU_RESPONSE],
   ),
 ]
 
@@ -117,44 +60,10 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def match_fw_to_car(fw_versions):
-  candidates = FW_VERSIONS
-  invalid = []
-
-  fw_versions_dict = {}
-  for fw in fw_versions:
-    addr = fw.address
-    sub_addr = fw.subAddress if fw.subAddress != 0 else None
-    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
-
-  for candidate, fws in candidates.items():
-    for ecu, expected_versions in fws.items():
-      ecu_type = ecu[0]
-      addr = ecu[1:]
-      found_version = fw_versions_dict.get(addr, None)
-      ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa, Ecu.electricBrakeBooster]
-      if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER] and found_version is None:
-        continue
-
-      # TODO: COROLLA_TSS2 engine can show on two different addresses
-      if ecu_type == Ecu.engine and candidate in [TOYOTA.COROLLA_TSS2, TOYOTA.CHR] and found_version is None:
-        continue
-
-      # ignore non essential ecus
-      if ecu_type not in ESSENTIAL_ECUS and found_version is None:
-        continue
-
-      if found_version not in expected_versions:
-        invalid.append(candidate)
-        break
-
-  return set(candidates.keys()) - set(invalid)
-
-
-def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, progress=False):
+def get_ecu_list(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
-  # Extract ECU adresses to query from fingerprints
+  # Extract ECU addresses to query from fingerprints
   # ECUs using a subadress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
@@ -179,7 +88,7 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
 
   addrs.insert(0, parallel_addrs)
 
-  fw_versions = {}
+  ecu_list = {}
   for i, addr in enumerate(tqdm(addrs, disable=not progress)):
     for addr_chunk in chunks(addr):
       for brand, request, response in REQUESTS:
@@ -189,13 +98,13 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, request, response, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.update(query.get_data(t))
+            ecu_list.update(query.get_data(t))
         except Exception:
-          cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
+          cloudlog.warning(f"ECU query exception: {traceback.format_exc()}")
 
   # Build capnp list to put into CarParams
   car_fw = []
-  for addr, version in fw_versions.items():
+  for addr, version in ecu_list.items():
     f = car.CarParams.CarFw.new_message()
 
     f.ecu = ecu_types[addr]
@@ -244,17 +153,15 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, 1, extra=extra, debug=args.debug, progress=True)
-  candidates = match_fw_to_car(fw_vers)
+  ecu_list = get_ecu_list(logcan, sendcan, 1, extra=extra, debug=args.debug, progress=True)
 
   print()
-  print("Found FW versions")
+  print("Found ECU descriptions")
   print("{")
-  for version in fw_vers:
-    subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-    print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
+  for desc in ecu_list:
+    subaddr = None if ecu.subAddress == 0 else hex(ecu.subAddress)
+    print(f"  (Ecu.{desc.ecu}, {hex(desc.address)}, {subaddr}): [{desc.fwVersion}]")
   print("}")
 
   print()
-  print("Possible matches:", candidates)
   print("Getting fw took %.3f s" % (time.time() - t))
