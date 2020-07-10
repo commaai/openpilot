@@ -39,7 +39,7 @@ from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
-WAIT_BETWEEN_ATTEMPTS=600
+WAIT_BETWEEN_ATTEMPTS=60
 STAGING_ROOT = "/data/safe_staging"
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
