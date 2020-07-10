@@ -314,14 +314,16 @@ def attempt_update():
       update_json = f'file:///{FINALIZED}/installer/updater/update.json'
       while True:
         Params().put("Offroad_NeosUpdate", "1")
-        run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], FINALIZED)
-        Params().put("Offroad_NeosUpdate", "0")
-        if os.path.isfile("/data/neoupdate/cache_success_marker"):
+        try:
+          run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], FINALIZED)
+          Params().put("Offroad_NeosUpdate", "0")
           print("NEOS background download successful!")
           break
-        else:
+        except CalledProcessError:
           print("NEOS background download failed, will retry at next wait interval")
+          Params().put("Offroad_NeosUpdate", "0")
           time.sleep(WAIT_BETWEEN_ATTEMPTS)
+          print(f"Retrying background download for NEOS {required_neos_version")
     else:
       print("No NEOS update required")
 
