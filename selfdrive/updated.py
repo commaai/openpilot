@@ -308,7 +308,10 @@ def attempt_update():
     # If a NEOS update is required, download it in the background
     with open("/VERSION", "r") as current_neos_file:
       current_neos_version = current_neos_file.read().replace("\n", "")
-    required_neos_version = run(["bash", "-c", r"source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"], FINALIZED)
+    required_neos_version = run(["bash", "-c", 
+               r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
+               FINALIZED)
+    print(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
     if current_neos_version != required_neos_version or DEBUG_FORCE_UPDATE:
       print(f"Beginning background download for NEOS {required_neos_version}")
       update_json = f'file:///{FINALIZED}/installer/updater/update.json'
