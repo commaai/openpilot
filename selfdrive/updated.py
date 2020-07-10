@@ -310,7 +310,7 @@ def attempt_update():
       while True:
         Params().put("Offroad_NeosUpdate", "1")
         try:
-          cloudlog.info("Beginning background download for NEOS {required_neos_version}")
+          cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
           run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], OVERLAY_MERGED)
           Params().put("Offroad_NeosUpdate", "0")
           cloudlog.info("NEOS background download successful!")
