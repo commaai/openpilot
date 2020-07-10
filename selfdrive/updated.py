@@ -50,7 +50,7 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 SHORT = os.getenv("SHORT") is not None
 
-DEBUG_FORCE_UPDATE = False
+DEBUG_FORCE_UPDATE = True
 
 # Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
