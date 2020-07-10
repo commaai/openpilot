@@ -1,0 +1,7 @@
+{
+  "ota_url": "https://commadist.azureedge.net/neosupdate/ota-signed-3bd2b3bdd6a501569e00b8f12786d65e0fd2788c0dd238f8c986e3e2e504683a-kernel.zip",
+  "ota_hash": "3bd2b3bdd6a501569e00b8f12786d65e0fd2788c0dd238f8c986e3e2e504683a",
+  "recovery_url": "https://commadist.azureedge.net/neosupdate/recovery-97c27e6ed04ed6bb0608b845a2d4100912093f9380c3f2ba6b56bccd608e5f6e.img",
+  "recovery_len": 15861036,
+  "recovery_hash": "97c27e6ed04ed6bb0608b845a2d4100912093f9380c3f2ba6b56bccd608e5f6e"
+}
