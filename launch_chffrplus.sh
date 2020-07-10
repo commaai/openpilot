@@ -65,9 +65,7 @@ function launch {
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
   # Check for NEOS update
-  # FIXME: hacked for testing, will force "update" if we have any NEOS files present
-  if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION"  ] || ( [ -d "/data/neoupdate" ] && [ ! -f /data/neoupdate/ranonce ] ); then
-    touch /data/neoupdate/ranonce
+  if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
     if [ -f "$BASEDIR/scripts/continue.sh" ]; then
       cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
