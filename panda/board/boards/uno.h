@@ -241,7 +241,7 @@ void uno_init(void) {
   }
 
   // init multiplexer
-  can_set_obd(car_harness_status, false);
+  can_set_obd(car_harness_status, true);
 
   // Switch to phone usb mode if harness connection is powered by less than 7V
   if(adc_get_voltage() < 7000U){
