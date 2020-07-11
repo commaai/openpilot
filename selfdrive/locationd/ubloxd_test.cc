@@ -7,7 +7,6 @@
 #include <sys/time.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <assert.h>
 #include <math.h>
 #include <ctime>
@@ -26,13 +25,13 @@
 using namespace ublox;
 extern volatile sig_atomic_t do_exit;
 
-void write_file(std::string fpath, uint8_t *to_write, int len) {
+void write_file(std::string fpath, uint8_t *to_write, int length) {
   FILE* f = fopen(fpath.c_str(), "wb");
   if (!f) {
     std::cout << "Open " << fpath << " failed" << std::endl;
     return;
   }
-  fwrite(to_write, len, 1, f);
+  fwrite(to_write, length, 1, f);
   fclose(f);
 }
 

@@ -7,7 +7,7 @@ import common.transformations.coordinates as coord
 from common.transformations.orientation import ecef_euler_from_ned, \
                                                euler_from_quat, \
                                                ned_euler_from_ecef, \
-                                               quat_from_euler, \
+                                               quat_from_euler, euler_from_rot, \
                                                rot_from_quat, rot_from_euler
 from rednose.helpers import KalmanError
 from selfdrive.locationd.models.live_kf import LiveKalman, States, ObservationKind
@@ -21,7 +21,6 @@ from sympy.utilities.lambdify import lambdify
 from rednose.helpers.sympy_helpers import euler_rotate
 
 
-OUTPUT_DECIMATION = 2
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
 
@@ -47,7 +46,10 @@ def get_H():
 
 
 class Localizer():
-  def __init__(self, disabled_logs=[], dog=None):
+  def __init__(self, disabled_logs=None, dog=None):
+    if disabled_logs is None:
+      disabled_logs = []
+
     self.kf = LiveKalman(GENERATED_DIR)
     self.reset_kalman()
     self.max_age = .2  # seconds
@@ -79,6 +81,8 @@ class Localizer():
     #fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
     orientation_ecef = euler_from_quat(predicted_state[States.ECEF_ORIENTATION])
     orientation_ecef_std = predicted_std[States.ECEF_ORIENTATION_ERR]
+    device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
+    calibrated_orientation_ecef = euler_from_rot(calib_from_device.dot(device_from_ecef))
 
     acc_calib = calib_from_device.dot(predicted_state[States.ACCELERATION])
     acc_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
@@ -89,10 +93,10 @@ class Localizer():
       predicted_cov[States.ANGULAR_VELOCITY_ERR, States.ANGULAR_VELOCITY_ERR]).dot(
         calib_from_device.T)))
 
-    device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
     vel_device = device_from_ecef.dot(vel_ecef)
     device_from_ecef_eul = euler_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
-    idxs = list(range(States.ECEF_ORIENTATION_ERR.start, States.ECEF_ORIENTATION_ERR.stop)) + list(range(States.ECEF_VELOCITY_ERR.start, States.ECEF_VELOCITY_ERR.stop))
+    idxs = list(range(States.ECEF_ORIENTATION_ERR.start, States.ECEF_ORIENTATION_ERR.stop)) + \
+           list(range(States.ECEF_VELOCITY_ERR.start, States.ECEF_VELOCITY_ERR.stop))
     condensed_cov = predicted_cov[idxs][:, idxs]
     HH = H(*list(np.concatenate([device_from_ecef_eul, vel_ecef])))
     vel_device_cov = HH.dot(condensed_cov).dot(HH.T)
@@ -130,6 +134,9 @@ class Localizer():
     fix.orientationECEF.value = to_float(orientation_ecef)
     fix.orientationECEF.std = to_float(orientation_ecef_std)
     fix.orientationECEF.valid = True
+    fix.calibratedOrientationECEF.value = to_float(calibrated_orientation_ecef)
+    #fix.calibratedOrientationECEF.std = to_float(calibrated_orientation_ecef_std)
+    #fix.calibratedOrientationECEF.valid = True
     fix.orientationNED.value = to_float(orientation_ned)
     #fix.orientationNED.std = to_float(orientation_ned_std)
     #fix.orientationNED.valid = True
@@ -190,10 +197,9 @@ class Localizer():
 
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
     ecef_pos = self.converter.ned2ecef([0, 0, 0])
-    ecef_vel = self.converter.ned2ecef_matrix.dot(np.array(log.vNED))
+    ecef_vel = self.converter.ned2ecef(np.array(log.vNED)) - ecef_pos
     ecef_pos_R = np.diag([(3*log.verticalAccuracy)**2]*3)
     ecef_vel_R = np.diag([(log.speedAccuracy)**2]*3)
-
 
     #self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
     self.unix_timestamp_millis = log.timestamp
@@ -260,14 +266,15 @@ class Localizer():
           self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
 
   def handle_live_calib(self, current_time, log):
-    self.calib = log.rpyCalib
-    self.device_from_calib = rot_from_euler(self.calib)
-    self.calib_from_device = self.device_from_calib.T
-    self.calibrated = log.calStatus == 1
+    if len(log.rpyCalib):
+      self.calib = log.rpyCalib
+      self.device_from_calib = rot_from_euler(self.calib)
+      self.calib_from_device = self.device_from_calib.T
+      self.calibrated = log.calStatus == 1
 
   def reset_kalman(self, current_time=None, init_orient=None):
     self.filter_time = current_time
-    init_x = LiveKalman.initial_x
+    init_x = LiveKalman.initial_x.copy()
     # too nonlinear to init on completely wrong
     if init_orient is not None:
       init_x[3:7] = init_orient
@@ -280,7 +287,11 @@ class Localizer():
     self.speed_counter = 0
     self.cam_counter = 0
 
-def locationd_thread(sm, pm, disabled_logs=[]):
+
+def locationd_thread(sm, pm, disabled_logs=None):
+  if disabled_logs is None:
+    disabled_logs = []
+
   if sm is None:
     socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration', 'carState']
     sm = messaging.SubMaster(socks, ignore_alive=['gpsLocationExternal'])
@@ -288,13 +299,12 @@ def locationd_thread(sm, pm, disabled_logs=[]):
     pm = messaging.PubMaster(['liveLocationKalman'])
 
   localizer = Localizer(disabled_logs=disabled_logs)
-  camera_odometry_cnt = 0
 
   while True:
     sm.update()
 
     for sock, updated in sm.updated.items():
-      if updated:
+      if updated and sm.valid[sock]:
         t = sm.logMonoTime[sock] * 1e-9
         if sock == "sensorEvents":
           localizer.handle_sensors(t, sm[sock])
@@ -308,19 +318,17 @@ def locationd_thread(sm, pm, disabled_logs=[]):
           localizer.handle_live_calib(t, sm[sock])
 
     if sm.updated['cameraOdometry']:
-      camera_odometry_cnt += 1
+      t = sm.logMonoTime['cameraOdometry']
+      msg = messaging.new_message('liveLocationKalman')
+      msg.logMonoTime = t
 
-      if camera_odometry_cnt % OUTPUT_DECIMATION == 0:
-        t = sm.logMonoTime['cameraOdometry']
-        msg = messaging.new_message('liveLocationKalman')
-        msg.logMonoTime = t
+      msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
+      msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
+      msg.liveLocationKalman.sensorsOK = sm.alive['sensorEvents'] and sm.valid['sensorEvents']
 
-        msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
-        msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
-
-        gps_age = (t / 1e9) - localizer.last_gps_fix
-        msg.liveLocationKalman.gpsOK = gps_age < 1.0
-        pm.send('liveLocationKalman', msg)
+      gps_age = (t / 1e9) - localizer.last_gps_fix
+      msg.liveLocationKalman.gpsOK = gps_age < 1.0
+      pm.send('liveLocationKalman', msg)
 
 
 def main(sm=None, pm=None):

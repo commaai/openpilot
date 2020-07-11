@@ -11,8 +11,8 @@
 #define ROI_Y_MIN 2
 #define ROI_Y_MAX 3
 
-#define LM_THRESH 222
-#define LM_PREC_THRESH 0.9
+#define LM_THRESH 120
+#define LM_PREC_THRESH 0.9 // 90 perc is blur
 
 // only apply to QCOM
 #define FULL_STRIDE_X 1280

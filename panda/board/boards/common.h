@@ -73,7 +73,7 @@ void peripherals_init(void){
 }
 
 // Detection with internal pullup
-#define PULL_EFFECTIVE_DELAY 10
+#define PULL_EFFECTIVE_DELAY 4096
 bool detect_with_pull(GPIO_TypeDef *GPIO, int pin, int mode) {
   set_gpio_mode(GPIO, pin, MODE_INPUT);
   set_gpio_pullup(GPIO, pin, mode);

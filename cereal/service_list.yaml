@@ -30,7 +30,7 @@ androidLog: [8020, true, 0.]
 carState: [8021, true, 100., 10]
 # 8022 is reserved for sshd
 carControl: [8023, true, 100., 10]
-plan: [8024, true, 20.]
+plan: [8024, true, 20., 2]
 liveLocation: [8025, true, 0., 1]
 gpsLocation: [8026, true, 1., 1]
 ethernetData: [8027, true, 0.]
@@ -57,7 +57,7 @@ orbslamCorrection: [8050, true, 0.]
 liveLocationCorrected: [8051, true, 0.]
 orbObservation: [8052, true, 0.]
 applanixLocation: [8053, true, 0.]
-liveLocationKalman: [8054, true, 0., 1]
+liveLocationKalman: [8054, true, 20., 2]
 uiNavigationEvent: [8055, true, 0.]
 orbOdometry: [8057, true, 0.]
 orbFeatures: [8058, false, 0.]
@@ -66,10 +66,10 @@ uiLayoutState: [8060, true, 0.]
 frontEncodeIdx: [8061, true, 5.]
 orbFeaturesSummary: [8062, true, 0.]
 driverState: [8063, true, 5., 1]
-liveParameters: [8064, true, 10.]
+liveParameters: [8064, true, 20., 2]
 liveMapData: [8065, true, 0.]
 cameraOdometry: [8066, true, 20., 5]
-pathPlan: [8067, true, 20.]
+pathPlan: [8067, true, 20., 2]
 kalmanOdometry: [8068, true, 0.]
 thumbnail: [8069, true, 0.2, 1]
 carEvents: [8070, true, 1., 1]
@@ -113,7 +113,7 @@ testJoystick: [8056, false, 0.]
 
 # **** stateful data transformers ****
 
-# modeld -- runs & publishes the model 
+# modeld -- runs & publishes the model
 #   publishes: model, cameraOdometry
 #   subscribes: liveCalibration, pathPlan
 

@@ -12,6 +12,10 @@ NetworkStrength = log.ThermalData.NetworkStrength
 
 ANDROID = os.path.isfile('/EON')
 
+def get_sound_card_online():
+  return (os.path.isfile('/proc/asound/card0/state') and
+          open('/proc/asound/card0/state').read().strip() == 'ONLINE')
+
 def getprop(key):
   if not ANDROID:
     return ""
@@ -47,10 +51,10 @@ def reboot(reason=None):
     reason_args = ["s16", reason]
 
   subprocess.check_output([
-    "service", "call", "power", "16", # IPowerManager.reboot
-    "i32", "0", # no confirmation,
+    "service", "call", "power", "16",  # IPowerManager.reboot
+    "i32", "0",  # no confirmation,
     *reason_args,
-    "i32", "1" # wait
+    "i32", "1"  # wait
   ])
 
 def service_call(call):
@@ -71,7 +75,7 @@ def parse_service_call_unpack(r, fmt):
 
 def parse_service_call_string(r):
   try:
-    r = r[8:] # Cut off length field
+    r = r[8:]  # Cut off length field
     r = r.decode('utf_16_be')
 
     # All pairs of two characters seem to be swapped. Not sure why

@@ -8,7 +8,6 @@
 #include "json11.hpp"
 
 #include "common/swaglog.h"
-#include "common/messaging.h"
 #include "common/params.h"
 #include "common/timing.h"
 
@@ -32,40 +31,32 @@ int main(int argc, char *argv[]) {
   Localizer localizer;
 
   // Read car params
-  char *value;
-  size_t value_sz = 0;
-
+  std::vector<char> params;
   LOGW("waiting for params to set vehicle model");
   while (true) {
-    read_db_value("CarParams", &value, &value_sz);
-    if (value_sz > 0) break;
+    params = read_db_bytes("CarParams");
+    if (params.size() > 0) break;
     usleep(100*1000);
   }
-  LOGW("got %d bytes CarParams", value_sz);
+  LOGW("got %d bytes CarParams", params.size());
 
   // make copy due to alignment issues
-  auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), value, value_sz);
-  free(value);
+  auto amsg = kj::heapArray<capnp::word>((params.size() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), params.data(), params.size());
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
   // Read params from previous run
-  const int result = read_db_value("LiveParameters", &value, &value_sz);
-
   std::string fingerprint = car_params.getCarFingerprint();
   std::string vin = car_params.getCarVin();
   double sR = car_params.getSteerRatio();
   double x = 1.0;
   double ao = 0.0;
-  double posenet_invalid_count = 0;
-
-  if (result == 0){
-    auto str = std::string(value, value_sz);
-    free(value);
-
+  std::vector<char> live_params = read_db_bytes("LiveParameters");
+  if (live_params.size() > 0){
     std::string err;
+    std::string str(live_params.begin(), live_params.end());
     auto json = json11::Json::parse(str, err);
     if (json.is_null() || !err.empty()) {
       std::string log = "Error parsing json: " + err;
@@ -138,7 +129,7 @@ int main(int argc, char *argv[]) {
     }
     if (sm.updated("cameraOdometry")){
       localizer.handle_log(sm["cameraOdometry"]);
-    } 
+    }
   }
   return 0;
 }

@@ -13,6 +13,7 @@ typedef struct PathData {
   float std;
   float stds[MODEL_PATH_DISTANCE];
   float poly[POLYFIT_DEGREE];
+  float validLen;
 } PathData;
 
 typedef struct LeadData {

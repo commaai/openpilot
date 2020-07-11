@@ -1,8 +1,0 @@
-proxy
-*.bin
-esp-open-sdk
-a.out
-cert.h
-gitversion.h
-esp-open-sdk.dmg
-obj/*
