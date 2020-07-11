@@ -115,7 +115,6 @@ void uno_set_esp_gps_mode(uint8_t mode) {
 }
 
 void uno_set_can_mode(uint8_t mode){
-  mode = CAN_MODE_OBD_CAN2;
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:
@@ -241,7 +240,7 @@ void uno_init(void) {
   }
 
   // init multiplexer
-  can_set_obd(car_harness_status, true);
+  can_set_obd(car_harness_status, false);
 
   // Switch to phone usb mode if harness connection is powered by less than 7V
   if(adc_get_voltage() < 7000U){
