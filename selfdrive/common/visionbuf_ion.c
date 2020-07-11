@@ -75,6 +75,14 @@ VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context c
   VisionBuf r = visionbuf_allocate(len);
   *out_mem = visionbuf_to_cl(&r, device_id, ctx);
   r.buf_cl = *out_mem;
+
+#ifdef QCOM_REPLAY
+  int err;
+  cl_command_queue q = clCreateCommandQueue(ctx, device_id, 0, &err);
+  assert(err == 0);
+  r.copy_q = q;
+#endif
+
   return r;
 }
 
