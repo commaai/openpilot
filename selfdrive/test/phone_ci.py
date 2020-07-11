@@ -48,6 +48,9 @@ def run_on_phone(test_cmd):
       conn.send(f"export {k}='{v}'\n")
   conn.send("export CI=1\n")
 
+  # clear scons cache dirs that haven't been written to in one day
+  conn.send("cd /tmp && find -name 'scons_cache_*' -type d -maxdepth 1 -mtime 1 -exec rm -rf '{}' \\;\n")
+
   # set up environment
   conn.send(f"cd {SOURCE_DIR}\n")
   conn.send("git reset --hard\n")
