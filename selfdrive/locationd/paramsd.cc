@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
   // make copy due to alignment issues
   auto amsg = kj::heapArray<capnp::word>((params.size() / sizeof(capnp::word)) + 1);
   memcpy(amsg.begin(), params.data(), params.size());
-  
+
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
@@ -53,7 +53,6 @@ int main(int argc, char *argv[]) {
   double sR = car_params.getSteerRatio();
   double x = 1.0;
   double ao = 0.0;
-  double posenet_invalid_count = 0;
   std::vector<char> live_params = read_db_bytes("LiveParameters");
   if (live_params.size() > 0){
     std::string err;

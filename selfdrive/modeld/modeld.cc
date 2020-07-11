@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <eigen3/Eigen/Dense>
 
 #include "common/visionbuf.h"
@@ -20,7 +21,6 @@ mat3 cur_transform;
 pthread_mutex_t transform_lock;
 
 void* live_thread(void *arg) {
-  int err;
   set_thread_name("live");
 
   SubMaster sm({"liveCalibration"});
@@ -74,6 +74,9 @@ void* live_thread(void *arg) {
 int main(int argc, char **argv) {
   int err;
   set_realtime_priority(51);
+
+  signal(SIGINT, (sighandler_t)set_do_exit);
+  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   // start calibration thread
   pthread_t live_thread_handle;
@@ -214,7 +217,7 @@ int main(int argc, char **argv) {
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
-        model_publish(pm, extra.frame_id, frame_id, model_buf, extra.timestamp_eof);
+        model_publish(pm, extra.frame_id, frame_id,  model_buf, extra.timestamp_eof);
         posenet_publish(pm, extra.frame_id, frame_id, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu", mt2-mt1, mt1-last, extra.frame_id, frame_id);

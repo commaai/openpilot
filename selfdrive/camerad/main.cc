@@ -171,7 +171,7 @@ void* frontview_thread(void *arg) {
     int rgb_idx = ui_idx;
     FrameMetadata frame_data = s->cameras.front.camera_bufs_metadata[buf_idx];
 
-    double t1 = millis_since_boot();
+    //double t1 = millis_since_boot();
 
     cl_event debayer_event;
     if (s->cameras.front.ci.bayer) {
@@ -329,8 +329,7 @@ void* frontview_thread(void *arg) {
 
     tbuffer_dispatch(&s->ui_front_tb, ui_idx);
 
-    double t2 = millis_since_boot();
-
+    //double t2 = millis_since_boot();
     //LOGD("front process: %.2fms", t2-t1);
   }
 
@@ -514,8 +513,6 @@ void* processing_thread(void *arg) {
     s->yuv_metas[yuv_idx] = frame_data;
 
     uint8_t* yuv_ptr_y = s->yuv_bufs[yuv_idx].y;
-    uint8_t* yuv_ptr_u = s->yuv_bufs[yuv_idx].u;
-    uint8_t* yuv_ptr_v = s->yuv_bufs[yuv_idx].v;
     cl_mem yuv_cl = s->yuv_cl[yuv_idx];
     rgb_to_yuv_queue(&s->rgb_to_yuv_state, q, s->rgb_bufs_cl[rgb_idx], yuv_cl);
     visionbuf_sync(&s->yuv_ion[yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
@@ -1252,7 +1249,6 @@ void party(VisionState *s) {
 }
 
 int main(int argc, char *argv[]) {
-  int err;
   set_realtime_priority(51);
 
   zsys_handler_set(NULL);
