@@ -5,6 +5,7 @@ import time
 from statistics import mean
 
 from cereal import log
+from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
 
 PANDA_OUTPUT_VOLTAGE = 5.28
@@ -67,7 +68,7 @@ class PowerMonitoring:
   # Calculation tick
   def calculate(self, health):
     try:
-      now = time.time()
+      now = sec_since_boot()
 
       # Check that time is valid
       if datetime.datetime.fromtimestamp(now).year < 2019:
