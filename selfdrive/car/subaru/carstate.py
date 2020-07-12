@@ -38,8 +38,8 @@ class CarState(CarStateBase):
     self.right_blinker_cnt = 50 if cp.vl["Dashlights"]['RIGHT_BLINKER'] else max(self.right_blinker_cnt - 1, 0)
     ret.rightBlinker = self.right_blinker_cnt > 0
 
-    ret.leftBlindspot = cp.vl["BSD_RCTA"]['L_ADJACENT'] == 1
-    ret.rightBlindspot = cp.vl["BSD_RCTA"]['R_ADJACENT'] == 1
+    ret.leftBlindspot = (cp.vl["BSD_RCTA"]['L_ADJACENT'] == 1) or (cp.vl["BSD_RCTA"]['L_APPROACHING'] == 1)
+    ret.rightBlindspot = (cp.vl["BSD_RCTA"]['R_ADJACENT'] == 1) or (cp.vl["BSD_RCTA"]['R_APPROACHING'] == 1)
 
     can_gear = int(cp.vl["Transmission"]['Gear'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
@@ -92,6 +92,8 @@ class CarState(CarStateBase):
       ("Gear", "Transmission", 0),
       ("L_ADJACENT", "BSD_RCTA", 0),
       ("R_ADJACENT", "BSD_RCTA", 0),
+      ("L_APPROACHING", "BSD_RCTA", 0),
+      ("R_APPROACHING", "BSD_RCTA", 0),
     ]
 
     checks = [

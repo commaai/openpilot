@@ -25,6 +25,9 @@ int main(int argc, char **argv) {
   int err;
   set_realtime_priority(51);
 
+  signal(SIGINT, (sighandler_t)set_do_exit);
+  signal(SIGTERM, (sighandler_t)set_do_exit);
+
   // messaging
   SubMaster sm({"dMonitoringState"});
   PubMaster pm({"driverState"});

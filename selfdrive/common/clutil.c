@@ -175,6 +175,7 @@ cl_program cl_cached_program_from_hash(cl_context ctx, cl_device_id device_id, u
   return prg;
 }
 
+#ifndef CLU_NO_CACHE
 static uint8_t* get_program_binary(cl_program prg, size_t *out_size) {
   int err;
 
@@ -199,6 +200,7 @@ static uint8_t* get_program_binary(cl_program prg, size_t *out_size) {
   *out_size = binary_size;
   return binary_buf;
 }
+#endif
 
 cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
                                          const char* src, const char* args,
@@ -265,13 +267,14 @@ cl_program cl_cached_program_from_file(cl_context ctx, cl_device_id device_id, c
   return ret;
 }
 
+#ifndef CLU_NO_CACHE
 static void add_index(uint64_t index_hash, uint64_t src_hash) {
   FILE *f = fopen("/tmp/clcache/index.cli", "a");
   assert(f);
   fprintf(f, "%016" PRIx64 " %016" PRIx64 "\n", index_hash, src_hash);
   fclose(f);
 }
-
+#endif
 
 cl_program cl_program_from_index(cl_context ctx, cl_device_id device_id, uint64_t index_hash) {
   int err;
