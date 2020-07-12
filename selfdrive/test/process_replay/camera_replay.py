@@ -6,7 +6,6 @@ from typing import Any
 from tqdm import tqdm
 
 from common.android import ANDROID
-os.environ['CI'] = "1"
 if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
 else:
@@ -70,7 +69,6 @@ def camera_replay(lr, fr):
   print("replay done")
   spinner.close()
   manager.kill_managed_process('modeld')
-  time.sleep(2)
   manager.kill_managed_process('camerad')
   return log_msgs
 
@@ -85,15 +83,16 @@ if __name__ == "__main__":
   log_msgs = camera_replay(list(lr), fr)
 
   if update:
-    from selfdrive.test.openpilotci import upload_file
-
     ref_commit = get_git_commit()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     save_log(log_fn, log_msgs)
     with open("model_replay_ref_commit", "w") as f:
       f.write(ref_commit)
-    upload_file(log_fn, os.path.basename(log_fn))
-    os.remove(log_fn)
+
+    if not ANDROID:
+      from selfdrive.test.openpilotci import upload_file
+      upload_file(log_fn, os.path.basename(log_fn))
+      os.remove(log_fn)
   else:
     ref_commit = open("model_replay_ref_commit").read().strip()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
