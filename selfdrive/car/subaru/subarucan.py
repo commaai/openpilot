@@ -1,6 +1,6 @@
 import copy
 from cereal import car
-from selfdrive.car.subaru.values import CAR
+from selfdrive.car.subaru.values import CAR, PREGLOBAL_CAR
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -9,19 +9,7 @@ def subaru_preglobal_checksum(packer, values, addr):
   return (sum(dat[:7])) % 256
 
 def create_steering_control(packer, car_fingerprint, apply_steer, frame, steer_step):
-
-  if car_fingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA]:
-    #counts from 0 to 15 then back to 0 + 16 for enable bit
-    idx = (frame / steer_step) % 16
-
-    values = {
-      "Counter": idx,
-      "LKAS_Output": apply_steer,
-      "LKAS_Request": 1 if apply_steer != 0 else 0,
-      "SET_1": 1
-    }
-
-  if car_fingerprint in [CAR.FORESTER_2017, CAR.LEGACY_2015, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
+  if car_fingerprint in PREGLOBAL_CAR:
     #counts from 0 to 7 then back to 0
     idx = (frame / steer_step) % 8
 
@@ -31,6 +19,17 @@ def create_steering_control(packer, car_fingerprint, apply_steer, frame, steer_s
       "LKAS_Active": 1 if apply_steer != 0 else 0
     }
     values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_LKAS")
+
+  else:
+    #counts from 0 to 15 then back to 0 + 16 for enable bit
+    idx = (frame / steer_step) % 16
+
+    values = {
+      "Counter": idx,
+      "LKAS_Output": apply_steer,
+      "LKAS_Request": 1 if apply_steer != 0 else 0,
+      "SET_1": 1
+    }
 
   return packer.make_can_msg("ES_LKAS", 0, values)
 

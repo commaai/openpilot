@@ -60,7 +60,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
-    if candidate in [CAR.FORESTER_2017, CAR.OUTBACK_2019]:
+    if candidate in [CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2019]:
       ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy
       ret.safetyParam = 1 # Outback 2019 and Forester have flipped driver torque signal
       ret.mass = 1568 + STD_CARGO_KG
@@ -72,7 +72,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 10., 20.], [0., 10., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.05, 0.2], [0.003, 0.018, 0.025]]
 
-    if candidate == CAR.LEGACY_2015:
+    if candidate == CAR.LEGACY_PREGLOBAL:
       ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy
       ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67
@@ -83,7 +83,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1, 0.2], [0.01, 0.02]]
 
-    if candidate == CAR.OUTBACK_2015:
+    if candidate == CAR.OUTBACK_PREGLOBAL:
       ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy
       ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67

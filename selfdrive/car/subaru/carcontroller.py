@@ -1,6 +1,6 @@
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, CAR
+from selfdrive.car.subaru.values import DBC, CAR, PREGLOBAL_CAR
 from opendbc.can.packer import CANPacker
 
 
@@ -10,10 +10,10 @@ class CarControllerParams():
     self.STEER_STEP = 2                  # how often we update the steer cmd
     self.STEER_DELTA_UP = 50             # torque increase per refresh, 0.8s to max
     self.STEER_DELTA_DOWN = 70           # torque decrease per refresh
-    if car_fingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA]:
-      self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
-    if car_fingerprint in [CAR.FORESTER_2017, CAR.LEGACY_2015, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
+    if car_fingerprint in PREGLOBAL_CAR:
       self.STEER_DRIVER_ALLOWANCE = 75  # allowed driver torque before start limiting
+    else:
+      self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 10   # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1         # from dbc
 
@@ -57,7 +57,7 @@ class CarController():
       self.apply_steer_last = apply_steer
 
     # button control
-    if CS.CP.carFingerprint in [CAR.FORESTER_2017, CAR.LEGACY_2015, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
+    if CS.CP.carFingerprint in PREGLOBAL_CAR:
       if self.es_accel_cnt != CS.es_accel_msg["Counter"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
@@ -76,8 +76,7 @@ class CarController():
 
         can_sends.append(subarucan.create_es_throttle_control(self.packer, fake_button, CS.es_accel_msg))
         self.es_accel_cnt = CS.es_accel_msg["Counter"]
-
-    if CS.CP.carFingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA]:
+    else:
       if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
         self.es_distance_cnt = CS.es_distance_msg["Counter"]

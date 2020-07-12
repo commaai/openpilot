@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR
+from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, PREGLOBAL_CAR
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -90,12 +90,12 @@ class CarState(CarStateBase):
     # - Analyze Eyesight OBD Mode22 scans to find better units bit
 
     # EDM Global: mph = 1, 2; All Outback: mph = 1, UDM Forester: mph = 7
-    if self.car_fingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
+    if self.car_fingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2019]:
       if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     # UDM Forester, Legacy: mph = 0
-    if self.car_fingerprint in [CAR.FORESTER_2017, CAR.LEGACY_2015]:
+    if self.car_fingerprint in [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL]:
       if (cp.vl["Dash_State"]['Units'] == 0):
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
@@ -105,17 +105,16 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
                         cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
-    if self.car_fingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA]:
-      ret.steerError = cp.vl["Steering_Torque"]['Steer_Error_1'] == 1
-      ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
-      self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
-      self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
-
-    if self.car_fingerprint in [CAR.FORESTER_2017, CAR.OUTBACK_2015, CAR.OUTBACK_2019, CAR.LEGACY_2015]:
+    if self.car_fingerprint in PREGLOBAL_CAR:
       ret.steerError = cp.vl["Steering_Torque"]["LKA_Lockout"] == 1
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
+    else:
+      ret.steerError = cp.vl["Steering_Torque"]['Steer_Error_1'] == 1
+      ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
+      self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
+      self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     return ret
 
@@ -157,7 +156,11 @@ class CarState(CarStateBase):
       ("Steering_Torque", 50),
     ]
 
-    if CP.carFingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA]:
+    if CP.carFingerprint in PREGLOBAL_CAR:
+      signals += [
+        ("LKA_Lockout", "Steering_Torque", 0),
+      ]
+    else:
       signals += [
         ("Steer_Error_1", "Steering_Torque", 0),
         ("Steer_Warning", "Steering_Torque", 0),
@@ -169,11 +172,6 @@ class CarState(CarStateBase):
         ("CruiseControl", 20),
      ]
 
-    if CP.carFingerprint in [CAR.FORESTER_2017, CAR.OUTBACK_2015, CAR.OUTBACK_2019, CAR.LEGACY_2015]:
-      signals += [
-        ("LKA_Lockout", "Steering_Torque", 0),
-      ]
-
     if CP.carFingerprint == CAR.FORESTER_2017:
       checks += [
         ("Dashlights", 20),
@@ -181,7 +179,7 @@ class CarState(CarStateBase):
         ("CruiseControl", 50),
       ]
 
-    if CP.carFingerprint in [CAR.LEGACY_2015, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
+    if CP.carFingerprint in [CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2019]:
       checks += [
         ("Dashlights", 10),
         ("CruiseControl", 50),
@@ -191,7 +189,34 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    if CP.carFingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA]:
+    if CP.carFingerprint in PREGLOBAL_CAR:
+      signals = [
+        ("Cruise_Set_Speed", "ES_DashStatus", 0),
+        ("Not_Ready_Startup", "ES_DashStatus", 0),
+
+        ("Throttle_Cruise", "ES_CruiseThrottle", 0),
+        ("Signal1", "ES_CruiseThrottle", 0),
+        ("Cruise_Activated", "ES_CruiseThrottle", 0),
+        ("Signal2", "ES_CruiseThrottle", 0),
+        ("Brake_On", "ES_CruiseThrottle", 0),
+        ("DistanceSwap", "ES_CruiseThrottle", 0),
+        ("Standstill", "ES_CruiseThrottle", 0),
+        ("Signal3", "ES_CruiseThrottle", 0),
+        ("CloseDistance", "ES_CruiseThrottle", 0),
+        ("Signal4", "ES_CruiseThrottle", 0),
+        ("Standstill_2", "ES_CruiseThrottle", 0),
+        ("ES_Error", "ES_CruiseThrottle", 0),
+        ("Signal5", "ES_CruiseThrottle", 0),
+        ("Counter", "ES_CruiseThrottle", 0),
+        ("Signal6", "ES_CruiseThrottle", 0),
+        ("Button", "ES_CruiseThrottle", 0),
+        ("Signal7", "ES_CruiseThrottle", 0),
+      ]
+
+      checks = [
+        ("ES_DashStatus", 20),
+      ]
+    else:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
         ("Conventional_Cruise", "ES_DashStatus", 0),
@@ -231,34 +256,6 @@ class CarState(CarStateBase):
         ("LKAS_Right_Line_Green", "ES_LKAS_State", 0),
         ("LKAS_Alert", "ES_LKAS_State", 0),
         ("Signal3", "ES_LKAS_State", 0),
-      ]
-
-      checks = [
-        ("ES_DashStatus", 10),
-      ]
-
-    if CP.carFingerprint in [CAR.FORESTER_2017, CAR.LEGACY_2015, CAR.OUTBACK_2015, CAR.OUTBACK_2019]:
-      signals = [
-        ("Cruise_Set_Speed", "ES_DashStatus", 0),
-        ("Not_Ready_Startup", "ES_DashStatus", 0),
-
-        ("Throttle_Cruise", "ES_CruiseThrottle", 0),
-        ("Signal1", "ES_CruiseThrottle", 0),
-        ("Cruise_Activated", "ES_CruiseThrottle", 0),
-        ("Signal2", "ES_CruiseThrottle", 0),
-        ("Brake_On", "ES_CruiseThrottle", 0),
-        ("DistanceSwap", "ES_CruiseThrottle", 0),
-        ("Standstill", "ES_CruiseThrottle", 0),
-        ("Signal3", "ES_CruiseThrottle", 0),
-        ("CloseDistance", "ES_CruiseThrottle", 0),
-        ("Signal4", "ES_CruiseThrottle", 0),
-        ("Standstill_2", "ES_CruiseThrottle", 0),
-        ("ES_Error", "ES_CruiseThrottle", 0),
-        ("Signal5", "ES_CruiseThrottle", 0),
-        ("Counter", "ES_CruiseThrottle", 0),
-        ("Signal6", "ES_CruiseThrottle", 0),
-        ("Button", "ES_CruiseThrottle", 0),
-        ("Signal7", "ES_CruiseThrottle", 0),
       ]
 
       checks = [

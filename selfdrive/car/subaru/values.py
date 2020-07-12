@@ -8,10 +8,10 @@ class CAR:
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
   FORESTER = "SUBARU FORESTER 2019"
-  FORESTER_2017 = "SUBARU FORESTER 2017 - 2018"
-  LEGACY_2015 = "SUBARU LEGACY 2015 - 2018"
-  OUTBACK_2015 = "SUBARU OUTBACK 2015 - 2018"
-  OUTBACK_2019 = "SUBARU OUTBACK 2019"
+  FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
+  LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
+  OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2018"
+  OUTBACK_PREGLOBAL_2019 = "SUBARU OUTBACK 2019"
 
 FINGERPRINTS = {
   CAR.ASCENT: [
@@ -44,7 +44,7 @@ FINGERPRINTS = {
   }
   # END FORESTER
   ],
-  CAR.OUTBACK_2015: [
+  CAR.OUTBACK_PREGLOBAL: [
   # OUTBACK PREMIUM 2.5i 2015 (Bugsy, Mark77, mokahat, naboo)
   {
     2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 346: 8, 352: 8, 353: 8, 354: 8, 356: 8, 358: 8, 359: 8, 392: 8, 640: 8, 642: 8, 644: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 977: 8, 1632: 8, 1745: 8, 1786: 5, 1882: 8, 2015: 8, 2016: 8, 2024: 8, 604: 8, 885: 8, 1788: 8, 316: 8, 1614: 8, 1640: 8, 1657: 8, 1658: 8, 1672: 8, 1743: 8, 1785: 5, 1787: 5
@@ -61,23 +61,23 @@ FINGERPRINTS = {
   {
     2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 316: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 352: 8, 353: 8, 354: 8, 356: 8, 358: 8, 359: 8, 392: 8, 554: 8, 604: 8, 640: 8, 642: 8, 644: 8, 805: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 977: 8, 1614: 8, 1632: 8, 1657: 8, 1658: 8, 1672: 8, 1722: 8, 1736: 8, 1743: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8
   },
-  # END OUTBACK_2015
+  # END OUTBACK_PREGLOBAL
   ],
-  CAR.OUTBACK_2019: [
+  CAR.OUTBACK_PREGLOBAL_2019: [
   # OUTBACK LIMITED 3.6R 2019 (jpevarnek)
   {
     2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 316: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 352: 8, 353: 8, 354: 8, 356: 8, 358: 8, 359: 8, 392: 8, 554: 8, 604: 8, 640: 8, 642: 8, 644: 8, 805: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 886: 2, 977: 8, 1614: 8, 1632: 8, 1657: 8, 1658: 8, 1672: 8, 1736: 8, 1743: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8, 1862: 8, 1870: 8, 1920: 8, 1927: 8, 1928: 8, 1935: 8, 1968: 8, 1976: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
   },
-  # END OUTBACK_2019
+  # END OUTBACK_PREGLOBAL_2019
   ],
-  CAR.FORESTER_2017: [
+  CAR.FORESTER_PREGLOBAL: [
   # FORESTER PREMIUM 2.5i 2017
   {
     2: 8, 112: 8, 117: 8, 128: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 340: 7, 342: 8, 352: 8, 353: 8, 354: 8, 355: 8, 356: 8, 554: 8, 604: 8, 640: 8, 641: 8, 642: 8, 805: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 886: 1, 888: 8, 977: 8, 1398: 8, 1632: 8, 1743: 8, 1744: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8, 1882: 8, 1895: 8, 1903: 8, 1986: 8, 1994: 8, 2015: 8, 2016: 8, 2024: 8, 644:8, 890:8, 1736:8
   },
-  # END FORESTER_2017
+  # END FORESTER_PREGLOBAL
   ],
-  CAR.LEGACY_2015: [
+  CAR.LEGACY_PREGLOBAL: [
   # LEGACY 2.5i 2017
   {
     2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 392: 8, 604: 8, 640: 8, 642: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 977: 8, 1632: 8, 1640: 8, 1736: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8, 352: 8, 353: 8, 354: 8, 356: 8, 358: 8, 359: 8, 644: 8
@@ -90,12 +90,12 @@ FINGERPRINTS = {
   {
     2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 316: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 352: 8, 353: 8, 354: 8, 356: 8, 358: 8, 359: 8, 392: 8, 554: 8, 604: 8, 640: 8, 642: 8, 805: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 977: 8, 1614: 8, 1632: 8, 1640: 8, 1657: 8, 1658: 8, 1672: 8, 1722: 8, 1743: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8, 2015: 8, 2016: 8, 2024: 8
   },
-  # END LEGACY_2015
+  # END LEGACY_PREGLOBAL
   ],
 }
 
 # Use only FPv2
-#IGNORED_FINGERPRINTS = [CAR.IMPREZA]
+IGNORED_FINGERPRINTS = [CAR.IMPREZA]
 
 FW_VERSIONS = {
   CAR.ASCENT: {
@@ -142,7 +142,7 @@ FW_VERSIONS = {
       b'\xe4\xe5\x061\x00',
     ],
   },
-  CAR.FORESTER_2017: {
+  CAR.FORESTER_PREGLOBAL: {
     # 2018 Subaru Forester 2.5i Touring - UDM / @Oreo
     # 2018 Subaru Forester 2.5 Limited - Canada / @litobro
     # Ecu, addr, subaddr: ROM ID
@@ -163,7 +163,7 @@ FW_VERSIONS = {
       b'\xdc\xf2@`\x00',
     ],
   },
-  CAR.LEGACY_2015: {
+  CAR.LEGACY_PREGLOBAL: {
     # 2018 Subaru Legacy 2.5i Premium - UDM / @kram322
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
@@ -182,7 +182,7 @@ FW_VERSIONS = {
       b'\xbc\xf2\x00\x81\x00',
     ],
   },
-  CAR.OUTBACK_2015: {
+  CAR.OUTBACK_PREGLOBAL: {
     # 2017 Outback Limited 3.6r - UDM / @Anthony
     # 2016 Outback Limited 2.5 - UDM / @aeiro
     # 2015 Outback Limited 2.5 - ADM / @Bugsy
@@ -231,10 +231,10 @@ STEER_THRESHOLD = {
   CAR.ASCENT: 80,
   CAR.IMPREZA: 80,
   CAR.FORESTER: 80,
-  CAR.FORESTER_2017: 75,
-  CAR.LEGACY_2015: 75,
-  CAR.OUTBACK_2015: 75,
-  CAR.OUTBACK_2019: 75,
+  CAR.FORESTER_PREGLOBAL: 75,
+  CAR.LEGACY_PREGLOBAL: 75,
+  CAR.OUTBACK_PREGLOBAL: 75,
+  CAR.OUTBACK_PREGLOBAL_2019: 75,
 }
 
 ECU_FINGERPRINT = {
@@ -245,9 +245,10 @@ DBC = {
   CAR.ASCENT: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
-  CAR.OUTBACK: dbc_dict('subaru_outback_2015_generated', None),
-  CAR.FORESTER_2017: dbc_dict('subaru_forester_2017_generated', None),
-  CAR.LEGACY_2015: dbc_dict('subaru_outback_2015_generated', None),
-  CAR.OUTBACK_2015: dbc_dict('subaru_outback_2015_generated', None),
-  CAR.OUTBACK_2019: dbc_dict('subaru_outback_2019_generated', None),
+  CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
+  CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
+  CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
+  CAR.OUTBACK_PREGLOBAL_2019: dbc_dict('subaru_outback_2019_generated', None),
 }
+
+PREGLOBAL_CAR = [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2019]
