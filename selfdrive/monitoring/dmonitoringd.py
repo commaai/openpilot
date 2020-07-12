@@ -25,9 +25,8 @@ def dmonitoringd_thread(sm=None, pm=None):
 
   driver_status = DriverStatus()
   is_rhd = params.get("IsRHD")
-  if is_rhd is not None:
-    driver_status.is_rhd_region = bool(int(is_rhd))
-    driver_status.is_rhd_region_checked = True
+  driver_status.is_rhd_region = is_rhd == b"1"
+  driver_status.is_rhd_region_checked = is_rhd is not None
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
   sm['carState'].vEgo = 0.

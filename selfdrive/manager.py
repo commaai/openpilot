@@ -242,6 +242,12 @@ car_started_processes = [
   'locationd',
 ]
 
+driver_view_processes = [
+  'driverview',
+  'camerad',
+  'dmonitorindmodeld'
+]
+
 if WEBCAM:
   car_started_processes += [
     'dmonitoringmodeld',
@@ -470,21 +476,23 @@ def manager_thread():
     if msg.thermal.freeSpace < 0.05:
       logger_dead = True
 
-    if msg.thermal.started and "driverview" not in running:
+    if msg.thermal.started:
       for p in car_started_processes:
         if p == "loggerd" and logger_dead:
           kill_managed_process(p)
         else:
           start_managed_process(p)
+      kill_managed_process("driverview")
     else:
       logger_dead = False
       for p in reversed(car_started_processes):
         kill_managed_process(p)
-      # this is ugly
-      if "driverview" not in running and params.get("IsDriverViewEnabled") == b"1":
-        start_managed_process("driverview")
-      elif "driverview" in running and params.get("IsDriverViewEnabled") == b"0":
-        kill_managed_process("driverview")
+
+      for p in driver_view_processes:
+        if params.get("IsDriverViewEnabled") == b"1":
+          start_managed_process(p)
+        else:
+          kill_managed_process(p)
 
     # check the status of all processes, did any of them die?
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
