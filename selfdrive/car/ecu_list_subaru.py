@@ -159,7 +159,7 @@ if __name__ == "__main__":
   print("Found ECU descriptions")
   print("{")
   for desc in ecu_list:
-    subaddr = None if ecu.subAddress == 0 else hex(ecu.subAddress)
+    subaddr = None if desc.subAddress == 0 else hex(desc.subAddress)
     print(f"  (Ecu.{desc.ecu}, {hex(desc.address)}, {subaddr}): [{desc.fwVersion}]")
   print("}")
 
