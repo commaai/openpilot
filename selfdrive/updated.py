@@ -317,7 +317,6 @@ def attempt_update():
 def main():
   update_failed_count = 0
   overlay_init_done = False
-  wait_helper = WaitTimeHelper()
   params = Params()
 
   if params.get("DisableUpdates") == b"1":
@@ -340,6 +339,7 @@ def main():
   # Wait a short time before our first update attempt
   # Avoids race with IsOffroad not being set, reduces manager startup load
   time.sleep(30)
+  wait_helper = WaitTimeHelper()
 
   while True:
     update_failed_count += 1
