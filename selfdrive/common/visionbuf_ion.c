@@ -9,8 +9,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <linux/ion.h>
-#include <CL/cl_ext.h>
 
+#ifdef QCOM_REPLAY
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#endif
+
+#include <CL/cl_ext.h>
 #include <msm_ion.h>
 
 #include "visionbuf.h"
