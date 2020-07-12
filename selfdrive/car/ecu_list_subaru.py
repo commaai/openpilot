@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
-from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
+from selfdrive.car.fingerprints import get_attr_from_cars
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.swaglog import cloudlog
 
