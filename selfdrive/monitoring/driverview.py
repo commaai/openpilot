@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
-import os
-import subprocess
-import multiprocessing
 import signal
 import time
+import multiprocessing
 
 import cereal.messaging as messaging
 from common.params import Params
-
-from common.basedir import BASEDIR
-
-KILL_TIMEOUT = 15
+from common.realtime import DT_CTRL
+import selfdrive.manager as manager
 
 
 def send_controls_packet(pm):
@@ -20,15 +16,15 @@ def send_controls_packet(pm):
       "rearViewCam": True,
     }
     pm.send('controlsState', dat)
-    time.sleep(0.01)
+    time.sleep(DT_CTRL)
 
 
-def send_dmon_packet(pm, d):
+def send_dmon_packet(pm, rhd, should_exit=False):
   dat = messaging.new_message('dMonitoringState')
   dat.dMonitoringState = {
-    "isRHD": d[0],
-    "rhdChecked": d[1],
-    "isPreview": d[2],
+    "isRHD": rhd,
+    "rhdChecked": True,
+    "isPreview": should_exit,
   }
   pm.send('dMonitoringState', dat)
 
@@ -38,42 +34,25 @@ def main():
   controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm])
   controls_sender.start()
 
-  # TODO: refactor with manager start/kill
-  proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
-  proc_mon = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/modeld/dmonitoringmodeld"), cwd=os.path.join(BASEDIR, "selfdrive/modeld"))
+  manager.start_managed_process('camerad')
+  manager.start_managed_process('dmonitoringmodeld')
 
-  params = Params()
-  is_rhd = False
-  is_rhd_checked = False
-  should_exit = False
+  is_rhd = Params().get("IsRHD") == b"1"
 
   def terminate(signalNumber, frame):
     print('got SIGTERM, exiting..')
-    should_exit = True
-    send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
-    proc_cam.send_signal(signal.SIGINT)
-    proc_mon.send_signal(signal.SIGINT)
-    kill_start = time.time()
-    while proc_cam.poll() is None:
-      if time.time() - kill_start > KILL_TIMEOUT:
-        from selfdrive.swaglog import cloudlog
-        cloudlog.critical("FORCE REBOOTING PHONE!")
-        os.system("date >> /sdcard/unkillable_reboot")
-        os.system("reboot")
-        raise RuntimeError
-      continue
+    send_dmon_packet(pm, is_rhd, should_exit=True)
+    manager.kill_managed_process('camerad')
+    manager.kill_managed_process('dmonitoringmodeld')
     controls_sender.terminate()
     exit()
 
   signal.signal(signal.SIGTERM, terminate)
 
   while True:
-    send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
+    send_dmon_packet(pm, is_rhd)
 
-    if not is_rhd_checked:
-      is_rhd = params.get("IsRHD") == b"1"
-      is_rhd_checked = True
-
+    # TODO: why is this 100hz? monitoring model only runs at 10hz
     time.sleep(0.01)
 
 
