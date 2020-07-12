@@ -875,8 +875,8 @@ int main() {
   // set process priority and affinity
   err = set_realtime_priority(54);
   LOG("set priority returns %d", err);
-  err = set_core_affinity(3);
-  LOG("set affinity returns %d", err);
+  //err = set_core_affinity(3);
+  //LOG("set affinity returns %d", err);
 
   // check the environment
   if (getenv("STARTED")) {
