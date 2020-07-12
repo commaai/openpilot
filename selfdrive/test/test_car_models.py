@@ -381,15 +381,15 @@ routes = {
     'enableCamera': True,
   },
   #"5ab784f361e19b78|2020-06-08--16-30-41": {
-  #  'carFingerprint': SUBARU.OUTBACK_2015,
+  #  'carFingerprint': SUBARU.OUTBACK_PREGLOBAL,
   #  'enableCamera': True,
   #},
   #"95441c38ae8c130e_2020-06-08--12-10-17": {
-  #  'carFingerprint': SUBARU.FORESTER_2017,
+  #  'carFingerprint': SUBARU.FORESTER_PREGLOBAL,
   #  'enableCamera': True,
   #},
   #"df5ca7660000fba8|2020-06-16--17-37-19": {
-  #  'carFingerprint': SUBARU.LEGACY_2015,
+  #  'carFingerprint': SUBARU.LEGACY_PREGLOBAL,
   #  'enableCamera': True,
   #},
   "791340bc01ed993d|2019-03-10--16-28-08": {
@@ -455,10 +455,10 @@ non_tested_cars = [
   TOYOTA.HIGHLANDERH,
   TOYOTA.HIGHLANDERH_TSS2,
   SUBARU.ASCENT,
-  SUBARU.FORESTER_2017,
-  SUBARU.LEGACY_2015,
-  SUBARU.OUTBACK_2015,
-  SUBARU.OUTBACK_2019,
+  SUBARU.FORESTER_PREGLOBAL,
+  SUBARU.LEGACY_PREGLOBAL,
+  SUBARU.OUTBACK_PREGLOBAL,
+  SUBARU.OUTBACK_PREGLOBAL_2019,
 ]
 
 if __name__ == "__main__":
