@@ -11,13 +11,6 @@ def main():
   rhd = Params().get("IsRHD") == b"1"
 
   while True:
-    # TODO: this really shouldn't be sending a controlsState
-    dat = messaging.new_message('controlsState')
-    dat.controlsState = {
-      "rearViewCam": True,
-    }
-    pm.send('controlsState', dat)
-
     dat = messaging.new_message('dMonitoringState')
     dat.dMonitoringState = {
       "isRHD": rhd,

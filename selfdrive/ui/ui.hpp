@@ -224,7 +224,6 @@ typedef struct UIState {
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
-  bool preview_started;
   bool vision_seen;
 
   std::atomic<float> light_sensor;
