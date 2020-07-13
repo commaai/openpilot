@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
 
     // setup filter to track dropped frames
     float dt = 1. / MODEL_FREQ;
-    float frame_filter_k = (dt / 5.) / (1. + dt / 5.);
+    const float frame_filter_k = (dt / 5.) / (1. + dt / 5.);
     float frames_dropped = 0;
 
     // one frame in memory
@@ -224,13 +224,14 @@ int main(int argc, char **argv) {
         mt2 = millis_since_boot();
 
         // tracked dropped frames
-        frames_dropped = (1. - frames_k) * frames_dropped + (extra.frame_id - last_vipc_frame_id) * frames_k;
-        float frame_drop_perc = dropped_frames / MODEL_FREQ;
+        uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
+        frames_dropped = (1. - frame_filter_k) * frames_dropped + (vipc_dropped_frames) * frame_filter_k;
+        float frame_drop_perc = frames_dropped / MODEL_FREQ;
 
         model_publish(pm, extra.frame_id, frame_id,  frame_drop_perc, model_buf, extra.timestamp_eof);
         posenet_publish(pm, extra.frame_id, frame_id, frame_drop_perc, model_buf, extra.timestamp_eof);
 
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.2f%", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
+        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f%", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
         last = mt1;
         last_vipc_frame_id = extra.frame_id;
       }
