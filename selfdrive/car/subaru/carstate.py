@@ -170,7 +170,7 @@ class CarState(CarStateBase):
         ("Dashlights", 10),
         ("BodyInfo", 10),
         ("CruiseControl", 20),
-     ]
+      ]
 
     if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
       checks += [
