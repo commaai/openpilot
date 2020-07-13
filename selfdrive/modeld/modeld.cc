@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
     LOGW("connected with buffer size: %d", buf_info.buf_len);
 
     // setup filter to track dropped frames
-    float dt = 1. / MODEL_FREQ;
+    const float dt = 1. / MODEL_FREQ;
     const float frame_filter_k = (dt / 5.) / (1. + dt / 5.);
     float frames_dropped = 0;
 
