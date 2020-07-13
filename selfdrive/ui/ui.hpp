@@ -197,8 +197,6 @@ typedef struct UIState {
   int ipc_fd;
 
   GLuint frame_program;
-
-  GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
 
   mat4 rgb_transform;

@@ -256,16 +256,15 @@ static void draw_frame(UIState *s) {
   if (v->cur_vision_idx >= 0){
     glBindTexture(GL_TEXTURE_2D, v->frame_texs[v->cur_vision_idx]);
 #ifndef QCOM
-    if (!scene->frontview) {
-      // TODO: a better way to do this?
-      //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->rear.priv_hnds[s->rear.cur_vision_idx]);
-    }
+  if (!scene->frontview) {
+    // TODO: a better way to do this?
+    //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->rear.priv_hnds[s->rear.cur_vision_idx]);
+  }
 #endif
   }
 
   mat4 *out_mat = (s->scene.frontview || s->scene.fullview) ? &s->front.frame_mat : &s->rear.frame_mat;
-
   glUseProgram(s->frame_program);
   glUniform1i(s->frame_texture_loc, 0);
   glUniformMatrix4fv(s->frame_transform_loc, 1, GL_TRUE, out_mat->v);
@@ -280,7 +279,6 @@ static void draw_frame(UIState *s) {
 static inline bool valid_frame_pt(UIState *s, float x, float y) {
   return x >= 0 && x <= s->rear.rgb_width && y >= 0 && y <= s->rear.rgb_height;
 }
-
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
   pvd->cnt = 0;
   int rcount = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, valid_len);
@@ -895,8 +893,8 @@ void ui_nvg_init(UIState *s) {
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
   assert(s->frame_program);
 
-  s->frame_pos_loc = glGetAttribLocation(s->frame_program, "aPosition");
-  s->frame_texcoord_loc = glGetAttribLocation(s->frame_program, "aTexCoord");
+  GLint frame_pos_loc = glGetAttribLocation(s->frame_program, "aPosition");
+  GLint frame_texcoord_loc = glGetAttribLocation(s->frame_program, "aTexCoord");
 
   s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
   s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
@@ -935,11 +933,11 @@ void ui_nvg_init(UIState *s) {
     glGenBuffers(1, &d->frame_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, d->frame_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(s->frame_pos_loc);
-    glVertexAttribPointer(s->frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(frame_pos_loc);
+    glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
                           sizeof(frame_coords[0]), (const void *)0);
-    glEnableVertexAttribArray(s->frame_texcoord_loc);
-    glVertexAttribPointer(s->frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(frame_texcoord_loc);
+    glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
                           sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
     glGenBuffers(1, &d->frame_ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d->frame_ibo);
