@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
   VisionStream stream;
   while (!do_exit) {
     VisionStreamBufs buf_info;
-    err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
+    err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
     if (err) {
       LOGW("visionstream connect failed");
       usleep(100000);
