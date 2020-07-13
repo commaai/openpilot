@@ -171,10 +171,16 @@ int main(int argc, char **argv) {
     }
     LOGW("connected with buffer size: %d", buf_info.buf_len);
 
+    // setup filter to track dropped frames
+    float dt = 1. / MODEL_FREQ;
+    float frame_filter_k = (dt / 5.) / (1. + dt / 5.);
+    float frames_dropped = 0;
+
     // one frame in memory
     cl_mem yuv_cl;
     VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context, &yuv_cl);
 
+    uint32_t last_vipc_frame_id = 0;
     double last = 0;
     int desire = -1;
     while (!do_exit) {
@@ -217,11 +223,16 @@ int main(int argc, char **argv) {
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
-        model_publish(pm, extra.frame_id, frame_id,  model_buf, extra.timestamp_eof);
-        posenet_publish(pm, extra.frame_id, frame_id, model_buf, extra.timestamp_eof);
+        // tracked dropped frames
+        frames_dropped = (1. - frames_k) * frames_dropped + (extra.frame_id - last_vipc_frame_id) * frames_k;
+        float frame_drop_perc = dropped_frames / MODEL_FREQ;
 
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu", mt2-mt1, mt1-last, extra.frame_id, frame_id);
+        model_publish(pm, extra.frame_id, frame_id,  frame_drop_perc, model_buf, extra.timestamp_eof);
+        posenet_publish(pm, extra.frame_id, frame_id, frame_drop_perc, model_buf, extra.timestamp_eof);
+
+        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.2f%", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
         last = mt1;
+        last_vipc_frame_id = extra.frame_id;
       }
 
     }

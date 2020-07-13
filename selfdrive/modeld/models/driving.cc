@@ -246,7 +246,7 @@ void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float 
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
+                   float frame_drop, const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   // make msg
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -293,13 +293,13 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   auto meta = framed.initMeta();
   fill_meta(meta, net_outputs.meta);
-  event.setValid(frame_age < MAX_FRAME_AGE);
+  event.setValid(frame_drop < MAX_FRAME_DROP);
 
   pm.send("model", msg);
 }
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
+                     float frame_drop, const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
@@ -332,7 +332,7 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   posenetd.setFrameId(vipc_frame_id);
 
   uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
-  event.setValid(frame_age < MAX_FRAME_AGE);
+  event.setValid(frame_drop < MAX_FRAME_DROP);
 
   pm.send("cameraOdometry", msg);
 }
