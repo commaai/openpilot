@@ -63,6 +63,9 @@ VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 
 OBD_VERSION_REQUEST = b'\x09\x04'
 OBD_VERSION_RESPONSE = b'\x49\x04'
 
+SUBARU_VERSION_REQUEST = b'\x22\xf1\x82'
+SUBARU_VERSION_RESPONSE = b'\x62\xf1\x82'
+
 DEFAULT_RX_OFFSET = 0x8
 VOLKSWAGEN_RX_OFFSET = 0x6a
 
@@ -163,6 +166,14 @@ REQUESTS = [
     [NISSAN_VERSION_REQUEST_STANDARD],
     [NISSAN_VERSION_RESPONSE_STANDARD],
     NISSAN_RX_OFFSET,
+  ),
+  )
+  # Subaru
+  (
+    "subaru",
+    [TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+    [TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
   ),
 ]
 
@@ -356,7 +367,7 @@ if __name__ == "__main__":
       extra[(Ecu.unknown, 0x750, i)] = []
     extra = {"any": {"debug": extra}}
 
-  time.sleep(1.)
+  time.sleep(10.)
 
   t = time.time()
   print("Getting vin...")
