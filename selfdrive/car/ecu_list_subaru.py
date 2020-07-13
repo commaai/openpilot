@@ -143,7 +143,7 @@ if __name__ == "__main__":
       extra[(Ecu.unknown, 0x750, i)] = []
     extra = {"any": {"debug": extra}}
 
-  time.sleep(1.)
+  time.sleep(10.)
 
   t = time.time()
   print("Getting vin...")
