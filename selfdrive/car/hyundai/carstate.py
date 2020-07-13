@@ -88,7 +88,7 @@ class CarState(CarStateBase):
         ret.gearShifter = GearShifter.unknown
     # Gear Selecton - This is only compatible with optima hybrid 2017
     elif self.CP.carFingerprint in FEATURES["use_elect_gears"]:
-      gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
+      gear = cp.vl["EV_PC5"]["CF_Vcu_GearSelDisp"]
       if gear in (5, 8):  # 5: D, 8: sport mode
         ret.gearShifter = GearShifter.drive
       elif gear == 6:
@@ -253,8 +253,8 @@ class CarState(CarStateBase):
         ("TCU12", 100)
       ]
     elif CP.carFingerprint in FEATURES["use_elect_gears"]:
-      signals += [("Elect_Gear_Shifter", "ELECT_GEAR", 0)]
-      checks += [("ELECT_GEAR", 20)]
+      signals += [("CF_Vcu_GearSelDisp", "EV_PC5", 0)]
+      checks += [("EV_PC5", 20)]
     else:
       signals += [
         ("CF_Lvr_Gear", "LVR12", 0)
