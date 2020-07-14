@@ -43,7 +43,7 @@ FramebufferState* framebuffer_init(
   }
 
   glfwMakeContextCurrent(window);
-  glfwSwapInterval(0);
+  glfwSwapInterval(1);
 
   // clear screen
   glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
@@ -64,6 +64,8 @@ void framebuffer_swap(FramebufferState *s) {
   glfwPollEvents();
 }
 
+bool set_brightness(int brightness) { return true; }
+
 void touch_init(TouchState *s) {
   printf("touch_init\n");
 }
@@ -80,13 +82,11 @@ int touch_read(TouchState *s, int* out_x, int* out_y) {
 
 #include "sound.hpp"
 
-void ui_sound_init() {}
-void ui_sound_destroy() {}
-
-void set_volume(int volume) {}
-
-void play_alert_sound(AudibleAlert alert) {}
-void stop_alert_sound(AudibleAlert alert) {}
+bool Sound::init(int volume) { return true; }
+bool Sound::play(AudibleAlert alert) { return true; }
+void Sound::stop() {}
+void Sound::setVolume(int volume) {}
+Sound::~Sound() {}
 
 #include "common/visionimg.h"
 #include <sys/mman.h>

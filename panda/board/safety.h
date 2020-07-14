@@ -37,6 +37,7 @@
 #define SAFETY_HONDA_BOSCH_HARNESS 20U
 #define SAFETY_VOLKSWAGEN_PQ 21U
 #define SAFETY_SUBARU_LEGACY 22U
+#define SAFETY_HYUNDAI_LEGACY 23U
 
 uint16_t current_safety_mode = SAFETY_SILENT;
 const safety_hooks *current_hooks = &nooutput_hooks;
@@ -198,6 +199,25 @@ bool addr_safety_check(CAN_FIFOMailBox_TypeDef *to_push,
   return is_msg_valid(rx_checks, index);
 }
 
+void generic_rx_checks(bool stock_ecu_detected) {
+  // exit controls on rising edge of gas press
+  if (gas_pressed && !gas_pressed_prev && !(unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS)) {
+    controls_allowed = 0;
+  }
+  gas_pressed_prev = gas_pressed;
+
+  // exit controls on rising edge of brake press
+  if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
+    controls_allowed = 0;
+  }
+  brake_pressed_prev = brake_pressed;
+
+  // check if stock ECU is on bus broken by car harness
+  if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected) {
+    relay_malfunction_set();
+  }
+}
+
 void relay_malfunction_set(void) {
   relay_malfunction = true;
   fault_occurred(FAULT_RELAY_MALFUNCTION);
@@ -224,13 +244,14 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_HYUNDAI, &hyundai_hooks},
   {SAFETY_CHRYSLER, &chrysler_hooks},
   {SAFETY_SUBARU, &subaru_hooks},
-  {SAFETY_SUBARU_LEGACY, &subaru_legacy_hooks},
   {SAFETY_VOLKSWAGEN_MQB, &volkswagen_mqb_hooks},
-  {SAFETY_VOLKSWAGEN_PQ, &volkswagen_pq_hooks},
   {SAFETY_NISSAN, &nissan_hooks},
   {SAFETY_NOOUTPUT, &nooutput_hooks},
+  {SAFETY_HYUNDAI_LEGACY, &hyundai_legacy_hooks},
 #ifdef ALLOW_DEBUG
   {SAFETY_MAZDA, &mazda_hooks},
+  {SAFETY_SUBARU_LEGACY, &subaru_legacy_hooks},
+  {SAFETY_VOLKSWAGEN_PQ, &volkswagen_pq_hooks},
   {SAFETY_TESLA, &tesla_hooks},
   {SAFETY_ALLOUTPUT, &alloutput_hooks},
   {SAFETY_GM_ASCM, &gm_ascm_hooks},
@@ -244,7 +265,9 @@ int set_safety_hooks(uint16_t mode, int16_t param) {
   relay_malfunction = false;
   gas_interceptor_detected = false;
   gas_interceptor_prev = 0;
+  gas_pressed = false;
   gas_pressed_prev = false;
+  brake_pressed = false;
   brake_pressed_prev = false;
   cruise_engaged_prev = false;
   vehicle_speed = 0;

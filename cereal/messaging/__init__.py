@@ -3,11 +3,11 @@ from .messaging_pyx import Context, Poller, SubSocket, PubSocket  # pylint: disa
 from .messaging_pyx import MultiplePublishersError, MessagingError  # pylint: disable=no-name-in-module, import-error
 import capnp
 
-assert MultiplePublishersError
-assert MessagingError
-
 from cereal import log
 from cereal.services import service_list
+
+assert MultiplePublishersError
+assert MessagingError
 
 # sec_since_boot is faster, but allow to run standalone too
 try:
@@ -73,7 +73,7 @@ def drain_sock(sock, wait_for_one=False):
     else:
       dat = sock.receive(non_blocking=True)
 
-    if dat is None: # Timeout hit
+    if dat is None:  # Timeout hit
       break
 
     dat = log.Event.from_bytes(dat)
@@ -93,7 +93,7 @@ def recv_sock(sock, wait=False):
     else:
       rcv = sock.receive(non_blocking=True)
 
-    if rcv is None: # Timeout hit
+    if rcv is None:  # Timeout hit
       break
 
     dat = rcv
@@ -133,10 +133,10 @@ class SubMaster():
   def __init__(self, services, ignore_alive=None, addr="127.0.0.1"):
     self.poller = Poller()
     self.frame = -1
-    self.updated = {s : False for s in services}
-    self.rcv_time = {s : 0. for s in services}
-    self.rcv_frame = {s : 0 for s in services}
-    self.alive = {s : False for s in services}
+    self.updated = {s: False for s in services}
+    self.rcv_time = {s: 0. for s in services}
+    self.rcv_frame = {s: 0 for s in services}
+    self.alive = {s: False for s in services}
     self.sock = {}
     self.freq = {}
     self.data = {}

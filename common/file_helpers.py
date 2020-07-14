@@ -3,12 +3,16 @@ import shutil
 import tempfile
 from atomicwrites import AtomicWriter
 
+
 def mkdirs_exists_ok(path):
+  if path.startswith('http://') or path.startswith('https://'):
+    raise ValueError('URL path')
   try:
     os.makedirs(path)
   except OSError:
     if not os.path.isdir(path):
       raise
+
 
 def rm_not_exists_ok(path):
   try:
@@ -17,11 +21,13 @@ def rm_not_exists_ok(path):
     if os.path.exists(path):
       raise
 
+
 def rm_tree_or_link(path):
   if os.path.islink(path):
     os.unlink(path)
   elif os.path.isdir(path):
     shutil.rmtree(path)
+
 
 def get_tmpdir_on_same_filesystem(path):
   normpath = os.path.normpath(path)
@@ -31,6 +37,7 @@ def get_tmpdir_on_same_filesystem(path):
   elif len(parts) > 2 and parts[2] == "runner":
     return "/{}/runner/tmp".format(parts[1])
   return "/tmp"
+
 
 class AutoMoveTempdir():
   def __init__(self, target_path, temp_dir=None):
@@ -47,11 +54,12 @@ class AutoMoveTempdir():
   def __enter__(self):
     return self
 
-  def __exit__(self, type, value, traceback):
-    if type is None:
+  def __exit__(self, exc_type, exc_value, traceback):
+    if exc_type is None:
       self.close()
     else:
       shutil.rmtree(self._path)
+
 
 class NamedTemporaryDir():
   def __init__(self, temp_dir=None):
@@ -67,8 +75,9 @@ class NamedTemporaryDir():
   def __enter__(self):
     return self
 
-  def __exit__(self, type, value, traceback):
+  def __exit__(self, exc_type, exc_value, traceback):
     self.close()
+
 
 def _get_fileobject_func(writer, temp_dir):
   def _get_fileobject():
@@ -76,6 +85,7 @@ def _get_fileobject_func(writer, temp_dir):
     os.chmod(file_obj.name, 0o644)
     return file_obj
   return _get_fileobject
+
 
 def atomic_write_on_fs_tmp(path, **kwargs):
   """Creates an atomic writer using a temporary file in a temporary directory
@@ -93,6 +103,7 @@ def atomic_write_in_dir(path, **kwargs):
   """
   writer = AtomicWriter(path, **kwargs)
   return writer._open(_get_fileobject_func(writer, os.path.dirname(path)))
+
 
 def atomic_write_in_dir_neos(path, contents, mode=None):
   """

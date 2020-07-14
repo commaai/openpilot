@@ -25,6 +25,7 @@
 #include "drivers/uart.h"
 #include "drivers/usb.h"
 #include "drivers/gmlan_alt.h"
+#include "drivers/kline_init.h"
 #include "drivers/timer.h"
 #include "drivers/clock.h"
 
@@ -249,7 +250,6 @@ void usb_cb_enumeration_complete() {
 int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) {
   unsigned int resp_len = 0;
   uart_ring *ur = NULL;
-  int i;
   timestamp_t t;
   switch (setup->b.bRequest) {
     // **** 0xa0: get rtc time
@@ -557,38 +557,15 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
     case 0xe7:
       set_power_save_state(setup->b.wValue.w);
       break;
-    // **** 0xf0: do k-line wValue pulse on uart2 for Acura
+    // **** 0xf0: k-line/l-line wake-up pulse for KWP2000 fast initialization
     case 0xf0:
-      if (setup->b.wValue.w == 1U) {
-        GPIOC->ODR &= ~(1U << 10);
-        GPIOC->MODER &= ~GPIO_MODER_MODER10_1;
-        GPIOC->MODER |= GPIO_MODER_MODER10_0;
-      } else {
-        GPIOC->ODR &= ~(1U << 12);
-        GPIOC->MODER &= ~GPIO_MODER_MODER12_1;
-        GPIOC->MODER |= GPIO_MODER_MODER12_0;
-      }
-
-      for (i = 0; i < 80; i++) {
-        delay(8000);
-        if (setup->b.wValue.w == 1U) {
-          GPIOC->ODR |= (1U << 10);
-          GPIOC->ODR &= ~(1U << 10);
-        } else {
-          GPIOC->ODR |= (1U << 12);
-          GPIOC->ODR &= ~(1U << 12);
+      if(board_has_lin()) {
+        bool k = (setup->b.wValue.w == 0U) || (setup->b.wValue.w == 2U);
+        bool l = (setup->b.wValue.w == 1U) || (setup->b.wValue.w == 2U);
+        if (bitbang_wakeup(k, l)) {
+          resp_len = -1; // do not clear NAK yet (wait for bit banging to finish)
         }
       }
-
-      if (setup->b.wValue.w == 1U) {
-        GPIOC->MODER &= ~GPIO_MODER_MODER10_0;
-        GPIOC->MODER |= GPIO_MODER_MODER10_1;
-      } else {
-        GPIOC->MODER &= ~GPIO_MODER_MODER12_0;
-        GPIOC->MODER |= GPIO_MODER_MODER12_1;
-      }
-
-      delay(140 * 9000);
       break;
     // **** 0xf1: Clear CAN ring buffer.
     case 0xf1:
@@ -618,6 +595,17 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
         heartbeat_counter = 0U;
         break;
       }
+    // **** 0xf4: k-line/l-line 5 baud initialization
+    case 0xf4:
+      if(board_has_lin()) {
+        bool k = (setup->b.wValue.w == 0U) || (setup->b.wValue.w == 2U);
+        bool l = (setup->b.wValue.w == 1U) || (setup->b.wValue.w == 2U);
+        uint8_t five_baud_addr = (setup->b.wIndex.w & 0xFFU);
+        if (bitbang_five_baud_addr(k, l, five_baud_addr)) {
+          resp_len = -1; // do not clear NAK yet (wait for bit banging to finish)
+        }
+      }
+      break;
     default:
       puts("NO HANDLER ");
       puth(setup->b.bRequest);
@@ -695,9 +683,8 @@ void TIM1_BRK_TIM9_IRQ_Handler(void) {
       puth(can_tx2_q.r_ptr); puts(" "); puth(can_tx2_q.w_ptr); puts("\n");
     #endif
 
-    // Tick fan driver
+    // Tick drivers
     fan_tick();
-    //puts("Fan speed: "); puth((unsigned int) fan_rpm); puts("rpm\n");
 
     // set green LED to be controls allowed
     current_board->set_led(LED_GREEN, controls_allowed);
@@ -725,9 +712,15 @@ void TIM1_BRK_TIM9_IRQ_Handler(void) {
         set_power_save_state(POWER_SAVE_STATUS_ENABLED);
       }
 
-      // Also disable fan and IR when the heartbeat goes missing
-      current_board->set_fan_power(0U);
+      // Also disable IR when the heartbeat goes missing
       current_board->set_ir_power(0U);
+
+      // If enumerated but no heartbeat (phone up, boardd not running), turn the fan on to cool the device
+      if(usb_enumerated()){
+        current_board->set_fan_power(50U);
+      } else {
+        current_board->set_fan_power(0U);
+      }
     }
 
     // enter CDP mode when car starts to ensure we are charging a turned off EON
@@ -755,6 +748,7 @@ void TIM1_BRK_TIM9_IRQ_Handler(void) {
   TIM9->SR = 0;
 }
 
+#define MAX_FADE 8192U
 int main(void) {
   // Init interrupt table
   init_interrupts(true);
@@ -853,19 +847,23 @@ int main(void) {
       #ifdef DEBUG_FAULTS
       if(fault_status == FAULT_STATUS_NONE){
       #endif
-        int div_mode = ((usb_power_mode == USB_POWER_DCP) ? 4 : 1);
+        uint32_t div_mode = ((usb_power_mode == USB_POWER_DCP) ? 4U : 1U);
 
         // useful for debugging, fade breaks = panda is overloaded
-        for (int div_mode_loop = 0; div_mode_loop < div_mode; div_mode_loop++) {
-          for (int fade = 0; fade < 1024; fade += 8) {
-            for (int i = 0; i < (128/div_mode); i++) {
-              current_board->set_led(LED_RED, 1);
-              if (fade < 512) { delay(fade); } else { delay(1024-fade); }
-              current_board->set_led(LED_RED, 0);
-              if (fade < 512) { delay(512-fade); } else { delay(fade-512); }
-            }
-          }
+        for(uint32_t fade = 0U; fade < MAX_FADE; fade += div_mode){
+          current_board->set_led(LED_RED, true);
+          delay(fade >> 4);
+          current_board->set_led(LED_RED, false);
+          delay((MAX_FADE - fade) >> 4);
         }
+
+        for(uint32_t fade = MAX_FADE; fade > 0U; fade -= div_mode){
+          current_board->set_led(LED_RED, true);
+          delay(fade >> 4);
+          current_board->set_led(LED_RED, false);
+          delay((MAX_FADE - fade) >> 4);
+        }
+
       #ifdef DEBUG_FAULTS
       } else {
           current_board->set_led(LED_RED, 1);

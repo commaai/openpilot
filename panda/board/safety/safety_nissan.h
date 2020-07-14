@@ -30,8 +30,6 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   bool valid = addr_safety_check(to_push, nissan_rx_checks, NISSAN_RX_CHECK_LEN,
                                  NULL, NULL, NULL);
 
-  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
-
   if (valid) {
     int bus = GET_BUS(to_push);
     int addr = GET_ADDR(to_push);
@@ -55,44 +53,24 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         vehicle_moving = vehicle_speed > 0.;
       }
 
-      // exit controls on rising edge of gas press
       // X-Trail 0x15c, Leaf 0x239
       if ((addr == 0x15c) || (addr == 0x239)) {
-        bool gas_pressed = true;
         if (addr == 0x15c){
           gas_pressed = ((GET_BYTE(to_push, 5) << 2) | ((GET_BYTE(to_push, 6) >> 6) & 0x3)) > 1;
         } else {
           gas_pressed = GET_BYTE(to_push, 0) > 3;
         }
-
-        if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev) {
-          controls_allowed = 0;
-        }
-        gas_pressed_prev = gas_pressed;
-      }
-
-      // 0x169 is lkas cmd. If it is on bus 0, then relay is unexpectedly closed
-      if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (addr == 0x169)) {
-        relay_malfunction_set();
       }
     }
 
-    // exit controls on rising edge of brake press, or if speed > 0 and brake
     // X-trail 0x454, Leaf  0x1cc
     if ((addr == 0x454) || (addr == 0x1cc)) {
-      bool brake_pressed = true;
       if (addr == 0x454){
         brake_pressed = (GET_BYTE(to_push, 2) & 0x80) != 0;
       } else {
         brake_pressed = GET_BYTE(to_push, 0) > 3;
       }
-
-      if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-        controls_allowed = 0;
-      }
-      brake_pressed_prev = brake_pressed;
     }
-
 
     // Handle cruise enabled
     if ((bus == 2) && (addr == 0x30f)) {
@@ -106,6 +84,8 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       }
       cruise_engaged_prev = cruise_engaged;
     }
+
+    generic_rx_checks((addr == 0x169));
   }
   return valid;
 }

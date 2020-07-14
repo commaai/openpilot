@@ -4,7 +4,7 @@ src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
 libs = [common, 'zmq', 'czmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
 
 if arch == "aarch64":
-  src += ['sound.cc', 'slplay.c']
+  src += ['sound.cc']
   libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
   linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
 else:

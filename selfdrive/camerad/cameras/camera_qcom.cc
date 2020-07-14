@@ -123,6 +123,8 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   s->max_gain = max_gain;
   s->fps = fps;
 
+  s->self_recover = 0;
+
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
   s->ops_sock = zsock_resolve(ops_sock);
@@ -161,16 +163,6 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 
   //printf("%5d/%5d %5d %f\n", s->cur_integ_lines, s->cur_frame_length, analog_gain, s->digital_gain);
 
-  int digital_gain = 0x100;
-
-  float white_balance[] = {0.4609375, 1.0, 0.546875};
-  //float white_balance[] = {1.0, 1.0, 1.0};
-
-  int digital_gain_gr = digital_gain / white_balance[1];
-  int digital_gain_gb = digital_gain / white_balance[1];
-  int digital_gain_r = digital_gain / white_balance[0];
-  int digital_gain_b = digital_gain / white_balance[2];
-
   struct msm_camera_i2c_reg_array reg_array[] = {
     // REG_HOLD
     {0x104,0x1,0},
@@ -201,23 +193,24 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   return err;
 }
 
-static inline int ov8865_get_coarse_gain(int gain) {
-  static const int gains[] = {0, 256, 384, 448, 480};
-  int i;
+static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
+  //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
+  int err, coarse_gain_bitmap, fine_gain_bitmap;
 
+  // get bitmaps from iso
+  static const int gains[] = {0, 100, 200, 400, 800};
+  int i;
   for (i = 1; i < ARRAYSIZE(gains); i++) {
     if (gain >= gains[i - 1] && gain < gains[i])
       break;
   }
+  int coarse_gain = i - 1;
+  float fine_gain = (gain - gains[coarse_gain])/(float)(gains[coarse_gain+1]-gains[coarse_gain]);
+  coarse_gain_bitmap = (1 << coarse_gain) - 1;
+  fine_gain_bitmap = ((int)(16*fine_gain) << 3) + 128; // 7th is always 1, 0-2nd are always 0
 
-  return i - 1;
-}
-
-static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
-  //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
-  int err, gain_bitmap;
-  gain_bitmap = (1 << ov8865_get_coarse_gain(gain)) - 1;
   integ_lines *= 16; // The exposure value in reg is in 16ths of a line
+
   struct msm_camera_i2c_reg_array reg_array[] = {
     //{0x104,0x1,0},
 
@@ -228,7 +221,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     // AEC MANUAL
     {0x3503, 0x4, 0},
     // AEC GAIN
-    {0x3508, (uint16_t)(gain_bitmap), 0}, {0x3509, 0xf8, 0},
+    {0x3508, (uint16_t)(coarse_gain_bitmap), 0}, {0x3509, (uint16_t)(fine_gain_bitmap), 0},
 
     //{0x104,0x0,0},
   };
@@ -386,7 +379,10 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     || integ_lines != s->cur_integ_lines
     || frame_length != s->cur_frame_length) {
 
-    if (s->apply_exposure) {
+    if (s->apply_exposure == ov8865_apply_exposure) {
+      gain = 800 * gain_frac; // ISO
+      err = s->apply_exposure(s, gain, integ_lines, frame_length);
+    } else if (s->apply_exposure) {
       err = s->apply_exposure(s, gain, integ_lines, frame_length);
     }
 
@@ -409,19 +405,40 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
 static void do_autoexposure(CameraState *s, float grey_frac) {
   const float target_grey = 0.3;
+  if (s->apply_exposure == ov8865_apply_exposure) {
+    // gain limits downstream
+    const float gain_frac_min = 0.015625;
+    const float gain_frac_max = 1.0;
+    // exposure time limits
+    unsigned int frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
+    const unsigned int exposure_time_min = 16;
+    const unsigned int exposure_time_max = frame_length - 11; // copied from set_exposure()
 
-  float new_exposure = s->cur_exposure_frac;
-  new_exposure *= pow(1.05, (target_grey - grey_frac) / 0.05 );
-  //LOGD("diff %f: %f to %f", target_grey - grey_frac, s->cur_exposure_frac, new_exposure);
+    float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.05);
+    if (s->cur_gain_frac > 0.125 && exposure_factor < 1) {
+      s->cur_gain_frac *= exposure_factor;
+    } else if (s->cur_integ_lines * exposure_factor <= exposure_time_max && s->cur_integ_lines * exposure_factor >= exposure_time_min) { // adjust exposure time first
+      s->cur_exposure_frac *= exposure_factor;
+    } else if (s->cur_gain_frac * exposure_factor <= gain_frac_max && s->cur_gain_frac * exposure_factor >= gain_frac_min) {
+      s->cur_gain_frac *= exposure_factor;
+    }
 
-  float new_gain = s->cur_gain_frac;
-  if (new_exposure < 0.10) {
-    new_gain *= 0.95;
-  } else if (new_exposure > 0.40) {
-    new_gain *= 1.05;
+    set_exposure(s, s->cur_exposure_frac, s->cur_gain_frac);
+
+  } else { // keep the old for others
+    float new_exposure = s->cur_exposure_frac;
+    new_exposure *= pow(1.05, (target_grey - grey_frac) / 0.05 );
+    //LOGD("diff %f: %f to %f", target_grey - grey_frac, s->cur_exposure_frac, new_exposure);
+
+    float new_gain = s->cur_gain_frac;
+    if (new_exposure < 0.10) {
+      new_gain *= 0.95;
+    } else if (new_exposure > 0.40) {
+      new_gain *= 1.05;
+    }
+
+    set_exposure(s, new_exposure, new_gain);
   }
-
-  set_exposure(s, new_exposure, new_gain);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
@@ -1745,8 +1762,13 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
       avg_focus += s->focus[i];
     }
   }
+  // self recover override
+  if (s->self_recover > 1) {
+    s->focus_err = 200 * ((s->self_recover % 2 == 0) ? 1:-1); // far for even numbers, close for odd
+    s->self_recover -= 2;
+    return;
+  }
 
-  //printf("\n");
   if (good_count < 4) {
     s->focus_err = nan("");
     return;
@@ -1770,8 +1792,8 @@ static void do_autofocus(CameraState *s) {
   float err = s->focus_err;
   float sag = (s->last_sag_acc_z/9.8) * 128;
 
-  const int dac_up = s->device == DEVICE_LP3? 634:456;
-  const int dac_down = s->device == DEVICE_LP3? 366:224;
+  const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
+  const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
 
   if (!isnan(err))  {
     // learn lens_true_pos
@@ -1980,43 +2002,6 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
   };
 }
 
-static bool acceleration_from_sensor_sock(void *sock, float *vs) {
-  int err;
-  bool ret = false;
-  zmq_msg_t msg;
-  err = zmq_msg_init(&msg);
-  assert(err == 0);
-
-  err = zmq_msg_recv(&msg, sock, 0);
-  assert(err >= 0);
-
-  void *data = zmq_msg_data(&msg);
-  size_t size = zmq_msg_size(&msg);
-
-  auto amsg = kj::heapArray<capnp::word>(size / sizeof(capnp::word) + 1);
-  memcpy(amsg.begin(), data, size);
-  capnp::FlatArrayMessageReader cmsg(amsg);
-  auto event = cmsg.getRoot<cereal::Event>();
-  if (event.which() == cereal::Event::SENSOR_EVENTS) {
-    auto sensor_events = event.getSensorEvents();
-    for (auto sensor_event : sensor_events) {
-      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-        auto v = sensor_event.getAcceleration().getV();
-        if (v.size() < 3) {
-          continue;  //wtf
-        }
-        for (int j = 0; j < 3; j++) {
-          vs[j] = v[j];
-        }
-        ret = true;
-        break;
-      }
-    }
-  }
-  zmq_msg_close(&msg);
-  return ret;
-}
-
 static void ops_term() {
   zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
   assert(ops_sock);
@@ -2036,66 +2021,85 @@ static void* ops_thread(void* arg) {
   zsock_t *cameraops = zsock_new_pull("@inproc://cameraops");
   assert(cameraops);
 
-  zsock_t *sensor_sock = zsock_new_sub(">tcp://127.0.0.1:8003", "");
-  assert(sensor_sock);
-
   zsock_t *terminate = zsock_new_sub(">inproc://terminate", "");
   assert(terminate);
 
-  zpoller_t *poller = zpoller_new(cameraops, sensor_sock, terminate, NULL);
+  zpoller_t *poller = zpoller_new(cameraops, terminate, NULL);
   assert(poller);
 
+  SubMaster sm({"sensorEvents"}); // msgq submaster
+
   while (!do_exit) {
-
+    // zmq handling
     zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
-    if (which == terminate || which == NULL) {
+    if (which == terminate) {
       break;
-    }
-    void* sockraw = zsock_resolve(which);
+    } else if (which != NULL) {
+      void* sockraw = zsock_resolve(which);
 
-    if (which == cameraops) {
-      zmq_msg_t msg;
-      err = zmq_msg_init(&msg);
-      assert(err == 0);
+      if (which == cameraops) {
+        zmq_msg_t msg;
+        err = zmq_msg_init(&msg);
+        assert(err == 0);
 
-      err = zmq_msg_recv(&msg, sockraw, 0);
-      assert(err >= 0);
+        err = zmq_msg_recv(&msg, sockraw, 0);
+        if (err >= 0) {
+          CameraMsg cmsg;
+          if (zmq_msg_size(&msg) == sizeof(cmsg)) {
+            memcpy(&cmsg, zmq_msg_data(&msg), zmq_msg_size(&msg));
 
-      CameraMsg cmsg;
-      if (zmq_msg_size(&msg) == sizeof(cmsg)) {
-        memcpy(&cmsg, zmq_msg_data(&msg), zmq_msg_size(&msg));
+            //LOGD("cameraops %d", cmsg.type);
 
-        //LOGD("cameraops %d", cmsg.type);
-
-        if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
-          if (cmsg.camera_num == 0) {
-            do_autoexposure(&s->rear, cmsg.grey_frac);
-            do_autofocus(&s->rear);
-          } else {
-            do_autoexposure(&s->front, cmsg.grey_frac);
+            if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
+              if (cmsg.camera_num == 0) {
+                do_autoexposure(&s->rear, cmsg.grey_frac);
+                do_autofocus(&s->rear);
+              } else {
+                do_autoexposure(&s->front, cmsg.grey_frac);
+              }
+            } else if (cmsg.type == -1) {
+              break;
+            }
           }
-        } else if (cmsg.type == -1) {
+        } else {
+          // skip if zmq is interrupted by msgq
+          int err_no = zmq_errno();
+          assert(err_no == EINTR || err_no == EAGAIN);
+        }
+
+        zmq_msg_close(&msg);
+      }
+    }
+    // msgq handling
+    if (sm.update(0) > 0) {
+      float vals[3] = {0.0};
+      bool got_accel = false;
+
+      auto sensor_events = sm["sensorEvents"].getSensorEvents();
+      for (auto sensor_event : sensor_events) {
+        if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
+          auto v = sensor_event.getAcceleration().getV();
+          if (v.size() < 3) {
+            continue;  //wtf
+          }
+          for (int j = 0; j < 3; j++) {
+            vals[j] = v[j];
+          }
+          got_accel = true;
           break;
         }
       }
 
-      zmq_msg_close(&msg);
-
-    } else if (which == sensor_sock) {
-      float vs[3] = {0.0};
-      bool got_accel = acceleration_from_sensor_sock(sockraw, vs);
-
       uint64_t ts = nanos_since_boot();
       if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
         s->rear.last_sag_ts = ts;
-        s->rear.last_sag_acc_z = -vs[2];
+        s->rear.last_sag_acc_z = -vals[2];
       }
     }
   }
 
   zpoller_destroy(&poller);
   zsock_destroy(&cameraops);
-  zsock_destroy(&sensor_sock);
   zsock_destroy(&terminate);
 
   return NULL;

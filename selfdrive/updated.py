@@ -32,6 +32,7 @@ import signal
 from pathlib import Path
 import fcntl
 import threading
+import time
 from cffi import FFI
 
 from common.basedir import BASEDIR
@@ -195,7 +196,7 @@ def inodes_in_tree(search_dir):
   """Given a search root, produce a dictionary mapping of inodes to relative
   pathnames of regular files (no directories, symlinks, or special files)."""
   inode_map = {}
-  for root, dirs, files in os.walk(search_dir, topdown=True):
+  for root, _, files in os.walk(search_dir, topdown=True):
     for file_name in files:
       full_path_name = os.path.join(root, file_name)
       st = os.lstat(full_path_name)
@@ -280,7 +281,8 @@ def attempt_update():
   upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
   new_version = cur_hash != upstream_hash
 
-  git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n")
+  err_msg = "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n"
+  git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != err_msg)
 
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
   if new_version or git_fetch_result:
@@ -315,8 +317,10 @@ def attempt_update():
 def main():
   update_failed_count = 0
   overlay_init_done = False
-  wait_helper = WaitTimeHelper()
   params = Params()
+
+  if params.get("DisableUpdates") == b"1":
+    raise RuntimeError("updates are disabled by param")
 
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
@@ -331,6 +335,11 @@ def main():
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
+
+  # Wait a short time before our first update attempt
+  # Avoids race with IsOffroad not being set, reduces manager startup load
+  time.sleep(30)
+  wait_helper = WaitTimeHelper()
 
   while True:
     update_failed_count += 1
