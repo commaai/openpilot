@@ -88,7 +88,7 @@ class Calibrator():
     end_status = self.cal_status
 
     self.just_calibrated = False
-    if start_status == Calibration.UNCALIBRATED and end_status == Calibration.CALIBRATED:
+    if start_status == Calibration.UNCALIBRATED and end_status != Calibration.UNCALIBRATED:
       self.just_calibrated = True
 
   def handle_v_ego(self, v_ego):
@@ -166,7 +166,6 @@ def calibrationd_thread(sm=None, pm=None):
                                           sm['cameraOdometry'].rot,
                                           sm['cameraOdometry'].transStd,
                                           sm['cameraOdometry'].rotStd)
-
 
       if DEBUG and new_vp is not None:
         print('got new vp', new_vp)

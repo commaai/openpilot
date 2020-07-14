@@ -68,11 +68,11 @@ def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lea
     "ACCAlwaysOne" : 1,
     "ACCResumeButton" : 0,
     "ACCSpeedSetpoint" : target_speed,
-    "ACCGapLevel" : 3 * acc_engaged, # 3 "far", 0 "inactive"
+    "ACCGapLevel" : 3 * acc_engaged,  # 3 "far", 0 "inactive"
     "ACCCmdActive" : acc_engaged,
     "ACCAlwaysOne2" : 1,
     "ACCLeadCar" : lead_car_in_sight,
-    "FCWAlert": fcw
+    "FCWAlert": 0x3 if fcw else 0
   }
 
   return packer.make_can_msg("ASCMActiveCruiseControlStatus", bus, values)
@@ -104,8 +104,12 @@ def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
   dat += [(idx << 5) + (far_range_mode << 4) + (near_range_mode << 3) + (chksum >> 8), chksum & 0xff]
   return make_can_msg(0x308, bytes(dat), bus)
 
-def create_adas_headlights_status(bus):
-  return make_can_msg(0x310, b"\x42\x04", bus)
+def create_adas_headlights_status(packer, bus):
+  values = {
+    "Always42": 0x42,
+    "Always4": 0x4,
+  }
+  return packer.make_can_msg("ASCMHeadlight", bus, values)
 
 def create_lka_icon_command(bus, active, critical, steer):
   if active and steer == 1:

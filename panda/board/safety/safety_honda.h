@@ -89,8 +89,6 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
                               honda_get_checksum, honda_compute_checksum, honda_get_counter);
   }
 
-  bool unsafe_allow_gas = unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS;
-
   if (valid) {
     int addr = GET_ADDR(to_push);
     int len = GET_LEN(to_push);
@@ -125,36 +123,22 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // in these cases, this is used instead.
     // most hondas: 0x17C bit 53
     // accord, crv: 0x1BE bit 4
-    // exit controls on rising edge of brake press or on brake press when speed > 0
     bool is_user_brake_msg = honda_alt_brake_msg ? ((addr) == 0x1BE) : ((addr) == 0x17C);
     if (is_user_brake_msg) {
-      bool brake_pressed = honda_alt_brake_msg ? (GET_BYTE((to_push), 0) & 0x10) : (GET_BYTE((to_push), 6) & 0x20);
-      if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-        controls_allowed = 0;
-      }
-      brake_pressed_prev = brake_pressed;
+      brake_pressed = honda_alt_brake_msg ? (GET_BYTE((to_push), 0) & 0x10) : (GET_BYTE((to_push), 6) & 0x20);
     }
 
-    // exit controls on rising edge of gas press if interceptor (0x201 w/ len = 6)
     // length check because bosch hardware also uses this id (0x201 w/ len = 8)
     if ((addr == 0x201) && (len == 6)) {
       gas_interceptor_detected = 1;
       int gas_interceptor = HONDA_GET_INTERCEPTOR(to_push);
-      if (!unsafe_allow_gas && (gas_interceptor > HONDA_GAS_INTERCEPTOR_THRESHOLD) &&
-          (gas_interceptor_prev <= HONDA_GAS_INTERCEPTOR_THRESHOLD)) {
-        controls_allowed = 0;
-      }
+      gas_pressed = gas_interceptor > HONDA_GAS_INTERCEPTOR_THRESHOLD;
       gas_interceptor_prev = gas_interceptor;
     }
 
-    // exit controls on rising edge of gas press if no interceptor
     if (!gas_interceptor_detected) {
       if (addr == 0x17C) {
-        bool gas_pressed = GET_BYTE(to_push, 0) != 0;
-        if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev) {
-          controls_allowed = 0;
-        }
-        gas_pressed_prev = gas_pressed;
+        gas_pressed = GET_BYTE(to_push, 0) != 0;
       }
     }
 
@@ -178,13 +162,15 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     // if steering controls messages are received on the destination bus, it's an indication
     // that the relay might be malfunctioning
+    bool stock_ecu_detected = false;
     int bus_rdr_car = (honda_hw == HONDA_BH_HW) ? 0 : 2;  // radar bus, car side
     if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && ((addr == 0xE4) || (addr == 0x194))) {
       if (((honda_hw != HONDA_N_HW) && (bus == bus_rdr_car)) ||
         ((honda_hw == HONDA_N_HW) && (bus == 0))) {
-        relay_malfunction_set();
+        stock_ecu_detected = true;
       }
     }
+    generic_rx_checks(stock_ecu_detected);
   }
   return valid;
 }

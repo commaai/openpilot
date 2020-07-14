@@ -20,7 +20,6 @@ if shutil.which('capnpc-java'):
 cereal_objects = env.SharedObject([
     'gen/cpp/car.capnp.c++',
     'gen/cpp/log.capnp.c++',
-    'messaging/socketmaster.cc',
   ])
 
 env.Library('cereal', cereal_objects)
@@ -37,6 +36,7 @@ messaging_objects = env.SharedObject([
   'messaging/impl_zmq.cc',
   'messaging/impl_msgq.cc',
   'messaging/msgq.cc',
+  'messaging/socketmaster.cc',
 ])
 
 messaging_lib = env.Library('messaging', messaging_objects)
@@ -46,7 +46,7 @@ Depends('messaging/impl_zmq.cc', services_h)
 # TODO: get APK to load system zmq to remove the static link
 if arch == "aarch64":
   zmq_static = FindFile("libzmq.a", "/usr/lib")
-  shared_lib_shared_lib = [zmq_static, 'm', 'stdc++', "gnustl_shared"]
+  shared_lib_shared_lib = [zmq_static, 'm', 'stdc++', "gnustl_shared", "kj", "capnp"]
   env.SharedLibrary('messaging_shared', messaging_objects, LIBS=shared_lib_shared_lib)
 
 env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging_lib, 'zmq'])

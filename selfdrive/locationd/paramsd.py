@@ -100,10 +100,13 @@ def main(sm=None, pm=None):
     }
     cloudlog.info("Parameter learner resetting to default values")
 
+  # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
+  # Without a way to detect this we have to reset the stiffness every drive
+  params['stiffnessFactor'] = 1.0
+
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverage']))
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
 
-  i = 0
   while True:
     sm.update()
 
@@ -113,14 +116,10 @@ def main(sm=None, pm=None):
       t = sm.logMonoTime[which] * 1e-9
       learner.handle_log(t, which, sm[which])
 
-    # TODO: set valid to false when locationd stops sending
-    # TODO: make sure controlsd knows when there is no gyro
-
-    if sm.updated['carState']:
+    if sm.updated['carState'] and (learner.carstate_counter % CARSTATE_DECIMATION == 0):
       msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']
 
-      msg.liveParameters.valid = True  # TODO: Check if learned values are sane
       msg.liveParameters.posenetValid = True
       msg.liveParameters.sensorValid = True
 
@@ -132,12 +131,11 @@ def main(sm=None, pm=None):
       msg.liveParameters.valid = all((
         abs(msg.liveParameters.angleOffsetAverage) < 10.0,
         abs(msg.liveParameters.angleOffset) < 10.0,
-        0.5 <= msg.liveParameters.stiffnessFactor <= 2.0,
+        0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
         min_sr <= msg.liveParameters.steerRatio <= max_sr,
       ))
 
-      i += 1
-      if i % 6000 == 0:   # once a minute
+      if learner.carstate_counter % 6000 == 0:   # once a minute
         params = {
           'carFingerprint': CP.carFingerprint,
           'steerRatio': msg.liveParameters.steerRatio,

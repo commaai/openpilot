@@ -10,7 +10,7 @@ from opendbc.can.dbc import dbc
 
 def process(in_fn, out_fn):
   dbc_name = os.path.split(out_fn)[-1].replace('.cc', '')
-  #print("processing %s: %s -> %s" % (dbc_name, in_fn, out_fn))
+  # print("processing %s: %s -> %s" % (dbc_name, in_fn, out_fn))
 
   template_fn = os.path.join(os.path.dirname(__file__), "dbc_template.cc")
 
@@ -70,7 +70,7 @@ def process(in_fn, out_fn):
     little_endian = None
 
   # sanity checks on expected COUNTER and CHECKSUM rules, as packer and parser auto-compute those signals
-  for address, msg_name, msg_size, sigs in msgs:
+  for address, msg_name, _, sigs in msgs:
     dbc_msg_name = dbc_name + " " + msg_name
     for sig in sigs:
       if checksum_type is not None:
@@ -121,6 +121,7 @@ def main():
   in_fn = os.path.join(dbc_dir, dbc_name + '.dbc')
 
   process(in_fn, out_fn)
+
 
 if __name__ == '__main__':
   main()

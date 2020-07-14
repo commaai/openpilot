@@ -36,7 +36,6 @@ class CarController():
         # Send at a rate of 5hz until we sync with stock ACC state
         can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, Buttons.CANCEL))
 
-
     self.apply_steer_last = apply_steer
 
     can_sends.append(mazdacan.create_steering_control(self.packer, CS.CP.carFingerprint,

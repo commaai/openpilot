@@ -48,8 +48,8 @@ def euler2quat(eulers):
 
   quats = np.array([q0, q1, q2, q3]).T
   for i in range(len(quats)):
-    if quats[i,0] < 0:
-      quats[i] = -quats[i]  # pylint: disable=unsupported-assignment-operation
+    if quats[i,0] < 0:  # pylint: disable=unsubscriptable-object
+      quats[i] = -quats[i]  # pylint: disable=unsupported-assignment-operation,unsubscriptable-object
   return quats.reshape(output_shape)
 
 
@@ -147,7 +147,7 @@ def sympy_into_c(sympy_functions, global_vars=None):
     # add routine to list
     routines.append(r)
 
-  [(c_name, c_code), (h_name, c_header)] = codegen.get_code_generator('C', 'ekf', 'C99').write(routines, "ekf")
+  [(_, c_code), (_, c_header)] = codegen.get_code_generator('C', 'ekf', 'C99').write(routines, "ekf")
   c_header = '\n'.join(x for x in c_header.split("\n") if len(x) > 0 and x[0] != '#')
 
   c_code = '\n'.join(x for x in c_code.split("\n") if len(x) > 0 and x[0] != '#')

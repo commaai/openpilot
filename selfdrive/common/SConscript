@@ -1,4 +1,4 @@
-Import('env', 'arch', 'SHARED')
+Import('env', 'arch', 'SHARED', 'QCOM_REPLAY')
 
 if SHARED:
   fxn = env.SharedLibrary
@@ -21,8 +21,11 @@ if arch == "aarch64":
   files += [
     'framebuffer.cc',
     'touch.c',
-    'visionbuf_ion.c',
   ]
+  if QCOM_REPLAY:
+    files += ['visionbuf_cl.c']
+  else:
+    files += ['visionbuf_ion.c']
   _gpu_libs = ['gui', 'adreno_utils']
 elif arch == "larch64":
   defines = {"CLU_NO_CACHE": None}

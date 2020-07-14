@@ -24,7 +24,7 @@ class PandaDFU(object):
           self._handle = device.open()
           self.legacy = "07*128Kg" in self._handle.getASCIIStringDescriptor(4)
           return
-    raise Exception("failed to open "+dfu_serial)
+    raise Exception("failed to open " + dfu_serial)
 
   @staticmethod
   def list():
@@ -43,9 +43,9 @@ class PandaDFU(object):
 
   @staticmethod
   def st_serial_to_dfu_serial(st):
-    if st == None or st == "none":
+    if st is None or st == "none":
       return None
-    uid_base = struct.unpack("H"*6, bytes.fromhex(st))
+    uid_base = struct.unpack("H" * 6, bytes.fromhex(st))
     return binascii.hexlify(struct.pack("!HHH", uid_base[1] + uid_base[5], uid_base[0] + uid_base[4] + 0xA, uid_base[3])).upper().decode("utf-8")
 
   def status(self):
@@ -69,7 +69,7 @@ class PandaDFU(object):
     self.status()
 
   def program(self, address, dat, block_size=None):
-    if block_size == None:
+    if block_size is None:
       block_size = len(dat)
 
     # Set Address Pointer
@@ -77,11 +77,11 @@ class PandaDFU(object):
     self.status()
 
     # Program
-    dat += b"\xFF"*((block_size-len(dat)) % block_size)
-    for i in range(0, len(dat)//block_size):
-      ldat = dat[i*block_size:(i+1)*block_size]
+    dat += b"\xFF" * ((block_size - len(dat)) % block_size)
+    for i in range(0, len(dat) // block_size):
+      ldat = dat[i * block_size:(i + 1) * block_size]
       print("programming %d with length %d" % (i, len(ldat)))
-      self._handle.controlWrite(0x21, DFU_DNLOAD, 2+i, 0, ldat)
+      self._handle.controlWrite(0x21, DFU_DNLOAD, 2 + i, 0, ldat)
       self.status()
 
   def program_bootstub(self, code_bootstub):

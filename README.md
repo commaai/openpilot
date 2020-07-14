@@ -67,7 +67,7 @@ Supported Cars
 | Acura     | ILX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 25mph             |
 | Acura     | RDX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Accord 2018-19                | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Accord Hybrid 2018-19         | All               | Stock            | 0mph               | 3mph              |
+| Honda     | Accord Hybrid 2018-20         | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Civic Hatchback 2017-19       | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | Civic Sedan/Coupe 2016-18     | Honda Sensing     | openpilot        | 0mph               | 12mph             |
 | Honda     | Civic Sedan/Coupe 2019-20     | Honda Sensing     | Stock            | 0mph               | 2mph<sup>2</sup>  |
@@ -82,6 +82,7 @@ Supported Cars
 | Honda     | Pilot 2016-18                 | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Pilot 2019                    | All               | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Ridgeline 2017-20             | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
+| Hyundai   | Sonata 2020                   | All               | Stock            | 0mph               | 0mph              |
 | Lexus     | CT Hybrid 2017-18             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | ES 2019                       | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
@@ -107,7 +108,7 @@ Supported Cars
 | Toyota    | Highlander 2020               | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Highlander Hybrid 2020        | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius 2016                    | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Prius 2017-19                 | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Toyota    | Prius 2017-20                 | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Rav4 2016                     | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Rav4 2017-18                  | All               | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
@@ -117,9 +118,9 @@ Supported Cars
 | Toyota    | Rav4 Hybrid 2019-20           | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Sienna 2018-20                | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 
-<sup>1</sup>[Comma Pedal](https://community.comma.ai/wiki/index.php/Comma_Pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. Here is how to [build a Comma Pedal](https://medium.com/@jfrux/comma-pedal-building-with-macrofab-6328bea791e8). ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
+<sup>1</sup>[Comma Pedal](https://github.com/commaai/openpilot/wiki/comma-pedal) is used to provide stop-and-go capability to some of the openpilot-supported cars that don't currently support stop-and-go. ***NOTE: The Comma Pedal is not officially supported by [comma](https://comma.ai).*** <br />
 <sup>2</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
-<sup>3</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. For DSU locations, see [Toyota Wiki page](https://community.comma.ai/wiki/index.php/Toyota). ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
+<sup>3</sup>When disconnecting the Driver Support Unit (DSU), openpilot ACC will replace stock ACC. ***NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).*** <br />
 <sup>4</sup>28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 
 Community Maintained Cars and Features
@@ -135,33 +136,37 @@ Community Maintained Cars and Features
 | Chrysler  | Pacifica 2020                 | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2019-20       | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Genesis   | G80 2018<sup>2</sup>          | All               | Stock            | 0mph               | 0mph         |
+| Genesis   | G80 2018                      | All               | Stock            | 0mph               | 0mph         |
 | Genesis   | G90 2018                      | All               | Stock            | 0mph               | 0mph         |
 | GMC       | Acadia Denali 2018<sup>2</sup>| Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Hyundai   | Elantra 2017-19<sup>2</sup>   | SCC + LKAS        | Stock            | 19mph              | 34mph        |
-| Hyundai   | Genesis 2015-16<sup>2</sup>   | SCC + LKAS        | Stock            | 19mph              | 37mph        |
-| Hyundai   | Kona 2017-19<sup>2</sup>      | SCC + LKAS        | Stock            | 22mph              | 0mph         |
-| Hyundai   | Kona 2019 EV<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Palisade 2020<sup>2</sup>     | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
+| Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
+| Hyundai   | Ioniq Electric Premium SE 2020| SCC + LKAS        | Stock            | 0mph               | 32mph        |
+| Hyundai   | Ioniq Electric Limited 2019   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
+| Hyundai   | Kona 2017-19                  | SCC + LKAS        | Stock            | 22mph              | 0mph         |
+| Hyundai   | Kona EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Palisade 2020                 | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019                 | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Sonata 2019-20                | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata 2019                   | All               | Stock            | 0mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Jeep      | Grand Cherokee 2019           | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Kia       | Forte 2018-19<sup>2</sup>     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Optima 2017<sup>2</sup>       | SCC + LKAS/LDWS   | Stock            | 0mph               | 32mph        |
-| Kia       | Optima 2019<sup>2</sup>       | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Sorento 2018<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Stinger 2018<sup>2</sup>      | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
+| Kia       | Forte 2018-19                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Optima 2017                   | SCC + LKAS/LDWS   | Stock            | 0mph               | 32mph        |
+| Kia       | Optima 2019                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Sorento 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-19<sup>2</sup>      | Propilot          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2019<sup>2</sup>        | Propilot          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017<sup>2</sup>      | Propilot          | Stock            | 0mph               | 0mph         |
+| Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Impreza 2018-20               | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Forester 2019                 | EyeSight          | Stock            | 0mph               | 0mph         |
+| Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 
-<sup>1</sup>Requires a [panda](https://comma.ai/shop/products/panda-obd-ii-dongle) and [community built giraffe](https://zoneos.com/volt/). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
-<sup>2</sup>May require a custom connector for the developer [car harness](https://comma.ai/shop/products/car-harness) <br />
+<sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built giraffe](https://github.com/commaai/openpilot/wiki/GM). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
+<sup>2</sup>Requires a custom connector for the developer [car harness](https://comma.ai/shop/products/car-harness) <br />
 
 Although it's not upstream, there's a community of people getting openpilot to run on Tesla's [here](https://tinkla.us/)
 
@@ -174,7 +179,7 @@ Installation Instructions
 
 Install openpilot on an EON or comma two by entering ``https://openpilot.comma.ai`` during the installer setup.
 
-Follow these [video instructions](https://youtu.be/3nlkomHathI) to properly mount the device on the windshield. Note: openpilot features an automatic pose calibration routine and openpilot performance should not be affected by small pitch and yaw misalignments caused by imprecise device mounting.
+Follow these [video instructions](https://youtu.be/lcjqxCymins) to properly mount the device on the windshield. Note: openpilot features an automatic pose calibration routine and openpilot performance should not be affected by small pitch and yaw misalignments caused by imprecise device mounting.
 
 Before placing the device on your windshield, check the state and local laws and ordinances where you drive. Some state laws prohibit or restrict the placement of objects on the windshield of a motor vehicle.
 
@@ -277,7 +282,7 @@ openpilot is developed by [comma](https://comma.ai/) and by users like you. We w
 
 You can add support for your car by following guides we have written for [Brand](https://medium.com/@comma_ai/how-to-write-a-car-port-for-openpilot-7ce0785eda84) and [Model](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
 
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs/). We also have a [bounty program](https://comma.ai/bounties.html).
+Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs/).
 
 And [follow us on Twitter](https://twitter.com/comma_ai).
 
@@ -327,7 +332,7 @@ NO WARRANTY EXPRESSED OR IMPLIED.**
 
 <img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img> <img src="https://cdn-images-1.medium.com/max/1600/1*C87EjxGeMPrkTuVRVWVg4w.png" width="225"></img>
 
-[![openpilot tests](https://github.com/commaai/openpilot/workflows/openpilot%20tests/badge.svg)](https://github.com/commaai/openpilot/actions)
+[![openpilot tests](https://github.com/commaai/openpilot/workflows/openpilot%20tests/badge.svg?event=push)](https://github.com/commaai/openpilot/actions)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/context:python)
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/context:cpp)
