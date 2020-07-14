@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
 
         // tracked dropped frames
         uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
-        frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)vipc_dropped_frames;
+        frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
         float frame_drop_perc = frames_dropped / MODEL_FREQ;
 
         model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
