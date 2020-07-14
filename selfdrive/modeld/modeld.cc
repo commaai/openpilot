@@ -173,7 +173,8 @@ int main(int argc, char **argv) {
 
     // setup filter to track dropped frames
     const float dt = 1. / MODEL_FREQ;
-    const float frame_filter_k = (dt / 5.) / (1. + dt / 5.);
+    const float ts = 5.0;  // 5 s filter time constant
+    const float frame_filter_k = (dt / ts) / (1. + dt / ts);
     float frames_dropped = 0;
 
     // one frame in memory
