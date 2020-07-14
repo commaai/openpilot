@@ -332,7 +332,7 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   posenetd.setFrameId(vipc_frame_id);
 
   uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
-  event.setValid(frame_age > 0);
+  event.setValid(frame_age < 1);
 
   pm.send("cameraOdometry", msg);
 }
