@@ -36,7 +36,7 @@
 #define POSE_SIZE 12
 
 #define MODEL_FREQ 20
-#define MAX_FRAME_DROP 0.1
+#define MAX_FRAME_DROP 0.05
 
 struct ModelDataRaw {
     float *path;
