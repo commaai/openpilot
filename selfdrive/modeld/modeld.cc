@@ -229,8 +229,8 @@ int main(int argc, char **argv) {
         frames_dropped = (1. - frame_filter_k) * frames_dropped + (vipc_dropped_frames) * frame_filter_k;
         float frame_drop_perc = frames_dropped / MODEL_FREQ;
 
-        model_publish(pm, extra.frame_id, frame_id,  frame_drop_perc, model_buf, extra.timestamp_eof);
-        posenet_publish(pm, extra.frame_id, frame_id, frame_drop_perc, model_buf, extra.timestamp_eof);
+        model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
+        posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f%", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
         last = mt1;
