@@ -257,6 +257,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   auto framed = event.initModel();
   framed.setFrameId(vipc_frame_id);
   framed.setFrameAge(frame_age);
+  framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
 
   auto lpath = framed.initPath();
