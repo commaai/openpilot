@@ -47,9 +47,6 @@ OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
-NICE_LOW_PRIORITY = ["nice", "-n", "19"]
-
-DEBUG_FORCE_UPDATE = False
 
 # Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
@@ -57,40 +54,13 @@ ffi.cdef("int link(const char *oldpath, const char *newpath);")
 libc = ffi.dlopen(None)
 
 
-class WaitTimeHelper:
-  ready_event = threading.Event()
-  shutdown = False
-
-  def __init__(self):
-    signal.signal(signal.SIGTERM, self.graceful_shutdown)
-    signal.signal(signal.SIGINT, self.graceful_shutdown)
-    signal.signal(signal.SIGHUP, self.update_now)
-
-  def graceful_shutdown(self, signum, frame):
-    # umount -f doesn't appear effective in avoiding "device busy" on EON,
-    # so don't actually die until the next convenient opportunity in main().
-    cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
-    self.shutdown = True
-    self.ready_event.set()
-
-  def update_now(self, signum, frame):
-    cloudlog.info("caught SIGHUP, running update check immediately")
-    #global DEBUG_FORCE_UPDATE
-    #DEBUG_FORCE_UPDATE = True
-    self.ready_event.set()
-
-
-def wait_between_updates(ready_event):
-  ready_event.clear()
-  ready_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS)
-
-
 def link(src, dest):
-  # Workaround for the EON/termux build of Python having os.link removed.
   return libc.link(src.encode(), dest.encode())
 
 
-def run(cmd, cwd=None):
+def run(cmd, cwd=None, low_priority=False):
+  if low_priority:
+    cmd = ["nice", "-n", "19"] + cmd
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -117,7 +87,7 @@ def set_update_available_params(new_version=False):
   t = datetime.datetime.utcnow().isoformat()
   params.put("LastUpdateTime", t.encode('utf8'))
 
-  if new_version or DEBUG_FORCE_UPDATE:
+  if new_version:
     try:
       with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
         r = f.read()
@@ -275,7 +245,7 @@ def attempt_update():
 
   setup_git_options(OVERLAY_MERGED)
 
-  git_fetch_output = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
+  git_fetch_output = run(["git", "fetch"], OVERLAY_MERGED, low_priority=True)
   cloudlog.info("git fetch success: %s", git_fetch_output)
 
   cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
@@ -286,15 +256,15 @@ def attempt_update():
   git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != err_msg)
 
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
-  if new_version or git_fetch_result or DEBUG_FORCE_UPDATE:
+  if new_version or git_fetch_result:
     cloudlog.info("Running update")
     if new_version:
       cloudlog.info("git reset in progress")
       r = [
-        run(NICE_LOW_PRIORITY + ["git", "reset", "--hard", "@{u}"], OVERLAY_MERGED),
-        run(NICE_LOW_PRIORITY + ["git", "clean", "-xdf"], OVERLAY_MERGED),
-        run(NICE_LOW_PRIORITY + ["git", "submodule", "init"], OVERLAY_MERGED),
-        run(NICE_LOW_PRIORITY + ["git", "submodule", "update"], OVERLAY_MERGED),
+        run(["git", "reset", "--hard", "@{u}"], OVERLAY_MERGED, low_priority=True),
+        run(["git", "clean", "-xdf"], OVERLAY_MERGED, low_priority=True ),
+        run(["git", "submodule", "init"], OVERLAY_MERGED, low_priority=True),
+        run(["git", "submodule", "update"], OVERLAY_MERGED, low_priority=True),
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
@@ -305,13 +275,13 @@ def attempt_update():
                r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
                OVERLAY_MERGED)
     cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
-    if current_neos_version != required_neos_version or DEBUG_FORCE_UPDATE:
+    if current_neos_version != required_neos_version:
       update_json = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
       while True:
         Params().put("Offroad_NeosUpdate", "1")
         try:
           cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
-          run(NICE_LOW_PRIORITY + ["installer/updater/updater", "bgcache", update_json], OVERLAY_MERGED)
+          run(["installer/updater/updater", "bgcache", update_json], OVERLAY_MERGED, low_priority=True)
           Params().put("Offroad_NeosUpdate", "0")
           cloudlog.info("NEOS background download successful!")
           break
@@ -345,7 +315,7 @@ def main():
   params = Params()
 
   if params.get("DisableUpdates") == b"1":
-    raise RuntimeError("updates are disabled by param")
+    raise RuntimeError("updates are disabled by DisableUpdates param")
 
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
@@ -361,18 +331,34 @@ def main():
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
-  # Wait a short time before our first update attempt
-  # Avoids race with IsOffroad not being set, reduces manager startup load
+  # Wait a short time before first update attempt to avoid race with IsOffroad
   time.sleep(30)
-  wait_helper = WaitTimeHelper()
+
+  # Setup signal handlers
+  do_exit = False
+  ready_event = threading.Event()
+  def set_ready(self, signum, frame):
+    cloudlog.info("caught SIGHUP, running update check immediately")
+    ready_event.set()
+  signal.signal(signal.SIGHUP, set_ready)
+
+  def set_do_exit(signum, frame):
+    # umount -f doesn't appear effective in avoiding "device busy" on EON,
+    # so don't actually die until the next convenient opportunity in main().
+    cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
+    nonlocal do_exit
+    do_exit = True
+    ready_event.set()
+  signal.signal(signal.SIGTERM, set_do_exit)
+  signal.signal(signal.SIGINT, set_do_exit)
 
   while True:
     update_failed_count += 1
-    time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
+    time_valid = datetime.datetime.utcnow().year >= 2019
+    ping_ok = not subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
 
     # Wait until we have a valid datetime to initialize the overlay
-    if not (ping_failed or time_wrong):
+    if ping_ok and time_valid:
       try:
         # If the git directory has modifcations after we created the overlay
         # we need to recreate the overlay
@@ -407,11 +393,12 @@ def main():
         cloudlog.exception("uncaught updated exception, shouldn't happen")
 
     params.put("UpdateFailedCount", str(update_failed_count))
-    wait_between_updates(wait_helper.ready_event)
-    if wait_helper.shutdown:
+
+    ready_event.clear()
+    ready_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS)
+    if do_exit:
       break
 
-  # We've been signaled to shut down
   dismount_ovfs()
 
 if __name__ == "__main__":
