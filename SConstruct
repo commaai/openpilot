@@ -45,15 +45,19 @@ if arch == "aarch64" or arch == "larch64":
   ]
 
   if arch == "larch64":
-    libpath += ["#phonelibs/snpe/larch64"]
-    libpath += ["#phonelibs/libyuv/larch64/lib"]
-    libpath += ["/usr/lib/aarch64-linux-gnu"]
+    libpath += [
+      "#phonelibs/snpe/larch64",
+      "#phonelibs/libyuv/larch64/lib",
+      "/usr/lib/aarch64-linux-gnu"
+    ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     rpath = ["/usr/local/lib"]
   else:
-    libpath += ["#phonelibs/snpe/aarch64"]
-    libpath += ["#phonelibs/libyuv/lib"]
+    libpath += [
+      "#phonelibs/snpe/aarch64",
+      "#phonelibs/libyuv/lib"
+    ]
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
     rpath = ["/system/vendor/lib64"]
@@ -81,8 +85,8 @@ else:
       "/usr/local/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
-    cflags.append("-DGL_SILENCE_DEPRECATION")
-    cxxflags.append("-DGL_SILENCE_DEPRECATION")
+    cflags += ["-DGL_SILENCE_DEPRECATION"]
+    cxxflags += ["-DGL_SILENCE_DEPRECATION"]
   else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
@@ -95,15 +99,20 @@ else:
     ]
 
   rpath = [
-           "external/tensorflow/lib",
-           "cereal",
-           "selfdrive/common"]
+    "external/tensorflow/lib",
+    "cereal",
+    "selfdrive/common"
+  ]
 
   # allows shared libraries to work globally
   rpath = [os.path.join(os.getcwd(), x) for x in rpath]
 
-ccflags_asan = ["-fsanitize=address", "-fno-omit-frame-pointer"] if GetOption('asan') else []
-ldflags_asan = ["-fsanitize=address"] if GetOption('asan') else []
+if GetOption('asan'):
+  ccflags_asan = ["-fsanitize=address", "-fno-omit-frame-pointer"]
+  ldflags_asan = ["-fsanitize=address"]
+else:
+  ccflags_asan = []
+  ldflags_asan = []
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
@@ -154,8 +163,7 @@ env = Environment(
 
   CFLAGS=["-std=gnu11"] + cflags,
   CXXFLAGS=["-std=c++14"] + cxxflags,
-  LIBPATH=libpath +
-  [
+  LIBPATH=libpath + [
     "#cereal",
     "#selfdrive/common",
     "#phonelibs",

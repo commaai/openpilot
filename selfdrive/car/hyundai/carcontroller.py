@@ -1,4 +1,5 @@
 from cereal import car
+from common.realtime import DT_CTRL
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
@@ -40,9 +41,7 @@ class CarController():
     self.car_fingerprint = CP.carFingerprint
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
-    self.resume_cnt = 0
     self.last_resume_frame = 0
-    self.last_lead_distance = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
@@ -56,7 +55,7 @@ class CarController():
 
     # fix for Genesis hard fault at low speed
     if CS.out.vEgo < 16.7 and self.car_fingerprint == CAR.HYUNDAI_GENESIS:
-      lkas_active = 0
+      lkas_active = False
 
     if not lkas_active:
       apply_steer = 0
@@ -75,24 +74,12 @@ class CarController():
 
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
-
     elif CS.out.cruiseState.standstill:
-      # run only first time when the car stopped
-      if self.last_lead_distance == 0:
-        # get the lead distance from the Radar
-        self.last_lead_distance = CS.lead_distance
-        self.resume_cnt = 0
-      # when lead car starts moving, create 6 RES msgs
-      elif CS.lead_distance != self.last_lead_distance and (frame - self.last_resume_frame) > 5:
+      # SCC won't resume anyway when the lead distace is less than 3.7m
+      # send resume at a max freq of 5Hz
+      if CS.lead_distance > 3.7 and (frame - self.last_resume_frame)*DT_CTRL > 0.2:
         can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
-        self.resume_cnt += 1
-        # interval after 6 msgs
-        if self.resume_cnt > 5:
-          self.last_resume_frame = frame
-          self.resume_cnt = 0
-    # reset lead distnce after the car starts moving
-    elif self.last_lead_distance != 0:
-      self.last_lead_distance = 0
+        self.last_resume_frame = frame
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ]:
