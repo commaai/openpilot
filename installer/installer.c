@@ -115,10 +115,13 @@ static int do_install() {
   if (stat(PRE_CHECKOUT_FOLDER, &sb) == 0 && S_ISDIR(sb.st_mode)) {
     printf("Pre-checkout found\n");
     err = use_pre_checkout();
-  } else {
+  } 
+  
+  else {
     printf("Doing fresh clone\n");
     err = fresh_clone();
   }
+  
   if(err) return 1;
 
 
