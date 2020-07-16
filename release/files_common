@@ -1,5 +1,6 @@
 .gitignore
 LICENSE
+launch.sh
 launch_chffrplus.sh
 launch_openpilot.sh
 
