@@ -37,14 +37,11 @@
 #define MANIFEST_URL_EON_LOCAL "http://192.168.5.1:8000/neosupdate/update.local.json"
 #define MANIFEST_URL_EON "https://github.com/commaai/eon-neos/raw/master/update.json"
 const char *manifest_url = MANIFEST_URL_EON;
-bool background_cache = false;
-bool cache_success_marker = false;
 
 #define RECOVERY_DEV "/dev/block/bootdevice/by-name/recovery"
 #define RECOVERY_COMMAND "/cache/recovery/command"
 
 #define UPDATE_DIR "/data/neoupdate"
-#define UPDATE_CACHE_SUCCESS_MARKER UPDATE_DIR "/cache_success_marker"
 
 extern const uint8_t bin_opensans_regular[] asm("_binary_opensans_regular_ttf_start");
 extern const uint8_t bin_opensans_regular_end[] asm("_binary_opensans_regular_ttf_end");
@@ -304,13 +301,11 @@ struct Updater {
   void set_progress(std::string text) {
     std::lock_guard<std::mutex> guard(lock);
     progress_text = text;
-    printf("%s\n", text.c_str());
   }
 
   void set_error(std::string text) {
     std::lock_guard<std::mutex> guard(lock);
     error_text = text;
-    printf("%s\n", text.c_str());
     state = ERROR;
   }
 
@@ -327,13 +322,11 @@ struct Updater {
   std::string stage_download(std::string url, std::string hash, std::string name) {
     std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
 
-    if (!cache_success_marker) {
-      set_progress("Downloading " + name + "...");
-      bool r = download_file(url, out_fn);
-      if (!r) {
-        set_error("failed to download " + name);
-        return "";
-      }
+    set_progress("Downloading " + name + "...");
+    bool r = download_file(url, out_fn);
+    if (!r) {
+      set_error("failed to download " + name);
+      return "";
     }
 
     set_progress("Verifying " + name + "...");
@@ -342,7 +335,6 @@ struct Updater {
     if (fn_hash != hash) {
       set_error(name + " was corrupt");
       unlink(out_fn.c_str());
-      unlink(UPDATE_CACHE_SUCCESS_MARKER);
       return "";
     }
 
@@ -435,18 +427,6 @@ struct Updater {
       //error'd
       return;
     }
-
-    FILE *cacheflag_file = fopen(UPDATE_CACHE_SUCCESS_MARKER, "w+b");
-    if (cacheflag_file) {
-      printf("NEOS update cached successfully\n");
-    } else {
-      printf("couldn't write cache success marker file\n");
-    }
-    fclose(cacheflag_file);
-
-    if (background_cache)
-      // Headless download-only mode, we're finished
-      return;
 
     if (!check_battery()) {
       set_battery_low();
@@ -649,12 +629,6 @@ struct Updater {
   }
 
   void ui_draw() {
-    const char *cached_instr = "Your device will now install an operating system update. Keep the "
-       "device connected to a power source during this process.";
-    const char *download_instr = "Your device will now download and install an operating system "
-       "update. The update is about 1GB and WiFi connectivity is recommended. Keep the device "
-       "connected to a power source during this process.";
-
     std::lock_guard<std::mutex> guard(lock);
 
     nvgBeginFrame(vg, fb_w, fb_h, 1.0f);
@@ -662,9 +636,9 @@ struct Updater {
     switch (state) {
     case CONFIRMATION:
       draw_ack_screen("An update to NEOS is required.",
-											cache_success_marker ? cached_instr : download_instr,
+                      "Your device will now be reset and upgraded. You may want to connect to wifi as download is around 1 GB. Existing data on device should not be lost.",
                       "Continue",
-                      cache_success_marker ? NULL : "Connect to WiFi");
+                      "Connect to WiFi");
       break;
     case LOW_BATTERY:
       draw_battery_screen();
@@ -782,30 +756,13 @@ int main(int argc, char *argv[]) {
       manifest_url = MANIFEST_URL_EON_LOCAL;
     } else if (strcmp(argv[1], "staging") == 0) {
       manifest_url = MANIFEST_URL_EON_STAGING;
-    } else if (strcmp(argv[1], "bgcache") == 0) {
-      manifest_url = argv[2];
-      background_cache = true;
     } else {
       manifest_url = argv[1];
     }
   }
-
-  FILE *cacheflag_file = fopen(UPDATE_CACHE_SUCCESS_MARKER, "rb");
-  if (cacheflag_file) {
-    printf("Cached download present, skipping directly to validation\n");
-    cache_success_marker = true;
-  } else {
-    printf("Cached download not present or incomplete, will resume if possible\n");
-    cache_success_marker = false;
-  }
-
   printf("updating from %s\n", manifest_url);
   Updater updater;
-  if (background_cache) {
-    updater.run_stages();
-  } else {
-    updater.go();
-  }
+  updater.go();
 
   return 0;
 }

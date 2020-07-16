@@ -32,6 +32,7 @@ import signal
 from pathlib import Path
 import fcntl
 import threading
+import time
 from cffi import FFI
 
 from common.basedir import BASEDIR
@@ -302,10 +303,6 @@ def attempt_update():
 
     finalize_from_ovfs_copy()
 
-    # If a NEOS update is required, download it in the background
-    neos_update_output = run(NICE_LOW_PRIORITY + ["installer/updater/bgcache.sh"], FINALIZED)
-    cloudlog.info("NEOS update check: %S", neos_update_output)
-
     # Make sure the validity flag lands on disk LAST, only when the local git
     # repo and OP install are in a consistent state.
     set_consistent_flag()
@@ -320,7 +317,6 @@ def attempt_update():
 def main():
   update_failed_count = 0
   overlay_init_done = False
-  wait_helper = WaitTimeHelper()
   params = Params()
 
   if params.get("DisableUpdates") == b"1":
@@ -339,6 +335,11 @@ def main():
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
+
+  # Wait a short time before our first update attempt
+  # Avoids race with IsOffroad not being set, reduces manager startup load
+  time.sleep(30)
+  wait_helper = WaitTimeHelper()
 
   while True:
     update_failed_count += 1
