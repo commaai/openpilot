@@ -86,12 +86,13 @@ function launch {
       cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
-    if [ ! -f "$BASEDIR/prebuilt" ]; then
-      echo "Clearing build products and resetting scons state prior to NEOS update"
-      git clean -xdf
-      git submodule foreach --recursive git clean -xdf
-      rm -rf /tmp/scons_cache
-    fi
+    # TODO: check if this is needed, scons should know what it needs to rebuild
+    #if [ ! -f "$BASEDIR/prebuilt" ]; then
+    #  echo "Clearing build products and resetting scons state prior to NEOS update"
+    #  git clean -xdf
+    #  git submodule foreach --recursive git clean -xdf
+    #  rm -rf /tmp/scons_cache
+    #fi
 
     "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update.json"
   fi
