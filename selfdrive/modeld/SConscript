@@ -9,7 +9,8 @@ common_src = [
   "models/commonmodel.c",
   "runners/snpemodel.cc",
   "transforms/loadyuv.c",
-  "transforms/transform.c"]
+  "transforms/transform.c"
+]
 
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'gnustl_shared']
@@ -24,9 +25,11 @@ else:
 
   # for tensorflow support
   common_src += ['runners/tfmodel.cc']
-  # tell runners to use it
+
+  # tell runners to use tensorflow
   lenv['CFLAGS'].append("-DUSE_TF_MODEL")
   lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
+
   if arch == "Darwin":
     # fix OpenCL
     del libs[libs.index('OpenCL')]

@@ -19,7 +19,7 @@ def run_on_phone(test_cmd):
   ssh = paramiko.SSHClient()
   ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-  key_file = open(os.path.join(os.path.dirname(__file__), "../../tools/ssh/key/id_rsa"))
+  key_file = open(os.path.join(os.path.dirname(__file__), "id_rsa"))
   key = paramiko.RSAKey.from_private_key(key_file)
 
   print("SSH to phone at {}".format(eon_ip))
@@ -44,14 +44,19 @@ def run_on_phone(test_cmd):
 
   # pass in all environment variables prefixed with 'CI_'
   for k, v in os.environ.items():
-    if k.startswith("CI_"):
+    if k.startswith("CI_") or k in ["GIT_BRANCH", "GIT_COMMIT"]:
       conn.send(f"export {k}='{v}'\n")
   conn.send("export CI=1\n")
+
+  # clear scons cache dirs that haven't been written to in one day
+  conn.send("cd /tmp && find -name 'scons_cache_*' -type d -maxdepth 1 -mtime 1 -exec rm -rf '{}' \\;\n")
 
   # set up environment
   conn.send(f"cd {SOURCE_DIR}\n")
   conn.send("git reset --hard\n")
   conn.send("git fetch origin\n")
+  conn.send("find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \\;\n")
+  conn.send(f"git reset --hard {commit}\n")
   conn.send(f"git checkout {commit}\n")
   conn.send("git clean -xdf\n")
   conn.send("git submodule update --init\n")

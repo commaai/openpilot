@@ -3,6 +3,7 @@ LICENSE
 launch_chffrplus.sh
 launch_openpilot.sh
 
+Jenkinsfile
 SConstruct
 
 CONTRIBUTING.md
@@ -57,6 +58,8 @@ common/api/__init__.py
 
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
+
+release/build_release2.sh
 
 selfdrive/version.py
 
@@ -314,10 +317,11 @@ selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 
 selfdrive/test/__init__.py
+selfdrive/test/id_rsa
 selfdrive/test/helpers.py
+selfdrive/test/phone_ci.py
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
-selfdrive/test/test_car_models.py
 selfdrive/test/test_cpu_usage.py
 
 selfdrive/ui/SConscript
@@ -472,17 +476,16 @@ opendbc/can/common.cc
 opendbc/can/common.h
 opendbc/can/common.pxd
 opendbc/can/common_dbc.h
+opendbc/can/common_pyx_setup.py
 opendbc/can/dbc.cc
 opendbc/can/dbc.py
 opendbc/can/dbc_template.cc
 opendbc/can/packer.cc
 opendbc/can/packer.py
 opendbc/can/packer_pyx.pyx
-opendbc/can/packer_pyx_setup.py
 opendbc/can/parser.cc
 opendbc/can/parser.py
 opendbc/can/parser_pyx.pyx
-opendbc/can/parser_pyx_setup.py
 opendbc/can/process_dbc.py
 opendbc/can/dbc_out/.gitkeep
 opendbc/can/dbc_out/.gitignore

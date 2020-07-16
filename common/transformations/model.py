@@ -41,6 +41,17 @@ medmodel_intrinsics = np.array(
    [   0. ,  eon_focal_length / medmodel_zoom,  MEDMODEL_CY],
    [   0. ,                            0. ,   1.]])
 
+# CAL model
+CALMODEL_INPUT_SIZE = (512, 256)
+CALMODEL_YUV_SIZE = (CALMODEL_INPUT_SIZE[0], CALMODEL_INPUT_SIZE[1] * 3 // 2)
+CALMODEL_CY = 47.6
+
+calmodel_zoom = 1.5
+calmodel_intrinsics = np.array(
+  [[ eon_focal_length / calmodel_zoom,    0. ,  0.5 * CALMODEL_INPUT_SIZE[0]],
+   [   0. ,  eon_focal_length / calmodel_zoom,  CALMODEL_CY],
+   [   0. ,                            0. ,   1.]])
+
 
 # BIG model
 

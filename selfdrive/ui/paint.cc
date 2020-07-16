@@ -437,6 +437,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   }
 }
 
+#ifdef SHOW_SPEEDLIMIT
 static void ui_draw_vision_speedlimit(UIState *s) {
   char speedlim_str[32];
   float speedlimit = s->scene.speedlimit;
@@ -493,6 +494,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
     ui_draw_text(s->vg, text_x, viz_speedlim_y + (is_speedlim_valid ? 170 : 165), "N/A", 42*2.5, color, s->font_sans_semibold);
   }
 }
+#endif
 
 static void ui_draw_vision_speed(UIState *s) {
   const UIScene *scene = &s->scene;
@@ -542,12 +544,14 @@ static void ui_draw_vision_event(UIState *s) {
   }
 }
 
+#ifdef SHOW_SPEEDLIMIT
 static void ui_draw_vision_map(UIState *s) {
   const int map_size = 96;
   const int map_x = (s->scene.ui_viz_rx + (map_size * 3) + (bdr_s * 3));
   const int map_y = (footer_y + ((footer_h - map_size) / 2));
   ui_draw_circle_image(s->vg, map_x, map_y, map_size, s->img_map, s->scene.map_valid);
 }
+#endif
 
 static void ui_draw_vision_face(UIState *s) {
   const int face_size = 96;

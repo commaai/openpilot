@@ -649,6 +649,11 @@ EVENTS = {
     ET.NO_ENTRY : NoEntryAlert("Radar Error: Restart the Car"),
   },
 
+  EventName.modeldLagging: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Driving model lagging"),
+    ET.NO_ENTRY : NoEntryAlert("Driving model lagging"),
+  },
+
   EventName.lowMemory: {
     ET.SOFT_DISABLE: SoftDisableAlert("Low Memory: Reboot Your Device"),
     ET.PERMANENT: Alert(
