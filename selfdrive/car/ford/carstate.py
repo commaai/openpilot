@@ -46,7 +46,7 @@ class CarState(CarStateBase):
     self.shifter_values = int(cp.vl["TransGearData"]['GearLvrPos_D_Actl'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values)
     ret.seatbeltUnlatched = cp.vl["RCMStatusMessage2_FD1"]['FirstRowBuckleDriver'] == 2
-    print ("Lateral_Limit:", self.latLimit, "lkas_state:", self.lkas_state, "steer_override:", self.steer_override)
+    print ("Lateral_Limit:", self.latLimit, "lkas_state:", self.lkas_state, "steer_override:", ret.steeringPressed)
     return ret
 
   @staticmethod
