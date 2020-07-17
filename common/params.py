@@ -326,7 +326,7 @@ def write_db(params_path, key, value):
       os.fsync(f.fileno())
 
     path = "%s/d/%s" % (params_path, key)
-    os.rename(tmp_path, path)
+    os.rename(tmp_path.name, path)
     fsync_dir(os.path.dirname(path))
   finally:
     os.umask(prev_umask)
