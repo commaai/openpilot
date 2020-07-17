@@ -41,7 +41,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = self.right_blinker_on > 0
     ret.doorOpen = any([cp.vl["Doors"]['Door_FL_Open'],cp.vl["Doors"]['Door_FR_Open'],
                         cp.vl["Doors"]['Door_RL_Open'], cp.vl["Doors"]['Door_RR_Open']]) 
-    ret.steer_torque_driver = cp.vl["EPAS_INFO"]['DrvSte_Tq_Actl']
+    ret.steeringTorque = cp.vl["EPAS_INFO"]['DrvSte_Tq_Actl']
 
     self.shifter_values = int(cp.vl["TransGearData"]['GearLvrPos_D_Actl'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values)
