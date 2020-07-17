@@ -16,23 +16,15 @@
 #include <hardware/gps.h>
 #include <utils/Timers.h>
 
-#include <capnp/serialize.h>
-
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/swaglog.h"
-
-#include "cereal/gen/cpp/log.capnp.h"
-
-#include "rawgps.h"
 
 volatile sig_atomic_t do_exit = 0;
 
 namespace {
 
-Context *gps_context;
-PubSocket *gps_publisher;
-PubSocket *gps_location_publisher;
+PubMaster *pm;
 
 const GpsInterface* gGpsInterface = NULL;
 const AGpsInterface* gAGpsInterface = NULL;
@@ -55,10 +47,7 @@ void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
   nmeaData.setLocalWallTime(log_time_wall);
   nmeaData.setNmea(nmea);
 
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  // printf("gps send %d\n", bytes.size());
-  gps_publisher->send((char*)bytes.begin(), bytes.size());
+  pm->send("gpsNMEA", msg);
 }
 
 void location_callback(GpsLocation* location) {
@@ -80,9 +69,7 @@ void location_callback(GpsLocation* location) {
   locationData.setTimestamp(location->timestamp);
   locationData.setSource(cereal::GpsLocationData::SensorSource::ANDROID);
 
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
-  gps_location_publisher->send((char*)bytes.begin(), bytes.size());
+  pm->send("gpsLocation", msg);
 }
 
 pthread_t create_thread_callback(const char* name, void (*start)(void *), void* arg) {
@@ -127,9 +114,8 @@ AGpsCallbacks agps_callbacks = {
   create_thread_callback,
 };
 
-
-
 void gps_init() {
+  pm = new PubMaster({"gpsNMEA", "gpsLocation"});
   LOG("*** init GPS");
   hw_module_t* module = NULL;
   hw_get_module(GPS_HARDWARE_MODULE_ID, (hw_module_t const**)&module);
@@ -158,30 +144,17 @@ void gps_init() {
                                    GPS_POSITION_RECURRENCE_PERIODIC,
                                    100, 0, 0);
 
-  gps_context = Context::create();
-  gps_publisher = PubSocket::create(gps_context, "gpsNMEA");
-  gps_location_publisher = PubSocket::create(gps_context, "gpsLocation");
-
-  assert(gps_publisher != NULL);
-  assert(gps_location_publisher != NULL);
 }
 
 void gps_destroy() {
+  delete pm;
   gGpsInterface->stop();
   gGpsInterface->cleanup();
-}
-
-
-int64_t arm_cntpct() {
-  int64_t v;
-  asm volatile("mrs %0, cntpct_el0" : "=r"(v));
-  return v;
 }
 
 }
 
 int main() {
-  int err = 0;
   setpriority(PRIO_PROCESS, 0, -13);
 
   signal(SIGINT, (sighandler_t)set_do_exit);
@@ -189,11 +162,7 @@ int main() {
 
   gps_init();
 
-  rawgps_init();
-
   while(!do_exit) pause();
-
-  rawgps_destroy();
 
   gps_destroy();
 

@@ -32,6 +32,7 @@ import signal
 from pathlib import Path
 import fcntl
 import threading
+import time
 from cffi import FFI
 
 from common.basedir import BASEDIR
@@ -112,7 +113,7 @@ def set_consistent_flag():
 def set_update_available_params(new_version=False):
   params = Params()
 
-  t = datetime.datetime.now().isoformat()
+  t = datetime.datetime.utcnow().isoformat()
   params.put("LastUpdateTime", t.encode('utf8'))
 
   if new_version:
@@ -130,6 +131,35 @@ def dismount_ovfs():
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.error("unmounting existing overlay")
     run(["umount", "-l", OVERLAY_MERGED])
+
+
+def setup_git_options(cwd):
+  # We sync FS object atimes (which EON doesn't use) and mtimes, but ctimes
+  # are outside user control. Make sure Git is set up to ignore system ctimes,
+  # because they change when we make hard links during finalize. Otherwise,
+  # there is a lot of unnecessary churn. This appears to be a common need on
+  # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
+  try:
+    trustctime = run(["git", "config", "--get", "core.trustctime"], cwd)
+    trustctime_set = (trustctime.strip() == "false")
+  except subprocess.CalledProcessError:
+    trustctime_set = False
+
+  if not trustctime_set:
+    cloudlog.info("Setting core.trustctime false")
+    run(["git", "config", "core.trustctime", "false"], cwd)
+
+  # We are temporarily using copytree to copy the directory, which also changes
+  # inode numbers. Ignore those changes too.
+  try:
+    checkstat = run(["git", "config", "--get", "core.checkStat"], cwd)
+    checkstat_set = (checkstat.strip() == "minimal")
+  except subprocess.CalledProcessError:
+    checkstat_set = False
+
+  if not checkstat_set:
+    cloudlog.info("Setting core.checkState minimal")
+    run(["git", "config", "core.checkStat", "minimal"], cwd)
 
 
 def init_ovfs():
@@ -151,17 +181,6 @@ def init_ovfs():
   if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
     os.remove(os.path.join(BASEDIR, ".overlay_consistent"))
 
-  # We sync FS object atimes (which EON doesn't use) and mtimes, but ctimes
-  # are outside user control. Make sure Git is set up to ignore system ctimes,
-  # because they change when we make hard links during finalize. Otherwise,
-  # there is a lot of unnecessary churn. This appears to be a common need on
-  # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
-  run(["git", "config", "core.trustctime", "false"], BASEDIR)
-
-  # We are temporarily using copytree to copy the directory, which also changes
-  # inode numbers. Ignore those changes too.
-  run(["git", "config", "core.checkStat", "minimal"], BASEDIR)
-
   # Leave a timestamped canary in BASEDIR to check at startup. The EON clock
   # should be correct by the time we get here. If the init file disappears, or
   # critical mtimes in BASEDIR are newer than .overlay_init, continue.sh can
@@ -177,7 +196,7 @@ def inodes_in_tree(search_dir):
   """Given a search root, produce a dictionary mapping of inodes to relative
   pathnames of regular files (no directories, symlinks, or special files)."""
   inode_map = {}
-  for root, dirs, files in os.walk(search_dir, topdown=True):
+  for root, _, files in os.walk(search_dir, topdown=True):
     for file_name in files:
       full_path_name = os.path.join(root, file_name)
       st = os.lstat(full_path_name)
@@ -253,6 +272,8 @@ def finalize_from_ovfs_copy():
 def attempt_update():
   cloudlog.info("attempting git update inside staging overlay")
 
+  setup_git_options(OVERLAY_MERGED)
+
   git_fetch_output = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
   cloudlog.info("git fetch success: %s", git_fetch_output)
 
@@ -260,7 +281,8 @@ def attempt_update():
   upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
   new_version = cur_hash != upstream_hash
 
-  git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n")
+  err_msg = "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n"
+  git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != err_msg)
 
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
   if new_version or git_fetch_result:
@@ -292,10 +314,13 @@ def attempt_update():
   set_update_available_params(new_version=new_version)
 
 
-def main(gctx=None):
+def main():
+  update_failed_count = 0
   overlay_init_done = False
-  wait_helper = WaitTimeHelper()
   params = Params()
+
+  if params.get("DisableUpdates") == b"1":
+    raise RuntimeError("updates are disabled by param")
 
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
@@ -311,8 +336,14 @@ def main(gctx=None):
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
+  # Wait a short time before our first update attempt
+  # Avoids race with IsOffroad not being set, reduces manager startup load
+  time.sleep(30)
+  wait_helper = WaitTimeHelper()
+
   while True:
-    time_wrong = datetime.datetime.now().year < 2019
+    update_failed_count += 1
+    time_wrong = datetime.datetime.utcnow().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
 
     # Wait until we have a valid datetime to initialize the overlay
@@ -335,6 +366,7 @@ def main(gctx=None):
 
         if params.get("IsOffroad") == b"1":
           attempt_update()
+          update_failed_count = 0
         else:
           cloudlog.info("not running updater, openpilot running")
 
@@ -348,8 +380,8 @@ def main(gctx=None):
         overlay_init_done = False
       except Exception:
         cloudlog.exception("uncaught updated exception, shouldn't happen")
-        overlay_init_done = False
 
+    params.put("UpdateFailedCount", str(update_failed_count))
     wait_between_updates(wait_helper.ready_event)
     if wait_helper.shutdown:
       break

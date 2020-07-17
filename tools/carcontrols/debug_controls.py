@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import struct
 from common.numpy_fast import clip
 from common.params import Params
 from copy import copy
@@ -27,7 +26,7 @@ def steer_thread():
 
   # wait for health and CAN packets
   hw_type = messaging.recv_one(health).health.hwType
-  has_relay = hw_type in [HwType.blackPanda, HwType.uno]
+  has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
   print("Waiting for CAN messages...")
   messaging.get_one_can(logcan)
 
@@ -65,11 +64,7 @@ def steer_thread():
       #print "enable", enabled, "steer", actuators.steer, "accel", actuators.gas - actuators.brake
 
       hud_alert = 0
-      audible_alert = 0
-      if joystick.testJoystick.buttons[2]:
-        audible_alert = "beepSingle"
       if joystick.testJoystick.buttons[3]:
-        audible_alert = "chimeRepeated"
         hud_alert = "steerRequired"
 
     CC.actuators.gas = actuators.gas
@@ -84,14 +79,12 @@ def steer_thread():
     sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))
 
     # broadcast carState
-    cs_send = messaging.new_message()
-    cs_send.init('carState')
+    cs_send = messaging.new_message('carState')
     cs_send.carState = copy(CS)
     carstate.send(cs_send.to_bytes())
 
     # broadcast carControl
-    cc_send = messaging.new_message()
-    cc_send.init('carControl')
+    cc_send = messaging.new_message('carControl')
     cc_send.carControl = copy(CC)
     carcontrol.send(cc_send.to_bytes())
 

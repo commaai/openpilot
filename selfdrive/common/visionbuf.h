@@ -1,6 +1,7 @@
 #ifndef IONBUF_H
 #define IONBUF_H
 
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
@@ -13,6 +14,7 @@ extern "C" {
 
 typedef struct VisionBuf {
   size_t len;
+  size_t mmap_len;
   void* addr;
   int handle;
   int fd;

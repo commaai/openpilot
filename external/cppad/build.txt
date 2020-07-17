@@ -1,7 +1,0 @@
-wget 'http://www.coin-or.org/download/source/CppAD/cppad-20170816.epl.tgz'
-tar xvf cppad-20170816.epl.tgz
-cd cppad-20170816/
-mkdir build
-cd build
-cmake -D cppad_prefix="$HOME/one/external/cppad" ..
-make install

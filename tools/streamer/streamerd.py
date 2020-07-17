@@ -1,15 +1,12 @@
 #!/usr/bin/env python
+# pylint: skip-file
+
 import os
 import sys
-import argparse
 import zmq
-import json
 import cv2
 import numpy as np
-from hexdump import hexdump
-import scipy.misc
 import struct
-from collections import deque
 
 # sudo pip install git+git://github.com/mikeboers/PyAV.git
 import av
@@ -29,8 +26,8 @@ def receiver_thread():
   if PYGAME:
     pygame.init()
     pygame.display.set_caption("vnet debug UI")
-    screen = pygame.display.set_mode((1164,874), pygame.DOUBLEBUF)
-    camera_surface = pygame.surface.Surface((1164,874), 0, 24).convert()
+    screen = pygame.display.set_mode((1164, 874), pygame.DOUBLEBUF)
+    camera_surface = pygame.surface.Surface((1164, 874), 0, 24).convert()
 
   addr = "192.168.5.11"
   if len(sys.argv) >= 2:
@@ -43,12 +40,12 @@ def receiver_thread():
   ctx = av.codec.codec.Codec('hevc', 'r').create()
   ctx.decode(av.packet.Packet(start.decode("hex")))
 
-  import time
+  # import time
   while 1:
-    t1 = time.time()
+    # t1 = time.time()
     ts, raw = s.recv_multipart()
     ts = struct.unpack('q', ts)[0] * 1000
-    t1, t2 = time.time(), t1
+    # t1, t2 = time.time(), t1
     #print 'ms to get frame:', (t1-t2)*1000
 
     pkt = av.packet.Packet(raw)
@@ -56,19 +53,18 @@ def receiver_thread():
     if not f:
       continue
     f = f[0]
-    t1, t2 = time.time(), t1
+    # t1, t2 = time.time(), t1
     #print 'ms to decode:', (t1-t2)*1000
 
     y_plane = np.frombuffer(f.planes[0], np.uint8).reshape((874, 1216))[:, 0:1164]
     u_plane = np.frombuffer(f.planes[1], np.uint8).reshape((437, 608))[:, 0:582]
     v_plane = np.frombuffer(f.planes[2], np.uint8).reshape((437, 608))[:, 0:582]
     yuv_img = y_plane.tobytes() + u_plane.tobytes() + v_plane.tobytes()
-    t1, t2 = time.time(), t1
+    # t1, t2 = time.time(), t1
     #print 'ms to make yuv:', (t1-t2)*1000
     #print 'tsEof:', ts
 
-    dat = messaging.new_message()
-    dat.init('frame')
+    dat = messaging.new_message('frame')
     dat.frame.image = yuv_img
     dat.frame.timestampEof = ts
     dat.frame.transform = map(float, list(np.eye(3).flatten()))
@@ -81,7 +77,7 @@ def receiver_thread():
 
       #scipy.misc.imsave("tmp.png", imgff)
 
-      pygame.surfarray.blit_array(camera_surface, imgff.swapaxes(0,1))
+      pygame.surfarray.blit_array(camera_surface, imgff.swapaxes(0, 1))
       screen.blit(camera_surface, (0, 0))
       pygame.display.flip()
 

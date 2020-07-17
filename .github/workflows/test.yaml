@@ -1,82 +1,157 @@
-name: Openpilot Tests
-on: [push, pull_request]
+name: openpilot tests
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron: '0 * * * *'
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
-  LOAD: docker load -i tmppilot.tar.gz/tmppilot.tar.gz
-  UNIT_TEST: cd /tmp/openpilot && python -m unittest discover
+  PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
+  CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
+  UNIT_TEST: coverage run --append -m unittest discover
+  BUILD: |
+      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+      docker pull docker.io/commaai/openpilotci:latest || true
+      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilot .
 
 jobs:
-  build:
-    name: build
+  build_release:
+    name: build release
     runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    env:
+      TEST_DIR: tmppilot
     steps:
     - uses: actions/checkout@v2
-    - name: Checkout submodules
-      run: |
-        git submodule update --init
-    - run: |
-        docker build -t tmppilot -f Dockerfile.openpilot .
-        docker save tmppilot:latest | gzip > tmppilot.tar.gz
-    - uses: actions/upload-artifact@v1
       with:
-        name: tmppilot.tar.gz
-        path: tmppilot.tar.gz
+        submodules: true
+    - name: Strip non-release files
+      run: |
+        mkdir $TEST_DIR
+        cp -pR --parents $(cat release/files_common) $TEST_DIR
+        cp Dockerfile.openpilot $TEST_DIR
 
-  linter:
-    name: linter
+        # need this to build on x86
+        cp -pR --parents phonelibs/libyuv phonelibs/snpe \
+                         external/bin selfdrive/modeld/runners $TEST_DIR
+
+        # need these so docker copy won't fail
+        cp Pipfile Pipfile.lock .pylintrc .coveragerc-app .pre-commit-config.yaml $TEST_DIR
+        cd $TEST_DIR
+        mkdir laika laika_repo tools
+    - name: Build Docker image
+      run: cd $TEST_DIR && eval "$BUILD"
+    - name: Build openpilot and run quick check
+      run: |
+          $RUN "cd /tmp/openpilot && \
+                scons -j$(nproc) && \
+                $UNIT_TEST selfdrive/car"
+
+  docker_push:
+    name: docker push
     runs-on: ubuntu-16.04
-    needs: build
+    timeout-minutes: 50
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
-      - name: flake8
-        run: $RUN "cd /tmp/openpilot/ && ./flake8_openpilot.sh"
-      - name: pylint
-        run: $RUN "cd /tmp/openpilot/ && ./pylint_openpilot.sh"
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Push to dockerhub
+        run: |
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag tmppilot docker.io/commaai/openpilotci:latest
+          docker push docker.io/commaai/openpilotci:latest
+
+  docker_push_prebuilt:
+    name: docker push prebuilt
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
+    needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Docker image
+        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j3" >> Dockerfile.openpilot && eval "$BUILD"
+      - name: Push to dockerhub
+        run: |
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag tmppilot docker.io/commaai/openpilot:latest
+          docker push docker.io/commaai/openpilot:latest
+
+  static_analysis:
+    name: static analysis
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: pre-commit
+        run: $RUN "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
 
   unit_tests:
     name: unit tests
     runs-on: ubuntu-16.04
-    needs: build
+    timeout-minutes: 50
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: Run unit tests
         run: |
-          $RUN "$UNIT_TEST common"
-          $RUN "$UNIT_TEST opendbc/can"
-          $RUN "$UNIT_TEST selfdrive/boardd"
-          $RUN "$UNIT_TEST selfdrive/controls"
-          $RUN "$UNIT_TEST selfdrive/loggerd"
-          $RUN "$UNIT_TEST selfdrive/car"
-          $RUN "$UNIT_TEST selfdrive/locationd"
-          $RUN "$UNIT_TEST selfdrive/athena"
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    coverage run selfdrive/test/test_fingerprints.py && \
+                    $UNIT_TEST common && \
+                    $UNIT_TEST opendbc/can && \
+                    $UNIT_TEST selfdrive/boardd && \
+                    $UNIT_TEST selfdrive/controls && \
+                    $UNIT_TEST selfdrive/monitoring && \
+                    $UNIT_TEST selfdrive/loggerd && \
+                    $UNIT_TEST selfdrive/car && \
+                    $UNIT_TEST selfdrive/locationd && \
+                    $UNIT_TEST selfdrive/athena && \
+                    $UNIT_TEST tools/lib/tests"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F unit_tests"
 
   process_replay:
     name: process replay
     runs-on: ubuntu-16.04
-    needs: build
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: Run replay
         run: |
-          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/process_replay && CI=1 ./test_processes.py"
-          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
-          docker rm $CONTAINER_NAME
-      - uses: actions/upload-artifact@v1
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F process_replay"
+      - name: Print diff
+        if: always()
+        run: |
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
+          cat diff.txt
+      - uses: actions/upload-artifact@v2
         if: always()
         with:
           name: process_replay_diff.txt
@@ -85,22 +160,26 @@ jobs:
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-16.04
-    needs: build
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: Test longitudinal
         run: |
-          CONTAINER_NAME="tmppilot_${GITHUB_SHA}"
-          docker run --shm-size 1G --name ${CONTAINER_NAME} tmppilot /bin/sh -c "cd /tmp/openpilot/selfdrive/test/longitudinal_maneuvers && OPTEST=1 ./test_longitudinal.py"
+          $PERSIST "mkdir -p /tmp/openpilot/selfdrive/test/out && \
+                    cd /tmp/openpilot/ && \
+                    scons -j$(nproc) && \
+                    cd selfdrive/test/longitudinal_maneuvers && \
+                    OPTEST=1 ./test_longitudinal.py"
+      - name: Copy artifacts
+        if: always()
+        run: |
           mkdir out
-          docker cp $CONTAINER_NAME:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
-          docker rm $CONTAINER_NAME
-      - uses: actions/upload-artifact@v1
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
+      - uses: actions/upload-artifact@v2
         if: always()
         with:
           name: longitudinal
@@ -109,13 +188,21 @@ jobs:
   test_car_models:
     name: test car models
     runs-on: ubuntu-16.04
-    needs: build
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
-      - uses: actions/download-artifact@v1
+      - uses: actions/checkout@v2
         with:
-          name: tmppilot.tar.gz
-      - name: Load image
-        run: $LOAD
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
       - name: Test car models
-        run: $RUN "mkdir -p /data/params && cd /tmp/openpilot/selfdrive/test/ && ./test_car_models.py"
+        run: |
+          $PERSIST "mkdir -p /data/params && \
+                    cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && \
+                    coverage combine"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F test_car_models"

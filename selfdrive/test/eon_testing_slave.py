@@ -2,16 +2,20 @@
 import re
 import time
 import json
-import base64
 import requests
 import subprocess
+from common.timeout import Timeout
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from os.path import expanduser
 from threading import Thread
+from selfdrive.manager import unblock_stdout
 
 from common.params import Params
 import os
 
+
+if __name__ == "__main__":
+  unblock_stdout()
 
 MASTER_HOST = "testing.comma.life"
 
@@ -32,41 +36,40 @@ def get_workdir():
 
 def heartbeat():
   work_dir = get_workdir()
-  env = {
-    "LD_LIBRARY_PATH": "",
-    "ANDROID_DATA": "/data",
-    "ANDROID_ROOT": "/system",
-  }
+  # env = {
+  #   "LD_LIBRARY_PATH": "",
+  #   "ANDROID_DATA": "/data",
+  #   "ANDROID_ROOT": "/system",
+  # }
 
   while True:
-
-    with open(os.path.join(work_dir, "selfdrive", "common", "version.h")) as _versionf:
-      version = _versionf.read().split('"')[1]
-
-    # subprocess.check_output(["/system/bin/screencap", "-p", "/tmp/screen.png"], cwd=work_dir, env=env)
-    # screenshot = base64.b64encode(open('/tmp/screen.png').read())
-    tmux = ""
-
     try:
-      tmux = os.popen('tail -n 100 /tmp/tmux_out').read()
-    except:
-      pass
+      with open(os.path.join(work_dir, "selfdrive", "common", "version.h")) as _versionf:
+        version = _versionf.read().split('"')[1]
 
-    params = Params()
-    msg = {
-      'version': version,
-      'dongle_id': params.get("DongleId").rstrip().decode('utf8'),
-      'remote': subprocess.check_output(["git", "config", "--get", "remote.origin.url"], cwd=work_dir).decode('utf8').rstrip(),
-      'revision': subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=work_dir).decode('utf8').rstrip(),
-      'serial': subprocess.check_output(["getprop", "ro.boot.serialno"]).decode('utf8').rstrip(),
-      # 'screenshot': screenshot,
-      'tmux': tmux,
-    }
+      # subprocess.check_output(["/system/bin/screencap", "-p", "/tmp/screen.png"], cwd=work_dir, env=env)
+      # screenshot = base64.b64encode(open('/tmp/screen.png').read())
+      tmux = ""
 
-    try:
-      requests.post('http://%s/eon/heartbeat/' % MASTER_HOST, json=msg, timeout=10.0)
-    except:
-      print("Unable to reach master")
+      try:
+        tmux = os.popen('tail -n 100 /tmp/tmux_out').read()
+      except Exception:
+        pass
+
+      params = Params()
+      msg = {
+        'version': version,
+        'dongle_id': params.get("DongleId").rstrip().decode('utf8'),
+        'remote': subprocess.check_output(["git", "config", "--get", "remote.origin.url"], cwd=work_dir).decode('utf8').rstrip(),
+        'revision': subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=work_dir).decode('utf8').rstrip(),
+        'serial': subprocess.check_output(["getprop", "ro.boot.serialno"]).decode('utf8').rstrip(),
+        # 'screenshot': screenshot,
+        'tmux': tmux,
+      }
+      with Timeout(10):
+        requests.post('http://%s/eon/heartbeat/' % MASTER_HOST, json=msg, timeout=5.0)
+    except Exception as e:
+      print("Unable to send heartbeat", e)
 
     time.sleep(5)
 
@@ -138,13 +141,8 @@ def control_server(server_class=HTTPServer, handler_class=HTTPHandler, port=8080
 
 
 if __name__ == "__main__":
-  heartbeat_thread = Thread(target=heartbeat)
-  heartbeat_thread.daemon = True
-  heartbeat_thread.start()
-
   control_thread = Thread(target=control_server)
   control_thread.daemon = True
   control_thread.start()
 
-  while True:
-    time.sleep(1)
+  heartbeat()

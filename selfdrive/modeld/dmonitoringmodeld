@@ -1,5 +1,5 @@
 #!/bin/sh
-export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64-android-clang3.8:$HOME/openpilot/phonelibs/snpe/x86_64-linux-clang:$LD_LIBRARY_PATH"
-export ADSP_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64-android-clang3.8/"
+export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64/:$HOME/openpilot/phonelibs/snpe/larch64:$HOME/openpilot/phonelibs/snpe/x86_64-linux-clang:$LD_LIBRARY_PATH"
+export ADSP_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64/"
 exec ./_dmonitoringmodeld
 

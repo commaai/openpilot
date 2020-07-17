@@ -2,11 +2,16 @@
 #define VISIONIMG_H
 
 #include "common/visionbuf.h"
+#include "common/glutil.h"
 
-#include <GLES3/gl3.h>
+#ifdef QCOM
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #undef Status
+#else
+typedef int EGLImageKHR;
+typedef void *EGLClientBuffer;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -4,8 +4,7 @@ import math
 import time
 from cereal import car
 from opendbc.can.parser import CANParser
-from selfdrive.car.gm.interface import CanBus
-from selfdrive.car.gm.values import DBC, CAR
+from selfdrive.car.gm.values import DBC, CAR, CanBus
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import RadarInterfaceBase
 
@@ -17,7 +16,7 @@ NUM_SLOTS = 20
 # messages that are present in DBC
 LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
-def create_radar_can_parser(canbus, car_fingerprint):
+def create_radar_can_parser(car_fingerprint):
 
   dbc_f = DBC[car_fingerprint]['radar']
   if car_fingerprint in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
@@ -38,20 +37,15 @@ def create_radar_can_parser(canbus, car_fingerprint):
 
     checks = []
 
-    return CANParser(dbc_f, signals, checks, canbus.obstacle)
+    return CANParser(dbc_f, signals, checks, CanBus.OBSTACLE)
   else:
     return None
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
-    # radar
-    self.pts = {}
+    super().__init__(CP)
 
-    self.delay = 0  # Delay of radar
-
-    canbus = CanBus()
-    print("Using %d as obstacle CAN bus ID" % canbus.obstacle)
-    self.rcp = create_radar_can_parser(canbus, CP.carFingerprint)
+    self.rcp = create_radar_can_parser(CP.carFingerprint)
 
     self.trigger_msg = LAST_RADAR_MSG
     self.updated_messages = set()
@@ -101,7 +95,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[targetId] = car.RadarData.RadarPoint.new_message()
           self.pts[targetId].trackId = targetId
         distance = cpt['TrkRange']
-        self.pts[targetId].dRel = distance # from front of car
+        self.pts[targetId].dRel = distance  # from front of car
         # From driver's pov, left is positive
         self.pts[targetId].yRel = math.sin(cpt['TrkAzimuth'] * CV.DEG_TO_RAD) * distance
         self.pts[targetId].vRel = cpt['TrkRangeRate']
@@ -109,7 +103,7 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[targetId].yvRel = float('nan')
 
     for oldTarget in list(self.pts.keys()):
-      if not oldTarget in currentTargets:
+      if oldTarget not in currentTargets:
         del self.pts[oldTarget]
 
     ret.points = list(self.pts.values())

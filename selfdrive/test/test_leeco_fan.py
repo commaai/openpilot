@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: skip-file
+
 import time
 from smbus2 import SMBus
 
@@ -20,4 +22,3 @@ def setup_leon_fan():
   bus.close()
 
 setup_leon_fan()
-

@@ -1,0 +1,8 @@
+Import('env', 'cython_dependencies')
+
+d = Dir('.')
+
+env.Command(['transformations.so'],
+            cython_dependencies + ['transformations.pxd', 'transformations.pyx',
+             'coordinates.cc', 'orientation.cc', 'coordinates.hpp', 'orientation.hpp'],
+            'cd ' + d.path + ' && python3 setup.py build_ext --inplace')

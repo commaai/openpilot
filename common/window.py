@@ -1,6 +1,6 @@
 import sys
-import pygame
-from pygame.locals import *
+import pygame  # pylint: disable=import-error
+import cv2  # pylint: disable=import-error
 
 class Window():
   def __init__(self, w, h, caption="window", double=False):
@@ -10,27 +10,26 @@ class Window():
     pygame.display.set_caption(caption)
     self.double = double
     if self.double:
-      self.screen = pygame.display.set_mode((w*2,h*2), pygame.DOUBLEBUF)
+      self.screen = pygame.display.set_mode((w*2, h*2))
     else:
-      self.screen = pygame.display.set_mode((w,h), pygame.DOUBLEBUF)
-    self.camera_surface = pygame.surface.Surface((w,h), 0, 24).convert()
+      self.screen = pygame.display.set_mode((w, h))
 
   def draw(self, out):
-    pygame.surfarray.blit_array(self.camera_surface, out.swapaxes(0,1))
+    pygame.event.pump()
     if self.double:
-      camera_surface_2x = pygame.transform.scale2x(self.camera_surface)
-      self.screen.blit(camera_surface_2x, (0, 0))
+      out2 = cv2.resize(out, (self.w*2, self.h*2))
+      pygame.surfarray.blit_array(self.screen, out2.swapaxes(0, 1))
     else:
-      self.screen.blit(self.camera_surface, (0, 0))
+      pygame.surfarray.blit_array(self.screen, out.swapaxes(0, 1))
     pygame.display.flip()
-  
+
   def getkey(self):
     while 1:
       event = pygame.event.wait()
-      if event.type == QUIT:
+      if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
-      if event.type == KEYDOWN:
+      if event.type == pygame.KEYDOWN:
         return event.key
 
   def getclick(self):
@@ -38,3 +37,12 @@ class Window():
       if event.type == pygame.MOUSEBUTTONDOWN:
         mx, my = pygame.mouse.get_pos()
         return mx, my
+
+if __name__ == "__main__":
+  import numpy as np
+  win = Window(200, 200, double=True)
+  img = np.zeros((200, 200, 3), np.uint8)
+  while 1:
+    print("draw")
+    img += 1
+    win.draw(img)

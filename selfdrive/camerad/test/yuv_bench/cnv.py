@@ -1,5 +1,5 @@
 import numpy as np
-import cv2
+import cv2  # pylint: disable=import-error
 
 # img_bgr = np.zeros((874, 1164, 3), dtype=np.uint8)
 # for y in range(874):

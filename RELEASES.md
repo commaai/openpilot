@@ -1,6 +1,64 @@
-Version 0.7.2 (2020-XX-XX)
+Version 0.7.7 (2020-07-20)
 ========================
+ * White panda is no longer supported, upgrade to comma two or black panda
+ * Improved vehicle model estimation using high precision localizer
+ * Improved thermal management on comma two
+ * Improved autofocus for road-facing camera
+ * Improved noise performance for driver-facing camera
+ * Block lane change start using blindspot monitor on select Toyota, Hyundai, and Subaru
+ * Fix GM ignition detection
+ * Code cleanup and smaller release sizes
+ * Hyundai Sonata 2020 promoted to officially supported car
+ * Hyundai Ioniq Electric Limited 2019 and Ioniq SE 2020 support thanks to baldwalker!
+ * Subaru Forester 2019 and Ascent 2019 support thanks to martinl!
+
+Version 0.7.6.1 (2020-06-16)
+========================
+* Hotfix: update kernel on some comma twos (orders #8570-#8680)
+
+Version 0.7.6 (2020-06-05)
+========================
+* White panda is deprecated, upgrade to comma two or black panda
+* 2017 Nissan X-Trail, 2018-19 Leaf and 2019 Rogue support thanks to avolmensky!
+* 2017 Mazda CX-5 support in dashcam mode thanks to Jafaral!
+* Huge CPU savings in modeld by using thneed!
+* Lots of code cleanup and refactors
+
+Version 0.7.5 (2020-05-13)
+========================
+* Right-Hand Drive support for both driving and driver monitoring!
+* New driving model: improved at sharp turns and lead speed estimation
+* New driver monitoring model: overall improvement on comma two
+* Driver camera preview in settings to improve mounting position
+* Added support for many Hyundai, Kia, Genesis models thanks to xx979xx!
+* Improved lateral tuning for 2020 Toyota Rav 4 (hybrid)
+
+Version 0.7.4 (2020-03-20)
+========================
+ * New driving model: improved lane changes and lead car detection
+ * Improved driver monitoring model: improve eye detection
+ * Improved calibration stability
+ * Improved lateral control on some 2019 and 2020 Toyota Prius
+ * Improved lateral control on VW Golf: 20% more steering torque
+ * Fixed bug where some 2017 and 2018 Toyota C-HR would use the wrong steering angle sensor
+ * Support for Honda Insight thanks to theantihero!
+ * Code cleanup in car abstraction layers and ui
+
+Version 0.7.3 (2020-02-21)
+========================
+ * Support for 2020 Highlander thanks to che220!
+ * Support for 2018 Lexus NX 300h thanks to kengggg!
+ * Speed up ECU firmware query
+ * Fix bug where manager would sometimes hang after shutting down the car
+
+Version 0.7.2 (2020-02-07)
+========================
+ * ECU firmware version based fingerprinting for Honda & Toyota
+ * New driving model: improved path prediction during turns and lane changes and better lead speed tracking
  * Improve driver monitoring under extreme lighting and add low accuracy alert
+ * Support for 2019 Rav4 Hybrid thanks to illumiN8i!
+ * Support for 2016, 2017 and 2020 Lexus RX thanks to illumiN8i!
+ * Support for 2020 Chrysler Pacifica Hybrid thanks to adhintz!
 
 Version 0.7.1 (2020-01-20)
 ========================

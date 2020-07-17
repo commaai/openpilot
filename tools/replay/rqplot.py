@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import os
+# type: ignore
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import cereal.messaging as messaging
 import time
-
 
 # tool to plot one or more signals live. Call ex:
 #./rqplot.py log.carState.vEgo log.carState.aEgo
@@ -80,4 +79,3 @@ if __name__ == "__main__":
 
     # just a bit of wait to avoid 100% CPU usage
     time.sleep(0.001)
-

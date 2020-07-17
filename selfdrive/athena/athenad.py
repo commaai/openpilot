@@ -1,39 +1,44 @@
-#!/usr/bin/env python3.7
-import json
-import os
+#!/usr/bin/env python3
+import base64
 import hashlib
 import io
+import json
+import os
+import queue
 import random
 import select
 import socket
-import time
 import threading
-import base64
-import requests
-import queue
+import time
 from collections import namedtuple
 from functools import partial
+from typing import Any
+
+import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import create_connection, WebSocketTimeoutException, ABNF
-from selfdrive.loggerd.config import ROOT
+from websocket import ABNF, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
+from cereal.services import service_list
 from common import android
 from common.api import Api
+from common.basedir import PERSIST
 from common.params import Params
-from cereal.services import service_list
+from common.realtime import sec_since_boot
+from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
-HANDLER_THREADS = os.getenv('HANDLER_THREADS', 4)
+HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
 
 dispatcher["echo"] = lambda s: s
-payload_queue = queue.Queue()
-response_queue = queue.Queue()
-upload_queue = queue.Queue()
-cancelled_uploads = set()
+payload_queue: Any = queue.Queue()
+response_queue: Any = queue.Queue()
+upload_queue: Any = queue.Queue()
+cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
+
 
 def handle_long_poll(ws):
   end_event = threading.Event()
@@ -56,8 +61,9 @@ def handle_long_poll(ws):
     end_event.set()
     raise
   finally:
-    for i, thread in enumerate(threads):
+    for thread in threads:
       thread.join()
+
 
 def jsonrpc_handler(end_event):
   dispatcher["startLocalProxy"] = partial(startLocalProxy, end_event)
@@ -72,6 +78,7 @@ def jsonrpc_handler(end_event):
       cloudlog.exception("athena jsonrpc handler failed")
       response_queue.put_nowait(json.dumps({"error": str(e)}))
 
+
 def upload_handler(end_event):
   while not end_event.is_set():
     try:
@@ -85,6 +92,7 @@ def upload_handler(end_event):
     except Exception:
       cloudlog.exception("athena.upload_handler.exception")
 
+
 def _do_upload(upload_item):
   with open(upload_item.path, "rb") as f:
     size = os.fstat(f.fileno()).st_size
@@ -92,6 +100,7 @@ def _do_upload(upload_item):
                         data=f,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
                         timeout=10)
+
 
 # security: user should be able to request any message from their car
 @dispatcher.add_method
@@ -107,10 +116,12 @@ def getMessage(service=None, timeout=1000):
 
   return ret.to_dict()
 
+
 @dispatcher.add_method
 def listDataDirectory():
   files = [os.path.relpath(os.path.join(dp, f), ROOT) for dp, dn, fn in os.walk(ROOT) for f in fn]
   return files
+
 
 @dispatcher.add_method
 def reboot():
@@ -127,6 +138,7 @@ def reboot():
 
   return {"success": 1}
 
+
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
   if len(fn) == 0 or fn[0] == '/' or '..' in fn:
@@ -135,7 +147,7 @@ def uploadFileToUrl(fn, url, headers):
   if not os.path.exists(path):
     return 404
 
-  item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time()*1000), id=None)
+  item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
   upload_id = hashlib.sha1(str(item).encode()).hexdigest()
   item = item._replace(id=upload_id)
 
@@ -143,9 +155,11 @@ def uploadFileToUrl(fn, url, headers):
 
   return {"enqueued": 1, "item": item._asdict()}
 
+
 @dispatcher.add_method
 def listUploadQueue():
   return [item._asdict() for item in list(upload_queue.queue)]
+
 
 @dispatcher.add_method
 def cancelUpload(upload_id):
@@ -155,6 +169,7 @@ def cancelUpload(upload_id):
 
   cancelled_uploads.add(upload_id)
   return {"success": 1}
+
 
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
   try:
@@ -186,17 +201,20 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     cloudlog.exception("athenad.startLocalProxy.exception")
     raise e
 
+
 @dispatcher.add_method
 def getPublicKey():
-  if not os.path.isfile('/persist/comma/id_rsa.pub'):
+  if not os.path.isfile(PERSIST + '/comma/id_rsa.pub'):
     return None
 
-  with open('/persist/comma/id_rsa.pub', 'r') as f:
+  with open(PERSIST + '/comma/id_rsa.pub', 'r') as f:
     return f.read()
+
 
 @dispatcher.add_method
 def getSshAuthorizedKeys():
   return Params().get("GithubSshKeys", encoding='utf8') or ''
+
 
 @dispatcher.add_method
 def getSimInfo():
@@ -216,6 +234,7 @@ def getSimInfo():
     'data_connected': cell_data_connected
   }
 
+
 @dispatcher.add_method
 def takeSnapshot():
   from selfdrive.camerad.snapshot.snapshot import snapshot, jpeg_write
@@ -233,6 +252,7 @@ def takeSnapshot():
   else:
     raise Exception("not available while camerad is started")
 
+
 def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
@@ -247,6 +267,7 @@ def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
   ssock.close()
   local_sock.close()
   end_event.set()
+
 
 def ws_proxy_send(ws, local_sock, signal_sock, end_event):
   while not end_event.is_set():
@@ -268,16 +289,23 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
       cloudlog.exception("athenad.ws_proxy_send.exception")
       end_event.set()
 
+
 def ws_recv(ws, end_event):
   while not end_event.is_set():
     try:
-      data = ws.recv()
-      payload_queue.put_nowait(data)
+      opcode, data = ws.recv_data(control_frame=True)
+      if opcode in (ABNF.OPCODE_TEXT, ABNF.OPCODE_BINARY):
+        if opcode == ABNF.OPCODE_TEXT:
+          data = data.decode("utf-8")
+        payload_queue.put_nowait(data)
+      elif opcode == ABNF.OPCODE_PING:
+        Params().put("LastAthenaPingTime", str(int(sec_since_boot() * 1e9)))
     except WebSocketTimeoutException:
       pass
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
       end_event.set()
+
 
 def ws_send(ws, end_event):
   while not end_event.is_set():
@@ -290,10 +318,12 @@ def ws_send(ws, end_event):
       cloudlog.exception("athenad.ws_send.exception")
       end_event.set()
 
+
 def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
-def main(gctx=None):
+
+def main():
   params = Params()
   dongle_id = params.get("DongleId").decode('utf-8')
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
@@ -315,8 +345,10 @@ def main(gctx=None):
     except Exception:
       cloudlog.exception("athenad.main.exception")
       conn_retries += 1
+      params.delete("LastAthenaPingTime")
 
     time.sleep(backoff(conn_retries))
+
 
 if __name__ == "__main__":
   main()

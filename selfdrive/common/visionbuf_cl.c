@@ -8,6 +8,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
@@ -17,11 +18,17 @@
 int offset = 0;
 void *malloc_with_fd(size_t len, int *fd) {
   char full_path[0x100];
+#ifdef __APPLE__
+  snprintf(full_path, sizeof(full_path)-1, "/tmp/visionbuf_%d_%d", getpid(), offset++);
+#else
   snprintf(full_path, sizeof(full_path)-1, "/dev/shm/visionbuf_%d_%d", getpid(), offset++);
+#endif
   *fd = open(full_path, O_RDWR | O_CREAT, 0777);
+  assert(*fd >= 0);
   unlink(full_path);
   ftruncate(*fd, len);
   void *addr = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, *fd, 0);
+  assert(addr != MAP_FAILED);
   return addr;
 }
 

@@ -15,8 +15,12 @@
 int ipc_connect(const char* socket_path) {
   int err;
 
+#ifdef __APPLE__
+  int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+#else
   int sock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
-  assert(sock >= 0);
+#endif
+  if (sock < 0) return -1;
   struct sockaddr_un addr = {
     .sun_family = AF_UNIX,
   };
@@ -35,7 +39,11 @@ int ipc_bind(const char* socket_path) {
 
   unlink(socket_path);
 
+#ifdef __APPLE__
+  int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+#else
   int sock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+#endif
   struct sockaddr_un addr = {
     .sun_family = AF_UNIX,
   };
@@ -52,8 +60,6 @@ int ipc_bind(const char* socket_path) {
 
 int ipc_sendrecv_with_fds(bool send, int fd, void *buf, size_t buf_size, int* fds, int num_fds,
                           int *out_num_fds) {
-  int err;
-
   char control_buf[CMSG_SPACE(sizeof(int) * num_fds)];
   memset(control_buf, 0, CMSG_SPACE(sizeof(int) * num_fds));
 

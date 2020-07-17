@@ -25,14 +25,14 @@ by generating a rotation matrix and multiplying.
 
 Orientation Conventations
 ------
-Quaternions, rotation matrices and euler angles are three 
+Quaternions, rotation matrices and euler angles are three
 equivalent representations of orientation and all three are
 used throughout the code base.
 
 For euler angles the preferred convention is [roll, pitch, yaw]
 which corresponds to rotations around the [x, y, z] axes. All
 euler angles should always be in radians or radians/s unless
-for plotting or display purposes. For quaternions the hamilton 
+for plotting or display purposes. For quaternions the hamilton
 notations is preferred which is [q<sub>w</sub>, q<sub>x</sub>, q<sub>y</sub>, q<sub>z</sub>]. All quaternions
 should always be normalized with a strictly positive q<sub>w</sub>. **These
 quaternions are a unique representation of orientation whereas euler angles
@@ -45,11 +45,16 @@ while rotating around the rotated axes, not the original axes.
 
 Calibration
 ------
-EONs are not all mounted in the exact same way. To compensate for the effects of this the vision model takes in an image that is "calibrated". This means the image is aligned so the direction of travel of the car when it is going straight and the road is flat is always in the location on the image. This calibration is defined by a pitch and yaw angle that describe the direction of travel vector in device frame.
+Device frame is aligned with the road-facing camera used by openpilot. However, when controlling the vehicle it makes more sense to think in a reference frame aligned with the vehicle. These two reference frames are not necessarily aligned. Calibration is defined as the roll, pitch and yaw angles that describe the orientation of the vehicle in device frame. The vehicle orientation is the orientation of the vehicles's body, the orientation of the vehicle can change relative to the road because of suspension movements.
+
+The roll of the vehicle is defined to be 0 when the vehicle is on a flat road and not turning. Pitch and yaw are defined as the angles that describe the direction in which the vehicle travels when it is driving on a flat road and not turning.
+
+It is important for openpilot's driving model to take in images that look as if the calibration angles were all zero. To achieve this the images input into the model are transformed with the estimated calibration angles. At the moment, roll calibration is always estimated to be zero. 
+
 
 Example
 ------
-To transform global Mesh3D positions and orientations (positions_ecef, quats_ecef) into the local frame described by the 
+To transform global Mesh3D positions and orientations (positions_ecef, quats_ecef) into the local frame described by the
 first position and orientation from Mesh3D one would do:
 ```
 ecef_from_local = rot_from_quat(quats_ecef[0])

@@ -4,21 +4,17 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
+#include <errno.h>
 #include <sys/time.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <assert.h>
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <map>
-#include <vector>
 
 #include "messaging.hpp"
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
-
+#include "common/util.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -32,7 +28,6 @@ void set_do_exit(int sig) {
 }
 
 using namespace ublox;
-
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
   signal(SIGINT, (sighandler_t) set_do_exit);
@@ -40,30 +35,31 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   UbloxMsgParser parser;
 
-  Context * c = Context::create();
-  PubSocket * gpsLocationExternal = PubSocket::create(c, "gpsLocationExternal");
-  PubSocket * ubloxGnss = PubSocket::create(c, "ubloxGnss");
-  SubSocket * ubloxRaw = SubSocket::create(c, "ubloxRaw");
+  Context * context = Context::create();
+  SubSocket * subscriber = SubSocket::create(context, "ubloxRaw");
+  assert(subscriber != NULL);
+  subscriber->setTimeout(100);
 
-  assert(gpsLocationExternal != NULL);
-  assert(ubloxGnss != NULL);
-  assert(ubloxRaw != NULL);
-
-  Poller * poller = Poller::create({ubloxRaw});
-
+  PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
   while (!do_exit) {
-    Message * msg = poll_func(poller);
-    if (msg == NULL) continue;
+    Message * msg = subscriber->receive();
+    if (!msg){
+      if (errno == EINTR) {
+        do_exit = true;
+      }
+      continue;
+    }
 
     auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
     memcpy(amsg.begin(), msg->getData(), msg->getSize());
 
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+    auto ubloxRaw = event.getUbloxRaw();
 
-    const uint8_t *data = event.getUbloxRaw().begin();
-    size_t len = event.getUbloxRaw().size();
+    const uint8_t *data = ubloxRaw.begin();
+    size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;
     while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;
@@ -75,7 +71,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_solution();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              send_func(gpsLocationExternal, bytes.begin(), bytes.size());
+              pm.send("gpsLocationExternal", bytes.begin(), bytes.size());
             }
           } else
             LOGW("Unknown nav msg id: 0x%02X", parser.msg_id());
@@ -85,17 +81,28 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
             auto words = parser.gen_raw();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              send_func(ubloxGnss, bytes.begin(), bytes.size());
+              pm.send("ubloxGnss", bytes.begin(), bytes.size());
             }
           } else if(parser.msg_id() == MSG_RXM_SFRBX) {
             //LOGD("MSG_RXM_SFRBX");
             auto words = parser.gen_nav_data();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
-              send_func(ubloxGnss, bytes.begin(), bytes.size());
+              pm.send("ubloxGnss", bytes.begin(), bytes.size());
             }
           } else
             LOGW("Unknown rxm msg id: 0x%02X", parser.msg_id());
+        } else if(parser.msg_class() == CLASS_MON) {
+          if(parser.msg_id() == MSG_MON_HW) {
+            //LOGD("MSG_MON_HW");
+            auto words = parser.gen_mon_hw();
+            if(words.size() > 0) {
+              auto bytes = words.asBytes();
+              pm.send("ubloxGnss", bytes.begin(), bytes.size());
+            }
+          } else {
+            LOGW("Unknown mon msg id: 0x%02X", parser.msg_id());
+          }
         } else
           LOGW("Unknown msg class: 0x%02X", parser.msg_class());
         parser.reset();
@@ -105,11 +112,8 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
     delete msg;
   }
 
-  delete poller;
-  delete ubloxRaw;
-  delete ubloxGnss;
-  delete gpsLocationExternal;
-  delete c;
+  delete subscriber;
+  delete context;
 
   return 0;
 }

@@ -21,11 +21,7 @@
 #include <random>
 
 #include <ftw.h>
-
 #include <zmq.h>
-#include <yaml-cpp/yaml.h>
-#include <capnp/serialize.h>
-
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
@@ -40,8 +36,9 @@
 
 #include "logger.h"
 #include "messaging.hpp"
+#include "services.h"
 
-#ifndef QCOM
+#if !(defined(QCOM) || defined(QCOM2))
 // no encoder on PC
 #define DISABLE_ENCODER
 #endif
@@ -64,6 +61,7 @@
 
 namespace {
 
+double randrange(double a, double b) __attribute__((unused));
 double randrange(double a, double b) {
   static std::mt19937 gen(millis_since_boot());
 
@@ -94,11 +92,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
   int err;
 
   if (front) {
-    char *value;
-    const int result = read_db_value(NULL, "RecordFront", &value, NULL);
-    if (result != 0) return;
-    if (value[0] != '1') { free(value); return; }
-    free(value);
+    std::vector<char> value = read_db_bytes("RecordFront");
+    if (value.size() == 0 || value[0] != '1') return;
     LOGW("recording front camera");
 
     set_thread_name("FrontCameraEncoder");
@@ -137,10 +132,14 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
       encoder_init(&encoder, front ? "dcamera.hevc" : "fcamera.hevc", buf_info.width, buf_info.height, CAMERA_FPS, front ? 2500000 : 5000000, true, false);
+
+      #ifndef QCOM2
+      // TODO: fix qcamera on tici
       if (!front) {
         encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
         has_encoder_alt = true;
       }
+      #endif
       encoder_inited = true;
       if (is_streaming) {
         encoder.zmq_ctx = zmq_ctx_new();
@@ -167,9 +166,9 @@ void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
         break;
       }
 
-      uint64_t current_time = nanos_since_boot();
-      uint64_t diff = current_time - extra.timestamp_eof;
-      double msdiff = (double) diff / 1000000.0;
+      //uint64_t current_time = nanos_since_boot();
+      //uint64_t diff = current_time - extra.timestamp_eof;
+      //double msdiff = (double) diff / 1000000.0;
       // printf("logger latency to tsEof: %f\n", msdiff);
 
       uint8_t *y = (uint8_t*)buf->addr;
@@ -452,34 +451,27 @@ kj::Array<capnp::word> gen_init_data() {
     init.setDirty(true);
   }
 
-  char* git_commit = NULL;
-  size_t size;
-  read_db_value(NULL, "GitCommit", &git_commit, &size);
-  if (git_commit) {
-    init.setGitCommit(capnp::Text::Reader(git_commit, size));
+  std::vector<char> git_commit = read_db_bytes("GitCommit");
+  if (git_commit.size() > 0) {
+    init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
   }
 
-  char* git_branch = NULL;
-  read_db_value(NULL, "GitBranch", &git_branch, &size);
-  if (git_branch) {
-    init.setGitBranch(capnp::Text::Reader(git_branch, size));
+  std::vector<char> git_branch = read_db_bytes("GitBranch");
+  if (git_branch.size() > 0) {
+    init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
   }
 
-  char* git_remote = NULL;
-  read_db_value(NULL, "GitRemote", &git_remote, &size);
-  if (git_remote) {
-    init.setGitRemote(capnp::Text::Reader(git_remote, size));
+  std::vector<char> git_remote = read_db_bytes("GitRemote");
+  if (git_remote.size() > 0) {
+    init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
   }
 
-  char* passive = NULL;
-  read_db_value(NULL, "Passive", &passive, NULL);
-  init.setPassive(passive && strlen(passive) && passive[0] == '1');
-
-
+  std::vector<char> passive = read_db_bytes("Passive");
+  init.setPassive(passive.size() > 0 && passive[0] == '1');
   {
     // log params
     std::map<std::string, std::string> params;
-    read_db_all(NULL, &params);
+    read_db_all(&params);
     auto lparams = init.initParams().initEntries(params.size());
     int i = 0;
     for (auto& kv : params) {
@@ -489,27 +481,7 @@ kj::Array<capnp::word> gen_init_data() {
       i++;
     }
   }
-
-
-  auto words = capnp::messageToFlatArray(msg);
-
-  if (git_commit) {
-    free((void*)git_commit);
-  }
-
-  if (git_branch) {
-    free((void*)git_branch);
-  }
-
-  if (git_remote) {
-    free((void*)git_remote);
-  }
-
-  if (passive) {
-    free((void*)passive);
-  }
-
-  return words;
+  return capnp::messageToFlatArray(msg);
 }
 
 static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
@@ -578,9 +550,6 @@ int main(int argc, char** argv) {
   s.ctx = Context::create();
   Poller * poller = Poller::create();
 
-  std::string exe_dir = util::dir_name(util::readlink("/proc/self/exe"));
-  std::string service_list_path = exe_dir + "/../../cereal/service_list.yaml";
-
   // subscribe to all services
 
   SubSocket *frame_sock = NULL;
@@ -589,13 +558,10 @@ int main(int argc, char** argv) {
   std::map<SubSocket*, int> qlog_counter;
   std::map<SubSocket*, int> qlog_freqs;
 
-  YAML::Node service_list = YAML::LoadFile(service_list_path);
-  for (const auto& it : service_list) {
-    auto name = it.first.as<std::string>();
-    bool should_log = it.second[1].as<bool>();
-    int qlog_freq = it.second[3] ? it.second[3].as<int>() : 0;
+  for (const auto& it : services) {
+    std::string name = it.name;
 
-    if (should_log) {
+    if (it.should_log) {
       SubSocket * sock = SubSocket::create(s.ctx, name);
       assert(sock != NULL);
 
@@ -606,8 +572,8 @@ int main(int argc, char** argv) {
         frame_sock = sock;
       }
 
-      qlog_counter[sock] = (qlog_freq == 0) ? -1 : 0;
-      qlog_freqs[sock] = qlog_freq;
+      qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
+      qlog_freqs[sock] = it.decimation;
     }
   }
 
@@ -734,6 +700,7 @@ int main(int argc, char** argv) {
     delete s;
   }
 
+  delete poller;
   delete s.ctx;
   return 0;
 }

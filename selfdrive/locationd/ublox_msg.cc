@@ -1,23 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
 #include <sys/time.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <assert.h>
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <map>
-#include <vector>
 #include <algorithm>
-
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/params.h"
 #include "common/swaglog.h"
@@ -45,7 +38,7 @@ inline int GET_FIELD_S(uint32_t w, uint32_t nb, uint32_t pos) {
 
 class EphemerisData {
   public:
-    EphemerisData(uint8_t svId, subframes_map subframes) {
+    EphemerisData(uint8_t svId, subframes_map &subframes) {
       this->svId = svId;
       int week_no = GET_FIELD_U(subframes[1][2+0], 10, 20);
       int t_gd = GET_FIELD_S(subframes[1][2+4], 8, 6);
@@ -345,6 +338,22 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
     }
   }
   return kj::Array<capnp::word>();
+}
+
+kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw() {
+  mon_hw_msg *msg = (mon_hw_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
+
+  capnp::MallocMessageBuilder msg_builder;
+  cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+  auto gnss = event.initUbloxGnss();
+  auto hwStatus = gnss.initHwStatus();
+  hwStatus.setNoisePerMS(msg->noisePerMS);
+  hwStatus.setAgcCnt(msg->agcCnt);
+  hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->aStatus);
+  hwStatus.setAPower((cereal::UbloxGnss::HwStatus::AntennaPowerStatus) msg->aPower);
+  hwStatus.setJamInd(msg->jamInd);
+  return capnp::messageToFlatArray(msg_builder);
 }
 
 bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {

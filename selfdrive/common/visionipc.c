@@ -35,7 +35,7 @@ int vipc_recv(int fd, VisionPacket *out_p) {
     p2.d = p.d;
     *out_p = p2;
   }
-  //printf("%d = vipc_recv(%d, %d): %d %d %d %u\n", ret, fd, p2.num_fds, out_p->d.stream_bufs.type, out_p->d.stream_bufs.width, out_p->d.stream_bufs.height, out_p->d.stream_bufs.buf_len);
+  //printf("%d = vipc_recv(%d, %d): %d %d %d %zu\n", ret, fd, p2.num_fds, out_p->d.stream_bufs.type, out_p->d.stream_bufs.width, out_p->d.stream_bufs.height, out_p->d.stream_bufs.buf_len);
   return ret;
 }
 
@@ -47,7 +47,7 @@ int vipc_send(int fd, const VisionPacket *p2) {
     .d = p2->d,
   };
   int ret = ipc_sendrecv_with_fds(true, fd, (void*)&p, sizeof(p), (int*)p2->fds, p2->num_fds, NULL);
-  //printf("%d = vipc_send(%d, %d): %d %d %d %u\n", ret, fd, p2->num_fds, p2->d.stream_bufs.type, p2->d.stream_bufs.width, p2->d.stream_bufs.height, p2->d.stream_bufs.buf_len);
+  //printf("%d = vipc_send(%d, %d): %d %d %d %zu\n", ret, fd, p2->num_fds, p2->d.stream_bufs.type, p2->d.stream_bufs.width, p2->d.stream_bufs.height, p2->d.stream_bufs.buf_len);
   return ret;
 }
 
@@ -99,7 +99,7 @@ int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, Visi
     close(s->ipc_fd);
     return -1;
   }
-  assert(rp.type = VIPC_STREAM_BUFS);
+  assert(rp.type == VIPC_STREAM_BUFS);
   assert(rp.d.stream_bufs.type == type);
 
   s->bufs_info = rp.d.stream_bufs;

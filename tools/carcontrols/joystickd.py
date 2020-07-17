@@ -6,10 +6,8 @@
 
 ### this process needs pygame and can't run on the EON ###
 
-import pygame
-import zmq
+import pygame  # pylint: disable=import-error
 import cereal.messaging as messaging
-
 
 def joystick_thread():
   joystick_sock = messaging.pub_sock('testJoystick')
@@ -32,8 +30,8 @@ def joystick_thread():
   # -------- Main Program Loop -----------
   while True:
     # EVENT PROCESSING STEP
-    for event in pygame.event.get(): # User did something
-      if event.type == pygame.QUIT: # If user clicked close
+    for event in pygame.event.get():  # User did something
+      if event.type == pygame.QUIT:  # If user clicked close
         pass
       # Available joystick events: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
       if event.type == pygame.JOYBUTTONDOWN:
@@ -55,8 +53,7 @@ def joystick_thread():
     for b in range(joystick.get_numbuttons()):
       buttons.append(bool(joystick.get_button(b)))
 
-    dat = messaging.new_message()
-    dat.init('testJoystick')
+    dat = messaging.new_message('testJoystick')
     dat.testJoystick.axes = axes
     dat.testJoystick.buttons = buttons
     joystick_sock.send(dat.to_bytes())

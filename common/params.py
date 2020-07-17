@@ -23,12 +23,12 @@ file in place without messing with <params_dir>/d.
 import time
 import os
 import errno
-import sys
 import shutil
 import fcntl
 import tempfile
 import threading
 from enum import Enum
+from common.basedir import PARAMS
 
 
 def mkdirs_exists_ok(path):
@@ -50,7 +50,7 @@ class UnknownKeyName(Exception):
 
 
 keys = {
-  "AccessToken": [TxType.PERSISTENT],
+  "AccessToken": [TxType.CLEAR_ON_MANAGER_START],
   "AthenadPid": [TxType.PERSISTENT],
   "CalibrationParams": [TxType.PERSISTENT],
   "CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
@@ -59,6 +59,8 @@ keys = {
   "CommunityFeaturesToggle": [TxType.PERSISTENT],
   "CompletedTrainingVersion": [TxType.PERSISTENT],
   "ControlsParams": [TxType.PERSISTENT],
+  "DisablePowerDown": [TxType.PERSISTENT],
+  "DisableUpdates": [TxType.PERSISTENT],
   "DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
   "DongleId": [TxType.PERSISTENT],
   "GitBranch": [TxType.PERSISTENT],
@@ -67,6 +69,7 @@ keys = {
   "GithubSshKeys": [TxType.PERSISTENT],
   "HasAcceptedTerms": [TxType.PERSISTENT],
   "HasCompletedSetup": [TxType.PERSISTENT],
+  "IsDriverViewEnabled": [TxType.CLEAR_ON_MANAGER_START],
   "IsLdwEnabled": [TxType.PERSISTENT],
   "IsGeofenceEnabled": [TxType.PERSISTENT],
   "IsMetric": [TxType.PERSISTENT],
@@ -75,12 +78,14 @@ keys = {
   "IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
   "IsUpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
   "IsUploadRawEnabled": [TxType.PERSISTENT],
+  "LastAthenaPingTime": [TxType.PERSISTENT],
   "LastUpdateTime": [TxType.PERSISTENT],
   "LimitSetSpeed": [TxType.PERSISTENT],
   "LimitSetSpeedNeural": [TxType.PERSISTENT],
   "LiveParameters": [TxType.PERSISTENT],
   "LongitudinalControl": [TxType.PERSISTENT],
   "OpenpilotEnabledToggle": [TxType.PERSISTENT],
+  "LaneChangeEnabled": [TxType.PERSISTENT],
   "PandaFirmware": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "PandaFirmwareHex": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "PandaDongleId": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
@@ -93,6 +98,7 @@ keys = {
   "TermsVersion": [TxType.PERSISTENT],
   "TrainingVersion": [TxType.PERSISTENT],
   "UpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
+  "UpdateFailedCount": [TxType.CLEAR_ON_MANAGER_START],
   "Version": [TxType.PERSISTENT],
   "Offroad_ChargeDisabled": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "Offroad_ConnectivityNeeded": [TxType.CLEAR_ON_MANAGER_START],
@@ -101,6 +107,7 @@ keys = {
   "Offroad_PandaFirmwareMismatch": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   "Offroad_InvalidTime": [TxType.CLEAR_ON_MANAGER_START],
   "Offroad_IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
+  "Offroad_NeosUpdate": [TxType.CLEAR_ON_MANAGER_START],
 }
 
 
@@ -139,6 +146,10 @@ class DBAccessor():
 
   def get(self, key):
     self._check_entered()
+
+    if self._vals is None:
+      return None
+
     try:
       return self._vals[key]
     except KeyError:
@@ -191,7 +202,8 @@ class DBReader(DBAccessor):
     finally:
       lock.release()
 
-  def __exit__(self, type, value, traceback): pass
+  def __exit__(self, exc_type, exc_value, traceback):
+    pass
 
 
 class DBWriter(DBAccessor):
@@ -216,14 +228,14 @@ class DBWriter(DBAccessor):
       os.chmod(self._path, 0o777)
       self._lock = self._get_lock(True)
       self._vals = self._read_values_locked()
-    except:
+    except Exception:
       os.umask(self._prev_umask)
       self._prev_umask = None
       raise
 
     return self
 
-  def __exit__(self, type, value, traceback):
+  def __exit__(self, exc_type, exc_value, traceback):
     self._check_entered()
 
     try:
@@ -297,12 +309,13 @@ def read_db(params_path, key):
   except IOError:
     return None
 
+
 def write_db(params_path, key, value):
   if isinstance(value, str):
     value = value.encode('utf8')
 
   prev_umask = os.umask(0)
-  lock = FileLock(params_path+"/.lock", True)
+  lock = FileLock(params_path + "/.lock", True)
   lock.acquire()
 
   try:
@@ -319,14 +332,20 @@ def write_db(params_path, key, value):
     os.umask(prev_umask)
     lock.release()
 
+
 class Params():
-  def __init__(self, db='/data/params'):
+  def __init__(self, db=PARAMS):
     self.db = db
 
     # create the database if it doesn't exist...
-    if not os.path.exists(self.db+"/d"):
+    if not os.path.exists(self.db + "/d"):
       with self.transaction(write=True):
         pass
+
+  def clear_all(self):
+    shutil.rmtree(self.db, ignore_errors=True)
+    with self.transaction(write=True):
+      pass
 
   def transaction(self, write=False):
     if write:
@@ -389,22 +408,3 @@ def put_nonblocking(key, val):
   t = threading.Thread(target=f, args=(key, val))
   t.start()
   return t
-
-
-if __name__ == "__main__":
-  params = Params()
-  if len(sys.argv) > 2:
-    params.put(sys.argv[1], sys.argv[2])
-  else:
-    for k in keys:
-      pp = params.get(k)
-      if pp is None:
-        print("%s is None" % k)
-      elif all(ord(c) < 128 and ord(c) >= 32 for c in pp):
-        print("%s = %s" % (k, pp))
-      else:
-        print("%s = %s" % (k, pp.encode("hex")))
-
-  # Test multiprocess:
-  # seq 0 100000 | xargs -P20 -I{} python common/params.py DongleId {} && sleep 0.05
-  # while python common/params.py DongleId; do sleep 0.05; done

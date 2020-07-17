@@ -85,6 +85,27 @@ typedef struct __attribute__((packed)) {
   uint32_t dwrd;
 } rxm_sfrbx_msg_extra;
 
+// MON_HW
+typedef struct __attribute__((packed)) {
+  uint32_t pinSel;
+  uint32_t pinBank;
+  uint32_t pinDir;
+  uint32_t pinVal;
+  uint16_t noisePerMS;
+  uint16_t agcCnt;
+  uint8_t aStatus;
+  uint8_t aPower;
+  uint8_t flags;
+  uint8_t reserved1;
+  uint32_t usedMask;
+  uint8_t VP[17];
+  uint8_t jamInd;
+  uint8_t reserved2[2];
+  uint32_t pinIrq;
+  uint32_t pullH;
+  uint32_t pullL;
+} mon_hw_msg;
+
 namespace ublox {
   // protocol constants
   const uint8_t PREAMBLE1 = 0xb5;
@@ -93,6 +114,7 @@ namespace ublox {
   // message classes
   const uint8_t CLASS_NAV = 0x01;
   const uint8_t CLASS_RXM = 0x02;
+  const uint8_t CLASS_MON = 0x0A;
 
   // NAV messages
   const uint8_t MSG_NAV_PVT = 0x7;
@@ -100,6 +122,9 @@ namespace ublox {
   // RXM messages
   const uint8_t MSG_RXM_RAW = 0x15;
   const uint8_t MSG_RXM_SFRBX = 0x13;
+
+  // MON messages
+  const uint8_t MSG_MON_HW = 0x09;
 
   const int UBLOX_HEADER_SIZE = 6;
   const int UBLOX_CHECKSUM_SIZE = 2;
@@ -113,6 +138,7 @@ namespace ublox {
       UbloxMsgParser();
       kj::Array<capnp::word> gen_solution();
       kj::Array<capnp::word> gen_raw();
+      kj::Array<capnp::word> gen_mon_hw();
 
       kj::Array<capnp::word> gen_nav_data();
       bool add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);

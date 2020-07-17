@@ -1,9 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <linux/ion.h>
 #include <CL/cl_ext.h>
 
@@ -60,6 +64,7 @@ VisionBuf visionbuf_allocate(size_t len) {
 
   return (VisionBuf){
     .len = len,
+    .mmap_len = ion_alloc.len,
     .addr = addr,
     .handle = ion_alloc.handle,
     .fd = ion_fd_data.fd,
@@ -69,6 +74,7 @@ VisionBuf visionbuf_allocate(size_t len) {
 VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx, cl_mem *out_mem) {
   VisionBuf r = visionbuf_allocate(len);
   *out_mem = visionbuf_to_cl(&r, device_id, ctx);
+  r.buf_cl = *out_mem;
   return r;
 }
 
@@ -133,6 +139,9 @@ void visionbuf_sync(const VisionBuf* buf, int dir) {
 }
 
 void visionbuf_free(const VisionBuf* buf) {
+  clReleaseMemObject(buf->buf_cl);
+  munmap(buf->addr, buf->mmap_len);
+  close(buf->fd);
   struct ion_handle_data handle_data = {
     .handle = buf->handle,
   };

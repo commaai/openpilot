@@ -55,7 +55,6 @@ def mpc_vwr_thread(addr="127.0.0.1"):
   aa.invert_xaxis()
   plt.show()
 
-
   # *** log ***
   livempc = messaging.sub_sock('liveMpc', addr=addr)
   model = messaging.sub_sock('model', addr=addr)
@@ -81,10 +80,10 @@ def mpc_vwr_thread(addr="127.0.0.1"):
       lineP.set_ydata(path_x)
 
     if lMpc is not None:
-      mpc_path_x  = list(lMpc.liveMpc.x)[1:]
-      mpc_path_y  = list(lMpc.liveMpc.y)[1:]
-      mpc_steer_angle  = list(lMpc.liveMpc.delta)[1:]
-      mpc_psi  = list(lMpc.liveMpc.psi)[1:]
+      mpc_path_x = list(lMpc.liveMpc.x)[1:]
+      mpc_path_y = list(lMpc.liveMpc.y)[1:]
+      mpc_steer_angle = list(lMpc.liveMpc.delta)[1:]
+      mpc_psi = list(lMpc.liveMpc.psi)[1:]
 
       line1.set_xdata(mpc_path_y)
       line1.set_ydata(mpc_path_x)

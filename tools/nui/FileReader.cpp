@@ -1,6 +1,5 @@
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
-#include <memory>
 
 #include <QtNetwork>
 
@@ -9,8 +8,9 @@ FileReader::FileReader(const QString& file_) : file(file_) {
 
 void FileReader::process() {
   timer.start();
-  // TODO: Support reading files from the API
-  startRequest(QUrl("http://data.comma.life/"+file));
+  QString str = file.simplified();
+  str.replace(" ", "");
+  startRequest(QUrl(str));
 }
 
 void FileReader::startRequest(const QUrl &url) {
@@ -71,7 +71,7 @@ LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* event
     while (1) {
       mergeEvents(cdled.get());
     }
-  }); 
+  });
 }
 
 void LogReader::mergeEvents(int dled) {
@@ -84,7 +84,8 @@ void LogReader::mergeEvents(int dled) {
       capnp::FlatArrayMessageReader cmsg = capnp::FlatArrayMessageReader(amsg);
 
       // this needed? it is
-      std::unique_ptr<capnp::FlatArrayMessageReader> tmsg(new capnp::FlatArrayMessageReader(kj::arrayPtr(amsg.begin(), cmsg.getEnd()));
+      capnp::FlatArrayMessageReader *tmsg =
+        new capnp::FlatArrayMessageReader(kj::arrayPtr(amsg.begin(), cmsg.getEnd()));
 
       amsg = kj::arrayPtr(cmsg.getEnd(), amsg.end());
 

@@ -52,7 +52,7 @@ def match_vision_to_cluster(v_ego, lead, clusters):
   # if no 'sane' match is found return -1
   # stationary radar points can be false positives
   dist_sane = abs(cluster.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
-  vel_sane = (abs(cluster.vRel - lead.relVel) < 10) or (v_ego + cluster.vRel > 2)
+  vel_sane = (abs(cluster.vRel - lead.relVel) < 10) or (v_ego + cluster.vRel > 3)
   if dist_sane and vel_sane:
     return cluster
   else:
@@ -90,9 +90,6 @@ class RadarD():
 
     self.tracks = defaultdict(dict)
     self.kalman_params = KalmanParams(radar_ts)
-
-    self.last_md_ts = 0
-    self.last_controls_state_ts = 0
 
     self.active = 0
 
@@ -136,7 +133,6 @@ class RadarD():
     idens = list(sorted(self.tracks.keys()))
     track_pts = list([self.tracks[iden].get_key_for_cluster() for iden in idens])
 
-
     # If we have multiple points, cluster them
     if len(track_pts) > 1:
       cluster_idxs = cluster_points_centroid(track_pts, 2.5)
@@ -163,13 +159,12 @@ class RadarD():
         self.tracks[idens[idx]].reset_a_lead(aLeadK, aLeadTau)
 
     # *** publish radarState ***
-    dat = messaging.new_message()
-    dat.init('radarState')
+    dat = messaging.new_message('radarState')
     dat.valid = sm.all_alive_and_valid(service_list=['controlsState', 'model'])
-    dat.radarState.mdMonoTime = self.last_md_ts
+    dat.radarState.mdMonoTime = sm.logMonoTime['model']
     dat.radarState.canMonoTimes = list(rr.canMonoTimes)
     dat.radarState.radarErrors = list(rr.errors)
-    dat.radarState.controlsStateMonoTime = self.last_controls_state_ts
+    dat.radarState.controlsStateMonoTime = sm.logMonoTime['controlsState']
 
     if has_radar:
       dat.radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['model'].lead, low_speed_override=True)
@@ -179,7 +174,7 @@ class RadarD():
 
 # fuses camera and radar data for best lead detection
 def radard_thread(sm=None, pm=None, can_sock=None):
-  set_realtime_priority(2)
+  set_realtime_priority(52)
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
@@ -223,8 +218,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
     # *** publish tracks for UI debugging (keep last) ***
     tracks = RD.tracks
-    dat = messaging.new_message()
-    dat.init('liveTracks', len(tracks))
+    dat = messaging.new_message('liveTracks', len(tracks))
 
     for cnt, ids in enumerate(sorted(tracks.keys())):
       dat.liveTracks[cnt] = {

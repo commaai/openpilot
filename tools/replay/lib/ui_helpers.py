@@ -1,16 +1,16 @@
-import platform
 from collections import namedtuple
+from typing import Any, Dict, Tuple
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import pygame
+import pygame  # pylint: disable=import-error
 
-from tools.lib.lazy_property import lazy_property
-from selfdrive.config import UIParams as UP
 from selfdrive.config import RADAR_TO_CAMERA
+from selfdrive.config import UIParams as UP
 from selfdrive.controls.lib.lane_planner import (compute_path_pinv,
                                                  model_polyfit)
+from tools.lib.lazy_property import lazy_property
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -23,7 +23,7 @@ _PATH_X = np.arange(192.)
 _PATH_XD = np.arange(192.)
 _PATH_PINV = compute_path_pinv(50)
 #_BB_OFFSET = 290, 332
-_BB_OFFSET = 0,0
+_BB_OFFSET = 0, 0
 _BB_SCALE = 1164/640.
 _BB_TO_FULL_FRAME = np.asarray([
     [_BB_SCALE, 0., _BB_OFFSET[0]],
@@ -35,7 +35,7 @@ METER_WIDTH = 20
 
 ModelUIData = namedtuple("ModelUIData", ["cpath", "lpath", "rpath", "lead", "lead_future"])
 
-_COLOR_CACHE = {}
+_COLOR_CACHE : Dict[Tuple[int, int, int], Any] = {}
 def find_color(lidar_surface, color):
   if color in _COLOR_CACHE:
     return _COLOR_CACHE[color]
@@ -73,7 +73,7 @@ def draw_path(y, x, color, img, calibration, top_down, lid_color=None):
     uv_model > 0, axis=1), uv_model[:, 0] < img.shape[1] - 1, uv_model[:, 1] <
                                                   img.shape[0] - 1))]
 
-  for i, j  in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)):
+  for i, j in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)):
     img[uv_model_dots[:, 1] + i, uv_model_dots[:, 0] + j] = color
 
   # draw lidar path point on lidar
@@ -88,12 +88,12 @@ def draw_path(y, x, color, img, calibration, top_down, lid_color=None):
 def draw_steer_path(speed_ms, curvature, color, img,
                     calibration, top_down, VM, lid_color=None):
   path_x = np.arange(101.)
-  path_y =  np.multiply(path_x, np.tan(np.arcsin(np.clip(path_x * curvature, -0.999, 0.999)) / 2.))
+  path_y = np.multiply(path_x, np.tan(np.arcsin(np.clip(path_x * curvature, -0.999, 0.999)) / 2.))
 
   draw_path(path_y, path_x, color, img, calibration, top_down, lid_color)
 
 def draw_lead_car(closest, top_down):
-  if closest != None:
+  if closest is not None:
     closest_y = int(round(UP.lidar_car_y - closest * UP.lidar_zoom))
     if closest_y > 0:
       top_down[1][int(round(UP.lidar_car_x - METER_WIDTH * 2)):int(
@@ -109,37 +109,31 @@ def draw_lead_on(img, closest_x_m, closest_y_m, calibration, color, sz=10, img_o
   return u, v
 
 
-if platform.system() != 'Darwin':
-  matplotlib.use('QT4Agg')
-
-
 def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=False):
-  color_palette = { "r": (1,0,0),
-                    "g": (0,1,0),
-                    "b": (0,0,1),
-                    "k": (0,0,0),
-                    "y": (1,1,0),
-                    "p": (0,1,1),
-                    "m": (1,0,1) }
+  color_palette = { "r": (1, 0, 0),
+                    "g": (0, 1, 0),
+                    "b": (0, 0, 1),
+                    "k": (0, 0, 0),
+                    "y": (1, 1, 0),
+                    "p": (0, 1, 1),
+                    "m": (1, 0, 1) }
 
-  if bigplots == True:
+  if bigplots:
     fig = plt.figure(figsize=(6.4, 7.0))
-  elif bigplots == False:
-    fig = plt.figure()
   else:
-    fig = plt.figure(figsize=bigplots)
+    fig = plt.figure()
 
-  fig.set_facecolor((0.2,0.2,0.2))
+  fig.set_facecolor((0.2, 0.2, 0.2))
 
   axs = []
   for pn in range(len(plot_ylims)):
-    ax = fig.add_subplot(len(plot_ylims),1,len(axs)+1)
+    ax = fig.add_subplot(len(plot_ylims), 1, len(axs)+1)
     ax.set_xlim(plot_xlims[pn][0], plot_xlims[pn][1])
     ax.set_ylim(plot_ylims[pn][0], plot_ylims[pn][1])
     ax.patch.set_facecolor((0.4, 0.4, 0.4))
     axs.append(ax)
 
-  plots = [] ;idxs = [] ;plot_select = []
+  plots, idxs, plot_select = [], [], []
   for i, pl_list in enumerate(plot_names):
     for j, item in enumerate(pl_list):
       plot, = axs[i].plot(arr[:, name_to_arr_idx[item]],
@@ -173,8 +167,14 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       fig.canvas.flush_events()
 
     raw_data = renderer.tostring_rgb()
-    #print fig.canvas.get_width_height()
-    plot_surface = pygame.image.frombuffer(raw_data, fig.canvas.get_width_height(), "RGB").convert()
+    x, y = fig.canvas.get_width_height()
+
+    # Handle 2x scaling
+    if len(raw_data) == 4 * x * y * 3:
+      plot_surface = pygame.image.frombuffer(raw_data, (2*x, 2*y), "RGB").convert()
+      plot_surface = pygame.transform.scale(plot_surface, (x, y))
+    else:
+      plot_surface = pygame.image.frombuffer(raw_data, fig.canvas.get_width_height(), "RGB").convert()
     return plot_surface
 
   return draw_plots
@@ -185,7 +185,6 @@ def draw_mpc(liveMpc, top_down):
   for p in zip(liveMpc.x, liveMpc.y):
     px, py = to_lid_pt(*p)
     top_down[1][px, py] = mpc_color
-
 
 
 class CalibrationTransformsForWarpMatrix(object):

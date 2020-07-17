@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: skip-file
 '''
 UBlox binary protocol handling
 
@@ -12,7 +13,8 @@ for ublox version 8, not all functions may work.
 
 
 import struct
-import time, os
+import os
+import time
 
 # protocol constants
 PREAMBLE1 = 0xb5
@@ -291,7 +293,7 @@ class UBloxDescriptor:
     fields = self.fields[:]
     for f in fields:
       (fieldname, alen) = ArrayParse(f)
-      if not fieldname in msg._fields:
+      if fieldname not in msg._fields:
         break
       if alen == -1:
         f1.append(msg._fields[fieldname])
@@ -327,7 +329,7 @@ class UBloxDescriptor:
     ret = self.name + ': '
     for f in self.fields:
       (fieldname, alen) = ArrayParse(f)
-      if not fieldname in msg._fields:
+      if fieldname not in msg._fields:
         continue
       v = msg._fields[fieldname]
       if isinstance(v, list):
@@ -475,6 +477,8 @@ msg_types = {
   UBloxDescriptor('AID_ALM', '<II', '_remaining', 'I', ['dwrd']),
   (CLASS_RXM, MSG_RXM_ALM):
   UBloxDescriptor('RXM_ALM', '<II , 8I', ['svid', 'week', 'dwrd[8]']),
+  (CLASS_CFG, MSG_CFG_ANT):
+  UBloxDescriptor('CFG_ANT', '<HH', ['flags', 'pins']),
   (CLASS_CFG, MSG_CFG_ODO):
   UBloxDescriptor('CFG_ODO', '<B3BBB6BBB2BBB2B', [
     'version', 'reserved1[3]', 'flags', 'odoCfg', 'reserverd2[6]', 'cogMaxSpeed',
@@ -494,9 +498,9 @@ msg_types = {
     'reserved12', 'reserved13', 'aopOrbMaxErr', 'reserved3', 'reserved4'
   ]),
   (CLASS_MON, MSG_MON_HW):
-  UBloxDescriptor('MON_HW', '<IIIIHHBBBBIB25BHIII', [
+  UBloxDescriptor('MON_HW', '<IIIIHHBBBBIB17BHIII', [
     'pinSel', 'pinBank', 'pinDir', 'pinVal', 'noisePerMS', 'agcCnt', 'aStatus', 'aPower',
-    'flags', 'reserved1', 'usedMask', 'VP[25]', 'jamInd', 'reserved3', 'pinInq', 'pullH',
+    'flags', 'reserved1', 'usedMask', 'VP[17]', 'jamInd', 'reserved3', 'pinInq', 'pullH',
     'pullL'
   ]),
   (CLASS_MON, MSG_MON_HW2):
@@ -589,7 +593,7 @@ class UBloxMessage:
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
     type = self.msg_type()
-    if not type in msg_types:
+    if type not in msg_types:
       raise UBloxError('Unknown message %s length=%u' % (str(type), len(self._buf)))
     msg_types[type].unpack(self)
     return self._fields, self._recs
@@ -599,7 +603,7 @@ class UBloxMessage:
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
     type = self.msg_type()
-    if not type in msg_types:
+    if type not in msg_types:
       raise UBloxError('Unknown message %s' % str(type))
     msg_types[type].pack(self)
 
@@ -608,7 +612,7 @@ class UBloxMessage:
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
     type = self.msg_type()
-    if not type in msg_types:
+    if type not in msg_types:
       raise UBloxError('Unknown message %s length=%u' % (str(type), len(self._buf)))
     return msg_types[type].name
 
@@ -714,7 +718,7 @@ class UBlox:
       self.dev = PandaSerial(self.panda, 1, self.baudrate)
 
       self.baudrate = 460800
-      print("upping baud:",self.baudrate)
+      print("upping baud:", self.baudrate)
       self.send_nmea("$PUBX,41,1,0007,0003,%u,0" % self.baudrate)
       time.sleep(0.1)
 
@@ -733,7 +737,6 @@ class UBlox:
           ret = self.buf[:n]
           self.buf = self.buf[n:]
           return ret
-
 
         def write(self, dat):
           pass
@@ -827,7 +830,10 @@ class UBlox:
     if not self.read_only:
       if self.use_sendrecv:
         return self.dev.send(buf)
-      return self.dev.write(buf)
+      if type(buf) == str:
+        return self.dev.write(str.encode(buf))
+      else:
+        return self.dev.write(buf)
 
   def read(self, n):
     '''read some bytes'''
@@ -973,7 +979,7 @@ class UBlox:
     payload = struct.pack('<IIIB', clearMask, saveMask, loadMask, deviceMask)
     self.send_message(CLASS_CFG, MSG_CFG_CFG, payload)
 
-  def configure_poll(self, msg_class, msg_id, payload=''):
+  def configure_poll(self, msg_class, msg_id, payload=b''):
     '''poll a configuration message'''
     self.send_message(msg_class, msg_id, payload)
 
