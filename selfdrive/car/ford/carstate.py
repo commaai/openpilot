@@ -11,7 +11,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = can_define.dv["TransGearData"]['GearLvrPos_D_Actl']
+    #self.shifter_values = can_define.dv["TransGearData"]['GearLvrPos_D_Actl']
     
   def update(self, cp):
     ret = car.CarState.new_message()
@@ -44,8 +44,8 @@ class CarState(CarStateBase):
                         cp.vl["Doors"]['Door_RL_Open'], cp.vl["Doors"]['Door_RR_Open']]) 
     ret.steer_torque_driver = cp.vl["EPAS_INFO"]['DrvSte_Tq_Actl']
 
-    can_gear = int(cp.vl["TransGearData"]['GearLvrPos_D_Actl'])
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
+    self.shifter_values = int(cp.vl["TransGearData"]['GearLvrPos_D_Actl'])
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values)
     ret.seatbeltUnlatched = cp.vl["RCMStatusMessage2_FD1"]['FirstRowBuckleDriver'] == 2
     return ret
 
