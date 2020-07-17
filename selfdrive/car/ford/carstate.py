@@ -33,8 +33,8 @@ class CarState(CarStateBase):
     ret.brakePressed = bool(cp.vl["Cruise_Status"]['Brake_Drv_Appl'])
     ret.brakeLights = bool(cp.vl["BCM_to_HS_Body"]['Brake_Lights'])
     ret.genericToggle = bool(cp.vl["Steering_Buttons"]['Dist_Incr'])
-    #self.latLimit = cp.vl["Lane_Keep_Assist_Status"]['LatCtlLim_D_Sta']
-    #print ("Lateral_Limit:", self.latLimit, "lkas_state:", self.lkas_state, "steer_override:", self.steer_override)
+    self.latLimit = cp.vl["Lane_Keep_Assist_Status"]['LatCtlLim_D_Sta']
+    print ("Lateral_Limit:", self.latLimit, "lkas_state:", self.lkas_state, "steer_override:", self.steer_override)
     self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
     self.left_blinker_on = bool(cp.vl["Steering_Buttons"]['Left_Turn_Light'])
     ret.leftBlinker = self.left_blinker_on > 0
@@ -42,11 +42,11 @@ class CarState(CarStateBase):
     ret.rightBlinker = self.right_blinker_on > 0
     ret.doorOpen = any([cp.vl["Doors"]['Door_FL_Open'],cp.vl["Doors"]['Door_FR_Open'],
                         cp.vl["Doors"]['Door_RL_Open'], cp.vl["Doors"]['Door_RR_Open']]) 
-    ret.steeringTorque = cp.vl["EPAS_INFO"]['SteeringColumnTorque']
+    ret.steer_torque_driver = cp.vl["EPAS_INFO"]['DrvSte_Tq_Actl']
 
     can_gear_ford = int(cp.vl["TransGearData"]['GearLvrPos_D_Actl'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear_ford, None))
-    #ret.seatbeltUnlatched = cp.vl["RCMStatusMessage2_FD1"]['FirstRowBuckleDriver'] == 2
+    ret.seatbeltUnlatched = cp.vl["RCMStatusMessage2_FD1"]['FirstRowBuckleDriver'] == 2
     return ret
 
   @staticmethod
@@ -77,10 +77,10 @@ class CarState(CarStateBase):
     ("Door_FR_Open", "Doors", 0.),
     ("Door_RL_Open", "Doors", 0.),
     ("Door_RR_Open", "Doors", 0.),
-    ("SteeringColumnTorque", "EPAS_INFO", 0.),
+    ("DrvSte_Tq_Actl", "EPAS_INFO", 0.),
     ("GearLvrPos_D_Actl", "TransGearData", 3.),
-    #("FirstRowBuckleDriver", "RCMStatusMessage2_FD1", 0.),
-    #("LatCtlLim_D_Sta", "Lane_Keep_Assist_Status", 0.),
+    ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1", 0.),
+    ("LatCtlLim_D_Sta", "Lane_Keep_Assist_Status", 0.),
   ]
     checks = []
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
