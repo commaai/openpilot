@@ -15,10 +15,10 @@ class CarState(CarStateBase):
     
   def update(self, cp):
     ret = car.CarState.new_message()
-    ret.wheelSpeeds.rr = cp.vl["WheelSpeed_CG1"]['WhlRr_W_Meas'] * CV.MPH_TO_MS
-    ret.wheelSpeeds.rl = cp.vl["WheelSpeed_CG1"]['WhlRl_W_Meas'] * CV.MPH_TO_MS
-    ret.wheelSpeeds.fr = cp.vl["WheelSpeed_CG1"]['WhlFr_W_Meas'] * CV.MPH_TO_MS
-    ret.wheelSpeeds.fl = cp.vl["WheelSpeed_CG1"]['WhlFl_W_Meas'] * CV.MPH_TO_MS
+    ret.wheelSpeeds.rr = cp.vl["WheelSpeed"]['WhlRr_W_Meas'] * CV.MPH_TO_MS
+    ret.wheelSpeeds.rl = cp.vl["WheelSpeed"]['WhlRl_W_Meas'] * CV.MPH_TO_MS
+    ret.wheelSpeeds.fr = cp.vl["WheelSpeed"]['WhlFr_W_Meas'] * CV.MPH_TO_MS
+    ret.wheelSpeeds.fl = cp.vl["WheelSpeed"]['WhlFl_W_Meas'] * CV.MPH_TO_MS
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = not ret.vEgoRaw > 0.001
@@ -53,10 +53,10 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     signals = [
     # sig_name, sig_address, default
-    ("WhlRr_W_Meas", "WheelSpeed_CG1", 0.),
-    ("WhlRl_W_Meas", "WheelSpeed_CG1", 0.),
-    ("WhlFr_W_Meas", "WheelSpeed_CG1", 0.),
-    ("WhlFl_W_Meas", "WheelSpeed_CG1", 0.),
+    ("WhlRr_W_Meas", "WheelSpeed", 0.),
+    ("WhlRl_W_Meas", "WheelSpeed", 0.),
+    ("WhlFr_W_Meas", "WheelSpeed", 0.),
+    ("WhlFl_W_Meas", "WheelSpeed", 0.),
     ("SteWhlRelInit_An_Sns", "Steering_Wheel_Data_CG1", 0.),
     ("Cruise_State", "Cruise_Status", 0.),
     ("Set_Speed", "Cruise_Status", 0.),
