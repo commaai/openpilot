@@ -106,7 +106,7 @@ DBC = {
   #CAR.ESCAPE: dbc_dict('placeholder', 'placeholder'),
   #CAR.EXPEDITION: dbc_dict('placeholder', 'placeholder'),
   #CAR.EXPLORER: dbc_dict('placeholder', 'placeholder'),
-  CAR.F150: dbc_dict('ford_newcan_pt', None),
+  CAR.F150: dbc_dict('ford_fusion_2018_pt', None),
   #CAR.MUSTANG: dbc_dict('placeholder', 'placeholder'),
   CAR.MONDEO: dbc_dict('ford_mondeo_2016_pt', 'ford_fusion_2018_adas'),
   #CAR.RANGER: dbc_dict('placeholder', 'placeholder'),
