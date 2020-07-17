@@ -74,7 +74,7 @@ class URLFile(object):
       chunk_size = (end - start) // threads
       chunks = [
         (start + chunk_size * i,
-         start + chunk_size * (i + 1) if i != threads - 1 else end)
+         start + chunk_size * (i + 1) - 1 if i != threads - 1 else end)
         for i in range(threads)]
 
       with Pool(threads) as pool:
