@@ -1,28 +1,27 @@
 # pylint: skip-file
 
 import os
-import time
 import tempfile
-import threading
 import urllib.parse
 import pycurl
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
+from multiprocessing import Pool
+
 
 class URLFile(object):
-  _tlocal = threading.local()
-
   def __init__(self, url, debug=False):
     self._url = url
     self._pos = 0
     self._local_file = None
-    self._debug = debug
 
-    try:
-      self._curl = self._tlocal.curl
-    except AttributeError:
-      self._curl = self._tlocal.curl = pycurl.Curl()
+  def get_curl(self):
+    curl = pycurl.Curl()
+    curl.setopt(pycurl.NOSIGNAL, 1)
+    curl.setopt(pycurl.TIMEOUT_MS, 500000)
+    curl.setopt(pycurl.FOLLOWLOCATION, True)
+    return curl
 
   def __enter__(self):
     return self
@@ -34,51 +33,57 @@ class URLFile(object):
       self._local_file = None
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
-  def read(self, ll=None):
-    if ll is None:
-      trange = 'bytes=%d-' % self._pos
-    else:
-      trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
-
-    dats = BytesIO()
-    c = self._curl
+  def get_length(self):
+    c = self.get_curl()
     c.setopt(pycurl.URL, self._url)
-    c.setopt(pycurl.WRITEDATA, dats)
-    c.setopt(pycurl.NOSIGNAL, 1)
-    c.setopt(pycurl.TIMEOUT_MS, 500000)
-    c.setopt(pycurl.HTTPHEADER, ["Range: " + trange, "Connection: keep-alive"])
-    c.setopt(pycurl.FOLLOWLOCATION, True)
-
-    if self._debug:
-      print("downloading", self._url)
-
-      def header(x):
-        if b'MISS' in x:
-          print(x.strip())
-
-      c.setopt(pycurl.HEADERFUNCTION, header)
-
-      def test(debug_type, debug_msg):
-       print("  debug(%d): %s" % (debug_type, debug_msg.strip()))
-
-      c.setopt(pycurl.VERBOSE, 1)
-      c.setopt(pycurl.DEBUGFUNCTION, test)
-      t1 = time.time()
-
+    c.setopt(c.NOBODY, 1)
     c.perform()
 
-    if self._debug:
-      t2 = time.time()
-      if t2 - t1 > 0.1:
-        print("get %s %r %.f slow" % (self._url, trange, t2 - t1))
+    return int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
+
+  @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
+  def download_chunk(self, start, end=None):
+    if end is None:
+      trange = f'bytes={start}-'
+    else:
+      trange = f'bytes={start}-{end}'
+
+    dats = BytesIO()
+    c = self.get_curl()
+    c.setopt(pycurl.URL, self._url)
+    c.setopt(pycurl.WRITEDATA, dats)
+    c.setopt(pycurl.HTTPHEADER, ["Range: " + trange, "Connection: keep-alive"])
+    c.setopt(c.NOBODY, 0)
+    c.perform()
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable
-      return ""
+      return b""
     if response_code != 206 and response_code != 200:
       raise Exception("Error {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
 
-    ret = dats.getvalue()
+    return dats.getvalue()
+
+  def read(self, ll=None):
+    start = self._pos
+    end = None if ll is None else self._pos + ll - 1
+    threads = int(os.environ.get("COMMA_PARALLEL_DOWNLOADS", "0"))
+
+    if threads > 0:
+      # Multithreaded download
+      end = self.get_length() if end is None else end
+      chunk_size = (end - start) // threads
+      chunks = [
+        (start + chunk_size * i,
+         start + chunk_size * (i + 1) if i != threads - 1 else end)
+        for i in range(threads)]
+
+      pool = Pool(threads)
+      ret = b"".join(pool.starmap(self.download_chunk, chunks))
+    else:
+      # Single threaded download
+      ret = self.download_chunk(start, end)
+
     self._pos += len(ret)
     return ret
 
