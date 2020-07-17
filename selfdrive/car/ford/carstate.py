@@ -33,7 +33,7 @@ class CarState(CarStateBase):
     ret.brakePressed = bool(cp.vl["Cruise_Status"]['Brake_Drv_Appl'])
     ret.brakeLights = bool(cp.vl["BCM_to_HS_Body"]['Brake_Lights'])
     ret.genericToggle = bool(cp.vl["Steering_Buttons"]['Dist_Incr'])
-    self.latLimit = cp.vl["Lane_Keep_Assist_Status"]['LatCtlLim_D_Sta']
+    self.latLimit = cp.vl["Lane_Keep_Assist_Status"]['LatCtlLim_D_Stat']
     print ("Lateral_Limit:", self.latLimit, "lkas_state:", self.lkas_state, "steer_override:", self.steer_override)
     self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
     self.left_blinker_on = bool(cp.vl["Steering_Buttons"]['Left_Turn_Light'])
