@@ -39,7 +39,7 @@ function launch {
           git submodule foreach --recursive git reset --hard
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
-          cd "${BASEDIR}" && exec "${LAUNCHER_LOCATION}"
+          exec "${LAUNCHER_LOCATION}"
         else
           echo "openpilot backup found, not updating"
           # TODO: restore backup? This means the updater didn't start after swapping
@@ -64,9 +64,9 @@ function launch {
   # Move RIL and other possibly long-running I/O interrupts onto core 1
   # Move USB to core 3 for better realtime handling
   IRQ_AFFINE_CORE_0=""
-  IRQ_AFFINE_CORE_1="13 16 25 78"  # I2C, NGD, qcom,smd-modem
+  IRQ_AFFINE_CORE_1="13 16 25 78"    # I2C, NGD, qcom,smd-modem
   IRQ_AFFINE_CORE_2="6 15 26 33 35"  # SPS, MDSS, ufshcd (flash storage), wlan_pci (WiFi)
-  IRQ_AFFINE_CORE_3="733 736"  # USB for LeEco and OP3T mainboards respectively
+  IRQ_AFFINE_CORE_3="733 736"        # USB for LeEco and OP3T mainboards respectively
 
   for CORE in {0..3}
   do
@@ -85,14 +85,6 @@ function launch {
     if [ -f "$BASEDIR/scripts/continue.sh" ]; then
       cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
-
-    # TODO: check if this is needed, scons should know what it needs to rebuild
-    #if [ ! -f "$BASEDIR/prebuilt" ]; then
-    #  echo "Clearing build products and resetting scons state prior to NEOS update"
-    #  git clean -xdf
-    #  git submodule foreach --recursive git clean -xdf
-    #  rm -rf /tmp/scons_cache
-    #fi
 
     "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update.json"
   fi
