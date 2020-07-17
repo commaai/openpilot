@@ -15,6 +15,7 @@ class URLFile(object):
     self._url = url
     self._pos = 0
     self._local_file = None
+    self._length = None
 
   def get_curl(self):
     curl = pycurl.Curl()
@@ -34,12 +35,17 @@ class URLFile(object):
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def get_length(self):
+    if self._length is not None:
+      return self._length
+
     c = self.get_curl()
     c.setopt(pycurl.URL, self._url)
     c.setopt(c.NOBODY, 1)
     c.perform()
 
-    return int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
+    length = int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
+    self._length = length
+    return length
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def download_chunk(self, start, end=None):
