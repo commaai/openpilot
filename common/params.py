@@ -319,7 +319,7 @@ def write_db(params_path, key, value):
   lock.acquire()
 
   try:
-    tmp_path = tempfile.mktemp(prefix=".tmp", dir=params_path)
+    tmp_path = tempfile.mkstemp(prefix=".tmp", dir=params_path)
     with open(tmp_path, "wb") as f:
       f.write(value)
       f.flush()
