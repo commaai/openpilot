@@ -6,7 +6,8 @@ from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.ford.values import DBC
 
  #WHEEL_RADIUS = 0.33
-
+GearShifter = car.CarState.GearShifter
+  
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -43,9 +44,20 @@ class CarState(CarStateBase):
                         cp.vl["Doors"]['Door_RL_Open'], cp.vl["Doors"]['Door_RR_Open']]) 
     ret.steeringTorque = cp.vl["EPAS_INFO"]['DrvSte_Tq_Actl']
 
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["TransGearData"]['GearLvrPos_D_Actl'], None))
+    #ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["TransGearData"]['GearLvrPos_D_Actl'], None))
     ret.seatbeltUnlatched = cp.vl["RCMStatusMessage2_FD1"]['FirstRowBuckleDriver'] == 2
     print ("Lateral_Limit:", self.latLimit, "lkas_state:", self.lkas_state, "steer_override:", ret.steeringPressed)
+    gear = cp.vl["TransGearData"]['GearLvrPos_D_Actl']
+    if gear == 0:
+      ret.gearShifter = GearShifter.park
+    elif gear == 1:
+      ret.gearShifter = GearShifter.reverse
+    elif gear == 2:
+      ret.gearShifter = GearShifter.neutral
+    elif gear in (3, 4, 5, 6, 7, 8, 9, 10, 11) #6R80 only. Not counting 10R80
+      ret.gearShifter = GearShifter.drive
+    else:
+      ret.gearShifter = GearShifter.unknown
     return ret
 
   @staticmethod
