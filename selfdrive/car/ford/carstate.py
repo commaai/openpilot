@@ -80,7 +80,7 @@ class CarState(CarStateBase):
     ("DrvSte_Tq_Actl", "EPAS_INFO", 0.),
     ("GearLvrPos_D_Actl", "TransGearData", 0.),
     ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1", 0.),
-    ("LatCtlLim_D_Sta", "Lane_Keep_Assist_Status", 0.),
+    ("LatCtlLim_D_Stat", "Lane_Keep_Assist_Status", 0.),
   ]
     checks = []
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
