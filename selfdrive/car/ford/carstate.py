@@ -54,7 +54,7 @@ class CarState(CarStateBase):
       ret.gearShifter = GearShifter.reverse
     elif gear == 2:
       ret.gearShifter = GearShifter.neutral
-    elif gear in (3, 4, 5, 6, 7, 8, 9, 10, 11) #6R80 only. Not counting 10R80
+    elif gear in (3, 4, 5, 6, 7, 8, 9, 10, 11): #6R80 only. Not counting 10R80
       ret.gearShifter = GearShifter.drive
     else:
       ret.gearShifter = GearShifter.unknown
