@@ -99,7 +99,7 @@ GPUMalloc::GPUMalloc(int size, int fd) {
   memset(&alloc, 0, sizeof(alloc));
   alloc.size = size;
   alloc.flags = 0x10000a00;
-  int ret = ioctl(fd, IOCTL_KGSL_GPUOBJ_ALLOC, &alloc);
+  ioctl(fd, IOCTL_KGSL_GPUOBJ_ALLOC, &alloc);
   void *addr = mmap64(NULL, alloc.mmapsize, 0x3, 0x1, fd, alloc.id*0x1000);
   assert(addr != MAP_FAILED);
 

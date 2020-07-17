@@ -29,7 +29,6 @@ struct ProcCache {
 }
 
 int main() {
-  int err;
   PubMaster publisher({"procLog"});
 
   double jiffy = sysconf(_SC_CLK_TCK);
@@ -61,8 +60,8 @@ int main() {
           unsigned long utime, ntime, stime, itime;
           unsigned long iowtime, irqtime, sirqtime;
 
-          int count = sscanf(stat_line.data(), "cpu%d %lu %lu %lu %lu %lu %lu %lu",
-            &id, &utime, &ntime, &stime, &itime, &iowtime, &irqtime, &sirqtime);
+          sscanf(stat_line.data(), "cpu%d %lu %lu %lu %lu %lu %lu %lu",
+                 &id, &utime, &ntime, &stime, &itime, &iowtime, &irqtime, &sirqtime);
 
           auto ltimeo = orphanage.newOrphan<cereal::ProcLog::CPUTimes>();
           auto ltime = ltimeo.get();

@@ -2,7 +2,7 @@
 import os
 import gc
 from cereal import car, log
-from common.android import ANDROID
+from common.android import ANDROID, get_sound_card_online
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, set_realtime_priority, set_core_affinity, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
@@ -79,8 +79,7 @@ class Controls:
               internet_needed or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
-    sounds_available = (not ANDROID or (os.path.isfile('/proc/asound/card0/state') and
-                        open('/proc/asound/card0/state').read().strip() == 'ONLINE'))
+    sounds_available = not ANDROID or get_sound_card_online()
 
     car_recognized = self.CP.carName != 'mock'
     # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
@@ -228,6 +227,8 @@ class Controls:
       self.events.add(EventName.relayMalfunction)
     if self.sm['plan'].fcw:
       self.events.add(EventName.fcw)
+    if self.sm['model'].frameDropPerc > 1:
+      self.events.add(EventName.modeldLagging)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
