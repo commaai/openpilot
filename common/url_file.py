@@ -66,19 +66,24 @@ class URLFile(object):
   def read(self, ll=None):
     start = self._pos
     end = None if ll is None else self._pos + ll - 1
-    threads = int(os.environ.get("COMMA_PARALLEL_DOWNLOADS", "0"))
+    max_threads = int(os.environ.get("COMMA_PARALLEL_DOWNLOADS", "0"))
 
-    if threads > 0:
+    if max_threads > 0:
       # Multithreaded download
       end = self.get_length() if end is None else end
-      chunk_size = (end - start) // threads
-      chunks = [
-        (start + chunk_size * i,
-         start + chunk_size * (i + 1) - 1 if i != threads - 1 else end)
-        for i in range(threads)]
+      threads = min((end - start) // (1024 * 1024), max_threads)
 
-      with Pool(threads) as pool:
-        ret = b"".join(pool.starmap(self.download_chunk, chunks))
+      if threads > 1:
+        chunk_size = (end - start) // threads
+        chunks = [
+          (start + chunk_size * i,
+           start + chunk_size * (i + 1) - 1 if i != threads - 1 else end)
+          for i in range(threads)]
+
+        with Pool(threads) as pool:
+          ret = b"".join(pool.starmap(self.download_chunk, chunks))
+      else:
+        ret = self.download_chunk(start, end)
     else:
       # Single threaded download
       ret = self.download_chunk(start, end)
