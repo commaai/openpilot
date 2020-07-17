@@ -53,7 +53,6 @@ class URLFile(object):
     c.setopt(pycurl.URL, self._url)
     c.setopt(pycurl.WRITEDATA, dats)
     c.setopt(pycurl.HTTPHEADER, ["Range: " + trange, "Connection: keep-alive"])
-    c.setopt(c.NOBODY, 0)
     c.perform()
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
@@ -78,8 +77,8 @@ class URLFile(object):
          start + chunk_size * (i + 1) if i != threads - 1 else end)
         for i in range(threads)]
 
-      pool = Pool(threads)
-      ret = b"".join(pool.starmap(self.download_chunk, chunks))
+      with Pool(threads) as pool:
+        ret = b"".join(pool.starmap(self.download_chunk, chunks))
     else:
       # Single threaded download
       ret = self.download_chunk(start, end)
