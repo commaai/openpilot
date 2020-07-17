@@ -5,9 +5,9 @@
 
 #include <libyuv.h>
 
-#define MODEL_WIDTH 160
-#define MODEL_HEIGHT 320
-#define FULL_W 426
+#define MODEL_WIDTH 320
+#define MODEL_HEIGHT 640
+#define FULL_W 852
 
 #if defined(QCOM) || defined(QCOM2)
 #define input_lambda(x) (x - 128.f) * 0.0078125f
@@ -136,6 +136,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   memcpy(&ret.right_eye_prob, &s->output[30], sizeof ret.right_eye_prob);
   memcpy(&ret.left_blink_prob, &s->output[31], sizeof ret.right_eye_prob);
   memcpy(&ret.right_blink_prob, &s->output[32], sizeof ret.right_eye_prob);
+  memcpy(&ret.sg_prob, &s->output[33], sizeof ret.sg_prob);
   ret.face_orientation_meta[0] = softplus(ret.face_orientation_meta[0]);
   ret.face_orientation_meta[1] = softplus(ret.face_orientation_meta[1]);
   ret.face_orientation_meta[2] = softplus(ret.face_orientation_meta[2]);
@@ -166,6 +167,7 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setRightEyeProb(res.right_eye_prob);
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
+  framed.setSgProb(res.sg_prob);
 
   pm.send("driverState", msg);
 }
