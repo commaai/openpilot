@@ -45,7 +45,7 @@ class CarState(CarStateBase):
     ret.steer_torque_driver = cp.vl["EPAS_INFO"]['DrvSte_Tq_Actl']
 
     can_gear_ford = int(cp.vl["TransGearData"]['GearLvrPos_D_Actl'])
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear_ford, None))
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
     ret.seatbeltUnlatched = cp.vl["RCMStatusMessage2_FD1"]['FirstRowBuckleDriver'] == 2
     return ret
 
@@ -78,7 +78,7 @@ class CarState(CarStateBase):
     ("Door_RL_Open", "Doors", 0.),
     ("Door_RR_Open", "Doors", 0.),
     ("DrvSte_Tq_Actl", "EPAS_INFO", 0.),
-    ("GearLvrPos_D_Actl", "TransGearData", 3.),
+    ("GearLvrPos_D_Actl", "TransGearData", 0.),
     ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1", 0.),
     ("LatCtlLim_D_Sta", "Lane_Keep_Assist_Status", 0.),
   ]
