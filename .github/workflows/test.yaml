@@ -65,7 +65,8 @@ jobs:
     - name: Install dependencies
       #if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: ./tools/mac_setup.sh
-    #- name: Brew link # after cache restore, setup brew symlinks
+    # setup symlinks again after cache restore
+    #- name: Brew link
     #  run: brew link $(brew list)
     - name: Build openpilot
       run: eval "$(pyenv init -)" && scons -j$(nproc)
