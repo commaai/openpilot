@@ -34,11 +34,10 @@
 
 #define USER_AGENT "NEOSUpdater-0.2"
 
-#define MANIFEST_URL_EON_STAGING "https://github.com/commaai/eon-neos/raw/master/update.staging.json"
-#define MANIFEST_URL_EON_LOCAL "http://192.168.5.1:8000/neosupdate/update.local.json"
-#define MANIFEST_URL_EON "https://github.com/commaai/eon-neos/raw/master/update.json"
-const char *manifest_url = MANIFEST_URL_EON;
-bool background_cache = false;
+#define MANIFEST_URL_NEOS_STAGING "https://github.com/commaai/eon-neos/raw/master/update.staging.json"
+#define MANIFEST_URL_NEOS_LOCAL "http://192.168.5.1:8000/neosupdate/update.local.json"
+#define MANIFEST_URL_NEOS "https://github.com/commaai/eon-neos/raw/master/update.json"
+const char *manifest_url = MANIFEST_URL_NEOS;
 bool cache_valid = false;
 
 #define RECOVERY_DEV "/dev/block/bootdevice/by-name/recovery"
@@ -152,6 +151,32 @@ static void start_settings_activity(const char* name) {
   system(launch_cmd);
 }
 
+bool is_settings_active() {
+  FILE *fp;
+  char sys_output[4096];
+
+  fp = popen("/bin/dumpsys window windows", "r");
+  if (fp == NULL) {
+    return false;
+  }
+
+  bool active = false;
+  while (fgets(sys_output, sizeof(sys_output), fp) != NULL) {
+    if (strstr(sys_output, "mCurrentFocus=null")  != NULL) {
+      break;
+    }
+
+    if (strstr(sys_output, "mCurrentFocus=Window") != NULL) {
+      active = true;
+      break;
+    }
+  }
+
+  pclose(fp);
+
+  return active;
+}
+
 struct Updater {
   bool do_exit = false;
 
@@ -169,7 +194,6 @@ struct Updater {
 
   std::mutex lock;
 
-  // i hate state machines give me coroutines already
   enum UpdateState {
     CONFIRMATION,
     LOW_BATTERY,
@@ -219,7 +243,7 @@ struct Updater {
     b_x = fb_w-b_w-200;
     b_y = 720;
     b_h = 220;
-    
+
     state = CONFIRMATION;
   }
 
@@ -323,9 +347,10 @@ struct Updater {
     state = RUNNING;
   }
 
-  std::string stage_download(std::string url, std::string hash, std::string name, bool startup_cache_check) {
+  std::string stage_download(std::string url, std::string hash, std::string name) {
     std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
 
+    // TODO: fix this
     if (!startup_cache_check && !cache_valid) {
       set_progress("Downloading " + name + "...");
       bool r = download_file(url, out_fn);
@@ -352,47 +377,26 @@ struct Updater {
     }
   }
 
-  void run_stages(bool startup_cache_check) {
-    printf("run_stages start\n");
+  bool download_stage() {
     curl = curl_easy_init();
     assert(curl);
 
-    if (!check_battery()) {
-      set_battery_low();
-      int battery_cap = battery_capacity();
-      while(battery_cap < min_battery_cap) {
-        battery_cap = battery_capacity();
-        battery_cap_text = std::to_string(battery_cap);
-        usleep(1000000);
-      }
-      set_running();
-    }
-
     if (!check_space()) {
       set_error("2GB of free space required to update");
-      return;
+      return false;
     }
 
     mkdir(UPDATE_DIR, 0777);
 
-    const int EON = (access("/EON", F_OK) != -1);
-
     set_progress("Finding latest version...");
-    std::string manifest_s;
-    if (EON) {
-      manifest_s = download_string(curl, manifest_url);
-    } else {
-      // don't update NEO
-      exit(0);
-    }
-
+    std::string manifest_s = download_string(curl, manifest_url);
     printf("manifest: %s\n", manifest_s.c_str());
 
     std::string err;
     auto manifest = json11::Json::parse(manifest_s, err);
     if (manifest.is_null() || !err.empty()) {
       set_error("failed to load update manifest");
-      return;
+      return false;
     }
 
     std::string ota_url = manifest["ota_url"].string_value();
@@ -407,7 +411,7 @@ struct Updater {
 
     if (ota_url.empty() || ota_hash.empty()) {
       set_error("invalid update manifest");
-      return;
+      return false;
     }
 
     // std::string installer_fn = stage_download(installer_url, installer_hash, "installer", startup_cache_check);
@@ -429,7 +433,7 @@ struct Updater {
         recovery_fn = stage_download(recovery_url, recovery_hash, "recovery", startup_cache_check);
         if (recovery_fn.empty()) {
           // error'd
-          return;
+          return false;
         }
       }
     }
@@ -437,13 +441,37 @@ struct Updater {
     std::string ota_fn = stage_download(ota_url, ota_hash, "update", startup_cache_check);
     if (ota_fn.empty()) {
       //error'd
+      return false;
+    }
+
+    // download sucessful
+    return true;
+  }
+
+  // thread that handles downloading and installing update
+  void run_stages() {
+    printf("run_stages start\n");
+
+
+    // ** download update **
+
+    if (!check_battery()) {
+      set_battery_low();
+      int battery_cap = battery_capacity();
+      while(battery_cap < min_battery_cap) {
+        battery_cap = battery_capacity();
+        battery_cap_text = std::to_string(battery_cap);
+        usleep(1000000);
+      }
+      set_running();
+    }
+
+    bool success = download_stage();
+    if (!sucess) {
       return;
     }
 
-    cache_valid = true;
-    if (background_cache or startup_cache_check)
-      // Headless or cache-check only mode, we're finished
-      return;
+    // ** install update **
 
     if (!check_battery()) {
       set_battery_low();
@@ -526,6 +554,8 @@ struct Updater {
     // execl("/system/bin/reboot", "recovery");
     // set_error("failed to reboot into recovery");
   }
+
+  // *************** screens ***************
 
   void draw_ack_screen(const char *title, const char *message, const char *button, const char *altbutton) {
     nvgFillColor(vg, nvgRGBA(255,255,255,255));
@@ -645,6 +675,8 @@ struct Updater {
     }
   }
 
+  // *************** UI ***************
+
   void ui_draw() {
     const char *cached_instr = "Your device needs to install an operating system update. Keep it "
        "connected to a power source.";
@@ -680,9 +712,7 @@ struct Updater {
   void ui_update() {
     std::lock_guard<std::mutex> guard(lock);
 
-    switch (state) {
-    case ERROR:
-    case CONFIRMATION: {
+    if (state == ERROR || state == CONFIRMATION) {
       int touch_x = -1, touch_y = -1;
       int res = touch_poll(&touch, &touch_x, &touch_y, 0);
       if (res == 1 && !is_settings_active()) {
@@ -701,14 +731,11 @@ struct Updater {
         }
       }
     }
-    default:
-      break;
-    }
   }
 
+  // *************** entry points ***************
 
-  void start_ui() {
-
+  void go() {
     ui_init();
 
     while (!do_exit) {
@@ -744,44 +771,20 @@ struct Updater {
       update_thread_handle.join();
     }
 
+    // reboot
     system("service call power 16 i32 0 i32 0 i32 1");
-  }
-
-  bool is_settings_active() {
-    FILE *fp;
-    char sys_output[4096];
-
-    fp = popen("/bin/dumpsys window windows", "r");
-    if (fp == NULL) {
-      return false;
-    }
-
-    bool active = false;
-    while (fgets(sys_output, sizeof(sys_output), fp) != NULL) {
-      if (strstr(sys_output, "mCurrentFocus=null")  != NULL) {
-        break;
-      }
-
-      if (strstr(sys_output, "mCurrentFocus=Window") != NULL) {
-        active = true;
-        break;
-      }
-    }
-
-    pclose(fp);
-
-    return active;
   }
 
 };
 
 }
 int main(int argc, char *argv[]) {
+  bool background_cache = false;
   if (argc > 1) {
     if (strcmp(argv[1], "local") == 0) {
-      manifest_url = MANIFEST_URL_EON_LOCAL;
+      manifest_url = MANIFEST_URL_NEOS_LOCAL;
     } else if (strcmp(argv[1], "staging") == 0) {
-      manifest_url = MANIFEST_URL_EON_STAGING;
+      manifest_url = MANIFEST_URL_NEOS_STAGING;
     } else if (strcmp(argv[1], "bgcache") == 0) {
       manifest_url = argv[2];
       background_cache = true;
@@ -792,12 +795,12 @@ int main(int argc, char *argv[]) {
 
   printf("updating from %s\n", manifest_url);
   Updater updater;
-  updater.run_stages(!background_cache);
 
+  int err = 0;
   if (background_cache) {
-    return !cache_valid;
+    err = !updater.download_stage();
   } else {
-    updater.start_ui();
-    return 0;
+    updater.go();
   }
+  return ret;
 }

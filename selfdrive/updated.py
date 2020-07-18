@@ -39,7 +39,7 @@ from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
-WAIT_BETWEEN_ATTEMPTS=600
+WAIT_BETWEEN_ATTEMPTS = 10 * 60 # seconds
 STAGING_ROOT = "/data/safe_staging"
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
@@ -48,7 +48,7 @@ OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 
-# Workaround for the EON/termux build of Python having os.link removed.
+# Workaround for the NEOS/termux build of Python having os.link removed.
 ffi = FFI()
 ffi.cdef("int link(const char *oldpath, const char *newpath);")
 libc = ffi.dlopen(None)
