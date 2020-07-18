@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#define OUTPUT_SIZE 34
+#define OUTPUT_SIZE 33
 #define RHD_CHECK_INTERVAL 10
 
 typedef struct DMonitoringResult {
@@ -22,7 +22,6 @@ typedef struct DMonitoringResult {
   float right_eye_prob;
   float left_blink_prob;
   float right_blink_prob;
-  float sg_prob;
 } DMonitoringResult;
 
 typedef struct DMonitoringModelState {
