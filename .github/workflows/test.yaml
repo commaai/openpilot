@@ -63,7 +63,7 @@ jobs:
         path: |
           ~/.pyenv
           /usr/local/Cellar
-        key: ${{ hashFiles('Pipfile*') }}-${{ hashFiles('tools/mac_setup.sh') }}
+        key: ${{ hashFiles('tools/mac_setup.sh') }}
     - name: Install dependencies
       run: BREW_LINK=1 ./tools/mac_setup.sh
     - name: Build openpilot

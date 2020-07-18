@@ -17,7 +17,7 @@ brew install capnp \
 
 # for use in CI after restoring cache
 if [ ! -z "$BREW_LINK" ]; then
-  brew link $(brew list)
+  brew link $(brew list) || true
 fi
 
 # install python
