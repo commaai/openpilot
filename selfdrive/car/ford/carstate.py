@@ -62,6 +62,7 @@ class CarState(CarStateBase):
     ret.rightBlindspot = cp.vl["Side_Detect_R_Stat"]['SodDetctRight_D_Stat'] !=0
     self.ahbcCommanded = cp.vl["Lane_Keep_Assist_Ui"]['AhbHiBeam_D_Rq']
     self.ipmaHeater = cp.vl["Lane_Keep_Assist_Ui"]['CamraDefog_B_Req']
+    self.ahbcRamping = cp.vl["Lane_Keep_Assist_Ui"]['AhbcRampingV_D_Rq']
     return ret
 
   @staticmethod
@@ -100,7 +101,7 @@ class CarState(CarStateBase):
     ("SodDetctRight_D_Stat", "Side_Detect_R_Stat", 0.),
     ("AhbHiBeam_D_Rq", "Lane_Keep_Assist_Ui", 0.),
     ("CamraDefog_B_Req", "Lane_Keep_Assist_Ui", 0.),
-      
+    ("AhbcRampingV_D_Rq", "Lane_Keep_Assist_Ui", 0.),
     ]
     
     checks = []
