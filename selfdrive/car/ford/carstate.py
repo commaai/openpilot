@@ -58,8 +58,8 @@ class CarState(CarStateBase):
       ret.gearShifter = GearShifter.drive
     else:
       ret.gearShifter = GearShifter.unknown
-    ret.leftBlindspot = cp.vl["Side_Detect_L_Stat"]['SodDetctLeft_D_Stat']
-    ret.rightBlindspot = cp.vl["Side_Detect_R_Stat"]['SodDetctRight_D_Stat']
+    ret.leftBlindspot = cp.vl["Side_Detect_L_Stat"]['SodDetctLeft_D_Stat'] !=0
+    ret.rightBlindspot = cp.vl["Side_Detect_R_Stat"]['SodDetctRight_D_Stat'] !=0
     self.ahbcCommanded = cp.vl["Lane_Keep_Assist_Ui"]['AhbHiBeam_D_Rq']
     self.ipmaHeater = cp.vl["Lane_Keep_Assist_Ui"]['CamraDefog_B_Req']
     return ret
