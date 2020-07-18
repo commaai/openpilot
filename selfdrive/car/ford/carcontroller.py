@@ -47,7 +47,7 @@ class CarController():
           self.lkas_action += int(CS.out.genericToggle and not self.generic_toggle_last)
           self.lkas_action &= 0xf
         else:
-          self.lkas_action = 4   # 4 and 5 seem the best. 8 and 9 seem to aggressive and laggy
+          self.lkas_action = 0   # 4 and 5 seem the best. 8 and 9 seem to aggressive and laggy
 
         can_sends.append(create_steer_command(self.packer, apply_steer, enabled,
                                               CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
