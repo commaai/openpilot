@@ -271,7 +271,7 @@ def attempt_update():
     # If a NEOS update is required, download it in the background
     with open("/VERSION", "r") as current_neos_file:
       current_neos_version = current_neos_file.read().strip()
-    required_neos_version = run(["bash", "-c", 
+    required_neos_version = run(["bash", "-c",
                r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
                OVERLAY_MERGED)
     cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
@@ -331,7 +331,7 @@ def main():
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
-  # Wait a short time before first update attempt to avoid race with IsOffroad
+  # Wait a for IsOffroad to be set
   time.sleep(30)
 
   # Setup signal handlers

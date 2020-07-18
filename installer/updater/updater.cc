@@ -347,39 +347,36 @@ struct Updater {
     state = RUNNING;
   }
 
-  std::string stage_download(std::string url, std::string hash, std::string name) {
+  std::string download(std::string url, std::string hash, std::string name) {
     std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
 
-    // TODO: fix this
-    if (!startup_cache_check && !cache_valid) {
+    // start or resume downloading if hash doesn't match
+    std::string fn_hash = sha256_file(out_fn);
+    if (hash.compare(fn_hash) != 0) {
       set_progress("Downloading " + name + "...");
       bool r = download_file(url, out_fn);
       if (!r) {
         set_error("failed to download " + name);
         return "";
       }
+      fn_hash = sha256_file(out_fn);
     }
 
     set_progress("Verifying " + name + "...");
-    std::string fn_hash = sha256_file(out_fn);
     printf("got %s hash: %s\n", name.c_str(), hash.c_str());
-
-    if (startup_cache_check && fn_hash == "") {
-      set_progress(name + " was not in cache");
-      return "";
-    } else if (fn_hash != hash) {
+    if (fn_hash != hash) {
       set_error(name + " was corrupt");
       unlink(out_fn.c_str());
       return "";
-    } else {
-      set_progress(name + " hash verified");
-      return out_fn;
     }
+    return out_fn;
   }
 
   bool download_stage() {
     curl = curl_easy_init();
     assert(curl);
+
+    // ** quick checks before download **
 
     if (!check_space()) {
       set_error("2GB of free space required to update");
@@ -414,12 +411,13 @@ struct Updater {
       return false;
     }
 
-    // std::string installer_fn = stage_download(installer_url, installer_hash, "installer", startup_cache_check);
+    // std::string installer_fn = download(installer_url, installer_hash, "installer");
     // if (installer_fn.empty()) {
     //   //error'd
     //   return;
     // }
 
+    // ** handle recovery download **
     std::string recovery_fn;
     if (recovery_url.empty() || recovery_hash.empty() || recovery_len == 0) {
       set_progress("Skipping recovery flash...");
@@ -430,7 +428,7 @@ struct Updater {
       printf("existing recovery hash: %s\n", existing_recovery_hash.c_str());
 
       if (existing_recovery_hash != recovery_hash) {
-        recovery_fn = stage_download(recovery_url, recovery_hash, "recovery", startup_cache_check);
+        recovery_fn = download(recovery_url, recovery_hash, "recovery");
         if (recovery_fn.empty()) {
           // error'd
           return false;
@@ -438,7 +436,8 @@ struct Updater {
       }
     }
 
-    std::string ota_fn = stage_download(ota_url, ota_hash, "update", startup_cache_check);
+    // ** handle ota download **
+    std::string ota_fn = download(ota_url, ota_hash, "update");
     if (ota_fn.empty()) {
       //error'd
       return false;
@@ -448,7 +447,7 @@ struct Updater {
     return true;
   }
 
-  // thread that handles downloading and installing update
+  // thread that handles downloading and installing the update
   void run_stages() {
     printf("run_stages start\n");
 
@@ -554,8 +553,6 @@ struct Updater {
     // execl("/system/bin/reboot", "recovery");
     // set_error("failed to reboot into recovery");
   }
-
-  // *************** screens ***************
 
   void draw_ack_screen(const char *title, const char *message, const char *button, const char *altbutton) {
     nvgFillColor(vg, nvgRGBA(255,255,255,255));
@@ -675,25 +672,18 @@ struct Updater {
     }
   }
 
-  // *************** UI ***************
-
   void ui_draw() {
-    const char *cached_instr = "Your device needs to install an operating system update. Keep it "
-       "connected to a power source.";
-    const char *download_instr = "Your device will now download and install an operating system "
-       "update. The update is about 1GB and WiFi connectivity is recommended. Keep it connected "
-       "to a power source during this process.";
-
     std::lock_guard<std::mutex> guard(lock);
 
     nvgBeginFrame(vg, fb_w, fb_h, 1.0f);
 
     switch (state) {
     case CONFIRMATION:
-      draw_ack_screen("An update to NEOS is required.",
-											cache_valid ? cached_instr : download_instr,
+     	// TODO: different text if update is fully cached?
+			draw_ack_screen("An update to NEOS is required.",
+                      "Your device will now be reset and upgraded. You may want to connect to wifi as download is around 1 GB. Existing data on device should not be lost.",
                       "Continue",
-                      cache_valid ? NULL : "Connect to WiFi");
+                      "Connect to WiFi");
       break;
     case LOW_BATTERY:
       draw_battery_screen();
@@ -732,8 +722,6 @@ struct Updater {
       }
     }
   }
-
-  // *************** entry points ***************
 
   void go() {
     ui_init();
@@ -778,6 +766,7 @@ struct Updater {
 };
 
 }
+
 int main(int argc, char *argv[]) {
   bool background_cache = false;
   if (argc > 1) {
