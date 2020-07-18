@@ -7,8 +7,9 @@ brew install capnp \
              czmq \
              coreutils \
              eigen \
-             llvm \
              libarchive \
+             libav \
+             llvm \
              pyenv \
              sdl2_gfx \
              sdl2_image \
