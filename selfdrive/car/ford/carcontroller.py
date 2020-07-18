@@ -30,7 +30,7 @@ class CarController():
     ahbcramping = CS.ahbcRamping
     config = CS.ipmaConfig
     noipma = CS.ipmaNo
-    ladeny = CS.LaDenyStat
+    ladeny = CS.laDenyStat
     stats = CS.ipmaStats
     if self.enable_camera:
 
