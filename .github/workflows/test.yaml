@@ -60,14 +60,12 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v2
       with:
-        path: ~/.pyenv,/usr/local/Cellar
+        path: |
+          ~/.pyenv
+          /usr/local/Cellar
         key: ${{ hashFiles('Pipfile*') }}-${{ hashFiles('tools/mac_setup.sh') }}
     - name: Install dependencies
-      #if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: ./tools/mac_setup.sh
-    # setup symlinks again after cache restore
-    #- name: Brew link
-    #  run: brew link $(brew list)
     - name: Build openpilot
       run: eval "$(pyenv init -)" && scons -j$(nproc)
 
