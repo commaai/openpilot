@@ -25,6 +25,8 @@ class CarController():
 
     apply_steer = actuators.steer
 
+    ahbc = CS.ahbcCommanded
+    defog = CS.ipmaHeater
     if self.enable_camera:
 
       if pcm_cancel:
