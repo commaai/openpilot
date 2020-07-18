@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
         model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
         posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
 
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f%", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
+        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
         last = mt1;
         last_vipc_frame_id = extra.frame_id;
       }
