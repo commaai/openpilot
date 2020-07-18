@@ -7,14 +7,12 @@ brew install capnp \
              czmq \
              coreutils \
              eigen \
+             ffmpeg \
              libarchive \
-             libav \
+             libtool \
              llvm \
              pyenv \
-             sdl2_gfx \
-             sdl2_image \
-             sdl2_mixer \
-             sdl2_ttf
+             zeromq
 
 # install python
 pyenv install 3.8.2
