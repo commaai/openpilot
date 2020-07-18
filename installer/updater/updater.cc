@@ -217,6 +217,12 @@ struct Updater {
   int b_x, b_w, b_y, b_h;
   int balt_x;
 
+  // download stage writes these for the installation stage
+  int recovery_len;
+  std::string recovery_hash;
+  std::string recovery_fn;
+  std::string ota_fn;
+
   CURL *curl = NULL;
 
   void ui_init() {
@@ -400,8 +406,8 @@ struct Updater {
     std::string ota_hash = manifest["ota_hash"].string_value();
 
     std::string recovery_url = manifest["recovery_url"].string_value();
-    std::string recovery_hash = manifest["recovery_hash"].string_value();
-    int recovery_len = manifest["recovery_len"].int_value();
+    recovery_hash = manifest["recovery_hash"].string_value();
+    recovery_len = manifest["recovery_len"].int_value();
 
     // std::string installer_url = manifest["installer_url"].string_value();
     // std::string installer_hash = manifest["installer_hash"].string_value();
@@ -418,7 +424,6 @@ struct Updater {
     // }
 
     // ** handle recovery download **
-    std::string recovery_fn;
     if (recovery_url.empty() || recovery_hash.empty() || recovery_len == 0) {
       set_progress("Skipping recovery flash...");
     } else {
@@ -437,7 +442,7 @@ struct Updater {
     }
 
     // ** handle ota download **
-    std::string ota_fn = download(ota_url, ota_hash, "update");
+    ota_fn = download(ota_url, ota_hash, "update");
     if (ota_fn.empty()) {
       //error'd
       return false;
@@ -465,7 +470,7 @@ struct Updater {
       set_running();
     }
 
-    bool success = download_stage();
+    bool sucess = download_stage();
     if (!sucess) {
       return;
     }
@@ -679,8 +684,8 @@ struct Updater {
 
     switch (state) {
     case CONFIRMATION:
-     	// TODO: different text if update is fully cached?
-			draw_ack_screen("An update to NEOS is required.",
+      // TODO: different text if update is fully cached?
+      draw_ack_screen("An update to NEOS is required.",
                       "Your device will now be reset and upgraded. You may want to connect to wifi as download is around 1 GB. Existing data on device should not be lost.",
                       "Continue",
                       "Connect to WiFi");
@@ -791,5 +796,5 @@ int main(int argc, char *argv[]) {
   } else {
     updater.go();
   }
-  return ret;
+  return err;
 }
