@@ -17,6 +17,7 @@ brew install capnp \
 
 # for use in CI after restoring cache
 if [ ! -z "$BREW_LINK" ]; then
+  brew unlink $(brew list) || true
   brew link $(brew list) || true
 fi
 
