@@ -28,6 +28,10 @@ class CarController():
     ahbc = CS.ahbcCommanded
     defog = CS.ipmaHeater
     ahbcramping = CS.ahbcRamping
+    config = CS.ipmaConfig
+    noipma = CS.ipmaNo
+    ladeny = CS.LaDenyStat
+    stats = CS.ipmaStats
     if self.enable_camera:
 
       if pcm_cancel:
@@ -51,7 +55,7 @@ class CarController():
 
       if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
          (self.steer_alert_last != steer_alert):
-        can_sends.append(create_lkas_ui(self.packer, CS.out.cruiseState.available, enabled, steer_alert, defog, ahbc, ahbcramping))
+        can_sends.append(create_lkas_ui(self.packer, CS.out.cruiseState.available, enabled, steer_alert, defog, ahbc, ahbcramping, config, noipma, ladeny, stats))
         self.enabled_last = enabled                         
         self.main_on_last = CS.out.cruiseState.available
       self.steer_alert_last = steer_alert
