@@ -58,8 +58,6 @@ jobs:
         submodules: true
     - name: Install dependencies
       run: ./tools/mac_setup.sh
-    - name: pyenv
-      run: pyenv version
     - name: Build openpilot
       run: eval "$(pyenv init -)" && scons -j$(nproc)
 
