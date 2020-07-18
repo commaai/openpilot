@@ -56,7 +56,14 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.pyenv,/usr/local/Cellar
+        key: ${{ hashFiles('tools/mac_setup.sh') }}
     - name: Install dependencies
+      #if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: ./tools/mac_setup.sh
     - name: Build openpilot
       run: eval "$(pyenv init -)" && scons -j$(nproc)

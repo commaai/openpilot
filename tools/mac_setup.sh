@@ -8,6 +8,7 @@ brew install capnp \
              coreutils \
              eigen \
              ffmpeg \
+             glfw \
              libarchive \
              libtool \
              llvm \
