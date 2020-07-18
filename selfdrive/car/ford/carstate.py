@@ -58,6 +58,8 @@ class CarState(CarStateBase):
       ret.gearShifter = GearShifter.drive
     else:
       ret.gearShifter = GearShifter.unknown
+    ret.leftBlindspot = cp.vl["Side_Detect_L_Stat"]['SodDetctLeft_D_Stat']
+    ret.rightBlindspot = cp.vl["Side_Detect_R_Stat"]['SodDetctRight_D_Stat']
     return ret
 
   @staticmethod
@@ -92,6 +94,8 @@ class CarState(CarStateBase):
     ("GearLvrPos_D_Actl", "TransGearData", 0.),
     ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1", 0.),
     ("LatCtlLim_D_Stat", "Lane_Keep_Assist_Status", 0.),
+    ("SodDetctLeft_D_Stat", "Side_Detect_L_Stat", 0.),
+    ("SodDetctRight_D_Stat", "Side_Detect_R_Stat", 0.).
   ]
     checks = []
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
