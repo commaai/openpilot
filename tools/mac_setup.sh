@@ -21,7 +21,7 @@ if [ ! -z "$BREW_LINK" ]; then
 fi
 
 # install python
-pyenv install 3.8.2
+pyenv install -s 3.8.2
 pyenv global 3.8.2
 pyenv rehash
 eval "$(pyenv init -)"
