@@ -100,5 +100,8 @@ class CarState(CarStateBase):
     ("SodDetctRight_D_Stat", "Side_Detect_R_Stat", 0.),
     ("AhbHiBeam_D_Rq", "Lane_Keep_Assist_Ui", 0.),
     ("CamraDefog_B_Req", "Lane_Keep_Assist_Ui", 0.),
+      
+    ]
+    
     checks = []
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
