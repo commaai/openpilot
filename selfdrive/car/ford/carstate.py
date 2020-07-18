@@ -64,6 +64,10 @@ class CarState(CarStateBase):
     self.ipmaHeater = cp.vl["Lane_Keep_Assist_Ui"]['CamraDefog_B_Req']
     self.ahbcRamping = cp.vl["Lane_Keep_Assist_Ui"]['AhbcRampingV_D_Rq']
     ret.stockFcw = cp.vl["ACCDATA_3"]['FcwVisblWarn_B_Rq'] !=0
+    self.ipmaConfig = cp.vl["Lane_Keep_Assist_Ui"]['FeatConfigIpmaActl']
+    self.ipmaNo = cp.vl["Lane_Keep_Assist_Ui"]['FeatNoIpmaActl']
+    self.laDenyStat = cp.vl["Lane_Keep_Assist_Ui"]['LaDenyStats_B_Dsply']
+    self.ipmaStats = cp.vl["Lane_Keep_Assist_Ui"]['CamraStats_D_Dsply']
     return ret
 
   @staticmethod
@@ -104,6 +108,10 @@ class CarState(CarStateBase):
     ("CamraDefog_B_Req", "Lane_Keep_Assist_Ui", 0.),
     ("AhbcRampingV_D_Rq", "Lane_Keep_Assist_Ui", 0.),
     ("FcwVisblWarn_B_Rq", "ACCDATA_3", 0.),
+    ("FeatConfigIpmaActl", "Lane_Keep_Assist_Ui", 0.),
+    ("FeatNoIpmaActl", "Lane_Keep_Assist_Ui", 0.),
+    ("LaDenyStats_B_Dsply", "Lane_Keep_Assist_Ui", 0.),
+    ("CamraStats_D_Dsply", "Lane_Keep_Assist_Ui", 0.),
     ]
     
     checks = []
