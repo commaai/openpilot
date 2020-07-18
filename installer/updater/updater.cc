@@ -38,7 +38,6 @@
 #define MANIFEST_URL_NEOS_LOCAL "http://192.168.5.1:8000/neosupdate/update.local.json"
 #define MANIFEST_URL_NEOS "https://github.com/commaai/eon-neos/raw/master/update.json"
 const char *manifest_url = MANIFEST_URL_NEOS;
-bool cache_valid = false;
 
 #define RECOVERY_DEV "/dev/block/bootdevice/by-name/recovery"
 #define RECOVERY_COMMAND "/cache/recovery/command"
@@ -714,7 +713,7 @@ struct Updater {
         if (touch_x >= b_x && touch_x < b_x+b_w && touch_y >= b_y && touch_y < b_y+b_h) {
           if (state == CONFIRMATION) {
             state = RUNNING;
-            update_thread_handle = std::thread(&Updater::run_stages, this, false);
+            update_thread_handle = std::thread(&Updater::run_stages, this);
           }
         }
         if (touch_x >= balt_x && touch_x < balt_x+b_w && touch_y >= b_y && touch_y < b_y+b_h) {
