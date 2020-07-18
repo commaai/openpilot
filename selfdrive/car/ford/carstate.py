@@ -42,7 +42,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = self.right_blinker_on > 0
     ret.doorOpen = any([cp.vl["Doors"]['Door_FL_Open'],cp.vl["Doors"]['Door_FR_Open'],
                         cp.vl["Doors"]['Door_RL_Open'], cp.vl["Doors"]['Door_RR_Open']]) 
-    ret.steeringTorque = cp.vl["EPAS_INFO"]['DrvSte_Tq_Actl']
+    ret.steeringTorque = cp.vl["EPAS_INFO"]['SteeringColumnTorque']
 
     #ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["TransGearData"]['GearLvrPos_D_Actl'], None))
     ret.seatbeltUnlatched = cp.vl["RCMStatusMessage2_FD1"]['FirstRowBuckleDriver'] == 2
@@ -98,7 +98,7 @@ class CarState(CarStateBase):
     ("Door_FR_Open", "Doors", 0.),
     ("Door_RL_Open", "Doors", 0.),
     ("Door_RR_Open", "Doors", 0.),
-    ("DrvSte_Tq_Actl", "EPAS_INFO", 0.),
+    ("SteeringColumnTorque", "EPAS_INFO", 0.),
     ("GearLvrPos_D_Actl", "TransGearData", 0.),
     ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1", 0.),
     ("LatCtlLim_D_Stat", "Lane_Keep_Assist_Status", 0.),
