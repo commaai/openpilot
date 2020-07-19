@@ -1,10 +1,12 @@
-from common.params import Params, UnknownKeyName
+import os
 import threading
 import time
 import tempfile
 import shutil
+import stat
 import unittest
 
+from common.params import Params, UnknownKeyName
 
 class TestParams(unittest.TestCase):
   def setUp(self):
@@ -58,6 +60,12 @@ class TestParams(unittest.TestCase):
     with self.assertRaises(UnknownKeyName):
       self.params.get("swag")
 
+  def test_params_permissions(self):
+    permissions = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH
+
+    self.params.put("DongleId", "cb38263377b873ee")
+    st_mode = os.stat(f"{self.tmpdir}/d/DongleId").st_mode
+    assert (st_mode & permissions) == permissions
 
 if __name__ == "__main__":
   unittest.main()
