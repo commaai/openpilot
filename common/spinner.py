@@ -1,14 +1,13 @@
 import os
 import subprocess
-from common.android import ANDROID
 from common.basedir import BASEDIR
 
 
 class Spinner():
-  def __init__(self):
+  def __init__(self, noop=False):
     # spinner is currently only implemented for android
     self.spinner_proc = None
-    if ANDROID:
+    if not noop:
       try:
         self.spinner_proc = subprocess.Popen(["./spinner"],
                                              stdin=subprocess.PIPE,

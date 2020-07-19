@@ -2,15 +2,14 @@
 import os
 import time
 import subprocess
-from common.android import ANDROID
 from common.basedir import BASEDIR
 
 
 class TextWindow():
-  def __init__(self, s):
+  def __init__(self, s, noop=False):
     # text window is only implemented for android currently
     self.text_proc = None
-    if ANDROID:
+    if not noop:
       try:
         self.text_proc = subprocess.Popen(["./text", s],
                                           stdin=subprocess.PIPE,
@@ -34,7 +33,7 @@ class TextWindow():
       self.text_proc = None
 
   def wait_for_exit(self):
-    if ANDROID:
+    if self.text_proc is not None:
       while True:
         if self.get_status() == 1:
           return
