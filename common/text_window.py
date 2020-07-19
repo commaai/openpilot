@@ -9,6 +9,7 @@ from common.basedir import BASEDIR
 class TextWindow():
   def __init__(self, s):
     # text window is only implemented for android currently
+    self.text_proc = None
     if ANDROID:
       try:
         self.text_proc = subprocess.Popen(["./text", s],

@@ -7,6 +7,7 @@ from common.basedir import BASEDIR
 class Spinner():
   def __init__(self):
     # spinner is currently only implemented for android
+    self.spinner_proc = None
     if ANDROID:
       try:
         self.spinner_proc = subprocess.Popen(["./spinner"],
