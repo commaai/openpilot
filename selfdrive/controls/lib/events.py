@@ -1,5 +1,6 @@
-from cereal import log, car
+from functools import total_ordering
 
+from cereal import log, car
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibration_helpers import Filter
@@ -93,6 +94,7 @@ class Events:
       ret.append(event)
     return ret
 
+@total_ordering
 class Alert:
   def __init__(self,
                alert_text_1,
