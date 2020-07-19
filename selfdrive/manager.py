@@ -70,19 +70,15 @@ def unblock_stdout():
 if __name__ == "__main__":
   unblock_stdout()
 
-if __name__ == "__main__" and ANDROID:
-  from common.spinner import Spinner
-  from common.text_window import TextWindow
-else:
-  from common.spinner import FakeSpinner as Spinner
-  from common.text_window import FakeTextWindow as TextWindow
+from common.spinner import Spinner
+from common.text_window import TextWindow
 
 import importlib
 import traceback
 from multiprocessing import Process
 
 # Run scons
-spinner = Spinner()
+spinner = Spinner(noop=(__name__ != "main" or not ANDROID))
 spinner.update("0")
 
 if not prebuilt:
@@ -142,8 +138,9 @@ if not prebuilt:
         cloudlog.error("scons build failed\n" + error_s)
 
         # Show TextWindow
+        no_ui = __name__ != "__main__" or not ANDROID
         error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
-        with TextWindow("openpilot failed to build\n \n" + error_s) as t:
+        with TextWindow("openpilot failed to build\n \n" + error_s, noop=no_ui) as t:
           t.wait_for_exit()
 
         exit(1)
