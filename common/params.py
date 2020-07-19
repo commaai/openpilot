@@ -324,6 +324,7 @@ def write_db(params_path, key, value):
       f.write(value)
       f.flush()
       os.fsync(f.fileno())
+    os.chmod(tmp_path.name, 0o666)
 
     path = "%s/d/%s" % (params_path, key)
     os.rename(tmp_path.name, path)
