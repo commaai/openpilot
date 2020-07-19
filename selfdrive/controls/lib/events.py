@@ -136,6 +136,9 @@ class Alert:
   def __gt__(self, alert2):
     return self.alert_priority > alert2.alert_priority
 
+  def __eq__(self, alert2):
+    return self.alert_priority == alert2.alert_priority
+
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
                visual_alert=VisualAlert.none, duration_hud_alert=2.):

@@ -70,12 +70,8 @@ def unblock_stdout():
 if __name__ == "__main__":
   unblock_stdout()
 
-if __name__ == "__main__" and ANDROID:
-  from common.spinner import Spinner
-  from common.text_window import TextWindow
-else:
-  from common.spinner import FakeSpinner as Spinner
-  from common.text_window import FakeTextWindow as TextWindow
+from common.spinner import Spinner
+from common.text_window import TextWindow
 
 import importlib
 import traceback
