@@ -47,8 +47,8 @@ class TestSimpleKalman(unittest.TestCase):
       x = self.kf.update(v_wheel)
 
       # Compare the output x, verify that the error is less than 1e-4
-      self.assertAlmostEqual(x_old[0], x[0])
-      self.assertAlmostEqual(x_old[1], x[1])
+      np.testing.assert_almost_equal(x_old[0], x[0])
+      np.testing.assert_almost_equal(x_old[1], x[1])
 
   def test_new_is_faster(self):
     setup = """
