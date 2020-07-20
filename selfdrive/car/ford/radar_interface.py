@@ -72,6 +72,6 @@ if self.CP.carFingerprint in FEATURES["use_op_longitudinal"]:
       ret.points = list(self.pts.values())
       self.updated_messages.clear()
       return ret
-else
+else:
   class RadarInterface(RadarInterfaceBase):
     pass
