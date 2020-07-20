@@ -52,8 +52,6 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 ffi = FFI()
 ffi.cdef("int link(const char *oldpath, const char *newpath);")
 libc = ffi.dlopen(None)
-
-
 def link(src, dest):
   return libc.link(src.encode(), dest.encode())
 
@@ -81,7 +79,7 @@ def set_consistent_flag():
   os.system("sync")
 
 
-def set_update_available_params(new_version=False):
+def set_update_available_params(new_version):
   params = Params()
 
   t = datetime.datetime.utcnow().isoformat()
@@ -287,16 +285,14 @@ def attempt_update(exit_event):
 
       for _ in range(150):
         try:
-          # TODO: this should run the updater from the update
-          run(["installer/updater/updater", "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
+          updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
+          run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
           params.put("Offroad_NeosUpdate", "0")
           cloudlog.info("NEOS background download successful!")
           break
         except subprocess.CalledProcessError:
           cloudlog.info("NEOS background download failed, will retry at next wait interval")
           params.put("Offroad_NeosUpdate", "0")
-
-          # Exit if our sleep was interrupted
           if not exit_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS):
             break
 
@@ -314,7 +310,7 @@ def attempt_update(exit_event):
   else:
     cloudlog.info("nothing new from git at this time")
 
-  set_update_available_params(new_version=new_version)
+  set_update_available_params(new_version)
 
 
 def main():
@@ -344,12 +340,12 @@ def main():
 
   # Setup signal handlers
   ready_event = threading.Event()
-  exit_event = threading.Event()
   def set_ready(self, signum, frame):
     cloudlog.info("caught SIGHUP, running update check immediately")
     ready_event.set()
   signal.signal(signal.SIGHUP, set_ready)
 
+  exit_event = threading.Event()
   def set_do_exit(signum, frame):
     # umount -f doesn't appear effective in avoiding "device busy" on NEOS,
     # so don't actually die until the next convenient opportunity in main().
