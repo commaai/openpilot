@@ -85,7 +85,7 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       cruise_engaged_prev = cruise_engaged;
     }
 
-    generic_rx_checks((addr == 0x169));
+    generic_rx_checks((addr == 0x169) && (bus == 0));
   }
   return valid;
 }
