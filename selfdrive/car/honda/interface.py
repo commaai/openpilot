@@ -185,7 +185,22 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
       ret.steerRatio = 15.38  # 10.93 is end-to-end spec
-      if eps_modified:   
+      if eps_modified:
+        ###  Hatchback A120 LX,EX/-L
+        # stock request input values:     0x0000, 0x0067, 0x0107, 0x01CB, 0x0294, 0x035E, 0x0457, 0x060D, 0x06EE 
+        # stock request output values:    0x0000, 0x0380, 0x0800, 0x0C00, 0x0EB6, 0x10AE, 0x1200, 0x1200, 0x1200 (Steer config index 1)
+        # modified request output values: 0x0000, 0x0380, 0x0800, 0x0C00, 0x0EB6, 0x10AE, 0x1200, 0x1B00, 0x2400
+        # stock filter output values:     0x00c0, 0x011a, 0x011a, 0x011a, 0x011a, 0x011a, 0x011a, 0x011a, 0x011a
+        # modified filter output values:  0x00c0, 0x011a, 0x011a, 0x011a, 0x011a, 0x011a, 0x011a, 0x0400, 0x0480
+        # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in 2x max
+        ###  Sport Hatchback A020/Sport Touring
+        # stock request input values:     0x0000, 0x0067, 0x0107, 0x01CB, 0x0293, 0x035E, 0x0457, 0x060C, 0x06EE 
+        # stock request output values:    0x0000, 0x02A1, 0x0693, 0x0AEE, 0x0EB6, 0x10AF, 0x1200, 0x1200, 0x1200 (Steer config index 1)
+        # modified request output values: 0x0000, 0x02A1, 0x0693, 0x0AEE, 0x0EB6, 0x10AF, 0x1200, 0x1B00, 0x2400
+        # stock filter output values:     0x009f, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
+        # modified filter output values:  0x009f, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
+        # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in 2x max
+        
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2566, 8000], [0, 2566, 3840]] 
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]]
       else:
