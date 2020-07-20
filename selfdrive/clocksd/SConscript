@@ -1,0 +1,2 @@
+Import('env', 'common', 'cereal', 'messaging')
+env.Program('clocksd.cc', LIBS=['diag', 'time_genoff', common, cereal, messaging, 'capnp', 'zmq', 'kj'])

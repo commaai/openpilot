@@ -1,0 +1,59 @@
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
+lenv = env.Clone()
+
+libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
+
+TEST_THNEED = False
+
+common_src = [
+  "models/commonmodel.c",
+  "runners/snpemodel.cc",
+  "transforms/loadyuv.c",
+  "transforms/transform.c"
+]
+
+if arch == "aarch64":
+  libs += ['gsl', 'CB', 'gnustl_shared']
+  if not TEST_THNEED:
+    common_src += ["thneed/thneed.cc"]
+    lenv['CFLAGS'].append("-DUSE_THNEED")
+    lenv['CXXFLAGS'].append("-DUSE_THNEED")
+elif arch == "larch64":
+  libs += ['gsl', 'CB', 'symphony-cpu', 'pthread']
+else:
+  libs += ['symphony-cpu', 'pthread']
+
+  # for tensorflow support
+  common_src += ['runners/tfmodel.cc']
+
+  # tell runners to use tensorflow
+  lenv['CFLAGS'].append("-DUSE_TF_MODEL")
+  lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
+
+  if arch == "Darwin":
+    # fix OpenCL
+    del libs[libs.index('OpenCL')]
+    lenv['FRAMEWORKS'] = ['OpenCL']
+
+    # no SNPE on Mac
+    del libs[libs.index('SNPE')]
+    del libs[libs.index('symphony-cpu')]
+    del common_src[common_src.index('runners/snpemodel.cc')]
+
+common = lenv.Object(common_src)
+
+lenv.Program('_dmonitoringmodeld', [
+    "dmonitoringmodeld.cc",
+    "models/dmonitoring.cc",
+  ]+common, LIBS=libs)
+
+lenv.Program('_modeld', [
+    "modeld.cc",
+    "models/driving.cc",
+  ]+common, LIBS=libs)
+
+if TEST_THNEED:
+  lenv.Program('thneed/debug/_thneed', [
+      "thneed/thneed.cc", "thneed/debug/test.cc"
+    ]+common, LIBS=libs)
+
