@@ -47,6 +47,7 @@ OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
+NEOSUPDATE_DIR = "/data/neosupdate"
 
 # Workaround for the NEOS/termux build of Python having os.link removed.
 ffi = FFI()
@@ -308,6 +309,10 @@ def attempt_update(exit_event):
 
     cloudlog.info("openpilot update successful!")
   else:
+    # Clear old NEOS updates
+    if os.path.isdir(NEOSUPDATE_DIR):
+      shutil.rmtree(NEOSUPDATE_DIR)
+
     cloudlog.info("nothing new from git at this time")
 
   set_update_available_params(new_version)

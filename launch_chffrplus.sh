@@ -71,12 +71,6 @@ function launch {
       cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
-    #echo "Clearing build products and resetting scons state prior to NEOS update"
-    #cd $BASEDIR
-    #git clean -xdf
-    #git submodule foreach --recursive git clean -xdf
-    #rm -rf /tmp/scons_cache
-
     "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update.json"
   else
     if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
