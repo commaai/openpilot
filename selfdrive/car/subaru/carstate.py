@@ -90,7 +90,7 @@ class CarState(CarStateBase):
     # - Analyze Eyesight OBD Mode22 scans to find better units bit
 
     # EDM Global: mph = 1, 2; All Outback: mph = 1, UDM Forester: mph = 7
-    if self.car_fingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2019]:
+    if self.car_fingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]:
       if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
@@ -179,7 +179,7 @@ class CarState(CarStateBase):
         ("CruiseControl", 50),
       ]
 
-    if CP.carFingerprint in [CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2019]:
+    if CP.carFingerprint in [CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]:
       checks += [
         ("Dashlights", 10),
         ("CruiseControl", 50),

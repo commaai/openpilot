@@ -10,8 +10,8 @@ class CAR:
   FORESTER = "SUBARU FORESTER 2019"
   FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
   LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
-  OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2018"
-  OUTBACK_PREGLOBAL_2019 = "SUBARU OUTBACK 2019"
+  OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
+  OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
 
 FINGERPRINTS = {
   CAR.ASCENT: [
@@ -63,12 +63,12 @@ FINGERPRINTS = {
   },
   # END OUTBACK_PREGLOBAL
   ],
-  CAR.OUTBACK_PREGLOBAL_2019: [
+  CAR.OUTBACK_PREGLOBAL_2018: [
   # OUTBACK LIMITED 3.6R 2019 (jpevarnek)
   {
     2: 8, 208: 8, 209: 4, 210: 8, 211: 7, 212: 8, 316: 8, 320: 8, 321: 8, 324: 8, 328: 8, 329: 8, 336: 2, 338: 8, 342: 8, 352: 8, 353: 8, 354: 8, 356: 8, 358: 8, 359: 8, 392: 8, 554: 8, 604: 8, 640: 8, 642: 8, 644: 8, 805: 8, 864: 8, 865: 8, 866: 8, 872: 8, 880: 8, 881: 8, 882: 8, 884: 8, 885: 8, 886: 2, 977: 8, 1614: 8, 1632: 8, 1657: 8, 1658: 8, 1672: 8, 1736: 8, 1743: 8, 1745: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8, 1862: 8, 1870: 8, 1920: 8, 1927: 8, 1928: 8, 1935: 8, 1968: 8, 1976: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
   },
-  # END OUTBACK_PREGLOBAL_2019
+  # END OUTBACK_PREGLOBAL_2018
   ],
   CAR.FORESTER_PREGLOBAL: [
   # FORESTER PREMIUM 2.5i 2017
@@ -225,11 +225,13 @@ FW_VERSIONS = {
     ],
   },
   # Outback with flipped driver torque signal
-  CAR.OUTBACK_PREGLOBAL_2019: {
+  CAR.OUTBACK_PREGLOBAL_2018: {
     # 2018 Outback Premium 2.5i - UDM / @zhoux260
+    # 2018 Outback 3.6r UDM / @mirroregami
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x8b\x97\xac\x00',
+      b'\x8b\x9a\xac\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'{\xb0\x00\x00',
@@ -239,6 +241,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xb5"@p\a',
+      b'\xb5+@@\a',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbc\xf2@\x81\x00',
@@ -254,7 +257,7 @@ STEER_THRESHOLD = {
   CAR.FORESTER_PREGLOBAL: 75,
   CAR.LEGACY_PREGLOBAL: 75,
   CAR.OUTBACK_PREGLOBAL: 75,
-  CAR.OUTBACK_PREGLOBAL_2019: 75,
+  CAR.OUTBACK_PREGLOBAL_2018: 75,
 }
 
 ECU_FINGERPRINT = {
@@ -268,7 +271,7 @@ DBC = {
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
   CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
   CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
-  CAR.OUTBACK_PREGLOBAL_2019: dbc_dict('subaru_outback_2019_generated', None),
+  CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
 
-PREGLOBAL_CAR = [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2019]
+PREGLOBAL_CAR = [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]
