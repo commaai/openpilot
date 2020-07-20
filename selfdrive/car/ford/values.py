@@ -109,8 +109,8 @@ FEATURES = {
 
 DBC = {
   #Ford
-  CAR.FUSION: dbc_dict('ford_fusion_2018_pt', 'ford_fusion_2018_adas'),
-  CAR.FUSIONSG: dbc_dict('ford_fusion_2018_pt', 'ford_fusion_2018_adas'),
+  CAR.FUSION: dbc_dict('ford_newcan_pt', 'ford_fusion_2018_adas'), #ford_fusion_2018_pt
+  CAR.FUSIONSG: dbc_dict('ford_newcan_pt', 'ford_fusion_2018_adas'), #ford_fusion_2018_pt
   #CAR.EDGE: dbc_dict('placeholder', 'placeholder'),
   #CAR.ESCAPE: dbc_dict('placeholder', 'placeholder'),
   #CAR.EXPEDITION: dbc_dict('placeholder', 'placeholder'),
@@ -118,7 +118,7 @@ DBC = {
   CAR.F150: dbc_dict('ford_newcan_pt', None),
   CAR.F150SG: dbc_dict('ford_newcan_pt', None),
   #CAR.MUSTANG: dbc_dict('placeholder', 'placeholder'),
-  CAR.MONDEO: dbc_dict('ford_mondeo_2016_pt', 'ford_fusion_2018_adas'),
+  CAR.MONDEO: dbc_dict('ford_mondeo_2016_pt', 'ford_fusion_2018_adas'), #ford_mondeo_2016_pt
   #CAR.RANGER: dbc_dict('placeholder', 'placeholder'),
   #CAR.TAURUS: dbc_dict('placeholder', 'placeholder'),
   #CAR.FLEX: dbc_dict('placeholder', 'placeholder'),
