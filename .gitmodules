@@ -6,7 +6,7 @@
 	url = ../../roxasthenobody98/opendbc.git
 [submodule "laika_repo"]
 	path = laika_repo
-	url = ../../commaai/laika.git
+	url = ../../roxasthenobody98/laika.git
 [submodule "cereal"]
 	path = cereal
 	url = ../../commaai/cereal.git
