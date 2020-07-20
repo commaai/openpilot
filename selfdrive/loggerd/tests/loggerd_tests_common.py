@@ -57,6 +57,7 @@ class MockParams():
     self.params = {
       "DongleId": b"0000000000000000",
       "IsUploadRawEnabled": b"1",
+      "IsOffroad": b"1",
     }
 
   def get(self, k):
