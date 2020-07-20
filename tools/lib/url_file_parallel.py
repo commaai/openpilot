@@ -44,7 +44,6 @@ class URLFileParallel(URLFile):
     else:
       trange = f'bytes={start}-{end}'
 
-    print(trange)
     dats = BytesIO()
     c = self.get_curl()
     c.setopt(pycurl.URL, self._url)
@@ -55,8 +54,6 @@ class URLFileParallel(URLFile):
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code != 206 and response_code != 200:
       raise Exception("Error {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
-
-    print("done", trange)
 
     return dats.getvalue()
 
@@ -75,7 +72,6 @@ class URLFileParallel(URLFile):
          start + chunk_size * (i + 1) - 1 if i != threads - 1 else end)
         for i in range(threads)]
 
-      print("pool", threads)
       with Pool(threads) as pool:
         ret = b"".join(pool.starmap(self.download_chunk, chunks))
     else:
