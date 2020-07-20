@@ -3,6 +3,8 @@
 import os
 import time
 
+os.environ["COMMA_PARALLEL_DOWNLOADS"] = "1"
+
 from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 from tools.lib.filereader import FileReader
