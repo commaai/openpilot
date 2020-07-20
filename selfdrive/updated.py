@@ -26,14 +26,14 @@ import os
 import datetime
 import subprocess
 import psutil
-from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
 import shutil
 import signal
-from pathlib import Path
 import fcntl
 import threading
 import time
 from cffi import FFI
+from pathlib import Path
+from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
 
 from common.basedir import BASEDIR
 from common.params import Params
@@ -105,7 +105,7 @@ def dismount_ovfs():
 
 
 def setup_git_options(cwd):
-  # We sync FS object atimes (which EON doesn't use) and mtimes, but ctimes
+  # We sync FS object atimes (which NEOS doesn't use) and mtimes, but ctimes
   # are outside user control. Make sure Git is set up to ignore system ctimes,
   # because they change when we make hard links during finalize. Otherwise,
   # there is a lot of unnecessary churn. This appears to be a common need on
@@ -152,7 +152,7 @@ def init_ovfs():
   if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
     os.remove(os.path.join(BASEDIR, ".overlay_consistent"))
 
-  # Leave a timestamped canary in BASEDIR to check at startup. The EON clock
+  # Leave a timestamped canary in BASEDIR to check at startup. The device clock
   # should be correct by the time we get here. If the init file disappears, or
   # critical mtimes in BASEDIR are newer than .overlay_init, continue.sh can
   # assume that BASEDIR has used for local development or otherwise modified,
@@ -240,8 +240,10 @@ def finalize_from_ovfs_copy():
   cloudlog.info("done finalizing overlay")
 
 
-def attempt_update():
+def attempt_update(exit_event):
   cloudlog.info("attempting git update inside staging overlay")
+
+  params = Params()
 
   setup_git_options(OVERLAY_MERGED)
 
@@ -268,29 +270,35 @@ def attempt_update():
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-    # If a NEOS update is required, download it in the background
-    with open("/VERSION", "r") as current_neos_file:
-      current_neos_version = current_neos_file.read().strip()
+    # Handle a NEOS update if it's required
+    with open("/VERSION", "r") as f:
+      current_neos_version = f.read().strip()
+
     required_neos_version = run(["bash", "-c",
-               r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
-               OVERLAY_MERGED)
+                                 r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
+                                 OVERLAY_MERGED)
+
     cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
     if current_neos_version != required_neos_version:
-      update_json = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
-      while True:
-        Params().put("Offroad_NeosUpdate", "1")
+      cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
+
+      update_manifest = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
+      params.put("Offroad_NeosUpdate", "1")
+
+      for _ in range(150):
         try:
-          cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
-          run(["installer/updater/updater", "bgcache", update_json], OVERLAY_MERGED, low_priority=True)
-          Params().put("Offroad_NeosUpdate", "0")
+          # TODO: this should run the updater from the update
+          run(["installer/updater/updater", "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
+          params.put("Offroad_NeosUpdate", "0")
           cloudlog.info("NEOS background download successful!")
           break
         except subprocess.CalledProcessError:
           cloudlog.info("NEOS background download failed, will retry at next wait interval")
-          Params().put("Offroad_NeosUpdate", "0")
-          time.sleep(WAIT_BETWEEN_ATTEMPTS)
-    else:
-      cloudlog.info("No NEOS update required")
+          params.put("Offroad_NeosUpdate", "0")
+
+          # Exit if our sleep was interrupted
+          if not exit_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS):
+            break
 
     # Un-set the validity flag to prevent the finalized tree from being
     # activated later if the finalize step is interrupted
@@ -331,31 +339,31 @@ def main():
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
-  # Wait a for IsOffroad to be set
+  # Wait for IsOffroad to be set
   time.sleep(30)
 
   # Setup signal handlers
-  do_exit = False
   ready_event = threading.Event()
+  exit_event = threading.Event()
   def set_ready(self, signum, frame):
     cloudlog.info("caught SIGHUP, running update check immediately")
     ready_event.set()
   signal.signal(signal.SIGHUP, set_ready)
 
   def set_do_exit(signum, frame):
-    # umount -f doesn't appear effective in avoiding "device busy" on EON,
+    # umount -f doesn't appear effective in avoiding "device busy" on NEOS,
     # so don't actually die until the next convenient opportunity in main().
     cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
-    nonlocal do_exit
-    do_exit = True
+    exit_event.set()
     ready_event.set()
   signal.signal(signal.SIGTERM, set_do_exit)
   signal.signal(signal.SIGINT, set_do_exit)
 
-  while True:
+  # Continuously check for updates
+  while not exit_event.is_set():
     update_failed_count += 1
     time_valid = datetime.datetime.utcnow().year >= 2019
-    ping_ok = not subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
+    ping_ok = os.system("ping -W 4 -c 1 8.8.8.8") == 0
 
     # Wait until we have a valid datetime to initialize the overlay
     if ping_ok and time_valid:
@@ -376,7 +384,7 @@ def main():
           overlay_init_done = True
 
         if params.get("IsOffroad") == b"1":
-          attempt_update()
+          attempt_update(exit_event)
           update_failed_count = 0
         else:
           cloudlog.info("not running updater, openpilot running")
@@ -389,6 +397,7 @@ def main():
           returncode=e.returncode
         )
         overlay_init_done = False
+
       except Exception:
         cloudlog.exception("uncaught updated exception, shouldn't happen")
 
@@ -396,8 +405,6 @@ def main():
 
     ready_event.clear()
     ready_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS)
-    if do_exit:
-      break
 
   dismount_ovfs()
 
