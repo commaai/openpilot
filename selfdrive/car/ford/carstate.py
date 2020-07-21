@@ -31,7 +31,6 @@ class CarState(CarStateBase):
     self.latLimit = cp.vl["Lane_Keep_Assist_Status"]['LatCtlLim_D_Stat']
     self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
     self.left_blinker_on = bool(cp.vl["Steering_Buttons"]['Left_Turn_Light'])
-    self.laneCurvature = cp.vl["Lane_Keep_Assist_Control"]['Lane_Curvature']
     ret.leftBlinker = self.left_blinker_on > 0
     self.right_blinker_on = bool(cp.vl["Steering_Buttons"]['Right_Turn_Light'])    
     ret.rightBlinker = self.right_blinker_on > 0
@@ -108,7 +107,6 @@ class CarState(CarStateBase):
     ("FeatNoIpmaActl", "Lane_Keep_Assist_Ui", 0.),
     ("LaDenyStats_B_Dsply", "Lane_Keep_Assist_Ui", 0.),
     ("CamraStats_D_Dsply", "Lane_Keep_Assist_Ui", 0.),
-    ("Lane_Curvature", "Lane_Keep_Assist_Control", 0.),
     ]
     
     checks = []
