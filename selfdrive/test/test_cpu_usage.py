@@ -17,7 +17,7 @@ def print_cpu_usage(first_proc, last_proc):
   procs = [
     ("selfdrive.controls.controlsd", 59.46),
     ("selfdrive.locationd.locationd", 34.38),
-    ("./loggerd", 28.49),
+    ("./loggerd", 33.90),
     ("selfdrive.controls.plannerd", 19.77),
     ("./_modeld", 12.74),
     ("selfdrive.locationd.paramsd", 11.53),
