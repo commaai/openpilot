@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+import time
 from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.ford.values import DBC
