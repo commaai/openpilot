@@ -297,10 +297,22 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x87LDKVBN424201KF26\xba\xaa\x9a\xa9\x99\x99\x89\x98\x89\x99\xa8\x99\x88\x99\x98\x89\x88\x99\xa8\x89v\x7f\xf7\xffwf_\xffq\xa6\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX4G38NB2\xafL]\xe7',],
   },
   CAR.KIA_NIRO_EV: {
-    (Ecu.fwdRadar, 0x7D0, None): [b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         \xf1\xa01.03'],
-    (Ecu.esp, 0x7D1, None): [b'\xf1\xa01.06'],
-    (Ecu.eps, 0x7D4, None): [b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4000\x00 4DEEC105'],
-    (Ecu.fwdCamera, 0x7C4, None): [b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.03 95740-Q4000 180821'],
+    (Ecu.fwdRadar, 0x7D0, None): [
+      b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         \xf1\xa01.03',
+      b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         \xf1\xa01.00',      
+    ],
+    (Ecu.esp, 0x7D1, None): [
+      b'\xf1\xa01.06',
+      b'\xf1\xa01.07',      
+    ],
+    (Ecu.eps, 0x7D4, None): [
+      b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4000\x00 4DEEC105',
+      b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4100\x00 4DEEC105',
+    ],
+    (Ecu.fwdCamera, 0x7C4, None): [
+      b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.03 95740-Q4000 180821',
+      b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4000 191211',
+    ],
   },
   CAR.KONA_EV: {
     (Ecu.fwdRadar, 0x7D0, None): [b'\xf1\x00OSev SCC FNCUP      1.00 1.01 99110-K4000        \xf1\xa01.01'],
