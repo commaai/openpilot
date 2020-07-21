@@ -35,7 +35,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRateCost = 1.0
       ret.centerToFront = ret.wheelbase * 0.44
       tire_stiffness_factor = 0.5328
-    elif candidate in [CAR.FUSION, CAR.FUSIONSG]:
+    elif candidate in [CAR.FUSIONSG]:
       ret.wheelbase = 2.85
       ret.steerRatio = 14.8
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
