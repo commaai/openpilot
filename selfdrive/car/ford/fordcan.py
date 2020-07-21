@@ -40,13 +40,12 @@ def create_lkas_ui(packer, main_on, enabled, steer_alert, defog, ahbc, ahbcrampi
     "Set_Me_X30": 0x30,
     "Lines_Hud": lines,
     "Hands_Warning_W_Chime": steer_alert,
-    "CamraDefog_B_Req": defog,
-    "AhbHiBeam_D_Rq": ahbc,
-    "AhbcRampingV_D_Rq": ahbcramping,
-    "FeatConfigIpmaActl": config,
-    "FeatNoIpmaActl": noipma,
-    "LaDenyStats_B_Dsply": ladeny,
-    "CamraStats_D_Dsply": stats,
+    "CamraDefog_B_Req": 0,
+    "AhbHiBeam_D_Rq": 0,
+    "AhbcRampingV_D_Rq": 0,
+    "FeatConfigIpmaActl": 0,
+    "FeatNoIpmaActl": 0,
+    "CamraStats_D_Dsply": 0,
   }
   return packer.make_can_msg("Lane_Keep_Assist_Ui", 0, values)
 
