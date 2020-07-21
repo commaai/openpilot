@@ -31,6 +31,7 @@ class CarController():
     noipma = CS.ipmaNo
     ladeny = CS.laDenyStat
     stats = CS.ipmaStats
+    curvature = CS.laneCurvature
     if self.enable_camera:
 
       if pcm_cancel:
@@ -39,7 +40,7 @@ class CarController():
 
       if (frame % 3) == 0:
 
-        curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
+        #curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
 
         # The use of the toggle below is handy for trying out the various LKAS modes
         if TOGGLE_DEBUG:
