@@ -1,5 +1,4 @@
 from cereal import car
-from selfdrive.car import make_can_msg
 from selfdrive.car.ford.fordcan import create_steer_command, create_lkas_ui, spam_cancel_button
 from opendbc.can.packer import CANPacker
 
