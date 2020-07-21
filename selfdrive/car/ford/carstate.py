@@ -12,7 +12,6 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    #self.shifter_values = can_define.dv["TransGearData"]['GearLvrPos_D_Actl']
     
   def update(self, cp):
     ret = car.CarState.new_message()
@@ -43,10 +42,10 @@ class CarState(CarStateBase):
     ret.doorOpen = any([cp.vl["Doors"]['Door_FL_Open'],cp.vl["Doors"]['Door_FR_Open'],
                         cp.vl["Doors"]['Door_RL_Open'], cp.vl["Doors"]['Door_RR_Open']]) 
     ret.steeringTorque = cp.vl["EPAS_INFO"]['SteeringColumnTorque']
-
-    #ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["TransGearData"]['GearLvrPos_D_Actl'], None))
     ret.seatbeltUnlatched = cp.vl["RCMStatusMessage2_FD1"]['FirstRowBuckleDriver'] == 2
-    print ("Lateral_Limit:", self.latLimit, "lkas_state:", self.lkas_state, "steer_override:", ret.steeringPressed)
+    ret.stockFcw = cp.vl["ACCDATA_3"]['FcwVisblWarn_B_Rq'] !=0
+    print ("Lateral_Limit:", self.latLimit, "lkas_state:", self.lkas_state, "steer_override:", ret.steeringPressed) #debug to check lockout state. 
+    #Gear Shifter
     gear = cp.vl["TransGearData"]['GearLvrPos_D_Actl']
     if gear == 0:
       ret.gearShifter = GearShifter.park
@@ -58,12 +57,13 @@ class CarState(CarStateBase):
       ret.gearShifter = GearShifter.drive
     else:
       ret.gearShifter = GearShifter.unknown
+    #SODL/SODR BLIS
     ret.leftBlindspot = cp.vl["Side_Detect_L_Stat"]['SodDetctLeft_D_Stat'] !=0
     ret.rightBlindspot = cp.vl["Side_Detect_R_Stat"]['SodDetctRight_D_Stat'] !=0
+    #fordcan params
     self.ahbcCommanded = cp.vl["Lane_Keep_Assist_Ui"]['AhbHiBeam_D_Rq']
     self.ipmaHeater = cp.vl["Lane_Keep_Assist_Ui"]['CamraDefog_B_Req']
     self.ahbcRamping = cp.vl["Lane_Keep_Assist_Ui"]['AhbcRampingV_D_Rq']
-    ret.stockFcw = cp.vl["ACCDATA_3"]['FcwVisblWarn_B_Rq'] !=0
     self.ipmaConfig = cp.vl["Lane_Keep_Assist_Ui"]['FeatConfigIpmaActl']
     self.ipmaNo = cp.vl["Lane_Keep_Assist_Ui"]['FeatNoIpmaActl']
     self.laDenyStat = cp.vl["Lane_Keep_Assist_Ui"]['LaDenyStats_B_Dsply']
