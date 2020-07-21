@@ -22,7 +22,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.ford
     ret.dashcamOnly = False
     
-    if candidate in [CAR.F150, CAR.F150SG]:
+    if candidate in [CAR.F150]:
       ret.wheelbase = 2.85
       ret.steerRatio = 14.0
       ret.mass = 4500. * CV.LB_TO_KG + STD_CARGO_KG
