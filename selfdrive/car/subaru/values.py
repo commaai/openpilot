@@ -228,6 +228,7 @@ FW_VERSIONS = {
   CAR.OUTBACK_PREGLOBAL_2018: {
     # 2018 Outback Premium 2.5i - UDM / @zhoux260
     # 2018 Outback 3.6r UDM / @mirroregami
+    # 2018 Outback 2.5i Premium UDM / @dirkmm
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x8b\x97\xac\x00',
@@ -242,10 +243,12 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xb5"@p\a',
       b'\xb5+@@\a',
+      b'\xb5"@P\a',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbc\xf2@\x81\x00',
       b'\xbc\xfb\xe0\x80\x00',
+      b'\xbc\xf2@\x80\x00',
     ],
   },
 }
