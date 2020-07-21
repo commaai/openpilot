@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from opendbc.can.parser import CANParser
-from selfdrive.car.ford.values import DBC
+from selfdrive.car.ford.values import DBC, FEATURES
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import RadarInterfaceBase
 
@@ -18,16 +18,15 @@ def _create_radar_can_parser(car_fingerprint):
   return CANParser(dbc_f, signals, checks, 1)
 
 class RadarInterface(RadarInterfaceBase):
+  def __init__(self, CP):
+    super().__init__(CP)
+    self.validCnt = {key: 0 for key in RADAR_MSGS}
+    self.track_id = 0
+
+    self.rcp = _create_radar_can_parser(CP.carFingerprint)
+    self.trigger_msg = 0x53f
+    self.updated_messages = set()
   if CP.carFingerprint in FEATURES["use_op_longitudinal"]: #TODO: Tune this. 
-    def __init__(self, CP):
-      super().__init__(CP)
-      self.validCnt = {key: 0 for key in RADAR_MSGS}
-      self.track_id = 0
-
-      self.rcp = _create_radar_can_parser(CP.carFingerprint)
-      self.trigger_msg = 0x53f
-      self.updated_messages = set()
-
     def update(self, can_strings):
       vls = self.rcp.update_strings(can_strings)
       self.updated_messages.update(vls)
