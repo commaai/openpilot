@@ -107,6 +107,33 @@ ECU_FINGERPRINT = {
   #"use_op_longitudinal": [CAR.F150SG, CAR.FUSIONSG],
 #}
 
+SPEED_FACTOR = {
+  #CAR.FUSION:
+  CAR.FUSIONSG: 1.,
+  #CAR.EDGE:
+  #CAR.ESCAPE:
+  #CAR.EXPEDITION:
+  #CAR.EXPLORER: 
+  CAR.F150: 1.116,
+  #CAR.MUSTANG: 
+  CAR.MONDEO: 1.,
+  #CAR.RANGER: 
+  #CAR.TAURUS:
+  #CAR.FLEX: 
+  #CAR.FOCUS: 
+  #CAR.TRANSIT: 
+  #CAR.AVIATOR: 
+  #CAR.CONTINENTAL: 
+  #CAR.CORSAIR: 
+  #CAR.MKC: 
+  #CAR.MKS: 
+  #CAR.MKT: 
+  #CAR.MKX: 
+  #CAR.MKZ:
+  #CAR.NAVIGATOR: 
+  #CAR.NAUTILUS:
+}
+
 DBC = {
   #Ford
   #CAR.FUSION: dbc_dict('ford_newcan_pt', 'ford_fusion_2018_adas'), #ford_fusion_2018_pt
