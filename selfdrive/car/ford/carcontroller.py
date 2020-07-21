@@ -44,7 +44,7 @@ class CarController():
         can_sends.append(create_steer_command(self.packer, apply_steer, enabled,
                                               CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
         self.generic_toggle_last = CS.out.genericToggle
-        print(curvature)
+        print("Curvature:", curvature)
       if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
          (self.steer_alert_last != steer_alert):
         can_sends.append(create_lkas_ui(self.packer, CS.out.cruiseState.available, enabled, steer_alert, CS.ahbcCommanded, CS.ipmaHeater, CS.ahbcRamping, CS.ipmaConfig, CS.ipmaNo, CS.ipmaStats))
