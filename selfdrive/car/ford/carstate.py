@@ -9,10 +9,6 @@ from selfdrive.car.ford.values import DBC
 GearShifter = car.CarState.GearShifter
   
 class CarState(CarStateBase):
-  def __init__(self, CP):
-    super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    
   def update(self, cp):
     ret = car.CarState.new_message()
     ret.wheelSpeeds.rr = cp.vl["WheelSpeed"]['WhlRr_W_Meas'] * CV.MPH_TO_MS
