@@ -71,12 +71,16 @@ routes = {
     'enableCamera': True,
   },
   # This pacifica was removed because the fingerprint seemed from a Volt
+  "d4cae9ff1c08659d|2020-07-19--18-30-12":{
+    'carFingerprint': FORD.F150,
+    'enableCamera': True,
+  },
   "f1b4c567731f4a1b|2018-04-18--11-29-37": {
-    'carFingerprint': FORD.FUSION,
+    'carFingerprint': FORD.FUSIONSG,
     'enableCamera': False,
   },
   "f1b4c567731f4a1b|2018-04-30--10-15-35": {
-    'carFingerprint': FORD.FUSION,
+    'carFingerprint': FORD.FUSIONSG,
     'enableCamera': True,
   },
   "c950e28c26b5b168|2018-05-30--22-03-41": {
