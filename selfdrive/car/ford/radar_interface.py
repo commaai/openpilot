@@ -24,16 +24,14 @@ class RadarInterface(RadarInterfaceBase):
     super().__init__(CP)
     self.validCnt = {key: 0 for key in RADAR_MSGS}
     self.track_id = 0
-    self.radar_off_can = CP.radarOffCan
+    self.radar_ts = CP.radarTimeStep
     self.rcp = _create_radar_can_parser(CP.carFingerprint)
     self.trigger_msg = 0x53f
     self.updated_messages = set()
 
   def update(self, can_strings):
-    if self.radar_off_can:
-      if 'NO_RADAR_SLEEP' not in os.environ:
-        time.sleep(0.05)
-        
+    if self.rcp is None:
+      time.sleep(self.radar_ts)   # nothing to do
       return car.RadarData.new_message()
   
     vls = self.rcp.update_strings(can_strings)
