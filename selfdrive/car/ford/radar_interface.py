@@ -30,9 +30,8 @@ class RadarInterface(RadarInterfaceBase):
   def update(self, can_strings):
     if self.radar_off_can:
       if 'NO_RADAR_SLEEP' not in os.environ:
-        time.sleep(0.05)
-        
-     return car.RadarData.new_message()
+        time.sleep(0.05) 
+      return car.RadarData.new_message()
   
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
