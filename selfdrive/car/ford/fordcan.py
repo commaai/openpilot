@@ -6,7 +6,7 @@ def create_steer_command(packer, angle_cmd, enabled, lkas_state, angle_steers, c
   """Creates a CAN message for the Ford Steer Command."""
 
   #if enabled and lkas available:
-  if enabled and lkas_state in [2, 3]:  # and (frame % 500) >= 3:
+  if enabled and lkas_state in [2,3]: #and (frame % 500) >= 3:
     action = lkas_action
   else:
     action = 0xf
@@ -16,15 +16,15 @@ def create_steer_command(packer, angle_cmd, enabled, lkas_state, angle_steers, c
 
   values = {
     "Lkas_Action": action,
-    "Lkas_Alert": 0xf,             # no alerts
-    "Lane_Curvature": clip(curvature, -0.01, 0.01),   # is it just for debug?
+    "Lkas_Alert": 0xe,             # no alerts
+    "Lane_Curvature": clip(curvature, -0.10, 0.10),   # is it just for debug?
     #"Lane_Curvature": 0,   # is it just for debug?
     "Steer_Angle_Req": angle_cmd
   }
   return packer.make_can_msg("Lane_Keep_Assist_Control", 0, values)
 
 
-def create_lkas_ui(packer, main_on, enabled, steer_alert):
+def create_lkas_ui(packer, main_on, enabled, steer_alert, defog, ahbc, ahbcramping, config, noipma, ladeny, stats):
   """Creates a CAN message for the Ford Steer Ui."""
 
   if not main_on:
@@ -35,11 +35,18 @@ def create_lkas_ui(packer, main_on, enabled, steer_alert):
     lines = 0x6
 
   values = {
-    "Set_Me_X80": 0x80,
-    "Set_Me_X45": 0x45,
+    "PersIndexIpma_D_Actl": 0x80,
+    "DasStats_D_Dsply": 0x45,
     "Set_Me_X30": 0x30,
     "Lines_Hud": lines,
     "Hands_Warning_W_Chime": steer_alert,
+    "CamraDefog_B_Req": defog,
+    "AhbHiBeam_D_Rq": ahbc,
+    "AhbcRampingV_D_Rq": ahbcramping,
+    "FeatConfigIpmaActl": config,
+    "FeatNoIpmaActl": noipma,
+    "LaDenyStats_B_Dsply": ladeny,
+    "CamraStats_D_Dsply": stats,
   }
   return packer.make_can_msg("Lane_Keep_Assist_Ui", 0, values)
 
