@@ -8,7 +8,7 @@ class KF1D:
   def __init__(self, x0, A, C, K):
     self.x = x0
     self.A = A
-    self.C = C
+    self.C = np.atleast_2d(C)
     self.K = K
 
     self.A_K = self.A - np.dot(self.K, self.C)
