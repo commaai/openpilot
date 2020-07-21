@@ -21,8 +21,6 @@ def create_steer_command(packer, angle_cmd, enabled, lkas_state, angle_steers, c
     "Lane_Curvature": curvature, #clip(curvature, -0.03, 0.03),   # is it just for debug?
     "Steer_Angle_Req": angle_cmd
   }
-  if frame % 10:
-    print(curvature)
   return packer.make_can_msg("Lane_Keep_Assist_Control", 0, values)
 
 
