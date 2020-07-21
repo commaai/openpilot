@@ -108,6 +108,7 @@ class CarState(CarStateBase):
     ("FeatNoIpmaActl", "Lane_Keep_Assist_Ui", 0.),
     ("LaDenyStats_B_Dsply", "Lane_Keep_Assist_Ui", 0.),
     ("CamraStats_D_Dsply", "Lane_Keep_Assist_Ui", 0.),
+    ("Lane_Curvature", "Lane_Keep_Assist_Control", 0.),
     ]
     
     checks = []
