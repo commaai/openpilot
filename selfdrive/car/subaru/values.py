@@ -224,7 +224,7 @@ FW_VERSIONS = {
       b'\xbe\xf2@p\x00',
     ],
   },
-  # Outback with flipped driver torque signal
+  # Outback with reversed driver torque signal
   CAR.OUTBACK_PREGLOBAL_2018: {
     # 2018 Outback Premium 2.5i - UDM / @zhoux260
     # 2018 Outback 3.6r UDM / @mirroregami
