@@ -2,6 +2,7 @@
 from cereal import car
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
+#from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.car.ford.values import MAX_ANGLE, Ecu, ECU_FINGERPRINT, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -14,23 +15,38 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 3.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "ford"
+    ret.communityFeature = True                              
     ret.safetyModel = car.CarParams.SafetyModel.ford
-    ret.dashcamOnly = True
-
-    ret.wheelbase = 2.85
-    ret.steerRatio = 14.8
-    ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]     # TODO: tune this
-    ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
-    ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
-    ret.steerLimitTimer = 0.8
-    ret.steerRateCost = 1.0
-    ret.centerToFront = ret.wheelbase * 0.44
-    tire_stiffness_factor = 0.5328
+    ret.dashcamOnly = False
+    
+    if candidate in [CAR.F150, CAR.F150SG]:
+      ret.wheelbase = 2.85
+      ret.steerRatio = 14.0
+      ret.mass = 4500. * CV.LB_TO_KG + STD_CARGO_KG
+      # PID Tuning
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.05], [0.002]]
+      ret.lateralTuning.pid.kf = 0.0   # MAX Steer angle to normalize FF
+      ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+      ret.steerLimitTimer = 0.8
+      ret.steerRateCost = 1.0
+      ret.centerToFront = ret.wheelbase * 0.44
+      tire_stiffness_factor = 0.5328
+    elif candidate in [CAR.FUSION, CAR.FUSIONSG]:
+      ret.wheelbase = 2.85
+      ret.steerRatio = 14.8
+      ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]     # TODO: tune this
+      ret.lateralTuning.pid.kf = 1. / MAX_ANGLE   # MAX Steer angle to normalize FF
+      ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+      ret.steerLimitTimer = 0.8
+      ret.steerRateCost = 1.0
+      ret.centerToFront = ret.wheelbase * 0.44
+      tire_stiffness_factor = 0.5328
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -55,14 +71,15 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp)
 
+    #ret = car.CarState.new_message()               
     ret.canValid = self.cp.can_valid
-
+       
     # events
     events = self.create_common_events(ret)
 
-    if self.CS.lkas_state not in [2, 3] and ret.vEgo > 13. * CV.MPH_TO_MS and ret.cruiseState.enabled:
-      events.add(car.CarEvent.EventName.steerTempUnavailableMute)
-
+    #if self.CS.lkas_state not in [2, 3] and ret.vEgo > 13.* CV.MPH_TO_MS and ret.cruiseState.enabled:
+    #  events.add(car.CarEvent.EventName.steerTempUnavailableMute)
+      
     ret.events = events.to_msg()
 
     self.CS.out = ret.as_reader()
