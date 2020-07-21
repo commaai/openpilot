@@ -24,7 +24,7 @@ def create_steer_command(packer, angle_cmd, enabled, lkas_state, angle_steers, c
   return packer.make_can_msg("Lane_Keep_Assist_Control", 0, values)
 
 
-def create_lkas_ui(packer, main_on, enabled, steer_alert):
+def create_lkas_ui(packer, main_on, enabled, steer_alert, defog, ahbc, ahbcramping, config, noipma, stats):
   """Creates a CAN message for the Ford Steer Ui."""
 
   if not main_on:
@@ -40,12 +40,12 @@ def create_lkas_ui(packer, main_on, enabled, steer_alert):
     "Set_Me_X30": 0x30,
     "Lines_Hud": lines,
     "Hands_Warning_W_Chime": steer_alert,
-    "CamraDefog_B_Req": 0,
-    "AhbHiBeam_D_Rq": 0,
-    "AhbcRampingV_D_Rq": 0,
-    "FeatConfigIpmaActl": 0,
-    "FeatNoIpmaActl": 0,
-    "CamraStats_D_Dsply": 0,
+    "CamraDefog_B_Req": defog,
+    "AhbHiBeam_D_Rq": ahbc,
+    "AhbcRampingV_D_Rq": ahbcramping,
+    "FeatConfigIpmaActl": config,
+    "FeatNoIpmaActl": noipma,
+    "CamraStats_D_Dsply": stats,
   }
   return packer.make_can_msg("Lane_Keep_Assist_Ui", 0, values)
 
