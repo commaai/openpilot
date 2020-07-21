@@ -34,7 +34,7 @@ FEATURES = {
 }
 
 DBC = {
-  CAR.FUSIONSG: dbc_dict('ford_newcan_pt', 'ford_fusion_2018_adas'),
-  CAR.F150: dbc_dict('ford_newcan_pt', None),
-  CAR.F150SG: dbc_dict('ford_newcan_pt', None),
+  CAR.FUSIONSG: dbc_dict('ford_lincoln_base_pt', 'ford_fusion_2018_adas'),
+  CAR.F150: dbc_dict('ford_lincoln_base_pt', None),
+  CAR.F150SG: dbc_dict('ford_lincoln_base_pt', None),
 }
