@@ -12,6 +12,9 @@ from selfdrive.test.test_car_models import routes
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
+from panda.tests.safety import libpandasafety_py
+from panda.tests.safety.common import package_can_msg
+
 routes = {v['carFingerprint']: k for k, v in routes.items()}
 
 
@@ -21,15 +24,9 @@ class TestCarModel(unittest.TestCase):
   def setUp(self):
     if self.car_model not in routes:
       self.skipTest(f"skipping {self.car_model} due to missing route")
-    route_url = get_url(routes[self.car_model], 0)
-    self.lr = list(LogReader(route_url))
 
-    fingerprint = _FINGERPRINTS[self.car_model][0]
-    fingerprints = {
-      0: fingerprint,
-      1: fingerprint,
-      2: fingerprint,
-    }
+    fingerprints = {i: _FINGERPRINTS[self.car_model][0] for i in range(3)}
+
     CarInterface, CarController, CarState = interfaces[self.car_model]
     has_relay = False
     self.car_params = CarInterface.get_params(self.car_model, fingerprints, has_relay, [])
@@ -40,7 +37,10 @@ class TestCarModel(unittest.TestCase):
 
     self.CI = CarInterface(self.car_params, CarController, CarState)
     assert self.CI
+    route_url = get_url(routes[self.car_model], 0)
+    self.can_msgs = [msg for msg in LogReader(route_url) if msg.which() == "can"]
 
+  # TODO: check safetyModel is in release panda build
   def test_car_params(self):
     # make sure car params are within a valid range
     self.assertGreater(self.car_params.mass, 1)
@@ -57,9 +57,7 @@ class TestCarModel(unittest.TestCase):
   def test_car_interface(self):
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
-    for msg in self.lr:
-      if msg.which() != "can":
-        continue
+    for msg in self.can_msgs:
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
       can_invalid_cnt += CS.canValid
@@ -75,11 +73,17 @@ class TestCarModel(unittest.TestCase):
     if hasattr(RI, '_update') and hasattr(RI, 'trigger_msg'):
       RI._update([RI.trigger_msg])
 
-  def test_can_valid(self):
-    pass
+  def test_panda_safety_rx(self):
+    safety = libpandasafety_py.libpandasafety
+    safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
 
-  def test_panda_safety(self):
-    pass
+    failed_addrs = set()
+    for can in self.can_msgs:
+      for msg in can.can:
+        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
+        if not safety.safety_rx_hook(to_send):
+          failed_addrs.add(msg.address)
+    self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
 
 if __name__ == "__main__":
