@@ -2,7 +2,7 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car.nissan import nissancan
 from opendbc.can.packer import CANPacker
-from selfdrive.car.nissan.values import CAR
+from selfdrive.car.nissan.values import CAR, STEER_THRESHOLD
 
 # Steer angle limits
 ANGLE_DELTA_BP = [0., 5., 15.]
@@ -53,7 +53,11 @@ class CarController():
       else:
         # Scale max torque based on how much torque the driver is applying to the wheel
         self.lkas_max_torque = max(
-            0, LKAS_MAX_TORQUE - 0.4 * abs(CS.out.steeringTorque))
+          # Scale max torque down to half LKAX_MAX_TORQUE as a minimum
+          LKAS_MAX_TORQUE * 0.5,
+          # Start scaling torque at STEER_THRESHOLD
+          LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - STEER_THRESHOLD)
+        )
 
     else:
       apply_angle = CS.out.steeringAngle
