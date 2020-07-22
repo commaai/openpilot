@@ -46,7 +46,7 @@ class CarController():
         self.generic_toggle_last = CS.out.genericToggle
         #print("Curvature:", curvature)
         self.lkasState = 3
-        can_sends.append(create_lkas_status(self.packer, self.lkasState, CS.out.steerError, CS.out.steeringPressed))
+        can_sends.append(create_lkas_status(self.packer, self.lkasState, CS.steerError, CS.steeringPressed))
         #print("State:", lkasState)
       if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
          (self.steer_alert_last != steer_alert):
