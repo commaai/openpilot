@@ -30,7 +30,7 @@ class CarController():
        print("CANCELING!!!!")
        can_sends.append(spam_cancel_button(self.packer))
 
-      if (frame % 4) == 0:
+      if (frame % 3) == 0:
 
         curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
 
