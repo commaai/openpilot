@@ -30,8 +30,8 @@ def create_lkas_status(packer, enabled, lkasState, steer_pressed, steer_error):
     print("State:", state)
   values = {
     "LaActAvail_D_Actl": state,
-    #"LaHandsOff_B_Actl": steer_pressed,
-    #"LaActDeny_B_Actl": steer_error,
+    "LaHandsOff_B_Actl": steer_pressed,
+    "LaActDeny_B_Actl": steer_error,
   }
 
   return packer.make_can_msg("Lane_Keep_Assist_Status", 0, values)
