@@ -2,7 +2,7 @@ from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.ford.values import DBC
+from selfdrive.car.ford.values import DBC, SPEED_FACTOR
 
  #WHEEL_RADIUS = 0.33
 GearShifter = car.CarState.GearShifter
