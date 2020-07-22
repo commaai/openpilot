@@ -23,7 +23,7 @@ def create_steer_command(packer, angle_cmd, enabled, lkas_state, angle_steers, c
   }
   return packer.make_can_msg("Lane_Keep_Assist_Control", 0, values)
 
-def create_lkas_status(packer, enabled, lkasState):#, steer_pressed, steer_error):
+def create_lkas_status(packer, enabled, lkasState, steer_pressed, steer_error):
   """Creates a CAN message for the Ford LKAS State"""
   if enabled:
     state = lkasState
