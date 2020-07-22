@@ -82,7 +82,7 @@ class CarController():
         self.last_resume_frame = frame
 
     # 20 Hz LFA MFA message
-    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ]:
+    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ_EV_2020, CAR.IONIQ]:
       can_sends.append(create_lfa_mfa(self.packer, frame, enabled))
 
     return can_sends
