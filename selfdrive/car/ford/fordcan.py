@@ -26,10 +26,11 @@ def create_steer_command(packer, angle_cmd, enabled, lkas_state, angle_steers, c
 def create_lkas_status(packer, enabled, lkasState, steer_pressed, steer_error):
   """Creates a CAN message for the Ford LKAS State"""
   if enabled:
-    state = lkasState
     print("State:", state)
+  else:
+    state = 
   values = {
-    "LaActAvail_D_Actl": state,
+    "LaActAvail_D_Actl": lkasState,
     "LaHandsOff_B_Actl": steer_pressed,
     "LaActDeny_B_Actl": steer_error,
   }
