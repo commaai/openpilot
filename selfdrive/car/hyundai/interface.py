@@ -36,7 +36,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
-    elif candidate == CAR.SONATA:
+    elif candidate in [CAR.SONATA, CAR.SONATA_H]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1513. + STD_CARGO_KG
       ret.wheelbase = 2.84
@@ -118,7 +118,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate == CAR.KONA_EV:
+    elif candidate in [CAR.KONA_HEV, CAR.KONA_EV]:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1685. + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -141,6 +141,45 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.KIA_CEED:
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = 1350. + STD_CARGO_KG
+      ret.wheelbase = 2.65
+      ret.steerRatio = 13.75
+      tire_stiffness_factor = 0.5
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.KIA_SPORTAGE:
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = 1985. + STD_CARGO_KG
+      ret.wheelbase = 2.78
+      ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.minSteerSpeed = 0.
+    elif candidate in [CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_EV]:
+      ret.steerRatio = 13.73
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.mass = 1737. + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      tire_stiffness_factor = 0.385
+    elif candidate in [CAR.GRANDEUR, CAR.GRANDEUR_HEV]:
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = 1719. + STD_CARGO_KG
+      ret.wheelbase = 2.8
+      ret.steerRatio = 12.5
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate in [CAR.KIA_CADENZA, CAR.KIA_CADENZA_HEV]:
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = 1575. + STD_CARGO_KG
+      ret.wheelbase = 2.85
+      ret.steerRatio = 12.5
+      ret.steerRateCost = 0.4
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
 
