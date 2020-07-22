@@ -31,8 +31,8 @@ class CarController():
        print("CANCELING!!!!")
        can_sends.append(spam_cancel_button(self.packer))
 
-      if (frame % 3) == 0:
-
+      if (frame % 100) == 0: #if (frame % 3) == 0:
+      #Stock IPMA Message is 33Hz. Testing to see if messages are accepted at 100Hz
         curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
 
         # The use of the toggle below is handy for trying out the various LKAS modes
@@ -45,7 +45,7 @@ class CarController():
         can_sends.append(create_steer_command(self.packer, apply_steer, enabled, CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
         self.generic_toggle_last = CS.out.genericToggle
         #print("Curvature:", curvature)
-        self.lkasState = 3 if enabled else 1
+        self.lkasState = 3 if enabled or CS.out.vEgo > 10 else 1
         can_sends.append(create_lkas_status(self.packer, enabled, self.lkasState, CS.out.steeringPressed, CS.out.steerError))
         print("IPMA State:", CS.lkas_state, "Commanded State:", self.lkasState)
       if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
