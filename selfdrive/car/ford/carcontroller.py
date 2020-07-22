@@ -47,7 +47,7 @@ class CarController():
         #print("Curvature:", curvature)
         self.lkasState = 3 if enabled else 1
         can_sends.append(create_lkas_status(self.packer, enabled, self.lkasState, CS.out.steeringPressed, CS.out.steerError))
-        print("IPMA State:", CS.lkas_state, "Commanded State:", lkasState)
+        print("IPMA State:", CS.lkas_state, "Commanded State:", lkasState) if enabled
       if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
          (self.steer_alert_last != steer_alert):
         can_sends.append(create_lkas_ui(self.packer, CS.out.cruiseState.available, enabled, steer_alert, CS.ipmaHeater, CS.ahbcCommanded, CS.ahbcRamping, CS.ipmaConfig, CS.ipmaNo, CS.ipmaStats))
