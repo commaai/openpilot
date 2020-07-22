@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=E1101
-
+import os
 import importlib
 import unittest
 from parameterized import parameterized_class
@@ -17,9 +17,8 @@ from panda.tests.safety.common import package_can_msg
 
 ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']}
 
-@parameterized_class(('car_model'), [(car,) for car in all_known_cars()][:2])
+@parameterized_class(('car_model'), [(car,) for car in all_known_cars()][:90])
 class TestCarModel(unittest.TestCase):
-
   def setUp(self):
     if self.car_model not in ROUTES:
       self.skipTest(f"skipping {self.car_model} due to missing route")
@@ -27,7 +26,7 @@ class TestCarModel(unittest.TestCase):
     fingerprints = {i: _FINGERPRINTS[self.car_model][0] for i in range(3)}
 
     CarInterface, CarController, CarState = interfaces[self.car_model]
-    has_relay = False
+    has_relay = True
     self.car_params = CarInterface.get_params(self.car_model, fingerprints, has_relay, [])
     assert self.car_params
 
@@ -53,6 +52,8 @@ class TestCarModel(unittest.TestCase):
     elif tuning == 'indi':
       self.assertGreater(self.car_params.lateralTuning.indi.outerLoopGain, 1e-3)
 
+    self.assertTrue(self.car_params.enableCamera)
+
     # TODO: check safetyModel is in release panda build
     safety = libpandasafety_py.libpandasafety
     set_status = safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
@@ -65,13 +66,16 @@ class TestCarModel(unittest.TestCase):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
       can_invalid_cnt += CS.canValid
-      # TODO: add this back
-      #self.assertLess(can_invalid_cnt, 10)
+    # TODO: add this back
+    #self.assertLess(can_invalid_cnt, 20)
 
   def test_radar_interface(self):
+    os.environ['NO_RADAR_SLEEP'] = "1"
     RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % self.car_params.carName).RadarInterface
     RI = RadarInterface(self.car_params)
     assert RI
+
+    # TODO: check for canErrors
     for msg in self.can_msgs:
       RI.update((msg.as_builder().to_bytes(),))
 
