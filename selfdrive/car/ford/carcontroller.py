@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.ford.fordcan import create_steer_command, create_lkas_ui, spam_cancel_button
+from selfdrive.car.ford.fordcan import create_steer_command, create_lkas_ui, spam_cancel_button, create_lkas_status
 from opendbc.can.packer import CANPacker
 
 
@@ -16,6 +16,7 @@ class CarController():
     self.generic_toggle_last = 0
     self.steer_alert_last = False
     self.lkas_action = 0
+    self.lkasState = 0
 
   def update(self, enabled, CS, frame, actuators, visual_alert, pcm_cancel):
 
@@ -41,10 +42,12 @@ class CarController():
         else:
           self.lkas_action = 4   # 4 and 5 seem the best. 8 and 9 seem to aggressive and laggy
 
-        can_sends.append(create_steer_command(self.packer, apply_steer, enabled,
-                                              CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
+        can_sends.append(create_steer_command(self.packer, apply_steer, enabled, CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
         self.generic_toggle_last = CS.out.genericToggle
-        print("Curvature:", curvature)
+        #print("Curvature:", curvature)
+        self.lkasState = 3
+        can_sends.append(create_lkas_status(self.packer, state, CS.out.steerError, CS.out.steeringPressed))
+        print(
       if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
          (self.steer_alert_last != steer_alert):
         can_sends.append(create_lkas_ui(self.packer, CS.out.cruiseState.available, enabled, steer_alert, CS.ahbcCommanded, CS.ipmaHeater, CS.ahbcRamping, CS.ipmaConfig, CS.ipmaNo, CS.ipmaStats))
