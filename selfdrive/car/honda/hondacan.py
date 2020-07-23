@@ -1,14 +1,26 @@
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import HONDA_BOSCH
 
+# CAN bus layout with relay
+# 0 = ACC-CAN - radar side
+# 1 = F-CAN B - powertrain
+# 2 = ACC-CAN - camera side
+# 3 = F-CAN A - OBDII port
+
+# CAN bus layout with giraffe
+# 0 = F-CAN B - powertrain
+# 1 = ACC-CAN - camera side
+# 2 = ACC-CAN - radar side
 
 def get_pt_bus(car_fingerprint, has_relay):
   return 1 if car_fingerprint in HONDA_BOSCH and has_relay else 0
 
 
-def get_lkas_cmd_bus(car_fingerprint, has_relay, openpilot_longitudinal_control=False):
-  if openpilot_longitudinal_control:
+def get_lkas_cmd_bus(car_fingerprint, has_relay, radar_disabled=False):
+  if radar_disabled:
+    # when radar is disabled, steering commands are sent directly to powertrain bus
     return get_pt_bus(car_fingerprint, has_relay)
+  # normally steering commands are sent to radar, which forwards them to powertrain bus
   return 2 if car_fingerprint in HONDA_BOSCH and not has_relay else 0
 
 
@@ -72,12 +84,12 @@ def create_acc_commands(packer, enabled, accel, gas, idx, stopping, starting, ca
 
   return commands
 
-def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx, has_relay, openpilot_longitudinal_control):
+def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx, has_relay, radar_disabled):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
-  bus = get_lkas_cmd_bus(car_fingerprint, has_relay, openpilot_longitudinal_control)
+  bus = get_lkas_cmd_bus(car_fingerprint, has_relay, radar_disabled)
   return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
 
 
@@ -92,10 +104,10 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx, has_relay):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, has_relay, openpilot_longitudinal_control, stock_hud):
+def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, has_relay, radar_disabled, stock_hud):
   commands = []
   bus_pt = get_pt_bus(car_fingerprint, has_relay)
-  bus_lkas = get_lkas_cmd_bus(car_fingerprint, has_relay, openpilot_longitudinal_control)
+  bus_lkas = get_lkas_cmd_bus(car_fingerprint, has_relay, radar_disabled)
 
   if car_fingerprint in HONDA_BOSCH:
     acc_hud_values = {
@@ -124,7 +136,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
       "FCM_PROBLEM": stock_hud["FCM_PROBLEM"],
       "ICONS": stock_hud["ICONS"],
     }
-  if openpilot_longitudinal_control:
+  if radar_disabled:
     commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values, idx))
 
   lkas_hud_values = {
@@ -136,7 +148,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
   }
   commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
 
-  if openpilot_longitudinal_control and car_fingerprint in HONDA_BOSCH:
+  if radar_disabled and car_fingerprint in HONDA_BOSCH:
     radar_hud_values = {
       'SET_TO_1' : 0x01,
     }
