@@ -142,6 +142,15 @@ void *safety_setter_thread(void *s) {
   return NULL;
 }
 
+void usb_close(libusb_device_handle* &dev_handle) {
+  if (!dev_handle) {
+    return;
+  }
+  libusb_release_interface(dev_handle, 0);
+  libusb_close(dev_handle);
+  dev_handle = NULL;
+}
+
 // must be called before threads or with mutex
 bool usb_connect() {
   int err, err2;
@@ -154,10 +163,7 @@ bool usb_connect() {
 
   ignition_last = false;
 
-  if (dev_handle != NULL){
-    libusb_close(dev_handle);
-    dev_handle = NULL;
-  }
+  usb_close(dev_handle);
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
   if (dev_handle == NULL) { goto fail; }
@@ -931,7 +937,6 @@ int main() {
   assert(err == 0);
 
   // join threads
-
   err = pthread_join(can_recv_thread_handle, NULL);
   assert(err == 0);
 
@@ -941,10 +946,7 @@ int main() {
   err = pthread_join(can_health_thread_handle, NULL);
   assert(err == 0);
 
-  //while (!do_exit) usleep(1000);
-
   // destruct libusb
-
-  libusb_close(dev_handle);
+  usb_close(dev_handle);
   libusb_exit(ctx);
 }
