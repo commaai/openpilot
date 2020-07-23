@@ -46,6 +46,7 @@ class CarController():
         can_sends.append(create_steer_command(self.packer, apply_steer, enabled, CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
         self.generic_toggle_last = CS.out.genericToggle
         #print("Curvature:", curvature)
+      if (frame % 100) == 0:
         self.lkasState = 3 if enabled or CS.out.vEgo > 10 else 1
         can_sends.append(create_lkas_status(self.packer, enabled, self.lkasState, CS.out.steeringPressed, CS.out.steerError))
         print("IPMA State:", CS.lkas_state, "Commanded State:", self.lkasState)
