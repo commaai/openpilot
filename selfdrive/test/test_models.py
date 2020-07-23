@@ -7,6 +7,7 @@ from collections import Counter
 from parameterized import parameterized_class
 
 from cereal import log, car
+import cereal.messaging as messaging
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.test.test_car_models import routes
@@ -83,7 +84,12 @@ class TestCarModel(unittest.TestCase):
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
     for msg in self.can_msgs:
-      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
+      # filter out openpilot msgs
+      can = [m for m in msg.can if m.src < 128]
+      can_pkt = messaging.new_message('can', len(can))
+      can_pkt.can = can
+
+      CS = self.CI.update(CC, (can_pkt.to_bytes(),))
       self.CI.apply(CC)
       can_invalid_cnt += CS.canValid
     # TODO: add this back
@@ -105,10 +111,6 @@ class TestCarModel(unittest.TestCase):
   def test_panda_safety_rx(self):
     if self.car_params.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
-
-    # TODO: get a new accord route
-    if self.car_model == "HONDA ACCORD 2018 SPORT 2T":
-      self.skipTest("skipping, need an updated route")
 
     safety = libpandasafety_py.libpandasafety
     safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
