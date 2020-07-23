@@ -60,7 +60,7 @@ try:
 
   if (origin is not None) and (branch is not None):
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
-    tested_branch = branch in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']
+    tested_branch = get_git_branch() in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']
 
     dirty = not comma_remote
     dirty = dirty or ('master' in branch)
