@@ -40,7 +40,6 @@ from common.params import Params
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
-WAIT_BETWEEN_ATTEMPTS = 10 * 60 # seconds
 STAGING_ROOT = "/data/safe_staging"
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
@@ -273,13 +272,13 @@ def attempt_update(exit_event):
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-      # Handle a NEOS update if it's required
+      # Download the accompanying NEOS version if it doesn't match the current version
       with open("/VERSION", "r") as f:
         current_neos_version = f.read().strip()
 
       required_neos_version = run(["bash", "-c",
                                    r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
-                                   OVERLAY_MERGED)
+                                   OVERLAY_MERGED).strip()
 
       cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
       if current_neos_version != required_neos_version:
@@ -304,7 +303,7 @@ def attempt_update(exit_event):
             if not exit_event.wait(timeout=120):
               break
 
-        # If we failed to download the NEOS update, show the alert again when we retry
+        # If the download failed, we'll show the alert again when we retry
         set_offroad_alert("Offroad_NeosUpdate", False)
         if not neos_downloaded:
           raise NeosDownloadFailed
@@ -336,7 +335,7 @@ def main():
   params = Params()
 
   if params.get("DisableUpdates") == b"1":
-    raise RuntimeError("updates are disabled by DisableUpdates param")
+    raise RuntimeError("updates are disabled by the DisableUpdates param")
 
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
@@ -355,17 +354,18 @@ def main():
   # Wait for IsOffroad to be set
   time.sleep(30)
 
-  # Setup signal handlers
+  # Setup a signal handler to immediately trigger an update
   ready_event = threading.Event()
   def set_ready(self, signum, frame):
     cloudlog.info("caught SIGHUP, running update check immediately")
     ready_event.set()
   signal.signal(signal.SIGHUP, set_ready)
 
+  # Setup the signal handlers to cleanly exit
   exit_event = threading.Event()
   def set_do_exit(signum, frame):
     # umount -f doesn't appear effective in avoiding "device busy" on NEOS,
-    # so don't actually die until the next convenient opportunity in main().
+    # so don't actually exit until the next convenient opportunity in main().
     cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
     exit_event.set()
     ready_event.set()
@@ -417,7 +417,7 @@ def main():
     params.put("UpdateFailedCount", str(update_failed_count))
 
     ready_event.clear()
-    ready_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS)
+    ready_event.wait(timeout=60*10)
 
   dismount_ovfs()
 

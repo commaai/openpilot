@@ -65,22 +65,24 @@ function launch {
   [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
+  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
-    if [ -f "$BASEDIR/scripts/continue.sh" ]; then
-      cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
+    if [ -f "$DIR/scripts/continue.sh" ]; then
+      cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
     # Clean old build products, but preserve the scons cache
-    cd $BASEDIR
+    cd $DIR
     scons --clean
     git clean -xdf
     git submodule foreach --recursive git clean -xdf
 
-    "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update.json"
+    "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
   else
     if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
-      "$BASEDIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
+      "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
     fi
   fi
 
