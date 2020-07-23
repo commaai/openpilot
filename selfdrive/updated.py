@@ -38,6 +38,7 @@ from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 WAIT_BETWEEN_ATTEMPTS = 10 * 60 # seconds
 STAGING_ROOT = "/data/safe_staging"
@@ -48,6 +49,7 @@ OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 NEOSUPDATE_DIR = "/data/neosupdate"
+
 
 # Workaround for the NEOS/termux build of Python having os.link removed.
 ffi = FFI()
@@ -242,8 +244,6 @@ def finalize_from_ovfs_copy():
 def attempt_update(exit_event):
   cloudlog.info("attempting git update inside staging overlay")
 
-  params = Params()
-
   setup_git_options(OVERLAY_MERGED)
 
   git_fetch_output = run(["git", "fetch"], OVERLAY_MERGED, low_priority=True)
@@ -282,20 +282,26 @@ def attempt_update(exit_event):
       cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
 
       update_manifest = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
-      params.put("Offroad_NeosUpdate", "1")
+      set_offroad_alert("Offroad_NeosUpdate", True)
 
+      done = False
       for _ in range(150):
         try:
           updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
           run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
-          params.put("Offroad_NeosUpdate", "0")
+          set_offroad_alert("Offroad_NeosUpdate", False)
           cloudlog.info("NEOS background download successful!")
+          done = True
           break
         except subprocess.CalledProcessError:
           cloudlog.info("NEOS background download failed, will retry at next wait interval")
-          params.put("Offroad_NeosUpdate", "0")
           if not exit_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS):
+            set_offroad_alert("Offroad_NeosUpdate", False)
             break
+
+      if not done:
+        # failed to download, show the alert again when we retry
+        set_offroad_alert("Offroad_NeosUpdate", False)
 
     # Un-set the validity flag to prevent the finalized tree from being
     # activated later if the finalize step is interrupted

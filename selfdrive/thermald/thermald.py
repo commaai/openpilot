@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 import os
-import json
-import copy
 import datetime
 import psutil
 from smbus2 import SMBus
 from cereal import log
 from common.android import ANDROID, get_network_type, get_network_strength
-from common.basedir import BASEDIR
 from common.params import Params, put_nonblocking
 from common.realtime import sec_since_boot, DT_TRML
 from common.numpy_fast import clip, interp
@@ -15,6 +12,7 @@ from common.filter_simple import FirstOrderFilter
 from selfdrive.version import terms_version, training_version
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.thermald.power_monitoring import PowerMonitoring, get_battery_capacity, get_battery_status, \
@@ -33,10 +31,6 @@ DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect 
 
 LEON = False
 last_eon_fan_val = None
-
-
-with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
-  OFFROAD_ALERTS = json.load(json_file)
 
 
 def read_tz(x, clip=True):
@@ -300,9 +294,9 @@ def thermald_thread():
     # show invalid date/time alert
     time_valid = now.year >= 2019
     if time_valid and not time_valid_prev:
-      params.delete("Offroad_InvalidTime")
+      set_offroad_alert("Offroad_InvalidTime", False)
     if not time_valid and time_valid_prev:
-      put_nonblocking("Offroad_InvalidTime", json.dumps(OFFROAD_ALERTS["Offroad_InvalidTime"]))
+      set_offroad_alert("Offroad_InvalidTime", True)
     time_valid_prev = time_valid
 
     # Show update prompt
@@ -318,20 +312,18 @@ def thermald_thread():
     if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
       if current_connectivity_alert != "expired":
         current_connectivity_alert = "expired"
-        params.delete("Offroad_ConnectivityNeededPrompt")
-        put_nonblocking("Offroad_ConnectivityNeeded", json.dumps(OFFROAD_ALERTS["Offroad_ConnectivityNeeded"]))
+        set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
+        set_offroad_alert("Offroad_ConnectivityNeeded", True)
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
       remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
       if current_connectivity_alert != "prompt" + remaining_time:
         current_connectivity_alert = "prompt" + remaining_time
-        alert_connectivity_prompt = copy.copy(OFFROAD_ALERTS["Offroad_ConnectivityNeededPrompt"])
-        alert_connectivity_prompt["text"] += remaining_time + " days."
-        params.delete("Offroad_ConnectivityNeeded")
-        put_nonblocking("Offroad_ConnectivityNeededPrompt", json.dumps(alert_connectivity_prompt))
+        set_offroad_alert("Offroad_ConnectivityNeeded", False)
+        set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
     elif current_connectivity_alert is not None:
       current_connectivity_alert = None
-      params.delete("Offroad_ConnectivityNeeded")
-      params.delete("Offroad_ConnectivityNeededPrompt")
+      set_offroad_alert("Offroad_ConnectivityNeeded", False)
+      set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
 
     do_uninstall = params.get("DoUninstall") == b"1"
     accepted_terms = params.get("HasAcceptedTerms") == terms_version
@@ -361,19 +353,19 @@ def thermald_thread():
       should_start = should_start and (not is_taking_snapshot) and (not is_viewing_driver)
 
     if fw_version_match and not fw_version_match_prev:
-      params.delete("Offroad_PandaFirmwareMismatch")
+      set_offroad_alert("Offroad_PandaFirmwareMismatch", False)
     if not fw_version_match and fw_version_match_prev:
-      put_nonblocking("Offroad_PandaFirmwareMismatch", json.dumps(OFFROAD_ALERTS["Offroad_PandaFirmwareMismatch"]))
+      set_offroad_alert("Offroad_PandaFirmwareMismatch", True)
 
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
     if thermal_status >= ThermalStatus.danger:
       should_start = False
       if thermal_status_prev < ThermalStatus.danger:
-        put_nonblocking("Offroad_TemperatureTooHigh", json.dumps(OFFROAD_ALERTS["Offroad_TemperatureTooHigh"]))
+        set_offroad_alert("Offroad_TemperatureTooHigh", True)
     else:
       if thermal_status_prev >= ThermalStatus.danger:
-        params.delete("Offroad_TemperatureTooHigh")
+        set_offroad_alert("Offroad_TemperatureTooHigh", False)
 
     if should_start:
       if not should_start_prev:
@@ -411,9 +403,9 @@ def thermald_thread():
     thermal_sock.send(msg.to_bytes())
 
     if usb_power_prev and not usb_power:
-      put_nonblocking("Offroad_ChargeDisabled", json.dumps(OFFROAD_ALERTS["Offroad_ChargeDisabled"]))
+      set_offroad_alert("Offroad_ChargeDisabled", True)
     elif usb_power and not usb_power_prev:
-      params.delete("Offroad_ChargeDisabled")
+      set_offroad_alert("Offroad_ChargeDisabled", False)
 
     thermal_status_prev = thermal_status
     usb_power_prev = usb_power

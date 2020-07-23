@@ -27,5 +27,9 @@
   "Offroad_IsTakingSnapshot": {
     "text": "Taking camera snapshots. System won't start until finished.",
     "severity": 0
+  },
+  "Offroad_NeosUpdate": {
+    "text": "An update to the NEOS operating system update is downloading in the background. You will be prompted to update when it's ready.",
+    "severity": 0
   }
 }
