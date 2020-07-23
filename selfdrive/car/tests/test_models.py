@@ -28,6 +28,8 @@ class TestCarModel(unittest.TestCase):
     fingerprints = {i: _FINGERPRINTS[cls.car_model][0] for i in range(3)}
 
     CarInterface, CarController, CarState = interfaces[cls.car_model]
+
+    # TODO: test with relay and without
     has_relay = True
     cls.car_params = CarInterface.get_params(cls.car_model, fingerprints, has_relay, [])
     assert cls.car_params
@@ -62,6 +64,7 @@ class TestCarModel(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {self.car_params.safetyModel}")
 
   def test_car_interface(self):
+    # TODO: also check for checkusm and counter violations from can parser
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
     for msg in self.can_msgs:
@@ -77,10 +80,12 @@ class TestCarModel(unittest.TestCase):
     RI = RadarInterface(self.car_params)
     assert RI
 
+    error_cnt = 0
     for msg in self.can_msgs:
       radar_data = RI.update((msg.as_builder().to_bytes(),))
       if radar_data is not None:
-        self.assertTrue(not len(radar_data.errors))
+        error_cnt += car.RadarData.Error.canError in radar_data.errors
+    self.assertLess(error_cnt, 20)
 
   def test_panda_safety_rx(self):
     if self.car_params.dashcamOnly:
