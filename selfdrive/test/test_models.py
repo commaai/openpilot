@@ -3,9 +3,10 @@
 import os
 import importlib
 import unittest
+from collections import Counter
 from parameterized import parameterized_class
 
-from cereal import car
+from cereal import log, car
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.test.test_car_models import routes
@@ -14,6 +15,8 @@ from tools.lib.logreader import LogReader
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
+
+HwType = log.HealthData.HwType
 
 ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']}
 
@@ -30,18 +33,22 @@ class TestCarModel(unittest.TestCase):
       lr = LogReader(get_url(ROUTES[cls.car_model], 1))
     except Exception:
       lr = LogReader(get_url(ROUTES[cls.car_model], 0))
-    cls.can_msgs = [msg for msg in lr if msg.which() == "can"]
 
+    has_relay = False
+    cls.can_msgs = []
     fingerprint = {i: dict() for i in range(3)}
-    for can in cls.can_msgs:
-      for msg in can.can:
-        if msg.src < 128:
-          fingerprint[msg.src][msg.address] = len(msg.dat)
+    for msg in lr:
+      if msg.which() == "can":
+        for m in msg.can:
+          if m.src < 128:
+            fingerprint[m.src][m.address] = len(m.dat)
+        cls.can_msgs.append(msg)
+      elif msg.which() == "health":
+        has_relay = msg.health.hwType in [HwType.blackPanda, HwType.uno, HwType.dos]
 
     CarInterface, CarController, CarState = interfaces[cls.car_model]
 
     # TODO: test with relay and without
-    has_relay = False
     cls.car_params = CarInterface.get_params(cls.car_model, fingerprint, has_relay, [])
     assert cls.car_params
 
@@ -99,15 +106,19 @@ class TestCarModel(unittest.TestCase):
     if self.car_params.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
+    # TODO: get a new accord route
+    if self.car_model == "HONDA ACCORD 2018 SPORT 2T":
+      self.skipTest("skipping, need an updated route")
+
     safety = libpandasafety_py.libpandasafety
     safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
 
-    failed_addrs = set()
+    failed_addrs = Counter()
     for can in self.can_msgs:
       for msg in can.can:
         to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
         if not safety.safety_rx_hook(to_send):
-          failed_addrs.add(msg.address)
+          failed_addrs[hex(msg.address)] += 1
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
 
