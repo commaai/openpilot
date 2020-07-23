@@ -192,6 +192,10 @@ routes = {
     'carFingerprint': HYUNDAI.SONATA_2019,
     'enableCamera': True,
   },
+  "5875672fc1d4bf57|2020-07-23--21-33-28": {
+    'carFingerprint': HYUNDAI.KIA_SORENTO,
+    'enableCamera': True,
+  },
   "9c917ba0d42ffe78|2020-04-17--12-43-19": {
     'carFingerprint': HYUNDAI.PALISADE,
     'enableCamera': True,
@@ -426,7 +430,6 @@ non_tested_cars = [
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_OPTIMA_H,
-  HYUNDAI.KIA_SORENTO,
   HYUNDAI.KIA_STINGER,
   HYUNDAI.KONA,
   HYUNDAI.KONA_EV,
