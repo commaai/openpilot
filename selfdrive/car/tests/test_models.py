@@ -17,24 +17,26 @@ from panda.tests.safety.common import package_can_msg
 
 ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']}
 
-@parameterized_class(('car_model'), [(car,) for car in all_known_cars()][:90])
+@parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
 class TestCarModel(unittest.TestCase):
-  def setUp(self):
-    if self.car_model not in ROUTES:
-      self.skipTest(f"skipping {self.car_model} due to missing route")
 
-    fingerprints = {i: _FINGERPRINTS[self.car_model][0] for i in range(3)}
+  @classmethod
+  def setUpClass(cls):
+    if cls.car_model not in ROUTES:
+      raise unittest.SkipTest
 
-    CarInterface, CarController, CarState = interfaces[self.car_model]
+    fingerprints = {i: _FINGERPRINTS[cls.car_model][0] for i in range(3)}
+
+    CarInterface, CarController, CarState = interfaces[cls.car_model]
     has_relay = True
-    self.car_params = CarInterface.get_params(self.car_model, fingerprints, has_relay, [])
-    assert self.car_params
+    cls.car_params = CarInterface.get_params(cls.car_model, fingerprints, has_relay, [])
+    assert cls.car_params
 
-    self.CI = CarInterface(self.car_params, CarController, CarState)
-    assert self.CI
+    cls.CI = CarInterface(cls.car_params, CarController, CarState)
+    assert cls.CI
 
-    route_url = get_url(ROUTES[self.car_model], 0)
-    self.can_msgs = [msg for msg in LogReader(route_url) if msg.which() == "can"]
+    route_url = get_url(ROUTES[cls.car_model], 0)
+    cls.can_msgs = [msg for msg in LogReader(route_url) if msg.which() == "can"]
 
   def test_car_params(self):
     if self.car_params.dashcamOnly:
@@ -75,9 +77,10 @@ class TestCarModel(unittest.TestCase):
     RI = RadarInterface(self.car_params)
     assert RI
 
-    # TODO: check for canErrors
     for msg in self.can_msgs:
-      RI.update((msg.as_builder().to_bytes(),))
+      radar_data = RI.update((msg.as_builder().to_bytes(),))
+      if radar_data is not None:
+        self.assertTrue(not len(radar_data.errors))
 
   def test_panda_safety_rx(self):
     if self.car_params.dashcamOnly:
