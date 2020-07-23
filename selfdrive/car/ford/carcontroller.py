@@ -31,7 +31,7 @@ class CarController():
        print("CANCELING!!!!")
        can_sends.append(spam_cancel_button(self.packer))
 
-      if (frame % 5) == 0: #if (frame % 3) == 0:
+      if (frame % 3) == 0: #if (frame % 3) == 0:
       #Stock IPMA Message is 33Hz. Testing to see if messages are accepted at 100Hz
         curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
 
