@@ -73,11 +73,13 @@ function launch {
       cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
-    # Clean old build products, but preserve the scons cache
-    cd $DIR
-    scons --clean
-    git clean -xdf
-    git submodule foreach --recursive git clean -xdf
+    if [ ! -f "$BASEDIR/prebuilt" ]; then
+      # Clean old build products, but preserve the scons cache
+      cd $DIR
+      scons --clean
+      git clean -xdf
+      git submodule foreach --recursive git clean -xdf
+    fi
 
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
   else
