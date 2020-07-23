@@ -6,7 +6,7 @@ import unittest
 from parameterized import parameterized_class
 
 from cereal import car
-from selfdrive.car.fingerprints import all_known_cars, _FINGERPRINTS
+from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.test.test_car_models import routes
 from selfdrive.test.openpilotci import get_url
@@ -23,22 +23,30 @@ class TestCarModel(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     if cls.car_model not in ROUTES:
+      print(f"Skipping tests for {cls.car_model}: missing route")
       raise unittest.SkipTest
 
-    fingerprints = {i: _FINGERPRINTS[cls.car_model][0] for i in range(3)}
+    try:
+      lr = LogReader(get_url(ROUTES[cls.car_model], 1))
+    except Exception:
+      lr = LogReader(get_url(ROUTES[cls.car_model], 0))
+    cls.can_msgs = [msg for msg in lr if msg.which() == "can"]
+
+    fingerprint = {i: dict() for i in range(3)}
+    for can in cls.can_msgs:
+      for msg in can.can:
+        if msg.src < 128:
+          fingerprint[msg.src][msg.address] = len(msg.dat)
 
     CarInterface, CarController, CarState = interfaces[cls.car_model]
 
     # TODO: test with relay and without
-    has_relay = True
-    cls.car_params = CarInterface.get_params(cls.car_model, fingerprints, has_relay, [])
+    has_relay = False
+    cls.car_params = CarInterface.get_params(cls.car_model, fingerprint, has_relay, [])
     assert cls.car_params
 
     cls.CI = CarInterface(cls.car_params, CarController, CarState)
     assert cls.CI
-
-    route_url = get_url(ROUTES[cls.car_model], 0)
-    cls.can_msgs = [msg for msg in LogReader(route_url) if msg.which() == "can"]
 
   def test_car_params(self):
     if self.car_params.dashcamOnly:
