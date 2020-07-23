@@ -740,7 +740,7 @@ void hexdump(unsigned char *d, int l) {
 
 void _pigeon_send(const char *dat, int len) {
   int sent;
-  unsigned char a[0x20];
+  unsigned char a[0x20+1];
   int err;
   a[0] = 1;
   for (int i=0; i<len; i+=0x20) {
