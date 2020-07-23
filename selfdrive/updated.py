@@ -51,6 +51,10 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 NEOSUPDATE_DIR = "/data/neosupdate"
 
 
+class NeosDownloadFailed(Exception):
+  pass
+
+
 # Workaround for the NEOS/termux build of Python having os.link removed.
 ffi = FFI()
 ffi.cdef("int link(const char *oldpath, const char *newpath);")
@@ -269,39 +273,41 @@ def attempt_update(exit_event):
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-    # Handle a NEOS update if it's required
-    with open("/VERSION", "r") as f:
-      current_neos_version = f.read().strip()
+      # Handle a NEOS update if it's required
+      with open("/VERSION", "r") as f:
+        current_neos_version = f.read().strip()
 
-    required_neos_version = run(["bash", "-c",
-                                 r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
-                                 OVERLAY_MERGED)
+      required_neos_version = run(["bash", "-c",
+                                   r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
+                                   OVERLAY_MERGED)
 
-    cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
-    if current_neos_version != required_neos_version:
-      cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
+      cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
+      if current_neos_version != required_neos_version:
+        cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
 
-      update_manifest = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
-      set_offroad_alert("Offroad_NeosUpdate", True)
+        update_manifest = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
+        set_offroad_alert("Offroad_NeosUpdate", True)
 
-      done = False
-      for _ in range(150):
-        try:
-          updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
-          run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
-          set_offroad_alert("Offroad_NeosUpdate", False)
-          cloudlog.info("NEOS background download successful!")
-          done = True
-          break
-        except subprocess.CalledProcessError:
-          cloudlog.info("NEOS background download failed, will retry at next wait interval")
-          if not exit_event.wait(timeout=WAIT_BETWEEN_ATTEMPTS):
-            set_offroad_alert("Offroad_NeosUpdate", False)
+        neos_downloaded = False
+        start_time = time.monotonic()
+        # Try to download for one day
+        while time.monotonic() - start_time < 60*60*24:
+          try:
+            updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
+            run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
+
+            cloudlog.info("NEOS background download successful!")
+            neos_downloaded = True
             break
+          except subprocess.CalledProcessError:
+            cloudlog.info("NEOS background download failed, will retry at next wait interval")
+            if not exit_event.wait(timeout=120):
+              break
 
-      if not done:
-        # failed to download, show the alert again when we retry
+        # If we failed to download the NEOS update, show the alert again when we retry
         set_offroad_alert("Offroad_NeosUpdate", False)
+        if not neos_downloaded:
+          raise NeosDownloadFailed
 
     # Un-set the validity flag to prevent the finalized tree from being
     # activated later if the finalize step is interrupted
@@ -315,11 +321,11 @@ def attempt_update(exit_event):
 
     cloudlog.info("openpilot update successful!")
   else:
-    # Clear old NEOS updates
-    if os.path.isdir(NEOSUPDATE_DIR):
-      shutil.rmtree(NEOSUPDATE_DIR)
-
     cloudlog.info("nothing new from git at this time")
+
+  # Clear old NEOS updates
+  if not new_version and os.path.isdir(NEOSUPDATE_DIR):
+    shutil.rmtree(NEOSUPDATE_DIR)
 
   set_update_available_params(new_version)
 
@@ -395,7 +401,6 @@ def main():
           update_failed_count = 0
         else:
           cloudlog.info("not running updater, openpilot running")
-
       except subprocess.CalledProcessError as e:
         cloudlog.event(
           "update process failed",
@@ -404,7 +409,8 @@ def main():
           returncode=e.returncode
         )
         overlay_init_done = False
-
+      except NeosDownloadFailed:
+        cloudlog.info("Failed to download NEOS update in one day")
       except Exception:
         cloudlog.exception("uncaught updated exception, shouldn't happen")
 

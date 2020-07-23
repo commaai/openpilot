@@ -71,6 +71,12 @@ function launch {
       cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
+    # Clean old build products, but preserve the scons cache
+    cd $BASEDIR
+    scons --clean
+    git clean -xdf
+    git submodule foreach --recursive git clean -xdf
+
     "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update.json"
   else
     if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
