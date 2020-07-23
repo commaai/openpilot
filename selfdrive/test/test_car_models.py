@@ -200,6 +200,10 @@ routes = {
     'carFingerprint': HYUNDAI.IONIQ,
     'enableCamera': True,
   },
+  "6fe86b4e410e4c37|2020-07-22--16-27-13": {
+    'carFingerprint': HYUNDAI.HYUNDAI_GENESIS,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -418,7 +422,6 @@ non_tested_cars = [
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
-  HYUNDAI.HYUNDAI_GENESIS,
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_OPTIMA_H,
