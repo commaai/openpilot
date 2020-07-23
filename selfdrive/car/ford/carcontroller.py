@@ -1,4 +1,5 @@
 from cereal import car
+import numpy as np
 from selfdrive.car.ford.fordcan import create_steer_command, create_lkas_ui, spam_cancel_button, create_lkas_status
 from opendbc.can.packer import CANPacker
 
@@ -31,9 +32,9 @@ class CarController():
        print("CANCELING!!!!")
        can_sends.append(spam_cancel_button(self.packer))
 
-      if (frame % 3) == 0: #if (frame % 3) == 0:
-      #Stock IPMA Message is 33Hz. Testing to see if messages are accepted at 100Hz
-        curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
+      if (frame % 3) == 0:
+      #Stock IPMA Message is 33Hz. PSCM accepts commands at max 44Hz. 
+        curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*np.pi/180., CS.out.vEgo)
 
         # The use of the toggle below is handy for trying out the various LKAS modes
         if TOGGLE_DEBUG:
