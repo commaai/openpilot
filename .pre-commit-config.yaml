@@ -38,9 +38,10 @@ repos:
         entry: cppcheck
         language: system
         types: [c++]
-        exclude: '^(phonelibs)|(external)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/'
+        exclude: '^(phonelibs)|(external)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/|(installer)'
         args:
         - --error-exitcode=1
+        - --language=c++
         - --quiet
         - --force
         - -j8

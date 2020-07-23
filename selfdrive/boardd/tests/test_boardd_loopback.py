@@ -9,6 +9,7 @@ import cereal.messaging as messaging
 from cereal import car
 from common.basedir import PARAMS
 from common.params import Params
+from common.spinner import Spinner
 from panda import Panda
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import make_can_msg
@@ -29,11 +30,12 @@ def reset_panda(fn):
 os.environ['STARTED'] = '1'
 os.environ['BOARDD_LOOPBACK'] = '1'
 os.environ['PARAMS_PATH'] = PARAMS
+
 @reset_panda
 @with_processes(['boardd'])
 def test_boardd_loopback():
-
   # wait for boardd to init
+  spinner = Spinner()
   time.sleep(2)
 
   # boardd blocks on CarVin and CarParams
@@ -47,7 +49,10 @@ def test_boardd_loopback():
 
   time.sleep(1)
 
-  for i in range(1000):
+  n = 1000
+  for i in range(n):
+    spinner.update(f"boardd loopback {i}/{n}")
+
     sent_msgs = defaultdict(set)
     for _ in range(random.randrange(10)):
       to_send = []
@@ -73,3 +78,9 @@ def test_boardd_loopback():
     # if a set isn't empty, messages got dropped
     for bus in range(3):
       assert not len(sent_msgs[bus]), f"loop {i}: bus {bus} missing {len(sent_msgs[bus])} messages"
+
+  spinner.close()
+
+
+if __name__ == "__main__":
+    test_boardd_loopback()

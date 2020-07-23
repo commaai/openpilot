@@ -4,14 +4,17 @@ from common.basedir import BASEDIR
 
 
 class Spinner():
-  def __init__(self):
-    try:
-      self.spinner_proc = subprocess.Popen(["./spinner"],
-                                           stdin=subprocess.PIPE,
-                                           cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
-                                           close_fds=True)
-    except OSError:
-      self.spinner_proc = None
+  def __init__(self, noop=False):
+    # spinner is currently only implemented for android
+    self.spinner_proc = None
+    if not noop:
+      try:
+        self.spinner_proc = subprocess.Popen(["./spinner"],
+                                             stdin=subprocess.PIPE,
+                                             cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
+                                             close_fds=True)
+      except OSError:
+        self.spinner_proc = None
 
   def __enter__(self):
     return self
@@ -38,23 +41,6 @@ class Spinner():
 
   def __exit__(self, exc_type, exc_value, traceback):
     self.close()
-
-
-class FakeSpinner(Spinner):
-  def __init__(self):  # pylint: disable=super-init-not-called
-    pass
-
-  def __enter__(self):
-    return self
-
-  def update(self, _):
-    pass
-
-  def close(self):
-    pass
-
-  def __exit__(self, exc_type, exc_value, traceback):
-    pass
 
 
 if __name__ == "__main__":
