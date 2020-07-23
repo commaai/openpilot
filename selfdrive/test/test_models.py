@@ -113,7 +113,8 @@ class TestCarModel(unittest.TestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     safety = libpandasafety_py.libpandasafety
-    safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
+    set_status = safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
+    self.assertEqual(0, set_status)
 
     failed_addrs = Counter()
     for can in self.can_msgs:
