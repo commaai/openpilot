@@ -105,11 +105,12 @@ if not prebuilt:
         prefix = b'progress: '
         if line.startswith(prefix):
           i = int(line[len(prefix):])
+          print(i)
           if spinner is not None:
             spinner.update("%d" % (70.0 * (i / TOTAL_SCONS_NODES)))
         elif len(line):
           compile_output.append(line)
-          print(line.decode('utf8', 'replace'))
+          # print(line.decode('utf8', 'replace'))
       except Exception:
         pass
 
