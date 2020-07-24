@@ -33,13 +33,13 @@ def main():
   controls_sender.start()
   thermal_sender.start()
 
-  start_managed_process('ui')
   start_managed_process('camerad')
+  start_managed_process('ui')
 
   def terminate():
     print('got SIGTERM, exiting..')
-    kill_managed_process('ui')
     kill_managed_process('camerad')
+    kill_managed_process('ui')
     controls_sender.terminate()
     thermal_sender.terminate()
     exit()
