@@ -90,7 +90,7 @@ if not prebuilt:
 
     nproc = os.cpu_count()
     j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
-    scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons = subprocess.Popen(["scons", "-j1"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
     compile_output = []
 
