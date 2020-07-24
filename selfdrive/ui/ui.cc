@@ -751,8 +751,12 @@ int main(int argc, char* argv[]) {
   bool debug_ui = false;
   if (argc == 2) {
     if (strcmp(argv[1], "debug") == 0) {
+      printf("DEBUGGING!\n");
       debug_ui = true;
     }
+  }
+  if (!debug_ui) {
+    printf("NOT DEBUGGING!\n");
   }
 
   while (!do_exit) {
