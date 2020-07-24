@@ -356,7 +356,7 @@ def main():
 
   # Setup a signal handler to immediately trigger an update
   ready_event = threading.Event()
-  def set_ready(self, signum, frame):
+  def set_ready(signum, frame):
     cloudlog.info("caught SIGHUP, running update check immediately")
     ready_event.set()
   signal.signal(signal.SIGHUP, set_ready)
