@@ -217,7 +217,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       brake_pressed = (GET_BYTE(to_push, 6) >> 7) != 0;
     }
 
-    generic_rx_checks((addr == 832));
+    generic_rx_checks((addr == 832 && bus == 0));
   }
   return valid;
 }
