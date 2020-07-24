@@ -88,6 +88,8 @@ selfdrive/boardd/boardd.py
 selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/boardd_setup.py
 selfdrive/boardd/can_list_to_can_capnp.cc
+selfdrive/boardd/panda.cc
+selfdrive/boardd/panda.h
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
