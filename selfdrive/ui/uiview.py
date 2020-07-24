@@ -45,6 +45,7 @@ def main():
     exit()
 
   signal.signal(signal.SIGTERM, terminate)
+  signal.signal(signal.SIGINT, terminate)
 
 
 if __name__ == '__main__':
