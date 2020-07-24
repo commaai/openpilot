@@ -36,7 +36,7 @@ def main():
   start_managed_process('camerad')
   start_managed_process('ui')
 
-  def terminate():
+  def terminate(signalNumber, frame):
     print('got SIGTERM, exiting..')
     kill_managed_process('camerad')
     kill_managed_process('ui')
