@@ -13,7 +13,7 @@ def send_controls_packet(pm):
       "rearViewCam": False,
     }
     pm.send('controlsState', dat)
-    time.sleep(0.01)
+    time.sleep(1 / 100.)  # 100 hz
 
 
 def send_thermal_packet(pm):
@@ -23,7 +23,7 @@ def send_thermal_packet(pm):
       'started': True,
     }
     pm.send('thermal', dat)
-    time.sleep(0.01)
+    time.sleep(1 / 2.)  # 2 hz
 
 
 def main():
