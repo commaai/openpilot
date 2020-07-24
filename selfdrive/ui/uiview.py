@@ -37,7 +37,6 @@ def main():
   start_managed_process('ui')
 
   def terminate():
-    print('HERE!!')
     print('got SIGTERM, exiting..')
     kill_managed_process('camerad')
     kill_managed_process('ui')
