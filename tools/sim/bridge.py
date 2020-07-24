@@ -12,6 +12,7 @@ from common.realtime import Ratekeeper
 from lib.can import can_function, sendcan_function
 from lib.helpers import FakeSteeringWheel
 from selfdrive.car.honda.values import CruiseButtons
+import sys
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('-a','--autopilot', action='store_true')
@@ -233,6 +234,9 @@ def go(q):
         print ("not controlling")
 
       rk.keep_time()
+
+  except:
+    print("Unexpected error:", sys.exc_info()[0])
 
   finally:
       if vehicle is not None:
