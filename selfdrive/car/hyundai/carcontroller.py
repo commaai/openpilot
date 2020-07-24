@@ -1,9 +1,10 @@
 from cereal import car
+from common.realtime import DT_CTRL
 from common.numpy_fast import clip
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa, \
-                                             create_scc11, create_scc12, create_mdps12, \
-                                             create_scc13, create_scc14, create_ems11
+                                             create_scc11, create_scc12,  create_scc13, create_scc14, \
+                                             create_mdps12, create_spas11, create_spas12, create_ems11
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR, FEATURES
 from opendbc.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
@@ -69,9 +70,7 @@ class CarController():
     self.steer_rate_limited = False
     self.lkas11_cnt = 0
     self.scc12_cnt = 0
-    self.resume_cnt = 0
     self.last_resume_frame = 0
-    self.last_lead_distance = 0
     self.turning_signal_timer = 0
     self.lkas_button_on = True
     self.longcontrol = CP.openpilotLongitudinalControl
@@ -118,7 +117,7 @@ class CarController():
 
     # fix for Genesis hard fault at low speed
     if CS.out.vEgo < 60 * CV.KPH_TO_MS and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
-      lkas_active = 0
+      lkas_active = False
 
     # Disable steering while turning blinker on and speed below 60 kph
     if CS.out.leftBlinker or CS.out.rightBlinker:
@@ -188,7 +187,14 @@ class CarController():
 
     if pcm_cancel_cmd and self.longcontrol:
       can_sends.append(create_clu11(self.packer, frame, CS.scc_bus, CS.clu11, Buttons.CANCEL, clu11_speed))
-    elif CS.mdps_bus: # send mdps12 to LKAS to prevent LKAS error if no cancel cmd
+    elif CS.out.cruiseState.standstill:
+      # SCC won't resume anyway when the lead distace is less than 3.7m
+      # send resume at a max freq of 5Hz
+      if CS.lead_distance > 3.7 and (frame - self.last_resume_frame)*DT_CTRL > 0.2:
+        can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
+        self.last_resume_frame = frame
+
+    if CS.mdps_bus: # send mdps12 to LKAS to prevent LKAS error
       can_sends.append(create_mdps12(self.packer, frame, CS.mdps12))
 
     # send scc to car if longcontrol enabled and SCC not on bus 0 or ont live
@@ -200,24 +206,6 @@ class CarController():
       if CS.has_scc14:
         can_sends.append(create_scc14(self.packer, enabled, CS.scc14))
       self.scc12_cnt += 1
-
-    if CS.out.cruiseState.standstill:
-      # run only first time when the car stopped
-      if self.last_lead_distance == 0:
-        # get the lead distance from the Radar
-        self.last_lead_distance = CS.lead_distance
-        self.resume_cnt = 0
-      # when lead car starts moving, create 6 RES msgs
-      elif CS.lead_distance != self.last_lead_distance and (frame - self.last_resume_frame) > 5:
-        can_sends.append(create_clu11(self.packer, frame, CS.scc_bus, CS.clu11, Buttons.RES_ACCEL, clu11_speed))
-        self.resume_cnt += 1
-        # interval after 6 msgs
-        if self.resume_cnt > 5:
-          self.last_resume_frame = frame
-          self.resume_cnt = 0
-    # reset lead distnce after the car starts moving
-    elif self.last_lead_distance != 0:
-      self.last_lead_distance = 0  
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.car_fingerprint in FEATURES["send_lfa_mfa"]:

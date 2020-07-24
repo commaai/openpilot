@@ -25,6 +25,8 @@ USB_Setup_TypeDef;
 
 #define MAX_CAN_MSGS_PER_BULK_TRANSFER 4U
 
+bool usb_eopf_detected = false;
+
 void usb_init(void);
 int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired);
 int usb_cb_ep1_in(void *usbdata, int len, bool hardwired);
@@ -660,8 +662,11 @@ void usb_setup(void) {
       break;
     default:
       resp_len = usb_cb_control_msg(&setup, resp, 1);
-      USB_WritePacket(resp, MIN(resp_len, setup.b.wLength.w), 0);
-      USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
+      // response pending if -1 was returned
+      if (resp_len != -1) {
+        USB_WritePacket(resp, MIN(resp_len, setup.b.wLength.w), 0);
+        USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
+      }
   }
 }
 
@@ -694,6 +699,10 @@ void usb_irqhandler(void) {
 
   if ((gintsts & USB_OTG_GINTSTS_ESUSP) != 0) {
     puts("ESUSP detected\n");
+  }
+
+  if ((gintsts & USB_OTG_GINTSTS_EOPF) != 0) {
+    usb_eopf_detected = true;
   }
 
   if ((gintsts & USB_OTG_GINTSTS_USBRST) != 0) {
@@ -957,6 +966,18 @@ void OTG_FS_IRQ_Handler(void) {
   NVIC_EnableIRQ(OTG_FS_IRQn);
 }
 
+bool usb_enumerated(void) {
+  // This relies on the USB being suspended after no activity for 3ms.
+  // Seems pretty stable in combination with the EOPF to reject noise.
+  bool ret = false;
+  if(!(USBx_DEVICE->DSTS & USB_OTG_DSTS_SUSPSTS)){
+    // Check to see if an end of periodic frame is detected
+    ret = usb_eopf_detected;
+  }
+  usb_eopf_detected = false;
+  return ret;
+}
+
 // ***************************** USB init *****************************
 
 void usb_init(void) {
@@ -1021,7 +1042,7 @@ void usb_init(void) {
   USBx->GINTMSK = USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM | USB_OTG_GINTMSK_OTGINT |
                   USB_OTG_GINTMSK_RXFLVLM | USB_OTG_GINTMSK_GONAKEFFM | USB_OTG_GINTMSK_GINAKEFFM |
                   USB_OTG_GINTMSK_OEPINT | USB_OTG_GINTMSK_IEPINT | USB_OTG_GINTMSK_USBSUSPM |
-                  USB_OTG_GINTMSK_CIDSCHGM | USB_OTG_GINTMSK_SRQIM | USB_OTG_GINTMSK_MMISM;
+                  USB_OTG_GINTMSK_CIDSCHGM | USB_OTG_GINTMSK_SRQIM | USB_OTG_GINTMSK_MMISM | USB_OTG_GINTMSK_EOPFM;
 
   USBx->GAHBCFG = USB_OTG_GAHBCFG_GINT;
 

@@ -70,7 +70,7 @@ void tbuffer_dispatch(TBuffer *tb, int idx) {
   efd_write(tb->efd);
   pthread_cond_signal(&tb->cv);
 
-  pthread_mutex_unlock(&tb->lock);  
+  pthread_mutex_unlock(&tb->lock);
 }
 
 int tbuffer_acquire(TBuffer *tb) {
@@ -344,7 +344,7 @@ void pool_push(Pool *s, int idx) {
   for (int i=0; i<POOL_MAX_QUEUES; i++) {
     PoolQueue *c = &s->queues[i];
     if (!c->inited) continue;
-    
+
     pthread_mutex_lock(&c->lock);
     if (((c->head+1) % c->num) == c->tail) {
       // queue is full. skip for now

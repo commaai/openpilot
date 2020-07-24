@@ -7,7 +7,7 @@ typedef Eigen::Matrix<double, DIM, EDIM, Eigen::RowMajor> DEM;
 
 void predict(double *in_x, double *in_P, double *in_Q, double dt) {
   typedef Eigen::Matrix<double, MEDIM, MEDIM, Eigen::RowMajor> RRM;
-  
+
   double nx[DIM] = {0};
   double in_F[EDIM*EDIM] = {0};
 
@@ -54,12 +54,12 @@ void update(double *in_x, double *in_P, Hfun h_fun, Hfun H_fun, Hfun Hea_fun, do
   Eigen::Matrix<double, ZDIM, 1> z(in_z);
   EEM P(in_P);
   ZZM pre_R(in_R);
-  
+
   // functions from sympy
   h_fun(in_x, in_ea, in_hx);
   H_fun(in_x, in_ea, in_H);
-  ZDM pre_H(in_H); 
-  
+  ZDM pre_H(in_H);
+
   // get y (y = z - hx)
   Eigen::Matrix<double, ZDIM, 1> pre_y(in_hx); pre_y = z - pre_y;
   X1M y; XXM H; XXM R;
@@ -69,7 +69,7 @@ void update(double *in_x, double *in_P, Hfun h_fun, Hfun H_fun, Hfun Hea_fun, do
     Hea_fun(in_x, in_ea, in_Hea);
     ZAM Hea(in_Hea);
     XXM A = Hea.transpose().fullPivLu().kernel();
-   
+
 
     y = A.transpose() * pre_y;
     H = A.transpose() * pre_H;
@@ -83,7 +83,7 @@ void update(double *in_x, double *in_P, Hfun h_fun, Hfun H_fun, Hfun Hea_fun, do
   H_mod_fun(in_x, in_H_mod);
   DEM H_mod(in_H_mod);
   XEM H_err = H * H_mod;
-  
+
   // Do mahalobis distance test
   if (MAHA_TEST){
     XXM a = (H_err * P * H_err.transpose() + R).inverse();
@@ -110,8 +110,8 @@ void update(double *in_x, double *in_P, Hfun h_fun, Hfun H_fun, Hfun Hea_fun, do
   memcpy(delta_x, dx.data(), EDIM * sizeof(double));
   err_fun(in_x, delta_x, x_new);
   Eigen::Matrix<double, DIM, 1> x(x_new);
- 
-  // update cov 
+
+  // update cov
   P = ((I_KH * P) * I_KH.transpose()) + ((KT.transpose() * R) * KT);
 
   // copy out state

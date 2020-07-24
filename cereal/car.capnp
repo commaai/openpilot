@@ -93,7 +93,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     driverMonitorLowAcc @68;
     invalidLkasSetting @69;
     speedTooHigh @70;
-    laneChangeBlockedDEPRECATED @71;
+    laneChangeBlocked @71;
     relayMalfunction @72;
     gasPressed @73;
     stockFcw @74;
@@ -105,13 +105,18 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     steerSaturated @80;
     whitePandaUnsupported @81;
     startupWhitePanda @82;
-    canErrorPersistent @83;
+    canErrorPersistentDEPRECATED @83;
     belowEngageSpeed @84;
-    preventLaneChange @85;
-    leftBlindspot @86;
-    rightBlindspot @87;
-    turningIndicatorOn @88;
-    lkasButtonOff @89;
+    noGps @85;
+    focusRecoverActive @86;
+    wrongCruiseMode @87;
+    neosUpdateRequired @88;
+    modeldLagging @89;
+    preventLaneChange @90;
+    turningIndicatorOn @91;
+    lkasButtonOff @92;
+    leftBlindspot @93;
+    rightBlindspot @94;
   }
 }
 
@@ -193,6 +198,7 @@ struct CarState {
     available @2 :Bool;
     speedOffset @3 :Float32;
     standstill @4 :Bool;
+    nonAdaptive @5 :Bool;
   }
 
   enum GearShifter {
@@ -477,6 +483,7 @@ struct CarParams {
     hondaBoschHarness @20;
     volkswagenPq @21;
     subaruLegacy @22;  # pre-Global platform
+    hyundaiLegacy @23;
   }
 
   enum SteerControlType {
