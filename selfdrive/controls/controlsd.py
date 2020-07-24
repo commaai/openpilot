@@ -181,7 +181,7 @@ class Controls:
         self.events.add(EventName.calibrationInvalid)
 
     # Handle lane change
-    if not CS.trailerConnected:
+    if not CS.trailerConnected: 
       if self.sm['pathPlan'].laneChangeState == LaneChangeState.preLaneChange:
         direction = self.sm['pathPlan'].laneChangeDirection
         if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
