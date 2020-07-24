@@ -40,7 +40,7 @@ def main():
   is_rhd_checked = False
   should_exit = False
 
-  def terminate():
+  def terminate(signalNumber, frame):
     print('got SIGTERM, exiting..')
     should_exit = True
     send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
@@ -50,6 +50,7 @@ def main():
     exit()
 
   signal.signal(signal.SIGTERM, terminate)
+  signal.signal(signal.SIGINT, terminate)  # catch ctrl-c as well
 
   while True:
     send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])

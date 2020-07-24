@@ -45,7 +45,7 @@ def main():
     exit()
 
   signal.signal(signal.SIGTERM, terminate)
-  # signal.signal(signal.SIGINT, terminate)
+  signal.signal(signal.SIGINT, terminate)  # catch ctrl-c as well
 
 
 if __name__ == '__main__':
