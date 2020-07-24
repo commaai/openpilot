@@ -463,6 +463,13 @@ EVENTS = {
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1),
   },
 
+  EventName.laneChangeTrailer: {
+    ET.WARNING: Alert(
+      "LCA Unavailable",
+      "LCA not available while trailer is connected",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1),
+  },
   EventName.steerSaturated: {
     ET.WARNING: Alert(
       "TAKE CONTROL",
