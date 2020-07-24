@@ -295,12 +295,12 @@ def attempt_update(exit_event):
             updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
             run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
 
-            cloudlog.info("NEOS background download successful!")
+            cloudlog.info("NEOS background download successful, took {time.monotonic() - start_time} seconds")
             neos_downloaded = True
             break
           except subprocess.CalledProcessError:
-            cloudlog.info("NEOS background download failed, will retry at next wait interval")
-            if not exit_event.wait(timeout=120):
+            cloudlog.info("NEOS background download failed, retrying")
+            if exit_event.wait(timeout=120):
               break
 
         # If the download failed, we'll show the alert again when we retry
@@ -351,9 +351,6 @@ def main():
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
-  # Wait for IsOffroad to be set
-  time.sleep(30)
-
   # Setup a signal handler to immediately trigger an update
   ready_event = threading.Event()
   def set_ready(signum, frame):
@@ -371,6 +368,9 @@ def main():
     ready_event.set()
   signal.signal(signal.SIGTERM, set_do_exit)
   signal.signal(signal.SIGINT, set_do_exit)
+
+  # Wait for IsOffroad to be set
+  ready_event.wait(timeout=30)
 
   # Continuously check for updates
   while not exit_event.is_set():
