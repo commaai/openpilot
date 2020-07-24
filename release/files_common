@@ -280,12 +280,6 @@ selfdrive/locationd/models/constants.py
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py
 
-selfdrive/locationd/locationd_yawrate.cc
-selfdrive/locationd/locationd_yawrate.h
-selfdrive/locationd/params_learner.cc
-selfdrive/locationd/params_learner.h
-selfdrive/locationd/paramsd.cc
-
 selfdrive/logcatd/SConscript
 selfdrive/logcatd/logcatd.cc
 
