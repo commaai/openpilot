@@ -235,7 +235,7 @@ def go(q):
 
       rk.keep_time()
 
-  except:
+  except Exception:
     print("Unexpected error:", sys.exc_info()[0])
 
   finally:
