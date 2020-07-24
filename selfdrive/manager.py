@@ -78,7 +78,7 @@ import traceback
 from multiprocessing import Process
 
 # Run scons
-spinner = Spinner(noop=(__name__ != "main" or not ANDROID))
+spinner = Spinner(noop=(__name__ != "__main__" or not ANDROID))
 spinner.update("0")
 
 if not prebuilt:

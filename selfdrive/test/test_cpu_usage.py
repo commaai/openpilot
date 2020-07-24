@@ -62,25 +62,31 @@ def print_cpu_usage(first_proc, last_proc):
   print(result)
   return r
 
+def all_running():
+  running = manager.get_running()
+  return all(p in running and running[p].is_alive() for p in manager.car_started_processes)
+
 return_code = 1
 def test_thread():
-  global return_code
-  proc_sock = messaging.sub_sock('procLog', conflate=True)
+  try:
+    global return_code
+    proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=1000)
 
-  # wait until everything's started and get first sample
-  time.sleep(30)
-  first_proc = messaging.recv_sock(proc_sock, wait=True)
+    # wait until everything's started and get first sample
+    time.sleep(30)
+    first_proc = messaging.recv_sock(proc_sock, wait=True)
+    if first_proc is None or not all_running():
+      print("\n\nTEST FAILED: all car started processes not running\n\n")
+      raise Exception
 
-  # run for a minute and get last sample
-  time.sleep(60)
-  last_proc = messaging.recv_sock(proc_sock, wait=True)
-
-  running = manager.get_running()
-  all_running = all(p in running and running[p].is_alive() for p in manager.car_started_processes)
-  return_code = print_cpu_usage(first_proc, last_proc)
-  if not all_running:
-    return_code = 1
-  _thread.interrupt_main()
+    # run for a minute and get last sample
+    time.sleep(60)
+    last_proc = messaging.recv_sock(proc_sock, wait=True)
+    return_code = print_cpu_usage(first_proc, last_proc)
+    if not all_running():
+      return_code = 1
+  finally:
+    _thread.interrupt_main()
 
 if __name__ == "__main__":
 
