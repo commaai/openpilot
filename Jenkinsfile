@@ -4,9 +4,9 @@ def phone(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa_public', variable: 'key_file')]) {
     sh label: step_label,
         script: """
-                ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -xle' <<'EOF'
-"echo \$\$ > /dev/cpuset/app/tasks" || true
-"echo \$PPID > /dev/cpuset/app/tasks" || true
+                ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -le' <<'EOF'
+echo \$\$ > /dev/cpuset/app/tasks || true
+echo \$PPID > /dev/cpuset/app/tasks || true
 mkdir -p /dev/shm
 chmod 777 /dev/shm
 cd ${env.TEST_DIR} || true
@@ -72,7 +72,7 @@ pipeline {
             phone_steps("eon", [
               ["build devel", "cd release && ./build_devel.sh"],
               ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
-              ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
+              //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
               ["push devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
             ])
