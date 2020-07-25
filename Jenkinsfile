@@ -26,7 +26,7 @@ def phone_steps(String device_type, steps) {
 pipeline {
   agent {
     docker {
-      image 'ubuntu:latest'
+      image 'python:3.7.3'
       args '--user=root'
     }
   }
