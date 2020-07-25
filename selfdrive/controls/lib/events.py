@@ -207,8 +207,7 @@ def auto_lane_change_alert(CP, sm, metric):
     "Auto Lane Change starts in (%d)" % alc_timer,
     "Monitor Other Vehicles",
     AlertStatus.normal, AlertSize.mid,
-    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
-  )
+    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75)
 
 EVENTS = {
   # ********** events with no alerts **********
