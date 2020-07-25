@@ -104,6 +104,6 @@ if __name__ == '__main__':
   driverview, uiview = True, False
   if len(sys.argv) > 1:
     arg = sys.argv[1].lower().strip()
-    if arg in ['--front', '--ui', '-f', '-u']:
+    if arg in ['--front', '-f']:
       driverview, uiview = False, True
   main(driverview=driverview, uiview=uiview)
