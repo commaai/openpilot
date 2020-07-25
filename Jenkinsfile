@@ -12,15 +12,13 @@ EOF"""
   }
 }
 
-def setup_environment(String ip) {
-  phone(ip, readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
-}
-
-def phone_steps(String device_type, steps) {
+def phone_steps(String device_type, timeout, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-    setup_environment(device_ip)
-    steps.each { item ->
-      phone(device_ip, item[0], item[1])
+    timeout(time: timeout, unit: 'MINUTES') {
+      phone(ip, readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
+      steps.each { item ->
+        phone(device_ip, item[0], item[1])
+      }
     }
   }
 }
@@ -44,12 +42,8 @@ pipeline {
         branch 'devel-staging'
       }
       steps {
-        lock(resource: "", label: 'eon-build', inversePrecedence: true, variable: 'device_ip', quantity: 1){
-          timeout(time: 60, unit: 'MINUTES') {
-            setup_environment(device_ip)
-            phone(device_ip, "cd release && PUSH=1 ./build_release2.sh")
-          }
-        }
+        phone_steps("eon-build", 60,
+                    ["cd release && PUSH=1 ./build_release2.sh", "build release2-staging and dashcam-staging"])
       }
     }
 
@@ -68,37 +62,24 @@ pipeline {
           environment {
             CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
           }
-
           steps {
-            lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'device_ip', quantity: 1){
-              timeout(time: 60, unit: 'MINUTES') {
-                setup_environment(device_ip)
-                phone(device_ip, "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh", "build devel")
-              }
-            }
+            phone_steps("eon", 60, ["cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh", "build devel"])
           }
         }
 
         stage('Replay Tests') {
           steps {
-            lock(resource: "", label: 'eon2', inversePrecedence: true, variable: 'device_ip', quantity: 1){
-              timeout(time: 60, unit: 'MINUTES') {
-                setup_environment(device_ip)
-                phone(device_ip, "cd selfdrive/test/process_replay && ./camera_replay.py", "camerad/modeld replay")
-              }
-            }
+            phone_steps("eon2", 60, ["cd selfdrive/test/process_replay && ./camera_replay.py", "camerad/modeld replay"])
           }
         }
 
         stage('HW Tests') {
           steps {
-            timeout(time: 60, unit: 'MINUTES') {
-              phone_steps('eon', [
-                ["SCONS_CACHE=1 scons -j4 cereal/", "build cereal"],
-                ["nosetests -s selfdrive/test/test_sounds.py", "test sounds"],
-                ["nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py", "test boardd loopback"],
-              ])
-            }
+            phone_steps("eon", [
+              ["SCONS_CACHE=1 scons -j4 cereal/", "build cereal"],
+              ["nosetests -s selfdrive/test/test_sounds.py", "test sounds"],
+              ["nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py", "test boardd loopback"],
+            ])
           }
         }
 
