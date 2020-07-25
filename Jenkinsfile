@@ -11,7 +11,7 @@ EOF"""
   }
 }
 
-def phone_steps(String device_type, timeout, steps) {
+def phone_steps(String device_type, int timeout, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
     timeout(time: timeout, unit: 'MINUTES') {
       phone(ip, readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
