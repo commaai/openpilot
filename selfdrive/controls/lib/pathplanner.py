@@ -12,7 +12,6 @@ from cereal import log
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
-LaneChangeBlocked = log.PathPlan.LaneChangeBlocked
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
@@ -61,7 +60,6 @@ class PathPlanner():
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
     self.pre_auto_LCA_timer = 0.0
-    self.lane_change_Blocked = LaneChangeBlocked.off
     self.prev_torque_applied = False
 
   def setup_mpc(self):
@@ -103,8 +101,10 @@ class PathPlanner():
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
-    left_BlindSpot = sm['carState'].leftBlindspot
-    right_BlindSpot = sm['carState'].rightBlindspot
+    if sm['carState'].leftBlinker:
+      self.lane_change_direction = LaneChangeDirection.left
+    elif sm['carState'].rightBlinker:
+      self.lane_change_direction = LaneChangeDirection.right
 
     if (not active) or (self.lane_change_timer > LANE_CHANGE_TIME_MAX) or (not one_blinker) or (not self.lane_change_enabled):
       self.lane_change_state = LaneChangeState.off
@@ -130,19 +130,12 @@ class PathPlanner():
       elif self.lane_change_state == LaneChangeState.preLaneChange:
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
-          self.lane_change_Blocked = LaneChangeBlocked.off
         elif torque_applied and (not blindspot_detected or self.prev_torque_applied):
           self.lane_change_state = LaneChangeState.laneChangeStarting
-          self.lane_change_Blocked = LaneChangeBlocked.off
-        else:
-          if torque_applied and blindspot_detected:
-            self.lane_change_Blocked = LaneChangeBlocked.left if left_BlindSpot else LaneChangeBlocked.right
-          if not torque_applied and self.lane_change_Blocked != LaneChangeBlocked.off and not self.prev_torque_applied:
-            self.prev_torque_applied = True
-          if not blindspot_detected and self.lane_change_Blocked != LaneChangeBlocked.off:
-            self.lane_change_Blocked = LaneChangeBlocked.off
-            self.prev_torque_applied = False
-            #self.pre_auto_LCA_timer = 0.0          
+        elif torque_applied and blindspot_detected and self.pre_auto_LCA_timer != 10.0:
+          self.pre_auto_LCA_timer = 10.0
+        elif not torque_applied and self.pre_auto_LCA_timer == 10.0 and not self.prev_torque_applied:
+          self.prev_torque_applied = True       
 
       # starting
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
@@ -238,7 +231,6 @@ class PathPlanner():
     plan_send.pathPlan.desire = desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
     plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
-    plan_send.pathPlan.laneChangeBlocked = self.lane_change_Blocked
 
     pm.send('pathPlan', plan_send)
 

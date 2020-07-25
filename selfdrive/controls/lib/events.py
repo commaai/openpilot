@@ -488,30 +488,6 @@ EVENTS = {
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .1),
   },
 
-   EventName.rightBlindspot: {
-     ET.WARNING: Alert(
-       "Vehicle in Right Lane",
-       "Waiting for Lane to be clear",
-       AlertStatus.userPrompt, AlertSize.mid,
-       Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
-   },
-
-   EventName.leftBlindspot: {
-     ET.WARNING: Alert(
-       "Vehicle in Left Lane",
-       "Waiting for Lane to be clear",
-       AlertStatus.userPrompt, AlertSize.mid,
-       Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
-   },
-
-   EventName.preventLaneChange: {
-     ET.WARNING: Alert(
-       "TAKE CONTROL",
-       "Lane Change Cancelled, Lane Unsafe",
-       AlertStatus.critical, AlertSize.full,
-       Priority.HIGH, VisualAlert.none, AudibleAlert.none, .0, .1, .1),
-   },
-
   # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {
