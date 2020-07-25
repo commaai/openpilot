@@ -16,9 +16,7 @@ KILL_TIMEOUT = 15
 def send_controls_packet(pm, d):
   while True:
     dat = messaging.new_message('controlsState')
-    dat.controlsState = {
-      "rearViewCam": d,
-    }
+    dat.controlsState.rearViewCam = d
     pm.send('controlsState', dat)
     time.sleep(1 / 100.)
 
@@ -26,9 +24,7 @@ def send_controls_packet(pm, d):
 def send_thermal_packet(pm):
   while True:
     dat = messaging.new_message('thermal')
-    dat.thermal = {
-      'started': True,
-    }
+    dat.thermal.started = True
     pm.send('thermal', dat)
     time.sleep(1 / 2.)  # 2 hz
 
