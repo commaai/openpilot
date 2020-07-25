@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/bash -e
 
 SOURCE_DIR=/data/openpilot_source
 TARGET_DIR=/data/openpilot
