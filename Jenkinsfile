@@ -16,6 +16,15 @@ def setup_environment(String ip) {
   phone(ip, readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
 }
 
+def phone_steps(String device_type, steps) {
+  lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
+    setup_environment(device_ip)
+    steps.each { item ->
+      phone(device_ip, item[0], item[1])
+    }
+  }
+}
+
 pipeline {
   agent {
     docker {
@@ -83,14 +92,12 @@ pipeline {
 
         stage('HW Tests') {
           steps {
-            lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'device_ip', quantity: 1){
-              timeout(time: 60, unit: 'MINUTES') {
-                setup_environment(device_ip)
-                phone(device_ip, "SCONS_CACHE=1 scons -j4 cereal/", "build cereal")
-                phone(device_ip, "nosetests -s selfdrive/test/test_sounds.py", "test sounds")
-                phone(device_ip, "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py", "test boardd loopback")
-              }
-            }
+            timeout(time: 60, unit: 'MINUTES') {
+              phone_steps('eon', [
+                ["SCONS_CACHE=1 scons -j4 cereal/", "build cereal"],
+                ["nosetests -s selfdrive/test/test_sounds.py", "test sounds"],
+                ["nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py", "test boardd loopback"],
+              ])
           }
         }
 
