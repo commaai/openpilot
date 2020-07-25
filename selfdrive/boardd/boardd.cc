@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <atomic>
 
 #include <assert.h>
 #include <pthread.h>
@@ -72,7 +73,7 @@ const float VBATT_START_CHARGING = 11.5;
 const float VBATT_PAUSE_CHARGING = 11.0;
 #endif
 
-bool safety_setter_thread_initialized = false;
+std::atomic<bool> safety_setter_thread_initialized(false);
 pthread_t safety_setter_thread_handle;
 
 bool pigeon_thread_initialized = false;
@@ -153,14 +154,8 @@ void *safety_setter_thread(void *s) {
   auto safety_param = car_params.getSafetyParam();
   LOGW("setting safety model: %d with param %d", safety_model, safety_param);
 
-  pthread_mutex_lock(&usb_lock);
-
-  // set in the mutex to avoid race
   safety_setter_thread_initialized = false;
-
-  usb_write(dev_handle, 0xdc, safety_model, safety_param);
-
-  pthread_mutex_unlock(&usb_lock);
+  usb_write(dev_handle, 0xdc, safety_model, safety_param, &usb_lock);
 
   return NULL;
 }
