@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
+import os
 import sys
 import time
 import signal
+import subprocess
 import multiprocessing
 import cereal.messaging as messaging
-from selfdrive.manager import start_managed_process, kill_managed_process
+
 from common.params import Params
+from common.basedir import BASEDIR
+
+KILL_TIMEOUT = 15
 
 
 def send_controls_packet(pm, d):
   while True:
-    print(d)
     dat = messaging.new_message('controlsState')
     dat.controlsState = {
       "rearViewCam": d,
@@ -49,12 +53,11 @@ def main(driverview, uiview):
     thermal_sender.start()
   controls_sender.start()
 
-
-  start_managed_process('camerad')
+  proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
   if driverview:
-    start_managed_process('dmonitoringmodeld')
+    proc_mon = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/modeld/dmonitoringmodeld"), cwd=os.path.join(BASEDIR, "selfdrive/modeld"))
   elif uiview:
-    start_managed_process('ui')
+    proc_ui = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/ui/ui"), cwd=os.path.join(BASEDIR, "selfdrive/ui"))
 
   params = Params()
   is_rhd = False
@@ -63,13 +66,23 @@ def main(driverview, uiview):
 
   def terminate(signalNumber, frame):
     print('got SIGTERM, exiting..')
-    kill_managed_process('camerad')
+    proc_cam.send_signal(signal.SIGINT)
+    kill_start = time.time()
+    while proc_cam.poll() is None:
+      if time.time() - kill_start > KILL_TIMEOUT:
+        from selfdrive.swaglog import cloudlog
+        cloudlog.critical("FORCE REBOOTING PHONE!")
+        os.system("date >> /sdcard/unkillable_reboot")
+        os.system("reboot")
+        raise RuntimeError
+      continue
+
     if driverview:
       should_exit = True
       send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
-      kill_managed_process('dmonitoringmodeld')
+      proc_mon.send_signal(signal.SIGINT)
     elif uiview:
-      kill_managed_process('ui')
+      proc_ui.send_signal(signal.SIGINT)
       thermal_sender.terminate()
     controls_sender.terminate()
     exit()
@@ -79,7 +92,6 @@ def main(driverview, uiview):
 
   if driverview:
     while True:
-      print('here')
       send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
       if not is_rhd_checked:
         is_rhd = params.get("IsRHD") == b"1"
