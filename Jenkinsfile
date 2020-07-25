@@ -1,9 +1,8 @@
 def phone(String ip, String cmd, String step_label) {
-  def label_txt = step_label == null || step_label.isEmpty() ? cmd : step_label;
   def ci_env = "CI=1 TEST_DIR=${env.TEST_DIR} GIT_BRANCH=${env.GIT_BRANCH} GIT_COMMIT=${env.GIT_COMMIT}"
 
   withCredentials([file(credentialsId: 'id_rsa_public', variable: 'key_file')]) {
-    sh label: "phone: ${label_txt}",
+    sh label: step_label,
         script: """
                 ssh -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -xle' <<'EOF'
                 cd ${env.TEST_DIR} || true
@@ -26,7 +25,7 @@ def phone_steps(String device_type, timeout, steps) {
 pipeline {
   agent {
     docker {
-      image 'python:3.7.3'
+      image 'ubuntu:latest'
       args '--user=root'
     }
   }
@@ -63,13 +62,15 @@ pipeline {
             CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
           }
           steps {
-            phone_steps("eon", 60, ["cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh", "build devel"])
+            phone_steps("eon", 60,
+                        ["cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh", "build devel"])
           }
         }
 
         stage('Replay Tests') {
           steps {
-            phone_steps("eon2", 60, ["cd selfdrive/test/process_replay && ./camera_replay.py", "camerad/modeld replay"])
+            phone_steps("eon2", 60,
+                        ["cd selfdrive/test/process_replay && ./camera_replay.py", "camerad/modeld replay"])
           }
         }
 

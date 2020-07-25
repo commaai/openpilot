@@ -70,10 +70,10 @@ return_code = 1
 def test_thread():
   try:
     global return_code
-    proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=5000)
+    proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=2000)
 
     # wait until everything's started and get first sample
-    time.sleep(30)
+    time.sleep(45)
     first_proc = messaging.recv_sock(proc_sock, wait=True)
     if first_proc is None or not all_running():
       err_msg = "procLog recv timed out" if first_proc is None else "all car started process not running"
