@@ -36,16 +36,17 @@ class TestCarModel(unittest.TestCase):
       lr = LogReader(get_url(ROUTES[cls.car_model], 0))
 
     has_relay = False
-    cls.can_msgs = []
+    can_msgs = []
     fingerprint = {i: dict() for i in range(3)}
     for msg in lr:
       if msg.which() == "can":
         for m in msg.can:
           if m.src < 128:
             fingerprint[m.src][m.address] = len(m.dat)
-        cls.can_msgs.append(msg)
+        can_msgs.append(msg)
       elif msg.which() == "health":
         has_relay = msg.health.hwType in [HwType.blackPanda, HwType.uno, HwType.dos]
+    cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     CarInterface, CarController, CarState = interfaces[cls.car_model]
 
