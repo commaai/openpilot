@@ -40,7 +40,6 @@ def send_dmon_packet(pm, d):
 
 def main(driverview, uiview):
   pm = messaging.PubMaster(['controlsState', 'dMonitoringState', 'thermal'])
-
   if driverview:
     controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, True])
   elif uiview:
