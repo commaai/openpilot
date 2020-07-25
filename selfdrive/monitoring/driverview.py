@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import time
 import signal
 import multiprocessing
@@ -27,7 +28,7 @@ def send_dmon_packet(pm, d):
   pm.send('dMonitoringState', dat)
 
 
-def main():
+def main(driverview, uiview):
   pm = messaging.PubMaster(['controlsState', 'dMonitoringState'])
   controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm])
   controls_sender.start()
@@ -62,4 +63,8 @@ def main():
 
 
 if __name__ == '__main__':
-  main()
+  print(sys.argv)
+  if len(sys.argv):
+    driverview = True
+    uiview = False
+  main(driverview=driverview, uiview=uiview)
