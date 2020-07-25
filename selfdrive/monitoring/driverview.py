@@ -43,13 +43,11 @@ def main(driverview=True):
   else:
     pm = messaging.PubMaster(['controlsState', 'thermal'])
 
-  rearViewCam = True
   if not driverview:
-    rearViewCam = False
     thermal_sender = multiprocessing.Process(target=send_thermal_packet, args=[pm])
     thermal_sender.start()
 
-  controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, rearViewCam])
+  controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, True if driverview else False])
   controls_sender.start()
 
   # TODO: refactor with manager start/kill
