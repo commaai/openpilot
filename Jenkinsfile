@@ -65,17 +65,19 @@ pipeline {
       parallel {
 
         stage('Build') {
-          environment {
-            CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
-          }
           steps {
-            phone_steps("eon", [
-              ["build devel", "cd release && ./build_devel.sh"],
-              ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
-              //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
-              ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-              ["push devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
-            ])
+            script {
+              def run = [
+                ["build devel", "cd release && ./build_devel.sh"],
+                ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
+                //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
+                ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+              ]
+              if (env.BRANCH_NAME == 'master') {
+                run.add(["push devel", "cd release && CI_PUSH='master-ci' ./build_devel.sh"])
+              }
+            }
+            phone_steps("eon", run)
           }
         }
 
