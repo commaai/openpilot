@@ -15,7 +15,7 @@ def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
     timeout(time: 60, unit: 'MINUTES') {
       phone(device_ip, "kill old processes", "pkill -f comma || true")
-      phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
+      phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
       steps.each { item ->
         phone(device_ip, item[0], item[1])
       }
@@ -42,7 +42,9 @@ pipeline {
         branch 'devel-staging'
       }
       steps {
-        phone_steps("eon-build", [["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"]])
+        phone_steps("eon-build", [
+          ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+        ])
       }
     }
 
@@ -62,13 +64,17 @@ pipeline {
             CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
           }
           steps {
-            phone_steps("eon", [["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"]])
+            phone_steps("eon", [
+              ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
+            ])
           }
         }
 
         stage('Replay Tests') {
           steps {
-            phone_steps("eon2", [["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"]])
+            phone_steps("eon2", [
+              ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
+            ])
           }
         }
 
