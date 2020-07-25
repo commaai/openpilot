@@ -27,7 +27,7 @@ class RadarInterface(RadarInterfaceBase):
     self.delay = int(round(0.1 / CP.radarTimeStep))   # 0.1s delay of radar
 
     # Nidec
-    self.rcp = _create_nidec_can_parser(CP.car_fingerprint)
+    self.rcp = _create_nidec_can_parser(CP.carFingerprint)
     self.trigger_msg = 0x445
     self.updated_messages = set()
 
