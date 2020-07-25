@@ -1,13 +1,4 @@
-#!/usr/bin/env bash
-set -e
-
-mkdir -p /dev/shm
-chmod 777 /dev/shm
-
-# Write cpuset
-echo $$ > /dev/cpuset/app/tasks
-echo $PPID > /dev/cpuset/app/tasks
-
+#!/usr/bin/env bash -e
 
 SOURCE_DIR=/data/openpilot_source
 TARGET_DIR=/data/openpilot
@@ -18,7 +9,7 @@ export GIT_COMMITTER_NAME="Vehicle Researcher"
 export GIT_COMMITTER_EMAIL="user@comma.ai"
 export GIT_AUTHOR_NAME="Vehicle Researcher"
 export GIT_AUTHOR_EMAIL="user@comma.ai"
-export GIT_SSH_COMMAND="ssh -i /tmp/deploy_key"
+export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
 echo "[-] Setting up repo T=$SECONDS"
 if [ ! -d "$TARGET_DIR" ]; then
