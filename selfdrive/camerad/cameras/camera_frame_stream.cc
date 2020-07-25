@@ -32,9 +32,7 @@ void camera_close(CameraState *s) {
   tbuffer_stop(&s->camera_tb);
 }
 
-void camera_release_buffer(void *cookie, int buf_idx) {
-  CameraState *s = static_cast<CameraState *>(cookie);
-}
+void camera_release_buffer(void *cookie, int buf_idx) {}
 
 void camera_init(CameraState *s, int camera_id, unsigned int fps) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
@@ -48,7 +46,6 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps) {
 }
 
 void run_frame_stream(DualCameraState *s) {
-  int err;
   SubMaster sm({"frame"});
 
   CameraState *const rear_camera = &s->rear;
@@ -70,18 +67,8 @@ void run_frame_stream(DualCameraState *s) {
 
     cl_command_queue q = rear_camera->camera_bufs[buf_idx].copy_q;
     cl_mem yuv_cl = rear_camera->camera_bufs[buf_idx].buf_cl;
-    cl_event map_event;
-    void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
-                                                CL_MAP_WRITE, 0, frame.getImage().size(),
-                                                0, NULL, &map_event, &err);
-    assert(err == 0);
-    clWaitForEvents(1, &map_event);
-    clReleaseEvent(map_event);
-    memcpy(yuv_buf, frame.getImage().begin(), frame.getImage().size());
 
-    clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
-    clWaitForEvents(1, &map_event);
-    clReleaseEvent(map_event);
+    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, frame.getImage().size(), frame.getImage().begin(), 0, NULL, NULL);
     tbuffer_dispatch(tb, buf_idx);
   }
 }
@@ -90,11 +77,11 @@ void run_frame_stream(DualCameraState *s) {
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
-      .frame_width = FRAME_WIDTH,
-      .frame_height = FRAME_HEIGHT,
-      .frame_stride = FRAME_WIDTH*3,
-      .bayer = false,
-      .bayer_flip = false,
+    .frame_width = FRAME_WIDTH,
+    .frame_height = FRAME_HEIGHT,
+    .frame_stride = FRAME_WIDTH*3,
+    .bayer = false,
+    .bayer_flip = false,
   },
   [CAMERA_ID_OV8865] = {
     .frame_width = 1632,
@@ -131,7 +118,6 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear,
                   VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
-  int err;
 
   // LOG("*** open front ***");
   camera_open(&s->front, camera_bufs_front, false);

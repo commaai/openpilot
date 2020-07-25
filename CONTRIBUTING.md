@@ -22,7 +22,7 @@ All PRs and commits are automatically checked by Github Actions. Check out `.git
 
 ### Code Style and Linting
 
-Code is automatically checked for style by Github Actions as part of the automated tests. You can also run these tests yourself by running `pylint_openpilot.sh` and `flake8_openpilot.sh`.
+Code is automatically checked for style by Github Actions as part of the automated tests. You can also run these tests yourself by running `pre-commit run --all`.
 
 ## Car Ports (openpilot)
 

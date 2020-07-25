@@ -21,12 +21,12 @@ def enter_download_mode(device):
 def find_first_panda(context=None):
   context = context or usb1.USBContext()
   for device in context.getDeviceList(skip_on_error=True):
-    if device.getVendorID() == 0xbbaa and device.getProductID()&0xFF00 == 0xdd00:
+    if device.getVendorID() == 0xbbaa and device.getProductID() & 0xFF00 == 0xdd00:
       return device
 
 if __name__ == "__main__":
   panda_dev = find_first_panda()
-  if panda_dev == None:
+  if panda_dev is None:
     print("no device found")
     sys.exit(0)
   print("found device")

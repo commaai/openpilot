@@ -52,7 +52,7 @@ void set_power_save_state(int state) {
     // Switch off IR when in power saving
     if(!enable){
       current_board->set_ir_power(0U);
-    }   
+    }
 
     power_save_status = state;
   }

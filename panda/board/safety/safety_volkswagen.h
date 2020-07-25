@@ -174,30 +174,17 @@ static int volkswagen_mqb_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       controls_allowed = ((acc_status == 3) || (acc_status == 4) || (acc_status == 5)) ? 1 : 0;
     }
 
-    // Exit controls on rising edge of gas press
     // Signal: Motor_20.MO_Fahrpedalrohwert_01
     if (addr == MSG_MOTOR_20) {
-      bool gas_pressed = ((GET_BYTES_04(to_push) >> 12) & 0xFF) != 0;
-      if (gas_pressed && !gas_pressed_prev && !(unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS)) {
-        controls_allowed = 0;
-      }
-      gas_pressed_prev = gas_pressed;
+      gas_pressed = ((GET_BYTES_04(to_push) >> 12) & 0xFF) != 0;
     }
 
-    // Exit controls on rising edge of brake press
     // Signal: ESP_05.ESP_Fahrer_bremst
     if (addr == MSG_ESP_05) {
-      bool brake_pressed = (GET_BYTE(to_push, 3) & 0x4) >> 2;
-      if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-        controls_allowed = 0;
-      }
-      brake_pressed_prev = brake_pressed;
+      brake_pressed = (GET_BYTE(to_push, 3) & 0x4) >> 2;
     }
 
-    // If there are HCA messages on bus 0 not sent by OP, there's a relay problem
-    if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (addr == MSG_HCA_01)) {
-      relay_malfunction_set();
-    }
+    generic_rx_checks((addr == MSG_HCA_01));
   }
   return valid;
 }
@@ -207,14 +194,13 @@ static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   bool valid = addr_safety_check(to_push, volkswagen_pq_rx_checks, VOLKSWAGEN_PQ_RX_CHECKS_LEN,
                                 volkswagen_get_checksum, volkswagen_pq_compute_checksum, volkswagen_pq_get_counter);
 
-  if (valid) {
-    int bus = GET_BUS(to_push);
+  if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
 
     // Update in-motion state by sampling front wheel speeds
     // Signal: Bremse_3.Radgeschw__VL_4_1 (front left)
     // Signal: Bremse_3.Radgeschw__VR_4_1 (front right)
-    if ((bus == 0) && (addr == MSG_BREMSE_3)) {
+    if (addr == MSG_BREMSE_3) {
       int wheel_speed_fl = (GET_BYTE(to_push, 0) | (GET_BYTE(to_push, 1) << 8)) >> 1;
       int wheel_speed_fr = (GET_BYTE(to_push, 2) | (GET_BYTE(to_push, 3) << 8)) >> 1;
       // Check for average front speed in excess of 0.3m/s, 1.08km/h
@@ -225,7 +211,7 @@ static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // Update driver input torque samples
     // Signal: Lenkhilfe_3.LH3_LM (absolute torque)
     // Signal: Lenkhilfe_3.LH3_LMSign (direction)
-    if ((bus == 0) && (addr == MSG_LENKHILFE_3)) {
+    if (addr == MSG_LENKHILFE_3) {
       int torque_driver_new = GET_BYTE(to_push, 2) | ((GET_BYTE(to_push, 3) & 0x3) << 8);
       int sign = (GET_BYTE(to_push, 3) & 0x4) >> 2;
       if (sign == 1) {
@@ -236,35 +222,22 @@ static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     // Update ACC status from ECU for controls-allowed state
     // Signal: Motor_2.GRA_Status
-    if ((bus == 0) && (addr == MSG_MOTOR_2)) {
+    if (addr == MSG_MOTOR_2) {
       int acc_status = (GET_BYTE(to_push, 2) & 0xC0) >> 6;
       controls_allowed = ((acc_status == 1) || (acc_status == 2)) ? 1 : 0;
     }
 
-    // Exit controls on rising edge of gas press
     // Signal: Motor_3.Fahrpedal_Rohsignal
-    if ((bus == 0) && (addr == MSG_MOTOR_3)) {
-      int gas_pressed = (GET_BYTE(to_push, 2));
-      if (gas_pressed && !gas_pressed_prev && !(unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS)) {
-        controls_allowed = 0;
-      }
-      gas_pressed_prev = gas_pressed;
+    if (addr == MSG_MOTOR_3) {
+      gas_pressed = (GET_BYTE(to_push, 2));
     }
 
-    // Exit controls on rising edge of brake press
     // Signal: Motor_2.Bremslichtschalter
-    if ((bus == 0) && (addr == MSG_MOTOR_2)) {
-      bool brake_pressed = (GET_BYTE(to_push, 2) & 0x1);
-      if (brake_pressed && (!(brake_pressed_prev) || vehicle_moving)) {
-        controls_allowed = 0;
-      }
-      brake_pressed_prev = brake_pressed;
+    if (addr == MSG_MOTOR_2) {
+      brake_pressed = (GET_BYTE(to_push, 2) & 0x1);
     }
 
-    // If there are HCA messages on bus 0 not sent by OP, there's a relay problem
-    if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && (bus == 0) && (addr == MSG_HCA_1)) {
-      relay_malfunction_set();
-    }
+    generic_rx_checks((addr == MSG_HCA_1));
   }
   return valid;
 }

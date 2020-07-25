@@ -1,0 +1,9 @@
+Import('env')
+
+d = Dir('.')
+
+env.Command(
+  ['transformations.so'],
+  ['transformations.pxd', 'transformations.pyx',
+   'coordinates.cc', 'orientation.cc', 'coordinates.hpp', 'orientation.hpp'],
+  'cd ' + d.path + ' && python3 setup.py build_ext --inplace')

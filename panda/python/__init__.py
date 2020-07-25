@@ -1,6 +1,5 @@
 # python library to interface with panda
 import datetime
-import binascii
 import struct
 import hashlib
 import socket
@@ -30,25 +29,22 @@ def build_st(target, mkfile="Makefile", clean=True):
 
   clean_cmd = "make -f %s clean" % mkfile if clean else ":"
   cmd = 'cd %s && %s && make -f %s %s' % (os.path.join(BASEDIR, "board"), clean_cmd, mkfile, target)
-  try:
-    _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
-  except subprocess.CalledProcessError:
-    raise
+  _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
 
 def parse_can_buffer(dat):
   ret = []
   for j in range(0, len(dat), 0x10):
-    ddat = dat[j:j+0x10]
+    ddat = dat[j:j + 0x10]
     f1, f2 = struct.unpack("II", ddat[0:8])
     extended = 4
     if f1 & extended:
       address = f1 >> 3
     else:
       address = f1 >> 21
-    dddat = ddat[8:8+(f2&0xF)]
+    dddat = ddat[8:8 + (f2 & 0xF)]
     if DEBUG:
-      print("  R %x: %s" % (address, binascii.hexlify(dddat)))
-    ret.append((address, f2>>16, dddat, (f2>>4)&0xFF))
+      print(f"  R 0x{address:x}: 0x{dddat.hex()}")
+    ret.append((address, f2 >> 16, dddat, (f2 >> 4) & 0xFF))
   return ret
 
 class PandaWifiStreaming(object):
@@ -67,7 +63,7 @@ class PandaWifiStreaming(object):
     ret = []
     while True:
       try:
-        dat, addr = self.sock.recvfrom(0x200*0x10)
+        dat, addr = self.sock.recvfrom(0x200 * 0x10)
         if addr == (self.ip, self.port):
           ret += parse_can_buffer(dat)
       except socket.error as e:
@@ -84,7 +80,7 @@ class WifiHandle(object):
   def __recv(self):
     ret = self.sock.recv(0x44)
     length = struct.unpack("I", ret[0:4])[0]
-    return ret[4:4+length]
+    return ret[4:4 + length]
 
   def controlWrite(self, request_type, request, value, index, data, timeout=0):
     # ignore data in reply, panda doesn't use it
@@ -97,7 +93,7 @@ class WifiHandle(object):
   def bulkWrite(self, endpoint, data, timeout=0):
     if len(data) > 0x10:
       raise ValueError("Data must not be longer than 0x10")
-    self.sock.send(struct.pack("HH", endpoint, len(data))+data)
+    self.sock.send(struct.pack("HH", endpoint, len(data)) + data)
     self.__recv()  # to /dev/null
 
   def bulkRead(self, endpoint, length, timeout=0):
@@ -132,6 +128,7 @@ class Panda(object):
   SAFETY_HONDA_BOSCH_HARNESS = 20
   SAFETY_VOLKSWAGEN_PQ = 21
   SAFETY_SUBARU_LEGACY = 22
+  SAFETY_HYUNDAI_LEGACY = 23
 
   SERIAL_DEBUG = 0
   SERIAL_ESP = 1
@@ -161,7 +158,7 @@ class Panda(object):
     self._handle = None
 
   def connect(self, claim=True, wait=False):
-    if self._handle != None:
+    if self._handle is not None:
       self.close()
 
     if self._serial == "WIFI":
@@ -176,7 +173,6 @@ class Panda(object):
       while 1:
         try:
           for device in context.getDeviceList(skip_on_error=True):
-            #print(device)
             if device.getVendorID() == 0xbbaa and device.getProductID() in [0xddcc, 0xddee]:
               try:
                 this_serial = device.getSerialNumber()
@@ -189,19 +185,19 @@ class Panda(object):
                 self.bootstub = device.getProductID() == 0xddee
                 self.legacy = (device.getbcdDevice() != 0x2300)
                 self._handle = device.open()
-                if not sys.platform in ["win32", "cygwin", "msys"]:
+                if sys.platform not in ["win32", "cygwin", "msys"]:
                   self._handle.setAutoDetachKernelDriver(True)
                 if claim:
                   self._handle.claimInterface(0)
-                  #self._handle.setInterfaceAltSetting(0, 0) #Issue in USB stack
+                  # self._handle.setInterfaceAltSetting(0, 0)  # Issue in USB stack
                 break
         except Exception as e:
           print("exception", e)
           traceback.print_exc()
-        if wait == False or self._handle != None:
+        if not wait or self._handle is not None:
           break
-        context = usb1.USBContext() #New context needed so new devices show up
-    assert(self._handle != None)
+        context = usb1.USBContext()  # New context needed so new devices show up
+    assert(self._handle is not None)
     print("connected")
 
   def reset(self, enter_bootstub=False, enter_bootloader=False):
@@ -230,7 +226,7 @@ class Panda(object):
         success = True
         break
       except Exception:
-        print("reconnecting is taking %d seconds..." % (i+1))
+        print("reconnecting is taking %d seconds..." % (i + 1))
         try:
           dfu = PandaDFU(PandaDFU.st_serial_to_dfu_serial(self._serial))
           dfu.recover()
@@ -259,7 +255,7 @@ class Panda(object):
     STEP = 0x10
     print("flash: flashing")
     for i in range(0, len(code), STEP):
-      handle.bulkWrite(2, code[i:i+STEP])
+      handle.bulkWrite(2, code[i:i + STEP])
 
     # reset
     print("flash: resetting")
@@ -321,14 +317,14 @@ class Panda(object):
   def flash_ota_st():
     ret = os.system("cd %s && make clean && make ota" % (os.path.join(BASEDIR, "board")))
     time.sleep(1)
-    return ret==0
+    return ret == 0
 
   @staticmethod
   def flash_ota_wifi(release=False):
     release_str = "RELEASE=1" if release else ""
-    ret = os.system("cd {} && make clean && {} make ota".format(os.path.join(BASEDIR, "boardesp"),release_str))
+    ret = os.system("cd {} && make clean && {} make ota".format(os.path.join(BASEDIR, "boardesp"), release_str))
     time.sleep(1)
-    return ret==0
+    return ret == 0
 
   @staticmethod
   def list():
@@ -344,7 +340,7 @@ class Panda(object):
     except Exception:
       pass
     # TODO: detect if this is real
-    #ret += ["WIFI"]
+    # ret += ["WIFI"]
     return ret
 
   def call_control_api(self, msg):
@@ -382,7 +378,6 @@ class Panda(object):
       self._handle.controlWrite(Panda.REQUEST_OUT, 0xd1, 0, 0, b'')
     except Exception as e:
       print(e)
-      pass
 
   def get_version(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xd6, 0, 0, 0x40).decode('utf8')
@@ -420,7 +415,7 @@ class Panda(object):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd0, 0, 0, 0x20)
     hashsig, calc_hash = dat[0x1c:], hashlib.sha1(dat[0:0x1c]).digest()[0:4]
     assert(hashsig == calc_hash)
-    return [dat[0:0x10].decode("utf8"), dat[0x10:0x10+10].decode("utf8")]
+    return [dat[0:0x10].decode("utf8"), dat[0x10:0x10 + 10].decode("utf8")]
 
   def get_secret(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xd0, 1, 0, 0x10)
@@ -467,10 +462,10 @@ class Panda(object):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf4, int(bus_num), int(enable), b'')
 
   def set_can_speed_kbps(self, bus, speed):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xde, bus, int(speed*10), b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xde, bus, int(speed * 10), b'')
 
   def set_uart_baud(self, uart, rate):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe4, uart, int(rate/300), b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe4, uart, int(rate / 300), b'')
 
   def set_uart_parity(self, uart, parity):
     # parity, 0=off, 1=even, 2=odd
@@ -493,7 +488,7 @@ class Panda(object):
     for addr, _, dat, bus in arr:
       assert len(dat) <= 8
       if DEBUG:
-        print("  W %x: %s" % (addr, binascii.hexlify(dat)))
+        print(f"  W 0x{addr:x}: 0x{dat.hex()}")
       if addr >= 0x800:
         rir = (addr << 3) | transmit | extended
       else:
@@ -504,7 +499,6 @@ class Panda(object):
 
     while True:
       try:
-        #print("DAT: %s"%b''.join(snds).__repr__())
         if self.wifi:
           for s in snds:
             self._handle.bulkWrite(3, s)
@@ -521,7 +515,7 @@ class Panda(object):
     dat = bytearray()
     while True:
       try:
-        dat = self._handle.bulkRead(1, 0x10*256)
+        dat = self._handle.bulkRead(1, 0x10 * 256)
         break
       except (usb1.USBErrorIO, usb1.USBErrorOverflow):
         print("CAN: BAD RECV, RETRYING")
@@ -561,7 +555,7 @@ class Panda(object):
   def serial_write(self, port_number, ln):
     ret = 0
     for i in range(0, len(ln), 0x20):
-      ret += self._handle.bulkWrite(2, struct.pack("B", port_number) + ln[i:i+0x20])
+      ret += self._handle.bulkWrite(2, struct.pack("B", port_number) + ln[i:i + 0x20])
     return ret
 
   def serial_clear(self, port_number):
@@ -577,12 +571,21 @@ class Panda(object):
   # ******************* kline *******************
 
   # pulse low for wakeup
-  def kline_wakeup(self):
+  def kline_wakeup(self, k=True, l=True):
+    assert k or l, "must specify k-line, l-line, or both"
     if DEBUG:
       print("kline wakeup...")
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf0, 0, 0, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf0, 2 if k and l else int(l), 0, b'')
     if DEBUG:
       print("kline wakeup done")
+
+  def kline_5baud(self, addr, k=True, l=True):
+    assert k or l, "must specify k-line, l-line, or both"
+    if DEBUG:
+      print("kline 5 baud...")
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf4, 2 if k and l else int(l), addr, b'')
+    if DEBUG:
+      print("kline 5 baud done")
 
   def kline_drain(self, bus=2):
     # drain buffer
@@ -592,44 +595,40 @@ class Panda(object):
       if len(ret) == 0:
         break
       elif DEBUG:
-        print("kline drain: " + binascii.hexlify(ret))
+        print(f"kline drain: 0x{ret.hex()}")
       bret += ret
     return bytes(bret)
 
   def kline_ll_recv(self, cnt, bus=2):
     echo = bytearray()
     while len(echo) != cnt:
-      ret = self._handle.controlRead(Panda.REQUEST_OUT, 0xe0, bus, 0, cnt-len(echo))
+      ret = self._handle.controlRead(Panda.REQUEST_OUT, 0xe0, bus, 0, cnt - len(echo))
       if DEBUG and len(ret) > 0:
-        print("kline recv: " + binascii.hexlify(ret))
+        print(f"kline recv: 0x{ret.hex()}")
       echo += ret
-    return str(echo)
+    return bytes(echo)
 
   def kline_send(self, x, bus=2, checksum=True):
-    def get_checksum(dat):
-      result = 0
-      result += sum(map(ord, dat)) if isinstance(b'dat', str) else sum(dat)
-      result = -result
-      return struct.pack("B", result % 0x100)
-
     self.kline_drain(bus=bus)
     if checksum:
-      x += get_checksum(x)
+      x += bytes([sum(x) % 0x100])
     for i in range(0, len(x), 0xf):
-      ts = x[i:i+0xf]
+      ts = x[i:i + 0xf]
       if DEBUG:
-        print("kline send: " + binascii.hexlify(ts))
+        print(f"kline send: 0x{ts.hex()}")
       self._handle.bulkWrite(2, bytes([bus]) + ts)
       echo = self.kline_ll_recv(len(ts), bus=bus)
       if echo != ts:
-        print("**** ECHO ERROR %d ****" % i)
-        print(binascii.hexlify(echo))
-        print(binascii.hexlify(ts))
+        print(f"**** ECHO ERROR {i} ****")
+        print(f"0x{echo.hex()}")
+        print(f"0x{ts.hex()}")
     assert echo == ts
 
-  def kline_recv(self, bus=2):
-    msg = self.kline_ll_recv(2, bus=bus)
-    msg += self.kline_ll_recv(ord(msg[1])-2, bus=bus)
+  def kline_recv(self, bus=2, header_len=4):
+    # read header (last byte is length)
+    msg = self.kline_ll_recv(header_len, bus=bus)
+    # read data (add one byte to length for checksum)
+    msg += self.kline_ll_recv(msg[-1]+1, bus=bus)
     return msg
 
   def send_heartbeat(self):
@@ -663,6 +662,6 @@ class Panda(object):
     a = struct.unpack("H", dat)
     return a[0]
 
-# ****************** Phone *****************
+  # ****************** Phone *****************
   def set_phone_power(self, enabled):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xb3, int(enabled), 0, b'')

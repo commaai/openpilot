@@ -6,31 +6,31 @@ from typing import Callable, NamedTuple, Tuple, List, Deque, Generator, Optional
 from enum import IntEnum
 
 class SERVICE_TYPE(IntEnum):
-  DIAGNOSTIC_SESSION_CONTROL         = 0x10
-  ECU_RESET                          = 0x11
-  SECURITY_ACCESS                    = 0x27
-  COMMUNICATION_CONTROL              = 0x28
-  TESTER_PRESENT                     = 0x3E
-  ACCESS_TIMING_PARAMETER            = 0x83
-  SECURED_DATA_TRANSMISSION          = 0x84
-  CONTROL_DTC_SETTING                = 0x85
-  RESPONSE_ON_EVENT                  = 0x86
-  LINK_CONTROL                       = 0x87
-  READ_DATA_BY_IDENTIFIER            = 0x22
-  READ_MEMORY_BY_ADDRESS             = 0x23
-  READ_SCALING_DATA_BY_IDENTIFIER    = 0x24
-  READ_DATA_BY_PERIODIC_IDENTIFIER   = 0x2A
+  DIAGNOSTIC_SESSION_CONTROL = 0x10
+  ECU_RESET = 0x11
+  SECURITY_ACCESS = 0x27
+  COMMUNICATION_CONTROL = 0x28
+  TESTER_PRESENT = 0x3E
+  ACCESS_TIMING_PARAMETER = 0x83
+  SECURED_DATA_TRANSMISSION = 0x84
+  CONTROL_DTC_SETTING = 0x85
+  RESPONSE_ON_EVENT = 0x86
+  LINK_CONTROL = 0x87
+  READ_DATA_BY_IDENTIFIER = 0x22
+  READ_MEMORY_BY_ADDRESS = 0x23
+  READ_SCALING_DATA_BY_IDENTIFIER = 0x24
+  READ_DATA_BY_PERIODIC_IDENTIFIER = 0x2A
   DYNAMICALLY_DEFINE_DATA_IDENTIFIER = 0x2C
-  WRITE_DATA_BY_IDENTIFIER           = 0x2E
-  WRITE_MEMORY_BY_ADDRESS            = 0x3D
-  CLEAR_DIAGNOSTIC_INFORMATION       = 0x14
-  READ_DTC_INFORMATION               = 0x19
+  WRITE_DATA_BY_IDENTIFIER = 0x2E
+  WRITE_MEMORY_BY_ADDRESS = 0x3D
+  CLEAR_DIAGNOSTIC_INFORMATION = 0x14
+  READ_DTC_INFORMATION = 0x19
   INPUT_OUTPUT_CONTROL_BY_IDENTIFIER = 0x2F
-  ROUTINE_CONTROL                    = 0x31
-  REQUEST_DOWNLOAD                   = 0x34
-  REQUEST_UPLOAD                     = 0x35
-  TRANSFER_DATA                      = 0x36
-  REQUEST_TRANSFER_EXIT              = 0x37
+  ROUTINE_CONTROL = 0x31
+  REQUEST_DOWNLOAD = 0x34
+  REQUEST_UPLOAD = 0x35
+  TRANSFER_DATA = 0x36
+  REQUEST_TRANSFER_EXIT = 0x37
 
 class SESSION_TYPE(IntEnum):
   DEFAULT = 1
@@ -271,7 +271,8 @@ _negative_response_codes = {
 
 
 class CanClient():
-  def __init__(self, can_send: Callable[[int, bytes, int], None], can_recv: Callable[[], List[Tuple[int, int, bytes, int]]], tx_addr: int, rx_addr: int, bus: int, sub_addr: int=None, debug: bool=False):
+  def __init__(self, can_send: Callable[[int, bytes, int], None], can_recv: Callable[[], List[Tuple[int, int, bytes, int]]],
+               tx_addr: int, rx_addr: int, bus: int, sub_addr: int = None, debug: bool = False):
     self.tx = can_send
     self.rx = can_recv
     self.tx_addr = tx_addr
@@ -286,30 +287,34 @@ class CanClient():
     if self.tx_addr == 0x7DF:
       is_response = addr >= 0x7E8 and addr <= 0x7EF
       if is_response:
-        if self.debug: print(f"switch to physical addr {hex(addr)}")
-        self.tx_addr = addr-8
+        if self.debug:
+          print(f"switch to physical addr {hex(addr)}")
+        self.tx_addr = addr - 8
         self.rx_addr = addr
       return is_response
     if self.tx_addr == 0x18DB33F1:
       is_response = addr >= 0x18DAF100 and addr <= 0x18DAF1FF
       if is_response:
-        if self.debug: print(f"switch to physical addr {hex(addr)}")
-        self.tx_addr = 0x18DA00F1 + (addr<<8 & 0xFF00)
+        if self.debug:
+          print(f"switch to physical addr {hex(addr)}")
+        self.tx_addr = 0x18DA00F1 + (addr << 8 & 0xFF00)
         self.rx_addr = addr
     return bus == self.bus and addr == self.rx_addr
 
-  def _recv_buffer(self, drain: bool=False) -> None:
+  def _recv_buffer(self, drain: bool = False) -> None:
     while True:
       msgs = self.rx()
       if drain:
-        if self.debug: print("CAN-RX: drain - {}".format(len(msgs)))
+        if self.debug:
+          print("CAN-RX: drain - {}".format(len(msgs)))
         self.rx_buff.clear()
       else:
-        for rx_addr, rx_ts, rx_data, rx_bus in msgs or []:
+        for rx_addr, _, rx_data, rx_bus in msgs or []:
           if self._recv_filter(rx_bus, rx_addr) and len(rx_data) > 0:
             rx_data = bytes(rx_data)  # convert bytearray to bytes
 
-            if self.debug: print(f"CAN-RX: {hex(rx_addr)} - 0x{bytes.hex(rx_data)}")
+            if self.debug:
+              print(f"CAN-RX: {hex(rx_addr)} - 0x{bytes.hex(rx_data)}")
 
             # Cut off sub addr in first byte
             if self.sub_addr is not None:
@@ -320,7 +325,7 @@ class CanClient():
       if len(msgs) < 254:
         return
 
-  def recv(self, drain: bool=False) -> Generator[bytes, None, None]:
+  def recv(self, drain: bool = False) -> Generator[bytes, None, None]:
     # buffer rx messages in case two response messages are received at once
     # (e.g. response pending and success/failure response)
     self._recv_buffer(drain)
@@ -328,18 +333,20 @@ class CanClient():
       while True:
         yield self.rx_buff.popleft()
     except IndexError:
-      pass # empty
+      pass  # empty
 
-  def send(self, msgs: List[bytes], delay: float=0) -> None:
+  def send(self, msgs: List[bytes], delay: float = 0) -> None:
     for i, msg in enumerate(msgs):
       if delay and i != 0:
-        if self.debug: print(f"CAN-TX: delay - {delay}")
+        if self.debug:
+          print(f"CAN-TX: delay - {delay}")
         time.sleep(delay)
 
       if self.sub_addr is not None:
         msg = bytes([self.sub_addr]) + msg
 
-      if self.debug: print(f"CAN-TX: {hex(self.tx_addr)} - 0x{bytes.hex(msg)}")
+      if self.debug:
+        print(f"CAN-TX: {hex(self.tx_addr)} - 0x{bytes.hex(msg)}")
       assert len(msg) <= 8
 
       self.tx(self.tx_addr, msg, self.bus)
@@ -348,7 +355,7 @@ class CanClient():
         self._recv_buffer()
 
 class IsoTpMessage():
-  def __init__(self, can_client: CanClient, timeout: float=1, debug: bool=False, max_len: int=8):
+  def __init__(self, can_client: CanClient, timeout: float = 1, debug: bool = False, max_len: int = 8):
     self._can_client = can_client
     self.timeout = timeout
     self.debug = debug
@@ -368,18 +375,21 @@ class IsoTpMessage():
     self.rx_idx = 0
     self.rx_done = False
 
-    if self.debug: print(f"ISO-TP: REQUEST - 0x{bytes.hex(self.tx_dat)}")
+    if self.debug:
+      print(f"ISO-TP: REQUEST - 0x{bytes.hex(self.tx_dat)}")
     self._tx_first_frame()
 
   def _tx_first_frame(self) -> None:
     if self.tx_len < self.max_len:
       # single frame (send all bytes)
-      if self.debug: print("ISO-TP: TX - single frame")
+      if self.debug:
+        print("ISO-TP: TX - single frame")
       msg = (bytes([self.tx_len]) + self.tx_dat).ljust(self.max_len, b"\x00")
       self.tx_done = True
     else:
       # first frame (send first 6 bytes)
-      if self.debug: print("ISO-TP: TX - first frame")
+      if self.debug:
+        print("ISO-TP: TX - first frame")
       msg = (struct.pack("!H", 0x1000 | self.tx_len) + self.tx_dat[:self.max_len - 2]).ljust(self.max_len - 2, b"\x00")
     self._can_client.send([msg])
 
@@ -397,16 +407,18 @@ class IsoTpMessage():
         if time.time() - start_time > self.timeout:
           raise MessageTimeoutError("timeout waiting for response")
     finally:
-      if self.debug and self.rx_dat: print(f"ISO-TP: RESPONSE - 0x{bytes.hex(self.rx_dat)}")
+      if self.debug and self.rx_dat:
+        print(f"ISO-TP: RESPONSE - 0x{bytes.hex(self.rx_dat)}")
 
   def _isotp_rx_next(self, rx_data: bytes) -> None:
     # single rx_frame
     if rx_data[0] >> 4 == 0x0:
       self.rx_len = rx_data[0] & 0xFF
-      self.rx_dat = rx_data[1:1+self.rx_len]
+      self.rx_dat = rx_data[1:1 + self.rx_len]
       self.rx_idx = 0
       self.rx_done = True
-      if self.debug: print(f"ISO-TP: RX - single frame - idx={self.rx_idx} done={self.rx_done}")
+      if self.debug:
+        print(f"ISO-TP: RX - single frame - idx={self.rx_idx} done={self.rx_done}")
       return
 
     # first rx_frame
@@ -415,8 +427,10 @@ class IsoTpMessage():
       self.rx_dat = rx_data[2:]
       self.rx_idx = 0
       self.rx_done = False
-      if self.debug: print(f"ISO-TP: RX - first frame - idx={self.rx_idx} done={self.rx_done}")
-      if self.debug: print("ISO-TP: TX - flow control continue")
+      if self.debug:
+        print(f"ISO-TP: RX - first frame - idx={self.rx_idx} done={self.rx_done}")
+      if self.debug:
+        print("ISO-TP: TX - flow control continue")
       # send flow control message (send all bytes)
       msg = b"\x30\x00\x00".ljust(self.max_len, b"\x00")
       self._can_client.send([msg])
@@ -424,23 +438,25 @@ class IsoTpMessage():
 
     # consecutive rx frame
     if rx_data[0] >> 4 == 0x2:
-      assert self.rx_done == False, "isotp - rx: consecutive frame with no active frame"
+      assert not self.rx_done, "isotp - rx: consecutive frame with no active frame"
       self.rx_idx += 1
       assert self.rx_idx & 0xF == rx_data[0] & 0xF, "isotp - rx: invalid consecutive frame index"
       rx_size = self.rx_len - len(self.rx_dat)
-      self.rx_dat += rx_data[1:1+rx_size]
+      self.rx_dat += rx_data[1:1 + rx_size]
       if self.rx_len == len(self.rx_dat):
         self.rx_done = True
-      if self.debug: print(f"ISO-TP: RX - consecutive frame - idx={self.rx_idx} done={self.rx_done}")
+      if self.debug:
+        print(f"ISO-TP: RX - consecutive frame - idx={self.rx_idx} done={self.rx_done}")
       return
 
     # flow control
     if rx_data[0] >> 4 == 0x3:
-      assert self.tx_done == False, "isotp - rx: flow control with no active frame"
+      assert not self.tx_done, "isotp - rx: flow control with no active frame"
       assert rx_data[0] != 0x32, "isotp - rx: flow-control overflow/abort"
       assert rx_data[0] == 0x30 or rx_data[0] == 0x31, "isotp - rx: flow-control transfer state indicator invalid"
       if rx_data[0] == 0x30:
-        if self.debug: print("ISO-TP: RX - flow control continue")
+        if self.debug:
+          print("ISO-TP: RX - flow control continue")
         delay_ts = rx_data[2] & 0x7F
         # scale is 1 milliseconds if first bit == 0, 100 micro seconds if first bit == 1
         delay_div = 1000. if rx_data[2] & 0x80 == 0 else 10000.
@@ -455,16 +471,18 @@ class IsoTpMessage():
         for i in range(start, end, num_bytes):
           self.tx_idx += 1
           # consecutive tx messages
-          msg = (bytes([0x20 | (self.tx_idx & 0xF)]) + self.tx_dat[i:i+num_bytes]).ljust(self.max_len, b"\x00")
+          msg = (bytes([0x20 | (self.tx_idx & 0xF)]) + self.tx_dat[i:i + num_bytes]).ljust(self.max_len, b"\x00")
           tx_msgs.append(msg)
         # send consecutive tx messages
         self._can_client.send(tx_msgs, delay=delay_sec)
         if end >= self.tx_len:
           self.tx_done = True
-        if self.debug: print(f"ISO-TP: TX - consecutive frame - idx={self.tx_idx} done={self.tx_done}")
+        if self.debug:
+          print(f"ISO-TP: TX - consecutive frame - idx={self.tx_idx} done={self.tx_done}")
       elif rx_data[0] == 0x31:
         # wait (do nothing until next flow control message)
-        if self.debug: print("ISO-TP: TX - flow control wait")
+        if self.debug:
+          print("ISO-TP: TX - flow control wait")
 
 FUNCTIONAL_ADDRS = [0x7DF, 0x18DB33F1]
 
@@ -478,13 +496,13 @@ def get_rx_addr_for_tx_addr(tx_addr):
 
   if tx_addr > 0x10000000 and tx_addr < 0xFFFFFFFF:
     # standard 29 bit response addr (flip last two bytes)
-    return (tx_addr & 0xFFFF0000) + (tx_addr<<8 & 0xFF00) + (tx_addr>>8 & 0xFF)
+    return (tx_addr & 0xFFFF0000) + (tx_addr << 8 & 0xFF00) + (tx_addr >> 8 & 0xFF)
 
   raise ValueError("invalid tx_addr: {}".format(tx_addr))
 
 
 class UdsClient():
-  def __init__(self, panda, tx_addr: int, rx_addr: int=None, bus: int=0, timeout: float=1, debug: bool=False):
+  def __init__(self, panda, tx_addr: int, rx_addr: int = None, bus: int = 0, timeout: float = 1, debug: bool = False):
     self.bus = bus
     self.tx_addr = tx_addr
     self.rx_addr = rx_addr if rx_addr is not None else get_rx_addr_for_tx_addr(tx_addr)
@@ -493,7 +511,7 @@ class UdsClient():
     self._can_client = CanClient(panda.can_send, panda.can_recv, self.tx_addr, self.rx_addr, self.bus, debug=self.debug)
 
   # generic uds request
-  def _uds_request(self, service_type: SERVICE_TYPE, subfunction: int=None, data: bytes=None) -> bytes:
+  def _uds_request(self, service_type: SERVICE_TYPE, subfunction: int = None, data: bytes = None) -> bytes:
     req = bytes([service_type])
     if subfunction is not None:
       req += bytes([subfunction])
@@ -525,12 +543,13 @@ class UdsClient():
           error_desc = resp[3:].hex()
         # wait for another message if response pending
         if error_code == 0x78:
-          if self.debug: print("UDS-RX: response pending")
+          if self.debug:
+            print("UDS-RX: response pending")
           continue
         raise NegativeResponseError('{} - {}'.format(service_desc, error_desc), service_id, error_code)
 
       # positive response
-      if service_type+0x40 != resp_sid:
+      if service_type + 0x40 != resp_sid:
         resp_sid_hex = hex(resp_sid) if resp_sid is not None else None
         raise InvalidServiceIdError('invalid response service id: {}'.format(resp_sid_hex))
 
@@ -554,7 +573,7 @@ class UdsClient():
       power_down_time = resp[0]
       return power_down_time
 
-  def security_access(self, access_type: ACCESS_TYPE, security_key: bytes=None):
+  def security_access(self, access_type: ACCESS_TYPE, security_key: bytes = None):
     request_seed = access_type % 2 != 0
     if request_seed and security_key is not None:
       raise ValueError('security_key not allowed')
@@ -572,12 +591,10 @@ class UdsClient():
   def tester_present(self, ):
     self._uds_request(SERVICE_TYPE.TESTER_PRESENT, subfunction=0x00)
 
-  def access_timing_parameter(self, timing_parameter_type: TIMING_PARAMETER_TYPE, parameter_values: bytes=None):
+  def access_timing_parameter(self, timing_parameter_type: TIMING_PARAMETER_TYPE, parameter_values: bytes = None):
     write_custom_values = timing_parameter_type == TIMING_PARAMETER_TYPE.SET_TO_GIVEN_VALUES
-    read_values = (
-      timing_parameter_type == TIMING_PARAMETER_TYPE.READ_CURRENTLY_ACTIVE or
-      timing_parameter_type == TIMING_PARAMETER_TYPE.READ_EXTENDED_SET
-    )
+    read_values = (timing_parameter_type == TIMING_PARAMETER_TYPE.READ_CURRENTLY_ACTIVE or
+                   timing_parameter_type == TIMING_PARAMETER_TYPE.READ_EXTENDED_SET)
     if not write_custom_values and parameter_values is not None:
       raise ValueError('parameter_values not allowed')
     if write_custom_values and parameter_values is None:
@@ -597,7 +614,8 @@ class UdsClient():
   def control_dtc_setting(self, dtc_setting_type: DTC_SETTING_TYPE):
     self._uds_request(SERVICE_TYPE.CONTROL_DTC_SETTING, subfunction=dtc_setting_type)
 
-  def response_on_event(self, response_event_type: RESPONSE_EVENT_TYPE, store_event: bool, window_time: int, event_type_record: int, service_response_record: int):
+  def response_on_event(self, response_event_type: RESPONSE_EVENT_TYPE, store_event: bool, window_time: int,
+                        event_type_record: int, service_response_record: int):
     if store_event:
       response_event_type |= 0x20  # type: ignore
     # TODO: split record parameters into arrays
@@ -607,17 +625,17 @@ class UdsClient():
     if response_event_type == RESPONSE_EVENT_TYPE.REPORT_ACTIVATED_EVENTS:
       return {
         "num_of_activated_events": resp[0],
-        "data": resp[1:], # TODO: parse the reset of response
+        "data": resp[1:],  # TODO: parse the reset of response
       }
 
     return {
       "num_of_identified_events": resp[0],
       "event_window_time": resp[1],
-      "data": resp[2:], # TODO: parse the reset of response
+      "data": resp[2:],  # TODO: parse the reset of response
     }
 
-  def link_control(self, link_control_type: LINK_CONTROL_TYPE, baud_rate_type: BAUD_RATE_TYPE=None):
-    data : Optional[bytes]
+  def link_control(self, link_control_type: LINK_CONTROL_TYPE, baud_rate_type: BAUD_RATE_TYPE = None):
+    data: Optional[bytes]
 
     if link_control_type == LINK_CONTROL_TYPE.VERIFY_BAUDRATE_TRANSITION_WITH_FIXED_BAUDRATE:
       # baud_rate_type = BAUD_RATE_TYPE
@@ -638,19 +656,19 @@ class UdsClient():
       raise ValueError('invalid response data identifier: {}'.format(hex(resp_id)))
     return resp[2:]
 
-  def read_memory_by_address(self, memory_address: int, memory_size: int, memory_address_bytes: int=4, memory_size_bytes: int=1):
+  def read_memory_by_address(self, memory_address: int, memory_size: int, memory_address_bytes: int = 4, memory_size_bytes: int = 1):
     if memory_address_bytes < 1 or memory_address_bytes > 4:
       raise ValueError('invalid memory_address_bytes: {}'.format(memory_address_bytes))
     if memory_size_bytes < 1 or memory_size_bytes > 4:
       raise ValueError('invalid memory_size_bytes: {}'.format(memory_size_bytes))
-    data = bytes([memory_size_bytes<<4 | memory_address_bytes])
+    data = bytes([memory_size_bytes << 4 | memory_address_bytes])
 
-    if memory_address >= 1<<(memory_address_bytes*8):
+    if memory_address >= 1 << (memory_address_bytes * 8):
       raise ValueError('invalid memory_address: {}'.format(memory_address))
-    data += struct.pack('!I', memory_address)[4-memory_address_bytes:]
-    if memory_size >= 1<<(memory_size_bytes*8):
+    data += struct.pack('!I', memory_address)[4 - memory_address_bytes:]
+    if memory_size >= 1 << (memory_size_bytes * 8):
       raise ValueError('invalid memory_size: {}'.format(memory_size))
-    data += struct.pack('!I', memory_size)[4-memory_size_bytes:]
+    data += struct.pack('!I', memory_size)[4 - memory_size_bytes:]
 
     resp = self._uds_request(SERVICE_TYPE.READ_MEMORY_BY_ADDRESS, subfunction=None, data=data)
     return resp
@@ -661,14 +679,15 @@ class UdsClient():
     resp_id = struct.unpack('!H', resp[0:2])[0] if len(resp) >= 2 else None
     if resp_id != data_identifier_type:
       raise ValueError('invalid response data identifier: {}'.format(hex(resp_id)))
-    return resp[2:] # TODO: parse the response
+    return resp[2:]  # TODO: parse the response
 
   def read_data_by_periodic_identifier(self, transmission_mode_type: TRANSMISSION_MODE_TYPE, periodic_data_identifier: int):
     # TODO: support list of identifiers
     data = bytes([transmission_mode_type, periodic_data_identifier])
     self._uds_request(SERVICE_TYPE.READ_DATA_BY_PERIODIC_IDENTIFIER, subfunction=None, data=data)
 
-  def dynamically_define_data_identifier(self, dynamic_definition_type: DYNAMIC_DEFINITION_TYPE, dynamic_data_identifier: int, source_definitions: List[DynamicSourceDefinition], memory_address_bytes: int=4, memory_size_bytes: int=1):
+  def dynamically_define_data_identifier(self, dynamic_definition_type: DYNAMIC_DEFINITION_TYPE, dynamic_data_identifier: int,
+                                         source_definitions: List[DynamicSourceDefinition], memory_address_bytes: int = 4, memory_size_bytes: int = 1):
     if memory_address_bytes < 1 or memory_address_bytes > 4:
       raise ValueError('invalid memory_address_bytes: {}'.format(memory_address_bytes))
     if memory_size_bytes < 1 or memory_size_bytes > 4:
@@ -679,14 +698,14 @@ class UdsClient():
       for s in source_definitions:
         data += struct.pack('!H', s.data_identifier) + bytes([s.position, s.memory_size])
     elif dynamic_definition_type == DYNAMIC_DEFINITION_TYPE.DEFINE_BY_MEMORY_ADDRESS:
-      data += bytes([memory_size_bytes<<4 | memory_address_bytes])
+      data += bytes([memory_size_bytes << 4 | memory_address_bytes])
       for s in source_definitions:
-        if s.memory_address >= 1<<(memory_address_bytes*8):
+        if s.memory_address >= 1 << (memory_address_bytes * 8):
           raise ValueError('invalid memory_address: {}'.format(s.memory_address))
-        data += struct.pack('!I', s.memory_address)[4-memory_address_bytes:]
-        if s.memory_size >= 1<<(memory_size_bytes*8):
+        data += struct.pack('!I', s.memory_address)[4 - memory_address_bytes:]
+        if s.memory_size >= 1 << (memory_size_bytes * 8):
           raise ValueError('invalid memory_size: {}'.format(s.memory_size))
-        data += struct.pack('!I', s.memory_size)[4-memory_size_bytes:]
+        data += struct.pack('!I', s.memory_size)[4 - memory_size_bytes:]
     elif dynamic_definition_type == DYNAMIC_DEFINITION_TYPE.CLEAR_DYNAMICALLY_DEFINED_DATA_IDENTIFIER:
       pass
     else:
@@ -700,64 +719,67 @@ class UdsClient():
     if resp_id != data_identifier_type:
       raise ValueError('invalid response data identifier: {}'.format(hex(resp_id)))
 
-  def write_memory_by_address(self, memory_address: int, memory_size: int, data_record: bytes, memory_address_bytes: int=4, memory_size_bytes: int=1):
+  def write_memory_by_address(self, memory_address: int, memory_size: int, data_record: bytes, memory_address_bytes: int = 4, memory_size_bytes: int = 1):
     if memory_address_bytes < 1 or memory_address_bytes > 4:
       raise ValueError('invalid memory_address_bytes: {}'.format(memory_address_bytes))
     if memory_size_bytes < 1 or memory_size_bytes > 4:
       raise ValueError('invalid memory_size_bytes: {}'.format(memory_size_bytes))
-    data = bytes([memory_size_bytes<<4 | memory_address_bytes])
+    data = bytes([memory_size_bytes << 4 | memory_address_bytes])
 
-    if memory_address >= 1<<(memory_address_bytes*8):
+    if memory_address >= 1 << (memory_address_bytes * 8):
       raise ValueError('invalid memory_address: {}'.format(memory_address))
-    data += struct.pack('!I', memory_address)[4-memory_address_bytes:]
-    if memory_size >= 1<<(memory_size_bytes*8):
+    data += struct.pack('!I', memory_address)[4 - memory_address_bytes:]
+    if memory_size >= 1 << (memory_size_bytes * 8):
       raise ValueError('invalid memory_size: {}'.format(memory_size))
-    data += struct.pack('!I', memory_size)[4-memory_size_bytes:]
+    data += struct.pack('!I', memory_size)[4 - memory_size_bytes:]
 
     data += data_record
     self._uds_request(SERVICE_TYPE.WRITE_MEMORY_BY_ADDRESS, subfunction=0x00, data=data)
 
   def clear_diagnostic_information(self, dtc_group_type: DTC_GROUP_TYPE):
-    data = struct.pack('!I', dtc_group_type)[1:] # 3 bytes
+    data = struct.pack('!I', dtc_group_type)[1:]  # 3 bytes
     self._uds_request(SERVICE_TYPE.CLEAR_DIAGNOSTIC_INFORMATION, subfunction=None, data=data)
 
-  def read_dtc_information(self, dtc_report_type: DTC_REPORT_TYPE, dtc_status_mask_type: DTC_STATUS_MASK_TYPE=DTC_STATUS_MASK_TYPE.ALL, dtc_severity_mask_type: DTC_SEVERITY_MASK_TYPE=DTC_SEVERITY_MASK_TYPE.ALL, dtc_mask_record: int=0xFFFFFF, dtc_snapshot_record_num: int=0xFF, dtc_extended_record_num: int=0xFF):
+  def read_dtc_information(self, dtc_report_type: DTC_REPORT_TYPE, dtc_status_mask_type: DTC_STATUS_MASK_TYPE = DTC_STATUS_MASK_TYPE.ALL,
+                           dtc_severity_mask_type: DTC_SEVERITY_MASK_TYPE = DTC_SEVERITY_MASK_TYPE.ALL, dtc_mask_record: int = 0xFFFFFF,
+                           dtc_snapshot_record_num: int = 0xFF, dtc_extended_record_num: int = 0xFF):
     data = b''
     # dtc_status_mask_type
     if dtc_report_type == DTC_REPORT_TYPE.NUMBER_OF_DTC_BY_STATUS_MASK or \
-      dtc_report_type == DTC_REPORT_TYPE.DTC_BY_STATUS_MASK or \
-      dtc_report_type == DTC_REPORT_TYPE.MIRROR_MEMORY_DTC_BY_STATUS_MASK or \
-      dtc_report_type == DTC_REPORT_TYPE.NUMBER_OF_MIRROR_MEMORY_DTC_BY_STATUS_MASK or \
-      dtc_report_type == DTC_REPORT_TYPE.NUMBER_OF_EMISSIONS_RELATED_OBD_DTC_BY_STATUS_MASK or \
-      dtc_report_type == DTC_REPORT_TYPE.EMISSIONS_RELATED_OBD_DTC_BY_STATUS_MASK:
-      data += bytes([dtc_status_mask_type])
+       dtc_report_type == DTC_REPORT_TYPE.DTC_BY_STATUS_MASK or \
+       dtc_report_type == DTC_REPORT_TYPE.MIRROR_MEMORY_DTC_BY_STATUS_MASK or \
+       dtc_report_type == DTC_REPORT_TYPE.NUMBER_OF_MIRROR_MEMORY_DTC_BY_STATUS_MASK or \
+       dtc_report_type == DTC_REPORT_TYPE.NUMBER_OF_EMISSIONS_RELATED_OBD_DTC_BY_STATUS_MASK or \
+       dtc_report_type == DTC_REPORT_TYPE.EMISSIONS_RELATED_OBD_DTC_BY_STATUS_MASK:
+       data += bytes([dtc_status_mask_type])
     # dtc_mask_record
     if dtc_report_type == DTC_REPORT_TYPE.DTC_SNAPSHOT_IDENTIFICATION or \
-      dtc_report_type == DTC_REPORT_TYPE.DTC_SNAPSHOT_RECORD_BY_DTC_NUMBER or \
-      dtc_report_type == DTC_REPORT_TYPE.DTC_EXTENDED_DATA_RECORD_BY_DTC_NUMBER or \
-      dtc_report_type == DTC_REPORT_TYPE.MIRROR_MEMORY_DTC_EXTENDED_DATA_RECORD_BY_DTC_NUMBER or \
-      dtc_report_type == DTC_REPORT_TYPE.SEVERITY_INFORMATION_OF_DTC:
-      data += struct.pack('!I', dtc_mask_record)[1:] # 3 bytes
+       dtc_report_type == DTC_REPORT_TYPE.DTC_SNAPSHOT_RECORD_BY_DTC_NUMBER or \
+       dtc_report_type == DTC_REPORT_TYPE.DTC_EXTENDED_DATA_RECORD_BY_DTC_NUMBER or \
+       dtc_report_type == DTC_REPORT_TYPE.MIRROR_MEMORY_DTC_EXTENDED_DATA_RECORD_BY_DTC_NUMBER or \
+       dtc_report_type == DTC_REPORT_TYPE.SEVERITY_INFORMATION_OF_DTC:
+       data += struct.pack('!I', dtc_mask_record)[1:]  # 3 bytes
     # dtc_snapshot_record_num
     if dtc_report_type == DTC_REPORT_TYPE.DTC_SNAPSHOT_IDENTIFICATION or \
-      dtc_report_type == DTC_REPORT_TYPE.DTC_SNAPSHOT_RECORD_BY_DTC_NUMBER or \
-      dtc_report_type == DTC_REPORT_TYPE.DTC_SNAPSHOT_RECORD_BY_RECORD_NUMBER:
-      data += bytes([dtc_snapshot_record_num])
+       dtc_report_type == DTC_REPORT_TYPE.DTC_SNAPSHOT_RECORD_BY_DTC_NUMBER or \
+       dtc_report_type == DTC_REPORT_TYPE.DTC_SNAPSHOT_RECORD_BY_RECORD_NUMBER:
+       data += bytes([dtc_snapshot_record_num])
     # dtc_extended_record_num
     if dtc_report_type == DTC_REPORT_TYPE.DTC_EXTENDED_DATA_RECORD_BY_DTC_NUMBER or \
-      dtc_report_type == DTC_REPORT_TYPE.MIRROR_MEMORY_DTC_EXTENDED_DATA_RECORD_BY_DTC_NUMBER:
-      data += bytes([dtc_extended_record_num])
+       dtc_report_type == DTC_REPORT_TYPE.MIRROR_MEMORY_DTC_EXTENDED_DATA_RECORD_BY_DTC_NUMBER:
+       data += bytes([dtc_extended_record_num])
     # dtc_severity_mask_type
     if dtc_report_type == DTC_REPORT_TYPE.NUMBER_OF_DTC_BY_SEVERITY_MASK_RECORD or \
-      dtc_report_type == DTC_REPORT_TYPE.DTC_BY_SEVERITY_MASK_RECORD:
-      data += bytes([dtc_severity_mask_type, dtc_status_mask_type])
+       dtc_report_type == DTC_REPORT_TYPE.DTC_BY_SEVERITY_MASK_RECORD:
+       data += bytes([dtc_severity_mask_type, dtc_status_mask_type])
 
     resp = self._uds_request(SERVICE_TYPE.READ_DTC_INFORMATION, subfunction=dtc_report_type, data=data)
 
     # TODO: parse response
     return resp
 
-  def input_output_control_by_identifier(self, data_identifier_type: DATA_IDENTIFIER_TYPE, control_parameter_type: CONTROL_PARAMETER_TYPE, control_option_record: bytes, control_enable_mask_record: bytes=b''):
+  def input_output_control_by_identifier(self, data_identifier_type: DATA_IDENTIFIER_TYPE, control_parameter_type: CONTROL_PARAMETER_TYPE,
+                                         control_option_record: bytes, control_enable_mask_record: bytes = b''):
     data = struct.pack('!H', data_identifier_type) + bytes([control_parameter_type]) + control_option_record + control_enable_mask_record
     resp = self._uds_request(SERVICE_TYPE.INPUT_OUTPUT_CONTROL_BY_IDENTIFIER, subfunction=None, data=data)
     resp_id = struct.unpack('!H', resp[0:2])[0] if len(resp) >= 2 else None
@@ -765,7 +787,7 @@ class UdsClient():
       raise ValueError('invalid response data identifier: {}'.format(hex(resp_id)))
     return resp[2:]
 
-  def routine_control(self, routine_control_type: ROUTINE_CONTROL_TYPE, routine_identifier_type: ROUTINE_IDENTIFIER_TYPE, routine_option_record: bytes=b''):
+  def routine_control(self, routine_control_type: ROUTINE_CONTROL_TYPE, routine_identifier_type: ROUTINE_IDENTIFIER_TYPE, routine_option_record: bytes = b''):
     data = struct.pack('!H', routine_identifier_type) + routine_option_record
     resp = self._uds_request(SERVICE_TYPE.ROUTINE_CONTROL, subfunction=routine_control_type, data=data)
     resp_id = struct.unpack('!H', resp[0:2])[0] if len(resp) >= 2 else None
@@ -773,57 +795,57 @@ class UdsClient():
       raise ValueError('invalid response routine identifier: {}'.format(hex(resp_id)))
     return resp[2:]
 
-  def request_download(self, memory_address: int, memory_size: int, memory_address_bytes: int=4, memory_size_bytes: int=4, data_format: int=0x00):
+  def request_download(self, memory_address: int, memory_size: int, memory_address_bytes: int = 4, memory_size_bytes: int = 4, data_format: int = 0x00):
     data = bytes([data_format])
 
     if memory_address_bytes < 1 or memory_address_bytes > 4:
       raise ValueError('invalid memory_address_bytes: {}'.format(memory_address_bytes))
     if memory_size_bytes < 1 or memory_size_bytes > 4:
       raise ValueError('invalid memory_size_bytes: {}'.format(memory_size_bytes))
-    data += bytes([memory_size_bytes<<4 | memory_address_bytes])
+    data += bytes([memory_size_bytes << 4 | memory_address_bytes])
 
-    if memory_address >= 1<<(memory_address_bytes*8):
+    if memory_address >= 1 << (memory_address_bytes * 8):
       raise ValueError('invalid memory_address: {}'.format(memory_address))
-    data += struct.pack('!I', memory_address)[4-memory_address_bytes:]
-    if memory_size >= 1<<(memory_size_bytes*8):
+    data += struct.pack('!I', memory_address)[4 - memory_address_bytes:]
+    if memory_size >= 1 << (memory_size_bytes * 8):
       raise ValueError('invalid memory_size: {}'.format(memory_size))
-    data += struct.pack('!I', memory_size)[4-memory_size_bytes:]
+    data += struct.pack('!I', memory_size)[4 - memory_size_bytes:]
 
     resp = self._uds_request(SERVICE_TYPE.REQUEST_DOWNLOAD, subfunction=None, data=data)
     max_num_bytes_len = resp[0] >> 4 if len(resp) > 0 else 0
     if max_num_bytes_len >= 1 and max_num_bytes_len <= 4:
-      max_num_bytes = struct.unpack('!I', (b"\x00"*(4-max_num_bytes_len))+resp[1:max_num_bytes_len+1])[0]
+      max_num_bytes = struct.unpack('!I', (b"\x00" * (4 - max_num_bytes_len)) + resp[1:max_num_bytes_len + 1])[0]
     else:
       raise ValueError('invalid max_num_bytes_len: {}'.format(max_num_bytes_len))
 
-    return max_num_bytes # max number of bytes per transfer data request
+    return max_num_bytes  # max number of bytes per transfer data request
 
-  def request_upload(self, memory_address: int, memory_size: int, memory_address_bytes: int=4, memory_size_bytes: int=4, data_format: int=0x00):
+  def request_upload(self, memory_address: int, memory_size: int, memory_address_bytes: int = 4, memory_size_bytes: int = 4, data_format: int = 0x00):
     data = bytes([data_format])
 
     if memory_address_bytes < 1 or memory_address_bytes > 4:
       raise ValueError('invalid memory_address_bytes: {}'.format(memory_address_bytes))
     if memory_size_bytes < 1 or memory_size_bytes > 4:
       raise ValueError('invalid memory_size_bytes: {}'.format(memory_size_bytes))
-    data += bytes([memory_size_bytes<<4 | memory_address_bytes])
+    data += bytes([memory_size_bytes << 4 | memory_address_bytes])
 
-    if memory_address >= 1<<(memory_address_bytes*8):
+    if memory_address >= 1 << (memory_address_bytes * 8):
       raise ValueError('invalid memory_address: {}'.format(memory_address))
-    data += struct.pack('!I', memory_address)[4-memory_address_bytes:]
-    if memory_size >= 1<<(memory_size_bytes*8):
+    data += struct.pack('!I', memory_address)[4 - memory_address_bytes:]
+    if memory_size >= 1 << (memory_size_bytes * 8):
       raise ValueError('invalid memory_size: {}'.format(memory_size))
-    data += struct.pack('!I', memory_size)[4-memory_size_bytes:]
+    data += struct.pack('!I', memory_size)[4 - memory_size_bytes:]
 
     resp = self._uds_request(SERVICE_TYPE.REQUEST_UPLOAD, subfunction=None, data=data)
     max_num_bytes_len = resp[0] >> 4 if len(resp) > 0 else 0
     if max_num_bytes_len >= 1 and max_num_bytes_len <= 4:
-      max_num_bytes = struct.unpack('!I', (b"\x00"*(4-max_num_bytes_len))+resp[1:max_num_bytes_len+1])[0]
+      max_num_bytes = struct.unpack('!I', (b"\x00" * (4 - max_num_bytes_len)) + resp[1:max_num_bytes_len + 1])[0]
     else:
       raise ValueError('invalid max_num_bytes_len: {}'.format(max_num_bytes_len))
 
-    return max_num_bytes # max number of bytes per transfer data request
+    return max_num_bytes  # max number of bytes per transfer data request
 
-  def transfer_data(self, block_sequence_count: int, data: bytes=b''):
+  def transfer_data(self, block_sequence_count: int, data: bytes = b''):
     data = bytes([block_sequence_count]) + data
     resp = self._uds_request(SERVICE_TYPE.TRANSFER_DATA, subfunction=None, data=data)
     resp_id = resp[0] if len(resp) > 0 else None

@@ -12,6 +12,7 @@ def int_or_float(s):
   else:
     return float(s)
 
+
 DBCSignal = namedtuple(
   "DBCSignal", ["name", "start_bit", "size", "is_little_endian", "is_signed",
                 "factor", "offset", "tmin", "tmax", "units"])
@@ -41,7 +42,7 @@ class dbc():
     self.def_vals = defaultdict(list)
 
     # lookup to bit reverse each byte
-    self.bits_index = [(i & ~0b111) + ((-i-1) & 0b111) for i in range(64)]
+    self.bits_index = [(i & ~0b111) + ((-i - 1) & 0b111) for i in range(64)]
 
     for l in self.txt:
       l = l.strip()
@@ -103,7 +104,7 @@ class dbc():
 
         # convert strings to UPPER_CASE_WITH_UNDERSCORES
         defvals[1::2] = [d.strip().upper().replace(" ", "_") for d in defvals[1::2]]
-        defvals = '"'+"".join(str(i) for i in defvals)+'"'
+        defvals = '"' + "".join(str(i) for i in defvals) + '"'
 
         self.def_vals[ids].append((sgname, defvals))
 
@@ -193,12 +194,12 @@ class dbc():
     if arr is None:
       out = {}
     else:
-      out = [None]*len(arr)
+      out = [None] * len(arr)
 
     msg = self.msgs.get(x[0])
     if msg is None:
       if x[0] not in self._warned_addresses:
-        #print("WARNING: Unknown message address {}".format(x[0]))
+        # print("WARNING: Unknown message address {}".format(x[0]))
         self._warned_addresses.add(x[0])
       return None, None
 

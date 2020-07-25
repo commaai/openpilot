@@ -41,6 +41,17 @@ medmodel_intrinsics = np.array(
    [   0. ,  eon_focal_length / medmodel_zoom,  MEDMODEL_CY],
    [   0. ,                            0. ,   1.]])
 
+# CAL model
+CALMODEL_INPUT_SIZE = (512, 256)
+CALMODEL_YUV_SIZE = (CALMODEL_INPUT_SIZE[0], CALMODEL_INPUT_SIZE[1] * 3 // 2)
+CALMODEL_CY = 47.6
+
+calmodel_zoom = 1.5
+calmodel_intrinsics = np.array(
+  [[ eon_focal_length / calmodel_zoom,    0. ,  0.5 * CALMODEL_INPUT_SIZE[0]],
+   [   0. ,  eon_focal_length / calmodel_zoom,  CALMODEL_CY],
+   [   0. ,                            0. ,   1.]])
+
 
 # BIG model
 
@@ -100,7 +111,7 @@ def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height=model
 
   # This function is super slow, so skip it if height is very close to canonical
   # TODO: speed it up!
-  if abs(height - model_height) > 0.001: #
+  if abs(height - model_height) > 0.001:
     camera_from_model_camera = get_model_height_transform(camera_frame_from_road_frame, height)
   else:
     camera_from_model_camera = np.eye(3)

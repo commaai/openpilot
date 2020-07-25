@@ -12,8 +12,8 @@ def apply_deadzone(error, deadzone):
 
 class PIController():
   def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
-    self._k_p = k_p # proportional gain
-    self._k_i = k_i # integral gain
+    self._k_p = k_p  # proportional gain
+    self._k_i = k_i  # integral gain
     self.k_f = k_f  # feedforward gain
 
     self.pos_limit = pos_limit
@@ -73,7 +73,7 @@ class PIController():
 
       # Update when changing i will move the control away from the limits
       # or when i will move towards the sign of the error
-      if ((error >= 0 and (control <= self.pos_limit or i < 0.0)) or \
+      if ((error >= 0 and (control <= self.pos_limit or i < 0.0)) or
           (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
          not freeze_integrator:
         self.i = i

@@ -50,7 +50,6 @@ class TestSimpleKalman(unittest.TestCase):
       self.assertAlmostEqual(x_old[0], x[0])
       self.assertAlmostEqual(x_old[1], x[1])
 
-
   def test_new_is_faster(self):
     setup = """
 import numpy as np
