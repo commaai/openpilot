@@ -1,4 +1,4 @@
-def phone(String ip, String cmd, String step_label) {
+def phone(String ip, String step_label, String cmd) {
   def ci_env = "CI=1 TEST_DIR=${env.TEST_DIR} GIT_BRANCH=${env.GIT_BRANCH} GIT_COMMIT=${env.GIT_COMMIT}"
 
   withCredentials([file(credentialsId: 'id_rsa_public', variable: 'key_file')]) {
@@ -14,8 +14,8 @@ EOF"""
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
     timeout(time: 60, unit: 'MINUTES') {
-      phone(device_ip, "pkill -f comma && pkill -f selfdrive", "kill old processes")
-      phone(device_ip, readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
+      phone(device_ip, "kill old processes", "pkill -f comma || true")
+      phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
       steps.each { item ->
         phone(device_ip, item[0], item[1])
       }
@@ -42,7 +42,7 @@ pipeline {
         branch 'devel-staging'
       }
       steps {
-        phone_steps("eon-build", [["cd release && PUSH=1 ./build_release2.sh", "build release2-staging and dashcam-staging"]])
+        phone_steps("eon-build", [["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"]])
       }
     }
 
@@ -62,22 +62,22 @@ pipeline {
             CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
           }
           steps {
-            phone_steps("eon", [["cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh", "build devel"]])
+            phone_steps("eon", [["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"]])
           }
         }
 
         stage('Replay Tests') {
           steps {
-            phone_steps("eon2", [["cd selfdrive/test/process_replay && ./camera_replay.py", "camerad/modeld replay"]])
+            phone_steps("eon2", [["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"]])
           }
         }
 
         stage('HW Tests') {
           steps {
             phone_steps("eon", [
-              ["SCONS_CACHE=1 scons -j4 cereal/", "build cereal"],
-              ["nosetests -s selfdrive/test/test_sounds.py", "test sounds"],
-              ["nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py", "test boardd loopback"],
+              ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
+              ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
+              ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
             ])
           }
         }
