@@ -43,7 +43,7 @@ def send_dmon_packet(pm, d):
   pm.send('dMonitoringState', dat)
 
 
-def main(driverview, uiview):
+def main(driverview=True, uiview=False):
   pm = messaging.PubMaster(['controlsState', 'dMonitoringState', 'thermal'])
 
   rearViewCam = True
@@ -103,9 +103,9 @@ def main(driverview, uiview):
 
 
 if __name__ == '__main__':
-  driverview, uiview = True, False
+  args = {}
   if len(sys.argv) > 1:
     arg = sys.argv[1].lower().strip()
     if arg in ['--front', '-f']:
-      driverview, uiview = False, True
-  main(driverview=driverview, uiview=uiview)
+      args['driverview'], args['uiview'] = False, True
+  main(**args)
