@@ -20,7 +20,7 @@ def send_controls_packet(pm, d):
       "rearViewCam": d,
     }
     pm.send('controlsState', dat)
-    time.sleep(1 / 100)
+    time.sleep(1 / 100.)
 
 
 def send_thermal_packet(pm):
@@ -105,7 +105,7 @@ def main(driverview=True, uiview=False):
         is_rhd = params.get("IsRHD") == b"1"
         is_rhd_checked = True
 
-      time.sleep(0.01)
+      time.sleep(1 / 100.)
 
 
 if __name__ == '__main__':
