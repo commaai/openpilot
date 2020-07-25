@@ -1,6 +1,7 @@
 def phone(String ip, String cmd, String step_label) {
   def label_txt = step_label == null || step_label.isEmpty() ? cmd : step_label;
   def ci_env = "CI=1 TEST_DIR=${env.TEST_DIR} GIT_BRANCH=${env.GIT_BRANCH} GIT_COMMIT=${env.GIT_COMMIT}"
+
   sh label: "phone: ${label_txt}",
      script: """
              ssh -o StrictHostKeyChecking=no -i selfdrive/test/id_rsa -p 8022 root@${ip} '${ci_env} /usr/bin/bash -xle' <<'EOF'
@@ -34,10 +35,8 @@ pipeline {
       steps {
         lock(resource: "", label: 'eon-build', inversePrecedence: true, variable: 'device_ip', quantity: 1){
           timeout(time: 60, unit: 'MINUTES') {
-            dir(path: 'selfdrive/test') {
-              sh 'pip install paramiko'
-              sh 'python phone_ci.py "cd release && PUSH=1 ./build_release2.sh"'
-            }
+            setup_environment(device_ip)
+            phone(device_ip, "cd release && PUSH=1 ./build_release2.sh")
           }
         }
       }
@@ -54,7 +53,6 @@ pipeline {
 
       parallel {
 
-        /*
         stage('Build') {
           environment {
             CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
@@ -63,15 +61,12 @@ pipeline {
           steps {
             lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'device_ip', quantity: 1){
               timeout(time: 60, unit: 'MINUTES') {
-                dir(path: 'selfdrive/test') {
-                  sh 'pip install paramiko'
-                  sh 'python phone_ci.py "cd release && ./build_devel.sh"'
-                }
+                setup_environment(device_ip)
+                phone(device_ip, "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh", "build devel")
               }
             }
           }
         }
-        */
 
         stage('Replay Tests') {
           steps {
@@ -84,22 +79,18 @@ pipeline {
           }
         }
 
-        /*
         stage('HW Tests') {
           steps {
             lock(resource: "", label: 'eon', inversePrecedence: true, variable: 'device_ip', quantity: 1){
               timeout(time: 60, unit: 'MINUTES') {
-                dir(path: 'selfdrive/test') {
-                  sh 'pip install paramiko'
-                  sh 'python phone_ci.py "SCONS_CACHE=1 scons -j3 cereal/ && \
-                                          nosetests -s selfdrive/test/test_sounds.py && \
-                                          nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"'
-                }
+                setup_environment(device_ip)
+                phone(device_ip, "SCONS_CACHE=1 scons -j4 cereal/", "build cereal")
+                phone(device_ip, "nosetests -s selfdrive/test/test_sounds.py", "test sounds")
+                phone(device_ip, "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py", "test boardd loopback")
               }
             }
           }
         }
-        */
 
       }
     }
