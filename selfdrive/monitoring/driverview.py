@@ -60,6 +60,7 @@ def main(driverview=True, uiview=False):
   controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, rearViewCam])
   controls_sender.start()
 
+  # TODO: refactor with manager start/kill
   proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
   if driverview:
     proc_mon = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/modeld/dmonitoringmodeld"), cwd=os.path.join(BASEDIR, "selfdrive/modeld"))
