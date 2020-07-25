@@ -14,8 +14,8 @@ EOF"""
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
     timeout(time: 60, unit: 'MINUTES') {
-      phone(ip, "pkill -f comma && pkill -f selfdrive", "kill old processes")
-      phone(ip, readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
+      phone(device_ip, "pkill -f comma && pkill -f selfdrive", "kill old processes")
+      phone(device_ip, readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
       steps.each { item ->
         phone(device_ip, item[0], item[1])
       }
