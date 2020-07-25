@@ -29,6 +29,8 @@ def send_dmon_packet(pm, d):
 
 
 def main(driverview, uiview):
+  print(driverview)
+  print(uiview)
   pm = messaging.PubMaster(['controlsState', 'dMonitoringState'])
   controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm])
   controls_sender.start()
@@ -63,8 +65,9 @@ def main(driverview, uiview):
 
 
 if __name__ == '__main__':
-  print(sys.argv)
-  if len(sys.argv):
-    driverview = True
-    uiview = False
+  driverview, uiview = True, False
+  if len(sys.argv) > 1:
+    arg = sys.argv[1].lower().strip()
+    if arg in ['--front', '--ui', '-f', '-u']:
+      driverview, uiview = False, True
   main(driverview=driverview, uiview=uiview)
