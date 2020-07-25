@@ -120,6 +120,8 @@ class TestCarModel(unittest.TestCase):
     failed_addrs = Counter()
     for can in self.can_msgs:
       for msg in can.can:
+        if msg.src >= 128:
+          continue
         to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
         if not safety.safety_rx_hook(to_send):
           failed_addrs[hex(msg.address)] += 1
