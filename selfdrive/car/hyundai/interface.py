@@ -30,10 +30,10 @@ class CarInterface(CarInterfaceBase):
     # Most Hyundai car ports are community features for now
     ret.communityFeature = candidate not in [CAR.SONATA]
 
-    ret.steerActuatorDelay = 0.1  # Default delay
-    ret.steerRateCost = 0.5
-    ret.steerLimitTimer = 0.8
-    tire_stiffness_factor = 1.
+    ret.steerActuatorDelay = 0.08  # 0.1 Default delay
+    ret.steerRateCost = 0.5        # 0.5 Default delay
+    ret.steerLimitTimer = 0.8     # 0.8 Default delay
+    tire_stiffness_factor = 1.     # 1. Default delay
 
     if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
       ret.lateralTuning.pid.kf = 0.00005
@@ -101,14 +101,24 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.069
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
-    elif candidate in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3558. * CV.LB_TO_KG
-      ret.wheelbase = 2.80
-      ret.steerRatio = 13.75
-      tire_stiffness_factor = 0.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate in [CAR.KIA_SPORTAGE, CAR.KIA_OPTIMA_H]:
+      if candidate == CAR.KIA_SPORTAGE:
+        ret.lateralTuning.pid.kf = 0.00005
+        ret.mass = 1499. + STD_CARGO_KG
+        ret.wheelbase = 2.66
+        ret.steerRatio = 16.5
+        ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
+        ret.minSteerSpeed = 0.
+        #tire_stiffness_factor = 0.5
+      else:
+        ret.lateralTuning.pid.kf = 0.00005
+        ret.mass = 3558. * CV.LB_TO_KG
+        ret.wheelbase = 2.80
+        ret.steerRatio = 13.75
+        tire_stiffness_factor = 0.5
+        ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.init('indi')
       ret.lateralTuning.indi.innerLoopGain = 3.0
@@ -163,14 +173,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate == CAR.KIA_SPORTAGE:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1985. + STD_CARGO_KG
-      ret.wheelbase = 2.78
-      ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minSteerSpeed = 0.
     elif candidate in [CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_EV]:
       if candidate == CAR.KIA_NIRO_EV:
         ret.lateralTuning.init('indi')
@@ -275,7 +277,7 @@ class CarInterface(CarInterfaceBase):
     if not self.CP.openpilotLongitudinalControl:
       ret.cruiseState.enabled = ret.cruiseState.available
     # some Optima only has blinker flash signal
-    if self.CP.carFingerprint == CAR.KIA_OPTIMA:
+    if self.CP.carFingerprint == CAR.KIA_SPORTAGE:
       ret.leftBlinker = bool(self.CS.left_blinker_flash or self.CS.prev_left_blinker and self.CC.turning_signal_timer)
       ret.rightBlinker = bool(self.CS.right_blinker_flash or self.CS.prev_right_blinker and self.CC.turning_signal_timer)
 
