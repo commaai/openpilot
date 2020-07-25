@@ -7,7 +7,7 @@ import sys
 
 import cereal.messaging as messaging
 import selfdrive.manager as manager
-
+from selfdrive.test.helpers import set_params_enabled
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
@@ -91,12 +91,14 @@ def test_thread():
 
 if __name__ == "__main__":
 
+
   # setup signal handler to exit with test status
   def handle_exit(sig, frame):
     sys.exit(return_code)
   signal.signal(signal.SIGINT, handle_exit)
 
   # start manager and test thread
+  set_params_enabled()
   t = threading.Thread(target=test_thread)
   t.daemon = True
   t.start()
