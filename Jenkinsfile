@@ -98,6 +98,7 @@ pipeline {
                 ["nosetests -s selfdrive/test/test_sounds.py", "test sounds"],
                 ["nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py", "test boardd loopback"],
               ])
+            }
           }
         }
 
