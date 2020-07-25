@@ -6,6 +6,7 @@ import signal
 import sys
 
 import cereal.messaging as messaging
+from common.params import Params
 import selfdrive.manager as manager
 from selfdrive.test.helpers import set_params_enabled
 
@@ -73,7 +74,11 @@ def test_thread():
     proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=2000)
 
     # wait until everything's started and get first sample
-    time.sleep(45)
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < 120:
+      if Params().get("CarParams") is not None:
+        break
+      time.sleep(2)
     first_proc = messaging.recv_sock(proc_sock, wait=True)
     if first_proc is None or not all_running():
       err_msg = "procLog recv timed out" if first_proc is None else "all car started process not running"
@@ -99,6 +104,8 @@ if __name__ == "__main__":
 
   # start manager and test thread
   set_params_enabled()
+  Params().delete("CarParams")
+
   t = threading.Thread(target=test_thread)
   t.daemon = True
   t.start()
