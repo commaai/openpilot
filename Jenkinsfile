@@ -65,7 +65,17 @@ pipeline {
           }
           steps {
             phone_steps("eon", [
-              ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
+              ["build devel", "cd release && ./build_devel.sh"],
+              ["set params for tests", '''
+                echo -n "0" > /data/params/d/Passive
+                echo -n "0.2.0" > /data/params/d/CompletedTrainingVersion
+                echo -n "1" > /data/params/d/HasCompletedSetup
+                echo -n "1" > /data/params/d/CommunityFeaturesToggle
+              '''],
+              ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
+              ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
+              ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+              ["push devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
             ])
           }
         }
