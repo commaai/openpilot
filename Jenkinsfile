@@ -2,12 +2,14 @@ def phone(String ip, String cmd, String step_label) {
   def label_txt = step_label == null || step_label.isEmpty() ? cmd : step_label;
   def ci_env = "CI=1 TEST_DIR=${env.TEST_DIR} GIT_BRANCH=${env.GIT_BRANCH} GIT_COMMIT=${env.GIT_COMMIT}"
 
-  sh label: "phone: ${label_txt}",
-     script: """
-             ssh -o StrictHostKeyChecking=no -i selfdrive/test/id_rsa -p 8022 root@${ip} '${ci_env} /usr/bin/bash -xle' <<'EOF'
-             cd ${env.TEST_DIR} || true
-             ${cmd}
+  withCredentials([file(credentialsId: 'id_rsa_public', variable: 'key_file')]) {
+    sh label: "phone: ${label_txt}",
+        script: """
+                ssh -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -xle' <<'EOF'
+                cd ${env.TEST_DIR} || true
+                ${cmd}
 EOF"""
+  }
 }
 
 def setup_environment(String ip) {
