@@ -114,6 +114,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     modeldLagging @89;
     turningIndicatorOn @91;
     lkasButtonOff @92;
+    autoLaneChange @93;
   }
 }
 

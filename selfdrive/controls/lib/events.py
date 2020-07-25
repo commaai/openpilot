@@ -201,6 +201,15 @@ def wrong_car_mode_alert(CP, sm, metric):
     text = "Main Switch Off"
   return NoEntryAlert(text, duration_hud_alert=0.)
 
+def auto_lane_change_alert(CP, sm, metric):
+  alc_timer = sm['pathPlan'].autoLaneChangeTimer
+  return Alert(
+    "Auto Lane Change starts in (%d)" % alc_timer,
+    "Monitor Other Vehicles",
+    AlertStatus.normal, AlertSize.mid,
+    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
+  )
+
 EVENTS = {
   # ********** events with no alerts **********
 
@@ -486,6 +495,10 @@ EVENTS = {
       "",
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .1),
+  },
+
+  EventName.autoLaneChange: {
+    ET.WARNING: auto_lane_change_alert,
   },
 
   # ********** events that affect controls state transitions **********

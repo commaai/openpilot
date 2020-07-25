@@ -59,7 +59,7 @@ class PathPlanner():
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
-    self.pre_auto_LCA_timer = 0.0
+    self.auto_lane_change_timer = 0.0
     self.prev_torque_applied = False
 
   def setup_mpc(self):
@@ -113,7 +113,7 @@ class PathPlanner():
       torque_applied = sm['carState'].steeringPressed and \
                        ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                         (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right)) or \
-                        CP.autoLcaEnabled and self.pre_auto_LCA_timer == 2.25
+                        CP.autoLcaEnabled and self.auto_lane_change_timer == 3.
 
       blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                             (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
@@ -132,9 +132,9 @@ class PathPlanner():
           self.lane_change_state = LaneChangeState.off
         elif torque_applied and (not blindspot_detected or self.prev_torque_applied):
           self.lane_change_state = LaneChangeState.laneChangeStarting
-        elif torque_applied and blindspot_detected and self.pre_auto_LCA_timer != 10.0:
-          self.pre_auto_LCA_timer = 10.0
-        elif not torque_applied and self.pre_auto_LCA_timer == 10.0 and not self.prev_torque_applied:
+        elif torque_applied and blindspot_detected and self.auto_lane_change_timer != 10.0:
+          self.auto_lane_change_timer = 10.0
+        elif not torque_applied and self.auto_lane_change_timer == 10.0 and not self.prev_torque_applied:
           self.prev_torque_applied = True       
 
       # starting
@@ -160,10 +160,10 @@ class PathPlanner():
       self.lane_change_timer += DT_MDL
 
     if self.lane_change_state == LaneChangeState.off:
-      self.pre_auto_LCA_timer = 0.0
+      self.auto_lane_change_timer = 0.0
       self.prev_torque_applied = False
-    elif self.pre_auto_LCA_timer < 3.: # stop afer 3 sec resume from 10 when torque applied
-      self.pre_auto_LCA_timer += DT_MDL
+    elif self.auto_lane_change_timer < 3.25: # stop afer 3 sec resume from 10 when torque applied
+      self.auto_lane_change_timer += DT_MDL
 
     self.prev_one_blinker = one_blinker
 
@@ -231,6 +231,7 @@ class PathPlanner():
     plan_send.pathPlan.desire = desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
     plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
+    plan_send.pathPlan.autoLaneChangeTimer = 3 - int(self.auto_lane_change_timer)
 
     pm.send('pathPlan', plan_send)
 
