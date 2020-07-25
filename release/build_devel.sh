@@ -80,10 +80,4 @@ if [ ! -z "$CI_PUSH" ]; then
   git push -f origin master-ci:$CI_PUSH
 fi
 
-echo "[-] done pushing T=$SECONDS"
-
-# reset version
-cd $SOURCE_DIR
-git checkout -- selfdrive/common/version.h
-
 echo "[-] done T=$SECONDS"
