@@ -2,7 +2,6 @@
 
 from selfdrive.car import dbc_dict
 from cereal import car
-Ecu = car.CarParams.Ecu
 
 
 class SteerLimitParams:
@@ -82,32 +81,18 @@ FINGERPRINTS = {
 
 
 DBC = {
-  CAR.PACIFICA_2017_HYBRID: dbc_dict(
-    'chrysler_pacifica_2017_hybrid',  # 'pt'
-    'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
-  CAR.PACIFICA_2018: dbc_dict(  # Same DBC file works.
-    'chrysler_pacifica_2017_hybrid',  # 'pt'
-    'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
-  CAR.PACIFICA_2020: dbc_dict(  # Same DBC file works.
-    'chrysler_pacifica_2017_hybrid',  # 'pt'
-    'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
-  CAR.PACIFICA_2018_HYBRID: dbc_dict(  # Same DBC file works.
-    'chrysler_pacifica_2017_hybrid',  # 'pt'
-    'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
-  CAR.PACIFICA_2019_HYBRID: dbc_dict(  # Same DBC file works.
-    'chrysler_pacifica_2017_hybrid',  # 'pt'
-    'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
-  CAR.JEEP_CHEROKEE: dbc_dict(  # Same DBC file works.
-    'chrysler_pacifica_2017_hybrid',  # 'pt'
-    'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
-  CAR.JEEP_CHEROKEE_2019: dbc_dict(  # Same DBC file works.
-    'chrysler_pacifica_2017_hybrid',  # 'pt'
-    'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
+  CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.PACIFICA_2018: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.PACIFICA_2020: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.PACIFICA_2018_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.PACIFICA_2019_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.JEEP_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
 }
 
 STEER_THRESHOLD = 120
 
 
 ECU_FINGERPRINT = {
-  Ecu.fwdCamera: [0x292],   # lkas cmd
+  car.CarParams.Ecu.fwdCamera: [0x292],  # lkas cmd
 }
