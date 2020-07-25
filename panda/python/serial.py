@@ -7,21 +7,16 @@ class PandaSerial(object):
     self.panda.set_uart_baud(self.port, baud)
     self.buf = b""
 
-  def read(self, l=1):
+  def read(self, l=1):  # noqa: E741
     tt = self.panda.serial_read(self.port)
     if len(tt) > 0:
-      #print "R: ", tt.encode("hex")
       self.buf += tt
     ret = self.buf[0:l]
     self.buf = self.buf[l:]
     return ret
 
   def write(self, dat):
-    #print "W: ", dat.encode("hex")
-    #print '  pigeon_send("' + ''.join(map(lambda x: "\\x%02X" % ord(x), dat)) + '");'
     return self.panda.serial_write(self.port, dat)
 
   def close(self):
     pass
-
-

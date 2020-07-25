@@ -14,7 +14,7 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 3.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.carName = "toyota"
@@ -23,7 +23,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
 
-    if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]: # These cars use LQR/INDI
+    if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]:  # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 
@@ -207,7 +207,7 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.8702
-      ret.steerRatio = 16.0 # not optimized
+      ret.steerRatio = 16.0  # not optimized
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3704. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
@@ -248,7 +248,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam = 73
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
-      tire_stiffness_factor = 0.444 # not optimized yet
+      tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 4070 * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006

@@ -1,3 +1,5 @@
+# flake8: noqa
+
 from cereal import car
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
@@ -29,9 +31,6 @@ class CanBus:
   OBSTACLE = 1
   CHASSIS = 2
   SW_GMLAN = 3
-
-def is_eps_status_ok(eps_status, car_fingerprint):
-  return eps_status in [0, 1]
 
 FINGERPRINTS = {
   # Astra BK MY17, ASCM unplugged

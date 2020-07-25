@@ -155,7 +155,6 @@ void gps_destroy() {
 }
 
 int main() {
-  int err = 0;
   setpriority(PRIO_PROCESS, 0, -13);
 
   signal(SIGINT, (sighandler_t)set_do_exit);

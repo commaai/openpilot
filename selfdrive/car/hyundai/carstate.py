@@ -86,16 +86,16 @@ class CarState(CarStateBase):
     # TODO: Check this
     ret.brakeLights = bool(cp.vl["TCS13"]['BrakeLight'] or ret.brakePressed)
 
-    #TODO: find pedal signal for EV/HYBRID Cars
-    ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100 if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
-                cp.vl["E_EMS11"]['Accel_Pedal_Pos'] / 100
+    if self.CP.carFingerprint in FEATURES["use_elect_ems"]:
+      ret.gas = cp.vl["E_EMS11"]['Accel_Pedal_Pos'] / 256.
+      ret.gasPressed = ret.gas > 5
+    else:
+      ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100
+      ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 
-    ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"]) if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
-                cp.vl["E_EMS11"]['Accel_Pedal_Pos'] > 5
-
-    ret.espDisabled = cp.vl["TCS15"]['ESC_Off_Step'] != 0
-
-    # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
+    # TODO: refactor gear parsing in function
+    # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
+    # as this seems to be standard over all cars, but is not the preferred method.
     if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
         ret.gearShifter = GearShifter.drive
@@ -121,7 +121,7 @@ class CarState(CarStateBase):
     # Gear Selecton - This is only compatible with optima hybrid 2017
     elif self.CP.carFingerprint in FEATURES["use_elect_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
-      if gear in (5, 8): # 5: D, 8: sport mode
+      if gear in (5, 8):  # 5: D, 8: sport mode
         ret.gearShifter = GearShifter.drive
       elif gear == 6:
         ret.gearShifter = GearShifter.neutral
@@ -134,7 +134,7 @@ class CarState(CarStateBase):
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
-      if gear in (5, 8): # 5: D, 8: sport mode
+      if gear in (5, 8):  # 5: D, 8: sport mode
         ret.gearShifter = GearShifter.drive
       elif gear == 6:
         ret.gearShifter = GearShifter.neutral
@@ -144,6 +144,13 @@ class CarState(CarStateBase):
         ret.gearShifter = GearShifter.reverse
       else:
         ret.gearShifter = GearShifter.unknown
+
+    if self.CP.carFingerprint in FEATURES["use_fca"]:
+      ret.stockAeb = cp.vl["FCA11"]['FCA_CmdAct'] != 0
+      ret.stockFcw = cp.vl["FCA11"]['CF_VSM_Warn'] == 2
+    else:
+      ret.stockAeb = cp.vl["SCC12"]['AEB_CmdAct'] != 0
+      ret.stockFcw = cp.vl["SCC12"]['CF_VSM_Warn'] == 2
 
     # Blind Spot Detection and Lane Change Assist signals
     self.lca_state = cp.vl["LCA11"]["CF_Lca_Stat"]
@@ -253,7 +260,6 @@ class CarState(CarStateBase):
       ("CF_VSM_Stat", "SCC12", 0),
       ("CF_VSM_BeltCmd", "SCC12", 0),
       ("ACCFailInfo", "SCC12", 0),
-      ("ACCMode", "SCC12", 0),
       ("StopReq", "SCC12", 0),
       ("CR_VSM_DecCmd", "SCC12", 0),
       ("aReqRaw", "SCC12", 0), #aReqMax
@@ -267,6 +273,7 @@ class CarState(CarStateBase):
       ("AEB_StopReq", "SCC12", 0),
       ("CR_VSM_Alive", "SCC12", 0),
       ("CR_VSM_ChkSum", "SCC12", 0),
+
       ("SCCDrvModeRValue", "SCC13", 2),
       ("SCC_Equip", "SCC13", 1),
       ("AebDrvSetStatus", "SCC13", 0),
@@ -322,7 +329,7 @@ class CarState(CarStateBase):
       signals += [
         ("CRUISE_LAMP_M", "EMS16", 0),
         ("CF_Lvr_CruiseSet", "LVR12", 0),
-      ]
+    ]
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
       signals += [
         ("CF_Clu_InhibitD", "CLU15", 0),
@@ -345,7 +352,6 @@ class CarState(CarStateBase):
     if CP.carFingerprint not in FEATURES["use_elect_ems"]:
       signals += [
         ("PV_AV_CAN", "EMS12", 0),
-
         ("CF_Ems_AclAct", "EMS16", 0),
       ]
       checks += [
@@ -360,6 +366,14 @@ class CarState(CarStateBase):
       checks += [
         ("E_EMS11", 100),
       ]
+
+    if CP.carFingerprint in FEATURES["use_fca"]:
+      signals += [
+        ("FCA_CmdAct", "FCA11", 0),
+        ("CF_VSM_Warn", "FCA11", 0),
+      ]
+      checks += [("FCA11", 50)]
+
     if CP.carFingerprint in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
       checks.remove(("TCS13", 50))
     if CP.spasEnabled:
@@ -386,6 +400,7 @@ class CarState(CarStateBase):
           ("CF_Mdps_Stat", "MDPS11", 0),
         ]
         checks += [("MDPS11", 100)]
+
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
   @staticmethod
@@ -452,7 +467,6 @@ class CarState(CarStateBase):
         ("CF_VSM_Stat", "SCC12", 0),
         ("CF_VSM_BeltCmd", "SCC12", 0),
         ("ACCFailInfo", "SCC12", 0),
-        ("ACCMode", "SCC12", 0),
         ("StopReq", "SCC12", 0),
         ("CR_VSM_DecCmd", "SCC12", 0),
         ("aReqRaw", "SCC12", 0), #aReqMax
@@ -534,7 +548,6 @@ class CarState(CarStateBase):
         ("CF_VSM_Stat", "SCC12", 0),
         ("CF_VSM_BeltCmd", "SCC12", 0),
         ("ACCFailInfo", "SCC12", 0),
-        ("ACCMode", "SCC12", 0),
         ("StopReq", "SCC12", 0),
         ("CR_VSM_DecCmd", "SCC12", 0),
         ("aReqRaw", "SCC12", 0), #aReqMax
@@ -564,3 +577,4 @@ class CarState(CarStateBase):
         ("SCC12", 50),
       ]
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+

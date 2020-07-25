@@ -1475,3 +1475,6 @@ BO_ 1157 LFAHDA_MFC: 4 XXX
  SG_ ACTIVE2 : 4|2@0+ (1,0) [0|3] "" XXX
  SG_ HDA_USM : 0|2@1+ (1,0) [0|3] "" XXX
  SG_ ACTIVE : 25|1@1+ (1,0) [0|3] "" XXX
+
+
+VAL_ 909 CF_VSM_Warn 2 "FCW" 3 "AEB";

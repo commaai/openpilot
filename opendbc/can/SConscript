@@ -16,12 +16,8 @@ for x in sorted(os.listdir('../')):
 
 libdbc = env.SharedLibrary('libdbc', ["dbc.cc", "parser.cc", "packer.cc", "common.cc"]+dbcs, LIBS=["capnp", "kj"])
 
-# packer
-env.Command(['packer_pyx.so'],
-  [libdbc, 'packer_pyx.pyx', 'packer_pyx_setup.py'],
-  "cd opendbc/can && python3 packer_pyx_setup.py build_ext --inplace")
+# Build packer and parser
 
-# parser
-env.Command(['parser_pyx.so'],
-  [libdbc, cereal, 'parser_pyx_setup.py', 'parser_pyx.pyx', 'common.pxd'],
-  "cd opendbc/can && python3 parser_pyx_setup.py build_ext --inplace")
+env.Command(['packer_pyx.so', 'parser_pyx.so'],
+  [libdbc, cereal, 'common_pyx_setup.py', 'packer_pyx.pyx', 'parser_pyx.pyx', 'common.pxd'],
+  "cd opendbc/can && python3 common_pyx_setup.py build_ext --inplace")

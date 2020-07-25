@@ -61,7 +61,7 @@ obj/$(PROJ_NAME).bin: obj/$(STARTUP_FILE).o obj/main.o
 obj/bootstub.bin: obj/$(STARTUP_FILE).o obj/bootstub.o obj/sha.o obj/rsa.o
 	$(CC) $(CFLAGS) -o obj/bootstub.$(PROJ_NAME).elf $^
 	$(OBJCOPY) -v -O binary obj/bootstub.$(PROJ_NAME).elf $@
-	
+
 clean:
 	rm -f obj/*
 

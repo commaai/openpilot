@@ -42,4 +42,3 @@ def ensure_st_up_to_date():
 
 if __name__ == "__main__":
   ensure_st_up_to_date()
-

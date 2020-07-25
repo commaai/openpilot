@@ -34,7 +34,7 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
   const int network_img_w = 176;
   const int network_img_x = !s->scene.uilayout_sidebarcollapsed ? 58 : -(sbr_w);
   const int network_img_y = 196;
-  const int img_idx = s->scene.networkType == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.networkStrength];
+  const int img_idx = s->scene.thermal.getNetworkType() == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.thermal.getNetworkStrength()];
   ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, s->img_network[img_idx], 1.0f);
 }
 
@@ -44,10 +44,10 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
   const int battery_img_x = !s->scene.uilayout_sidebarcollapsed ? 160 : -(sbr_w);
   const int battery_img_y = 255;
 
-  int battery_img = s->scene.batteryCharging ? s->img_battery_charging : s->img_battery;
+  int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
 
   ui_draw_rect(s->vg, battery_img_x + 6, battery_img_y + 5,
-               ((battery_img_w - 19) * (s->scene.batteryPercent * 0.01)), battery_img_h - 11, COLOR_WHITE);
+               ((battery_img_w - 19) * (s->scene.thermal.getBatteryPercent() * 0.01)), battery_img_h - 11, COLOR_WHITE);
 
   ui_draw_image(s->vg, battery_img_x, battery_img_y, battery_img_w, battery_img_h, battery_img, 1.0f);
 }
@@ -63,8 +63,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   const int network_x = !s->scene.uilayout_sidebarcollapsed ? 50 : -(sbr_w);
   const int network_y = 273;
   const int network_w = 100;
-  const int network_h = 100;
-  const char *network_type = network_type_map[s->scene.networkType];
+  const char *network_type = network_type_map[s->scene.thermal.getNetworkType()];
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);
   nvgFontFaceId(s->vg, s->font_sans_regular);
@@ -127,16 +126,16 @@ static void ui_draw_sidebar_temp_metric(UIState *s) {
   char temp_value_str[32];
   char temp_value_unit[32];
   const int temp_y_offset = 0;
-  snprintf(temp_value_str, sizeof(temp_value_str), "%d", s->scene.paTemp);
+  snprintf(temp_value_str, sizeof(temp_value_str), "%d", s->scene.thermal.getPa0());
   snprintf(temp_value_unit, sizeof(temp_value_unit), "%s", "°C");
   snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");
   strcat(temp_value_str, temp_value_unit);
 
-  ui_draw_sidebar_metric(s, temp_label_str, temp_value_str, temp_severity_map[s->scene.thermalStatus], temp_y_offset, NULL);
+  ui_draw_sidebar_metric(s, temp_label_str, temp_value_str, temp_severity_map[s->scene.thermal.getThermalStatus()], temp_y_offset, NULL);
 }
 
 static void ui_draw_sidebar_panda_metric(UIState *s) {
-  int panda_severity;
+  int panda_severity = 2;
   char panda_message_str[32];
   const int panda_y_offset = 32 + 148;
 
