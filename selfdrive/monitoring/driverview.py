@@ -43,16 +43,14 @@ def send_dmon_packet(pm, d):
   pm.send('dMonitoringState', dat)
 
 
-def main(driverview=True, uiview=False):
-  senders = ['controlsState']
+def main(driverview=True):
   if driverview:
-    senders.append('dMonitoringState')
-  elif uiview:
-    senders.append('thermal')
-  pm = messaging.PubMaster(senders)
+    pm = messaging.PubMaster(['controlsState', 'dMonitoringState'])
+  else:
+    pm = messaging.PubMaster(['controlsState', 'thermal'])
 
   rearViewCam = True
-  if uiview:
+  if not driverview:
     rearViewCam = False
     thermal_sender = multiprocessing.Process(target=send_thermal_packet, args=[pm])
     thermal_sender.start()
@@ -64,13 +62,12 @@ def main(driverview=True, uiview=False):
   proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
   if driverview:
     proc_mon = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/modeld/dmonitoringmodeld"), cwd=os.path.join(BASEDIR, "selfdrive/modeld"))
-  elif uiview:
+  else:
     proc_ui = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/ui/ui"), cwd=os.path.join(BASEDIR, "selfdrive/ui"))
 
   params = Params()
   is_rhd = False
   is_rhd_checked = False
-  should_exit = False
 
   def terminate(signalNumber, frame):
     print('got SIGTERM, exiting..')
@@ -86,10 +83,9 @@ def main(driverview=True, uiview=False):
       continue
 
     if driverview:
-      should_exit = True
-      send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
+      send_dmon_packet(pm, [is_rhd, is_rhd_checked, False])
       proc_mon.send_signal(signal.SIGINT)
-    elif uiview:
+    else:
       proc_ui.send_signal(signal.SIGINT)
       thermal_sender.terminate()
     controls_sender.terminate()
@@ -100,18 +96,15 @@ def main(driverview=True, uiview=False):
 
   if driverview:
     while True:
-      send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
+      send_dmon_packet(pm, [is_rhd, is_rhd_checked, True])
       if not is_rhd_checked:
         is_rhd = params.get("IsRHD") == b"1"
         is_rhd_checked = True
-
       time.sleep(1 / 100.)
 
 
 if __name__ == '__main__':
-  args = {}
-  if len(sys.argv) > 1:
-    arg = sys.argv[1].lower().strip()
-    if arg in ['--front', '-f']:
-      args['driverview'], args['uiview'] = False, True
-  main(**args)
+  ui = False
+  if len(sys.argv) > 1 and sys.argv[1].lower().strip() in ['--front', '-f']:
+    ui = True
+  main(not ui)
