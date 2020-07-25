@@ -13,7 +13,7 @@ EOF"""
 }
 
 def setup_environment(String ip) {
-  phone(ip, readFile("selfdrive/test/setup_ci.sh"), "git checkout")
+  phone(ip, readFile("selfdrive/test/setup_device_ci.sh"), "git checkout")
 }
 
 pipeline {
