@@ -5,8 +5,8 @@ def phone(String ip, String step_label, String cmd) {
     sh label: step_label,
         script: """
                 ssh -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -xle' <<'EOF'
-                echo \$$ > /dev/cpuset/app/tasks
-                echo \$PPID > /dev/cpuset/app/tasks
+                echo "\$$" > /dev/cpuset/app/tasks
+                echo "\$PPID" > /dev/cpuset/app/tasks
                 mkdir -p /dev/shm
                 chmod 777 /dev/shm
                 cd ${env.TEST_DIR} || true
