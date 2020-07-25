@@ -2,7 +2,7 @@
 
 from selfdrive.car import dbc_dict
 from cereal import car
-
+Ecu = car.CarParams.Ecu
 
 class SteerLimitParams:
   STEER_MAX = 261         # 262 faults
@@ -94,5 +94,5 @@ STEER_THRESHOLD = 120
 
 
 ECU_FINGERPRINT = {
-  car.CarParams.Ecu.fwdCamera: [0x292],  # lkas cmd
+  Ecu.fwdCamera: [0x292],  # lkas cmd
 }
