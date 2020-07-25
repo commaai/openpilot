@@ -45,12 +45,14 @@ def send_dmon_packet(pm, d):
 
 def main(driverview, uiview):
   pm = messaging.PubMaster(['controlsState', 'dMonitoringState', 'thermal'])
-  if driverview:
-    controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, True])
-  elif uiview:
-    controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, False])
+
+  rearViewCam = True
+  if uiview:
+    rearViewCam = False
     thermal_sender = multiprocessing.Process(target=send_thermal_packet, args=[pm])
     thermal_sender.start()
+
+  controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, rearViewCam])
   controls_sender.start()
 
   proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
