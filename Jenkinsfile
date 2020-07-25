@@ -4,7 +4,7 @@ def phone(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa_public', variable: 'key_file')]) {
     sh label: step_label,
         script: """
-                ssh -t -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -xle' <<'EOF'
+                ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -xle' <<'EOF'
                 "echo \$\$ > /dev/cpuset/app/tasks" || true
                 "echo \$PPID > /dev/cpuset/app/tasks" || true
                 mkdir -p /dev/shm
