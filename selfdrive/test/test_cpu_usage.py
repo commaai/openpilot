@@ -76,7 +76,7 @@ def test_thread():
     time.sleep(30)
     first_proc = messaging.recv_sock(proc_sock, wait=True)
     if first_proc is None or not all_running():
-      err_msg = "procLog recv timed out" if first_pric is None else "all car started process not running"
+      err_msg = "procLog recv timed out" if first_proc is None else "all car started process not running"
       print(f"\n\nTEST FAILED: {err_msg}\n\n")
       raise Exception
 
