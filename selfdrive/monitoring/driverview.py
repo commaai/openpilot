@@ -40,11 +40,15 @@ def send_dmon_packet(pm, d):
 
 def main(driverview, uiview):
   pm = messaging.PubMaster(['controlsState', 'dMonitoringState', 'thermal'])
-  # controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm])
-  # controls_sender.start()
-  if uiview:
+
+  if driverview:
+    controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, True])
+  elif uiview:
+    controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm, False])
     thermal_sender = multiprocessing.Process(target=send_thermal_packet, args=[pm])
     thermal_sender.start()
+  controls_sender.start()
+
 
   start_managed_process('camerad')
   if driverview:
@@ -73,17 +77,14 @@ def main(driverview, uiview):
   signal.signal(signal.SIGTERM, terminate)
   signal.signal(signal.SIGINT, terminate)  # catch ctrl-c as well
 
-  while True:
-    if driverview:
-      send_controls_packet(pm, True)
+  if driverview:
+    while True:
       send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
       if not is_rhd_checked:
         is_rhd = params.get("IsRHD") == b"1"
         is_rhd_checked = True
 
       time.sleep(0.01)
-    elif uiview:
-      send_controls_packet(pm, False)
 
 
 if __name__ == '__main__':
