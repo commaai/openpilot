@@ -22,6 +22,7 @@
 #define FAULT_INTERRUPT_RATE_TIM1       (1U << 16)
 #define FAULT_INTERRUPT_RATE_TIM3       (1U << 17)
 #define FAULT_REGISTER_DIVERGENT        (1U << 18)
+#define FAULT_INTERRUPT_RATE_KLINE_INIT (1U << 19)
 
 // Permanent faults
 #define PERMANENT_FAULTS 0U

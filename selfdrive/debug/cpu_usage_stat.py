@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
 # type: ignore
-import psutil
-import time
-import os
-import sys
-import numpy as np
-import argparse
-import re
-from collections import defaultdict
-
 '''
 System tools like top/htop can only show current cpu usage values, so I write this script to do statistics jobs.
   Features:
-    Use psutil library to sample cpu usage(avergage for all cores) of OpenPilot processes, at a rate of 5 samples/sec.
+    Use psutil library to sample cpu usage(avergage for all cores) of openpilot processes, at a rate of 5 samples/sec.
     Do cpu usage statistics periodically, 5 seconds as a cycle.
     Caculate the average cpu usage within this cycle.
     Caculate minumium/maximium/accumulated_average cpu usage as long term inspections.
@@ -24,17 +15,27 @@ System tools like top/htop can only show current cpu usage values, so I write th
     boardd: 1.96%, min: 1.96%, max: 1.96%, acc: 1.96%
     ubloxd.py: 0.39%, min: 0.39%, max: 0.39%, acc: 0.39%
 '''
+import psutil
+import time
+import os
+import sys
+import numpy as np
+import argparse
+import re
+from collections import defaultdict
+
 
 # Do statistics every 5 seconds
 PRINT_INTERVAL = 5
 SLEEP_INTERVAL = 0.2
 
 monitored_proc_names = [
-  'ubloxd', 'thermald', 'uploader', 'deleter', 'controlsd', 'plannerd', 'radard', 'mapd', 'loggerd' , 'logmessaged', 'tombstoned',
-  'logcatd', 'proclogd', 'boardd', 'pandad', './ui', 'ui',  'calibrationd', 'params_learner', 'modeld', 'dmonitoringmodeld', 'camerad', 'sensord', 'updated', 'gpsd', 'athena']
+  'ubloxd', 'thermald', 'uploader', 'deleter', 'controlsd', 'plannerd', 'radard', 'mapd', 'loggerd', 'logmessaged', 'tombstoned',
+  'logcatd', 'proclogd', 'boardd', 'pandad', './ui', 'ui', 'calibrationd', 'params_learner', 'modeld', 'dmonitoringmodeld', 'camerad', 'sensord', 'updated', 'gpsd', 'athena']
 cpu_time_names = ['user', 'system', 'children_user', 'children_system']
 
 timer = getattr(time, 'monotonic', time.time)
+
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(
@@ -113,7 +114,7 @@ if __name__ == "__main__":
           for stat_type in ['avg', 'min', 'max']:
             msg += '\n {}: {}'.format(stat_type, [name + ':' + str(round(stat[stat_type][name]*100, 2)) for name in cpu_time_names])
         l.append((os.path.basename(k), stat['avg']['total'], msg))
-      l.sort(key= lambda x: -x[1])
+      l.sort(key=lambda x: -x[1])
       for x in l:
         print(x[2])
       print('avg sum: {0:.2%} over {1} samples {2} seconds\n'.format(

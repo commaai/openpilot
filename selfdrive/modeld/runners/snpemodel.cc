@@ -6,7 +6,6 @@
 #include "snpemodel.h"
 
 void PrintErrorStringAndExit() {
-  const char* const errStr = zdl::DlSystem::getLastErrorString();
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;
   std::exit(EXIT_FAILURE);
 }

@@ -15,7 +15,7 @@ def plannerd_thread(sm=None, pm=None):
   gc.disable()
 
   # start the loop
-  set_realtime_priority(2)
+  set_realtime_priority(52)
 
   cloudlog.info("plannerd is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))

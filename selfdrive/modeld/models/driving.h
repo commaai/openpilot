@@ -35,6 +35,9 @@
 #define TIME_DISTANCE 100
 #define POSE_SIZE 12
 
+#define MODEL_FREQ 20
+#define MAX_FRAME_DROP 0.05
+
 struct ModelDataRaw {
     float *path;
     float *left_lane;
@@ -71,8 +74,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 
-void model_publish(PubMaster &pm, uint32_t frame_id,
-                   const ModelDataRaw &data, uint64_t timestamp_eof);
-void posenet_publish(PubMaster &pm, uint32_t frame_id,
-                   const ModelDataRaw &data, uint64_t timestamp_eof);
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
+                   uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data, uint64_t timestamp_eof);
+void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
+                     uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data, uint64_t timestamp_eof);
 #endif

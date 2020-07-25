@@ -20,7 +20,7 @@ class CarControllerParams():
     self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 100     # from dbc
-    self.NEAR_STOP_BRAKE_PHASE = 0.5 # m/s, more aggressive braking near full stop
+    self.NEAR_STOP_BRAKE_PHASE = 0.5  # m/s, more aggressive braking near full stop
 
     # Takes case of "Service Adaptive Cruise" and "Service Front Camera"
     # dashboard messages.
@@ -38,36 +38,20 @@ class CarControllerParams():
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
 
 
-def actuator_hystereses(final_pedal, pedal_steady):
-  # hyst params... TODO: move these to VehicleParams
-  pedal_hyst_gap = 0.01    # don't change pedal command for small oscillations within this value
-
-  # for small pedal oscillations within pedal_hyst_gap, don't change the pedal command
-  if final_pedal == 0.:
-    pedal_steady = 0.
-  elif final_pedal > pedal_steady + pedal_hyst_gap:
-    pedal_steady = final_pedal - pedal_hyst_gap
-  elif final_pedal < pedal_steady - pedal_hyst_gap:
-    pedal_steady = final_pedal + pedal_hyst_gap
-  final_pedal = pedal_steady
-
-  return final_pedal, pedal_steady
-
 class CarController():
   def __init__(self, dbc_name, CP, VM):
-    self.pedal_steady = 0.
     self.start_time = 0.
     self.apply_steer_last = 0
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
-    self.fcw_frames = 0
 
     self.params = CarControllerParams()
 
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
+    self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
-  def update(self, enabled, CS, frame, actuators, \
+  def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
@@ -75,12 +59,7 @@ class CarController():
     # Send CAN commands.
     can_sends = []
 
-    # FCW: trigger FCWAlert for 100 frames (4 seconds)
-    if hud_alert == VisualAlert.fcw:
-      self.fcw_frames = 100
-
-    ### STEER ###
-
+    # STEER
     if (frame % P.STEER_STEP) == 0:
       lkas_enabled = enabled and not CS.out.steerWarning and CS.out.vEgo > P.MIN_STEER_SPEED
       if lkas_enabled:
@@ -93,18 +72,12 @@ class CarController():
       self.apply_steer_last = apply_steer
       idx = (frame // P.STEER_STEP) % 4
 
-      can_sends.append(gmcan.create_steering_control(self.packer_pt,
-        CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
+      can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
-    ### GAS/BRAKE ###
-
+    # GAS/BRAKE
     # no output if not enabled, but keep sending keepalive messages
     # treat pedals as one
     final_pedal = actuators.gas - actuators.brake
-
-    # *** apply pedal hysteresis ***
-    final_brake, self.brake_steady = actuator_hystereses(
-      final_pedal, self.pedal_steady)
 
     if not enabled:
       # Stock ECU sends max regen when not enabled.
@@ -121,18 +94,11 @@ class CarController():
       at_full_stop = enabled and CS.out.standstill
       near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
       can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, apply_brake, idx, near_stop, at_full_stop))
-
-      at_full_stop = enabled and CS.out.standstill
       can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
 
     # Send dashboard UI commands (ACC status), 25hz
     if (frame % 4) == 0:
-      # Send FCW if applicable
-      send_fcw = 0
-      if self.fcw_frames > 0:
-        send_fcw = 0x3
-        self.fcw_frames -= 1
-
+      send_fcw = hud_alert == VisualAlert.fcw
       can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, enabled, hud_v_cruise * CV.MS_TO_KPH, hud_show_car, send_fcw))
 
     # Radar needs to know current speed and yaw rate (50hz),
@@ -143,7 +109,7 @@ class CarController():
     if frame % time_and_headlights_step == 0:
       idx = (frame // time_and_headlights_step) % 4
       can_sends.append(gmcan.create_adas_time_status(CanBus.OBSTACLE, int((tt - self.start_time) * 60), idx))
-      can_sends.append(gmcan.create_adas_headlights_status(CanBus.OBSTACLE))
+      can_sends.append(gmcan.create_adas_headlights_status(self.packer_obj, CanBus.OBSTACLE))
 
     speed_and_accelerometer_step = 2
     if frame % speed_and_accelerometer_step == 0:

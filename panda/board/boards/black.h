@@ -100,7 +100,6 @@ void black_set_esp_gps_mode(uint8_t mode) {
 }
 
 void black_set_can_mode(uint8_t mode){
-  mode = CAN_MODE_OBD_CAN2;
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:

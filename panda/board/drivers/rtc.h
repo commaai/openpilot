@@ -56,14 +56,14 @@ void rtc_set_time(timestamp_t time){
         // Enable initialization mode
         register_set_bits(&(RTC->ISR), RTC_ISR_INIT);
         while((RTC->ISR & RTC_ISR_INITF) == 0){}
-        
+
         // Set time
         RTC->TR = (to_bcd(time.hour) << RTC_TR_HU_Pos) | (to_bcd(time.minute) << RTC_TR_MNU_Pos) | (to_bcd(time.second) << RTC_TR_SU_Pos);
         RTC->DR = (to_bcd(time.year - YEAR_OFFSET) << RTC_DR_YU_Pos) | (time.weekday << RTC_DR_WDU_Pos) | (to_bcd(time.month) << RTC_DR_MU_Pos) | (to_bcd(time.day) << RTC_DR_DU_Pos);
 
         // Set options
         register_set(&(RTC->CR), 0U, 0xFCFFFFU);
-        
+
         // Disable initalization mode
         register_clear_bits(&(RTC->ISR), RTC_ISR_INIT);
 
@@ -95,7 +95,7 @@ timestamp_t rtc_get_time(void){
         uint32_t time = RTC->TR;
         uint32_t date = RTC->DR;
 
-        // Parse values        
+        // Parse values
         result.year = from_bcd((date & (RTC_DR_YT | RTC_DR_YU)) >> RTC_DR_YU_Pos) + YEAR_OFFSET;
         result.month = from_bcd((date & (RTC_DR_MT | RTC_DR_MU)) >> RTC_DR_MU_Pos);
         result.day = from_bcd((date & (RTC_DR_DT | RTC_DR_DU)) >> RTC_DR_DU_Pos);

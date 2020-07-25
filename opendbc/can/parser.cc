@@ -171,7 +171,6 @@ CANParser::CANParser(int abus, const std::string& dbc_name,
 
 void CANParser::UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Reader& cans) {
     int msg_count = cans.size();
-    uint64_t p;
 
     DEBUG("got %d messages\n", msg_count);
 

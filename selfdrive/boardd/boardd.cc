@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
+#include <errno.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -18,7 +19,6 @@
 #include "cereal/gen/cpp/car.capnp.h"
 
 #include "common/util.h"
-#include "common/messaging.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -33,8 +33,8 @@
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
-#define CUTOFF_GAIN 0.015625f  // iso400
-#define SATURATE_GAIN 0.0625f  // iso1600
+#define CUTOFF_IL 200
+#define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 #define VOLTAGE_K 0.091  // LPF gain for 5s tau (dt/tau / (dt/tau + 1))
 
@@ -61,13 +61,16 @@ bool fake_send = false;
 bool loopback_can = false;
 cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
 bool is_pigeon = false;
-const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
-const float VBATT_START_CHARGING = 11.5;
-const float VBATT_PAUSE_CHARGING = 11.0;
 float voltage_f = 12.5;  // filtered voltage
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
 bool ignition_last = false;
+
+#ifndef __x86_64__
+const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
+const float VBATT_START_CHARGING = 11.5;
+const float VBATT_PAUSE_CHARGING = 11.0;
+#endif
 
 bool safety_setter_thread_initialized = false;
 pthread_t safety_setter_thread_handle;
@@ -86,45 +89,39 @@ void *safety_setter_thread(void *s) {
   libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::ELM327), 0, NULL, 0, TIMEOUT);
   pthread_mutex_unlock(&usb_lock);
 
-  char *value_vin;
-  size_t value_vin_sz = 0;
-
   // switch to SILENT when CarVin param is read
   while (1) {
     if (do_exit) return NULL;
-    const int result = read_db_value("CarVin", &value_vin, &value_vin_sz);
-    if (value_vin_sz > 0) {
+    std::vector<char> value_vin = read_db_bytes("CarVin");
+    if (value_vin.size() > 0) {
       // sanity check VIN format
-      assert(value_vin_sz == 17);
+      assert(value_vin.size() == 17);
+      std::string str_vin(value_vin.begin(), value_vin.end());
+      LOGW("got CarVin %s", str_vin.c_str());
       break;
     }
     usleep(100*1000);
   }
-  LOGW("got CarVin %s", value_vin);
-  free(value_vin);
 
   // VIN query done, stop listening to OBDII
   pthread_mutex_lock(&usb_lock);
   libusb_control_transfer(dev_handle, 0x40, 0xdc, (uint16_t)(cereal::CarParams::SafetyModel::NO_OUTPUT), 0, NULL, 0, TIMEOUT);
   pthread_mutex_unlock(&usb_lock);
 
-  char *value;
-  size_t value_sz = 0;
-
+  std::vector<char> params;
   LOGW("waiting for params to set safety model");
   while (1) {
     if (do_exit) return NULL;
 
-    const int result = read_db_value("CarParams", &value, &value_sz);
-    if (value_sz > 0) break;
+    params = read_db_bytes("CarParams");
+    if (params.size() > 0) break;
     usleep(100*1000);
   }
-  LOGW("got %d bytes CarParams", value_sz);
+  LOGW("got %d bytes CarParams", params.size());
 
   // format for board, make copy due to alignment issues, will be freed on out of scope
-  auto amsg = kj::heapArray<capnp::word>((value_sz / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), value, value_sz);
-  free(value);
+  auto amsg = kj::heapArray<capnp::word>((params.size() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), params.data(), params.size());
 
   capnp::FlatArrayMessageReader cmsg(amsg);
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
@@ -283,7 +280,6 @@ void can_recv(PubMaster &pm) {
   int err;
   uint32_t data[RECV_SIZE/4];
   int recv;
-  uint32_t f1, f2;
 
   uint64_t start_time = nanos_since_boot();
 
@@ -408,10 +404,8 @@ void can_health(PubMaster &pm) {
   bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
   bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
   if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
-    char *disable_power_down = NULL;
-    size_t disable_power_down_sz = 0;
-    const int result = read_db_value("DisablePowerDown", &disable_power_down, &disable_power_down_sz);
-    if (disable_power_down_sz != 1 || disable_power_down[0] != '1') {
+    std::vector<char> disable_power_down = read_db_bytes("DisablePowerDown");
+    if (disable_power_down.size() != 1 || disable_power_down[0] != '1') {
       printf("TURN OFF CHARGING!\n");
       pthread_mutex_lock(&usb_lock);
       libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
@@ -419,7 +413,6 @@ void can_health(PubMaster &pm) {
       printf("POWER DOWN DEVICE\n");
       system("service call power 17 i32 0 i32 1");
     }
-    if (disable_power_down) free(disable_power_down);
   }
   if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
     printf("TURN ON CHARGING!\n");
@@ -464,7 +457,7 @@ void can_health(PubMaster &pm) {
   uint16_t fan_speed_rpm = 0;
 
   pthread_mutex_lock(&usb_lock);
-  int sz = libusb_control_transfer(dev_handle, 0xc0, 0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm), TIMEOUT);
+  libusb_control_transfer(dev_handle, 0xc0, 0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm), TIMEOUT);
   pthread_mutex_unlock(&usb_lock);
 
   // Write to rtc once per minute when no ignition present
@@ -518,7 +511,7 @@ void can_health(PubMaster &pm) {
 
   size_t i = 0;
   for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
-       f <= size_t(cereal::HealthData::FaultType::REGISTER_DIVERGENT); f++){
+       f <= size_t(cereal::HealthData::FaultType::INTERRUPT_RATE_KLINE_INIT); f++){
     if (fault_bits.test(f)) {
       faults.set(i, cereal::HealthData::FaultType(f));
       i++;
@@ -541,13 +534,15 @@ void can_send(cereal::Event::Reader &event) {
     //Older than 1 second. Dont send.
     return;
   }
-  int msg_count = event.getSendcan().size();
+
+  auto can_data_list = event.getSendcan();
+  int msg_count = can_data_list.size();
 
   uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
-    auto cmsg = event.getSendcan()[i];
+    auto cmsg = can_data_list[i];
     if (cmsg.getAddress() >= 0x800) {
       // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
@@ -555,9 +550,10 @@ void can_send(cereal::Event::Reader &event) {
       // normal
       send[i*4] = (cmsg.getAddress() << 21) | 1;
     }
-    assert(cmsg.getDat().size() <= 8);
-    send[i*4+1] = cmsg.getDat().size() | (cmsg.getSrc() << 4);
-    memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
+    auto can_data = cmsg.getDat();
+    assert(can_data.size() <= 8);
+    send[i*4+1] = can_data.size() | (cmsg.getSrc() << 4);
+    memcpy(&send[i*4+2], can_data.begin(), can_data.size());
   }
 
   // send to board
@@ -593,20 +589,26 @@ void *can_send_thread(void *crap) {
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "sendcan");
   assert(subscriber != NULL);
+  subscriber->setTimeout(100);
 
   // run as fast as messages come in
   while (!do_exit) {
     Message * msg = subscriber->receive();
 
-    if (msg){
-      auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-      memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-      capnp::FlatArrayMessageReader cmsg(amsg);
-      cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-      can_send(event);
-      delete msg;
+    if (!msg){
+      if (errno == EINTR) {
+        do_exit = true;
+      }
+      continue;
     }
+
+    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
+    memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
+    capnp::FlatArrayMessageReader cmsg(amsg);
+    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+    can_send(event);
+    delete msg;
   }
 
   delete subscriber;
@@ -690,15 +692,15 @@ void *hardware_control_thread(void *crap) {
     }
     if (sm.updated("frontFrame")){
       auto event = sm["frontFrame"];
-      float cur_front_gain = event.getFrontFrame().getGainFrac();
+      int cur_integ_lines = event.getFrontFrame().getIntegLines();
       last_front_frame_t = event.getLogMonoTime();
 
-      if (cur_front_gain <= CUTOFF_GAIN) {
+      if (cur_integ_lines <= CUTOFF_IL) {
         ir_pwr = 100.0 * MIN_IR_POWER;
-      } else if (cur_front_gain > SATURATE_GAIN) {
+      } else if (cur_integ_lines > SATURATE_IL) {
         ir_pwr = 100.0 * MAX_IR_POWER;
       } else {
-        ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_front_gain - CUTOFF_GAIN) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_GAIN - CUTOFF_GAIN)));
+        ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_integ_lines - CUTOFF_IL) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)));
       }
     }
     // Disable ir_pwr on front frame timeout
@@ -721,6 +723,7 @@ void *hardware_control_thread(void *crap) {
 
 #define pigeon_send(x) _pigeon_send(x, sizeof(x)-1)
 
+void hexdump(unsigned char *d, int l) __attribute__((unused));
 void hexdump(unsigned char *d, int l) {
   for (int i = 0; i < l; i++) {
     if (i!=0 && i%0x10 == 0) printf("\n");
@@ -869,9 +872,11 @@ int main() {
   int err;
   LOGW("starting boardd");
 
-  // set process priority
-  err = set_realtime_priority(4);
-  LOG("setpriority returns %d", err);
+  // set process priority and affinity
+  err = set_realtime_priority(54);
+  LOG("set priority returns %d", err);
+  err = set_core_affinity(3);
+  LOG("set affinity returns %d", err);
 
   // check the environment
   if (getenv("STARTED")) {

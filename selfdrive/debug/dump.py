@@ -29,7 +29,7 @@ if __name__ == "__main__":
   poller = messaging.Poller()
 
   for m in args.socket if len(args.socket) > 0 else service_list:
-    sock = messaging.sub_sock(m, poller, addr=args.addr)
+    messaging.sub_sock(m, poller, addr=args.addr)
 
   values = None
   if args.values:

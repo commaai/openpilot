@@ -95,7 +95,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[targetId] = car.RadarData.RadarPoint.new_message()
           self.pts[targetId].trackId = targetId
         distance = cpt['TrkRange']
-        self.pts[targetId].dRel = distance # from front of car
+        self.pts[targetId].dRel = distance  # from front of car
         # From driver's pov, left is positive
         self.pts[targetId].yRel = math.sin(cpt['TrkAzimuth'] * CV.DEG_TO_RAD) * distance
         self.pts[targetId].vRel = cpt['TrkRangeRate']

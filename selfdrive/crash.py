@@ -39,6 +39,12 @@ else:
     client.extra_context(kwargs)
 
   def install():
+    """
+    Workaround for `sys.excepthook` thread bug from:
+    http://bugs.python.org/issue1230540
+    Call once from the main thread before creating any threads.
+    Source: https://stackoverflow.com/a/31622038
+    """
     # installs a sys.excepthook
     __excepthook__ = sys.excepthook
 
@@ -48,12 +54,6 @@ else:
       __excepthook__(*exc_info)
     sys.excepthook = handle_exception
 
-    """
-    Workaround for `sys.excepthook` thread bug from:
-    http://bugs.python.org/issue1230540
-    Call once from the main thread before creating any threads.
-    Source: https://stackoverflow.com/a/31622038
-    """
     init_original = threading.Thread.__init__
 
     def init(self, *args, **kwargs):
