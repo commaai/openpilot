@@ -31,11 +31,9 @@ def send_thermal_packet(pm):
 
 def send_dmon_packet(pm, d):
   dat = messaging.new_message('dMonitoringState')
-  dat.dMonitoringState = {
-    "isRHD": d[0],
-    "rhdChecked": d[1],
-    "isPreview": d[2],
-  }
+  dat.dMonitoringState.isRHD = d[0]
+  dat.dMonitoringState.rhdChecked = d[1]
+  dat.dMonitoringState.isPreview = d[2]
   pm.send('dMonitoringState', dat)
 
 
