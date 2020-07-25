@@ -10,6 +10,7 @@ from common.params import Params
 
 def send_controls_packet(pm, d):
   while True:
+    print(d)
     dat = messaging.new_message('controlsState')
     dat.controlsState = {
       "rearViewCam": d,
@@ -78,6 +79,7 @@ def main(driverview, uiview):
 
   if driverview:
     while True:
+      print('here')
       send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
       if not is_rhd_checked:
         is_rhd = params.get("IsRHD") == b"1"
