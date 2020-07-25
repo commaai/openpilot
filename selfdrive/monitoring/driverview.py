@@ -8,14 +8,24 @@ from selfdrive.manager import start_managed_process, kill_managed_process
 from common.params import Params
 
 
-def send_controls_packet(pm):
+def send_controls_packet(pm, d):
   while True:
     dat = messaging.new_message('controlsState')
     dat.controlsState = {
-      "rearViewCam": True,
+      "rearViewCam": d,
     }
     pm.send('controlsState', dat)
-    time.sleep(0.01)
+    time.sleep(1 / 100)
+
+
+def send_thermal_packet(pm):
+  while True:
+    dat = messaging.new_message('thermal')
+    dat.thermal = {
+      'started': True,
+    }
+    pm.send('thermal', dat)
+    time.sleep(1 / 2.)  # 2 hz
 
 
 def send_dmon_packet(pm, d):
@@ -29,14 +39,18 @@ def send_dmon_packet(pm, d):
 
 
 def main(driverview, uiview):
-  print(driverview)
-  print(uiview)
-  pm = messaging.PubMaster(['controlsState', 'dMonitoringState'])
-  controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm])
-  controls_sender.start()
+  pm = messaging.PubMaster(['controlsState', 'dMonitoringState', 'thermal'])
+  # controls_sender = multiprocessing.Process(target=send_controls_packet, args=[pm])
+  # controls_sender.start()
+  if uiview:
+    thermal_sender = multiprocessing.Process(target=send_thermal_packet, args=[pm])
+    thermal_sender.start()
 
-  start_managed_process('dmonitoringmodeld')
   start_managed_process('camerad')
+  if driverview:
+    start_managed_process('dmonitoringmodeld')
+  elif uiview:
+    start_managed_process('ui')
 
   params = Params()
   is_rhd = False
@@ -45,10 +59,14 @@ def main(driverview, uiview):
 
   def terminate(signalNumber, frame):
     print('got SIGTERM, exiting..')
-    should_exit = True
-    send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
-    kill_managed_process('dmonitoringmodeld')
     kill_managed_process('camerad')
+    if driverview:
+      should_exit = True
+      send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
+      kill_managed_process('dmonitoringmodeld')
+    elif uiview:
+      kill_managed_process('ui')
+      thermal_sender.terminate()
     controls_sender.terminate()
     exit()
 
@@ -56,12 +74,16 @@ def main(driverview, uiview):
   signal.signal(signal.SIGINT, terminate)  # catch ctrl-c as well
 
   while True:
-    send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
-    if not is_rhd_checked:
-      is_rhd = params.get("IsRHD") == b"1"
-      is_rhd_checked = True
+    if driverview:
+      send_controls_packet(pm, True)
+      send_dmon_packet(pm, [is_rhd, is_rhd_checked, not should_exit])
+      if not is_rhd_checked:
+        is_rhd = params.get("IsRHD") == b"1"
+        is_rhd_checked = True
 
-    time.sleep(0.01)
+      time.sleep(0.01)
+    elif uiview:
+      send_controls_packet(pm, False)
 
 
 if __name__ == '__main__':
