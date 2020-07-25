@@ -75,7 +75,7 @@ pipeline {
 
         stage('HW Tests') {
           steps {
-            phone_steps("eon", [
+            phone_steps("eon", 60, [
               ["SCONS_CACHE=1 scons -j4 cereal/", "build cereal"],
               ["nosetests -s selfdrive/test/test_sounds.py", "test sounds"],
               ["nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py", "test boardd loopback"],
