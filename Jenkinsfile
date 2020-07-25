@@ -41,8 +41,7 @@ pipeline {
         branch 'devel-staging'
       }
       steps {
-        phone_steps("eon-build", 60,
-                    ["cd release && PUSH=1 ./build_release2.sh", "build release2-staging and dashcam-staging"])
+        phone_steps("eon-build", 60, ["cd release && PUSH=1 ./build_release2.sh", "build release2-staging and dashcam-staging"])
       }
     }
 
@@ -62,15 +61,13 @@ pipeline {
             CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ''}"
           }
           steps {
-            phone_steps("eon", 60,
-                        ["cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh", "build devel"])
+            phone_steps("eon", 60, ["cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh", "build devel"])
           }
         }
 
         stage('Replay Tests') {
           steps {
-            phone_steps("eon2", 60,
-                        ["cd selfdrive/test/process_replay && ./camera_replay.py", "camerad/modeld replay"])
+            phone_steps("eon2", 60, ["cd selfdrive/test/process_replay && ./camera_replay.py", "camerad/modeld replay"])
           }
         }
 
