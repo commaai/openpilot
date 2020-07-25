@@ -186,7 +186,7 @@ class Controls:
       if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
          (CS.rightBlindspot and direction == LaneChangeDirection.right):
         self.events.add(EventName.laneChangeBlocked)
-      elif self.CP.autoLcaEnabled and self.sm['pathPlan'].autoLaneChangeTimer < 3.25:
+      elif self.CP.autoLcaEnabled and self.sm['pathPlan'].autoLaneChangeTimer > 0:
         self.events.add(EventName.autoLaneChange)
       else:
         if direction == LaneChangeDirection.left:
