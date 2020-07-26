@@ -19,7 +19,7 @@ To enable long control, change line 255 in selfdrive/car/hyundai/interface.py to
 ```python
         ret.openpilotLongitudinalControl = True
 ```
-- <b>  Auto LCA:</b> credit to @SiGmAX666: Auto Lane change assist, no need for steering nudge. LCA will abort if driver override steering wheel. To enable Auto LCA(disabled by default),  change line 189 in selfdrive/car/hyundai/interface.py to:
+- <b>  Auto LCA:</b> credit to @SiGmAX666: Auto Lane change assist, no need for steering nudge. To enable Auto LCA(disabled by default),  change line 189 in selfdrive/car/hyundai/interface.py to:
 ```python
     ret.autoLcaEnabled = True
 ```
