@@ -204,6 +204,10 @@ routes = {
     'carFingerprint': HYUNDAI.HYUNDAI_GENESIS,
     'enableCamera': True,
   },
+  "5dddcbca6eb66c62|2020-07-26--13-24-19--0": {
+    'carFingerprint': HYUNDAI.KIA_STINGER,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -426,7 +430,6 @@ non_tested_cars = [
   HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_OPTIMA_H,
   HYUNDAI.KIA_SORENTO,
-  HYUNDAI.KIA_STINGER,
   HYUNDAI.KONA,
   HYUNDAI.KONA_EV,
   TOYOTA.CAMRYH,
