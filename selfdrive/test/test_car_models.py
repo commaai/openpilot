@@ -208,6 +208,10 @@ routes = {
     'carFingerprint': HYUNDAI.IONIQ,
     'enableCamera': True,
   },
+  "5dddcbca6eb66c62|2020-07-26--13-24-19": {
+    'carFingerprint': HYUNDAI.KIA_STINGER,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
