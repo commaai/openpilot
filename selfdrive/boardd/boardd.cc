@@ -265,48 +265,18 @@ void can_recv(PubMaster &pm) {
 }
 
 void can_health(PubMaster &pm) {
-  int cnt;
-  int err;
-
-  // copied from panda/board/main.c
-  struct __attribute__((packed)) health {
-    uint32_t uptime;
-    uint32_t voltage;
-    uint32_t current;
-    uint32_t can_rx_errs;
-    uint32_t can_send_errs;
-    uint32_t can_fwd_errs;
-    uint32_t gmlan_send_errs;
-    uint32_t faults;
-    uint8_t ignition_line;
-    uint8_t ignition_can;
-    uint8_t controls_allowed;
-    uint8_t gas_interceptor_detected;
-    uint8_t car_harness_status;
-    uint8_t usb_power_mode;
-    uint8_t safety_model;
-    uint8_t fault_status;
-    uint8_t power_save_enabled;
-  } health;
-
-  // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
   auto healthData = event.initHealth();
 
-  bool received = false;
-
-  // recv from board
-  cnt = panda->usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
-  received = (cnt == sizeof(health));
-
-  // No panda connected, send empty health packet
-  if (!received){
+  if (!panda->connected){
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
     pm.send("health", msg);
     return;
   }
+
+  health_t health = panda->get_health();
 
   if (spoofing_started) {
     health.ignition_line = 1;
@@ -364,7 +334,7 @@ void can_health(PubMaster &pm) {
     assert((result == 0) || (result == ERR_NO_VALUE));
 
     if (!safety_setter_thread_initialized) {
-      err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
+      int err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
       assert(err == 0);
       safety_setter_thread_initialized = true;
     }
@@ -733,6 +703,7 @@ int main() {
   }
 
   while (!do_exit){
+    // TODO: start health thread without connection
     // connect to the board
     usb_retry_connect();
 

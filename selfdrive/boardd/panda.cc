@@ -211,3 +211,9 @@ uint16_t Panda::get_fan_speed(){
   usb_read(0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm));
   return fan_speed_rpm;
 }
+
+health_t Panda::get_health(){
+  health_t health {0};
+  usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
+  return health;
+}

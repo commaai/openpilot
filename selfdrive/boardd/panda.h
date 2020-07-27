@@ -13,6 +13,27 @@
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
 
+// copied from panda/board/main.c
+struct __attribute__((packed)) health_t {
+  uint32_t uptime;
+  uint32_t voltage;
+  uint32_t current;
+  uint32_t can_rx_errs;
+  uint32_t can_send_errs;
+  uint32_t can_fwd_errs;
+  uint32_t gmlan_send_errs;
+  uint32_t faults;
+  uint8_t ignition_line;
+  uint8_t ignition_can;
+  uint8_t controls_allowed;
+  uint8_t gas_interceptor_detected;
+  uint8_t car_harness_status;
+  uint8_t usb_power_mode;
+  uint8_t safety_model;
+  uint8_t fault_status;
+  uint8_t power_save_enabled;
+};
+
 class Panda {
  private:
   libusb_context *ctx = NULL;
@@ -46,5 +67,5 @@ class Panda {
   void set_fan_speed(uint16_t fan_speed);
   uint16_t get_fan_speed();
 
-
+  health_t get_health();
 };
