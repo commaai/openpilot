@@ -138,7 +138,7 @@ ECU_FINGERPRINT = {
   Ecu.fwdCamera: [832, 1156, 1191, 1342]
 }
 
-# Don't use theses fingerprints for fingerprinting, they are still needed for ECU detection
+# Don't use these fingerprints for fingerprinting, they are still needed for ECU detection
 IGNORED_FINGERPRINTS = [CAR.KONA, CAR.KIA_FORTE, CAR.KIA_SPORTAGE, CAR.KIA_NIRO_HEV]
 
 FW_VERSIONS = {
