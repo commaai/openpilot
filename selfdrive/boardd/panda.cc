@@ -217,3 +217,21 @@ health_t Panda::get_health(){
   usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
   return health;
 }
+
+void Panda::set_loopback(bool loopback){
+  usb_write(0xe5, loopback, 0);
+}
+
+const char* Panda::get_firmware_version(){
+  const char* fw_sig_buf = new char[128];
+
+  int read_1 = usb_read(0xd3, 0, 0, (unsigned char*)fw_sig_buf, 64);
+  int read_2 = usb_read(0xd4, 0, 0, (unsigned char*)fw_sig_buf + 64, 64);
+
+  if ((read_1 == 64) && (read_2 == 64)) {
+    return fw_sig_buf;
+  }
+
+  delete[] fw_sig_buf;
+  return NULL;
+}

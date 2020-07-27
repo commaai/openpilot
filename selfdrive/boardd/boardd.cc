@@ -135,12 +135,10 @@ void *safety_setter_thread(void *s) {
 
 // must be called before threads or with mutex
 bool usb_connect() {
-  int err, err2;
-  unsigned char fw_sig_buf[128];
-  unsigned char fw_sig_hex_buf[16];
   unsigned char serial_buf[16];
   const char *serial;
   int serial_sz = 0;
+  int err;
 
   ignition_last = false;
 
@@ -150,25 +148,25 @@ bool usb_connect() {
     return false;
   }
 
-
   if (loopback_can) {
-    panda->usb_write(0xe5, 1, 0);
+    panda->set_loopback(true);
   }
 
-  // get panda fw
-  err = panda->usb_read(0xd3, 0, 0, fw_sig_buf, 64);
-  err2 = panda->usb_read(0xd4, 0, 0, fw_sig_buf + 64, 64);
-  if ((err == 64) && (err2 == 64)) {
-    printf("FW signature read\n");
-    write_db_value("PandaFirmware", (const char *)fw_sig_buf, 128);
+  const char *fw_sig_buf = panda->get_firmware_version();
+  if (fw_sig_buf){
+    write_db_value("PandaFirmware", fw_sig_buf, 128);
 
+    // Convert to hex for offroad
+    char fw_sig_hex_buf[17] = {0};
     for (size_t i = 0; i < 8; i++){
-      fw_sig_hex_buf[2*i] = NIBBLE_TO_HEX(fw_sig_buf[i] >> 4);
-      fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX(fw_sig_buf[i] & 0xF);
+      fw_sig_hex_buf[2*i] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] >> 4);
+      fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
     }
-    write_db_value("PandaFirmwareHex", (const char *)fw_sig_hex_buf, 16);
-  }
-  else { goto fail; }
+    write_db_value("PandaFirmwareHex", fw_sig_hex_buf, 16);
+    LOGW("FW signature read: %s", fw_sig_hex_buf);
+
+    delete[] fw_sig_buf;
+  } else { goto fail; }
 
   // get panda serial
   err = panda->usb_read(0xd0, 0, 0, serial_buf, 16);
