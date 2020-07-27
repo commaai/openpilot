@@ -386,7 +386,7 @@ void can_health_thread() {
     }
 
     bool power_save_desired = !ignition;
-    if (health.power_save_enable != power_save_desired){
+    if (health.power_save_enabled != power_save_desired){
       panda->set_power_saving(power_save_desired);
     }
 
