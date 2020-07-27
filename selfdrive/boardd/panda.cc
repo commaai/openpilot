@@ -68,7 +68,6 @@ Panda::~Panda(){
   pthread_mutex_unlock(&usb_lock);
 }
 
-
 void Panda::handle_usb_issue(int err, const char func[]) {
   LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
   if (err == LIBUSB_ERROR_NO_DEVICE) {
@@ -164,7 +163,6 @@ cereal::HealthData::HwType Panda::get_hw_type() {
   return (cereal::HealthData::HwType)(hw_query[0]);
 }
 
-
 void Panda::set_rtc(struct tm sys_time){
   // tm struct has year defined as years since 1900
   usb_write(0xa1, (uint16_t)(1900 + sys_time.tm_year), 0);
@@ -175,7 +173,6 @@ void Panda::set_rtc(struct tm sys_time){
   usb_write(0xa6, (uint16_t)sys_time.tm_min, 0);
   usb_write(0xa7, (uint16_t)sys_time.tm_sec, 0);
 }
-
 
 struct tm Panda::get_rtc(){
   struct __attribute__((packed)) timestamp_t {
@@ -200,7 +197,6 @@ struct tm Panda::get_rtc(){
 
   return new_time;
 }
-
 
 void Panda::set_fan_speed(uint16_t fan_speed){
   usb_write(0xb1, fan_speed, 0);
@@ -253,7 +249,6 @@ const char* Panda::get_serial(){
 void Panda::set_power_saving(bool power_saving){
   usb_write(0xe7, power_saving, 0);
 }
-
 
 void Panda::set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode){
   usb_write(0xe6, (uint16_t)power_mode, 0);
