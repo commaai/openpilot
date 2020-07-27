@@ -223,7 +223,7 @@ void Panda::set_loopback(bool loopback){
 }
 
 const char* Panda::get_firmware_version(){
-  const char* fw_sig_buf = new char[128];
+  const char* fw_sig_buf = new char[128]();
 
   int read_1 = usb_read(0xd3, 0, 0, (unsigned char*)fw_sig_buf, 64);
   int read_2 = usb_read(0xd4, 0, 0, (unsigned char*)fw_sig_buf + 64, 64);
@@ -234,4 +234,18 @@ const char* Panda::get_firmware_version(){
 
   delete[] fw_sig_buf;
   return NULL;
+}
+
+const char* Panda::get_serial(){
+  const char* serial_buf = new char[16]();
+
+  int err = usb_read(0xd0, 0, 0, (unsigned char*)serial_buf, 16);
+
+  if (err >= 0) {
+    return serial_buf;
+  }
+
+  delete[] serial_buf;
+  return NULL;
+
 }

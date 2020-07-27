@@ -66,5 +66,6 @@ class Panda {
   health_t get_health();
   void set_loopback(bool loopback);
   const char* get_firmware_version();
+  const char* get_serial();
 
 };

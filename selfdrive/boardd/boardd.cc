@@ -135,11 +135,6 @@ void *safety_setter_thread(void *s) {
 
 // must be called before threads or with mutex
 bool usb_connect() {
-  unsigned char serial_buf[16];
-  const char *serial;
-  int serial_sz = 0;
-  int err;
-
   ignition_last = false;
 
   try {
@@ -157,27 +152,28 @@ bool usb_connect() {
     write_db_value("PandaFirmware", fw_sig_buf, 128);
 
     // Convert to hex for offroad
-    char fw_sig_hex_buf[17] = {0};
+    char fw_sig_hex_buf[16] = {0};
     for (size_t i = 0; i < 8; i++){
       fw_sig_hex_buf[2*i] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] >> 4);
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
     }
+
     write_db_value("PandaFirmwareHex", fw_sig_hex_buf, 16);
-    LOGW("FW signature read: %s", fw_sig_hex_buf);
+    LOGW("fw signature: %.*s", 16, fw_sig_hex_buf);
 
     delete[] fw_sig_buf;
-  } else { goto fail; }
+  } else { return false; }
 
   // get panda serial
-  err = panda->usb_read(0xd0, 0, 0, serial_buf, 16);
+  const char *serial_buf = panda->get_serial();
+  if (serial_buf) {
+    size_t serial_sz = strnlen(serial_buf, 16);
 
-  if (err > 0) {
-    serial = (const char *)serial_buf;
-    serial_sz = strnlen(serial, err);
-    write_db_value("PandaDongleId", serial, serial_sz);
-    printf("panda serial: %.*s\n", serial_sz, serial);
-  }
-  else { goto fail; }
+    write_db_value("PandaDongleId", serial_buf, serial_sz);
+    LOGW("panda serial: %.*s", serial_sz, serial_buf);
+
+    delete[] serial_buf;
+  } else { return false; }
 
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
 #ifndef __x86_64__
@@ -185,13 +181,12 @@ bool usb_connect() {
     panda->usb_write(0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CDP), 0);
   }
 #endif
-  connected_once = true;
 
   if (panda->is_pigeon) {
     LOGW("panda with gps detected");
     pigeon_needs_init = true;
     if (!pigeon_thread_initialized) {
-      err = pthread_create(&pigeon_thread_handle, NULL, pigeon_thread, NULL);
+      int err = pthread_create(&pigeon_thread_handle, NULL, pigeon_thread, NULL);
       assert(err == 0);
       pigeon_thread_initialized = true;
     }
@@ -210,9 +205,8 @@ bool usb_connect() {
     }
   }
 
+  connected_once = true;
   return true;
-fail:
-  return false;
 }
 
 // must be called before threads or with mutex
