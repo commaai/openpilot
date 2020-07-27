@@ -36,6 +36,7 @@ Panda::Panda(){
     (hw_type == cereal::HealthData::HwType::GREY_PANDA) ||
     (hw_type == cereal::HealthData::HwType::BLACK_PANDA) ||
     (hw_type == cereal::HealthData::HwType::UNO);
+  has_rtc = (hw_type == cereal::HealthData::HwType::UNO);
 
   return;
 
@@ -152,8 +153,8 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
   return transferred;
 }
 
-int Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param){
-  return usb_write(0xdc, (uint16_t)safety_model, safety_param);
+void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param){
+  usb_write(0xdc, (uint16_t)safety_model, safety_param);
 }
 
 cereal::HealthData::HwType Panda::get_hw_type() {
@@ -161,4 +162,41 @@ cereal::HealthData::HwType Panda::get_hw_type() {
 
   usb_read(0xc1, 0, 0, hw_query, 1);
   return (cereal::HealthData::HwType)(hw_query[0]);
+}
+
+
+void Panda::set_rtc(struct tm sys_time){
+  // tm struct has year defined as years since 1900
+  usb_write(0xa1, (uint16_t)(1900 + sys_time.tm_year), 0);
+  usb_write(0xa2, (uint16_t)(1 + sys_time.tm_mon), 0);
+  usb_write(0xa3, (uint16_t)sys_time.tm_mday, 0);
+  // usb_write(0xa4, (uint16_t)(1 + sys_time.tm_wday), 0);
+  usb_write(0xa5, (uint16_t)sys_time.tm_hour, 0);
+  usb_write(0xa6, (uint16_t)sys_time.tm_min, 0);
+  usb_write(0xa7, (uint16_t)sys_time.tm_sec, 0);
+}
+
+
+struct tm Panda::get_rtc(){
+  struct __attribute__((packed)) timestamp_t {
+    uint16_t year; // Starts at 0
+    uint8_t month;
+    uint8_t day;
+    uint8_t weekday;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+  } rtc_time;
+
+  usb_read(0xa0, 0, 0, (unsigned char*)&rtc_time, sizeof(rtc_time));
+
+  struct tm new_time = { 0 };
+  new_time.tm_year = rtc_time.year - 1900; // tm struct has year defined as years since 1900
+  new_time.tm_mon  = rtc_time.month - 1;
+  new_time.tm_mday = rtc_time.day;
+  new_time.tm_hour = rtc_time.hour;
+  new_time.tm_min  = rtc_time.minute;
+  new_time.tm_sec  = rtc_time.second;
+
+  return new_time;
 }

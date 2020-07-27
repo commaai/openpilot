@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -8,9 +7,9 @@
 #include <errno.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/resource.h>
 
+#include <ctime>
 #include <cassert>
 #include <iostream>
 #include <algorithm>
@@ -67,6 +66,20 @@ bool pigeon_needs_init;
 
 void pigeon_init();
 void *pigeon_thread(void *crap);
+
+struct tm get_time(){
+  time_t rawtime;
+  time(&rawtime);
+
+  struct tm sys_time;
+  gmtime_r(&rawtime, &sys_time);
+
+  return sys_time;
+}
+
+bool time_valid(struct tm sys_time){
+  return 1900 + sys_time.tm_year >= 2019;
+}
 
 void *safety_setter_thread(void *s) {
   // diagnostic only is the default, needed for VIN query
@@ -186,35 +199,15 @@ bool usb_connect() {
     }
   }
 
-  if (panda->hw_type == cereal::HealthData::HwType::UNO){
-    // Get time from system
-    time_t rawtime;
-    time(&rawtime);
+  if (panda->has_rtc){
+    struct tm sys_time = get_time();
+    struct tm rtc_time = panda->get_rtc();
 
-    struct tm sys_time;
-    gmtime_r(&rawtime, &sys_time);
-
-    // Get time from RTC
-    timestamp_t rtc_time;
-    panda->usb_read(0xa0, 0, 0, (unsigned char*)&rtc_time, sizeof(rtc_time));
-
-    //printf("System: %d-%d-%d\t%d:%d:%d\n", 1900 + sys_time.tm_year, 1 + sys_time.tm_mon, sys_time.tm_mday, sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec);
-    //printf("RTC: %d-%d-%d\t%d:%d:%d\n", rtc_time.year, rtc_time.month, rtc_time.day, rtc_time.hour, rtc_time.minute, rtc_time.second);
-
-    // Update system time from RTC if it looks off, and RTC time is good
-    if (1900 + sys_time.tm_year < 2019 && rtc_time.year >= 2019){
+    if (!time_valid(sys_time) && time_valid(rtc_time)) {
       LOGE("System time wrong, setting from RTC");
 
-      struct tm new_time = { 0 };
-      new_time.tm_year = rtc_time.year - 1900;
-      new_time.tm_mon  = rtc_time.month - 1;
-      new_time.tm_mday = rtc_time.day;
-      new_time.tm_hour = rtc_time.hour;
-      new_time.tm_min  = rtc_time.minute;
-      new_time.tm_sec  = rtc_time.second;
-
       setenv("TZ","UTC",1);
-      const struct timeval tv = {mktime(&new_time), 0};
+      const struct timeval tv = {mktime(&rtc_time), 0};
       settimeofday(&tv, 0);
     }
   }
@@ -383,23 +376,11 @@ void can_health(PubMaster &pm) {
   panda->usb_read(0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm));
 
   // Write to rtc once per minute when no ignition present
-  if ((panda->hw_type == cereal::HealthData::HwType::UNO) && !ignition && (no_ignition_cnt % 120 == 1)){
-    // Get time from system
-    time_t rawtime;
-    time(&rawtime);
-
-    struct tm sys_time;
-    gmtime_r(&rawtime, &sys_time);
-
+  if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)){
     // Write time to RTC if it looks reasonable
-    if (1900 + sys_time.tm_year >= 2019){
-      panda->usb_write(0xa1, (uint16_t)(1900 + sys_time.tm_year), 0);
-      panda->usb_write(0xa2, (uint16_t)(1 + sys_time.tm_mon), 0);
-      panda->usb_write(0xa3, (uint16_t)sys_time.tm_mday, 0);
-      // panda->usb_write(0xa4, (uint16_t)(1 + sys_time.tm_wday), 0);
-      panda->usb_write(0xa5, (uint16_t)sys_time.tm_hour, 0);
-      panda->usb_write(0xa6, (uint16_t)sys_time.tm_min, 0);
-      panda->usb_write(0xa7, (uint16_t)sys_time.tm_sec, 0);
+    struct tm sys_time = get_time();
+    if (time_valid(sys_time)){
+      panda->set_rtc(sys_time);
     }
   }
 
