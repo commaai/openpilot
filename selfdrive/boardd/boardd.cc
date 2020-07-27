@@ -248,27 +248,11 @@ void usb_retry_connect() {
 }
 
 void can_recv(PubMaster &pm) {
-  int recv = 0;
   uint32_t data[RECV_SIZE/4];
   uint64_t start_time = nanos_since_boot();
 
 
-  // TODO: Move bulk receive into panda lib
-  /*
-  // do recv
-  int err = 0;
-  pthread_mutex_lock(&usb_lock);
-
-  do {
-    err = libusb_bulk_transfer(dev_handle, 0x81, (uint8_t*)data, RECV_SIZE, &recv, TIMEOUT);
-    if (err != 0) { handle_usb_issue(err, __func__); }
-    if (err == LIBUSB_ERROR_OVERFLOW) { LOGE_100("overflow got 0x%x", recv); };
-
-    // timeout is okay to exit, recv still happened
-    if (err == LIBUSB_ERROR_TIMEOUT) { break; }
-  } while(err != 0);
-
-  pthread_mutex_unlock(&usb_lock);
+  int recv = panda->usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
   // return if length is 0
   if (recv <= 0) {
@@ -276,7 +260,6 @@ void can_recv(PubMaster &pm) {
   } else if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
   }
-  */
 
   // create message
   capnp::MallocMessageBuilder msg;
@@ -507,30 +490,9 @@ void can_send(cereal::Event::Reader &event) {
   }
 
   // send to board
-
-  // TODO: handle bulk transfer in panda class
-  /*
-  int err;
-  int sent;
-  pthread_mutex_lock(&usb_lock);
-
-  if (!fake_send) {
-    do {
-      // Try sending can messages. If the receive buffer on the panda is full it will NAK
-      // and libusb will try again. After 5ms, it will time out. We will drop the messages.
-      err = libusb_bulk_transfer(dev_handle, 3, (uint8_t*)send, msg_count*0x10, &sent, 5);
-      if (err == LIBUSB_ERROR_TIMEOUT) {
-        LOGW("Transmit buffer full");
-        break;
-      } else if (err != 0 || msg_count*0x10 != sent) {
-        LOGW("Error");
-        handle_usb_issue(err, __func__);
-      }
-    } while(err != 0);
+  if (!fake_send){
+    panda->usb_bulk_write(3, (unsigned char*)send, msg_count*0x10, 5);
   }
-
-  pthread_mutex_unlock(&usb_lock);
-  */
 
   // done
   free(send);
@@ -684,19 +646,13 @@ void hexdump(unsigned char *d, int l) {
 }
 
 void _pigeon_send(const char *dat, int len) {
-  // int sent;
-  // int err;
-
   unsigned char a[0x20+1];
   a[0] = 1;
   for (int i=0; i<len; i+=0x20) {
     int ll = std::min(0x20, len-i);
     memcpy(&a[1], &dat[i], ll);
 
-    // pthread_mutex_lock(&usb_lock);
-    // err = libusb_bulk_transfer(dev_handle, 2, a, ll+1, &sent, TIMEOUT);
-    // if (err < 0) { handle_usb_issue(err, __func__); }
-    // pthread_mutex_unlock(&usb_lock);
+    panda->usb_bulk_write(2, a, ll+1);
   }
 }
 

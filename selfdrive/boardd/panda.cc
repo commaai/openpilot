@@ -104,3 +104,49 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
 
   return err;
 }
+
+int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  int err;
+  int transferred;
+
+  pthread_mutex_lock(&usb_lock);
+  do {
+    // Try sending can messages. If the receive buffer on the panda is full it will NAK
+    // and libusb will try again. After 5ms, it will time out. We will drop the messages.
+    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+
+    if (err == LIBUSB_ERROR_TIMEOUT) {
+      LOGW("Transmit buffer full");
+      break;
+    } else if (err != 0 || length != transferred) {
+      handle_usb_issue(err, __func__);
+    }
+  } while(err != 0);
+
+  pthread_mutex_unlock(&usb_lock);
+  return transferred;
+}
+
+int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  int err;
+  int transferred;
+
+  pthread_mutex_lock(&usb_lock);
+
+  do {
+    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+
+    if (err == LIBUSB_ERROR_TIMEOUT) {
+      break; // timeout is okay to exit, recv still happened
+    } else if (err == LIBUSB_ERROR_OVERFLOW) {
+      LOGE_100("overflow got 0x%x", transferred);
+    } else if (err != 0) {
+      handle_usb_issue(err, __func__);
+    }
+
+  } while(err != 0);
+
+  pthread_mutex_unlock(&usb_lock);
+
+  return transferred;
+}
