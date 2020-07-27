@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <bitset>
 #include <thread>
+#include <atomic>
 
 #include <libusb-1.0/libusb.h>
 
@@ -55,10 +56,8 @@ const float VBATT_START_CHARGING = 11.5;
 const float VBATT_PAUSE_CHARGING = 11.0;
 #endif
 
-
 // Safety setter thread is started on car start
-bool safety_setter_thread_running = false;
-pthread_t safety_setter_thread_handle;
+std::atomic<bool> safety_setter_thread_running(false);
 
 struct tm get_time(){
   time_t rawtime;
@@ -74,13 +73,17 @@ bool time_valid(struct tm sys_time){
   return 1900 + sys_time.tm_year >= 2019;
 }
 
-void *safety_setter_thread(void *s) {
+void safety_setter_thread() {
+  LOGW("Starting safety setter thread");
   // diagnostic only is the default, needed for VIN query
   panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
 
   // switch to SILENT when CarVin param is read
   while (1) {
-    if (do_exit || !panda->connected) return NULL;
+    if (do_exit || !panda->connected){
+      safety_setter_thread_running = false;
+      return;
+    };
 
     std::vector<char> value_vin = read_db_bytes("CarVin");
     if (value_vin.size() > 0) {
@@ -99,7 +102,10 @@ void *safety_setter_thread(void *s) {
   std::vector<char> params;
   LOGW("waiting for params to set safety model");
   while (1) {
-    if (do_exit || !panda->connected) return NULL;
+    if (do_exit || !panda->connected){
+      safety_setter_thread_running = false;
+      return;
+    };
 
     params = read_db_bytes("CarParams");
     if (params.size() > 0) break;
@@ -121,7 +127,7 @@ void *safety_setter_thread(void *s) {
   panda->set_safety_model(safety_model, safety_param);
 
   safety_setter_thread_running = false;
-  return NULL;
+  return;
 }
 
 
@@ -306,9 +312,8 @@ void can_health(PubMaster &pm) {
     assert((result == 0) || (result == ERR_NO_VALUE));
 
     if (!safety_setter_thread_running) {
-      int err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
-      assert(err == 0);
       safety_setter_thread_running = true;
+      std::thread(safety_setter_thread).detach();
     } else {
       LOGW("Safety setter thread already running");
     }
