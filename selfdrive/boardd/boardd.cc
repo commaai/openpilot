@@ -58,15 +58,6 @@ const float VBATT_PAUSE_CHARGING = 11.0;
 bool safety_setter_thread_initialized = false;
 pthread_t safety_setter_thread_handle;
 
-bool pigeon_thread_initialized = false;
-pthread_t pigeon_thread_handle;
-
-bool pigeon_needs_init;
-
-
-void pigeon_init();
-void *pigeon_thread(void *crap);
-
 struct tm get_time(){
   time_t rawtime;
   time(&rawtime);
@@ -181,16 +172,6 @@ bool usb_connect() {
     panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
   }
 #endif
-
-  if (panda->is_pigeon) {
-    LOGW("panda with gps detected");
-    pigeon_needs_init = true;
-    if (!pigeon_thread_initialized) {
-      int err = pthread_create(&pigeon_thread_handle, NULL, pigeon_thread, NULL);
-      assert(err == 0);
-      pigeon_thread_initialized = true;
-    }
-  }
 
   if (panda->has_rtc){
     struct tm sys_time = get_time();
@@ -633,17 +614,18 @@ static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
 
 
 void *pigeon_thread(void *crap) {
+  if (!panda->is_pigeon){ return NULL; };
+
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
 
   // run at ~100hz
   unsigned char dat[0x1000];
   uint64_t cnt = 0;
+
+  pigeon_init();
+
   while (!do_exit && panda->connected) {
-    if (pigeon_needs_init) {
-      pigeon_needs_init = false;
-      pigeon_init();
-    }
     int alen = 0;
     while (alen < 0xfc0) {
       int len = panda->usb_read(0xe0, 1, 0, dat+alen, 0x40);
@@ -719,6 +701,11 @@ int main() {
                          hardware_control_thread, NULL);
     assert(err == 0);
 
+    pthread_t pigeon_thread_handle;
+    err = pthread_create(&pigeon_thread_handle, NULL,
+                         pigeon_thread, NULL);
+    assert(err == 0);
+
     // join threads
     err = pthread_join(can_recv_thread_handle, NULL);
     assert(err == 0);
@@ -727,6 +714,9 @@ int main() {
     assert(err == 0);
 
     err = pthread_join(can_health_thread_handle, NULL);
+    assert(err == 0);
+
+    err = pthread_join(pigeon_thread_handle, NULL);
     assert(err == 0);
 
     delete panda;
