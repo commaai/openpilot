@@ -253,3 +253,7 @@ void Panda::set_power_saving(bool power_saving){
 void Panda::set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode){
   usb_write(0xe6, (uint16_t)power_mode, 0);
 }
+
+void Panda::send_heartbeat(){
+  usb_write(0xf3, 1, 0);
+}

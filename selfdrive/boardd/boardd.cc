@@ -204,7 +204,6 @@ void can_recv(PubMaster &pm) {
   uint32_t data[RECV_SIZE/4];
   uint64_t start_time = nanos_since_boot();
 
-
   int recv = panda->usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
   // return if length is 0
@@ -460,11 +459,8 @@ void can_health_thread() {
         i++;
       }
     }
-    // send to health
     pm.send("health", msg);
-
-    // send heartbeat back to panda
-    panda->usb_write(0xf3, 1, 0);
+    panda->send_heartbeat();
   }
 }
 
