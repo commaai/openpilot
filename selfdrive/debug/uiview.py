@@ -4,8 +4,8 @@ import cereal.messaging as messaging
 from common.basedir import BASEDIR
 
 pm = messaging.PubMaster(['controlsState', 'thermal'])
-subprocess.Popen(BASEDIR + "/selfdrive/camerad/camerad", cwd=BASEDIR + "/selfdrive/camerad")
-subprocess.Popen(BASEDIR + "/selfdrive/ui/ui", cwd=BASEDIR + "/selfdrive/ui")
+proc_cam = subprocess.Popen(BASEDIR + "/selfdrive/camerad/camerad", cwd=BASEDIR + "/selfdrive/camerad")
+proc_ui = subprocess.Popen(BASEDIR + "/selfdrive/ui/ui", cwd=BASEDIR + "/selfdrive/ui")
 
 while True:
   dat = messaging.new_message('controlsState')
@@ -15,3 +15,6 @@ while True:
   dat.thermal.started = True
   pm.send('thermal', dat)
   time.sleep(1 / 100.)
+
+proc_cam.send_signal(signal.SIGINT)
+proc_ui.send_signal(signal.SIGINT)
