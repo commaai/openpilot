@@ -108,7 +108,7 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
 
 int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
   int err;
-  int transferred;
+  int transferred = 0;
 
   pthread_mutex_lock(&usb_lock);
   do {
@@ -130,7 +130,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
 
 int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
   int err;
-  int transferred;
+  int transferred = 0;
 
   pthread_mutex_lock(&usb_lock);
 

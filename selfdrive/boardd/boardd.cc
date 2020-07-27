@@ -126,6 +126,7 @@ void safety_setter_thread() {
 
 bool usb_connect() {
   try {
+    assert(panda == NULL);
     panda = new Panda();
   } catch (std::exception &e) {
     return false;
@@ -326,7 +327,6 @@ void can_recv_thread() {
 
 void can_health_thread() {
   LOGD("start health thread");
-  // health = 8011
   PubMaster pm({"health"});
 
   uint32_t no_ignition_cnt = 0;
@@ -334,17 +334,17 @@ void can_health_thread() {
   float voltage_f = 12.5;  // filtered voltage
 
   // run at 2hz
-  while (!do_exit && panda->connected) {
-
+  while (!do_exit) {
     capnp::MallocMessageBuilder msg;
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(nanos_since_boot());
     auto healthData = event.initHealth();
 
-    if (!panda->connected){
+    if (!panda || !panda->connected){
       healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
       pm.send("health", msg);
-      return;
+      usleep(500*1000);
+      continue;
     }
 
     health_t health = panda->get_health();
@@ -650,13 +650,14 @@ int main() {
     fake_send = true;
   }
 
+  std::thread health_thread(can_health_thread);
+
   while (!do_exit){
     // TODO: start health thread without connection
     // connect to the board
     usb_retry_connect();
 
     std::vector<std::thread> threads;
-    threads.push_back(std::thread(can_health_thread));
     threads.push_back(std::thread(can_send_thread));
     threads.push_back(std::thread(can_recv_thread));
     threads.push_back(std::thread(hardware_control_thread));
@@ -665,5 +666,8 @@ int main() {
     for (auto &t : threads) t.join();
 
     delete panda;
+    panda = NULL;
   }
+
+  health_thread.join();
 }
