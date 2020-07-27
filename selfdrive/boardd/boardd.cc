@@ -290,7 +290,7 @@ void usb_retry_connect() {
 
 void handle_usb_issue(int err, const char func[]) {
   LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
-  if (err == -4) {
+  if (err == LIBUSB_ERROR_NO_DEVICE) {
     LOGE("lost connection");
     usb_retry_connect();
   }
@@ -310,10 +310,10 @@ void can_recv(PubMaster &pm) {
   do {
     err = libusb_bulk_transfer(dev_handle, 0x81, (uint8_t*)data, RECV_SIZE, &recv, TIMEOUT);
     if (err != 0) { handle_usb_issue(err, __func__); }
-    if (err == -8) { LOGE_100("overflow got 0x%x", recv); };
+    if (err == LIBUSB_ERROR_OVERFLOW) { LOGE_100("overflow got 0x%x", recv); };
 
     // timeout is okay to exit, recv still happened
-    if (err == -7) { break; }
+    if (err == LIBUSB_ERROR_TIMEOUT) { break; }
   } while(err != 0);
 
   pthread_mutex_unlock(&usb_lock);

@@ -197,10 +197,10 @@ jobs:
         run: eval "$BUILD"
       - name: Test car models
         run: |
-          $PERSIST "mkdir -p /data/params && \
-                    cd /tmp/openpilot && \
+          $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && \
+                    coverage run --parallel-mode --concurrency=multiprocessing \
+                                 --rcfile=./.coveragerc-app selfdrive/test/test_models.py && \
                     coverage combine"
       - name: Upload coverage to Codecov
         run: |

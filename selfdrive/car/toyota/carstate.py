@@ -182,9 +182,14 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
 
-    signals = [("FORCE", "PRE_COLLISION", 0), ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0)]
+    signals = [
+      ("FORCE", "PRE_COLLISION", 0),
+      ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0)
+    ]
 
     # use steering message to check if panda is connected to frc
-    checks = [("STEERING_LKA", 42)]
+    checks = [
+      ("STEERING_LKA", 42)
+    ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
