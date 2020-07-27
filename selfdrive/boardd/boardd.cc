@@ -614,16 +614,6 @@ void *hardware_control_thread(void *crap) {
 }
 
 #define pigeon_send(x) _pigeon_send(x, sizeof(x)-1)
-
-void hexdump(unsigned char *d, int l) __attribute__((unused));
-void hexdump(unsigned char *d, int l) {
-  for (int i = 0; i < l; i++) {
-    if (i!=0 && i%0x10 == 0) printf("\n");
-    printf("%2.2X ", d[i]);
-  }
-  printf("\n");
-}
-
 void _pigeon_send(const char *dat, int len) {
   unsigned char a[0x20+1];
   a[0] = 1;

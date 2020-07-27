@@ -78,16 +78,14 @@ void Panda::handle_usb_issue(int err, const char func[]) {
 }
 
 int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
+  int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
   pthread_mutex_lock(&usb_lock);
-  if (!connected){
-    pthread_mutex_unlock(&usb_lock);
-    return -1;
-  }
-
-  int err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
-  if (err < 0) handle_usb_issue(err, __func__);
+  do {
+    err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
+    if (err < 0) handle_usb_issue(err, __func__);
+  } while (err < 0 && connected);
 
   pthread_mutex_unlock(&usb_lock);
 
@@ -95,17 +93,14 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
 }
 
 int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout) {
+  int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
   pthread_mutex_lock(&usb_lock);
-  if (!connected){
-    pthread_mutex_unlock(&usb_lock);
-    return -1;
-  }
-
-  int err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
-  if (err < 0) handle_usb_issue(err, __func__);
-
+  do {
+    err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
+    if (err < 0) handle_usb_issue(err, __func__);
+  } while (err < 0 && connected);
   pthread_mutex_unlock(&usb_lock);
 
   return err;
@@ -127,7 +122,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
     } else if (err != 0 || length != transferred) {
       handle_usb_issue(err, __func__);
     }
-  } while(err != 0);
+  } while(err != 0 && connected);
 
   pthread_mutex_unlock(&usb_lock);
   return transferred;
@@ -150,7 +145,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
       handle_usb_issue(err, __func__);
     }
 
-  } while(err != 0);
+  } while(err != 0 && connected);
 
   pthread_mutex_unlock(&usb_lock);
 
