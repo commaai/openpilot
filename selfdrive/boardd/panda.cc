@@ -208,6 +208,10 @@ uint16_t Panda::get_fan_speed(){
   return fan_speed_rpm;
 }
 
+void Panda::set_ir_pwr(uint16_t ir_pwr) {
+  usb_write(0xb0, ir_pwr, 0);
+}
+
 health_t Panda::get_health(){
   health_t health {0};
   usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));

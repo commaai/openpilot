@@ -63,6 +63,7 @@ class Panda {
   struct tm get_rtc();
   void set_fan_speed(uint16_t fan_speed);
   uint16_t get_fan_speed();
+  void set_ir_pwr(uint16_t ir_pwr);
   health_t get_health();
   void set_loopback(bool loopback);
   const char* get_firmware_version();

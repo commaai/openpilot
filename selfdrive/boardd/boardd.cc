@@ -505,7 +505,7 @@ void hardware_control_thread() {
     }
 
     if (ir_pwr != prev_ir_pwr || cnt % 100 == 0 || ir_pwr >= 50.0){
-      panda->usb_write(0xb0, ir_pwr, 0);
+      panda->set_ir_pwr(ir_pwr);
       prev_ir_pwr = ir_pwr;
     }
 
