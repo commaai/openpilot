@@ -43,7 +43,6 @@ volatile sig_atomic_t do_exit = 0;
 
 bool spoofing_started = false;
 bool fake_send = false;
-bool loopback_can = false;
 float voltage_f = 12.5;  // filtered voltage
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
@@ -134,7 +133,7 @@ bool usb_connect() {
     return false;
   }
 
-  if (loopback_can) {
+  if (getenv("BOARDD_LOOPBACK")) {
     panda->set_loopback(true);
   }
 
@@ -671,10 +670,6 @@ int main() {
 
   if (getenv("FAKESEND")) {
     fake_send = true;
-  }
-
-  if (getenv("BOARDD_LOOPBACK")){
-    loopback_can = true;
   }
 
   while (!do_exit){
