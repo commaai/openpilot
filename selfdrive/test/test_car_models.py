@@ -375,6 +375,7 @@ routes = {
   "3c8f0c502e119c1c|2020-06-30--12-58-02": {
     'carFingerprint': SUBARU.ASCENT,
     'enableCamera': True,
+    'fingerprintSource': 'fixed',
   },
   "c321c6b697c5a5ff|2020-06-23--11-04-33": {
     'carFingerprint': SUBARU.FORESTER,
@@ -455,7 +456,6 @@ non_tested_cars = [
   TOYOTA.CHRH,
   TOYOTA.HIGHLANDERH,
   TOYOTA.HIGHLANDERH_TSS2,
-  SUBARU.ASCENT,
   SUBARU.FORESTER_PREGLOBAL,
   SUBARU.LEGACY_PREGLOBAL,
   SUBARU.OUTBACK_PREGLOBAL,
