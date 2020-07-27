@@ -73,10 +73,8 @@ static void update_offroad_layout_state(UIState *s) {
     timeout--;
   }
   if (prev_collapsed != s->scene.uilayout_sidebarcollapsed || prev_app != s->active_app || timeout == 0) {
-    capnp::MallocMessageBuilder msg;
-    auto event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto layout = event.initUiLayoutState();
+    MessageBuilder msg;
+    auto layout = msg.initEvent().initUiLayoutState();
     layout.setActiveApp(s->active_app);
     layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
     s->pm->send("offroadLayout", msg);
