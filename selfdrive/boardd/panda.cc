@@ -31,6 +31,12 @@ Panda::Panda(){
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { goto fail; }
 
+  hw_type = get_hw_type();
+  is_pigeon =
+    (hw_type == cereal::HealthData::HwType::GREY_PANDA) ||
+    (hw_type == cereal::HealthData::HwType::BLACK_PANDA) ||
+    (hw_type == cereal::HealthData::HwType::UNO);
+
   return;
 
  fail:
@@ -153,4 +159,11 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
 
 int Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param){
   return usb_write(0xdc, (uint16_t)safety_model, safety_param);
+}
+
+cereal::HealthData::HwType Panda::get_hw_type() {
+  unsigned char hw_query[1] = {0};
+
+  usb_read(0xc1, 0, 0, hw_query, 1);
+  return (cereal::HealthData::HwType)(hw_query[0]);
 }

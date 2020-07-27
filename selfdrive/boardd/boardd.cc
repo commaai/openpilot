@@ -42,12 +42,9 @@ Panda * panda = NULL;
 
 volatile sig_atomic_t do_exit = 0;
 
-cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
-
 bool spoofing_started = false;
 bool fake_send = false;
 bool loopback_can = false;
-bool is_pigeon = false;
 float voltage_f = 12.5;  // filtered voltage
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
@@ -126,7 +123,6 @@ void *safety_setter_thread(void *s) {
 // must be called before threads or with mutex
 bool usb_connect() {
   int err, err2;
-  unsigned char hw_query[1] = {0};
   unsigned char fw_sig_buf[128];
   unsigned char fw_sig_hex_buf[16];
   unsigned char serial_buf[16];
@@ -180,13 +176,7 @@ bool usb_connect() {
 #endif
   connected_once = true;
 
-  panda->usb_read(0xc1, 0, 0, hw_query, 1);
-
-  hw_type = (cereal::HealthData::HwType)(hw_query[0]);
-  is_pigeon = (hw_type == cereal::HealthData::HwType::GREY_PANDA) ||
-              (hw_type == cereal::HealthData::HwType::BLACK_PANDA) ||
-              (hw_type == cereal::HealthData::HwType::UNO);
-  if (is_pigeon) {
+  if (panda->is_pigeon) {
     LOGW("panda with gps detected");
     pigeon_needs_init = true;
     if (!pigeon_thread_initialized) {
@@ -196,7 +186,7 @@ bool usb_connect() {
     }
   }
 
-  if (hw_type == cereal::HealthData::HwType::UNO){
+  if (panda->hw_type == cereal::HealthData::HwType::UNO){
     // Get time from system
     time_t rawtime;
     time(&rawtime);
@@ -393,7 +383,7 @@ void can_health(PubMaster &pm) {
   panda->usb_read(0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm));
 
   // Write to rtc once per minute when no ignition present
-  if ((hw_type == cereal::HealthData::HwType::UNO) && !ignition && (no_ignition_cnt % 120 == 1)){
+  if ((panda->hw_type == cereal::HealthData::HwType::UNO) && !ignition && (no_ignition_cnt % 120 == 1)){
     // Get time from system
     time_t rawtime;
     time(&rawtime);
@@ -423,12 +413,12 @@ void can_health(PubMaster &pm) {
   healthData.setIgnitionCan(health.ignition_can);
   healthData.setControlsAllowed(health.controls_allowed);
   healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
-  healthData.setHasGps(is_pigeon);
+  healthData.setHasGps(panda->is_pigeon);
   healthData.setCanRxErrs(health.can_rx_errs);
   healthData.setCanSendErrs(health.can_send_errs);
   healthData.setCanFwdErrs(health.can_fwd_errs);
   healthData.setGmlanSendErrs(health.gmlan_send_errs);
-  healthData.setHwType(hw_type);
+  healthData.setHwType(panda->hw_type);
   healthData.setUsbPowerMode(cereal::HealthData::UsbPowerMode(health.usb_power_mode));
   healthData.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_model));
   healthData.setFanSpeedRpm(fan_speed_rpm);
@@ -574,13 +564,8 @@ void *hardware_control_thread(void *crap) {
   LOGD("start hardware control thread");
   SubMaster sm({"thermal", "frontFrame"});
 
-  // Wait for hardware type to be set.
-  while (hw_type == cereal::HealthData::HwType::UNKNOWN){
-    usleep(100*1000);
-  }
   // Only control fan speed on UNO
-  if (hw_type != cereal::HealthData::HwType::UNO) return NULL;
-
+  if (panda->hw_type != cereal::HealthData::HwType::UNO) return NULL;
 
   uint64_t last_front_frame_t = 0;
   uint16_t prev_fan_speed = 999;
