@@ -73,7 +73,7 @@ bool time_valid(struct tm sys_time){
 }
 
 void safety_setter_thread() {
-  LOGW("Starting safety setter thread");
+  LOGD("Starting safety setter thread");
   // diagnostic only is the default, needed for VIN query
   panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
 
