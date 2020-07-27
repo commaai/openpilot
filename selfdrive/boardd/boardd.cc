@@ -55,7 +55,9 @@ const float VBATT_START_CHARGING = 11.5;
 const float VBATT_PAUSE_CHARGING = 11.0;
 #endif
 
-bool safety_setter_thread_initialized = false;
+
+// Safety setter thread is started on car start
+bool safety_setter_thread_running = false;
 pthread_t safety_setter_thread_handle;
 
 struct tm get_time(){
@@ -116,10 +118,9 @@ void *safety_setter_thread(void *s) {
   auto safety_param = car_params.getSafetyParam();
   LOGW("setting safety model: %d with param %d", (int)safety_model, safety_param);
 
-  // TODO: think about race condition!
-  safety_setter_thread_initialized = false;
   panda->set_safety_model(safety_model, safety_param);
 
+  safety_setter_thread_running = false;
   return NULL;
 }
 
@@ -305,10 +306,12 @@ void can_health(PubMaster &pm) {
     result = delete_db_value("CarParams");
     assert((result == 0) || (result == ERR_NO_VALUE));
 
-    if (!safety_setter_thread_initialized) {
+    if (!safety_setter_thread_running) {
       int err = pthread_create(&safety_setter_thread_handle, NULL, safety_setter_thread, NULL);
       assert(err == 0);
-      safety_setter_thread_initialized = true;
+      safety_setter_thread_running = true;
+    } else {
+      LOGW("Safety setter thread already running");
     }
   }
 
