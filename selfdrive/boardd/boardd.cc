@@ -48,7 +48,6 @@ bool fake_send = false;
 float voltage_f = 12.5;  // filtered voltage
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
-bool ignition_last = false;
 
 #ifndef __x86_64__
 const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
@@ -132,8 +131,6 @@ void safety_setter_thread() {
 
 
 bool usb_connect() {
-  ignition_last = false;
-
   try {
     panda = new Panda();
   } catch (std::exception &e) {
@@ -243,134 +240,6 @@ void can_recv(PubMaster &pm) {
   pm.send("can", msg);
 }
 
-void can_health(PubMaster &pm) {
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto healthData = event.initHealth();
-
-  if (!panda->connected){
-    healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
-    pm.send("health", msg);
-    return;
-  }
-
-  health_t health = panda->get_health();
-
-  if (spoofing_started) {
-    health.ignition_line = 1;
-  }
-
-  voltage_f = VOLTAGE_K * (health.voltage / 1000.0) + (1.0 - VOLTAGE_K) * voltage_f;  // LPF
-
-  // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
-  if (health.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
-    panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
-  }
-
-  bool ignition = ((health.ignition_line != 0) || (health.ignition_can != 0));
-
-  if (ignition) {
-    no_ignition_cnt = 0;
-  } else {
-    no_ignition_cnt += 1;
-  }
-
-#ifndef __x86_64__
-  bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
-  bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
-  if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
-    std::vector<char> disable_power_down = read_db_bytes("DisablePowerDown");
-    if (disable_power_down.size() != 1 || disable_power_down[0] != '1') {
-      LOGW("TURN OFF CHARGING!\n");
-      panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
-      LOGW("POWER DOWN DEVICE\n");
-      system("service call power 17 i32 0 i32 1");
-    }
-  }
-  if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
-    LOGW("TURN ON CHARGING!\n");
-    panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
-  }
-
-  bool power_save_desired = !ignition;
-  if (health.power_save_enable != power_save_desired){
-    panda->set_power_saving(power_save_desired);
-  }
-
-  // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
-  if (!ignition && (health.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
-    panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
-  }
-#endif
-
-  // clear VIN, CarParams, and set new safety on car start
-  if (ignition && !ignition_last) {
-    int result = delete_db_value("CarVin");
-    assert((result == 0) || (result == ERR_NO_VALUE));
-    result = delete_db_value("CarParams");
-    assert((result == 0) || (result == ERR_NO_VALUE));
-
-    if (!safety_setter_thread_running) {
-      safety_setter_thread_running = true;
-      std::thread(safety_setter_thread).detach();
-    } else {
-      LOGW("Safety setter thread already running");
-    }
-  }
-
-  // Write to rtc once per minute when no ignition present
-  if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)){
-    // Write time to RTC if it looks reasonable
-    struct tm sys_time = get_time();
-    if (time_valid(sys_time)){
-      panda->set_rtc(sys_time);
-    }
-  }
-
-  ignition_last = ignition;
-  uint16_t fan_speed_rpm = panda->get_fan_speed();
-
-  // set fields
-  healthData.setUptime(health.uptime);
-  healthData.setVoltage(health.voltage);
-  healthData.setCurrent(health.current);
-  healthData.setIgnitionLine(health.ignition_line);
-  healthData.setIgnitionCan(health.ignition_can);
-  healthData.setControlsAllowed(health.controls_allowed);
-  healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
-  healthData.setHasGps(panda->is_pigeon);
-  healthData.setCanRxErrs(health.can_rx_errs);
-  healthData.setCanSendErrs(health.can_send_errs);
-  healthData.setCanFwdErrs(health.can_fwd_errs);
-  healthData.setGmlanSendErrs(health.gmlan_send_errs);
-  healthData.setHwType(panda->hw_type);
-  healthData.setUsbPowerMode(cereal::HealthData::UsbPowerMode(health.usb_power_mode));
-  healthData.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_model));
-  healthData.setFanSpeedRpm(fan_speed_rpm);
-  healthData.setFaultStatus(cereal::HealthData::FaultStatus(health.fault_status));
-  healthData.setPowerSaveEnabled((bool)(health.power_save_enabled));
-
-  // Convert faults bitset to capnp list
-  std::bitset<sizeof(health.faults) * 8> fault_bits(health.faults);
-  auto faults = healthData.initFaults(fault_bits.count());
-
-  size_t i = 0;
-  for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
-       f <= size_t(cereal::HealthData::FaultType::INTERRUPT_RATE_KLINE_INIT); f++){
-    if (fault_bits.test(f)) {
-      faults.set(i, cereal::HealthData::FaultType(f));
-      i++;
-    }
-  }
-  // send to health
-  pm.send("health", msg);
-
-  // send heartbeat back to panda
-  panda->usb_write(0xf3, 1, 0);
-}
-
-
 void can_send(cereal::Event::Reader &event) {
   if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
     return; //Older than 1 second. Dont send.
@@ -467,10 +336,135 @@ void can_health_thread() {
   // health = 8011
   PubMaster pm({"health"});
 
+  bool ignition_last = false;
+
   // run at 2hz
   while (!do_exit && panda->connected) {
-    can_health(pm);
-    usleep(500*1000);
+
+    capnp::MallocMessageBuilder msg;
+    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+    event.setLogMonoTime(nanos_since_boot());
+    auto healthData = event.initHealth();
+
+    if (!panda->connected){
+      healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
+      pm.send("health", msg);
+      return;
+    }
+
+    health_t health = panda->get_health();
+
+    if (spoofing_started) {
+      health.ignition_line = 1;
+    }
+
+    voltage_f = VOLTAGE_K * (health.voltage / 1000.0) + (1.0 - VOLTAGE_K) * voltage_f;  // LPF
+
+    // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
+    if (health.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
+      panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
+    }
+
+    bool ignition = ((health.ignition_line != 0) || (health.ignition_can != 0));
+
+    if (ignition) {
+      no_ignition_cnt = 0;
+    } else {
+      no_ignition_cnt += 1;
+    }
+
+  #ifndef __x86_64__
+    bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
+    bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
+    if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
+      std::vector<char> disable_power_down = read_db_bytes("DisablePowerDown");
+      if (disable_power_down.size() != 1 || disable_power_down[0] != '1') {
+        LOGW("TURN OFF CHARGING!\n");
+        panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
+        LOGW("POWER DOWN DEVICE\n");
+        system("service call power 17 i32 0 i32 1");
+      }
+    }
+    if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
+      LOGW("TURN ON CHARGING!\n");
+      panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
+    }
+
+    bool power_save_desired = !ignition;
+    if (health.power_save_enable != power_save_desired){
+      panda->set_power_saving(power_save_desired);
+    }
+
+    // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
+    if (!ignition && (health.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
+      panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
+    }
+  #endif
+
+    // clear VIN, CarParams, and set new safety on car start
+    if (ignition && !ignition_last) {
+      int result = delete_db_value("CarVin");
+      assert((result == 0) || (result == ERR_NO_VALUE));
+      result = delete_db_value("CarParams");
+      assert((result == 0) || (result == ERR_NO_VALUE));
+
+      if (!safety_setter_thread_running) {
+        safety_setter_thread_running = true;
+        std::thread(safety_setter_thread).detach();
+      } else {
+        LOGW("Safety setter thread already running");
+      }
+    }
+
+    // Write to rtc once per minute when no ignition present
+    if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)){
+      // Write time to RTC if it looks reasonable
+      struct tm sys_time = get_time();
+      if (time_valid(sys_time)){
+        panda->set_rtc(sys_time);
+      }
+    }
+
+    ignition_last = ignition;
+    uint16_t fan_speed_rpm = panda->get_fan_speed();
+
+    // set fields
+    healthData.setUptime(health.uptime);
+    healthData.setVoltage(health.voltage);
+    healthData.setCurrent(health.current);
+    healthData.setIgnitionLine(health.ignition_line);
+    healthData.setIgnitionCan(health.ignition_can);
+    healthData.setControlsAllowed(health.controls_allowed);
+    healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
+    healthData.setHasGps(panda->is_pigeon);
+    healthData.setCanRxErrs(health.can_rx_errs);
+    healthData.setCanSendErrs(health.can_send_errs);
+    healthData.setCanFwdErrs(health.can_fwd_errs);
+    healthData.setGmlanSendErrs(health.gmlan_send_errs);
+    healthData.setHwType(panda->hw_type);
+    healthData.setUsbPowerMode(cereal::HealthData::UsbPowerMode(health.usb_power_mode));
+    healthData.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_model));
+    healthData.setFanSpeedRpm(fan_speed_rpm);
+    healthData.setFaultStatus(cereal::HealthData::FaultStatus(health.fault_status));
+    healthData.setPowerSaveEnabled((bool)(health.power_save_enabled));
+
+    // Convert faults bitset to capnp list
+    std::bitset<sizeof(health.faults) * 8> fault_bits(health.faults);
+    auto faults = healthData.initFaults(fault_bits.count());
+
+    size_t i = 0;
+    for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
+        f <= size_t(cereal::HealthData::FaultType::INTERRUPT_RATE_KLINE_INIT); f++){
+      if (fault_bits.test(f)) {
+        faults.set(i, cereal::HealthData::FaultType(f));
+        i++;
+      }
+    }
+    // send to health
+    pm.send("health", msg);
+
+    // send heartbeat back to panda
+    panda->usb_write(0xf3, 1, 0);
   }
 }
 
