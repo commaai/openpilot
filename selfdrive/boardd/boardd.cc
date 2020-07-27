@@ -125,7 +125,6 @@ void *safety_setter_thread(void *s) {
 }
 
 
-// must be called before threads or with mutex
 bool usb_connect() {
   ignition_last = false;
 
