@@ -37,26 +37,20 @@
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 #define VOLTAGE_K 0.091  // LPF gain for 5s tau (dt/tau / (dt/tau + 1))
 
-namespace {
-
-Panda * panda = NULL;
-
-volatile sig_atomic_t do_exit = 0;
-
-bool spoofing_started = false;
-bool fake_send = false;
-float voltage_f = 12.5;  // filtered voltage
-uint32_t no_ignition_cnt = 0;
-bool connected_once = false;
-
 #ifndef __x86_64__
 const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
 const float VBATT_START_CHARGING = 11.5;
 const float VBATT_PAUSE_CHARGING = 11.0;
 #endif
 
-// Safety setter thread is started on car start
+namespace {
+
+Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
+volatile sig_atomic_t do_exit = 0;
+bool spoofing_started = false;
+bool fake_send = false;
+bool connected_once = false;
 
 struct tm get_time(){
   time_t rawtime;
@@ -335,7 +329,9 @@ void can_health_thread() {
   // health = 8011
   PubMaster pm({"health"});
 
+  uint32_t no_ignition_cnt = 0;
   bool ignition_last = false;
+  float voltage_f = 12.5;  // filtered voltage
 
   // run at 2hz
   while (!do_exit && panda->connected) {
