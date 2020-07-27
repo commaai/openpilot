@@ -370,11 +370,6 @@ void can_health(PubMaster &pm) {
     }
   }
 
-  // Get fan RPM
-  uint16_t fan_speed_rpm = 0;
-
-  panda->usb_read(0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm));
-
   // Write to rtc once per minute when no ignition present
   if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)){
     // Write time to RTC if it looks reasonable
@@ -385,6 +380,7 @@ void can_health(PubMaster &pm) {
   }
 
   ignition_last = ignition;
+  uint16_t fan_speed_rpm = panda->get_fan_speed();
 
   // set fields
   healthData.setUptime(health.uptime);
@@ -561,7 +557,7 @@ void *hardware_control_thread(void *crap) {
     if (sm.updated("thermal")){
       uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
-        panda->usb_write(0xb1, fan_speed, 0);
+        panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
       }
     }

@@ -200,3 +200,14 @@ struct tm Panda::get_rtc(){
 
   return new_time;
 }
+
+
+void Panda::set_fan_speed(uint16_t fan_speed){
+  usb_write(0xb1, fan_speed, 0);
+}
+
+uint16_t Panda::get_fan_speed(){
+  uint16_t fan_speed_rpm = 0;
+  usb_read(0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm));
+  return fan_speed_rpm;
+}
