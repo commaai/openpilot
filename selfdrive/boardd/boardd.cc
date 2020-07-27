@@ -14,6 +14,7 @@
 #include <iostream>
 #include <algorithm>
 #include <bitset>
+#include <thread>
 
 #include <libusb-1.0/libusb.h>
 
@@ -397,9 +398,7 @@ void can_send(cereal::Event::Reader &event) {
   delete[] send;
 }
 
-// **** threads ****
-
-void *can_send_thread(void *crap) {
+void can_send_thread() {
   LOGD("start send thread");
 
   Context * context = Context::create();
@@ -429,11 +428,9 @@ void *can_send_thread(void *crap) {
 
   delete subscriber;
   delete context;
-
-  return NULL;
 }
 
-void *can_recv_thread(void *crap) {
+void can_recv_thread() {
   LOGD("start recv thread");
 
   // can = 8006
@@ -458,10 +455,9 @@ void *can_recv_thread(void *crap) {
 
     next_frame_time += dt;
   }
-  return NULL;
 }
 
-void *can_health_thread(void *crap) {
+void can_health_thread() {
   LOGD("start health thread");
   // health = 8011
   PubMaster pm({"health"});
@@ -471,16 +467,14 @@ void *can_health_thread(void *crap) {
     can_health(pm);
     usleep(500*1000);
   }
-
-  return NULL;
 }
 
-void *hardware_control_thread(void *crap) {
+void hardware_control_thread() {
   LOGD("start hardware control thread");
   SubMaster sm({"thermal", "frontFrame"});
 
   // Only control fan speed on UNO
-  if (panda->hw_type != cereal::HealthData::HwType::UNO) return NULL;
+  if (panda->hw_type != cereal::HealthData::HwType::UNO) return;
 
   uint64_t last_front_frame_t = 0;
   uint16_t prev_fan_speed = 999;
@@ -524,8 +518,6 @@ void *hardware_control_thread(void *crap) {
     }
 
   }
-
-  return NULL;
 }
 
 #define pigeon_send(x) _pigeon_send(x, sizeof(x)-1)
@@ -609,8 +601,8 @@ static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
 }
 
 
-void *pigeon_thread(void *crap) {
-  if (!panda->is_pigeon){ return NULL; };
+void pigeon_thread() {
+  if (!panda->is_pigeon){ return; };
 
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
@@ -643,7 +635,6 @@ void *pigeon_thread(void *crap) {
     usleep(10*1000);
     cnt++;
   }
-  return NULL;
 }
 
 }
@@ -672,44 +663,14 @@ int main() {
     // connect to the board
     usb_retry_connect();
 
-    pthread_t can_health_thread_handle;
-    err = pthread_create(&can_health_thread_handle, NULL,
-                         can_health_thread, NULL);
-    assert(err == 0);
+    std::vector<std::thread> threads;
+    threads.push_back(std::thread(can_health_thread));
+    threads.push_back(std::thread(can_send_thread));
+    threads.push_back(std::thread(can_recv_thread));
+    threads.push_back(std::thread(hardware_control_thread));
+    threads.push_back(std::thread(pigeon_thread));
 
-    // create threads
-    pthread_t can_send_thread_handle;
-    err = pthread_create(&can_send_thread_handle, NULL,
-                         can_send_thread, NULL);
-    assert(err == 0);
-
-    pthread_t can_recv_thread_handle;
-    err = pthread_create(&can_recv_thread_handle, NULL,
-                         can_recv_thread, NULL);
-    assert(err == 0);
-
-    pthread_t hardware_control_thread_handle;
-    err = pthread_create(&hardware_control_thread_handle, NULL,
-                         hardware_control_thread, NULL);
-    assert(err == 0);
-
-    pthread_t pigeon_thread_handle;
-    err = pthread_create(&pigeon_thread_handle, NULL,
-                         pigeon_thread, NULL);
-    assert(err == 0);
-
-    // join threads
-    err = pthread_join(can_recv_thread_handle, NULL);
-    assert(err == 0);
-
-    err = pthread_join(can_send_thread_handle, NULL);
-    assert(err == 0);
-
-    err = pthread_join(can_health_thread_handle, NULL);
-    assert(err == 0);
-
-    err = pthread_join(pigeon_thread_handle, NULL);
-    assert(err == 0);
+    for (auto &t : threads) t.join();
 
     delete panda;
   }
