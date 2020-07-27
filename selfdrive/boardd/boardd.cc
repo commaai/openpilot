@@ -178,7 +178,7 @@ bool usb_connect() {
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
 #ifndef __x86_64__
   if (!connected_once) {
-    panda->usb_write(0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CDP), 0);
+    panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
   }
 #endif
 
@@ -211,7 +211,7 @@ bool usb_connect() {
 
 // must be called before threads or with mutex
 void usb_retry_connect() {
-  LOG("attempting to connect");
+  LOGW("attempting to connect");
   while (!usb_connect()) { usleep(100*1000); }
   LOGW("connected to board");
 }
@@ -295,15 +295,15 @@ void can_health(PubMaster &pm) {
   if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
     std::vector<char> disable_power_down = read_db_bytes("DisablePowerDown");
     if (disable_power_down.size() != 1 || disable_power_down[0] != '1') {
-      printf("TURN OFF CHARGING!\n");
-      panda->usb_write(0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0);
-      printf("POWER DOWN DEVICE\n");
+      LOGW("TURN OFF CHARGING!\n");
+      panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
+      LOGW("POWER DOWN DEVICE\n");
       system("service call power 17 i32 0 i32 1");
     }
   }
   if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
-    printf("TURN ON CHARGING!\n");
-    panda->usb_write(0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CDP), 0);
+    LOGW("TURN ON CHARGING!\n");
+    panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
   }
 
   bool power_save_desired = !ignition;

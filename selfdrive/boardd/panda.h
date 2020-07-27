@@ -68,5 +68,6 @@ class Panda {
   const char* get_firmware_version();
   const char* get_serial();
   void set_power_saving(bool power_saving);
+  void set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode);
 
 };

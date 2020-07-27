@@ -253,3 +253,8 @@ const char* Panda::get_serial(){
 void Panda::set_power_saving(bool power_saving){
   usb_write(0xe7, power_saving, 0);
 }
+
+
+void Panda::set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode){
+  usb_write(0xe6, (uint16_t)power_mode, 0);
+}
