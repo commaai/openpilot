@@ -457,6 +457,7 @@ void can_health_thread() {
     }
     pm.send("health", msg);
     panda->send_heartbeat();
+    usleep(500*1000);
   }
 }
 
