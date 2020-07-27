@@ -9,7 +9,6 @@ import os
 
 PHONELIBS = os.path.join(BASEDIR, 'phonelibs')
 
-ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 libraries = ['can_list_to_can_capnp', 'capnp', 'kj']
 
 setup(name='Boardd API Implementation',
