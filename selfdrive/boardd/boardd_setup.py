@@ -1,4 +1,3 @@
-import subprocess
 from distutils.core import Extension, setup
 
 from Cython.Build import cythonize
