@@ -183,7 +183,7 @@ struct tm Panda::get_rtc(){
     uint8_t hour;
     uint8_t minute;
     uint8_t second;
-  } rtc_time;
+  } rtc_time = {0};
 
   usb_read(0xa0, 0, 0, (unsigned char*)&rtc_time, sizeof(rtc_time));
 
