@@ -168,6 +168,10 @@ routes = {
     'carFingerprint': HONDA.CIVIC_BOSCH,
     'enableCamera': True,
   },
+  "6fe86b4e410e4c37|2020-07-22--16-27-13": {
+    'carFingerprint': HYUNDAI.HYUNDAI_GENESIS,
+    'enableCamera': True,
+  },
   "38bfd238edecbcd7|2018-08-22--09-45-44": {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': False,
@@ -188,6 +192,10 @@ routes = {
     'carFingerprint': HYUNDAI.SONATA_2019,
     'enableCamera': True,
   },
+  "5875672fc1d4bf57|2020-07-23--21-33-28": {
+    'carFingerprint': HYUNDAI.KIA_SORENTO,
+    'enableCamera': True,
+  },
   "9c917ba0d42ffe78|2020-04-17--12-43-19": {
     'carFingerprint': HYUNDAI.PALISADE,
     'enableCamera': True,
@@ -198,6 +206,10 @@ routes = {
   },
   "2c5cf2dd6102e5da|2020-06-26--16-00-08": {
     'carFingerprint': HYUNDAI.IONIQ,
+    'enableCamera': True,
+  },
+  "5dddcbca6eb66c62|2020-07-26--13-24-19": {
+    'carFingerprint': HYUNDAI.KIA_STINGER,
     'enableCamera': True,
   },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
@@ -422,7 +434,6 @@ non_tested_cars = [
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_OPTIMA_H,
-  HYUNDAI.KIA_SORENTO,
   HYUNDAI.KIA_STINGER,
   HYUNDAI.KONA,
   HYUNDAI.KONA_EV,

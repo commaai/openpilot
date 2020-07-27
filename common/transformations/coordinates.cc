@@ -10,9 +10,9 @@
 #define RAD2DEG(x) ((x) * 180.0 / M_PI)
 
 
-double a = 6378137;
-double b = 6356752.3142;
-double esq = 6.69437999014 * 0.001;
+double a = 6378137; // lgtm [cpp/short-global-name]
+double b = 6356752.3142; // lgtm [cpp/short-global-name]
+double esq = 6.69437999014 * 0.001; // lgtm [cpp/short-global-name]
 double e1sq = 6.73949674228 * 0.001;
 
 

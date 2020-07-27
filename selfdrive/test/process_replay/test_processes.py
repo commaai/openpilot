@@ -71,7 +71,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception("Route never enabled: %s" % segment)
 
-  return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs)
+  return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
 
 
 def format_diff(results, ref_commit):

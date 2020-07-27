@@ -230,7 +230,6 @@ def ui_thread(addr, frame_address):
     pygame.surfarray.blit_array(*top_down)
     screen.blit(top_down[0], (640, 0))
 
-    i = 0
     SPACING = 25
 
     lines = [
