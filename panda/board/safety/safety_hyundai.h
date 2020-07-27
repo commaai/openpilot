@@ -375,6 +375,7 @@ static void hyundai_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
   relay_malfunction_reset();
+  if(board_has_obd()){current_board->set_can_mode(CAN_MODE_OBD_CAN2);}
 
   hyundai_legacy = false;
 }
@@ -383,6 +384,7 @@ static void hyundai_legacy_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
   relay_malfunction_reset();
+  if(board_has_obd()){current_board->set_can_mode(CAN_MODE_OBD_CAN2);}
 
   hyundai_legacy = true;
 }
