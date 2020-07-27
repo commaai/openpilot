@@ -366,25 +366,21 @@ void can_health(PubMaster &pm) {
 
 
 void can_send(cereal::Event::Reader &event) {
-  // recv from sendcan
   if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
-    //Older than 1 second. Dont send.
-    return;
+    return; //Older than 1 second. Dont send.
   }
 
   auto can_data_list = event.getSendcan();
   int msg_count = can_data_list.size();
 
-  uint32_t *send = (uint32_t*)malloc(msg_count*0x10);
+  uint32_t *send = new uint32_t[msg_count*0x10];
   memset(send, 0, msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
     auto cmsg = can_data_list[i];
-    if (cmsg.getAddress() >= 0x800) {
-      // extended
+    if (cmsg.getAddress() >= 0x800) { // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
-    } else {
-      // normal
+    } else { // normal
       send[i*4] = (cmsg.getAddress() << 21) | 1;
     }
     auto can_data = cmsg.getDat();
@@ -398,8 +394,7 @@ void can_send(cereal::Event::Reader &event) {
     panda->usb_bulk_write(3, (unsigned char*)send, msg_count*0x10, 5);
   }
 
-  // done
-  free(send);
+  delete[] send;
 }
 
 // **** threads ****
