@@ -150,3 +150,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
 
   return transferred;
 }
+
+int Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param){
+  return usb_write(0xdc, (uint16_t)safety_model, safety_param);
+}
