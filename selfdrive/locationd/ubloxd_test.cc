@@ -51,8 +51,7 @@ Message * poll_ubloxraw_msg(Poller * poller) {
     auto ublox_raw = msg_builder.initEvent().initUbloxRaw(consuming);
     memcpy(ublox_raw.begin(), (void *)(data + consumed), consuming);
 
-    auto words = capnp::messageToFlatArray(msg_builder);
-    auto bytes = words.asBytes();
+    auto bytes = msg_builder.toBytes();
 
     Message * msg = new ZMQMessage();
     msg->init((char*)bytes.begin(), bytes.size());

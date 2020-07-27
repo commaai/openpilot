@@ -235,8 +235,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_raw() {
   }
   rxm_raw_msg_extra *measurements = (rxm_raw_msg_extra *)&msg_parse_buf[UBLOX_HEADER_SIZE + sizeof(rxm_raw_msg)];
   MessageBuilder msg_builder;
-  auto gnss = msg_builder.initEvent().initUbloxGnss();
-  auto mr = gnss.initMeasurementReport();
+  auto mr = msg_builder.initEvent().initUbloxGnss().initMeasurementReport();
   mr.setRcvTow(msg->rcvTow);
   mr.setGpsWeek(msg->week);
   mr.setLeapSeconds(msg->leapS);

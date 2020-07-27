@@ -22,8 +22,7 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
+  auto bytes = msg.toBytes();
 
   logger_log(s, bytes.begin(), bytes.size(), true);
 }

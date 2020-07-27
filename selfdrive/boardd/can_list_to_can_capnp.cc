@@ -21,8 +21,7 @@ void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::stri
     canData[j].setDat(kj::arrayPtr((uint8_t*)it->dat.data(), it->dat.size()));
     canData[j].setSrc(it->src);
   }
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
+  auto bytes = msg.toBytes();
   out.append((const char *)bytes.begin(), bytes.size());
 }
 
