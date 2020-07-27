@@ -305,13 +305,12 @@ void can_health(PubMaster &pm) {
     printf("TURN ON CHARGING!\n");
     panda->usb_write(0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CDP), 0);
   }
-  // set power save state enabled when car is off and viceversa when it's on
-  if (ignition && (health.power_save_enabled == 1)) {
-    panda->usb_write(0xe7, 0, 0);
+
+  bool power_save_desired = !ignition;
+  if (health.power_save_enable != power_save_desired){
+    panda->set_power_saving(power_save_desired);
   }
-  if (!ignition && (health.power_save_enabled == 0)) {
-    panda->usb_write(0xe7, 1, 0);
-  }
+
   // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
   if (!ignition && (health.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);

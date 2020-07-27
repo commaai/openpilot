@@ -249,3 +249,7 @@ const char* Panda::get_serial(){
   return NULL;
 
 }
+
+void Panda::set_power_saving(bool power_saving){
+  usb_write(0xe7, power_saving, 0);
+}

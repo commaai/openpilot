@@ -67,5 +67,6 @@ class Panda {
   void set_loopback(bool loopback);
   const char* get_firmware_version();
   const char* get_serial();
+  void set_power_saving(bool power_saving);
 
 };
