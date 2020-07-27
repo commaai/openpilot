@@ -19,7 +19,7 @@ from common.params import Params
 from cereal.services import service_list
 from collections import namedtuple
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback'])
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance'])
 
 
 def wait_for_event(evt):
@@ -218,6 +218,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
     should_recv_callback=None,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="radard",
@@ -228,6 +229,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -238,6 +240,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "plan.processingDelay"],
     init_callback=get_car_params,
     should_recv_callback=None,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="calibrationd",
@@ -248,6 +251,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
@@ -258,6 +262,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=None,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="locationd",
@@ -268,6 +273,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=None,
+    tolerance=1e-7,  # Numpy gives different results based on CPU features after version 19
   ),
 
 ]

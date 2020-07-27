@@ -5,6 +5,7 @@ import sys
 import numbers
 
 import dictdiffer
+
 if "CI" in os.environ:
   def tqdm(x):
     return x
@@ -12,6 +13,8 @@ else:
   from tqdm import tqdm  # type: ignore
 
 from tools.lib.logreader import LogReader
+
+EPSILON = sys.float_info.epsilon
 
 
 def save_log(dest, log_msgs):
@@ -49,7 +52,7 @@ def remove_ignored_fields(msg, ignore):
   return msg.as_reader()
 
 
-def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None):
+def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None):
   if ignore_fields is None:
     ignore_fields = []
 
@@ -70,7 +73,19 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None):
     if msg1_bytes != msg2_bytes:
       msg1_dict = msg1.to_dict(verbose=True)
       msg2_dict = msg2.to_dict(verbose=True)
+
+      tolerance = EPSILON if tolerance is None else tolerance
       dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
+
+      # Dictiffer only supports relative tolerance, we also want to check for absolute
+      def outside_tolerance(diff):
+        a, b = diff[2]
+        if isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
+          return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+        return True
+
+      dd = list(filter(outside_tolerance, dd))
+
       diff.extend(dd)
   return diff
 

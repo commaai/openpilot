@@ -24,7 +24,7 @@ def create_es_distance(packer, es_distance_msg, pcm_cancel_cmd):
 
   values = copy.copy(es_distance_msg)
   if pcm_cancel_cmd:
-    values["Main"] = 1
+    values["Cruise_Cancel"] = 1
 
   return packer.make_can_msg("ES_Distance", 0, values)
 

@@ -48,5 +48,4 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
     "GRA_Tip_Stufe_2": CS.graTipStufe2,
     "GRA_ButtonTypeInfo": CS.graButtonTypeInfo
   }
-
   return packer.make_can_msg("GRA_ACC_01", bus, values, idx)
