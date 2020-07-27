@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import time, subprocess
+import time, subprocess, signal
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
 
