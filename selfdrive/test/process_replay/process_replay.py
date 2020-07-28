@@ -262,7 +262,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=None,
-    tolerance=None,
+    tolerance=1e-7,
   ),
   ProcessConfig(
     proc_name="locationd",
