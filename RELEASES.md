@@ -1,3 +1,7 @@
+Version 0.7.8 (2020-08-XX)
+========================
+ * New driver monitoring model
+
 Version 0.7.7 (2020-07-20)
 ========================
  * White panda is no longer supported, upgrade to comma two or black panda
