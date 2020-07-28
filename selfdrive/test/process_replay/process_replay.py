@@ -215,7 +215,7 @@ CONFIGS = [
       "thermal": [], "health": [], "liveCalibration": [], "dMonitoringState": [], "plan": [], "pathPlan": [], "gpsLocation": [], "liveLocationKalman": [],
       "model": [], "frame": [],
     },
-    ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
+    ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs", "carParams.fingerprintSource"],
     init_callback=fingerprint,
     should_recv_callback=None,
     tolerance=None,

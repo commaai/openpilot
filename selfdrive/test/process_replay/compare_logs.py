@@ -3,6 +3,7 @@ import bz2
 import os
 import sys
 import numbers
+import capnp
 
 import dictdiffer
 
@@ -45,6 +46,8 @@ def remove_ignored_fields(msg, ignore):
       if isinstance(v, bool):
         val = False
       elif isinstance(v, numbers.Number):
+        val = 0
+      elif isinstance(v, capnp.lib.capnp._DynamicEnum):
         val = 0
       else:
         raise NotImplementedError
