@@ -196,6 +196,8 @@ if __name__ == "__main__":
 
     if keys.get('fingerprintSource', None) == 'fixed':
       os.environ['FINGERPRINT'] = cast(str, keys["carFingerprint"])
+    else:
+      os.environ['FINGERPRINT'] = ""
 
     print("***** testing route segment %s *****\n" % segment)
 
