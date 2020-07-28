@@ -55,7 +55,7 @@ segments = {
   "7873afaf022d36e2|2019-07-03--18-46-44--0": {
     'car_brand': "SUBARU",
     'carFingerprint': SUBARU.IMPREZA,
-    'fingerprintSource': 'fixed',
+  #  'fingerprintSource': 'fixed',
   },
   #"5ab784f361e19b78|2020-06-08--16-30-41--25": {
   #  'car_brand': "SUBARU_LEGACY",
