@@ -114,8 +114,6 @@ typedef struct UIScene {
   int ui_viz_rw;
   int ui_viz_ro;
 
-  int front_box_x, front_box_y, front_box_width, front_box_height;
-
   std::string alert_text1;
   std::string alert_text2;
   std::string alert_type;
