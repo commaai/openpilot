@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
-import time, subprocess, signal
+import time
 import cereal.messaging as messaging
-from common.basedir import BASEDIR
+from selfdrive.manager import start_managed_process, kill_managed_process
 
 pm = messaging.PubMaster(['controlsState', 'thermal'])
-proc_cam = subprocess.Popen(BASEDIR + "/selfdrive/camerad/camerad", cwd=BASEDIR + "/selfdrive/camerad")
-proc_ui = subprocess.Popen(BASEDIR + "/selfdrive/ui/ui", cwd=BASEDIR + "/selfdrive/ui")
-
-while True:
-  dat = messaging.new_message('controlsState')
-  dat.controlsState.rearViewCam = False
-  pm.send('controlsState', dat)
-  dat = messaging.new_message('thermal')
-  dat.thermal.started = True
-  pm.send('thermal', dat)
-  time.sleep(1 / 100.)
-
-proc_cam.send_signal(signal.SIGINT)
-proc_ui.send_signal(signal.SIGINT)
+[start_managed_process(p) for p in ['camerad', 'ui']]
+try:
+  while True:
+    dat_cs, dat_thermal = [messaging.new_message(s) for s in ['controlsState', 'thermal']]
+    dat_cs.controlsState.rearViewCam, dat_thermal.thermal.started = False, True
+    [pm.send(s, dat) for s, dat in zip(['controlsState', 'thermal'], [dat_cs, dat_thermal])]
+    time.sleep(1 / 100)
+except KeyboardInterrupt:
+  [kill_managed_process(p) for p in ['camerad', 'ui']]
