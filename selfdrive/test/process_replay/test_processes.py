@@ -2,34 +2,81 @@
 import argparse
 import os
 import sys
-from typing import Any
+from typing import Any, cast
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.process_replay.compare_logs import compare_logs
 from selfdrive.test.process_replay.process_replay import (CONFIGS,
                                                           replay_process)
 from tools.lib.logreader import LogReader
+from selfdrive.car.chrysler.values import CAR as CHRYSLER
+from selfdrive.car.gm.values import CAR as GM
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.hyundai.values import CAR as HYUNDAI
+from selfdrive.car.nissan.values import CAR as NISSAN
+from selfdrive.car.mazda.values import CAR as MAZDA
+from selfdrive.car.subaru.values import CAR as SUBARU
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
 INJECT_MODEL = 0
 
-segments = [
-  ("HONDA", "0375fdf7b1ce594d|2019-06-13--08-32-25--3"),      # HONDA.ACCORD
-  ("HONDA", "99c94dc769b5d96e|2019-08-03--14-19-59--2"),      # HONDA.CIVIC
-  ("TOYOTA", "77611a1fac303767|2020-02-29--13-29-33--3"),     # TOYOTA.COROLLA_TSS2
-  ("GM", "7cc2a8365b4dd8a9|2018-12-02--12-10-44--2"),         # GM.ACADIA
-  ("CHRYSLER", "b6849f5cf2c926b1|2020-02-28--07-29-48--13"),  # CHRYSLER.PACIFICA
-  ("HYUNDAI", "5b7c365c50084530|2020-04-15--16-13-24--3"),    # HYUNDAI.SONATA
-  #("CHRYSLER", "b6e1317e1bfbefa6|2020-03-04--13-11-40"),   # CHRYSLER.JEEP_CHEROKEE
-  ("SUBARU", "7873afaf022d36e2|2019-07-03--18-46-44--0"),     # SUBARU.IMPREZA
-  ("VOLKSWAGEN", "76b83eb0245de90e|2020-03-05--19-16-05--3"),  # VW.GOLF
-  ("NISSAN", "fbbfa6af821552b9|2020-03-03--08-09-43--0"),     # NISSAN.XTRAIL
-
+segments = {
+  "0375fdf7b1ce594d|2019-06-13--08-32-25--3": {
+    'car_brand': "HONDA",
+    'carFingerprint': HONDA.ACCORD,
+  },
+  "99c94dc769b5d96e|2019-08-03--14-19-59--2": {
+    'car_brand': "HONDA",
+    'carFingerprint': HONDA.CIVIC,
+  },
+  "77611a1fac303767|2020-02-29--13-29-33--3": {
+    'car_brand': "TOYOTA",
+    'carFingerprint': TOYOTA.COROLLA_TSS2,
+  },
+  "7cc2a8365b4dd8a9|2018-12-02--12-10-44--2": {
+    'car_brand': "GM",
+    'carFingerprint': GM.ACADIA,
+  },
+  # fixme: verify which PACIFICA
+  "b6849f5cf2c926b1|2020-02-28--07-29-48--13": {
+    'car_brand': "CHRYSLER",
+    'carFingerprint': CHRYSLER.PACIFICA_2018,
+  },
+  "5b7c365c50084530|2020-04-15--16-13-24--3": {
+    'car_brand': "HYUNDAI",
+    'carFingerprint': HYUNDAI.SONATA,
+  },
+  #"b6e1317e1bfbefa6|2020-03-04--13-11-40": {
+  #  'car_brand': "CHRYSLER",
+  #  'carFingerprint': CHRYSLER.JEEP_CHEROKEE,
+  #},
+  "7873afaf022d36e2|2019-07-03--18-46-44--0": {
+    'car_brand': "SUBARU",
+    'carFingerprint': SUBARU.IMPREZA,
+    'fingerprintSource': 'fixed',
+  },
+  #"5ab784f361e19b78|2020-06-08--16-30-41--25": {
+  #  'car_brand': "SUBARU_LEGACY",
+  #  'carFingerprint': SUBARU.OUTBACK_PREGLOBAL,
+  #},
+  "76b83eb0245de90e|2020-03-05--19-16-05--3": {
+    'car_brand': "VOLKSWAGEN",
+    'carFingerprint': VOLKSWAGEN.GOLF,
+  },
+  "fbbfa6af821552b9|2020-03-03--08-09-43--0": {
+    'car_brand': "NISSAN",
+    'carFingerprint': NISSAN.XTRAIL,
+  },
   # Enable when port is tested and dascamOnly is no longer set
-  #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
-]
+  #"32a319f057902bb3|2020-04-27--15-18-58--2": {
+  #  'car_brand': "MAZDA",
+  #  'carFingerprint': MAZDA.CX5,
+  #},
+}
 
 # ford doesn't need to be tested until a full port is done
-excluded_interfaces = ["mock", "ford", "mazda"]
+excluded_interfaces = ["mock", "ford", "mazda", "subaru"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
@@ -136,15 +183,18 @@ if __name__ == "__main__":
 
   # check to make sure all car brands are tested
   if FULL_TEST:
-    tested_cars = set(c.lower() for c, _ in segments)
+    tested_cars = set(keys["car_brand"].lower() for segment, keys in segments.items())
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
 
   results: Any = {}
-  for car_brand, segment in segments:
-    if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
-       (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
+  for segment, keys in segments.items():
+    if (cars_whitelisted and keys["car_brand"].upper() not in args.whitelist_cars) or \
+       (not cars_whitelisted and keys["car_brand"].upper() in args.blacklist_cars):
       continue
+
+    if keys.get('fingerprintSource', None) == 'fixed':
+      os.environ['FINGERPRINT'] = cast(str, keys["carFingerprint"])
 
     print("***** testing route segment %s *****\n" % segment)
 
