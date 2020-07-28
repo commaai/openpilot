@@ -19,6 +19,7 @@ from common.params import Params
 from cereal.services import service_list
 from collections import namedtuple
 
+
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance'])
 
 
