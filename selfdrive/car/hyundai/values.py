@@ -193,7 +193,7 @@ FW_VERSIONS = {
   CAR.PALISADE: {    
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00LX2_ SCC FHCUP      1.00 1.04 99110-S8100         \xf1\xa01.04',
-      b'\xf1\x00LX2 SCC FHCUP      1.00 1.04 99110-S8100         \xf1\xa01.04,
+      b'\xf1\x00LX2 SCC FHCUP      1.00 1.04 99110-S8100         \xf1\xa01.04',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00LX ESC \x0b 102\x19\x05\x07 58910-S8330',
