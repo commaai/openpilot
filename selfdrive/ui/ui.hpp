@@ -92,8 +92,6 @@ typedef struct UIScene {
   int frontview;
   int fullview;
 
-  int transformed_width, transformed_height;
-
   ModelData model;
 
   float mpc_x[50];
@@ -118,9 +116,6 @@ typedef struct UIScene {
   std::string alert_text2;
   std::string alert_type;
   cereal::ControlsState::AlertSize alert_size;
-
-  // Used to show gps planner status
-  bool gps_planner_active;
 
   cereal::HealthData::HwType hwType;
   int satelliteCount;
@@ -158,7 +153,6 @@ typedef struct UIState {
   NVGcontext *vg;
 
   // fonts and images
-  int font_courbd;
   int font_sans_regular;
   int font_sans_semibold;
   int font_sans_bold;
@@ -201,7 +195,6 @@ typedef struct UIState {
 
   int rgb_width, rgb_height, rgb_stride;
   size_t rgb_buf_len;
-  mat4 rgb_transform;
 
   int rgb_front_width, rgb_front_height, rgb_front_stride;
   size_t rgb_front_buf_len;
