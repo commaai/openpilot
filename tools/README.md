@@ -31,6 +31,7 @@ Setup
 1. Run ubuntu_setup.sh, make sure everything completed correctly
 
 2. Compile openpilot by running ```scons``` in the openpilot directory
+   or alternatively run ```./openpilot_build.sh``` (uses a pre-configured docker container)
 
 3. Add some folders to root
     ```bash
