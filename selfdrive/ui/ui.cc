@@ -90,12 +90,9 @@ static void update_offroad_layout_state(UIState *s) {
 
 static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   if (!s->scene.uilayout_sidebarcollapsed && touch_x <= sbr_w) {
-    if (touch_x >= settings_btn_x && touch_x < (settings_btn_x + settings_btn_w)
-      && touch_y >= settings_btn_y && touch_y < (settings_btn_y + settings_btn_h)) {
+    if (settings_btn_rect.ptInRect(touch_x, touch_y)) {
       s->active_app = cereal::UiLayoutState::App::SETTINGS;
-    }
-    else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
-      && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
+    } else if (getHomeBtnRect(&s->scene).ptInRect(touch_x, touch_y)) {
       if (s->started) {
         s->active_app = cereal::UiLayoutState::App::NONE;
         s->scene.uilayout_sidebarcollapsed = true;
@@ -107,7 +104,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+  if (s->started && (touch_x >= s->scene.viz_rect.left - bdr_s)
     && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
@@ -481,8 +478,7 @@ static void ui_update(UIState *s) {
     assert(glGetError() == GL_NO_ERROR);
 
     s->scene.uilayout_sidebarcollapsed = true;
-    s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
-    s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
+    s->scene.viz_rect = {bdr_s * 3, bdr_s, s->fb_w - bdr_s, s->fb_h - bdr_s};
     s->scene.ui_viz_ro = 0;
 
     s->vision_connect_firstrun = false;
@@ -767,11 +763,12 @@ int main(int argc, char* argv[]) {
     ui_set_brightness(s, (int)smooth_brightness);
 
     // resize vision for collapsing sidebar
-    const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-    s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
-    s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
-    s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
-
+    s->scene.viz_rect = Rect{bdr_s * 3, bdr_s, s->fb_w - bdr_s, s->fb_h - bdr_s};
+    s->scene.ui_viz_ro = 0;
+    if (!s->scene.uilayout_sidebarcollapsed){
+      s->scene.viz_rect.left = sbr_w + bdr_s;
+      s->scene.ui_viz_ro = -(sbr_w - 6 * bdr_s);
+    }
     // poll for touch events
     int touch_x = -1, touch_y = -1;
     int touched = touch_poll(&touch, &touch_x, &touch_y, 0);

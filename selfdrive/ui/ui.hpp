@@ -48,29 +48,21 @@
 //#define SHOW_SPEEDLIMIT 1
 //#define DEBUG_TURN
 
-const int vwp_w = 1920;
-const int vwp_h = 1080;
 const int nav_w = 640;
 const int nav_ww= 760;
 const int sbr_w = 300;
 const int bdr_s = 30;
-const int box_x = sbr_w+bdr_s;
-const int box_y = bdr_s;
-const int box_w = vwp_w-sbr_w-(bdr_s*2);
-const int box_h = vwp_h-(bdr_s*2);
-const int viz_w = vwp_w-(bdr_s*2);
-const int ff_xoffset = 32;
 const int header_h = 420;
 const int footer_h = 280;
-const int footer_y = vwp_h-bdr_s-footer_h;
-const int settings_btn_h = 117;
-const int settings_btn_w = 200;
-const int settings_btn_x = 50;
-const int settings_btn_y = 35;
-const int home_btn_h = 180;
-const int home_btn_w = 180;
-const int home_btn_x = 60;
-const int home_btn_y = vwp_h - home_btn_h - 40;
+
+struct Rect {
+  int left, top, right, bottom;
+  inline int width() const { return right - left; }
+  inline int height() const { return bottom - top; }
+  inline int centerX() const { return left + width() / 2;}
+  inline bool ptInRect(int px, int py) const { return px >= left && px <= right && py >= top && py <= bottom; }
+};
+
 
 const int UI_FREQ = 30;   // Hz
 
@@ -110,8 +102,7 @@ typedef struct UIScene {
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
   // responsive layout
-  int ui_viz_rx;
-  int ui_viz_rw;
+  Rect viz_rect;
   int ui_viz_ro;
 
   int front_box_x, front_box_y, front_box_width, front_box_height;
@@ -256,6 +247,11 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
 void ui_draw(UIState *s);
 void ui_draw_sidebar(UIState *s);
 void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha);
+void ui_draw_image(NVGcontext *vg, const Rect& rect, int image, float alpha);
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r = 0, int width = 0);
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r = 0);
 void ui_nvg_init(UIState *s);
+inline Rect getHomeBtnRect(UIScene *scene){
+  return Rect{60, scene->viz_rect.bottom - 180 - 40, 180+60, scene->viz_rect.bottom - 40};
+}
+const Rect settings_btn_rect {50, 35, 50 + 200, 35 + 117};

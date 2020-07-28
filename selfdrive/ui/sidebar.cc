@@ -6,21 +6,18 @@
 
 static void ui_draw_sidebar_background(UIState *s) {
   int sbr_x = !s->scene.uilayout_sidebarcollapsed ? 0 : -(sbr_w) + bdr_s * 2;
-  ui_draw_rect(s->vg, sbr_x, 0, sbr_w, vwp_h, COLOR_BLACK_ALPHA(85));
+  ui_draw_rect(s->vg, sbr_x, 0, sbr_w, s->fb_h, COLOR_BLACK_ALPHA(85));
 }
 
 static void ui_draw_sidebar_settings_button(UIState *s) {
   bool settingsActive = s->active_app == cereal::UiLayoutState::App::SETTINGS;
-  const int settings_btn_xr = !s->scene.uilayout_sidebarcollapsed ? settings_btn_x : -(sbr_w);
-
-  ui_draw_image(s->vg, settings_btn_xr, settings_btn_y, settings_btn_w, settings_btn_h, s->img_button_settings, settingsActive ? 1.0f : 0.65f);
+  ui_draw_image(s->vg, settings_btn_rect.left, settings_btn_rect.top, settings_btn_rect.width(), settings_btn_rect.height(), s->img_button_settings, settingsActive ? 1.0f : 0.65f);
 }
 
 static void ui_draw_sidebar_home_button(UIState *s) {
   bool homeActive = s->active_app == cereal::UiLayoutState::App::HOME;
-  const int home_btn_xr = !s->scene.uilayout_sidebarcollapsed ? home_btn_x : -(sbr_w);
-
-  ui_draw_image(s->vg, home_btn_xr, home_btn_y, home_btn_w, home_btn_h, s->img_button_home, homeActive ? 1.0f : 0.65f);
+  Rect home_btn_rect = getHomeBtnRect(&s->scene);
+  ui_draw_image(s->vg, home_btn_rect.left, home_btn_rect.top, home_btn_rect.width(), home_btn_rect.height(), s->img_button_home, homeActive ? 1.0f : 0.65f);
 }
 
 static void ui_draw_sidebar_network_strength(UIState *s) {
