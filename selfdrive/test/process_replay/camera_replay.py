@@ -27,7 +27,7 @@ def camera_replay(lr, fr):
   spinner = Spinner()
 
   pm = messaging.PubMaster(['frame', 'liveCalibration'])
-  sm = messaging.SubMaster(['model'])
+  model_sock = messaging.sub_sock("model", conflate=False)
 
   # TODO: add dmonitoringmodeld
   print("preparing procs")
@@ -56,7 +56,7 @@ def camera_replay(lr, fr):
         frame_idx += 1
 
         pm.send(msg.which(), f)
-        log_msgs.append(messaging.recv_one(sm.sock['model']))
+        log_msgs.append(messaging.recv_one(model_sock))
 
         spinner.update("modeld replay %d/%d" % (frame_idx, fr.frame_count))
 
