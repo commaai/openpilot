@@ -212,7 +212,7 @@ FEATURES = {
   # which message has the gear
   "use_cluster_gears": set([CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30]),
   "use_tcu_gears": set([CAR.KIA_OPTIMA, CAR.SONATA_2019]),
-  "use_ev_pc5_gears": set([CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ]),
+  "use_elect_gears": set([CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ]),
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
   "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.KONA, CAR.KONA_EV, CAR.KIA_FORTE, CAR.PALISADE]),
