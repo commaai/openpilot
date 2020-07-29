@@ -10,7 +10,7 @@ from cereal import log, car
 import cereal.messaging as messaging
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.test.test_car_models import routes
+from selfdrive.test.test_car_models import routes, non_tested_cars
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
@@ -27,8 +27,12 @@ class TestCarModel(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     if cls.car_model not in ROUTES:
-      print(f"Skipping tests for {cls.car_model}: missing route")
-      raise unittest.SkipTest
+      # TODO: get routes for missing cars and remove this
+      if cls.car_model in non_tested_cars:
+        print(f"Skipping tests for {cls.car_model}: missing route")
+        raise unittest.SkipTest
+      else:
+        raise Exception(f"missing test route for car {cls.car_model}")
 
     try:
       lr = LogReader(get_url(ROUTES[cls.car_model], 1))
