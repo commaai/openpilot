@@ -45,11 +45,6 @@ class Controls:
     set_core_affinity(3)
 
     # Setup sockets
-    self.pm = pm
-    if self.pm is None:
-      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
-                                     'carControl', 'carEvents', 'carParams'])
-
     self.sm = sm
     if self.sm is None:
       self.sm = messaging.SubMaster(['thermal', 'health', 'frame', 'model', 'liveCalibration',
@@ -61,14 +56,20 @@ class Controls:
       self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
     # wait for one health and one CAN packet
-    while not sm.updated['health']:
-      sm.update()
+    while not self.sm.updated['health']:
+      self.sm.update()
     hw_type = sm['health'].hwType
     has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
     print("Waiting for CAN messages...")
     messaging.get_one_can(self.can_sock)
 
-    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], has_relay)
+    sendcan_sock = messaging.pub_sock('sendcan')
+    self.CI, self.CP = get_car(self.can_sock, sendcan_sock, has_relay)
+
+    self.pm = pm
+    if self.pm is None:
+      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
+                                     'carControl', 'carEvents', 'carParams'])
 
     # read params
     params = Params()
