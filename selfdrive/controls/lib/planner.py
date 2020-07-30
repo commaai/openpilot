@@ -188,32 +188,33 @@ class Planner():
     radar_can_error = car.RadarData.Error.canError in radar_errors
 
     # **** send the plan ****
-    plan_send = messaging.new_message('plan')
+    plan_send = messaging.new_message()
 
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState'])
 
-    plan_send.plan.mdMonoTime = sm.logMonoTime['model']
-    plan_send.plan.radarStateMonoTime = sm.logMonoTime['radarState']
+    plan = plan_send.init('plan')
+    plan.mdMonoTime = sm.logMonoTime['model']
+    plan.radarStateMonoTime = sm.logMonoTime['radarState']
 
     # longitudal plan
-    plan_send.plan.vCruise = float(self.v_cruise)
-    plan_send.plan.aCruise = float(self.a_cruise)
-    plan_send.plan.vStart = float(self.v_acc_start)
-    plan_send.plan.aStart = float(self.a_acc_start)
-    plan_send.plan.vTarget = float(self.v_acc)
-    plan_send.plan.aTarget = float(self.a_acc)
-    plan_send.plan.vTargetFuture = float(self.v_acc_future)
-    plan_send.plan.hasLead = self.mpc1.prev_lead_status
-    plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
+    plan.vCruise = float(self.v_cruise)
+    plan.aCruise = float(self.a_cruise)
+    plan.vStart = float(self.v_acc_start)
+    plan.aStart = float(self.a_acc_start)
+    plan.vTarget = float(self.v_acc)
+    plan.aTarget = float(self.a_acc)
+    plan.vTargetFuture = float(self.v_acc_future)
+    plan.hasLead = self.mpc1.prev_lead_status
+    plan.longitudinalPlanSource = self.longitudinalPlanSource
 
     radar_valid = not (radar_dead or radar_fault)
-    plan_send.plan.radarValid = bool(radar_valid)
-    plan_send.plan.radarCanError = bool(radar_can_error)
+    plan.radarValid = bool(radar_valid)
+    plan.radarCanError = bool(radar_can_error)
 
-    plan_send.plan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
+    plan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
 
     # Send out fcw
-    plan_send.plan.fcw = fcw
+    plan.fcw = fcw
 
     pm.send('plan', plan_send)
 
