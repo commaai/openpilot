@@ -273,10 +273,10 @@ def thermald_thread():
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
     # We only do this if there is a relay that prevents the car from faulting
-    if max_cpu_temp > 107. or bat_temp >= 63. or (has_relay and (started_ts is None) and max_cpu_temp > 70.0):
+    if max_cpu_temp > 107.0 or bat_temp > 62.0 or (has_relay and (started_ts is None) and (max_cpu_temp > 65.0 or bat_temp > 60.)):
       # onroad not allowed
       thermal_status = ThermalStatus.danger
-    elif max_comp_temp > 96.0 or bat_temp > 60.:
+    elif max_comp_temp > 96.0 or bat_temp > 60.0:
       # hysteresis between onroad not allowed and engage not allowed
       thermal_status = clip(thermal_status, ThermalStatus.red, ThermalStatus.danger)
     elif max_cpu_temp > 94.0:
@@ -365,14 +365,14 @@ def thermald_thread():
     if not fw_version_match and fw_version_match_prev:
       put_nonblocking("Offroad_PandaFirmwareMismatch", json.dumps(OFFROAD_ALERTS["Offroad_PandaFirmwareMismatch"]))
 
-    # if any CPU gets above 107 or the battery gets above 63, kill all processes
+    # if any CPU gets above 99 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
     if thermal_status >= ThermalStatus.danger:
       should_start = False
-      if thermal_status_prev < ThermalStatus.danger:
+      if thermal_status_prev >= clip(thermal_status,ThermalStatus.red,ThermalStatus.danger):
         put_nonblocking("Offroad_TemperatureTooHigh", json.dumps(OFFROAD_ALERTS["Offroad_TemperatureTooHigh"]))
     else:
-      if thermal_status_prev >= ThermalStatus.danger:
+      if thermal_status_prev >= thermal_status and thermal_status < ThermalStatus.danger:
         params.delete("Offroad_TemperatureTooHigh")
 
     if should_start:
