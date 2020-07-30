@@ -201,32 +201,34 @@ class PathPlanner():
       self.solution_invalid_cnt = 0
     plan_solution_valid = self.solution_invalid_cnt < 2
 
-    plan_send = messaging.new_message('pathPlan')
+    plan_send = messaging.new_message()
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'model'])
-    plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.pathPlan.dPoly = [float(x) for x in self.LP.d_poly]
-    plan_send.pathPlan.lPoly = [float(x) for x in self.LP.l_poly]
-    plan_send.pathPlan.lProb = float(self.LP.l_prob)
-    plan_send.pathPlan.rPoly = [float(x) for x in self.LP.r_poly]
-    plan_send.pathPlan.rProb = float(self.LP.r_prob)
+    pathPlan = plan_send.init('pathPlan')
+    pathPlan.laneWidth = float(self.LP.lane_width)
+    pathPlan.dPoly = [float(x) for x in self.LP.d_poly]
+    pathPlan.lPoly = [float(x) for x in self.LP.l_poly]
+    pathPlan.lProb = float(self.LP.l_prob)
+    pathPlan.rPoly = [float(x) for x in self.LP.r_poly]
+    pathPlan.rProb = float(self.LP.r_prob)
 
-    plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)
-    plan_send.pathPlan.rateSteers = float(rate_desired)
-    plan_send.pathPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage)
-    plan_send.pathPlan.mpcSolutionValid = bool(plan_solution_valid)
-    plan_send.pathPlan.paramsValid = bool(sm['liveParameters'].valid)
+    pathPlan.angleSteers = float(self.angle_steers_des_mpc)
+    pathPlan.rateSteers = float(rate_desired)
+    pathPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage)
+    pathPlan.mpcSolutionValid = plan_solution_valid
+    pathPlan.paramsValid = sm['liveParameters'].valid
 
-    plan_send.pathPlan.desire = desire
-    plan_send.pathPlan.laneChangeState = self.lane_change_state
-    plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
+    pathPlan.desire = desire
+    pathPlan.laneChangeState = self.lane_change_state
+    pathPlan.laneChangeDirection = self.lane_change_direction
 
     pm.send('pathPlan', plan_send)
 
     if LOG_MPC:
-      dat = messaging.new_message('liveMpc')
-      dat.liveMpc.x = list(self.mpc_solution[0].x)
-      dat.liveMpc.y = list(self.mpc_solution[0].y)
-      dat.liveMpc.psi = list(self.mpc_solution[0].psi)
-      dat.liveMpc.delta = list(self.mpc_solution[0].delta)
-      dat.liveMpc.cost = self.mpc_solution[0].cost
+      dat = messaging.new_message()
+      liveMpc = dat.init('liveMpc')
+      liveMpc.x = list(self.mpc_solution[0].x)
+      liveMpc.y = list(self.mpc_solution[0].y)
+      liveMpc.psi = list(self.mpc_solution[0].psi)
+      liveMpc.delta = list(self.mpc_solution[0].delta)
+      liveMpc.cost = self.mpc_solution[0].cost
       pm.send('liveMpc', dat)
