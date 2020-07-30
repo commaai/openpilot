@@ -128,11 +128,12 @@ class Calibrator():
     calib = get_calib_from_vp(self.vp)
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
 
-    cal_send = messaging.new_message('liveCalibration')
-    cal_send.liveCalibration.calStatus = self.cal_status
-    cal_send.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
-    cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
-    cal_send.liveCalibration.rpyCalib = [float(x) for x in calib]
+    cal_send = messaging.new_message()
+    liveCalibration = cal_send.init('liveCalibration')
+    liveCalibration.calStatus = self.cal_status
+    liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
+    liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
+    liveCalibration.rpyCalib = [float(x) for x in calib]
 
     pm.send('liveCalibration', cal_send)
 
