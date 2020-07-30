@@ -531,11 +531,7 @@ EVENTS = {
   },
 
   EventName.posenetInvalid: {
-    ET.WARNING: Alert(
-      "TAKE CONTROL",
-      "Vision Model Output Uncertain",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
+    ET.SOFT_DISABLE("Vision Model Output Uncertain"),
     ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
   },
 
