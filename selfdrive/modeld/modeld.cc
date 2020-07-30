@@ -184,6 +184,7 @@ int main(int argc, char **argv) {
     uint32_t last_vipc_frame_id = 0;
     double last = 0;
     int desire = -1;
+    uint32_t frame_id = 0;
     while (!do_exit) {
       VIPCBuf *buf;
       VIPCBufExtra extra;
@@ -202,6 +203,7 @@ int main(int argc, char **argv) {
       if (sm.update(0) > 0){
         // TODO: path planner timeout?
         desire = ((int)sm["pathPlan"].getPathPlan().getDesire()) - 1;
+        frame_id = sm["frame"].getFrame().getFrameId();
       }
 
       double mt1 = 0, mt2 = 0;
@@ -212,8 +214,7 @@ int main(int argc, char **argv) {
         }
 
         mat3 model_transform = matmul3(yuv_transform, transform);
-        uint32_t frame_id = sm["frame"].getFrame().getFrameId();
-
+        
         mt1 = millis_since_boot();
 
         // TODO: don't make copies!
