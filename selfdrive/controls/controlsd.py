@@ -420,7 +420,7 @@ class Controls:
     right_lane_visible = self.sm['pathPlan'].rProb > 0.5
     left_lane_visible = self.sm['pathPlan'].lProb > 0.5
     hudControl.rightLaneVisible = right_lane_visible
-    hudControl.leftLaneVisible =  left_lane_visible
+    hudControl.leftLaneVisible = left_lane_visible
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \

@@ -2,6 +2,7 @@
 import numpy as np
 import sympy as sp
 
+from cereal import log
 import cereal.messaging as messaging
 import common.transformations.coordinates as coord
 from common.transformations.orientation import ecef_euler_from_ned, \
@@ -20,6 +21,7 @@ from selfdrive.swaglog import cloudlog
 from sympy.utilities.lambdify import lambdify
 from rednose.helpers.sympy_helpers import euler_rotate
 
+Status = log.LiveLocationKalman.Status
 
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
@@ -183,11 +185,11 @@ class Localizer():
     fix.unixTimestampMillis = self.unix_timestamp_millis
 
     if np.linalg.norm(fix.positionECEF.std) < 50 and self.calibrated:
-      fix.status = 'valid'
+      fix.status = Status.valid
     elif np.linalg.norm(fix.positionECEF.std) < 50:
-      fix.status = 'uncalibrated'
+      fix.status = Status.uncalibrated
     else:
-      fix.status = 'uninitialized'
+      fix.status = Status.unintialized
     return fix
 
   def update_kalman(self, time, kind, meas, R=None):
@@ -307,8 +309,8 @@ def locationd_thread(sm, pm, disabled_logs=None):
     disabled_logs = []
 
   if sm is None:
-    socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration', 'carState']
-    sm = messaging.SubMaster(socks, ignore_alive=['gpsLocationExternal'])
+    sm = messaging.SubMaster(['gpsLocationExternal', 'sensorEvents', 'cameraOdometry',
+                              'liveCalibration', 'carState'], ignore_alive=['gpsLocationExternal'])
   if pm is None:
     pm = messaging.PubMaster(['liveLocationKalman'])
 
