@@ -22,7 +22,7 @@ from rednose.helpers.sympy_helpers import euler_rotate
 
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
-POSENET_STD_HIST = 20
+POSENET_STD_HIST = 40
 
 
 def to_float(arr):
@@ -166,8 +166,9 @@ class Localizer():
     #fix.posenetOK = self.posenet_invalid_count < 4
 
     # experimentally found these values
-    old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST:])
-    std_spike = new_mean/old_mean > 5 and new_mean > 9
+    old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST//2:])
+    std_spike = new_mean/old_mean > 4 and new_mean > 5
+
     if std_spike and self.car_speed > 5:
       fix.posenetOK = False
     else:
@@ -249,7 +250,7 @@ class Localizer():
       trans_device_std = self.device_from_calib.dot(log.transStd)
       self.posenet_speed = np.linalg.norm(trans_device)
       self.posenet_stds[:-1] = self.posenet_stds[1:]
-      self.posenet_stds = trans_device_std[0]
+      self.posenet_stds[-1] = trans_device_std[0]
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_TRANSLATION,
                          np.concatenate([trans_device, 10*trans_device_std]))
