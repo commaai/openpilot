@@ -55,11 +55,12 @@ def remove_ignored_fields(msg, ignore):
 def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None):
   if ignore_fields is None:
     ignore_fields = []
-
   if ignore_msgs is None:
     ignore_msgs = []
+
   log1, log2 = [list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2)]
-  assert len(log1) == len(log2), "logs are not same length: " + str(len(log1)) + " VS " + str(len(log2))
+  if len(log1) != len(log2):
+    raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}")
 
   diff = []
   for msg1, msg2 in tqdm(zip(log1, log2)):
@@ -77,11 +78,12 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       tolerance = EPSILON if tolerance is None else tolerance
       dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
 
-      # Dictiffer only supports relative tolerance, we also want to check for absolute
+      # Dictdiffer only supports relative tolerance, we also want to check for absolute
       def outside_tolerance(diff):
-        a, b = diff[2]
-        if isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-          return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+        if diff[0] == "change":
+          a, b = diff[2]
+          if isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
+            return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
         return True
 
       dd = list(filter(outside_tolerance, dd))
