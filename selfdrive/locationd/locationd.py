@@ -115,44 +115,58 @@ class Localizer():
     fix.positionGeodetic.value = to_float(fix_pos_geo)
     #fix.positionGeodetic.std = to_float(fix_pos_geo_std)
     #fix.positionGeodetic.valid = True
-    fix.positionECEF.value = to_float(fix_ecef)
-    fix.positionECEF.std = to_float(fix_ecef_std)
-    fix.positionECEF.valid = True
-    fix.velocityECEF.value = to_float(vel_ecef)
-    fix.velocityECEF.std = to_float(vel_ecef_std)
-    fix.velocityECEF.valid = True
+    positionECEF = fix.positionECEF
+    positionECEF.value = to_float(fix_ecef)
+    positionECEF.std = to_float(fix_ecef_std)
+    positionECEF.valid = True
+
+    velocityECEF = fix.velocityECEF
+    velocityECEF.value = to_float(vel_ecef)
+    velocityECEF.std = to_float(vel_ecef_std)
+    velocityECEF.valid = True
     fix.velocityNED.value = to_float(ned_vel)
     #fix.velocityNED.std = to_float(ned_vel_std)
     #fix.velocityNED.valid = True
-    fix.velocityDevice.value = to_float(vel_device)
-    fix.velocityDevice.std = to_float(vel_device_std)
-    fix.velocityDevice.valid = True
-    fix.accelerationDevice.value = to_float(predicted_state[States.ACCELERATION])
-    fix.accelerationDevice.std = to_float(predicted_std[States.ACCELERATION_ERR])
-    fix.accelerationDevice.valid = True
+    velocityDevice = fix.velocityDevice
+    velocityDevice.value = to_float(vel_device)
+    velocityDevice.std = to_float(vel_device_std)
+    velocityDevice.valid = True
 
-    fix.orientationECEF.value = to_float(orientation_ecef)
-    fix.orientationECEF.std = to_float(orientation_ecef_std)
-    fix.orientationECEF.valid = True
+    accelerationDevice = fix.accelerationDevice
+    accelerationDevice.value = to_float(predicted_state[States.ACCELERATION])
+    accelerationDevice.std = to_float(predicted_std[States.ACCELERATION_ERR])
+    accelerationDevice.valid = True
+
+    orientationECEF = fix.orientationECEF
+    orientationECEF.value = to_float(orientation_ecef)
+    orientationECEF.std = to_float(orientation_ecef_std)
+    orientationECEF.valid = True
     fix.calibratedOrientationECEF.value = to_float(calibrated_orientation_ecef)
     #fix.calibratedOrientationECEF.std = to_float(calibrated_orientation_ecef_std)
     #fix.calibratedOrientationECEF.valid = True
     fix.orientationNED.value = to_float(orientation_ned)
     #fix.orientationNED.std = to_float(orientation_ned_std)
     #fix.orientationNED.valid = True
-    fix.angularVelocityDevice.value = to_float(predicted_state[States.ANGULAR_VELOCITY])
-    fix.angularVelocityDevice.std = to_float(predicted_std[States.ANGULAR_VELOCITY_ERR])
-    fix.angularVelocityDevice.valid = True
 
-    fix.velocityCalibrated.value = to_float(vel_calib)
-    fix.velocityCalibrated.std = to_float(vel_calib_std)
-    fix.velocityCalibrated.valid = True
-    fix.angularVelocityCalibrated.value = to_float(ang_vel_calib)
-    fix.angularVelocityCalibrated.std = to_float(ang_vel_calib_std)
-    fix.angularVelocityCalibrated.valid = True
-    fix.accelerationCalibrated.value = to_float(acc_calib)
-    fix.accelerationCalibrated.std = to_float(acc_calib_std)
-    fix.accelerationCalibrated.valid = True
+    angularVelocityDevice = fix.angularVelocityDevice
+    angularVelocityDevice.value = to_float(predicted_state[States.ANGULAR_VELOCITY])
+    angularVelocityDevice.std = to_float(predicted_std[States.ANGULAR_VELOCITY_ERR])
+    angularVelocityDevice.valid = True
+
+    velocityCalibrated = fix.velocityCalibrated
+    velocityCalibrated.value = to_float(vel_calib)
+    velocityCalibrated.std = to_float(vel_calib_std)
+    velocityCalibrated.valid = True
+
+    angularVelocityCalibrated = fix.angularVelocityCalibrated
+    angularVelocityCalibrated.value = to_float(ang_vel_calib)
+    angularVelocityCalibrated.std = to_float(ang_vel_calib_std)
+    angularVelocityCalibrated.valid = True
+
+    accelerationCalibrated = fix.accelerationCalibrated
+    accelerationCalibrated.value = to_float(acc_calib)
+    accelerationCalibrated.std = to_float(acc_calib_std)
+    accelerationCalibrated.valid = True
     return fix
 
   def liveLocationMsg(self, time):
