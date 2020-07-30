@@ -365,15 +365,15 @@ def thermald_thread():
     if not fw_version_match and fw_version_match_prev:
       put_nonblocking("Offroad_PandaFirmwareMismatch", json.dumps(OFFROAD_ALERTS["Offroad_PandaFirmwareMismatch"]))
 
-    # if any CPU gets above 99 or the battery gets above 63, kill all processes
+    # if any CPU gets above 107 / battery gets above 63 / offroad but temperature is high from past run , kill all processes
     # controls will warn with CPU above 95 or battery above 60
     if thermal_status >= ThermalStatus.danger:
       should_start = False
-      if thermal_status_prev >= clip(thermal_status,ThermalStatus.red,ThermalStatus.danger):
+      if thermal_status_prev >= ThermalStatus.red:              # show warning if tempeature gets too high
         put_nonblocking("Offroad_TemperatureTooHigh", json.dumps(OFFROAD_ALERTS["Offroad_TemperatureTooHigh"]))
     else:
-      if thermal_status_prev >= thermal_status and thermal_status < ThermalStatus.danger:
-        params.delete("Offroad_TemperatureTooHigh")
+      if thermal_status_prev >= thermal_status and thermal_status < ThermalStatus.danger: 
+        params.delete("Offroad_TemperatureTooHigh")              # remove warning when temperature is good and decreasing
 
     if should_start:
       if not should_start_prev:
