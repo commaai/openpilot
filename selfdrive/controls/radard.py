@@ -159,16 +159,17 @@ class RadarD():
         self.tracks[idens[idx]].reset_a_lead(aLeadK, aLeadTau)
 
     # *** publish radarState ***
-    dat = messaging.new_message('radarState')
+    dat = messaging.new_message()
     dat.valid = sm.all_alive_and_valid(service_list=['controlsState', 'model'])
-    dat.radarState.mdMonoTime = sm.logMonoTime['model']
-    dat.radarState.canMonoTimes = list(rr.canMonoTimes)
-    dat.radarState.radarErrors = list(rr.errors)
-    dat.radarState.controlsStateMonoTime = sm.logMonoTime['controlsState']
+    radarState = dat.init('radarState')
+    radarState.mdMonoTime = sm.logMonoTime['model']
+    radarState.canMonoTimes = list(rr.canMonoTimes)
+    radarState.radarErrors = list(rr.errors)
+    radarState.controlsStateMonoTime = sm.logMonoTime['controlsState']
 
     if has_radar:
-      dat.radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['model'].lead, low_speed_override=True)
-      dat.radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['model'].leadFuture, low_speed_override=False)
+      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['model'].lead, low_speed_override=True)
+      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['model'].leadFuture, low_speed_override=False)
     return dat
 
 
@@ -200,8 +201,6 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
   RD = RadarD(CP.radarTimeStep, RI.delay)
 
-  has_radar = not CP.radarOffCan
-
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
     rr = RI.update(can_strings)
@@ -211,22 +210,21 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
     sm.update(0)
 
-    dat = RD.update(rk.frame, sm, rr, has_radar)
+    dat = RD.update(rk.frame, sm, rr, not CP.radarOffCan)
     dat.radarState.cumLagMs = -rk.remaining*1000.
 
     pm.send('radarState', dat)
 
     # *** publish tracks for UI debugging (keep last) ***
-    tracks = RD.tracks
-    dat = messaging.new_message('liveTracks', len(tracks))
-
-    for cnt, ids in enumerate(sorted(tracks.keys())):
-      dat.liveTracks[cnt] = {
-        "trackId": ids,
-        "dRel": float(tracks[ids].dRel),
-        "yRel": float(tracks[ids].yRel),
-        "vRel": float(tracks[ids].vRel),
-      }
+    dat = messaging.new_message()
+    liveTracks = dat.init('liveTracks', len(RD.tracks))
+    track_keys = sorted(RD.tracks.keys())
+    for track in liveTracks:
+      ids = track_keys.pop(0)
+      track.trackId = ids
+      track.dRel = RD.tracks[ids].dRel
+      track.yRel = RD.tracks[ids].yRel
+      track.vRel = RD.tracks[ids].vRel
     pm.send('liveTracks', dat)
 
     rk.monitor_time()
