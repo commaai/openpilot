@@ -22,6 +22,7 @@ from rednose.helpers.sympy_helpers import euler_rotate
 
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
+POSENET_STD_HIST = 20
 
 
 def to_float(arr):
@@ -62,6 +63,7 @@ class Localizer():
     self.posenet_invalid_count = 0
     self.posenet_speed = 0
     self.car_speed = 0
+    self.posenet_stds = 10*np.ones((POSENET_STD_HIST))
 
     self.converter = coord.LocalCoord.from_ecef(self.kf.x[States.ECEF_POS])
 
@@ -157,11 +159,19 @@ class Localizer():
   def liveLocationMsg(self):
     fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P)
 
-    if abs(self.posenet_speed - self.car_speed) > max(0.4 * self.car_speed, 5.0):
-      self.posenet_invalid_count += 1
+    #if abs(self.posenet_speed - self.car_speed) > max(0.4 * self.car_speed, 5.0):
+    #  self.posenet_invalid_count += 1
+    #else:
+    #  self.posenet_invalid_count = 0
+    #fix.posenetOK = self.posenet_invalid_count < 4
+
+    # experimentally found these values
+    old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST:])
+    std_spike = new_mean/old_mean > 5 and new_mean > 9
+    if std_spike and self.car_speed > 5:
+      fix.posenetOK = False
     else:
-      self.posenet_invalid_count = 0
-    fix.posenetOK = self.posenet_invalid_count < 4
+      fix.posenetOK = True
 
     #fix.gpsWeek = self.time.week
     #fix.gpsTimeOfWeek = self.time.tow
@@ -238,6 +248,8 @@ class Localizer():
       trans_device = self.device_from_calib.dot(log.trans)
       trans_device_std = self.device_from_calib.dot(log.transStd)
       self.posenet_speed = np.linalg.norm(trans_device)
+      self.posenet_stds[:-1] = self.posenet_stds[1:]
+      self.posenet_stds = trans_device_std[0]
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_TRANSLATION,
                          np.concatenate([trans_device, 10*trans_device_std]))
