@@ -1,21 +1,13 @@
 #include <cstdio>
-#include <cstdlib>
-#include <cstdint>
 #include <cassert>
-#include <unistd.h>
 #include <signal.h>
 #include <errno.h>
 #include <poll.h>
-#include <string.h>
-#include <inttypes.h>
 #include <libyuv.h>
 #include <sys/resource.h>
 #include <pthread.h>
 
-#include <string>
 #include <iostream>
-#include <fstream>
-#include <streambuf>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -27,13 +19,10 @@
 #include <cutils/properties.h>
 #endif
 
-#include "common/version.h"
 #include "common/timing.h"
-#include "common/params.h"
 #include "common/swaglog.h"
 #include "common/visionipc.h"
 #include "common/utilpp.h"
-#include "common/util.h"
 
 #include "logger.h"
 #include "messaging.hpp"
@@ -81,18 +70,16 @@ double randrange(double a, double b) {
   return dist(gen);
 }
 
-
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
 }
 struct LoggerdState {
   Context *ctx;
-  LoggerState logger;
+  Logger logger;
 
   std::mutex lock;
   std::condition_variable cv;
-  char segment_path[4096];
   uint32_t last_frame_id;
   uint32_t rotate_last_frame_id;
   int rotate_segment;
@@ -144,7 +131,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   PubSocket *idx_sock = PubSocket::create(s.ctx, cam_idx == CAM_IDX_DCAM ? "frontEncodeIdx" : (cam_idx == CAM_IDX_ECAM ? "wideEncodeIdx" : "encodeIdx"));
   assert(idx_sock != NULL);
 
-  LoggerHandle *lh = NULL;
+  std::shared_ptr<LoggerHandle> lh;
 
   while (!do_exit) {
     VisionStreamBufs buf_info;
@@ -233,18 +220,15 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
 
           if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
+            encoder_rotate(&encoder_alt, s.segment_path, s.logger.getPart());
           }
 
           if (raw_clips) {
-            rawlogger->Rotate(s.segment_path, s.rotate_segment);
+            rawlogger->Rotate(s.segment_path, s.logger.getPart());
           }
 
-          encoder_segment = s.rotate_segment;
-          if (lh) {
-            lh_close(lh);
-          }
-          lh = logger_get_handle(&s.logger);
+          encoder_segment = s.logger.getPart();
+          lh = s.logger.getHandle();
         }
 
         if (encoder.rotating) {
@@ -317,7 +301,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
         if (lh) {
-          lh_log(lh, bytes.begin(), bytes.size(), false);
+          lh->log(bytes.begin(), bytes.size(), false);
         }
       }
 
@@ -343,7 +327,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 
           auto bytes = msg.toBytes();
           if (lh) {
-            lh_log(lh, bytes.begin(), bytes.size(), false);
+            lh->log(bytes.begin(), bytes.size(), false);
           }
 
           // close rawlogger if clip ended
@@ -360,11 +344,6 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
       }
 
       cnt++;
-    }
-
-    if (lh) {
-      lh_close(lh);
-      lh = NULL;
     }
 
     if (raw_clips) {
@@ -393,90 +372,6 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 
 }
 
-void append_property(const char* key, const char* value, void *cookie) {
-  std::vector<std::pair<std::string, std::string> > *properties =
-    (std::vector<std::pair<std::string, std::string> > *)cookie;
-
-  properties->push_back(std::make_pair(std::string(key), std::string(value)));
-}
-
-kj::Array<capnp::word> gen_init_data() {
-  MessageBuilder msg;
-  auto init = msg.initEvent().initInitData();
-
-  init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
-
-  std::ifstream cmdline_stream("/proc/cmdline");
-  std::vector<std::string> kernel_args;
-  std::string buf;
-  while (cmdline_stream >> buf) {
-    kernel_args.push_back(buf);
-  }
-
-  auto lkernel_args = init.initKernelArgs(kernel_args.size());
-  for (int i=0; i<kernel_args.size(); i++) {
-    lkernel_args.set(i, kernel_args[i]);
-  }
-
-  init.setKernelVersion(util::read_file("/proc/version"));
-
-#ifdef QCOM
-  {
-    std::vector<std::pair<std::string, std::string> > properties;
-    property_list(append_property, (void*)&properties);
-
-    auto lentries = init.initAndroidProperties().initEntries(properties.size());
-    for (int i=0; i<properties.size(); i++) {
-      auto lentry = lentries[i];
-      lentry.setKey(properties[i].first);
-      lentry.setValue(properties[i].second);
-    }
-  }
-#endif
-
-  const char* dongle_id = getenv("DONGLE_ID");
-  if (dongle_id) {
-    init.setDongleId(std::string(dongle_id));
-  }
-
-  const char* clean = getenv("CLEAN");
-  if (!clean) {
-    init.setDirty(true);
-  }
-
-  std::vector<char> git_commit = read_db_bytes("GitCommit");
-  if (git_commit.size() > 0) {
-    init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
-  }
-
-  std::vector<char> git_branch = read_db_bytes("GitBranch");
-  if (git_branch.size() > 0) {
-    init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
-  }
-
-  std::vector<char> git_remote = read_db_bytes("GitRemote");
-  if (git_remote.size() > 0) {
-    init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
-  }
-
-  init.setPassive(read_db_bool("Passive"));
-  {
-    // log params
-    std::map<std::string, std::string> params;
-    read_db_all(&params);
-    auto lparams = init.initParams().initEntries(params.size());
-    int i = 0;
-    for (auto& kv : params) {
-      auto lentry = lparams[i];
-      lentry.setKey(kv.first);
-      lentry.setValue(kv.second);
-      i++;
-    }
-  }
-  return capnp::messageToFlatArray(msg);
-}
-
 static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
   const char* dot = strrchr(fpath, '.');
   if (dot && strcmp(dot, ".lock") == 0) {
@@ -490,17 +385,10 @@ static void clear_locks() {
 }
 
 static void bootlog() {
-  int err;
-
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    logger_init(&s.logger, "bootlog", bytes.begin(), bytes.size(), false);
-  }
-
-  err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+  s.logger.init("bootlog", false);
+  int err = s.logger.open(LOG_ROOT);
   assert(err == 0);
-  LOGW("bootlog to %s", s.segment_path);
+  LOGW("bootlog to %s", s.logger.getSegmentPath());
 
   {
     MessageBuilder msg;
@@ -517,8 +405,6 @@ static void bootlog() {
     auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size(), false);
   }
-
-  logger_close(&s.logger);
 }
 
 int main(int argc, char** argv) {
@@ -571,13 +457,7 @@ int main(int argc, char** argv) {
     }
   }
 
-
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
-  }
-
+  s.logger.init("rlog", true);
   bool is_streaming = false;
   bool is_logging = true;
 
@@ -589,9 +469,9 @@ int main(int argc, char** argv) {
   }
 
   if (is_logging) {
-    err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+    err = s.logger.open(LOG_ROOT);
     assert(err == 0);
-    LOGW("logging to %s", s.segment_path);
+    LOGW("logging to %s", s.logger.getSegmentPath());
   }
 
   double start_ts = seconds_since_boot();
@@ -643,7 +523,7 @@ int main(int argc, char** argv) {
           }
         }
 
-        logger_log(&s.logger, data, len, qlog_counter[sock] == 0);
+        s.logger.log(data, len, qlog_counter[sock] == 0);
         delete msg;
 
         if (qlog_counter[sock] != -1) {
@@ -667,9 +547,9 @@ int main(int argc, char** argv) {
       s.rotate_last_frame_id = s.last_frame_id;
 
       if (is_logging) {
-        err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+        err = s.logger.open(LOG_ROOT);
         assert(err == 0);
-        LOGW("rotated to %s", s.segment_path);
+        LOGW("rotated to %s", s.logger.getSegmentPath());
       }
     }
 
@@ -681,7 +561,6 @@ int main(int argc, char** argv) {
   LOGW("joining threads");
   s.cv.notify_all();
 
-
 #ifndef DISABLE_ENCODER
   #ifdef QCOM2
   wide_encoder_thread_handle.join();
@@ -690,8 +569,6 @@ int main(int argc, char** argv) {
   encoder_thread_handle.join();
   LOGW("encoder joined");
 #endif
-
-  logger_close(&s.logger);
 
   for (auto s : socks){
     delete s;
