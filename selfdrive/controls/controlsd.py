@@ -103,11 +103,13 @@ class Controls:
     self.LoC = LongControl(self.CP, self.CI.compute_gb)
     self.VM = VehicleModel(self.CP)
 
-    if self.CP.lateralTuning.which() == 'pid':
+    self.lat_angle_control = self.CP.steerControlType == car.CarParams.SteerControlType.angle
+    self.lat_tuning = self.CP.lateralTuning.which()
+    if self.lat_tuning == 'pid':
       self.LaC = LatControlPID(self.CP)
-    elif self.CP.lateralTuning.which() == 'indi':
+    elif self.lat_tuning == 'indi':
       self.LaC = LatControlINDI(self.CP)
-    elif self.CP.lateralTuning.which() == 'lqr':
+    elif self.lat_tuning == 'lqr':
       self.LaC = LatControlLQR(self.CP)
 
     self.state = State.disabled
@@ -156,9 +158,8 @@ class Controls:
     self.events.add_from_msg(self.sm['dMonitoringState'].events)
 
     # Handle startup event
-    if self.startup_event is not None:
+    if self.sm.frame == 0:
       self.events.add(self.startup_event)
-      self.startup_event = None
 
     # Create events for battery, temperature, disk space, and memory
     if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
@@ -371,14 +372,15 @@ class Controls:
     # Steering PID loop and lateral MPC
     actuators.steer, actuators.steerAngle, lac_log = self.LaC.update(self.active, CS, self.CP, path_plan)
 
-    # Check for difference between desired angle and angle for angle based control
-    angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
-      abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
+    if self.lat_angle_control:
+      # Check for difference between desired angle and angle for angle based control
+      angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
+        abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
 
-    if angle_control_saturated and not CS.steeringPressed and self.active:
-      self.saturated_count += 1
-    else:
-      self.saturated_count = 0
+      if angle_control_saturated and not CS.steeringPressed and self.active:
+        self.saturated_count += 1
+      else:
+        self.saturated_count = 0
 
     # Send a "steering required alert" if saturation count has reached the limit
     if (lac_log.saturated and not CS.steeringPressed) or \
@@ -409,15 +411,16 @@ class Controls:
     CC.cruiseControl.speedOverride = float(speed_override if self.CP.enableCruise else 0.0)
     CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
 
-    CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
-    CC.hudControl.speedVisible = self.enabled
-    CC.hudControl.lanesVisible = self.enabled
-    CC.hudControl.leadVisible = self.sm['plan'].hasLead
+    hudControl = CC.hudControl
+    hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
+    hudControl.speedVisible = self.enabled
+    hudControl.lanesVisible = self.enabled
+    hudControl.leadVisible = self.sm['plan'].hasLead
 
     right_lane_visible = self.sm['pathPlan'].rProb > 0.5
     left_lane_visible = self.sm['pathPlan'].lProb > 0.5
-    CC.hudControl.rightLaneVisible = bool(right_lane_visible)
-    CC.hudControl.leftLaneVisible = bool(left_lane_visible)
+    hudControl.rightLaneVisible = right_lane_visible
+    hudControl.leftLaneVisible =  left_lane_visible
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
@@ -430,31 +433,30 @@ class Controls:
       l_lane_close = left_lane_visible and (self.sm['pathPlan'].lPoly[3] < (1.08 - CAMERA_OFFSET))
       r_lane_close = right_lane_visible and (self.sm['pathPlan'].rPoly[3] > -(1.08 + CAMERA_OFFSET))
 
-      CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
-      CC.hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
+      hudControl.leftLaneDepart = l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close
+      hudControl.rightLaneDepart = r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close
 
-    if CC.hudControl.rightLaneDepart or CC.hudControl.leftLaneDepart:
+    if hudControl.rightLaneDepart or hudControl.leftLaneDepart:
       self.events.add(EventName.ldw)
 
     alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric])
     self.AM.add_many(self.sm.frame, alerts, self.enabled)
     self.AM.process_alerts(self.sm.frame)
-    CC.hudControl.visualAlert = self.AM.visual_alert
+    hudControl.visualAlert = self.AM.visual_alert
 
     if not self.read_only:
       # send car controls over can
       can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-    force_decel = (self.sm['dMonitoringState'].awarenessStatus < 0.) or \
-                    (self.state == State.softDisabling)
+    force_decel = self.state == State.softDisabling or self.sm['dMonitoringState'].awarenessStatus < 0.
 
     steer_angle_rad = (CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD
 
     # controlsState
-    dat = messaging.new_message('controlsState')
+    dat = messaging.new_message()
     dat.valid = CS.canValid
-    controlsState = dat.controlsState
+    controlsState = dat.init('controlsState')
     controlsState.alertText1 = self.AM.alert_text_1
     controlsState.alertText2 = self.AM.alert_text_2
     controlsState.alertSize = self.AM.alert_size
@@ -491,20 +493,20 @@ class Controls:
     controlsState.cumLagMs = -self.rk.remaining * 1000.
     controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.mapValid = self.sm['plan'].mapValid
-    controlsState.forceDecel = bool(force_decel)
+    controlsState.forceDecel = force_decel
     controlsState.canErrorCounter = self.can_error_counter
 
-    if self.CP.lateralTuning.which() == 'pid':
+    if self.lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
-    elif self.CP.lateralTuning.which() == 'lqr':
+    elif self.lat_tuning == 'lqr':
       controlsState.lateralControlState.lqrState = lac_log
-    elif self.CP.lateralTuning.which() == 'indi':
+    elif self.lat_tuning == 'indi':
       controlsState.lateralControlState.indiState = lac_log
     self.pm.send('controlsState', dat)
 
     # carState
     car_events = self.events.to_msg()
-    cs_send = messaging.new_message('carState')
+    cs_send = messaging.new_message()
     cs_send.valid = CS.canValid
     cs_send.carState = CS
     cs_send.carState.events = car_events
@@ -512,19 +514,19 @@ class Controls:
 
     # carEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
-      ce_send = messaging.new_message('carEvents', len(self.events))
+      ce_send = messaging.new_message()
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
-      cp_send = messaging.new_message('carParams')
+      cp_send = messaging.new_message()
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
 
     # carControl
-    cc_send = messaging.new_message('carControl')
+    cc_send = messaging.new_message()
     cc_send.valid = CS.canValid
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
