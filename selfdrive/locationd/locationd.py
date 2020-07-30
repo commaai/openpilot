@@ -189,7 +189,7 @@ class Localizer():
     elif np.linalg.norm(fix.positionECEF.std) < 50:
       fix.status = Status.uncalibrated
     else:
-      fix.status = Status.unintialized
+      fix.status = Status.uninitialized
     return fix
 
   def update_kalman(self, time, kind, meas, R=None):
