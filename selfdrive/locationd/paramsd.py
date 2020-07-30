@@ -120,15 +120,16 @@ def main(sm=None, pm=None):
       msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']
 
-      msg.liveParameters.posenetValid = True
-      msg.liveParameters.sensorValid = True
+      liveParameters = msg.liveParameters
+      liveParameters.posenetValid = True
+      liveParameters.sensorValid = True
 
       x = learner.kf.x
-      msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
-      msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
-      msg.liveParameters.angleOffsetAverage = math.degrees(x[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffset = msg.liveParameters.angleOffsetAverage + math.degrees(x[States.ANGLE_OFFSET_FAST])
-      msg.liveParameters.valid = all((
+      liveParameters.steerRatio = float(x[States.STEER_RATIO])
+      liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
+      liveParameters.angleOffsetAverage = math.degrees(x[States.ANGLE_OFFSET])
+      liveParameters.angleOffset = msg.liveParameters.angleOffsetAverage + math.degrees(x[States.ANGLE_OFFSET_FAST])
+      liveParameters.valid = all((
         abs(msg.liveParameters.angleOffsetAverage) < 10.0,
         abs(msg.liveParameters.angleOffset) < 10.0,
         0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
@@ -138,9 +139,9 @@ def main(sm=None, pm=None):
       if learner.carstate_counter % 6000 == 0:   # once a minute
         params = {
           'carFingerprint': CP.carFingerprint,
-          'steerRatio': msg.liveParameters.steerRatio,
-          'stiffnessFactor': msg.liveParameters.stiffnessFactor,
-          'angleOffsetAverage': msg.liveParameters.angleOffsetAverage,
+          'steerRatio': liveParameters.steerRatio,
+          'stiffnessFactor': liveParameters.stiffnessFactor,
+          'angleOffsetAverage': liveParameters.angleOffsetAverage,
         }
         put_nonblocking("LiveParameters", json.dumps(params))
 
