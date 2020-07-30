@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
 import sympy as sp
-
 import cereal.messaging as messaging
 import common.transformations.coordinates as coord
 from common.transformations.orientation import ecef_euler_from_ned, \
@@ -52,7 +51,7 @@ class Localizer():
 
     self.kf = LiveKalman(GENERATED_DIR)
     self.reset_kalman()
-    self.max_age = .2  # seconds
+    self.max_age = .1  # seconds
     self.disabled_logs = disabled_logs
     self.calib = np.zeros(3)
     self.device_from_calib = np.eye(3)
@@ -155,7 +154,7 @@ class Localizer():
     fix.accelerationCalibrated.valid = True
     return fix
 
-  def liveLocationMsg(self, time):
+  def liveLocationMsg(self):
     fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P)
 
     if abs(self.posenet_speed - self.car_speed) > max(0.4 * self.car_speed, 5.0):
@@ -178,15 +177,10 @@ class Localizer():
 
   def update_kalman(self, time, kind, meas, R=None):
     try:
-      self.kf.predict_and_observe(time, kind, meas, R=R)
+      self.kf.predict_and_observe(time, kind, meas, R)
     except KalmanError:
       cloudlog.error("Error in predict and observe, kalman reset")
       self.reset_kalman()
-    #idx = bisect_right([x[0] for x in self.observation_buffer], time)
-    #self.observation_buffer.insert(idx, (time, kind, meas))
-    #while len(self.observation_buffer) > 0 and self.observation_buffer[-1][0] - self.observation_buffer[0][0] > self.max_age:
-    #  else:
-    #    self.observation_buffer.pop(0)
 
   def handle_gps(self, current_time, log):
     # ignore the message if the fix is invalid
@@ -322,7 +316,7 @@ def locationd_thread(sm, pm, disabled_logs=None):
       msg = messaging.new_message('liveLocationKalman')
       msg.logMonoTime = t
 
-      msg.liveLocationKalman = localizer.liveLocationMsg(t * 1e-9)
+      msg.liveLocationKalman = localizer.liveLocationMsg()
       msg.liveLocationKalman.inputsOK = sm.all_alive_and_valid()
       msg.liveLocationKalman.sensorsOK = sm.alive['sensorEvents'] and sm.valid['sensorEvents']
 
