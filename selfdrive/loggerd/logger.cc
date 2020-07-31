@@ -17,7 +17,7 @@ static void log_sentinel(LoggerHandle* log, cereal::Sentinel::SentinelType type)
   log->write(msg, true);
 }
 
-static int mkpath(char* file_path) {
+static int mkpath(const char* file_path) {
   assert(file_path && *file_path);
   char* p;
   for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
