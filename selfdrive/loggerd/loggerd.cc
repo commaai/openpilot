@@ -206,17 +206,17 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 
         // rotate the encoder if the logger is on a newer segment
         if (should_rotate) {
-          LOG("rotate encoder to %s", s.segment_path);
+          LOG("rotate encoder to %s", s.logger->getSegmentPath());
 
           encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
 
           if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.segment_path, s.logger->getPart());
+            encoder_rotate(&encoder_alt, s.logger->getSegmentPath(), s.logger->getPart());
           }
 
           if (raw_clips) {
-            rawlogger->Rotate(s.segment_path, s.logger->getPart());
+            rawlogger->Rotate(s.logger->getSegmentPath(), s.logger->getPart());
           }
 
           encoder_segment = s.logger->getPart();
