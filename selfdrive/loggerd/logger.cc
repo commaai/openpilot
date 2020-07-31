@@ -17,13 +17,11 @@
 #include "common/utilpp.h"
 #include "common/params.h"
 
-static void log_sentinel(Logger* s, cereal::Sentinel::SentinelType type) {
+static void log_sentinel(LoggerHandle* log, cereal::Sentinel::SentinelType type) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
-  auto bytes = msg.toBytes();
-
-  s->log(bytes.begin(), bytes.size(), true);
+  log->write(msg, true);
 }
 
 static int mkpath(const char* file_path) {
@@ -142,7 +140,7 @@ std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
     return nullptr;
   }
   auto bytes = init_data.asBytes();
-  log->log(bytes.begin(), bytes.size(), has_qlog);
+  log->write(bytes.begin(), bytes.size(), has_qlog);
   cur_handle = log; 
   return cur_handle;
 }
@@ -191,7 +189,7 @@ fail:
   return false;
 }
 
-void LoggerHandle::log(uint8_t* data, size_t data_size, bool in_qlog) {
+void LoggerHandle::write(uint8_t* data, size_t data_size, bool in_qlog) {
   const std::lock_guard<std::mutex> lock(mutex);
   int bzerror;
   BZ2_bzWrite(&bzerror, bz_file, data, data_size);
@@ -200,10 +198,10 @@ void LoggerHandle::log(uint8_t* data, size_t data_size, bool in_qlog) {
   }
 }
 
-void LoggerHandle::log(capnp::MessageBuilder& msg, bool in_qlog) {
+void LoggerHandle::write(capnp::MessageBuilder& msg, bool in_qlog) {
   auto words = capnp::messageToFlatArray(msg);
   auto bytes = words.asBytes();
-  log(bytes.begin(), bytes.size(), in_qlog);
+  write(bytes.begin(), bytes.size(), in_qlog);
 }
 
 void LoggerHandle::close() {

@@ -10,9 +10,9 @@
 class LoggerHandle {
  public:
   LoggerHandle() = default;
-  ~LoggerHandle() { close();}
-  void log(uint8_t* data, size_t data_size, bool in_qlog = false);
-  void log(capnp::MessageBuilder& msg, bool in_qlog = false);
+  ~LoggerHandle() { close(); }
+  void write(uint8_t* data, size_t data_size, bool in_qlog = false);
+  void write(capnp::MessageBuilder& msg, bool in_qlog = false);
 
  private:
   bool open(const char* segment_path, const char* log_name, int part, bool has_qlog);
