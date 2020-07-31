@@ -120,7 +120,7 @@ Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlo
   struct tm timeinfo;
   localtime_r(&rawtime, &timeinfo);
   strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
-  
+
   init_data = gen_init_data();
 }
 
@@ -158,9 +158,9 @@ bool LoggerHandle::open(const char* segment_path, const char* log_name, int part
   auto open_files = [](std::string& f_path, FILE*& f, BZFILE*& bz_f) {
     f = fopen(f_path.c_str(), "wb");
     if (f != nullptr) {
-      int err;
-      bz_f = BZ2_bzWriteOpen(&err, f, 9, 0, 30);
-      return err == BZ_OK;
+      int bzerror;
+      bz_f = BZ2_bzWriteOpen(&bzerror, f, 9, 0, 30);
+      return bzerror == BZ_OK;
     }
     return false;
   };
