@@ -163,30 +163,20 @@ bool LoggerHandle::open(const char* segment_path, const char* log_name, int part
   if (lock_file == NULL) return false;
   fclose(lock_file);
 
-  log_file = fopen(log_path.c_str(), "wb");
-  if (log_file == NULL) {
-    goto fail;
-  }
-  bz_file = BZ2_bzWriteOpen(&err, log_file, 9, 0, 30);
-  if (err != BZ_OK) { 
-    goto fail;
-  }
-
-  if (has_qlog) {
-    qlog_file = fopen(qlog_path.c_str(), "wb");
-    if (qlog_file == NULL) {
-      goto fail;
+  auto open_files = [](std::string& f_path, FILE*& f, BZFILE*& bz_f){
+    f = fopen(f_path.c_str(), "wb");
+    int err;
+    if (f) {
+      bz_f = BZ2_bzWriteOpen(&err, f, 9, 0, 30);
+      return err == BZ_OK;
     }
-    bz_qlog = BZ2_bzWriteOpen(&err, qlog_file, 9, 0, 30);
-    if (err != BZ_OK) {
-      goto fail;
-    }
+    return false;
+  };
+  if (!open_files(log_path, log_file, bz_file) || !open_files(qlog_path, qlog_file, bz_qlog)) {
+    close();
+    return false;
   }
   return true;
-fail:
-  LOGE("logger failed to open files");
-  close();
-  return false;
 }
 
 void LoggerHandle::write(uint8_t* data, size_t data_size, bool in_qlog) {
