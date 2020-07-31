@@ -32,8 +32,8 @@ class Logger {
   Logger(const char* log_name, bool has_qlog);
   ~Logger();
   std::shared_ptr<LoggerHandle> openNext(const char* root_path);
-  inline std::shared_ptr<LoggerHandle> getHandle() { return cur_handle; }
-  inline int getPart() { return part; }
+  inline std::shared_ptr<LoggerHandle> getHandle() const { return cur_handle; }
+  inline int getPart() const { return part; }
   inline const char* getSegmentPath() const { return segment_path.c_str(); }
 
  private:
