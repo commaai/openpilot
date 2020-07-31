@@ -17,12 +17,12 @@ static void log_sentinel(LoggerHandle* log, cereal::Sentinel::SentinelType type)
   log->write(msg, true);
 }
 
-static int mkpath(const char* file_path) {
+static int mkpath(char* file_path) {
   assert(file_path && *file_path);
   char* p;
-  for (p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
+  for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
     *p = '\0';
-    if (mkdir(file_path, 0777) == -1) {
+    if (mkdir(file_path, 0777)==-1) {
       if (errno != EEXIST) {
         *p = '/';
         return -1;
@@ -126,6 +126,10 @@ Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlo
 }
 
 std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
+  if (cur_handle) { // isn't start of route
+    log_sentinel(cur_handle.get(), cereal::Sentinel::SentinelType::END_OF_SEGMENT);
+  }
+
   part += 1;
   segment_path = util::string_format("%s/%s--%d", root_path, route_name, part);
   auto log = std::make_shared<LoggerHandle>();
@@ -134,11 +138,12 @@ std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
   }
   auto bytes = init_data.asBytes();
   log->write(bytes.begin(), bytes.size(), has_qlog);
+  log_sentinel(log.get(), !cur_handle ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
   cur_handle = log; 
   return cur_handle;
 }
 
-void Logger::close() {
+Logger::~Logger() {
   if (cur_handle) {
     log_sentinel(cur_handle.get(), cereal::Sentinel::SentinelType::END_OF_ROUTE);
   }
@@ -165,8 +170,8 @@ bool LoggerHandle::open(const char* segment_path, const char* log_name, int part
     }
     return false;
   };
-  
-  if (!open_files(log_path, log_file, bz_file) || !open_files(qlog_path, qlog_file, bz_qlog)) {
+
+  if (!open_files(log_path, log_file, bz_file) || (has_qlog && !open_files(qlog_path, qlog_file, bz_qlog))) {
     close();
     return false;
   }
