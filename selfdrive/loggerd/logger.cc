@@ -113,16 +113,15 @@ static kj::Array<capnp::word> gen_init_data() {
   return capnp::messageToFlatArray(msg);
 }
 
-Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlog) {
-  init_data = gen_init_data();
-
+Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlog), log_name_(log_name) {
   umask(0);
 
   time_t rawtime = time(NULL);
   struct tm timeinfo;
   localtime_r(&rawtime, &timeinfo);
   strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
-  log_name_ = log_name;
+  
+  init_data = gen_init_data();
 }
 
 std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
