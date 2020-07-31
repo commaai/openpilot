@@ -143,7 +143,6 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   int encoder_segment = -1;
   int cnt = 0;
 
-  PubSocket *idx_sock = PubSocket::create(s.ctx, front ? "frontEncodeIdx" : "encodeIdx");
   PubSocket *idx_sock = PubSocket::create(s.ctx, cam_idx == CAM_IDX_DCAM ? "frontEncodeIdx" : (cam_idx == CAM_IDX_ECAM ? "wideEncodeIdx" : "encodeIdx"));
   assert(idx_sock != NULL);
 
