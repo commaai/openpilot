@@ -126,7 +126,7 @@ Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlo
 }
 
 std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
-  if (cur_handle) { // isn't start of route
+  if (cur_handle) {
     log_sentinel(cur_handle.get(), cereal::Sentinel::SentinelType::END_OF_SEGMENT);
   }
 
