@@ -4,7 +4,7 @@ from common.params import Params
 from copy import copy
 from cereal import car, log
 import cereal.messaging as messaging
-from selfdrive.car.car_helpers import get_car
+from selfdrive.car.car_helpers import get_car, get_one_can
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 
 HwType = log.HealthData.HwType
@@ -28,7 +28,7 @@ def steer_thread():
   hw_type = messaging.recv_one(health).health.hwType
   has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
   print("Waiting for CAN messages...")
-  messaging.get_one_can(logcan)
+  get_one_can(logcan)
 
   CI, CP = get_car(logcan, sendcan, has_relay)
   Params().put("CarParams", CP.to_bytes())

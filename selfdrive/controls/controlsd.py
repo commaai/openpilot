@@ -10,7 +10,7 @@ from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_event
+from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
@@ -64,7 +64,7 @@ class Controls:
     hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
     has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
     print("Waiting for CAN messages...")
-    messaging.get_one_can(self.can_sock)
+    get_one_can(self.can_sock)
 
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], has_relay)
 
