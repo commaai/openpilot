@@ -10,9 +10,7 @@
 #include <streambuf>
 #include <vector>
 #include <string>
-
 #include "cereal/gen/cpp/log.capnp.h"
-#include "capnp/serialize.h"
 #include "common/swaglog.h"
 #include "common/version.h"
 #include "common/util.h"
@@ -124,13 +122,10 @@ static kj::Array<capnp::word> gen_init_data() {
   return capnp::messageToFlatArray(msg);
 }
 
-Logger::Logger(const char* log_name, bool has_qlog) {
+Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlog) {
   init_data = gen_init_data();
 
   umask(0);
-
-  part = -1;
-  has_qlog = has_qlog;
 
   time_t rawtime = time(NULL);
   struct tm timeinfo;
@@ -140,21 +135,27 @@ Logger::Logger(const char* log_name, bool has_qlog) {
 }
 
 bool Logger::openNext(const char* root_path) {
+  part += 1;
   segment_path = util::string_format("%s/%s--%d", root_path, route_name, part);
   auto log = std::make_shared<LoggerHandle>();
   if (!log->open(segment_path.c_str(), log_name_.c_str(), part, has_qlog)){
     return false;
   }
-  if (init_data.size() > 0) {
-    auto bytes = init_data.asBytes();
-    log->log(bytes.begin(), bytes.size(), has_qlog);
-  }
+  auto bytes = init_data.asBytes();
+  log->log(bytes.begin(), bytes.size(), has_qlog);
   cur_handle = log; 
   return true;
 }
+
 void Logger::log(uint8_t* data, size_t data_size, bool in_qlog) {
   if (cur_handle) {
     cur_handle->log(data, data_size, in_qlog);
+  }
+}
+
+void Logger::log(capnp::MessageBuilder& msg, bool in_qlog) {
+  if (cur_handle) {
+    cur_handle->log(msg, in_qlog);
   }
 }
 
@@ -169,21 +170,29 @@ bool LoggerHandle::open(const char* segment_path, const char* log_name, int part
 
   int err = mkpath(log_path.c_str());
   if (err) return false;
-
+  
   FILE* lock_file = fopen(lock_path.c_str(), "wb");
   if (lock_file == NULL) return false;
   fclose(lock_file);
 
   log_file = fopen(log_path.c_str(), "wb");
-  if (log_file == NULL) goto fail;
+  if (log_file == NULL) {
+    goto fail;
+  }
   bz_file = BZ2_bzWriteOpen(&err, log_file, 9, 0, 30);
-  if (err != BZ_OK) goto fail;
+  if (err != BZ_OK) { 
+    goto fail;
+  }
 
   if (has_qlog) {
     qlog_file = fopen(qlog_path.c_str(), "wb");
-    if (qlog_file == NULL) goto fail;
+    if (qlog_file == NULL) {
+      goto fail;
+    }
     bz_qlog = BZ2_bzWriteOpen(&err, qlog_file, 9, 0, 30);
-    if (err != BZ_OK) goto fail;
+    if (err != BZ_OK) {
+      goto fail;
+    }
   }
   return true;
 fail:
@@ -199,6 +208,12 @@ void LoggerHandle::log(uint8_t* data, size_t data_size, bool in_qlog) {
   if (in_qlog && bz_qlog != NULL) {
     BZ2_bzWrite(&bzerror, bz_qlog, data, data_size);
   }
+}
+
+void LoggerHandle::log(capnp::MessageBuilder& msg, bool in_qlog) {
+  auto words = capnp::messageToFlatArray(msg);
+  auto bytes = words.asBytes();
+  log(bytes.begin(), bytes.size(), in_qlog);
 }
 
 void LoggerHandle::close() {

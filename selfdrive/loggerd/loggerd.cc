@@ -326,9 +326,12 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
 
+<<<<<<< f796a0a3ec674bbcb8c2b5d776b69e99a5289d0a
           auto bytes = msg.toBytes();
+=======
+>>>>>>> add function log(MessageBuild&)
           if (lh) {
-            lh->log(bytes.begin(), bytes.size(), false);
+            lh->log(msg);
           }
 
           // close rawlogger if clip ended
@@ -387,7 +390,7 @@ static void clear_locks() {
 
 static void bootlog() {
   Logger logger("bootlog", false);
-  int err = logger.open(LOG_ROOT);
+  int err = logger.openNext(LOG_ROOT);
   assert(err == 0);
   LOGW("bootlog to %s", logger.getSegmentPath());
   MessageBuilder msg;
@@ -401,8 +404,7 @@ static void bootlog() {
   std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
   boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-  auto bytes = msg.toBytes();
-  logger.log(bytes.begin(), bytes.size());
+  logger.log(msg);
 }
 
 int main(int argc, char** argv) {
@@ -467,7 +469,7 @@ int main(int argc, char** argv) {
   }
 
   if (is_logging) {
-    err = s.logger->open(LOG_ROOT);
+    err = s.logger->openNext(LOG_ROOT);
     assert(err == 0);
     LOGW("logging to %s", s.logger->getSegmentPath());
   }

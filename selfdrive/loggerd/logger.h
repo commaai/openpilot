@@ -12,6 +12,7 @@ class LoggerHandle {
   LoggerHandle() = default;
   ~LoggerHandle() { close();}
   void log(uint8_t* data, size_t data_size, bool in_qlog = false);
+  void log(capnp::MessageBuilder& msg, bool in_qlog = false);
 
  private:
   bool open(const char* segment_path, const char* log_name, int part, bool has_qlog);
@@ -32,6 +33,7 @@ class Logger {
   bool openNext(const char* root_path);
   void close();
   void log(uint8_t* data, size_t data_size, bool in_qlog = false);
+  void log(capnp::MessageBuilder& msg, bool in_qlog = false);
   inline std::shared_ptr<LoggerHandle> getHandle() { return cur_handle; }
   inline int getPart() { return part; }
   inline const char* getSegmentPath() const { return segment_path.c_str(); }
