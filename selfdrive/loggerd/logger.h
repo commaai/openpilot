@@ -7,6 +7,8 @@
 #include "capnp/serialize.h"
 #include "common/swaglog.h"
 #include "common/utilpp.h"
+#include "common/params.h"
+#include "common/util.h"
 
 class LoggerHandle {
  public:

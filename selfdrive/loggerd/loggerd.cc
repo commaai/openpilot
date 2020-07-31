@@ -6,6 +6,7 @@
 
 #include <condition_variable>
 #include <random>
+#include <thread>
 
 #include <ftw.h>
 #include <zmq.h>

@@ -6,9 +6,10 @@
 #include <string>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "common/version.h"
-#include "common/util.h"
+#ifdef QCOM
+#include <cutils/properties.h>
+#endif
 
-#include "common/params.h"
 typedef cereal::Sentinel::SentinelType SentinelType;
 static void log_sentinel(LoggerHandle* log, SentinelType type) {
   MessageBuilder msg;
@@ -17,7 +18,7 @@ static void log_sentinel(LoggerHandle* log, SentinelType type) {
   log->write(msg, true);
 }
 
-static int mkpath(const char* file_path) {
+static int mkpath(char* file_path) {
   assert(file_path && *file_path);
   char* p;
   for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
@@ -31,6 +32,13 @@ static int mkpath(const char* file_path) {
     *p = '/';
   }
   return 0;
+}
+
+void append_property(const char* key, const char* value, void *cookie) {
+  std::vector<std::pair<std::string, std::string> > *properties =
+    (std::vector<std::pair<std::string, std::string> > *)cookie;
+
+  properties->push_back(std::make_pair(std::string(key), std::string(value)));
 }
 
 static kj::Array<capnp::word> gen_init_data() {
@@ -148,7 +156,7 @@ bool LoggerHandle::open(const char* segment_path, const char* log_name, int part
   std::string qlog_path = util::string_format("%s/qlog.bz2", segment_path);
   lock_path = util::string_format("%s.lock", log_path.c_str());
 
-  int err = mkpath(log_path.c_str());
+  int err = mkpath((char*)log_path.c_str());
   if (err) return false;
 
   FILE* lock_file = fopen(lock_path.c_str(), "wb");
