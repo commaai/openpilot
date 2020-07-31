@@ -18,7 +18,7 @@ class LoggerHandle {
   void write(capnp::MessageBuilder& msg, bool in_qlog = false);
 
  private:
-  bool open(const char* segment_path, const char* log_name, int part, bool has_qlog);
+  bool open(const std::string& segment_path, const std::string& log_name, int part, bool has_qlog);
   void close();
   std::mutex mutex;
   std::string lock_path;

@@ -151,10 +151,10 @@ Logger::~Logger() {
   if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_ROUTE);
 }
 
-bool LoggerHandle::open(const char* segment_path, const char* log_name, int part, bool has_qlog) {
+bool LoggerHandle::open(const std::string& segment_path, const std::string& log_name, int part, bool has_qlog) {
   std::string log_path = util::string_format("%s/%s.bz2", segment_path, log_name);
-  std::string qlog_path = util::string_format("%s/qlog.bz2", segment_path);
-  lock_path = util::string_format("%s.lock", log_path.c_str());
+  std::string qlog_path = segment_path + "/qlog.bz2";
+  lock_path = log_path + ".lock";
 
   int err = mkpath((char*)log_path.c_str());
   if (err) return false;
