@@ -390,8 +390,8 @@ static void clear_locks() {
 
 static void bootlog() {
   Logger logger("bootlog", false);
-  int err = logger.openNext(LOG_ROOT);
-  assert(err == 0);
+  std::shared_ptr<LoggerHandle> log = logger.openNext(LOG_ROOT);
+  assert(log != nullptr);
   LOGW("bootlog to %s", logger.getSegmentPath());
   MessageBuilder msg;
   auto boot = msg.initEvent().initBoot();
@@ -404,12 +404,10 @@ static void bootlog() {
   std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
   boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-  logger.log(msg);
+  log->log(msg);
 }
 
 int main(int argc, char** argv) {
-  int err;
-
   if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
     bootlog();
     return 0;
@@ -468,9 +466,10 @@ int main(int argc, char** argv) {
     is_logging = false;
   }
 
+  std::shared_ptr<LoggerHandle> log;
   if (is_logging) {
-    err = s.logger->openNext(LOG_ROOT);
-    assert(err == 0);
+    log = s.logger->openNext(LOG_ROOT);
+    assert(log != nullptr);
     LOGW("logging to %s", s.logger->getSegmentPath());
   }
 
@@ -522,8 +521,10 @@ int main(int argc, char** argv) {
             s.cv.notify_all();
           }
         }
-
-        s.logger->log(data, len, qlog_counter[sock] == 0);
+        if (log != nullptr) {
+          log->log(data, len, qlog_counter[sock] == 0);
+        }
+        
         delete msg;
 
         if (qlog_counter[sock] != -1) {
@@ -547,8 +548,8 @@ int main(int argc, char** argv) {
       s.rotate_last_frame_id = s.last_frame_id;
 
       if (is_logging) {
-        err = s.logger->openNext(LOG_ROOT);
-        assert(err == 0);
+        log = s.logger->openNext(LOG_ROOT);
+        assert(log != nullptr);
         LOGW("rotated to %s", s.logger->getSegmentPath());
       }
     }

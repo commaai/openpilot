@@ -30,10 +30,8 @@ class Logger {
  public:
   Logger(const char* log_name, bool has_qlog);
   ~Logger() {}
-  bool openNext(const char* root_path);
+  std::shared_ptr<LoggerHandle> openNext(const char* root_path);
   void close();
-  void log(uint8_t* data, size_t data_size, bool in_qlog = false);
-  void log(capnp::MessageBuilder& msg, bool in_qlog = false);
   inline std::shared_ptr<LoggerHandle> getHandle() { return cur_handle; }
   inline int getPart() { return part; }
   inline const char* getSegmentPath() const { return segment_path.c_str(); }

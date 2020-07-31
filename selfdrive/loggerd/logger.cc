@@ -134,33 +134,23 @@ Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlo
   log_name_ = log_name;
 }
 
-bool Logger::openNext(const char* root_path) {
+std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
   part += 1;
   segment_path = util::string_format("%s/%s--%d", root_path, route_name, part);
   auto log = std::make_shared<LoggerHandle>();
   if (!log->open(segment_path.c_str(), log_name_.c_str(), part, has_qlog)){
-    return false;
+    return nullptr;
   }
   auto bytes = init_data.asBytes();
   log->log(bytes.begin(), bytes.size(), has_qlog);
   cur_handle = log; 
-  return true;
-}
-
-void Logger::log(uint8_t* data, size_t data_size, bool in_qlog) {
-  if (cur_handle) {
-    cur_handle->log(data, data_size, in_qlog);
-  }
-}
-
-void Logger::log(capnp::MessageBuilder& msg, bool in_qlog) {
-  if (cur_handle) {
-    cur_handle->log(msg, in_qlog);
-  }
+  return cur_handle;
 }
 
 void Logger::close() {
-  log_sentinel(this, cereal::Sentinel::SentinelType::END_OF_ROUTE);
+  if (cur_handle) {
+    log_sentinel(cur_handle.get(), cereal::Sentinel::SentinelType::END_OF_ROUTE);
+  }
 }
 
 bool LoggerHandle::open(const char* segment_path, const char* log_name, int part, bool has_qlog) {
