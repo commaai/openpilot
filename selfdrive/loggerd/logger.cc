@@ -9,8 +9,8 @@
 #include "common/util.h"
 
 #include "common/params.h"
-
-static void log_sentinel(LoggerHandle* log, cereal::Sentinel::SentinelType type) {
+typedef cereal::Sentinel::SentinelType SentinelType;
+static void log_sentinel(LoggerHandle* log, SentinelType type) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
@@ -126,7 +126,7 @@ Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlo
 }
 
 std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
-  if (cur_handle) log_sentinel(cur_handle.get(), cereal::Sentinel::SentinelType::END_OF_SEGMENT);
+  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_SEGMENT);
 
   part += 1;
   segment_path = util::string_format("%s/%s--%d", root_path, route_name, part);
@@ -136,13 +136,12 @@ std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
   }
   auto bytes = init_data.asBytes();
   log->write(bytes.begin(), bytes.size(), has_qlog);
-  log_sentinel(log.get(), !cur_handle ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
-  cur_handle = log;
-  return cur_handle;
+  log_sentinel(log.get(), !cur_handle ? SentinelType::START_OF_ROUTE : SentinelType::START_OF_SEGMENT);
+  return cur_handle = log;
 }
 
 Logger::~Logger() {
-  if (cur_handle) log_sentinel(cur_handle.get(), cereal::Sentinel::SentinelType::END_OF_ROUTE);
+  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_ROUTE);
 }
 
 bool LoggerHandle::open(const char* segment_path, const char* log_name, int part, bool has_qlog) {
