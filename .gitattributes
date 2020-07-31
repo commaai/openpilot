@@ -25,3 +25,4 @@ models/segnet2.keras filter=lfs diff=lfs merge=lfs -text
 external/opencl/*.deb filter=lfs diff=lfs merge=lfs -text
 phonelibs/zmq/aarch64-linux/lib/libzmq.a filter=lfs diff=lfs merge=lfs -text
 external/azcopy/azcopy filter=lfs diff=lfs merge=lfs -text
+selfdrive/test/process_replay/*.bz2 filter=lfs diff=lfs merge=lfs -text
