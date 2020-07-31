@@ -1,5 +1,4 @@
-#ifndef ENCODER_H
-#define ENCODER_H
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
@@ -81,6 +80,4 @@ void encoder_destroy(EncoderState *s);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

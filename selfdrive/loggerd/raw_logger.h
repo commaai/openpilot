@@ -1,5 +1,4 @@
-#ifndef FFV1LOGGER_H
-#define FFV1LOGGER_H
+#pragma once
 
 #include <cstdio>
 #include <cstdlib>
@@ -39,5 +38,3 @@ private:
 
   AVFrame *frame = NULL;
 };
-
-#endif

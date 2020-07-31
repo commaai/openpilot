@@ -1,5 +1,4 @@
-#ifndef FRAMELOGGER_H
-#define FRAMELOGGER_H
+#pragma once
 
 #include <cstdint>
 
@@ -77,5 +76,3 @@ private:
   bool opening = false, closing = false, rotating = false;
   std::string next_path;
 };
-
-#endif
