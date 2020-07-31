@@ -31,7 +31,11 @@ typedef struct CameraState {
   float digital_gain;
   int digital_gain_pre;
   float analog_gain_frac;
+  uint16_t analog_gain;
+  uint8_t dc_opstate;
+  bool dc_gain_enabled;
   int exposure_time;
+
   mat3 transform;
 
   int device_iommu;
@@ -61,6 +65,7 @@ typedef struct CameraState {
   int request_ids[FRAME_BUF_COUNT];
   int sync_objs[FRAME_BUF_COUNT];
   int frame_id;
+  bool first;
 
   struct cam_req_mgr_session_info req_mgr_session_info;
 

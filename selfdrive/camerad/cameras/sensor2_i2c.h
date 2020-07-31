@@ -4,7 +4,6 @@ struct i2c_random_wr_payload stop_reg_array[] = {{0x301a, 0x18}};;
 
 struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x0018}, // RESET_REGISTER
-
   //
   {0x3092, 0x0C24}, // ROW_NOISE_CONTROL
   {0x337A, 0x0C80}, // DBLC_SCALE0
@@ -278,6 +277,21 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30BA, 0x11F2}, // DIGITAL_CTRL
   {0x3044, 0x0400}, // DARK_CONTROL
   {0x3064, 0x1802}, // SMIA_TEST
+  /*{0x3064, 0xCC2}, // STATS_EN
+  {0x3270, 0x10}, //
+  {0x3272, 0x30}, //
+  {0x3274, 0x50}, //
+  {0x3276, 0x10}, //
+  {0x3278, 0x30}, //
+  {0x327A, 0x50}, //
+
+  {0x3144, 0x0}, //
+  {0x3146, 0x0}, //
+  {0x3244, 0x0}, //
+  {0x3246, 0x0}, //
+  {0x3268, 0x0}, //
+  {0x326A, 0x0}, //
+  */
   {0x33E0, 0x0C80}, // TEST_ASIL_ROWS
   {0x3180, 0x0080}, // RESERVED_MFR_3180
   {0x33E4, 0x0080}, // RESERVED_MFR_33E4
@@ -321,8 +335,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x001C}, // RESET_REGISTER
 
   // HDR Settings
-  {0x3082, 0x0004}, // OPERATION_MODE_CTRL
-  {0x3238, 0x0666}, // EXPOSURE_RATIO
+  {0x3082, 0x000C}, // OPERATION_MODE_CTRL
+  {0x3238, 0x0222}, // EXPOSURE_RATIO
   {0x3014, 0x098E}, // FINE_INTEGRATION_TIME_
   {0x321E, 0x098E}, // FINE_INTEGRATION_TIME2
   {0x3222, 0x098E}, // FINE_INTEGRATION_TIME3
@@ -330,19 +344,19 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30B0, 0x0800}, // DIGITAL_TEST
   {0x32EA, 0x3C0E}, // RESERVED_MFR_32EA
   {0x32EC, 0x72A1}, // RESERVED_MFR_32EC
-  {0x31D0, 0x0000}, // COMPANDING, no good in 10 bit?
-  //{0x33DA, 0x0001}, // COMPANDING
-  {0x3362, 0x0002}, // DC GAIN
-  {0x3370, 0x0001}, // DBLC
+  {0x31D0, 0x0001}, // COMPANDING, no good in 10 bit?
+  {0x33DA, 0x0001}, // COMPANDING
+  {0x3362, 0x0000}, // DC GAIN
+  {0x3370, 0x0231}, // DBLC
   {0x318E, 0x0200}, // PRE_HDR_GAIN_EN
 
    // Initial Gains
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
   {0x3366, 0x7777}, // ANALOG_GAIN
   //{0x3060, 0xAAAA}, // ANALOG_COLOR_GAIN
-  {0x3060, 0x5655}, // ANALOG_COLOR_GAIN
-  {0x305A, 0x0080}, // RED_GAIN
-  {0x3058, 0x0080}, // BLUE_GAIN
+  {0x3060, 0x7777}, // ANALOG_COLOR_GAIN
+  {0x305A, 0x00BB}, // RED_GAIN 75
+  {0x3058, 0x0111}, // BLUE_GAIN FA
   {0x3056, 0x0080}, // GREEN1_GAIN
   {0x305C, 0x0080}, // GREEN2_GAIN
   {0x3022, 0x00}, // GROUPED_PARAMETER_HOLD_
