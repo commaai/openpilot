@@ -256,3 +256,59 @@ void Panda::set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode){
 void Panda::send_heartbeat(){
   usb_write(0xf3, 1, 0);
 }
+
+void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list){
+  int msg_count = can_data_list.size();
+
+  uint32_t *send = new uint32_t[msg_count*0x10]();
+
+  for (int i = 0; i < msg_count; i++) {
+    auto cmsg = can_data_list[i];
+    if (cmsg.getAddress() >= 0x800) { // extended
+      send[i*4] = (cmsg.getAddress() << 3) | 5;
+    } else { // normal
+      send[i*4] = (cmsg.getAddress() << 21) | 1;
+    }
+    auto can_data = cmsg.getDat();
+    assert(can_data.size() <= 8);
+    send[i*4+1] = can_data.size() | (cmsg.getSrc() << 4);
+    memcpy(&send[i*4+2], can_data.begin(), can_data.size());
+  }
+
+  usb_bulk_write(3, (unsigned char*)send, msg_count*0x10, 5);
+
+  delete[] send;
+}
+
+int Panda::can_receive(cereal::Event::Builder &event){
+  uint32_t data[RECV_SIZE/4];
+  int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
+
+  // return if length is 0
+  if (recv <= 0) {
+    return 0;
+  } else if (recv == RECV_SIZE) {
+    LOGW("Receive buffer full");
+  }
+
+  size_t num_msg = recv / 0x10;
+  auto canData = event.initCan(num_msg);
+
+  // populate message
+  for (int i = 0; i < num_msg; i++) {
+    if (data[i*4] & 4) {
+      // extended
+      canData[i].setAddress(data[i*4] >> 3);
+      //printf("got extended: %x\n", data[i*4] >> 3);
+    } else {
+      // normal
+      canData[i].setAddress(data[i*4] >> 21);
+    }
+    canData[i].setBusTime(data[i*4+1] >> 16);
+    int len = data[i*4+1]&0xF;
+    canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
+    canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
+  }
+
+  return recv;
+}

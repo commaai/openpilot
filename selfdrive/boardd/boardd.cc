@@ -195,74 +195,17 @@ void usb_retry_connect() {
 }
 
 void can_recv(PubMaster &pm) {
-  uint32_t data[RECV_SIZE/4];
   uint64_t start_time = nanos_since_boot();
-
-  int recv = panda->usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
-
-  // return if length is 0
-  if (recv <= 0) {
-    return;
-  } else if (recv == RECV_SIZE) {
-    LOGW("Receive buffer full");
-  }
 
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(start_time);
-  size_t num_msg = recv / 0x10;
-  auto canData = event.initCan(num_msg);
 
-  // populate message
-  for (int i = 0; i < num_msg; i++) {
-    if (data[i*4] & 4) {
-      // extended
-      canData[i].setAddress(data[i*4] >> 3);
-      //printf("got extended: %x\n", data[i*4] >> 3);
-    } else {
-      // normal
-      canData[i].setAddress(data[i*4] >> 21);
-    }
-    canData[i].setBusTime(data[i*4+1] >> 16);
-    int len = data[i*4+1]&0xF;
-    canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
-    canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
+  int recv = panda->can_receive(event);
+  if (recv){
+    pm.send("can", msg);
   }
-
-  pm.send("can", msg);
-}
-
-void can_send(cereal::Event::Reader &event) {
-  if (nanos_since_boot() - event.getLogMonoTime() > 1e9) {
-    return; //Older than 1 second. Dont send.
-  }
-
-  auto can_data_list = event.getSendcan();
-  int msg_count = can_data_list.size();
-
-  uint32_t *send = new uint32_t[msg_count*0x10];
-  memset(send, 0, msg_count*0x10);
-
-  for (int i = 0; i < msg_count; i++) {
-    auto cmsg = can_data_list[i];
-    if (cmsg.getAddress() >= 0x800) { // extended
-      send[i*4] = (cmsg.getAddress() << 3) | 5;
-    } else { // normal
-      send[i*4] = (cmsg.getAddress() << 21) | 1;
-    }
-    auto can_data = cmsg.getDat();
-    assert(can_data.size() <= 8);
-    send[i*4+1] = can_data.size() | (cmsg.getSrc() << 4);
-    memcpy(&send[i*4+2], can_data.begin(), can_data.size());
-  }
-
-  // send to board
-  if (!fake_send){
-    panda->usb_bulk_write(3, (unsigned char*)send, msg_count*0x10, 5);
-  }
-
-  delete[] send;
 }
 
 void can_send_thread() {
@@ -289,7 +232,14 @@ void can_send_thread() {
 
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-    can_send(event);
+
+    //Dont send if older than 1 second
+    if (nanos_since_boot() - event.getLogMonoTime() < 1e9) {
+      if (!fake_send){
+        panda->can_send(event.getSendcan());
+      }
+    }
+
     delete msg;
   }
 

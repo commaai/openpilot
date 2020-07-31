@@ -72,4 +72,7 @@ class Panda {
   void set_power_saving(bool power_saving);
   void set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode);
   void send_heartbeat();
+  void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
+  int can_receive(cereal::Event::Builder &event);
+
 };
