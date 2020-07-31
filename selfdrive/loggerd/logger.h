@@ -17,7 +17,7 @@ class LoggerHandle {
   bool open(const char* segment_path, const char* log_name, int part, bool has_qlog);
   void close();
   std::mutex mutex;
-  char lock_path[4096] = {};
+  std::string lock_path;
   FILE* log_file = nullptr;
   BZFILE* bz_file = nullptr;
   BZFILE* bz_qlog = nullptr;
@@ -27,27 +27,21 @@ class LoggerHandle {
 
 class Logger {
  public:
-  Logger() = default;
+  Logger(const char* log_name, bool has_qlog);
   ~Logger() {}
-  void init(const char* log_name, bool has_qlog);
-  bool open(const char* root_path);
+  bool openNext(const char* root_path);
   void close();
-  std::shared_ptr<LoggerHandle> getHandle() { return cur_handle; }
-  void log(uint8_t* data, size_t data_size, bool in_qlog = false) {
-    if (cur_handle) {
-      cur_handle->log(data, data_size, in_qlog);
-    }
-  }
+  void log(uint8_t* data, size_t data_size, bool in_qlog = false);
+  inline std::shared_ptr<LoggerHandle> getHandle() { return cur_handle; }
   inline int getPart() { return part; }
-  inline const char* getSegmentPath() const { return segment_path; }
+  inline const char* getSegmentPath() const { return segment_path.c_str(); }
 
  private:
-  char segment_path[4096] = {};
-  char route_name[64] = {};
-  kj::Array<capnp::word> init_data_;
-  int part = 0;
-
+  std::string segment_path;
   std::string log_name_;
+  char route_name[64] = {};
+  int part = 0;
   bool has_qlog = false;
+  kj::Array<capnp::word> init_data;
   std::shared_ptr<LoggerHandle> cur_handle;
 };

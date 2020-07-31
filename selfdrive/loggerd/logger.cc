@@ -28,7 +28,7 @@ static void log_sentinel(Logger* s, cereal::Sentinel::SentinelType type) {
   s->log(bytes.begin(), bytes.size(), true);
 }
 
-static int mkpath(char* file_path) {
+static int mkpath(const char* file_path) {
   assert(file_path && *file_path);
   char* p;
   for (p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
@@ -44,7 +44,7 @@ static int mkpath(char* file_path) {
   return 0;
 }
 
-kj::Array<capnp::word> gen_init_data() {
+static kj::Array<capnp::word> gen_init_data() {
   capnp::MallocMessageBuilder msg;
   auto event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
@@ -124,8 +124,8 @@ kj::Array<capnp::word> gen_init_data() {
   return capnp::messageToFlatArray(msg);
 }
 
-void Logger::init(const char* log_name,  bool has_qlog) {
-  init_data_ = gen_init_data();
+Logger::Logger(const char* log_name, bool has_qlog) {
+  init_data = gen_init_data();
 
   umask(0);
 
@@ -139,47 +139,48 @@ void Logger::init(const char* log_name,  bool has_qlog) {
   log_name_ = log_name;
 }
 
-bool Logger::open(const char* root_path) {
-  snprintf(segment_path, sizeof(segment_path), "%s/%s--%d", root_path, route_name, part);
+bool Logger::openNext(const char* root_path) {
+  segment_path = util::string_format("%s/%s--%d", root_path, route_name, part);
   auto log = std::make_shared<LoggerHandle>();
-  if (!log->open(segment_path, log_name_.c_str(), part, has_qlog)){
+  if (!log->open(segment_path.c_str(), log_name_.c_str(), part, has_qlog)){
     return false;
   }
-  if (init_data_.size() > 0) {
-    auto bytes = init_data_.asBytes();
+  if (init_data.size() > 0) {
+    auto bytes = init_data.asBytes();
     log->log(bytes.begin(), bytes.size(), has_qlog);
   }
   cur_handle = log; 
   return true;
+}
+void Logger::log(uint8_t* data, size_t data_size, bool in_qlog) {
+  if (cur_handle) {
+    cur_handle->log(data, data_size, in_qlog);
+  }
 }
 
 void Logger::close() {
   log_sentinel(this, cereal::Sentinel::SentinelType::END_OF_ROUTE);
 }
 
-
 bool LoggerHandle::open(const char* segment_path, const char* log_name, int part, bool has_qlog) {
-  char log_path[4096] = {};
-  char qlog_path[4096] = {};
+  std::string log_path = util::string_format("%s/%s.bz2", segment_path, log_name);
+  std::string qlog_path = util::string_format( "%s/qlog.bz2", segment_path);
+  lock_path = util::string_format("%s.lock", log_path.c_str());
 
-  snprintf(log_path, sizeof(log_path), "%s/%s.bz2", segment_path, log_name);
-  snprintf(qlog_path, sizeof(qlog_path), "%s/qlog.bz2", segment_path);
-  snprintf(lock_path, sizeof(lock_path), "%s.lock", log_path);
-
-  int err = mkpath(log_path);
+  int err = mkpath(log_path.c_str());
   if (err) return false;
 
-  FILE* lock_file = fopen(lock_path, "wb");
+  FILE* lock_file = fopen(lock_path.c_str(), "wb");
   if (lock_file == NULL) return false;
   fclose(lock_file);
 
-  log_file = fopen(log_path, "wb");
+  log_file = fopen(log_path.c_str(), "wb");
   if (log_file == NULL) goto fail;
   bz_file = BZ2_bzWriteOpen(&err, log_file, 9, 0, 30);
   if (err != BZ_OK) goto fail;
 
   if (has_qlog) {
-    qlog_file = fopen(qlog_path, "wb");
+    qlog_file = fopen(qlog_path.c_str(), "wb");
     if (qlog_file == NULL) goto fail;
     bz_qlog = BZ2_bzWriteOpen(&err, qlog_file, 9, 0, 30);
     if (err != BZ_OK) goto fail;
@@ -215,7 +216,9 @@ void LoggerHandle::close() {
     fclose(qlog_file);
     qlog_file = NULL;
   }
-  fclose(log_file);
-  log_file = NULL;
-  unlink(lock_path);
+  if (log_file) {
+    fclose(log_file);
+    log_file = NULL;
+  }
+  unlink(lock_path.c_str());
 }

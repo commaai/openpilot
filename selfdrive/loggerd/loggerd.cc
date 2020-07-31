@@ -76,7 +76,7 @@ static void set_do_exit(int sig) {
 }
 struct LoggerdState {
   Context *ctx;
-  Logger logger;
+  std::unique_ptr<Logger> logger;
 
   std::mutex lock;
   std::condition_variable cv;
@@ -90,7 +90,8 @@ struct LoggerdState {
   int should_close;
   int finish_close;
 };
-LoggerdState s;
+
+LoggerdState s = {};
 
 #ifndef DISABLE_ENCODER
 void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
@@ -220,15 +221,15 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
 
           if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.segment_path, s.logger.getPart());
+            encoder_rotate(&encoder_alt, s.segment_path, s.logger->getPart());
           }
 
           if (raw_clips) {
-            rawlogger->Rotate(s.segment_path, s.logger.getPart());
+            rawlogger->Rotate(s.segment_path, s.logger->getPart());
           }
 
-          encoder_segment = s.logger.getPart();
-          lh = s.logger.getHandle();
+          encoder_segment = s.logger->getPart();
+          lh = s.logger->getHandle();
         }
 
         if (encoder.rotating) {
@@ -385,26 +386,23 @@ static void clear_locks() {
 }
 
 static void bootlog() {
-  s.logger.init("bootlog", false);
-  int err = s.logger.open(LOG_ROOT);
+  Logger logger("bootlog", false);
+  int err = logger.open(LOG_ROOT);
   assert(err == 0);
-  LOGW("bootlog to %s", s.logger.getSegmentPath());
+  LOGW("bootlog to %s", logger.getSegmentPath());
+  MessageBuilder msg;
+  auto boot = msg.initEvent().initBoot();
 
-  {
-    MessageBuilder msg;
-    auto boot = msg.initEvent().initBoot();
+  boot.setWallTimeNanos(nanos_since_epoch());
 
-    boot.setWallTimeNanos(nanos_since_epoch());
+  std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
+  boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
 
-    std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
-    boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
+  std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
+  boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-    std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
-    boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
-
-    auto bytes = msg.toBytes();
-    logger_log(&s.logger, bytes.begin(), bytes.size(), false);
-  }
+  auto bytes = msg.toBytes();
+  logger.log(bytes.begin(), bytes.size());
 }
 
 int main(int argc, char** argv) {
@@ -428,6 +426,7 @@ int main(int argc, char** argv) {
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
   s.ctx = Context::create();
+  s.logger = std::make_unique<Logger>("rlog", true);
   Poller * poller = Poller::create();
 
   // subscribe to all services
@@ -457,7 +456,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  s.logger.init("rlog", true);
   bool is_streaming = false;
   bool is_logging = true;
 
@@ -469,9 +467,9 @@ int main(int argc, char** argv) {
   }
 
   if (is_logging) {
-    err = s.logger.open(LOG_ROOT);
+    err = s.logger->open(LOG_ROOT);
     assert(err == 0);
-    LOGW("logging to %s", s.logger.getSegmentPath());
+    LOGW("logging to %s", s.logger->getSegmentPath());
   }
 
   double start_ts = seconds_since_boot();
@@ -523,7 +521,7 @@ int main(int argc, char** argv) {
           }
         }
 
-        s.logger.log(data, len, qlog_counter[sock] == 0);
+        s.logger->log(data, len, qlog_counter[sock] == 0);
         delete msg;
 
         if (qlog_counter[sock] != -1) {
@@ -547,9 +545,9 @@ int main(int argc, char** argv) {
       s.rotate_last_frame_id = s.last_frame_id;
 
       if (is_logging) {
-        err = s.logger.open(LOG_ROOT);
+        err = s.logger->openNext(LOG_ROOT);
         assert(err == 0);
-        LOGW("rotated to %s", s.logger.getSegmentPath());
+        LOGW("rotated to %s", s.logger->getSegmentPath());
       }
     }
 
