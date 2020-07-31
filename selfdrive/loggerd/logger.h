@@ -1,6 +1,6 @@
 #pragma once
-#include <bzlib.h>
 #include <assert.h>
+#include <bzlib.h>
 #include <memory>
 #include <mutex>
 // #include <vector>
