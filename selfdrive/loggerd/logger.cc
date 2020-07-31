@@ -152,7 +152,7 @@ Logger::~Logger() {
 }
 
 bool LoggerHandle::open(const std::string& segment_path, const std::string& log_name, int part, bool has_qlog) {
-  std::string log_path = util::string_format("%s/%s.bz2", segment_path, log_name);
+  std::string log_path = util::string_format("%s/%s.bz2", segment_path.c_str(), log_name.c_str());
   std::string qlog_path = segment_path + "/qlog.bz2";
   lock_path = log_path + ".lock";
 
