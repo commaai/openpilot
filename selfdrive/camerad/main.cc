@@ -34,6 +34,7 @@
 #include "cereal/gen/cpp/log.capnp.h"
 
 #define UI_BUF_COUNT 4
+#define DEBAYER_LOCAL_WORKSIZE 16
 #define YUV_COUNT 40
 #define MAX_CLIENTS 5
 
@@ -79,6 +80,9 @@ struct VisionState {
   cl_kernel krnl_debayer_rear;
   cl_kernel krnl_debayer_front;
   cl_kernel krnl_debayer_wide;
+  int debayer_cl_localMemSize;
+  size_t debayer_cl_globalWorkSize[2];
+  size_t debayer_cl_localWorkSize[2];
 
   cl_program prg_rgb_laplacian;
   cl_kernel krnl_rgb_laplacian;
@@ -212,14 +216,20 @@ void* frontview_thread(void *arg) {
       assert(err == 0);
       err = clSetKernelArg(s->krnl_debayer_front, 1, sizeof(cl_mem), &s->rgb_front_bufs_cl[rgb_idx]);
       assert(err == 0);
+#ifdef QCOM2
+      err = clSetKernelArg(s->krnl_debayer_front, 2, s->debayer_cl_localMemSize, 0);
+      assert(err == 0);
+      err = clEnqueueNDRangeKernel(q, s->krnl_debayer_front, 2, NULL,
+                                   s->debayer_cl_globalWorkSize, s->debayer_cl_localWorkSize, 0, 0, &debayer_event);
+#else
       float digital_gain = 1.0;
       err = clSetKernelArg(s->krnl_debayer_front, 2, sizeof(float), &digital_gain);
       assert(err == 0);
-
       const size_t debayer_work_size = s->rgb_front_height; // doesn't divide evenly, is this okay?
       const size_t debayer_local_work_size = 128;
       err = clEnqueueNDRangeKernel(q, s->krnl_debayer_front, 1, NULL,
                                    &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event);
+#endif
       assert(err == 0);
     } else {
       assert(s->rgb_front_buf_size >= s->cameras.front.frame_size);
@@ -251,7 +261,7 @@ void* frontview_thread(void *arg) {
     }
 
 #ifdef NOSCREEN
-    if (frame_data.frame_id % 2 == 0) {
+    if (frame_data.frame_id % 4 == 2) {
       sendrgb(&s->cameras, (uint8_t*) s->rgb_front_bufs[rgb_idx].addr, s->rgb_front_bufs[rgb_idx].len, 2);
     }
 #endif
@@ -316,10 +326,10 @@ void* frontview_thread(void *arg) {
         x_end = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
 #ifdef QCOM2
-      x_start = 0.2*s->rgb_front_width;
-      x_end = 0.8*s->rgb_front_width;
-      y_start = 0.2*s->rgb_front_height;
-      y_end = 0.8*s->rgb_front_height;
+      x_start = 0.1*s->rgb_front_width;
+      x_end = 0.9*s->rgb_front_width;
+      y_start = 0.1*s->rgb_front_height;
+      y_end = 0.9*s->rgb_front_height;
 #endif
       uint32_t lum_binning[256] = {0,};
       for (int y = y_start; y < y_end; ++y) {
@@ -447,17 +457,14 @@ void* wideview_thread(void *arg) {
 
     cl_event debayer_event;
     if (s->cameras.wide.ci.bayer) {
-      err = clSetKernelArg(s->krnl_debayer_rear, 0, sizeof(cl_mem), &s->wide_camera_bufs_cl[buf_idx]); // TODO: add separate cl krl
+      err = clSetKernelArg(s->krnl_debayer_wide, 0, sizeof(cl_mem), &s->wide_camera_bufs_cl[buf_idx]);
       assert(err == 0);
-      err = clSetKernelArg(s->krnl_debayer_rear, 1, sizeof(cl_mem), &s->rgb_wide_bufs_cl[rgb_idx]);
+      err = clSetKernelArg(s->krnl_debayer_wide, 1, sizeof(cl_mem), &s->rgb_wide_bufs_cl[rgb_idx]);
       assert(err == 0);
-      err = clSetKernelArg(s->krnl_debayer_rear, 2, sizeof(float), &s->cameras.wide.digital_gain);
+      err = clSetKernelArg(s->krnl_debayer_wide, 2, s->debayer_cl_localMemSize, 0);
       assert(err == 0);
-
-      const size_t debayer_work_size = s->rgb_height; // doesn't divide evenly, is this okay?
-      const size_t debayer_local_work_size = 128;
-      err = clEnqueueNDRangeKernel(q, s->krnl_debayer_rear, 1, NULL,
-                                   &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event);
+      err = clEnqueueNDRangeKernel(q, s->krnl_debayer_wide, 2, NULL,
+                                   s->debayer_cl_globalWorkSize, s->debayer_cl_localWorkSize, 0, 0, &debayer_event);
       assert(err == 0);
     } else {
       assert(s->rgb_wide_buf_size >= s->frame_size);
@@ -475,7 +482,7 @@ void* wideview_thread(void *arg) {
     visionbuf_sync(&s->rgb_wide_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
 #ifdef NOSCREEN
-    if (frame_data.frame_id % 2 == 0) {
+    if (frame_data.frame_id % 4 == 0) {
       sendrgb(&s->cameras, (uint8_t*) s->rgb_wide_bufs[rgb_idx].addr, s->rgb_wide_bufs[rgb_idx].len, 1);
     }
 #endif
@@ -532,17 +539,17 @@ void* wideview_thread(void *arg) {
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
-        s->frame_sock->send((char*)bytes.begin(), bytes.size());
+        s->wide_frame_sock->send((char*)bytes.begin(), bytes.size());
       }
     }
 
     tbuffer_dispatch(&s->ui_wide_tb, ui_idx);
 
     // auto exposure over big box
-    const int exposure_x = 2;//290;
-    const int exposure_y = 200;//282 + 40; // TODO: fix this? should not use med imo
-    const int exposure_height = 250;// 314;
-    const int exposure_width = 450;//560;
+    const int exposure_x = 120*2;//290;
+    const int exposure_y = 180*2;//282 + 40; // TODO: fix this? should not use med imo
+    const int exposure_height = 180*2;// 314;
+    const int exposure_width = 720*2;//560;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
@@ -615,19 +622,26 @@ void* processing_thread(void *arg) {
     int ui_idx = tbuffer_select(&s->ui_tb);
     int rgb_idx = ui_idx;
 
+    // double t10 = millis_since_boot();
     cl_event debayer_event;
     if (s->cameras.rear.ci.bayer) {
       err = clSetKernelArg(s->krnl_debayer_rear, 0, sizeof(cl_mem), &s->camera_bufs_cl[buf_idx]);
       assert(err == 0);
       err = clSetKernelArg(s->krnl_debayer_rear, 1, sizeof(cl_mem), &s->rgb_bufs_cl[rgb_idx]);
       assert(err == 0);
+#ifdef QCOM2
+      err = clSetKernelArg(s->krnl_debayer_rear, 2, s->debayer_cl_localMemSize, 0);
+      assert(err == 0);
+      err = clEnqueueNDRangeKernel(q, s->krnl_debayer_rear, 2, NULL,
+                                   s->debayer_cl_globalWorkSize, s->debayer_cl_localWorkSize, 0, 0, &debayer_event);
+#else
       err = clSetKernelArg(s->krnl_debayer_rear, 2, sizeof(float), &s->cameras.rear.digital_gain);
       assert(err == 0);
-
       const size_t debayer_work_size = s->rgb_height; // doesn't divide evenly, is this okay?
       const size_t debayer_local_work_size = 128;
       err = clEnqueueNDRangeKernel(q, s->krnl_debayer_rear, 1, NULL,
                                    &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event);
+#endif
       assert(err == 0);
     } else {
       assert(s->rgb_buf_size >= s->frame_size);
@@ -636,16 +650,18 @@ void* processing_thread(void *arg) {
                                 0, 0, s->rgb_buf_size, 0, 0, &debayer_event);
       assert(err == 0);
     }
-
     clWaitForEvents(1, &debayer_event);
     clReleaseEvent(debayer_event);
+
+    // double t11 = millis_since_boot();
+    // printf("kernel time: %f ms\n", t11 - t10);
 
     tbuffer_release(&s->cameras.rear.camera_tb, buf_idx);
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
 #ifdef NOSCREEN
-  if (frame_data.frame_id % 2 == 1) {
+  if (frame_data.frame_id % 4 == 1) {
     sendrgb(&s->cameras, (uint8_t*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, 0);
   }
 #endif
@@ -856,10 +872,10 @@ void* processing_thread(void *arg) {
     tbuffer_dispatch(&s->ui_tb, ui_idx);
 
     // auto exposure over big box
-    const int exposure_x = 2;
-    const int exposure_y = 200;// + 40;
-    const int exposure_height = 250;// 314;
-    const int exposure_width = 450;//560;
+    const int exposure_x = 120*2;
+    const int exposure_y = 180*2;// + 40;
+    const int exposure_height = 180*2;// 314;
+    const int exposure_width = 720*2;//560;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
@@ -1222,8 +1238,8 @@ cl_program build_debayer_program(VisionState *s,
                                  int frame_width, int frame_height, int frame_stride,
                                  int rgb_width, int rgb_height, int rgb_stride,
                                  int bayer_flip, int hdr) {
-  assert(rgb_width == frame_width/2);
-  assert(rgb_height == frame_height/2);
+  assert(rgb_width == frame_width);
+  assert(rgb_height == frame_height);
 
   #ifdef QCOM2
     int dnew = 1;
@@ -1240,7 +1256,11 @@ cl_program build_debayer_program(VisionState *s,
           frame_width, frame_height, frame_stride,
           rgb_width, rgb_height, rgb_stride,
           bayer_flip, hdr, dnew);
+#ifdef QCOM2
+  return CLU_LOAD_FROM_FILE(s->context, s->device_id, "cameras/real_debayer.cl", args);
+#else
   return CLU_LOAD_FROM_FILE(s->context, s->device_id, "cameras/debayer.cl", args);
+#endif
 }
 
 cl_program build_conv_program(VisionState *s,
@@ -1305,7 +1325,7 @@ void init_buffers(VisionState *s) {
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
     s->camera_bufs[i] = visionbuf_allocate_cl(s->frame_size, s->device_id, s->context,
                                               &s->camera_bufs_cl[i]);
-    #ifndef QCOM2
+    #ifdef QCOM
       // TODO: make lengths correct
       s->focus_bufs[i] = visionbuf_allocate(0xb80);
       s->stats_bufs[i] = visionbuf_allocate(0xb80);
@@ -1326,8 +1346,13 @@ void init_buffers(VisionState *s) {
 
   // processing buffers
   if (s->cameras.rear.ci.bayer) {
-    s->rgb_width = s->frame_width/2;
-    s->rgb_height = s->frame_height/2;
+#ifdef QCOM2
+    s->rgb_width = s->frame_width;
+    s->rgb_height = s->frame_height;
+#else
+    s->rgb_width = s->frame_width / 2;
+    s->rgb_height = s->frame_height / 2;
+#endif
   } else {
     s->rgb_width = s->frame_width;
     s->rgb_height = s->frame_height;
@@ -1345,21 +1370,20 @@ void init_buffers(VisionState *s) {
 
   //assert(s->cameras.front.ci.bayer);
   if (s->cameras.front.ci.bayer) {
-    s->rgb_front_width = s->cameras.front.ci.frame_width/2;
-    s->rgb_front_height = s->cameras.front.ci.frame_height/2;
+#ifdef QCOM2
+    s->rgb_front_width = s->cameras.front.ci.frame_width;
+    s->rgb_front_height = s->cameras.front.ci.frame_height;
+#else
+    s->rgb_front_width = s->cameras.front.ci.frame_width / 2;
+    s->rgb_front_height = s->cameras.front.ci.frame_height / 2;
+#endif
   } else {
     s->rgb_front_width = s->cameras.front.ci.frame_width;
     s->rgb_front_height = s->cameras.front.ci.frame_height;
   }
-  
-  if (s->cameras.wide.ci.bayer) {
-    s->rgb_wide_width = s->cameras.wide.ci.frame_width/2;
-    s->rgb_wide_height = s->cameras.wide.ci.frame_height/2;
-  } else {
-    s->rgb_wide_width = s->cameras.wide.ci.frame_width;
-    s->rgb_wide_height = s->cameras.wide.ci.frame_height;
-  }
-  
+
+  s->rgb_wide_width = s->cameras.wide.ci.frame_width;
+  s->rgb_wide_height = s->cameras.wide.ci.frame_height;
 
   for (int i=0; i<UI_BUF_COUNT; i++) {
     VisionImg img = visionimg_alloc_rgb24(s->rgb_front_width, s->rgb_front_height, &s->rgb_front_bufs[i]);
@@ -1463,7 +1487,13 @@ void init_buffers(VisionState *s) {
     s->krnl_debayer_wide = clCreateKernel(s->prg_debayer_wide, "debayer10", &err);
     assert(err == 0);
   }
+  s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
+  s->debayer_cl_globalWorkSize[0] = s->rgb_width;
+  s->debayer_cl_globalWorkSize[1] = s->rgb_height;
+  s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
+  s->debayer_cl_localWorkSize[1] = DEBAYER_LOCAL_WORKSIZE;
 
+#ifdef QCOM
   s->prg_rgb_laplacian = build_conv_program(s, s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y, 
                                             3);
   s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
@@ -1482,6 +1512,7 @@ void init_buffers(VisionState *s) {
   s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
 
   for (int i=0; i<(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1); i++) {s->lapres[i] = 16160;}
+#endif
 
   rgb_to_yuv_init(&s->rgb_to_yuv_state, s->context, s->device_id, s->yuv_width, s->yuv_height, s->rgb_stride);
   rgb_to_yuv_init(&s->front_rgb_to_yuv_state, s->context, s->device_id, s->yuv_front_width, s->yuv_front_height, s->rgb_front_stride);
@@ -1492,8 +1523,10 @@ void free_buffers(VisionState *s) {
   // free bufs
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
     visionbuf_free(&s->camera_bufs[i]);
+#ifdef QCOM
     visionbuf_free(&s->focus_bufs[i]);
     visionbuf_free(&s->stats_bufs[i]);
+#endif
   }
 
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
@@ -1503,7 +1536,6 @@ void free_buffers(VisionState *s) {
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
    visionbuf_free(&s->wide_camera_bufs[i]);
   }
-
 
   for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_bufs[i]);
