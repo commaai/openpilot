@@ -57,10 +57,6 @@ segments = {
     'carFingerprint': SUBARU.IMPREZA,
   #  'fingerprintSource': 'fixed',
   },
-  #"5ab784f361e19b78|2020-06-08--16-30-41--25": {
-  #  'car_brand': "SUBARU_LEGACY",
-  #  'carFingerprint': SUBARU.OUTBACK_PREGLOBAL,
-  #},
   "76b83eb0245de90e|2020-03-05--19-16-05--3": {
     'car_brand': "VOLKSWAGEN",
     'carFingerprint': VOLKSWAGEN.GOLF,
