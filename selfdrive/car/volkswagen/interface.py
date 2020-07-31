@@ -3,7 +3,6 @@ from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-GEAR = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
