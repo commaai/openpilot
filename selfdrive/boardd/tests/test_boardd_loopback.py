@@ -8,6 +8,7 @@ from functools import wraps
 import cereal.messaging as messaging
 from cereal import car
 from common.basedir import PARAMS
+from common.android import ANDROID
 from common.params import Params
 from common.spinner import Spinner
 from panda import Panda
@@ -35,7 +36,7 @@ os.environ['PARAMS_PATH'] = PARAMS
 @with_processes(['boardd'])
 def test_boardd_loopback():
   # wait for boardd to init
-  spinner = Spinner()
+  spinner = Spinner(noop=(not ANDROID))
   time.sleep(2)
 
   # boardd blocks on CarVin and CarParams
