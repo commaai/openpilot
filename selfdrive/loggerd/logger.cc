@@ -1,20 +1,13 @@
 #include "logger.h"
-#include <assert.h>
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/stat.h>
-#include <time.h>
-#include <unistd.h>
 #include <fstream>
 #include <streambuf>
 #include <vector>
 #include <string>
 #include "cereal/gen/cpp/log.capnp.h"
-#include "common/swaglog.h"
 #include "common/version.h"
 #include "common/util.h"
-#include "common/utilpp.h"
+
 #include "common/params.h"
 
 static void log_sentinel(LoggerHandle* log, cereal::Sentinel::SentinelType type) {
@@ -165,13 +158,14 @@ bool LoggerHandle::open(const char* segment_path, const char* log_name, int part
 
   auto open_files = [](std::string& f_path, FILE*& f, BZFILE*& bz_f){
     f = fopen(f_path.c_str(), "wb");
-    int err;
-    if (f) {
+    if (f != nullptr) {
+      int err;
       bz_f = BZ2_bzWriteOpen(&err, f, 9, 0, 30);
       return err == BZ_OK;
     }
     return false;
   };
+  
   if (!open_files(log_path, log_file, bz_file) || !open_files(qlog_path, qlog_file, bz_qlog)) {
     close();
     return false;

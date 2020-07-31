@@ -1,15 +1,9 @@
-#include <cstdio>
-#include <cassert>
 #include <signal.h>
 #include <errno.h>
-#include <poll.h>
 #include <libyuv.h>
 #include <sys/resource.h>
 #include <pthread.h>
 
-#include <iostream>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
 #include <random>
 
@@ -19,10 +13,7 @@
 #include <cutils/properties.h>
 #endif
 
-#include "common/timing.h"
-#include "common/swaglog.h"
 #include "common/visionipc.h"
-#include "common/utilpp.h"
 
 #include "logger.h"
 #include "messaging.hpp"

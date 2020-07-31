@@ -1,11 +1,12 @@
 #pragma once
 #include <bzlib.h>
-
+#include <assert.h>
 #include <memory>
 #include <mutex>
 // #include <vector>
 #include "capnp/serialize.h"
-#include "kj/array.h"
+#include "common/swaglog.h"
+#include "common/utilpp.h"
 
 class LoggerHandle {
  public:
