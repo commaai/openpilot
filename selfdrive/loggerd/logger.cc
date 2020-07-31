@@ -138,7 +138,7 @@ std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
   part += 1;
   segment_path = util::string_format("%s/%s--%d", root_path, route_name, part);
   auto log = std::make_shared<LoggerHandle>();
-  if (!log->open(segment_path.c_str(), log_name_.c_str(), part, has_qlog)) {
+  if (!log->open(segment_path, log_name_, part, has_qlog)) {
     return nullptr;
   }
   auto bytes = init_data.asBytes();
@@ -156,14 +156,13 @@ bool LoggerHandle::open(const std::string& segment_path, const std::string& log_
   std::string qlog_path = segment_path + "/qlog.bz2";
   lock_path = log_path + ".lock";
 
-  int err = mkpath((char*)log_path.c_str());
-  if (err) return false;
+  if (0 != mkpath((char*)log_path.c_str())) return false;
 
   FILE* lock_file = fopen(lock_path.c_str(), "wb");
   if (lock_file == NULL) return false;
   fclose(lock_file);
 
-  auto open_files = [](std::string& f_path, FILE*& f, BZFILE*& bz_f) {
+  auto open_files = [](const std::string& f_path, FILE*& f, BZFILE*& bz_f) {
     f = fopen(f_path.c_str(), "wb");
     if (f != nullptr) {
       int bzerror;
