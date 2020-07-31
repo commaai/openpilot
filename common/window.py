@@ -6,7 +6,7 @@ class Window():
   def __init__(self, w, h, caption="window", double=False):
     self.w = w
     self.h = h
-    pygame.init()
+    pygame.display.init()
     pygame.display.set_caption(caption)
     self.double = double
     if self.double:
