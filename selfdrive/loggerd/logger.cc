@@ -186,7 +186,6 @@ void LoggerHandle::write(capnp::MessageBuilder& msg, bool in_qlog) {
 }
 
 void LoggerHandle::close() {
-  const std::lock_guard<std::mutex> lock(mutex);
   auto close_files = [](FILE*& f, BZFILE*& bz_f) {
     int bzerror;
     if (bz_f) BZ2_bzWriteClose(&bzerror, bz_f, 0, NULL, NULL);
