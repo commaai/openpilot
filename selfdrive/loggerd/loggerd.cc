@@ -112,7 +112,7 @@ struct LoggerdState {
 LoggerdState s;
 
 #ifndef DISABLE_ENCODER
-void encoder_thread(bool is_streaming, bool raw_clips, bool front) {
+void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   int err;
 
   // 0:f, 1:d, 2:e
