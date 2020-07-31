@@ -40,22 +40,19 @@ Panda::Panda(){
 
   return;
 
- fail:
-  if (dev_handle){
-    libusb_release_interface(dev_handle, 0);
-    libusb_close(dev_handle);
-  }
-
-  if (ctx) {
-    libusb_exit(ctx);
-  }
-
+fail:
+  cleanup();
   throw std::runtime_error("Error connecting to panda");
 }
 
 Panda::~Panda(){
   pthread_mutex_lock(&usb_lock);
+  cleanup();
+  connected = false;
+  pthread_mutex_unlock(&usb_lock);
+}
 
+void Panda::cleanup(){
   if (dev_handle){
     libusb_release_interface(dev_handle, 0);
     libusb_close(dev_handle);
@@ -64,8 +61,6 @@ Panda::~Panda(){
   if (ctx) {
     libusb_exit(ctx);
   }
-  connected = -1;
-  pthread_mutex_unlock(&usb_lock);
 }
 
 void Panda::handle_usb_issue(int err, const char func[]) {

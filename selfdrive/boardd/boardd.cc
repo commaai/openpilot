@@ -120,7 +120,6 @@ void safety_setter_thread() {
   panda->set_safety_model(safety_model, safety_param);
 
   safety_setter_thread_running = false;
-  return;
 }
 
 
@@ -373,7 +372,7 @@ void can_health_thread() {
       no_ignition_cnt += 1;
     }
 
-  #ifndef __x86_64__
+#ifdef QCOM
     bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
     bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
     if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
@@ -389,7 +388,9 @@ void can_health_thread() {
       LOGW("TURN ON CHARGING!\n");
       panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
     }
+#endif
 
+#ifndef __x86_64__
     bool power_save_desired = !ignition;
     if (health.power_save_enabled != power_save_desired){
       panda->set_power_saving(power_save_desired);
@@ -399,7 +400,7 @@ void can_health_thread() {
     if (!ignition && (health.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
-  #endif
+#endif
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {

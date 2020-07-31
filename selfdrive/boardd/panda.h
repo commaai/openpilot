@@ -40,6 +40,7 @@ class Panda {
   libusb_device_handle *dev_handle = NULL;
   pthread_mutex_t usb_lock;
   void handle_usb_issue(int err, const char func[]);
+  void cleanup();
 
  public:
   Panda();
