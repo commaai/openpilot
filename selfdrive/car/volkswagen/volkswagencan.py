@@ -3,15 +3,11 @@
 
 def create_mqb_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   values = {
-    "SET_ME_0X3": 0x3,
-    "Assist_Torque": abs(apply_steer),
-    "Assist_Requested": lkas_enabled,
-    "Assist_VZ": 1 if apply_steer < 0 else 0,
-    "HCA_Available": 1,
-    "HCA_Standby": not lkas_enabled,
-    "HCA_Active": lkas_enabled,
-    "SET_ME_0XFE": 0xFE,
-    "SET_ME_0X07": 0x07,
+    "HCA_System_Status": 0x3,
+    "LM_Offset": abs(apply_steer),
+    "LM_Offset_Valid": lkas_enabled,
+    "LM_Offsign": 1 if apply_steer < 0 else 0,
+    "HCA_Control_Status": 0x5 if lkas_enabled else 0x3,
   }
   return packer.make_can_msg("HCA_01", bus, values, idx)
 
