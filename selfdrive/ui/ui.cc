@@ -363,6 +363,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
   if (sm.updated("dMonitoringState")) {
     auto data = sm["dMonitoringState"].getDMonitoringState();
+    scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = data.getIsRHD();
     scene.frontview = data.getIsPreview();
   }

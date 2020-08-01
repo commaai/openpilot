@@ -483,11 +483,15 @@ def manager_thread():
           start_managed_process(p)
     else:
       logger_dead = False
+      driver_view = params.get("IsDriverViewEnabled") == b"1"
+
+      # TODO: refactor how manager manages processes
       for p in reversed(car_started_processes):
-        kill_managed_process(p)
+        if p not in driver_view_processes or not driver_view:
+          kill_managed_process(p)
 
       for p in driver_view_processes:
-        if params.get("IsDriverViewEnabled") == b"1":
+        if driver_view:
           start_managed_process(p)
         else:
           kill_managed_process(p)

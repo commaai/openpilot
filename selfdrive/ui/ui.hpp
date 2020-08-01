@@ -125,6 +125,7 @@ typedef struct UIScene {
   cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
+  cereal::DMonitoringState::Reader dmonitoring_state;
 } UIScene;
 
 typedef struct {

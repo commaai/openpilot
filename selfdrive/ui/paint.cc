@@ -560,7 +560,7 @@ static void ui_draw_vision_face(UIState *s) {
   const int face_size = 96;
   const int face_x = (s->scene.ui_viz_rx + face_size + (bdr_s * 2));
   const int face_y = (footer_y + ((footer_h - face_size) / 2));
-  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.controls_state.getDriverMonitoringOn());
+  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.dmonitoring_state.getFaceDetected());
 }
 
 static void ui_draw_driver_view(UIState *s) {
@@ -584,7 +584,7 @@ static void ui_draw_driver_view(UIState *s) {
   ui_draw_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
 
   // draw face box
-  if (scene->driver_state.getFaceProb() > 0.4) {
+  if (scene->dmonitoring_state.getFaceDetected()) {
     auto fxy_list = scene->driver_state.getFacePosition();
     const float face_x = fxy_list[0];
     const float face_y = fxy_list[1];
@@ -609,7 +609,7 @@ static void ui_draw_driver_view(UIState *s) {
   const int face_size = 85;
   const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
   const int y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->driver_state.getFaceProb() > 0.4);
+  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->dmonitoring_state.getFaceDetected());
 }
 
 static void ui_draw_vision_header(UIState *s) {
