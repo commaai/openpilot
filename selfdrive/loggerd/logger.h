@@ -39,8 +39,7 @@ class Logger {
   inline const char* getSegmentPath() const { return segment_path.c_str(); }
 
  private:
-  std::string segment_path;
-  std::string log_name_;
+  std::string segment_path, log_name;
   char route_name[64] = {};
   int part = 0;
   bool has_qlog = false;

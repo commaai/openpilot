@@ -121,7 +121,7 @@ static kj::Array<capnp::word> gen_init_data() {
   return capnp::messageToFlatArray(msg);
 }
 
-Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlog), log_name_(log_name) {
+Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlog), log_name(log_name) {
   umask(0);
 
   time_t rawtime = time(NULL);
@@ -138,7 +138,7 @@ std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
   part += 1;
   segment_path = util::string_format("%s/%s--%d", root_path, route_name, part);
   auto log = std::make_shared<LoggerHandle>();
-  if (!log->open(segment_path, log_name_, part, has_qlog)) {
+  if (!log->open(segment_path, log_name, part, has_qlog)) {
     return nullptr;
   }
   auto bytes = init_data.asBytes();
