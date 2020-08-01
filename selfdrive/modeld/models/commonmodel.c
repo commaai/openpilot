@@ -1,7 +1,4 @@
 #include "commonmodel.h"
-
-#include <czmq.h>
-#include "common/mat.h"
 #include "common/timing.h"
 
 void frame_init(ModelFrame* frame, int width, int height,
@@ -58,13 +55,4 @@ void frame_free(ModelFrame* frame) {
   clReleaseMemObject(frame->transformed_v_cl);
   clReleaseMemObject(frame->transformed_u_cl);
   clReleaseMemObject(frame->transformed_y_cl);
-}
-
-
-float sigmoid(float input) {
-  return 1 / (1 + expf(-input));
-}
-
-float softplus(float input) {
-  return log1p(expf(input));
 }

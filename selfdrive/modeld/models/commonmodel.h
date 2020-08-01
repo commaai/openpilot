@@ -9,6 +9,7 @@
 #endif
 
 #include "common/mat.h"
+#include <czmq.h>
 #include "transforms/transform.h"
 #include "transforms/loadyuv.h"
 
@@ -16,8 +17,14 @@
 extern "C" {
 #endif
 
-float softplus(float input);
-float sigmoid(float input);
+
+inline float sigmoid(float input) {
+  return 1 / (1 + expf(-input));
+}
+
+inline float softplus(float input) {
+  return log1p(expf(input));
+}
 
 typedef struct ModelFrame {
   cl_device_id device_id;
