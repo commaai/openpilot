@@ -6,14 +6,11 @@
 #define DESIRE
 #define TRAFFIC_CONVENTION
 
-
-#include "common/mat.h"
 #include "common/util.h"
 
 #include "commonmodel.h"
 #include "runners/run.h"
 
-#include <czmq.h>
 #include "messaging.hpp"
 
 #define MODEL_WIDTH 512
