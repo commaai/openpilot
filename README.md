@@ -11,6 +11,21 @@ support:
 ------
 <b>I am going to try to mintain this fork for the commuinty, if you like it you can support me from here:  [Donate](https://paypal.me/xx979xx)</b>
 
+Installation:
+------
+The best way to install this fork while keeping comma.ai files is the following:
+- move to openpilot folder and add new remote, xx979xx e.g.:
+```
+cd /data/openpilot
+git remote add xx979xx https://github.com/xx979xx/openpilot.git
+git fetch --all
+```
+- To change branch to/from community:
+```
+git checkout xx979xx/HKG_community
+git checkout origin/release2
+```
+
 Changes:
 ------
 - <b>  HKG longitudinal control:</b> warrings: it is beta, be carful!! Openpilot will control the speed of your car, you can engage with cruise button.
