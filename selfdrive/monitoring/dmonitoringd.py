@@ -77,7 +77,7 @@ def dmonitoringd_thread(sm=None, pm=None):
       driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
 
       # build dMonitoringState packet
-      dat = messaging.new_message()
+      dat = messaging.new_message('dMonitoringState')
       dat.dMonitoringState = {
         "events": events.to_msg(),
         "faceDetected": driver_status.face_detected,

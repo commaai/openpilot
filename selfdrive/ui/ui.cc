@@ -815,7 +815,7 @@ int main(int argc, char* argv[]) {
 
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
-    } else if (s->started) {
+    } else if (s->started && !s->frontview) {
       if (!s->controls_seen) {
         // car is started, but controlsState hasn't been seen at all
         s->scene.alert_text1 = "openpilot Unavailable";
