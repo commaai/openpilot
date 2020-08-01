@@ -368,6 +368,11 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.frontview = data.getIsPreview();
   }
 
+  // timeout on frontview
+  if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
+    scene.frontview = false;
+  }
+
   s->started = scene.thermal.getStarted() || scene.frontview;
   // Handle onroad/offroad transition
   if (!s->started) {
@@ -815,7 +820,7 @@ int main(int argc, char* argv[]) {
 
     if (s->controls_timeout > 0) {
       s->controls_timeout--;
-    } else if (s->started && !s->frontview) {
+    } else if (s->started && !s->scene.frontview) {
       if (!s->controls_seen) {
         // car is started, but controlsState hasn't been seen at all
         s->scene.alert_text1 = "openpilot Unavailable";
