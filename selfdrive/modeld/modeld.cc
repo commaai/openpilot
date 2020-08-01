@@ -181,10 +181,9 @@ int main(int argc, char **argv) {
     cl_mem yuv_cl;
     VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context, &yuv_cl);
 
-    uint32_t last_vipc_frame_id = 0;
+    uint32_t frame_id = 0, last_vipc_frame_id = 0;
     double last = 0;
     int desire = -1;
-    uint32_t frame_id = 0;
     while (!do_exit) {
       VIPCBuf *buf;
       VIPCBufExtra extra;
