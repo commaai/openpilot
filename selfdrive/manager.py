@@ -189,7 +189,6 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
-  "driverview": "selfdrive.monitoring.driverview",
 }
 
 daemon_processes = {
@@ -243,8 +242,8 @@ car_started_processes = [
 ]
 
 driver_view_processes = [
-  'driverview',
   'camerad',
+  'dmonitoringd',
   'dmonitorindmodeld'
 ]
 
@@ -482,7 +481,6 @@ def manager_thread():
           kill_managed_process(p)
         else:
           start_managed_process(p)
-      kill_managed_process("driverview")
     else:
       logger_dead = False
       for p in reversed(car_started_processes):
