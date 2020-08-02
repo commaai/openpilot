@@ -37,7 +37,7 @@ jobs:
                          external/bin selfdrive/modeld/runners $TEST_DIR
 
         # need these so docker copy won't fail
-        cp Pipfile Pipfile.lock .pylintrc .coveragerc-app .pre-commit-config.yaml $TEST_DIR
+        cp Pipfile Pipfile.lock .pylintrc .pre-commit-config.yaml $TEST_DIR
         cd $TEST_DIR
         mkdir laika laika_repo tools
     - name: Build Docker image
