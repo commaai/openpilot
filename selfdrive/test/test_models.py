@@ -21,6 +21,16 @@ HwType = log.HealthData.HwType
 
 ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']}
 
+# TODO: get updated routes for these cars
+ignore_can_valid = [
+  "VOLKSWAGEN GOLF",
+  "ACURA ILX 2016 ACURAWATCH PLUS",
+  "TOYOTA PRIUS 2017",
+  "TOYOTA COROLLA 2017",
+  "LEXUS RX HYBRID 2017",
+  "TOYOTA AVALON 2016",
+]
+
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
 class TestCarModel(unittest.TestCase):
 
@@ -96,9 +106,9 @@ class TestCarModel(unittest.TestCase):
 
       CS = self.CI.update(CC, (can_pkt.to_bytes(),))
       self.CI.apply(CC)
-      can_invalid_cnt += CS.canValid
-    # TODO: add this back
-    #self.assertLess(can_invalid_cnt, 20)
+      can_invalid_cnt += not CS.canValid
+    if self.car_model not in ignore_can_valid:
+      self.assertLess(can_invalid_cnt, 50)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
