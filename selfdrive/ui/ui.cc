@@ -362,10 +362,9 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.driver_state = sm["driverState"].getDriverState();
   }
   if (sm.updated("dMonitoringState")) {
-    auto data = sm["dMonitoringState"].getDMonitoringState();
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
-    scene.is_rhd = data.getIsRHD();
-    scene.frontview = data.getIsPreview();
+    scene.is_rhd = scene.dmonitoring_state.getIsRHD();
+    scene.frontview = scene.dmonitoring_state.getIsPreview();
   }
 
   // timeout on frontview
