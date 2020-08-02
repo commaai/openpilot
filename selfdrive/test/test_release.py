@@ -51,29 +51,33 @@ class TestDashcam(TestReleaseCommon):
     _, CarController, _ = interfaces[car_model]
     self.assertTrue(CarController is None)
 
+  def test_no_carcontroller_files(self):
+    pass
 
 class TestRelease2(TestReleaseCommon):
 
   BRANCH = "release2-staging"
 
   def test_git_history(self):
+    shortlog = subprocess.check_output("git shortlog -s -n", cwd=BASEDIR, shell=True, encoding='utf8')
+    assert int(shortlog.split()[0]) == 1, f"release2 should be one commit, got {shortlog}"
+
     with open(os.path.join(BASEDIR, "selfdrive/common/version.h")) as f:
       version_h = f.read()
     version = re.findall('"([^"]*)"', version_h)[0].split("-release")[0]
-    commit_msg = f"openpilot v{version} release"
 
     email = "user@comma.ai"
     name = "Vehicle Researcher"
+    commit_msg = f"openpilot v{version} release"
     attrs = [
-      ("s", commit_msg),
       ("ae", email),
       ("ce", email),
       ("an", name),
       ("cn", name),
+      ("s", commit_msg),
     ]
     for fmt, expected_val in attrs:
       out = subprocess.check_output(f"git log --pretty='{fmt}'", cwd=BASEDIR, shell=True, encoding='utf8').strip()
-      assert len(out.split("\n")) == 1, "release2 should only have one commit"
       assert expected_val == out, f"wrong output from git, expected '{expected_val}' but got '{out}'"
 
 if __name__ == "__main__":
