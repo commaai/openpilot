@@ -75,7 +75,7 @@ git commit --amend -m "openpilot v$VERSION"
 # Print committed files that are normally gitignored
 #git status --ignored
 
-# Push release2
+# Push release2-staging
 if [ ! -z "$PUSH" ]; then
   echo "pushing $VERSION to release2-staging and dashcam-staging"
   git remote set-url origin git@github.com:commaai/openpilot.git
@@ -88,7 +88,7 @@ git rm selfdrive/car/*/carcontroller.py
 
 git commit -m "create dashcam release from release2"
 
-# Push release2
+# Push dashcam-staging
 if [ ! -z "$PUSH" ]; then
   echo "pushing $VERSION to dashcam-staging"
   #git push -f origin release2-staging:dashcam-staging
