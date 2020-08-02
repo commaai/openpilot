@@ -5,16 +5,13 @@ from opendbc.can.packer import CANPacker
 
 
 class CarControllerParams():
-  def __init__(self, car_fingerprint):
-    self.STEER_MAX = 2047                # max_steer 2047
+  def __init__(self):
+    self.STEER_MAX = 2047                # max_steer 4095
     self.STEER_STEP = 2                  # how often we update the steer cmd
     self.STEER_DELTA_UP = 50             # torque increase per refresh, 0.8s to max
     self.STEER_DELTA_DOWN = 70           # torque decrease per refresh
-    if car_fingerprint in PREGLOBAL_CAR:
-      self.STEER_DRIVER_ALLOWANCE = 75  # allowed driver torque before start limiting
-    else:
-      self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
-    self.STEER_DRIVER_MULTIPLIER = 10   # weight driver torque heavily
+    self.STEER_DRIVER_ALLOWANCE = 60     # allowed driver torque before start limiting
+    self.STEER_DRIVER_MULTIPLIER = 10    # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1         # from dbc
 
 class CarController():
@@ -26,7 +23,7 @@ class CarController():
     self.fake_button_prev = 0
     self.steer_rate_limited = False
 
-    self.params = CarControllerParams(CP.carFingerprint)
+    self.params = CarControllerParams()
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line):
