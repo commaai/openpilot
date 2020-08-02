@@ -125,6 +125,7 @@ typedef struct UIScene {
   cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
+  cereal::DMonitoringState::Reader dmonitoring_state;
 } UIScene;
 
 typedef struct {
@@ -224,7 +225,6 @@ typedef struct UIState {
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
-  bool preview_started;
   bool vision_seen;
 
   std::atomic<float> light_sensor;
