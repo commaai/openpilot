@@ -56,9 +56,9 @@ class CarState(CarStateBase):
     if self.car_fingerprint == CAR.LEGACY_PREGLOBAL:
       if (cp.vl["Dash_State"]['Units'] == 0):
         ret.cruiseState.speed *= CV.MPH_TO_KPH
-    # EDM Global: mph = 1, 2
+    # EDM Global: mph = 1, 2; UDM Forester: 7 = mph
     else:
-      if cp.vl["Dash_State"]['Units'] in [1, 2]:
+      if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
         ret.cruiseState.speed *= CV.MPH_TO_KPH
 
 
