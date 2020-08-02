@@ -98,7 +98,7 @@ class TestCarModel(unittest.TestCase):
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
     for msg in self.can_msgs:
-      CS = self.CI.update(CC, (msg.to_bytes(),))
+      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
       can_invalid_cnt += not CS.canValid
 
