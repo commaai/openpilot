@@ -385,7 +385,6 @@ selfdrive/modeld/runners/run.h
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
-selfdrive/monitoring/driverview.py
 
 selfdrive/assets
 selfdrive/assets/fonts/*.ttf
