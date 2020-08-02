@@ -143,18 +143,17 @@ class CarState(CarStateBase):
     ]
 
     checks = [
+      ("STEER_ANGLE_SENSOR", 80),
+      ("WHEEL_SPEEDS", 80),
+      ("STEER_TORQUE_SENSOR", 50),
       ("BRAKE_MODULE", 40),
       ("GAS_PEDAL", 33),
-      ("WHEEL_SPEEDS", 80),
-      ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
-      ("STEER_TORQUE_SENSOR", 50),
       ("EPS_STATUS", 25),
-      # TODO: find these freqs
-      ("GEAR_PACKET", 0),
-      ("SEATS_DOORS", 0),
-      ("ESP_CONTROL", 0),
-      ("STEERING_LEVERS", 0),
+      ("SEATS_DOORS", 5),
+      ("ESP_CONTROL", 5),
+      ("STEERING_LEVERS", 1),
+      ("GEAR_PACKET", 1),
     ]
 
     if CP.carFingerprint == CAR.LEXUS_IS:
@@ -189,8 +188,7 @@ class CarState(CarStateBase):
         ("R_ADJACENT", "BSM", 0),
         ("R_APPROACHING", "BSM", 0),
       ]
-      # TODO: find freq
-      checks += [("BSM", 0)]
+      checks += [("BSM", 1)]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -205,8 +203,7 @@ class CarState(CarStateBase):
     # use steering message to check if panda is connected to frc
     checks = [
       ("STEERING_LKA", 42),
-      # TODO: find freq
-      ("PRE_COLLISION", 0),
+      ("PRE_COLLISION", 33),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
