@@ -28,6 +28,7 @@ ignore_can_valid = [
   "TOYOTA COROLLA 2017",
   "LEXUS RX HYBRID 2017",
   "TOYOTA AVALON 2016",
+  "HONDA PILOT 2019 ELITE",
 ]
 
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
