@@ -108,7 +108,7 @@ class CarState(CarStateBase):
       ("DASHBOARD", 15),
       ("STEERING_LEVERS", 10),
       ("SEATBELT_STATUS", 2),
-      ("DOOR", 1),
+      ("DOORS", 1),
       ("TRACTION_BUTTON", 1),
     ]
 
