@@ -204,7 +204,9 @@ class CarState(CarStateBase):
 
     # use steering message to check if panda is connected to frc
     checks = [
-      ("STEERING_LKA", 42)
+      ("STEERING_LKA", 42),
+      # TODO: find freq
+      ("PRE_COLLISION", 0),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
