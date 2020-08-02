@@ -89,8 +89,6 @@ class CarState(CarStateBase):
       # sig_name, sig_address, default
       ("Steer_Torque_Sensor", "Steering_Torque", 0),
       ("Steering_Angle", "Steering_Torque", 0),
-      ("Steer_Error_1", "Steering_Torque", 0),
-      ("Steer_Warning", "Steering_Torque", 0),
       ("Cruise_On", "CruiseControl", 0),
       ("Cruise_Activated", "CruiseControl", 0),
       ("Brake_Pedal", "Brake_Pedal", 0),
@@ -117,6 +115,11 @@ class CarState(CarStateBase):
     if CP.carFingerprint in PREGLOBAL_CARS:
       signals += [
         ("LKA_Lockout", "Steering_Torque", 0),
+      ]
+    else:
+      signals += [
+        ("Steer_Error_1", "Steering_Torque", 0),
+        ("Steer_Warning", "Steering_Torque", 0),
       ]
 
     checks = [
