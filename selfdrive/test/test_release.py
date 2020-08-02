@@ -77,7 +77,7 @@ class TestRelease2(TestReleaseCommon):
       ("s", commit_msg),
     ]
     for fmt, expected_val in attrs:
-      out = subprocess.check_output(f"git log --pretty='{fmt}'", cwd=BASEDIR, shell=True, encoding='utf8').strip()
+      out = subprocess.check_output(f"git log --pretty='%{fmt}'", cwd=BASEDIR, shell=True, encoding='utf8').strip()
       assert expected_val == out, f"wrong output from git, expected '{expected_val}' but got '{out}'"
 
 if __name__ == "__main__":
