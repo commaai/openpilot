@@ -62,40 +62,41 @@ pipeline {
           }
         }
 
+        stage('On-device Tests') {
+          when { not { branch 'devel-staging' } }
 
-        stage('Build devel') {
-          when { not branch 'devel-staging' }
-          environment {
-            CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
+          stage('Build devel') {
+            environment {
+              CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
+            }
+            steps {
+              phone_steps("eon", [
+                ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
+                ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
+                //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
+                ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+              ])
+            }
           }
-          steps {
-            phone_steps("eon", [
-              ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
-              ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
-              //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
-              ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-            ])
-          }
-        }
 
-        stage('Replay Tests') {
-          when { not branch 'devel-staging' }
-          steps {
-            phone_steps("eon2", [
-              ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
-            ])
+          stage('Replay Tests') {
+            steps {
+              phone_steps("eon2", [
+                ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
+              ])
+            }
           }
-        }
 
-        stage('HW Tests') {
-          when { not branch 'devel-staging' }
-          steps {
-            phone_steps("eon", [
-              ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
-              ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
-              ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
-            ])
+          stage('HW Tests') {
+            steps {
+              phone_steps("eon", [
+                ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
+                ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
+                ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
+              ])
+            }
           }
+
         }
 
       }
