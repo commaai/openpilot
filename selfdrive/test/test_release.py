@@ -13,7 +13,7 @@ from selfdrive.car.car_helpers import interfaces
 # TODO: tests for devel/master-ci
 
 def run(cmd):
-  return subprocess.call(cmd, cwd=BASEDIR)
+  return subprocess.call(cmd, cwd=BASEDIR, shell=True)
 
 class TestReleaseCommon(unittest.TestCase):
 
