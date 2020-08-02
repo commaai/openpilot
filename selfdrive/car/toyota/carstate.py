@@ -150,32 +150,47 @@ class CarState(CarStateBase):
       ("PCM_CRUISE", 33),
       ("STEER_TORQUE_SENSOR", 50),
       ("EPS_STATUS", 25),
+      # TODO: find these freqs
+      ("GEAR_PACKET", 0),
+      ("SEATS_DOORS", 0),
+      ("ESP_CONTROL", 0),
+      ("STEERING_LEVERS", 0),
     ]
 
     if CP.carFingerprint == CAR.LEXUS_IS:
-      signals.append(("MAIN_ON", "DSU_CRUISE", 0))
-      signals.append(("SET_SPEED", "DSU_CRUISE", 0))
-      checks.append(("DSU_CRUISE", 5))
+      signals += [
+        ("MAIN_ON", "DSU_CRUISE", 0),
+        ("SET_SPEED", "DSU_CRUISE", 0),
+      ]
+      checks += [("DSU_CRUISE", 5)]
     else:
-      signals.append(("MAIN_ON", "PCM_CRUISE_2", 0))
-      signals.append(("SET_SPEED", "PCM_CRUISE_2", 0))
-      signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
-      checks.append(("PCM_CRUISE_2", 33))
+      signals += [
+        ("MAIN_ON", "PCM_CRUISE_2", 0),
+        ("SET_SPEED", "PCM_CRUISE_2", 0),
+        ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
+      ]
+      checks += [("PCM_CRUISE_2", 33)]
 
     if CP.carFingerprint == CAR.PRIUS:
       signals += [("STATE", "AUTOPARK_STATUS", 0)]
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
-      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
-      signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
-      checks.append(("GAS_SENSOR", 50))
+      signals += [
+        ("INTERCEPTOR_GAS", "GAS_SENSOR", 0),
+        ("INTERCEPTOR_GAS2", "GAS_SENSOR", 0),
+      ]
+      checks += [("GAS_SENSOR", 50)]
 
     if CP.carFingerprint in TSS2_CAR:
-      signals += [("L_ADJACENT", "BSM", 0)]
-      signals += [("L_APPROACHING", "BSM", 0)]
-      signals += [("R_ADJACENT", "BSM", 0)]
-      signals += [("R_APPROACHING", "BSM", 0)]
+      signals += [
+        ("L_ADJACENT", "BSM", 0),
+        ("L_APPROACHING", "BSM", 0),
+        ("R_ADJACENT", "BSM", 0),
+        ("R_APPROACHING", "BSM", 0),
+      ]
+      # TODO: find freq
+      checks += [("BSM", 0)]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
