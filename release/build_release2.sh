@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-export GIT_COMMITTER_NAME="Vehicle Researcher"
-export GIT_COMMITTER_EMAIL="user@comma.ai"
-export GIT_AUTHOR_NAME="Vehicle Researcher"
-export GIT_AUTHOR_EMAIL="user@comma.ai"
-
-export GIT_SSH_COMMAND="ssh -i /data/gitkey"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $DIR/git_identity.sh
 
 # set CLEAN to build outside of CI
 if [ ! -z "$CLEAN" ]; then
@@ -23,6 +19,7 @@ else
   cd /data/openpilot
   git clean -xdf
   git branch -D release2-staging || true
+  git branch -D dashcam-staging || true
 fi
 
 git fetch origin release2-staging
@@ -53,9 +50,9 @@ ln -sfn /data/openpilot /data/pythonpath
 export PYTHONPATH="/data/openpilot:/data/openpilot/pyextra"
 SCONS_CACHE=1 scons -j3
 
-# Run tests
-nosetests -s selfdrive/test/test_openpilot.py
-selfdrive/car/tests/test_car_interfaces.py
+# TODO: run these in jenkins before push
+#nosetests -s selfdrive/test/test_openpilot.py
+#selfdrive/car/tests/test_car_interfaces.py
 
 # Cleanup
 find . -name '*.a' -delete
@@ -78,15 +75,21 @@ git commit --amend -m "openpilot v$VERSION"
 # Print committed files that are normally gitignored
 #git status --ignored
 
+# Push release2
 if [ ! -z "$PUSH" ]; then
+  echo "pushing $VERSION to release2-staging and dashcam-staging"
   git remote set-url origin git@github.com:commaai/openpilot.git
+  #git push -f origin release2-staging
+fi
 
-  # Push to release2-staging
-  git push -f origin release2-staging
+# Create dashcam release
+git checkout -B "dashcam-staging"
+git rm selfdrive/car/*/carcontroller.py
 
-  # Create dashcam release
-  git rm selfdrive/car/*/carcontroller.py
+git commit -m "create dashcam release from release2"
 
-  git commit -m "create dashcam release from release2"
-  git push -f origin release2-staging:dashcam-staging
+# Push release2
+if [ ! -z "$PUSH" ]; then
+  echo "pushing $VERSION to dashcam-staging"
+  #git push -f origin release2-staging:dashcam-staging
 fi
