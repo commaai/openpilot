@@ -92,7 +92,7 @@ routes = {
     'carFingerprint': GM.BUICK_REGAL,
     'enableCamera': True,
   },
-  "7d44af5b7a1b2c8e|2017-09-16--01-50-07": {
+  "a74b011b32b51b56|2020-07-26--17-09-36": {
     'carFingerprint': HONDA.CIVIC,
     'enableCamera': True,
   },
@@ -270,6 +270,12 @@ routes = {
     'enableDsu': True,
     'enableGasInterceptor': True,
   },
+  "b14c5b4742e6fc85|2020-07-28--19-50-11": {
+    'carFingerprint': TOYOTA.RAV4,
+    'enableCamera': True,
+    'enableDsu': False,
+    'enableGasInterceptor': True,
+  },
   "32a7df20486b0f70|2020-02-06--16-06-50": {
     'carFingerprint': TOYOTA.RAV4H,
     'enableCamera': True,
@@ -361,11 +367,6 @@ routes = {
   "2e07163a1ba9a780|2019-08-29--09-35-42": {
     'carFingerprint': TOYOTA.LEXUS_IS,
     'enableCamera': False,
-    'enableDsu': False,
-  },
-  "1dd19ceed0ee2b48|2018-12-22--17-36-49": {
-    'carFingerprint': TOYOTA.LEXUS_IS,  # 300 hybrid
-    'enableCamera': True,
     'enableDsu': False,
   },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
