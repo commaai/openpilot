@@ -103,14 +103,13 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 50),
       ("STEERING", 100),
       ("ACC_2", 50),
-      # TODO: find these freqs
-      #("DOOR", 0),
-      #("GEAR", 0)
-      #("ACCEL_GAS_134", 0)
-      #("STEERING_LEVERS", 0)
-      #("DASHBOARD", 0)
-      #("TRACTION_BUTTON", 0)
-      #("SEATBELT_STATUS", 0)
+      ("GEAR", 50),
+      ("ACCEL_GAS_134", 50),
+      ("DASHBOARD", 15),
+      ("STEERING_LEVERS", 10),
+      ("SEATBELT_STATUS", 2),
+      ("DOOR", 1),
+      ("TRACTION_BUTTON", 1),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -124,10 +123,9 @@ class CarState(CarStateBase):
       ("LKAS_STATUS_OK", "LKAS_HEARTBIT", -1)
     ]
     checks = [
-      # TODO: find these freqs
-      ("LKAS_COMMAND", 0),
-      ("LKAS_HUD", 0),
-      ("LKAS_HEARTBIT", 0),
+      ("LKAS_COMMAND", 100),
+      ("LKAS_HEARTBIT", 10),
+      ("LKAS_HUD", 4),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
