@@ -42,10 +42,6 @@ class TestReleaseCommon(unittest.TestCase):
   def test_no_build_should_fail(self):
     pass
 
-  def test_version(self):
-    version_h = open(os.path.join(BASEDIR, "selfdrive/common/version.h")).read().strip()
-    assert "release" in version_h, f"version not marked as release: {version_h}"
-
 class TestDashcam(TestReleaseCommon):
 
   BRANCH = "dashcam-staging"
@@ -61,7 +57,8 @@ class TestRelease2(TestReleaseCommon):
   BRANCH = "release2-staging"
 
   def test_git_history(self):
-    version_h = open(os.path.join(BASEDIR, "selfdrive/common/version.h")).read()
+    with open(os.path.join(BASEDIR, "selfdrive/common/version.h")) as f:
+      version_h = f.read()
     version = re.findall('"([^"]*)"', version_h)[0].split("-release")[0]
     commit_msg = f"openpilot v{version} release"
 
@@ -75,7 +72,7 @@ class TestRelease2(TestReleaseCommon):
       ("cn", name),
     ]
     for fmt, expected_val in attrs:
-      out = subprocess.check_output(f"git log --pretty='{fmt}'", cwd=BASEDIR, encoding='utf8').strip()
+      out = subprocess.check_output(f"git log --pretty='{fmt}'", cwd=BASEDIR, shell=True, encoding='utf8').strip()
       assert len(out.split("\n")) == 1, "release2 should only have one commit"
       assert expected_val == out, f"wrong output from git, expected '{expected_val}' but got '{out}'"
 
