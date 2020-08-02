@@ -298,6 +298,8 @@ class CarState(CarStateBase):
       ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
     ]
 
-    checks = []
+    checks = [
+      ("LKAS11", 100)
+    ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
