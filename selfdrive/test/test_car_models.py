@@ -92,7 +92,7 @@ routes = {
     'carFingerprint': GM.BUICK_REGAL,
     'enableCamera': True,
   },
-  "7d44af5b7a1b2c8e|2017-09-16--01-50-07": {
+  "a74b011b32b51b56|2020-07-26--17-09-36": {
     'carFingerprint': HONDA.CIVIC,
     'enableCamera': True,
   },
@@ -268,6 +268,12 @@ routes = {
     'carFingerprint': TOYOTA.RAV4,
     'enableCamera': True,
     'enableDsu': True,
+    'enableGasInterceptor': True,
+  },
+  "b14c5b4742e6fc85|2020-07-30--20-56-51": {
+    'carFingerprint': TOYOTA.RAV4,
+    'enableCamera': True,
+    'enableDsu': False,
     'enableGasInterceptor': True,
   },
   "32a7df20486b0f70|2020-02-06--16-06-50": {
