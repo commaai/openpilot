@@ -31,6 +31,7 @@ class fake_DM_msg():
     self.rightBlinkProb = 1. * is_distracted
     self.faceOrientationStd = [1.*is_model_uncertain, 1.*is_model_uncertain, 1.*is_model_uncertain]
     self.facePositionStd = [1.*is_model_uncertain, 1.*is_model_uncertain]
+    self.sgProb = 0.
 
 
 # driver state from neural net, 10Hz
