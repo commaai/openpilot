@@ -49,6 +49,7 @@ pipeline {
       steps {
         phone_steps("eon-build", [
           ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+          ["release tests", "python selfdrive/test/test_release.py"],
         ])
       }
     }
