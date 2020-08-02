@@ -62,6 +62,7 @@ pipeline {
           }
         }
 
+        /*
         stage('On-device Tests') {
           when { not { branch 'devel-staging' } }
 
@@ -98,6 +99,7 @@ pipeline {
           }
 
         }
+        */
 
       }
     }
