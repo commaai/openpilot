@@ -363,11 +363,6 @@ routes = {
     'enableCamera': False,
     'enableDsu': False,
   },
-  "1dd19ceed0ee2b48|2018-12-22--17-36-49": {
-    'carFingerprint': TOYOTA.LEXUS_IS,  # 300 hybrid
-    'enableCamera': True,
-    'enableDsu': False,
-  },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,
