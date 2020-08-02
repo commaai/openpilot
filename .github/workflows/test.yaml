@@ -199,7 +199,9 @@ jobs:
         run: |
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    nosetests --with-coverage --processes=4 --process-timeout=60 selfdrive/test/test_models.py"
+                    coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                                 selfdrive/test/test_models.py && \
+                    coverage combine"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
