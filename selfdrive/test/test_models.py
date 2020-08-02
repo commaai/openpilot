@@ -96,9 +96,8 @@ class TestCarModel(unittest.TestCase):
 
       CS = self.CI.update(CC, (can_pkt.to_bytes(),))
       self.CI.apply(CC)
-      can_invalid_cnt += CS.canValid
-    # TODO: add this back
-    #self.assertLess(can_invalid_cnt, 20)
+      can_invalid_cnt += not CS.canValid
+    self.assertLess(can_invalid_cnt, 20)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
