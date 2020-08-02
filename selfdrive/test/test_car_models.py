@@ -212,7 +212,7 @@ routes = {
     'carFingerprint': HYUNDAI.KIA_STINGER,
     'enableCamera': True,
   },
-  "d624b3d19adce635|2020-07-31--22-39-17": {
+  "d624b3d19adce635|2020-08-01--14-59-12": {
     'carFingerprint': HYUNDAI.VELOSTER,
     'enableCamera': True,
   },
