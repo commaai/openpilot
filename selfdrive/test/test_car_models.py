@@ -212,6 +212,10 @@ routes = {
     'carFingerprint': HYUNDAI.KIA_STINGER,
     'enableCamera': True,
   },
+  "d624b3d19adce635|2020-08-01--14-59-12": {
+    'carFingerprint': HYUNDAI.VELOSTER,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
