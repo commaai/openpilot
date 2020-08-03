@@ -2,6 +2,7 @@ import numpy as np
 
 from common.transformations.camera import (FULL_FRAME_SIZE, eon_focal_length,
                                            get_view_frame_from_road_frame,
+                                           get_view_frame_from_calib_frame,
                                            vp_from_ke)
 
 # segnet
@@ -72,6 +73,9 @@ bigmodel_frame_from_road_frame = np.dot(bigmodel_intrinsics,
 
 medmodel_frame_from_road_frame = np.dot(medmodel_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
+
+medmodel_frame_from_calib_frame = np.dot(medmodel_intrinsics,
+  get_view_frame_from_calib_frame(0, 0, 0, model_height))
 
 model_frame_from_bigmodel_frame = np.dot(model_intrinsics, np.linalg.inv(bigmodel_intrinsics))
 medmodel_frame_from_bigmodel_frame = np.dot(medmodel_intrinsics, np.linalg.inv(bigmodel_intrinsics))

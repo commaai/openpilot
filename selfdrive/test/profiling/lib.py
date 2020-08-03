@@ -37,6 +37,7 @@ class PubSocket():
 
 class SubMaster(messaging.SubMaster):
   def __init__(self, msgs, trigger, services):  # pylint: disable=super-init-not-called
+    msgs = [m for m in msgs if m.which() in services]
     self.max_i = len(msgs) - 1
     self.i = 0
     self.frame = 0
