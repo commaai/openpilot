@@ -158,16 +158,9 @@ class Localizer():
 
   def liveLocationMsg(self):
     fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P)
-
-    #if abs(self.posenet_speed - self.car_speed) > max(0.4 * self.car_speed, 5.0):
-    #  self.posenet_invalid_count += 1
-    #else:
-    #  self.posenet_invalid_count = 0
-    #fix.posenetOK = self.posenet_invalid_count < 4
-
-    # experimentally found these values
+    # experimentally found these values, no false positives in 20k minutes of driving
     old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST//2:])
-    std_spike = new_mean/old_mean > 4 and new_mean > 5
+    std_spike = new_mean/old_mean > 4 and new_mean > 7
 
     if std_spike and self.car_speed > 5:
       fix.posenetOK = False
@@ -268,6 +261,10 @@ class Localizer():
       # Accelerometer
       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
         self.acc_counter += 1
+        # check if device fell, estimate 10 for g
+        # 40g is a good filter for falling detection, no false positives in 20k minutes of driving
+        if abs(sensor_reading.acceleration[0] - 10) > 40:
+          device_fell = True
         if self.acc_counter % SENSOR_DECIMATION == 0:
           v = sensor_reading.acceleration.v
           self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
