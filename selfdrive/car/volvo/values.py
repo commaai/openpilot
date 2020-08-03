@@ -77,13 +77,16 @@ class CAR:
   V40 = "VOLVO V40 2017"
   V60 = "VOLVO V60 2015"
 
+
 class PLATFORM:
   C1 = [CAR.V40]
   EUCD = [CAR.V60]
 
+
 ECU_ADDRESS = { 
   CAR.V40: {"BCM": 0x760, "ECM": 0x7E0, "DIM": 0x720, "CEM": 0x726, "FSM": 0x764, "PSCM": 0x730, "TCM": 0x7E1, "CVM": 0x793},
   }
+
 
 # TODO: Find good DID for identifying SW version
 # 0xf1a1, 0xf1a3 not on CVM.
