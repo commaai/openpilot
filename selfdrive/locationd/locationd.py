@@ -261,7 +261,7 @@ class Localizer():
       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
         # check if device fell, estimate 10 for g
         # 40g is a good filter for falling detection, no false positives in 20k minutes of driving
-        self.device_fell = abs(sensor_reading.acceleration[0] - 10) > 40
+        self.device_fell = abs(sensor_reading.acceleration.v[0] - 10) > 40
 
         self.acc_counter += 1
         if self.acc_counter % SENSOR_DECIMATION == 0:
