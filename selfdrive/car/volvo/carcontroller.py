@@ -164,7 +164,6 @@ class CarController():
         self.SteerCommand.angle_request = clip(self.SteerCommand.angle_request, self.angle_request_prev - angle_rate_lim, self.angle_request_prev + angle_rate_lim)
 
         # Create trqlim from angle request (before constraints)
-        #self.SteerCommand.trqlim = clip(self.SteerCommand.angle_request*2, -127, 127)
         if fingerprint in PLATFORM.C1:
           self.SteerCommand.trqlim = -127 if current_steer_angle > self.SteerCommand.angle_request else 127
           self.SteerCommand.steer_direction = CCP.STEER
@@ -174,17 +173,6 @@ class CarController():
           self.SteerCommand.steer_direction = CCP.STEER_RIGHT if current_steer_angle > self.SteerCommand.angle_request else CCP.STEER_LEFT
           self.SteerCommand.steer_direction = self.dir_change(self.SteerCommand.steer_direction, current_steer_angle-self.SteerCommand.angle_request) # Filter the direction change 
           
-       #self.SteerCommand.steer_direction = CCP.STEER
-        
-
-        # get maximum allowed steering angle request
-        #max_right, max_left, max_delta_right, max_delta_left = self.max_angle_req(current_steer_angle, self.angle_request_prev, CCP)
-        
-        # set clipped lka angle request
-        # activating from disabled is allowed to bypass the delta change requirement
-        #self.SteerCommand.angle_request = clip(self.SteerCommand.angle_request, max_delta_right, max_delta_left) if self.acc_enabled_prev else self.SteerCommand.angle_request
-        #self.SteerCommand.angle_request = clip(self.SteerCommand.angle_request, max_right, max_left)
-
       else:
         self.SteerCommand.steer_direction = CCP.STEER_NO
         self.SteerCommand.trqlim = 0
