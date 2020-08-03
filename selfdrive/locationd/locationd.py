@@ -69,6 +69,7 @@ class Localizer():
 
     self.unix_timestamp_millis = 0
     self.last_gps_fix = 0
+    self.device_fell = False
 
   @staticmethod
   def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov):
@@ -162,10 +163,8 @@ class Localizer():
     old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST//2:])
     std_spike = new_mean/old_mean > 4 and new_mean > 7
 
-    if std_spike and self.car_speed > 5:
-      fix.posenetOK = False
-    else:
-      fix.posenetOK = True
+    fix.posenetOK = not (std_spike and self.car_speed > 5)
+    fix.deviceStable = not self.device_fell
 
     #fix.gpsWeek = self.time.week
     #fix.gpsTimeOfWeek = self.time.tow
@@ -260,11 +259,11 @@ class Localizer():
 
       # Accelerometer
       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
-        self.acc_counter += 1
         # check if device fell, estimate 10 for g
         # 40g is a good filter for falling detection, no false positives in 20k minutes of driving
-        if abs(sensor_reading.acceleration[0] - 10) > 40:
-          device_fell = True
+        self.device_fell = abs(sensor_reading.acceleration[0] - 10) > 40
+
+        self.acc_counter += 1
         if self.acc_counter % SENSOR_DECIMATION == 0:
           v = sensor_reading.acceleration.v
           self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
