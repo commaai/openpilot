@@ -504,7 +504,9 @@ void* processing_thread(void *arg) {
 
     double t2 = millis_since_boot();
 
+#ifndef QCOM2
     uint8_t *bgr_ptr = (uint8_t*)s->rgb_bufs[rgb_idx].addr;
+#endif
 
     double yt1 = millis_since_boot();
 
