@@ -17,7 +17,7 @@ def cancelACC(packer, car_fingerprint, CS):
 
 def manipulateServo(packer, car_fingerprint, CS):
   # Manipulate data from servo to FSM
-  # Zero active and torque bits.
+  # Set LKATorque and LKAActive to zero otherwise LKA will be disabled. (Check dbc)
   msg = {
       "LKATorque" : 0,
       "SteeringAngleServo" : CS.PSCMInfo.SteeringAngleServo,
