@@ -7,7 +7,6 @@ from collections import Counter
 from parameterized import parameterized_class
 
 from cereal import log, car
-import cereal.messaging as messaging
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.test.test_car_models import routes, non_tested_cars
@@ -20,6 +19,18 @@ from panda.tests.safety.common import package_can_msg
 HwType = log.HealthData.HwType
 
 ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']}
+
+# TODO: get updated routes for these cars
+ignore_can_valid = [
+  "VOLKSWAGEN GOLF",
+  "ACURA ILX 2016 ACURAWATCH PLUS",
+  "TOYOTA PRIUS 2017",
+  "TOYOTA COROLLA 2017",
+  "LEXUS RX HYBRID 2017",
+  "TOYOTA AVALON 2016",
+  "HONDA PILOT 2019 ELITE",
+  "HYUNDAI SANTA FE LIMITED 2019",
+]
 
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
 class TestCarModel(unittest.TestCase):
@@ -89,16 +100,12 @@ class TestCarModel(unittest.TestCase):
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
     for msg in self.can_msgs:
-      # filter out openpilot msgs
-      can = [m for m in msg.can if m.src < 128]
-      can_pkt = messaging.new_message('can', len(can))
-      can_pkt.can = can
-
-      CS = self.CI.update(CC, (can_pkt.to_bytes(),))
+      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
-      can_invalid_cnt += CS.canValid
-    # TODO: add this back
-    #self.assertLess(can_invalid_cnt, 20)
+      can_invalid_cnt += not CS.canValid
+
+    if self.car_model not in ignore_can_valid:
+      self.assertLess(can_invalid_cnt, 50)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"

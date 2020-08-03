@@ -81,7 +81,6 @@ RUN mkdir -p /tmp/openpilot
 COPY SConstruct \
      .pylintrc \
      .pre-commit-config.yaml \
-     .coveragerc-app \
      /tmp/openpilot/
 
 COPY ./pyextra /tmp/openpilot/pyextra

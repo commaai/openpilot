@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
 import gc
 from cereal import car
-from common.realtime import set_realtime_priority
+from common.realtime import set_realtime_priority, DT_DMON
 from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.controls.lib.events import Events
 from selfdrive.monitoring.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
 from selfdrive.locationd.calibration_helpers import Calibration
 
+
 def dmonitoringd_thread(sm=None, pm=None):
   gc.disable()
-
-  # start the loop
   set_realtime_priority(53)
-
-  params = Params()
 
   # Pub/Sub Sockets
   if pm is None:
@@ -23,13 +20,15 @@ def dmonitoringd_thread(sm=None, pm=None):
   if sm is None:
     sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model'])
 
+  params = Params()
+
   driver_status = DriverStatus()
   is_rhd = params.get("IsRHD")
-  if is_rhd is not None:
-    driver_status.is_rhd_region = bool(int(is_rhd))
-    driver_status.is_rhd_region_checked = True
+  driver_status.is_rhd_region = is_rhd == b"1"
+  driver_status.is_rhd_region_checked = is_rhd is not None
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
+  sm['liveCalibration'].rpyCalib = [0, 0, 0]
   sm['carState'].vEgo = 0.
   sm['carState'].cruiseState.enabled = False
   sm['carState'].cruiseState.speed = 0.
@@ -38,19 +37,13 @@ def dmonitoringd_thread(sm=None, pm=None):
   sm['carState'].gasPressed = False
   sm['carState'].standstill = True
 
-  cal_rpy = [0, 0, 0]
   v_cruise_last = 0
   driver_engaged = False
+  offroad = params.get("IsOffroad") == b"1"
 
   # 10Hz <- dmonitoringmodeld
   while True:
     sm.update()
-
-    # Handle calibration
-    if sm.updated['liveCalibration']:
-      if sm['liveCalibration'].calStatus == Calibration.CALIBRATED:
-        if len(sm['liveCalibration'].rpyCalib) == 3:
-          cal_rpy = sm['liveCalibration'].rpyCalib
 
     # Get interaction
     if sm.updated['carState']:
@@ -67,17 +60,23 @@ def dmonitoringd_thread(sm=None, pm=None):
     if sm.updated['model']:
       driver_status.set_policy(sm['model'])
 
+    # Check once a second if we're offroad
+    if sm.frame % 1/DT_DMON == 0:
+      offroad = params.get("IsOffroad") == b"1"
+
     # Get data from dmonitoringmodeld
     if sm.updated['driverState']:
       events = Events()
-      driver_status.get_pose(sm['driverState'], cal_rpy, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
-      # Block any engage after certain distrations
+      driver_status.get_pose(sm['driverState'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
+
+      # Block engaging after max number of distrations
       if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
         events.add(car.CarEvent.EventName.tooDistracted)
+
       # Update events from driver state
       driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
 
-      # dMonitoringState packet
+      # build dMonitoringState packet
       dat = messaging.new_message('dMonitoringState')
       dat.dMonitoringState = {
         "events": events.to_msg(),
@@ -95,7 +94,7 @@ def dmonitoringd_thread(sm=None, pm=None):
         "awarenessPassive": driver_status.awareness_passive,
         "isLowStd": driver_status.pose.low_std,
         "hiStdCount": driver_status.hi_stds,
-        "isPreview": False,
+        "isPreview": offroad,
       }
       pm.send('dMonitoringState', dat)
 

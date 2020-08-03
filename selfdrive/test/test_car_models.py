@@ -92,7 +92,7 @@ routes = {
     'carFingerprint': GM.BUICK_REGAL,
     'enableCamera': True,
   },
-  "7d44af5b7a1b2c8e|2017-09-16--01-50-07": {
+  "a74b011b32b51b56|2020-07-26--17-09-36": {
     'carFingerprint': HONDA.CIVIC,
     'enableCamera': True,
   },
@@ -212,6 +212,10 @@ routes = {
     'carFingerprint': HYUNDAI.KIA_STINGER,
     'enableCamera': True,
   },
+  "d624b3d19adce635|2020-08-01--14-59-12": {
+    'carFingerprint': HYUNDAI.VELOSTER,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -268,6 +272,12 @@ routes = {
     'carFingerprint': TOYOTA.RAV4,
     'enableCamera': True,
     'enableDsu': True,
+    'enableGasInterceptor': True,
+  },
+  "b14c5b4742e6fc85|2020-07-28--19-50-11": {
+    'carFingerprint': TOYOTA.RAV4,
+    'enableCamera': True,
+    'enableDsu': False,
     'enableGasInterceptor': True,
   },
   "32a7df20486b0f70|2020-02-06--16-06-50": {
@@ -363,11 +373,6 @@ routes = {
     'enableCamera': False,
     'enableDsu': False,
   },
-  "1dd19ceed0ee2b48|2018-12-22--17-36-49": {
-    'carFingerprint': TOYOTA.LEXUS_IS,  # 300 hybrid
-    'enableCamera': True,
-    'enableDsu': False,
-  },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,
@@ -430,11 +435,8 @@ non_tested_cars = [
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
-  HYUNDAI.HYUNDAI_GENESIS,
   HYUNDAI.KIA_FORTE,
-  HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_OPTIMA_H,
-  HYUNDAI.KIA_STINGER,
   HYUNDAI.KONA,
   HYUNDAI.KONA_EV,
   TOYOTA.CAMRYH,
