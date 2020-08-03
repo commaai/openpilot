@@ -99,10 +99,13 @@ class TestCarModel(unittest.TestCase):
     # TODO: also check for checkusm and counter violations from can parser
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
-    for msg in self.can_msgs:
+    for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
-      can_invalid_cnt += not CS.canValid
+
+      # wait 2s for low frequency msgs to be seen
+      if i > 200:
+        can_invalid_cnt += not CS.canValid
 
     if self.car_model not in ignore_can_valid:
       self.assertLess(can_invalid_cnt, 50)

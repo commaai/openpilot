@@ -143,52 +143,39 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      ("STEER_ANGLE_SENSOR", 80),
-      ("WHEEL_SPEEDS", 80),
-      ("STEER_TORQUE_SENSOR", 50),
       ("BRAKE_MODULE", 40),
       ("GAS_PEDAL", 33),
+      ("WHEEL_SPEEDS", 80),
+      ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
+      ("STEER_TORQUE_SENSOR", 50),
       ("EPS_STATUS", 25),
-      ("SEATS_DOORS", 5),
-      ("ESP_CONTROL", 5),
-      ("STEERING_LEVERS", 1),
-      ("GEAR_PACKET", 1),
     ]
 
     if CP.carFingerprint == CAR.LEXUS_IS:
-      signals += [
-        ("MAIN_ON", "DSU_CRUISE", 0),
-        ("SET_SPEED", "DSU_CRUISE", 0),
-      ]
-      checks += [("DSU_CRUISE", 5)]
+      signals.append(("MAIN_ON", "DSU_CRUISE", 0))
+      signals.append(("SET_SPEED", "DSU_CRUISE", 0))
+      checks.append(("DSU_CRUISE", 5))
     else:
-      signals += [
-        ("MAIN_ON", "PCM_CRUISE_2", 0),
-        ("SET_SPEED", "PCM_CRUISE_2", 0),
-        ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
-      ]
-      checks += [("PCM_CRUISE_2", 33)]
+      signals.append(("MAIN_ON", "PCM_CRUISE_2", 0))
+      signals.append(("SET_SPEED", "PCM_CRUISE_2", 0))
+      signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
+      checks.append(("PCM_CRUISE_2", 33))
 
     if CP.carFingerprint == CAR.PRIUS:
       signals += [("STATE", "AUTOPARK_STATUS", 0)]
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
-      signals += [
-        ("INTERCEPTOR_GAS", "GAS_SENSOR", 0),
-        ("INTERCEPTOR_GAS2", "GAS_SENSOR", 0),
-      ]
-      checks += [("GAS_SENSOR", 50)]
+      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
+      signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
+      checks.append(("GAS_SENSOR", 50))
 
     if CP.carFingerprint in TSS2_CAR:
-      signals += [
-        ("L_ADJACENT", "BSM", 0),
-        ("L_APPROACHING", "BSM", 0),
-        ("R_ADJACENT", "BSM", 0),
-        ("R_APPROACHING", "BSM", 0),
-      ]
-      checks += [("BSM", 1)]
+      signals += [("L_ADJACENT", "BSM", 0)]
+      signals += [("L_APPROACHING", "BSM", 0)]
+      signals += [("R_ADJACENT", "BSM", 0)]
+      signals += [("R_APPROACHING", "BSM", 0)]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -202,8 +189,7 @@ class CarState(CarStateBase):
 
     # use steering message to check if panda is connected to frc
     checks = [
-      ("STEERING_LKA", 42),
-      ("PRE_COLLISION", 33),
+      ("STEERING_LKA", 42)
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
