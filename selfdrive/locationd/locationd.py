@@ -71,10 +71,6 @@ class Localizer():
     self.last_gps_fix = 0
 
   @staticmethod
-  def write_measurement(msg):
-    pass
-
-  @staticmethod
   def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov):
     predicted_std = np.sqrt(np.diagonal(predicted_cov))
 
@@ -119,18 +115,17 @@ class Localizer():
     fix = messaging.log.LiveLocationKalman.new_message()
 
     # write measurements to msg
-    nans = np.nan*np.zeros(3)
     measurements = [
       # measurement field, value, std, valid
-      (fix.positionGeodetic, fix_pos_geo, nans, True),
+      (fix.positionGeodetic, fix_pos_geo, np.nan*np.zeros(3), True),
       (fix.positionECEF, fix_ecef, fix_ecef_std, True),
       (fix.velocityECEF, vel_ecef, vel_ecef_std, True),
-      (fix.velocityNED, ned_vel, nans, True),
+      (fix.velocityNED, ned_vel, np.nan*np.zeros(3), True),
       (fix.velocityDevice, vel_device, vel_device_std, True),
       (fix.accelerationDevice, predicted_state[States.ACCELERATION], predicted_std[States.ACCELERATION_ERR], True),
       (fix.orientationECEF, orientation_ecef, orientation_ecef_std, True),
-      (fix.calibratedOrientationECEF, calibrated_orientation_ecef, nans, True),
-      (fix.orientationNED, orientation_ned, nans, True),
+      (fix.calibratedOrientationECEF, calibrated_orientation_ecef, np.nan*np.zeros(3), True),
+      (fix.orientationNED, orientation_ned, np.nan*np.zeros(3), True),
       (fix.angularVelocityDevice, predicted_state[States.ANGULAR_VELOCITY], predicted_std[States.ANGULAR_VELOCITY_ERR], True),
       (fix.velocityCalibrated, vel_calib, vel_calib_std, True),
       (fix.angularVelocityCalibrated, ang_vel_calib, ang_vel_calib_std, True),
