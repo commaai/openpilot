@@ -117,10 +117,10 @@ def main(sm=None, pm=None):
       learner.handle_log(t, which, sm[which])
 
     if sm.updated['carState'] and (learner.carstate_counter % CARSTATE_DECIMATION == 0):
-      msg = messaging.new_message('liveParameters')
+      msg = messaging.new_message()
       msg.logMonoTime = sm.logMonoTime['carState']
 
-      liveParameters = msg.liveParameters
+      liveParameters = msg.init('liveParameters')
       liveParameters.posenetValid = True
       liveParameters.sensorValid = True
 
@@ -128,12 +128,12 @@ def main(sm=None, pm=None):
       liveParameters.steerRatio = float(x[States.STEER_RATIO])
       liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       liveParameters.angleOffsetAverage = math.degrees(x[States.ANGLE_OFFSET])
-      liveParameters.angleOffset = msg.liveParameters.angleOffsetAverage + math.degrees(x[States.ANGLE_OFFSET_FAST])
+      liveParameters.angleOffset = liveParameters.angleOffsetAverage + math.degrees(x[States.ANGLE_OFFSET_FAST])
       liveParameters.valid = all((
-        abs(msg.liveParameters.angleOffsetAverage) < 10.0,
-        abs(msg.liveParameters.angleOffset) < 10.0,
-        0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
-        min_sr <= msg.liveParameters.steerRatio <= max_sr,
+        abs(liveParameters.angleOffsetAverage) < 10.0,
+        abs(liveParameters.angleOffset) < 10.0,
+        0.2 <= liveParameters.stiffnessFactor <= 5.0,
+        min_sr <= liveParameters.steerRatio <= max_sr,
       ))
 
       if learner.carstate_counter % 6000 == 0:   # once a minute

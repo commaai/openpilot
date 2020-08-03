@@ -55,15 +55,16 @@ def read_tz(x, clip=True):
 
 
 def read_thermal():
-  dat = messaging.new_message('thermal')
-  dat.thermal.cpu0 = read_tz(5)
-  dat.thermal.cpu1 = read_tz(7)
-  dat.thermal.cpu2 = read_tz(10)
-  dat.thermal.cpu3 = read_tz(12)
-  dat.thermal.mem = read_tz(2)
-  dat.thermal.gpu = read_tz(16)
-  dat.thermal.bat = read_tz(29)
-  dat.thermal.pa0 = read_tz(25)
+  dat = messaging.new_message()
+  thermal = dat.init('thermal')
+  thermal.cpu0 = read_tz(5)
+  thermal.cpu1 = read_tz(7)
+  thermal.cpu2 = read_tz(10)
+  thermal.cpu3 = read_tz(12)
+  thermal.mem = read_tz(2)
+  thermal.gpu = read_tz(16)
+  thermal.bat = read_tz(29)
+  thermal.pa0 = read_tz(25)
   return dat
 
 
@@ -156,7 +157,7 @@ def thermald_thread():
   health_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected health frequency
 
   # now loop
-  thermal_sock = messaging.pub_sock('thermal')
+  pm = messaging.PubMaster(['thermal'])
   health_sock = messaging.sub_sock('health', timeout=health_timeout)
   location_sock = messaging.sub_sock('gpsLocation')
 
@@ -187,7 +188,7 @@ def thermald_thread():
   has_relay = False
 
   params = Params()
-  pm = PowerMonitoring()
+  power_monitoring = PowerMonitoring()
   no_panda_cnt = 0
 
   while 1:
@@ -238,37 +239,38 @@ def thermald_thread():
       except Exception:
         cloudlog.exception("Error getting network status")
 
-    msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
-    msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
-    msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
-    msg.thermal.networkType = network_type
-    msg.thermal.networkStrength = network_strength
-    msg.thermal.batteryPercent = get_battery_capacity()
-    msg.thermal.batteryStatus = get_battery_status()
-    msg.thermal.batteryCurrent = get_battery_current()
-    msg.thermal.batteryVoltage = get_battery_voltage()
-    msg.thermal.usbOnline = get_usb_present()
+    thermal = msg.thermal
+    thermal.freeSpace = get_available_percent(default=100.0) / 100.0
+    thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
+    thermal.cpuPerc = int(round(psutil.cpu_percent()))
+    thermal.networkType = network_type
+    thermal.networkStrength = network_strength
+    thermal.batteryPercent = get_battery_capacity()
+    thermal.batteryStatus = get_battery_status()
+    thermal.batteryCurrent = get_battery_current()
+    thermal.batteryVoltage = get_battery_voltage()
+    thermal.usbOnline = get_usb_present()
 
     # Fake battery levels on uno for frame
     if is_uno:
-      msg.thermal.batteryPercent = 100
-      msg.thermal.batteryStatus = "Charging"
+      thermal.batteryPercent = 100
+      thermal.batteryStatus = "Charging"
 
-    current_filter.update(msg.thermal.batteryCurrent / 1e6)
+    current_filter.update(thermal.batteryCurrent / 1e6)
 
     # TODO: add car battery voltage check
     max_cpu_temp = cpu_temp_filter.update(
-      max(msg.thermal.cpu0,
-          msg.thermal.cpu1,
-          msg.thermal.cpu2,
-          msg.thermal.cpu3) / 10.0)
+      max(thermal.cpu0,
+          thermal.cpu1,
+          thermal.cpu2,
+          thermal.cpu3) / 10.0)
 
-    max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
-    bat_temp = msg.thermal.bat / 1000.
+    max_comp_temp = max(max_cpu_temp, thermal.mem / 10., thermal.gpu / 10.)
+    bat_temp = thermal.bat / 1000.
 
     if handle_fan is not None:
       fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
-      msg.thermal.fanSpeed = fan_speed
+      thermal.fanSpeed = fan_speed
 
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
@@ -343,7 +345,7 @@ def thermald_thread():
     should_start = ignition
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    should_start = should_start and msg.thermal.freeSpace > 0.02
+    should_start = should_start and thermal.freeSpace > 0.02
 
     # confirm we have completed training and aren't uninstalling
     should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
@@ -395,20 +397,20 @@ def thermald_thread():
 
       # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
       # more than a minute but we were running
-      if msg.thermal.batteryPercent < BATT_PERC_OFF and msg.thermal.batteryStatus == "Discharging" and \
+      if thermal.batteryPercent < BATT_PERC_OFF and thermal.batteryStatus == "Discharging" and \
          started_seen and (sec_since_boot() - off_ts) > 60:
         os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     # Offroad power monitoring
-    pm.calculate(health)
-    msg.thermal.offroadPowerUsage = pm.get_power_used()
+    power_monitoring.calculate(health)
+    thermal.offroadPowerUsage = power_monitoring.get_power_used()
 
-    msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
-    msg.thermal.started = started_ts is not None
-    msg.thermal.startedTs = int(1e9*(started_ts or 0))
+    thermal.chargingError = current_filter.x > 0. and thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
+    thermal.started = started_ts is not None
+    thermal.startedTs = int(1e9*(started_ts or 0))
 
-    msg.thermal.thermalStatus = thermal_status
-    thermal_sock.send(msg.to_bytes())
+    thermal.thermalStatus = thermal_status
+    pm.send('thermal', msg)
 
     if usb_power_prev and not usb_power:
       put_nonblocking("Offroad_ChargeDisabled", json.dumps(OFFROAD_ALERTS["Offroad_ChargeDisabled"]))
