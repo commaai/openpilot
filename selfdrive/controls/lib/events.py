@@ -655,6 +655,11 @@ EVENTS = {
     ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
   },
 
+  EventName.deviceFalling: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Device Fell Off Mount"),
+    ET.NO_ENTRY: NoEntryAlert("Device Fell Off Mount"),
+  },
+
   EventName.lowMemory: {
     ET.SOFT_DISABLE: SoftDisableAlert("Low Memory: Reboot Your Device"),
     ET.PERMANENT: Alert(

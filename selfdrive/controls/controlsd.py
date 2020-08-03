@@ -216,6 +216,8 @@ class Controls:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
+    if not self.sm['liveLocationKalman'].deviceStable:
+      self.events.add(EventName.deviceFalling)
     if not self.sm['frame'].recoverState < 2:
       # counter>=2 is active
       self.events.add(EventName.focusRecoverActive)
