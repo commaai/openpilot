@@ -1,6 +1,5 @@
 from cereal import car
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
-from common.params import put_nonblocking
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -19,7 +18,7 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 4.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     # VW port is a community feature, since we don't own one to test
@@ -64,7 +63,6 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def update(self, c, can_strings):
-    canMonoTimes = []
     buttonEvents = []
 
     # Process the most recent CAN message traffic, and check for validity
@@ -77,10 +75,11 @@ class CarInterface(CarInterfaceBase):
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
-    # Update the EON metric configuration to match the car at first startup,
+    # TODO: add a field for this to carState, car interface code shouldn't write params
+    # Update the device metric configuration to match the car at first startup,
     # or if there's been a change.
-    if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
-      put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
+    #if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
+    #  put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
 
     # Check for and process state-change events (button press or release) from
     # the turn stalk switch or ACC steering wheel/control stalk buttons.
@@ -101,7 +100,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
-    ret.canMonoTimes = canMonoTimes
 
     # update previous car states
     self.displayMetricUnitsPrev = self.CS.displayMetricUnits

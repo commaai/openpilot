@@ -6,8 +6,9 @@ import signal
 import sys
 
 import cereal.messaging as messaging
+from common.params import Params
 import selfdrive.manager as manager
-
+from selfdrive.test.helpers import set_params_enabled
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
@@ -62,27 +63,39 @@ def print_cpu_usage(first_proc, last_proc):
   print(result)
   return r
 
+def all_running():
+  running = manager.get_running()
+  return all(p in running and running[p].is_alive() for p in manager.car_started_processes)
+
 return_code = 1
 def test_thread():
-  global return_code
-  proc_sock = messaging.sub_sock('procLog', conflate=True)
+  try:
+    global return_code
+    proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=2000)
 
-  # wait until everything's started and get first sample
-  time.sleep(30)
-  first_proc = messaging.recv_sock(proc_sock, wait=True)
+    # wait until everything's started and get first sample
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < 120:
+      if Params().get("CarParams") is not None:
+        break
+      time.sleep(2)
+    first_proc = messaging.recv_sock(proc_sock, wait=True)
+    if first_proc is None or not all_running():
+      err_msg = "procLog recv timed out" if first_proc is None else "all car started process not running"
+      print(f"\n\nTEST FAILED: {err_msg}\n\n")
+      raise Exception
 
-  # run for a minute and get last sample
-  time.sleep(60)
-  last_proc = messaging.recv_sock(proc_sock, wait=True)
-
-  running = manager.get_running()
-  all_running = all(p in running and running[p].is_alive() for p in manager.car_started_processes)
-  return_code = print_cpu_usage(first_proc, last_proc)
-  if not all_running:
-    return_code = 1
-  _thread.interrupt_main()
+    # run for a minute and get last sample
+    time.sleep(60)
+    last_proc = messaging.recv_sock(proc_sock, wait=True)
+    return_code = print_cpu_usage(first_proc, last_proc)
+    if not all_running():
+      return_code = 1
+  finally:
+    _thread.interrupt_main()
 
 if __name__ == "__main__":
+
 
   # setup signal handler to exit with test status
   def handle_exit(sig, frame):
@@ -90,6 +103,9 @@ if __name__ == "__main__":
   signal.signal(signal.SIGINT, handle_exit)
 
   # start manager and test thread
+  set_params_enabled()
+  Params().delete("CarParams")
+
   t = threading.Thread(target=test_thread)
   t.daemon = True
   t.start()

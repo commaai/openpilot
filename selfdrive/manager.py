@@ -19,7 +19,7 @@ WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-TOTAL_SCONS_NODES = 1140
+TOTAL_SCONS_NODES = 1020
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 # Create folders needed for msgq
@@ -78,7 +78,7 @@ import traceback
 from multiprocessing import Process
 
 # Run scons
-spinner = Spinner(noop=(__name__ != "main" or not ANDROID))
+spinner = Spinner(noop=(__name__ != "__main__" or not ANDROID))
 spinner.update("0")
 
 if not prebuilt:
@@ -189,7 +189,6 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
-  "driverview": "selfdrive.monitoring.driverview",
 }
 
 daemon_processes = {
@@ -240,6 +239,12 @@ car_started_processes = [
   'proclogd',
   'ubloxd',
   'locationd',
+]
+
+driver_view_processes = [
+  'camerad',
+  'dmonitoringd',
+  'dmonitoringmodeld'
 ]
 
 if WEBCAM:
@@ -470,7 +475,7 @@ def manager_thread():
     if msg.thermal.freeSpace < 0.05:
       logger_dead = True
 
-    if msg.thermal.started and "driverview" not in running:
+    if msg.thermal.started:
       for p in car_started_processes:
         if p == "loggerd" and logger_dead:
           kill_managed_process(p)
@@ -478,13 +483,18 @@ def manager_thread():
           start_managed_process(p)
     else:
       logger_dead = False
+      driver_view = params.get("IsDriverViewEnabled") == b"1"
+
+      # TODO: refactor how manager manages processes
       for p in reversed(car_started_processes):
-        kill_managed_process(p)
-      # this is ugly
-      if "driverview" not in running and params.get("IsDriverViewEnabled") == b"1":
-        start_managed_process("driverview")
-      elif "driverview" in running and params.get("IsDriverViewEnabled") == b"0":
-        kill_managed_process("driverview")
+        if p not in driver_view_processes or not driver_view:
+          kill_managed_process(p)
+
+      for p in driver_view_processes:
+        if driver_view:
+          start_managed_process(p)
+        else:
+          kill_managed_process(p)
 
     # check the status of all processes, did any of them die?
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]

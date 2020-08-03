@@ -21,10 +21,10 @@ class TestSimpleKalman(unittest.TestCase):
     K0_0 = 0.12287673
     K1_0 = 0.29666309
 
-    self.kf_old = KF1D_old(x0=np.matrix([[x0_0], [x1_0]]),
-                           A=np.matrix([[A0_0, A0_1], [A1_0, A1_1]]),
-                           C=np.matrix([C0_0, C0_1]),
-                           K=np.matrix([[K0_0], [K1_0]]))
+    self.kf_old = KF1D_old(x0=np.array([[x0_0], [x1_0]]),
+                           A=np.array([[A0_0, A0_1], [A1_0, A1_1]]),
+                           C=np.array([C0_0, C0_1]),
+                           K=np.array([[K0_0], [K1_0]]))
 
     self.kf = KF1D(x0=[[x0_0], [x1_0]],
                    A=[[A0_0, A0_1], [A1_0, A1_1]],
@@ -47,8 +47,8 @@ class TestSimpleKalman(unittest.TestCase):
       x = self.kf.update(v_wheel)
 
       # Compare the output x, verify that the error is less than 1e-4
-      self.assertAlmostEqual(x_old[0], x[0])
-      self.assertAlmostEqual(x_old[1], x[1])
+      np.testing.assert_almost_equal(x_old[0], x[0])
+      np.testing.assert_almost_equal(x_old[1], x[1])
 
   def test_new_is_faster(self):
     setup = """
@@ -69,10 +69,10 @@ C0_1 = 0.0
 K0_0 = 0.12287673
 K1_0 = 0.29666309
 
-kf_old = KF1D_old(x0=np.matrix([[x0_0], [x1_0]]),
-                  A=np.matrix([[A0_0, A0_1], [A1_0, A1_1]]),
-                  C=np.matrix([C0_0, C0_1]),
-                  K=np.matrix([[K0_0], [K1_0]]))
+kf_old = KF1D_old(x0=np.array([[x0_0], [x1_0]]),
+                  A=np.array([[A0_0, A0_1], [A1_0, A1_1]]),
+                  C=np.array([C0_0, C0_1]),
+                  K=np.array([[K0_0], [K1_0]]))
 
 kf = KF1D(x0=[[x0_0], [x1_0]],
           A=[[A0_0, A0_1], [A1_0, A1_1]],

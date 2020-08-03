@@ -88,6 +88,8 @@ selfdrive/boardd/boardd.py
 selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/boardd_setup.py
 selfdrive/boardd/can_list_to_can_capnp.cc
+selfdrive/boardd/panda.cc
+selfdrive/boardd/panda.h
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
@@ -280,12 +282,6 @@ selfdrive/locationd/models/constants.py
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py
 
-selfdrive/locationd/locationd_yawrate.cc
-selfdrive/locationd/locationd_yawrate.h
-selfdrive/locationd/params_learner.cc
-selfdrive/locationd/params_learner.h
-selfdrive/locationd/paramsd.cc
-
 selfdrive/logcatd/SConscript
 selfdrive/logcatd/logcatd.cc
 
@@ -318,9 +314,8 @@ selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 
 selfdrive/test/__init__.py
-selfdrive/test/id_rsa
 selfdrive/test/helpers.py
-selfdrive/test/phone_ci.py
+selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_cpu_usage.py
@@ -390,7 +385,6 @@ selfdrive/modeld/runners/run.h
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
-selfdrive/monitoring/driverview.py
 
 selfdrive/assets
 selfdrive/assets/fonts/*.ttf
@@ -510,6 +504,7 @@ opendbc/honda_civic_hatchback_ex_2017_can_generated.dbc
 opendbc/honda_civic_sedan_16_diesel_2019_can_generated.dbc
 opendbc/honda_crv_touring_2016_can_generated.dbc
 opendbc/honda_crv_ex_2017_can_generated.dbc
+opendbc/honda_crv_ex_2017_body_generated.dbc
 opendbc/honda_crv_executive_2016_can_generated.dbc
 opendbc/honda_crv_hybrid_2019_can_generated.dbc
 opendbc/honda_fit_ex_2018_can_generated.dbc
@@ -528,7 +523,7 @@ opendbc/mazda_2017.dbc
 opendbc/nissan_x_trail_2017.dbc
 opendbc/nissan_leaf_2018.dbc
 
-opendbc/subaru_global_2017.dbc
+opendbc/subaru_global_2017_generated.dbc
 
 opendbc/toyota_rav4_hybrid_2017_pt_generated.dbc
 opendbc/toyota_rav4_2017_pt_generated.dbc
