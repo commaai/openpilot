@@ -11,8 +11,6 @@ from common.basedir import BASEDIR
 from common.params import Params
 
 
-# TODO: refactor and test NEOS download here
-
 class TestUpdater(unittest.TestCase):
 
   def setUp(self):
@@ -50,14 +48,16 @@ class TestUpdater(unittest.TestCase):
     self.params = Params(db=os.path.join(self.basedir, "persist/params"))
     self.params.clear_all()
 
+    os.sync()
+
   def tearDown(self):
     try:
-      if self.updated_proc is not None:
-        self.updated_proc.terminate()
-        # TODO: why does updated take so long to die?
-        self.updated_proc.wait(60)
-    finally:
-      self.tmp_dir.cleanup()
+      self.updated_proc.terminate()
+      self.updated_proc.wait(30)
+    except Exception:
+      pass
+    self.tmp_dir.cleanup()
+    os.sync()
 
   def _run(self, cmd, cwd=None):
     if not isinstance(cmd, list):
@@ -114,7 +114,7 @@ class TestUpdater(unittest.TestCase):
       self._wait_for_update(clear_param=True)
 
       # give a bit of time to write all the params
-      time.sleep(0.01)
+      time.sleep(0.1)
       self._check_update_time()
       self._assert_update_available(False)
       self._check_failed_updates()
@@ -130,7 +130,7 @@ class TestUpdater(unittest.TestCase):
     self._wait_for_update(clear_param=True)
 
     # give a bit of time to write all the params
-    time.sleep(0.2)
+    time.sleep(0.1)
     self._check_update_time()
     self._assert_update_available(False)
     self._check_failed_updates()
@@ -144,8 +144,9 @@ class TestUpdater(unittest.TestCase):
       "git commit --allow-empty -m 'an update'",
     ], cwd=self.git_remote_dir)
 
-    self._wait_for_update(clear_param=True)
-    time.sleep(0.5)
+    # TODO: why does the sync in set_consistent_flag take forever sometimes?
+    self._wait_for_update(timeout=60, clear_param=True)
+    time.sleep(0.1)
     self._check_update_time()
     self._assert_update_available(True)
     self._check_failed_updates()

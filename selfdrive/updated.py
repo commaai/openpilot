@@ -77,12 +77,10 @@ def remove_consistent_flag():
 
 
 def set_consistent_flag():
-  print("setting consistent flag")
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
   os.system("sync")
   consistent_file.touch()
-  os.system("sync")
-  print("done setting consistent flag")
+  os.sync()
 
 
 def set_update_available_params(new_version=False):
