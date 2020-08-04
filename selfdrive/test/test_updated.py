@@ -134,12 +134,12 @@ class TestUpdater(unittest.TestCase):
       time.sleep(0.05)
 
     # give a bit of time to write all the params
-    time.sleep(0.01)
+    time.sleep(0.05)
     self._check_update_time()
     self._assert_update_available(False)
     self._check_failed_updates()
 
-    # wait for updater
+    # wait for updater to start sleeping
     time.sleep(5)
 
     # make a commit in our remote
