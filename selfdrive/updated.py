@@ -77,10 +77,12 @@ def remove_consistent_flag():
 
 
 def set_consistent_flag():
+  print("setting consistent flag")
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
   os.system("sync")
   consistent_file.touch()
   os.system("sync")
+  print("done setting consistent flag")
 
 
 def set_update_available_params(new_version=False):
@@ -310,7 +312,8 @@ def main():
   # Setup a signal handler to immediately trigger an update
   ready_event = threading.Event()
   def set_ready(signum, frame):
-    cloudlog.info("caught SIGHUP, running update check immediately")
+    if not ready_event.set():
+      cloudlog.info("caught SIGHUP, running update check immediately")
     ready_event.set()
   signal.signal(signal.SIGHUP, set_ready)
 

@@ -81,9 +81,9 @@ class TestUpdater(unittest.TestCase):
     if clear_param:
       self.params.delete("LastUpdateTime")
 
+    self._update_now()
     start_time = time.monotonic()
     while self.params.get("LastUpdateTime") is None:
-      self._update_now()
       if time.monotonic() - start_time > timeout:
         raise Exception("timed out waiting for update to complate")
       time.sleep(0.05)
@@ -100,8 +100,8 @@ class TestUpdater(unittest.TestCase):
     self.assertEqual(failed_updates, expected_count)
 
   def _assert_update_available(self, available):
-    a = self.params.get("UpdateAvailable")
-    self.assertEqual(a == b"1", available)
+    update = self.params.get("UpdateAvailable")
+    self.assertEqual(update == b"1", available)
 
   # Run updated for 50 cycles with no update
   @unittest.skip("remove when done writing tests")
@@ -119,6 +119,7 @@ class TestUpdater(unittest.TestCase):
       self._assert_update_available(False)
       self._check_failed_updates()
 
+  # Let the updater run with no update for a cycle, then write an update
   #@unittest.skip("remove when done writing tests")
   def test_update(self):
     self.params.put("IsOffroad", "1")
@@ -126,21 +127,15 @@ class TestUpdater(unittest.TestCase):
     time.sleep(2)
 
     # run for a cycle with no update
-    start_time = time.monotonic()
-    while self.params.get("LastUpdateTime") is None:
-      self._update_now()
-      if time.monotonic() - start_time > 30:
-        raise Exception("failed to complete cycle in 30s")
-      time.sleep(0.05)
+    self._wait_for_update(clear_param=True)
 
     # give a bit of time to write all the params
-    time.sleep(0.05)
+    time.sleep(0.2)
     self._check_update_time()
     self._assert_update_available(False)
     self._check_failed_updates()
 
-    # wait for updater to start sleeping
-    time.sleep(5)
+    self.params.delete("LastUpdateTime")
 
     # make a commit in our remote
     self._run([
@@ -150,8 +145,7 @@ class TestUpdater(unittest.TestCase):
     ], cwd=self.git_remote_dir)
 
     self._wait_for_update(clear_param=True)
-    time.sleep(0.05)
-
+    time.sleep(0.5)
     self._check_update_time()
     self._assert_update_available(True)
     self._check_failed_updates()
