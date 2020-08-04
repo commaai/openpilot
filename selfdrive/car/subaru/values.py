@@ -125,6 +125,25 @@ FW_VERSIONS = {
       b'\x00\xfe\xf7\x00\x00',
     ],
   },
+  CAR.FORESTER: {
+    # 2020 Forester - UDM / @jaypray
+    # Ecu, addr, subaddr: ROM ID
+    (Ecu.esp, 0x7b0, None): [
+      b'\xa3 \x19\x14\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'\x8d\xc0\x04\x00',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00e`\x1f@  ',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xcb"`p\x07',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\x1a\xf6F`\x00',
+    ],
+  },
   CAR.IMPREZA: {
     # 2018 Crosstrek - EDM / @martinl
     # 2018 Impreza - ADM / @Michael
