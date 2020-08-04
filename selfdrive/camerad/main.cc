@@ -332,6 +332,7 @@ void* frontview_thread(void *arg) {
     //double t2 = millis_since_boot();
     //LOGD("front process: %.2fms", t2-t1);
   }
+  clReleaseCommandQueue(q);
 
   return NULL;
 }
@@ -670,6 +671,7 @@ void* processing_thread(void *arg) {
     LOGD("queued: %.2fms, yuv: %.2f, | processing: %.3fms", (t2-t1), (yt2-yt1), (t5-t1));
   }
 
+  clReleaseCommandQueue(q);
   return NULL;
 }
 
@@ -1175,25 +1177,33 @@ void free_buffers(VisionState *s) {
   // free bufs
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
     visionbuf_free(&s->camera_bufs[i]);
+    visionbuf_free(&s->front_camera_bufs[i]);
     visionbuf_free(&s->focus_bufs[i]);
     visionbuf_free(&s->stats_bufs[i]);
   }
 
-  for (int i=0; i<FRAME_BUF_COUNT; i++) {
-   visionbuf_free(&s->front_camera_bufs[i]);
-  }
-
   for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_bufs[i]);
-  }
-
-  for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_front_bufs[i]);
   }
 
   for (int i=0; i<YUV_COUNT; i++) {
     visionbuf_free(&s->yuv_ion[i]);
+    visionbuf_free(&s->yuv_front_ion[i]);
   }
+
+  clReleaseMemObject(s->rgb_conv_roi_cl);
+  clReleaseMemObject(s->rgb_conv_result_cl);
+  clReleaseMemObject(s->rgb_conv_filter_cl);
+
+  clReleaseProgram(s->prg_debayer_rear);
+  clReleaseProgram(s->prg_debayer_front);
+  clReleaseKernel(s->krnl_debayer_rear);
+  clReleaseKernel(s->krnl_debayer_front);
+  
+  clReleaseProgram(s->prg_rgb_laplacian);
+  clReleaseKernel(s->krnl_rgb_laplacian);
+  
 }
 
 void party(VisionState *s) {
