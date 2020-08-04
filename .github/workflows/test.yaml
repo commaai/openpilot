@@ -112,6 +112,7 @@ jobs:
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
                     coverage run selfdrive/test/test_fingerprints.py && \
+                    coverage run --append selfdrive/test/test_updated.py && \
                     $UNIT_TEST common && \
                     $UNIT_TEST opendbc/can && \
                     $UNIT_TEST selfdrive/boardd && \

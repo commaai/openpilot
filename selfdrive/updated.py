@@ -26,20 +26,25 @@ import os
 import datetime
 import subprocess
 import psutil
-from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
 import shutil
 import signal
-from pathlib import Path
 import fcntl
 import threading
-import time
 from cffi import FFI
+from pathlib import Path
+from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, \
+                 ST_MODE, ST_INO, ST_UID, ST_GID, \
+                 ST_ATIME, ST_MTIME
 
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
+LOCK_FILE = "/tmp/safe_staging_overlay.lock"
 STAGING_ROOT = "/data/safe_staging"
+if os.getenv("UPDATER_TESTING") is not None:
+  LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", LOCK_FILE)
+  STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", STAGING_ROOT)
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
@@ -47,41 +52,11 @@ OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
-SHORT = os.getenv("SHORT") is not None
 
 # Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
 ffi.cdef("int link(const char *oldpath, const char *newpath);")
 libc = ffi.dlopen(None)
-
-
-class WaitTimeHelper:
-  ready_event = threading.Event()
-  shutdown = False
-
-  def __init__(self):
-    signal.signal(signal.SIGTERM, self.graceful_shutdown)
-    signal.signal(signal.SIGINT, self.graceful_shutdown)
-    signal.signal(signal.SIGHUP, self.update_now)
-
-  def graceful_shutdown(self, signum, frame):
-    # umount -f doesn't appear effective in avoiding "device busy" on EON,
-    # so don't actually die until the next convenient opportunity in main().
-    cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
-    self.shutdown = True
-    self.ready_event.set()
-
-  def update_now(self, signum, frame):
-    cloudlog.info("caught SIGHUP, running update check immediately")
-    self.ready_event.set()
-
-
-def wait_between_updates(ready_event, t=60*10):
-  ready_event.clear()
-  if SHORT:
-    ready_event.wait(timeout=10)
-  else:
-    ready_event.wait(timeout=t)
 
 
 def link(src, dest):
@@ -96,10 +71,8 @@ def run(cmd, cwd=None):
 def remove_consistent_flag():
   os.system("sync")
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-  try:
+  if os.path.isfile(consistent_file):
     consistent_file.unlink()
-  except FileNotFoundError:
-    pass
   os.system("sync")
 
 
@@ -315,14 +288,12 @@ def attempt_update():
 
 
 def main():
-  update_failed_count = 0
-  overlay_init_done = False
   params = Params()
 
   if params.get("DisableUpdates") == b"1":
     raise RuntimeError("updates are disabled by param")
 
-  if not os.geteuid() == 0:
+  if os.geteuid() != 0:
     raise RuntimeError("updated must be launched as root!")
 
   # Set low io priority
@@ -330,31 +301,49 @@ def main():
   if psutil.LINUX:
     p.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
-  ov_lock_fd = open('/tmp/safe_staging_overlay.lock', 'w')
+  ov_lock_fd = open(LOCK_FILE, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
-  # Wait a short time before our first update attempt
-  # Avoids race with IsOffroad not being set, reduces manager startup load
-  time.sleep(30)
-  wait_helper = WaitTimeHelper()
+  # Setup a signal handler to immediately trigger an update
+  ready_event = threading.Event()
+  def set_ready(signum, frame):
+    cloudlog.info("caught SIGHUP, running update check immediately")
+    ready_event.set()
+  signal.signal(signal.SIGHUP, set_ready)
 
-  while not wait_helper.shutdown:
+  # Setup the signal handlers to cleanly exit
+  exit_event = threading.Event()
+  def set_do_exit(signum, frame):
+    # umount -f doesn't appear effective in avoiding "device busy" on NEOS,
+    # so don't actually exit until the next convenient opportunity in main().
+    cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
+    exit_event.set()
+    ready_event.set()
+  signal.signal(signal.SIGTERM, set_do_exit)
+  signal.signal(signal.SIGINT, set_do_exit)
+
+  # Wait for IsOffroad to be set
+  ready_event.wait(timeout=30)
+
+  update_failed_count = 0
+  overlay_init_done = False
+  while not exit_event.is_set():
     update_failed_count += 1
+    ready_event.clear()
 
     # Check for internet every 30s
     time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
+    ping_failed = os.system("ping -W 4 -c 1 8.8.8.8") != 0
     if ping_failed or time_wrong:
-      wait_between_updates(wait_helper.ready_event, t=30)
+      ready_event.wait(30)
       continue
 
     # Attempt an update
     try:
-      # If the git directory has modifcations after we created the overlay
-      # we need to recreate the overlay
+      # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
       if overlay_init_done:
         overlay_init_fn = os.path.join(BASEDIR, ".overlay_init")
         git_dir_path = os.path.join(BASEDIR, ".git")
@@ -386,7 +375,9 @@ def main():
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
     params.put("UpdateFailedCount", str(update_failed_count))
-    wait_between_updates(wait_helper.ready_event)
+
+    # Wait 10 minutes between update attempts
+    ready_event.wait(60*10)
 
   # We've been signaled to shut down
   dismount_ovfs()
