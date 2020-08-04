@@ -71,6 +71,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1, 0.2], [0.01, 0.02]]
+      ret.dashcamOnly = True
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
