@@ -32,7 +32,7 @@ class CarController():
     can_sends = []
     
     # *** steering ***
-    if (frame % P.STEER_STEP) == 0:
+    if (frame % self.params.STEER_STEP) == 0:
 
       apply_steer = int(round(actuators.steer * P.STEER_MAX))
 
