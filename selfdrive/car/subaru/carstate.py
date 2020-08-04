@@ -20,7 +20,7 @@ class CarState(CarStateBase):
 
     ret.gas = cp.vl["Throttle"]['Throttle_Pedal'] / 255.
     ret.gasPressed = ret.gas > 1e-5
-    if self.car_fingerprint in PREGLOBAL_CAR:
+    if self.car_fingerprint in PREGLOBAL_CARS:
       ret.brakePressed = cp.vl["Brake_Pedal"]['Brake_Pedal'] > 2
     else:
       ret.brakePressed = cp.vl["Brake_Pedal"]['Brake_Pedal'] > 1e-5
