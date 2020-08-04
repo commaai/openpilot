@@ -24,21 +24,14 @@ class CarController():
     self.fake_button_prev = 0
     self.steer_rate_limited = False
 
-    # Setup detection helper. Routes commands to
-    # an appropriate CAN bus number.
     self.params = CarControllerParams()
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line):
-    """ Controls thread """
 
-    P = self.params
-
-    # Send CAN commands.
     can_sends = []
-
-    ### STEER ###
-
+    
+    # *** steering ***
     if (frame % P.STEER_STEP) == 0:
 
       apply_steer = int(round(actuators.steer * P.STEER_MAX))
@@ -46,7 +39,7 @@ class CarController():
       # limits due to driver torque
 
       new_steer = int(round(apply_steer))
-      apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
+      apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
       self.steer_rate_limited = new_steer != apply_steer
 
       if not enabled:
@@ -58,10 +51,10 @@ class CarController():
         can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, frame, P.STEER_STEP))
 
       self.apply_steer_last = apply_steer
+    
 
-    ### DISENGAGE ###
+    # *** alerts and pcm cancel ***
 
-    # button control
     if CS.CP.carFingerprint in PREGLOBAL_CARS:
       if self.es_accel_cnt != CS.es_accel_msg["Counter"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
@@ -86,8 +79,6 @@ class CarController():
       if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
         self.es_distance_cnt = CS.es_distance_msg["Counter"]
-
-    ### ALERTS ###
 
       if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
         can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, visual_alert, left_line, right_line))
