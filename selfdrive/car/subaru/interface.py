@@ -25,6 +25,8 @@ class CarInterface(CarInterfaceBase):
     # Subaru port is a community feature, since we don't own one to test
     ret.communityFeature = True
 
+    ret.dashcamOnly = candidate in PREGLOBAL_CARS
+    
     # force openpilot to fake the stock camera, since car harness is not supported yet and old style giraffe (with switches)
     # was never released
     ret.enableCamera = True
@@ -71,7 +73,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.1, 0.2], [0.01, 0.02]]
-      ret.dashcamOnly = True
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -92,11 +93,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
-    buttonEvents = []
-    be = car.CarState.ButtonEvent.new_message()
-    be.type = car.CarState.ButtonEvent.Type.accelCruise
-    buttonEvents.append(be)
 
     ret.events = self.create_common_events(ret).to_msg()
 
