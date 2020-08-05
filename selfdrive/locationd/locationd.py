@@ -149,7 +149,6 @@ class Localizer():
 
     fix.posenetOK = not (std_spike and self.car_speed > 5)
     fix.deviceStable = not self.device_fell
-    self.device_fell = False
 
     #fix.gpsWeek = self.time.week
     #fix.gpsTimeOfWeek = self.time.tow
@@ -246,7 +245,7 @@ class Localizer():
       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
         # check if device fell, estimate 10 for g
         # 40g is a good filter for falling detection, no false positives in 20k minutes of driving
-        self.device_fell = self.device_fell or (np.linalg.norm(np.array(sensor_reading.acceleration.v) - np.array([10, 0, 0])) > 40)
+        self.device_fell = abs(sensor_reading.acceleration.v[0] - 10) > 40
 
         self.acc_counter += 1
         if self.acc_counter % SENSOR_DECIMATION == 0:
