@@ -56,14 +56,11 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.KPH_TO_MS
 
     # UDM Legacy: mph = 0
-    if self.car_fingerprint == CAR.LEGACY_PREGLOBAL:
-      if (cp.vl["Dash_State"]['Units'] == 0):
-        ret.cruiseState.speed *= CV.MPH_TO_KPH
+    if self.car_fingerprint == CAR.LEGACY_PREGLOBAL and cp.vl["Dash_State"]['Units'] == 0:
+      ret.cruiseState.speed *= CV.MPH_TO_KPH
     # EDM Global: mph = 1, 2; UDM Forester: 7 = mph
-    else:
-      if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
-        ret.cruiseState.speed *= CV.MPH_TO_KPH
-
+    elif self.car_fingerprint != CAR.LEGACY_PREGLOBAL and cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
+      ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     ret.doorOpen = any([cp.vl["BodyInfo"]['DOOR_OPEN_RR'],
@@ -115,16 +112,6 @@ class CarState(CarStateBase):
       ("R_APPROACHING", "BSD_RCTA", 0),
     ]
 
-    if CP.carFingerprint in PREGLOBAL_CARS:
-      signals += [
-        ("LKA_Lockout", "Steering_Torque", 0),
-      ]
-    else:
-      signals += [
-        ("Steer_Error_1", "Steering_Torque", 0),
-        ("Steer_Warning", "Steering_Torque", 0),
-      ]
-
     checks = [
       # sig_address, frequency
       ("Throttle", 100),
@@ -135,11 +122,18 @@ class CarState(CarStateBase):
       ("Steering_Torque", 50),
     ]
 
-    if CP.carFingerprint == CAR.LEGACY_PREGLOBAL:
+    if CP.carFingerprint in PREGLOBAL_CARS:
+      signals += [
+        ("LKA_Lockout", "Steering_Torque", 0),
+      ]
       checks += [
         ("CruiseControl", 50),
       ]
     else:
+      signals += [
+        ("Steer_Error_1", "Steering_Torque", 0),
+        ("Steer_Warning", "Steering_Torque", 0),
+      ]
       checks += [
         ("BodyInfo", 10),
         ("CruiseControl", 20),
