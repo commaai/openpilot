@@ -53,6 +53,19 @@ pipeline {
       }
     }
 
+    stage('PC tests') {
+      agent {
+        dockerfile {
+          filename 'Dockerfile.openpilot'
+          //additionalBuildArgs '--cache-from docker.io/commaai/openpilotci:latest'
+          args '--privileged --shm-size 1G'
+        }
+      }
+      steps {
+        sh 'scons -j4'
+      }
+    }
+
     stage('On-device Tests') {
       when {
         not {
