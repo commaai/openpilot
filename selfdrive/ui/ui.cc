@@ -466,7 +466,6 @@ int main(int argc, char* argv[]) {
   int draws = 0;
 
   while (!do_exit) {
-    bool should_swap = false;
     if (!s->started) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
       // Don't hold the lock while sleeping, so that vision_connect_thread have chances to get the lock.
@@ -496,34 +495,25 @@ int main(int argc, char* argv[]) {
       handle_vision_touch(s, touch_x, touch_y);
     }
 
-    if (!s->started) {
-      // always process events offroad
-      check_messages(s);
-
-      if (s->started) {
-        s->controls_timeout = 5 * UI_FREQ;
-      }
-    } else {
-      // Car started, fetch a new rgb image from ipc
+    bool prev_started = s->started;
+    check_messages(s);
+    if (s->started) {
       set_awake(s, true);
       s->vision.update();
-
-      check_messages(s);
-
-      // Visiond process is just stopped, force a redraw to make screen blank again.
-      if (!s->started) {
-        s->scene.uilayout_sidebarcollapsed = false;
-        ui_draw(s);
-        glFinish();
-        should_swap = true;
+      if (!prev_started) {
+        s->controls_timeout = 5 * UI_FREQ;
       }
-    }
 
-    // manage wakefulness
-    if (s->awake_timeout > 0) {
-      s->awake_timeout--;
-    } else if (!s->scene.frontview){
-      set_awake(s, false);
+    } else {
+      if (prev_started) {
+        s->scene.uilayout_sidebarcollapsed = false;
+      }
+      // manage wakefulness
+      if (s->awake_timeout > 0) {
+        s->awake_timeout--;
+      } else if (!s->scene.frontview) {
+        set_awake(s, false);
+      }
     }
 
     // manage hardware disconnect
@@ -533,11 +523,10 @@ int main(int argc, char* argv[]) {
       s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
     }
     update_offroad_layout_state(s);
+    
     // Don't waste resources on drawing in case screen is off
-    if (s->awake && !s->scene.frontview) {
-      ui_draw(s);
-      glFinish();
-      should_swap = true;
+    if (!s->awake || s->scene.frontview) {
+      continue;
     }
 
     s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
@@ -563,7 +552,6 @@ int main(int argc, char* argv[]) {
         s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
         update_status(s, STATUS_ALERT);
       }
-      ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
 
     read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
@@ -580,18 +568,15 @@ int main(int argc, char* argv[]) {
         s->scene.athenaStatus = NET_ERROR;
       }
     }
-    
-    // the bg thread needs to be scheduled, so the main thread needs time without the lock
-    // safe to do this outside the lock?
-    if (should_swap) {
-      double u2 = millis_since_boot();
-      if (u2-u1 > 66) {
-        // warn on sub 15fps
-        LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
-      }
-      draws++;
-      s->vision.swap();
+
+    ui_draw(s);
+    double u2 = millis_since_boot();
+    if (u2-u1 > 66) {
+      // warn on sub 15fps
+      LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
     }
+    draws++;
+    s->vision.swap();
   }
 
   set_awake(s, true);
