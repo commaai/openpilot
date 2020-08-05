@@ -57,7 +57,7 @@ pipeline {
       agent {
         dockerfile {
           filename 'Dockerfile.openpilot'
-          //additionalBuildArgs '--cache-from docker.io/commaai/openpilotci:latest'
+          additionalBuildArgs '--cache-from docker.io/commaai/openpilotci:latest'
           args '--privileged --shm-size 1G'
         }
       }
