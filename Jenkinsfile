@@ -50,7 +50,7 @@ pipeline {
           agent {
             dockerfile {
               filename 'Dockerfile.openpilot'
-              args '--privileged --shm-size 1G'
+              args '--privileged --shm-size=1G --user=root'
             }
           }
           stages {
