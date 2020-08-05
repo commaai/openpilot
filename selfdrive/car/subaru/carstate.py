@@ -134,6 +134,10 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint == CAR.LEGACY_PREGLOBAL:
       checks += [
+        ("BSD_RCTA", 16),
+        ("Throttle", 100),
+        ("Brake_Pedal", 50),
+        ("Transmission", 100),
         ("CruiseControl", 50),
       ]
     else:
@@ -172,6 +176,7 @@ class CarState(CarStateBase):
 
       checks = [
         ("ES_DashStatus", 20),
+        ("ES_CruiseThrottle", 20),
       ]
     else:
       signals = [
