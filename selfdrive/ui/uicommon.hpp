@@ -1,4 +1,6 @@
 #pragma once
+#include <cmath>
+#include <assert.h>
 #include "messaging.hpp"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -35,8 +37,8 @@ const int viz_w = vwp_w-(bdr_s*2);
 class UIVision {
  public:
   void init(bool front=false);
-  bool ui_update();
-  void draw_frame();
+  bool update();
+  void draw();
   void swap();
   
   int rgb_width, rgb_height, rgb_stride;
@@ -46,8 +48,8 @@ class UIVision {
   int fb_w=0, fb_h=0;
 
 private:
-  void ui_init_vision(const VisionPacket& vp);
-  void vision_connect();
+  void initVision(const VisionPacket& vp);
+  void connect();
 
   VIPCBuf bufs[UI_BUF_COUNT]={};
   int cur_vision_idx = 0;

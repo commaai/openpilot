@@ -1,18 +1,9 @@
-#include <assert.h>
 #include <signal.h>
-#include <stdlib.h>
-
-#include <cmath>
-
 #include "common/params.h"
-#include "common/swaglog.h"
-#include "common/util.h"
 #include "uicommon.hpp"
-
 #include "nanovg_gl.h"
 
 volatile sig_atomic_t do_exit = 0;
-
 static void set_do_exit(int sig) {
   do_exit = 1;
 }
@@ -24,7 +15,6 @@ class DriverView {
     sm = new SubMaster({"driverState", "dMonitoringState"});
 
 #ifdef QCOM
-    // on QCOM, we enable MSAA
     vg = nvgCreate(0);
 #else
     vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
@@ -33,15 +23,9 @@ class DriverView {
 
     img_face = nvgCreateImage(vg, "../assets/img_driver_face.png", 1);
     assert(img_face != 0);
-    touch_init(&touch);
   }
 
   void run() {
-    int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
-    if (touched == 1) {
-      write_db_value("IsDriverViewEnabled", "0", 1);
-    }
     if (sm->update(0) > 0) {
       if (sm->updated("driverState")) {
         driver_state = (*sm)["driverState"].getDriverState();
@@ -51,7 +35,7 @@ class DriverView {
       }
     }
 
-    vision.ui_update();
+    vision.update();
 
     glClearColor(0, 0, 0, 1.0);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -64,7 +48,7 @@ class DriverView {
     glEnable(GL_SCISSOR_TEST);
     glViewport(bdr_s, bdr_s, vision.fb_w - bdr_s * 2, vision.fb_h - bdr_s * 2);
     glScissor(bdr_s, bdr_s, vision.fb_w - bdr_s * 2, vision.fb_h - bdr_s * 2);
-    vision.draw_frame();
+    vision.draw();
     glDisable(GL_SCISSOR_TEST);
 
     glViewport(0, 0, vision.fb_w, vision.fb_h);
@@ -132,7 +116,6 @@ class DriverView {
   }
 
   UIVision vision;
-  TouchState touch = {};
   NVGcontext* vg;
   SubMaster* sm;
   cereal::DriverState::Reader driver_state;
@@ -143,9 +126,20 @@ class DriverView {
 int main(int argc, char* argv[]) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
+  
+  TouchState touch = {};
+  touch_init(&touch);
 
   DriverView driver_view;
+
   while (!do_exit) {
+    int touch_x = -1, touch_y = -1;
+    int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
+    if (touched == 1) {
+      write_db_value("IsDriverViewEnabled", "0", 1);
+      break;
+    }
+
     driver_view.run();
   }
   return 0;

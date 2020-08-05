@@ -141,14 +141,13 @@ void UIVision::init(bool front) {
 }
 
 static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
-  int err;
   LOGW("vision_subscribe type:%d", type);
 
   VisionPacket p1 = {
     .type = VIPC_STREAM_SUBSCRIBE,
     .d = { .stream_sub = { .type = type, .tbuffer = true, }, },
   };
-  err = vipc_send(fd, &p1);
+  int err = vipc_send(fd, &p1);
   if (err < 0) {
     close(fd);
     return 0;
@@ -178,7 +177,7 @@ static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
 }
 
 
-void UIVision::vision_connect() {
+void UIVision::connect() {
   bool do_exit = false;
   while (!do_exit) {
     int fd = vipc_connect();
@@ -190,7 +189,7 @@ void UIVision::vision_connect() {
     VisionPacket vp;
     if (!vision_subscribe(fd, &vp, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK)) continue;
     ipc_fd = fd;
-    ui_init_vision(vp);
+    initVision(vp);
 
     vision_connected = true;
     break;
@@ -201,7 +200,7 @@ void UIVision::swap(){
   framebuffer_swap(fb);
 }    
 
-void UIVision::ui_init_vision(const VisionPacket& vp) {
+void UIVision::initVision(const VisionPacket& vp) {
   assert(vp.num_fds == UI_BUF_COUNT);
   const VisionStreamBufs& vs_bufs = vp.d.stream_bufs;
   vipc_bufs_load(bufs, &vs_bufs, vp.num_fds, vp.fds);
@@ -246,9 +245,9 @@ void UIVision::ui_init_vision(const VisionPacket& vp) {
 }
 
 
-bool UIVision::ui_update() {
+bool UIVision::update() {
   if (!vision_connected) {
-      vision_connect();
+      connect();
   }
   zmq_pollitem_t polls[1] = {{0}};
   // Take an rgb image from visiond if there is one
@@ -315,7 +314,7 @@ bool UIVision::ui_update() {
   return true;
 }
 
-void UIVision::draw_frame() {
+void UIVision::draw() {
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
   if (cur_vision_idx >= 0) {

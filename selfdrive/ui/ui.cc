@@ -1,17 +1,9 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <assert.h>
-#include <sys/mman.h>
-#include <string>
 #include <sstream>
 #include <sys/resource.h>
 #include <czmq.h>
-#include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "common/touch.h"
 #include "common/params.h"
 #include "common/utilpp.h"
 #include "ui.hpp"
@@ -514,7 +506,7 @@ int main(int argc, char* argv[]) {
     } else {
       // Car started, fetch a new rgb image from ipc
       set_awake(s, true);
-      s->vision.ui_update();
+      s->vision.update();
 
       check_messages(s);
 

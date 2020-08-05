@@ -1,9 +1,6 @@
 #include "ui.hpp"
-#include <assert.h>
 #include <map>
-#include <cmath>
 #include "common/util.h"
-
 #include "nanovg_gl.h"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
@@ -587,7 +584,7 @@ static void ui_draw_vision(UIState *s) {
   glEnable(GL_SCISSOR_TEST);
   glViewport(scene->ui_viz_rx+scene->ui_viz_ro, s->vision.fb_h-(box_y+box_h), viz_w, box_h);
   glScissor(scene->ui_viz_rx, s->vision.fb_h-(box_y+box_h), scene->ui_viz_rw, box_h);
-  s->vision.draw_frame();
+  s->vision.draw();
   glDisable(GL_SCISSOR_TEST);
 
   glViewport(0, 0, s->vision.fb_w, s->vision.fb_h);
@@ -640,7 +637,6 @@ void ui_nvg_init(UIState *s) {
 #else
   s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
 #endif
-
   assert(s->vg);
 
   s->font_sans_regular = nvgCreateFont(s->vg, "sans-regular", "../assets/fonts/opensans_regular.ttf");
