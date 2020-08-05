@@ -52,7 +52,10 @@ class CarController():
       if not enabled:
         apply_steer = 0
 
-      can_sends.append(subarucan.create_steering_control(self.packer, CS.CP.carFingerprint, apply_steer, frame, P.STEER_STEP))
+      if CS.CP.carFingerprint in PREGLOBAL_CARS:
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, frame, P.STEER_STEP))
+      else:
+        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, frame, P.STEER_STEP))
 
       self.apply_steer_last = apply_steer
 
