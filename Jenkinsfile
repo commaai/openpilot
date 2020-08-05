@@ -55,7 +55,9 @@ pipeline {
           }
           stages {
             stage('Build') {
-              sh 'scons -j4'
+              steps {
+                sh 'scons -j4'
+              }
             }
           }
         }
