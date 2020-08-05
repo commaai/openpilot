@@ -52,8 +52,9 @@ class TestUpdater(unittest.TestCase):
 
   def tearDown(self):
     try:
-      self.updated_proc.terminate()
-      self.updated_proc.wait(30)
+      if self.updated_proc is not None:
+        self.updated_proc.terminate()
+        self.updated_proc.wait(30)
     except Exception as e:
       print(e)
     self.tmp_dir.cleanup()
