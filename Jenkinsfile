@@ -56,14 +56,12 @@ pipeline {
           stages {
             stage('Build') {
               steps {
-                sh 'whoami'
-                sh 'scons -j4'
+                sh 'scons -j$(nproc)'
               }
             }
           }
         }
 
-        /*
         stage('On-device Tests') {
           agent {
             docker {
@@ -119,7 +117,6 @@ pipeline {
           }
 
         }
-        */
 
       }
     }
