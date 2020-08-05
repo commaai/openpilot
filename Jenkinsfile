@@ -60,6 +60,12 @@ pipeline {
               }
             }
           }
+          post {
+            always {
+              // need to do this since container runs as root
+              cleanWs()
+            }
+          }
         }
 
         stage('On-device Tests') {
