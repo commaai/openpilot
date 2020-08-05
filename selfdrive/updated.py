@@ -37,13 +37,8 @@ from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
-TEST_IP = "8.8.8.8"
-LOCK_FILE = "/tmp/safe_staging_overlay.lock"
-STAGING_ROOT = "/data/safe_staging"
-if os.getenv("UPDATER_TESTING") is not None:
-  TEST_IP = "localhost"
-  LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", LOCK_FILE)
-  STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", STAGING_ROOT)
+LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
+STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
@@ -87,18 +82,13 @@ def run(cmd, cwd=None):
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
-def remove_consistent_flag():
+def set_consistent_flag(consistent):
   os.system("sync")
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-  if os.path.isfile(consistent_file):
+  if consistent:
+    consistent_file.touch()
+  elif not consistent and consistent_file.exists():
     consistent_file.unlink()
-  os.system("sync")
-
-
-def set_consistent_flag():
-  consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-  os.system("sync")
-  consistent_file.touch()
   os.system("sync")
 
 
@@ -154,7 +144,7 @@ def init_ovfs():
   cloudlog.info("preparing new safe staging area")
   Params().put("UpdateAvailable", "0")
 
-  remove_consistent_flag()
+  set_consistent_flag(False)
 
   dismount_ovfs()
   if os.path.isdir(STAGING_ROOT):
@@ -220,13 +210,13 @@ def attempt_update():
 
     # Un-set the validity flag to prevent the finalized tree from being
     # activated later if the finalize step is interrupted
-    remove_consistent_flag()
+    set_consistent_flag(False)
 
     finalize_from_ovfs()
 
     # Make sure the validity flag lands on disk LAST, only when the local git
     # repo and OP install are in a consistent state.
-    set_consistent_flag()
+    set_consistent_flag(True)
 
     cloudlog.info("update successful!")
   else:
@@ -267,7 +257,7 @@ def main():
 
     # Check for internet every 30s
     time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = os.system(f"ping -W 4 -c 1 {TEST_IP}") != 0
+    ping_failed = os.system("ping -W 4 -c 1 8.8.8.8") != 0
     if ping_failed or time_wrong:
       wait_helper.sleep(30)
       continue

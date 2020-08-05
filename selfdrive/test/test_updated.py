@@ -62,7 +62,6 @@ class TestUpdater(unittest.TestCase):
 
   def _get_updated_proc(self):
     os.environ["PYTHONPATH"] = self.basedir
-    os.environ["UPDATER_TESTING"] = "1"
     os.environ["UPDATER_LOCK_FILE"] = os.path.join(self.tmp_dir.name, "updater.lock")
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
     updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
