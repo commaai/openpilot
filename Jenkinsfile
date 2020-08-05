@@ -29,12 +29,7 @@ def phone_steps(String device_type, steps) {
 }
 
 pipeline {
-  agent {
-    docker {
-      image 'python:3.7.3'
-      args '--user=root'
-    }
-  }
+  agent none
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
@@ -66,49 +61,57 @@ pipeline {
 
         // *** On-device Tests ***
 
-        stage('Release Build') {
-          when {
-            branch 'devel-staging'
-          }
-          steps {
-            phone_steps("eon-build", [
-              ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
-            ])
-          }
-        }
 
-        stage('Devel Build') {
-          environment {
-            CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
+        stage('On-device Tests') {
+          agent {
+            image 'python:3.7.3'
+            args '--user=root'
           }
-          steps {
-            phone_steps("eon", [
-              ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
-              ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
-              //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
-              ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-            ])
-          }
-        }
 
-        stage('Replay Tests') {
-          steps {
-            phone_steps("eon2", [
-              ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
-            ])
+          stage('Release Build') {
+            when {
+              branch 'devel-staging'
+            }
+            steps {
+              phone_steps("eon-build", [
+                ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+              ])
+            }
           }
-        }
 
-        stage('HW Tests') {
-          steps {
-            phone_steps("eon", [
-              ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
-              ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
-              ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
-            ])
+          stage('Devel Build') {
+            environment {
+              CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
+            }
+            steps {
+              phone_steps("eon", [
+                ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
+                ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
+                //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
+                ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+              ])
+            }
           }
-        }
 
+          stage('Replay Tests') {
+            steps {
+              phone_steps("eon2", [
+                ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
+              ])
+            }
+          }
+
+          stage('HW Tests') {
+            steps {
+              phone_steps("eon", [
+                ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
+                ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
+                ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
+              ])
+            }
+          }
+
+        }
 
       }
     }
