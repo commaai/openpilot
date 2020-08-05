@@ -184,7 +184,7 @@ def init_ovfs():
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
 
 
-def finalize_from_ovfs_copy():
+def finalize_from_ovfs():
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
@@ -226,7 +226,7 @@ def attempt_update():
     # activated later if the finalize step is interrupted
     remove_consistent_flag()
 
-    finalize_from_ovfs_copy()
+    finalize_from_ovfs()
 
     # Make sure the validity flag lands on disk LAST, only when the local git
     # repo and OP install are in a consistent state.
