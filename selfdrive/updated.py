@@ -46,12 +46,13 @@ OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
-SHORT = os.getenv("SHORT") is not None
 
 # Workaround for the EON/termux build of Python having os.link removed.
 ffi = FFI()
 ffi.cdef("int link(const char *oldpath, const char *newpath);")
 libc = ffi.dlopen(None)
+def link(src, dest):
+  return libc.link(src.encode(), dest.encode())
 
 
 class WaitTimeHelper:
@@ -77,15 +78,7 @@ class WaitTimeHelper:
 
 def wait_between_updates(ready_event, t=60*10):
   ready_event.clear()
-  if SHORT:
-    ready_event.wait(timeout=10)
-  else:
-    ready_event.wait(timeout=t)
-
-
-def link(src, dest):
-  # Workaround for the EON/termux build of Python having os.link removed.
-  return libc.link(src.encode(), dest.encode())
+  ready_event.wait(timeout=t)
 
 
 def run(cmd, cwd=None):
@@ -254,7 +247,7 @@ def main():
   if params.get("DisableUpdates") == b"1":
     raise RuntimeError("updates are disabled by param")
 
-  if not os.geteuid() == 0:
+  if os.geteuid() != 0:
     raise RuntimeError("updated must be launched as root!")
 
   # Set low io priority
