@@ -3,10 +3,6 @@ from cereal import car
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-def subaru_preglobal_checksum(packer, values, addr):
-  dat = packer.make_can_msg(addr, 0, values)[2]
-  return (sum(dat[:7])) % 256
-
 def create_steering_control(packer, apply_steer, frame, steer_step):
 
   idx = (frame / steer_step) % 16
@@ -17,19 +13,6 @@ def create_steering_control(packer, apply_steer, frame, steer_step):
     "LKAS_Request": 1 if apply_steer != 0 else 0,
     "SET_1": 1
   }
-
-  return packer.make_can_msg("ES_LKAS", 0, values)
-
-def create_preglobal_steering_control(packer, apply_steer, frame, steer_step):
-
-  idx = (frame / steer_step) % 8
-
-  values = {
-    "Counter": idx,
-    "LKAS_Command": apply_steer,
-    "LKAS_Active": 1 if apply_steer != 0 else 0
-  }
-  values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_LKAS")
 
   return packer.make_can_msg("ES_LKAS", 0, values)
 
@@ -54,6 +37,25 @@ def create_es_lkas(packer, es_lkas_msg, visual_alert, left_line, right_line):
   values["LKAS_Right_Line_Visible"] = int(right_line)
 
   return packer.make_can_msg("ES_LKAS_State", 0, values)
+
+# *** Subaru Pre-global ***
+
+def subaru_preglobal_checksum(packer, values, addr):
+  dat = packer.make_can_msg(addr, 0, values)[2]
+  return (sum(dat[:7])) % 256
+
+def create_preglobal_steering_control(packer, apply_steer, frame, steer_step):
+
+  idx = (frame / steer_step) % 8
+
+  values = {
+    "Counter": idx,
+    "LKAS_Command": apply_steer,
+    "LKAS_Active": 1 if apply_steer != 0 else 0
+  }
+  values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_LKAS")
+
+  return packer.make_can_msg("ES_LKAS", 0, values)
 
 def create_es_throttle_control(packer, fake_button, es_accel_msg):
 
