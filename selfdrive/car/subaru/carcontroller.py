@@ -30,7 +30,7 @@ class CarController():
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line):
 
     can_sends = []
-    
+
     # *** steering ***
     if (frame % self.params.STEER_STEP) == 0:
 
