@@ -26,7 +26,6 @@ import os
 import datetime
 import subprocess
 import psutil
-from stat import S_ISREG, S_ISDIR, S_ISLNK, S_IMODE, ST_MODE, ST_INO, ST_UID, ST_GID, ST_ATIME, ST_MTIME
 import shutil
 import signal
 from pathlib import Path
@@ -190,73 +189,6 @@ def init_ovfs():
 
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
-
-
-def inodes_in_tree(search_dir):
-  """Given a search root, produce a dictionary mapping of inodes to relative
-  pathnames of regular files (no directories, symlinks, or special files)."""
-  inode_map = {}
-  for root, _, files in os.walk(search_dir, topdown=True):
-    for file_name in files:
-      full_path_name = os.path.join(root, file_name)
-      st = os.lstat(full_path_name)
-      if S_ISREG(st[ST_MODE]):
-        inode_map[st[ST_INO]] = full_path_name
-  return inode_map
-
-
-def dup_ovfs_object(inode_map, source_obj, target_dir):
-  """Given a relative pathname to copy, and a new target root, duplicate the
-  source object in the target root, using hardlinks for regular files."""
-
-  source_full_path = os.path.join(OVERLAY_MERGED, source_obj)
-  st = os.lstat(source_full_path)
-  target_full_path = os.path.join(target_dir, source_obj)
-
-  if S_ISREG(st[ST_MODE]):
-    # Hardlink all regular files; ownership and permissions are shared.
-    link(inode_map[st[ST_INO]], target_full_path)
-  else:
-    # Recreate all directories and symlinks; copy ownership and permissions.
-    if S_ISDIR(st[ST_MODE]):
-      os.mkdir(os.path.join(FINALIZED, source_obj), S_IMODE(st[ST_MODE]))
-    elif S_ISLNK(st[ST_MODE]):
-      os.symlink(os.readlink(source_full_path), target_full_path)
-      os.chmod(target_full_path, S_IMODE(st[ST_MODE]), follow_symlinks=False)
-    else:
-      # Ran into a FIFO, socket, etc. Should not happen in OP install dir.
-      # Ignore without copying for the time being; revisit later if needed.
-      cloudlog.error("can't copy this file type: %s" % source_full_path)
-    os.chown(target_full_path, st[ST_UID], st[ST_GID], follow_symlinks=False)
-
-  # Sync target mtimes to the cached lstat() value from each source object.
-  # Restores shared inode mtimes after linking, fixes symlinks and dirs.
-  os.utime(target_full_path, (st[ST_ATIME], st[ST_MTIME]), follow_symlinks=False)
-
-
-def finalize_from_ovfs_hardlink():
-  """Take the current OverlayFS merged view and finalize a copy outside of
-  OverlayFS, ready to be swapped-in at BASEDIR. Copy using hardlinks"""
-
-  cloudlog.info("creating finalized version of the overlay")
-
-  # The "copy" is done with hardlinks, but since the OverlayFS merge looks
-  # like a different filesystem, and hardlinks can't cross filesystems, we
-  # have to borrow a source pathname from the upper or lower layer.
-  inode_map = inodes_in_tree(BASEDIR)
-  inode_map.update(inodes_in_tree(OVERLAY_UPPER))
-
-  shutil.rmtree(FINALIZED)
-  os.umask(0o077)
-  os.mkdir(FINALIZED)
-  for root, dirs, files in os.walk(OVERLAY_MERGED, topdown=True):
-    for obj_name in dirs:
-      relative_path_name = os.path.relpath(os.path.join(root, obj_name), OVERLAY_MERGED)
-      dup_ovfs_object(inode_map, relative_path_name, FINALIZED)
-    for obj_name in files:
-      relative_path_name = os.path.relpath(os.path.join(root, obj_name), OVERLAY_MERGED)
-      dup_ovfs_object(inode_map, relative_path_name, FINALIZED)
-  cloudlog.info("done finalizing overlay")
 
 
 def finalize_from_ovfs_copy():
