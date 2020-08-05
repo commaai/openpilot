@@ -31,7 +31,6 @@ import signal
 from pathlib import Path
 import fcntl
 import threading
-import time
 from cffi import FFI
 
 from common.basedir import BASEDIR
@@ -56,10 +55,9 @@ def link(src, dest):
 
 
 class WaitTimeHelper:
-  ready_event = threading.Event()
-  shutdown = False
-
   def __init__(self):
+    self.ready_event = threading.Event()
+    self.shutdown = False
     signal.signal(signal.SIGTERM, self.graceful_shutdown)
     signal.signal(signal.SIGINT, self.graceful_shutdown)
     signal.signal(signal.SIGHUP, self.update_now)
@@ -75,10 +73,9 @@ class WaitTimeHelper:
     cloudlog.info("caught SIGHUP, running update check immediately")
     self.ready_event.set()
 
-
-def wait_between_updates(ready_event, t=60*10):
-  ready_event.clear()
-  ready_event.wait(timeout=t)
+  def sleep(self, t):
+    self.ready_event.clear()
+    self.ready_event.wait(timeout=t)
 
 
 def run(cmd, cwd=None):
@@ -257,10 +254,9 @@ def main():
   except IOError:
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
-  # Wait a short time before our first update attempt
-  # Avoids race with IsOffroad not being set, reduces manager startup load
-  time.sleep(30)
+  # Wait for IsOffroad to be set before our first update attempt
   wait_helper = WaitTimeHelper()
+  wait_helper.sleep(30)
 
   while not wait_helper.shutdown:
     update_failed_count += 1
@@ -269,7 +265,7 @@ def main():
     time_wrong = datetime.datetime.utcnow().year < 2019
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
     if ping_failed or time_wrong:
-      wait_between_updates(wait_helper.ready_event, t=30)
+      wait_helper.sleep(30)
       continue
 
     # Attempt an update
@@ -307,7 +303,7 @@ def main():
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
     params.put("UpdateFailedCount", str(update_failed_count))
-    wait_between_updates(wait_helper.ready_event)
+    wait_helper.sleep(60*10)
 
   # We've been signaled to shut down
   dismount_ovfs()
