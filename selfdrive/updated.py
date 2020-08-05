@@ -42,7 +42,8 @@ from selfdrive.swaglog import cloudlog
 
 LOCK_FILE = "/tmp/safe_staging_overlay.lock"
 STAGING_ROOT = "/data/safe_staging"
-if os.getenv("UPDATER_TESTING") is not None:
+UPDATER_TESTING = os.getenv("UPDATER_TESTING") is not None
+if UPDATER_TESTING:
   LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", LOCK_FILE)
   STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", STAGING_ROOT)
 
@@ -334,7 +335,11 @@ def main():
 
     # Check for internet every 30s
     time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = os.system("ping -W 4 -c 1 8.8.8.8") != 0
+    # can't ping in CI
+    if UPDATER_TESTING:
+      ping_failed = False
+    else:
+      ping_failed = os.system("ping -W 4 -c 1 8.8.8.8") != 0
     if ping_failed or time_wrong:
       ready_event.wait(30)
       continue
