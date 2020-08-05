@@ -53,14 +53,11 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 
-# Workaround for the EON/termux build of Python having os.link removed.
+# Workaround for the NEOS/termux build of Python having os.link removed.
 ffi = FFI()
 ffi.cdef("int link(const char *oldpath, const char *newpath);")
 libc = ffi.dlopen(None)
-
-
 def link(src, dest):
-  # Workaround for the EON/termux build of Python having os.link removed.
   return libc.link(src.encode(), dest.encode())
 
 
@@ -107,7 +104,7 @@ def dismount_ovfs():
 
 
 def setup_git_options(cwd):
-  # We sync FS object atimes (which EON doesn't use) and mtimes, but ctimes
+  # We sync FS object atimes (which NEOS doesn't use) and mtimes, but ctimes
   # are outside user control. Make sure Git is set up to ignore system ctimes,
   # because they change when we make hard links during finalize. Otherwise,
   # there is a lot of unnecessary churn. This appears to be a common need on
@@ -154,7 +151,7 @@ def init_ovfs():
   if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
     os.remove(os.path.join(BASEDIR, ".overlay_consistent"))
 
-  # Leave a timestamped canary in BASEDIR to check at startup. The EON clock
+  # Leave a timestamped canary in BASEDIR to check at startup. The device clock
   # should be correct by the time we get here. If the init file disappears, or
   # critical mtimes in BASEDIR are newer than .overlay_init, continue.sh can
   # assume that BASEDIR has used for local development or otherwise modified,

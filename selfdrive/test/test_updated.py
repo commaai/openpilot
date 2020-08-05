@@ -58,7 +58,6 @@ class TestUpdater(unittest.TestCase):
     except Exception as e:
       print(e)
     self.tmp_dir.cleanup()
-    os.sync()
 
   def _run(self, cmd, cwd=None):
     if not isinstance(cmd, list):
@@ -105,7 +104,7 @@ class TestUpdater(unittest.TestCase):
     self.assertEqual(update == b"1", available)
 
   # Run updated for 50 cycles with no update
-  #@unittest.skip("remove when done writing tests")
+  @unittest.skip("remove when done writing tests")
   def test_no_update(self):
     self.params.put("IsOffroad", "1")
     self._start_updater()
@@ -121,7 +120,7 @@ class TestUpdater(unittest.TestCase):
       self._check_failed_updates()
 
   # Let the updater run with no update for a cycle, then write an update
-  #@unittest.skip("remove when done writing tests")
+  @unittest.skip("remove when done writing tests")
   def test_update(self):
     self.params.put("IsOffroad", "1")
     self._start_updater()
@@ -145,28 +144,34 @@ class TestUpdater(unittest.TestCase):
       "git commit --allow-empty -m 'an update'",
     ], cwd=self.git_remote_dir)
 
-    # TODO: why does the sync in set_consistent_flag take forever sometimes?
     self._wait_for_update(timeout=60, clear_param=True)
     time.sleep(0.1)
     self._check_update_time()
     self._assert_update_available(True)
     self._check_failed_updates()
 
-  #def test_overlay_reinit(self):
-  #  self.params.put("IsOffroad", "1")
-  #  slef._start_updater()
-  #
-  #  time.sleep(2)
-  #
-  #  # let updater run for a cycle
-  #  self._update_now()
-  #
-  #  # make sure the overlay was initialized
-  #  start_time = time.monotonic()
-  #  while params
-  #    if time.monotonic() - start_time > 60:
-  #      pass
+  # Test overlay re-creation after touching basedir's git
+  @unittest.skip("remove when done writing tests")
+  def test_overlay_reinit(self):
+    self.params.put("IsOffroad", "1")
+    self._start_updater()
+  
+    time.sleep(2)
 
+    overlay_init_fn = os.path.join(self.basedir, ".overlay_init")
+
+    # run for a cycle with no update
+    self._wait_for_update(clear_param=True)
+    self.params.delete("LastUpdateTime")
+    first_mtime = os.path.getmtime(overlay_init_fn)
+
+    # touch a file in the basedir
+    self._run("touch new_file && git add new_file", cwd=self.basedir)
+
+    # run another cycle and check mtime
+    self._wait_for_update(clear_param=True)
+    new_mtime = os.path.getmtime(overlay_init_fn)
+    self.assertTrue(first_mtime != new_mtime)
 
   #def test_release_notes(self):
   #  pass
