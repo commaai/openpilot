@@ -112,7 +112,6 @@ jobs:
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
                     coverage run selfdrive/test/test_fingerprints.py && \
-                    coverage run --append selfdrive/test/test_updated.py && \
                     $UNIT_TEST common && \
                     $UNIT_TEST opendbc/can && \
                     $UNIT_TEST selfdrive/boardd && \
@@ -122,7 +121,10 @@ jobs:
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
-                    $UNIT_TEST tools/lib/tests"
+                    $UNIT_TEST tools/lib/tests && \
+
+                    git init && git add -A && git commit -m 'this is a commit' && \
+                    coverage run --append selfdrive/test/test_updated.py"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci

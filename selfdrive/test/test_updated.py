@@ -54,8 +54,8 @@ class TestUpdater(unittest.TestCase):
     try:
       self.updated_proc.terminate()
       self.updated_proc.wait(30)
-    except Exception:
-      pass
+    except Exception as e:
+      print(e)
     self.tmp_dir.cleanup()
     os.sync()
 
@@ -104,7 +104,7 @@ class TestUpdater(unittest.TestCase):
     self.assertEqual(update == b"1", available)
 
   # Run updated for 50 cycles with no update
-  @unittest.skip("remove when done writing tests")
+  #@unittest.skip("remove when done writing tests")
   def test_no_update(self):
     self.params.put("IsOffroad", "1")
     self._start_updater()
