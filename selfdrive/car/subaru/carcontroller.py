@@ -34,7 +34,7 @@ class CarController():
     # *** steering ***
     if (frame % self.params.STEER_STEP) == 0:
 
-      apply_steer = int(round(actuators.steer * P.STEER_MAX))
+      apply_steer = int(round(actuators.steer * self.params.STEER_MAX))
 
       # limits due to driver torque
 
