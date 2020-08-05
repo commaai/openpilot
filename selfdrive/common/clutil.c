@@ -37,7 +37,9 @@ void clu_init(void) {
 }
 
 cl_device_id cl_get_device_id(cl_device_type device_type) {
-  cl_device_id device_id;
+  bool opencl_platform_found = false;
+  cl_device_id device_id = NULL;
+  
   cl_uint num_platforms = 0;
   int err = clGetPlatformIDs(0, NULL, &num_platforms);
   assert(err == 0);
@@ -46,11 +48,10 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   assert(err == 0);
 
   char cBuffer[1024];
-  size_t i = 0;
-  for (; i < num_platforms; i++) {
+  for (size_t i = 0; i < num_platforms; i++) {
     err = clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
     assert(err == 0);
-    printf("platform[%zu] CL_PLATFORM_NAME: %s", i, cBuffer);
+    printf("platform[%zu] CL_PLATFORM_NAME: %s\n", i, cBuffer);
 
     cl_uint num_devices;
     err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
@@ -61,11 +62,15 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
     err = clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL);
     assert(err == 0);
     cl_print_info(platform_ids[i], device_id);
-    printf("\n");
+    opencl_platform_found = true;
     break;
   }
   free(platform_ids);
-  assert(i < num_platforms);
+  
+  if (!opencl_platform_found) {
+    printf("No valid openCL platform found\n");
+    assert(opencl_platform_found);
+  }
   return device_id;
 }
 
