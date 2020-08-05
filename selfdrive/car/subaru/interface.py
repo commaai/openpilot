@@ -26,7 +26,7 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = True
 
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
-    
+
     # force openpilot to fake the stock camera, since car harness is not supported yet and old style giraffe (with switches)
     # was never released
     ret.enableCamera = True
