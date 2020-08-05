@@ -64,8 +64,10 @@ pipeline {
 
         stage('On-device Tests') {
           agent {
-            image 'python:3.7.3'
-            args '--user=root'
+            docker {
+              image 'python:3.7.3'
+              args '--user=root'
+            }
           }
           stages {
 
