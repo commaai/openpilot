@@ -56,12 +56,14 @@ pipeline {
           stages {
             stage('Build') {
               steps {
+                sh 'whoami'
                 sh 'scons -j4'
               }
             }
           }
         }
 
+        /*
         stage('On-device Tests') {
           agent {
             docker {
@@ -117,6 +119,7 @@ pipeline {
           }
 
         }
+        */
 
       }
     }
