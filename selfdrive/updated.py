@@ -131,27 +131,23 @@ def setup_git_options(cwd):
   # because they change when we make hard links during finalize. Otherwise,
   # there is a lot of unnecessary churn. This appears to be a common need on
   # OSX as well: https://www.git-tower.com/blog/make-git-rebase-safe-on-osx/
-  try:
-    trustctime = run(["git", "config", "--get", "core.trustctime"], cwd)
-    trustctime_set = (trustctime.strip() == "false")
-  except subprocess.CalledProcessError:
-    trustctime_set = False
 
-  if not trustctime_set:
-    cloudlog.info("Setting core.trustctime false")
-    run(["git", "config", "core.trustctime", "false"], cwd)
-
-  # We are temporarily using copytree to copy the directory, which also changes
+  # We are using copytree to copy the directory, which also changes
   # inode numbers. Ignore those changes too.
-  try:
-    checkstat = run(["git", "config", "--get", "core.checkStat"], cwd)
-    checkstat_set = (checkstat.strip() == "minimal")
-  except subprocess.CalledProcessError:
-    checkstat_set = False
+  git_cfg = [
+    ("core.trustctime", "false"),
+    ("core.checkStat", "minimal"),
+  ]
+  for option, value in git_cfg:
+    try:
+      ret = run(["git", "config", "--get", option], cwd)
+      config_ok = (ret.strip() == value)
+    except subprocess.CalledProcessError:
+      config_ok = False
 
-  if not checkstat_set:
-    cloudlog.info("Setting core.checkState minimal")
-    run(["git", "config", "core.checkStat", "minimal"], cwd)
+    if not config_ok:
+      cloudlog.info(f"Setting '{option}' to '{value}'")
+      run(["git", "config", option, value], cwd)
 
 
 def init_ovfs():
