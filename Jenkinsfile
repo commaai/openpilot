@@ -53,6 +53,9 @@ pipeline {
               args '--privileged --shm-size=1G --user=root'
             }
           }
+          options {
+            skipDefaultCheckout true
+          }
           stages {
             stage('Build') {
               steps {
@@ -63,6 +66,7 @@ pipeline {
           post {
             always {
               // need to do this since container runs as root
+              sh "chmod -R 777 ."
               cleanWs()
             }
           }
