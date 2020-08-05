@@ -50,17 +50,15 @@ pipeline {
           agent {
             dockerfile {
               filename 'Dockerfile.openpilot'
-              additionalBuildArgs '--cache-from docker.io/commaai/openpilotci:latest'
               args '--privileged --shm-size 1G'
             }
           }
-          steps {
-            sh 'scons -j4'
+          stages {
+            stage('Build') {
+              sh 'scons -j4'
+            }
           }
         }
-
-        // *** On-device Tests ***
-
 
         stage('On-device Tests') {
           agent {
