@@ -77,7 +77,7 @@ def set_consistent_flag():
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
   os.system("sync")
   consistent_file.touch()
-  os.sync()
+  os.system("sync")
 
 
 def set_update_available_params(new_version=False):

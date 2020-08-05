@@ -16,11 +16,6 @@ class TestUpdater(unittest.TestCase):
   def setUp(self):
     self.updated_proc = None
 
-    try:
-      os.remove("/tmp/safe_staging_overlay.lock")
-    except Exception:
-      pass
-
     self.tmp_dir = tempfile.TemporaryDirectory()
     org_dir = os.path.join(self.tmp_dir.name, "commaai")
 
@@ -47,7 +42,6 @@ class TestUpdater(unittest.TestCase):
 
     self.params = Params(db=os.path.join(self.basedir, "persist/params"))
     self.params.clear_all()
-
     os.sync()
 
   def tearDown(self):
@@ -73,8 +67,9 @@ class TestUpdater(unittest.TestCase):
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
     updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
     return subprocess.Popen(updated_path, env=os.environ)
-   
-  def _start_updater(self):
+
+  def _start_updater(self, offroad=True):
+    self.params.put("IsOffroad", "1" if offroad else "0")
     self.updated_proc = self._get_updated_proc()
 
   def _update_now(self):
@@ -91,6 +86,13 @@ class TestUpdater(unittest.TestCase):
         raise Exception("timed out waiting for update to complate")
       time.sleep(0.05)
 
+  def _make_commit(self):
+    self._run([
+      "git config user.email tester@testing.com",
+      "git config user.name Testy Tester",
+      "git commit --allow-empty -m 'an update'",
+    ], cwd=self.git_remote_dir)
+
   def _check_update_time(self):
     # make sure LastUpdateTime is recent
     t = self.params.get("LastUpdateTime", encoding='utf8')
@@ -104,12 +106,11 @@ class TestUpdater(unittest.TestCase):
 
   def _assert_update_available(self, available):
     update = self.params.get("UpdateAvailable")
-    self.assertEqual(update == b"1", available)
+    self.assertEqual(update == b"1", available, f"UpdateAvailable: '{repr(update)}'")
 
   # Run updated for 50 cycles with no update
-  @unittest.skip("remove when done writing tests")
+  #@unittest.skip("remove when done writing tests")
   def test_no_update(self):
-    self.params.put("IsOffroad", "1")
     self._start_updater()
     time.sleep(2)
 
@@ -123,9 +124,8 @@ class TestUpdater(unittest.TestCase):
       self._check_failed_updates()
 
   # Let the updater run with no update for a cycle, then write an update
-  @unittest.skip("remove when done writing tests")
+  #@unittest.skip("remove when done writing tests")
   def test_update(self):
-    self.params.put("IsOffroad", "1")
     self._start_updater()
     time.sleep(2)
 
@@ -140,12 +140,8 @@ class TestUpdater(unittest.TestCase):
 
     self.params.delete("LastUpdateTime")
 
-    # make a commit in our remote
-    self._run([
-      "git config user.email tester@testing.com",
-      "git config user.name Testy Tester",
-      "git commit --allow-empty -m 'an update'",
-    ], cwd=self.git_remote_dir)
+    # write an update to our remote
+    self._make_commit()
 
     self._wait_for_update(timeout=60, clear_param=True)
     time.sleep(0.1)
@@ -153,10 +149,30 @@ class TestUpdater(unittest.TestCase):
     self._assert_update_available(True)
     self._check_failed_updates()
 
-  # Test overlay re-creation after touching basedir's git
+  # Let the updater run for 10 cycle, and write an update every cycle
   @unittest.skip("remove when done writing tests")
+  def test_update_loop(self):
+    self._start_updater()
+    time.sleep(2)
+
+    # run for a cycle with no update
+    self._wait_for_update(clear_param=True)
+
+    for _ in range(10):
+      time.sleep(0.5)
+      self._make_commit()
+      self._wait_for_update(timeout=60, clear_param=True)
+
+      # give a bit of time to write all the params
+      time.sleep(0.2)
+      self._check_update_time()
+      self._assert_update_available(True)
+      self._check_failed_updates()
+      self.params.delete("UpdateAvailable")
+
+  # Test overlay re-creation after touching basedir's git
+  #@unittest.skip("remove when done writing tests")
   def test_overlay_reinit(self):
-    self.params.put("IsOffroad", "1")
     self._start_updater()
 
     time.sleep(2)
@@ -177,10 +193,9 @@ class TestUpdater(unittest.TestCase):
     self.assertTrue(first_mtime != new_mtime)
 
   # Make sure updated exits if another instance is running
-  @unittest.skip("remove when done writing tests")
+  #@unittest.skip("remove when done writing tests")
   def test_multiple_instances(self):
     # start updated and let it run for a cycle
-    self.params.put("IsOffroad", "1")
     self._start_updater()
     time.sleep(1)
     self._wait_for_update(clear_param=True)
@@ -189,12 +204,6 @@ class TestUpdater(unittest.TestCase):
     second_updated = self._get_updated_proc()
     ret_code = second_updated.wait(timeout=5)
     self.assertTrue(ret_code is not None)
-
-  #def test_release_notes(self):
-  #  pass
-
-  #def test_only_one_updated(self):
-  #  pass
 
 if __name__ == "__main__":
   unittest.main()
