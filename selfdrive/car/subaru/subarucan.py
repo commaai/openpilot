@@ -1,6 +1,5 @@
 import copy
 from cereal import car
-from selfdrive.car.subaru.values import PREGLOBAL_CARS
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
