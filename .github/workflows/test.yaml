@@ -121,12 +121,7 @@ jobs:
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
-                    $UNIT_TEST tools/lib/tests && \
-
-                    git init && git add -A && \
-                    git config user.email 'tester@testing.com' && git config user.name 'Testy Tester' && \
-                    git commit -m 'this is a commit' && \
-                    coverage run --append selfdrive/test/test_updated.py"
+                    $UNIT_TEST tools/lib/tests"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
