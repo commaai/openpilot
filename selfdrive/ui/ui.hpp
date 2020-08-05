@@ -1,26 +1,10 @@
 #pragma once
-#include "messaging.hpp"
-
-#ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#define NANOVG_GL3_IMPLEMENTATION
-#define nvgCreate nvgCreateGL3
-#else
-#include <GLES3/gl3.h>
-#include <EGL/egl.h>
-#define NANOVG_GLES3_IMPLEMENTATION
-#define nvgCreate nvgCreateGLES3
-#endif
 #include <atomic>
 #include <pthread.h>
-#include "nanovg.h"
 
-#include "common/mat.h"
-#include "common/visionipc.h"
-#include "common/visionimg.h"
-#include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "sound.hpp"
+#include "uicommon.hpp"
 
 #define STATUS_STOPPED 0
 #define STATUS_DISENGAGED 1
@@ -40,26 +24,9 @@
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
 #define COLOR_OCHRE nvgRGBA(218, 111, 37, 255)
 
-#ifndef QCOM
-  #define UI_60FPS
-#endif
-
-#define UI_BUF_COUNT 4
 //#define SHOW_SPEEDLIMIT 1
 //#define DEBUG_TURN
 
-const int vwp_w = 1920;
-const int vwp_h = 1080;
-const int nav_w = 640;
-const int nav_ww= 760;
-const int sbr_w = 300;
-const int bdr_s = 30;
-const int box_x = sbr_w+bdr_s;
-const int box_y = bdr_s;
-const int box_w = vwp_w-sbr_w-(bdr_s*2);
-const int box_h = vwp_h-(bdr_s*2);
-const int viz_w = vwp_w-(bdr_s*2);
-const int ff_xoffset = 32;
 const int header_h = 420;
 const int footer_h = 280;
 const int footer_y = vwp_h-bdr_s-footer_h;
@@ -103,7 +70,6 @@ typedef struct UIScene {
   float speedlimit;
   bool speedlimit_valid;
 
-  bool is_rhd;
   bool map_valid;
   bool uilayout_sidebarcollapsed;
   bool uilayout_mapenabled;
@@ -124,7 +90,6 @@ typedef struct UIScene {
   cereal::ThermalData::Reader thermal;
   cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::ControlsState::Reader controls_state;
-  cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
 } UIScene;
 
@@ -144,13 +109,6 @@ typedef struct {
 
 
 typedef struct UIState {
-  pthread_mutex_t lock;
-
-  // framebuffer
-  FramebufferState *fb;
-  int fb_w, fb_h;
-
-  // NVG
   NVGcontext *vg;
 
   // fonts and images
@@ -172,35 +130,9 @@ typedef struct UIState {
   PubMaster *pm;
 
   cereal::UiLayoutState::App active_app;
-
-  // vision state
-  bool vision_connected;
-  bool vision_connect_firstrun;
-  int ipc_fd;
-
-  VIPCBuf bufs[UI_BUF_COUNT];
-  VIPCBuf front_bufs[UI_BUF_COUNT];
-  int cur_vision_idx;
-  int cur_vision_front_idx;
-
-  GLuint frame_program;
-  GLuint frame_texs[UI_BUF_COUNT];
-  EGLImageKHR khr[UI_BUF_COUNT];
-  void *priv_hnds[UI_BUF_COUNT];
-  GLuint frame_front_texs[UI_BUF_COUNT];
-  EGLImageKHR khr_front[UI_BUF_COUNT];
-  void *priv_hnds_front[UI_BUF_COUNT];
-
-  GLint frame_pos_loc, frame_texcoord_loc;
-  GLint frame_texture_loc, frame_transform_loc;
-
-  int rgb_width, rgb_height, rgb_stride;
-  size_t rgb_buf_len;
-
-  int rgb_front_width, rgb_front_height, rgb_front_stride;
-  size_t rgb_front_buf_len;
-
+  UIVision vision;
   UIScene scene;
+
   bool awake;
 
   // timeouts
@@ -225,14 +157,10 @@ typedef struct UIState {
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
-  bool vision_seen;
 
   std::atomic<float> light_sensor;
 
   int touch_fd;
-
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
 
   model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 
@@ -246,7 +174,4 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
                           const char* va_text1, const char* va_text2);
 void ui_draw(UIState *s);
 void ui_draw_sidebar(UIState *s);
-void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha);
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r = 0, int width = 0);
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r = 0);
 void ui_nvg_init(UIState *s);

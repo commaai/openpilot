@@ -324,6 +324,7 @@ selfdrive/ui/SConscript
 selfdrive/ui/*.cc
 selfdrive/ui/*.hpp
 selfdrive/ui/ui
+selfdrive/ui/driverview
 selfdrive/ui/spinner/Makefile
 selfdrive/ui/spinner/spinner
 selfdrive/ui/spinner/spinner.c

@@ -4,14 +4,7 @@
 #include <cmath>
 #include "common/util.h"
 
-#define NANOVG_GLES3_IMPLEMENTATION
-
 #include "nanovg_gl.h"
-#include "nanovg_gl_utils.h"
-
-extern "C"{
-#include "common/glutil.h"
-}
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 const mat3 intrinsic_matrix = (mat3){{
@@ -93,21 +86,6 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgClosePath(s->vg);
   nvgFillColor(s->vg, fillColor);
   nvgFill(s->vg);
-}
-
-static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int image, NVGcolor color, float img_alpha, int img_y = 0) {
-  const int img_size = size * 1.5;
-  nvgBeginPath(vg);
-  nvgCircle(vg, x, y + (bdr_s * 1.5), size);
-  nvgFillColor(vg, color);
-  nvgFill(vg);
-  ui_draw_image(vg, x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size, image, img_alpha);
-}
-
-static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int image, bool active) {
-  float bg_alpha = active ? 0.3f : 0.1f;
-  float img_alpha = active ? 1.0f : 0.15f;
-  ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
 static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &lead){
@@ -204,7 +182,6 @@ static void update_all_track_data(UIState *s) {
   }
 }
 
-
 static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
  if (pvd->cnt == 0) return;
 
@@ -230,46 +207,8 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
   nvgFill(s->vg);
 }
 
-static void draw_frame(UIState *s) {
-  const UIScene *scene = &s->scene;
-
-  if (s->scene.frontview) {
-    glBindVertexArray(s->frame_vao[1]);
-  } else {
-    glBindVertexArray(s->frame_vao[0]);
-  }
-
-  mat4 *out_mat;
-  if (s->scene.frontview || s->scene.fullview) {
-    out_mat = &s->front_frame_mat;
-  } else {
-    out_mat = &s->rear_frame_mat;
-  }
-  glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
-  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
-    #ifndef QCOM
-      // TODO: a better way to do this?
-      //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
-    #endif
-  }
-
-  glUseProgram(s->frame_program);
-  glUniform1i(s->frame_texture_loc, 0);
-  glUniformMatrix4fv(s->frame_transform_loc, 1, GL_TRUE, out_mat->v);
-
-  assert(glGetError() == GL_NO_ERROR);
-  glEnableVertexAttribArray(0);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void*)0);
-  glDisableVertexAttribArray(0);
-  glBindVertexArray(0);
-}
-
 static inline bool valid_frame_pt(UIState *s, float x, float y) {
-  return x >= 0 && x <= s->rgb_width && y >= 0 && y <= s->rgb_height;
+  return x >= 0 && x <= s->vision.rgb_width && y >= 0 && y <= s->vision.rgb_height;
 
 }
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
@@ -359,11 +298,11 @@ static void ui_draw_world(UIState *s) {
   nvgScissor(s->vg, ui_viz_rx, box_y, ui_viz_rw, box_h);
 
   nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
-  nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
+  nvgScale(s->vg, (float)viz_w / s->vision.fb_w, (float)inner_height / s->vision.fb_h);
   nvgTranslate(s->vg, 240.0f, 0.0);
   nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
   nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+  nvgScale(s->vg, 1440.0f / s->vision.rgb_width, 1080.0f / s->vision.rgb_height);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
@@ -563,55 +502,6 @@ static void ui_draw_vision_face(UIState *s) {
   ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.dmonitoring_state.getFaceDetected());
 }
 
-static void ui_draw_driver_view(UIState *s) {
-  const UIScene *scene = &s->scene;
-  s->scene.uilayout_sidebarcollapsed = true;
-  const int frame_x = scene->ui_viz_rx;
-  const int frame_w = scene->ui_viz_rw;
-  const int valid_frame_w = 4 * box_h / 3;
-  const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
-
-  // blackout
-  NVGpaint gradient = nvgLinearGradient(s->vg, scene->is_rhd ? valid_frame_x : (valid_frame_x + valid_frame_w),
-                                        box_y,
-                                        scene->is_rhd ? (valid_frame_w - box_h / 2) : (valid_frame_x + box_h / 2), box_y,
-                                        COLOR_BLACK, COLOR_BLACK_ALPHA(0));
-  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : (valid_frame_x + box_h / 2), box_y, valid_frame_w - box_h / 2, box_h, gradient);
-  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
-
-  // borders
-  ui_draw_rect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h, nvgRGBA(23, 51, 73, 255));
-  ui_draw_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
-
-  // draw face box
-  if (scene->dmonitoring_state.getFaceDetected()) {
-    auto fxy_list = scene->driver_state.getFacePosition();
-    const float face_x = fxy_list[0];
-    const float face_y = fxy_list[1];
-    float fbox_x;
-    float fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
-    if (!scene->is_rhd) {
-      fbox_x = valid_frame_x + (1 - (face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
-    } else {
-      fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
-    }
-
-    if (std::abs(face_x) <= 0.35 && std::abs(face_y) <= 0.4) {
-      ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2,
-                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((std::abs(face_x) > std::abs(face_y) ? std::abs(face_x) : std::abs(face_y))) * 0.6 / 0.375),
-                   35, 10);
-    } else {
-      ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 35, 10);
-    }
-  }
-
-  // draw face icon
-  const int face_size = 85;
-  const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
-  const int y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->dmonitoring_state.getFaceDetected());
-}
-
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -695,31 +585,27 @@ static void ui_draw_vision(UIState *s) {
 
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
-  glViewport(scene->ui_viz_rx+scene->ui_viz_ro, s->fb_h-(box_y+box_h), viz_w, box_h);
-  glScissor(scene->ui_viz_rx, s->fb_h-(box_y+box_h), scene->ui_viz_rw, box_h);
-  draw_frame(s);
+  glViewport(scene->ui_viz_rx+scene->ui_viz_ro, s->vision.fb_h-(box_y+box_h), viz_w, box_h);
+  glScissor(scene->ui_viz_rx, s->vision.fb_h-(box_y+box_h), scene->ui_viz_rw, box_h);
+  s->vision.draw_frame();
   glDisable(GL_SCISSOR_TEST);
 
-  glViewport(0, 0, s->fb_w, s->fb_h);
+  glViewport(0, 0, s->vision.fb_w, s->vision.fb_h);
 
   // Draw augmented elements
-  if (!scene->frontview && !scene->fullview) {
+  if (!scene->fullview) {
     ui_draw_world(s);
   }
 
   // Set Speed, Current Speed, Status/Events
-  if (!scene->frontview) {
-    ui_draw_vision_header(s);
-  } else {
-    ui_draw_driver_view(s);
-  }
+  ui_draw_vision_header(s);
 
   if (scene->alert_size != cereal::ControlsState::AlertSize::NONE) {
     // Controls Alerts
     ui_draw_vision_alert(s, scene->alert_size, s->status,
                             scene->alert_text1.c_str(), scene->alert_text2.c_str());
   } else {
-    if (!scene->frontview){ui_draw_vision_footer(s);}
+    ui_draw_vision_footer(s);
   }
 }
 
@@ -736,107 +622,15 @@ void ui_draw(UIState *s) {
   ui_draw_background(s);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glViewport(0, 0, s->fb_w, s->fb_h);
-  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
+  glViewport(0, 0, s->vision.fb_w, s->vision.fb_h);
+  nvgBeginFrame(s->vg, s->vision.fb_w, s->vision.fb_h, 1.0f);
   ui_draw_sidebar(s);
-  if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED && s->vision_seen) {
+  if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED) {
     ui_draw_vision(s);
   }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
-
-void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha){
-  nvgBeginPath(vg);
-  NVGpaint imgPaint = nvgImagePattern(vg, x, y, w, h, 0, image, alpha);
-  nvgRect(vg, x, y, w, h);
-  nvgFillPaint(vg, imgPaint);
-  nvgFill(vg);
-}
-
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r, int width) {
-  nvgBeginPath(vg);
-  r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
-  if (width) {
-    nvgStrokeColor(vg, color);
-    nvgStrokeWidth(vg, width);
-    nvgStroke(vg);
-  } else {
-    nvgFillColor(vg, color);
-    nvgFill(vg);
-  }
-}
-
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r){
-  nvgBeginPath(vg);
-  r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
-  nvgFillPaint(vg, paint);
-  nvgFill(vg);
-}
-
-#ifdef NANOVG_GL3_IMPLEMENTATION
-static const char frame_vertex_shader[] =
-  "#version 150 core\n"
-  "in vec4 aPosition;\n"
-  "in vec4 aTexCoord;\n"
-  "uniform mat4 uTransform;\n"
-  "out vec4 vTexCoord;\n"
-  "void main() {\n"
-  "  gl_Position = uTransform * aPosition;\n"
-  "  vTexCoord = aTexCoord;\n"
-  "}\n";
-
-static const char frame_fragment_shader[] =
-  "#version 150 core\n"
-  "precision mediump float;\n"
-  "uniform sampler2D uTexture;\n"
-  "in vec4 vTexCoord;\n"
-  "out vec4 colorOut;\n"
-  "void main() {\n"
-  "  colorOut = texture(uTexture, vTexCoord.xy);\n"
-  "}\n";
-#else
-static const char frame_vertex_shader[] =
-  "attribute vec4 aPosition;\n"
-  "attribute vec4 aTexCoord;\n"
-  "uniform mat4 uTransform;\n"
-  "varying vec4 vTexCoord;\n"
-  "void main() {\n"
-  "  gl_Position = uTransform * aPosition;\n"
-  "  vTexCoord = aTexCoord;\n"
-  "}\n";
-
-static const char frame_fragment_shader[] =
-  "precision mediump float;\n"
-  "uniform sampler2D uTexture;\n"
-  "varying vec4 vTexCoord;\n"
-  "void main() {\n"
-  "  gl_FragColor = texture2D(uTexture, vTexCoord.xy);\n"
-  "}\n";
-#endif
-
-static const mat4 device_transform = {{
-  1.0,  0.0, 0.0, 0.0,
-  0.0,  1.0, 0.0, 0.0,
-  0.0,  0.0, 1.0, 0.0,
-  0.0,  0.0, 0.0, 1.0,
-}};
-
-// frame from 4/3 to box size with a 2x zoom
-static const mat4 frame_transform = {{
-  2*(4./3.)/((float)viz_w/box_h), 0.0, 0.0, 0.0,
-  0.0, 2.0, 0.0, 0.0,
-  0.0, 0.0, 1.0, 0.0,
-  0.0, 0.0, 0.0, 1.0,
-}};
-
-// frame from 4/3 to 16/9 display
-static const mat4 full_to_wide_frame_transform = {{
-  .75,  0.0, 0.0, 0.0,
-  0.0,  1.0, 0.0, 0.0,
-  0.0,  0.0, 1.0, 0.0,
-  0.0,  0.0, 0.0, 1.0,
-}};
 
 void ui_nvg_init(UIState *s) {
   // init drawing
@@ -878,71 +672,5 @@ void ui_nvg_init(UIState *s) {
     snprintf(network_asset, sizeof(network_asset), "../assets/images/network_%d.png", i);
     s->img_network[i] = nvgCreateImage(s->vg, network_asset, 1);
     assert(s->img_network[i] != 0);
-  }
-
-  // init gl
-  s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
-  assert(s->frame_program);
-
-  s->frame_pos_loc = glGetAttribLocation(s->frame_program, "aPosition");
-  s->frame_texcoord_loc = glGetAttribLocation(s->frame_program, "aTexCoord");
-
-  s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
-  s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
-
-  glViewport(0, 0, s->fb_w, s->fb_h);
-
-  glDisable(GL_DEPTH_TEST);
-
-  assert(glGetError() == GL_NO_ERROR);
-
-  for(int i = 0; i < 2; i++) {
-    float x1, x2, y1, y2;
-    if (i == 1) {
-      // flip horizontally so it looks like a mirror
-      x1 = 0.0;
-      x2 = 1.0;
-      y1 = 1.0;
-      y2 = 0.0;
-    } else {
-      x1 = 1.0;
-      x2 = 0.0;
-      y1 = 1.0;
-      y2 = 0.0;
-    }
-    const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
-    const float frame_coords[4][4] = {
-      {-1.0, -1.0, x2, y1}, //bl
-      {-1.0,  1.0, x2, y2}, //tl
-      { 1.0,  1.0, x1, y2}, //tr
-      { 1.0, -1.0, x1, y1}, //br
-    };
-
-    glGenVertexArrays(1,&s->frame_vao[i]);
-    glBindVertexArray(s->frame_vao[i]);
-    glGenBuffers(1, &s->frame_vbo[i]);
-    glBindBuffer(GL_ARRAY_BUFFER, s->frame_vbo[i]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(s->frame_pos_loc);
-    glVertexAttribPointer(s->frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(frame_coords[0]), (const void *)0);
-    glEnableVertexAttribArray(s->frame_texcoord_loc);
-    glVertexAttribPointer(s->frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
-    glGenBuffers(1, &s->frame_ibo[i]);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->frame_ibo[i]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER,0);
-    glBindVertexArray(0);
-  }
-
-  s->front_frame_mat = matmul(device_transform, full_to_wide_frame_transform);
-  s->rear_frame_mat = matmul(device_transform, frame_transform);
-
-  for(int i = 0;i < UI_BUF_COUNT; i++) {
-    s->khr[i] = 0;
-    s->priv_hnds[i] = NULL;
-    s->khr_front[i] = 0;
-    s->priv_hnds_front[i] = NULL;
   }
 }

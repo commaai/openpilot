@@ -180,6 +180,7 @@ managed_processes = {
   "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
+  "driverview": ("selfdrive/ui", ["./driverview"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
   "paramsd": "selfdrive.locationd.paramsd",
   "camerad": ("selfdrive/camerad", ["./camerad"]),
@@ -244,7 +245,8 @@ car_started_processes = [
 driver_view_processes = [
   'camerad',
   'dmonitoringd',
-  'dmonitoringmodeld'
+  'dmonitoringmodeld',
+  'driverview'
 ]
 
 if WEBCAM:
