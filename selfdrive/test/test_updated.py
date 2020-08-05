@@ -79,6 +79,9 @@ class TestUpdater(unittest.TestCase):
     if clear_param:
       self.params.delete("LastUpdateTime")
 
+    if os.getenv("CI") is not None:
+      timeout = timeout*2
+
     self._update_now()
     start_time = time.monotonic()
     while self.params.get("LastUpdateTime") is None:

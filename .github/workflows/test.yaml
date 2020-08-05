@@ -126,7 +126,7 @@ jobs:
                     git init && git add -A && \
                     git config user.email 'tester@testing.com' && git config user.name 'Testy Tester' && \
                     git commit -m 'this is a commit' && \
-                    coverage run --append selfdrive/test/test_updated.py"
+                    CI=1 coverage run --append selfdrive/test/test_updated.py"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
