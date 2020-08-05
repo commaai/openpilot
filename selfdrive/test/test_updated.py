@@ -66,13 +66,16 @@ class TestUpdater(unittest.TestCase):
     for c in cmd:
       subprocess.check_output(c, cwd=cwd, shell=True)
 
-  def _start_updater(self):
+  def _get_updated_proc(self):
     os.environ["PYTHONPATH"] = self.basedir
     os.environ["UPDATER_TESTING"] = "1"
     os.environ["UPDATER_LOCK_FILE"] = os.path.join(self.tmp_dir.name, "updater.lock")
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
     updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
-    self.updated_proc = subprocess.Popen(updated_path, env=os.environ)
+    return subprocess.Popen(updated_path, env=os.environ)
+   
+  def _start_updater(self):
+    self.updated_proc = self._get_updated_proc()
 
   def _update_now(self):
     self.updated_proc.send_signal(signal.SIGHUP)
@@ -155,7 +158,7 @@ class TestUpdater(unittest.TestCase):
   def test_overlay_reinit(self):
     self.params.put("IsOffroad", "1")
     self._start_updater()
-  
+
     time.sleep(2)
 
     overlay_init_fn = os.path.join(self.basedir, ".overlay_init")
@@ -172,6 +175,20 @@ class TestUpdater(unittest.TestCase):
     self._wait_for_update(clear_param=True)
     new_mtime = os.path.getmtime(overlay_init_fn)
     self.assertTrue(first_mtime != new_mtime)
+
+  # Make sure updated exits if another instance is running
+  @unittest.skip("remove when done writing tests")
+  def test_multiple_instances(self):
+    # start updated and let it run for a cycle
+    self.params.put("IsOffroad", "1")
+    self._start_updater()
+    time.sleep(1)
+    self._wait_for_update(clear_param=True)
+
+    # start another instance
+    second_updated = self._get_updated_proc()
+    ret_code = second_updated.wait(timeout=5)
+    self.assertTrue(ret_code is not None)
 
   #def test_release_notes(self):
   #  pass
