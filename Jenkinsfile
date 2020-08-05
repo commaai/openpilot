@@ -41,43 +41,43 @@ pipeline {
   }
 
   stages {
-
-    stage('Release Build') {
-      when {
-        branch 'devel-staging'
-      }
-      steps {
-        phone_steps("eon-build", [
-          ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
-        ])
-      }
-    }
-
-    stage('PC tests') {
-      agent {
-        dockerfile {
-          filename 'Dockerfile.openpilot'
-          additionalBuildArgs '--cache-from docker.io/commaai/openpilotci:latest'
-          args '--privileged --shm-size 1G'
-        }
-      }
-      steps {
-        sh 'scons -j4'
-      }
-    }
-
-    stage('On-device Tests') {
+    stage('openpilot tests') {
       when {
         not {
           anyOf {
-            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'
+            branch 'master-ci'; branch 'devel'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'
           }
         }
       }
-
       parallel {
 
-        stage('Build') {
+        stage('PC tests') {
+          agent {
+            dockerfile {
+              filename 'Dockerfile.openpilot'
+              additionalBuildArgs '--cache-from docker.io/commaai/openpilotci:latest'
+              args '--privileged --shm-size 1G'
+            }
+          }
+          steps {
+            sh 'scons -j4'
+          }
+        }
+
+        // *** On-device Tests ***
+
+        stage('Release Build') {
+          when {
+            branch 'devel-staging'
+          }
+          steps {
+            phone_steps("eon-build", [
+              ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+            ])
+          }
+        }
+
+        stage('Devel Build') {
           environment {
             CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
           }
@@ -109,8 +109,8 @@ pipeline {
           }
         }
 
+
       }
     }
-
   }
 }
