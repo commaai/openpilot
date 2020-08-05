@@ -109,7 +109,6 @@ class TestUpdater(unittest.TestCase):
     self.assertEqual(update == b"1", available, f"UpdateAvailable: '{repr(update)}'")
 
   # Run updated for 50 cycles with no update
-  #@unittest.skip("remove when done writing tests")
   def test_no_update(self):
     self._start_updater()
     time.sleep(2)
@@ -124,7 +123,6 @@ class TestUpdater(unittest.TestCase):
       self._check_failed_updates()
 
   # Let the updater run with no update for a cycle, then write an update
-  #@unittest.skip("remove when done writing tests")
   def test_update(self):
     self._start_updater()
     time.sleep(2)
@@ -150,7 +148,6 @@ class TestUpdater(unittest.TestCase):
     self._check_failed_updates()
 
   # Let the updater run for 10 cycle, and write an update every cycle
-  @unittest.skip("remove when done writing tests")
   def test_update_loop(self):
     self._start_updater()
     time.sleep(2)
@@ -158,10 +155,11 @@ class TestUpdater(unittest.TestCase):
     # run for a cycle with no update
     self._wait_for_update(clear_param=True)
 
-    for _ in range(10):
+    # TODO: make this faster, so we can do more loops
+    for _ in range(5):
       time.sleep(0.5)
       self._make_commit()
-      self._wait_for_update(timeout=60, clear_param=True)
+      self._wait_for_update(timeout=90, clear_param=True)
 
       # give a bit of time to write all the params
       time.sleep(0.2)
@@ -171,7 +169,6 @@ class TestUpdater(unittest.TestCase):
       self.params.delete("UpdateAvailable")
 
   # Test overlay re-creation after touching basedir's git
-  #@unittest.skip("remove when done writing tests")
   def test_overlay_reinit(self):
     self._start_updater()
 
@@ -193,7 +190,6 @@ class TestUpdater(unittest.TestCase):
     self.assertTrue(first_mtime != new_mtime)
 
   # Make sure updated exits if another instance is running
-  #@unittest.skip("remove when done writing tests")
   def test_multiple_instances(self):
     # start updated and let it run for a cycle
     self._start_updater()
