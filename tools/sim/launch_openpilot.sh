@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 export PASSIVE="0"
 export NOBOARD="1"
