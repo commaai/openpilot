@@ -127,8 +127,8 @@ class Calibrator():
   def send_data(self, pm):
     calib = get_calib_from_vp(self.vp)
     if self.valid_blocks > 0:
-      max_vp_calib = get_calib_from_vp(np.max(self.vps[:self.valid_blocks], axis=0))
-      min_vp_calib = get_calib_from_vp(np.min(self.vps[:self.valid_blocks], axis=0))
+      max_vp_calib = np.array(get_calib_from_vp(np.max(self.vps[:self.valid_blocks], axis=0)))
+      min_vp_calib = np.array(get_calib_from_vp(np.min(self.vps[:self.valid_blocks], axis=0)))
       calib_spread = np.abs(max_vp_calib - min_vp_calib)
     else:
       calib_spread = np.zeros(3)
