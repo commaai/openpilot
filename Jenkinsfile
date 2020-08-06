@@ -65,9 +65,8 @@ pipeline {
           }
           post {
             always {
-              // need to do this since container runs as root
+              // fix permissions since docker runs as another user
               sh "chmod -R 777 ."
-              cleanWs()
             }
           }
         }
