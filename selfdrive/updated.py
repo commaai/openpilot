@@ -37,6 +37,7 @@ from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
+TEST_IP = os.getenv("UPDATER_TEST_IP", "8.8.8.8")
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
@@ -258,7 +259,7 @@ def main():
 
     # Check for internet every 30s
     time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = os.system("git ls-remote --tags --quiet") != 0
+    ping_failed = os.system(f"ping -W 4 -c 1 {TEST_IP}") != 0
     if ping_failed or time_wrong:
       wait_helper.sleep(30)
       continue

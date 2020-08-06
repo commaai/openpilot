@@ -26,6 +26,10 @@ class TestUpdater(unittest.TestCase):
     for d in [org_dir, self.basedir, self.git_remote_dir, self.staging_dir]:
       os.mkdir(d)
 
+    self.upper_dir = os.path.join(self.staging_dir, "upper")
+    self.merged_dir = os.path.join(self.staging_dir, "merged")
+    self.finalized_dir = os.path.join(self.staging_dir, "finalized")
+
     # setup local submodule remotes
     submodules = subprocess.check_output("git submodule --quiet foreach 'echo $name'",
                                          shell=True, cwd=BASEDIR, encoding='utf8').split()
@@ -38,7 +42,7 @@ class TestUpdater(unittest.TestCase):
       f"git clone {BASEDIR} {self.git_remote_dir}",
       f"git clone {self.git_remote_dir} {self.basedir}",
       f"cd {self.basedir} && git submodule init && git submodule update",
-      f"cd {self.basedir} && scons -j4 cereal"
+      f"cd {self.basedir} && scons -j{os.cpu_count()} cereal"
     ])
 
     self.params = Params(db=os.path.join(self.basedir, "persist/params"))
@@ -54,6 +58,8 @@ class TestUpdater(unittest.TestCase):
       print(e)
     self.tmp_dir.cleanup()
 
+  # *** test helpers ***
+
   def _run(self, cmd, cwd=None):
     if not isinstance(cmd, list):
       cmd = (cmd,)
@@ -63,144 +69,123 @@ class TestUpdater(unittest.TestCase):
 
   def _get_updated_proc(self):
     os.environ["PYTHONPATH"] = self.basedir
+    os.environ["UPDATER_TEST_IP"] = "localhost"
     os.environ["UPDATER_LOCK_FILE"] = os.path.join(self.tmp_dir.name, "updater.lock")
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
     updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
     return subprocess.Popen(updated_path, env=os.environ)
 
-  def _start_updater(self, offroad=True):
+  def _start_updater(self, offroad=True, nosleep=False):
     self.params.put("IsOffroad", "1" if offroad else "0")
     self.updated_proc = self._get_updated_proc()
+    if not nosleep:
+      time.sleep(1)
 
   def _update_now(self):
     self.updated_proc.send_signal(signal.SIGHUP)
+
+  # TODO: this should be implemented in params
+  def _read_param(self, key, timeout=1):
+    ret = None
+    start_time = time.monotonic()
+    while ret is None:
+      ret = self.params.get(key, encoding='utf8')
+      if time.monotonic() - start_time > timeout:
+        break
+      time.sleep(0.01)
+    return ret
 
   def _wait_for_update(self, timeout=30, clear_param=False):
     if clear_param:
       self.params.delete("LastUpdateTime")
 
     self._update_now()
-    start_time = time.monotonic()
-    while self.params.get("LastUpdateTime") is None:
-      if time.monotonic() - start_time > timeout:
-        raise Exception("timed out waiting for update to complate")
-      time.sleep(0.05)
+    t = self._read_param("LastUpdateTime", timeout=timeout)
+    if t is None:
+      raise Exception("timed out waiting for update to complate")
 
   def _make_commit(self):
-    # make some changes
+    # remove a dir
     shutil.rmtree(os.path.join(self.git_remote_dir, "selfdrive/monitoring"))
-    with open(os.path.join(self.git_remote_dir, "selfdrive/controls/controlsd.py"), "wb") as f:
-      for l in f.readlines():
+
+    # modify a file
+    file_path = os.path.join(self.git_remote_dir, "selfdrive/controls/controlsd.py")
+    file_lines = open(file_path).readlines()
+    with open(file_path, "w") as f:
+      for l in file_lines:
         f.write(l[::-1])
 
     # and commit them
     self._run([
       "git config user.email tester@testing.com",
       "git config user.name Testy Tester",
+      "touch a_new_file",
       "git add -A",
       "git commit -m 'an update'",
     ], cwd=self.git_remote_dir)
 
-  def _check_update_time(self):
+  def _check_update_state(self, update_available):
     # make sure LastUpdateTime is recent
-    t = self.params.get("LastUpdateTime", encoding='utf8')
+    t = self._read_param("LastUpdateTime")
     last_update_time = datetime.datetime.fromisoformat(t)
     td = datetime.datetime.utcnow() - last_update_time
     self.assertLess(td.total_seconds(), 10)
+    self.params.delete("LastUpdateTime")
 
-  def _check_failed_updates(self, expected_count=0):
-    failed_updates = int(self.params.get("UpdateFailedCount", encoding='utf8'))
-    self.assertEqual(failed_updates, expected_count)
+    # check params
+    update = self._read_param("UpdateAvailable")
+    self.assertEqual(update == b"1", update_available, f"UpdateAvailable: {repr(update)}")
+    self.assertEqual(self._read_param("UpdateFailedCount"), "0")
 
-  def _assert_update_available(self, available):
-    update = self.params.get("UpdateAvailable")
-    self.assertEqual(update == b"1", available, f"UpdateAvailable: '{repr(update)}'")
+    # TODO: check that the finalized update actually matches remote
+    # check the .overlay_init and .overlay_consistent flags
+    self.assertTrue(os.path.isfile(os.path.join(self.basedir, ".overlay_init")))
+    self.assertEqual(os.path.isfile(os.path.join(self.finalized_dir, ".overlay_consistent")), update_available)
 
-  def _assert_no_diff(self):
-    # check the diff between the merged overlay and remote
-    pass
+  # *** test cases ***
 
-  def _check_flags(self, update):
-    if update:
-      self.assertEqual(os.path.isfile(os.path.join(self.basedir, ".overlay_init")), True)
-    self.assertEqual(os.path.isfile(os.path.join(self.staging_dir, "finalized/.overlay_consistent")), update)
-
-  # Run updated for 50 cycles with no update
+  # Run updated for 100 cycles with no update
   def test_no_update(self):
     self._start_updater()
-    time.sleep(2)
-
-    for _ in range(50):
+    for _ in range(100):
       self._wait_for_update(clear_param=True)
-
-      # give a bit of time to write all the params
-      time.sleep(0.1)
-      self._check_update_time()
-      self._assert_update_available(False)
-      self._check_failed_updates()
-      self._check_flags(False)
+      self._check_update_state(False)
 
   # Let the updater run with no update for a cycle, then write an update
   def test_update(self):
     self._start_updater()
-    time.sleep(2)
 
     # run for a cycle with no update
     self._wait_for_update(clear_param=True)
-
-    # give a bit of time to write all the params
-    time.sleep(0.1)
-    self._check_update_time()
-    self._assert_update_available(False)
-    self._check_failed_updates()
-    self._check_flags(False)
-
-    self.params.delete("LastUpdateTime")
+    self._check_update_state(False)
 
     # write an update to our remote
     self._make_commit()
 
+    # run for a cycle to get the update
     self._wait_for_update(timeout=60, clear_param=True)
-    time.sleep(0.1)
-    self._check_update_time()
-    self._assert_update_available(True)
-    self._check_failed_updates()
-    self._check_flags(True)
+    self._check_update_state(True)
 
     # run another cycle with no update
-    self._wait_for_update(timeout=60, clear_param=True)
-    time.sleep(0.1)
-    self._check_update_time()
-    self._assert_update_available(True)
-    self._check_failed_updates()
-    self._check_flags(True)
+    self._wait_for_update(clear_param=True)
+    self._check_update_state(True)
 
-  # Let the updater run for 10 cycle, and write an update every cycle
+  # Let the updater run for 10 cycles, and write an update every cycle
+  @unittest.skip("need to make this faster")
   def test_update_loop(self):
     self._start_updater()
-    time.sleep(2)
 
     # run for a cycle with no update
     self._wait_for_update(clear_param=True)
-
-    # TODO: make this faster, so we can do more loops
-    for _ in range(5):
+    for _ in range(10):
       time.sleep(0.5)
       self._make_commit()
       self._wait_for_update(timeout=90, clear_param=True)
+      self._check_update_state(True)
 
-      # give a bit of time to write all the params
-      time.sleep(0.2)
-      self._check_update_time()
-      self._assert_update_available(True)
-      self._check_failed_updates()
-      self.params.delete("UpdateAvailable")
-
-  # Test overlay re-creation after touching basedir's git
+  # Test overlay re-creation after tracking a new file in basedir's git
   def test_overlay_reinit(self):
     self._start_updater()
-
-    time.sleep(2)
 
     overlay_init_fn = os.path.join(self.basedir, ".overlay_init")
 
@@ -212,10 +197,15 @@ class TestUpdater(unittest.TestCase):
     # touch a file in the basedir
     self._run("touch new_file && git add new_file", cwd=self.basedir)
 
-    # run another cycle and check mtime
+    # run another cycle, should have a new mtime
+    self._wait_for_update(clear_param=True)
+    second_mtime = os.path.getmtime(overlay_init_fn)
+    self.assertTrue(first_mtime != second_mtime)
+
+    # run another cycle, mtime should be same as last cycle
     self._wait_for_update(clear_param=True)
     new_mtime = os.path.getmtime(overlay_init_fn)
-    self.assertTrue(first_mtime != new_mtime)
+    self.assertTrue(second_mtime == new_mtime)
 
   # Make sure updated exits if another instance is running
   def test_multiple_instances(self):
