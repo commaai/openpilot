@@ -62,6 +62,7 @@ pipeline {
                     git commit -m "test" && \
                     ls -la && \
                     ls -la .git && \
+                    git status && \
                     python selfdrive/test/test_updated.py'
               }
             }
