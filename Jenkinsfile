@@ -57,7 +57,7 @@ pipeline {
             stage('Updater tests') {
               steps {
                 sh 'scons -j$(nproc)'
-                sh 'git init && git add -A && git config user.email "testy@tester.com" && git config user.name "testy tester" && git commit -m "openpilot" && python selfdrive/test/test_updated.py'
+                sh 'git init && python selfdrive/test/test_updated.py'
               }
             }
           }
