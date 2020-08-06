@@ -345,6 +345,11 @@ void* processing_thread(void *arg) {
   err = set_realtime_priority(51);
   LOG("setpriority returns %d", err);
 
+#if defined(QCOM) && !defined(QCOM_REPLAY)
+  std::unique_ptr<uint8_t[]> rgb_roi_buf = std::make_unique<uint8_t[]>((s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3);
+  std::unique_ptr<int16_t[]> conv_result = std::make_unique<int16_t[]>((s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y));
+#endif
+
   // init cl stuff
 #ifdef __APPLE__
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
@@ -416,13 +421,12 @@ void* processing_thread(void *arg) {
     /*double t10 = millis_since_boot();*/
 
     // cache rgb roi and write to cl
-    uint8_t *rgb_roi_buf = new uint8_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3];
     int roi_id = cnt % ((ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)); // rolling roi
     int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
     int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
 
     for (int r=0;r<(s->rgb_height/NUM_SEGMENTS_Y);r++) {
-      memcpy(rgb_roi_buf + r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
+      memcpy(rgb_roi_buf.get() + r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
               (uint8_t *) s->rgb_bufs[rgb_idx].addr + \
                 (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 + \
                 (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
@@ -430,7 +434,7 @@ void* processing_thread(void *arg) {
     }
 
     err = clEnqueueWriteBuffer (q, s->rgb_conv_roi_cl, true, 0,
-        s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), rgb_roi_buf, 0, 0, 0);
+        s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), rgb_roi_buf.get(), 0, 0, 0);
     assert(err == 0);
 
     /*double t11 = millis_since_boot();
@@ -453,23 +457,19 @@ void* processing_thread(void *arg) {
     clWaitForEvents(1, &conv_event);
     clReleaseEvent(conv_event);
 
-    int16_t *conv_result = new int16_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)];
     err = clEnqueueReadBuffer(q, s->rgb_conv_result_cl, true, 0,
-       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), conv_result, 0, 0, 0);
+       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), conv_result.get(), 0, 0, 0);
     assert(err == 0);
 
     /*t11 = millis_since_boot();
     printf("conv time: %f ms\n", t11 - t10);
     t10 = millis_since_boot();*/
 
-    get_lapmap_one(conv_result, &s->lapres[roi_id], s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y);
+    get_lapmap_one(conv_result.get(), &s->lapres[roi_id], s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y);
 
     /*t11 = millis_since_boot();
     printf("pool time: %f ms\n", t11 - t10);
     t10 = millis_since_boot();*/
-
-    delete [] rgb_roi_buf;
-    delete [] conv_result;
 
     /*t11 = millis_since_boot();
     printf("process time: %f ms\n ----- \n", t11 - t10);
@@ -504,7 +504,9 @@ void* processing_thread(void *arg) {
 
     double t2 = millis_since_boot();
 
+#ifndef QCOM2
     uint8_t *bgr_ptr = (uint8_t*)s->rgb_bufs[rgb_idx].addr;
+#endif
 
     double yt1 = millis_since_boot();
 

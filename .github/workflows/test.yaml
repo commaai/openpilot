@@ -37,7 +37,7 @@ jobs:
                          external/bin selfdrive/modeld/runners $TEST_DIR
 
         # need these so docker copy won't fail
-        cp Pipfile Pipfile.lock .pylintrc .coveragerc-app .pre-commit-config.yaml $TEST_DIR
+        cp Pipfile Pipfile.lock .pylintrc .pre-commit-config.yaml $TEST_DIR
         cd $TEST_DIR
         mkdir laika laika_repo tools
     - name: Build Docker image
@@ -197,10 +197,10 @@ jobs:
         run: eval "$BUILD"
       - name: Test car models
         run: |
-          $PERSIST "mkdir -p /data/params && \
-                    cd /tmp/openpilot && \
+          $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && \
+                    coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                                 selfdrive/test/test_models.py && \
                     coverage combine"
       - name: Upload coverage to Codecov
         run: |

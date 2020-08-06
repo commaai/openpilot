@@ -6,8 +6,9 @@ import signal
 import sys
 
 import cereal.messaging as messaging
+from common.params import Params
 import selfdrive.manager as manager
-
+from selfdrive.test.helpers import set_params_enabled
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
@@ -70,13 +71,18 @@ return_code = 1
 def test_thread():
   try:
     global return_code
-    proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=1000)
+    proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=2000)
 
     # wait until everything's started and get first sample
-    time.sleep(30)
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < 120:
+      if Params().get("CarParams") is not None:
+        break
+      time.sleep(2)
     first_proc = messaging.recv_sock(proc_sock, wait=True)
     if first_proc is None or not all_running():
-      print("\n\nTEST FAILED: all car started processes not running\n\n")
+      err_msg = "procLog recv timed out" if first_proc is None else "all car started process not running"
+      print(f"\n\nTEST FAILED: {err_msg}\n\n")
       raise Exception
 
     # run for a minute and get last sample
@@ -90,12 +96,16 @@ def test_thread():
 
 if __name__ == "__main__":
 
+
   # setup signal handler to exit with test status
   def handle_exit(sig, frame):
     sys.exit(return_code)
   signal.signal(signal.SIGINT, handle_exit)
 
   # start manager and test thread
+  set_params_enabled()
+  Params().delete("CarParams")
+
   t = threading.Thread(target=test_thread)
   t.daemon = True
   t.start()
