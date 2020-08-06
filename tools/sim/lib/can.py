@@ -38,7 +38,6 @@ def can_function(pm, speed, angle, idx, cruise_button=0, is_engaged=False):
   msg.append(packer.make_can_msg("SEATBELT_STATUS", 0, {"SEATBELT_DRIVER_LATCHED": 1}, idx))
   msg.append(packer.make_can_msg("STEER_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": angle_to_sangle(angle)}, idx))
-  msg.append(packer.make_can_msg("POWERTRAIN_DATA", 0, {}, idx))
   msg.append(packer.make_can_msg("VSA_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("STANDSTILL", 0, {}, idx))
   msg.append(packer.make_can_msg("STEER_MOTOR_TORQUE", 0, {}, idx))
