@@ -120,6 +120,11 @@ class TestUpdater(unittest.TestCase):
     # check the diff between the merged overlay and remote
     pass
 
+  def _check_flags(self, update):
+    if update:
+      self.assertEqual(os.path.isfile(os.path.join(self.basedir, ".overlay_init")), True)
+    self.assertEqual(os.path.isfile(os.path.join(self.staging_dir, "finalized/.overlay_consistent")), update)
+
   # Run updated for 50 cycles with no update
   def test_no_update(self):
     self._start_updater()
@@ -133,6 +138,7 @@ class TestUpdater(unittest.TestCase):
       self._check_update_time()
       self._assert_update_available(False)
       self._check_failed_updates()
+      self._check_flags(False)
 
   # Let the updater run with no update for a cycle, then write an update
   def test_update(self):
@@ -147,6 +153,7 @@ class TestUpdater(unittest.TestCase):
     self._check_update_time()
     self._assert_update_available(False)
     self._check_failed_updates()
+    self._check_flags(False)
 
     self.params.delete("LastUpdateTime")
 
@@ -158,6 +165,7 @@ class TestUpdater(unittest.TestCase):
     self._check_update_time()
     self._assert_update_available(True)
     self._check_failed_updates()
+    self._check_flags(True)
 
     # run another cycle with no update
     self._wait_for_update(timeout=60, clear_param=True)
@@ -165,6 +173,7 @@ class TestUpdater(unittest.TestCase):
     self._check_update_time()
     self._assert_update_available(True)
     self._check_failed_updates()
+    self._check_flags(True)
 
   # Let the updater run for 10 cycle, and write an update every cycle
   def test_update_loop(self):
