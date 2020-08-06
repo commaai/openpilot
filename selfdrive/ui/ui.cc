@@ -9,6 +9,11 @@
 #include "common/utilpp.h"
 #include "ui.hpp"
 
+volatile sig_atomic_t do_exit = 0;
+static void set_do_exit(int sig) {
+  do_exit = 1;
+}
+
 static void ui_set_brightness(UIState *s, int brightness) {
   static int last_brightness = -1;
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
@@ -103,10 +108,6 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
     && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
   }
-}
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
 }
 
 template <class T>
@@ -325,7 +326,6 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (sm.updated("dMonitoringState")) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-   
   }
 
   // timeout on frontview
@@ -358,7 +358,6 @@ static void check_messages(UIState *s) {
     handle_message(s, *(s->sm));
   }
 }
-
 
 #ifdef QCOM
 
@@ -468,19 +467,6 @@ int main(int argc, char* argv[]) {
     }
     double u1 = millis_since_boot();
 
-    // light sensor is only exposed on EONs
-    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
-    if (clipped_brightness > 512) clipped_brightness = 512;
-    smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
-    if (smooth_brightness > 255) smooth_brightness = 255;
-    ui_set_brightness(s, (int)smooth_brightness);
-
-    // resize vision for collapsing sidebar
-    const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-    s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
-    s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
-    s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
-
     // poll for touch events
     int touch_x = -1, touch_y = -1;
     int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
@@ -494,7 +480,7 @@ int main(int argc, char* argv[]) {
     check_messages(s);
     if (s->started) {
       set_awake(s, true);
-      s->vision.update();
+      s->vision.update(&do_exit);
       if (!prev_started) {
         s->controls_timeout = 5 * UI_FREQ;
       }
@@ -523,6 +509,13 @@ int main(int argc, char* argv[]) {
     if (!s->awake || s->scene.frontview) {
       continue;
     }
+
+    // light sensor is only exposed on EONs
+    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
+    if (clipped_brightness > 512) clipped_brightness = 512;
+    smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
+    if (smooth_brightness > 255) smooth_brightness = 255;
+    ui_set_brightness(s, (int)smooth_brightness);
 
     s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
 
@@ -563,6 +556,12 @@ int main(int argc, char* argv[]) {
         s->scene.athenaStatus = NET_ERROR;
       }
     }
+
+    // resize vision for collapsing sidebar
+    const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
+    s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
+    s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
+    s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
 
     ui_draw(s);
     double u2 = millis_since_boot();

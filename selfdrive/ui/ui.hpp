@@ -170,8 +170,6 @@ typedef struct UIState {
 } UIState;
 
 // API
-void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, int va_color,
-                          const char* va_text1, const char* va_text2);
 void ui_draw(UIState *s);
 void ui_draw_sidebar(UIState *s);
 void ui_nvg_init(UIState *s);

@@ -170,9 +170,8 @@ void UIVision::initVision() {
   assert(glGetError() == GL_NO_ERROR);
 }
 
-void UIVision::update() {
-  bool do_exits = false;
-  while (!do_exits) {
+void UIVision::update(volatile sig_atomic_t *do_exit) {
+  while (!(*do_exit)) {
     if (!vision_connected) {
       int err = visionstream_init(&stream, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK, true, nullptr);
       if (err) {
@@ -190,7 +189,7 @@ void UIVision::update() {
       vision_connected = false;
       continue;
     }
-    
+
     break;
   }
 }

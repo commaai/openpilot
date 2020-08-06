@@ -35,7 +35,7 @@ class DriverView {
       }
     }
 
-    vision.update();
+    vision.update(&do_exit);
 
     glClearColor(0, 0, 0, 1.0);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -139,7 +139,6 @@ int main(int argc, char* argv[]) {
       write_db_value("IsDriverViewEnabled", "0", 1);
       break;
     }
-
     driver_view.run();
   }
   return 0;

@@ -2,6 +2,7 @@
 #include "messaging.hpp"
 #include <assert.h>
 #include <cmath>
+#include <signal.h>
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -37,7 +38,7 @@ const int viz_w = vwp_w - (bdr_s * 2);
 class UIVision {
  public:
   void init(bool front = false);
-  void update();
+  void update(volatile sig_atomic_t *do_exit);
   void draw();
   void swap();
   inline int getRgbWidth() const { return stream.bufs_info.width; }
