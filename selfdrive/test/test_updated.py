@@ -4,6 +4,7 @@ import os
 import time
 import tempfile
 import unittest
+import shutil
 import signal
 import subprocess
 
@@ -86,16 +87,18 @@ class TestUpdater(unittest.TestCase):
       time.sleep(0.05)
 
   def _make_commit(self):
-    self._run([
-      # TODO: modify a file
-      # make some changes
-      "rm -rf selfdrive/monitoring",
-      "mkdir this_is_a_new_dir && touch this_is_a_new_dir/new_file",
+    # make some changes
+    shutil.rmtree(os.path.join(self.git_remote_dir, "selfdrive/monitoring"))
+    with open(os.path.join(self.git_remote_dir, "selfdrive/controls/controlsd.py"), "wb") as f:
+      for l in f.readlines():
+        f.write(l[::-1])
 
-      # and commit them
+    # and commit them
+    self._run([
       "git config user.email tester@testing.com",
       "git config user.name Testy Tester",
-      "git commit --allow-empty -m 'an update'",
+      "git add -A",
+      "git commit -m 'an update'",
     ], cwd=self.git_remote_dir)
 
   def _check_update_time(self):

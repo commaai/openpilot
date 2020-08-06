@@ -54,14 +54,9 @@ pipeline {
             }
           }
           stages {
-            stage('Updater tests') {
+            stage('Build') {
               steps {
-                sh 'rm -rf .git && \
-                    git init && git add -A && \
-                    git config user.email "testy@tester.test" && git config user.name "testy tester" && \
-                    git commit -m "test" && \
-                    pwd && \
-                    PYTHONPATH="$PWD" python selfdrive/test/test_updated.py'
+                sh 'scons -j$(nproc)'
               }
             }
           }
