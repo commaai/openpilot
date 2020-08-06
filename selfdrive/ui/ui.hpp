@@ -132,7 +132,6 @@ typedef struct UIState {
   cereal::UiLayoutState::App active_app;
   UIVision vision;
   UIScene scene;
-
   bool awake;
 
   // timeouts

@@ -1,7 +1,6 @@
 #pragma once
 #include <assert.h>
 #include <signal.h>
-
 #include <cmath>
 
 #include "messaging.hpp"
@@ -39,6 +38,9 @@ const int viz_w = vwp_w - (bdr_s * 2);
 
 class UIVision {
  public:
+  FramebufferState *fb = nullptr;
+  int fb_w = 0, fb_h = 0;
+
   UIVision() = default;
   ~UIVision();
   void init(bool front = false);
@@ -48,14 +50,13 @@ class UIVision {
   inline int getRgbWidth() const { return stream.bufs_info.width; }
   inline int getRgbHeight() const { return stream.bufs_info.height; }
 
-  FramebufferState *fb = nullptr;
-  int fb_w = 0, fb_h = 0;
-
  private:
   bool openStream();
   void closeStream();
 
   VisionStream stream;
+  bool vision_connected = false;
+  bool front_view = false;
 
   GLuint frame_program;
   GLuint frame_texs[UI_BUF_COUNT] = {};
@@ -65,9 +66,6 @@ class UIVision {
   GLint frame_texture_loc, frame_transform_loc;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
-
-  bool vision_connected = false;
-  bool front_view = false;
 };
 
 void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha);
