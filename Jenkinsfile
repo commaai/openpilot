@@ -57,6 +57,7 @@ pipeline {
             stage('Build') {
               steps {
                 sh 'scons -j$(nproc)'
+                sh 'python selfdrive/test/test_updater.py'
               }
             }
           }

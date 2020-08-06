@@ -87,6 +87,12 @@ class TestUpdater(unittest.TestCase):
 
   def _make_commit(self):
     self._run([
+      # TODO: modify a file
+      # make some changes
+      "rm -rf selfdrive/monitoring",
+      "mkdir this_is_a_new_dir && touch this_is_a_new_dir/new_file",
+
+      # and commit them
       "git config user.email tester@testing.com",
       "git config user.name Testy Tester",
       "git commit --allow-empty -m 'an update'",
@@ -106,6 +112,10 @@ class TestUpdater(unittest.TestCase):
   def _assert_update_available(self, available):
     update = self.params.get("UpdateAvailable")
     self.assertEqual(update == b"1", available, f"UpdateAvailable: '{repr(update)}'")
+
+  def _assert_no_diff(self):
+    # check the diff between the merged overlay and remote
+    pass
 
   # Run updated for 50 cycles with no update
   def test_no_update(self):
@@ -140,6 +150,13 @@ class TestUpdater(unittest.TestCase):
     # write an update to our remote
     self._make_commit()
 
+    self._wait_for_update(timeout=60, clear_param=True)
+    time.sleep(0.1)
+    self._check_update_time()
+    self._assert_update_available(True)
+    self._check_failed_updates()
+
+    # run another cycle with no update
     self._wait_for_update(timeout=60, clear_param=True)
     time.sleep(0.1)
     self._check_update_time()
