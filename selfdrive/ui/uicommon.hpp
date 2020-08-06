@@ -1,8 +1,10 @@
 #pragma once
-#include "messaging.hpp"
 #include <assert.h>
-#include <cmath>
 #include <signal.h>
+
+#include <cmath>
+
+#include "messaging.hpp"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -37,6 +39,8 @@ const int viz_w = vwp_w - (bdr_s * 2);
 
 class UIVision {
  public:
+  UIVision() = default;
+  ~UIVision();
   void init(bool front = false);
   void update(volatile sig_atomic_t *do_exit);
   void draw();
@@ -49,6 +53,7 @@ class UIVision {
 
  private:
   void initVision();
+  void freeBuffers();
 
   VisionStream stream;
 

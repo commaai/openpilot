@@ -670,3 +670,7 @@ void ui_nvg_init(UIState *s) {
     assert(s->img_network[i] != 0);
   }
 }
+
+void ui_nvg_delete(UIState *s) {
+  nvgDelete(s->vg);
+}

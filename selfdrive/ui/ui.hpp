@@ -173,3 +173,4 @@ typedef struct UIState {
 void ui_draw(UIState *s);
 void ui_draw_sidebar(UIState *s);
 void ui_nvg_init(UIState *s);
+void ui_nvg_delete(UIState *s);

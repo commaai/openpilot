@@ -333,6 +333,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.frontview = false;
   }
 
+  // make sure the driverview shw
   if (prev_frontview != scene.frontview) {
     s->scene.uilayout_sidebarcollapsed = scene.frontview;
     s->active_app = scene.frontview ? cereal::UiLayoutState::App::NONE : cereal::UiLayoutState::App::SETTINGS;
@@ -483,6 +484,7 @@ int main(int argc, char* argv[]) {
       s->vision.update(&do_exit);
       if (!prev_started) {
         s->controls_timeout = 5 * UI_FREQ;
+        s->scene.uilayout_sidebarcollapsed = true;
       }
 
     } else {
@@ -579,6 +581,7 @@ int main(int argc, char* argv[]) {
   // join light_sensor_thread?
 #endif
 
+  ui_nvg_delete(s);
   delete s->sm;
   delete s->pm;
   return 0;

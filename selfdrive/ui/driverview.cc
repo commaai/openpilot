@@ -1,4 +1,5 @@
 #include <signal.h>
+
 #include "common/params.h"
 #include "uicommon.hpp"
 #include "nanovg_gl.h"
@@ -12,58 +13,22 @@ class DriverView {
  public:
   DriverView() {
     vision.init(true);
-    sm = new SubMaster({"driverState", "dMonitoringState"});
-
 #ifdef QCOM
     vg = nvgCreate(0);
 #else
     vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
 #endif
     assert(vg);
-
     img_face = nvgCreateImage(vg, "../assets/img_driver_face.png", 1);
     assert(img_face != 0);
+
+    sm = new SubMaster({"driverState", "dMonitoringState"});
   }
 
-  void run() {
-    if (sm->update(0) > 0) {
-      if (sm->updated("driverState")) {
-        driver_state = (*sm)["driverState"].getDriverState();
-      }
-      if (sm->updated("dMonitoringState")) {
-        dmonitoring_state = (*sm)["dMonitoringState"].getDMonitoringState();
-      }
-    }
-
-    vision.update(&do_exit);
-
-    glClearColor(0, 0, 0, 1.0);
-    glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glViewport(0, 0, vision.fb_w, vision.fb_h);
-    nvgBeginFrame(vg, vision.fb_w, vision.fb_h, 1.0f);
-
-    glEnable(GL_SCISSOR_TEST);
-    glViewport(bdr_s, bdr_s, vision.fb_w - bdr_s * 2, vision.fb_h - bdr_s * 2);
-    glScissor(bdr_s, bdr_s, vision.fb_w - bdr_s * 2, vision.fb_h - bdr_s * 2);
-    vision.draw();
-    glDisable(GL_SCISSOR_TEST);
-
-    glViewport(0, 0, vision.fb_w, vision.fb_h);
-    ui_draw_driver_view();
-
-    nvgEndFrame(vg);
-    glDisable(GL_BLEND);
-
-    vision.swap();
-  }
-
-  void ui_draw_driver_view() {
+  void draw() {
     const int ff_xoffset = 32;
-    const int frame_x = bdr_s;
-    const int frame_w = vision.fb_w;
+    const int frame_x = ui_viz_rx;
+    const int frame_w = ui_viz_rw;
     const int valid_frame_w = 4 * box_h / 3;
     const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
 
@@ -110,6 +75,41 @@ class DriverView {
     ui_draw_circle_image(vg, x, y, face_size, img_face, dmonitoring_state.getFaceDetected());
   }
 
+  void run() {
+    if (sm->update(0) > 0) {
+      if (sm->updated("driverState")) {
+        driver_state = (*sm)["driverState"].getDriverState();
+      }
+      if (sm->updated("dMonitoringState")) {
+        dmonitoring_state = (*sm)["dMonitoringState"].getDMonitoringState();
+      }
+    }
+
+    vision.update(&do_exit);
+
+    glClearColor(0, 0, 0, 1.0);
+    glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glViewport(0, 0, vision.fb_w, vision.fb_h);
+    nvgBeginFrame(vg, vision.fb_w, vision.fb_h, 1.0f);
+
+    glEnable(GL_SCISSOR_TEST);
+    glViewport(ui_viz_rx, vision.fb_h - (box_y + box_h), viz_w, box_h);
+    glScissor(ui_viz_rx, vision.fb_h - (box_y + box_h), ui_viz_rw, box_h);
+    vision.draw();
+    glDisable(GL_SCISSOR_TEST);
+
+    glViewport(0, 0, vision.fb_w, vision.fb_h);
+    draw();
+
+    nvgEndFrame(vg);
+    glDisable(GL_BLEND);
+
+    vision.swap();
+  }
+
   ~DriverView() {
     delete sm;
     nvgDelete(vg);
@@ -121,12 +121,14 @@ class DriverView {
   cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
   int img_face;
+  const int ui_viz_rx = (box_x - sbr_w + (bdr_s * 2));
+  const int ui_viz_rw = (box_w + sbr_w - (bdr_s * 2));
 };
 
 int main(int argc, char* argv[]) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
-  
+
   TouchState touch = {};
   touch_init(&touch);
 

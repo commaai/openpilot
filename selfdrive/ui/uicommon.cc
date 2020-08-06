@@ -132,18 +132,14 @@ void UIVision::init(bool front) {
   frame_mat = matmul(device_transform, front_view ? full_to_wide_frame_transform : frame_transform);
 }
 
-void UIVision::swap(){
+void UIVision::swap() {
   framebuffer_swap(fb);
-}    
+}
 
 void UIVision::initVision() {
   assert(stream.num_bufs == UI_BUF_COUNT);
+  freeBuffers();
   for (int i = 0; i < UI_BUF_COUNT; i++) {
-    if (khr[i] != 0) {
-      visionimg_destroy_gl(khr[i], priv_hnds[i]);
-      glDeleteTextures(1, &frame_texs[i]);
-    }
-
     VisionImg img = {
         .fd = stream.bufs[i].fd,
         .format = VISIONIMG_FORMAT_RGB24,
@@ -194,11 +190,27 @@ void UIVision::update(volatile sig_atomic_t *do_exit) {
   }
 }
 
+void UIVision::freeBuffers() {
+  for (int i = 0; i < UI_BUF_COUNT; i++) {
+    if (khr[i] != 0) {
+      visionimg_destroy_gl(khr[i], priv_hnds[i]);
+      glDeleteTextures(1, &frame_texs[i]);
+    }
+  }
+}
+
+UIVision::~UIVision() {
+  if (vision_connected) {
+    visionstream_destroy(&stream);
+  }
+  freeBuffers();
+}
+
 void UIVision::draw() {
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
 
-  if (stream.last_idx  >= 0) {
+  if (stream.last_idx >= 0) {
     glBindTexture(GL_TEXTURE_2D, frame_texs[stream.last_idx]);
     if (!front_view) {
 #ifndef QCOM
@@ -215,12 +227,12 @@ void UIVision::draw() {
 
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void*)0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
   glDisableVertexAttribArray(0);
   glBindVertexArray(0);
 }
 
-void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha){
+void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha) {
   nvgBeginPath(vg);
   NVGpaint imgPaint = nvgImagePattern(vg, x, y, w, h, 0, image, alpha);
   nvgRect(vg, x, y, w, h);
@@ -230,7 +242,7 @@ void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image
 
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r, int width) {
   nvgBeginPath(vg);
-  r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
+  r > 0 ? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
   if (width) {
     nvgStrokeColor(vg, color);
     nvgStrokeWidth(vg, width);
@@ -241,9 +253,9 @@ void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor c
   }
 }
 
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r){
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r) {
   nvgBeginPath(vg);
-  r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
+  r > 0 ? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
   nvgFillPaint(vg, paint);
   nvgFill(vg);
 }
