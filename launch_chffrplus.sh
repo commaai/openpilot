@@ -14,11 +14,16 @@ if [ -z "$PASSIVE" ]; then
   export PASSIVE="1"
 fi
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
 STAGING_ROOT="/data/safe_staging"
 
 function launch {
   # Wifi scan
   wpa_cli IFNAME=wlan0 SCAN
+
+  # Remove orphaned git lock if it exists on boot
+  [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:
@@ -75,7 +80,6 @@ function launch {
   [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
-  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
   # Remove old NEOS update file
   # TODO: move this code to the updater

@@ -263,7 +263,7 @@ def main():
 
     # Check for internet every 30s
     time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
+    ping_failed = os.system("git ls-remote --tags --quiet") != 0
     if ping_failed or time_wrong:
       wait_helper.sleep(30)
       continue
