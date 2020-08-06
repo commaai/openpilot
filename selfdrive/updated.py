@@ -152,6 +152,7 @@ def init_ovfs():
 
   for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED, FINALIZED]:
     os.mkdir(dirname, 0o755)
+
   if not os.lstat(BASEDIR).st_dev == os.lstat(OVERLAY_MERGED).st_dev:
     raise RuntimeError("base and overlay merge directories are on different filesystems; not valid for overlay FS!")
 
@@ -250,7 +251,7 @@ def main():
   wait_helper.sleep(30)
 
   update_failed_count = 0
-  overlay_init_done = False
+  overlay_initialized = False
   while not wait_helper.shutdown:
     update_failed_count += 1
     wait_helper.ready_event.clear()
@@ -265,18 +266,18 @@ def main():
     # Attempt an update
     try:
       # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
-      if overlay_init_done:
+      if overlay_initialized:
         overlay_init_fn = os.path.join(BASEDIR, ".overlay_init")
         git_dir_path = os.path.join(BASEDIR, ".git")
         new_files = run(["find", git_dir_path, "-newer", overlay_init_fn])
 
         if len(new_files.splitlines()):
           cloudlog.info(".git directory changed, recreating overlay")
-          overlay_init_done = False
+          overlay_initialized = False
 
-      if not overlay_init_done:
+      if not overlay_initialized:
         init_ovfs()
-        overlay_init_done = True
+        overlay_initialized = True
 
       if params.get("IsOffroad") == b"1":
         attempt_update()
@@ -291,7 +292,7 @@ def main():
         output=e.output,
         returncode=e.returncode
       )
-      overlay_init_done = False
+      overlay_initialized = False
     except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
