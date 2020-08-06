@@ -140,77 +140,16 @@ void UIVision::init(bool front) {
   frame_mat = matmul(device_transform, front_view ? full_to_wide_frame_transform : frame_transform);
 }
 
-static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
-  LOGW("vision_subscribe type:%d", type);
-
-  VisionPacket p1 = {
-    .type = VIPC_STREAM_SUBSCRIBE,
-    .d = { .stream_sub = { .type = type, .tbuffer = true, }, },
-  };
-  int err = vipc_send(fd, &p1);
-  if (err < 0) {
-    close(fd);
-    return 0;
-  }
-
-  do {
-    err = vipc_recv(fd, rp);
-    if (err <= 0) {
-      close(fd);
-      return 0;
-    }
-
-    // release what we aren't ready for yet
-    if (rp->type == VIPC_STREAM_ACQUIRE) {
-      VisionPacket rep = {
-        .type = VIPC_STREAM_RELEASE,
-        .d = { .stream_rel = {
-          .type = rp->d.stream_acq.type,
-          .idx = rp->d.stream_acq.idx,
-        }},
-      };
-      vipc_send(fd, &rep);
-    }
-  } while (rp->type != VIPC_STREAM_BUFS || rp->d.stream_bufs.type != type);
-
-  return 1;
-}
-
-
-void UIVision::connect() {
-  bool do_exit = false;
-  while (!do_exit) {
-    int fd = vipc_connect();
-    if (fd < 0) {
-      usleep(100000);
-      continue;
-    }
-
-    VisionPacket vp;
-    if (!vision_subscribe(fd, &vp, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK)) continue;
-    ipc_fd = fd;
-    initVision(vp);
-
-    vision_connected = true;
-    break;
-  }
-}
-
 void UIVision::swap(){
   framebuffer_swap(fb);
 }    
 
-void UIVision::initVision(const VisionPacket& vp) {
-  assert(vp.num_fds == UI_BUF_COUNT);
-  const VisionStreamBufs& vs_bufs = vp.d.stream_bufs;
-  vipc_bufs_load(bufs, &vs_bufs, vp.num_fds, vp.fds);
-
-  cur_vision_idx = -1;
-
-  rgb_width = vs_bufs.width;
-  rgb_height = vs_bufs.height;
-  rgb_stride = vs_bufs.stride;
-  rgb_buf_len = vs_bufs.buf_len;
+void UIVision::initVision(const VisionStreamBufs& buf_info) {
+  assert(stream.num_bufs == UI_BUF_COUNT);
+  rgb_width = buf_info.width;
+  rgb_height = buf_info.height;
+  rgb_stride = buf_info.stride;
+  rgb_buf_len = buf_info.buf_len;
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     if (khr[i] != 0) {
@@ -219,7 +158,7 @@ void UIVision::initVision(const VisionPacket& vp) {
     }
 
     VisionImg img = {
-        .fd = bufs[i].fd,
+        .fd = stream.bufs[i].fd,
         .format = VISIONIMG_FORMAT_RGB24,
         .width = rgb_width,
         .height = rgb_height,
@@ -228,7 +167,7 @@ void UIVision::initVision(const VisionPacket& vp) {
         .size = rgb_buf_len,
     };
 #ifndef QCOM
-    priv_hnds[i] = bufs[i].addr;
+    priv_hnds[i] = stream.bufs[i].addr;
 #endif
     frame_texs[i] = visionimg_to_gl(&img, &khr[i], &priv_hnds[i]);
 
@@ -244,86 +183,46 @@ void UIVision::initVision(const VisionPacket& vp) {
   assert(glGetError() == GL_NO_ERROR);
 }
 
-
-bool UIVision::update() {
-  if (!vision_connected) {
-      connect();
-  }
-  zmq_pollitem_t polls[1] = {{0}};
-  // Take an rgb image from visiond if there is one
-  while (true) {
-    if (ipc_fd < 0) {
-      // TODO: rethink this, for now it should only trigger on PC
-      LOGW("vision disconnected by other thread");
-      vision_connected = false;
-      return false;
-    }
-    polls[0].fd = ipc_fd;
-    polls[0].events = ZMQ_POLLIN;
-#ifdef UI_60FPS
-    // uses more CPU in both UI and surfaceflinger
-    // 16% / 21%
-    int ret = zmq_poll(polls, 1, 1);
-#else
-    // 9% / 13% = a 14% savings
-    int ret = zmq_poll(polls, 1, 1000);
-#endif
-    if (ret < 0) {
-      if (errno == EINTR || errno == EAGAIN) continue;
-
-      LOGE("poll failed (%d - %d)", ret, errno);
-      close(ipc_fd);
-      ipc_fd = -1;
-      vision_connected = false;
-      return false;
-    } else if (ret == 0) {
-      break;
-    }
-    // vision ipc event
-    VisionPacket rp;
-    int err = vipc_recv(ipc_fd, &rp);
-    if (err <= 0) {
-      LOGW("vision disconnected");
-      close(ipc_fd);
-      ipc_fd = -1;
-      vision_connected = false;
-      return false;
-    }
-    if (rp.type == VIPC_STREAM_ACQUIRE) {
-      int idx = rp.d.stream_acq.idx;
-
-      int release_idx = cur_vision_idx;
-      if (release_idx >= 0) {
-        VisionPacket rep = {
-            .type = VIPC_STREAM_RELEASE,
-            .d = {.stream_rel = {
-                      .type = rp.d.stream_acq.type,
-                      .idx = release_idx,
-                  }},
-        };
-        vipc_send(ipc_fd, &rep);
+void UIVision::update() {
+  int err;
+  bool do_exits = false;
+  while (!do_exits) {
+    if (!vision_connected) {
+      VisionStreamBufs buf_info;
+      err = visionstream_init(&stream, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK, true, &buf_info);
+      if (err) {
+        printf("visionstream connect fail\n");
+        usleep(100000);
+        continue;
       }
-
-      assert(idx < UI_BUF_COUNT);
-      cur_vision_idx = idx;
-    } else {
-      assert(false);
+      vision_connected = true;
+      initVision(buf_info);
     }
+    VIPCBuf *buf;
+    VIPCBufExtra extra;
+    buf = visionstream_get(&stream, &extra);
+    if (buf == NULL) {
+      printf("visionstream get failed\n");
+      visionstream_destroy(&stream);
+      vision_connected = false;
+      continue;
+    }
+
     break;
   }
-  return true;
 }
 
 void UIVision::draw() {
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
-  if (cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, frame_texs[cur_vision_idx]);
+
+  if (stream.last_idx  >= 0) {
+    glBindTexture(GL_TEXTURE_2D, frame_texs[stream.last_idx]);
     if (!front_view) {
 #ifndef QCOM
       // TODO: a better way to do this?
-      //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, priv_hnds[cur_vision_idx]);
+      //printf("%d\n", ((int*)priv_hnds[stream.last_idx])[0]);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, priv_hnds[stream.last_idx]);
 #endif
     }
   }

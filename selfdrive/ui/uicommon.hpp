@@ -37,7 +37,7 @@ const int viz_w = vwp_w-(bdr_s*2);
 class UIVision {
  public:
   void init(bool front=false);
-  bool update();
+  void update();
   void draw();
   void swap();
   
@@ -48,11 +48,9 @@ class UIVision {
   int fb_w=0, fb_h=0;
 
 private:
-  void initVision(const VisionPacket& vp);
-  void connect();
+  void initVision(const VisionStreamBufs& buf_info);
 
-  VIPCBuf bufs[UI_BUF_COUNT]={};
-  int cur_vision_idx = 0;
+  VisionStream stream;
 
   GLuint frame_program;
   GLuint frame_texs[UI_BUF_COUNT]={};
@@ -65,8 +63,8 @@ private:
 
   bool vision_connected = false;
   
-  bool front_view=false;
-  size_t rgb_buf_len;
+  bool front_view = false;
+  size_t rgb_buf_len = 0;
 };
 
 void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha);

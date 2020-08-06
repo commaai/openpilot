@@ -5,6 +5,7 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/params.h"
+#include "common/util.h"
 #include "common/utilpp.h"
 #include "ui.hpp"
 
@@ -523,7 +524,7 @@ int main(int argc, char* argv[]) {
       s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
     }
     update_offroad_layout_state(s);
-    
+
     // Don't waste resources on drawing in case screen is off
     if (!s->awake || s->scene.frontview) {
       continue;
