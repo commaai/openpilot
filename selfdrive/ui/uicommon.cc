@@ -136,9 +136,12 @@ void UIVision::swap() {
   framebuffer_swap(fb);
 }
 
-void UIVision::initVision() {
+bool UIVision::openStream() {
+  int err = visionstream_init(&stream, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK, true, nullptr);
+  if (err) {
+    return false;
+  }
   assert(stream.num_bufs == UI_BUF_COUNT);
-  freeBuffers();
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     VisionImg img = {
         .fd = stream.bufs[i].fd,
@@ -164,24 +167,23 @@ void UIVision::initVision() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
   }
   assert(glGetError() == GL_NO_ERROR);
+  return true;
 }
 
 void UIVision::update(volatile sig_atomic_t *do_exit) {
   while (!(*do_exit)) {
     if (!vision_connected) {
-      int err = visionstream_init(&stream, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK, true, nullptr);
-      if (err) {
+      if (!openStream()) {
         printf("visionstream connect fail\n");
         usleep(100000);
         continue;
       }
       vision_connected = true;
-      initVision();
     }
     VIPCBuf *buf = visionstream_get(&stream, nullptr);
     if (buf == NULL) {
       printf("visionstream get failed\n");
-      visionstream_destroy(&stream);
+      closeStream();
       vision_connected = false;
       continue;
     }
@@ -190,7 +192,10 @@ void UIVision::update(volatile sig_atomic_t *do_exit) {
   }
 }
 
-void UIVision::freeBuffers() {
+void UIVision::closeStream() {
+  if (vision_connected) {
+    visionstream_destroy(&stream);
+  }
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     if (khr[i] != 0) {
       visionimg_destroy_gl(khr[i], priv_hnds[i]);
@@ -200,10 +205,7 @@ void UIVision::freeBuffers() {
 }
 
 UIVision::~UIVision() {
-  if (vision_connected) {
-    visionstream_destroy(&stream);
-  }
-  freeBuffers();
+  closeStream();
 }
 
 void UIVision::draw() {

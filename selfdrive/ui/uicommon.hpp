@@ -52,8 +52,8 @@ class UIVision {
   int fb_w = 0, fb_h = 0;
 
  private:
-  void initVision();
-  void freeBuffers();
+  bool openStream();
+  void closeStream();
 
   VisionStream stream;
 
