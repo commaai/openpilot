@@ -170,8 +170,6 @@ def calibrationd_thread(sm=None, pm=None):
       if DEBUG and new_vp is not None:
         print('got new vp', new_vp)
 
-      # decimate outputs for efficiency
-
 
 def main(sm=None, pm=None):
   calibrationd_thread(sm, pm)
