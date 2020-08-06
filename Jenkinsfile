@@ -60,10 +60,8 @@ pipeline {
                     git init && git add -A && \
                     git config user.email "testy@tester.test" && git config user.name "testy tester" && \
                     git commit -m "test" && \
-                    ls -la && \
-                    ls -la .git && \
-                    git status && \
-                    python selfdrive/test/test_updated.py'
+                    pwd &&
+                    PYTHONPATH="$PWD" python selfdrive/test/test_updated.py'
               }
             }
           }
