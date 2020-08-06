@@ -61,7 +61,7 @@ pipeline {
                     git config user.email "testy@tester.test" && git config user.name "testy tester" && \
                     git commit -m "test" && \
                     scons -j$(nproc) && \
-                    git init && python selfdrive/test/test_updated.py'
+                    python selfdrive/test/test_updated.py'
               }
             }
           }
