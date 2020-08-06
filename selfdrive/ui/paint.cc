@@ -205,7 +205,7 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
 }
 
 static inline bool valid_frame_pt(UIState *s, float x, float y) {
-  return x >= 0 && x <= s->vision.rgb_width && y >= 0 && y <= s->vision.rgb_height;
+  return x >= 0 && x <= s->vision.getRgbWidth() && y >= 0 && y <= s->vision.getRgbHeight();
 
 }
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
@@ -299,7 +299,7 @@ static void ui_draw_world(UIState *s) {
   nvgTranslate(s->vg, 240.0f, 0.0);
   nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
   nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, 1440.0f / s->vision.rgb_width, 1080.0f / s->vision.rgb_height);
+  nvgScale(s->vg, 1440.0f / s->vision.getRgbWidth(), 1080.0f / s->vision.getRgbHeight());
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);

@@ -345,12 +345,6 @@ void handle_message(UIState *s, SubMaster &sm) {
       update_status(s, STATUS_STOPPED);
       s->controls_seen = false;
       s->active_app = cereal::UiLayoutState::App::HOME;
-
-      #ifndef QCOM
-      // disconnect from visionipc on PC
-      close(s->vision.ipc_fd);
-      s->vision.ipc_fd = -1;
-      #endif
     } 
   } else if (s->status == STATUS_STOPPED) {
     update_status(s, STATUS_DISENGAGED);

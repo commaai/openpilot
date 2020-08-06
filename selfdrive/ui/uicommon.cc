@@ -9,10 +9,6 @@
 #include "common/util.h"
 #include "uicommon.hpp"
 
-#ifndef QCOM
-  #define UI_60FPS
-#endif
-
 #ifdef NANOVG_GL3_IMPLEMENTATION
 static const char frame_vertex_shader[] =
   "#version 150 core\n"
@@ -79,7 +75,6 @@ static const mat4 full_to_wide_frame_transform = {{
 
 void UIVision::init(bool front) {
   front_view = front;
-  ipc_fd = -1;
   fb = framebuffer_init("ui", 0, true, &fb_w, &fb_h);
   assert(fb);
 
@@ -89,14 +84,11 @@ void UIVision::init(bool front) {
 
   frame_pos_loc = glGetAttribLocation(frame_program, "aPosition");
   frame_texcoord_loc = glGetAttribLocation(frame_program, "aTexCoord");
-
   frame_texture_loc = glGetUniformLocation(frame_program, "uTexture");
   frame_transform_loc = glGetUniformLocation(frame_program, "uTransform");
 
   glViewport(0, 0, fb_w, fb_h);
-
   glDisable(GL_DEPTH_TEST);
-
   assert(glGetError() == GL_NO_ERROR);
 
   float x1, x2, y1, y2;
@@ -144,13 +136,8 @@ void UIVision::swap(){
   framebuffer_swap(fb);
 }    
 
-void UIVision::initVision(const VisionStreamBufs& buf_info) {
+void UIVision::initVision() {
   assert(stream.num_bufs == UI_BUF_COUNT);
-  rgb_width = buf_info.width;
-  rgb_height = buf_info.height;
-  rgb_stride = buf_info.stride;
-  rgb_buf_len = buf_info.buf_len;
-
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     if (khr[i] != 0) {
       visionimg_destroy_gl(khr[i], priv_hnds[i]);
@@ -160,11 +147,11 @@ void UIVision::initVision(const VisionStreamBufs& buf_info) {
     VisionImg img = {
         .fd = stream.bufs[i].fd,
         .format = VISIONIMG_FORMAT_RGB24,
-        .width = rgb_width,
-        .height = rgb_height,
-        .stride = rgb_stride,
+        .width = stream.bufs_info.width,
+        .height = stream.bufs_info.height,
+        .stride = stream.bufs_info.stride,
         .bpp = 3,
-        .size = rgb_buf_len,
+        .size = stream.bufs_info.buf_len,
     };
 #ifndef QCOM
     priv_hnds[i] = stream.bufs[i].addr;
@@ -184,30 +171,26 @@ void UIVision::initVision(const VisionStreamBufs& buf_info) {
 }
 
 void UIVision::update() {
-  int err;
   bool do_exits = false;
   while (!do_exits) {
     if (!vision_connected) {
-      VisionStreamBufs buf_info;
-      err = visionstream_init(&stream, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK, true, &buf_info);
+      int err = visionstream_init(&stream, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK, true, nullptr);
       if (err) {
         printf("visionstream connect fail\n");
         usleep(100000);
         continue;
       }
       vision_connected = true;
-      initVision(buf_info);
+      initVision();
     }
-    VIPCBuf *buf;
-    VIPCBufExtra extra;
-    buf = visionstream_get(&stream, &extra);
+    VIPCBuf *buf = visionstream_get(&stream, nullptr);
     if (buf == NULL) {
       printf("visionstream get failed\n");
       visionstream_destroy(&stream);
       vision_connected = false;
       continue;
     }
-
+    
     break;
   }
 }
