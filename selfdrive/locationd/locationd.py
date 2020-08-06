@@ -245,7 +245,7 @@ class Localizer():
       # Accelerometer
       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
         # check if device fell, estimate 10 for g
-        # 40g is a good filter for falling detection, no false positives in 20k minutes of driving
+        # 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
         self.device_fell = self.device_fell or (np.linalg.norm(np.array(sensor_reading.acceleration.v) - np.array([10, 0, 0])) > 40)
 
         self.acc_counter += 1
