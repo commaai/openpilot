@@ -53,9 +53,6 @@ pipeline {
               args '--privileged --shm-size=1G --user=root'
             }
           }
-          options {
-            skipDefaultCheckout true
-          }
           stages {
             stage('Build') {
               steps {
