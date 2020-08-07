@@ -28,16 +28,18 @@ import subprocess
 import psutil
 import shutil
 import signal
-from pathlib import Path
 import fcntl
 import threading
 from cffi import FFI
+from pathlib import Path
 
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
-STAGING_ROOT = "/data/safe_staging"
+TEST_IP = os.getenv("UPDATER_TEST_IP", "8.8.8.8")
+LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
+STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
@@ -81,20 +83,13 @@ def run(cmd, cwd=None):
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
-def remove_consistent_flag():
+def set_consistent_flag(consistent):
   os.system("sync")
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-  try:
+  if consistent:
+    consistent_file.touch()
+  elif not consistent and consistent_file.exists():
     consistent_file.unlink()
-  except FileNotFoundError:
-    pass
-  os.system("sync")
-
-
-def set_consistent_flag():
-  consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
-  os.system("sync")
-  consistent_file.touch()
   os.system("sync")
 
 
@@ -150,7 +145,7 @@ def init_ovfs():
   cloudlog.info("preparing new safe staging area")
   Params().put("UpdateAvailable", "0")
 
-  remove_consistent_flag()
+  set_consistent_flag(False)
 
   dismount_ovfs()
   if os.path.isdir(STAGING_ROOT):
@@ -158,6 +153,7 @@ def init_ovfs():
 
   for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED, FINALIZED]:
     os.mkdir(dirname, 0o755)
+
   if not os.lstat(BASEDIR).st_dev == os.lstat(OVERLAY_MERGED).st_dev:
     raise RuntimeError("base and overlay merge directories are on different filesystems; not valid for overlay FS!")
 
@@ -216,13 +212,13 @@ def attempt_update():
 
     # Un-set the validity flag to prevent the finalized tree from being
     # activated later if the finalize step is interrupted
-    remove_consistent_flag()
+    set_consistent_flag(False)
 
     finalize_from_ovfs()
 
     # Make sure the validity flag lands on disk LAST, only when the local git
     # repo and OP install are in a consistent state.
-    set_consistent_flag()
+    set_consistent_flag(True)
 
     cloudlog.info("update successful!")
   else:
@@ -232,8 +228,6 @@ def attempt_update():
 
 
 def main():
-  update_failed_count = 0
-  overlay_init_done = False
   params = Params()
 
   if params.get("DisableUpdates") == b"1":
@@ -247,7 +241,7 @@ def main():
   if psutil.LINUX:
     p.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
-  ov_lock_fd = open('/tmp/safe_staging_overlay.lock', 'w')
+  ov_lock_fd = open(LOCK_FILE, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError:
@@ -257,33 +251,34 @@ def main():
   wait_helper = WaitTimeHelper()
   wait_helper.sleep(30)
 
+  update_failed_count = 0
+  overlay_initialized = False
   while not wait_helper.shutdown:
     update_failed_count += 1
     wait_helper.ready_event.clear()
 
     # Check for internet every 30s
     time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = os.system("git ls-remote --tags --quiet") != 0
+    ping_failed = os.system(f"ping -W 4 -c 1 {TEST_IP}") != 0
     if ping_failed or time_wrong:
       wait_helper.sleep(30)
       continue
 
     # Attempt an update
     try:
-      # If the git directory has modifcations after we created the overlay
-      # we need to recreate the overlay
-      if overlay_init_done:
+      # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
+      if overlay_initialized:
         overlay_init_fn = os.path.join(BASEDIR, ".overlay_init")
         git_dir_path = os.path.join(BASEDIR, ".git")
         new_files = run(["find", git_dir_path, "-newer", overlay_init_fn])
 
         if len(new_files.splitlines()):
           cloudlog.info(".git directory changed, recreating overlay")
-          overlay_init_done = False
+          overlay_initialized = False
 
-      if not overlay_init_done:
+      if not overlay_initialized:
         init_ovfs()
-        overlay_init_done = True
+        overlay_initialized = True
 
       if params.get("IsOffroad") == b"1":
         attempt_update()
@@ -298,11 +293,13 @@ def main():
         output=e.output,
         returncode=e.returncode
       )
-      overlay_init_done = False
+      overlay_initialized = False
     except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
     params.put("UpdateFailedCount", str(update_failed_count))
+
+    # Wait 10 minutes between update attempts
     wait_helper.sleep(60*10)
 
   # We've been signaled to shut down
