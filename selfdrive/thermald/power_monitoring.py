@@ -45,7 +45,7 @@ def get_usb_present():
 
 def get_battery_charging():
   # This does correspond with actually charging
-  return _read_param("/sys/class/power_supply/battery/charge_type", lambda x: x.strip() != "N/A", False)
+  return _read_param("/sys/class/power_supply/battery/charge_type", lambda x: x.strip() != "N/A", True)
 
 
 def set_battery_charging(on):
@@ -218,13 +218,14 @@ class PowerMonitoring:
     return disable_charging
 
   # See if we need to shutdown
-  def should_shutdown(self, health, offroad_timestamp, started_seen):
+  def should_shutdown(self, health, offroad_timestamp, started_seen, LEON):
     panda_charging = (health.health.usbPowerMode != log.HealthData.UsbPowerMode.client)
+    BATT_PERC_OFF = 10 if LEON else 3
 
     should_shutdown = False
     # Wait until we have shut down charging before powering down
     should_shutdown |= (not panda_charging and self.should_disable_charging(health, offroad_timestamp))
-    should_shutdown |= ((not self.get_battery_charging()) and started_seen and ((now - offroad_timestamp) > 60))
+    should_shutdown |= ((self.get_battery_capacity() < BATT_PERC_OFF) and (not self.get_battery_charging()) and started_seen and ((now - offroad_timestamp) > 60))
 
     return should_shutdown
 

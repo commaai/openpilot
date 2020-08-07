@@ -150,9 +150,6 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
 
 def thermald_thread():
-  # prevent LEECO from undervoltage
-  BATT_PERC_OFF = 10 if LEON else 3
-
   health_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected health frequency
 
   # now loop
@@ -398,10 +395,10 @@ def thermald_thread():
     msg.thermal.offroadPowerUsage = pm.get_power_used()
 
     # Check if we need to disable charging (handled by boardd)
-    msg.thermal.disableCharging = pm.should_disable_charging(health, off_ts)
+    msg.thermal.chargingDisabled = pm.should_disable_charging(health, off_ts)
 
     # Check if we need to shut down
-    if pm.should_shutdown(health, off_ts, started_seen):
+    if pm.should_shutdown(health, off_ts, started_seen, LEON):
       os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged

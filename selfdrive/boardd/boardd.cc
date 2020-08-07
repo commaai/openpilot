@@ -415,6 +415,7 @@ void hardware_control_thread() {
         prev_fan_speed = fan_speed;
       }
 
+#ifdef QCOM
       // Charging mode
       bool charging_disabled = sm["thermal"].getThermal().getChargingDisabled();
       if (charging_disabled != prev_charging_disabled){
@@ -427,6 +428,7 @@ void hardware_control_thread() {
         }
         prev_charging_disabled = charging_disabled;
       }
+#endif
     }
     if (sm.updated("frontFrame")){
       auto event = sm["frontFrame"];
