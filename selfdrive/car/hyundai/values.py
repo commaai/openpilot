@@ -152,7 +152,7 @@ ECU_FINGERPRINT = {
 }
 
 # Don't use these fingerprints for fingerprinting, they are still used for ECU detection
-IGNORED_FINGERPRINTS = [CAR.VELOSTER]
+IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.SONATA_HEV]
 
 FW_VERSIONS = {
   CAR.SONATA: {
