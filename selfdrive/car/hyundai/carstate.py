@@ -174,6 +174,7 @@ class CarState(CarStateBase):
       ("ACCEnable", "TCS13", 0),
       ("BrakeLight", "TCS13", 0),
       ("DriverBraking", "TCS13", 0),
+      ("DriverOverride", "TCS13", 0),
 
       ("ESC_Off_Step", "TCS15", 0),
 
