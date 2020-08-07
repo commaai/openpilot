@@ -219,6 +219,9 @@ class PowerMonitoring:
 
   # See if we need to shutdown
   def should_shutdown(self, health, offroad_timestamp, started_seen, LEON):
+    if health == None or offroad_timestamp == None:
+      return False
+
     panda_charging = (health.health.usbPowerMode != log.HealthData.UsbPowerMode.client)
     BATT_PERC_OFF = 10 if LEON else 3
 
