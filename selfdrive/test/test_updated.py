@@ -114,6 +114,8 @@ class TestUpdater(unittest.TestCase):
   def _make_commit(self):
     all_dirs, all_files = [], []
     for root, dirs, files in os.walk(self.git_remote_dir):
+      if ".git" in root:
+        continue
       for d in dirs:
         all_dirs.append(os.path.join(root, d))
       for f in files:
@@ -123,23 +125,25 @@ class TestUpdater(unittest.TestCase):
     new_dir = os.path.join(self.git_remote_dir, "this_is_a_new_dir")
     os.mkdir(new_dir)
     for _ in range(random.randrange(5, 30)):
-      for d in (new_dir, random.choice(all_dirs)):
+      for d in (new_dir, random.sample(all_dirs)):
         with tempfile.NamedTemporaryFile(dir=d, delete=False) as f:
-          f.write(os.urandom(random.randrange(1, 1000000000)))
+          f.write(os.urandom(random.randrange(1, 1000000)))
+
+    # modify some files
+    for f in random.sample(all_files, k=random.randrange(5, 50)):
+      with open(f, "w+") as ff:
+        txt = ff.readlines()
+        ff.seek(0)
+        for line in txt:
+          ff.write(line[::-1])
+
+    # remove some files
+    for f in random.sample(all_files, k=random.randrange(5, 50)):
+      os.remove(f)
 
     # remove some dirs
-    for d in random.choices(all_dirs, k=random.randrange(1, 10)):
+    for d in random.sample(all_dirs, k=random.randrange(1, 10)):
       shutil.rmtree(d)
-
-    # remove and modify some files
-    for f in random.choices(all_files, k=random.randrange(5, 50)):
-      if random.choice([True, False]):
-        os.remove(f)
-      else:
-        txt = open().readlines()
-        with open(f, "w") as ff:
-          for line in txt:
-            ff.write(line[::-1])
 
     # commit the changes
     self._run([
