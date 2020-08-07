@@ -389,6 +389,10 @@ routes = {
     'carFingerprint': SUBARU.IMPREZA,
     'enableCamera': True,
   },
+  "df5ca7660000fba8|2020-06-16--17-37-19": {
+    'carFingerprint': SUBARU.LEGACY_PREGLOBAL,
+    'enableCamera': True,
+  },
   "fbbfa6af821552b9|2020-03-03--08-09-43": {
     'carFingerprint': NISSAN.XTRAIL,
     'enableCamera': True,
