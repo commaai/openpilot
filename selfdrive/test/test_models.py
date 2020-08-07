@@ -45,10 +45,13 @@ class TestCarModel(unittest.TestCase):
       else:
         raise Exception(f"missing test route for car {cls.car_model}")
 
-    try:
-      lr = LogReader(get_url(ROUTES[cls.car_model], 1))
-    except Exception:
-      lr = LogReader(get_url(ROUTES[cls.car_model], 0))
+    for seg in [2, 1, 0]:
+      try:
+        lr = LogReader(get_url(ROUTES[cls.car_model], seg))
+        break
+      except Exception:
+        if seg == 0:
+          raise
 
     has_relay = False
     can_msgs = []
@@ -99,10 +102,13 @@ class TestCarModel(unittest.TestCase):
     # TODO: also check for checkusm and counter violations from can parser
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
-    for msg in self.can_msgs:
+    for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
-      can_invalid_cnt += not CS.canValid
+
+      # wait 2s for low frequency msgs to be seen
+      if i > 200:
+        can_invalid_cnt += not CS.canValid
 
     if self.car_model not in ignore_can_valid:
       self.assertLess(can_invalid_cnt, 50)
