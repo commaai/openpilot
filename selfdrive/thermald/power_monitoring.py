@@ -76,7 +76,7 @@ class PowerMonitoring:
     self.integration_lock = threading.Lock()
 
     car_battery_power_uWh = params.get("CarBatteryPower")
-    if car_battery_power_uWh == None:
+    if car_battery_power_uWh is None:
       # If unknown, we assume the car battery is almost dead
       self.car_battery_power_uWh = (CAR_BATTERY_CAPACITY_uWh / 10)
     else:
@@ -204,7 +204,7 @@ class PowerMonitoring:
 
   # See if we need to disable charging
   def should_disable_charging(self, health, offroad_timestamp):
-    if health == None or offroad_timestamp == None:
+    if health is None or offroad_timestamp is None:
       return False
 
     now = sec_since_boot()
@@ -218,9 +218,10 @@ class PowerMonitoring:
 
   # See if we need to shutdown
   def should_shutdown(self, health, offroad_timestamp, started_seen, LEON):
-    if health == None or offroad_timestamp == None:
+    if health is None or offroad_timestamp is None:
       return False
 
+    now = sec_since_boot()
     panda_charging = (health.health.usbPowerMode != log.HealthData.UsbPowerMode.client)
     BATT_PERC_OFF = 10 if LEON else 3
 
