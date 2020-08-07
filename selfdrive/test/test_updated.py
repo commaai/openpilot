@@ -7,6 +7,7 @@ import unittest
 import shutil
 import signal
 import subprocess
+import random
 
 from common.basedir import BASEDIR
 from common.params import Params
@@ -58,7 +59,9 @@ class TestUpdater(unittest.TestCase):
       print(e)
     self.tmp_dir.cleanup()
 
+
   # *** test helpers ***
+
 
   def _run(self, cmd, cwd=None):
     if not isinstance(cmd, list):
@@ -69,6 +72,10 @@ class TestUpdater(unittest.TestCase):
 
   def _get_updated_proc(self):
     os.environ["PYTHONPATH"] = self.basedir
+    os.environ["GIT_AUTHOR_NAME"] = "testy tester"
+    os.environ["GIT_COMMITTER_NAME"] = "testy tester"
+    os.environ["GIT_AUTHOR_EMAIL"] = "testy@tester.test"
+    os.environ["GIT_COMMITTER_EMAIL"] = "testy@tester.test"
     os.environ["UPDATER_TEST_IP"] = "localhost"
     os.environ["UPDATER_LOCK_FILE"] = os.path.join(self.tmp_dir.name, "updater.lock")
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
@@ -105,21 +112,37 @@ class TestUpdater(unittest.TestCase):
       raise Exception("timed out waiting for update to complate")
 
   def _make_commit(self):
-    # remove a dir
-    shutil.rmtree(os.path.join(self.git_remote_dir, "selfdrive/monitoring"))
+    all_dirs, all_files = [], []
+    for root, dirs, files in os.walk(self.git_remote_dir):
+      for d in dirs:
+        all_dirs.append(os.path.join(root, d))
+      for f in files:
+        all_files.append(os.path.join(root, f))
 
-    # modify a file
-    file_path = os.path.join(self.git_remote_dir, "selfdrive/controls/controlsd.py")
-    file_lines = open(file_path).readlines()
-    with open(file_path, "w") as f:
-      for l in file_lines:
-        f.write(l[::-1])
+    # make a new dir and some new files
+    new_dir = os.path.join(self.git_remote_dir, "this_is_a_new_dir")
+    os.mkdir(new_dir)
+    for _ in range(random.randrange(5, 30)):
+      for d in (new_dir, random.choice(all_dirs)):
+        with tempfile.NamedTemporaryFile(dir=d, delete=False) as f:
+          f.write(os.urandom(random.randrange(1, 1000000000)))
 
-    # and commit them
+    # remove some dirs
+    for d in random.choices(all_dirs, k=random.randrange(1, 10)):
+      shutil.rmtree(d)
+
+    # remove and modify some files
+    for f in random.choices(all_files, k=random.randrange(5, 50)):
+      if random.choice([True, False]):
+        os.remove(f)
+      else:
+        txt = open().readlines()
+        with open(f, "w") as ff:
+          for line in txt:
+            ff.write(line[::-1])
+
+    # commit the changes
     self._run([
-      "git config user.email tester@testing.com",
-      "git config user.name Testy Tester",
-      "touch a_new_file",
       "git add -A",
       "git commit -m 'an update'",
     ], cwd=self.git_remote_dir)
@@ -132,9 +155,12 @@ class TestUpdater(unittest.TestCase):
     self.assertLess(td.total_seconds(), 10)
     self.params.delete("LastUpdateTime")
 
+    # wait a bit for the rest of the params to be written
+    time.sleep(0.1)
+
     # check params
     update = self._read_param("UpdateAvailable")
-    self.assertEqual(update == b"1", update_available, f"UpdateAvailable: {repr(update)}")
+    self.assertEqual(update == "1", update_available, f"UpdateAvailable: {repr(update)}")
     self.assertEqual(self._read_param("UpdateFailedCount"), "0")
 
     # TODO: check that the finalized update actually matches remote
@@ -142,7 +168,9 @@ class TestUpdater(unittest.TestCase):
     self.assertTrue(os.path.isfile(os.path.join(self.basedir, ".overlay_init")))
     self.assertEqual(os.path.isfile(os.path.join(self.finalized_dir, ".overlay_consistent")), update_available)
 
+
   # *** test cases ***
+
 
   # Run updated for 100 cycles with no update
   def test_no_update(self):
@@ -218,6 +246,7 @@ class TestUpdater(unittest.TestCase):
     second_updated = self._get_updated_proc()
     ret_code = second_updated.wait(timeout=5)
     self.assertTrue(ret_code is not None)
+
 
 if __name__ == "__main__":
   unittest.main()
