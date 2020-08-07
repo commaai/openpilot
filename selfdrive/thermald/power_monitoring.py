@@ -16,7 +16,6 @@ CAR_VOLTAGE_LOW_PASS_K = 0.091 # LPF gain for 5s tau (dt/tau / (dt/tau + 1))
 CAR_BATTERY_CAPACITY_uWh = 30e6
 CAR_CHARGING_RATE_W = 45
 
-VBATT_START_CHARGING = 11.5
 VBATT_PAUSE_CHARGING = 11.0
 MAX_TIME_OFFROAD_S = 30*3600
 
@@ -212,7 +211,6 @@ class PowerMonitoring:
     disable_charging |= (now - offroad_timestamp) > MAX_TIME_OFFROAD_S
     disable_charging |= (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3))
     disable_charging |= (self.car_battery_power_uWh <= 0)
-    disable_charging &= (self.car_voltage_mV < (VBATT_START_CHARGING * 1e3))
     disable_charging &= (not health.health.ignitionLine and not health.health.ignitionCan)
     disable_charging &= (self.params.get("DisablePowerDown") != b"1")
     return disable_charging
