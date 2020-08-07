@@ -80,7 +80,8 @@ class PowerMonitoring:
       # If unknown, we assume the car battery is almost dead
       self.car_battery_power_uWh = (CAR_BATTERY_CAPACITY_uWh / 10)
     else:
-      self.car_battery_power_uWh = int(car_battery_power_uWh)
+      # Reset capacity if it's low
+      self.car_battery_power_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_power_uWh))
     
 
   # Calculation tick
