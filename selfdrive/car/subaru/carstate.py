@@ -4,7 +4,8 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, PREGLOBAL_CAR
+from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, PREGLOBAL_CARS
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -19,7 +20,7 @@ class CarState(CarStateBase):
 
     ret.gas = cp.vl["Throttle"]['Throttle_Pedal'] / 255.
     ret.gasPressed = ret.gas > 1e-5
-    if self.car_fingerprint in PREGLOBAL_CAR:
+    if self.car_fingerprint in PREGLOBAL_CARS:
       ret.brakePressed = cp.vl["Brake_Pedal"]['Brake_Pedal'] > 2
     else:
       ret.brakePressed = cp.vl["Brake_Pedal"]['Brake_Pedal'] > 1e-5
@@ -104,7 +105,7 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
                         cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
 
-    if self.car_fingerprint in PREGLOBAL_CAR:
+    if self.car_fingerprint in PREGLOBAL_CARS:
       ret.steerError = cp.vl["Steering_Torque"]["LKA_Lockout"] == 1
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
@@ -140,21 +141,25 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_FL", "BodyInfo", 1),
       ("DOOR_OPEN_RR", "BodyInfo", 1),
       ("DOOR_OPEN_RL", "BodyInfo", 1),
+      ("Units", "Dash_State", 1),
       ("Gear", "Transmission", 0),
       ("L_ADJACENT", "BSD_RCTA", 0),
-      ("L_APPROACHING", "BSD_RCTA", 0),
       ("R_ADJACENT", "BSD_RCTA", 0),
+      ("L_APPROACHING", "BSD_RCTA", 0),
       ("R_APPROACHING", "BSD_RCTA", 0),
-      ("Units", "Dash_State", 1),
     ]
 
     checks = [
       # sig_address, frequency
+      ("Throttle", 100),
+      ("Dashlights", 10),
+      ("Brake_Pedal", 50),
       ("Wheel_Speeds", 50),
+      ("Transmission", 100),
       ("Steering_Torque", 50),
     ]
 
-    if CP.carFingerprint in PREGLOBAL_CAR:
+    if CP.carFingerprint in PREGLOBAL_CARS:
       signals += [
         ("LKA_Lockout", "Steering_Torque", 0),
       ]
@@ -187,7 +192,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    if CP.carFingerprint in PREGLOBAL_CAR:
+    if CP.carFingerprint in PREGLOBAL_CARS:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
         ("Not_Ready_Startup", "ES_DashStatus", 0),
@@ -213,6 +218,7 @@ class CarState(CarStateBase):
 
       checks = [
         ("ES_DashStatus", 20),
+        ("ES_CruiseThrottle", 20),
       ]
     else:
       signals = [

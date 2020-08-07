@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 class CAR:
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
-  FORESTER = "SUBARU FORESTER 2019 - 2020"
+  FORESTER = "SUBARU FORESTER 2019"
   FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
   LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
   OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
@@ -46,10 +46,10 @@ FINGERPRINTS = {
   {
     2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 544: 8, 545: 8, 546: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 811: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1614: 8, 1617: 8, 1632: 8, 1650: 8, 1651: 8, 1657: 8, 1658: 8, 1677: 8, 1722: 8, 1759: 8, 1787: 5, 1788: 8
   },
-  # Forester 2020 (jaypray)
-  {
-    2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 544: 8, 545: 8, 546: 8, 552: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 811: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 961: 8, 1614: 8, 1617: 8, 1632: 8, 1650: 8, 1651: 8, 1657: 8, 1658: 8, 1677: 8, 1697: 8, 1698: 8, 1743: 8, 1759: 8, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8
-  },
+  # Forester 2020 (jaypray) - TODO: needs new panda safety mode
+  #{
+  #  2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 544: 8, 545: 8, 546: 8, 552: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 811: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 961: 8, 1614: 8, 1617: 8, 1632: 8, 1650: 8, 1651: 8, 1657: 8, 1658: 8, 1677: 8, 1697: 8, 1698: 8, 1743: 8, 1759: 8, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8
+  #},
   # END FORESTER
   ],
   CAR.OUTBACK_PREGLOBAL: [
@@ -125,25 +125,25 @@ FW_VERSIONS = {
       b'\x00\xfe\xf7\x00\x00',
     ],
   },
-  CAR.FORESTER: {
-    # 2020 Forester - UDM / @jaypray
-    # Ecu, addr, subaddr: ROM ID
-    (Ecu.esp, 0x7b0, None): [
-      b'\xa3 \x19\x14\x00',
-    ],
-    (Ecu.eps, 0x746, None): [
-      b'\x8d\xc0\x04\x00',
-    ],
-    (Ecu.fwdCamera, 0x787, None): [
-      b'\x00\x00e`\x1f@  ',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xcb"`p\x07',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\x1a\xf6F`\x00',
-    ],
-  },
+  #CAR.FORESTER: {
+  #  # 2020 Forester - UDM / @jaypray
+  #  # Ecu, addr, subaddr: ROM ID
+  #  (Ecu.esp, 0x7b0, None): [
+  #    b'\xa3 \x19\x14\x00',
+  #  ],
+  #  (Ecu.eps, 0x746, None): [
+  #    b'\x8d\xc0\x04\x00',
+  #  ],
+  #  (Ecu.fwdCamera, 0x787, None): [
+  #    b'\x00\x00e`\x1f@  ',
+  #  ],
+  #  (Ecu.engine, 0x7e0, None): [
+  #    b'\xcb"`p\x07',
+  #  ],
+  #  (Ecu.transmission, 0x7e1, None): [
+  #    b'\x1a\xf6F`\x00',
+  #  ],
+  #},
   CAR.IMPREZA: {
     # 2018 Crosstrek - EDM / @martinl
     # 2018 Impreza - ADM / @Michael
@@ -328,4 +328,4 @@ DBC = {
   CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
 
-PREGLOBAL_CAR = [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]
+PREGLOBAL_CARS = [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]
