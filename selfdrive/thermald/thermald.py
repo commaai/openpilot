@@ -187,7 +187,7 @@ def thermald_thread():
   has_relay = False
 
   params = Params()
-  pm = PowerMonitoring()
+  pm = PowerMonitoring(params)
   no_panda_cnt = 0
 
   while 1:
@@ -393,15 +393,16 @@ def thermald_thread():
         off_ts = sec_since_boot()
         os.system('echo powersave > /sys/class/devfreq/soc:qcom,cpubw/governor')
 
-      # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
-      # more than a minute but we were running
-      if msg.thermal.batteryPercent < BATT_PERC_OFF and msg.thermal.batteryStatus == "Discharging" and \
-         started_seen and (sec_since_boot() - off_ts) > 60:
-        os.system('LD_LIBRARY_PATH="" svc power shutdown')
-
     # Offroad power monitoring
     pm.calculate(health)
     msg.thermal.offroadPowerUsage = pm.get_power_used()
+
+    # Check if we need to disable charging (handled by boardd)
+    msg.thermal.disableCharging = pm.should_disable_charging(health, off_ts)
+
+    # Check if we need to shut down
+    if pm.should_shutdown(health, off_ts, started_seen):
+      os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
