@@ -107,7 +107,7 @@ class PowerMonitoring:
       # Cap the car battery power and save it in a param
       self.car_battery_power_uWh = max(self.car_battery_power_uWh, 0)
       self.car_battery_power_uWh = min(self.car_battery_power_uWh, CAR_BATTERY_CAPACITY_uWh)
-      self.params.put("CarBatteryPower", int(self.car_battery_power_uWh))
+      self.params.put("CarBatteryPower", str(int(self.car_battery_power_uWh)))
 
       # First measurement, set integration time
       with self.integration_lock:
