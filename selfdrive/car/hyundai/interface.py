@@ -36,7 +36,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
-    elif candidate in [CAR.SONATA, CAR.SONATA_HEV]:
+    elif candidate == CAR.SONATA:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1513. + STD_CARGO_KG
       ret.wheelbase = 2.84
@@ -153,7 +153,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]  
 
     # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in [CAR.SONATA_HEV, CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_2019, CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER]:
+    if candidate in [CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_2019, CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER]:
       ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
 
     ret.centerToFront = ret.wheelbase * 0.4
