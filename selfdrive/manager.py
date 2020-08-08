@@ -389,6 +389,14 @@ def cleanup_all_processes(signal, frame):
     kill_managed_process(name)
   cloudlog.info("everything is dead")
 
+
+def send_managed_process_signal(name, sig):
+  if name not in running or name not in managed_processes:
+    return
+  cloudlog.info(f"sending signal {sig} to {name}")
+  os.kill(running[name].pid, sig)
+
+
 # ****************** run loop ******************
 
 def manager_init(should_register=True):
@@ -457,6 +465,7 @@ def manager_thread():
     for k in os.getenv("BLOCK").split(","):
       del managed_processes[k]
 
+  started_prev = False
   logger_dead = False
 
   while 1:
@@ -495,6 +504,12 @@ def manager_thread():
           start_managed_process(p)
         else:
           kill_managed_process(p)
+
+      # trigger an update after going offroad
+      if started_prev:
+        send_managed_process_signal("updated", signal.SIGHUP)
+
+    started_prev = msg.thermal.started
 
     # check the status of all processes, did any of them die?
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]

@@ -45,10 +45,13 @@ class TestCarModel(unittest.TestCase):
       else:
         raise Exception(f"missing test route for car {cls.car_model}")
 
-    try:
-      lr = LogReader(get_url(ROUTES[cls.car_model], 1))
-    except Exception:
-      lr = LogReader(get_url(ROUTES[cls.car_model], 0))
+    for seg in [2, 1, 0]:
+      try:
+        lr = LogReader(get_url(ROUTES[cls.car_model], seg))
+        break
+      except Exception:
+        if seg == 0:
+          raise
 
     has_relay = False
     can_msgs = []
