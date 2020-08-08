@@ -150,6 +150,7 @@ Community Maintained Cars and Features
 | Hyundai   | Santa Fe 2019                 | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata 2019                   | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Veloster 2019                 | SCC + LKAS        | Stock            | 5mph               | 0mph         |
+| Hyundai   | Genesis_G70                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Kia       | Forte 2018-19                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
