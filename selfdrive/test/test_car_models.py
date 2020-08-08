@@ -172,6 +172,10 @@ routes = {
     'carFingerprint': HYUNDAI.HYUNDAI_GENESIS,
     'enableCamera': True,
   },
+  "70c5bec28ec8e345|2020-08-08--12-22-23": {
+    'carFingerprint': HYUNDAI.GENESIS_G70,
+    'enableCamera': True,
+  },
   "38bfd238edecbcd7|2018-08-22--09-45-44": {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': False,
