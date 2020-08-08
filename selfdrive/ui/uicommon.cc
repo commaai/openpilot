@@ -178,7 +178,7 @@ void UIVision::update(volatile sig_atomic_t *do_exit) {
         usleep(100000);
         continue;
       }
-      vision_connected = true;
+      vision_connected = true;      
     }
     VIPCBuf *buf = visionstream_get(&stream, nullptr);
     if (buf == NULL) {
@@ -195,13 +195,13 @@ void UIVision::update(volatile sig_atomic_t *do_exit) {
 void UIVision::closeStream() {
   if (vision_connected) {
     visionstream_destroy(&stream);
-  }
-  for (int i = 0; i < UI_BUF_COUNT; i++) {
-    if (khr[i] != 0) {
-      visionimg_destroy_gl(khr[i], priv_hnds[i]);
-      glDeleteTextures(1, &frame_texs[i]);
-      khr[i] = 0;
-      frame_texs[i] = 0;
+    for (int i = 0; i < UI_BUF_COUNT; i++) {
+      if (khr[i] != 0) {
+        visionimg_destroy_gl(khr[i], priv_hnds[i]);
+        glDeleteTextures(1, &frame_texs[i]);
+        khr[i] = 0;
+        frame_texs[i] = 0;
+      }
     }
   }
 }
