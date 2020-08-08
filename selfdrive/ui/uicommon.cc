@@ -200,6 +200,8 @@ void UIVision::closeStream() {
     if (khr[i] != 0) {
       visionimg_destroy_gl(khr[i], priv_hnds[i]);
       glDeleteTextures(1, &frame_texs[i]);
+      khr[i] = 0;
+      frame_texs[i] = 0;
     }
   }
 }

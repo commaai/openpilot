@@ -54,7 +54,7 @@ class UIVision {
   bool openStream();
   void closeStream();
 
-  VisionStream stream;
+  VisionStream stream = {};
   bool vision_connected = false;
   bool front_view = false;
 
