@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <czmq.h>
 #include "messaging.hpp"
 
 #include "msmb_isp.h"
@@ -61,7 +62,8 @@ typedef struct CameraState {
 
   int device;
 
-  void* ops_sock;
+  void* ops_sock_handle;
+  zsock_t * ops_sock;
 
   uint32_t pixel_clock;
   uint32_t line_length_pclk;
