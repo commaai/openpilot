@@ -1,5 +1,5 @@
 import os
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.basedir import BASEDIR
 from selfdrive.version import comma_remote, tested_branch
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars

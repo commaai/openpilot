@@ -10,7 +10,7 @@ from os.path import expanduser
 from threading import Thread
 from selfdrive.manager import unblock_stdout
 
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 import os
 
 

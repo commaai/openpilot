@@ -6,7 +6,7 @@ import numpy as np
 
 import cereal.messaging as messaging
 from cereal import car, log
-from common.params import Params, put_nonblocking
+from common.params import Params, put_nonblocking # pylint: disable=no-name-in-module, import-error
 from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog

@@ -6,7 +6,7 @@ import shutil
 import stat
 import unittest
 
-from common.params import Params, UnknownKeyName
+from common.params import Params, UnknownKeyName # pylint: disable=no-name-in-module, import-error
 
 class TestParams(unittest.TestCase):
   def setUp(self):

@@ -11,7 +11,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CruiseButtons as CB
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 import selfdrive.manager as manager
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 
 
 def create_dir(path):

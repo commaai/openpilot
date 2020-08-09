@@ -15,7 +15,7 @@ from cereal import car, log
 from selfdrive.car.car_helpers import get_car
 import selfdrive.manager as manager
 import cereal.messaging as messaging
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from cereal.services import service_list
 from collections import namedtuple
 

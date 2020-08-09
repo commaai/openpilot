@@ -6,7 +6,7 @@ import subprocess
 import time
 from PIL import Image
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.camerad.snapshot.visionipc import VisionIPC
 
 with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:

@@ -2,7 +2,7 @@
 import gc
 
 from cereal import car
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.realtime import set_realtime_priority
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.planner import Planner

@@ -15,7 +15,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.loggerd.config import ROOT
 
 from common import android
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.api import Api
 from common.xattr import getxattr, setxattr
 

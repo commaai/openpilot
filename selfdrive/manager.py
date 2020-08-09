@@ -150,7 +150,7 @@ if not prebuilt:
 import cereal
 import cereal.messaging as messaging
 
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 import selfdrive.crash as crash
 from selfdrive.registration import register
 from selfdrive.version import version, dirty

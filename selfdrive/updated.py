@@ -34,7 +34,7 @@ from cffi import FFI
 from pathlib import Path
 
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.swaglog import cloudlog
 
 TEST_IP = os.getenv("UPDATER_TEST_IP", "8.8.8.8")

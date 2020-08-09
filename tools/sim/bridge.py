@@ -8,7 +8,7 @@ import threading
 import random
 import cereal.messaging as messaging
 import argparse
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.realtime import Ratekeeper
 from lib.can import can_function, sendcan_function
 from lib.helpers import FakeSteeringWheel

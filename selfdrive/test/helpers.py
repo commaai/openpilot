@@ -4,7 +4,7 @@ from nose.tools import nottest
 
 from common.android import ANDROID
 from common.apk import update_apks, start_offroad, pm_apply_packages, android_packages
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.version import training_version, terms_version
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
 

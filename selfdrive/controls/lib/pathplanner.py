@@ -6,7 +6,7 @@ from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
 from selfdrive.controls.lib.lane_planner import LanePlanner
 from selfdrive.config import Conversions as CV
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 import cereal.messaging as messaging
 from cereal import log
 

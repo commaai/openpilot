@@ -6,7 +6,7 @@ from collections import defaultdict, deque
 import cereal.messaging as messaging
 from cereal import car
 from common.numpy_fast import interp
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.realtime import Ratekeeper, set_realtime_priority
 from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid

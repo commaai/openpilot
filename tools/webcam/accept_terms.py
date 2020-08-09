@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.version import terms_version, training_version
 
 if __name__ == '__main__':

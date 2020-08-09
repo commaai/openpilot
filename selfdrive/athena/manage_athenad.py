@@ -4,7 +4,7 @@ import time
 from multiprocessing import Process
 
 import selfdrive.crash as crash
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.launcher import launcher
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import version, dirty
