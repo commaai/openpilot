@@ -43,12 +43,13 @@ TEST_IP = os.getenv("UPDATER_TEST_IP", "8.8.8.8")
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
+NEOS_VERSION = os.getenv("UPDATER_NEOS_VERSION", "/VERSION")
+NEOSUPDATE_DIR = os.getenv("UPDATER_NEOSUPDATE_DIR", "/data/neosupdate")
+
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
-
-NEOSUPDATE_DIR = "/data/neosupdate"
 
 
 # Workaround for lack of os.link in the NEOS/termux python
@@ -216,7 +217,7 @@ def attempt_update(wait_helper):
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
       # Download the accompanying NEOS version if it doesn't match the current version
-      with open("/VERSION", "r") as f:
+      with open(NEOS_VERSION, "r") as f:
         current_neos_version = f.read().strip()
 
       required_neos_version = run(["bash", "-c",
@@ -265,10 +266,6 @@ def attempt_update(wait_helper):
   else:
     cloudlog.info("nothing new from git at this time")
 
-  # Clear old NEOS updates
-  #if not new_version and os.path.isdir(NEOSUPDATE_DIR):
-  #  shutil.rmtree(NEOSUPDATE_DIR)
-
   set_update_available_params(new_version)
   return new_version
 
@@ -298,6 +295,7 @@ def main():
   wait_helper.sleep(30)
 
   update_failed_count = 0
+  update_available = False
   overlay_initialized = False
   while not wait_helper.shutdown:
     update_failed_count += 1
@@ -327,8 +325,10 @@ def main():
         overlay_initialized = True
 
       if params.get("IsOffroad") == b"1":
-        attempt_update(wait_helper)
+        update_available = attempt_update(wait_helper) or update_available
         update_failed_count = 0
+        if not update_available and os.path.isdir(NEOSUPDATE_DIR):
+          shutil.rmtree(NEOSUPDATE_DIR)
       else:
         cloudlog.info("not running updater, openpilot running")
 
