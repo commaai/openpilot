@@ -64,31 +64,8 @@ static int fsync_dir(const char* path){
     return result;
   }
 }
-/*
-static int ensure_dir_exists(const char* path) {
-  struct stat st;
-  if (stat(path, &st) == -1) {
-    return mkdir(path, 0700);
-  }
-  return 0;
-}
-*/
-int write_db_value(const char* key, const char* value, size_t value_size, bool persistent_param) {
-  // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
-  // 1) Create temp file
-  // 2) Write data to temp file
-  // 3) fsync() the temp file
-  // 4) rename the temp file to the real name
-  // 5) fsync() the containing directory
 
-//  int lock_fd = -1;
-//  int tmp_fd = -1;
-/*
-  char tmp_path[1024];
-  char path[1024];
-  char *tmp_dir;
-  ssize_t bytes_written;
-*/
+int write_db_value(const char* key, const char* value, size_t value_size, bool persistent_param) {
   int result;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
   params::Params p = params::Params::Params(params_path);
@@ -99,142 +76,21 @@ int write_db_value(const char* key, const char* value, size_t value_size, bool p
     result = -1;
   }
   return result; 
-
-/*
-  // Make sure params path exists
-  result = ensure_dir_exists(params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  result = snprintf(path, sizeof(path), "%s/d", params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // See if the symlink exists, otherwise create it
-  struct stat st;
-  if (stat(path, &st) == -1) {
-    // Create temp folder
-    result = snprintf(path, sizeof(path), "%s/.tmp_XXXXXX", params_path);
-    if (result < 0) {
-      goto cleanup;
-    }
-    tmp_dir = mkdtemp(path);
-    if (tmp_dir == NULL){
-      goto cleanup;
-    }
-
-    // Set permissions
-    result = chmod(tmp_dir, 0777);
-    if (result < 0) {
-      goto cleanup;
-    }
-
-    // Symlink it to temp link
-    result = snprintf(tmp_path, sizeof(tmp_path), "%s.link", tmp_dir);
-    if (result < 0) {
-      goto cleanup;
-    }
-    result = symlink(tmp_dir, tmp_path);
-    if (result < 0) {
-      goto cleanup;
-    }
-
-    // Move symlink to <params>/d
-    result = snprintf(path, sizeof(path), "%s/d", params_path);
-    if (result < 0) {
-      goto cleanup;
-    }
-    result = rename(tmp_path, path);
-    if (result < 0) {
-      goto cleanup;
-    }
-  }
-
-  // Write value to temp.
-  result =
-      snprintf(tmp_path, sizeof(tmp_path), "%s/.tmp_value_XXXXXX", params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  tmp_fd = mkstemp(tmp_path);
-  bytes_written = write(tmp_fd, value, value_size);
-  if (bytes_written != value_size) {
-    result = -20;
-    goto cleanup;
-  }
-
-  // Build lock path
-  result = snprintf(path, sizeof(path), "%s/.lock", params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-  lock_fd = open(path, O_CREAT);
-
-  // Build key path
-  result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // Take lock.
-  result = flock(lock_fd, LOCK_EX);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // change permissions to 0666 for apks
-  result = fchmod(tmp_fd, 0666);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // fsync to force persist the changes.
-  result = fsync(tmp_fd);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // Move temp into place.
-  result = rename(tmp_path, path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // fsync parent directory
-  result = snprintf(path, sizeof(path), "%s/d", params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  result = fsync_dir(path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-cleanup:
-  // Release lock.
-  if (lock_fd >= 0) {
-    close(lock_fd);
-  }
-  if (tmp_fd >= 0) {
-    if (result < 0) {
-      remove(tmp_path);
-    }
-    close(tmp_fd);
-  }
-  return result;
-*/
 }
 
 int delete_db_value(const char* key, bool persistent_param) {
-  int lock_fd = -1;
+  //int lock_fd = -1;
   int result;
-  char path[1024];
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
-
+  params::Params p = params::Params::Params(params_path);
+  try {
+    p._delete(key);
+    result = 0;
+  } catch (const exception& e) {
+    result = -1;
+  }
+  return result;
+/*
   // Build lock path, and open lockfile
   result = snprintf(path, sizeof(path), "%s/.lock", params_path);
   if (result < 0) {
@@ -278,6 +134,7 @@ cleanup:
     close(lock_fd);
   }
   return result;
+*/
 }
 
 int read_db_value(const char* key, char** value, size_t* value_sz, bool persistent_param) {
