@@ -1,52 +1,38 @@
-<!--
+<!-- Please copy and paste the relevant template -->
 
-Please copy and paste the relevant template
+<!--- ***** Template: Car bug fix *****
 
+**Description** [](A description of the bug and the fix. Also link any relevant issues.)
 
-<!-- ***** Template: Car bug fix ***** -->
-
-**Description**
-
-<!-- A description of the bug and the fix. Also link any relevant issues. -->
-
-**Verification**
-
-<!-- Explain how you tested this bug fix. -->
+**Verification** [](Explain how you tested this bug fix.)
 
 **Route**
-
 Route: [a route with the bug fix]
 
+-->
 
-<!-- ***** Template: Bug fix ***** -->
+<!--- ***** Template: Bug fix *****
 
-**Description**
+**Description** [](A description of the bug and the fix. Also link any relevant issues.)
 
-<!-- A description of the bug and the fix. Also link the issue if it exists. -->
+**Verification** [](Explain how you tested this bug fix.)
 
-**Verification**
+-->
 
-<!-- Explain how you tested this bug fix. -->
-
-
-<!-- ***** Template: Car port ***** -->
+<!--- ***** Template: Car port *****
 
 **Checklist**
-
 - [ ] added to README
 - [ ] test route added to [test_car_models](../../selfdrive/test/test_car_models.py)
 - [ ] route with openpilot:
 - [ ] route with stock system:
 
+-->
 
-<!-- ***** Template: Refactor ***** -->
+<!--- ***** Template: Refactor *****
 
-**Description**
+**Description** [](A description of the refactor, including the goals it accomplishes.)
 
-<!-- A description of the refactor, including the goals it accomplishes. -->
-
-**Verification**
-
-<!-- Explain how you tested the refactor for regressions. -->
+**Verification** [](Explain how you tested the refactor for regressions.)
 
 -->
