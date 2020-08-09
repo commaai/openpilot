@@ -101,7 +101,7 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
     if (!isalnum(de->d_name[0])) continue;
     std::string key = std::string(de->d_name);
     try {
-      value = p.get(key); 
+      value = p.get(key, false); 
     } catch (const exception& e) {
       return -1;
     }
