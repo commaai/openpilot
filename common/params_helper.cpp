@@ -19,6 +19,68 @@ using std::endl;
 
 namespace params {
   
+  map<string, vector<TxType>> key_map = {
+    {"AccessToken", {TxType::CLEAR_ON_MANAGER_START} },
+    {"AthenadPid", {TxType::PERSISTENT} },
+    {"CalibrationParams", {TxType::PERSISTENT} },
+    {"CarParams", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"CarParamsCache", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"CarVin", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"CommunityFeaturesToggle", {TxType::PERSISTENT} },
+    {"CompletedTrainingVersion", {TxType::PERSISTENT} },
+    {"ControlsParams", {TxType::PERSISTENT} },
+    {"DisablePowerDown", {TxType::PERSISTENT} },
+    {"DisableUpdates", {TxType::PERSISTENT} },
+    {"DoUninstall", {TxType::CLEAR_ON_MANAGER_START} },
+    {"DongleId", {TxType::PERSISTENT} },
+    {"GitBranch", {TxType::PERSISTENT} },
+    {"GitCommit", {TxType::PERSISTENT} },
+    {"GitRemote", {TxType::PERSISTENT} },
+    {"GithubSshKeys", {TxType::PERSISTENT} },
+    {"HasAcceptedTerms", {TxType::PERSISTENT} },
+    {"HasCompletedSetup", {TxType::PERSISTENT} },
+    {"IsDriverViewEnabled", {TxType::CLEAR_ON_MANAGER_START} },
+    {"IsLdwEnabled", {TxType::PERSISTENT} },
+    {"IsGeofenceEnabled", {TxType::PERSISTENT} },
+    {"IsMetric", {TxType::PERSISTENT} },
+    {"IsOffroad", {TxType::CLEAR_ON_MANAGER_START} },
+    {"IsRHD", {TxType::PERSISTENT} },
+    {"IsTakingSnapshot", {TxType::CLEAR_ON_MANAGER_START} },
+    {"IsUpdateAvailable", {TxType::CLEAR_ON_MANAGER_START} },
+    {"IsUploadRawEnabled", {TxType::PERSISTENT} },
+    {"LastAthenaPingTime", {TxType::PERSISTENT} },
+    {"LastUpdateTime", {TxType::PERSISTENT} },
+    {"LimitSetSpeed", {TxType::PERSISTENT} },
+    {"LimitSetSpeedNeural", {TxType::PERSISTENT} },
+    {"LiveParameters", {TxType::PERSISTENT} },
+    {"LongitudinalControl", {TxType::PERSISTENT} },
+    {"OpenpilotEnabledToggle", {TxType::PERSISTENT} },
+    {"LaneChangeEnabled", {TxType::PERSISTENT} },
+    {"PandaFirmware", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"PandaFirmwareHex", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"PandaDongleId", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"Passive", {TxType::PERSISTENT} },
+    {"RecordFront", {TxType::PERSISTENT} },
+    {"ReleaseNotes", {TxType::PERSISTENT} },
+    {"ShouldDoUpdate", {TxType::CLEAR_ON_MANAGER_START} },
+    {"SpeedLimitOffset", {TxType::PERSISTENT} },
+    {"SubscriberInfo", {TxType::PERSISTENT} },
+    {"TermsVersion", {TxType::PERSISTENT} },
+    {"TrainingVersion", {TxType::PERSISTENT} },
+    {"UpdateAvailable", {TxType::CLEAR_ON_MANAGER_START} },
+    {"UpdateFailedCount", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Version", {TxType::PERSISTENT} },
+    {"Offroad_ChargeDisabled", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"Offroad_ConnectivityNeeded", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_ConnectivityNeededPrompt", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_TemperatureTooHigh", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_PandaFirmwareMismatch", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+   {"Offroad_InvalidTime", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_IsTakingSnapshot", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_NeosUpdate", {TxType::CLEAR_ON_MANAGER_START} }
+
+  };
+
   static bool is_directory(string path) {
     struct stat st;
     if (stat(path.c_str(), &st) == 0) {
@@ -28,7 +90,7 @@ namespace params {
     }
     return false;
   }
-
+/*
   static string current_path() {
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -37,7 +99,7 @@ namespace params {
       return "";
     }
   }
-
+*/
   static bool is_symlink(string path) {
     struct stat st;
     int result;
@@ -458,7 +520,7 @@ namespace params {
     DBAccessor* accessor = transaction(true);
     map<string,vector<TxType>>::iterator itr;
 
-    for(itr = keys.begin(); itr != keys.end(); itr++) {
+    for(itr = key_map.begin(); itr != key_map.end(); itr++) {
       if(has(itr->second, t)) {
         accessor->_delete(itr->first);
       }
@@ -483,7 +545,7 @@ namespace params {
   string Params::get(string key) {
     string val = "";
     try {
-      keys.at(key);
+      key_map.at(key);
     } catch(const exception&) {
       throw UnknownKeyName();
     }
@@ -494,7 +556,7 @@ namespace params {
   string Params::get(string key, bool block) {
     string val = "";
     try {
-      keys.at(key);
+      key_map.at(key);
     } catch(const exception&) {
       throw UnknownKeyName();
     }
@@ -503,14 +565,14 @@ namespace params {
       if (!block || (val != "")) {
         break;
       }
-      sleep(.05);
+      usleep(50);
     }
     return val;
   }
    
   void Params::put(string key, string data) {
     try {
-      keys.at(key);
+      key_map.at(key);
     } catch(const exception&) {
       throw UnknownKeyName();
     }  
@@ -518,12 +580,12 @@ namespace params {
   }
 
   void Params::f() {
-    sleep(.1);
+    usleep(100);
     put("CarParams", "test");
   }
 
 }
-
+/*
 using namespace params;
 
 int main() {
@@ -664,4 +726,4 @@ int main() {
   remove_all(test_path); 
   return 0;
 }
-
+*/

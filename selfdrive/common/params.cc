@@ -1,4 +1,5 @@
 #include "common/params.h"
+#include "params_helper.h"
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -63,7 +64,7 @@ static int fsync_dir(const char* path){
     return result;
   }
 }
-
+/*
 static int ensure_dir_exists(const char* path) {
   struct stat st;
   if (stat(path, &st) == -1) {
@@ -71,7 +72,7 @@ static int ensure_dir_exists(const char* path) {
   }
   return 0;
 }
-
+*/
 int write_db_value(const char* key, const char* value, size_t value_size, bool persistent_param) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
@@ -80,15 +81,26 @@ int write_db_value(const char* key, const char* value, size_t value_size, bool p
   // 4) rename the temp file to the real name
   // 5) fsync() the containing directory
 
-  int lock_fd = -1;
-  int tmp_fd = -1;
-  int result;
+//  int lock_fd = -1;
+//  int tmp_fd = -1;
+/*
   char tmp_path[1024];
   char path[1024];
   char *tmp_dir;
   ssize_t bytes_written;
+*/
+  int result;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
+  params::Params p = params::Params::Params(params_path);
+  try {
+    p.put(key, value);
+    result = 0;
+  } catch (const exception& e) {
+    result = -1;
+  }
+  return result; 
 
+/*
   // Make sure params path exists
   result = ensure_dir_exists(params_path);
   if (result < 0) {
@@ -214,6 +226,7 @@ cleanup:
     close(tmp_fd);
   }
   return result;
+*/
 }
 
 int delete_db_value(const char* key, bool persistent_param) {
@@ -269,10 +282,10 @@ cleanup:
 
 int read_db_value(const char* key, char** value, size_t* value_sz, bool persistent_param) {
   int lock_fd = -1;
-  int result;
   char path[1024];
+  int result;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
-
+  
   result = snprintf(path, sizeof(path), "%s/.lock", params_path);
   if (result < 0) {
     goto cleanup;
