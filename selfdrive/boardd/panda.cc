@@ -25,6 +25,10 @@ Panda::Panda(){
   dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
   if (dev_handle == NULL) { goto fail; }
 
+  if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
+    libusb_detach_kernel_driver(dev_handle, 0);
+  }
+
   err = libusb_set_configuration(dev_handle, 1);
   if (err != 0) { goto fail; }
 
