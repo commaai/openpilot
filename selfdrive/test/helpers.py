@@ -10,8 +10,7 @@ from selfdrive.manager import start_managed_process, kill_managed_process, get_r
 
 def set_params_enabled():
   params = Params()
-  params.put("HasAcceptedTerms", "1")
-  params.put("TermsVersion", terms_version)
+  params.put("HasAcceptedTerms", terms_version)
   params.put("HasCompletedSetup", "1")
   params.put("OpenpilotEnabledToggle", "1")
   params.put("CommunityFeaturesToggle", "1")
