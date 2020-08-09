@@ -12,7 +12,6 @@
 #include <cutils/properties.h>
 
 #include <pthread.h>
-#include <czmq.h>
 #include <capnp/serialize.h>
 #include "msmb_isp.h"
 #include "msmb_ispif.h"
@@ -125,9 +124,9 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
 
   s->self_recover = 0;
 
-  zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
-  assert(ops_sock);
-  s->ops_sock = zsock_resolve(ops_sock);
+  s->ops_sock = zsock_new_push(">inproc://cameraops");
+  assert(s->ops_sock);
+  s->ops_sock_handle = zsock_resolve(s->ops_sock);
 
   tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame",
     camera_release_buffer, s);
@@ -448,7 +447,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     .grey_frac = grey_frac,
   };
 
-  zmq_send(s->ops_sock, &msg, sizeof(msg), ZMQ_DONTWAIT);
+  zmq_send(s->ops_sock_handle, &msg, sizeof(msg), ZMQ_DONTWAIT);
 }
 
 static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
@@ -1956,6 +1955,8 @@ static void camera_close(CameraState *s) {
   }
 
   free(s->eeprom);
+
+  zsock_destroy(&s->ops_sock);
 }
 
 
