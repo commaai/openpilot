@@ -329,7 +329,7 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
 
   // timeout on frontview
-  if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
+  if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
     scene.frontview = false;
   }
 

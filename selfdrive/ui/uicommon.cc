@@ -141,6 +141,7 @@ bool UIVision::openStream() {
   if (err) {
     return false;
   }
+  // init buffers
   assert(stream.num_bufs == UI_BUF_COUNT);
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     VisionImg img = {
