@@ -282,15 +282,17 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
     for(int i = 0; i < msg->numWords;i++)
       words.push_back(measurements[i].dwrd);
 
-    if(subframeId == 1) {
-      nav_frame_buffer[msg->gnssId][msg->svid] = subframes_map();
-      nav_frame_buffer[msg->gnssId][msg->svid][subframeId] = words;
-    } else if(nav_frame_buffer[msg->gnssId][msg->svid].find(subframeId-1) != nav_frame_buffer[msg->gnssId][msg->svid].end())
-      nav_frame_buffer[msg->gnssId][msg->svid][subframeId] = words;
-    if(nav_frame_buffer[msg->gnssId][msg->svid].size() == 5) {
-      EphemerisData ephem_data(msg->svid, nav_frame_buffer[msg->gnssId][msg->svid]);
-      MessageBuilder msg_builder;
-      auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
+    subframes_map &map = nav_frame_buffer[msg->gnssId][msg->svid];
+    if(subframeId == 1 || map.find(subframeId-1) != map.end()) {
+      map[subframeId] = words;
+    }
+    if(map.size() == 5) {
+      EphemerisData ephem_data(msg->svid, map);
+      capnp::MallocMessageBuilder msg_builder;
+      cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
+      event.setLogMonoTime(nanos_since_boot());
+      auto gnss = event.initUbloxGnss();
+      auto eph = gnss.initEphemeris();
       eph.setSvId(ephem_data.svId);
       eph.setToc(ephem_data.toc);
       eph.setGpsWeek(ephem_data.gpsWeek);
