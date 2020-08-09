@@ -65,6 +65,7 @@ def print_cpu_usage(first_proc, last_proc):
 
 def all_running():
   running = manager.get_running()
+  print({p: (p in running and running[p].is_alive()) for p in manager.car_started_processes})
   return all(p in running and running[p].is_alive() for p in manager.car_started_processes)
 
 def test_cpu_usage():
