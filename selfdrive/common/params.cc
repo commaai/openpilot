@@ -37,7 +37,7 @@ static const char* persistent_params_path = default_params_path;
 
 } //namespace
 
-
+/*
 static int fsync_dir(const char* path){
   int result = 0;
   int fd = open(path, O_RDONLY);
@@ -64,6 +64,8 @@ static int fsync_dir(const char* path){
     return result;
   }
 }
+
+*/
 
 int write_db_value(const char* key, const char* value, size_t value_size, bool persistent_param) {
   int result;
