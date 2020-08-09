@@ -1733,9 +1733,7 @@ void actuator_move(CameraState *s, uint16_t target) {
   //LOGD("actuator move focus: %d", err);
 
   s->cur_step_pos = dest_step_pos;
-  pthread_mutex_lock(&s->frame_info_lock);
   s->cur_lens_pos = actuator_cfg_data.cfg.move.curr_lens_pos;
-  pthread_mutex_unlock(&s->frame_info_lock);
 
   //LOGD("step %d   target: %d  lens pos: %d", dest_step_pos, target, s->cur_lens_pos);
 }

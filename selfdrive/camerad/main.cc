@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <signal.h>
 #include <cassert>
-#include <mutex>
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "cameras/camera_qcom.h"
@@ -287,6 +286,7 @@ void* frontview_thread(void *arg) {
 
     // push YUV buffer
     int yuv_idx = pool_select(&s->yuv_front_pool);
+    s->yuv_front_metas[yuv_idx] = frame_data;
 
     rgb_to_yuv_queue(&s->front_rgb_to_yuv_state, q, s->rgb_front_bufs_cl[ui_idx], s->yuv_front_cl[yuv_idx]);
     visionbuf_sync(&s->yuv_front_ion[yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
