@@ -123,7 +123,7 @@ void read_db_value_blocking(const char* key, char** value, size_t* value_sz, boo
     string ret = p.get(key, true);
     *value = ret.c_str();
     value_sz = sizeof(*value);
-    result = 0
+    result = 0;
   } catch (const exception& e) {
     result = -1;
   }
@@ -142,9 +142,11 @@ while (1) {
 }
 
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param) {
-  int err = 0;
+  //int err = 0;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
-
+  params::Params p = params::Params::Params(params_path);
+  
+/*
   std::string lock_path = util::string_format("%s/.lock", params_path);
 
   int lock_fd = open(lock_path.c_str(), 0);
@@ -152,26 +154,33 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
 
   err = flock(lock_fd, LOCK_EX);
   if (err < 0) return err;
+*/
 
   std::string key_path = util::string_format("%s/d", params_path);
   DIR *d = opendir(key_path.c_str());
+/*
   if (!d) {
     close(lock_fd);
     return -1;
   }
-
+*/
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
     if (!isalnum(de->d_name[0])) continue;
     std::string key = std::string(de->d_name);
-    std::string value = util::read_file(util::string_format("%s/%s", key_path.c_str(), key.c_str()));
+  //  std::string value = util::read_file(util::string_format("%s/%s", key_path.c_str(), key.c_str()));
+    try {
+      std::string value = p.get(key); 
+    } catch (const exception& e) {
+      result = -1;
+    }
 
     (*params)[key] = value;
   }
 
   closedir(d);
 
-  close(lock_fd);
+//  close(lock_fd);
   return 0;
 }
 
