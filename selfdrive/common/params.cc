@@ -76,6 +76,7 @@ int read_db_value(const char* key, char** value, size_t* value_sz, bool persiste
   return result;
 }
 
+
 void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
   while (1) {
     const int result = read_db_value(key, value, value_sz, persistent_param);
@@ -87,6 +88,7 @@ void read_db_value_blocking(const char* key, char** value, size_t* value_sz, boo
     }
   }
 }
+
 
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param) {
   std::string value;
