@@ -16,10 +16,6 @@
 #include <string>
 #include <string.h>
 
-#include "common/util.h"
-#include "common/utilpp.h"
-
-
 namespace {
 
 template <typename T>
@@ -51,7 +47,6 @@ int write_db_value(const char* key, const char* value, size_t value_size, bool p
 }
 
 int delete_db_value(const char* key, bool persistent_param) {
-  //int lock_fd = -1;
   int result;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
   params::Params p = params::Params::Params(params_path);
@@ -71,50 +66,14 @@ int read_db_value(const char* key, char** value, size_t* value_sz, bool persiste
   try {
     string ret = p.get(key, false);
     *value = const_cast<char*>(ret.c_str());
-    const size_t byteswritten = sizeof(*value);
-    size_t temp = (size_t) byteswritten;
+    const size_t bytesread = sizeof(*value);
+    size_t temp = (size_t) bytesread;
     *value_sz = temp;
     result = 0;
   } catch (const exception& e) {
     result = -1;
   }
   return result;
- /* 
-  result = snprintf(path, sizeof(path), "%s/.lock", params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-  lock_fd = open(path, 0);
-
-  result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // Take lock.
-  result = flock(lock_fd, LOCK_EX);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // Read value.
-  // TODO(mgraczyk): If there is a lot of contention, we can release the lock
-  //                 after opening the file, before reading.
-  *value = static_cast<char*>(read_file(path, value_sz));
-  if (*value == NULL) {
-    result = -22;
-    goto cleanup;
-  }
-
-  result = 0;
-
-cleanup:
-  // Release lock.
-  if (lock_fd >= 0) {
-    close(lock_fd);
-  }
-  return result;
-*/
 }
 
 void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
@@ -130,34 +89,17 @@ void read_db_value_blocking(const char* key, char** value, size_t* value_sz, boo
 }
 
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param) {
-  //int err = 0;
   std::string value;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
   params::Params p = params::Params::Params(params_path);
   
-/*
-  std::string lock_path = util::string_format("%s/.lock", params_path);
-
-  int lock_fd = open(lock_path.c_str(), 0);
-  if (lock_fd < 0) return -1;
-
-  err = flock(lock_fd, LOCK_EX);
-  if (err < 0) return err;
-*/
-
-  std::string key_path = util::string_format("%s/d", params_path);
+  std::string key_path = std::string(params_path) +"/d";
   DIR *d = opendir(key_path.c_str());
-/*
-  if (!d) {
-    close(lock_fd);
-    return -1;
-  }
-*/
+  
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
     if (!isalnum(de->d_name[0])) continue;
     std::string key = std::string(de->d_name);
-  //  std::string value = util::read_file(util::string_format("%s/%s", key_path.c_str(), key.c_str()));
     try {
       value = p.get(key); 
     } catch (const exception& e) {
@@ -168,8 +110,6 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
   }
 
   closedir(d);
-
-//  close(lock_fd);
   return 0;
 }
 

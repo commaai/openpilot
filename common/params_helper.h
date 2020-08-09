@@ -109,11 +109,9 @@ namespace params {
     public:
       Params(string d);
       void clear_all();
-      void f();
       void manager_start();
       void panda_disconnect();
       void _delete(string key);
-      string get(string key);
       string get(string key, bool);
       void put(string key, string data);
   };
