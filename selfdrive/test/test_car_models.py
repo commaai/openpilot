@@ -460,6 +460,7 @@ non_tested_cars = [
   TOYOTA.HIGHLANDER,
   TOYOTA.HIGHLANDERH,
   TOYOTA.HIGHLANDERH_TSS2,
+  SUBARU.OUTBACK_PREGLOBAL_2018,
 ]
 
 if __name__ == "__main__":
