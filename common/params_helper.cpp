@@ -19,6 +19,68 @@ using std::endl;
 
 namespace params {
   
+  map<string, vector<TxType>> key_map = {
+    {"AccessToken", {TxType::CLEAR_ON_MANAGER_START} },
+    {"AthenadPid", {TxType::PERSISTENT} },
+    {"CalibrationParams", {TxType::PERSISTENT} },
+    {"CarParams", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"CarParamsCache", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"CarVin", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"CommunityFeaturesToggle", {TxType::PERSISTENT} },
+    {"CompletedTrainingVersion", {TxType::PERSISTENT} },
+    {"ControlsParams", {TxType::PERSISTENT} },
+    {"DisablePowerDown", {TxType::PERSISTENT} },
+    {"DisableUpdates", {TxType::PERSISTENT} },
+    {"DoUninstall", {TxType::CLEAR_ON_MANAGER_START} },
+    {"DongleId", {TxType::PERSISTENT} },
+    {"GitBranch", {TxType::PERSISTENT} },
+    {"GitCommit", {TxType::PERSISTENT} },
+    {"GitRemote", {TxType::PERSISTENT} },
+    {"GithubSshKeys", {TxType::PERSISTENT} },
+    {"HasAcceptedTerms", {TxType::PERSISTENT} },
+    {"HasCompletedSetup", {TxType::PERSISTENT} },
+    {"IsDriverViewEnabled", {TxType::CLEAR_ON_MANAGER_START} },
+    {"IsLdwEnabled", {TxType::PERSISTENT} },
+    {"IsGeofenceEnabled", {TxType::PERSISTENT} },
+    {"IsMetric", {TxType::PERSISTENT} },
+    {"IsOffroad", {TxType::CLEAR_ON_MANAGER_START} },
+    {"IsRHD", {TxType::PERSISTENT} },
+    {"IsTakingSnapshot", {TxType::CLEAR_ON_MANAGER_START} },
+    {"IsUpdateAvailable", {TxType::CLEAR_ON_MANAGER_START} },
+    {"IsUploadRawEnabled", {TxType::PERSISTENT} },
+    {"LastAthenaPingTime", {TxType::PERSISTENT} },
+    {"LastUpdateTime", {TxType::PERSISTENT} },
+    {"LimitSetSpeed", {TxType::PERSISTENT} },
+    {"LimitSetSpeedNeural", {TxType::PERSISTENT} },
+    {"LiveParameters", {TxType::PERSISTENT} },
+    {"LongitudinalControl", {TxType::PERSISTENT} },
+    {"OpenpilotEnabledToggle", {TxType::PERSISTENT} },
+    {"LaneChangeEnabled", {TxType::PERSISTENT} },
+    {"PandaFirmware", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"PandaFirmwareHex", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"PandaDongleId", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"Passive", {TxType::PERSISTENT} },
+    {"RecordFront", {TxType::PERSISTENT} },
+    {"ReleaseNotes", {TxType::PERSISTENT} },
+    {"ShouldDoUpdate", {TxType::CLEAR_ON_MANAGER_START} },
+    {"SpeedLimitOffset", {TxType::PERSISTENT} },
+    {"SubscriberInfo", {TxType::PERSISTENT} },
+    {"TermsVersion", {TxType::PERSISTENT} },
+    {"TrainingVersion", {TxType::PERSISTENT} },
+    {"UpdateAvailable", {TxType::CLEAR_ON_MANAGER_START} },
+    {"UpdateFailedCount", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Version", {TxType::PERSISTENT} },
+    {"Offroad_ChargeDisabled", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+    {"Offroad_ConnectivityNeeded", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_ConnectivityNeededPrompt", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_TemperatureTooHigh", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_PandaFirmwareMismatch", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
+   {"Offroad_InvalidTime", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_IsTakingSnapshot", {TxType::CLEAR_ON_MANAGER_START} },
+    {"Offroad_NeosUpdate", {TxType::CLEAR_ON_MANAGER_START} }
+
+  };
+
   static bool is_directory(string path) {
     struct stat st;
     if (stat(path.c_str(), &st) == 0) {
@@ -28,16 +90,7 @@ namespace params {
     }
     return false;
   }
-
-  static string current_path() {
-    char cwd[1024];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-      return cwd;
-    } else {
-      return "";
-    }
-  }
-
+  
   static bool is_symlink(string path) {
     struct stat st;
     int result;
@@ -458,7 +511,7 @@ namespace params {
     DBAccessor* accessor = transaction(true);
     map<string,vector<TxType>>::iterator itr;
 
-    for(itr = keys.begin(); itr != keys.end(); itr++) {
+    for(itr = key_map.begin(); itr != key_map.end(); itr++) {
       if(has(itr->second, t)) {
         accessor->_delete(itr->first);
       }
@@ -479,22 +532,11 @@ namespace params {
     accessor->_delete(key);
     delete accessor;
   }
-
-  string Params::get(string key) {
-    string val = "";
-    try {
-      keys.at(key);
-    } catch(const exception&) {
-      throw UnknownKeyName();
-    }
-    val = read_db(db, key);
-    return val;
-  }
-
+  
   string Params::get(string key, bool block) {
     string val = "";
     try {
-      keys.at(key);
+      key_map.at(key);
     } catch(const exception&) {
       throw UnknownKeyName();
     }
@@ -503,165 +545,18 @@ namespace params {
       if (!block || (val != "")) {
         break;
       }
-      sleep(.05);
+      usleep(50);
     }
     return val;
   }
    
   void Params::put(string key, string data) {
     try {
-      keys.at(key);
+      key_map.at(key);
     } catch(const exception&) {
       throw UnknownKeyName();
     }  
     write_db(db, key, data); 
   }
 
-  void Params::f() {
-    sleep(.1);
-    put("CarParams", "test");
-  }
-
 }
-
-using namespace params;
-
-int main() {
- 
-  // Testing mkdirs
-  string test_path = current_path() + "/test";
-  
-  mkdirs_exists_ok(test_path);
-
-  // Successful fsync
-  int result = fsync_dir(test_path.c_str());
-  assert(result == 0);
-
-  // Failed fsync
-  test_path = current_path() + "/cat///";
-  result = fsync_dir(test_path.c_str());
-  assert(result == -1);
-  test_path = current_path() + "/test";
-  DBAccessor* accessor = new DBReader(test_path);
-
-  //Entered DB.
-  bool flag = true;
-  try {
-    accessor->_check_entered();
-  } catch (const exception& e) {
-    flag =false;
-  }
-  assert(flag);
-  delete accessor;
-  //DBWriter
-  test_path = current_path() + "/test";
-  accessor = new DBWriter(test_path);
-
-  //Entered DB.
-  flag = true;
-  try {
-    accessor->_check_entered();
-  } catch (const exception& e) {
-    flag = false;
-  }
-  assert(flag);
-
-  //Check data path
-  assert(accessor->_data_path() == test_path + "/d");
-  
-  //Check data path
-  assert(accessor->_data_path() != test_path + "/f");
-  
-  assert(accessor->_data_path() == (test_path + "/d").c_str());
-
-  // FileLock not created
-  FileLock* f = accessor->_get_lock(false);
-  assert(!exists((accessor->_data_path()) + "/.lock"));
-  f->release();
-  delete f;
-
-  // FileLock created but hidden
-  f = accessor->_get_lock(true);
-  //assert(!fs::is_regular_file(fs::path(accessor->_data_path())/".lock"));
-  f->release();
-  delete f;
-
-  delete accessor;  
-  string tempdir_path;
-  char path[1024];
-  result = snprintf(path, sizeof(path), "%s/.tmp_XXXXXX", current_path().c_str());
-  if (result < 0 ) throw OSError();
-  tempdir_path = mkdtemp(path);
-
-  // Testing Params
-
-  Params p = Params(tempdir_path);
-  p.put("PandaDongleId", "cat");
-  assert(p.get("PandaDongleId") == "cat");
-
-  // Test params no ascii
-  p.put("CarParams", "\xe1\x90\xff");
-  assert(p.get("CarParams") == "\xe1\x90\xff");
-
-  //Test params get cleared panda disconnect.  
-  p.put("CarParams", "test");
-  p.put("DongleId", "cb38263377b873ee");
-  assert(p.get("CarParams") == "test");
-  p.panda_disconnect();
-  assert(p.get("DongleId") != "");
-  assert(p.get("CarParams") == "");
-
-  //Test params cleared mananger start
-  p.put("CarParams", "test");
-  p.put("DongleId", "cb38263377b873ee");
-  assert(p.get("CarParams") == "test");
-  p.manager_start();
-  assert(p.get("CarParams") == "");
-  assert(p.get("DongleId") != "");
-  p.clear_all();
-
-  //Put/get two things
-  p.put("DongleId", "bob");
-  p.put("AthenadPid", "123");
-  assert(p.get("DongleId") == "bob");
-  assert(p.get("AthenadPid") == "123");
-
-  flag = false;
-  try {
-    p.get("swag");
-  } catch(const exception& e) {
-    flag = true;
-  }
-  assert(flag);
-
-  //Testing permissions
-  p.put("DongleId", "test");
-  string file_path = tempdir_path + "/d/" + "DongleId";
-  assert(exists(file_path));
-  mode_t perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-  struct stat st; 
-  stat(file_path.c_str(), &st);
-  mode_t file_perm = st.st_mode;
-  assert((file_perm & perms) == perms);
-
-
-  // Testing blocking
-  p.clear_all();
-  p.put("DongleId", "test");
-  p.get("DongleId", 1);
-
-
-
-  // Testing blocking
-  p.clear_all();
-  std::thread t(&Params::f, &p);
-  assert(p.get("CarParams") == "");
-  assert(p.get("CarParams", true) == "test");
-
-
-  t.detach();
-  remove_all(tempdir_path);
-  remove_all(test_path); 
-  return 0;
-}
-

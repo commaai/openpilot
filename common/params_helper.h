@@ -37,82 +37,6 @@ namespace params {
     }
   };
   
-  static string current_path();
-  
-  static bool is_directory(string path);
-  
-  static bool is_symlink(string path);
-  
-  static bool exists(string path);
-
-  static void remove_all(string path);
-
-  static void mkdirs_exists_ok(string path);
-
-  static int fsync_dir(const char* path);
-
-  map<string, vector<TxType>> keys = {
-    {"AccessToken", {TxType::CLEAR_ON_MANAGER_START} },
-    {"AthenadPid", {TxType::PERSISTENT} },
-    {"CalibrationParams", {TxType::PERSISTENT} },
-    {"CarParams", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
-    {"CarParamsCache", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
-    {"CarVin", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
-    {"CommunityFeaturesToggle", {TxType::PERSISTENT} },
-    {"CompletedTrainingVersion", {TxType::PERSISTENT} },
-    {"ControlsParams", {TxType::PERSISTENT} },
-    {"DisablePowerDown", {TxType::PERSISTENT} },
-    {"DisableUpdates", {TxType::PERSISTENT} },
-    {"DoUninstall", {TxType::CLEAR_ON_MANAGER_START} },
-    {"DongleId", {TxType::PERSISTENT} },
-    {"GitBranch", {TxType::PERSISTENT} },
-    {"GitCommit", {TxType::PERSISTENT} },
-    {"GitRemote", {TxType::PERSISTENT} },
-    {"GithubSshKeys", {TxType::PERSISTENT} },
-    {"HasAcceptedTerms", {TxType::PERSISTENT} },
-    {"HasCompletedSetup", {TxType::PERSISTENT} },
-    {"IsDriverViewEnabled", {TxType::CLEAR_ON_MANAGER_START} },
-    {"IsLdwEnabled", {TxType::PERSISTENT} },
-    {"IsGeofenceEnabled", {TxType::PERSISTENT} },
-    {"IsMetric", {TxType::PERSISTENT} },
-    {"IsOffroad", {TxType::CLEAR_ON_MANAGER_START} },
-    {"IsRHD", {TxType::PERSISTENT} },
-    {"IsTakingSnapshot", {TxType::CLEAR_ON_MANAGER_START} },
-    {"IsUpdateAvailable", {TxType::CLEAR_ON_MANAGER_START} },
-    {"IsUploadRawEnabled", {TxType::PERSISTENT} },
-    {"LastAthenaPingTime", {TxType::PERSISTENT} },
-    {"LastUpdateTime", {TxType::PERSISTENT} },
-    {"LimitSetSpeed", {TxType::PERSISTENT} },
-    {"LimitSetSpeedNeural", {TxType::PERSISTENT} },
-    {"LiveParameters", {TxType::PERSISTENT} },
-    {"LongitudinalControl", {TxType::PERSISTENT} },
-    {"OpenpilotEnabledToggle", {TxType::PERSISTENT} },
-    {"LaneChangeEnabled", {TxType::PERSISTENT} },
-    {"PandaFirmware", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
-    {"PandaFirmwareHex", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
-    {"PandaDongleId", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
-    {"Passive", {TxType::PERSISTENT} },
-    {"RecordFront", {TxType::PERSISTENT} },
-    {"ReleaseNotes", {TxType::PERSISTENT} },
-    {"ShouldDoUpdate", {TxType::CLEAR_ON_MANAGER_START} },
-    {"SpeedLimitOffset", {TxType::PERSISTENT} },
-    {"SubscriberInfo", {TxType::PERSISTENT} },
-    {"TermsVersion", {TxType::PERSISTENT} },
-    {"TrainingVersion", {TxType::PERSISTENT} },
-    {"UpdateAvailable", {TxType::CLEAR_ON_MANAGER_START} },
-    {"UpdateFailedCount", {TxType::CLEAR_ON_MANAGER_START} },
-    {"Version", {TxType::PERSISTENT} },
-    {"Offroad_ChargeDisabled", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
-    {"Offroad_ConnectivityNeeded", {TxType::CLEAR_ON_MANAGER_START} },
-    {"Offroad_ConnectivityNeededPrompt", {TxType::CLEAR_ON_MANAGER_START} },
-    {"Offroad_TemperatureTooHigh", {TxType::CLEAR_ON_MANAGER_START} },
-    {"Offroad_PandaFirmwareMismatch", {TxType::CLEAR_ON_MANAGER_START, TxType::CLEAR_ON_PANDA_DISCONNECT} },
-   {"Offroad_InvalidTime", {TxType::CLEAR_ON_MANAGER_START} },
-    {"Offroad_IsTakingSnapshot", {TxType::CLEAR_ON_MANAGER_START} },
-    {"Offroad_NeosUpdate", {TxType::CLEAR_ON_MANAGER_START} }
-
-  };
-
 
   class FileLock {
     
@@ -185,11 +109,9 @@ namespace params {
     public:
       Params(string d);
       void clear_all();
-      void f();
       void manager_start();
       void panda_disconnect();
       void _delete(string key);
-      string get(string key);
       string get(string key, bool);
       void put(string key, string data);
   };
