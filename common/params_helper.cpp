@@ -565,7 +565,7 @@ namespace params {
       if (!block || (val != "")) {
         break;
       }
-      usleep(50);
+      usleep(50000);
     }
     return val;
   }
@@ -580,7 +580,7 @@ namespace params {
   }
 
   void Params::f() {
-    usleep(100);
+    usleep(100000);
     put("CarParams", "test");
   }
 

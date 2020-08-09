@@ -70,9 +70,11 @@ int read_db_value(const char* key, char** value, size_t* value_sz, bool persiste
   params::Params p = params::Params::Params(params_path);
   try {
     string ret = p.get(key, false);
-    *value = ret.c_str();
-    value_sz = sizeof(*value);
-    result = 0
+    *value = const_cast<char*>(ret.c_str());
+    const size_t byteswritten = sizeof(*value);
+    size_t temp = (size_t) byteswritten;
+    *value_sz = temp;
+    result = 0;
   } catch (const exception& e) {
     result = -1;
   }
@@ -116,20 +118,7 @@ cleanup:
 }
 
 void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
-  int result;
-  const char* params_path = persistent_param ? persistent_params_path : default_params_path;
-  params::Params p = params::Params::Params(params_path);
-  try {
-    string ret = p.get(key, true);
-    *value = ret.c_str();
-    value_sz = sizeof(*value);
-    result = 0;
-  } catch (const exception& e) {
-    result = -1;
-  }
-  return result;
-/*  
-while (1) {
+  while (1) {
     const int result = read_db_value(key, value, value_sz, persistent_param);
     if (result == 0) {
       return;
@@ -138,11 +127,11 @@ while (1) {
       usleep(100000);
     }
   }
-*/
 }
 
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param) {
   //int err = 0;
+  std::string value;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
   params::Params p = params::Params::Params(params_path);
   
@@ -170,9 +159,9 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
     std::string key = std::string(de->d_name);
   //  std::string value = util::read_file(util::string_format("%s/%s", key_path.c_str(), key.c_str()));
     try {
-      std::string value = p.get(key); 
+      value = p.get(key); 
     } catch (const exception& e) {
-      result = -1;
+      return -1;
     }
 
     (*params)[key] = value;
