@@ -55,15 +55,12 @@ class CarState(CarStateBase):
     ret.cruiseState.available = cp.vl["CruiseControl"]['Cruise_On'] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed'] * CV.KPH_TO_MS
 
-    # EDM Global: mph = 1, 2; All Outback: mph = 1, UDM Forester: mph = 7
-    if self.car_fingerprint in [CAR.ASCENT, CAR.FORESTER, CAR.IMPREZA, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]:
-      if cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
-        ret.cruiseState.speed *= CV.MPH_TO_KPH
-
     # UDM Forester, Legacy: mph = 0
-    if self.car_fingerprint in [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL]:
-      if (cp.vl["Dash_State"]['Units'] == 0):
-        ret.cruiseState.speed *= CV.MPH_TO_KPH
+    if self.car_fingerprint in [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL] and (cp.vl["Dash_State"]['Units'] == 0):
+      ret.cruiseState.speed *= CV.MPH_TO_KPH
+    # EDM Global: mph = 1, 2; All Outback: mph = 1, UDM Forester: mph = 7
+    elif self.car_fingerprint not in [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL] and cp.vl["Dash_State"]['Units'] in [1, 2, 7]:
+      ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]['SEATBELT_FL'] == 1
     ret.doorOpen = any([cp.vl["BodyInfo"]['DOOR_OPEN_RR'],
