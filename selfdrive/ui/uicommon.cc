@@ -137,7 +137,8 @@ void UIVision::swap() {
 }
 
 bool UIVision::openStream() {
-  int err = visionstream_init(&stream, front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK, true, nullptr);
+  VisionStreamType type = front_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+  int err = visionstream_init(&stream, type, true, nullptr);
   if (err) {
     return false;
   }
