@@ -190,7 +190,6 @@ int main(int argc, char **argv) {
       buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
         LOGW("visionstream get failed");
-        visionstream_destroy(&stream);
         break;
       }
 
@@ -239,9 +238,8 @@ int main(int argc, char **argv) {
 
     }
     visionbuf_free(&yuv_ion);
+    visionstream_destroy(&stream);
   }
-
-  visionstream_destroy(&stream);
 
   model_free(&model);
 
