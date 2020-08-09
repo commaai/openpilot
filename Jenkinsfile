@@ -104,7 +104,7 @@ pipeline {
                     phone_steps("eon", [
                       ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
                       ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
-                      //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
+                      ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                     ])
                   }
