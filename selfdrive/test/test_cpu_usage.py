@@ -7,7 +7,6 @@ import subprocess
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
 from common.params import Params
-import selfdrive.manager as manager
 from selfdrive.test.helpers import set_params_enabled
 
 def cputime_total(ct):
@@ -63,11 +62,6 @@ def print_cpu_usage(first_proc, last_proc):
   print(result)
   return r
 
-def all_running():
-  running = manager.get_running()
-  print({p: (p in running and running[p].is_alive()) for p in manager.car_started_processes})
-  return all(p in running and running[p].is_alive() for p in manager.car_started_processes)
-
 def test_cpu_usage():
   cpu_ok = False
 
@@ -84,17 +78,13 @@ def test_cpu_usage():
         break
       time.sleep(2)
     first_proc = messaging.recv_sock(proc_sock, wait=True)
-    if first_proc is None or not all_running():
-      err_msg = "procLog recv timed out" if first_proc is None else "all car started process not running"
-      print(f"\n\nTEST FAILED: {err_msg}\n\n")
-      raise Exception
+    if first_proc is None:
+      raise Exception("\n\nTEST FAILED: progLog recv timed out\n\n")
 
     # run for a minute and get last sample
     time.sleep(60)
     last_proc = messaging.recv_sock(proc_sock, wait=True)
     cpu_ok = print_cpu_usage(first_proc, last_proc)
-    if not all_running():
-      cpu_ok = False
   finally:
     manager_proc.terminate()
     ret = manager_proc.wait(20)
