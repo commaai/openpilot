@@ -389,14 +389,17 @@ routes = {
     'carFingerprint': SUBARU.IMPREZA,
     'enableCamera': True,
   },
-  "95441c38ae8c130e_2020-06-08--12-10-17": {
+  # Dashcam
+  "95441c38ae8c130e|2020-06-08--12-10-17": {
     'carFingerprint': SUBARU.FORESTER_PREGLOBAL,
     'enableCamera': True,
   },
+  # Dashcam
   "df5ca7660000fba8|2020-06-16--17-37-19": {
     'carFingerprint': SUBARU.LEGACY_PREGLOBAL,
     'enableCamera': True,
   },
+  # Dashcam
   "5ab784f361e19b78|2020-06-08--16-30-41": {
     'carFingerprint': SUBARU.OUTBACK_PREGLOBAL,
     'enableCamera': True,
@@ -457,9 +460,6 @@ non_tested_cars = [
   TOYOTA.HIGHLANDER,
   TOYOTA.HIGHLANDERH,
   TOYOTA.HIGHLANDERH_TSS2,
-  SUBARU.FORESTER_PREGLOBAL,
-  SUBARU.OUTBACK_PREGLOBAL,
-  SUBARU.OUTBACK_PREGLOBAL_2018,
 ]
 
 if __name__ == "__main__":
