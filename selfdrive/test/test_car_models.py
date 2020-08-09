@@ -12,7 +12,7 @@ import cereal.messaging as messaging
 import selfdrive.manager as manager
 from cereal import car
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.ford.values import CAR as FORD

@@ -14,8 +14,9 @@ import requests
 
 from cereal import log
 from common.hardware import HARDWARE
+from common import android
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.api import Api
-from common.params import Params
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog

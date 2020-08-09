@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.numpy_fast import interp
 
 import cereal.messaging as messaging

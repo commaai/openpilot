@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
-from common.params import Params
+from common.realtime import set_realtime_priority
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 import cereal.messaging as messaging
 from selfdrive.controls.lib.events import Events
 from selfdrive.monitoring.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION

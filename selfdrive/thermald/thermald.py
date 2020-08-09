@@ -9,10 +9,12 @@ from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
+from common.android import ANDROID, get_network_type, get_network_strength
+from common.basedir import BASEDIR
+from common.params import Params, put_nonblocking # pylint: disable=no-name-in-module, import-error
 from common.filter_simple import FirstOrderFilter
 from common.hardware import EON, HARDWARE, TICI
 from common.numpy_fast import clip, interp
-from common.params import Params, put_nonblocking
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.loggerd.config import get_available_percent

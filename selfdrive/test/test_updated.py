@@ -10,7 +10,7 @@ import subprocess
 import random
 
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 
 
 class TestUpdated(unittest.TestCase):

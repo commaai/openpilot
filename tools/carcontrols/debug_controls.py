@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from common.numpy_fast import clip
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from copy import copy
 from cereal import car, log
 import cereal.messaging as messaging

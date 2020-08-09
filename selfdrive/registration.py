@@ -6,7 +6,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.version import version, terms_version, training_version, get_git_commit, get_git_branch, get_git_remote
 from common.hardware import HARDWARE
 from common.api import api_get
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
 

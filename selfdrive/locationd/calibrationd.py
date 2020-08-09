@@ -13,7 +13,7 @@ import numpy as np
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
-from common.params import Params, put_nonblocking
+from common.params import Params, put_nonblocking # pylint: disable=no-name-in-module, import-error
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
 from common.transformations.orientation import rot_from_euler, euler_from_rot

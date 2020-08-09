@@ -23,7 +23,7 @@ from cereal.services import service_list
 from common.hardware import HARDWARE
 from common.api import Api
 from common.basedir import PERSIST
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.realtime import sec_since_boot
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog

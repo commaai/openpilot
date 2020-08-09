@@ -6,7 +6,7 @@ import subprocess
 
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.test.helpers import set_params_enabled
 
 def cputime_total(ct):

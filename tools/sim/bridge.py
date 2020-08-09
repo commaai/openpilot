@@ -8,9 +8,9 @@ import numpy as np
 import threading
 import cereal.messaging as messaging
 import argparse
-from common.params import Params
 from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.car.honda.values import CruiseButtons
 from selfdrive.test.helpers import set_params_enabled
 

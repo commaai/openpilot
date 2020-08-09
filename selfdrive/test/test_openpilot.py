@@ -2,7 +2,7 @@
 import os
 os.environ['FAKEUPLOAD'] = "1"
 
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.realtime import sec_since_boot
 from selfdrive.manager import manager_init, manager_prepare, start_daemon_process
 from selfdrive.test.helpers import phone_only, with_processes, set_params_enabled

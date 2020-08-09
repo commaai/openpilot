@@ -5,7 +5,7 @@ import subprocess
 import time
 from PIL import Image
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.camerad.snapshot.visionipc import VisionIPC
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
