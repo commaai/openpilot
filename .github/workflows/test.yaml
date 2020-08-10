@@ -61,6 +61,8 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
+          ~/Library/Caches/pip
+          ~/Library/Caches/pipenv
           ~/Library/Caches/Homebrew
         key: ${{ hashFiles('tools/mac_setup.sh') }}
     - name: Install dependencies
