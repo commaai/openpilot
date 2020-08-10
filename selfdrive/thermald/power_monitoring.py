@@ -89,10 +89,6 @@ class PowerMonitoring:
     try:
       now = sec_since_boot()
 
-      # Check that time is valid
-      if datetime.datetime.now().year < 2019:
-        return
-
       # If health is None, we're probably not in a car, so we don't care
       if health is None or health.health.hwType == log.HealthData.HwType.unknown:
         with self.integration_lock:
