@@ -6,7 +6,7 @@ from statistics import mean
 
 from cereal import log
 from common.realtime import sec_since_boot
-from common.params import Params, put_nonblocking
+from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 PANDA_OUTPUT_VOLTAGE = 5.28
@@ -71,6 +71,7 @@ class PowerMonitoring:
   def __init__(self):
     self.params = Params()
     self.last_measurement_time = None           # Used for integration delta
+    self.last_save_time = 0                     # Used for saving current value in a param
     self.power_used_uWh = 0                     # Integrated power usage in uWh since going into offroad
     self.next_pulsed_measurement_time = None
     self.car_voltage_mV = 12e3                  # Low-passed version of health voltage
@@ -101,10 +102,12 @@ class PowerMonitoring:
       # Low-pass battery voltage
       self.car_voltage_mV = ((health.health.voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 -  CAR_VOLTAGE_LOW_PASS_K)))
 
-      # Cap the car battery power and save it in a param
+      # Cap the car battery power and save it in a param every 10-ish seconds
       self.car_battery_power_uWh = max(self.car_battery_power_uWh, 0)
       self.car_battery_power_uWh = min(self.car_battery_power_uWh, CAR_BATTERY_CAPACITY_uWh)
-      self.params.put("CarBatteryPower", str(int(self.car_battery_power_uWh)))
+      if now - self.last_save_time >= 10:
+        self.params.put_nonblocking("CarBatteryPower", str(int(self.car_battery_power_uWh)))
+        self.last_save_time = now
 
       # First measurement, set integration time
       with self.integration_lock:
