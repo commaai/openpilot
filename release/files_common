@@ -525,6 +525,8 @@ opendbc/nissan_leaf_2018.dbc
 
 opendbc/subaru_global_2017_generated.dbc
 opendbc/subaru_outback_2015_generated.dbc
+opendbc/subaru_outback_2019_generated.dbc
+opendbc/subaru_forester_2017_generated.dbc
 
 opendbc/toyota_rav4_hybrid_2017_pt_generated.dbc
 opendbc/toyota_rav4_2017_pt_generated.dbc
