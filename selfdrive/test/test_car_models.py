@@ -393,8 +393,24 @@ routes = {
     'carFingerprint': SUBARU.IMPREZA,
     'enableCamera': True,
   },
+  # Dashcam
+  "95441c38ae8c130e|2020-06-08--12-10-17": {
+    'carFingerprint': SUBARU.FORESTER_PREGLOBAL,
+    'enableCamera': True,
+  },
+  # Dashcam
   "df5ca7660000fba8|2020-06-16--17-37-19": {
     'carFingerprint': SUBARU.LEGACY_PREGLOBAL,
+    'enableCamera': True,
+  },
+  # Dashcam
+  "5ab784f361e19b78|2020-06-08--16-30-41": {
+    'carFingerprint': SUBARU.OUTBACK_PREGLOBAL,
+    'enableCamera': True,
+  },
+  # Dashcam
+  "e19eb5d5353b1ac1|2020-08-09--14-37-56": {
+    'carFingerprint': SUBARU.OUTBACK_PREGLOBAL_2018,
     'enableCamera': True,
   },
   "fbbfa6af821552b9|2020-03-03--08-09-43": {
