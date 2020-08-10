@@ -30,7 +30,6 @@ class TestUpdated(unittest.TestCase):
     self.neos_version = os.path.join(org_dir, "neos_version")
     self.neosupdate_dir = os.path.join(org_dir, "neosupdate")
     with open(self.neos_version, "w") as f:
-      # TODO: get this from launch env
       v = subprocess.check_output(r"bash -c 'source launch_env.sh && echo $REQUIRED_NEOS_VERSION'",
                                   cwd=BASEDIR, shell=True, encoding='utf8').strip()
       f.write(v)

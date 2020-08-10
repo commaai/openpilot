@@ -174,6 +174,7 @@ def init_ovfs():
   # and skips the update activation attempt.
   Path(os.path.join(BASEDIR, ".overlay_init")).touch()
 
+  os.system("sync")
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
 
@@ -220,16 +221,15 @@ def attempt_update(wait_helper):
       with open(NEOS_VERSION, "r") as f:
         current_neos_version = f.read().strip()
 
-      required_neos_version = run(["bash", "-c",
-                                   r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && echo -n $REQUIRED_NEOS_VERSION"],
-                                   OVERLAY_MERGED).strip()
+      required_neos_version = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
+                                    echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
 
       cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
       if current_neos_version != required_neos_version:
         cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
 
-        update_manifest = f'file:///{OVERLAY_MERGED}/installer/updater/update.json'
         set_offroad_alert("Offroad_NeosUpdate", True)
+        update_manifest = os.path.join("file://", OVERLAY_MERGED, "/installer/updater/update.json")
 
         neos_downloaded = False
         start_time = time.monotonic()
@@ -239,7 +239,7 @@ def attempt_update(wait_helper):
             updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
             run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
 
-            cloudlog.info("NEOS background download successful, took {time.monotonic() - start_time} seconds")
+            cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
             neos_downloaded = True
             break
           except subprocess.CalledProcessError:

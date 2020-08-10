@@ -14,16 +14,17 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
 
-with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as json_file:
-  OFFROAD_ALERTS = json.load(json_file)
-def set_offroad_alert(alert, show_alert, extra_text=""):
+with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
+  OFFROAD_ALERTS = json.load(f)
+
+
+def set_offroad_alert(alert, show_alert, extra_text=None):
   if show_alert:
     a = OFFROAD_ALERTS[alert]
-    if len(extra_text):
+    if extra_text is not None:
       a = copy.copy(OFFROAD_ALERTS[alert])
       a['text'] += extra_text
-    text = json.dumps(OFFROAD_ALERTS[alert])
-    Params().put(alert, text)
+    Params().put(alert, json.dumps(a))
   else:
     Params().delete(alert)
 
