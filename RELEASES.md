@@ -1,6 +1,6 @@
 Version 0.7.8 (2020-08-XX)
 ========================
- * New driver monitoring model
+ * New driver monitoring model: improved face detection and better compatibility with sunglasses
  * Improved updater reliability and responsiveness
  * Hyundai Genesis G70 2018 and Veloster 2019 support thanks to xps-genesis!
 
