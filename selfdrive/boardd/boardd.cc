@@ -400,7 +400,9 @@ void hardware_control_thread() {
   uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
   uint16_t prev_ir_pwr = 999;
+#ifdef QCOM
   bool prev_charging_disabled = false;
+#endif
   unsigned int cnt = 0;
 
   while (!do_exit && panda->connected) {
@@ -415,10 +417,10 @@ void hardware_control_thread() {
         prev_fan_speed = fan_speed;
       }
 
+#ifdef QCOM
       // Charging mode
       bool charging_disabled = sm["thermal"].getThermal().getChargingDisabled();
       if (charging_disabled != prev_charging_disabled){
-#ifdef QCOM
         if (charging_disabled){
           panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
           LOGW("TURN OFF CHARGING!\n");
@@ -426,9 +428,9 @@ void hardware_control_thread() {
           panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
           LOGW("TURN ON CHARGING!\n");
         }
-#endif
         prev_charging_disabled = charging_disabled;
       }
+#endif
     }
     if (sm.updated("frontFrame")){
       auto event = sm["frontFrame"];
