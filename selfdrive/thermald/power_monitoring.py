@@ -1,4 +1,3 @@
-import datetime
 import random
 import threading
 import time
@@ -77,7 +76,7 @@ class PowerMonitoring:
     self.car_voltage_mV = 12e3                  # Low-passed version of health voltage
     self.integration_lock = threading.Lock()
 
-    car_battery_power_uWh = params.get("CarBatteryPower")
+    car_battery_power_uWh = self.params.get("CarBatteryPower")
     if car_battery_power_uWh is None:
       # If unknown, we assume the car battery is almost dead
       self.car_battery_power_uWh = (CAR_BATTERY_CAPACITY_uWh / 10)
