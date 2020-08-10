@@ -62,7 +62,7 @@ jobs:
       with:
         path: |
           ~/Library/Caches/Homebrew
-        key: ""
+        key: ${{ hashFiles('tools/mac_setup.sh') }}
     - name: Install dependencies
       run: ./tools/mac_setup.sh
     - name: Build openpilot
