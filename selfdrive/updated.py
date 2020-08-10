@@ -61,7 +61,8 @@ def link(src, dest):
 
 
 class WaitTimeHelper:
-  def __init__(self):
+  def __init__(self, proc):
+    self.proc = proc
     self.ready_event = threading.Event()
     self.shutdown = False
     signal.signal(signal.SIGTERM, self.graceful_shutdown)
@@ -72,6 +73,13 @@ class WaitTimeHelper:
     # umount -f doesn't appear effective in avoiding "device busy" on NEOS,
     # so don't actually die until the next convenient opportunity in main().
     cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
+
+    # forward the signal to all our child processes
+    child_procs = self.proc.children(recursive=True)
+    for p in child_procs:
+      print(f"sending {signum} to {p.pid} {p.name()}")
+      p.send_signal(signum)
+
     self.shutdown = True
     self.ready_event.set()
 
@@ -277,9 +285,9 @@ def main():
     raise RuntimeError("updated must be launched as root!")
 
   # Set low io priority
-  p = psutil.Process()
+  proc = psutil.Process()
   if psutil.LINUX:
-    p.ionice(psutil.IOPRIO_CLASS_BE, value=7)
+    proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:
@@ -288,7 +296,7 @@ def main():
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
   # Wait for IsOffroad to be set before our first update attempt
-  wait_helper = WaitTimeHelper()
+  wait_helper = WaitTimeHelper(proc)
   wait_helper.sleep(30)
 
   update_failed_count = 0
