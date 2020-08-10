@@ -61,6 +61,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
+          ~/.pyenv
           ~/Library/Caches/pip
           ~/Library/Caches/pipenv
           ~/Library/Caches/Homebrew
