@@ -138,7 +138,7 @@ def setup_git_options(cwd):
   for option, value in git_cfg:
     try:
       ret = run(["git", "config", "--get", option], cwd)
-      config_ok = (ret.strip() == value)
+      config_ok = ret.strip() == value
     except subprocess.CalledProcessError:
       config_ok = False
 
@@ -183,9 +183,14 @@ def finalize_from_ovfs():
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
+  # Remove the update ready flag and any old updates
   cloudlog.info("creating finalized version of the overlay")
+  set_consistent_flag(False)
   shutil.rmtree(FINALIZED)
+
+  # Copy the merged overlay view and set the update ready flag
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
+  set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
 
@@ -207,6 +212,7 @@ def attempt_update(wait_helper):
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
   if new_version or git_fetch_result:
     cloudlog.info("Running update")
+
     if new_version:
       cloudlog.info("git reset in progress")
       r = [
@@ -219,16 +225,17 @@ def attempt_update(wait_helper):
 
       # Download the accompanying NEOS version if it doesn't match the current version
       with open(NEOS_VERSION, "r") as f:
-        current_neos_version = f.read().strip()
+        cur_neos = f.read().strip()
 
-      required_neos_version = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
-                                    echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
+      updated_neos = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
+                           echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
 
-      cloudlog.info(f"NEOS version update check: {current_neos_version} current, {required_neos_version} in update")
-      if current_neos_version != required_neos_version:
-        cloudlog.info(f"Beginning background download for NEOS {required_neos_version}")
+      cloudlog.info(f"NEOS version check: {cur_neos} vs {updated_neos}")
+      if cur_neos != updated_neos:
+        cloudlog.info(f"Beginning background download for NEOS {updated_neos}")
 
         set_offroad_alert("Offroad_NeosUpdate", True)
+        updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
         update_manifest = os.path.join("file://", OVERLAY_MERGED, "/installer/updater/update.json")
 
         neos_downloaded = False
@@ -236,32 +243,22 @@ def attempt_update(wait_helper):
         # Try to download for one day
         while (time.monotonic() - start_time < 60*60*24) and not wait_helper.shutdown:
           try:
-            updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
             run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
-
-            cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
             neos_downloaded = True
             break
           except subprocess.CalledProcessError:
             cloudlog.info("NEOS background download failed, retrying")
-            if wait_helper.sleep(120):
-              break
+            wait_helper.sleep(120)
 
         # If the download failed, we'll show the alert again when we retry
         set_offroad_alert("Offroad_NeosUpdate", False)
         if not neos_downloaded:
           raise Exception("Failed to download NEOS update")
 
-    # Un-set the validity flag to prevent the finalized tree from being
-    # activated later if the finalize step is interrupted
-    set_consistent_flag(False)
+        cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
 
+    # Create the finalized, ready-to-swap update
     finalize_from_ovfs()
-
-    # Make sure the validity flag lands on disk LAST, only when the local git
-    # repo and OP install are in a consistent state.
-    set_consistent_flag(True)
-
     cloudlog.info("openpilot update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
@@ -298,7 +295,6 @@ def main():
   update_available = False
   overlay_initialized = False
   while not wait_helper.shutdown:
-    update_failed_count += 1
     wait_helper.ready_event.clear()
 
     # Check for internet every 30s
@@ -307,6 +303,9 @@ def main():
     if ping_failed or time_wrong:
       wait_helper.sleep(30)
       continue
+
+    # Increment every attempt
+    update_failed_count += 1
 
     # Attempt an update
     try:
@@ -343,9 +342,8 @@ def main():
     except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
-    params.put("UpdateFailedCount", str(update_failed_count))
-
     # Wait 10 minutes between update attempts
+    params.put("UpdateFailedCount", str(update_failed_count))
     wait_helper.sleep(60*10)
 
   dismount_ovfs()
