@@ -76,13 +76,13 @@ class PowerMonitoring:
     self.car_voltage_mV = 12e3                  # Low-passed version of health voltage
     self.integration_lock = threading.Lock()
 
-    car_battery_power_uWh = self.params.get("CarBatteryPower")
-    if car_battery_power_uWh is None:
+    car_battery_capacity_uWh = self.params.get("CarBatteryCapacity")
+    if car_battery_capacity_uWh is None:
       # If unknown, we assume the car battery is almost dead
-      self.car_battery_power_uWh = (CAR_BATTERY_CAPACITY_uWh / 10)
+      self.car_battery_capacity_uWh = (CAR_BATTERY_CAPACITY_uWh / 10)
     else:
       # Reset capacity if it's low
-      self.car_battery_power_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_power_uWh))
+      self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_capacity_uWh))
     
 
   # Calculation tick
@@ -102,10 +102,10 @@ class PowerMonitoring:
       self.car_voltage_mV = ((health.health.voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 -  CAR_VOLTAGE_LOW_PASS_K)))
 
       # Cap the car battery power and save it in a param every 10-ish seconds
-      self.car_battery_power_uWh = max(self.car_battery_power_uWh, 0)
-      self.car_battery_power_uWh = min(self.car_battery_power_uWh, CAR_BATTERY_CAPACITY_uWh)
+      self.car_battery_capacity_uWh = max(self.car_battery_capacity_uWh, 0)
+      self.car_battery_capacity_uWh = min(self.car_battery_capacity_uWh, CAR_BATTERY_CAPACITY_uWh)
       if now - self.last_save_time >= 10:
-        self.params.put_nonblocking("CarBatteryPower", str(int(self.car_battery_power_uWh)))
+        self.params.put_nonblocking("CarBatteryCapacity", str(int(self.car_battery_capacity_uWh)))
         self.last_save_time = now
 
       # First measurement, set integration time
@@ -121,7 +121,7 @@ class PowerMonitoring:
           integration_time_h = (now - self.last_measurement_time) / 3600
           if integration_time_h < 0:
             raise ValueError(f"Negative integration time: {integration_time_h}h")
-          self.car_battery_power_uWh += (CAR_CHARGING_RATE_W * 1e6 * integration_time_h)
+          self.car_battery_capacity_uWh += (CAR_CHARGING_RATE_W * 1e6 * integration_time_h)
           self.last_measurement_time = now
       else:
         # No ignition, we integrate the offroad power used by the device
@@ -192,7 +192,7 @@ class PowerMonitoring:
           if power_used < 0:
             raise ValueError(f"Negative power used! Integration time: {integration_time_h} h Current Power: {power_used} uWh")
           self.power_used_uWh += power_used
-          self.car_battery_power_uWh -= power_used
+          self.car_battery_capacity_uWh -= power_used
           self.last_measurement_time = t
       except Exception:
         cloudlog.exception("Integration failed")
@@ -200,6 +200,9 @@ class PowerMonitoring:
   # Get the power usage
   def get_power_used(self):
     return int(self.power_used_uWh)
+  
+  def get_car_battery_capacity(self):
+    return int(self.car_battery_capacity_uWh)
 
   # See if we need to disable charging
   def should_disable_charging(self, health, offroad_timestamp):
@@ -210,7 +213,7 @@ class PowerMonitoring:
     disable_charging = False
     disable_charging |= (now - offroad_timestamp) > MAX_TIME_OFFROAD_S
     disable_charging |= (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3))
-    disable_charging |= (self.car_battery_power_uWh <= 0)
+    disable_charging |= (self.car_battery_capacity_uWh <= 0)
     disable_charging &= (not health.health.ignitionLine and not health.health.ignitionCan)
     disable_charging &= (self.params.get("DisablePowerDown") != b"1")
     return disable_charging
