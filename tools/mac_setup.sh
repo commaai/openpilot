@@ -15,12 +15,6 @@ brew install capnp \
              pyenv \
              zeromq
 
-# for use in CI after restoring cache
-if [ ! -z "$BREW_LINK" ]; then
-  brew unlink $(brew list) || true
-  brew link $(brew list) || true
-fi
-
 # install python
 pyenv install -s 3.8.2
 pyenv global 3.8.2

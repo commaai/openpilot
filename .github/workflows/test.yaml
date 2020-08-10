@@ -51,7 +51,7 @@ jobs:
   build_mac:
     name: build macos
     runs-on: macos-10.15
-    timeout-minutes: 50
+    timeout-minutes: 35
     steps:
     - uses: actions/checkout@v2
       with:
@@ -61,13 +61,14 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
-          ~/.pyenv
-          /usr/local/Cellar
-        key: ${{ hashFiles('tools/mac_setup.sh') }}
+          ~/Library/Caches/Homebrew
+        key: ""
     - name: Install dependencies
-      run: BREW_LINK=1 ./tools/mac_setup.sh
+      run: ./tools/mac_setup.sh
     - name: Build openpilot
       run: eval "$(pyenv init -)" && scons -j$(nproc)
+    - name: Brew cleanup
+      run: brew cleanup # keeps our cache small
 
   docker_push:
     name: docker push
