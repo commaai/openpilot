@@ -6,6 +6,7 @@ from statistics import mean
 
 from cereal import log
 from common.realtime import sec_since_boot
+from common.params import Params, put_nonblocking
 from selfdrive.swaglog import cloudlog
 
 PANDA_OUTPUT_VOLTAGE = 5.28
@@ -67,8 +68,8 @@ def panda_current_to_actual_current(panda_current):
 
 
 class PowerMonitoring:
-  def __init__(self, params):
-    self.params = params
+  def __init__(self):
+    self.params = Params()
     self.last_measurement_time = None           # Used for integration delta
     self.power_used_uWh = 0                     # Integrated power usage in uWh since going into offroad
     self.next_pulsed_measurement_time = None

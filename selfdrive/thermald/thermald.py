@@ -184,7 +184,7 @@ def thermald_thread():
   has_relay = False
 
   params = Params()
-  pm = PowerMonitoring(params)
+  pm = PowerMonitoring()
   no_panda_cnt = 0
 
   while 1:
