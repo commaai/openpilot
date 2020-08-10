@@ -69,21 +69,32 @@ def create_clu11(packer, frame, clu11, button):
   return packer.make_can_msg("CLU11", 0, values)
 
 
-def create_lfa_mfa(packer, frame, enabled):
+def create_lfa_mfa(packer, frame, enabled, hda_speed_limit):
   values = {
-    "ACTIVE": enabled,
+    "HDA_USM": 2,
+    "HDA_C_State": 5 if enabled else 0,
+    "HDA_VSetReq": hda_speed_limit if enabled else 0,
+    "LFA_SysWarning": 0,
+    "LFA_Icon_State": 2 if enabled else 0,
+    "LFA_USM": 2,
   }
 
-  # ACTIVE 1 = Green steering wheel icon
+  # HDA_USM 2 = ?
 
-  # LFA_USM 2 & 3 = LFA cancelled, fast loud beeping
-  # LFA_USM 0 & 1 = No mesage
+  # HDA_C_State 0 = HDA not available
+  # HDA_C_State 4 = HDA available
+  # HDA_C_State 5 = HDA active
+
+  # HDA_VSetReq = HDA speed limit
 
   # LFA_SysWarning 1 = "Switching to HDA", short beep
   # LFA_SysWarning 2 = "Switching to Smart Cruise control", short beep
   # LFA_SysWarning 3 =  LFA error
 
-  # ACTIVE2: nothing
-  # HDA_USM: nothing
+  # LFA_Icon_State 0 = no wheel
+  # LFA_Icon_State 1 = white wheel
+  # LFA_Icon_State 2 = green wheel
+
+  # LFA_USM 2 = ?
 
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
