@@ -106,6 +106,10 @@ pipeline {
                       ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
                       ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+
+                      ["test updater build", "cd installer/updater && make clean && make"],
+                      ["test spinner build", "cd selfdrive/ui/spinner && make clean && make"],
+                      ["test text window build", "cd selfdrive/ui/text && make clean && make"],
                     ])
                   }
                 }
