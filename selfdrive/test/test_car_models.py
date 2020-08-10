@@ -404,6 +404,11 @@ routes = {
     'carFingerprint': SUBARU.OUTBACK_PREGLOBAL,
     'enableCamera': True,
   },
+  # Dashcam
+  "e19eb5d5353b1ac1|2020-08-09--14-37-56": {
+    'carFingerprint': SUBARU.OUTBACK_PREGLOBAL_2018,
+    'enableCamera': True,
+  },
   "fbbfa6af821552b9|2020-03-03--08-09-43": {
     'carFingerprint': NISSAN.XTRAIL,
     'enableCamera': True,
@@ -460,7 +465,6 @@ non_tested_cars = [
   TOYOTA.HIGHLANDER,
   TOYOTA.HIGHLANDERH,
   TOYOTA.HIGHLANDERH_TSS2,
-  SUBARU.OUTBACK_PREGLOBAL_2018,
 ]
 
 if __name__ == "__main__":
