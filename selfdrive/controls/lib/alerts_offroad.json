@@ -16,6 +16,11 @@
     "text": "Connect to internet to check for updates. openpilot won't engage until it connects to internet to check for updates.",
     "severity": 1
   },
+  "Offroad_UpdateFailed": {
+    "text": "Unable to download updates\n",
+    "severity": 1,
+    "_comment": "Append the command and error to the text."
+  },
   "Offroad_PandaFirmwareMismatch": {
     "text": "Unexpected panda firmware version. System won't start. Reboot your device to reflash panda.",
     "severity": 1
