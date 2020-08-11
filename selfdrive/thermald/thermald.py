@@ -9,7 +9,7 @@ from common.params import Params, put_nonblocking
 from common.realtime import sec_since_boot, DT_TRML
 from common.numpy_fast import clip, interp
 from common.filter_simple import FirstOrderFilter
-from selfdrive.version import terms_version, training_version
+from selfdrive.version import terms_version, training_version, get_git_branch
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
@@ -165,6 +165,7 @@ def thermald_thread():
   thermal_status_prev = ThermalStatus.green
   usb_power = True
   usb_power_prev = True
+  current_branch = get_git_branch()
 
   network_type = NetworkType.none
   network_strength = NetworkStrength.unknown
@@ -311,8 +312,11 @@ def thermald_thread():
     last_update_exception = params.get("LastUpdateException", encoding='utf8')
 
     if update_failed_count > 15 and last_update_exception is not None:
-      # TODO: don't show release2 users random exceptions
-      set_offroad_alert("Offroad_UpdateFailed", True, extra_text=last_update_exception)
+      if current_branch in ["release2", "dashcam"]:
+        extra_text = "Ensure the software is correctly installed"
+      else:
+        extra_text = last_update_exception
+      set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
 
       # don't show connectivity alerts
       set_offroad_alert("Offroad_ConnectivityNeeded", False)

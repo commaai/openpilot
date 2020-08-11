@@ -17,7 +17,7 @@
     "severity": 1
   },
   "Offroad_UpdateFailed": {
-    "text": "Update failed\n",
+    "text": "Unable to download updates\n",
     "severity": 1,
     "_comment": "Append the command and error to the text."
   },
