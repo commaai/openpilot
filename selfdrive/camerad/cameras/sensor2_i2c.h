@@ -309,6 +309,12 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3404, 0x0970}, // Y_OUTPUT_CONTROL
   {0x30BA, 0x11F3}, // DIGITAL_CTRL
 
+  // SLAV* MODE
+  {0x30CE, 0x0120},
+  {0x340A, 0xE6}, // E6 // 0000 1110 0110
+  {0x340C, 0x802}, // 2 // 0000 0000 0010
+  // {0x301A, 0x0100}, // RESET_REGISTER
+
   // FPS = 88e6 / 0x09C4 / 0x06E0 = 20
   {0x300C, 0x09B4}, // LINE_LENGTH_PCK_ 9B4
   {0x300A, 0x06EB}, // FRAME_LENGTH_LINES_ 6EB
@@ -332,7 +338,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x31B8, 0x3047}, // RESERVED_MFR_31B8
   {0x31BA, 0x0186}, // RESERVED_MFR_31BA
   {0x31BC, 0x0805}, // RESERVED_MFR_31BC
-  {0x301A, 0x001C}, // RESET_REGISTER
+  {0x301A, 0x091C}, // RESET_REGISTER
 
   // HDR Settings
   {0x3082, 0x000C}, // OPERATION_MODE_CTRL
@@ -344,8 +350,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30B0, 0x0800}, // DIGITAL_TEST
   {0x32EA, 0x3C0E}, // RESERVED_MFR_32EA
   {0x32EC, 0x72A1}, // RESERVED_MFR_32EC
-  {0x31D0, 0x0001}, // COMPANDING, no good in 10 bit?
-  {0x33DA, 0x0001}, // COMPANDING
+  {0x31D0, 0x0000}, // COMPANDING, no good in 10 bit?
+  {0x33DA, 0x0000}, // COMPANDING
   {0x3362, 0x0000}, // DC GAIN
   {0x3370, 0x0231}, // DBLC
   {0x318E, 0x0200}, // PRE_HDR_GAIN_EN
@@ -354,11 +360,11 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
   {0x3366, 0x7777}, // ANALOG_GAIN
   //{0x3060, 0xAAAA}, // ANALOG_COLOR_GAIN
-  {0x3060, 0x7777}, // ANALOG_COLOR_GAIN
-  {0x305A, 0x00BB}, // RED_GAIN 75
-  {0x3058, 0x0111}, // BLUE_GAIN FA
-  {0x3056, 0x0080}, // GREEN1_GAIN
-  {0x305C, 0x0080}, // GREEN2_GAIN
+  {0x3060, 0xBBBB}, // ANALOG_COLOR_GAIN
+  {0x305A, 0x00C4}, // RED_GAIN 75
+  {0x3058, 0x00B1}, // BLUE_GAIN FA
+  {0x3056, 0x009A}, // GREEN1_GAIN
+  {0x305C, 0x009A}, // GREEN2_GAIN
   {0x3022, 0x00}, // GROUPED_PARAMETER_HOLD_
 
   // Initial Integration Time
