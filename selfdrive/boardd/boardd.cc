@@ -491,14 +491,15 @@ void pigeon_thread() {
   unsigned char dat[0x1000];
   uint64_t cnt = 0;
 
-  Pigeon pigeon(panda);
+  Pigeon * pigeon = Pigeon::create(panda);
+  pigeon->init();
 
   while (!do_exit && panda->connected) {
-    int len = pigeon.receive(dat);
+    int len = pigeon->receive(dat);
     if (len > 0) {
       if (dat[0] == (char)0x00){
         LOGW("received invalid ublox message, resetting panda GPS");
-        pigeon.init();
+        pigeon->init();
       } else {
         pigeon_publish_raw(pm, dat, len);
       }
@@ -508,6 +509,8 @@ void pigeon_thread() {
     usleep(10*1000);
     cnt++;
   }
+
+  delete pigeon;
 }
 
 }

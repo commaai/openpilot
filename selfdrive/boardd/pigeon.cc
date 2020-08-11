@@ -6,9 +6,14 @@
 
 using namespace std::string_literals;
 
-Pigeon::Pigeon(Panda * panda) : panda(panda){
-  init();
+
+Pigeon * Pigeon::create(Panda * p){
+  PandaPigeon * pigeon = new PandaPigeon();
+  pigeon->set_panda(p);
+
+  return pigeon;
 }
+
 
 void Pigeon::init() {
   usleep(1000*1000);
@@ -58,12 +63,17 @@ void Pigeon::init() {
   LOGW("panda GPS on");
 }
 
-void Pigeon::set_baud(int baud) {
+
+void PandaPigeon::set_panda(Panda * p) {
+  panda = p;
+}
+
+void PandaPigeon::set_baud(int baud) {
   panda->usb_write(0xe2, 1, 0);
   panda->usb_write(0xe4, 1, baud/300);
 }
 
-void Pigeon::send(std::string s) {
+void PandaPigeon::send(std::string s) {
   int len = s.length();
   const char * dat = s.data();
 
@@ -79,7 +89,7 @@ void Pigeon::send(std::string s) {
 
 
 // return vector?
-int Pigeon::receive(unsigned char * dat) {
+int PandaPigeon::receive(unsigned char * dat) {
   int alen = 0;
 
   while (alen < 0xfc0) {
@@ -91,6 +101,6 @@ int Pigeon::receive(unsigned char * dat) {
   return alen;
 }
 
-void Pigeon::set_power(int power) {
+void PandaPigeon::set_power(int power) {
   panda->usb_write(0xd9, power, 0);
 }
