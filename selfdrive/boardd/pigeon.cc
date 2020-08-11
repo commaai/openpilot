@@ -99,18 +99,17 @@ void PandaPigeon::send(std::string s) {
   }
 }
 
+std::string PandaPigeon::receive() {
+  std::string r;
 
-// return vector?
-int PandaPigeon::receive(unsigned char * dat) {
-  int alen = 0;
-
-  while (alen < 0x1000 - 0x40){
-    int len = panda->usb_read(0xe0, 1, 0, dat+alen, 0x40);
+  while (true){
+    unsigned char dat[0x40];
+    int len = panda->usb_read(0xe0, 1, 0, dat, 0x40);
     if (len <= 0) break;
-    alen += len;
+    r.append((char*)dat, len);
   }
 
-  return alen;
+  return r;
 }
 
 void PandaPigeon::set_power(bool power) {
@@ -185,13 +184,22 @@ void TTYPigeon::send(std::string s) {
   if(err < 0) { handle_tty_issue(err, __func__); }
 }
 
-int TTYPigeon::receive(unsigned char * dat) {
-  size_t max_len = 0x1000;
-  int len = read(pigeon_tty_fd, dat, max_len);
-  if(len < 0) {
-    handle_tty_issue(len, __func__);
+std::string TTYPigeon::receive() {
+  std::string r;
+
+  while (true){
+    char dat[0x40];
+    int len = read(pigeon_tty_fd, dat, 0x40);
+    if(len < 0) {
+      handle_tty_issue(len, __func__);
+    } else if (len == 0){
+      break;
+    } else {
+      r.append(dat, len);
+    }
+
   }
-  return len;
+  return r;
 }
 
 void TTYPigeon::set_power(bool power){

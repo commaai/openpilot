@@ -14,7 +14,7 @@ class Pigeon {
   void init();
   virtual void set_baud(int baud) = 0;
   virtual void send(std::string s) = 0;
-  virtual int receive(unsigned char * dat) = 0;
+  virtual std::string receive() = 0;
   virtual void set_power(bool power) = 0;
 };
 
@@ -25,7 +25,7 @@ public:
   void connect(Panda * p);
   void set_baud(int baud);
   void send(std::string s);
-  int receive(unsigned char * dat);
+  std::string receive();
   void set_power(bool power);
 };
 
@@ -38,6 +38,6 @@ public:
   void connect(const char* tty);
   void set_baud(int baud);
   void send(std::string s);
-  int receive(unsigned char * dat);
+  std::string receive();
   void set_power(bool power);
 };

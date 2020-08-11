@@ -469,13 +469,13 @@ void hardware_control_thread() {
   }
 }
 
-static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
+static void pigeon_publish_raw(PubMaster &pm, std::string dat) {
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
-  auto ublox_raw = event.initUbloxRaw(alen);
-  memcpy(ublox_raw.begin(), dat, alen);
+  auto ublox_raw = event.initUbloxRaw(dat.length());
+  memcpy(ublox_raw.begin(), dat.data(), dat.length());
 
   pm.send("ubloxRaw", msg);
 }
@@ -487,10 +487,6 @@ void pigeon_thread() {
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
 
-  // run at ~100hz
-  unsigned char dat[0x1000];
-  uint64_t cnt = 0;
-
 #ifdef QCOM2
   Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
 #else
@@ -500,19 +496,18 @@ void pigeon_thread() {
   pigeon->init();
 
   while (!do_exit && panda->connected) {
-    int len = pigeon->receive(dat);
-    if (len > 0) {
-      if (dat[0] == (char)0x00){
+    std::string recv = pigeon->receive();
+    if (recv.length() > 0) {
+      if (recv[0] == (char)0x00){
         LOGW("received invalid ublox message, resetting panda GPS");
         pigeon->init();
       } else {
-        pigeon_publish_raw(pm, dat, len);
+        pigeon_publish_raw(pm, recv);
       }
     }
 
-    // 10ms
+    // 10ms - 100 Hz
     usleep(10*1000);
-    cnt++;
   }
 
   delete pigeon;
