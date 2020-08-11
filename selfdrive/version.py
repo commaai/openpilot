@@ -33,9 +33,7 @@ def get_git_remote(default=None):
     local_branch = run_cmd(["git", "name-rev", "--name-only", "HEAD"])
     tracking_remote = run_cmd(["git", "config", "branch." + local_branch + ".remote"])
     return run_cmd(["git", "config", "remote." + tracking_remote + ".url"])
-
-  except subprocess.CalledProcessError:
-    # Not on a branch, fallback
+  except subprocess.CalledProcessError:  # Not on a branch, fallback
     run_cmd_default(["git", "config", "--get", "remote.origin.url"], default=default)
 
 
