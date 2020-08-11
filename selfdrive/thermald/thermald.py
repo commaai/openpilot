@@ -174,7 +174,7 @@ def thermald_thread():
   cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
   health_prev = None
   fw_version_match_prev = True
-  current_connectivity_alert = None
+  current_update_alert = None
   time_valid_prev = True
   should_start_prev = False
   handle_fan = None
@@ -317,29 +317,29 @@ def thermald_thread():
       else:
         extra_text = last_update_exception
 
-      if current_connectivity_alert != "update" + extra_text:
+      if current_update_alert != "update" + extra_text:
         set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
 
-      # don't show connectivity alerts
-      current_connectivity_alert = "update" + extra_text
+      current_update_alert = "update" + extra_text
       set_offroad_alert("Offroad_ConnectivityNeeded", False)
       set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
     else:
-      set_offroad_alert("Offroad_UpdateFailed", False)
+      if "update" in current_update_alert:
+        set_offroad_alert("Offroad_UpdateFailed", False)
 
       if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
-        if current_connectivity_alert != "expired":
-          current_connectivity_alert = "expired"
+        if current_update_alert != "expired":
+          current_update_alert = "expired"
           set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
           set_offroad_alert("Offroad_ConnectivityNeeded", True)
       elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
         remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
-        if current_connectivity_alert != "prompt" + remaining_time:
-          current_connectivity_alert = "prompt" + remaining_time
+        if current_update_alert != "prompt" + remaining_time:
+          current_update_alert = "prompt" + remaining_time
           set_offroad_alert("Offroad_ConnectivityNeeded", False)
           set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
-      elif current_connectivity_alert is not None:
-        current_connectivity_alert = None
+      elif current_update_alert is not None:
+        current_update_alert = None
         set_offroad_alert("Offroad_ConnectivityNeeded", False)
         set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
 
