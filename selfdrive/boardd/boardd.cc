@@ -491,7 +491,12 @@ void pigeon_thread() {
   unsigned char dat[0x1000];
   uint64_t cnt = 0;
 
-  Pigeon * pigeon = Pigeon::create(panda);
+#ifdef QCOM2
+  Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
+#else
+  Pigeon * pigeon = Pigeon::connect(panda);
+#endif
+
   pigeon->init();
 
   while (!do_exit && panda->connected) {
@@ -533,6 +538,8 @@ int main() {
   if (getenv("FAKESEND")) {
     fake_send = true;
   }
+
+  panda_set_power(true);
 
   while (!do_exit){
     std::vector<std::thread> threads;

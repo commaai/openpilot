@@ -1,15 +1,27 @@
+#include <cassert>
 #include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <termios.h>
 
 #include "common/swaglog.h"
+#include "common/gpio.h"
 
 #include "pigeon.h"
 
 using namespace std::string_literals;
 
 
-Pigeon * Pigeon::create(Panda * p){
+Pigeon * Pigeon::connect(Panda * p){
   PandaPigeon * pigeon = new PandaPigeon();
-  pigeon->set_panda(p);
+  pigeon->connect(p);
+
+  return pigeon;
+}
+
+Pigeon * Pigeon::connect(const char * tty){
+  TTYPigeon * pigeon = new TTYPigeon();
+  pigeon->connect(tty);
 
   return pigeon;
 }
@@ -64,7 +76,7 @@ void Pigeon::init() {
 }
 
 
-void PandaPigeon::set_panda(Panda * p) {
+void PandaPigeon::connect(Panda * p) {
   panda = p;
 }
 
@@ -92,7 +104,7 @@ void PandaPigeon::send(std::string s) {
 int PandaPigeon::receive(unsigned char * dat) {
   int alen = 0;
 
-  while (alen < 0xfc0) {
+  while (alen < 0x1000 - 0x40){
     int len = panda->usb_read(0xe0, 1, 0, dat+alen, 0x40);
     if (len <= 0) break;
     alen += len;
@@ -101,6 +113,93 @@ int PandaPigeon::receive(unsigned char * dat) {
   return alen;
 }
 
-void PandaPigeon::set_power(int power) {
+void PandaPigeon::set_power(bool power) {
   panda->usb_write(0xd9, power, 0);
+}
+
+
+// TTY Pigeon
+void handle_tty_issue(int err, const char func[]) {
+  //strerror(errno)
+  LOGE_100("tty error %d in %s", err, func);
+}
+
+void TTYPigeon::connect(const char * tty) {
+  pigeon_tty_fd = open(tty, O_RDWR);
+  assert(pigeon_tty_fd >= 0);
+  assert(tcgetattr(pigeon_tty_fd, &pigeon_tty) == 0);
+
+  // configure tty
+  pigeon_tty.c_cflag &= ~PARENB;                                            // disable parity
+  pigeon_tty.c_cflag &= ~CSTOPB;                                            // single stop bit
+  pigeon_tty.c_cflag |= CS8;                                                // 8 bits per byte
+  pigeon_tty.c_cflag &= ~CRTSCTS;                                           // no RTS/CTS flow control
+  pigeon_tty.c_cflag |= CREAD | CLOCAL;                                     // turn on READ & ignore ctrl lines
+  pigeon_tty.c_lflag &= ~ICANON;                                            // disable canonical mode
+  pigeon_tty.c_lflag &= ~ISIG;                                              // disable interpretation of INTR, QUIT and SUSP
+  pigeon_tty.c_iflag &= ~(IXON | IXOFF | IXANY);                            // turn off software flow ctrl
+  pigeon_tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);   // disable any special handling of received bytes
+  pigeon_tty.c_oflag &= ~OPOST;                                             // prevent special interpretation of output bytes
+  pigeon_tty.c_oflag &= ~ONLCR;                                             // prevent conversion of newline to carriage return/line feed
+
+  // configure blocking behavior
+  pigeon_tty.c_cc[VMIN] = 0;  // min amount of characters returned
+  pigeon_tty.c_cc[VTIME] = 0; // max blocking time in s/10 (0=inf)
+
+  assert(tcsetattr(pigeon_tty_fd, TCSANOW, &pigeon_tty) == 0);
+}
+
+void TTYPigeon::set_baud(int baud){
+  speed_t baud_const = 0;
+  switch(baud){
+  case 9600:
+    baud_const = B9600;
+    break;
+  case 460800:
+    baud_const = B460800;
+    break;
+  default:
+    assert(false);
+  }
+
+  // make sure everything is tx'ed before changing baud
+  assert(tcdrain(pigeon_tty_fd) == 0);
+
+  // change baud
+  assert(tcgetattr(pigeon_tty_fd, &pigeon_tty) == 0);
+  assert(cfsetspeed(&pigeon_tty, baud_const) == 0);
+  assert(tcsetattr(pigeon_tty_fd, TCSANOW, &pigeon_tty) == 0);
+
+  // flush
+  assert(tcflush(pigeon_tty_fd, TCIOFLUSH) == 0);
+}
+
+void TTYPigeon::send(std::string s) {
+  int len = s.length();
+  const char * dat = s.data();
+
+  int err = write(pigeon_tty_fd, dat, len);
+  err += tcdrain(pigeon_tty_fd);
+  if(err < 0) { handle_tty_issue(err, __func__); }
+}
+
+int TTYPigeon::receive(unsigned char * dat) {
+  size_t max_len = 0x1000;
+  int len = read(pigeon_tty_fd, dat, max_len);
+  if(len < 0) {
+    handle_tty_issue(len, __func__);
+  }
+  return len;
+}
+
+void TTYPigeon::set_power(bool power){
+  int err = 0;
+  err += gpio_init(GPIO_UBLOX_RST_N, true);
+  err += gpio_init(GPIO_UBLOX_SAFEBOOT_N, true);
+  err += gpio_init(GPIO_UBLOX_PWR_EN, true);
+
+  err += gpio_set(GPIO_UBLOX_RST_N, power);
+  err += gpio_set(GPIO_UBLOX_SAFEBOOT_N, power);
+  err += gpio_set(GPIO_UBLOX_PWR_EN, power);
+  assert(err == 0);
 }

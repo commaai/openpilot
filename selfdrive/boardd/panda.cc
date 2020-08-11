@@ -3,8 +3,29 @@
 #include <iostream>
 
 #include "common/swaglog.h"
+#include "common/gpio.h"
 
 #include "panda.h"
+
+void panda_set_power(bool power){
+#ifdef QCOM2
+  int err = 0;
+  err += gpio_init(GPIO_STM_RST_N, true);
+  err += gpio_init(GPIO_STM_BOOT0, true);
+  err += gpio_init(GPIO_HUB_RST_N, true);
+
+  err += gpio_set(GPIO_STM_RST_N, false);
+
+  // TODO: set hub somewhere else
+  err += gpio_set(GPIO_HUB_RST_N, true);
+  err += gpio_set(GPIO_STM_BOOT0, false);
+
+  usleep(100*1000); // 100 ms
+
+  err += gpio_set(GPIO_STM_RST_N, power);
+  assert(err == 0);
+#endif
+}
 
 Panda::Panda(){
   int err;
