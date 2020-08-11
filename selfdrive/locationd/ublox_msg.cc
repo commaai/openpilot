@@ -283,7 +283,10 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
       words.push_back(measurements[i].dwrd);
 
     subframes_map &map = nav_frame_buffer[msg->gnssId][msg->svid];
-    if(subframeId == 1 || map.find(subframeId-1) != map.end()) {
+    if (subframeId == 1) {
+      map = subframes_map();
+      map[subframeId] = words;
+    } else if (map.find(subframeId-1) != map.end()) {
       map[subframeId] = words;
     }
     if(map.size() == 5) {
