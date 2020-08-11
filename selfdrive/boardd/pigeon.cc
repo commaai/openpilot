@@ -117,6 +117,10 @@ void PandaPigeon::set_power(bool power) {
   panda->usb_write(0xd9, power, 0);
 }
 
+PandaPigeon::~PandaPigeon(){
+
+}
+
 
 void handle_tty_issue(int err, const char func[]) {
   LOGE_100("tty error %d \"%s\" in %s", err, strerror(err), func);
@@ -202,4 +206,8 @@ void TTYPigeon::set_power(bool power){
   err += gpio_set(GPIO_UBLOX_PWR_EN, power);
   assert(err == 0);
 #endif
+}
+
+TTYPigeon::~TTYPigeon(){
+  close(pigeon_tty_fd);
 }

@@ -21,6 +21,7 @@ class Pigeon {
 class PandaPigeon : public Pigeon {
   Panda * panda = NULL;
 public:
+  ~PandaPigeon();
   void connect(Panda * p);
   void set_baud(int baud);
   void send(std::string s);
@@ -33,6 +34,7 @@ class TTYPigeon : public Pigeon {
   int pigeon_tty_fd = -1;
   struct termios pigeon_tty;
 public:
+  ~TTYPigeon();
   void connect(const char* tty);
   void set_baud(int baud);
   void send(std::string s);
