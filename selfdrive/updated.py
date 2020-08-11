@@ -312,9 +312,6 @@ def main():
       wait_helper.sleep(30)
       continue
 
-    # Increment every attempt
-    update_failed_count += 1
-
     # Attempt an update
     exception = None
     update_failed_count += 1
