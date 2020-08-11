@@ -5,39 +5,38 @@ from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
 
-def get_git_commit(default=None):
+def run_cmd(cmd):
+    return subprocess.check_output(cmd, encoding='utf8').strip()
+
+
+def run_cmd_default(cmd, default=None):
   try:
-    return subprocess.check_output(["git", "rev-parse", "HEAD"], encoding='utf8').strip()
+    return run_cmd(cmd)
   except subprocess.CalledProcessError:
     return default
+
+
+def get_git_commit(branch="HEAD", default=None):
+  return run_cmd_default(["git", "rev-parse", branch], default=default)
 
 
 def get_git_branch(default=None):
-  try:
-    return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], encoding='utf8').strip()
-  except subprocess.CalledProcessError:
-    return default
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"], default=default)
 
 
 def get_git_full_branchname(default=None):
-  try:
-    return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], encoding='utf8').strip()
-  except subprocess.CalledProcessError:
-    return default
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], default=default)
 
 
 def get_git_remote(default=None):
   try:
-    local_branch = subprocess.check_output(["git", "name-rev", "--name-only", "HEAD"], encoding='utf8').strip()
-    tracking_remote = subprocess.check_output(["git", "config", "branch." + local_branch + ".remote"], encoding='utf8').strip()
-    return subprocess.check_output(["git", "config", "remote." + tracking_remote + ".url"], encoding='utf8').strip()
+    local_branch = run_cmd(["git", "name-rev", "--name-only", "HEAD"])
+    tracking_remote = run_cmd(["git", "config", "branch." + local_branch + ".remote"])
+    return run_cmd(["git", "config", "remote." + tracking_remote + ".url"])
 
   except subprocess.CalledProcessError:
-    try:
-      # Not on a branch, fallback
-      return subprocess.check_output(["git", "config", "--get", "remote.origin.url"], encoding='utf8').strip()
-    except subprocess.CalledProcessError:
-      return default
+    # Not on a branch, fallback
+    run_cmd_default(["git", "config", "--get", "remote.origin.url"], default=default)
 
 
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:
@@ -73,11 +72,9 @@ if (origin is not None) and (branch is not None):
       # Log dirty files
       if dirty:
         try:
-          dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"], encoding='utf8')
-          commit = subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"], encoding='utf8').rstrip()
-          origin_commit = subprocess.check_output(["git", "rev-parse", "--verify", branch], encoding='utf8').rstrip()
+          dirty_files = run_cmd(["git", "diff-index", branch, "--"])
           cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch,
-                         dirty_files=dirty_files, commit=commit, origin_commit=origin_commit)
+                         dirty_files=dirty_files, commit=get_git_commit(), origin_commit=get_git_commit(branch))
         except subprocess.CalledProcessError:
           pass
 
