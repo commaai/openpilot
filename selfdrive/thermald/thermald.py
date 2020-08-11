@@ -316,9 +316,12 @@ def thermald_thread():
         extra_text = "Ensure the software is correctly installed"
       else:
         extra_text = last_update_exception
-      set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
+
+      if current_connectivity_alert != "update" + extra_text:
+        set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
 
       # don't show connectivity alerts
+      current_connectivity_alert = "update" + extra_text
       set_offroad_alert("Offroad_ConnectivityNeeded", False)
       set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
     else:
