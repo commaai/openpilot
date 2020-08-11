@@ -296,7 +296,6 @@ def main():
       )
       exception = e
       overlay_initialized = False
-      params.put("LastUpdateException", f"command failed: {e.cmd}\n{e.output}")
     except Exception as e:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
       exception = e
@@ -305,7 +304,7 @@ def main():
     if exception is None:
       params.delete("LastUpdateException")
     else:
-      params.put("LastUpdateException", "command failed: {e.cmd}\n{e.output}")
+      params.put("LastUpdateException", f"command failed: {exception.cmd}\n{exception.output}")
 
     # Wait 10 minutes between update attempts
     wait_helper.sleep(60*10)
