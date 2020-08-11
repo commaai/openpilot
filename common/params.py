@@ -80,6 +80,7 @@ keys = {
   "IsUploadRawEnabled": [TxType.PERSISTENT],
   "LastAthenaPingTime": [TxType.PERSISTENT],
   "LastUpdateTime": [TxType.PERSISTENT],
+  "LastUpdateException": [TxType.PERSISTENT],
   "LimitSetSpeed": [TxType.PERSISTENT],
   "LimitSetSpeedNeural": [TxType.PERSISTENT],
   "LiveParameters": [TxType.PERSISTENT],
@@ -108,6 +109,7 @@ keys = {
   "Offroad_InvalidTime": [TxType.CLEAR_ON_MANAGER_START],
   "Offroad_IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
   "Offroad_NeosUpdate": [TxType.CLEAR_ON_MANAGER_START],
+  "Offroad_UpdateFailed": [TxType.CLEAR_ON_MANAGER_START],
 }
 
 

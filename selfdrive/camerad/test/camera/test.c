@@ -34,7 +34,7 @@ void tbuffer_stop(TBuffer *tb) {
 }
 
 int main() {
-  DualCameraState s;
+  DualCameraState s={};
   cameras_init(&s);
   VisionBuf camera_bufs_rear[0x10] = {0};
   VisionBuf camera_bufs_focus[0x10] = {0};
