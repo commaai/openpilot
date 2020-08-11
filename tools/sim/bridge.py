@@ -24,6 +24,8 @@ pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
 
 W, H = 1164, 874
 
+REPEAT_COUNTER = 5
+
 def cam_callback(image):
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
   img = np.reshape(img, (H, W, 4))
@@ -147,21 +149,34 @@ def go(q):
   # init
   A_throttle = 2.
   A_brake = 2.
-  A_steer_torque = 1.
+  A_steer_torque = 10.
+  A_steer_angle = 1.
   fake_wheel = FakeSteeringWheel()
   is_openpilot_engaged = False
   in_reverse = False
 
+  M_throttle = 1.
+  M_steer = 0.2
+
   throttle_out = 0
   brake_out = 0
   steer_angle_out = 0
+  throttle_ease_out_counter = REPEAT_COUNTER
+  brake_ease_out_counter = REPEAT_COUNTER
+  steer_ease_out_counter = REPEAT_COUNTER
+  old_throttle_out = 0
+  old_brake_out = 0
+  old_steer_angle_out = 0
 
   while 1:
     cruise_button = 0
-
+    throttle_out = 0
+    steer_angle_out = 0
+    fake_wheel.set_angle(steer_angle_out)  # touching the wheel overrides fake wheel angle
+        
     # check for a input message, this will not block
     if not q.empty():
-      print("here")
+      # print("here")
       message = q.get()
 
       m = message.split('_')
@@ -170,7 +185,7 @@ def go(q):
         fake_wheel.set_angle(steer_angle_out)  # touching the wheel overrides fake wheel angle
         # print(" === steering overriden === ")
       if m[0] == "throttle":
-        throttle_out = float(m[1]) / 100.
+        throttle_out = float(m[1])/ 100.
         if throttle_out > 0.3:
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
@@ -194,20 +209,52 @@ def go(q):
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
 
+    
+    
     vel = vehicle.get_velocity()
     speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
     can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button, is_engaged=is_openpilot_engaged)
-
+    
+    
+    
     if rk.frame % 1 == 0:  # 20Hz?
-      throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
-      # print(" === torq, ",steer_torque_op, " ===")
       if is_openpilot_engaged:
+        # print('engaged')
+        throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
         fake_wheel.response(steer_torque_op * A_steer_torque, speed)
         throttle_out = throttle_op * A_throttle
         brake_out = brake_op * A_brake
-        steer_angle_out = fake_wheel.angle
+        steer_angle_out = fake_wheel.angle * A_steer_angle
         # print(steer_torque_op)
-      # print(steer_angle_out)
+      else:
+        throttle_out = throttle_out * M_throttle
+        steer_angle_out = steer_angle_out * M_steer
+
+        if throttle_out==0 and old_throttle_out>0 and throttle_ease_out_counter>0:
+          throttle_out = old_throttle_out
+          throttle_ease_out_counter += -1
+        else:
+          throttle_ease_out_counter = REPEAT_COUNTER
+        
+        if brake_out==0 and old_brake_out>0 and brake_ease_out_counter>0:
+          brake_out = old_brake_out
+          brake_ease_out_counter += -1
+        else:
+          brake_ease_out_counter = REPEAT_COUNTER
+
+        if steer_angle_out==0 and old_steer_angle_out>0 and steer_ease_out_counter>0:
+          steer_angle_out = old_steer_angle_out
+          fake_wheel.set_angle(steer_angle_out)
+          steer_ease_out_counter += -1
+        else:
+          steer_ease_out_counter = REPEAT_COUNTER
+      
+      old_throttle_out = throttle_out
+      old_brake_out = brake_out
+      old_steer_angle_out = steer_angle_out
+
+      print('\nframe : ',rk.frame)
+      print("engaged : ", is_openpilot_engaged, "\nthrottle : ",(throttle_out, throttle_ease_out_counter),"\nsteer : ",(steer_angle_out, steer_ease_out_counter))
       vc = carla.VehicleControl(throttle=throttle_out, steer=steer_angle_out / 3.14, brake=brake_out, reverse=in_reverse)
       vehicle.apply_control(vc)
 
@@ -220,7 +267,7 @@ if __name__ == "__main__":
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
   params.put("CommunityFeaturesToggle", "1")
-  params.put("CalibrationParams", '{"vanishing_point": [582.06, 442.78], "valid_blocks": 20}')
+  params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
   # no carla, still run
   try:

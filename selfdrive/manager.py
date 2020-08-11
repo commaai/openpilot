@@ -434,6 +434,7 @@ def manager_init(should_register=True):
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
 def manager_thread():
+  print(os.environ)
   # now loop
   thermal_sock = messaging.sub_sock('thermal')
 

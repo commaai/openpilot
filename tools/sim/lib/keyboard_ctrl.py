@@ -46,6 +46,23 @@ def keyboard_poll_thread(q):
       q.put(str("cruise_cancel"))
     if c == 'q':
       exit(0)
+    if c=='\033':
+      print('arrow')
+      c=getch()
+      c=getch()
+      if c=='A':
+        print('up')
+        q.put(str("throttle_100"))
+      if c=='B':
+        print('dowm')
+        q.put(str("brake_100"))
+      if c=='C':
+        print('right')
+        q.put(str("steer_1"))
+      if c=='D':
+        print('left')
+        q.put(str("steer_-1"))
+
 
 def test(q):
   while 1:

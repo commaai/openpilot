@@ -153,7 +153,7 @@ class Controls:
 
     self.events.clear()
     self.events.add_from_msg(CS.events)
-    self.events.add_from_msg(self.sm['dMonitoringState'].events)
+    # self.events.add_from_msg(self.sm['dMonitoringState'].events)
 
     # Handle startup event
     if self.startup_event is not None:
@@ -202,8 +202,8 @@ class Controls:
     if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
       # only plan not being received: radar not communicating
       self.events.add(EventName.radarCommIssue)
-    elif not self.sm.all_alive_and_valid():
-      self.events.add(EventName.commIssue)
+    # elif not self.sm.all_alive_and_valid():
+    #   self.events.add(EventName.commIssue)
     if not self.sm['pathPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and os.getenv("NOSENSOR") is None:
@@ -229,8 +229,8 @@ class Controls:
       self.events.add(EventName.relayMalfunction)
     if self.sm['plan'].fcw:
       self.events.add(EventName.fcw)
-    if self.sm['model'].frameDropPerc > 1:
-      self.events.add(EventName.modeldLagging)
+    # if self.sm['model'].frameDropPerc > 1:
+    #   self.events.add(EventName.modeldLagging)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
