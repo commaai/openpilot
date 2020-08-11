@@ -44,8 +44,6 @@ const float VBATT_START_CHARGING = 11.5;
 const float VBATT_PAUSE_CHARGING = 11.0;
 #endif
 
-namespace {
-
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
 volatile sig_atomic_t do_exit = 0;
@@ -513,7 +511,6 @@ void pigeon_thread() {
   delete pigeon;
 }
 
-}
 
 int main() {
   int err;
