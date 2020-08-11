@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # type: ignore
+import carla # pylint: disable=import-error
 import time
 import math
 import atexit
@@ -9,10 +10,11 @@ import random
 import cereal.messaging as messaging
 import argparse
 from common.params import Params
-from common.realtime import Ratekeeper
+from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function, sendcan_function
 from lib.helpers import FakeSteeringWheel
 from selfdrive.car.honda.values import CruiseButtons
+from selfdrive.test.helpers import set_params_enabled
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--autopilot', action='store_true')
@@ -76,7 +78,7 @@ def fake_driver_monitoring():
     dat = messaging.new_message('driverState')
     dat.driverState.faceProb = 1.0
     pm.send('driverState', dat)
-    time.sleep(0.1)
+    time.sleep(DT_DMON)
 
 def go(q):
   threading.Thread(target=health_function).start()
@@ -106,6 +108,8 @@ def go(q):
   world_map = world.get_map()
   vehicle_bp = random.choice(blueprint_library.filter('vehicle.tesla.*'))
   vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
+
+  # TODO: should set these using carParams
 
   # make tires less slippery
   wheel_control = carla.WheelPhysicsControl(tire_friction=5)
@@ -173,17 +177,15 @@ def go(q):
     throttle_out = 0
     steer_angle_out = 0
     fake_wheel.set_angle(steer_angle_out)  # touching the wheel overrides fake wheel angle
-        
+
     # check for a input message, this will not block
     if not q.empty():
-      # print("here")
       message = q.get()
 
       m = message.split('_')
       if m[0] == "steer":
         steer_angle_out = float(m[1])
         fake_wheel.set_angle(steer_angle_out)  # touching the wheel overrides fake wheel angle
-        # print(" === steering overriden === ")
       if m[0] == "throttle":
         throttle_out = float(m[1])/ 100.
         if throttle_out > 0.3:
@@ -209,14 +211,11 @@ def go(q):
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
 
-    
-    
     vel = vehicle.get_velocity()
     speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
     can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button, is_engaged=is_openpilot_engaged)
-    
-    
-    
+
+
     if rk.frame % 1 == 0:  # 20Hz?
       if is_openpilot_engaged:
         # print('engaged')
@@ -235,7 +234,7 @@ def go(q):
           throttle_ease_out_counter += -1
         else:
           throttle_ease_out_counter = REPEAT_COUNTER
-        
+
         if brake_out==0 and old_brake_out>0 and brake_ease_out_counter>0:
           brake_out = old_brake_out
           brake_ease_out_counter += -1
@@ -248,7 +247,7 @@ def go(q):
           steer_ease_out_counter += -1
         else:
           steer_ease_out_counter = REPEAT_COUNTER
-      
+
       old_throttle_out = throttle_out
       old_brake_out = brake_out
       old_steer_angle_out = steer_angle_out
@@ -261,21 +260,12 @@ def go(q):
     rk.keep_time()
 
 if __name__ == "__main__":
-  params = Params()
-  params.delete("Offroad_ConnectivityNeeded")
-  from selfdrive.version import terms_version, training_version
-  params.put("HasAcceptedTerms", terms_version)
-  params.put("CompletedTrainingVersion", training_version)
-  params.put("CommunityFeaturesToggle", "1")
-  params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
-  # no carla, still run
-  try:
-    import carla
-  except ImportError:
-    print("WARNING: NO CARLA")
-    while 1:
-      time.sleep(1)
+  # make sure params are in a good state
+  params = Params()
+  params.clear_all()
+  set_params_enabled()
+  params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
   from multiprocessing import Process, Queue
   q = Queue()
