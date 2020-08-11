@@ -88,5 +88,5 @@ if __name__ == "__main__":
   print("Dirty: %s" % dirty)
   print("Version: %s" % version)
   print("Remote: %s" % origin)
-  print("Branch %s" % branch)
-  print("Prebuilt %s" % prebuilt)
+  print("Branch: %s" % branch)
+  print("Prebuilt: %s" % prebuilt)
