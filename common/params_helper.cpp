@@ -9,10 +9,8 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include <assert.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <thread>
 
 using std::cout;
 using std::endl;
