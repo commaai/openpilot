@@ -27,13 +27,16 @@ cdef class Params:
   def panda_disconnect(self):
     self.p.panda_disconnect()
 
-  def _delete(self, key):
+  def delete(self, key):
     try:
       key = key.encode('UTF-8')
     except (UnicodeDecodeError, AttributeError):
       pass
     self.p._delete(key)
 
+
+  # Parameterized blocking/non-blocking get function.
+  # The blocking variant releases the GIL.
   def get(self, key, block=False, encoding=None):
     try:
       key = key.encode('UTF-8')
@@ -60,15 +63,20 @@ cdef class Params:
       ret = ret.decode(encoding)
     return ret
 
-
+  # This put function can block, so there is a non-blocking variant
+  # which can be used in time-sensitive code. Writing Params, should
+  # be avoided. This function releases the GIL.
   def put(self, key, value):
     try:
       key = key.encode('UTF-8')
       value = value.encode('UTF-8')
     except (UnicodeDecodeError, AttributeError):
       pass
+    cdef string k = key;
+    cdef string v = value;
     try:
-      self.p.put(key, value)
+        with nogil:
+          self.p.put(k, v)
     except (RuntimeError):
       raise UnknownKeyName(key)
   

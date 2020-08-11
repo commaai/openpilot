@@ -14,4 +14,4 @@ cdef extern from "params_helper.h" namespace "params":
     void panda_disconnect() except+
     void _delete(string) except+
     string get(string, bool) nogil except+
-    void put(string, string) except+
+    void put(string, string) nogil except+
