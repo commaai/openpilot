@@ -70,7 +70,7 @@ if (origin is not None) and (branch is not None):
       dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
 
       # Log dirty files
-      if dirty:
+      if dirty and comma_remote:
         try:
           dirty_files = run_cmd(["git", "diff-index", branch, "--"])
           cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch,
