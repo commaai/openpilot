@@ -324,22 +324,22 @@ def thermald_thread():
       set_offroad_alert("Offroad_ConnectivityNeeded", False)
       set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
     else:
-      if "update" in current_update_alert:
-        set_offroad_alert("Offroad_UpdateFailed", False)
-
       if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
         if current_update_alert != "expired":
           current_update_alert = "expired"
+          set_offroad_alert("Offroad_UpdateFailed", False)
           set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
           set_offroad_alert("Offroad_ConnectivityNeeded", True)
       elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
         remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
         if current_update_alert != "prompt" + remaining_time:
           current_update_alert = "prompt" + remaining_time
+          set_offroad_alert("Offroad_UpdateFailed", False)
           set_offroad_alert("Offroad_ConnectivityNeeded", False)
           set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
       elif current_update_alert is not None:
         current_update_alert = None
+        set_offroad_alert("Offroad_UpdateFailed", False)
         set_offroad_alert("Offroad_ConnectivityNeeded", False)
         set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
 
