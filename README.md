@@ -145,6 +145,7 @@ Community Maintained Cars and Features
 | Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
 | Hyundai   | Ioniq Electric Premium SE 2020| SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Hyundai   | Ioniq Electric Limited 2019   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
+| Hyundai   | Kona 2020                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Palisade 2020                 | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019                 | All               | Stock            | 0mph               | 0mph         |
@@ -157,9 +158,9 @@ Community Maintained Cars and Features
 | Kia       | Optima 2019                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Nissan    | Leaf 2018-19<sup>2</sup>      | Propilot          | Stock            | 0mph               | 0mph         |
-| Nissan    | Rogue 2019<sup>2</sup>        | Propilot          | Stock            | 0mph               | 0mph         |
-| Nissan    | X-Trail 2017<sup>2</sup>      | Propilot          | Stock            | 0mph               | 0mph         |
+| Nissan    | Leaf 2018-19                  | Propilot          | Stock            | 0mph               | 0mph         |
+| Nissan    | Rogue 2019                    | Propilot          | Stock            | 0mph               | 0mph         |
+| Nissan    | X-Trail 2017                  | Propilot          | Stock            | 0mph               | 0mph         |
 | Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Forester 2019                 | EyeSight          | Stock            | 0mph               | 0mph         |
