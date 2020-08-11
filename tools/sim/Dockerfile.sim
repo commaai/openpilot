@@ -80,16 +80,8 @@ RUN pyenv install 3.8.2 && \
       tensorflow==2.2 \
       parameterized==0.7.4
 
-RUN mkdir -p /tmp/openpilot
-
-RUN mkdir carla_temp && cd carla_temp && \
-    curl -O http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/CARLA_0.9.7.tar.gz && \
-    tar -xf CARLA_0.9.7.tar.gz && \
-    (easy_install PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true) && \
-    cd ../ && \
-    rm -r carla_temp
-
-RUN mkdir opencl_temp && cd opencl_temp && \
+RUN mkdir /tmp/opencl && \
+    cd /tmp/opencl && \
     curl -O http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532/l_opencl_p_18.1.0.015.tgz && \
     tar -xf l_opencl_p_18.1.0.015.tgz && \
     cd l_opencl_p_18.1.0.015 && \
@@ -101,9 +93,18 @@ RUN mkdir opencl_temp && cd opencl_temp && \
     echo INTEL_SW_IMPROVEMENT_PROGRAM_CONSENT=no  >> config && \
     echo COMPONENTS=";intel-openclrt__x86_64;intel-openclrt-pset" >> config && \
     ./install.sh -s config && \
-    cd ../../ && \
-    rm -r opencl_temp
+    rm -rf /tmp/opencl
 
+ENV CARLA_VERSION 0.9.7
+
+RUN mkdir /tmp/carla && \
+    cd /tmp/carla && \
+    curl -O http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/CARLA_0.9.7.tar.gz && \
+    tar -xf CARLA_0.9.7.tar.gz && \
+    (easy_install PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true) && \
+    rm -rf /tmp/carla
+
+RUN mkdir -p /tmp/openpilot
 
 COPY SConstruct \
      .pylintrc \
@@ -121,6 +122,5 @@ COPY ./common /tmp/openpilot/common
 COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./panda /tmp/openpilot/panda
-COPY ./selfdrive /tmp/openpilot/selfdrive
 COPY ./models /tmp/openpilot/models
-
+COPY ./selfdrive /tmp/openpilot/selfdrive
