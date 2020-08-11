@@ -19,7 +19,7 @@ WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-TOTAL_SCONS_NODES = 1020
+TOTAL_SCONS_NODES = 1005
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 # Create folders needed for msgq
