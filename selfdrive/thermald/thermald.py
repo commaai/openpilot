@@ -318,30 +318,28 @@ def thermald_thread():
         extra_text = last_update_exception
 
       if current_update_alert != "update" + extra_text:
-        set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
-
-      current_update_alert = "update" + extra_text
-      set_offroad_alert("Offroad_ConnectivityNeeded", False)
-      set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
-    else:
-      if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
-        if current_update_alert != "expired":
-          current_update_alert = "expired"
-          set_offroad_alert("Offroad_UpdateFailed", False)
-          set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
-          set_offroad_alert("Offroad_ConnectivityNeeded", True)
-      elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
-        remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
-        if current_update_alert != "prompt" + remaining_time:
-          current_update_alert = "prompt" + remaining_time
-          set_offroad_alert("Offroad_UpdateFailed", False)
-          set_offroad_alert("Offroad_ConnectivityNeeded", False)
-          set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
-      elif current_update_alert is not None:
-        current_update_alert = None
-        set_offroad_alert("Offroad_UpdateFailed", False)
+        current_update_alert = "update" + extra_text
         set_offroad_alert("Offroad_ConnectivityNeeded", False)
         set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
+        set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
+    elif dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
+      if current_update_alert != "expired":
+        current_update_alert = "expired"
+        set_offroad_alert("Offroad_UpdateFailed", False)
+        set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
+        set_offroad_alert("Offroad_ConnectivityNeeded", True)
+    elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
+      remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
+      if current_update_alert != "prompt" + remaining_time:
+        current_update_alert = "prompt" + remaining_time
+        set_offroad_alert("Offroad_UpdateFailed", False)
+        set_offroad_alert("Offroad_ConnectivityNeeded", False)
+        set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
+    elif current_update_alert is not None:
+      current_update_alert = None
+      set_offroad_alert("Offroad_UpdateFailed", False)
+      set_offroad_alert("Offroad_ConnectivityNeeded", False)
+      set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
 
     do_uninstall = params.get("DoUninstall") == b"1"
     accepted_terms = params.get("HasAcceptedTerms") == terms_version
