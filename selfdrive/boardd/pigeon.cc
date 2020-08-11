@@ -104,7 +104,7 @@ std::string PandaPigeon::receive() {
 
   while (true){
     unsigned char dat[0x40];
-    int len = panda->usb_read(0xe0, 1, 0, dat, 0x40);
+    int len = panda->usb_read(0xe0, 1, 0, dat, sizeof(dat));
     if (len <= 0) break;
     r.append((char*)dat, len);
   }
@@ -189,7 +189,7 @@ std::string TTYPigeon::receive() {
 
   while (true){
     char dat[0x40];
-    int len = read(pigeon_tty_fd, dat, 0x40);
+    int len = read(pigeon_tty_fd, dat, sizeof(dat));
     if(len < 0) {
       handle_tty_issue(len, __func__);
     } else if (len == 0){
