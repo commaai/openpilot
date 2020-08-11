@@ -254,7 +254,6 @@ def main():
   update_failed_count = 0
   overlay_initialized = False
   while not wait_helper.shutdown:
-    update_failed_count += 1
     wait_helper.ready_event.clear()
 
     # Check for internet every 30s
@@ -265,6 +264,8 @@ def main():
       continue
 
     # Attempt an update
+    exception = None
+    update_failed_count += 1
     try:
       # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
       if overlay_initialized:
@@ -293,11 +294,17 @@ def main():
         output=e.output,
         returncode=e.returncode
       )
+      exception = e
       overlay_initialized = False
-    except Exception:
+    except Exception as e:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
+      exception = e
 
     params.put("UpdateFailedCount", str(update_failed_count))
+    if exception is None:
+      params.delete("LastUpdateException")
+    else:
+      params.put("LastUpdateException", f"command failed: {exception.cmd}\n{exception.output}")
 
     # Wait 10 minutes between update attempts
     wait_helper.sleep(60*10)
