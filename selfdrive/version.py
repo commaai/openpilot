@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
 
@@ -42,6 +43,8 @@ def get_git_remote(default=None):
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:
   version = _versionf.read().split('"')[1]
 
+prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
+
 training_version = b"0.2.0"
 terms_version = b"2"
 
@@ -51,31 +54,36 @@ tested_branch = False
 origin = get_git_remote()
 branch = get_git_full_branchname()
 
-try:
-  # This is needed otherwise touched files might show up as modified
+if (origin is not None) and (branch is not None):
   try:
-    subprocess.check_call(["git", "update-index", "--refresh"])
-  except subprocess.CalledProcessError:
-    pass
-
-  if (origin is not None) and (branch is not None):
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
     tested_branch = get_git_branch() in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']
 
-    dirty = not comma_remote
+    dirty = False
+
+    # Actually check dirty files
+    if not prebuilt:
+      # This is needed otherwise touched files might show up as modified
+      try:
+        subprocess.check_call(["git", "update-index", "--refresh"])
+      except subprocess.CalledProcessError:
+        pass
+      dirty = dirty or (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
+
+      # Log dirty files
+      if dirty:
+        dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"], encoding='utf8')
+        commit = subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"], encoding='utf8').rstrip()
+        origin_commit = subprocess.check_output(["git", "rev-parse", "--verify", branch], encoding='utf8').rstrip()
+        cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch,
+                       dirty_files=dirty_files, commit=commit, origin_commit=origin_commit)
+
+    dirty = dirty or (not comma_remote)
     dirty = dirty or ('master' in branch)
-    dirty = dirty or (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
 
-    if dirty:
-      dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"], encoding='utf8')
-      commit = subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"], encoding='utf8').rstrip()
-      origin_commit = subprocess.check_output(["git", "rev-parse", "--verify", branch], encoding='utf8').rstrip()
-      cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch,
-                     dirty_files=dirty_files, commit=commit, origin_commit=origin_commit)
-
-except subprocess.CalledProcessError:
-  dirty = True
-  cloudlog.exception("git subprocess failed while checking dirty")
+  except subprocess.CalledProcessError:
+    dirty = True
+    cloudlog.exception("git subprocess failed while checking dirty")
 
 
 if __name__ == "__main__":
@@ -83,3 +91,4 @@ if __name__ == "__main__":
   print("Version: %s" % version)
   print("Remote: %s" % origin)
   print("Branch %s" % branch)
+  print("Prebuilt %s" % prebuilt)
