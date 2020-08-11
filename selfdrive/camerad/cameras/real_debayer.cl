@@ -1,10 +1,13 @@
 const __constant float3 color_correction[3] = {
   // Matrix from WBraw -> sRGBD65 (normalized)
-  (float3)(1.18409513, -0.15969593,  0.04764678),
-  (float3)(-0.18071031,  1.13545802,  0.42800657),
-  (float3)(-0.00338482,  0.02423791,  0.52434665),
+  (float3)(1,0,0),
+  (float3)(0,1,0),
+  (float3)(0,0,1),
 };
-
+// wait for 24 color calib
+//(float3)(0.44832666,  0.0163177 , -0.00434611),
+//  (float3)(0.51599514,  1.0778389 , -0.32716517),
+//  (float3)(0.0356782 , -0.09415659,  1.33151128),
 const __constant float3 df = (float3)(0.5, 0.5, 0.5);
 
 float3 color_correct(float r, float g, float b) {
@@ -64,7 +67,7 @@ __kernel void debayer10(const __global uchar * in,
   cached[localOffset] = to_normal(raw_val);
 
   // edges
-  if (x_global < 1 || x_global > FRAME_STRIDE - 2 || y_global < 1 || y_global > FRAME_HEIGHT - 2) {
+  if (x_global < 1 || x_global > RGB_WIDTH - 2 || y_global < 1 || y_global > RGB_WIDTH - 2) {
     barrier(CLK_LOCAL_MEM_FENCE);
     return;
   } else {
@@ -76,22 +79,21 @@ __kernel void debayer10(const __global uchar * in,
       localColOffset = x_local;
       globalColOffset = -1;
       cached[(y_local + 1) * localRowLen + x_local] = to_normal(int_from_10(in, y_global * FRAME_STRIDE + (5 * ((x_global-1) / 4)), (offset_10 + 3) % 4));
-      //cached[(y_local + 1) * localRowLen + x_local] = to_normal(int_from_10(in, globalStart_10, offset_10 - 1)); // this assumes local work size is multipy of 4
     } else if (x_local >= get_local_size(0) - 1) {
       localColOffset = x_local + 2;
       globalColOffset = 1;
-      cached[localOffset + 1] = to_normal(int_from_10(in, globalStart_10, offset_10 + 1));
+      cached[localOffset + 1] = to_normal(int_from_10(in, y_global * FRAME_STRIDE + (5 * ((x_global+1) / 4)), (offset_10 + 1) % 4));
     }
 
     if (y_local < 1) {
       cached[y_local * localRowLen + x_local + 1] = to_normal(int_from_10(in, globalStart_10 - FRAME_STRIDE, offset_10));
-      if (localColOffset > 0) {
-        cached[y_local * localRowLen + localColOffset] = to_normal(int_from_10(in, (y_global-1) * FRAME_STRIDE + (5 * ((globalColOffset) / 4)), globalColOffset % 4));
+      if (localColOffset != -1) {
+        cached[y_local * localRowLen + localColOffset] = to_normal(int_from_10(in, (y_global-1) * FRAME_STRIDE + (5 * ((x_global+globalColOffset) / 4)), (offset_10+4+globalColOffset) % 4));
       }
     } else if (y_local >= get_local_size(1) - 1) {
       cached[(y_local + 2) * localRowLen + x_local + 1] = to_normal(int_from_10(in, globalStart_10 + FRAME_STRIDE, offset_10));
-      if (localColOffset > 0) {
-        cached[(y_local + 2) * localRowLen + localColOffset] = to_normal(int_from_10(in, (y_global+1) * FRAME_STRIDE + (5 * ((globalColOffset) / 4)), globalColOffset % 4));
+      if (localColOffset != -1) {
+        cached[(y_local + 2) * localRowLen + localColOffset] = to_normal(int_from_10(in, (y_global+1) * FRAME_STRIDE + (5 * ((x_global+globalColOffset) / 4)), (offset_10+4+globalColOffset) % 4));
       }
     }
 
@@ -106,21 +108,21 @@ __kernel void debayer10(const __global uchar * in,
     if (x_global % 2 == 0) {
       if (y_global % 2 == 0) { // G1
         r = (cached[localOffset - 1] + cached[localOffset + 1]) / 2.0f;
-        g = cached[localOffset];
-        b = (cached[localOffset - get_local_size(0) - 2] + cached[localOffset + get_local_size(0) + 2]) / 2.0f;
+        g = (cached[localOffset] + cached[localOffset + localRowLen + 1]) / 2.0f;
+        b = (cached[localOffset - localRowLen] + cached[localOffset + localRowLen]) / 2.0f;
       } else { // B
-        r = (cached[localOffset - get_local_size(0) - 3] + cached[localOffset - get_local_size(0) - 1] + cached[localOffset + get_local_size(0) + 1] + cached[localOffset + get_local_size(0) + 3]) / 4.0f;
-        g = (cached[localOffset - get_local_size(0) - 2] + cached[localOffset + get_local_size(0) + 2] + cached[localOffset - 1] + cached[localOffset + 1]) / 4.0f;
+        r = (cached[localOffset - localRowLen - 1] + cached[localOffset - localRowLen + 1] + cached[localOffset + localRowLen - 1] + cached[localOffset + localRowLen + 1]) / 4.0f;
+        g = (cached[localOffset - localRowLen] + cached[localOffset + localRowLen] + cached[localOffset - 1] + cached[localOffset + 1]) / 4.0f;
         b = cached[localOffset];
       }
     } else {
       if (y_global % 2 == 0) { // R
         r = cached[localOffset];
-        g = (cached[localOffset - get_local_size(0) - 2] + cached[localOffset + get_local_size(0) + 2] + cached[localOffset - 1] + cached[localOffset + 1]) / 4.0f;
-        b = (cached[localOffset - get_local_size(0) - 3] + cached[localOffset - get_local_size(0) - 1] + cached[localOffset + get_local_size(0) + 1] + cached[localOffset + get_local_size(0) + 3]) / 4.0f;
+        g = (cached[localOffset - localRowLen] + cached[localOffset + localRowLen] + cached[localOffset - 1] + cached[localOffset + 1]) / 4.0f;
+        b = (cached[localOffset - localRowLen - 1] + cached[localOffset - localRowLen + 1] + cached[localOffset + localRowLen - 1] + cached[localOffset + localRowLen + 1]) / 4.0f;
       } else { // G2
-        r = (cached[localOffset - get_local_size(0) - 2] + cached[localOffset + get_local_size(0) + 2]) / 2.0f;
-        g = cached[localOffset];
+        r = (cached[localOffset - localRowLen] + cached[localOffset + localRowLen]) / 2.0f;
+        g = (cached[localOffset] + cached[localOffset - localRowLen - 1]) / 2.0f;
         b = (cached[localOffset - 1] + cached[localOffset + 1]) / 2.0f;
       }
     }
