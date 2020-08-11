@@ -118,10 +118,8 @@ void PandaPigeon::set_power(bool power) {
 }
 
 
-// TTY Pigeon
 void handle_tty_issue(int err, const char func[]) {
-  //strerror(errno)
-  LOGE_100("tty error %d in %s", err, func);
+  LOGE_100("tty error %d \"%s\" in %s", err, strerror(err), func);
 }
 
 void TTYPigeon::connect(const char * tty) {
@@ -193,6 +191,7 @@ int TTYPigeon::receive(unsigned char * dat) {
 }
 
 void TTYPigeon::set_power(bool power){
+#ifdef QCOM2
   int err = 0;
   err += gpio_init(GPIO_UBLOX_RST_N, true);
   err += gpio_init(GPIO_UBLOX_SAFEBOOT_N, true);
@@ -202,4 +201,5 @@ void TTYPigeon::set_power(bool power){
   err += gpio_set(GPIO_UBLOX_SAFEBOOT_N, power);
   err += gpio_set(GPIO_UBLOX_PWR_EN, power);
   assert(err == 0);
+#endif
 }
