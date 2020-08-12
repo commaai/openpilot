@@ -9,6 +9,11 @@
 
 #include "pigeon.h"
 
+// Termios on macos doesn't define all baud rate constants
+#ifndef B460800
+#define   B460800 0010004
+#endif
+
 using namespace std::string_literals;
 
 
