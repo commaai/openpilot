@@ -127,7 +127,10 @@ void handle_tty_issue(int err, const char func[]) {
 
 void TTYPigeon::connect(const char * tty) {
   pigeon_tty_fd = open(tty, O_RDWR);
-  assert(pigeon_tty_fd >= 0);
+  if (pigeon_tty_fd < 0){
+    handle_tty_issue(errno, __func__);
+    assert(pigeon_tty_fd >= 0);
+  }
   assert(tcgetattr(pigeon_tty_fd, &pigeon_tty) == 0);
 
   // configure tty
