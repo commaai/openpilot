@@ -29,6 +29,7 @@ import psutil
 import shutil
 import signal
 import fcntl
+import time
 import threading
 from cffi import FFI
 from pathlib import Path
@@ -36,17 +37,20 @@ from pathlib import Path
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 TEST_IP = os.getenv("UPDATER_TEST_IP", "8.8.8.8")
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
+
+NEOS_VERSION = os.getenv("UPDATER_NEOS_VERSION", "/VERSION")
+NEOSUPDATE_DIR = os.getenv("UPDATER_NEOSUPDATE_DIR", "/data/neoupdate")
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
-NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 
 # Workaround for lack of os.link in the NEOS/termux python
 ffi = FFI()
@@ -57,7 +61,8 @@ def link(src, dest):
 
 
 class WaitTimeHelper:
-  def __init__(self):
+  def __init__(self, proc):
+    self.proc = proc
     self.ready_event = threading.Event()
     self.shutdown = False
     signal.signal(signal.SIGTERM, self.graceful_shutdown)
@@ -68,6 +73,12 @@ class WaitTimeHelper:
     # umount -f doesn't appear effective in avoiding "device busy" on NEOS,
     # so don't actually die until the next convenient opportunity in main().
     cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
+
+    # forward the signal to all our child processes
+    child_procs = self.proc.children(recursive=True)
+    for p in child_procs:
+      p.send_signal(signum)
+
     self.shutdown = True
     self.ready_event.set()
 
@@ -79,7 +90,9 @@ class WaitTimeHelper:
     self.ready_event.wait(timeout=t)
 
 
-def run(cmd, cwd=None):
+def run(cmd, cwd=None, low_priority=False):
+  if low_priority:
+    cmd = ["nice", "-n", "19"] + cmd
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -93,7 +106,7 @@ def set_consistent_flag(consistent):
   os.system("sync")
 
 
-def set_update_available_params(new_version=False):
+def set_update_available_params(new_version):
   params = Params()
 
   t = datetime.datetime.utcnow().isoformat()
@@ -132,7 +145,7 @@ def setup_git_options(cwd):
   for option, value in git_cfg:
     try:
       ret = run(["git", "config", "--get", option], cwd)
-      config_ok = (ret.strip() == value)
+      config_ok = ret.strip() == value
     except subprocess.CalledProcessError:
       config_ok = False
 
@@ -168,6 +181,7 @@ def init_ovfs():
   # and skips the update activation attempt.
   Path(os.path.join(BASEDIR, ".overlay_init")).touch()
 
+  os.system("sync")
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
 
@@ -176,18 +190,23 @@ def finalize_from_ovfs():
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
+  # Remove the update ready flag and any old updates
   cloudlog.info("creating finalized version of the overlay")
+  set_consistent_flag(False)
   shutil.rmtree(FINALIZED)
+
+  # Copy the merged overlay view and set the update ready flag
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
+  set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
 
-def attempt_update():
+def attempt_update(wait_helper):
   cloudlog.info("attempting git update inside staging overlay")
 
   setup_git_options(OVERLAY_MERGED)
 
-  git_fetch_output = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
+  git_fetch_output = run(["git", "fetch"], OVERLAY_MERGED, low_priority=True)
   cloudlog.info("git fetch success: %s", git_fetch_output)
 
   cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
@@ -200,46 +219,75 @@ def attempt_update():
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
   if new_version or git_fetch_result:
     cloudlog.info("Running update")
+
     if new_version:
       cloudlog.info("git reset in progress")
       r = [
-        run(NICE_LOW_PRIORITY + ["git", "reset", "--hard", "@{u}"], OVERLAY_MERGED),
-        run(NICE_LOW_PRIORITY + ["git", "clean", "-xdf"], OVERLAY_MERGED),
-        run(NICE_LOW_PRIORITY + ["git", "submodule", "init"], OVERLAY_MERGED),
-        run(NICE_LOW_PRIORITY + ["git", "submodule", "update"], OVERLAY_MERGED),
+        run(["git", "reset", "--hard", "@{u}"], OVERLAY_MERGED, low_priority=True),
+        run(["git", "clean", "-xdf"], OVERLAY_MERGED, low_priority=True ),
+        run(["git", "submodule", "init"], OVERLAY_MERGED, low_priority=True),
+        run(["git", "submodule", "update"], OVERLAY_MERGED, low_priority=True),
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-    # Un-set the validity flag to prevent the finalized tree from being
-    # activated later if the finalize step is interrupted
-    set_consistent_flag(False)
+      # Download the accompanying NEOS version if it doesn't match the current version
+      with open(NEOS_VERSION, "r") as f:
+        cur_neos = f.read().strip()
 
+      updated_neos = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
+                           echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
+
+      cloudlog.info(f"NEOS version check: {cur_neos} vs {updated_neos}")
+      if cur_neos != updated_neos:
+        cloudlog.info(f"Beginning background download for NEOS {updated_neos}")
+
+        set_offroad_alert("Offroad_NeosUpdate", True)
+        updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
+        update_manifest = f"file://{OVERLAY_MERGED}/installer/updater/update.json"
+
+        neos_downloaded = False
+        start_time = time.monotonic()
+        # Try to download for one day
+        while (time.monotonic() - start_time < 60*60*24) and not wait_helper.shutdown:
+          wait_helper.ready_event.clear()
+          try:
+            run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
+            neos_downloaded = True
+            break
+          except subprocess.CalledProcessError:
+            cloudlog.info("NEOS background download failed, retrying")
+            wait_helper.sleep(120)
+
+        # If the download failed, we'll show the alert again when we retry
+        set_offroad_alert("Offroad_NeosUpdate", False)
+        if not neos_downloaded:
+          raise Exception("Failed to download NEOS update")
+
+        cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
+
+    # Create the finalized, ready-to-swap update
     finalize_from_ovfs()
-
-    # Make sure the validity flag lands on disk LAST, only when the local git
-    # repo and OP install are in a consistent state.
-    set_consistent_flag(True)
-
-    cloudlog.info("update successful!")
+    cloudlog.info("openpilot update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
 
-  set_update_available_params(new_version=new_version)
+  set_update_available_params(new_version)
+  return new_version
 
 
 def main():
   params = Params()
 
   if params.get("DisableUpdates") == b"1":
-    raise RuntimeError("updates are disabled by param")
+    raise RuntimeError("updates are disabled by the DisableUpdates param")
 
   if os.geteuid() != 0:
     raise RuntimeError("updated must be launched as root!")
 
   # Set low io priority
-  p = psutil.Process()
+  proc = psutil.Process()
   if psutil.LINUX:
-    p.ionice(psutil.IOPRIO_CLASS_BE, value=7)
+    proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:
@@ -248,10 +296,11 @@ def main():
     raise RuntimeError("couldn't get overlay lock; is another updated running?")
 
   # Wait for IsOffroad to be set before our first update attempt
-  wait_helper = WaitTimeHelper()
+  wait_helper = WaitTimeHelper(proc)
   wait_helper.sleep(30)
 
   update_failed_count = 0
+  update_available = False
   overlay_initialized = False
   while not wait_helper.shutdown:
     wait_helper.ready_event.clear()
@@ -282,8 +331,10 @@ def main():
         overlay_initialized = True
 
       if params.get("IsOffroad") == b"1":
-        attempt_update()
+        update_available = attempt_update(wait_helper) or update_available
         update_failed_count = 0
+        if not update_available and os.path.isdir(NEOSUPDATE_DIR):
+          shutil.rmtree(NEOSUPDATE_DIR)
       else:
         cloudlog.info("not running updater, openpilot running")
 
@@ -308,7 +359,6 @@ def main():
     # Wait 10 minutes between update attempts
     wait_helper.sleep(60*10)
 
-  # We've been signaled to shut down
   dismount_ovfs()
 
 if __name__ == "__main__":
