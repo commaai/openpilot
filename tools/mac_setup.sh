@@ -16,6 +16,7 @@ brew install capnp \
              ffmpeg \
              glfw \
              libarchive \
+             libusb \
              libtool \
              llvm \
              pyenv \
