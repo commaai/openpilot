@@ -2,6 +2,8 @@
 #include <cassert>
 #include <iostream>
 
+#include <unistd.h>
+
 #include "common/swaglog.h"
 #include "common/gpio.h"
 
