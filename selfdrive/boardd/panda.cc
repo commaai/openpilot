@@ -62,8 +62,10 @@ Panda::Panda(){
   is_pigeon =
     (hw_type == cereal::HealthData::HwType::GREY_PANDA) ||
     (hw_type == cereal::HealthData::HwType::BLACK_PANDA) ||
-    (hw_type == cereal::HealthData::HwType::UNO);
-  has_rtc = (hw_type == cereal::HealthData::HwType::UNO);
+    (hw_type == cereal::HealthData::HwType::UNO) || 
+    (hw_type == cereal::HealthData::HwType::DOS);
+  has_rtc = (hw_type == cereal::HealthData::HwType::UNO) ||
+    (hw_type == cereal::HealthData::HwType::DOS);
 
   return;
 
