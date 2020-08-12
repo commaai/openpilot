@@ -332,13 +332,11 @@ struct Updater {
   void set_progress(std::string text) {
     std::lock_guard<std::mutex> guard(lock);
     progress_text = text;
-    printf("%s\n", text.c_str());
   }
 
   void set_error(std::string text) {
     std::lock_guard<std::mutex> guard(lock);
     error_text = text;
-    printf("%s\n", text.c_str());
     state = ERROR;
   }
 
@@ -684,7 +682,6 @@ struct Updater {
 
     switch (state) {
     case CONFIRMATION:
-      // TODO: different text if update is fully cached?
       draw_ack_screen("An update to NEOS is required.",
                       "Your device will now be reset and upgraded. You may want to connect to wifi as download is around 1 GB. Existing data on device should not be lost.",
                       "Continue",

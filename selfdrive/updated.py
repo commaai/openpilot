@@ -77,7 +77,6 @@ class WaitTimeHelper:
     # forward the signal to all our child processes
     child_procs = self.proc.children(recursive=True)
     for p in child_procs:
-      print(f"sending {signum} to {p.pid} {p.name()}")
       p.send_signal(signum)
 
     self.shutdown = True
