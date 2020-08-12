@@ -1,4 +1,4 @@
-Version 0.7.8 (2020-08-XX)
+Version 0.7.8 (2020-08-19)
 ========================
  * New driver monitoring model: improved face detection and better compatibility with sunglasses
  * Download NEOS operating system updates in the background
