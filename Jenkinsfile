@@ -38,6 +38,12 @@ pipeline {
   stages {
 
     stage('Release Build') {
+      agent {
+        docker {
+          image 'python:3.7.3'
+          args '--user=root'
+        }
+      }
       when {
         branch 'devel-staging'
       }
