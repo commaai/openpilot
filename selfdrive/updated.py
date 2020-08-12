@@ -348,7 +348,7 @@ def main():
       )
       exception = e
       overlay_initialized = False
-    except Exception as e:
+    except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
     params.put("UpdateFailedCount", str(update_failed_count))
