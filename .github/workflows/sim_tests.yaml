@@ -1,0 +1,27 @@
+name: simulator
+on:
+  push:
+
+  # TODO: remove the push trigger, and only run on schedule
+  #schedule:
+  #- cron: '0 * * * *'
+
+jobs:
+  docker_build:
+    name: build container
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Docker build
+      run: |
+        docker pull $(grep -ioP '(?<=^from)\s+\S+' tools/sim/Dockerfile.sim) || true
+        docker pull docker.io/commaai/openpilot-sim:latest || true
+        docker build --cache-from docker.io/commaai/openpilot-sim:latest -t simpilot -f tools/sim/Dockerfile.sim .
+    - name: Push to dockerhub
+      run: |
+        docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN }}
+        docker tag simpilot docker.io/commaai/openpilot-sim:latest
+        docker push docker.io/commaai/openpilot-sim:latest
