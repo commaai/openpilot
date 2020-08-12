@@ -72,17 +72,20 @@ def sendcan_function(sendcan):
   cp.update_strings(sc, sendcan=True)
 
   if cp.vl[0x1fa]['COMPUTER_BRAKE_REQUEST']:
-    brake = cp.vl[0x1fa]['COMPUTER_BRAKE'] * 0.003906248
+    # brake = cp.vl[0x1fa]['COMPUTER_BRAKE'] * 0.003906248
+    brake = cp.vl[0x1fa]['COMPUTER_BRAKE'] / 1024.
   else:
     brake = 0.0
 
   if cp.vl[0x200]['GAS_COMMAND'] > 0:
-    gas = cp.vl[0x200]['GAS_COMMAND'] / 256.0
+    # gas = cp.vl[0x200]['GAS_COMMAND'] / 256.0
+    gas = ( cp.vl[0x200]['GAS_COMMAND'] + 83.3 ) / (0.253984064 * 2**16)
   else:
     gas = 0.0
 
   if cp.vl[0xe4]['STEER_TORQUE_REQUEST']:
-    steer_torque = cp.vl[0xe4]['STEER_TORQUE']*1.0/0x1000
+    # steer_torque = cp.vl[0xe4]['STEER_TORQUE']*1.0/0x1000
+    steer_torque = cp.vl[0xe4]['STEER_TORQUE']/3840
   else:
     steer_torque = 0.0
 
