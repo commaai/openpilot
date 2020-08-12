@@ -37,7 +37,7 @@
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 #define VOLTAGE_K 0.091  // LPF gain for 5s tau (dt/tau / (dt/tau + 1))
 
-#ifndef __x86_64__
+#ifdef QCOM
 const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
 const float VBATT_START_CHARGING = 11.5;
 const float VBATT_PAUSE_CHARGING = 11.0;
