@@ -244,12 +244,13 @@ def attempt_update(wait_helper):
 
         set_offroad_alert("Offroad_NeosUpdate", True)
         updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
-        update_manifest = os.path.join("file://", OVERLAY_MERGED, "/installer/updater/update.json")
+        update_manifest = f"file://{OVERLAY_MERGED}/installer/updater/update.json"
 
         neos_downloaded = False
         start_time = time.monotonic()
         # Try to download for one day
         while (time.monotonic() - start_time < 60*60*24) and not wait_helper.shutdown:
+          wait_helper.ready_event.clear()
           try:
             run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
             neos_downloaded = True
