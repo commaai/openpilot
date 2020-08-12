@@ -350,7 +350,6 @@ def main():
       overlay_initialized = False
     except Exception as e:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
-      exception = e
 
     params.put("UpdateFailedCount", str(update_failed_count))
     if exception is None:

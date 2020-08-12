@@ -97,7 +97,7 @@ std::string download_string(CURL *curl, std::string url) {
 
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 0);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
   curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt(curl, CURLOPT_RESUME_FROM, 0);
@@ -282,7 +282,7 @@ struct Updater {
 
       curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
       curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-      curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+      curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 0);
       curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
       curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
       curl_easy_setopt(curl, CURLOPT_RESUME_FROM, resume_from);
