@@ -362,6 +362,7 @@ struct Updater {
       bool r = download_file(url, out_fn);
       if (!r) {
         set_error("failed to download " + name);
+        unlink(out_fn.c_str());
         return "";
       }
       fn_hash = sha256_file(out_fn);
