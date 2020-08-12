@@ -31,7 +31,6 @@ Pigeon * Pigeon::connect(const char * tty){
   return pigeon;
 }
 
-
 void Pigeon::init() {
   usleep(1000*1000);
   LOGW("panda GPS start");
@@ -80,7 +79,6 @@ void Pigeon::init() {
   LOGW("panda GPS on");
 }
 
-
 void PandaPigeon::connect(Panda * p) {
   panda = p;
 }
@@ -122,9 +120,7 @@ void PandaPigeon::set_power(bool power) {
 }
 
 PandaPigeon::~PandaPigeon(){
-
 }
-
 
 void handle_tty_issue(int err, const char func[]) {
   LOGE_100("tty error %d \"%s\" in %s", err, strerror(err), func);
@@ -188,7 +184,8 @@ void TTYPigeon::send(std::string s) {
   const char * dat = s.data();
 
   int err = write(pigeon_tty_fd, dat, len);
-  err += tcdrain(pigeon_tty_fd);
+  if(err < 0) { handle_tty_issue(err, __func__); }
+  err = tcdrain(pigeon_tty_fd);
   if(err < 0) { handle_tty_issue(err, __func__); }
 }
 
