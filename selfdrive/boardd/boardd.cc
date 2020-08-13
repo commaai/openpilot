@@ -28,6 +28,7 @@
 #include "messaging.hpp"
 
 #include "panda.h"
+#include "pigeon.h"
 
 
 #define MAX_IR_POWER 0.5f
@@ -42,8 +43,6 @@ const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after
 const float VBATT_START_CHARGING = 11.5;
 const float VBATT_PAUSE_CHARGING = 11.0;
 #endif
-
-namespace {
 
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
@@ -468,82 +467,13 @@ void hardware_control_thread() {
   }
 }
 
-#define pigeon_send(x) _pigeon_send(x, sizeof(x)-1)
-void _pigeon_send(const char *dat, int len) {
-  unsigned char a[0x20+1];
-  a[0] = 1;
-  for (int i=0; i<len; i+=0x20) {
-    int ll = std::min(0x20, len-i);
-    memcpy(&a[1], &dat[i], ll);
-
-    panda->usb_bulk_write(2, a, ll+1);
-  }
-}
-
-void pigeon_set_power(int power) {
-  panda->usb_write(0xd9, power, 0);
-}
-
-void pigeon_set_baud(int baud) {
-  panda->usb_write(0xe2, 1, 0);
-  panda->usb_write(0xe4, 1, baud/300);
-}
-
-void pigeon_init() {
-  usleep(1000*1000);
-  LOGW("panda GPS start");
-
-  // power off pigeon
-  pigeon_set_power(0);
-  usleep(100*1000);
-
-  // 9600 baud at init
-  pigeon_set_baud(9600);
-
-  // power on pigeon
-  pigeon_set_power(1);
-  usleep(500*1000);
-
-  // baud rate upping
-  pigeon_send("\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A");
-  usleep(100*1000);
-
-  // set baud rate to 460800
-  pigeon_set_baud(460800);
-  usleep(100*1000);
-
-  // init from ubloxd
-  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py
-  pigeon_send("\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F");
-  pigeon_send("\xB5\x62\x06\x3E\x00\x00\x44\xD2");
-  pigeon_send("\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35");
-  pigeon_send("\xB5\x62\x06\x00\x14\x00\x01\x00\x00\x00\xC0\x08\x00\x00\x00\x08\x07\x00\x01\x00\x01\x00\x00\x00\x00\x00\xF4\x80");
-  pigeon_send("\xB5\x62\x06\x00\x14\x00\x04\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1D\x85");
-  pigeon_send("\xB5\x62\x06\x00\x00\x00\x06\x18");
-  pigeon_send("\xB5\x62\x06\x00\x01\x00\x01\x08\x22");
-  pigeon_send("\xB5\x62\x06\x00\x01\x00\x02\x09\x23");
-  pigeon_send("\xB5\x62\x06\x00\x01\x00\x03\x0A\x24");
-  pigeon_send("\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10");
-  pigeon_send("\xB5\x62\x06\x24\x24\x00\x05\x00\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5A\x63");
-  pigeon_send("\xB5\x62\x06\x1E\x14\x00\x00\x00\x00\x00\x01\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x3C\x37");
-  pigeon_send("\xB5\x62\x06\x24\x00\x00\x2A\x84");
-  pigeon_send("\xB5\x62\x06\x23\x00\x00\x29\x81");
-  pigeon_send("\xB5\x62\x06\x1E\x00\x00\x24\x72");
-  pigeon_send("\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51");
-  pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70");
-  pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C");
-  pigeon_send("\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70");
-
-  LOGW("panda GPS on");
-}
-
-static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
+static void pigeon_publish_raw(PubMaster &pm, std::string dat) {
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
-  auto ublox_raw = event.initUbloxRaw(alen);
-  memcpy(ublox_raw.begin(), dat, alen);
+  auto ublox_raw = event.initUbloxRaw(dat.length());
+  memcpy(ublox_raw.begin(), dat.data(), dat.length());
 
   pm.send("ubloxRaw", msg);
 }
@@ -555,37 +485,32 @@ void pigeon_thread() {
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
 
-  // run at ~100hz
-  unsigned char dat[0x1000];
-  uint64_t cnt = 0;
+#ifdef QCOM2
+  Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
+#else
+  Pigeon * pigeon = Pigeon::connect(panda);
+#endif
 
-  pigeon_init();
+  pigeon->init();
 
   while (!do_exit && panda->connected) {
-    int alen = 0;
-    while (alen < 0xfc0) {
-      int len = panda->usb_read(0xe0, 1, 0, dat+alen, 0x40);
-      if (len <= 0) break;
-
-      //printf("got %d\n", len);
-      alen += len;
-    }
-    if (alen > 0) {
-      if (dat[0] == (char)0x00){
+    std::string recv = pigeon->receive();
+    if (recv.length() > 0) {
+      if (recv[0] == (char)0x00){
         LOGW("received invalid ublox message, resetting panda GPS");
-        pigeon_init();
+        pigeon->init();
       } else {
-        pigeon_publish_raw(pm, dat, alen);
+        pigeon_publish_raw(pm, recv);
       }
     }
 
-    // 10ms
+    // 10ms - 100 Hz
     usleep(10*1000);
-    cnt++;
   }
+
+  delete pigeon;
 }
 
-}
 
 int main() {
   int err;
@@ -605,6 +530,8 @@ int main() {
   if (getenv("FAKESEND")) {
     fake_send = true;
   }
+
+  panda_set_power(true);
 
   while (!do_exit){
     std::vector<std::thread> threads;
