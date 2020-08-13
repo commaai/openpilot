@@ -1,16 +1,27 @@
 #!/usr/bin/env python3
+import json
 import os
 import unittest
+import random
 from PIL import Image, ImageDraw, ImageFont
 
 from cereal import log, car
 from common.basedir import BASEDIR
+from common.params import Params
 from selfdrive.controls.lib.events import Alert, EVENTS
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 AlertSize = log.ControlsState.AlertSize
 
+OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")
 
 class TestAlerts(unittest.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    with open(OFFROAD_ALERTS_PATH) as f:
+      cls.offroad_alerts = json.loads(f.read())
+
   def test_events_defined(self):
     # Ensure all events in capnp schema are defined in events.py
     events = car.CarEvent.EventName.schema.enumerants
@@ -60,6 +71,29 @@ class TestAlerts(unittest.TestCase):
         msg = "type: %s msg: %s" % (alert.alert_type, txt)
         self.assertLessEqual(w, max_text_width, msg=msg)
 
+  def test_offroad_alerts(self):
+    params = Params()
+    for a in self.offroad_alerts:
+      # set the alert
+      alert = self.offroad_alerts[a]
+      set_offroad_alert(a, True)
+      self.assertTrue(json.dumps(alert) == params.get(a, encoding='utf8'))
+
+      # then delete it
+      set_offroad_alert(a, False)
+      self.assertTrue(params.get(a) is None)
+
+  def test_offroad_alerts_extra_text(self):
+    params = Params()
+    for i in range(50):
+      # set the alert
+      a = random.choice(list(self.offroad_alerts))
+      alert = self.offroad_alerts[a]
+      set_offroad_alert(a, True, extra_text="a"*i)
+
+      expected_txt = alert['text'] + "a"*i
+      written_txt = json.loads(params.get(a, encoding='utf8'))['text']
+      self.assertTrue(expected_txt == written_txt)
 
 if __name__ == "__main__":
   unittest.main()

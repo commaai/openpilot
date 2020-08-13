@@ -713,15 +713,24 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x018966353M7100\x00\x00\x00\x00',
       b'\x018966353Q2300\x00\x00\x00\x00',
+      b'\x018966353R8100\x00\x00\x00\x00',
     ],
-    (Ecu.esp, 0x7b0, None): [b'F152653330\x00\x00\x00\x00\x00\x00'],
+    (Ecu.esp, 0x7b0, None): [
+      b'F152653330\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.dsu, 0x791, None): [
       b'881515306400\x00\x00\x00\x00',
       b'881515306500\x00\x00\x00\x00',
     ],
-    (Ecu.eps, 0x7a1, None): [b'8965B53271\x00\x00\x00\x00\x00\x00'],
-    (Ecu.fwdRadar, 0x750, 0xf): [b'8821F4702300\x00\x00\x00\x00'],
-    (Ecu.fwdCamera, 0x750, 0x6d): [b'8646F5301400\x00\x00\x00\x00'],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B53271\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'8821F4702300\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F5301400\x00\x00\x00\x00',
+    ],
   },
   CAR.PRIUS: {
     (Ecu.engine, 0x700, None): [
