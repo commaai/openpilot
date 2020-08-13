@@ -413,9 +413,6 @@ def main(argv):
       args=(command_address, forward_commands_address, data_address, args.realtime,
             _get_address_mapping(args), args.publish_time_length, args.bind_early, args.no_loop))
 
-    for p in subprocesses.values():
-      p.daemon = True
-
     subprocesses["data"].start()
     subprocesses["control"].start()
 

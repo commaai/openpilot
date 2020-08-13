@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-import os
-import time
 from opendbc.can.parser import CANParser
 from cereal import car
 from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 def _create_radar_can_parser(car_fingerprint):
-  dbc_f = DBC[car_fingerprint]['radar']
-
   if car_fingerprint in TSS2_CAR:
     RADAR_A_MSGS = list(range(0x180, 0x190))
     RADAR_B_MSGS = list(range(0x190, 0x1a0))
@@ -26,7 +22,7 @@ def _create_radar_can_parser(car_fingerprint):
 
   checks = list(zip(RADAR_A_MSGS + RADAR_B_MSGS, [20]*(msg_a_n + msg_b_n)))
 
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
@@ -53,8 +49,7 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.no_radar:
-      time.sleep(self.radar_ts)
-      return car.RadarData.new_message()
+      return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)

@@ -11,7 +11,7 @@ NUM_SEGS = 10 # route has 82 segments available
 # Get can messages from logs
 print("Loading...")
 can_msgs = []
-for i in tqdm(list(range(NUM_SEGS))):
+for i in tqdm(list(range(1, NUM_SEGS))):
   log_url = f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2"
   lr = LogReader(log_url)
   can_msgs += [m for m in lr if m.which() == 'can']

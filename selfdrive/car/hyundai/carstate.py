@@ -41,8 +41,7 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
 
     if ret.cruiseState.enabled:
-      is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
-      speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
+      speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
       ret.cruiseState.speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
     else:
       ret.cruiseState.speed = 0
@@ -282,7 +281,7 @@ class CarState(CarStateBase):
 
     signals = [
       # sig_name, sig_address, default
-      ("CF_Lkas_Bca_R", "LKAS11", 0),
+      ("CF_Lkas_LdwsActivemode", "LKAS11", 0),
       ("CF_Lkas_LdwsSysState", "LKAS11", 0),
       ("CF_Lkas_SysWarning", "LKAS11", 0),
       ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
@@ -299,6 +298,8 @@ class CarState(CarStateBase):
       ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
     ]
 
-    checks = []
+    checks = [
+      ("LKAS11", 100)
+    ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)

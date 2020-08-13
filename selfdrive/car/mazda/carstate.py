@@ -162,8 +162,8 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [ ]
-    checks = [ ]
+    signals = []
+    checks = []
 
     if CP.carFingerprint == CAR.CX5:
       signals += [

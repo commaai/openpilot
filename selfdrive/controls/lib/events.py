@@ -1,5 +1,6 @@
-from cereal import log, car
+from functools import total_ordering
 
+from cereal import log, car
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibration_helpers import Filter
@@ -93,6 +94,7 @@ class Events:
       ret.append(event)
     return ret
 
+@total_ordering
 class Alert:
   def __init__(self,
                alert_text_1,
@@ -135,6 +137,9 @@ class Alert:
 
   def __gt__(self, alert2):
     return self.alert_priority > alert2.alert_priority
+
+  def __eq__(self, alert2):
+    return self.alert_priority == alert2.alert_priority
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
@@ -525,15 +530,6 @@ EVENTS = {
                               duration_hud_alert=0.),
   },
 
-  EventName.posenetInvalid: {
-    ET.WARNING: Alert(
-      "TAKE CONTROL",
-      "Vision Model Output Uncertain",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
-    ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
-  },
-
   EventName.focusRecoverActive: {
     ET.WARNING: Alert(
       "TAKE CONTROL",
@@ -652,6 +648,16 @@ EVENTS = {
   EventName.modeldLagging: {
     ET.SOFT_DISABLE: SoftDisableAlert("Driving model lagging"),
     ET.NO_ENTRY : NoEntryAlert("Driving model lagging"),
+  },
+
+  EventName.posenetInvalid: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Vision Model Output Uncertain"),
+    ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
+  },
+
+  EventName.deviceFalling: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Device Fell Off Mount"),
+    ET.NO_ENTRY: NoEntryAlert("Device Fell Off Mount"),
   },
 
   EventName.lowMemory: {

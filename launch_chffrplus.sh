@@ -6,9 +6,14 @@ fi
 
 source "$BASEDIR/launch_env.sh"
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
 function launch {
   # Wifi scan
   wpa_cli IFNAME=wlan0 SCAN
+
+  # Remove orphaned git lock if it exists on boot
+  [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:
@@ -39,6 +44,7 @@ function launch {
           git submodule foreach --recursive git reset --hard
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
+          unset REQUIRED_NEOS_VERSION
           exec "${LAUNCHER_LOCATION}"
         else
           echo "openpilot backup found, not updating"
@@ -81,17 +87,24 @@ function launch {
   done
 
   # Check for NEOS update
-  if [ "$(< /VERSION)" != "$REQUIRED_NEOS_VERSION" ]; then
-    if [ -f "$BASEDIR/scripts/continue.sh" ]; then
-      cp "$BASEDIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
+  if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
+    if [ -f "$DIR/scripts/continue.sh" ]; then
+      cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
     fi
 
-    "$BASEDIR/installer/updater/updater" "file://$BASEDIR/installer/updater/update.json"
-  fi
+    if [ ! -f "$BASEDIR/prebuilt" ]; then
+      # Clean old build products, but preserve the scons cache
+      cd $DIR
+      scons --clean
+      git clean -xdf
+      git submodule foreach --recursive git clean -xdf
+    fi
 
-  # Remove old NEOS update files
-  if [ -d /data/neoupdate ]; then
-    rm -rf /data/neoupdate
+    "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+  else
+    if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
+      "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
+    fi
   fi
 
   # One-time fix for a subset of OP3T with gyro orientation offsets.

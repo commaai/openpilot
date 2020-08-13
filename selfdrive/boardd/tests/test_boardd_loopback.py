@@ -8,6 +8,7 @@ from functools import wraps
 import cereal.messaging as messaging
 from cereal import car
 from common.basedir import PARAMS
+from common.android import ANDROID
 from common.params import Params
 from common.spinner import Spinner
 from panda import Panda
@@ -30,13 +31,12 @@ def reset_panda(fn):
 os.environ['STARTED'] = '1'
 os.environ['BOARDD_LOOPBACK'] = '1'
 os.environ['PARAMS_PATH'] = PARAMS
+
 @reset_panda
 @with_processes(['boardd'])
 def test_boardd_loopback():
-
-
   # wait for boardd to init
-  spinner = Spinner()
+  spinner = Spinner(noop=(not ANDROID))
   time.sleep(2)
 
   # boardd blocks on CarVin and CarParams
@@ -81,3 +81,7 @@ def test_boardd_loopback():
       assert not len(sent_msgs[bus]), f"loop {i}: bus {bus} missing {len(sent_msgs[bus])} messages"
 
   spinner.close()
+
+
+if __name__ == "__main__":
+    test_boardd_loopback()

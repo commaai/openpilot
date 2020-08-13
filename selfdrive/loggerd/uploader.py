@@ -247,7 +247,8 @@ def uploader_fn(exit_event):
 
   backoff = 0.1
   while True:
-    allow_raw_upload = (params.get("IsUploadRawEnabled") != b"0")
+    offroad = params.get("IsOffroad") == b'1'
+    allow_raw_upload = (params.get("IsUploadRawEnabled") != b"0") and offroad
     on_hotspot = is_on_hotspot()
     on_wifi = is_on_wifi()
     should_upload = on_wifi and not on_hotspot
@@ -257,7 +258,6 @@ def uploader_fn(exit_event):
 
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and should_upload)
     if d is None:  # Nothing to upload
-      offroad = params.get("IsOffroad") == b'1'
       time.sleep(60 if offroad else 5)
       continue
 

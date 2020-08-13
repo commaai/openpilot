@@ -172,7 +172,7 @@ class CarState(CarStateBase):
     self.v_cruise_pcm_prev = 0
     self.cruise_mode = 0
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
     # car params
@@ -322,6 +322,12 @@ class CarState(CarStateBase):
       self.stock_hud = cp_cam.vl["ACC_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
 
+    if self.CP.carFingerprint in (CAR.CRV_5G, ):
+      # BSM messages are on B-CAN, requires a panda forwarding B-CAN messages to CAN 0
+      # more info here: https://github.com/commaai/openpilot/pull/1867
+      ret.leftBlindspot = cp_body.vl["BSM_STATUS_LEFT"]['BSM_ALERT'] == 1
+      ret.rightBlindspot = cp_body.vl["BSM_STATUS_RIGHT"]['BSM_ALERT'] == 1
+
     return ret
 
   @staticmethod
@@ -354,3 +360,17 @@ class CarState(CarStateBase):
 
     bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH and not CP.isPandaBlack else 2
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_cam)
+
+  @staticmethod
+  def get_body_can_parser(CP):
+    signals = []
+    checks = []
+
+    if CP.carFingerprint == CAR.CRV_5G:
+      signals += [("BSM_ALERT", "BSM_STATUS_RIGHT", 0),
+                  ("BSM_ALERT", "BSM_STATUS_LEFT", 0)]
+
+      bus_body = 0 # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
+      return CANParser(DBC[CP.carFingerprint]['body'], signals, checks, bus_body)
+
+    return None

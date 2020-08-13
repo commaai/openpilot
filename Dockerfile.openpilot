@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ffmpeg \
     git \
+    iputils-ping \
     libarchive-dev \
     libbz2-dev \
     libcurl4-openssl-dev \
@@ -53,6 +54,7 @@ COPY Pipfile Pipfile.lock /tmp/
 RUN pyenv install 3.8.2 && \
     pyenv global 3.8.2 && \
     pyenv rehash && \
+    pip install --no-cache-dir --upgrade pip==20.1.1 && \
     pip install --no-cache-dir pipenv==2018.11.26 && \
     cd /tmp && \
     pipenv install --system --deploy --clear && \
@@ -80,7 +82,6 @@ RUN mkdir -p /tmp/openpilot
 COPY SConstruct \
      .pylintrc \
      .pre-commit-config.yaml \
-     .coveragerc-app \
      /tmp/openpilot/
 
 COPY ./pyextra /tmp/openpilot/pyextra
