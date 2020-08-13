@@ -4,8 +4,7 @@
 #include <cmath>
 #include "common/util.h"
 
-#define NANOVG_GLES3_IMPLEMENTATION
-
+#include "nvg.hpp"
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 
@@ -888,7 +887,7 @@ void ui_nvg_init(UIState *s) {
   s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
   s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
 
-  glViewport(0, 0, s->fb_w, s->fb_h);
+  // glViewport(0, 0, s->fb_w, s->fb_h);
 
   glDisable(GL_DEPTH_TEST);
 

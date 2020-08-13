@@ -1,4 +1,4 @@
-Import('env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
+Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
 libs = [common, 'zmq', 'czmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
@@ -12,6 +12,7 @@ else:
   libs += ['pthread', 'glfw']
   linkflags = []
 
-env.Program('_ui', src,
-  LINKFLAGS=linkflags,
-  LIBS=libs)
+if qt_env is None:
+  env.Program('_ui', src,
+    LINKFLAGS=linkflags,
+    LIBS=libs)

@@ -15,12 +15,4 @@ class Window : public QWidget
 public:
   explicit Window(QWidget *parent = 0);
 
-public slots:
-  void handleButton();
-
-private:
-  QLabel *label1 = NULL;
-  QPushButton *button1 = NULL;
-  QPushButton *button2 = NULL;
-
 };
