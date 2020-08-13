@@ -17,7 +17,7 @@ def mock_sec_since_boot():
 
 with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
   with patch("common.params.put_nonblocking", new=params.put):
-    from selfdrive.thermald.power_monitoring import *
+    from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, PANDA_OUTPUT_VOLTAGE, CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING
 
 def actual_current_to_panda_current(actual_current):
   return max(int(((3.3 - (actual_current * 8.25)) * 4096) / 3.3), 0)
