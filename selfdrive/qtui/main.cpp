@@ -13,11 +13,8 @@ int main(int argc, char *argv[])
 
 
   MainWindow w;
-  w.setFixedSize(1920, 1080);
+  w.setFixedSize(2160, 1080);
   w.show();
 
-  // GLWindow glWindow;
-  // glWindow.setFixedSize(1920, 1080);
-  // glWindow.show();
   return a.exec();
 }

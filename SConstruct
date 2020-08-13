@@ -177,19 +177,31 @@ env = Environment(
 )
 
 qt_env = None
-if arch == "x86_64":
+if arch in ["x86_64", "larch64"]:
   qt_env = env.Clone()
+
+  if arch == "larch64":
+    qt_env['QTDIR'] = "/usr/local/Qt-5.15.0"
+    QT_BASE = "/usr/local/Qt-5.15.0/"
+    qt_dirs = [
+      QT_BASE + "include/",
+      QT_BASE + "include/QtWidgets",
+      QT_BASE + "include/QtGui",
+      QT_BASE + "include/QtCore",
+      QT_BASE + "include/",
+    ]
+    qt_env["RPATH"] += [QT_BASE + "lib"]
+
+  else:
+    qt_dirs = [
+      f"/usr/include/{arch}-linux-gnu/qt5",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtWidgets",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtGui",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtCore",
+    ]
+
   qt_env.Tool('qt')
-
-  qt_dirs = [
-    "/usr/include/x86_64-linux-gnu/qt5",
-    "/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
-    "/usr/include/x86_64-linux-gnu/qt5/QtGui",
-    "/usr/include/x86_64-linux-gnu/qt5/QtCore",
-    "/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64",
-  ]
   qt_env['CPPPATH'] += qt_dirs
-
   qt_flags = [
     "-D_REENTRANT",
     "-DQT_NO_DEBUG",

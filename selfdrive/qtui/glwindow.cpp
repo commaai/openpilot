@@ -1,9 +1,6 @@
 #include <cmath>
 #include <iostream>
 
-#include <QMouseEvent>
-
-
 #include "glwindow.hpp"
 #include "ui/ui.hpp"
 
