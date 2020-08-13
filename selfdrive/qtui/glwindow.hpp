@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QBasicTimer>

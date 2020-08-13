@@ -8,8 +8,6 @@
 #include <sstream>
 #include <sys/resource.h>
 #include <czmq.h>
-
-
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
@@ -18,9 +16,6 @@
 #include "common/params.h"
 #include "common/utilpp.h"
 #include "ui.hpp"
-#include "nvg.hpp"
-
-
 
 static void ui_set_brightness(UIState *s, int brightness) {
   static int last_brightness = -1;

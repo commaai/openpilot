@@ -1,6 +1,16 @@
 #pragma once
 #include "messaging.hpp"
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#define NANOVG_GL3_IMPLEMENTATION
+#define nvgCreate nvgCreateGL3
+#else
+#include <GLES3/gl3.h>
+#include <EGL/egl.h>
+#define NANOVG_GLES3_IMPLEMENTATION
+#define nvgCreate nvgCreateGLES3
+#endif
 #include <atomic>
 #include <pthread.h>
 #include "nanovg.h"

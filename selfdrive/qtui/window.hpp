@@ -6,13 +6,12 @@
 #include <QHBoxLayout>
 #include <QSpacerItem>
 #include <QLabel>
-#include <QDebug>
 
-class Window : public QWidget
+class MainWindow : public QWidget
 {
   Q_OBJECT
 
 public:
-  explicit Window(QWidget *parent = 0);
+  explicit MainWindow(QWidget *parent = 0);
 
 };
