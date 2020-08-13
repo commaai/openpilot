@@ -3,20 +3,17 @@
 
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-from libcpp cimport bool
 from libcpp.unordered_set cimport unordered_set
 from libc.stdint cimport uint32_t, uint64_t, uint16_t
 from libcpp.map cimport map
-
-from collections import defaultdict
+from libcpp cimport bool
 
 from common cimport CANParser as cpp_CANParser
 from common cimport SignalParseOptions, MessageParseOptions, dbc_lookup, SignalValue, DBC
 
-
-from libcpp cimport bool
 import os
 import numbers
+from collections import defaultdict
 
 cdef int CAN_INVALID_CNT = 5
 
@@ -30,7 +27,7 @@ cdef class CANParser:
     vector[SignalValue] can_values
     bool test_mode_enabled
 
-  cdef public:
+  cdef readonly:
     string dbc_name
     dict vl
     dict ts

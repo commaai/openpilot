@@ -6,20 +6,22 @@ from common.basedir import BASEDIR
 
 
 class TextWindow():
-  def __init__(self, s):
-    try:
-      self.text_proc = subprocess.Popen(["./text", s],
-                                        stdin=subprocess.PIPE,
-                                        cwd=os.path.join(BASEDIR, "selfdrive", "ui", "text"),
-                                        close_fds=True)
-    except OSError:
-      self.text_proc = None
+  def __init__(self, s, noop=False):
+    # text window is only implemented for android currently
+    self.text_proc = None
+    if not noop:
+      try:
+        self.text_proc = subprocess.Popen(["./text", s],
+                                          stdin=subprocess.PIPE,
+                                          cwd=os.path.join(BASEDIR, "selfdrive", "ui", "text"),
+                                          close_fds=True)
+      except OSError:
+        self.text_proc = None
 
   def get_status(self):
     if self.text_proc is not None:
       self.text_proc.poll()
       return self.text_proc.returncode
-
     return None
 
   def __enter__(self):
@@ -31,39 +33,17 @@ class TextWindow():
       self.text_proc = None
 
   def wait_for_exit(self):
-    while True:
-      if self.get_status() == 1:
-        return
-      time.sleep(0.1)
+    if self.text_proc is not None:
+      while True:
+        if self.get_status() == 1:
+          return
+        time.sleep(0.1)
 
   def __del__(self):
     self.close()
 
   def __exit__(self, exc_type, exc_value, traceback):
     self.close()
-
-
-class FakeTextWindow(TextWindow):
-  def __init__(self, s):  # pylint: disable=super-init-not-called
-    pass
-
-  def get_status(self):
-    return 1
-
-  def wait_for_exit(self):
-    return
-
-  def __enter__(self):
-    return self
-
-  def update(self, _):
-    pass
-
-  def close(self):
-    pass
-
-  def __exit__(self, exc_type, exc_value, traceback):
-    pass
 
 
 if __name__ == "__main__":

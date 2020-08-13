@@ -53,7 +53,7 @@ class CarState(CarStateBase):
                         pt_cp.vl["Gateway_72"]['ZV_HD_offen']])
 
     # Update seatbelt fastened status.
-    ret.seatbeltUnlatched = False if pt_cp.vl["Airbag_02"]["AB_Gurtschloss_FA"] == 3 else True
+    ret.seatbeltUnlatched = pt_cp.vl["Airbag_02"]["AB_Gurtschloss_FA"] != 3
 
     # Update driver preference for metric. VW stores many different unit
     # preferences, including separate units for for distance vs. speed.

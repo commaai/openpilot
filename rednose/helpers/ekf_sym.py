@@ -157,7 +157,7 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
 
 class EKF_sym():
   def __init__(self, folder, name, Q, x_initial, P_initial, dim_main, dim_main_err,  # pylint: disable=dangerous-default-value
-               N=0, dim_augment=0, dim_augment_err=0, maha_test_kinds=[], global_vars=None):
+               N=0, dim_augment=0, dim_augment_err=0, maha_test_kinds=[], global_vars=None, max_rewind_age=1.0):
     """Generates process function and all observation functions for the kalman filter."""
     self.msckf = N > 0
     self.N = N
@@ -184,6 +184,7 @@ class EKF_sym():
     self.Q = Q
 
     # rewind stuff
+    self.max_rewind_age = max_rewind_age
     self.rewind_t = []
     self.rewind_states = []
     self.rewind_obscache = []
@@ -379,7 +380,7 @@ class EKF_sym():
 
     # rewind
     if self.filter_time is not None and t < self.filter_time:
-      if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] - 1.0:
+      if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] - self.max_rewind_age:
         print("observation too old at %.3f with filter at %.3f, ignoring" % (t, self.filter_time))
         return None
       rewound = self.rewind(t)
