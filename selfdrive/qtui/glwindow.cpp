@@ -1,20 +1,20 @@
+#include <cmath>
+#include <iostream>
+
 #include <QMouseEvent>
 
-#include <cmath>
 
 #include "glwindow.hpp"
 #include "ui/ui.hpp"
 
 
-GLWindow::~GLWindow()
-{
+GLWindow::~GLWindow() {
   makeCurrent();
   doneCurrent();
 }
 
 
-void GLWindow::timerEvent(QTimerEvent *)
-{
+void GLWindow::timerEvent(QTimerEvent *) {
   update();
 }
 
@@ -33,12 +33,11 @@ void GLWindow::initializeGL()
   // timer.start(12, this);
 }
 
-void GLWindow::resizeGL(int w, int h)
-{
+void GLWindow::resizeGL(int w, int h) {
+  std::cout << "resize " << w << "x" << h << std::endl;
 
 }
 
-void GLWindow::paintGL()
-{
+void GLWindow::paintGL() {
   ui_draw(ui_state);
 }

@@ -1,4 +1,7 @@
 #include <cassert>
+#include <iostream>
+
+
 #include <QGuiApplication>
 #include <QSurfaceFormat>
 #include <QOpenGLContext>
@@ -7,10 +10,13 @@
 #include "window.hpp"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
-  QSurfaceFormat format;
-  format.setDepthBufferSize(24);
-  QSurfaceFormat::setDefaultFormat(format);
+  QVBoxLayout *main_layout = new QVBoxLayout;
+  GLWindow * glWindow = new GLWindow;
+  QPushButton * button1 = new QPushButton("Button 1", this);
 
-  GLWindow glWindow;
-  glWindow.show();
+
+  main_layout->addWidget(button1);
+  main_layout->addWidget(glWindow);
+
+  setLayout(main_layout);
 }
