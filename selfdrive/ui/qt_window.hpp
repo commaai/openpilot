@@ -3,7 +3,7 @@
 #include <QGuiApplication>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
-#include <QBasicTimer>
+#include <QTimer>
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QMouseEvent>
@@ -24,16 +24,20 @@ class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
+  GLWindow();
   ~GLWindow();
 
 protected:
-  void timerEvent(QTimerEvent *e) override;
   void mousePressEvent(QMouseEvent *e) override;
   void initializeGL() override;
   void resizeGL(int w, int h) override;
   void paintGL() override;
 
+
 private:
-  QBasicTimer timer;
+  QTimer * timer;
   UIState * ui_state;
+
+public slots:
+  void timerUpdate();
 };
