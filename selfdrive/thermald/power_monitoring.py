@@ -78,12 +78,11 @@ class PowerMonitoring:
 
     car_battery_capacity_uWh = self.params.get("CarBatteryCapacity")
     if car_battery_capacity_uWh is None:
-      # If unknown, we assume the car battery is almost dead
-      self.car_battery_capacity_uWh = (CAR_BATTERY_CAPACITY_uWh / 10)
-    else:
-      # Reset capacity if it's low
-      self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_capacity_uWh))
-    
+      car_battery_capacity_uWh = 0
+
+    # Reset capacity if it's low
+    self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_capacity_uWh))
+
 
   # Calculation tick
   def calculate(self, health):
@@ -200,7 +199,7 @@ class PowerMonitoring:
   # Get the power usage
   def get_power_used(self):
     return int(self.power_used_uWh)
-  
+
   def get_car_battery_capacity(self):
     return int(self.car_battery_capacity_uWh)
 
