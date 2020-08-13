@@ -71,12 +71,15 @@ def test_cpu_usage():
   try:
     proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=2000)
 
-    # wait until everything's started and get first sample
+    # wait until everything's started
     start_time = time.monotonic()
-    while time.monotonic() - start_time < 120:
+    while time.monotonic() - start_time < 210:
       if Params().get("CarParams") is not None:
         break
       time.sleep(2)
+
+    # take first sample
+    time.sleep(5)
     first_proc = messaging.recv_sock(proc_sock, wait=True)
     if first_proc is None:
       raise Exception("\n\nTEST FAILED: progLog recv timed out\n\n")
