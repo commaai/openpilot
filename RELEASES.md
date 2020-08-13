@@ -1,3 +1,7 @@
+Subaru-PR-test (2020-08-13)
+========================
+ * New FPv2: 2018 Crosstrek - UDM
+
 Version 0.7.7 (2020-07-20)
 ========================
  * White panda is no longer supported, upgrade to comma two or black panda
