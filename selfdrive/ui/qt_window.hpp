@@ -6,8 +6,17 @@
 #include <QBasicTimer>
 #include <QWidget>
 #include <QVBoxLayout>
+#include <QMouseEvent>
 
 #include "ui/ui.hpp"
+
+class MainWindow : public QWidget
+{
+  Q_OBJECT
+
+public:
+  explicit MainWindow(QWidget *parent = 0);
+};
 
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -19,7 +28,7 @@ public:
 
 protected:
   void timerEvent(QTimerEvent *e) override;
-
+  void mousePressEvent(QMouseEvent *e) override;
   void initializeGL() override;
   void resizeGL(int w, int h) override;
   void paintGL() override;
@@ -27,13 +36,4 @@ protected:
 private:
   QBasicTimer timer;
   UIState * ui_state;
-};
-
-class MainWindow : public QWidget
-{
-  Q_OBJECT
-
-public:
-  explicit MainWindow(QWidget *parent = 0);
-
 };
