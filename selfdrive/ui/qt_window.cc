@@ -1,9 +1,22 @@
+#include <cassert>
+#include <iostream>
 #include <cmath>
 #include <iostream>
 
-#include "glwindow.hpp"
-#include "ui/ui.hpp"
+#include <QGuiApplication>
+#include <QSurfaceFormat>
+#include <QOpenGLContext>
 
+#include "qt_window.hpp"
+
+MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout;
+  GLWindow * glWindow = new GLWindow;
+
+  main_layout->addWidget(glWindow);
+  main_layout->setMargin(0);
+  setLayout(main_layout);
+}
 
 GLWindow::~GLWindow() {
   makeCurrent();

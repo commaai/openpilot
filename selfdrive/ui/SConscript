@@ -16,3 +16,7 @@ if qt_env is None:
   env.Program('_ui', src,
     LINKFLAGS=linkflags,
     LIBS=libs)
+else:
+  qt_libs = ["Qt5Widgets", "Qt5Gui", "Qt5Core", "GL", "pthread"]
+  src = ["qt_ui.cc", "qt_window.cc", "paint.cc", "sidebar.cc", '#phonelibs/nanovg/nanovg.c'],
+  qt_env.Program("_ui", src, LIBS=qt_libs + libs)

@@ -1,7 +1,6 @@
 #include <QApplication>
 
-#include "window.hpp"
-#include "glwindow.hpp"
+#include "qt_window.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -10,7 +9,6 @@ int main(int argc, char *argv[])
   QSurfaceFormat format;
   format.setDepthBufferSize(24);
   QSurfaceFormat::setDefaultFormat(format);
-
 
   MainWindow w;
   w.setFixedSize(2160, 1080);

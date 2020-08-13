@@ -1,10 +1,13 @@
 #pragma once
+
+#include <QGuiApplication>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QBasicTimer>
+#include <QWidget>
+#include <QVBoxLayout>
 
 #include "ui/ui.hpp"
-
 
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -24,4 +27,13 @@ protected:
 private:
   QBasicTimer timer;
   UIState * ui_state;
+};
+
+class MainWindow : public QWidget
+{
+  Q_OBJECT
+
+public:
+  explicit MainWindow(QWidget *parent = 0);
+
 };

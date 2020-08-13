@@ -292,7 +292,6 @@ SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
 
 SConscript(['selfdrive/ui/SConscript'])
-SConscript(['selfdrive/qtui/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])

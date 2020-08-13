@@ -1,9 +1,0 @@
-Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
-
-qt_libs = ["Qt5Widgets", "Qt5Gui", "Qt5Core", "GL", "pthread"]
-libs = [common, 'zmq', 'czmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
-
-if qt_env is not None:
-    qt_env.Program("ui",
-                   ["main.cpp", "window.cpp", "glwindow.cpp", "../ui/paint.cc", "../ui/sidebar.cc", '#phonelibs/nanovg/nanovg.c'],
-                   LIBS=qt_libs + libs)
