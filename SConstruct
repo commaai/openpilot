@@ -176,6 +176,29 @@ env = Environment(
   ]
 )
 
+qt_env = None
+if arch == "x86_64":
+  qt_env = env.Clone()
+  qt_env.Tool('qt')
+
+  qt_dirs = [
+    "/usr/include/x86_64-linux-gnu/qt5",
+    "/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
+    "/usr/include/x86_64-linux-gnu/qt5/QtGui",
+    "/usr/include/x86_64-linux-gnu/qt5/QtCore",
+    "/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64",
+  ]
+  qt_env['CPPPATH'] += qt_dirs
+
+  qt_flags = [
+    "-D_REENTRANT",
+    "-DQT_NO_DEBUG",
+    "-DQT_WIDGETS_LIB",
+    "-DQT_GUI_LIB",
+    "-DQT_CORE_LIB"
+  ]
+  qt_env['CXXFLAGS'] += qt_flags
+
 if os.environ.get('SCONS_CACHE'):
   cache_dir = '/tmp/scons_cache'
 
@@ -214,7 +237,7 @@ def abspath(x):
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -257,10 +280,12 @@ SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
 
 SConscript(['selfdrive/ui/SConscript'])
+SConscript(['selfdrive/qtui/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/locationd/models/SConscript'])
+
 
 if arch == "aarch64":
   SConscript(['selfdrive/logcatd/SConscript'])

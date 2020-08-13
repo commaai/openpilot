@@ -1,0 +1,8 @@
+Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
+
+qt_libs = ["Qt5Widgets", "Qt5Gui", "Qt5Core", "GL", "pthread"]
+
+if qt_env is not None:
+    qt_env.Program("ui",
+                   ["main.cpp", "window.cpp"],
+                   LIBS=qt_libs)
