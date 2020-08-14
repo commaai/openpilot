@@ -233,7 +233,7 @@ static void update_status(UIState *s, int status) {
   }
 }
 
-static void fill_path_points(const capnp::List<float>::Reader &poly, float *points) {
+static inline void fill_path_points(const capnp::List<float>::Reader &poly, float *points) {
   for (int i = 0; i < MODEL_PATH_DISTANCE; i++) {
     points[i] = poly[0] * (i * i * i) + poly[1] * (i * i) + poly[2] * i + poly[3];
   }

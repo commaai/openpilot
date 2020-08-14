@@ -317,7 +317,7 @@ static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
   model_path_vertices_data *pvd = &s->model_path_vertices[0];
   if(s->sm->updated("model")) {
-     update_all_lane_lines_data(s, scene->model.getLeftLane(), scene->left_path_points, pvd);
+    update_all_lane_lines_data(s, scene->model.getLeftLane(), scene->left_path_points, pvd);
     update_all_lane_lines_data(s, scene->model.getRightLane(), scene->right_path_points, pvd + MODEL_LANE_PATH_CNT);
   }
   // Draw left lane edge
