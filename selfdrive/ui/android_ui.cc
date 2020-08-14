@@ -243,11 +243,6 @@ int main(int argc, char* argv[]) {
     if (smooth_brightness > 255) smooth_brightness = 255;
     ui_set_brightness(s, (int)smooth_brightness);
 
-    // resize vision for collapsing sidebar
-    const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-    s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
-    s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
-    s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
 
     // poll for touch events
     int touch_x = -1, touch_y = -1;

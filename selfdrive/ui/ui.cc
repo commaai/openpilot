@@ -236,6 +236,12 @@ void check_messages(UIState *s) {
 void ui_update(UIState *s) {
   int err;
 
+  // resize vision for collapsing sidebar
+  const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
+  s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
+  s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
+  s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
+
   if (s->vision_connect_firstrun) {
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event

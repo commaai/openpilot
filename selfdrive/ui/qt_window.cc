@@ -35,15 +35,26 @@ void GLWindow::initializeGL() {
 
   ui_state = new UIState();
   ui_init(ui_state);
-  ui_state->fb_w = 1920;
+  ui_state->fb_w = 2160;
   ui_state->fb_h = 1080;
+
+  int err = pthread_create(&connect_thread_handle, NULL,
+                           vision_connect_thread, ui_state);
+  assert(err == 0);
 
   timer->start(50);
 }
 
 void GLWindow::timerUpdate(){
+  pthread_mutex_lock(&ui_state->lock);
+
   check_messages(ui_state);
-  // ui_update(s);
+  if (ui_state->vision_connected){
+    ui_update(ui_state);
+  }
+  pthread_mutex_unlock(&ui_state->lock);
+
+  // Paint
   update();
 }
 
@@ -52,11 +63,14 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
+  pthread_mutex_lock(&ui_state->lock);
   ui_draw(ui_state);
+  pthread_mutex_unlock(&ui_state->lock);
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *e) {
   std::cout << "Click: " << e->x() << ", " << e->y() << std::endl;
+  ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
 }
 
 
