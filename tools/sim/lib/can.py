@@ -13,11 +13,15 @@ packer = CANPacker("honda_civic_touring_2016_can_generated")
 rpacker = CANPacker("acura_ilx_2016_nidec")
 
 SR = 7.5
+MPS_TO_KMPH = 3.6
+
 
 def angle_to_sangle(angle):
   return - math.degrees(angle) * SR
 
 def can_function(pm, speed, angle, idx, cruise_button=0, is_engaged=False):
+
+  speed = speed * MPS_TO_KMPH #Convert mps to kmph
   msg = []
   msg.append(packer.make_can_msg("ENGINE_DATA", 0, {"XMISSION_SPEED": speed}, idx))
   msg.append(packer.make_can_msg("WHEEL_SPEEDS", 0,
@@ -37,7 +41,8 @@ def can_function(pm, speed, angle, idx, cruise_button=0, is_engaged=False):
   msg.append(packer.make_can_msg("GAS_PEDAL_2", 0, {}, idx))
   msg.append(packer.make_can_msg("SEATBELT_STATUS", 0, {"SEATBELT_DRIVER_LATCHED": 1}, idx))
   msg.append(packer.make_can_msg("STEER_STATUS", 0, {}, idx))
-  msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": angle_to_sangle(angle)}, idx))
+  # msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": angle_to_sangle(angle)}, idx))
+  msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": angle}, idx))
   msg.append(packer.make_can_msg("VSA_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("STANDSTILL", 0, {}, idx))
   msg.append(packer.make_can_msg("STEER_MOTOR_TORQUE", 0, {}, idx))
