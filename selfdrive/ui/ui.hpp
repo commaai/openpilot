@@ -251,6 +251,7 @@ typedef struct UIState {
 
 void ui_init(UIState *s);
 void ui_update(UIState *s);
+void ui_update_sizes(UIState *s);
 
 void* vision_connect_thread(void *args);
 void check_messages(UIState *s);

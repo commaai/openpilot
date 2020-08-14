@@ -7,6 +7,9 @@
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QMouseEvent>
+#include <QPushButton>
+#include <QGridLayout>
+#include <QStackedLayout>
 
 #include "ui/ui.hpp"
 
@@ -16,6 +19,25 @@ class MainWindow : public QWidget
 
 public:
   explicit MainWindow(QWidget *parent = 0);
+
+private:
+  QStackedLayout *main_layout;
+
+public slots:
+  void openSettings();
+  void closeSettings();
+
+};
+
+class SettingsWindow : public QWidget
+{
+  Q_OBJECT
+
+public:
+  explicit SettingsWindow(QWidget *parent = 0);
+
+signals:
+  void closeSettings();
 };
 
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions
@@ -24,7 +46,7 @@ class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  GLWindow();
+  explicit GLWindow(QWidget *parent = 0);
   ~GLWindow();
 
 protected:
@@ -41,4 +63,7 @@ private:
 
 public slots:
   void timerUpdate();
+
+signals:
+  void openSettings();
 };

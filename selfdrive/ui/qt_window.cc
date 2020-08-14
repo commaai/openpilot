@@ -11,16 +11,41 @@
 volatile sig_atomic_t do_exit = 0;
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout;
-  GLWindow * glWindow = new GLWindow;
+  main_layout = new QStackedLayout;
 
-
+  GLWindow * glWindow = new GLWindow(this);
   main_layout->addWidget(glWindow);
+
+  SettingsWindow * settingsWindow = new SettingsWindow(this);
+  main_layout->addWidget(settingsWindow);
+
+
   main_layout->setMargin(0);
   setLayout(main_layout);
+  QObject::connect(glWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
+  QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
 }
 
-GLWindow::GLWindow() {
+void MainWindow::openSettings(){
+  main_layout->setCurrentIndex(1);
+}
+
+void MainWindow::closeSettings(){
+  main_layout->setCurrentIndex(0);
+}
+
+SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout;
+  QPushButton * b = new QPushButton("Close");
+
+  main_layout->addWidget(b);
+  setLayout(main_layout);
+
+  QObject::connect(b, SIGNAL(clicked()), parentWidget(), SLOT(closeSettings()));
+}
+
+
+GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 }
@@ -48,13 +73,14 @@ void GLWindow::initializeGL() {
 void GLWindow::timerUpdate(){
   pthread_mutex_lock(&ui_state->lock);
 
+  ui_update_sizes(ui_state);
+
   check_messages(ui_state);
   if (ui_state->vision_connected){
     ui_update(ui_state);
   }
   pthread_mutex_unlock(&ui_state->lock);
 
-  // Paint
   update();
 }
 
@@ -69,8 +95,18 @@ void GLWindow::paintGL() {
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *e) {
-  std::cout << "Click: " << e->x() << ", " << e->y() << std::endl;
-  ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
+  if (!ui_state->scene.uilayout_sidebarcollapsed && e->x() <= sbr_w) {
+    if (e->x() >= settings_btn_x && e->x() < (settings_btn_x + settings_btn_w)
+        && e->y() >= settings_btn_y && e->y() < (settings_btn_y + settings_btn_h)) {
+      emit openSettings();
+    }
+  }
+
+  // if (ui_state->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)){
+  if (true && (e->x() >= ui_state->scene.ui_viz_rx - bdr_s)){
+    ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
+  }
+
 }
 
 
