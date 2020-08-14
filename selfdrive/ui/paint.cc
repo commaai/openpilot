@@ -13,6 +13,8 @@ extern "C"{
 #include "common/glutil.h"
 }
 
+#include "paint.hpp"
+
 // TODO: this is also hardcoded in common/transformations/camera.py
 const mat3 intrinsic_matrix = (mat3){{
   910., 0., 582.,

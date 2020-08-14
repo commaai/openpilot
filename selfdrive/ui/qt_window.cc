@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "qt_window.hpp"
+#include "paint.hpp"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout;

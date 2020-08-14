@@ -16,6 +16,7 @@
 #include "common/params.h"
 #include "common/utilpp.h"
 #include "ui.hpp"
+#include "paint.hpp"
 
 static void ui_set_brightness(UIState *s, int brightness) {
   static int last_brightness = -1;
