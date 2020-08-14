@@ -12,7 +12,11 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 #include <atomic>
+
+#include <string>
+#include <sstream>
 #include <pthread.h>
+
 #include "nanovg.h"
 
 #include "common/mat.h"
@@ -20,6 +24,7 @@
 #include "common/visionimg.h"
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
+#include "common/params.h"
 #include "sound.hpp"
 
 #define STATUS_STOPPED 0
@@ -242,3 +247,49 @@ typedef struct UIState {
 
   Sound sound;
 } UIState;
+
+
+void ui_init(UIState *s);
+void ui_update(UIState *s);
+
+void* vision_connect_thread(void *args);
+void check_messages(UIState *s);
+void update_status(UIState *s, int status);
+
+
+int write_param_float(float param, const char* param_name, bool persistent_param = false);
+template <class T>
+int read_param(T* param, const char *param_name, bool persistent_param = false){
+  T param_orig = *param;
+  char *value;
+  size_t sz;
+
+  int result = read_db_value(param_name, &value, &sz, persistent_param);
+  if (result == 0){
+    std::string s = std::string(value, sz); // value is not null terminated
+    free(value);
+
+    // Parse result
+    std::istringstream iss(s);
+    iss >> *param;
+
+    // Restore original value if parsing failed
+    if (iss.fail()) {
+      *param = param_orig;
+      result = -1;
+    }
+  }
+  return result;
+}
+
+template <class T>
+int read_param_timeout(T* param, const char* param_name, int* timeout, bool persistent_param = false) {
+  int result = -1;
+  if (*timeout > 0){
+    (*timeout)--;
+  } else {
+    *timeout = 2 * UI_FREQ; // 0.5Hz
+    result = read_param(param, param_name, persistent_param);
+  }
+  return result;
+}

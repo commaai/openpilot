@@ -3,22 +3,24 @@ Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
 libs = [common, 'zmq', 'czmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
 
-if arch == "aarch64":
-  src += ['sound.cc']
-  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
-  linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
-else:
-  src += ['linux.cc']
-  libs += ['pthread', 'glfw']
-  linkflags = []
 
-qt_env = None
+# qt_env = None
 
 if qt_env is None:
+  if arch == "aarch64":
+    src += ['sound.cc']
+    libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
+    linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
+  else:
+    src += ['linux.cc']
+    libs += ['pthread', 'glfw']
+    linkflags = []
+
+  src = ["android_ui.cc"] + src
   env.Program('_ui', src,
     LINKFLAGS=linkflags,
     LIBS=libs)
 else:
   qt_libs = ["Qt5Widgets", "Qt5Gui", "Qt5Core", "GL", "pthread"]
-  src = ["qt_ui.cc", "qt_window.cc", "paint.cc", "sidebar.cc", '#phonelibs/nanovg/nanovg.c'],
-  qt_env.Program("_ui", src, LIBS=qt_libs + libs)
+  qt_src = ["qt_ui.cc", "qt_window.cc"] + src
+  qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
