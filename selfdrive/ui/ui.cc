@@ -233,6 +233,12 @@ static void update_status(UIState *s, int status) {
   }
 }
 
+static void fill_path_points(const capnp::List<float>::Reader &poly, float *points) {
+  for (int i = 0; i < MODEL_PATH_DISTANCE; i++) {
+    points[i] = poly[0] * (i * i * i) + poly[1] * (i * i) + poly[2] * i + poly[3];
+  }
+}
+
 void handle_message(UIState *s, SubMaster &sm) {
   UIScene &scene = s->scene;
   if (s->started && sm.updated("controlsState")) {
@@ -294,6 +300,9 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
   if (sm.updated("model")) {
     scene.model = sm["model"].getModel();
+    fill_path_points(scene.model.getPath().getPoly(), scene.path_points);
+    fill_path_points(scene.model.getRightLane().getPoly(), scene.left_path_points);
+    fill_path_points(scene.model.getRightLane().getPoly(), scene.right_path_points);
   }
   // else if (which == cereal::Event::LIVE_MPC) {
   //   auto data = event.getLiveMpc();
