@@ -42,6 +42,8 @@ void GLWindow::initializeGL() {
 }
 
 void GLWindow::timerUpdate(){
+  check_messages(ui_state);
+  // ui_update(s);
   update();
 }
 
