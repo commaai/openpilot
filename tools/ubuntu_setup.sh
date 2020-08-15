@@ -61,7 +61,8 @@ fi
 # install bashrc
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  echo "source $HOME/openpilot/tools/openpilot_env.sh" >> ~/.bashrc
+  OP_DIR=$(git rev-parse --show-toplevel)
+  echo "source $OP_DIR/tools/openpilot_env.sh" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
