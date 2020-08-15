@@ -150,6 +150,7 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
   float lead_d = scene->lead_data[0].getDRel()*2.;
   float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
                             :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
+  path_height = fmin(path_height, scene->model.getPath().getValidLen());
   pvd->cnt = 0;
   // left side up
   for (int i=0; i<=path_height; i++) {
@@ -206,7 +207,6 @@ static void update_all_track_data(UIState *s) {
     update_track_data(s, true, &s->track_vertices[1]);
   }
 }
-
 
 static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
  if (pvd->cnt == 0) return;
