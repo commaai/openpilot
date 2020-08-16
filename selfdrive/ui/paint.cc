@@ -187,6 +187,9 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
 
     vec4 p_car_space = (vec4){{px, py, 0., 1.}};
     vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+    if (p_full_frame.v[0] < 0. || p_full_frame.v[1] < 0.) {
+      continue;
+    }
     pvd->v[pvd->cnt].x = p_full_frame.v[0];
     pvd->v[pvd->cnt].y = p_full_frame.v[1];
     pvd->cnt += 1;
@@ -286,7 +289,7 @@ static void update_lane_line_data(UIState *s, const float *points, float off, mo
     pvd->v[pvd->cnt].y = p_full_frame.v[1];
     pvd->cnt += 1;
   }
-  for (int i = rcount; i > 0; i--) {
+  for (int i = rcount - 1; i > 0; i--) {
     float px = (float)i;
     float py = points[i] + off;
     const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
