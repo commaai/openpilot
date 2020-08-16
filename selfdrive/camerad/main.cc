@@ -1244,7 +1244,7 @@ void party(VisionState *s) {
 
   zsock_signal(s->terminate_pub, 0);
 
-#if !defined(QCOM2) && !defined(QCOM_REPLAY) && !defined(__APPLE__)
+#if (defined(QCOM) && !defined(QCOM_REPLAY)) || defined(WEBCAM)
   LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
   assert(err == 0);
