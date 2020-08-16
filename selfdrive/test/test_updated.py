@@ -13,7 +13,7 @@ from common.basedir import BASEDIR
 from common.params import Params
 
 
-class TestUpdater(unittest.TestCase):
+class TestUpdated(unittest.TestCase):
 
   def setUp(self):
     self.updated_proc = None
@@ -26,6 +26,13 @@ class TestUpdater(unittest.TestCase):
     self.staging_dir = os.path.join(org_dir, "safe_staging")
     for d in [org_dir, self.basedir, self.git_remote_dir, self.staging_dir]:
       os.mkdir(d)
+
+    self.neos_version = os.path.join(org_dir, "neos_version")
+    self.neosupdate_dir = os.path.join(org_dir, "neosupdate")
+    with open(self.neos_version, "w") as f:
+      v = subprocess.check_output(r"bash -c 'source launch_env.sh && echo $REQUIRED_NEOS_VERSION'",
+                                  cwd=BASEDIR, shell=True, encoding='utf8').strip()
+      f.write(v)
 
     self.upper_dir = os.path.join(self.staging_dir, "upper")
     self.merged_dir = os.path.join(self.staging_dir, "merged")
@@ -43,7 +50,7 @@ class TestUpdater(unittest.TestCase):
       f"git clone {BASEDIR} {self.git_remote_dir}",
       f"git clone {self.git_remote_dir} {self.basedir}",
       f"cd {self.basedir} && git submodule init && git submodule update",
-      f"cd {self.basedir} && scons -j{os.cpu_count()} cereal"
+      f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
     ])
 
     self.params = Params(db=os.path.join(self.basedir, "persist/params"))
@@ -79,6 +86,8 @@ class TestUpdater(unittest.TestCase):
     os.environ["UPDATER_TEST_IP"] = "localhost"
     os.environ["UPDATER_LOCK_FILE"] = os.path.join(self.tmp_dir.name, "updater.lock")
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
+    os.environ["UPDATER_NEOS_VERSION"] = self.neos_version
+    os.environ["UPDATER_NEOSUPDATE_DIR"] = self.neosupdate_dir
     updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
     return subprocess.Popen(updated_path, env=os.environ)
 
@@ -250,6 +259,41 @@ class TestUpdater(unittest.TestCase):
     second_updated = self._get_updated_proc()
     ret_code = second_updated.wait(timeout=5)
     self.assertTrue(ret_code is not None)
+
+
+  # *** test cases with NEOS updates ***
+
+
+  # Run updated with no update, make sure it clears the old NEOS update
+  def test_clear_neos_cache(self):
+    # make the dir and some junk files
+    os.mkdir(self.neosupdate_dir)
+    for _ in range(15):
+      with tempfile.NamedTemporaryFile(dir=self.neosupdate_dir, delete=False) as f:
+        f.write(os.urandom(random.randrange(1, 1000000)))
+
+    self._start_updater()
+    self._wait_for_update(clear_param=True)
+    self._check_update_state(False)
+    self.assertFalse(os.path.isdir(self.neosupdate_dir))
+
+  # Let the updater run with no update for a cycle, then write an update
+  @unittest.skip("TODO: only runs on device")
+  def test_update_with_neos_update(self):
+    # bump the NEOS version and commit it
+    self._run([
+      "echo 'export REQUIRED_NEOS_VERSION=3' >> launch_env.sh",
+      "git -c user.name='testy' -c user.email='testy@tester.test' \
+       commit -am 'a neos update'",
+    ], cwd=self.git_remote_dir)
+
+    # run for a cycle to get the update
+    self._start_updater()
+    self._wait_for_update(timeout=60, clear_param=True)
+    self._check_update_state(True)
+
+    # TODO: more comprehensive check
+    self.assertTrue(os.path.isdir(self.neosupdate_dir))
 
 
 if __name__ == "__main__":

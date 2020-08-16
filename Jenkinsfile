@@ -38,6 +38,12 @@ pipeline {
   stages {
 
     stage('Release Build') {
+      agent {
+        docker {
+          image 'python:3.7.3'
+          args '--user=root'
+        }
+      }
       when {
         branch 'devel-staging'
       }
@@ -106,6 +112,8 @@ pipeline {
                       ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
                       ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+                      ["test spinner build", "cd selfdrive/ui/spinner && make clean && make"],
+                      ["test text window build", "cd selfdrive/ui/text && make clean && make"],
                     ])
                   }
                 }
@@ -118,12 +126,13 @@ pipeline {
                   }
                 }
 
-                stage('HW Tests') {
+                stage('HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
                       ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
+                      //["test updater", "python installer/updater/test_updater.py"],
                     ])
                   }
                 }

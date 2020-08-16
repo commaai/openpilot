@@ -222,7 +222,6 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 };
 
 void cameras_init(DualCameraState *s) {
-  memset(s, 0, sizeof(*s));
 
   camera_init(&s->rear, CAMERA_ID_LGC920, 20);
   s->rear.transform = (mat3){{
