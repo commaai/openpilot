@@ -158,6 +158,7 @@ FW_VERSIONS = {
   },
   CAR.SANTA_FE: {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
+    (Ecu.engine, 0x7e0, None): [b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00'],
   },
   CAR.KIA_STINGER: {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00CK  MDPS R 1.00 1.04 57700-J5420 4C4VL104'],
@@ -179,6 +180,7 @@ FW_VERSIONS = {
   },
   CAR.KIA_OPTIMA: {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
+    (Ecu.engine, 0x7e0, None): [b'\x01TJFAJNU06F201H03'],
   }
 }
 
