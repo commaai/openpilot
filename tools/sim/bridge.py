@@ -11,15 +11,13 @@ import cereal.messaging as messaging
 import argparse
 from common.params import Params
 from common.realtime import Ratekeeper, DT_DMON
-from lib.can import can_function, sendcan_function
-from lib.helpers import FakeSteeringWheel
+from lib.can import can_function
 from selfdrive.car.honda.values import CruiseButtons
 from selfdrive.test.helpers import set_params_enabled
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--autopilot', action='store_true')
 parser.add_argument('--joystick', action='store_true')
-parser.add_argument('--realmonitoring', action='store_true')
 args = parser.parse_args()
 
 pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
@@ -28,7 +26,7 @@ sm = messaging.SubMaster(['carControl','controlsState'])
 W, H = 1164, 874
 
 REPEAT_COUNTER = 5
-PRINT_EVERY = 100
+PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
 class VehicleState():
@@ -50,7 +48,7 @@ def steer_rate_limit(old,new):
     return old-limit
   else:
     return new
-  
+
 
 def cam_callback(image):
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
@@ -95,13 +93,25 @@ def health_function():
     rk.keep_time()
 
 def fake_driver_monitoring():
-  if args.realmonitoring:
-    return
   pm = messaging.PubMaster(['driverState'])
   while 1:
+
+    # dmonitoringmodeld output
     dat = messaging.new_message('driverState')
     dat.driverState.faceProb = 1.0
     pm.send('driverState', dat)
+
+    # dmonotirongd output
+    dat = messaging.new_message('dMonitoringState')
+    dat.dMonitoringState = {
+      "faceDetected": True,
+      "isDistracted": False,
+      "awarenessStatus": 1.,
+      "isRHD": False,
+      "rhdChecked": True,
+    }
+    pm.send('dMonitoringState', dat)
+
     time.sleep(DT_DMON)
 
 def can_function_runner(vs):
@@ -127,19 +137,19 @@ def go(q):
   settings.fixed_delta_seconds = 0.05
   world.apply_settings(settings)
 
-  weather = carla.WeatherParameters(
+  world.set_weather(carla.WeatherParameters(
     cloudyness=0.1,
     precipitation=0.0,
     precipitation_deposits=0.0,
     wind_intensity=0.0,
     sun_azimuth_angle=15.0,
-    sun_altitude_angle=75.0)
-  world.set_weather(weather)
+    sun_altitude_angle=75.0
+  ))
 
   blueprint_library = world.get_blueprint_library()
-  
+
   world_map = world.get_map()
-  
+
   vehicle_bp = random.choice(blueprint_library.filter('vehicle.tesla.*'))
   # vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
   vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
@@ -199,10 +209,10 @@ def go(q):
   throttle_ease_out_counter = REPEAT_COUNTER
   brake_ease_out_counter = REPEAT_COUNTER
   steer_ease_out_counter = REPEAT_COUNTER
-  
-  
+
+
   vc = carla.VehicleControl(throttle=0, steer=0, brake=0, reverse=False)
-  
+
   is_openpilot_engaged = False
 
   throttle_out = steer_out = brake_out = 0
@@ -239,7 +249,7 @@ def go(q):
         brake_manual = float(m[1])
         is_openpilot_engaged = False
       if m[0] == "reverse":
-        in_reverse = not in_reverse
+        #in_reverse = not in_reverse
         cruise_button = CruiseButtons.CANCEL
         is_openpilot_engaged = False
       if m[0] == "cruise":
@@ -257,7 +267,7 @@ def go(q):
       steer_out = steer_manual * steer_manual_multiplier
       brake_out = brake_manual * brake_manual_multiplier
 
-      steer_out = steer_out
+      #steer_out = steer_out
       # steer_out = steer_rate_limit(old_steer, steer_out)
       old_steer = steer_out
       old_throttle = throttle_out
@@ -284,11 +294,11 @@ def go(q):
     #   is_openpilot_engaged = False
     # if brake_out > 0.3:
     #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False        
+    #   is_openpilot_engaged = False
     # if steer_out > 0.3:
     #   cruise_button = CruiseButtons.CANCEL
     #   is_openpilot_engaged = False
-        
+
     else:
       if throttle_out==0 and old_throttle>0:
         if throttle_ease_out_counter>0:
@@ -312,11 +322,11 @@ def go(q):
           steer_ease_out_counter += -1
         else:
           steer_ease_out_counter = REPEAT_COUNTER
-          old_streer = 0
+          old_steer = 0
 
 
     # --------------Step 2-------------------------------
-    
+
     steer_carla = steer_out / (max_steer_angle * STEER_RATIO * -1)
 
     steer_carla = np.clip(steer_carla, -1,1)
@@ -336,24 +346,20 @@ def go(q):
     vehicle_state.cruise_button = cruise_button
     vehicle_state.is_engaged = is_openpilot_engaged
 
-    if rk.frame%PRINT_EVERY==0:
+    if rk.frame%PRINT_DECIMATION == 0:
       print('\nframe : ',rk.frame)
       print("op?:", is_openpilot_engaged, "; throttle:",round(vc.throttle,3),"; steer(c/deg):",round(vc.steer,3),round(steer_out,3), '; brake:', round(vc.brake,3))
       # print("engaged : ", is_openpilot_engaged, ";othrottle : ",round(old_throttle,3),";0steer : ",round(old_steer,3), ';obrake : ', round(old_brake,3))
-      
+
     rk.keep_time()
 
 if __name__ == "__main__":
 
   # make sure params are in a good state
   params = Params()
-  # params.clear_all()
-  # set_params_enabled()
+  params.clear_all()
+  set_params_enabled()
   params.delete("Offroad_ConnectivityNeeded")
-  from selfdrive.version import terms_version, training_version
-  params.put("HasAcceptedTerms", terms_version)
-  params.put("CompletedTrainingVersion", training_version)
-  params.put("CommunityFeaturesToggle", "1")
   params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
   from multiprocessing import Process, Queue

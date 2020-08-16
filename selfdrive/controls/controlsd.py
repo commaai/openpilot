@@ -153,7 +153,7 @@ class Controls:
 
     self.events.clear()
     self.events.add_from_msg(CS.events)
-    # self.events.add_from_msg(self.sm['dMonitoringState'].events)
+    self.events.add_from_msg(self.sm['dMonitoringState'].events)
 
     # Handle startup event
     if self.startup_event is not None:

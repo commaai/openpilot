@@ -231,7 +231,6 @@ car_started_processes = [
   'plannerd',
   'loggerd',
   'radard',
-  'dmonitoringd',
   'calibrationd',
   'paramsd',
   'camerad',
@@ -249,6 +248,7 @@ driver_view_processes = [
 
 if WEBCAM:
   car_started_processes += [
+    'dmonitoringd',
     'dmonitoringmodeld',
   ]
 
@@ -257,6 +257,7 @@ if ANDROID:
     'sensord',
     'clocksd',
     'gpsd',
+    'dmonitoringd',
     'dmonitoringmodeld',
   ]
 
