@@ -78,6 +78,8 @@ int main(int argc, char **argv) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
+  pthread_mutex_init(&transform_lock, NULL);
+
   // start calibration thread
   pthread_t live_thread_handle;
   err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
@@ -249,5 +251,6 @@ int main(int argc, char **argv) {
   clReleaseCommandQueue(q);
   clReleaseContext(context);
 
+  pthread_mutex_destroy(&transform_lock);
   return 0;
 }
