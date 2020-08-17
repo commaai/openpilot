@@ -302,8 +302,8 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (sm.updated("model")) {
     scene.model = sm["model"].getModel();
     fill_path_points(scene.model.getPath(), scene.path_points);
-    fill_path_points(scene.model.getLeftLane(), scene.left_path_points);
-    fill_path_points(scene.model.getRightLane(), scene.right_path_points);
+    fill_path_points(scene.model.getLeftLane(), scene.left_lane_points);
+    fill_path_points(scene.model.getRightLane(), scene.right_lane_points);
   }
   // else if (which == cereal::Event::LIVE_MPC) {
   //   auto data = event.getLiveMpc();

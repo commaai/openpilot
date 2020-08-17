@@ -125,9 +125,9 @@ typedef struct UIScene {
   cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
   cereal::ModelData::Reader model;
-  float left_path_points[MODEL_PATH_DISTANCE];
+  float left_lane_points[MODEL_PATH_DISTANCE];
   float path_points[MODEL_PATH_DISTANCE];
-  float right_path_points[MODEL_PATH_DISTANCE];
+  float right_lane_points[MODEL_PATH_DISTANCE];
 } UIScene;
 
 typedef struct {
