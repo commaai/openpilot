@@ -17,7 +17,7 @@ jobs:
         submodules: true
     - name: Docker build
       run: |
-        BUILD=1 tools/sim/build_containers.sh
+        BUILD=1 tools/sim/build_container.sh
     - name: Push to dockerhub
       run: |
         docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN }}
