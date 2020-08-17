@@ -31,7 +31,6 @@ import signal
 import fcntl
 import time
 import threading
-from cffi import FFI
 from pathlib import Path
 
 from common.basedir import BASEDIR
@@ -50,14 +49,6 @@ OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
-
-
-# Workaround for lack of os.link in the NEOS/termux python
-ffi = FFI()
-ffi.cdef("int link(const char *oldpath, const char *newpath);")
-libc = ffi.dlopen(None)
-def link(src, dest):
-  return libc.link(src.encode(), dest.encode())
 
 
 class WaitTimeHelper:
