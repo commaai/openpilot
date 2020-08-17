@@ -305,15 +305,13 @@ static void update_lane_line_data(UIState *s, const float *points, float off, mo
 static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
   update_lane_line_data(s, path.points, 0.025*path.prob, pstart, path.validLen);
   float var = fmin(path.std, 0.7);
-  update_lane_line_data(s, path.points, -var, pstart + 1, path.validLen);
-  update_lane_line_data(s, path.points, var, pstart + 2, path.validLen);
+  update_lane_line_data(s, path.points, var, pstart + 1, path.validLen);
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
   ui_draw_lane_line(s, pstart, color);
   color.a /= 25;
   ui_draw_lane_line(s, pstart + 1, color);
-  ui_draw_lane_line(s, pstart + 2, color);
 }
 
 static void ui_draw_vision_lanes(UIState *s) {
