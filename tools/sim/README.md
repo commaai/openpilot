@@ -12,9 +12,11 @@ cd ~/openpilot/tools/sim
 ```
 ./start_carla_docker.sh  # run the CARLA 0.9.7 docker image
 ```
-## openpilot (in terminal 2)
+## Run openpilot (in terminal 2)
+Run the openpilot image and two scripts : `selfdrive/manager.py` and `tools/sim/bridge.py`
 ```
-./run_op_sim.sh # run openpilot-sim docker image
+./build_container # pull openpilot-sim image
+./run_op_sim.sh # run openpilot-sim image
 ```
 ## Controls
 Now put the focus on the terminal running bridge.py and you can control
@@ -22,10 +24,13 @@ openpilot driving in the simulation with the following keys
 
 |  key  |   functionality   |
 | :---: | :---------------: |
-|   Up Arrow   |  Throttle  |
-|  Down Arrow    |  Brake  |
+|   1   | Cruise up 5 mph |
 |   2   | Cruise down 5 mph |
 |   3   |   Cruise cancel   |
+|   Up Arrow   |  Throttle  |
+|  Down Arrow    |  Brake  |
+|   Left Arrow   |  Left Turn  |
+|   Right Arrow   |  Right Turn  |
 |   q   |     Exit all      |
 
 
@@ -36,8 +41,7 @@ In order to develop locally, you can build the images locally and mount the open
 
 ## openpilot (in terminal 2)
 ```
-export DEV=1
-./build_op_sim.sh
+BUILD=1 ./build_op_sim.sh
 
-./run_op_sim.sh --develop=1
+DEVELOP=1 ./run_op_sim.sh --develop=1
 ```
