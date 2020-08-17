@@ -6,6 +6,7 @@
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
+#include "common/clutil.h"
 
 #include "models/driving.h"
 #include "messaging.hpp"
@@ -78,6 +79,8 @@ int main(int argc, char **argv) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
+  pthread_mutex_init(&transform_lock, NULL);
+
   // start calibration thread
   pthread_t live_thread_handle;
   err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
@@ -94,58 +97,12 @@ int main(int argc, char **argv) {
 #endif
 
   // cl init
-  cl_device_id device_id;
-  cl_context context;
-  cl_command_queue q;
-  {
-    cl_uint num_platforms;
-    err = clGetPlatformIDs(0, NULL, &num_platforms);
-    assert(err == 0);
+  cl_device_id device_id = cl_get_device_id(device_type);
+  cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
+  assert(err == 0);
 
-    cl_platform_id * platform_ids = new cl_platform_id[num_platforms];
-    err = clGetPlatformIDs(num_platforms, platform_ids, NULL);
-    assert(err == 0);
-
-    LOGD("got %d opencl platform(s)", num_platforms);
-
-    char cBuffer[1024];
-    bool opencl_platform_found = false;
-
-    for (size_t i = 0; i < num_platforms; i++){
-      err = clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
-      assert(err == 0);
-      LOGD("platform[%zu] CL_PLATFORM_NAME: %s", i, cBuffer);
-
-      cl_uint num_devices;
-      err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
-      if (err != 0|| !num_devices){
-        continue;
-      }
-
-      // Get first device
-      err = clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL);
-      assert(err == 0);
-
-      context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
-      assert(err == 0);
-
-      q = clCreateCommandQueue(context, device_id, 0, &err);
-      assert(err == 0);
-
-      opencl_platform_found = true;
-      break;
-    }
-
-    delete[] platform_ids;
-
-    if (!opencl_platform_found){
-      LOGE("No valid openCL platform found");
-      assert(opencl_platform_found);
-    }
-
-
-    LOGD("opencl init complete");
-  }
+  cl_command_queue q = clCreateCommandQueue(context, device_id, 0, &err);
+  assert(err == 0);
 
   // init the models
   ModelState model;
@@ -249,5 +206,6 @@ int main(int argc, char **argv) {
   clReleaseCommandQueue(q);
   clReleaseContext(context);
 
+  pthread_mutex_destroy(&transform_lock);
   return 0;
 }

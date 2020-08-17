@@ -1,13 +1,33 @@
+import os
+import copy
+import json
+
 from cereal import car, log
+from common.basedir import BASEDIR
+from common.params import Params
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
-import copy
-
 
 AlertSize = log.ControlsState.AlertSize
 AlertStatus = log.ControlsState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+
+
+with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
+  OFFROAD_ALERTS = json.load(f)
+
+
+def set_offroad_alert(alert, show_alert, extra_text=None):
+  if show_alert:
+    a = OFFROAD_ALERTS[alert]
+    if extra_text is not None:
+      a = copy.copy(OFFROAD_ALERTS[alert])
+      a['text'] += extra_text
+    Params().put(alert, json.dumps(a))
+  else:
+    Params().delete(alert)
+
 
 class AlertManager():
 

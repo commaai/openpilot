@@ -28,6 +28,7 @@
 #include "messaging.hpp"
 
 #include "panda.h"
+#include "pigeon.h"
 
 
 #define MAX_IR_POWER 0.5f
@@ -35,15 +36,6 @@
 #define CUTOFF_IL 200
 #define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
-#define VOLTAGE_K 0.091  // LPF gain for 5s tau (dt/tau / (dt/tau + 1))
-
-#ifndef __x86_64__
-const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
-const float VBATT_START_CHARGING = 11.5;
-const float VBATT_PAUSE_CHARGING = 11.0;
-#endif
-
-namespace {
 
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
@@ -280,7 +272,6 @@ void can_health_thread() {
 
   uint32_t no_ignition_cnt = 0;
   bool ignition_last = false;
-  float voltage_f = 12.5;  // filtered voltage
 
   // Broadcast empty health message when panda is not yet connected
   while (!panda){
@@ -307,8 +298,6 @@ void can_health_thread() {
       health.ignition_line = 1;
     }
 
-    voltage_f = VOLTAGE_K * (health.voltage / 1000.0) + (1.0 - VOLTAGE_K) * voltage_f;  // LPF
-
     // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
     if (health.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
@@ -321,24 +310,6 @@ void can_health_thread() {
     } else {
       no_ignition_cnt += 1;
     }
-
-#ifdef QCOM
-    bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
-    bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
-    if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
-      std::vector<char> disable_power_down = read_db_bytes("DisablePowerDown");
-      if (disable_power_down.size() != 1 || disable_power_down[0] != '1') {
-        LOGW("TURN OFF CHARGING!\n");
-        panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
-        LOGW("POWER DOWN DEVICE\n");
-        system("service call power 17 i32 0 i32 1");
-      }
-    }
-    if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
-      LOGW("TURN ON CHARGING!\n");
-      panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
-    }
-#endif
 
 #ifndef __x86_64__
     bool power_save_desired = !ignition;
@@ -405,7 +376,7 @@ void can_health_thread() {
 
     size_t i = 0;
     for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
-        f <= size_t(cereal::HealthData::FaultType::INTERRUPT_RATE_KLINE_INIT); f++){
+        f <= size_t(cereal::HealthData::FaultType::INTERRUPT_RATE_TIM9); f++){
       if (fault_bits.test(f)) {
         faults.set(i, cereal::HealthData::FaultType(f));
         i++;
@@ -428,6 +399,9 @@ void hardware_control_thread() {
   uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
   uint16_t prev_ir_pwr = 999;
+#ifdef QCOM
+  bool prev_charging_disabled = false;
+#endif
   unsigned int cnt = 0;
 
   while (!do_exit && panda->connected) {
@@ -435,11 +409,27 @@ void hardware_control_thread() {
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
     if (sm.updated("thermal")){
+      // Fan speed
       uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
       }
+
+#ifdef QCOM
+      // Charging mode
+      bool charging_disabled = sm["thermal"].getThermal().getChargingDisabled();
+      if (charging_disabled != prev_charging_disabled){
+        if (charging_disabled){
+          panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
+          LOGW("TURN OFF CHARGING!\n");
+        } else {
+          panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
+          LOGW("TURN ON CHARGING!\n");
+        }
+        prev_charging_disabled = charging_disabled;
+      }
+#endif
     }
     if (sm.updated("frontFrame")){
       auto event = sm["frontFrame"];
@@ -468,82 +458,13 @@ void hardware_control_thread() {
   }
 }
 
-#define pigeon_send(x) _pigeon_send(x, sizeof(x)-1)
-void _pigeon_send(const char *dat, int len) {
-  unsigned char a[0x20+1];
-  a[0] = 1;
-  for (int i=0; i<len; i+=0x20) {
-    int ll = std::min(0x20, len-i);
-    memcpy(&a[1], &dat[i], ll);
-
-    panda->usb_bulk_write(2, a, ll+1);
-  }
-}
-
-void pigeon_set_power(int power) {
-  panda->usb_write(0xd9, power, 0);
-}
-
-void pigeon_set_baud(int baud) {
-  panda->usb_write(0xe2, 1, 0);
-  panda->usb_write(0xe4, 1, baud/300);
-}
-
-void pigeon_init() {
-  usleep(1000*1000);
-  LOGW("panda GPS start");
-
-  // power off pigeon
-  pigeon_set_power(0);
-  usleep(100*1000);
-
-  // 9600 baud at init
-  pigeon_set_baud(9600);
-
-  // power on pigeon
-  pigeon_set_power(1);
-  usleep(500*1000);
-
-  // baud rate upping
-  pigeon_send("\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A");
-  usleep(100*1000);
-
-  // set baud rate to 460800
-  pigeon_set_baud(460800);
-  usleep(100*1000);
-
-  // init from ubloxd
-  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py
-  pigeon_send("\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F");
-  pigeon_send("\xB5\x62\x06\x3E\x00\x00\x44\xD2");
-  pigeon_send("\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35");
-  pigeon_send("\xB5\x62\x06\x00\x14\x00\x01\x00\x00\x00\xC0\x08\x00\x00\x00\x08\x07\x00\x01\x00\x01\x00\x00\x00\x00\x00\xF4\x80");
-  pigeon_send("\xB5\x62\x06\x00\x14\x00\x04\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1D\x85");
-  pigeon_send("\xB5\x62\x06\x00\x00\x00\x06\x18");
-  pigeon_send("\xB5\x62\x06\x00\x01\x00\x01\x08\x22");
-  pigeon_send("\xB5\x62\x06\x00\x01\x00\x02\x09\x23");
-  pigeon_send("\xB5\x62\x06\x00\x01\x00\x03\x0A\x24");
-  pigeon_send("\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10");
-  pigeon_send("\xB5\x62\x06\x24\x24\x00\x05\x00\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5A\x63");
-  pigeon_send("\xB5\x62\x06\x1E\x14\x00\x00\x00\x00\x00\x01\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x3C\x37");
-  pigeon_send("\xB5\x62\x06\x24\x00\x00\x2A\x84");
-  pigeon_send("\xB5\x62\x06\x23\x00\x00\x29\x81");
-  pigeon_send("\xB5\x62\x06\x1E\x00\x00\x24\x72");
-  pigeon_send("\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51");
-  pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70");
-  pigeon_send("\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C");
-  pigeon_send("\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70");
-
-  LOGW("panda GPS on");
-}
-
-static void pigeon_publish_raw(PubMaster &pm, unsigned char *dat, int alen) {
+static void pigeon_publish_raw(PubMaster &pm, std::string dat) {
   // create message
   capnp::MallocMessageBuilder msg;
   cereal::Event::Builder event = msg.initRoot<cereal::Event>();
   event.setLogMonoTime(nanos_since_boot());
-  auto ublox_raw = event.initUbloxRaw(alen);
-  memcpy(ublox_raw.begin(), dat, alen);
+  auto ublox_raw = event.initUbloxRaw(dat.length());
+  memcpy(ublox_raw.begin(), dat.data(), dat.length());
 
   pm.send("ubloxRaw", msg);
 }
@@ -555,37 +476,32 @@ void pigeon_thread() {
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
 
-  // run at ~100hz
-  unsigned char dat[0x1000];
-  uint64_t cnt = 0;
+#ifdef QCOM2
+  Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
+#else
+  Pigeon * pigeon = Pigeon::connect(panda);
+#endif
 
-  pigeon_init();
+  pigeon->init();
 
   while (!do_exit && panda->connected) {
-    int alen = 0;
-    while (alen < 0xfc0) {
-      int len = panda->usb_read(0xe0, 1, 0, dat+alen, 0x40);
-      if (len <= 0) break;
-
-      //printf("got %d\n", len);
-      alen += len;
-    }
-    if (alen > 0) {
-      if (dat[0] == (char)0x00){
+    std::string recv = pigeon->receive();
+    if (recv.length() > 0) {
+      if (recv[0] == (char)0x00){
         LOGW("received invalid ublox message, resetting panda GPS");
-        pigeon_init();
+        pigeon->init();
       } else {
-        pigeon_publish_raw(pm, dat, alen);
+        pigeon_publish_raw(pm, recv);
       }
     }
 
-    // 10ms
+    // 10ms - 100 Hz
     usleep(10*1000);
-    cnt++;
   }
+
+  delete pigeon;
 }
 
-}
 
 int main() {
   int err;
@@ -605,6 +521,8 @@ int main() {
   if (getenv("FAKESEND")) {
     fake_send = true;
   }
+
+  panda_set_power(true);
 
   while (!do_exit){
     std::vector<std::thread> threads;

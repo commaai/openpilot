@@ -1,10 +1,10 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
 #include <czmq.h>
+#include <atomic>
 #include "messaging.hpp"
 
 #include "msmb_isp.h"
@@ -96,7 +96,7 @@ typedef struct CameraState {
   int cur_frame_length;
   int cur_integ_lines;
 
-  float digital_gain;
+  std::atomic<float> digital_gain;
 
   StreamState ss[3];
 
@@ -113,9 +113,9 @@ typedef struct CameraState {
   uint16_t cur_lens_pos;
   uint64_t last_sag_ts;
   float last_sag_acc_z;
-  float lens_true_pos;
+  std::atomic<float> lens_true_pos;
 
-  int self_recover; // af recovery counter, neg is patience, pos is active
+  std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
 
   int fps;
 
@@ -143,6 +143,4 @@ int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
-
 #endif
