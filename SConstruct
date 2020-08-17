@@ -156,6 +156,7 @@ env = Environment(
     "#selfdrive/camerad/include",
     "#selfdrive/loggerd/include",
     "#selfdrive/modeld",
+    "#selfdrive/ui",
     "#cereal/messaging",
     "#cereal",
     "#opendbc/can",

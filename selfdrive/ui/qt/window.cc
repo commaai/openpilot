@@ -4,7 +4,9 @@
 #include <iostream>
 #include <signal.h>
 
-#include "qt_window.hpp"
+#include "window.hpp"
+#include "settings.hpp"
+
 #include "paint.hpp"
 #include "sound.hpp"
 
@@ -34,15 +36,6 @@ void MainWindow::closeSettings(){
   main_layout->setCurrentIndex(0);
 }
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout;
-  QPushButton * b = new QPushButton("Close");
-
-  main_layout->addWidget(b);
-  setLayout(main_layout);
-
-  QObject::connect(b, SIGNAL(clicked()), parentWidget(), SLOT(closeSettings()));
-}
 
 
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {

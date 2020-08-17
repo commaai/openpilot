@@ -6,7 +6,6 @@
 #include "common/util.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
-
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 
@@ -15,6 +14,7 @@ extern "C"{
 }
 
 #include "paint.hpp"
+#include "sidebar.hpp"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 const mat3 intrinsic_matrix = (mat3){{
