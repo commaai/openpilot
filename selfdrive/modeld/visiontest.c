@@ -33,28 +33,8 @@ typedef struct {
 
 void initialize_opencl(VisionTest* visiontest) {
   // init cl
-  /* Get Platform and Device Info */
-  cl_platform_id platform_ids[16] = {0};
-  cl_uint num_platforms;
-  int err = clGetPlatformIDs(16, platform_ids, &num_platforms);
-  if (err != 0) {
-    fprintf(stderr, "cl error: %d\n", err);
-  }
-  assert(err == 0);
-
-  // try to find a CPU device
-  cl_device_id device_id = NULL;
-  for (int i=0; i<num_platforms; i++) {
-    cl_uint num_devices_unused;
-    err = clGetDeviceIDs(platform_ids[i], CL_DEVICE_TYPE_CPU, 1, &device_id,
-                         &num_devices_unused);
-    if (err == 0) break;
-  }
-  if (err != 0) {
-    fprintf(stderr, "cl error: %d\n", err);
-  }
-  assert(err == 0);
-
+  int err;
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_CPU);
   visiontest->context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
   assert(err == 0);
 
