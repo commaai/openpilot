@@ -85,9 +85,7 @@ static std::map<UIStatus, NVGcolor> bg_colors = {
 
 typedef struct UIScene {
 
-  float mpc_x[50];
-  float mpc_y[50];
-
+  bool world_objects_visible;
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
   bool world_objects_visible;
 
@@ -190,7 +188,7 @@ typedef struct UIState {
   bool alert_blinked;
   float alert_blinking_alpha;
 
-  track_vertices_data track_vertices[2];
+  track_vertices_data track_vertices;
   model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 
   Rect video_rect;
