@@ -5,7 +5,7 @@ from parameterized import parameterized
 
 from cereal import log
 import cereal.messaging as messaging
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 params = Params()
 
 # Create fake time

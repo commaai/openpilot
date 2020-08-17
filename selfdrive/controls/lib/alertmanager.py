@@ -4,7 +4,7 @@ import json
 
 from cereal import car, log
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 

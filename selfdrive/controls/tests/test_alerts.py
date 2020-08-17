@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from cereal import log, car
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from selfdrive.controls.lib.events import Alert, EVENTS
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
