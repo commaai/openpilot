@@ -477,25 +477,26 @@ void* processing_thread(void *arg) {
     t10 = millis_since_boot();*/
 
     // setup self recover
+    const float lens_true_pos = s->cameras.rear.lens_true_pos;
     if (is_blur(&s->lapres[0]) &&
-       (s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN)+1 ||
-        s->cameras.rear.lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP)-1) &&
+       (lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN)+1 ||
+        lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP)-1) &&
        s->cameras.rear.self_recover < 2) {
       // truly stuck, needs help
       s->cameras.rear.self_recover -= 1;
       if (s->cameras.rear.self_recover < -FOCUS_RECOVER_PATIENCE) {
         LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
-                                      s->cameras.rear.lens_true_pos, s->cameras.rear.self_recover);
-        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS + ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0); // parity determined by which end is stuck at
+                                      lens_true_pos, s->cameras.rear.self_recover.load());
+        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS + ((lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0); // parity determined by which end is stuck at
       }
-    } else if ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M - LP3_AF_DAC_3SIG:OP3T_AF_DAC_M - OP3T_AF_DAC_3SIG) ||
-               s->cameras.rear.lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M + LP3_AF_DAC_3SIG:OP3T_AF_DAC_M + OP3T_AF_DAC_3SIG)) &&
+    } else if ((lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M - LP3_AF_DAC_3SIG:OP3T_AF_DAC_M - OP3T_AF_DAC_3SIG) ||
+               lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M + LP3_AF_DAC_3SIG:OP3T_AF_DAC_M + OP3T_AF_DAC_3SIG)) &&
               s->cameras.rear.self_recover < 2) {
       // in suboptimal position with high prob, but may still recover by itself
       s->cameras.rear.self_recover -= 1;
       if (s->cameras.rear.self_recover < -(FOCUS_RECOVER_PATIENCE*3)) {
-        LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", s->cameras.rear.lens_true_pos, s->cameras.rear.self_recover);
-        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS/2 + ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0);
+        LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, s->cameras.rear.self_recover.load());
+        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS/2 + ((lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0);
       }
     } else if (s->cameras.rear.self_recover < 0) {
       s->cameras.rear.self_recover += 1; // reset if fine
@@ -1009,19 +1010,7 @@ cl_program build_pool_program(VisionState *s,
 
 void cl_init(VisionState *s) {
   int err;
-  cl_platform_id platform_id = NULL;
-  cl_uint num_devices;
-  cl_uint num_platforms;
-
-  err = clGetPlatformIDs(1, &platform_id, &num_platforms);
-  assert(err == 0);
-  err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1,
-                       &s->device_id, &num_devices);
-  assert(err == 0);
-
-  cl_print_info(platform_id, s->device_id);
-  printf("\n");
-
+  s->device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   s->context = clCreateContext(NULL, 1, &s->device_id, NULL, NULL, &err);
   assert(err == 0);
 }
@@ -1243,7 +1232,7 @@ void party(VisionState *s) {
 
   zsock_signal(s->terminate_pub, 0);
 
-#if !defined(QCOM2) && !defined(QCOM_REPLAY) && !defined(__APPLE__)
+#if (defined(QCOM) && !defined(QCOM_REPLAY)) || defined(WEBCAM)
   LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
   assert(err == 0);
@@ -1267,7 +1256,7 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  VisionState state = {0};
+  VisionState state = {};
   VisionState *s = &state;
 
   clu_init();

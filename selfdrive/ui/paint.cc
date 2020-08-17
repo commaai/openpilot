@@ -187,6 +187,9 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
 
     vec4 p_car_space = (vec4){{px, py, 0., 1.}};
     vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+    if (p_full_frame.v[0] < 0. || p_full_frame.v[1] < 0.) {
+      continue;
+    }
     pvd->v[pvd->cnt].x = p_full_frame.v[0];
     pvd->v[pvd->cnt].y = p_full_frame.v[1];
     pvd->cnt += 1;
@@ -286,7 +289,7 @@ static void update_lane_line_data(UIState *s, const float *points, float off, mo
     pvd->v[pvd->cnt].y = p_full_frame.v[1];
     pvd->cnt += 1;
   }
-  for (int i = rcount; i > 0; i--) {
+  for (int i = rcount - 1; i > 0; i--) {
     float px = (float)i;
     float py = points[i] + off;
     const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
@@ -302,15 +305,13 @@ static void update_lane_line_data(UIState *s, const float *points, float off, mo
 static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
   update_lane_line_data(s, path.points, 0.025*path.prob, pstart, path.validLen);
   float var = fmin(path.std, 0.7);
-  update_lane_line_data(s, path.points, -var, pstart + 1, path.validLen);
-  update_lane_line_data(s, path.points, var, pstart + 2, path.validLen);
+  update_lane_line_data(s, path.points, var, pstart + 1, path.validLen);
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
   ui_draw_lane_line(s, pstart, color);
   color.a /= 25;
   ui_draw_lane_line(s, pstart + 1, color);
-  ui_draw_lane_line(s, pstart + 2, color);
 }
 
 static void ui_draw_vision_lanes(UIState *s) {
@@ -516,7 +517,7 @@ static void ui_draw_vision_speed(UIState *s) {
 
   snprintf(speed_str, sizeof(speed_str), "%d", (int)speed);
   ui_draw_text(s->vg, viz_speed_x + viz_speed_w / 2, 240, speed_str, 96*2.5, COLOR_WHITE, s->font_sans_bold);
-  ui_draw_text(s->vg, viz_speed_x + viz_speed_w / 2, 320, s->is_metric?"kph":"mph", 36*2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
+  ui_draw_text(s->vg, viz_speed_x + viz_speed_w / 2, 320, s->is_metric?"km/h":"mph", 36*2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
 }
 
 static void ui_draw_vision_event(UIState *s) {
