@@ -389,7 +389,7 @@ namespace params {
       } catch (const exception& e){old_data_path = "NULL";}
 
       new_data_path = tempdir_path + "/.link"; 
-      result = symlink(basename(tempdir_path.c_str()), new_data_path.c_str());
+      result = symlink(basename(const_cast<char*>(tempdir_path.c_str())), new_data_path.c_str());
       if (result < 0 ) throw OSError();
       rename(new_data_path.c_str(), data_path.c_str());
       fsync_dir(_path.c_str());
@@ -407,7 +407,7 @@ namespace params {
         }
         string sym_check = string(buf);
         bool success = new_data_path != "NULL" && exists(data_path)
-          && basename(tempdir_path.c_str()) == sym_check;
+          && basename(const_cast<char*>(tempdir_path.c_str())) == sym_check;
 
         if (success) {
           if (old_data_path != "NULL") {
