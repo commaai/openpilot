@@ -11,6 +11,7 @@
 #include <fstream>
 #include <string.h>
 #include <sys/stat.h>
+#include <libgen.h>
 
 using std::cout;
 using std::endl;
