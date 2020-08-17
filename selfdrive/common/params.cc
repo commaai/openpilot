@@ -16,6 +16,8 @@
 #include <string>
 #include <string.h>
 
+using namespace params;
+
 namespace {
 
 template <typename T>
@@ -36,7 +38,7 @@ static const char* persistent_params_path = default_params_path;
 int write_db_value(const char* key, const char* value, size_t value_size, bool persistent_param) {
   int result;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
-  params::Params p = params::Params::Params(params_path);
+  Params p = Params(params_path);
   try {
     p.put(key, value);
     result = 0;
@@ -49,7 +51,7 @@ int write_db_value(const char* key, const char* value, size_t value_size, bool p
 int delete_db_value(const char* key, bool persistent_param) {
   int result;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
-  params::Params p = params::Params::Params(params_path);
+  Params p = Params(params_path);
   try {
     p._delete(key);
     result = 0;
@@ -62,7 +64,7 @@ int delete_db_value(const char* key, bool persistent_param) {
 int read_db_value(const char* key, char** value, size_t* value_sz, bool persistent_param) {
   int result;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
-  params::Params p = params::Params::Params(params_path);
+  Params p = Params(params_path);
   try {
     string ret = p.get(key, false);
     *value = const_cast<char*>(ret.c_str());
@@ -93,7 +95,7 @@ void read_db_value_blocking(const char* key, char** value, size_t* value_sz, boo
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param) {
   std::string value;
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
-  params::Params p = params::Params::Params(params_path);
+  Params p = Params(params_path);
   
   std::string key_path = std::string(params_path) +"/d";
   DIR *d = opendir(key_path.c_str());
