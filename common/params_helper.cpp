@@ -77,7 +77,8 @@ namespace params {
     {"Offroad_InvalidTime", {TxType::CLEAR_ON_MANAGER_START} },
     {"Offroad_IsTakingSnapshot", {TxType::CLEAR_ON_MANAGER_START} },
     {"Offroad_NeosUpdate", {TxType::CLEAR_ON_MANAGER_START} },
-    {"Offroad_UpdateFailed", {TxType::CLEAR_ON_MANAGER_START} }
+    {"Offroad_UpdateFailed", {TxType::CLEAR_ON_MANAGER_START} },
+    {"CarBatteryCapacity", {TxType::PERSISTENT} }
   };
 
   static bool is_directory(string path) {
