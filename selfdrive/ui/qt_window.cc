@@ -60,8 +60,8 @@ void GLWindow::initializeGL() {
 
   ui_state = new UIState();
   ui_init(ui_state);
-  ui_state->fb_w = 2160;
-  ui_state->fb_h = 1080;
+  ui_state->fb_w = vwp_w;
+  ui_state->fb_h = vwp_h;
 
   int err = pthread_create(&connect_thread_handle, NULL,
                            vision_connect_thread, ui_state);
