@@ -42,14 +42,7 @@ static inline double millis_since_boot() {
 
 void cl_init(cl_device_id &device_id, cl_context &context) {
   int err;
-  cl_platform_id platform_id = NULL;
-  cl_uint num_devices;
-  cl_uint num_platforms;
-
-  err = clGetPlatformIDs(1, &platform_id, &num_platforms);
-  err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1,
-                       &device_id, &num_devices);
-  cl_print_info(platform_id, device_id);
+  device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
 }
 

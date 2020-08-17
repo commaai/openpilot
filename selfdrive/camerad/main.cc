@@ -1010,19 +1010,7 @@ cl_program build_pool_program(VisionState *s,
 
 void cl_init(VisionState *s) {
   int err;
-  cl_platform_id platform_id = NULL;
-  cl_uint num_devices;
-  cl_uint num_platforms;
-
-  err = clGetPlatformIDs(1, &platform_id, &num_platforms);
-  assert(err == 0);
-  err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1,
-                       &s->device_id, &num_devices);
-  assert(err == 0);
-
-  cl_print_info(platform_id, s->device_id);
-  printf("\n");
-
+  s->device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   s->context = clCreateContext(NULL, 1, &s->device_id, NULL, NULL, &err);
   assert(err == 0);
 }
