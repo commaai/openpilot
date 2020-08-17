@@ -17,9 +17,7 @@ jobs:
         submodules: true
     - name: Docker build
       run: |
-        docker pull $(grep -ioP '(?<=^from)\s+\S+' tools/sim/Dockerfile.sim) || true
-        docker pull docker.io/commaai/openpilot-sim:latest || true
-        docker build --cache-from docker.io/commaai/openpilot-sim:latest -t simpilot -f tools/sim/Dockerfile.sim .
+        BUILD=1 tools/sim/build_containers.sh
     - name: Push to dockerhub
       run: |
         docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN }}
