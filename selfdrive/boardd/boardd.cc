@@ -36,13 +36,6 @@
 #define CUTOFF_IL 200
 #define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
-#define VOLTAGE_K 0.091  // LPF gain for 5s tau (dt/tau / (dt/tau + 1))
-
-#ifdef QCOM
-const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
-const float VBATT_START_CHARGING = 11.5;
-const float VBATT_PAUSE_CHARGING = 11.0;
-#endif
 
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
@@ -279,7 +272,6 @@ void can_health_thread() {
 
   uint32_t no_ignition_cnt = 0;
   bool ignition_last = false;
-  float voltage_f = 12.5;  // filtered voltage
 
   // Broadcast empty health message when panda is not yet connected
   while (!panda){
@@ -306,8 +298,6 @@ void can_health_thread() {
       health.ignition_line = 1;
     }
 
-    voltage_f = VOLTAGE_K * (health.voltage / 1000.0) + (1.0 - VOLTAGE_K) * voltage_f;  // LPF
-
     // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
     if (health.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
@@ -320,24 +310,6 @@ void can_health_thread() {
     } else {
       no_ignition_cnt += 1;
     }
-
-#ifdef QCOM
-    bool cdp_mode = health.usb_power_mode == (uint8_t)(cereal::HealthData::UsbPowerMode::CDP);
-    bool no_ignition_exp = no_ignition_cnt > NO_IGNITION_CNT_MAX;
-    if ((no_ignition_exp || (voltage_f < VBATT_PAUSE_CHARGING)) && cdp_mode && !ignition) {
-      std::vector<char> disable_power_down = read_db_bytes("DisablePowerDown");
-      if (disable_power_down.size() != 1 || disable_power_down[0] != '1') {
-        LOGW("TURN OFF CHARGING!\n");
-        panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
-        LOGW("POWER DOWN DEVICE\n");
-        system("service call power 17 i32 0 i32 1");
-      }
-    }
-    if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
-      LOGW("TURN ON CHARGING!\n");
-      panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
-    }
-#endif
 
 #ifndef __x86_64__
     bool power_save_desired = !ignition;
@@ -427,6 +399,9 @@ void hardware_control_thread() {
   uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
   uint16_t prev_ir_pwr = 999;
+#ifdef QCOM
+  bool prev_charging_disabled = false;
+#endif
   unsigned int cnt = 0;
 
   while (!do_exit && panda->connected) {
@@ -434,11 +409,27 @@ void hardware_control_thread() {
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
     if (sm.updated("thermal")){
+      // Fan speed
       uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
       }
+
+#ifdef QCOM
+      // Charging mode
+      bool charging_disabled = sm["thermal"].getThermal().getChargingDisabled();
+      if (charging_disabled != prev_charging_disabled){
+        if (charging_disabled){
+          panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
+          LOGW("TURN OFF CHARGING!\n");
+        } else {
+          panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
+          LOGW("TURN ON CHARGING!\n");
+        }
+        prev_charging_disabled = charging_disabled;
+      }
+#endif
     }
     if (sm.updated("frontFrame")){
       auto event = sm["frontFrame"];
