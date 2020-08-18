@@ -151,7 +151,7 @@ static void update_track_data(UIState *s, track_vertices_data *pvd) {
   const float off = 0.5;
   const float *points = s->scene.path_points;
   const float lead_d = s->scene.lead_data[0].getDRel()*2.;
-  const float valid_len = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, s->scene.model.getPath().getValidLen()) ;
+  const float valid_len = fmin(TRACK_POINTS_MAX_CNT / 2, s->scene.model.getPath().getValidLen()) ;
   float path_height = (lead_d>0.)?fmin(lead_d, valid_len)-fmin(lead_d*0.35, 10.):valid_len;
   
   vertex_data *v = &pvd->v[0];
