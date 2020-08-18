@@ -148,12 +148,13 @@ static void ui_draw_lines(UIState *s, const vertex_data *v, const int cnt, NVGco
 }
 
 static void update_track_data(UIState *s, track_vertices_data *pvd) {
+  const UIScene *scene = &s->scene;
   const float off = 0.5;
-  const float *points = s->scene.path_points;
-  const float lead_d = s->scene.lead_data[0].getDRel()*2.;
-  const float valid_len = fmin(TRACK_POINTS_MAX_CNT / 2, s->scene.model.getPath().getValidLen()) ;
-  float path_height = (lead_d>0.)?fmin(lead_d, valid_len)-fmin(lead_d*0.35, 10.):valid_len;
-  
+  const float *points = scene->path_points;
+  float lead_d = scene->lead_data[0].getDRel()*2.;
+  float path_height = (lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
+  path_height = fmin(path_height, scene->model.getPath().getValidLen());
+
   vertex_data *v = &pvd->v[0];
   for (int i = 0; i < path_height; i++) {
     v += car_space_to_full_frame(s, lerp(i+1.0, i, i/100.0), points[i] - off, &v->x, &v->y);
@@ -227,19 +228,19 @@ static void ui_draw_lane(UIState *s, model_path_vertices_data *pstart, NVGcolor 
 
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
-  auto leftLane = scene->model.getLeftLane();
-  auto rightLane = scene->model.getRightLane();
+  auto left_lane = scene->model.getLeftLane();
+  auto right_lane = scene->model.getRightLane();
   model_path_vertices_data *pvd = &s->model_path_vertices[0];
   if(s->sm->updated("model")) {
-    update_all_lane_lines_data(s, leftLane, scene->left_lane_points, pvd);
-    update_all_lane_lines_data(s, rightLane, scene->right_lane_points, pvd + MODEL_LANE_PATH_CNT);
+    update_all_lane_lines_data(s, left_lane, scene->left_lane_points, pvd);
+    update_all_lane_lines_data(s, right_lane, scene->right_lane_points, pvd + MODEL_LANE_PATH_CNT);
   }
 
   // Draw left lane edge
-  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, leftLane.getProb()));
+  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, left_lane.getProb()));
 
   // Draw right lane edge
-  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, rightLane.getProb()));
+  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, right_lane.getProb()));
 
   if(s->sm->updated("radarState")) {
     update_track_data(s, &s->track_vertices);
