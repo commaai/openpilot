@@ -37,7 +37,7 @@ const mat3 intrinsic_matrix = (mat3){{
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
-bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float* out_x, float *out_y) {
+bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float *out_x, float *out_y) {
   const vec4 car_space_projective = (vec4){{in_x, in_y, 0., 1.}};
   // We'll call the car space point p.
   // First project into normalized image coordinates with the extrinsics matrix.
@@ -51,7 +51,7 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float* ou
   *out_x = KEp.v[0] / KEp.v[2];
   *out_y = KEp.v[1] / KEp.v[2];
 
-  return *out_x >= 0 && *out_x <= s->rgb_width && *out_y >= 0 && *out_y <= s->rgb_height;
+  return *out_x >= 0 && *out_y >= 0;
 }
 
 // Calculate an interpolation between two numbers at a specific increment
@@ -72,6 +72,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   if (!car_space_to_full_frame(s, x_in, y_in, &x, &y)) {
     return;
   }
+
   sz *= 30;
   sz /= (x_in / 3 + 30);
   if (sz > 30) sz = 30;
@@ -135,7 +136,7 @@ static void ui_draw_lines(UIState *s, const vertex_data *v, const int cnt, NVGco
 
   nvgBeginPath(s->vg);
   nvgMoveTo(s->vg, v[0].x, v[0].y);
-  for (int i=1; i<cnt; i++) {
+  for (int i = 1; i < cnt; i++) {
     nvgLineTo(s->vg, v[i].x, v[i].y);
   }
   nvgClosePath(s->vg);
@@ -156,10 +157,10 @@ static void update_track_data(UIState *s, track_vertices_data *pvd) {
   path_height = fmin(path_height, scene->model.getPath().getValidLen());
 
   vertex_data *v = &pvd->v[0];
-  for (int i = 0; i < path_height; i++) {
+  for (int i = 0; i <= path_height; i++) {
     v += car_space_to_full_frame(s, lerp(i+1.0, i, i/100.0), points[i] - off, &v->x, &v->y);
   }
-  for (int i = path_height - 1; i >= 0; i--) {
+  for (int i = path_height; i >= 0; i--) {
     v += car_space_to_full_frame(s, lerp(i+1.0, i, i/100.0), points[i] + off, &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
