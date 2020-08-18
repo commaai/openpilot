@@ -130,7 +130,7 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
   draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
-static void ui_draw_model_path(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *bg) {
+static void ui_draw_lines(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
   if (cnt == 0) return;
 
   nvgBeginPath(s->vg);
@@ -141,8 +141,8 @@ static void ui_draw_model_path(UIState *s, const vertex_data *v, const int cnt, 
   nvgClosePath(s->vg);
   if (color) {
     nvgFillColor(s->vg, *color);
-  } else if (bg) {
-    nvgFillPaint(s->vg, *bg);
+  } else if (paint) {
+    nvgFillPaint(s->vg, *paint);
   }
   nvgFill(s->vg);
 }
@@ -167,7 +167,7 @@ static void update_track_data(UIState *s, track_vertices_data *pvd) {
 static void ui_draw_track(UIState *s, track_vertices_data *pvd) {
   NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                         COLOR_WHITE, COLOR_WHITE_ALPHA(0));
-  ui_draw_model_path(s, &pvd->v[0], pvd->cnt, nullptr, &track_bg);
+  ui_draw_lines(s, &pvd->v[0], pvd->cnt, nullptr, &track_bg);
 }
 
 static void draw_frame(UIState *s) {
@@ -219,10 +219,10 @@ static void update_all_lane_lines_data(UIState *s, const cereal::ModelData::Path
 }
 
 static void ui_draw_lane(UIState *s, model_path_vertices_data *pstart, NVGcolor color) {
-  ui_draw_model_path(s, pstart->v, pstart->cnt, &color, nullptr);
+  ui_draw_lines(s, pstart->v, pstart->cnt, &color, nullptr);
   color.a /= 25;
   pstart += 1;
-  ui_draw_model_path(s, pstart->v, pstart->cnt, &color, nullptr);
+  ui_draw_lines(s, pstart->v, pstart->cnt, &color, nullptr);
 }
 
 static void ui_draw_vision_lanes(UIState *s) {
