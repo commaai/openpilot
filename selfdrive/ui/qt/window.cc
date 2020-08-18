@@ -4,6 +4,11 @@
 #include <iostream>
 #include <signal.h>
 
+#include <QVBoxLayout>
+#include <QMouseEvent>
+#include <QPushButton>
+#include <QGridLayout>
+
 #include "window.hpp"
 #include "settings.hpp"
 

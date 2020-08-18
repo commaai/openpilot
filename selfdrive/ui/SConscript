@@ -15,6 +15,6 @@ if qt_env is None:
     LIBS=libs)
 
 else:
-  qt_libs = ["Qt5Widgets", "Qt5Gui", "Qt5Core", "GL", "pthread"]
+  qt_libs = ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus", "GL", "pthread"]
   qt_src = ["qt/ui.cc", "qt/window.cc", "qt/settings.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)

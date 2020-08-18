@@ -1,14 +1,10 @@
 #pragma once
 
+#include <QWidget>
+#include <QTimer>
 #include <QGuiApplication>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
-#include <QTimer>
-#include <QWidget>
-#include <QVBoxLayout>
-#include <QMouseEvent>
-#include <QPushButton>
-#include <QGridLayout>
 #include <QStackedLayout>
 
 #include "ui/ui.hpp"

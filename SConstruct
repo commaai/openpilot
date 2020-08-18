@@ -189,7 +189,7 @@ if arch in ["x86_64", "larch64"]:
       QT_BASE + "include/QtWidgets",
       QT_BASE + "include/QtGui",
       QT_BASE + "include/QtCore",
-      QT_BASE + "include/",
+      QT_BASE + "include/QtDBus",
     ]
     qt_env["RPATH"] += [QT_BASE + "lib"]
 
@@ -199,6 +199,7 @@ if arch in ["x86_64", "larch64"]:
       f"/usr/include/{arch}-linux-gnu/qt5/QtWidgets",
       f"/usr/include/{arch}-linux-gnu/qt5/QtGui",
       f"/usr/include/{arch}-linux-gnu/qt5/QtCore",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtDBus",
     ]
 
   qt_env.Tool('qt')
