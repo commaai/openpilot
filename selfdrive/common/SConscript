@@ -5,7 +5,7 @@ if SHARED:
 else:
   fxn = env.Library
 
-_common = fxn('common', ['params.cc', 'swaglog.cc', 'util.c', 'cqueue.c'], LIBS="json11")
+_common = fxn('common', ['params.cc', 'swaglog.cc', 'util.c', 'cqueue.c', 'gpio.cc'], LIBS="json11")
 _visionipc = fxn('visionipc', ['visionipc.c', 'ipc.c'])
 
 files = [
@@ -42,4 +42,3 @@ else:
 
 _gpucommon = fxn('gpucommon', files, CPPDEFINES=defines, LIBS=_gpu_libs)
 Export('_common', '_visionipc', '_gpucommon', '_gpu_libs')
-

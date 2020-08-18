@@ -48,6 +48,31 @@ jobs:
                 scons -j$(nproc) && \
                 $UNIT_TEST selfdrive/car"
 
+  build_mac:
+    name: build macos
+    runs-on: macos-10.15
+    timeout-minutes: 35
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.pyenv
+          ~/Library/Caches/pip
+          ~/Library/Caches/pipenv
+          ~/Library/Caches/Homebrew
+        key: ${{ hashFiles('tools/mac_setup.sh') }}
+    - name: Install dependencies
+      run: ./tools/mac_setup.sh
+    - name: Build openpilot
+      run: eval "$(pyenv init -)" && scons -j$(nproc)
+    - name: Brew cleanup
+      run: brew cleanup # keeps our cache small
+
   docker_push:
     name: docker push
     runs-on: ubuntu-16.04
@@ -121,6 +146,7 @@ jobs:
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
+                    $UNIT_TEST selfdrive/thermald && \
                     $UNIT_TEST tools/lib/tests"
       - name: Upload coverage to Codecov
         run: |

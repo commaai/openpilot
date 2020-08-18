@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ffmpeg \
     git \
+    iputils-ping \
     libarchive-dev \
     libbz2-dev \
     libcurl4-openssl-dev \

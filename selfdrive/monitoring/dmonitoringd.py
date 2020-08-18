@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import gc
 from cereal import car
-from common.realtime import set_realtime_priority, DT_DMON
+from common.realtime import set_realtime_priority
 from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.controls.lib.events import Events
@@ -59,10 +59,6 @@ def dmonitoringd_thread(sm=None, pm=None):
     # Get model meta
     if sm.updated['model']:
       driver_status.set_policy(sm['model'])
-
-    # Check once a second if we're offroad
-    if sm.frame % 1/DT_DMON == 0:
-      offroad = params.get("IsOffroad") == b"1"
 
     # Get data from dmonitoringmodeld
     if sm.updated['driverState']:

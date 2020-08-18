@@ -227,39 +227,16 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->limit_set_speed_timeout = UI_FREQ;
 }
 
-static void read_path(PathData& p, const cereal::ModelData::PathData::Reader &pathp) {
-  p = {};
-
-  p.prob = pathp.getProb();
-  p.std = pathp.getStd();
-
-  auto polyp = pathp.getPoly();
-  for (int i = 0; i < POLYFIT_DEGREE; i++) {
-    p.poly[i] = polyp[i];
-  }
-
-  // Compute points locations
-  for (int i = 0; i < MODEL_PATH_DISTANCE; i++) {
-    p.points[i] = p.poly[0] * (i*i*i) + p.poly[1] * (i*i)+ p.poly[2] * i + p.poly[3];
-  }
-
-  p.validLen = pathp.getValidLen();
-}
-
-static void read_model(ModelData &d, const cereal::ModelData::Reader &model) {
-  d = {};
-  read_path(d.path, model.getPath());
-  read_path(d.left_lane, model.getLeftLane());
-  read_path(d.right_lane, model.getRightLane());
-  auto leadd = model.getLead();
-  d.lead = (LeadData){
-      .dist = leadd.getDist(), .prob = leadd.getProb(), .std = leadd.getStd(),
-  };
-}
-
 static void update_status(UIState *s, int status) {
   if (s->status != status) {
     s->status = status;
+  }
+}
+
+static inline void fill_path_points(const cereal::ModelData::PathData::Reader &path, float *points) {
+  const capnp::List<float>::Reader &poly = path.getPoly();
+  for (int i = 0; i < path.getValidLen(); i++) {
+    points[i] = poly[0] * (i * i * i) + poly[1] * (i * i) + poly[2] * i + poly[3];
   }
 }
 
@@ -323,7 +300,10 @@ void handle_message(UIState *s, SubMaster &sm) {
     }
   }
   if (sm.updated("model")) {
-    read_model(scene.model, sm["model"].getModel());
+    scene.model = sm["model"].getModel();
+    fill_path_points(scene.model.getPath(), scene.path_points);
+    fill_path_points(scene.model.getLeftLane(), scene.left_lane_points);
+    fill_path_points(scene.model.getRightLane(), scene.right_lane_points);
   }
   // else if (which == cereal::Event::LIVE_MPC) {
   //   auto data = event.getLiveMpc();

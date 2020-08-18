@@ -75,7 +75,7 @@ const int home_btn_y = vwp_h - home_btn_h - 40;
 const int UI_FREQ = 30;   // Hz
 
 const int MODEL_PATH_MAX_VERTICES_CNT = 98;
-const int MODEL_LANE_PATH_CNT = 3;
+const int MODEL_LANE_PATH_CNT = 2;
 const int TRACK_POINTS_MAX_CNT = 50 * 2;
 
 const int SET_SPEED_NA = 255;
@@ -91,8 +91,6 @@ const uint8_t bg_colors[][4] = {
 typedef struct UIScene {
   int frontview;
   int fullview;
-
-  ModelData model;
 
   float mpc_x[50];
   float mpc_y[50];
@@ -126,6 +124,10 @@ typedef struct UIScene {
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
+  cereal::ModelData::Reader model;
+  float left_lane_points[MODEL_PATH_DISTANCE];
+  float path_points[MODEL_PATH_DISTANCE];
+  float right_lane_points[MODEL_PATH_DISTANCE];
 } UIScene;
 
 typedef struct {
