@@ -92,8 +92,6 @@ typedef struct UIScene {
   int frontview;
   int fullview;
 
-  ModelData model;
-
   float mpc_x[50];
   float mpc_y[50];
 
@@ -126,6 +124,10 @@ typedef struct UIScene {
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
+  cereal::ModelData::Reader model;
+  float left_lane_points[MODEL_PATH_DISTANCE];
+  float path_points[MODEL_PATH_DISTANCE];
+  float right_lane_points[MODEL_PATH_DISTANCE];
 } UIScene;
 
 typedef struct {
