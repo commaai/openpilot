@@ -132,7 +132,7 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
 
 static void ui_draw_model_path(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *bg) {
   if (cnt == 0) return;
-  
+
   nvgBeginPath(s->vg);
   nvgMoveTo(s->vg, v[0].x, v[0].y);
   for (int i=1; i<cnt; i++) {
@@ -149,17 +149,17 @@ static void ui_draw_model_path(UIState *s, const vertex_data *v, const int cnt, 
 
 static void update_track_data(UIState *s, track_vertices_data *pvd) {
   const float off = 0.5;
-  const float *points = s->scene.model.path.points;
+  const float *points = s->scene.path_points;
   const float lead_d = s->scene.lead_data[0].getDRel()*2.;
-  const float valid_len = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, s->scene.model.path.validLen) ;
+  const float valid_len = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, s->scene.model.getPath().getValidLen()) ;
   float path_height = (lead_d>0.)?fmin(lead_d, valid_len)-fmin(lead_d*0.35, 10.):valid_len;
   
   vertex_data *v = &pvd->v[0];
   for (int i = 0; i < path_height; i++) {
-    v += car_space_to_full_frame(s, lerp(i + 1.0, i, i / 100.0), points[i] - off, &v->x, &v->y);
+    v += car_space_to_full_frame(s, lerp(i+1.0, i, i/100.0), points[i] - off, &v->x, &v->y);
   }
   for (int i = path_height - 1; i >= 0; i--) {
-    v += car_space_to_full_frame(s, lerp(i + 1.0, i, i / 100.0), points[i] + off, &v->x, &v->y);
+    v += car_space_to_full_frame(s, lerp(i+1.0, i, i/100.0), points[i] + off, &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -213,12 +213,12 @@ static void update_lane_line_data(UIState *s, const float *points, float off, mo
   pvd->cnt = v - pvd->v;
 }
 
-static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
-  update_lane_line_data(s, path.points, 0.025*path.prob, pstart, path.validLen);
-  update_lane_line_data(s, path.points, fmin(path.std, 0.7), pstart + 1, path.validLen);
+static void update_all_lane_lines_data(UIState *s, const cereal::ModelData::PathData::Reader &path, const float *points, model_path_vertices_data *pstart) {
+  update_lane_line_data(s, points, 0.025*path.getProb(), pstart, path.getValidLen());
+  update_lane_line_data(s, points, fmin(path.getStd(), 0.7), pstart + 1, path.getValidLen());
 }
 
-static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
+static void ui_draw_lane(UIState *s, model_path_vertices_data *pstart, NVGcolor color) {
   ui_draw_model_path(s, pstart->v, pstart->cnt, &color, nullptr);
   color.a /= 25;
   pstart += 1;
@@ -227,17 +227,19 @@ static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_d
 
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
+  auto leftLane = scene->model.getLeftLane();
+  auto rightLane = scene->model.getRightLane();
   model_path_vertices_data *pvd = &s->model_path_vertices[0];
   if(s->sm->updated("model")) {
-    update_all_lane_lines_data(s, scene->model.getLeftLane(), scene->left_lane_points, pvd);
-    update_all_lane_lines_data(s, scene->model.getRightLane(), scene->right_lane_points, pvd + MODEL_LANE_PATH_CNT);
+    update_all_lane_lines_data(s, leftLane, scene->left_lane_points, pvd);
+    update_all_lane_lines_data(s, rightLane, scene->right_lane_points, pvd + MODEL_LANE_PATH_CNT);
   }
 
   // Draw left lane edge
-  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLeftLane().getProb()));
+  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, leftLane.getProb()));
 
   // Draw right lane edge
-  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getRightLane().getProb()));
+  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, rightLane.getProb()));
 
   if(s->sm->updated("radarState")) {
     update_track_data(s, &s->track_vertices);
