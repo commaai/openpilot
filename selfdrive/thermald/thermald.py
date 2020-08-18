@@ -409,6 +409,7 @@ def thermald_thread():
 
     # Check if we need to shut down
     if pm.should_shutdown(health, off_ts, started_seen, LEON):
+      cloudlog.info(f"shutting device down, offroad for {off_ts}")
       os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
