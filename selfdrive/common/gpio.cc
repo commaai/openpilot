@@ -8,7 +8,7 @@
 
 int gpio_init(int pin_nr, bool output){
   int ret = 0;
-  int fd, tmp;
+  int fd = -1, tmp;
 
   char pin_dir_path[50];
   int pin_dir_path_len = snprintf(pin_dir_path, sizeof(pin_dir_path),
@@ -46,7 +46,7 @@ cleanup:
 
 int gpio_set(int pin_nr, bool high){
   int ret = 0;
-  int fd, tmp;
+  int fd = -1, tmp;
 
   char pin_val_path[50];
   int pin_val_path_len = snprintf(pin_val_path, sizeof(pin_val_path),
