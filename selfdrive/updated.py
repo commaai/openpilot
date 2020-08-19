@@ -88,20 +88,27 @@ def run(cmd, cwd=None, low_priority=False):
 
 
 def set_consistent_flag(consistent):
-  os.system("sync")
+  os.sync()
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
   if consistent:
     consistent_file.touch()
   elif not consistent and consistent_file.exists():
     consistent_file.unlink()
-  os.system("sync")
+  os.sync()
 
 
-def set_update_available_params(new_version):
+def set_params(new_version, failed_count, exception):
   params = Params()
 
-  t = datetime.datetime.utcnow().isoformat()
-  params.put("LastUpdateTime", t.encode('utf8'))
+  params.put("UpdateFailedCount", str(failed_count))
+  if failed_count == 0:
+    t = datetime.datetime.utcnow().isoformat()
+    params.put("LastUpdateTime", t.encode('utf8'))
+
+  if exception is None:
+    params.delete("LastUpdateException")
+  else:
+    params.put("LastUpdateException", exception)
 
   if new_version:
     try:
@@ -184,7 +191,7 @@ def init_overlay():
     consistent_file.unlink()
   consistent_file.touch()
 
-  os.system("sync")
+  os.sync()
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
 
@@ -282,7 +289,6 @@ def fetch_update(wait_helper):
   else:
     cloudlog.info("nothing new from git at this time")
 
-  set_update_available_params(new_version)
   return new_version
 
 
@@ -310,9 +316,14 @@ def main():
   wait_helper = WaitTimeHelper(proc)
   wait_helper.sleep(30)
 
+  update_ready = False
   last_fetch_time = 0
   update_failed_count = 0
-  update_available = False
+
+  # Start update loop
+  #  * every 30s, check if we're offroad
+  #  * every 60s, check if remote HEAD is different than local HEAD
+  #  * every 10m, if remote and local HEAD don't match, git fetch
   while not wait_helper.shutdown:
     wait_helper.ready_event.clear()
 
@@ -329,15 +340,19 @@ def main():
     try:
       init_overlay()
 
-      # TODO: update LastUpdateTime and failed count here
-      update = check_for_update()
+      update_available = check_for_update()
+      if not update_available:
+        update_failed_count = 0
 
       # Fetch updates at most every 10 minutes
-      if update and time.monotonic() - last_fetch_time > 60*10:
-        update_available = fetch_update(wait_helper) or update_available
+      if update_available and time.monotonic() - last_fetch_time > 60*10:
+        update_ready = fetch_update(wait_helper) or update_ready
         update_failed_count = 0
-        if not update_available and os.path.isdir(NEOSUPDATE_DIR):
+        last_fetch_time = time.monotonic()
+
+        if not update_ready and os.path.isdir(NEOSUPDATE_DIR):
           shutil.rmtree(NEOSUPDATE_DIR)
+
     except subprocess.CalledProcessError as e:
       cloudlog.event(
         "update process failed",
@@ -345,17 +360,11 @@ def main():
         output=e.output,
         returncode=e.returncode
       )
-      exception = e
+      exception = f"command failed: {e.cmd}\n{e.output}"
     except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
-    params.put("UpdateFailedCount", str(update_failed_count))
-    if exception is None:
-      params.delete("LastUpdateException")
-    else:
-      params.put("LastUpdateException", f"command failed: {exception.cmd}\n{exception.output}")
-
-    # Check for updates every minute
+    set_params(update_ready, update_failed_count, exception)
     wait_helper.sleep(60)
 
   dismount_overlay()
