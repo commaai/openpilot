@@ -66,57 +66,66 @@ VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf) {
   };
 }
 
+void EGLTexture::init(const VisionImg &img, void *addr) {
+  assert((img.size % img.stride) == 0);
+  assert((img.stride % img.bpp) == 0);
 #ifdef QCOM
+  int format = HAL_PIXEL_FORMAT_RGB_888;
+  private_handle = new private_handle_t(
+      img.fd, img.size,
+      private_handle_t::PRIV_FLAGS_USES_ION | private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
+      0, format,
+      img.stride / img.bpp, img.size / img.stride,
+      img.width, img.height);
 
-EGLClientBuffer visionimg_to_egl(const VisionImg *img, void **pph) {
-  assert((img->size % img->stride) == 0);
-  assert((img->stride % img->bpp) == 0);
-
-  int format = 0;
-  if (img->format == VISIONIMG_FORMAT_RGB24) {
-    format = HAL_PIXEL_FORMAT_RGB_888;
-  } else {
-    assert(false);
-  }
-
-  private_handle_t* hnd = new private_handle_t(img->fd, img->size,
-                             private_handle_t::PRIV_FLAGS_USES_ION|private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
-                             0, format,
-                             img->stride/img->bpp, img->size/img->stride,
-                             img->width, img->height);
-
-  GraphicBuffer* gb = new GraphicBuffer(img->width, img->height, (PixelFormat)format,
-                                        GraphicBuffer::USAGE_HW_TEXTURE, img->stride/img->bpp, hnd, false);
-  // GraphicBuffer is ref counted by EGLClientBuffer(ANativeWindowBuffer), no need and not possible to release.
-  *pph = hnd;
-  return (EGLClientBuffer) gb->getNativeBuffer();
-}
-
-GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
-
-  EGLClientBuffer buf = visionimg_to_egl(img, pph);
+  GraphicBuffer *buf = new GraphicBuffer(
+      img.width, img.height, (PixelFormat)format,
+      GraphicBuffer::USAGE_HW_TEXTURE, img.stride / img.bpp,
+      (private_handle_t *)private_handle, false);
 
   EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   assert(display != EGL_NO_DISPLAY);
 
-  EGLint img_attrs[] = { EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE };
-  EGLImageKHR image = eglCreateImageKHR(display, EGL_NO_CONTEXT,
-                                        EGL_NATIVE_BUFFER_ANDROID, buf, img_attrs);
-  assert(image != EGL_NO_IMAGE_KHR);
+  EGLint img_attrs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE};
+  img_khr = eglCreateImageKHR(
+      display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID,
+      (EGLClientBuffer)buf->getNativeBuffer(), img_attrs);
+  assert(img_khr != EGL_NO_IMAGE_KHR);
 
-  GLuint tex = 0;
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_2D, tex);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);
-  *pkhr = image;
-  return tex;
-}
-
-void visionimg_destroy_gl(EGLImageKHR khr, void *ph) {
-  EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  assert(display != EGL_NO_DISPLAY);
-  eglDestroyImageKHR(display, khr);
-  delete (private_handle_t*)ph;
-}
-
+  glGenTextures(1, &frame_tex);
+  glBindTexture(GL_TEXTURE_2D, frame_tex);
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, img_khr);
+#else
+  glGenTextures(1, &frame_tex);
+  glBindTexture(GL_TEXTURE_2D, frame_tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, addr);
+  glGenerateMipmap(GL_TEXTURE_2D);
 #endif
+  glBindTexture(GL_TEXTURE_2D, frame_tex);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  // BGR
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+}
+
+void EGLTexture::destroy() {
+  if (frame_tex != 0) {
+    glDeleteTextures(1, &frame_tex);
+    frame_tex = 0;
+  }
+#ifdef QCOM
+  if (img_khr != 0) {
+    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    assert(display != EGL_NO_DISPLAY);
+    eglDestroyImageKHR(display, img_khr);
+    img_khr = 0;
+  }
+  if (private_handle) {
+    delete (private_handle_t *)private_handle;
+    private_handle = nullptr;
+  }
+#endif
+}

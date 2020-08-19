@@ -1,5 +1,4 @@
-#ifndef VISIONIMG_H
-#define VISIONIMG_H
+#pragma once
 
 #include "common/visionbuf.h"
 #include "common/glutil.h"
@@ -30,12 +29,19 @@ typedef struct VisionImg {
 void visionimg_compute_aligned_width_and_height(int width, int height, int *aligned_w, int *aligned_h);
 VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf);
 
-EGLClientBuffer visionimg_to_egl(const VisionImg *img, void **pph);
-GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph);
-void visionimg_destroy_gl(EGLImageKHR khr, void *ph);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
+class EGLTexture {
+ public:
+  GLuint frame_tex = 0;
+
+  void init(const VisionImg &img, void *addr);
+  void destroy();
+#ifdef QCOM
+ private:
+  void *private_handle = nullptr;
+  EGLImageKHR img_khr = 0;
 #endif
+};

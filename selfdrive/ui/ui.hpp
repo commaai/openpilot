@@ -185,9 +185,8 @@ typedef struct UIState {
 
   // graphics
   GLuint frame_program;
-  GLuint frame_texs[UI_BUF_COUNT];
-  EGLImageKHR khr[UI_BUF_COUNT];
-  void *priv_hnds[UI_BUF_COUNT];
+  
+  EGLTexture egl_texture[UI_BUF_COUNT];
 
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;

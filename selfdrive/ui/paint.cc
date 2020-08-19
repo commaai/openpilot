@@ -248,11 +248,11 @@ static void draw_frame(UIState *s) {
   glActiveTexture(GL_TEXTURE0);
 
   if (s->stream.last_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->stream.last_idx]);
+    glBindTexture(GL_TEXTURE_2D, s->texture[s->stream.last_idx]->frame_tex);
 #ifndef QCOM
     // this is handled in ion on QCOM
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->stream.bufs_info.width, s->stream.bufs_info.height,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->stream.last_idx]);
+                 0, GL_RGB, GL_UNSIGNED_BYTE, s->stream.bufs[s->stream.last_idx].addr);
 #endif
   }
 
@@ -818,9 +818,4 @@ void ui_nvg_init(UIState *s) {
 
   s->front_frame_mat = matmul(device_transform, full_to_wide_frame_transform);
   s->rear_frame_mat = matmul(device_transform, frame_transform);
-
-  for(int i = 0; i < UI_BUF_COUNT; i++) {
-    s->khr[i] = 0;
-    s->priv_hnds[i] = NULL;
-  }
 }
