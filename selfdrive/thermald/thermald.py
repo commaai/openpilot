@@ -403,7 +403,7 @@ def thermald_thread():
     # Offroad power monitoring
     pm.calculate(health)
     msg.thermal.offroadPowerUsage = pm.get_power_used()
-    msg.thermal.carBatteryCapacity = pm.get_car_battery_capacity()
+    msg.thermal.carBatteryCapacity = max(0, pm.get_car_battery_capacity())
 
     # Check if we need to disable charging (handled by boardd)
     msg.thermal.chargingDisabled = pm.should_disable_charging(health, off_ts)
