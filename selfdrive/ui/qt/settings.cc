@@ -43,9 +43,8 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QW
 }
 
 void ParamsToggle::checkboxClicked(int state){
-  char value[1] = {};
-  value[0] = state ? '1': '0';
-  write_db_value(param.toStdString().c_str(), value, 1);
+  char value = state ? '1': '0';
+  write_db_value(param.toStdString().c_str(), &value, 1);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
