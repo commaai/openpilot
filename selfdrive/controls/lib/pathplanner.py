@@ -165,7 +165,7 @@ class PathPlanner():
     self.LP.update_d_poly(v_ego)
 
     # Rolling shutter takes 16 ms
-    frame_delay = 0.008 + (sm.logMonoTime['model'] - sm['model'].timestampEof) / 1e9
+    frame_delay = min(0.008 + (sm.logMonoTime['model'] - sm['model'].timestampEof) / 1e9, 0.250)
     delay = frame_delay + CP.steerActuatorDelay
 
     # account for actuation + frame delay
