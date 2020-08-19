@@ -153,7 +153,7 @@ def init_overlay():
   # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
   if overlay_init_file.is_file():
     git_dir_path = os.path.join(BASEDIR, ".git")
-    new_files = run(["find", git_dir_path, "-newer", string(overlay_init_file)])
+    new_files = run(["find", git_dir_path, "-newer", str(overlay_init_file)])
     if not len(new_files.splitlines()):
       # Return since a valid overlay already exists
       return
@@ -207,8 +207,13 @@ def finalize_update():
   cloudlog.info("done finalizing overlay")
 
 
+def check_for_update():
+  # TODO: actually check for an update
+  return os.system("git ls-remotes --heads --exit-code") == 0
+
+
 def fetch_update(wait_helper):
-  cloudlog.info("attempting git update inside staging overlay")
+  cloudlog.info("attempting git fetch inside staging overlay")
 
   setup_git_options(OVERLAY_MERGED)
 
@@ -305,15 +310,16 @@ def main():
   wait_helper = WaitTimeHelper(proc)
   wait_helper.sleep(30)
 
+  last_fetch_time = 0
   update_failed_count = 0
   update_available = False
   while not wait_helper.shutdown:
     wait_helper.ready_event.clear()
 
-    # Check for internet every 30s
+    # Don't run updater while onroad or if the time's wrong
     time_wrong = datetime.datetime.utcnow().year < 2019
-    ping_failed = os.system("git ls-remotes --heads --exit-code") != 0
-    if ping_failed or time_wrong:
+    is_onroad = params.get("IsOffroad") != b"1"
+    if is_onroad or time_wrong:
       wait_helper.sleep(30)
       continue
 
@@ -323,14 +329,15 @@ def main():
     try:
       init_overlay()
 
-      if params.get("IsOffroad") == b"1":
+      # TODO: update LastUpdateTime and failed count here
+      update = check_for_update()
+
+      # Fetch updates at most every 10 minutes
+      if update and time.monotonic() - last_fetch_time > 60*10:
         update_available = fetch_update(wait_helper) or update_available
         update_failed_count = 0
         if not update_available and os.path.isdir(NEOSUPDATE_DIR):
           shutil.rmtree(NEOSUPDATE_DIR)
-      else:
-        cloudlog.info("not running updater, openpilot running")
-
     except subprocess.CalledProcessError as e:
       cloudlog.event(
         "update process failed",
@@ -339,7 +346,6 @@ def main():
         returncode=e.returncode
       )
       exception = e
-      overlay_initialized = False
     except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
@@ -349,8 +355,8 @@ def main():
     else:
       params.put("LastUpdateException", f"command failed: {exception.cmd}\n{exception.output}")
 
-    # Wait 10 minutes between update attempts
-    wait_helper.sleep(60*10)
+    # Check for updates every minute
+    wait_helper.sleep(60)
 
   dismount_overlay()
 
