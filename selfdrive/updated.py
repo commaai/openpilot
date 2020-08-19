@@ -114,7 +114,7 @@ def set_update_available_params(new_version):
     params.put("UpdateAvailable", "1")
 
 
-def dismount_ovfs():
+def dismount_overlay():
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.error("unmounting existing overlay")
     run(["umount", "-l", OVERLAY_MERGED])
@@ -145,13 +145,26 @@ def setup_git_options(cwd):
       run(["git", "config", option, value], cwd)
 
 
-def init_ovfs():
+def init_overlay():
+
+  overlay_init_file = Path(os.path.join(BASEDIR, ".overlay_init"))
+
+  # TODO: can we take a git lock instead?
+  # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
+  if overlay_init_file.is_file():
+    git_dir_path = os.path.join(BASEDIR, ".git")
+    new_files = run(["find", git_dir_path, "-newer", string(overlay_init_file)])
+    if not len(new_files.splitlines()):
+      # Return since a valid overlay already exists
+      return
+    else:
+      cloudlog.info(".git directory changed, recreating overlay")
+
   cloudlog.info("preparing new safe staging area")
+
   Params().put("UpdateAvailable", "0")
-
   set_consistent_flag(False)
-
-  dismount_ovfs()
+  dismount_overlay()
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
 
@@ -161,23 +174,22 @@ def init_ovfs():
   if not os.lstat(BASEDIR).st_dev == os.lstat(OVERLAY_MERGED).st_dev:
     raise RuntimeError("base and overlay merge directories are on different filesystems; not valid for overlay FS!")
 
-  # Remove consistent flag from current BASEDIR so it's not copied over
-  if os.path.isfile(os.path.join(BASEDIR, ".overlay_consistent")):
-    os.remove(os.path.join(BASEDIR, ".overlay_consistent"))
-
   # Leave a timestamped canary in BASEDIR to check at startup. The device clock
   # should be correct by the time we get here. If the init file disappears, or
   # critical mtimes in BASEDIR are newer than .overlay_init, continue.sh can
   # assume that BASEDIR has used for local development or otherwise modified,
   # and skips the update activation attempt.
-  Path(os.path.join(BASEDIR, ".overlay_init")).touch()
+  consistent_file = Path(os.path.join(BASEDIR, ".overlay_consistent"))
+  if consistent_file.is_file():
+    consistent_file.unlink()
+  consistent_file.touch()
 
   os.system("sync")
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
 
 
-def finalize_from_ovfs():
+def finalize_update():
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
@@ -188,11 +200,14 @@ def finalize_from_ovfs():
 
   # Copy the merged overlay view and set the update ready flag
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
+
+  # TODO: check for changes in lower dir
+
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
 
-def attempt_update(wait_helper):
+def fetch_update(wait_helper):
   cloudlog.info("attempting git update inside staging overlay")
 
   setup_git_options(OVERLAY_MERGED)
@@ -257,7 +272,7 @@ def attempt_update(wait_helper):
         cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
 
     # Create the finalized, ready-to-swap update
-    finalize_from_ovfs()
+    finalize_update()
     cloudlog.info("openpilot update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
@@ -292,7 +307,6 @@ def main():
 
   update_failed_count = 0
   update_available = False
-  overlay_initialized = False
   while not wait_helper.shutdown:
     wait_helper.ready_event.clear()
 
@@ -307,22 +321,10 @@ def main():
     exception = None
     update_failed_count += 1
     try:
-      # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
-      if overlay_initialized:
-        overlay_init_fn = os.path.join(BASEDIR, ".overlay_init")
-        git_dir_path = os.path.join(BASEDIR, ".git")
-        new_files = run(["find", git_dir_path, "-newer", overlay_init_fn])
-
-        if len(new_files.splitlines()):
-          cloudlog.info(".git directory changed, recreating overlay")
-          overlay_initialized = False
-
-      if not overlay_initialized:
-        init_ovfs()
-        overlay_initialized = True
+      init_overlay()
 
       if params.get("IsOffroad") == b"1":
-        update_available = attempt_update(wait_helper) or update_available
+        update_available = fetch_update(wait_helper) or update_available
         update_failed_count = 0
         if not update_available and os.path.isdir(NEOSUPDATE_DIR):
           shutil.rmtree(NEOSUPDATE_DIR)
@@ -350,7 +352,7 @@ def main():
     # Wait 10 minutes between update attempts
     wait_helper.sleep(60*10)
 
-  dismount_ovfs()
+  dismount_overlay()
 
 if __name__ == "__main__":
   main()
