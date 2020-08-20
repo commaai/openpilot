@@ -66,22 +66,18 @@ VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf) {
   };
 }
 
-void EGLTexture::init(const VisionImg &img, void *addr) {
+EGLImageTexture::EGLImageTexture(const VisionImg &img, void *addr) {
   assert((img.size % img.stride) == 0);
   assert((img.stride % img.bpp) == 0);
 #ifdef QCOM
   int format = HAL_PIXEL_FORMAT_RGB_888;
   private_handle = new private_handle_t(
-      img.fd, img.size,
-      private_handle_t::PRIV_FLAGS_USES_ION | private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
-      0, format,
-      img.stride / img.bpp, img.size / img.stride,
-      img.width, img.height);
+      img.fd, img.size, private_handle_t::PRIV_FLAGS_USES_ION | private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
+      0, format, img.stride / img.bpp, img.size / img.stride, img.width, img.height);
 
   GraphicBuffer *buf = new GraphicBuffer(
-      img.width, img.height, (PixelFormat)format,
-      GraphicBuffer::USAGE_HW_TEXTURE, img.stride / img.bpp,
-      (private_handle_t *)private_handle, false);
+      img.width, img.height, (PixelFormat)format, GraphicBuffer::USAGE_HW_TEXTURE,
+      img.stride / img.bpp, (private_handle_t *)private_handle, false);
 
   EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   assert(display != EGL_NO_DISPLAY);
@@ -101,6 +97,7 @@ void EGLTexture::init(const VisionImg &img, void *addr) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, addr);
   glGenerateMipmap(GL_TEXTURE_2D);
 #endif
+
   glBindTexture(GL_TEXTURE_2D, frame_tex);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -111,21 +108,12 @@ void EGLTexture::init(const VisionImg &img, void *addr) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
 }
 
-void EGLTexture::destroy() {
-  if (frame_tex != 0) {
-    glDeleteTextures(1, &frame_tex);
-    frame_tex = 0;
-  }
+EGLImageTexture::~EGLImageTexture() {
+  glDeleteTextures(1, &frame_tex);
 #ifdef QCOM
-  if (img_khr != 0) {
-    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    assert(display != EGL_NO_DISPLAY);
-    eglDestroyImageKHR(display, img_khr);
-    img_khr = 0;
-  }
-  if (private_handle) {
-    delete (private_handle_t *)private_handle;
-    private_handle = nullptr;
-  }
+  EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  assert(display != EGL_NO_DISPLAY);
+  eglDestroyImageKHR(display, img_khr);
+  delete (private_handle_t *)private_handle;
 #endif
 }
