@@ -79,7 +79,7 @@ def test_cpu_usage():
       time.sleep(2)
 
     # take first sample
-    time.sleep(5)
+    time.sleep(30)
     first_proc = messaging.recv_sock(proc_sock, wait=True)
     if first_proc is None:
       raise Exception("\n\nTEST FAILED: progLog recv timed out\n\n")
