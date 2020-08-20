@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include "common/visionbuf.h"
 #include "common/glutil.h"
 
