@@ -134,12 +134,15 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
 
-  if new_speed_h > fan_speed:  # update speed if using the high thresholds results in fan speed increment
+  if new_speed_h > fan_speed:
+    # update speed if using the high thresholds results in fan speed increment
     fan_speed = new_speed_h
-  elif new_speed_l < fan_speed:  # update speed if using the low thresholds results in fan speed decrement
+  elif new_speed_l < fan_speed:
+    # update speed if using the low thresholds results in fan speed decrement
     fan_speed = new_speed_l
 
-  if bat_temp < _BAT_TEMP_THERSHOLD:  # no max fan speed unless battery is hot
+  if bat_temp < _BAT_TEMP_THERSHOLD:
+    # no max fan speed unless battery is hot
     fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
 
   set_eon_fan(fan_speed // 16384)
