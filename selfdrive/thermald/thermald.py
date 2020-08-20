@@ -69,8 +69,8 @@ def read_tz(x):
 def read_thermal(thermal_config):
   s = thermal_config.scale
   dat = messaging.new_message('thermal')
-  dat.thermal.cpuTemps = [read_tz(z) / s for z in thermal_config.cpu]
-  dat.thermal.gpuTemps = [read_tz(z) / s for z in thermal_config.gpu]
+  dat.thermal.cpu = [read_tz(z) / s for z in thermal_config.cpu]
+  dat.thermal.gpu = [read_tz(z) / s for z in thermal_config.gpu]
   dat.thermal.mem = read_tz(thermal_config.mem) / s
   dat.thermal.ambient = read_tz(thermal_config.ambient) / s
   dat.thermal.bat = read_tz(thermal_config.bat) / thermal_config.bat_scale
@@ -265,8 +265,8 @@ def thermald_thread():
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
 
     # TODO: add car battery voltage check
-    max_cpu_temp = cpu_temp_filter.update(max(msg.thermal.cpuTemps))
-    max_comp_temp = max(max_cpu_temp, msg.thermal.mem, max(msg.thermal.gpuTemps))
+    max_cpu_temp = cpu_temp_filter.update(max(msg.thermal.cpu))
+    max_comp_temp = max(max_cpu_temp, msg.thermal.mem, max(msg.thermal.gpu))
     bat_temp = msg.thermal.bat
 
     if handle_fan is not None:
