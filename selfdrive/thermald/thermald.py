@@ -26,7 +26,7 @@ from selfdrive.thermald.power_monitoring import (PowerMonitoring,
                                                  get_usb_present)
 from selfdrive.version import get_git_branch, terms_version, training_version
 
-ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'scale', 'bat_scale'])
+ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient'])
 
 FW_SIGNATURE = get_expected_signature()
 
@@ -47,12 +47,13 @@ last_eon_fan_val = None
 
 
 def get_thermal_config():
+  # (tz, scale)
   if EON:
-    return ThermalConfig(cpu=(5, 7, 10, 12), gpu=(16,), mem=2, bat=29, ambient=25, scale=10, bat_scale=1000)
+    return ThermalConfig(cpu=((5, 7, 10, 12), 10), gpu=((16,), 10), mem=(2, 10), bat=(29, 1000), ambient=(25, 1))
   elif TICI:
-    return ThermalConfig(cpu=(1, 2, 3, 4, 5, 6, 7, 8), gpu=(48,49), mem=15, bat=None, abient=70, scale=1000, bat_scale=1)
+    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), abient=(70, 1000))
   else:
-    return ThermalConfig(cpu=(None,), gpu=(None,), mem=None, bat=None, ambient=None, scale=1, bat_scale=1)
+    return ThermalConfig(cpu=((None,), 1), gpu=((None,), 1), mem=(None, 1), bat=(None, 1), ambient=(None, 1))
 
 
 def read_tz(x):
@@ -67,13 +68,12 @@ def read_tz(x):
 
 
 def read_thermal(thermal_config):
-  s = thermal_config.scale
   dat = messaging.new_message('thermal')
-  dat.thermal.cpu = [read_tz(z) / s for z in thermal_config.cpu]
-  dat.thermal.gpu = [read_tz(z) / s for z in thermal_config.gpu]
-  dat.thermal.mem = read_tz(thermal_config.mem) / s
-  dat.thermal.ambient = read_tz(thermal_config.ambient) / s
-  dat.thermal.bat = read_tz(thermal_config.bat) / thermal_config.bat_scale
+  dat.thermal.cpu = [read_tz(z) / thermal_config.cpu[1] for z in thermal_config.cpu[0]]
+  dat.thermal.gpu = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
+  dat.thermal.mem = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
+  dat.thermal.ambient = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
+  dat.thermal.bat = read_tz(thermal_config.bat[0]) / thermal_config.bat[1]
   return dat
 
 
