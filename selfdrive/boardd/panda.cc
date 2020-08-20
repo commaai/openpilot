@@ -62,7 +62,7 @@ Panda::Panda(){
   is_pigeon =
     (hw_type == cereal::HealthData::HwType::GREY_PANDA) ||
     (hw_type == cereal::HealthData::HwType::BLACK_PANDA) ||
-    (hw_type == cereal::HealthData::HwType::UNO) || 
+    (hw_type == cereal::HealthData::HwType::UNO) ||
     (hw_type == cereal::HealthData::HwType::DOS);
   has_rtc = (hw_type == cereal::HealthData::HwType::UNO) ||
     (hw_type == cereal::HealthData::HwType::DOS);
@@ -105,6 +105,10 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
+  if (!connected){
+    return LIBUSB_ERROR_NO_DEVICE;
+  }
+
   pthread_mutex_lock(&usb_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
@@ -134,6 +138,10 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
   int err;
   int transferred = 0;
 
+  if (!connected){
+    return 0;
+  }
+
   pthread_mutex_lock(&usb_lock);
   do {
     // Try sending can messages. If the receive buffer on the panda is full it will NAK
@@ -155,6 +163,10 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
 int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
   int err;
   int transferred = 0;
+
+  if (!connected){
+    return 0;
+  }
 
   pthread_mutex_lock(&usb_lock);
 
