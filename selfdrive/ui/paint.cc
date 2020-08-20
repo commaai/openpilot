@@ -2,16 +2,19 @@
 #include <assert.h>
 #include <map>
 #include <cmath>
+#include <iostream>
 #include "common/util.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
-
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 
 extern "C"{
 #include "common/glutil.h"
 }
+
+#include "paint.hpp"
+#include "sidebar.hpp"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 const mat3 intrinsic_matrix = (mat3){{
@@ -348,7 +351,7 @@ static void ui_draw_world(UIState *s) {
     return;
   }
 
-  const int inner_height = viz_w*9/16;
+  const int inner_height = float(viz_w) * vwp_h / vwp_w;
   const int ui_viz_rx = scene->ui_viz_rx;
   const int ui_viz_rw = scene->ui_viz_rw;
   const int ui_viz_ro = scene->ui_viz_ro;
@@ -358,10 +361,13 @@ static void ui_draw_world(UIState *s) {
 
   nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
-  nvgTranslate(s->vg, 240.0f, 0.0);
-  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+
+  float w = 1440.0f; // Why 1440?
+  nvgTranslate(s->vg, (vwp_w - w) / 2.0f, 0.0);
+
+  nvgTranslate(s->vg, -w / 2, -1080.0f / 2);
   nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+  nvgScale(s->vg, w / s->rgb_width, 1080.0f / s->rgb_height);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);

@@ -337,6 +337,9 @@ selfdrive/ui/text/Makefile
 selfdrive/ui/text/text
 selfdrive/ui/text/text.c
 
+selfdrive/ui/qt/*.cc
+selfdrive/ui/qt/*.hpp
+
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
 selfdrive/camerad/bufs.h
