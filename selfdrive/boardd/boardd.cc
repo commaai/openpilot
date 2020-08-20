@@ -393,7 +393,7 @@ void hardware_control_thread() {
   SubMaster sm({"thermal", "frontFrame"});
 
   // Only control fan speed on UNO
-  if (panda->hw_type != cereal::HealthData::HwType::UNO || panda->hw_type != cereal::HealthData::HwType::DOS) return;
+  if (panda->hw_type != cereal::HealthData::HwType::UNO && panda->hw_type != cereal::HealthData::HwType::DOS) return;
 
   uint64_t last_front_frame_t = 0;
   uint16_t prev_fan_speed = 999;
