@@ -2,6 +2,7 @@
 import os
 import datetime
 import psutil
+import time
 from smbus2 import SMBus
 from cereal import log
 from common.android import ANDROID, get_network_type, get_network_strength
@@ -144,9 +145,6 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
 
 def thermald_thread():
-  # prevent LEECO from undervoltage
-  BATT_PERC_OFF = 10 if LEON else 3
-
   health_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected health frequency
 
   # now loop
@@ -402,15 +400,20 @@ def thermald_thread():
         off_ts = sec_since_boot()
         os.system('echo powersave > /sys/class/devfreq/soc:qcom,cpubw/governor')
 
-      # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
-      # more than a minute but we were running
-      if msg.thermal.batteryPercent < BATT_PERC_OFF and msg.thermal.batteryStatus == "Discharging" and \
-         started_seen and (sec_since_boot() - off_ts) > 60:
-        os.system('LD_LIBRARY_PATH="" svc power shutdown')
-
     # Offroad power monitoring
     pm.calculate(health)
     msg.thermal.offroadPowerUsage = pm.get_power_used()
+    msg.thermal.carBatteryCapacity = max(0, pm.get_car_battery_capacity())
+
+    # Check if we need to disable charging (handled by boardd)
+    msg.thermal.chargingDisabled = pm.should_disable_charging(health, off_ts)
+
+    # Check if we need to shut down
+    if pm.should_shutdown(health, off_ts, started_seen, LEON):
+      cloudlog.info(f"shutting device down, offroad since {off_ts}")
+      # TODO: add function for blocking cloudlog instead of sleep
+      time.sleep(10)
+      os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None

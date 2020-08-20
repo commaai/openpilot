@@ -2,16 +2,19 @@
 #include <assert.h>
 #include <map>
 #include <cmath>
+#include <iostream>
 #include "common/util.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
-
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 
 extern "C"{
 #include "common/glutil.h"
 }
+
+#include "paint.hpp"
+#include "sidebar.hpp"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 const mat3 intrinsic_matrix = (mat3){{
@@ -142,7 +145,7 @@ static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, N
 
 static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd) {
   const UIScene *scene = &s->scene;
-  const PathData path = scene->model.path;
+  const float *points = scene->path_points;
   const float *mpc_x_coords = &scene->mpc_x[0];
   const float *mpc_y_coords = &scene->mpc_y[0];
 
@@ -150,6 +153,7 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
   float lead_d = scene->lead_data[0].getDRel()*2.;
   float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
                             :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
+  path_height = fmin(path_height, scene->model.getPath().getValidLen());
   pvd->cnt = 0;
   // left side up
   for (int i=0; i<=path_height; i++) {
@@ -160,7 +164,7 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
       py = mpc_y_coords[i] - off;
     } else {
       px = lerp(i+1.0, i, i/100.0);
-      py = path.points[i] - off;
+      py = points[i] - off;
     }
 
     vec4 p_car_space = (vec4){{px, py, 0., 1.}};
@@ -182,11 +186,14 @@ static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd)
       py = mpc_y_coords[i] + off;
     } else {
       px = lerp(i+1.0, i, i/100.0);
-      py = path.points[i] + off;
+      py = points[i] + off;
     }
 
     vec4 p_car_space = (vec4){{px, py, 0., 1.}};
     vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
+    if (p_full_frame.v[0] < 0. || p_full_frame.v[1] < 0.) {
+      continue;
+    }
     pvd->v[pvd->cnt].x = p_full_frame.v[0];
     pvd->v[pvd->cnt].y = p_full_frame.v[1];
     pvd->cnt += 1;
@@ -203,7 +210,6 @@ static void update_all_track_data(UIState *s) {
     update_track_data(s, true, &s->track_vertices[1]);
   }
 }
-
 
 static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
  if (pvd->cnt == 0) return;
@@ -286,7 +292,7 @@ static void update_lane_line_data(UIState *s, const float *points, float off, mo
     pvd->v[pvd->cnt].y = p_full_frame.v[1];
     pvd->cnt += 1;
   }
-  for (int i = rcount; i > 0; i--) {
+  for (int i = rcount - 1; i > 0; i--) {
     float px = (float)i;
     float py = points[i] + off;
     const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
@@ -299,38 +305,33 @@ static void update_lane_line_data(UIState *s, const float *points, float off, mo
   }
 }
 
-static void update_all_lane_lines_data(UIState *s, const PathData &path, model_path_vertices_data *pstart) {
-  update_lane_line_data(s, path.points, 0.025*path.prob, pstart, path.validLen);
-  float var = fmin(path.std, 0.7);
-  update_lane_line_data(s, path.points, -var, pstart + 1, path.validLen);
-  update_lane_line_data(s, path.points, var, pstart + 2, path.validLen);
+static void update_all_lane_lines_data(UIState *s, const cereal::ModelData::PathData::Reader &path, const float *points, model_path_vertices_data *pstart) {
+  update_lane_line_data(s, points, 0.025*path.getProb(), pstart, path.getValidLen());
+  update_lane_line_data(s, points, fmin(path.getStd(), 0.7), pstart + 1, path.getValidLen());
 }
 
-static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
+static void ui_draw_lane(UIState *s,  model_path_vertices_data *pstart, NVGcolor color) {
   ui_draw_lane_line(s, pstart, color);
   color.a /= 25;
   ui_draw_lane_line(s, pstart + 1, color);
-  ui_draw_lane_line(s, pstart + 2, color);
 }
 
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
   model_path_vertices_data *pvd = &s->model_path_vertices[0];
   if(s->sm->updated("model")) {
-    update_all_lane_lines_data(s, scene->model.left_lane, pvd);
-    update_all_lane_lines_data(s, scene->model.right_lane, pvd + MODEL_LANE_PATH_CNT);
+    update_all_lane_lines_data(s, scene->model.getLeftLane(), scene->left_lane_points, pvd);
+    update_all_lane_lines_data(s, scene->model.getRightLane(), scene->right_lane_points, pvd + MODEL_LANE_PATH_CNT);
   }
   // Draw left lane edge
   ui_draw_lane(
-      s, &scene->model.left_lane,
-      pvd,
-      nvgRGBAf(1.0, 1.0, 1.0, scene->model.left_lane.prob));
+      s, pvd,
+      nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLeftLane().getProb()));
 
   // Draw right lane edge
   ui_draw_lane(
-      s, &scene->model.right_lane,
-      pvd + MODEL_LANE_PATH_CNT,
-      nvgRGBAf(1.0, 1.0, 1.0, scene->model.right_lane.prob));
+      s, pvd + MODEL_LANE_PATH_CNT,
+      nvgRGBAf(1.0, 1.0, 1.0, scene->model.getRightLane().getProb()));
 
   if(s->sm->updated("radarState")) {
     update_all_track_data(s);
@@ -350,7 +351,7 @@ static void ui_draw_world(UIState *s) {
     return;
   }
 
-  const int inner_height = viz_w*9/16;
+  const int inner_height = float(viz_w) * vwp_h / vwp_w;
   const int ui_viz_rx = scene->ui_viz_rx;
   const int ui_viz_rw = scene->ui_viz_rw;
   const int ui_viz_ro = scene->ui_viz_ro;
@@ -360,10 +361,13 @@ static void ui_draw_world(UIState *s) {
 
   nvgTranslate(s->vg, ui_viz_rx+ui_viz_ro, box_y + (box_h-inner_height)/2.0);
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
-  nvgTranslate(s->vg, 240.0f, 0.0);
-  nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2);
+
+  float w = 1440.0f; // Why 1440?
+  nvgTranslate(s->vg, (vwp_w - w) / 2.0f, 0.0);
+
+  nvgTranslate(s->vg, -w / 2, -1080.0f / 2);
   nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, 1440.0f / s->rgb_width, 1080.0f / s->rgb_height);
+  nvgScale(s->vg, w / s->rgb_width, 1080.0f / s->rgb_height);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
@@ -516,7 +520,7 @@ static void ui_draw_vision_speed(UIState *s) {
 
   snprintf(speed_str, sizeof(speed_str), "%d", (int)speed);
   ui_draw_text(s->vg, viz_speed_x + viz_speed_w / 2, 240, speed_str, 96*2.5, COLOR_WHITE, s->font_sans_bold);
-  ui_draw_text(s->vg, viz_speed_x + viz_speed_w / 2, 320, s->is_metric?"kph":"mph", 36*2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
+  ui_draw_text(s->vg, viz_speed_x + viz_speed_w / 2, 320, s->is_metric?"km/h":"mph", 36*2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
 }
 
 static void ui_draw_vision_event(UIState *s) {

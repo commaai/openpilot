@@ -41,6 +41,7 @@ sudo apt-get update && sudo apt-get install -y \
     opencl-headers \
     python-dev \
     python-pip \
+    qt5-default \
     screen \
     sudo \
     vim \

@@ -162,8 +162,8 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   float prob;
   float valid_len;
 
-  // clamp to 5 and 192
-  valid_len = fmin(192, fmax(5, data[MODEL_PATH_DISTANCE*2]));
+  // clamp to 5 and MODEL_PATH_DISTANCE
+  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, data[MODEL_PATH_DISTANCE*2]));
   for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
     points_arr[i] = data[i] + offset;
     stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]) + 1e-6;

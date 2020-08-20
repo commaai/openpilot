@@ -12,7 +12,11 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 #include <atomic>
+
+#include <string>
+#include <sstream>
 #include <pthread.h>
+
 #include "nanovg.h"
 
 #include "common/mat.h"
@@ -20,6 +24,7 @@
 #include "common/visionimg.h"
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
+#include "common/params.h"
 #include "sound.hpp"
 
 #define STATUS_STOPPED 0
@@ -48,12 +53,19 @@
 //#define SHOW_SPEEDLIMIT 1
 //#define DEBUG_TURN
 
+// TODO: Detect dynamically
+#ifdef QCOM2
+const int vwp_w = 2160;
+#else
 const int vwp_w = 1920;
+#endif
+
 const int vwp_h = 1080;
 const int nav_w = 640;
 const int nav_ww= 760;
 const int sbr_w = 300;
 const int bdr_s = 30;
+
 const int box_x = sbr_w+bdr_s;
 const int box_y = bdr_s;
 const int box_w = vwp_w-sbr_w-(bdr_s*2);
@@ -75,7 +87,7 @@ const int home_btn_y = vwp_h - home_btn_h - 40;
 const int UI_FREQ = 30;   // Hz
 
 const int MODEL_PATH_MAX_VERTICES_CNT = 98;
-const int MODEL_LANE_PATH_CNT = 3;
+const int MODEL_LANE_PATH_CNT = 2;
 const int TRACK_POINTS_MAX_CNT = 50 * 2;
 
 const int SET_SPEED_NA = 255;
@@ -91,8 +103,6 @@ const uint8_t bg_colors[][4] = {
 typedef struct UIScene {
   int frontview;
   int fullview;
-
-  ModelData model;
 
   float mpc_x[50];
   float mpc_y[50];
@@ -126,6 +136,10 @@ typedef struct UIScene {
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
+  cereal::ModelData::Reader model;
+  float left_lane_points[MODEL_PATH_DISTANCE];
+  float path_points[MODEL_PATH_DISTANCE];
+  float right_lane_points[MODEL_PATH_DISTANCE];
 } UIScene;
 
 typedef struct {
@@ -241,12 +255,49 @@ typedef struct UIState {
   Sound sound;
 } UIState;
 
-// API
-void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, int va_color,
-                          const char* va_text1, const char* va_text2);
-void ui_draw(UIState *s);
-void ui_draw_sidebar(UIState *s);
-void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha);
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r = 0, int width = 0);
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r = 0);
-void ui_nvg_init(UIState *s);
+
+void ui_init(UIState *s);
+void ui_update(UIState *s);
+void ui_update_sizes(UIState *s);
+
+void* vision_connect_thread(void *args);
+void check_messages(UIState *s);
+void update_status(UIState *s, int status);
+
+
+int write_param_float(float param, const char* param_name, bool persistent_param = false);
+template <class T>
+int read_param(T* param, const char *param_name, bool persistent_param = false){
+  T param_orig = *param;
+  char *value;
+  size_t sz;
+
+  int result = read_db_value(param_name, &value, &sz, persistent_param);
+  if (result == 0){
+    std::string s = std::string(value, sz); // value is not null terminated
+    free(value);
+
+    // Parse result
+    std::istringstream iss(s);
+    iss >> *param;
+
+    // Restore original value if parsing failed
+    if (iss.fail()) {
+      *param = param_orig;
+      result = -1;
+    }
+  }
+  return result;
+}
+
+template <class T>
+int read_param_timeout(T* param, const char* param_name, int* timeout, bool persistent_param = false) {
+  int result = -1;
+  if (*timeout > 0){
+    (*timeout)--;
+  } else {
+    *timeout = 2 * UI_FREQ; // 0.5Hz
+    result = read_param(param, param_name, persistent_param);
+  }
+  return result;
+}
