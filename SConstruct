@@ -192,7 +192,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       QT_BASE + "include/QtDBus",
     ]
     qt_env["RPATH"] += [QT_BASE + "lib"]
-  if arch == "Darwin":
+  elif arch == "Darwin":
     qt_env['QTDIR'] = "/usr/local/opt/qt"
     QT_BASE = "/usr/local/opt/qt/"
     qt_dirs = [
