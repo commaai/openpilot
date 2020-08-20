@@ -303,7 +303,6 @@ SConscript(['selfdrive/controls/lib/longitudinal_mpc_model/SConscript'])
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
 
-SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
@@ -316,3 +315,6 @@ if arch == "aarch64":
   SConscript(['selfdrive/clocksd/SConscript'])
 else:
   SConscript(['tools/lib/index_log/SConscript'])
+
+if arch != "larch64":
+  SConscript(['selfdrive/ui/SConscript'])
