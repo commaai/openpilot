@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     opencl-headers \
     python-dev \
     python-pip \
+    qt5-default \
     sudo \
     wget \
   && rm -rf /var/lib/apt/lists/*
