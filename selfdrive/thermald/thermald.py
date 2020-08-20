@@ -1,23 +1,32 @@
 #!/usr/bin/env python3
-import os
 import datetime
-import psutil
+import os
 import time
+from collections import namedtuple
+
+import psutil
 from smbus2 import SMBus
-from cereal import log
-from common.android import ANDROID, get_network_type, get_network_strength
-from common.params import Params, put_nonblocking
-from common.realtime import sec_since_boot, DT_TRML
-from common.numpy_fast import clip, interp
-from common.filter_simple import FirstOrderFilter
-from selfdrive.version import terms_version, training_version, get_git_branch
-from selfdrive.swaglog import cloudlog
+
 import cereal.messaging as messaging
+from cereal import log
+from common.android import get_network_strength, get_network_type
+from common.filter_simple import FirstOrderFilter
+from common.numpy_fast import clip, interp
+from common.params import Params, put_nonblocking
+from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
-from selfdrive.thermald.power_monitoring import PowerMonitoring, get_battery_capacity, get_battery_status, \
-                                                get_battery_current, get_battery_voltage, get_usb_present
+from selfdrive.swaglog import cloudlog
+from selfdrive.thermald.power_monitoring import (PowerMonitoring,
+                                                 get_battery_capacity,
+                                                 get_battery_current,
+                                                 get_battery_status,
+                                                 get_battery_voltage,
+                                                 get_usb_present)
+from selfdrive.version import get_git_branch, terms_version, training_version
+
+ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'scale', 'bat_scale'])
 
 FW_SIGNATURE = get_expected_signature()
 
@@ -30,35 +39,41 @@ DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without inte
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
+EON = os.path.isfile('/EON')
+TICI = os.path.isfile('/TICI')
+
 LEON = False
 last_eon_fan_val = None
 
 
-def read_tz(x, clip=True):
-  if not ANDROID:
-    # we don't monitor thermal on PC
+def get_thermal_config():
+  if EON:
+    return ThermalConfig(cpu=(5, 7, 10, 12), gpu=(16,), mem=2, bat=29, ambient=25, scale=10, bat_scale=1000)
+  elif TICI:
+    return ThermalConfig(cpu=(1, 2, 3, 4, 5, 6, 7, 8), gpu=(48,49), mem=15, bat=None, abient=70, scale=1000, bat_scale=1)
+  else:
+    return ThermalConfig(cpu=(None,), gpu=(None,), mem=None, bat=None, ambient=None, scale=1, bat_scale=1)
+
+
+def read_tz(x):
+  if x is None:
     return 0
+
   try:
     with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
-      ret = int(f.read())
-      if clip:
-        ret = max(0, ret)
+      return int(f.read())
   except FileNotFoundError:
     return 0
 
-  return ret
 
-
-def read_thermal():
+def read_thermal(thermal_config):
+  s = thermal_config.scale
   dat = messaging.new_message('thermal')
-  dat.thermal.cpu0 = read_tz(5)
-  dat.thermal.cpu1 = read_tz(7)
-  dat.thermal.cpu2 = read_tz(10)
-  dat.thermal.cpu3 = read_tz(12)
-  dat.thermal.mem = read_tz(2)
-  dat.thermal.gpu = read_tz(16)
-  dat.thermal.bat = read_tz(29)
-  dat.thermal.pa0 = read_tz(25)
+  dat.thermal.cpuTemps = [read_tz(z) / s for z in thermal_config.cpu]
+  dat.thermal.gpuTemps = [read_tz(z) / s for z in thermal_config.gpu]
+  dat.thermal.mem = read_tz(thermal_config.mem) / s
+  dat.thermal.ambient = read_tz(thermal_config.ambient) / s
+  dat.thermal.bat = read_tz(thermal_config.bat) / thermal_config.bat_scale
   return dat
 
 
@@ -119,15 +134,12 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
 
-  if new_speed_h > fan_speed:
-    # update speed if using the high thresholds results in fan speed increment
+  if new_speed_h > fan_speed:  # update speed if using the high thresholds results in fan speed increment
     fan_speed = new_speed_h
-  elif new_speed_l < fan_speed:
-    # update speed if using the low thresholds results in fan speed decrement
+  elif new_speed_l < fan_speed:  # update speed if using the low thresholds results in fan speed decrement
     fan_speed = new_speed_l
 
-  if bat_temp < _BAT_TEMP_THERSHOLD:
-    # no max fan speed unless battery is hot
+  if bat_temp < _BAT_TEMP_THERSHOLD:  # no max fan speed unless battery is hot
     fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
 
   set_eon_fan(fan_speed // 16384)
@@ -183,11 +195,13 @@ def thermald_thread():
   pm = PowerMonitoring()
   no_panda_cnt = 0
 
+  thermal_config = get_thermal_config()
+
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
     location = messaging.recv_sock(location_sock)
     location = location.gpsLocation if location else None
-    msg = read_thermal()
+    msg = read_thermal(thermal_config)
 
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
@@ -208,7 +222,7 @@ def thermald_thread():
         is_uno = health.health.hwType == log.HealthData.HwType.uno
         has_relay = health.health.hwType in [log.HealthData.HwType.blackPanda, log.HealthData.HwType.uno, log.HealthData.HwType.dos]
 
-        if is_uno or not ANDROID:
+        if (not EON) or is_uno:
           cloudlog.info("Setting up UNO fan handler")
           handle_fan = handle_fan_uno
         else:
@@ -243,7 +257,7 @@ def thermald_thread():
     msg.thermal.usbOnline = get_usb_present()
 
     # Fake battery levels on uno for frame
-    if is_uno:
+    if (not EON) or is_uno:
       msg.thermal.batteryPercent = 100
       msg.thermal.batteryStatus = "Charging"
       msg.thermal.bat = 0
@@ -251,14 +265,9 @@ def thermald_thread():
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
 
     # TODO: add car battery voltage check
-    max_cpu_temp = cpu_temp_filter.update(
-      max(msg.thermal.cpu0,
-          msg.thermal.cpu1,
-          msg.thermal.cpu2,
-          msg.thermal.cpu3) / 10.0)
-
-    max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
-    bat_temp = msg.thermal.bat / 1000.
+    max_cpu_temp = cpu_temp_filter.update(max(msg.thermal.cpuTemps))
+    max_comp_temp = max(max_cpu_temp, msg.thermal.mem, max(msg.thermal.gpuTemps))
+    bat_temp = msg.thermal.bat
 
     if handle_fan is not None:
       fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
