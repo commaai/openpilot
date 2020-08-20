@@ -192,7 +192,17 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       QT_BASE + "include/QtDBus",
     ]
     qt_env["RPATH"] += [QT_BASE + "lib"]
-
+  if arch == "Darwin":
+    qt_env['QTDIR'] = "/usr/local/opt/qt"
+    QT_BASE = "/usr/local/opt/qt/"
+    qt_dirs = [
+      QT_BASE + "include/",
+      QT_BASE + "include/QtWidgets",
+      QT_BASE + "include/QtGui",
+      QT_BASE + "include/QtCore",
+      QT_BASE + "include/QtDBus",
+    ]
+    qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
   else:
     qt_dirs = [
       f"/usr/include/{arch}-linux-gnu/qt5",
