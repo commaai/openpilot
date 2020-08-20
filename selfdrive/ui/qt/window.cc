@@ -31,6 +31,13 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   setLayout(main_layout);
   QObject::connect(glWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
+
+  setStyleSheet(R"(
+    * {
+      color: white;
+      background-color: #072339;
+    }
+  )");
 }
 
 void MainWindow::openSettings(){

@@ -21,6 +21,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   QHBoxLayout *hlayout = new QHBoxLayout;
   QVBoxLayout *vlayout = new QVBoxLayout;
 
+  hlayout->addSpacing(25);
   if (icon.length()){
     QPixmap pix(icon);
     QLabel *icon = new QLabel();
@@ -30,7 +31,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   } else{
     hlayout->addSpacing(100);
   }
-  hlayout->addSpacing(50);
+  hlayout->addSpacing(25);
 
   checkbox = new QCheckBox(title);
   QLabel *label = new QLabel(description);
@@ -41,7 +42,6 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   hlayout->addLayout(vlayout);
 
   setLayout(hlayout);
-  setFrameStyle(QFrame::Box | QFrame::Raised);
 
   auto p = read_db_bytes(param.toStdString().c_str());
   if (p.size()){
@@ -51,6 +51,9 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   setStyleSheet(R"(
     QCheckBox { font-size: 40px }
     QLabel { font-size: 20px }
+    * {
+      background-color: #114265;
+    }
   )");
 
   QObject::connect(checkbox, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
@@ -97,14 +100,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
                                             ));
   settings_list->addWidget(new ParamsToggle("CommunityFeaturesToggle",
                                             "Enable Community Features",
-                                            "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features.{'\n",
+                                            "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
                                             "../assets/offroad/icon_shell.png"
                                             ));
 
   settings_list->setSpacing(25);
 
   container->setLayout(settings_list);
-  container->setFixedWidth(1250);
+  container->setFixedWidth(1650);
 
   QScrollArea *scrollArea = new QScrollArea;
   scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -115,7 +118,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QScroller* qs = QScroller::scroller(scrollArea);
   qs->setScrollerProperties(sp);
-
 
   QHBoxLayout *main_layout = new QHBoxLayout;
   main_layout->addSpacing(50);
