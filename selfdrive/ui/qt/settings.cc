@@ -49,8 +49,8 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   }
 
   setStyleSheet(R"(
-    QCheckBox { font-size: 40px }
-    QLabel { font-size: 20px }
+    QCheckBox { font-size: 70px }
+    QLabel { font-size: 40px }
     * {
       background-color: #114265;
     }
@@ -135,6 +135,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   setStyleSheet(R"(
     QPushButton { font-size: 40px }
+    * {
+      color: white;
+      background-color: #072339;
+    }
   )");
-
 }
