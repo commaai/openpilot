@@ -33,6 +33,7 @@ import time
 import threading
 from pathlib import Path
 
+from common.android import ANDROID
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
@@ -175,7 +176,7 @@ def init_overlay():
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
 
-  for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED, FINALIZED]:
+  for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED]:
     os.mkdir(dirname, 0o755)
 
   if not os.lstat(BASEDIR).st_dev == os.lstat(OVERLAY_MERGED).st_dev:
@@ -203,15 +204,52 @@ def finalize_update():
   # Remove the update ready flag and any old updates
   cloudlog.info("creating finalized version of the overlay")
   set_consistent_flag(False)
-  shutil.rmtree(FINALIZED)
 
+  # TODO: check for changes in lower dir. also lock lower and upper dir?
   # Copy the merged overlay view and set the update ready flag
+  if os.path.exists(FINALIZED):
+    shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
-
-  # TODO: check for changes in lower dir
 
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
+
+
+def handle_neos_update(wait_helper):
+  with open(NEOS_VERSION, "r") as f:
+    cur_neos = f.read().strip()
+
+  updated_neos = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
+                       echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
+
+  cloudlog.info(f"NEOS version check: {cur_neos} vs {updated_neos}")
+  if cur_neos == updated_neos:
+    return
+
+  cloudlog.info(f"Beginning background download for NEOS {updated_neos}")
+  set_offroad_alert("Offroad_NeosUpdate", True)
+
+  updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
+  update_manifest = f"file://{OVERLAY_MERGED}/installer/updater/update.json"
+
+  neos_downloaded = False
+  start_time = time.monotonic()
+  # Try to download for one day
+  while not neos_downloaded and not wait_helper.shutdown and \
+        (time.monotonic() - start_time < 60*60*24):
+    wait_helper.ready_event.clear()
+    try:
+      run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
+      neos_downloaded = True
+    except subprocess.CalledProcessError:
+      cloudlog.info("NEOS background download failed, retrying")
+      wait_helper.sleep(120)
+
+  # If the download failed, we'll show the alert again when we retry
+  set_offroad_alert("Offroad_NeosUpdate", False)
+  if not neos_downloaded:
+    raise Exception("Failed to download NEOS update")
+  cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
 
 
 def check_for_update():
@@ -248,40 +286,8 @@ def fetch_update(wait_helper):
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-      # Download the accompanying NEOS version if it doesn't match the current version
-      with open(NEOS_VERSION, "r") as f:
-        cur_neos = f.read().strip()
-
-      updated_neos = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
-                           echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
-
-      cloudlog.info(f"NEOS version check: {cur_neos} vs {updated_neos}")
-      if cur_neos != updated_neos:
-        cloudlog.info(f"Beginning background download for NEOS {updated_neos}")
-
-        set_offroad_alert("Offroad_NeosUpdate", True)
-        updater_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater")
-        update_manifest = f"file://{OVERLAY_MERGED}/installer/updater/update.json"
-
-        neos_downloaded = False
-        start_time = time.monotonic()
-        # Try to download for one day
-        while (time.monotonic() - start_time < 60*60*24) and not wait_helper.shutdown:
-          wait_helper.ready_event.clear()
-          try:
-            run([updater_path, "bgcache", update_manifest], OVERLAY_MERGED, low_priority=True)
-            neos_downloaded = True
-            break
-          except subprocess.CalledProcessError:
-            cloudlog.info("NEOS background download failed, retrying")
-            wait_helper.sleep(120)
-
-        # If the download failed, we'll show the alert again when we retry
-        set_offroad_alert("Offroad_NeosUpdate", False)
-        if not neos_downloaded:
-          raise Exception("Failed to download NEOS update")
-
-        cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
+      if ANDROID:
+        handle_neos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
     finalize_update()
@@ -352,7 +358,6 @@ def main():
 
         if not update_ready and os.path.isdir(NEOSUPDATE_DIR):
           shutil.rmtree(NEOSUPDATE_DIR)
-
     except subprocess.CalledProcessError as e:
       cloudlog.event(
         "update process failed",
