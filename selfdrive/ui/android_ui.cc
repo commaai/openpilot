@@ -14,11 +14,9 @@
 #include "paint.hpp"
 
 // Includes for light sensor
-#ifdef QCOM
 #include <cutils/properties.h>
 #include <hardware/sensors.h>
 #include <utils/Timers.h>
-#endif
 
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
@@ -29,7 +27,6 @@ static void set_do_exit(int sig) {
 static void* light_sensor_thread(void *args) {
   set_thread_name("light_sensor");
 
-#ifdef QCOM
   int err;
   UIState *s = (UIState*)args;
   s->light_sensor = 0.0;
@@ -71,7 +68,6 @@ static void* light_sensor_thread(void *args) {
 fail:
   LOGE("LIGHT SENSOR IS MISSING");
   s->light_sensor = 255;
-#endif
 
   return NULL;
 }
@@ -97,7 +93,6 @@ static void enable_event_processing(bool yes) {
 }
 
 static void set_awake(UIState *s, bool awake) {
-#ifdef QCOM
   if (awake) {
     // 30 second timeout
     s->awake_timeout = 30*UI_FREQ;
@@ -117,10 +112,6 @@ static void set_awake(UIState *s, bool awake) {
       enable_event_processing(false);
     }
   }
-#else
-  // computer UI doesn't sleep
-  s->awake = true;
-#endif
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
@@ -153,7 +144,6 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void update_offroad_layout_state(UIState *s) {
-#ifdef QCOM
   static int timeout = 0;
   static bool prev_collapsed = false;
   static cereal::UiLayoutState::App prev_app = cereal::UiLayoutState::App::NONE;
@@ -173,7 +163,6 @@ static void update_offroad_layout_state(UIState *s) {
     prev_app = s->active_app;
     timeout = 2 * UI_FREQ;
   }
-#endif
 }
 
 int main(int argc, char* argv[]) {
