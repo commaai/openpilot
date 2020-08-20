@@ -156,6 +156,7 @@ env = Environment(
     "#selfdrive/camerad/include",
     "#selfdrive/loggerd/include",
     "#selfdrive/modeld",
+    "#selfdrive/ui",
     "#cereal/messaging",
     "#cereal",
     "#opendbc/can",
@@ -175,6 +176,52 @@ env = Environment(
     "#phonelibs",
   ]
 )
+
+qt_env = None
+if arch in ["x86_64", "Darwin", "larch64"]:
+  qt_env = env.Clone()
+
+  if arch == "larch64":
+    qt_env['QTDIR'] = "/usr/local/Qt-5.15.0"
+    QT_BASE = "/usr/local/Qt-5.15.0/"
+    qt_dirs = [
+      QT_BASE + "include/",
+      QT_BASE + "include/QtWidgets",
+      QT_BASE + "include/QtGui",
+      QT_BASE + "include/QtCore",
+      QT_BASE + "include/QtDBus",
+    ]
+    qt_env["RPATH"] += [QT_BASE + "lib"]
+  if arch == "Darwin":
+    qt_env['QTDIR'] = "/usr/local/opt/qt"
+    QT_BASE = "/usr/local/opt/qt/"
+    qt_dirs = [
+      QT_BASE + "include/",
+      QT_BASE + "include/QtWidgets",
+      QT_BASE + "include/QtGui",
+      QT_BASE + "include/QtCore",
+      QT_BASE + "include/QtDBus",
+    ]
+    qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
+  else:
+    qt_dirs = [
+      f"/usr/include/{arch}-linux-gnu/qt5",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtWidgets",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtGui",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtCore",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtDBus",
+    ]
+
+  qt_env.Tool('qt')
+  qt_env['CPPPATH'] += qt_dirs
+  qt_flags = [
+    "-D_REENTRANT",
+    "-DQT_NO_DEBUG",
+    "-DQT_WIDGETS_LIB",
+    "-DQT_GUI_LIB",
+    "-DQT_CORE_LIB"
+  ]
+  qt_env['CXXFLAGS'] += qt_flags
 
 if os.environ.get('SCONS_CACHE'):
   cache_dir = '/tmp/scons_cache'
@@ -214,7 +261,7 @@ def abspath(x):
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -261,6 +308,7 @@ SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/locationd/models/SConscript'])
+
 
 if arch == "aarch64":
   SConscript(['selfdrive/logcatd/SConscript'])

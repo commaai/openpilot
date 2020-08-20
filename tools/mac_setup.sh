@@ -20,6 +20,7 @@ brew install capnp \
              libtool \
              llvm \
              pyenv \
+             qt5 \
              zeromq
 
 # Detect shell and pick correct RC file.
