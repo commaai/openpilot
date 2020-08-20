@@ -122,12 +122,6 @@ def set_params(new_version, failed_count, exception):
     params.put("UpdateAvailable", "1")
 
 
-def dismount_overlay():
-  if os.path.ismount(OVERLAY_MERGED):
-    cloudlog.error("unmounting existing overlay")
-    run(["umount", "-l", OVERLAY_MERGED])
-
-
 def setup_git_options(cwd):
   # We sync FS object atimes (which NEOS doesn't use) and mtimes, but ctimes
   # are outside user control. Make sure Git is set up to ignore system ctimes,
@@ -153,6 +147,12 @@ def setup_git_options(cwd):
       run(["git", "config", option, value], cwd)
 
 
+def dismount_overlay():
+  if os.path.ismount(OVERLAY_MERGED):
+    cloudlog.error("unmounting existing overlay")
+    run(["umount", "-l", OVERLAY_MERGED])
+
+
 def init_overlay():
 
   overlay_init_file = Path(os.path.join(BASEDIR, ".overlay_init"))
@@ -163,7 +163,7 @@ def init_overlay():
     git_dir_path = os.path.join(BASEDIR, ".git")
     new_files = run(["find", git_dir_path, "-newer", str(overlay_init_file)])
     if not len(new_files.splitlines()):
-      # Return since a valid overlay already exists
+      # A valid overlay already exists
       return
     else:
       cloudlog.info(".git directory changed, recreating overlay")
@@ -179,7 +179,7 @@ def init_overlay():
   for dirname in [STAGING_ROOT, OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED]:
     os.mkdir(dirname, 0o755)
 
-  if not os.lstat(BASEDIR).st_dev == os.lstat(OVERLAY_MERGED).st_dev:
+  if os.lstat(BASEDIR).st_dev != os.lstat(OVERLAY_MERGED).st_dev:
     raise RuntimeError("base and overlay merge directories are on different filesystems; not valid for overlay FS!")
 
   # Leave a timestamped canary in BASEDIR to check at startup. The device clock
@@ -205,12 +205,12 @@ def finalize_update():
   cloudlog.info("creating finalized version of the overlay")
   set_consistent_flag(False)
 
-  # TODO: check for changes in lower dir. also lock lower and upper dir?
   # Copy the merged overlay view and set the update ready flag
   if os.path.exists(FINALIZED):
     shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
+  # TODO: check for changes in lower dir. also lock lower and upper dir?
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
