@@ -12,7 +12,7 @@ private:
   QCheckBox *checkbox;
   QString param;
 public:
-  explicit ParamsToggle(QString param, QString title, QString description, QWidget *parent = 0);
+  explicit ParamsToggle(QString param, QString title, QString description, QString icon, QWidget *parent = 0);
 public slots:
   void checkboxClicked(int state);
 };
