@@ -111,6 +111,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QScrollArea *scrollArea = new QScrollArea;
   scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   scrollArea->setWidget(container);
 
   QScrollerProperties sp;
@@ -125,6 +126,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QPushButton * button = new QPushButton("Close");
   main_layout->addWidget(button);
+  main_layout->addSpacing(20);
 
   setLayout(main_layout);
 
