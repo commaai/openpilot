@@ -53,7 +53,7 @@ RUN dpkg --add-architecture i386 && \
     rm -rf /var/lib/apt/lists/*
 
 RUN add-apt-repository ppa:team-gcc-arm-embedded/ppa -y && \
-    apt-get update && apt-get install && \
+    apt-get update && apt-get install -y --no-install-recommends \
     apt-get install gcc-arm-none-eabi && \
     rm -rf /var/lib/apt/lists/*
 
