@@ -1,24 +1,89 @@
-FROM commaai/openpilotci:latest
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
+FROM ubuntu:16.04 as glvnd
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         ca-certificates \
         make \
-        screen \
-        autoconf \
         automake \
+        autoconf \
         libtool \
         pkg-config \
+        python \
         libxext-dev \
         libx11-dev \
-        cpio \
-        libpng16-16 \
         x11proto-gl-dev && \
     rm -rf /var/lib/apt/lists/*
 
-ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
+ARG LIBGLVND_VERSION
+
+WORKDIR /opt/libglvnd
+RUN git clone --branch="v1.0.0" https://github.com/NVIDIA/libglvnd.git . && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr/local --libdir=/usr/local/lib/x86_64-linux-gnu && \
+    make -j10 install-strip && \
+    find /usr/local/lib/x86_64-linux-gnu -type f -name 'lib*.la' -delete
+
+RUN dpkg --add-architecture i386 && \
+    apt-get update && apt-get install -y --no-install-recommends \
+        gcc-multilib \
+        libxext-dev:i386 \
+        libx11-dev:i386 && \
+    rm -rf /var/lib/apt/lists/*
+
+# 32-bit libraries
+RUN make distclean && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr/local --libdir=/usr/local/lib/i386-linux-gnu --host=i386-linux-gnu "CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32" && \
+    make -j10 install-strip && \
+    find /usr/local/lib/i386-linux-gnu -type f -name 'lib*.la' -delete
+
+
+
+FROM commaai/openpilotci:latest
+
+
+RUN dpkg --add-architecture i386 && \
+    apt-get update && apt-get install -y --no-install-recommends \
+        libxau6 libxau6:i386 \
+        libxdmcp6 libxdmcp6:i386 \
+        libxcb1 libxcb1:i386 \
+        libxext6 libxext6:i386 \
+        libx11-6 libx11-6:i386 && \
+    rm -rf /var/lib/apt/lists/*
+
+# nvidia-container-runtime
+ENV NVIDIA_VISIBLE_DEVICES \
+        ${NVIDIA_VISIBLE_DEVICES:-all}
+ENV NVIDIA_DRIVER_CAPABILITIES \
+        ${NVIDIA_DRIVER_CAPABILITIES:+$NVIDIA_DRIVER_CAPABILITIES,}graphics,compat32,utility
+
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+# Required for non-glvnd setups.
+ENV LD_LIBRARY_PATH /usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+
+
+COPY --from=glvnd /usr/local/lib/x86_64-linux-gnu /usr/local/lib/x86_64-linux-gnu
+COPY --from=glvnd /usr/local/lib/i386-linux-gnu /usr/local/lib/i386-linux-gnu
+
+#COPY 10_nvidia.json /usr/local/share/glvnd/egl_vendor.d/10_nvidia.json
+
+RUN echo '/usr/local/lib/x86_64-linux-gnu' >> /etc/ld.so.conf.d/glvnd.conf && \
+    echo '/usr/local/lib/i386-linux-gnu' >> /etc/ld.so.conf.d/glvnd.conf && \
+    ldconfig
+
+ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        screen \
+        cpio \
+        libpng16-16 && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /tmp/opencl && \
     cd /tmp/opencl && \
@@ -35,19 +100,17 @@ RUN mkdir /tmp/opencl && \
     ./install.sh -s config && \
     rm -rf /tmp/opencl
 
-RUN git clone --branch="master" https://github.com/NVIDIA/libglvnd.git tmp/libglvnd && \
-    cd tmp/libglvnd && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr/local --libdir=/usr/local/lib/x86_64-linux-gnu && \
-    make -j10 install-strip && \
-    find /usr/local/lib/x86_64-linux-gnu -type f -name 'lib*.la' -delete && \
-    ls
-    # rm -rf tmp/libglvnd
 
-RUN echo '/usr/local/lib/x86_64-linux-gnu' >> /etc/ld.so.conf.d/glvnd.conf && \
-    ldconfig
+ENV CARLA_VERSION 0.9.7
 
-RUN pip install --no-cache-dir tensorflow==2.2 && \
-    pip install -r https://raw.githubusercontent.com/carla-simulator/carla/0.9.7/PythonAPI/carla/requirements.txt
+RUN mkdir /tmp/carla && \
+    cd /tmp/carla && \
+    curl -O http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/CARLA_0.9.7.tar.gz && \
+    tar -xf CARLA_0.9.7.tar.gz && \
+    (easy_install PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true) && \
+    rm -rf /tmp/carla
+
+RUN pip install --no-cache-dir tensorflow==2.2
+
 
 COPY ./models /tmp/openpilot/models

@@ -93,7 +93,7 @@ def health_function():
     rk.keep_time()
 
 def fake_driver_monitoring():
-  pm = messaging.PubMaster(['driverState'])
+  pm = messaging.PubMaster(['driverState','dMonitoringState'])
   while 1:
 
     # dmonitoringmodeld output
