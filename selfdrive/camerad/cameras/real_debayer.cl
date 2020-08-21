@@ -1,8 +1,8 @@
 const __constant float3 color_correction[3] = {
   // Matrix from WBraw -> sRGBD65 (normalized)
-  (float3)(1,0,0),
-  (float3)(0,1,0),
-  (float3)(0,0,1),
+  (float3)(1.17898387, -0.19583185, -0.19881648),
+  (float3)(-0.03367879,  1.33692858, -0.02475203),
+  (float3)(-0.14530508, -0.14109673,  1.22356851),
 };
 // wait for 24 color calib
 //(float3)(0.44832666,  0.0163177 , -0.00434611),
@@ -39,7 +39,7 @@ float to_normal(uint x) {
   const float black_level = 0;
   pv = max(0.0, pv - black_level);
   pv /= (1024.0f - black_level);
-  pv = 2 * pv / (1.0f + pv); // reinhard
+  pv = 1.6*pv / (1.0f + 1.6*pv); // reinhard
   return pv;
 }
 
