@@ -326,10 +326,10 @@ void* frontview_thread(void *arg) {
         x_end = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
 #ifdef QCOM2
-      x_start = 0.1*s->rgb_front_width;
-      x_end = 0.9*s->rgb_front_width;
-      y_start = 0.1*s->rgb_front_height;
-      y_end = 0.9*s->rgb_front_height;
+      x_start = 0.15*s->rgb_front_width;
+      x_end = 0.85*s->rgb_front_width;
+      y_start = 0.15*s->rgb_front_height;
+      y_end = 0.85*s->rgb_front_height;
 #endif
       uint32_t lum_binning[256] = {0,};
       for (int y = y_start; y < y_end; ++y) {
@@ -547,8 +547,8 @@ void* wideview_thread(void *arg) {
 
     // auto exposure over big box
     const int exposure_x = 120*2;//290;
-    const int exposure_y = 180*2;//282 + 40; // TODO: fix this? should not use med imo
-    const int exposure_height = 180*2;// 314;
+    const int exposure_y = 300;//282 + 40; // TODO: fix this? should not use med imo
+    const int exposure_height = 600;// 314;
     const int exposure_width = 720*2;//560;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
@@ -873,8 +873,8 @@ void* processing_thread(void *arg) {
 
     // auto exposure over big box
     const int exposure_x = 120*2;
-    const int exposure_y = 180*2;// + 40;
-    const int exposure_height = 180*2;// 314;
+    const int exposure_y = 300;// + 40;
+    const int exposure_height = 300*2;// 314;
     const int exposure_width = 720*2;//560;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
