@@ -20,10 +20,10 @@ def dmonitoringd_thread(sm=None, pm=None):
   if sm is None:
     sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model'])
 
-  params = Params()
+  is_rhd = Params().get("IsRHD")
+  offroad = Params().get("IsOffroad") == b"1"
 
   driver_status = DriverStatus()
-  is_rhd = params.get("IsRHD")
   driver_status.is_rhd_region = is_rhd == b"1"
   driver_status.is_rhd_region_checked = is_rhd is not None
 
@@ -39,7 +39,6 @@ def dmonitoringd_thread(sm=None, pm=None):
 
   v_cruise_last = 0
   driver_engaged = False
-  offroad = params.get("IsOffroad") == b"1"
 
   # 10Hz <- dmonitoringmodeld
   while True:
@@ -56,7 +55,6 @@ def dmonitoringd_thread(sm=None, pm=None):
         driver_status.update(Events(), True, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
       v_cruise_last = v_cruise
 
-    # Get model meta
     if sm.updated['model']:
       driver_status.set_policy(sm['model'])
 
