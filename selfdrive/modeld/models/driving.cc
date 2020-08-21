@@ -43,7 +43,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
   s->m = new DefaultRunModel("../../models/supercombo.dlc", s->output, output_size, USE_GPU_RUNTIME);
 
 #ifdef NOSCREEN
-  zsock_t *yuv_sock = zsock_new_push("tcp://192.168.2.221:7769");
+  zsock_t *yuv_sock = zsock_new_push("tcp://192.168.3.4:7769");
   assert(yuv_sock);
   s->yuv_sock = yuv_sock;
 #endif
