@@ -28,12 +28,13 @@ typedef struct CameraState {
   TBuffer camera_tb;
 
   int frame_size;
-  float digital_gain;
-  int digital_gain_pre;
+  //float digital_gain;
+  //int digital_gain_pre;
   float analog_gain_frac;
   uint16_t analog_gain;
   uint8_t dc_opstate;
   bool dc_gain_enabled;
+  bool quad_hdr;
   int exposure_time;
 
   mat3 transform;
