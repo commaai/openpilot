@@ -1,6 +1,6 @@
-struct i2c_random_wr_payload start_reg_array[] = {{0x301a, 0x1c}};
+struct i2c_random_wr_payload start_reg_array[] = {{0x301a, 0x91c}};
 //struct i2c_random_wr_payload stop_reg_array[] = {{0x301a, 0x10d8}};
-struct i2c_random_wr_payload stop_reg_array[] = {{0x301a, 0x18}};;
+struct i2c_random_wr_payload stop_reg_array[] = {{0x301a, 0x918}};;
 
 struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x0018}, // RESET_REGISTER
@@ -313,7 +313,6 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30CE, 0x0120},
   {0x340A, 0xE6}, // E6 // 0000 1110 0110
   {0x340C, 0x802}, // 2 // 0000 0000 0010
-  // {0x301A, 0x0100}, // RESET_REGISTER
 
   // FPS = 88e6 / 0x09C4 / 0x06E0 = 20
   {0x300C, 0x09B4}, // LINE_LENGTH_PCK_ 9B4
@@ -338,10 +337,10 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x31B8, 0x3047}, // RESERVED_MFR_31B8
   {0x31BA, 0x0186}, // RESERVED_MFR_31BA
   {0x31BC, 0x0805}, // RESERVED_MFR_31BC
-  {0x301A, 0x091C}, // RESET_REGISTER
+  {0x301A, 0x01C}, // RESET_REGISTER
 
   // HDR Settings
-  {0x3082, 0x000C}, // OPERATION_MODE_CTRL
+  {0x3082, 0x0004}, // OPERATION_MODE_CTRL
   {0x3238, 0x0222}, // EXPOSURE_RATIO
   {0x3014, 0x098E}, // FINE_INTEGRATION_TIME_
   {0x321E, 0x098E}, // FINE_INTEGRATION_TIME2
@@ -359,16 +358,16 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
    // Initial Gains
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
   {0x3366, 0x7777}, // ANALOG_GAIN
-  //{0x3060, 0xAAAA}, // ANALOG_COLOR_GAIN
   {0x3060, 0xBBBB}, // ANALOG_COLOR_GAIN
-  {0x305A, 0x00C4}, // RED_GAIN 75
-  {0x3058, 0x00B1}, // BLUE_GAIN FA
+  {0x305A, 0x00C4}, // RED_GAIN
+  {0x3058, 0x00B1}, // BLUE_GAIN
   {0x3056, 0x009A}, // GREEN1_GAIN
   {0x305C, 0x009A}, // GREEN2_GAIN
   {0x3022, 0x00}, // GROUPED_PARAMETER_HOLD_
 
   // Initial Integration Time
   {0x3012, 0x256},
+
 };
 
 struct i2c_random_wr_payload poke_array_ov7750[] = {
