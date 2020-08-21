@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from time import time, sleep
 
-H, W = (604*2//4, 964*2//4)
+H, W = (604*2//6, 964*2//6)
 # H, W = (604, 964)
 
 cam_bufs = np.zeros((3,H,W,3), dtype=np.uint8)
@@ -13,7 +13,7 @@ if __name__ == '__main__':
   import zmq
   context = zmq.Context()
   socket = context.socket(zmq.PULL)
-  socket.bind("tcp://192.168.2.191:7768")
+  socket.bind("tcp://192.168.3.4:7768")
   while True:
     try:
       message = socket.recv()
