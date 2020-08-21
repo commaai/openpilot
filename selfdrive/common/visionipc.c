@@ -192,5 +192,5 @@ void visionstream_destroy(VisionStream *s) {
     }
   }
   if (s->bufs) free(s->bufs);
-  if (s->ipc_fd >=0) close(s->ipc_fd);
+  if (s->ipc_fd >= 0) close(s->ipc_fd);
 }
