@@ -104,18 +104,26 @@ void GLWindow::mousePressEvent(QMouseEvent *e) {
 }
 
 
-GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
-  unsigned int texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img->width, img->height, 0, GL_RGB, GL_UNSIGNED_BYTE, *pph);
+/* HACKS */
+bool Sound::init(int volume) { return true; }
+bool Sound::play(AudibleAlert alert) { printf("play sound: %d\n", (int)alert); return true; }
+void Sound::stop() {}
+void Sound::setVolume(int volume) {}
+Sound::~Sound() {}
+
+EGLImageTexture::EGLImageTexture(const VisionImg &img, void *addr) {
+  assert((img.size % img.stride) == 0);
+  assert((img.stride % img.bpp) == 0);
+  glGenTextures(1, &frame_tex);
+  glBindTexture(GL_TEXTURE_2D, frame_tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, addr);
   glGenerateMipmap(GL_TEXTURE_2D);
-  *pkhr = (EGLImageKHR)1; // not NULL
-  return texture;
+
+  bindTexture(frame_tex);
 }
 
-void visionimg_destroy_gl(EGLImageKHR khr, void *ph) {
-  // empty
+EGLImageTexture::~EGLImageTexture() {
+  glDeleteTextures(1, &frame_tex);
 }
 
 FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,

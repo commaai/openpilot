@@ -65,11 +65,10 @@ VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf) {
     .bpp = 3,
   };
 }
-
+#ifdef QCOM
 EGLImageTexture::EGLImageTexture(const VisionImg &img, void *addr) {
   assert((img.size % img.stride) == 0);
   assert((img.stride % img.bpp) == 0);
-#ifdef QCOM
   int format = HAL_PIXEL_FORMAT_RGB_888;
   private_handle = new private_handle_t(
       img.fd, img.size, private_handle_t::PRIV_FLAGS_USES_ION | private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
@@ -91,29 +90,15 @@ EGLImageTexture::EGLImageTexture(const VisionImg &img, void *addr) {
   glGenTextures(1, &frame_tex);
   glBindTexture(GL_TEXTURE_2D, frame_tex);
   glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, img_khr);
-#else
-  glGenTextures(1, &frame_tex);
-  glBindTexture(GL_TEXTURE_2D, frame_tex);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, addr);
-  glGenerateMipmap(GL_TEXTURE_2D);
-#endif
 
-  glBindTexture(GL_TEXTURE_2D, frame_tex);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-  // BGR
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+  bindTexture(frame_tex);
 }
 
 EGLImageTexture::~EGLImageTexture() {
   glDeleteTextures(1, &frame_tex);
-#ifdef QCOM
   EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   assert(display != EGL_NO_DISPLAY);
   eglDestroyImageKHR(display, img_khr);
   delete (private_handle_t *)private_handle;
-#endif
 }
+#endif
