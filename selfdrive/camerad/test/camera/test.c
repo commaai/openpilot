@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "camera_qcom.h"
+// TODO: add qcom2 test
 
 bool do_exit = false;
 

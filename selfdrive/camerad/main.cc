@@ -1648,7 +1648,11 @@ int main(int argc, char *argv[]) {
   assert(s->thumbnail_sock != NULL);
 #endif
 
+#ifndef QCOM2
+  cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0]);
+#else
   cameras_open(&s->cameras, &s->camera_bufs[0], &s->focus_bufs[0], &s->stats_bufs[0], &s->front_camera_bufs[0], &s->wide_camera_bufs[0]);
+#endif
 
   party(s);
 
