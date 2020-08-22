@@ -26,6 +26,9 @@ class Analyzer(ast.NodeVisitor):
     self.generic_visit(node)
 
 tlns = 0
+carlns = 0
+scriptlns = 0
+testlns = 0
 for f in sorted(pyf):
   if f not in fouts:
     continue
@@ -35,7 +38,17 @@ for f in sorted(pyf):
   tree = ast.parse(src)
   Analyzer().visit(tree)
   print("%5d %s %s" % (lns, f, xbit))
-  tlns += lns
+  if 'test' in f:
+    testlns += lns
+  elif f.startswith('tools/') or f.startswith('scripts/') or f.startswith('selfdrive/debug'):
+    scriptlns += lns
+  elif f.startswith('selfdrive/car'):
+    carlns += lns
+  else:
+    tlns += lns
 
-print("%d lines of parsed openpilot python" % tlns)
+print("%d lines of openpilot python" % tlns)
+print("%d lines of car ports" % carlns)
+print("%d lines of tools/scripts/debug" % scriptlns)
+print("%d lines of tests" % testlns)
 #print(sorted(list(imps)))
