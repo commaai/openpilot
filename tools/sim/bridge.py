@@ -29,6 +29,8 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
+
+
 class VehicleState():
   def __init__(self):
     self.speed = 0
@@ -49,19 +51,21 @@ def steer_rate_limit(old,new):
   else:
     return new
 
-
+FRAME_ID = 0
 def cam_callback(image):
+  global FRAME_ID
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
   img = np.reshape(img, (H, W, 4))
   img = img[:, :, [0, 1, 2]].copy()
 
   dat = messaging.new_message('frame')
   dat.frame = {
-    "frameId": image.frame,
+    "frameId": FRAME_ID,
     "image": img.tostring(),
     "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
   pm.send('frame', dat)
+  FRAME_ID+=1
 
 def imu_callback(imu):
   #print(imu, imu.accelerometer)
@@ -91,6 +95,18 @@ def health_function():
     }
     pm.send('health', dat)
     rk.keep_time()
+
+def fake_gps():
+  pm = messaging.PubMaster(['gpsLocationExternal'])
+  while 1:
+
+    # dmonitoringmodeld output
+    dat = messaging.new_message('gpsLocationExternal')
+    pm.send('gpsLocationExternal', dat)
+
+    time.sleep(0.01)
+
+
 
 def fake_driver_monitoring():
   pm = messaging.PubMaster(['driverState','dMonitoringState'])
@@ -128,14 +144,15 @@ def go(q):
 
   threading.Thread(target=health_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
+  threading.Thread(target=fake_gps).start()
   threading.Thread(target=can_function_runner, args=(vehicle_state,)).start()
 
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(10.0)
   world = client.load_world('Town04')
-  settings = world.get_settings()
-  settings.fixed_delta_seconds = 0.05
-  world.apply_settings(settings)
+  # settings = world.get_settings()
+  # settings.fixed_delta_seconds = 0.05
+  # world.apply_settings(settings)
 
   world.set_weather(carla.WeatherParameters(
     cloudyness=0.1,
