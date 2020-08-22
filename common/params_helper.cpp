@@ -13,6 +13,9 @@
 #include <sys/stat.h>
 #include <libgen.h>
 
+#include <limits.h>     /* PATH_MAX */
+#include <errno.h>
+
 using std::cout;
 using std::endl;
 
@@ -81,6 +84,38 @@ namespace params {
     {"CarBatteryCapacity", {TxType::PERSISTENT} }
   };
 
+
+  static int mkdir_p(const char *path) {
+    /* Adapted from http://stackoverflow.com/a/2336245/119527 */
+    const size_t len = strlen(path);
+    char _path[PATH_MAX];
+    char *p; 
+    errno = 0;
+    /* Copy string so its mutable */
+    if (len > sizeof(_path)-1) {
+        errno = ENAMETOOLONG;
+        return -1; 
+    }   
+    strcpy(_path, path);
+    /* Iterate the string */
+    for (p = _path + 1; *p; p++) {
+        if (*p == '/') {
+            /* Temporarily truncate */
+            *p = '\0';
+            if (mkdir(_path, S_IRWXU) != 0) {
+                if (errno != EEXIST)
+                    return -1; 
+            }
+            *p = '/';
+        }
+    }   
+    if (mkdir(_path, S_IRWXU) != 0) {
+        if (errno != EEXIST)
+            return -1; 
+    }   
+    return 0;
+  }
+
   static bool is_directory(string path) {
     struct stat st;
     if (stat(path.c_str(), &st) == 0) {
@@ -116,7 +151,7 @@ namespace params {
   }
 
   static void mkdirs_exists_ok(string path) {
-    int result = system(("mkdir -p -m 666 " + path).c_str());
+    int result = mkdir_p(path.c_str());
     if (!exists(path) || result < 0 ) {
       throw OSError();
     }
