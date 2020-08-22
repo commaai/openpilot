@@ -17,7 +17,13 @@ Run the openpilot image and two scripts : `selfdrive/manager.py` and `tools/sim/
 ```
 ./build_container # pull openpilot-sim image
 ./run_op_sim.sh # run openpilot-sim image
+cd tmp/openpilot && scons -j$(nproc) 
+screen ./selfdrive/manager.py
+# Ctrl+a c
+./tools/sim/bridge.py
 ```
+
+
 ## Controls
 Now put the focus on the terminal running bridge.py and you can control
 openpilot driving in the simulation with the following keys
@@ -44,4 +50,8 @@ In order to develop locally, you can build the images locally and mount the open
 BUILD=1 ./build_op_sim.sh
 
 DEVELOP=1 ./run_op_sim.sh --develop=1
+cd tmp/openpilot && scons -j$(nproc) 
+screen ./selfdrive/manager.py
+# Ctrl+a c
+./tools/sim/bridge.py
 ```
