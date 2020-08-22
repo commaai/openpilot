@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# type: ignore
 import numpy as np
 import matplotlib.pyplot as plt
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py

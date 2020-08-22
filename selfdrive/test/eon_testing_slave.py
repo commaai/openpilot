@@ -36,11 +36,11 @@ def get_workdir():
 
 def heartbeat():
   work_dir = get_workdir()
-  env = {
-    "LD_LIBRARY_PATH": "",
-    "ANDROID_DATA": "/data",
-    "ANDROID_ROOT": "/system",
-  }
+  # env = {
+  #   "LD_LIBRARY_PATH": "",
+  #   "ANDROID_DATA": "/data",
+  #   "ANDROID_ROOT": "/system",
+  # }
 
   while True:
     try:
@@ -53,7 +53,7 @@ def heartbeat():
 
       try:
         tmux = os.popen('tail -n 100 /tmp/tmux_out').read()
-      except:
+      except Exception:
         pass
 
       params = Params()

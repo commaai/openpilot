@@ -25,7 +25,7 @@ def create_mqb_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert
     rightlanehud = 2 if rightLaneVisible else 1
 
   values = {
-    "LDW_Unknown": 2, # FIXME: possible speed or attention relationship
+    "LDW_Unknown": 2,  # FIXME: possible speed or attention relationship
     "Kombi_Lamp_Orange": 1 if hca_enabled and steering_pressed else 0,
     "Kombi_Lamp_Green": 1 if hca_enabled and not steering_pressed else 0,
     "Left_Lane_Status": leftlanehud,
@@ -48,5 +48,4 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
     "GRA_Tip_Stufe_2": CS.graTipStufe2,
     "GRA_ButtonTypeInfo": CS.graButtonTypeInfo
   }
-
   return packer.make_can_msg("GRA_ACC_01", bus, values, idx)

@@ -2,14 +2,15 @@
 import os
 import gc
 from cereal import car, log
+from common.android import ANDROID, get_sound_card_online
 from common.numpy_fast import clip
-from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper, DT_CTRL
+from common.realtime import sec_since_boot, set_realtime_priority, set_core_affinity, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car.car_helpers import get_car, get_startup_event
+from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
@@ -36,21 +37,23 @@ LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 
+
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     gc.disable()
-    set_realtime_priority(3)
+    set_realtime_priority(53)
+    set_core_affinity(3)
 
     # Setup sockets
     self.pm = pm
     if self.pm is None:
-      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', \
+      self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
                                      'carControl', 'carEvents', 'carParams'])
 
     self.sm = sm
     if self.sm is None:
-      self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', \
-                                     'dMonitoringState', 'plan', 'pathPlan'])
+      self.sm = messaging.SubMaster(['thermal', 'health', 'frame', 'model', 'liveCalibration',
+                                     'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -59,9 +62,9 @@ class Controls:
 
     # wait for one health and one CAN packet
     hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
-    has_relay = hw_type in [HwType.blackPanda, HwType.uno]
+    has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
     print("Waiting for CAN messages...")
-    messaging.get_one_can(self.can_sock)
+    get_one_can(self.can_sock)
 
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], has_relay)
 
@@ -69,15 +72,14 @@ class Controls:
     params = Params()
     self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
     self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
-    internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
+    internet_needed = (params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None) and (params.get("DisableUpdates") != b"1")
     community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
     openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
     passive = params.get("Passive", encoding='utf8') == "1" or \
               internet_needed or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
-    sounds_available = not os.path.isfile('/EON') or (os.path.isdir('/proc/asound/card0') \
-                            and open('/proc/asound/card0/state').read().strip() == 'ONLINE')
+    sounds_available = not ANDROID or get_sound_card_online()
 
     car_recognized = self.CP.carName != 'mock'
     # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
@@ -119,12 +121,11 @@ class Controls:
     self.can_error_counter = 0
     self.last_blinker_frame = 0
     self.saturated_count = 0
+    self.distance_traveled = 0
     self.events_prev = []
-    self.current_alert_types = []
+    self.current_alert_types = [ET.PERMANENT]
 
     self.sm['liveCalibration'].calStatus = Calibration.INVALID
-    self.sm['pathPlan'].sensorValid = True
-    self.sm['pathPlan'].posenetValid = True
     self.sm['thermal'].freeSpace = 1.
     self.sm['dMonitoringState'].events = []
     self.sm['dMonitoringState'].awarenessStatus = 1.
@@ -140,11 +141,12 @@ class Controls:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if self.read_only and not passive:
       self.events.add(EventName.carUnrecognized, static=True)
+    if hw_type == HwType.whitePanda:
+      self.events.add(EventName.whitePandaUnsupported, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
-
 
   def update_events(self, CS):
     """Compute carEvents from carState"""
@@ -180,15 +182,20 @@ class Controls:
 
     # Handle lane change
     if self.sm['pathPlan'].laneChangeState == LaneChangeState.preLaneChange:
-      if self.sm['pathPlan'].laneChangeDirection == LaneChangeDirection.left:
-        self.events.add(EventName.preLaneChangeLeft)
+      direction = self.sm['pathPlan'].laneChangeDirection
+      if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
+         (CS.rightBlindspot and direction == LaneChangeDirection.right):
+        self.events.add(EventName.laneChangeBlocked)
       else:
-        self.events.add(EventName.preLaneChangeRight)
-    elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting, \
+        if direction == LaneChangeDirection.left:
+          self.events.add(EventName.preLaneChangeLeft)
+        else:
+          self.events.add(EventName.preLaneChangeRight)
+    elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
                                         LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
 
-    if self.can_rcv_error:
+    if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
     if self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
@@ -199,28 +206,36 @@ class Controls:
       self.events.add(EventName.commIssue)
     if not self.sm['pathPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
-    if not self.sm['pathPlan'].sensorValid and os.getenv("NOSENSOR") is None:
-      self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].sensorsOK and os.getenv("NOSENSOR") is None:
+      if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
+        self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
+      # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
+      self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
-    if not self.sm['pathPlan'].posenetValid:
+    if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
+    if not self.sm['liveLocationKalman'].deviceStable:
+      self.events.add(EventName.deviceFalling)
+    if not self.sm['frame'].recoverState < 2:
+      # counter>=2 is active
+      self.events.add(EventName.focusRecoverActive)
     if not self.sm['plan'].radarValid:
       self.events.add(EventName.radarFault)
     if self.sm['plan'].radarCanError:
       self.events.add(EventName.radarCanError)
-    if not CS.canValid:
-      self.events.add(EventName.canError)
     if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
       self.events.add(EventName.relayMalfunction)
     if self.sm['plan'].fcw:
       self.events.add(EventName.fcw)
+    if self.sm['model'].frameDropPerc > 1:
+      self.events.add(EventName.modeldLagging)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
-        and not self.CP.radarOffCan and CS.vEgo < 0.3:
+       and not self.CP.radarOffCan and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
-
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
@@ -248,8 +263,9 @@ class Controls:
     if not self.sm['health'].controlsAllowed and self.enabled:
       self.mismatch_counter += 1
 
-    return CS
+    self.distance_traveled += CS.vEgo * DT_CTRL
 
+    return CS
 
   def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
@@ -303,6 +319,8 @@ class Controls:
         elif self.state == State.preEnabled:
           if not self.events.any(ET.PRE_ENABLE):
             self.state = State.enabled
+          else:
+            self.current_alert_types.append(ET.PRE_ENABLE)
 
     # DISABLED
     elif self.state == State.disabled:
@@ -325,7 +343,6 @@ class Controls:
 
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
-
 
   def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
@@ -362,10 +379,12 @@ class Controls:
 
     if angle_control_saturated and not CS.steeringPressed and self.active:
       self.saturated_count += 1
+    else:
+      self.saturated_count = 0
 
     # Send a "steering required alert" if saturation count has reached the limit
     if (lac_log.saturated and not CS.steeringPressed) or \
-        (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
+       (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
       # Check if we deviated from the path
       left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
       right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
@@ -374,7 +393,6 @@ class Controls:
         self.events.add(EventName.steerSaturated)
 
     return actuators, v_acc_sol, a_acc_sol, lac_log
-
 
   def publish_logs(self, CS, start_time, actuators, v_acc, a_acc, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""

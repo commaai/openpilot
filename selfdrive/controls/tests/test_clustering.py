@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 import time
 import unittest
 import numpy as np

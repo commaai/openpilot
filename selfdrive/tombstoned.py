@@ -61,7 +61,7 @@ def main():
   while True:
     now_tombstones = set(get_tombstones())
 
-    for fn, ctime in (now_tombstones - initial_tombstones):
+    for fn, _ in (now_tombstones - initial_tombstones):
       try:
         cloudlog.info(f"reporting new tombstone {fn}")
         report_tombstone(fn, client)

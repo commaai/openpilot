@@ -1,11 +1,11 @@
-Import('env', 'arch', 'SHARED')
+Import('env', 'arch', 'SHARED', 'QCOM_REPLAY')
 
 if SHARED:
   fxn = env.SharedLibrary
 else:
   fxn = env.Library
 
-_common = fxn('common', ['params.cc', 'swaglog.cc', 'util.c', 'cqueue.c'], LIBS="json11")
+_common = fxn('common', ['params.cc', 'swaglog.cc', 'util.c', 'cqueue.c', 'gpio.cc'], LIBS="json11")
 _visionipc = fxn('visionipc', ['visionipc.c', 'ipc.c'])
 
 files = [
@@ -21,8 +21,11 @@ if arch == "aarch64":
   files += [
     'framebuffer.cc',
     'touch.c',
-    'visionbuf_ion.c',
   ]
+  if QCOM_REPLAY:
+    files += ['visionbuf_cl.c']
+  else:
+    files += ['visionbuf_ion.c']
   _gpu_libs = ['gui', 'adreno_utils']
 elif arch == "larch64":
   defines = {"CLU_NO_CACHE": None}
@@ -39,4 +42,3 @@ else:
 
 _gpucommon = fxn('gpucommon', files, CPPDEFINES=defines, LIBS=_gpu_libs)
 Export('_common', '_visionipc', '_gpucommon', '_gpu_libs')
-

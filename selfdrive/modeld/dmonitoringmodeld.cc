@@ -23,13 +23,14 @@ static void set_do_exit(int sig) {
 
 int main(int argc, char **argv) {
   int err;
-  set_realtime_priority(1);
+  set_realtime_priority(51);
+
+  signal(SIGINT, (sighandler_t)set_do_exit);
+  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   // messaging
-  Context *msg_context = Context::create();
-  PubSocket *dmonitoring_sock = PubSocket::create(msg_context, "driverState");
-  SubSocket *dmonstate_sock = SubSocket::create(msg_context, "dMonitoringState", "127.0.0.1", true);
-  assert(dmonstate_sock != NULL);
+  SubMaster sm({"dMonitoringState"});
+  PubMaster pm({"driverState"});
 
   // init the models
   DMonitoringModelState dmonitoringmodel;
@@ -55,23 +56,15 @@ int main(int argc, char **argv) {
       buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
         printf("visionstream get failed\n");
-        visionstream_destroy(&stream);
         break;
       }
       //printf("frame_id: %d %dx%d\n", extra.frame_id, buf_info.width, buf_info.height);
       if (!dmonitoringmodel.is_rhd_checked) {
         if (chk_counter >= RHD_CHECK_INTERVAL) {
-          Message *msg = dmonstate_sock->receive(true);
-          if (msg != NULL) {
-            auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-            memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-            capnp::FlatArrayMessageReader cmsg(amsg);
-            cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-            dmonitoringmodel.is_rhd = event.getDMonitoringState().getIsRHD();
-            dmonitoringmodel.is_rhd_checked = event.getDMonitoringState().getRhdChecked();
-            delete msg;
+          if (sm.update(0) > 0) {
+            auto state = sm["dMonitoringState"].getDMonitoringState();
+            dmonitoringmodel.is_rhd = state.getIsRHD();
+            dmonitoringmodel.is_rhd_checked = state.getRhdChecked();
           }
           chk_counter = 0;
         }
@@ -85,18 +78,14 @@ int main(int argc, char **argv) {
       double t2 = millis_since_boot();
 
       // send dm packet
-      dmonitoring_publish(dmonitoring_sock, extra.frame_id, res);
+      dmonitoring_publish(pm, extra.frame_id, res);
 
       LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
     }
-
+    visionstream_destroy(&stream);
   }
 
-  visionstream_destroy(&stream);
-
-  delete dmonitoring_sock;
-  delete msg_context;
   dmonitoring_free(&dmonitoringmodel);
 
   return 0;

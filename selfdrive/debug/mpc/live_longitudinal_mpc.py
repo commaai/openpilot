@@ -97,8 +97,6 @@ def plot_longitudinal_mpc(addr="127.0.0.1"):
       fig.canvas.flush_events()
 
 
-
-
 if __name__ == "__main__":
   if len(sys.argv) > 1:
     plot_longitudinal_mpc(sys.argv[1])

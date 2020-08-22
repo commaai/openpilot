@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# type: ignore
+
 import argparse
 import numpy as np
 from collections import defaultdict, deque

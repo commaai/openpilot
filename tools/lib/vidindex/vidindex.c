@@ -18,7 +18,7 @@ static uint32_t read24be(const uint8_t* ptr) {
 }
 static void write32le(FILE *of, uint32_t v) {
   uint8_t va[4] = {
-    v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff 
+    v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff
   };
   fwrite(va, 1, sizeof(va), of);
 }
@@ -135,7 +135,7 @@ static void hevc_index(const uint8_t *data, size_t file_size, FILE *of_prefix, F
             bs_get(&bs, 1);
           }
           uint32_t slice_type = bs_ue(&bs);
-          
+
           // write the index
           write32le(of_index, slice_type);
           write32le(of_index, ptr - data);
@@ -244,7 +244,7 @@ static void h264_index(const uint8_t *data, size_t file_size, FILE *of_prefix, F
         uint32_t pic_parameter_set_id = bs_ue(&bs);
 
         uint32_t frame_num = bs_get(&bs, sps_log2_max_frame_num_minus4+4);
-        
+
         if (first_mb_in_slice == 0) {
           write32le(of_index, slice_type);
           write32le(of_index, ptr - data);

@@ -38,27 +38,8 @@ int main() {
 
 
   // init cl
-  /* Get Platform and Device Info */
-  cl_platform_id platform_id = NULL;
-  cl_uint num_platforms_unused;
-  int err = clGetPlatformIDs(1, &platform_id, &num_platforms_unused);
-  if (err != 0) {
-    fprintf(stderr, "cl error: %d\n", err);
-  }
-  assert(err == 0);
-
-  cl_device_id device_id = NULL;
-  cl_uint num_devices_unused;
-  err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id,
-                       &num_devices_unused);
-  if (err != 0) {
-    fprintf(stderr, "cl error: %d\n", err);
-  }
-  assert(err == 0);
-
-  cl_print_info(platform_id, device_id);
-  printf("\n");
-
+  int err;
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
   assert(err == 0);
 

@@ -82,7 +82,8 @@ class IsoTpParallelQuery():
       id_addr = rx_addr or tx_addr[0]
       sub_addr = tx_addr[1]
 
-      can_client = CanClient(self._can_tx, partial(self._can_rx, id_addr, sub_addr=sub_addr), tx_addr[0], rx_addr, self.bus, sub_addr=sub_addr, debug=self.debug)
+      can_client = CanClient(self._can_tx, partial(self._can_rx, id_addr, sub_addr=sub_addr), tx_addr[0], rx_addr,
+                             self.bus, sub_addr=sub_addr, debug=self.debug)
 
       max_len = 8 if sub_addr is None else 7
 

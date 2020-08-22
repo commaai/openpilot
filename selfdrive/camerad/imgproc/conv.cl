@@ -3,7 +3,7 @@
 
 // convert input rgb image to single channel then conv
 __kernel void rgb2gray_conv2d(
-  const __global uchar * input, 
+  const __global uchar * input,
   __global short * output,
   __constant short * filter,
   __local uchar3 * cached
@@ -23,8 +23,8 @@ __kernel void rgb2gray_conv2d(
 
   // pad
   if (
-    get_global_id(0) < HALF_FILTER_SIZE       || 
-    get_global_id(0) > IMAGE_W - HALF_FILTER_SIZE - 1   || 
+    get_global_id(0) < HALF_FILTER_SIZE       ||
+    get_global_id(0) > IMAGE_W - HALF_FILTER_SIZE - 1   ||
     get_global_id(1) < HALF_FILTER_SIZE     ||
     get_global_id(1) > IMAGE_H - HALF_FILTER_SIZE - 1
   )
@@ -32,11 +32,11 @@ __kernel void rgb2gray_conv2d(
     barrier(CLK_LOCAL_MEM_FENCE);
     return;
   }
-  else 
+  else
   {
     int localColOffset = -1;
     int globalColOffset = -1;
-    
+
     // cache extra
     if ( get_local_id(0) < HALF_FILTER_SIZE )
     {
@@ -51,7 +51,7 @@ __kernel void rgb2gray_conv2d(
     {
       localColOffset = get_local_id(0) + TWICE_HALF_FILTER_SIZE;
       globalColOffset = HALF_FILTER_SIZE;
-      
+
       cached[ myLocal + HALF_FILTER_SIZE ].x = input[ my * 3 + HALF_FILTER_SIZE * 3 ];
       cached[ myLocal + HALF_FILTER_SIZE ].y = input[ my * 3 + HALF_FILTER_SIZE * 3 + 1];
       cached[ myLocal + HALF_FILTER_SIZE ].z = input[ my * 3 + HALF_FILTER_SIZE * 3 + 2];

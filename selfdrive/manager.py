@@ -9,7 +9,9 @@ import shutil
 import subprocess
 import datetime
 import textwrap
+from typing import Dict, List
 from selfdrive.swaglog import cloudlog, add_logentries_handler
+
 
 from common.basedir import BASEDIR, PARAMS
 from common.android import ANDROID
@@ -17,7 +19,7 @@ WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-TOTAL_SCONS_NODES = 1140
+TOTAL_SCONS_NODES = 1005
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 # Create folders needed for msgq
@@ -34,7 +36,7 @@ if ANDROID:
 def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
-  if child_pid != 0: # parent
+  if child_pid != 0:  # parent
 
     # child is in its own process group, manually pass kill signals
     signal.signal(signal.SIGINT, lambda signum, frame: os.kill(child_pid, signal.SIGINT))
@@ -68,19 +70,15 @@ def unblock_stdout():
 if __name__ == "__main__":
   unblock_stdout()
 
-if __name__ == "__main__" and ANDROID:
-  from common.spinner import Spinner
-  from common.text_window import TextWindow
-else:
-  from common.spinner import FakeSpinner as Spinner
-  from common.text_window import FakeTextWindow as TextWindow
+from common.spinner import Spinner
+from common.text_window import TextWindow
 
 import importlib
 import traceback
 from multiprocessing import Process
 
 # Run scons
-spinner = Spinner()
+spinner = Spinner(noop=(__name__ != "__main__" or not ANDROID))
 spinner.update("0")
 
 if not prebuilt:
@@ -99,7 +97,7 @@ if not prebuilt:
     # Read progress from stderr and update spinner
     while scons.poll() is None:
       try:
-        line = scons.stderr.readline()
+        line = scons.stderr.readline()  # type: ignore
         if line is None:
           continue
         line = line.rstrip()
@@ -117,16 +115,20 @@ if not prebuilt:
 
     if scons.returncode != 0:
       # Read remaining output
-      r = scons.stderr.read().split(b'\n')
+      r = scons.stderr.read().split(b'\n')   # type: ignore
       compile_output += r
 
       if retry:
-        print("scons build failed, cleaning in")
-        for i in range(3,-1,-1):
-          print("....%d" % i)
-          time.sleep(1)
-        subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
-        shutil.rmtree("/tmp/scons_cache")
+        if not os.getenv("CI"):
+          print("scons build failed, cleaning in")
+          for i in range(3, -1, -1):
+            print("....%d" % i)
+            time.sleep(1)
+          subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
+          shutil.rmtree("/tmp/scons_cache")
+        else:
+          print("scons build failed after retry")
+          sys.exit(1)
       else:
         # Build failed log errors
         errors = [line.decode('utf8', 'replace') for line in compile_output
@@ -136,8 +138,9 @@ if not prebuilt:
         cloudlog.error("scons build failed\n" + error_s)
 
         # Show TextWindow
+        no_ui = __name__ != "__main__" or not ANDROID
         error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
-        with TextWindow("Openpilot failed to build\n \n" + error_s) as t:
+        with TextWindow("openpilot failed to build\n \n" + error_s, noop=no_ui) as t:
           t.wait_for_exit()
 
         exit(1)
@@ -155,7 +158,6 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
 from common import android
 from common.apk import update_apks, pm_apply_packages, start_offroad
-from common.manager_helpers import print_cpu_usage
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
@@ -167,7 +169,7 @@ managed_processes = {
   "controlsd": "selfdrive.controls.controlsd",
   "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
-  "dmonitoringd": "selfdrive.controls.dmonitoringd",
+  "dmonitoringd": "selfdrive.monitoring.dmonitoringd",
   "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
@@ -179,7 +181,7 @@ managed_processes = {
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
-  "paramsd": ("selfdrive/locationd", ["./paramsd"]),
+  "paramsd": "selfdrive.locationd.paramsd",
   "camerad": ("selfdrive/camerad", ["./camerad"]),
   "sensord": ("selfdrive/sensord", ["./sensord"]),
   "clocksd": ("selfdrive/clocksd", ["./clocksd"]),
@@ -187,14 +189,13 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
-  "driverview": "selfdrive.controls.lib.driverview",
 }
 
 daemon_processes = {
   "manage_athenad": ("selfdrive.athena.manage_athenad", "AthenadPid"),
 }
 
-running = {}
+running: Dict[str, Process] = {}
 def get_running():
   return running
 
@@ -202,10 +203,10 @@ def get_running():
 unkillable_processes = ['camerad']
 
 # processes to end with SIGINT instead of SIGTERM
-interrupt_processes = []
+interrupt_processes: List[str] = []
 
 # processes to end with SIGKILL instead of SIGTERM
-kill_processes = ['sensord', 'paramsd']
+kill_processes = ['sensord']
 
 # processes to end if thermal conditions exceed Green parameters
 green_temp_processes = ['uploader']
@@ -222,6 +223,7 @@ if ANDROID:
     'logcatd',
     'tombstoned',
     'updated',
+    'deleter',
   ]
 
 car_started_processes = [
@@ -236,7 +238,13 @@ car_started_processes = [
   'modeld',
   'proclogd',
   'ubloxd',
-  #'locationd',
+  'locationd',
+]
+
+driver_view_processes = [
+  'camerad',
+  'dmonitoringd',
+  'dmonitoringmodeld'
 ]
 
 if WEBCAM:
@@ -250,7 +258,6 @@ if ANDROID:
     'clocksd',
     'gpsd',
     'dmonitoringmodeld',
-    'deleter',
   ]
 
 def register_managed_process(name, desc, car_started=False):
@@ -303,11 +310,11 @@ def start_daemon_process(name):
       pass
 
   cloudlog.info("starting daemon %s" % name)
-  proc = subprocess.Popen(['python', '-m', proc],
-                         stdin=open('/dev/null', 'r'),
-                         stdout=open('/dev/null', 'w'),
-                         stderr=open('/dev/null', 'w'),
-                         preexec_fn=os.setpgrp)
+  proc = subprocess.Popen(['python', '-m', proc],  # pylint: disable=subprocess-popen-preexec-fn
+                          stdin=open('/dev/null', 'r'),
+                          stdout=open('/dev/null', 'w'),
+                          stderr=open('/dev/null', 'w'),
+                          preexec_fn=os.setpgrp)
 
   params.put(pid_param, str(proc.pid))
 
@@ -357,9 +364,11 @@ def kill_managed_process(name):
         cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
         join_process(running[name], 15)
         if running[name].exitcode is None:
-          cloudlog.critical("FORCE REBOOTING PHONE!")
-          os.system("date >> /sdcard/unkillable_reboot")
-          os.system("reboot")
+          cloudlog.critical("unkillable process %s failed to die!" % name)
+          if ANDROID:
+            cloudlog.critical("FORCE REBOOTING PHONE!")
+            os.system("date >> /sdcard/unkillable_reboot")
+            os.system("reboot")
           raise RuntimeError
       else:
         cloudlog.info("killing %s with SIGKILL" % name)
@@ -379,6 +388,14 @@ def cleanup_all_processes(signal, frame):
   for name in list(running.keys()):
     kill_managed_process(name)
   cloudlog.info("everything is dead")
+
+
+def send_managed_process_signal(name, sig):
+  if name not in running or name not in managed_processes:
+    return
+  cloudlog.info(f"sending signal {sig} to {name}")
+  os.kill(running[name].pid, sig)
+
 
 # ****************** run loop ******************
 
@@ -420,9 +437,6 @@ def manager_thread():
   # now loop
   thermal_sock = messaging.sub_sock('thermal')
 
-  if os.getenv("GET_CPU_USAGE"):
-    proc_sock = messaging.sub_sock('procLog', conflate=True)
-
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
@@ -451,10 +465,8 @@ def manager_thread():
     for k in os.getenv("BLOCK").split(","):
       del managed_processes[k]
 
+  started_prev = False
   logger_dead = False
-
-  start_t = time.time()
-  first_proc = None
 
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
@@ -472,7 +484,7 @@ def manager_thread():
     if msg.thermal.freeSpace < 0.05:
       logger_dead = True
 
-    if msg.thermal.started and "driverview" not in running:
+    if msg.thermal.started:
       for p in car_started_processes:
         if p == "loggerd" and logger_dead:
           kill_managed_process(p)
@@ -480,13 +492,24 @@ def manager_thread():
           start_managed_process(p)
     else:
       logger_dead = False
+      driver_view = params.get("IsDriverViewEnabled") == b"1"
+
+      # TODO: refactor how manager manages processes
       for p in reversed(car_started_processes):
-        kill_managed_process(p)
-      # this is ugly
-      if "driverview" not in running and params.get("IsDriverViewEnabled") == b"1":
-        start_managed_process("driverview")
-      elif "driverview" in running and params.get("IsDriverViewEnabled") == b"0":
-        kill_managed_process("driverview")
+        if p not in driver_view_processes or not driver_view:
+          kill_managed_process(p)
+
+      for p in driver_view_processes:
+        if driver_view:
+          start_managed_process(p)
+        else:
+          kill_managed_process(p)
+
+      # trigger an update after going offroad
+      if started_prev:
+        send_managed_process_signal("updated", signal.SIGHUP)
+
+    started_prev = msg.thermal.started
 
     # check the status of all processes, did any of them die?
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
@@ -495,20 +518,6 @@ def manager_thread():
     # Exit main loop when uninstall is needed
     if params.get("DoUninstall", encoding='utf8') == "1":
       break
-
-    if os.getenv("GET_CPU_USAGE"):
-      dt = time.time() - start_t
-
-      # Get first sample
-      if dt > 30 and first_proc is None:
-        first_proc = messaging.recv_sock(proc_sock)
-
-      # Get last sample and exit
-      if dt > 90:
-        last_proc = messaging.recv_sock(proc_sock, wait=True)
-
-        cleanup_all_processes(None, None)
-        sys.exit(print_cpu_usage(first_proc, last_proc))
 
 def manager_prepare(spinner=None):
   # build all processes
@@ -532,11 +541,12 @@ def uninstall():
 def main():
   os.environ['PARAMS_PATH'] = PARAMS
 
-  # the flippening!
-  os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
+  if ANDROID:
+    # the flippening!
+    os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
 
-  # disable bluetooth
-  os.system('service call bluetooth_manager 8')
+    # disable bluetooth
+    os.system('service call bluetooth_manager 8')
 
   params = Params()
   params.manager_start()
@@ -588,8 +598,6 @@ def main():
 
   try:
     manager_thread()
-  except SystemExit:
-    raise
   except Exception:
     traceback.print_exc()
     crash.capture_exception()

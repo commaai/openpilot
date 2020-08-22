@@ -1,7 +1,8 @@
+from functools import total_ordering
+
 from cereal import log, car
-
+from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
-
 from selfdrive.locationd.calibration_helpers import Filter
 
 AlertSize = log.ControlsState.AlertSize
@@ -37,6 +38,7 @@ class Events:
   def __init__(self):
     self.events = []
     self.static_events = []
+    self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
 
   @property
   def names(self):
@@ -51,6 +53,7 @@ class Events:
     self.events.append(event_name)
 
   def clear(self):
+    self.events_prev = {k: (v+1 if k in self.events else 0) for k, v in self.events_prev.items()}
     self.events = self.static_events.copy()
 
   def any(self, event_type):
@@ -59,7 +62,10 @@ class Events:
         return True
     return False
 
-  def create_alerts(self, event_types, callback_args=[]):
+  def create_alerts(self, event_types, callback_args=None):
+    if callback_args is None:
+      callback_args = []
+
     ret = []
     for e in self.events:
       types = EVENTS[e].keys()
@@ -68,8 +74,10 @@ class Events:
           alert = EVENTS[e][et]
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
-          alert.alert_type = EVENT_NAME[e]
-          ret.append(alert)
+
+          if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
+            alert.alert_type = f"{EVENT_NAME[e]}/{et}"
+            ret.append(alert)
     return ret
 
   def add_from_msg(self, events):
@@ -86,6 +94,7 @@ class Events:
       ret.append(event)
     return ret
 
+@total_ordering
 class Alert:
   def __init__(self,
                alert_text_1,
@@ -98,7 +107,8 @@ class Alert:
                duration_sound,
                duration_hud_alert,
                duration_text,
-               alert_rate=0.):
+               alert_rate=0.,
+               creation_delay=0.):
 
     self.alert_type = ""
     self.alert_text_1 = alert_text_1
@@ -115,6 +125,7 @@ class Alert:
 
     self.start_time = 0.
     self.alert_rate = alert_rate
+    self.creation_delay = creation_delay
 
     # typecheck that enums are valid on startup
     tst = car.CarControl.new_message()
@@ -126,6 +137,9 @@ class Alert:
 
   def __gt__(self, alert2):
     return self.alert_priority > alert2.alert_priority
+
+  def __eq__(self, alert2):
+    return self.alert_priority == alert2.alert_priority
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
@@ -157,28 +171,43 @@ class EngagementAlert(Alert):
                      Priority.MID, VisualAlert.none,
                      audible_alert, .2, 0., 0.),
 
+
+# ********** alert callback functions **********
+
 def below_steer_speed_alert(CP, sm, metric):
-  speed = CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)
-  unit = "kph" if metric else "mph"
+  speed = int(round(CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
+  unit = "km/h" if metric else "mph"
   return Alert(
     "TAKE CONTROL",
     "Steer Unavailable Below %d %s" % (speed, unit),
     AlertStatus.userPrompt, AlertSize.mid,
-    Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3),
+    Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3)
 
 def calibration_incomplete_alert(CP, sm, metric):
   speed = int(Filter.MIN_SPEED * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
-  unit = "kph" if metric else "mph"
+  unit = "km/h" if metric else "mph"
   return Alert(
-    "Calibration in Progress: %d" % sm['liveCalibration'].calPerc,
+    "Calibration in Progress: %d%%" % sm['liveCalibration'].calPerc,
     "Drive Above %d %s" % (speed, unit),
     AlertStatus.normal, AlertSize.mid,
-    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
+
+def no_gps_alert(CP, sm, metric):
+  gps_integrated = sm['health'].hwType in [log.HealthData.HwType.uno, log.HealthData.HwType.dos]
+  return Alert(
+    "Poor GPS reception",
+    "If sky is visible, contact support" if gps_integrated else "Check GPS antenna placement",
+    AlertStatus.normal, AlertSize.mid,
+    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.)
+
+def wrong_car_mode_alert(CP, sm, metric):
+  text = "Cruise Mode Disabled"
+  if CP.carName == "honda":
+    text = "Main Switch Off"
+  return NoEntryAlert(text, duration_hud_alert=0.)
 
 EVENTS = {
   # ********** events with no alerts **********
-
-  EventName.gasPressed: {ET.PRE_ENABLE: None},
 
   # ********** events only containing alerts displayed in all states **********
 
@@ -195,6 +224,14 @@ EVENTS = {
       "Be ready to take over at any time",
       "Always keep hands on wheel and eyes on road",
       AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  },
+
+  EventName.startupWhitePanda: {
+    ET.PERMANENT: Alert(
+      "WARNING: White panda is deprecated",
+      "Upgrade to comma two or black panda",
+      AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
@@ -230,6 +267,15 @@ EVENTS = {
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
+  EventName.whitePandaUnsupported: {
+    ET.PERMANENT: Alert(
+      "White Panda Is No Longer Supported",
+      "Upgrade to comma two or black panda",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.NO_ENTRY: NoEntryAlert("White panda is no longer supported"),
+  },
+
   EventName.invalidLkasSetting: {
     ET.PERMANENT: Alert(
       "Stock LKAS is turned on",
@@ -253,7 +299,7 @@ EVENTS = {
       "Dashcam Mode",
       "Car Unrecognized",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
   EventName.stockAeb: {
@@ -290,6 +336,14 @@ EVENTS = {
 
   # ********** events only containing alerts that display while engaged **********
 
+  EventName.gasPressed: {
+    ET.PRE_ENABLE: Alert(
+      "openpilot will not brake while gas pressed",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .0, .0, .1),
+  },
+
   EventName.vehicleModelInvalid: {
     ET.WARNING: Alert(
       "Vehicle Parameter Identification Failed",
@@ -324,7 +378,7 @@ EVENTS = {
 
   EventName.driverDistracted: {
     ET.WARNING: Alert(
-      "DISEventName.AGE IMMEDIATELY",
+      "DISENGAGE IMMEDIATELY",
       "Driver Was Distracted",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, .1, .1),
@@ -348,7 +402,7 @@ EVENTS = {
 
   EventName.driverUnresponsive: {
     ET.WARNING: Alert(
-      "DISEventName.AGE IMMEDIATELY",
+      "DISENGAGE IMMEDIATELY",
       "Driver Was Unresponsive",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, .1, .1),
@@ -379,11 +433,7 @@ EVENTS = {
   },
 
   EventName.belowSteerSpeed: {
-    ET.WARNING: Alert(
-      "TAKE CONTROL",
-      "Steer Unavailable Below ",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3),
+    ET.WARNING: below_steer_speed_alert,
   },
 
   EventName.preLaneChangeLeft: {
@@ -400,6 +450,14 @@ EVENTS = {
       "Monitor Other Vehicles",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
+  },
+
+  EventName.laneChangeBlocked: {
+    ET.WARNING: Alert(
+      "Car Detected in Blindspot",
+      "Monitor Other Vehicles",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1),
   },
 
   EventName.laneChange: {
@@ -454,8 +512,12 @@ EVENTS = {
 
   EventName.wrongCarMode: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
-    ET.NO_ENTRY: NoEntryAlert("Main Switch Off",
-                              duration_hud_alert=0.),
+    ET.NO_ENTRY: wrong_car_mode_alert,
+  },
+
+  EventName.wrongCruiseMode: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+    ET.NO_ENTRY: NoEntryAlert("Enable Adaptive Cruise"),
   },
 
   EventName.steerTempUnavailable: {
@@ -468,13 +530,12 @@ EVENTS = {
                               duration_hud_alert=0.),
   },
 
-  EventName.posenetInvalid: {
+  EventName.focusRecoverActive: {
     ET.WARNING: Alert(
       "TAKE CONTROL",
-      "Vision Model Output Uncertain",
+      "Attempting Refocus: Camera Focus Invalid",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
-    ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
   },
 
   EventName.outOfSpace: {
@@ -482,13 +543,30 @@ EVENTS = {
                               duration_hud_alert=0.),
   },
 
+  EventName.belowEngageSpeed: {
+    ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
+  },
+
+  EventName.neosUpdateRequired: {
+    ET.PERMANENT: Alert(
+      "NEOS Update Required",
+      "Please Wait for Update",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.HIGHEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.NO_ENTRY: NoEntryAlert("NEOS Update Required"),
+  },
+
   EventName.sensorDataInvalid: {
     ET.PERMANENT: Alert(
       "No Data from Device Sensors",
       "Reboot your Device",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=1.),
     ET.NO_ENTRY: NoEntryAlert("No Data from Device Sensors"),
+  },
+
+  EventName.noGps: {
+    ET.PERMANENT: no_gps_alert,
   },
 
   EventName.soundsUnavailable: {
@@ -567,6 +645,21 @@ EVENTS = {
     ET.NO_ENTRY : NoEntryAlert("Radar Error: Restart the Car"),
   },
 
+  EventName.modeldLagging: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Driving model lagging"),
+    ET.NO_ENTRY : NoEntryAlert("Driving model lagging"),
+  },
+
+  EventName.posenetInvalid: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Vision Model Output Uncertain"),
+    ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
+  },
+
+  EventName.deviceFalling: {
+    ET.SOFT_DISABLE: SoftDisableAlert("Device Fell Off Mount"),
+    ET.NO_ENTRY: NoEntryAlert("Device Fell Off Mount"),
+  },
+
   EventName.lowMemory: {
     ET.SOFT_DISABLE: SoftDisableAlert("Low Memory: Reboot Your Device"),
     ET.PERMANENT: Alert(
@@ -589,6 +682,11 @@ EVENTS = {
 
   EventName.canError: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error: Check Connections"),
+    ET.PERMANENT: Alert(
+      "CAN Error: Check Connections",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=1.),
     ET.NO_ENTRY: NoEntryAlert("CAN Error: Check Connections"),
   },
 
@@ -656,11 +754,10 @@ EVENTS = {
       "Speed too low",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
-    ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
   },
 
   EventName.speedTooHigh: {
-    ET.IMMEDIATE_DISABLE: Alert(
+    ET.WARNING: Alert(
       "Speed Too High",
       "Slow down to resume operation",
       AlertStatus.normal, AlertSize.mid,

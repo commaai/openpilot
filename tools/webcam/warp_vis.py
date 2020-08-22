@@ -2,10 +2,10 @@
 import numpy as np
 
 # copied from common.transformations/camera.py
-eon_focal_length = 910.0 # pixels
-eon_dcam_focal_length = 860.0 # pixels
+eon_focal_length = 910.0  # pixels
+eon_dcam_focal_length = 860.0  # pixels
 
-webcam_focal_length = -908.0/1.5 # pixels
+webcam_focal_length = -908.0/1.5  # pixels
 
 eon_intrinsics = np.array([
   [eon_focal_length,   0.,   1164/2.],
@@ -23,9 +23,9 @@ webcam_intrinsics = np.array([
   [  0.,    0.,     1.]])
 
 if __name__ == "__main__":
-  import cv2
-  trans_webcam_to_eon_rear = np.dot(eon_intrinsics,np.linalg.inv(webcam_intrinsics))
-  trans_webcam_to_eon_front = np.dot(eon_dcam_intrinsics,np.linalg.inv(webcam_intrinsics))
+  import cv2  # pylint: disable=import-error
+  trans_webcam_to_eon_rear = np.dot(eon_intrinsics, np.linalg.inv(webcam_intrinsics))
+  trans_webcam_to_eon_front = np.dot(eon_dcam_intrinsics, np.linalg.inv(webcam_intrinsics))
   print("trans_webcam_to_eon_rear:\n", trans_webcam_to_eon_rear)
   print("trans_webcam_to_eon_front:\n", trans_webcam_to_eon_front)
 
@@ -37,9 +37,7 @@ if __name__ == "__main__":
     ret, img = cap.read()
     if ret:
       # img = cv2.warpPerspective(img, trans_webcam_to_eon_rear, (1164,874), borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-      img = cv2.warpPerspective(img, trans_webcam_to_eon_front, (1164,874), borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+      img = cv2.warpPerspective(img, trans_webcam_to_eon_front, (1164, 874), borderMode=cv2.BORDER_CONSTANT, borderValue=0)
       print(img.shape, end='\r')
       cv2.imshow('preview', img)
       cv2.waitKey(10)
-
-

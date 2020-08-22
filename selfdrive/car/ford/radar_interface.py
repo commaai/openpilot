@@ -8,14 +8,13 @@ from selfdrive.car.interfaces import RadarInterfaceBase
 RADAR_MSGS = list(range(0x500, 0x540))
 
 def _create_radar_can_parser(car_fingerprint):
-  dbc_f = DBC[car_fingerprint]['radar']
   msg_n = len(RADAR_MSGS)
   signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
                      RADAR_MSGS * 3,
                      [0] * msg_n + [0] * msg_n + [0] * msg_n))
   checks = list(zip(RADAR_MSGS, [20]*msg_n))
 
-  return CANParser(dbc_f, signals, checks, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
@@ -34,7 +33,6 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-
     ret = car.RadarData.new_message()
     errors = []
     if not self.rcp.can_valid:
@@ -50,7 +48,7 @@ class RadarInterface(RadarInterfaceBase):
       if cpt['X_Rel'] > 0.00001:
         self.validCnt[ii] += 1
       else:
-        self.validCnt[ii] = max(self.validCnt[ii] -1, 0)
+        self.validCnt[ii] = max(self.validCnt[ii] - 1, 0)
       #print ii, self.validCnt[ii], cpt['VALID'], cpt['X_Rel'], cpt['Angle']
 
       # radar point only valid if there have been enough valid measurements

@@ -73,7 +73,8 @@ class MultiLogIterator(object):
       self._idx += 1
     else:
       self._idx = 0
-      self._current_log = next(i for i in range(self._current_log + 1, len(self._log_readers) + 1) if i == len(self._log_readers) or self._log_paths[i] is not None)
+      self._current_log = next(i for i in range(self._current_log + 1, len(self._log_readers) + 1)
+                               if i == len(self._log_readers) or self._log_paths[i] is not None)
       # wraparound
       if self._current_log == len(self._log_readers):
         if self._wraparound:

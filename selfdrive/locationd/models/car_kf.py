@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-import sys
-
 import math
+import sys
+from typing import Any, Dict
+
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.models.constants import ObservationKind
+from rednose import KalmanFilter
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
+from selfdrive.locationd.models.constants import ObservationKind
 
 i = 0
 
@@ -31,10 +33,10 @@ class States():
   STEER_ANGLE = _slice(1)  # [rad]
 
 
-class CarKalman():
+class CarKalman(KalmanFilter):
   name = 'car'
 
-  x_initial = np.array([
+  initial_x = np.array([
     1.0,
     15.0,
     0.0,
@@ -47,10 +49,10 @@ class CarKalman():
 
   # process noise
   Q = np.diag([
-    (.05/100)**2,
+    (.05 / 100)**2,
     .01**2,
-    math.radians(0.002)**2,
-    math.radians(0.1)**2,
+    math.radians(0.02)**2,
+    math.radians(0.25)**2,
 
     .1**2, .01**2,
     math.radians(0.1)**2,
@@ -58,15 +60,14 @@ class CarKalman():
   ])
   P_initial = Q.copy()
 
-  obs_noise = {
+  obs_noise: Dict[int, Any] = {
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
-    ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(5.0)**2),
+    ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
     ObservationKind.STIFFNESS: np.atleast_2d(5.0**2),
     ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
   }
 
-  maha_test_kinds = []  # [ObservationKind.ROAD_FRAME_YAW_RATE, ObservationKind.ROAD_FRAME_XY_SPEED]
   global_vars = [
     sp.Symbol('mass'),
     sp.Symbol('rotational_inertia'),
@@ -78,9 +79,8 @@ class CarKalman():
 
   @staticmethod
   def generate_code(generated_dir):
-    dim_state = CarKalman.x_initial.shape[0]
+    dim_state = CarKalman.initial_x.shape[0]
     name = CarKalman.name
-    maha_test_kinds = CarKalman.maha_test_kinds
 
     # globals
     m, j, aF, aR, cF_orig, cR_orig = CarKalman.global_vars
@@ -137,57 +137,18 @@ class CarKalman():
       [sp.Matrix([x]), ObservationKind.STIFFNESS, None],
     ]
 
-    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds, global_vars=CarKalman.global_vars)
+    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, global_vars=CarKalman.global_vars)
 
-  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0):
-    self.dim_state = self.x_initial.shape[0]
-    x_init = self.x_initial
+  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0):  # pylint: disable=super-init-not-called
+    dim_state = self.initial_x.shape[0]
+    dim_state_err = self.P_initial.shape[0]
+    x_init = self.initial_x
     x_init[States.STEER_RATIO] = steer_ratio
     x_init[States.STIFFNESS] = stiffness_factor
     x_init[States.ANGLE_OFFSET] = angle_offset
 
     # init filter
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds, global_vars=self.global_vars)
-
-  @property
-  def x(self):
-    return self.filter.state()
-
-  @property
-  def P(self):
-    return self.filter.covs()
-
-  def predict(self, t):
-    return self.filter.predict(t)
-
-  def rts_smooth(self, estimates):
-    return self.filter.rts_smooth(estimates, norm_quats=False)
-
-  def get_R(self, kind, n):
-    obs_noise = self.obs_noise[kind]
-    dim = obs_noise.shape[0]
-    R = np.zeros((n, dim, dim))
-    for i in range(n):
-      R[i, :, :] = obs_noise
-    return R
-
-  def init_state(self, state, covs_diag=None, covs=None, filter_time=None):
-    if covs_diag is not None:
-      P = np.diag(covs_diag)
-    elif covs is not None:
-      P = covs
-    else:
-      P = self.filter.covs()
-    self.filter.init_state(state, P, filter_time)
-
-  def predict_and_observe(self, t, kind, data, R=None):
-    if len(data) > 0:
-      data = np.atleast_2d(data)
-
-    if R is None:
-      R = self.get_R(kind, len(data))
-
-    self.filter.predict_and_update_batch(t, kind, data, R)
+    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=self.global_vars)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,40 @@
+Version 0.7.9 (2020-XX-XX)
+========================
+ * Improved car battery power management
+
+Version 0.7.8 (2020-08-19)
+========================
+ * New driver monitoring model: improved face detection and better compatibility with sunglasses
+ * Download NEOS operating system updates in the background
+ * Improved updater reliability and responsiveness
+ * Hyundai Kona 2020, Veloster 2019, and Genesis G70 2018 support thanks to xps-genesis!
+
+Version 0.7.7 (2020-07-20)
+========================
+ * White panda is no longer supported, upgrade to comma two or black panda
+ * Improved vehicle model estimation using high precision localizer
+ * Improved thermal management on comma two
+ * Improved autofocus for road-facing camera
+ * Improved noise performance for driver-facing camera
+ * Block lane change start using blindspot monitor on select Toyota, Hyundai, and Subaru
+ * Fix GM ignition detection
+ * Code cleanup and smaller release sizes
+ * Hyundai Sonata 2020 promoted to officially supported car
+ * Hyundai Ioniq Electric Limited 2019 and Ioniq SE 2020 support thanks to baldwalker!
+ * Subaru Forester 2019 and Ascent 2019 support thanks to martinl!
+
+Version 0.7.6.1 (2020-06-16)
+========================
+* Hotfix: update kernel on some comma twos (orders #8570-#8680)
+
+Version 0.7.6 (2020-06-05)
+========================
+* White panda is deprecated, upgrade to comma two or black panda
+* 2017 Nissan X-Trail, 2018-19 Leaf and 2019 Rogue support thanks to avolmensky!
+* 2017 Mazda CX-5 support in dashcam mode thanks to Jafaral!
+* Huge CPU savings in modeld by using thneed!
+* Lots of code cleanup and refactors
+
 Version 0.7.5 (2020-05-13)
 ========================
 * Right-Hand Drive support for both driving and driver monitoring!
@@ -5,7 +42,6 @@ Version 0.7.5 (2020-05-13)
 * New driver monitoring model: overall improvement on comma two
 * Driver camera preview in settings to improve mounting position
 * Added support for many Hyundai, Kia, Genesis models thanks to xx979xx!
-* 2019 Nissan X-Trail and 2018 Nissan Leaf support thanks to avolmensky!
 * Improved lateral tuning for 2020 Toyota Rav 4 (hybrid)
 
 Version 0.7.4 (2020-03-20)

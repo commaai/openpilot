@@ -33,12 +33,15 @@ sudo apt-get update && sudo apt-get install -y \
     libusb-1.0-0-dev \
     libzmq3-dev \
     libczmq-dev \
+    libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
+    libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev libfreetype6-dev \
     locales \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
     opencl-headers \
     python-dev \
     python-pip \
+    qt5-default \
     screen \
     sudo \
     vim \
@@ -59,7 +62,8 @@ fi
 # install bashrc
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  echo "source $HOME/openpilot/tools/openpilot_env.sh" >> ~/.bashrc
+  OP_DIR=$(git rev-parse --show-toplevel)
+  echo "source $OP_DIR/tools/openpilot_env.sh" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
@@ -83,13 +87,7 @@ pyenv rehash
 pip install pipenv==2018.11.26
 
 # pipenv setup (in openpilot dir)
-pipenv install --system --deploy
-
-# to make tools work
-pip install -r tools/requirements.txt
-
-# to make modeld work on PC with nvidia GPU
-pip install tensorflow-gpu==2.1
+pipenv install --dev --system --deploy
 
 # for loggerd to work on ubuntu
 # TODO: PC should log somewhere else

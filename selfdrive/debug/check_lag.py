@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# type: ignore
+
 import cereal.messaging as messaging
 from cereal.services import service_list
 

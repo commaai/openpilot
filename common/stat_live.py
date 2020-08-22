@@ -32,7 +32,7 @@ class RunningStat():
       self.S_last = 0.
     else:
       self.M = self.M_last + (new_data - self.M_last) / self.n
-      self.S = self.S_last + (new_data - self.M_last) * (new_data - self.M);
+      self.S = self.S_last + (new_data - self.M_last) * (new_data - self.M)
       self.M_last = self.M
       self.S_last = self.S
 
@@ -64,7 +64,7 @@ class RunningStatFilter():
     _std_last = self.raw_stat.std()
     self.raw_stat.push_data(new_data)
     _delta_std = self.raw_stat.std() - _std_last
-    if _delta_std<=0:
+    if _delta_std <= 0:
       self.filtered_stat.push_data(new_data)
     else:
       pass

@@ -32,7 +32,7 @@ except Exception:
   sys.exit(-1)
 
 sensord_env = {**os.environ, 'SENSOR_TEST': '1'}
-process = subprocess.run("./sensord", cwd="/data/openpilot/selfdrive/sensord", env=sensord_env)
+process = subprocess.run("./sensord", cwd="/data/openpilot/selfdrive/sensord", env=sensord_env)  # pylint: disable=subprocess-run-check
 
 if process.returncode == 40:
   text = "Current run: SUCCESS\n"
@@ -45,7 +45,7 @@ else:
   with open('/tmp/dmesg-' + timestr + '.log', 'w') as dmesg_out:
     subprocess.call('dmesg', stdout=dmesg_out, shell=False)
   with open("/tmp/logcat-" + timestr + '.log', 'w') as logcat_out:
-    subprocess.call(['logcat','-d'], stdout=logcat_out, shell=False)
+    subprocess.call(['logcat', '-d'], stdout=logcat_out, shell=False)
 
 text += "Sensor pass history: " + str(data['sensor-pass']) + "\n"
 text += "Sensor fail history: " + str(data['sensor-fail']) + "\n"

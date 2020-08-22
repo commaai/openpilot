@@ -7,9 +7,11 @@ from selfdrive.car import gen_empty_fingerprint
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
+MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS  # 144 + 4 = 92 mph
 
 # generic car and radar interfaces
 
@@ -21,9 +23,11 @@ class CarInterfaceBase():
     self.frame = 0
     self.low_speed_alert = False
 
-    self.CS = CarState(CP)
-    self.cp = self.CS.get_can_parser(CP)
-    self.cp_cam = self.CS.get_cam_can_parser(CP)
+    if CarState is not None:
+      self.CS = CarState(CP)
+      self.cp = self.CS.get_can_parser(CP)
+      self.cp_cam = self.CS.get_cam_can_parser(CP)
+      self.cp_body = self.CS.get_body_can_parser(CP)
 
     self.CC = None
     if CarController is not None:
@@ -38,7 +42,7 @@ class CarInterfaceBase():
     raise NotImplementedError
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
     raise NotImplementedError
 
   # returns a set of default params to avoid repetition in car specific params
@@ -81,7 +85,7 @@ class CarInterfaceBase():
   def apply(self, c):
     raise NotImplementedError
 
-  def create_common_events(self, cs_out, extra_gears=[], gas_resume_speed=-1, pcm_enable=True):
+  def create_common_events(self, cs_out, extra_gears=[], gas_resume_speed=-1, pcm_enable=True):  # pylint: disable=dangerous-default-value
     events = Events()
 
     if cs_out.doorOpen:
@@ -102,8 +106,10 @@ class CarInterfaceBase():
       events.add(EventName.stockFcw)
     if cs_out.stockAeb:
       events.add(EventName.stockAeb)
-    if cs_out.vEgo > 92 * CV.MPH_TO_MS:
+    if cs_out.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
+    if cs_out.cruiseState.nonAdaptive:
+      events.add(EventName.wrongCruiseMode)
 
     if cs_out.steerError:
       events.add(EventName.steerUnavailable)
@@ -131,13 +137,12 @@ class RadarInterfaceBase():
     self.pts = {}
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
+    self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
     ret = car.RadarData.new_message()
-
-    if 'NO_RADAR_SLEEP' not in os.environ:
+    if not self.no_radar_sleep:
       time.sleep(self.radar_ts)  # radard runs on RI updates
-
     return ret
 
 class CarStateBase:
@@ -169,4 +174,8 @@ class CarStateBase:
 
   @staticmethod
   def get_cam_can_parser(CP):
+    return None
+
+  @staticmethod
+  def get_body_can_parser(CP):
     return None

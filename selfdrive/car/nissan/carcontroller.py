@@ -2,7 +2,7 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car.nissan import nissancan
 from opendbc.can.packer import CANPacker
-from selfdrive.car.nissan.values import CAR
+from selfdrive.car.nissan.values import CAR, STEER_THRESHOLD
 
 # Steer angle limits
 ANGLE_DELTA_BP = [0., 5., 15.]
@@ -53,7 +53,11 @@ class CarController():
       else:
         # Scale max torque based on how much torque the driver is applying to the wheel
         self.lkas_max_torque = max(
-            0, LKAS_MAX_TORQUE - 0.4 * abs(CS.out.steeringTorque))
+          # Scale max torque down to half LKAX_MAX_TORQUE as a minimum
+          LKAS_MAX_TORQUE * 0.5,
+          # Start scaling torque at STEER_THRESHOLD
+          LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - STEER_THRESHOLD)
+        )
 
     else:
       apply_angle = CS.out.steeringAngle
@@ -65,7 +69,7 @@ class CarController():
       # send acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       cruise_cancel = 1
 
-    if self.CP.carFingerprint == CAR.XTRAIL and cruise_cancel:
+    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL] and cruise_cancel:
         can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, CS.cruise_throttle_msg, frame))
 
     # TODO: Find better way to cancel!

@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+# type: ignore
+
 import numpy as np
 from collections import OrderedDict
 import matplotlib.pyplot as plt
@@ -147,7 +149,6 @@ for cost in np.logspace(-1, 1.0, 5):
 xs.append(sol_x)
 ys.append(sol_y)
 deltas.append(delta)
-
 
 
 plt.figure()

@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 
 from common.basedir import BASEDIR
 os.environ['BASEDIR'] = BASEDIR
-SCALE = float(os.getenv("SCALE", 1.0))
+SCALE = float(os.getenv("SCALE", "1"))
 
 import argparse
-import pygame
+import pygame  # pylint: disable=import-error
 import numpy as np
-import cv2
+import cv2  # pylint: disable=import-error
 import sys
 import cereal.messaging as messaging
 
@@ -17,7 +17,6 @@ _BB_TO_FULL_FRAME = np.asarray([[1., 0., _BB_OFFSET[0]], [0., 1., _BB_OFFSET[1]]
                                 [0., 0., 1.]])
 _FULL_FRAME_TO_BB = np.linalg.inv(_BB_TO_FULL_FRAME)
 _FULL_FRAME_SIZE = 1164, 874
-
 
 
 def pygame_modules_have_loaded():
@@ -68,7 +67,7 @@ def ui_thread(addr, frame_address):
     else:
       # actually RGB
       img = np.frombuffer(yuv_img, dtype=np.uint8).reshape((_FULL_FRAME_SIZE[1], _FULL_FRAME_SIZE[0], 3))
-      img = img[:, :, ::-1] # Convert BGR to RGB
+      img = img[:, :, ::-1]  # Convert BGR to RGB
 
     height, width = img.shape[:2]
     img_resized = cv2.resize(

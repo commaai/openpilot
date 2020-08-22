@@ -13,6 +13,7 @@ class TestCarInterfaces(unittest.TestCase):
     all_cars = all_known_cars()
 
     for car_name in all_cars:
+      print(car_name)
       fingerprint = FINGERPRINTS[car_name][0]
 
       CarInterface, CarController, CarState = interfaces[car_name]
@@ -29,6 +30,17 @@ class TestCarInterfaces(unittest.TestCase):
         car_interface = CarInterface(car_params, CarController, CarState)
         assert car_params
         assert car_interface
+
+        self.assertGreater(car_params.mass, 1)
+        self.assertGreater(car_params.steerRateCost, 1e-3)
+
+        tuning = car_params.lateralTuning.which()
+        if tuning == 'pid':
+          self.assertTrue(len(car_params.lateralTuning.pid.kpV))
+        elif tuning == 'lqr':
+          self.assertTrue(len(car_params.lateralTuning.lqr.a))
+        elif tuning == 'indi':
+          self.assertGreater(car_params.lateralTuning.indi.outerLoopGain, 1e-3)
 
         # Run car interface
         CC = car.CarControl.new_message()
@@ -51,7 +63,7 @@ class TestCarInterfaces(unittest.TestCase):
 
       # Run radar interface once
       radar_interface.update([])
-      if hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
+      if not car_params.radarOffCan and hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
         radar_interface._update([radar_interface.trigger_msg])
 
 if __name__ == "__main__":

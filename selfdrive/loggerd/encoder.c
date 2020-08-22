@@ -1,3 +1,5 @@
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -23,6 +25,7 @@
 #include "common/swaglog.h"
 
 #include "encoder.h"
+
 
 //#define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
 
@@ -93,6 +96,7 @@ static OMX_CALLBACKTYPE omx_callbacks = {
 #define PORT_INDEX_IN 0
 #define PORT_INDEX_OUT 1
 
+static const char* omx_color_fomat_name(uint32_t format) __attribute__((unused));
 static const char* omx_color_fomat_name(uint32_t format) {
   switch (format) {
   case OMX_COLOR_FormatUnused: return "OMX_COLOR_FormatUnused";
@@ -226,7 +230,7 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   in_port.format.video.xFramerate = (s->fps * 65536);
   in_port.format.video.eCompressionFormat = OMX_VIDEO_CodingUnused;
   // in_port.format.video.eColorFormat = OMX_COLOR_FormatYUV420SemiPlanar;
-  in_port.format.video.eColorFormat = QOMX_COLOR_FORMATYUV420PackedSemiPlanar32m;
+  in_port.format.video.eColorFormat = (OMX_COLOR_FORMATTYPE)QOMX_COLOR_FORMATYUV420PackedSemiPlanar32m;
 
   err = OMX_SetParameter(s->handle, OMX_IndexParamPortDefinition,
                          (OMX_PTR) &in_port);
@@ -394,9 +398,9 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   }
 
   if (s->stream_sock_raw) {
-    uint64_t current_time = nanos_since_boot();
-    uint64_t diff = current_time - out_buf->nTimeStamp*1000LL;
-    double msdiff = (double) diff / 1000000.0;
+    //uint64_t current_time = nanos_since_boot();
+    //uint64_t diff = current_time - out_buf->nTimeStamp*1000LL;
+    //double msdiff = (double) diff / 1000000.0;
     // printf("encoded latency to tsEof: %f\n", msdiff);
     zmq_send(s->stream_sock_raw, &out_buf->nTimeStamp, sizeof(out_buf->nTimeStamp), ZMQ_SNDMORE);
     zmq_send(s->stream_sock_raw, buf_data, out_buf->nFilledLen, 0);

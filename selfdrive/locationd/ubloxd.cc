@@ -7,17 +7,12 @@
 #include <sys/time.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <assert.h>
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <map>
-#include <vector>
 
 #include "messaging.hpp"
-#include <capnp/serialize.h>
-#include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/params.h"
 #include "common/swaglog.h"
