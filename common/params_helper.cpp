@@ -12,7 +12,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <libgen.h>
-
 #include <limits.h>     /* PATH_MAX */
 #include <errno.h>
 
@@ -84,7 +83,6 @@ namespace params {
     {"CarBatteryCapacity", {TxType::PERSISTENT} }
   };
 
-
   static int mkdir_p(const char *path) {
     /* Adapted from http://stackoverflow.com/a/2336245/119527 */
     const size_t len = strlen(path);
@@ -102,14 +100,14 @@ namespace params {
         if (*p == '/') {
             /* Temporarily truncate */
             *p = '\0';
-            if (mkdir(_path, S_IRWXU) != 0) {
+            if (mkdir(_path, 0666) != 0) {
                 if (errno != EEXIST)
                     return -1; 
             }
             *p = '/';
         }
     }   
-    if (mkdir(_path, S_IRWXU) != 0) {
+    if (mkdir(_path, 0666) != 0) {
         if (errno != EEXIST)
             return -1; 
     }   
