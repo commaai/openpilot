@@ -2,7 +2,9 @@
 #include <string.h>
 #include <math.h>
 #include <map>
-#include "ui.hpp"
+
+#include "paint.hpp"
+#include "sidebar.hpp"
 
 static void ui_draw_sidebar_background(UIState *s) {
   int sbr_x = !s->scene.uilayout_sidebarcollapsed ? 0 : -(sbr_w) + bdr_s * 2;
