@@ -10,11 +10,11 @@ class LatControlLQR():
     self.scale = CP.lateralTuning.lqr.scale
     self.ki = CP.lateralTuning.lqr.ki
 
-    self.A = np.array(CP.lateralTuning.lqr.a).reshape((2,2))
-    self.B = np.array(CP.lateralTuning.lqr.b).reshape((2,1))
-    self.C = np.array(CP.lateralTuning.lqr.c).reshape((1,2))
-    self.K = np.array(CP.lateralTuning.lqr.k).reshape((1,2))
-    self.L = np.array(CP.lateralTuning.lqr.l).reshape((2,1))
+    self.A = np.array(CP.lateralTuning.lqr.a).reshape((2, 2))
+    self.B = np.array(CP.lateralTuning.lqr.b).reshape((2, 1))
+    self.C = np.array(CP.lateralTuning.lqr.c).reshape((1, 2))
+    self.K = np.array(CP.lateralTuning.lqr.k).reshape((1, 2))
+    self.L = np.array(CP.lateralTuning.lqr.l).reshape((2, 1))
     self.dc_gain = CP.lateralTuning.lqr.dcGain
 
     self.x_hat = np.array([[0], [0]])
@@ -79,8 +79,8 @@ class LatControlLQR():
         i = self.i_lqr + self.ki * self.i_rate * error
         control = lqr_output + i
 
-        if ((error >= 0 and (control <= steers_max or i < 0.0)) or \
-            (error <= 0 and (control >= -steers_max or i > 0.0))):
+        if (error >= 0 and (control <= steers_max or i < 0.0)) or \
+           (error <= 0 and (control >= -steers_max or i > 0.0)):
           self.i_lqr = i
 
       self.output_steer = lqr_output + self.i_lqr

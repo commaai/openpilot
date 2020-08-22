@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# type: ignore
+
 import os
 import argparse
 import signal
@@ -28,7 +30,7 @@ if __name__ == "__main__":
   stats = defaultdict(lambda: {'err': 0, "cnt": 0, "=": 0, "+": 0, "-": 0})
   cnt = 0
   total_error = 0
-  
+
   while messaging.recv_one(carControl):
     sm.update()
     msg_cnt += 1

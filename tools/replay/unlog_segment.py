@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: skip-file
+
 import argparse
 import bisect
 import select
@@ -100,6 +102,6 @@ if __name__ == "__main__":
   try:
     replay(args.segment, args.loop)
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
-  except:
+  except Exception:
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
     raise

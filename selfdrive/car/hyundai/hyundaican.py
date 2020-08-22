@@ -20,7 +20,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CF_Lkas_Chksum"] = 0
 
   if car_fingerprint in [CAR.SONATA, CAR.PALISADE]:
-    values["CF_Lkas_Bca_R"] = int(left_lane) + (int(right_lane) << 1)
+    values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
     # FcwOpt_USM 5 = Orange blinking car + lanes
@@ -40,9 +40,9 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   elif car_fingerprint == CAR.HYUNDAI_GENESIS:
     # This field is actually LdwsActivemode
     # Genesis and Optima fault when forwarding while engaged
-    values["CF_Lkas_Bca_R"] = 2
+    values["CF_Lkas_LdwsActivemode"] = 2
   elif car_fingerprint == CAR.KIA_OPTIMA:
-    values["CF_Lkas_Bca_R"] = 0
+    values["CF_Lkas_LdwsActivemode"] = 0
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 

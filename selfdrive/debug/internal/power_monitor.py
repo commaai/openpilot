@@ -17,7 +17,7 @@ if __name__ == '__main__':
       print("disabling charging")
       os.system('echo "0" > /sys/class/power_supply/battery/charging_enabled')
 
-    voltage_average = (0., 0) # average, count
+    voltage_average = (0., 0)  # average, count
     current_average = (0., 0)
     power_average = (0., 0)
     capacity_average = (0., 0)

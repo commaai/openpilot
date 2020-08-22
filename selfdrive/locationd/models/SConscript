@@ -17,6 +17,7 @@ if arch != "aarch64":
         'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', 'generated'),
         'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', 'generated'),
         'feature_handler_5': ('#rednose/helpers/feature_handler.py', 'generated'),
+        'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', 'generated'),
     })
 
 found = {}

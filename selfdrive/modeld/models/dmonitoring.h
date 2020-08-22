@@ -1,19 +1,15 @@
-#ifndef DMONITORING_H
-#define DMONITORING_H
-
+#pragma once
+#include <vector>
 #include "common/util.h"
 #include "commonmodel.h"
 #include "runners/run.h"
-
-#include "cereal/gen/cpp/log.capnp.h"
-#include <capnp/serialize.h>
 #include "messaging.hpp"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define OUTPUT_SIZE 33
+#define OUTPUT_SIZE 34
 #define RHD_CHECK_INTERVAL 10
 
 typedef struct DMonitoringResult {
@@ -26,6 +22,7 @@ typedef struct DMonitoringResult {
   float right_eye_prob;
   float left_blink_prob;
   float right_blink_prob;
+  float sg_prob;
 } DMonitoringResult;
 
 typedef struct DMonitoringModelState {
@@ -33,15 +30,18 @@ typedef struct DMonitoringModelState {
   bool is_rhd;
   bool is_rhd_checked;
   float output[OUTPUT_SIZE];
+  std::vector<uint8_t> resized_buf;
+  std::vector<uint8_t> cropped_buf;
+  std::vector<uint8_t> premirror_cropped_buf;
+  std::vector<float> net_input_buf;
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
-void dmonitoring_publish(PubSocket *sock, uint32_t frame_id, const DMonitoringResult res);
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res);
 void dmonitoring_free(DMonitoringModelState* s);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif

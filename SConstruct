@@ -1,4 +1,7 @@
+import Cython
+import distutils
 import os
+import shutil
 import subprocess
 import sys
 import platform
@@ -11,6 +14,10 @@ AddOption('--asan',
           action='store_true',
           help='turn on ASAN')
 
+# Rebuild cython extensions if python, distutils, or cython change
+cython_dependencies = [Value(v) for v in (sys.version, distutils.__version__, Cython.__version__)]
+Export('cython_dependencies')
+
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
@@ -18,6 +25,7 @@ if arch == "aarch64" and not os.path.isdir("/system"):
   arch = "larch64"
 
 webcam = bool(ARGUMENTS.get("use_webcam", 0))
+QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
 if arch == "aarch64" or arch == "larch64":
   lenv = {
@@ -43,20 +51,31 @@ if arch == "aarch64" or arch == "larch64":
   ]
 
   if arch == "larch64":
-    libpath += ["#phonelibs/snpe/larch64"]
-    libpath += ["#phonelibs/libyuv/larch64/lib"]
-    libpath += ["/usr/lib/aarch64-linux-gnu"]
+    libpath += [
+      "#phonelibs/snpe/larch64",
+      "#phonelibs/libyuv/larch64/lib",
+      "/usr/lib/aarch64-linux-gnu"
+    ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     rpath = ["/usr/local/lib"]
   else:
-    libpath += ["#phonelibs/snpe/aarch64"]
-    libpath += ["#phonelibs/libyuv/lib"]
+    libpath += [
+      "#phonelibs/snpe/aarch64",
+      "#phonelibs/libyuv/lib"
+    ]
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
     rpath = ["/system/vendor/lib64"]
 
+    if QCOM_REPLAY:
+      cflags += ["-DQCOM_REPLAY"]
+      cxxflags += ["-DQCOM_REPLAY"]
+
 else:
+  cflags = []
+  cxxflags = []
+
   lenv = {
     "PATH": "#external/bin:" + os.environ['PATH'],
   }
@@ -72,6 +91,8 @@ else:
       "/usr/local/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
+    cflags += ["-DGL_SILENCE_DEPRECATION"]
+    cxxflags += ["-DGL_SILENCE_DEPRECATION"]
   else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
@@ -84,18 +105,20 @@ else:
     ]
 
   rpath = [
-           "external/tensorflow/lib",
-           "cereal",
-           "selfdrive/common"]
+    "external/tensorflow/lib",
+    "cereal",
+    "selfdrive/common"
+  ]
 
   # allows shared libraries to work globally
   rpath = [os.path.join(os.getcwd(), x) for x in rpath]
 
-  cflags = []
-  cxxflags = []
-
-ccflags_asan = ["-fsanitize=address", "-fno-omit-frame-pointer"] if GetOption('asan') else []
-ldflags_asan = ["-fsanitize=address"] if GetOption('asan') else []
+if GetOption('asan'):
+  ccflags_asan = ["-fsanitize=address", "-fno-omit-frame-pointer"]
+  ldflags_asan = ["-fsanitize=address"]
+else:
+  ccflags_asan = []
+  ldflags_asan = []
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
@@ -106,11 +129,10 @@ env = Environment(
     "-g",
     "-fPIC",
     "-O2",
-    "-Werror=implicit-function-declaration",
-    "-Werror=incompatible-pointer-types",
-    "-Werror=int-conversion",
-    "-Werror=return-type",
-    "-Werror=format-extra-args",
+    "-Wunused",
+    "-Werror",
+    "-Wno-deprecated-register",
+    "-Wno-inconsistent-missing-override",
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
@@ -134,6 +156,7 @@ env = Environment(
     "#selfdrive/camerad/include",
     "#selfdrive/loggerd/include",
     "#selfdrive/modeld",
+    "#selfdrive/ui",
     "#cereal/messaging",
     "#cereal",
     "#opendbc/can",
@@ -147,16 +170,73 @@ env = Environment(
 
   CFLAGS=["-std=gnu11"] + cflags,
   CXXFLAGS=["-std=c++14"] + cxxflags,
-  LIBPATH=libpath +
-  [
+  LIBPATH=libpath + [
     "#cereal",
     "#selfdrive/common",
     "#phonelibs",
   ]
 )
 
+qt_env = None
+if arch in ["x86_64", "Darwin", "larch64"]:
+  qt_env = env.Clone()
+
+  if arch == "larch64":
+    qt_env['QTDIR'] = "/usr/local/Qt-5.15.0"
+    QT_BASE = "/usr/local/Qt-5.15.0/"
+    qt_dirs = [
+      QT_BASE + "include/",
+      QT_BASE + "include/QtWidgets",
+      QT_BASE + "include/QtGui",
+      QT_BASE + "include/QtCore",
+      QT_BASE + "include/QtDBus",
+    ]
+    qt_env["RPATH"] += [QT_BASE + "lib"]
+  elif arch == "Darwin":
+    qt_env['QTDIR'] = "/usr/local/opt/qt"
+    QT_BASE = "/usr/local/opt/qt/"
+    qt_dirs = [
+      QT_BASE + "include/",
+      QT_BASE + "include/QtWidgets",
+      QT_BASE + "include/QtGui",
+      QT_BASE + "include/QtCore",
+      QT_BASE + "include/QtDBus",
+    ]
+    qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
+  else:
+    qt_dirs = [
+      f"/usr/include/{arch}-linux-gnu/qt5",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtWidgets",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtGui",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtCore",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtDBus",
+    ]
+
+  qt_env.Tool('qt')
+  qt_env['CPPPATH'] += qt_dirs
+  qt_flags = [
+    "-D_REENTRANT",
+    "-DQT_NO_DEBUG",
+    "-DQT_WIDGETS_LIB",
+    "-DQT_GUI_LIB",
+    "-DQT_CORE_LIB"
+  ]
+  qt_env['CXXFLAGS'] += qt_flags
+
 if os.environ.get('SCONS_CACHE'):
-  CacheDir('/tmp/scons_cache')
+  cache_dir = '/tmp/scons_cache'
+
+  if os.getenv('CI'):
+    branch = os.getenv('GIT_BRANCH')
+
+    if QCOM_REPLAY:
+      cache_dir = '/tmp/scons_cache_qcom_replay'
+    elif branch is not None and branch != 'master':
+      cache_dir_branch = '/tmp/scons_cache_' + branch
+      if not os.path.isdir(cache_dir_branch) and os.path.isdir(cache_dir):
+        shutil.copytree(cache_dir, cache_dir_branch)
+      cache_dir = cache_dir_branch
+  CacheDir(cache_dir)
 
 node_interval = 5
 node_count = 0
@@ -181,7 +261,7 @@ def abspath(x):
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'arch', 'zmq', 'SHARED', 'webcam')
+Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -209,11 +289,11 @@ SConscript(['opendbc/can/SConscript'])
 
 SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
+SConscript(['common/transformations/SConscript'])
 SConscript(['phonelibs/SConscript'])
 
-if arch != "Darwin":
-  SConscript(['selfdrive/camerad/SConscript'])
-  SConscript(['selfdrive/modeld/SConscript'])
+SConscript(['selfdrive/camerad/SConscript'])
+SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
@@ -223,11 +303,11 @@ SConscript(['selfdrive/controls/lib/longitudinal_mpc_model/SConscript'])
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
 
-#SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/locationd/models/SConscript'])
+
 
 if arch == "aarch64":
   SConscript(['selfdrive/logcatd/SConscript'])
@@ -235,3 +315,6 @@ if arch == "aarch64":
   SConscript(['selfdrive/clocksd/SConscript'])
 else:
   SConscript(['tools/lib/index_log/SConscript'])
+
+if arch != "larch64":
+  SConscript(['selfdrive/ui/SConscript'])

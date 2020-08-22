@@ -1,18 +1,17 @@
-README.md
-SAFETY.md
-
-codecov.yml
-lgtm.yml
-
 .gitignore
 LICENSE
+launch.sh
+launch_env.sh
 launch_chffrplus.sh
 launch_openpilot.sh
 
-CONTRIBUTING.md
-RELEASES.md
-
+Jenkinsfile
 SConstruct
+
+CONTRIBUTING.md
+README.md
+RELEASES.md
+SAFETY.md
 
 apk/ai.comma*.apk
 
@@ -29,7 +28,6 @@ common/numpy_fast.py
 common/params.py
 common/xattr.py
 common/profiler.py
-common/testing.py
 common/basedir.py
 common/filter_simple.py
 common/stat_live.py
@@ -39,22 +37,31 @@ common/cython_hacks.py
 common/apk.py
 common/SConscript
 common/common_pyx_setup.py
-common/manager_helpers.py
 
 common/kalman/.gitignore
 common/kalman/*
-common/kalman/tests/*
 
 common/transformations/__init__.py
 common/transformations/camera.py
-common/transformations/coordinates.py
 common/transformations/model.py
+
+common/transformations/SConscript
+common/transformations/setup.py
+common/transformations/coordinates.py
+common/transformations/coordinates.cc
+common/transformations/coordinates.hpp
 common/transformations/orientation.py
+common/transformations/orientation.cc
+common/transformations/orientation.hpp
+common/transformations/transformations.pxd
+common/transformations/transformations.pyx
 
 common/api/__init__.py
 
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
+
+release/build_release2.sh
 
 selfdrive/version.py
 
@@ -73,8 +80,6 @@ selfdrive/updated.py
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
 selfdrive/athena/manage_athenad.py
-selfdrive/athena/test.py
-selfdrive/athena/test_helpers.py
 
 selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript
@@ -84,7 +89,10 @@ selfdrive/boardd/boardd.py
 selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/boardd_setup.py
 selfdrive/boardd/can_list_to_can_capnp.cc
-selfdrive/boardd/tests/**
+selfdrive/boardd/panda.cc
+selfdrive/boardd/panda.h
+selfdrive/boardd/pigeon.cc
+selfdrive/boardd/pigeon.h
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
@@ -93,6 +101,8 @@ selfdrive/car/interfaces.py
 selfdrive/car/vin.py
 selfdrive/car/fw_versions.py
 selfdrive/car/isotp_parallel_query.py
+selfdrive/car/tests/__init__.py
+selfdrive/car/tests/test_car_interfaces.py
 selfdrive/car/chrysler/__init__.py
 selfdrive/car/chrysler/carstate.py
 selfdrive/car/chrysler/interface.py
@@ -100,7 +110,6 @@ selfdrive/car/chrysler/radar_interface.py
 selfdrive/car/chrysler/values.py
 selfdrive/car/chrysler/carcontroller.py
 selfdrive/car/chrysler/chryslercan.py
-selfdrive/car/chrysler/test_chryslercan.py
 selfdrive/car/honda/__init__.py
 selfdrive/car/honda/carstate.py
 selfdrive/car/honda/interface.py
@@ -122,6 +131,13 @@ selfdrive/car/toyota/radar_interface.py
 selfdrive/car/toyota/values.py
 selfdrive/car/toyota/carcontroller.py
 selfdrive/car/toyota/toyotacan.py
+selfdrive/car/nissan/__init__.py
+selfdrive/car/nissan/carcontroller.py
+selfdrive/car/nissan/carstate.py
+selfdrive/car/nissan/interface.py
+selfdrive/car/nissan/nissancan.py
+selfdrive/car/nissan/radar_interface.py
+selfdrive/car/nissan/values.py
 selfdrive/car/volkswagen/__init__.py
 selfdrive/car/volkswagen/carstate.py
 selfdrive/car/volkswagen/interface.py
@@ -150,13 +166,19 @@ selfdrive/car/subaru/radar_interface.py
 selfdrive/car/subaru/values.py
 selfdrive/car/subaru/carcontroller.py
 selfdrive/car/subaru/subarucan.py
+selfdrive/car/mazda/__init__.py
+selfdrive/car/mazda/carstate.py
+selfdrive/car/mazda/interface.py
+selfdrive/car/mazda/radar_interface.py
+selfdrive/car/mazda/values.py
+selfdrive/car/mazda/carcontroller.py
+selfdrive/car/mazda/mazdacan.py
 selfdrive/car/mock/*.py
 
 selfdrive/clocksd/.gitignore
 selfdrive/clocksd/SConscript
 selfdrive/clocksd/clocksd.cc
 
-selfdrive/debug/mpc/*
 selfdrive/debug/*.py
 
 selfdrive/common/SConscript
@@ -176,7 +198,6 @@ selfdrive/common/util.[c,h]
 selfdrive/common/efd.[c,h]
 selfdrive/common/cqueue.[c,h]
 selfdrive/common/clutil.[c,h]
-selfdrive/common/messaging.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
 selfdrive/common/mutex.h
@@ -192,20 +213,19 @@ selfdrive/common/visionimg.cc
 selfdrive/common/visionimg.h
 selfdrive/common/spinner.c
 selfdrive/common/spinner.h
+selfdrive/common/gpio.cc
+selfdrive/common/gpio.h
 
 
 selfdrive/controls/__init__.py
-selfdrive/controls/tests/*
 selfdrive/controls/controlsd.py
 selfdrive/controls/plannerd.py
 selfdrive/controls/radard.py
-selfdrive/controls/dmonitoringd.py
 selfdrive/controls/lib/__init__.py
 selfdrive/controls/lib/alertmanager.py
 selfdrive/controls/lib/alerts_offroad.json
 selfdrive/controls/lib/events.py
 selfdrive/controls/lib/drive_helpers.py
-selfdrive/controls/lib/driver_monitor.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_lqr.py
@@ -220,7 +240,6 @@ selfdrive/controls/lib/speed_smoother.py
 selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
 selfdrive/controls/lib/long_mpc_model.py
-selfdrive/controls/lib/driverview.py
 
 selfdrive/controls/lib/cluster/*
 
@@ -256,7 +275,6 @@ selfdrive/locationd/ubloxd_main.cc
 selfdrive/locationd/ubloxd_test.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
-selfdrive/locationd/test/*.py
 
 selfdrive/locationd/locationd.py
 selfdrive/locationd/paramsd.py
@@ -268,12 +286,6 @@ selfdrive/locationd/models/constants.py
 
 selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py
-
-selfdrive/locationd/locationd_yawrate.cc
-selfdrive/locationd/locationd_yawrate.h
-selfdrive/locationd/params_learner.cc
-selfdrive/locationd/params_learner.h
-selfdrive/locationd/paramsd.cc
 
 selfdrive/logcatd/SConscript
 selfdrive/logcatd/logcatd.cc
@@ -295,7 +307,6 @@ selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py
 selfdrive/loggerd/uploader.py
 selfdrive/loggerd/deleter.py
-selfdrive/loggerd/tests/*
 
 selfdrive/sensord/SConscript
 selfdrive/sensord/gpsd.cc
@@ -308,25 +319,14 @@ selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 
 selfdrive/test/__init__.py
-selfdrive/test/longitudinal_maneuvers/*.py
+selfdrive/test/helpers.py
+selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_openpilot.py
 selfdrive/test/test_fingerprints.py
-selfdrive/test/test_car_models.py
-selfdrive/test/openpilotci_upload.py
-
-selfdrive/test/process_replay/.gitignore
-selfdrive/test/process_replay/__init__.py
-selfdrive/test/process_replay/compare_logs.py
-selfdrive/test/process_replay/process_replay.py
-selfdrive/test/process_replay/test_processes.py
-selfdrive/test/process_replay/update_refs.py
-selfdrive/test/process_replay/ref_commit
-selfdrive/test/process_replay/README.md
+selfdrive/test/test_cpu_usage.py
 
 selfdrive/ui/SConscript
-selfdrive/ui/*.c
 selfdrive/ui/*.cc
-selfdrive/ui/*.h
 selfdrive/ui/*.hpp
 selfdrive/ui/ui
 selfdrive/ui/spinner/Makefile
@@ -336,6 +336,9 @@ selfdrive/ui/spinner/spinner.c
 selfdrive/ui/text/Makefile
 selfdrive/ui/text/text
 selfdrive/ui/text/text.c
+
+selfdrive/ui/qt/*.cc
+selfdrive/ui/qt/*.hpp
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
@@ -380,10 +383,16 @@ selfdrive/modeld/transforms/loadyuv.cl
 selfdrive/modeld/transforms/transform.[c,h]
 selfdrive/modeld/transforms/transform.cl
 
+selfdrive/modeld/thneed/thneed.*
+selfdrive/modeld/thneed/include/*
+
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
 selfdrive/modeld/runners/runmodel.h
 selfdrive/modeld/runners/run.h
+
+selfdrive/monitoring/dmonitoringd.py
+selfdrive/monitoring/driver_monitor.py
 
 selfdrive/assets
 selfdrive/assets/fonts/*.ttf
@@ -396,9 +405,7 @@ phonelibs/nanovg/*.h
 phonelibs/libgralloc/**
 phonelibs/linux/**
 phonelibs/opencl/**
-phonelibs/curl/*
 phonelibs/zlib/*
-phonelibs/boringssl/*
 phonelibs/bzip2/*
 phonelibs/openmax/**
 
@@ -420,9 +427,132 @@ phonelibs/android_system_core/**
 installer/updater/updater
 installer/updater/updater.cc
 installer/updater/update.json
+installer/updater/update_kernel.json
 installer/updater/Makefile
 
 scripts/update_now.sh
 scripts/stop_updater.sh
 
+pyextra/.gitignore
+
 rednose/**
+
+cereal/.gitignore
+cereal/__init__.py
+cereal/car.capnp
+cereal/log.capnp
+cereal/services.py
+cereal/service_list.yaml
+cereal/SConscript
+cereal/include/**
+cereal/messaging/.gitignore
+cereal/messaging/__init__.py
+cereal/messaging/bridge.cc
+cereal/messaging/impl_msgq.cc
+cereal/messaging/impl_msgq.hpp
+cereal/messaging/impl_zmq.cc
+cereal/messaging/impl_zmq.hpp
+cereal/messaging/messaging.cc
+cereal/messaging/messaging.hpp
+cereal/messaging/messaging.pxd
+cereal/messaging/messaging_pyx.pyx
+cereal/messaging/messaging_pyx_setup.py
+cereal/messaging/msgq.cc
+cereal/messaging/msgq.hpp
+cereal/messaging/socketmaster.cc
+
+panda/.gitignore
+panda/__init__.py
+panda/VERSION
+panda/board/**
+panda/certs/**
+panda/common/**
+panda/crypto/**
+panda/python/**
+
+opendbc/.gitignore
+opendbc/__init__.py
+opendbc/can/__init__.py
+opendbc/can/SConscript
+opendbc/can/can_define.py
+opendbc/can/common.cc
+opendbc/can/common.h
+opendbc/can/common.pxd
+opendbc/can/common_dbc.h
+opendbc/can/common_pyx_setup.py
+opendbc/can/dbc.cc
+opendbc/can/dbc.py
+opendbc/can/dbc_template.cc
+opendbc/can/packer.cc
+opendbc/can/packer.py
+opendbc/can/packer_pyx.pyx
+opendbc/can/parser.cc
+opendbc/can/parser.py
+opendbc/can/parser_pyx.pyx
+opendbc/can/process_dbc.py
+opendbc/can/dbc_out/.gitkeep
+opendbc/can/dbc_out/.gitignore
+
+opendbc/chrysler_pacifica_2017_hybrid.dbc
+opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
+
+opendbc/gm_global_a_powertrain.dbc
+opendbc/gm_global_a_object.dbc
+opendbc/gm_global_a_chassis.dbc
+
+opendbc/ford_fusion_2018_pt.dbc
+opendbc/ford_fusion_2018_adas.dbc
+
+opendbc/honda_accord_s2t_2018_can_generated.dbc
+opendbc/honda_accord_lx15t_2018_can_generated.dbc
+opendbc/acura_ilx_2016_can_generated.dbc
+opendbc/acura_rdx_2018_can_generated.dbc
+opendbc/honda_civic_touring_2016_can_generated.dbc
+opendbc/honda_civic_hatchback_ex_2017_can_generated.dbc
+opendbc/honda_civic_sedan_16_diesel_2019_can_generated.dbc
+opendbc/honda_crv_touring_2016_can_generated.dbc
+opendbc/honda_crv_ex_2017_can_generated.dbc
+opendbc/honda_crv_ex_2017_body_generated.dbc
+opendbc/honda_crv_executive_2016_can_generated.dbc
+opendbc/honda_crv_hybrid_2019_can_generated.dbc
+opendbc/honda_fit_ex_2018_can_generated.dbc
+opendbc/honda_hrv_touring_2019_can_generated.dbc
+opendbc/honda_odyssey_exl_2018_generated.dbc
+opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
+opendbc/honda_pilot_touring_2017_can_generated.dbc
+opendbc/honda_ridgeline_black_edition_2017_can_generated.dbc
+opendbc/honda_insight_ex_2019_can_generated.dbc
+opendbc/acura_ilx_2016_nidec.dbc
+
+opendbc/hyundai_kia_generic.dbc
+
+opendbc/mazda_2017.dbc
+
+opendbc/nissan_x_trail_2017.dbc
+opendbc/nissan_leaf_2018.dbc
+
+opendbc/subaru_global_2017_generated.dbc
+opendbc/subaru_outback_2015_generated.dbc
+opendbc/subaru_outback_2019_generated.dbc
+opendbc/subaru_forester_2017_generated.dbc
+
+opendbc/toyota_rav4_hybrid_2017_pt_generated.dbc
+opendbc/toyota_rav4_2017_pt_generated.dbc
+opendbc/toyota_prius_2017_pt_generated.dbc
+opendbc/toyota_corolla_2017_pt_generated.dbc
+opendbc/lexus_rx_350_2016_pt_generated.dbc
+opendbc/lexus_rx_hybrid_2017_pt_generated.dbc
+opendbc/toyota_nodsu_pt_generated.dbc
+opendbc/toyota_nodsu_hybrid_pt_generated.dbc
+opendbc/toyota_camry_hybrid_2018_pt_generated.dbc
+opendbc/toyota_highlander_2017_pt_generated.dbc
+opendbc/toyota_highlander_hybrid_2018_pt_generated.dbc
+opendbc/toyota_avalon_2017_pt_generated.dbc
+opendbc/toyota_sienna_xle_2018_pt_generated.dbc
+opendbc/lexus_is_2018_pt_generated.dbc
+opendbc/lexus_ct200h_2018_pt_generated.dbc
+opendbc/lexus_nx300h_2018_pt_generated.dbc
+opendbc/toyota_adas.dbc
+opendbc/toyota_tss2_adas.dbc
+
+opendbc/vw_mqb_2010.dbc

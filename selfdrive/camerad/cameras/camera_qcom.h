@@ -1,9 +1,11 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <czmq.h>
+#include <atomic>
+#include "messaging.hpp"
 
 #include "msmb_isp.h"
 #include "msmb_ispif.h"
@@ -24,6 +26,18 @@
 #define DEVICE_LP3 2
 
 #define NUM_FOCUS 8
+
+#define LP3_AF_DAC_DOWN 366
+#define LP3_AF_DAC_UP 634
+#define LP3_AF_DAC_M 440
+#define LP3_AF_DAC_3SIG 52
+#define OP3T_AF_DAC_DOWN 224
+#define OP3T_AF_DAC_UP 456
+#define OP3T_AF_DAC_M 300
+#define OP3T_AF_DAC_3SIG 96
+
+#define FOCUS_RECOVER_PATIENCE 50 // 2.5 seconds of complete blur
+#define FOCUS_RECOVER_STEPS 240 // 6 seconds
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +62,8 @@ typedef struct CameraState {
 
   int device;
 
-  void* ops_sock;
+  void* ops_sock_handle;
+  zsock_t * ops_sock;
 
   uint32_t pixel_clock;
   uint32_t line_length_pclk;
@@ -81,7 +96,7 @@ typedef struct CameraState {
   int cur_frame_length;
   int cur_integ_lines;
 
-  float digital_gain;
+  std::atomic<float> digital_gain;
 
   StreamState ss[3];
 
@@ -98,7 +113,9 @@ typedef struct CameraState {
   uint16_t cur_lens_pos;
   uint64_t last_sag_ts;
   float last_sag_acc_z;
-  float lens_true_pos;
+  std::atomic<float> lens_true_pos;
+
+  std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
 
   int fps;
 
@@ -126,6 +143,4 @@ int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
-
 #endif

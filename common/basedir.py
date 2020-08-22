@@ -8,4 +8,3 @@ if ANDROID:
 else:
   PERSIST = os.path.join(BASEDIR, "persist")
   PARAMS = os.path.join(BASEDIR, "persist", "params")
-

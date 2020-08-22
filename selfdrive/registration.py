@@ -45,7 +45,7 @@ def register():
 
   # late import
   import jwt
-  register_token = jwt.encode({'register':True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
+  register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
 
   try:
     cloudlog.info("getting pilotauth")

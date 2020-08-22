@@ -4,7 +4,7 @@
 #include <capnp/dynamic.h>
 #include <capnp/schema.h>
 
-// include the dynamic struct 
+// include the dynamic struct
 #include "cereal/gen/cpp/car.capnp.c++"
 #include "cereal/gen/cpp/log.capnp.c++"
 
@@ -24,7 +24,7 @@ static inline uint64_t nanos_since_boot() {
 }
 
 
-Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, FrameReader*> *frs_, int seek) 
+Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, FrameReader*> *frs_, int seek)
   : events(events_), events_lock(events_lock_), frs(frs_) {
   ctx = Context::create();
   YAML::Node service_list = YAML::LoadFile("../../cereal/service_list.yaml");

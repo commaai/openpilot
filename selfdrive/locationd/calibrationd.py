@@ -24,22 +24,21 @@ INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 WRITE_CYCLES = 10  # write every 1000 cycles
 VP_INIT = np.array([W/2., H/2.])
 
-# These validity corners were chosen by looking at 1000
-# and taking most extreme cases with some margin.
-VP_VALIDITY_CORNERS = np.array([[W//2 - 120, 300], [W//2 + 120, 520]])
+# These values are needed to accomodate biggest modelframe
+VP_VALIDITY_CORNERS = np.array([[W//2 - 63, 300], [W//2 + 63, 520]])
 DEBUG = os.getenv("DEBUG") is not None
 
 
 def is_calibration_valid(vp):
-  return vp[0] > VP_VALIDITY_CORNERS[0,0] and vp[0] < VP_VALIDITY_CORNERS[1,0] and \
-         vp[1] > VP_VALIDITY_CORNERS[0,1] and vp[1] < VP_VALIDITY_CORNERS[1,1]
+  return vp[0] > VP_VALIDITY_CORNERS[0, 0] and vp[0] < VP_VALIDITY_CORNERS[1, 0] and \
+         vp[1] > VP_VALIDITY_CORNERS[0, 1] and vp[1] < VP_VALIDITY_CORNERS[1, 1]
 
 
 def sanity_clip(vp):
   if np.isnan(vp).any():
     vp = VP_INIT
-  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0,0] - 20, VP_VALIDITY_CORNERS[1,0] + 20),
-                   np.clip(vp[1], VP_VALIDITY_CORNERS[0,1] - 20, VP_VALIDITY_CORNERS[1,1] + 20)])
+  return np.array([np.clip(vp[0], VP_VALIDITY_CORNERS[0, 0] - 5, VP_VALIDITY_CORNERS[1, 0] + 5),
+                   np.clip(vp[1], VP_VALIDITY_CORNERS[0, 1] - 5, VP_VALIDITY_CORNERS[1, 1] + 5)])
 
 
 def intrinsics_from_vp(vp):
@@ -69,10 +68,7 @@ class Calibrator():
     if calibration_params:
       try:
         calibration_params = json.loads(calibration_params)
-        if 'calib_radians' in calibration_params:
-          self.vp = vp_from_rpy(calibration_params["calib_radians"])
-        else:
-          self.vp = np.array(calibration_params["vanishing_point"])
+        self.vp = vp_from_rpy(calibration_params["calib_radians"])
         if not np.isfinite(self.vp).all():
           self.vp = copy.copy(VP_INIT)
         self.vps = np.tile(self.vp, (INPUTS_WANTED, 1))
@@ -92,7 +88,7 @@ class Calibrator():
     end_status = self.cal_status
 
     self.just_calibrated = False
-    if start_status == Calibration.UNCALIBRATED and end_status == Calibration.CALIBRATED:
+    if start_status == Calibration.UNCALIBRATED and end_status != Calibration.UNCALIBRATED:
       self.just_calibrated = True
 
   def handle_v_ego(self, v_ego):
@@ -130,13 +126,21 @@ class Calibrator():
 
   def send_data(self, pm):
     calib = get_calib_from_vp(self.vp)
+    if self.valid_blocks > 0:
+      max_vp_calib = np.array(get_calib_from_vp(np.max(self.vps[:self.valid_blocks], axis=0)))
+      min_vp_calib = np.array(get_calib_from_vp(np.min(self.vps[:self.valid_blocks], axis=0)))
+      calib_spread = np.abs(max_vp_calib - min_vp_calib)
+    else:
+      calib_spread = np.zeros(3)
     extrinsic_matrix = get_view_frame_from_road_frame(0, calib[1], calib[2], model_height)
 
     cal_send = messaging.new_message('liveCalibration')
+    cal_send.liveCalibration.validBlocks = self.valid_blocks
     cal_send.liveCalibration.calStatus = self.cal_status
     cal_send.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
     cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
     cal_send.liveCalibration.rpyCalib = [float(x) for x in calib]
+    cal_send.liveCalibration.rpyCalibSpread = [float(x) for x in calib_spread]
 
     pm.send('liveCalibration', cal_send)
 
@@ -171,11 +175,8 @@ def calibrationd_thread(sm=None, pm=None):
                                           sm['cameraOdometry'].transStd,
                                           sm['cameraOdometry'].rotStd)
 
-
       if DEBUG and new_vp is not None:
         print('got new vp', new_vp)
-
-      # decimate outputs for efficiency
 
 
 def main(sm=None, pm=None):

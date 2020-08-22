@@ -1,26 +1,31 @@
 ---
 name: Bug report
-about: Create a report to help us improve openpilot
+about: For issues with running openpilot on your comma device
 title: ''
-labels: ''
+labels: 'bug'
 assignees: ''
-
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+
+<!-- A clear and concise description of what the bug is. Add the `car bug` label for vehicle/brand specific bugs and the `bug` label for all other bugs. -->
 
 **How to reproduce or log data**
-Steps to reproduce the behavior, or a explorer/cabana link to the exact drive and timestamp of when the bug occurred.
+
+<!-- Steps to reproduce the behavior. -->
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+
+<!-- A clear and concise description of what you expected to happen. -->
 
 **Device/Version information (please complete the following information):**
- - Device: [e.g. EON/EON Gold]
- - Dongle ID: [e.g. 77611a1fac303767, can be found in Settings -> Device -> Dongle ID]
- - Version: [e.g. 0.6.4], or commit hash when on devel
- - Car make/model [e.g. Toyota Prius 2016]
+ - Device: [e.g. EON/EON Gold/comma two]
+ - Dongle ID: [e.g. 77611a1fac303767, can be found in Settings -> Device -> Dongle ID or my.comma.ai/useradmin]
+ - Route: [e.g. 77611a1fac303767|2020-05-11--16-37-07, can be found in my.comma.ai/useradmin]
+ - Timestamp: [When in the route the bug occurs (e.g. 4min 30s into the drive)]
+ - Version: [commit hash when on a non-release branch, or version number when on devel or release2 (e.g. 0.7.6)]
+ - Car make/model: [e.g. Toyota Prius 2016]
 
 **Additional context**
-Add any other context about the problem here.
+
+<!-- Add any other context about the problem here. -->

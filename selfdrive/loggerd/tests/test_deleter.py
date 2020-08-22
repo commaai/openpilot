@@ -23,9 +23,6 @@ class TestDeleter(UploaderTestCase):
     deleter.os.statvfs = self.fake_statvfs
     deleter.ROOT = self.root
 
-  def tearDown(self):
-    super(TestDeleter, self).tearDown()
-
   def start_thread(self):
     self.end_event = threading.Event()
     self.del_thread = threading.Thread(target=deleter.deleter_thread, args=[self.end_event])

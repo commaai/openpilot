@@ -20,6 +20,7 @@ class Analyzer(ast.NodeVisitor):
     for alias in node.names:
       imps.add(alias.name)
     self.generic_visit(node)
+
   def visit_ImportFrom(self, node):
     imps.add(node.module)
     self.generic_visit(node)
@@ -38,4 +39,3 @@ for f in sorted(pyf):
 
 print("%d lines of parsed openpilot python" % tlns)
 #print(sorted(list(imps)))
-

@@ -25,4 +25,3 @@ class Timeout:
 
   def __exit__(self, exc_type, exc_val, exc_tb):
     signal.alarm(0)
-

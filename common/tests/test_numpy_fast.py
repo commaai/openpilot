@@ -1,6 +1,5 @@
 import numpy as np
 import unittest
-import timeit
 
 from common.numpy_fast import interp
 

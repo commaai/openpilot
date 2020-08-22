@@ -78,7 +78,7 @@ class CarController():
       static_msgs = range(1653, 1658)
       for addr in static_msgs:
         cnt = (frame % 10) + 1
-        can_sends.append(make_can_msg(addr, (cnt<<4).to_bytes(1, 'little') + b'\x00\x00\x00\x00\x00\x00\x00', 1))
+        can_sends.append(make_can_msg(addr, (cnt << 4).to_bytes(1, 'little') + b'\x00\x00\x00\x00\x00\x00\x00', 1))
 
       self.enabled_last = enabled
       self.main_on_last = CS.out.cruiseState.available

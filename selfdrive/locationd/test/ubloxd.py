@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# type: ignore
+# pylint: skip-file
 
 import os
 import serial
@@ -18,10 +20,10 @@ debug = os.getenv("DEBUG") is not None   # debug prints
 print_dB = os.getenv("PRINT_DB") is not None     # print antenna dB
 
 timeout = 1
-dyn_model = 4 # auto model
+dyn_model = 4  # auto model
 baudrate = 460800
-ports = ["/dev/ttyACM0","/dev/ttyACM1"]
-rate = 100 # send new data every 100ms
+ports = ["/dev/ttyACM0", "/dev/ttyACM1"]
+rate = 100  # send new data every 100ms
 
 # which SV IDs we have seen and when we got iono
 svid_seen = {}
@@ -31,17 +33,17 @@ iono_seen = 0
 def configure_ublox(dev):
   # configure ports  and solution parameters and rate
   # TODO: configure constellations and channels to allow for 10Hz and high precision
-  dev.configure_port(port=ublox.PORT_USB, inMask=1, outMask=1) # enable only UBX on USB
-  dev.configure_port(port=0, inMask=0, outMask=0) # disable DDC
+  dev.configure_port(port=ublox.PORT_USB, inMask=1, outMask=1)  # enable only UBX on USB
+  dev.configure_port(port=0, inMask=0, outMask=0)  # disable DDC
 
   if panda:
     payload = struct.pack('<BBHIIHHHBB', 1, 0, 0, 2240, baudrate, 1, 1, 0, 0, 0)
-    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload) # enable UART
+    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload)  # enable UART
   else:
     payload = struct.pack('<BBHIIHHHBB', 1, 0, 0, 2240, baudrate, 0, 0, 0, 0, 0)
-    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload) # disable UART
+    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload)  # disable UART
 
-  dev.configure_port(port=4, inMask=0, outMask=0) # disable SPI
+  dev.configure_port(port=4, inMask=0, outMask=0)  # disable SPI
   dev.configure_poll_port()
   dev.configure_poll_port(ublox.PORT_SERIAL1)
   dev.configure_poll_port(ublox.PORT_SERIAL2)
@@ -79,10 +81,9 @@ def configure_ublox(dev):
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW, 1)
 
 
-
 def int_to_bool_list(num):
   # for parsing bool bytes
-  return [bool(num & (1<<n)) for n in range(8)]
+  return [bool(num & (1 << n)) for n in range(8)]
 
 
 def gen_ephemeris(ephem_data):
@@ -127,15 +128,15 @@ def gen_ephemeris(ephem_data):
 
 
 def gen_solution(msg):
-  msg_data = msg.unpack()[0] # Solutions do not have any data in repeated blocks
+  msg_data = msg.unpack()[0]  # Solutions do not have any data in repeated blocks
   timestamp = int(((datetime.datetime(msg_data['year'],
                                       msg_data['month'],
                                       msg_data['day'],
                                       msg_data['hour'],
                                       msg_data['min'],
-                                      msg_data['sec'])
-                 - datetime.datetime(1970,1,1)).total_seconds())*1e+03
-                 + msg_data['nano']*1e-06)
+                                      msg_data['sec']) -
+                 datetime.datetime(1970, 1, 1)).total_seconds())*1e+03 +
+                 msg_data['nano']*1e-06)
   gps_fix = {'bearing': msg_data['headMot']*1e-05,  # heading of motion in degrees
              'altitude': msg_data['height']*1e-03,  # altitude above ellipsoid
              'latitude': msg_data['lat']*1e-07,  # latitude in degrees
@@ -162,9 +163,9 @@ def gen_nav_data(msg, nav_frame_buffer):
 
   # parse GPS ephem
   gnssId = msg_meta_data['gnssId']
-  if gnssId  == 0:
-    svId =  msg_meta_data['svid']
-    subframeId =  GET_FIELD_U(measurements[1]['dwrd'], 3, 8)
+  if gnssId == 0:
+    svId = msg_meta_data['svid']
+    subframeId = GET_FIELD_U(measurements[1]['dwrd'], 3, 8)
     words = []
     for m in measurements:
       words.append(m['dwrd'])
@@ -178,8 +179,6 @@ def gen_nav_data(msg, nav_frame_buffer):
     if len(nav_frame_buffer[gnssId][svId]) == 5:
       ephem_data = EphemerisData(svId, nav_frame_buffer[gnssId][svId])
       return gen_ephemeris(ephem_data)
-
-
 
 
 def gen_raw(msg):
@@ -203,9 +202,9 @@ def gen_raw(msg):
         'glonassFrequencyIndex': m['freqId'],
         'locktime': m['locktime'],
         'cno': m['cno'],
-        'pseudorangeStdev': 0.01*(2**(m['prStdev'] & 15)), # weird scaling, might be wrong
+        'pseudorangeStdev': 0.01*(2**(m['prStdev'] & 15)),  # weird scaling, might be wrong
         'carrierPhaseStdev': 0.004*(m['cpStdev'] & 15),
-        'dopplerStdev': 0.002*(2**(m['doStdev'] & 15)), # weird scaling, might be wrong
+        'dopplerStdev': 0.002*(2**(m['doStdev'] & 15)),  # weird scaling, might be wrong
         'trackingStatus': trackingStatus})
   if print_dB:
     cnos = {}
@@ -243,7 +242,7 @@ def init_reader():
       return dev
     except serial.serialutil.SerialException as e:
       print(e)
-      port_counter = (port_counter + 1)%len(ports)
+      port_counter = (port_counter + 1) % len(ports)
       time.sleep(2)
 
 def handle_msg(dev, msg, nav_frame_buffer):
@@ -280,9 +279,8 @@ def main():
   global gpsLocationExternal, ubloxGnss
   nav_frame_buffer = {}
   nav_frame_buffer[0] = {}
-  for i in range(1,33):
+  for i in range(1, 33):
     nav_frame_buffer[0][i] = {}
-
 
   gpsLocationExternal = messaging.pub_sock('gpsLocationExternal')
   ubloxGnss = messaging.pub_sock('ubloxGnss')

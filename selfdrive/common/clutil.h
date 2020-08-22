@@ -17,6 +17,7 @@ extern "C" {
 
 void clu_init(void);
 
+cl_device_id cl_get_device_id(cl_device_type device_type);
 cl_program cl_create_program_from_file(cl_context ctx, const char* path);
 void cl_print_info(cl_platform_id platform, cl_device_id device);
 void cl_print_build_errors(cl_program program, cl_device_id device);
