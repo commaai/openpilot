@@ -1337,13 +1337,13 @@ void init_buffers(VisionState *s) {
                                                        s->device_id, s->context,
                                                        &s->front_camera_bufs_cl[i]);
   }
-
+#ifdef QCOM2
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
     s->wide_camera_bufs[i] = visionbuf_allocate_cl(s->cameras.wide.frame_size,
                                                        s->device_id, s->context,
                                                        &s->wide_camera_bufs_cl[i]);
   }
-
+#endif
   // processing buffers
   if (s->cameras.rear.ci.bayer) {
 #ifdef QCOM2
@@ -1381,10 +1381,10 @@ void init_buffers(VisionState *s) {
     s->rgb_front_width = s->cameras.front.ci.frame_width;
     s->rgb_front_height = s->cameras.front.ci.frame_height;
   }
-
+#ifdef QCOM2
   s->rgb_wide_width = s->cameras.wide.ci.frame_width;
   s->rgb_wide_height = s->cameras.wide.ci.frame_height;
-
+#endif
   for (int i=0; i<UI_BUF_COUNT; i++) {
     VisionImg img = visionimg_alloc_rgb24(s->rgb_front_width, s->rgb_front_height, &s->rgb_front_bufs[i]);
     s->rgb_front_bufs_cl[i] = visionbuf_to_cl(&s->rgb_front_bufs[i], s->device_id, s->context);
@@ -1394,7 +1394,7 @@ void init_buffers(VisionState *s) {
     }
   }
   tbuffer_init(&s->ui_front_tb, UI_BUF_COUNT, "frontrgb");
-
+#ifdef QCOM2
   for (int i=0; i<UI_BUF_COUNT; i++) {
     VisionImg img = visionimg_alloc_rgb24(s->rgb_wide_width, s->rgb_wide_height, &s->rgb_wide_bufs[i]);
     s->rgb_wide_bufs_cl[i] = visionbuf_to_cl(&s->rgb_wide_bufs[i], s->device_id, s->context);
@@ -1404,7 +1404,7 @@ void init_buffers(VisionState *s) {
     }
   }
   tbuffer_init(&s->ui_wide_tb, UI_BUF_COUNT, "widergb");
-
+#endif
 
   // yuv back for recording and orbd
   pool_init(&s->yuv_pool, YUV_COUNT);
@@ -1436,7 +1436,8 @@ void init_buffers(VisionState *s) {
     s->yuv_front_bufs[i].v = s->yuv_front_bufs[i].u + (s->yuv_front_width/2 * s->yuv_front_height/2);
   }
 
-  // yuv front for recording
+  // yuv wide for recording
+#ifdef QCOM2
   pool_init(&s->yuv_wide_pool, YUV_COUNT);
   s->yuv_wide_tb = pool_get_tbuffer(&s->yuv_wide_pool);
 
@@ -1450,7 +1451,7 @@ void init_buffers(VisionState *s) {
     s->yuv_wide_bufs[i].u = s->yuv_wide_bufs[i].y + (s->yuv_wide_width * s->yuv_wide_height);
     s->yuv_wide_bufs[i].v = s->yuv_wide_bufs[i].u + (s->yuv_wide_width/2 * s->yuv_wide_height/2);
   }
-
+#endif
 
   if (s->cameras.rear.ci.bayer) {
     // debayering does a 2x downscale
@@ -1477,7 +1478,7 @@ void init_buffers(VisionState *s) {
     s->krnl_debayer_front = clCreateKernel(s->prg_debayer_front, "debayer10", &err);
     assert(err == 0);
   }
-
+#ifdef QCOM2
   if (s->cameras.wide.ci.bayer) {
     s->prg_debayer_wide = build_debayer_program(s, s->cameras.wide.ci.frame_width, s->cameras.wide.ci.frame_height,
                                                     s->cameras.wide.ci.frame_stride,
@@ -1487,6 +1488,7 @@ void init_buffers(VisionState *s) {
     s->krnl_debayer_wide = clCreateKernel(s->prg_debayer_wide, "debayer10", &err);
     assert(err == 0);
   }
+#endif
   s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
   s->debayer_cl_globalWorkSize[0] = s->rgb_width;
   s->debayer_cl_globalWorkSize[1] = s->rgb_height;
@@ -1516,7 +1518,9 @@ void init_buffers(VisionState *s) {
 
   rgb_to_yuv_init(&s->rgb_to_yuv_state, s->context, s->device_id, s->yuv_width, s->yuv_height, s->rgb_stride);
   rgb_to_yuv_init(&s->front_rgb_to_yuv_state, s->context, s->device_id, s->yuv_front_width, s->yuv_front_height, s->rgb_front_stride);
+#ifdef QCOM2
   rgb_to_yuv_init(&s->wide_rgb_to_yuv_state, s->context, s->device_id, s->yuv_wide_width, s->yuv_wide_height, s->rgb_wide_stride);
+#endif
 }
 
 void free_buffers(VisionState *s) {
@@ -1532,11 +1536,11 @@ void free_buffers(VisionState *s) {
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
    visionbuf_free(&s->front_camera_bufs[i]);
   }
-
+#ifdef QCOM2
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
    visionbuf_free(&s->wide_camera_bufs[i]);
   }
-
+#endif
   for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_bufs[i]);
   }
@@ -1544,11 +1548,11 @@ void free_buffers(VisionState *s) {
   for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_front_bufs[i]);
   }
-
+#ifdef QCOM2
   for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_wide_bufs[i]);
   }
-
+#endif
   for (int i=0; i<YUV_COUNT; i++) {
     visionbuf_free(&s->yuv_ion[i]);
   }
@@ -1574,12 +1578,12 @@ void party(VisionState *s) {
   err = pthread_create(&frontview_thread_handle, NULL,
                        frontview_thread, s);
   assert(err == 0);
-
+#ifdef QCOM2
   pthread_t wideview_thread_handle;
   err = pthread_create(&wideview_thread_handle, NULL,
                        wideview_thread, s);
   assert(err == 0);
-
+#endif
 
   // priority for cameras
   err = set_realtime_priority(1);
@@ -1591,17 +1595,21 @@ void party(VisionState *s) {
   tbuffer_stop(&s->ui_front_tb);
   pool_stop(&s->yuv_pool);
   pool_stop(&s->yuv_front_pool);
+#ifdef QCOM2
+  tbuffer_stop(&s->ui_wide_tb);
+  pool_stop(&s->yuv_wide_pool);
+#endif
 
   zsock_signal(s->terminate_pub, 0);
 
   LOG("joining frontview_thread");
   err = pthread_join(frontview_thread_handle, NULL);
   assert(err == 0);
-
+#ifdef QCOM2
   LOG("joining wideview_thread");
   err = pthread_join(wideview_thread_handle, NULL);
   assert(err == 0);
-
+#endif
   LOG("joining visionserver_thread");
   err = pthread_join(visionserver_thread_handle, NULL);
   assert(err == 0);
