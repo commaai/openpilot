@@ -268,7 +268,7 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
   return err;
 }
 
-void cameras_init(DualCameraState *s) {
+void cameras_init(MultiCameraState *s) {
   memset(s, 0, sizeof(*s));
 
   char project_name[1024] = {0};
@@ -527,7 +527,7 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
 
 
 
-static void sensors_init(DualCameraState *s) {
+static void sensors_init(MultiCameraState *s) {
   int err;
 
   int sensorinit_fd = -1;
@@ -1805,7 +1805,7 @@ static void front_start(CameraState *s) {
 
 
 
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
   int err;
 
   struct ispif_cfg_data ispif_cfg_data;
@@ -2029,7 +2029,7 @@ static void ops_term() {
 
 static void* ops_thread(void* arg) {
   int err;
-  DualCameraState *s = (DualCameraState*)arg;
+  MultiCameraState *s = (MultiCameraState*)arg;
 
   set_thread_name("camera_settings");
 
@@ -2101,7 +2101,7 @@ static void* ops_thread(void* arg) {
   return NULL;
 }
 
-void cameras_run(DualCameraState *s) {
+void cameras_run(MultiCameraState *s) {
   int err;
 
   pthread_t ops_thread_handle;
@@ -2213,7 +2213,7 @@ void cameras_run(DualCameraState *s) {
   cameras_close(s);
 }
 
-void cameras_close(DualCameraState *s) {
+void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
 }

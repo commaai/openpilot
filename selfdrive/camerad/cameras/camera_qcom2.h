@@ -72,7 +72,7 @@ typedef struct CameraState {
 
 } CameraState;
 
-typedef struct DualCameraState {
+typedef struct MultiCameraState {
   int device;
 
   int video0_fd;
@@ -87,14 +87,14 @@ typedef struct DualCameraState {
 #endif
 
   pthread_mutex_t isp_lock;
-} DualCameraState;
+} MultiCameraState;
 
-void cameras_init(DualCameraState *s);
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
-void cameras_run(DualCameraState *s);
+void cameras_init(MultiCameraState *s);
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
+void cameras_run(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
 #ifdef NOSCREEN
-void sendrgb(DualCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
+void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
 #endif
 
 #ifdef __cplusplus

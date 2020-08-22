@@ -788,7 +788,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
 
 }
 
-void cameras_init(DualCameraState *s) {
+void cameras_init(MultiCameraState *s) {
   camera_init(&s->rear, CAMERA_ID_AR0231, 1, 20); // swap left/right
   printf("rear initted \n");
   camera_init(&s->wide, CAMERA_ID_AR0231, 0, 20);
@@ -802,7 +802,7 @@ void cameras_init(DualCameraState *s) {
 #endif
 }
 
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide) {
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide) {
   int ret;
 
   LOG("-- Opening devices");
@@ -900,7 +900,7 @@ static void camera_close(CameraState *s) {
   tbuffer_stop(&s->camera_tb);
 }
 
-static void cameras_close(DualCameraState *s) {
+static void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->wide);
   camera_close(&s->front);
@@ -919,7 +919,7 @@ struct video_event_data {
   uint64_t  tv_usec;
 };
 
-void cameras_run(DualCameraState *s) {
+void cameras_run(MultiCameraState *s) {
   // start devices
   LOG("-- Start devices");
 
@@ -1055,7 +1055,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 }
 
 #ifdef NOSCREEN
-void sendrgb(DualCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
+void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   int err, err2;
   int scale = 6;
   int old_width = FRAME_WIDTH;

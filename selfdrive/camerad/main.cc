@@ -164,7 +164,7 @@ struct VisionState {
   VisionBuf wide_camera_bufs[FRAME_BUF_COUNT];
 
 
-  DualCameraState cameras;
+  MultiCameraState cameras;
 
   zsock_t *terminate_pub;
 
