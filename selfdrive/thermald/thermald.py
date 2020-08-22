@@ -2,6 +2,7 @@
 import os
 import datetime
 import psutil
+import time
 from smbus2 import SMBus
 from cereal import log
 from common.android import ANDROID, get_network_type, get_network_strength
@@ -402,13 +403,16 @@ def thermald_thread():
     # Offroad power monitoring
     pm.calculate(health)
     msg.thermal.offroadPowerUsage = pm.get_power_used()
-    msg.thermal.carBatteryCapacity = pm.get_car_battery_capacity()
+    msg.thermal.carBatteryCapacity = max(0, pm.get_car_battery_capacity())
 
     # Check if we need to disable charging (handled by boardd)
     msg.thermal.chargingDisabled = pm.should_disable_charging(health, off_ts)
 
     # Check if we need to shut down
     if pm.should_shutdown(health, off_ts, started_seen, LEON):
+      cloudlog.info(f"shutting device down, offroad since {off_ts}")
+      # TODO: add function for blocking cloudlog instead of sleep
+      time.sleep(10)
       os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
