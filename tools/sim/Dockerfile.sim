@@ -1,119 +1,97 @@
-FROM ubuntu:16.04 as glvnd
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        git \
-        ca-certificates \
-        make \
-        automake \
-        autoconf \
-        libtool \
-        pkg-config \
-        python \
-        libxext-dev \
-        libx11-dev \
-        x11proto-gl-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-ARG LIBGLVND_VERSION
-
-WORKDIR /opt/libglvnd
-RUN git clone --branch="v1.0.0" https://github.com/NVIDIA/libglvnd.git . && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr/local --libdir=/usr/local/lib/x86_64-linux-gnu && \
-    make -j10 install-strip && \
-    find /usr/local/lib/x86_64-linux-gnu -type f -name 'lib*.la' -delete
-
-RUN dpkg --add-architecture i386 && \
-    apt-get update && apt-get install -y --no-install-recommends \
-        gcc-multilib \
-        libxext-dev:i386 \
-        libx11-dev:i386 && \
-    rm -rf /var/lib/apt/lists/*
-
-# 32-bit libraries
-RUN make distclean && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr/local --libdir=/usr/local/lib/i386-linux-gnu --host=i386-linux-gnu "CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32" && \
-    make -j10 install-strip && \
-    find /usr/local/lib/i386-linux-gnu -type f -name 'lib*.la' -delete
-
-
-
-FROM commaai/openpilotci:latest
-
-
-RUN dpkg --add-architecture i386 && \
-    apt-get update && apt-get install -y --no-install-recommends \
-        software-properties-common \
-        libxau6 libxau6:i386 \
-        libxdmcp6 libxdmcp6:i386 \
-        libxcb1 libxcb1:i386 \
-        libxext6 libxext6:i386 \
-        libx11-6 libx11-6:i386 && \ 
-    rm -rf /var/lib/apt/lists/*
-
-
-# nvidia-container-runtime
-ENV NVIDIA_VISIBLE_DEVICES \
-        ${NVIDIA_VISIBLE_DEVICES:-all}
-ENV NVIDIA_DRIVER_CAPABILITIES \
-        ${NVIDIA_DRIVER_CAPABILITIES:+$NVIDIA_DRIVER_CAPABILITIES,}graphics,compat32,utility
-
-RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
-    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
-
-# Required for non-glvnd setups.
-ENV LD_LIBRARY_PATH /usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
-
-
-COPY --from=glvnd /usr/local/lib/x86_64-linux-gnu /usr/local/lib/x86_64-linux-gnu
-COPY --from=glvnd /usr/local/lib/i386-linux-gnu /usr/local/lib/i386-linux-gnu
-
-#COPY 10_nvidia.json /usr/local/share/glvnd/egl_vendor.d/10_nvidia.json
-
-RUN echo '/usr/local/lib/x86_64-linux-gnu' >> /etc/ld.so.conf.d/glvnd.conf && \
-    echo '/usr/local/lib/i386-linux-gnu' >> /etc/ld.so.conf.d/glvnd.conf && \
-    ldconfig
-
-ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-
-
+FROM ubuntu:16.04
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
+# TODO: start from CI container
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        screen \
-        cpio \
-        libpng16-16 && \
-        apt-get install -y gcc-arm-none-eabi && \
-    rm -rf /var/lib/apt/lists/*
+    autoconf \
+    build-essential \
+    bzip2 \
+    capnproto \
+    libcapnp-dev \
+    clang \
+    cmake \
+    cppcheck \
+    curl \
+    ffmpeg \
+    gcc-arm-none-eabi \
+    git \
+    iputils-ping \
+    libarchive-dev \
+    libbz2-dev \
+    libcurl4-openssl-dev \
+    libeigen3-dev \
+    libffi-dev \
+    libglew-dev \
+    libgles2-mesa-dev \
+    libglfw3-dev \
+    libglib2.0-0 \
+    liblzma-dev \
+    libomp-dev \
+    libopencv-dev \
+    libssl-dev \
+    libsqlite3-dev \
+    libusb-1.0-0-dev \
+    libczmq-dev \
+    libzmq3-dev \
+    locales \
+    ocl-icd-libopencl1 \
+    ocl-icd-opencl-dev \
+    opencl-headers \
+    python-dev \
+    python-pip \
+    qt5-default \
+    sudo \
+    wget \
+  && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /tmp/opencl && \
-    cd /tmp/opencl && \
-    curl -O http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532/l_opencl_p_18.1.0.015.tgz && \
-    tar -xf l_opencl_p_18.1.0.015.tgz && \
-    cd l_opencl_p_18.1.0.015 && \
-    echo ACCEPT_EULA=accept > config && \
-    echo CONTINUE_WITH_OPTIONAL_ERROR=yes >> config && \
-    echo PSET_INSTALL_DIR=/opt/intel >> config && \
-    echo CONTINUE_WITH_INSTALLDIR_OVERWRITE=yes >> config && \
-    echo PSET_MODE=install >> config && \
-    echo INTEL_SW_IMPROVEMENT_PROGRAM_CONSENT=no >> config && \
-    echo COMPONENTS=";intel-openclrt__x86_64;intel-openclrt-pset" >> config && \
-    ./install.sh -s config && \
-    rm -rf /tmp/opencl
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
+
+COPY Pipfile Pipfile.lock /tmp/
+RUN pyenv install 3.8.2 && \
+    pyenv global 3.8.2 && \
+    pyenv rehash && \
+    pip install --no-cache-dir --upgrade pip==20.1.1 && \
+    pip install --no-cache-dir pipenv==2018.11.26 && \
+    cd /tmp && \
+    pipenv install --dev --deploy --clear && \
+    pip uninstall -y pipenv
 
 
-ENV CARLA_VERSION 0.9.7
+# new stuff for CARLA
 
-RUN mkdir /tmp/carla && \
-    cd /tmp/carla && \
-    curl -O http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/CARLA_0.9.7.tar.gz && \
-    tar -xf CARLA_0.9.7.tar.gz && \
-    (easy_install PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true) && \
-    rm -rf /tmp/carla
+# Dependencies for glvnd and X11.
+RUN apt-get update \
+  && apt-get install -y -qq --no-install-recommends \
+    libglvnd0 \
+    libgl1 \
+    libglx0 \
+    libegl1 \
+    libxext6 \
+    libx11-6 \
+  && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir tensorflow==2.2
+RUN mkdir -p /tmp/openpilot
 
+COPY SConstruct /tmp/openpilot/
 
+COPY ./pyextra /tmp/openpilot/pyextra
+COPY ./phonelibs /tmp/openpilot/phonelibs
+COPY ./laika /tmp/openpilot/laika
+COPY ./laika_repo /tmp/openpilot/laika_repo
+COPY ./rednose /tmp/openpilot/rednose
+COPY ./tools /tmp/openpilot/tools
+COPY ./release /tmp/openpilot/release
+COPY ./common /tmp/openpilot/common
 COPY ./models /tmp/openpilot/models
+COPY ./opendbc /tmp/openpilot/opendbc
+COPY ./cereal /tmp/openpilot/cereal
+COPY ./panda /tmp/openpilot/panda
+COPY ./selfdrive /tmp/openpilot/selfdrive

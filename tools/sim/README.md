@@ -1,9 +1,6 @@
 openpilot in simulator
 =====================
 
-There are docker images for both CARLA (the simulator we're using) and openpilot
-
-
 ## Setup
 
 Checkout openpilot
@@ -21,6 +18,10 @@ First, start the CARLA server.
 cd ~/openpilot/tools/sim
 ./start_carla.sh
 ```
+
+
+The next steps can either run on your local machine or in the openpilot-sim docker container.
+Use `start_openpilot_docker.sh` to start the docker container and start a shell inside of it.
 
 Next, start the bridge.
 ```
