@@ -69,7 +69,12 @@ VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf) {
 EGLImageTexture::EGLImageTexture(const VisionImg &img, void *addr) {
   assert((img.size % img.stride) == 0);
   assert((img.stride % img.bpp) == 0);
-  int format = HAL_PIXEL_FORMAT_RGB_888;
+  int format = 0;
+  if (img->format == VISIONIMG_FORMAT_RGB24) {
+    format = HAL_PIXEL_FORMAT_RGB_888;
+  } else {
+    assert(false);
+  }
   private_handle = new private_handle_t(
       img.fd, img.size, private_handle_t::PRIV_FLAGS_USES_ION | private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
       0, format, img.stride / img.bpp, img.size / img.stride, img.width, img.height);
@@ -99,6 +104,6 @@ EGLImageTexture::~EGLImageTexture() {
   EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   assert(display != EGL_NO_DISPLAY);
   eglDestroyImageKHR(display, img_khr);
-  delete (private_handle_t *)private_handle;
+  delete (private_handle_t*)private_handle;
 }
 #endif
