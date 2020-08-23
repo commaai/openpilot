@@ -28,7 +28,6 @@ void ui_init(UIState *s) {
                          "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"
   });
 
-  s->ipc_fd = -1;
   s->scene.satelliteCount = -1;
   s->started = false;
   s->vision_seen = false;
@@ -39,33 +38,14 @@ void ui_init(UIState *s) {
   ui_nvg_init(s);
 }
 
-static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
-                           int num_back_fds, const int *back_fds,
-                           const VisionStreamBufs front_bufs, int num_front_fds,
-                           const int *front_fds) {
-  assert(num_back_fds == UI_BUF_COUNT);
-  assert(num_front_fds == UI_BUF_COUNT);
-
-  vipc_bufs_load(s->bufs, &back_bufs, num_back_fds, back_fds);
-  vipc_bufs_load(s->front_bufs, &front_bufs, num_front_fds, front_fds);
-
-  s->cur_vision_idx = -1;
-  s->cur_vision_front_idx = -1;
-
-  s->scene.frontview = getenv("FRONTVIEW") != NULL;
+static void ui_init_vision(UIState *s) {
+  if (!s->scene.frontview) {
+    s->scene.frontview = getenv("FRONTVIEW") != NULL;
+  }
   s->scene.fullview = getenv("FULLVIEW") != NULL;
   s->scene.world_objects_visible = false;  // Invisible until we receive a calibration message.
 
-  s->rgb_width = back_bufs.width;
-  s->rgb_height = back_bufs.height;
-  s->rgb_stride = back_bufs.stride;
-  s->rgb_buf_len = back_bufs.buf_len;
-
-  s->rgb_front_width = front_bufs.width;
-  s->rgb_front_height = front_bufs.height;
-  s->rgb_front_stride = front_bufs.stride;
-  s->rgb_front_buf_len = front_bufs.buf_len;
-
+  read_param(&s->speed_lim_off, "SpeedLimitOffset");
   read_param(&s->is_metric, "IsMetric");
   read_param(&s->longitudinal_control, "LongitudinalControl");
 }
@@ -218,8 +198,6 @@ void ui_update_sizes(UIState *s){
 }
 
 void ui_update(UIState *s) {
-  int err;
-
   if (s->vision_connect_firstrun) {
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
@@ -231,50 +209,20 @@ void ui_update(UIState *s) {
       }
 
       VisionImg img = {
-        .fd = s->bufs[i].fd,
+        .fd = s->stream.bufs[i].fd,
         .format = VISIONIMG_FORMAT_RGB24,
-        .width = s->rgb_width,
-        .height = s->rgb_height,
-        .stride = s->rgb_stride,
+        .width = s->stream.bufs_info.width,
+        .height = s->stream.bufs_info.height,
+        .stride = s->stream.bufs_info.stride,
         .bpp = 3,
-        .size = s->rgb_buf_len,
+        .size = s->stream.bufs_info.buf_len,
       };
       #ifndef QCOM
-        s->priv_hnds[i] = s->bufs[i].addr;
+        s->priv_hnds[i] = s->stream.bufs[i].addr;
       #endif
       s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
 
       glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-    }
-
-    for (int i=0; i<UI_BUF_COUNT; i++) {
-      if(s->khr_front[i] != 0) {
-        visionimg_destroy_gl(s->khr_front[i], s->priv_hnds_front[i]);
-        glDeleteTextures(1, &s->frame_front_texs[i]);
-      }
-
-      VisionImg img = {
-        .fd = s->front_bufs[i].fd,
-        .format = VISIONIMG_FORMAT_RGB24,
-        .width = s->rgb_front_width,
-        .height = s->rgb_front_height,
-        .stride = s->rgb_front_stride,
-        .bpp = 3,
-        .size = s->rgb_front_buf_len,
-      };
-      #ifndef QCOM
-        s->priv_hnds_front[i] = s->bufs[i].addr;
-      #endif
-      s->frame_front_texs[i] = visionimg_to_gl(&img, &s->khr_front[i], &s->priv_hnds_front[i]);
-
-      glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[i]);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -296,154 +244,44 @@ void ui_update(UIState *s) {
     s->alert_blinking_alpha = 1.0;
     s->alert_blinked = false;
   }
-
-  zmq_pollitem_t polls[1] = {{0}};
-  // Take an rgb image from visiond if there is one
-  assert(s->ipc_fd >= 0);
-  while(true) {
-    if (s->ipc_fd < 0) {
-      // TODO: rethink this, for now it should only trigger on PC
-      LOGW("vision disconnected by other thread");
-      s->vision_connected = false;
-      return;
-    }
-    polls[0].fd = s->ipc_fd;
-    polls[0].events = ZMQ_POLLIN;
-    #ifdef UI_60FPS
-      // uses more CPU in both UI and surfaceflinger
-      // 16% / 21%
-      int ret = zmq_poll(polls, 1, 1);
-    #else
-      // 9% / 13% = a 14% savings
-      int ret = zmq_poll(polls, 1, 1000);
-    #endif
-    if (ret < 0) {
-      if (errno == EINTR || errno == EAGAIN) continue;
-
-      LOGE("poll failed (%d - %d)", ret, errno);
-      close(s->ipc_fd);
-      s->ipc_fd = -1;
-      s->vision_connected = false;
-      return;
-    } else if (ret == 0) {
-      break;
-    }
-    // vision ipc event
-    VisionPacket rp;
-    err = vipc_recv(s->ipc_fd, &rp);
-    if (err <= 0) {
-      LOGW("vision disconnected");
-      close(s->ipc_fd);
-      s->ipc_fd = -1;
-      s->vision_connected = false;
-      return;
-    }
-    if (rp.type == VIPC_STREAM_ACQUIRE) {
-      bool front = rp.d.stream_acq.type == VISION_STREAM_RGB_FRONT;
-      int idx = rp.d.stream_acq.idx;
-
-      int release_idx;
-      if (front) {
-        release_idx = s->cur_vision_front_idx;
-      } else {
-        release_idx = s->cur_vision_idx;
-      }
-      if (release_idx >= 0) {
-        VisionPacket rep = {
-          .type = VIPC_STREAM_RELEASE,
-          .d = { .stream_rel = {
-            .type = rp.d.stream_acq.type,
-            .idx = release_idx,
-          }},
-        };
-        vipc_send(s->ipc_fd, &rep);
-      }
-
-      if (front) {
-        assert(idx < UI_BUF_COUNT);
-        s->cur_vision_front_idx = idx;
-      } else {
-        assert(idx < UI_BUF_COUNT);
-        s->cur_vision_idx = idx;
-        // printf("v %d\n", ((uint8_t*)s->bufs[idx].addr)[0]);
-      }
-    } else {
-      assert(false);
-    }
-    break;
+  
+  VIPCBuf *buf = visionstream_get(&s->stream, nullptr);
+  if (!buf) {
+    visionstream_destroy(&s->stream);
+    s->vision_connected = false;
   }
-}
-
-static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
-  int err;
-  LOGW("vision_subscribe type:%d", type);
-
-  VisionPacket p1 = {
-    .type = VIPC_STREAM_SUBSCRIBE,
-    .d = { .stream_sub = { .type = type, .tbuffer = true, }, },
-  };
-  err = vipc_send(fd, &p1);
-  if (err < 0) {
-    close(fd);
-    return 0;
-  }
-
-  do {
-    err = vipc_recv(fd, rp);
-    if (err <= 0) {
-      close(fd);
-      return 0;
-    }
-
-    // release what we aren't ready for yet
-    if (rp->type == VIPC_STREAM_ACQUIRE) {
-      VisionPacket rep = {
-        .type = VIPC_STREAM_RELEASE,
-        .d = { .stream_rel = {
-          .type = rp->d.stream_acq.type,
-          .idx = rp->d.stream_acq.idx,
-        }},
-      };
-      vipc_send(fd, &rep);
-    }
-  } while (rp->type != VIPC_STREAM_BUFS || rp->d.stream_bufs.type != type);
-
-  return 1;
 }
 
 void* vision_connect_thread(void *args) {
   set_thread_name("vision_connect");
 
-  UIState *s = (UIState*)args;
+  UIState *s = (UIState *)args;
   while (!do_exit) {
     usleep(100000);
     pthread_mutex_lock(&s->lock);
-    bool connected = s->vision_connected;
-    pthread_mutex_unlock(&s->lock);
-    if (connected) continue;
+    if (s->vision_connected) {
+      if (!s->started) {
+        visionstream_destroy(&s->stream);
+        s->vision_connected = false;
+      }
+    } else {
+      if (s->started) {
+        const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+        int err = visionstream_init(&s->stream, type, true, nullptr);
+        if (err == 0) {
+          ui_init_vision(s);
 
-    int fd = vipc_connect();
-    if (fd < 0) continue;
+          s->vision_connected = true;
+          s->vision_seen = true;
+          s->vision_connect_firstrun = true;
 
-    VisionPacket back_rp, front_rp;
-    if (!vision_subscribe(fd, &back_rp, VISION_STREAM_RGB_BACK)) continue;
-    if (!vision_subscribe(fd, &front_rp, VISION_STREAM_RGB_FRONT)) continue;
-
-    pthread_mutex_lock(&s->lock);
-    assert(!s->vision_connected);
-    s->ipc_fd = fd;
-
-    ui_init_vision(s,
-                   back_rp.d.stream_bufs, back_rp.num_fds, back_rp.fds,
-                   front_rp.d.stream_bufs, front_rp.num_fds, front_rp.fds);
-
-    s->vision_connected = true;
-    s->vision_seen = true;
-    s->vision_connect_firstrun = true;
-
-    // Drain sockets
-    s->sm->drain();
-
+          // Drain sockets
+          s->sm->drain();
+        } else {
+          LOGW("visionstream connect failed");
+        }
+      }
+    }
     pthread_mutex_unlock(&s->lock);
   }
   return NULL;

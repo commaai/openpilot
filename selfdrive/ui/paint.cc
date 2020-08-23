@@ -252,14 +252,14 @@ static void draw_frame(UIState *s) {
     out_mat = &s->rear_frame_mat;
   }
   glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
-  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
 
-    // TODO: a better way to do this?
+  if (s->stream.last_idx >= 0) {
+    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->stream.last_idx]);
 #ifndef QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->rgb_width, s->rgb_height, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
+    if (!scene->frontview) {
+      // TODO: a better way to do this?
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->rgb_width, s->rgb_height, 0, GL_RGB, GL_UNSIGNED_BYTE, s->stream.bufs[s->stream.last_idx].addr);
+    }
 #endif
   }
 
@@ -275,7 +275,8 @@ static void draw_frame(UIState *s) {
 }
 
 static inline bool valid_frame_pt(UIState *s, float x, float y) {
-  return x >= 0 && x <= s->rgb_width && y >= 0 && y <= s->rgb_height;
+  return x >= 0 && x <= s->stream.bufs_info.width && y >= 0 && y <= s->stream.bufs_info.height;
+
 }
 
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
@@ -369,7 +370,7 @@ static void ui_draw_world(UIState *s) {
 
   nvgTranslate(s->vg, -w / 2, -1080.0f / 2);
   nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, w / s->rgb_width, 1080.0f / s->rgb_height);
+  nvgScale(s->vg, w / s->stream.bufs_info.width, 1080.0f / s->stream.bufs_info.height);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
@@ -844,7 +845,5 @@ void ui_nvg_init(UIState *s) {
   for(int i = 0;i < UI_BUF_COUNT; i++) {
     s->khr[i] = 0;
     s->priv_hnds[i] = NULL;
-    s->khr_front[i] = 0;
-    s->priv_hnds_front[i] = NULL;
   }
 }
