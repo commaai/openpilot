@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
   const int MAX_VOLUME = LEON ? 15 : 12;
   assert(s->sound.init(MIN_VOLUME));
 
-  int draws = 0;
+  uint32_t draws = 0;
 
   while (!do_exit) {
     bool should_swap = false;
