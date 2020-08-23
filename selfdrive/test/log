@@ -1,0 +1,8 @@
+selfdrive/car/honda/carstate.py: needs update
+selfdrive/test/test_models.py: needs update
+scons: Reading SConscript files ...
+scons: done reading SConscript files.
+scons: Building targets ...
+scons: `.' is up to date.
+scons: done building targets.
+make: Nothing to be done for `all'.
