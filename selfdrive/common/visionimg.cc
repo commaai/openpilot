@@ -70,7 +70,7 @@ EGLImageTexture::EGLImageTexture(const VisionImg &img, void *addr) {
   assert((img.size % img.stride) == 0);
   assert((img.stride % img.bpp) == 0);
   int format = 0;
-  if (img->format == VISIONIMG_FORMAT_RGB24) {
+  if (img.format == VISIONIMG_FORMAT_RGB24) {
     format = HAL_PIXEL_FORMAT_RGB_888;
   } else {
     assert(false);
@@ -107,3 +107,4 @@ EGLImageTexture::~EGLImageTexture() {
   delete (private_handle_t*)private_handle;
 }
 #endif
+ 
