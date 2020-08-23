@@ -14,12 +14,12 @@ env:
       # build the openpilot docker base image
       #docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       #docker pull docker.io/commaai/openpilot-base:latest || true
-      docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot .
+      docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot_base .
 
       # build the final CI image
       #docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilotci) || true
       docker pull docker.io/commaai/openpilotci:latest || true
-      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilot .
+      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
 
 jobs:
   build_release:
@@ -94,7 +94,7 @@ jobs:
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
-          docker tag commaai/openpilot-base docker.io/commaai/openpilot-base:latest
+          docker tag commaai/openpilot-base:latest docker.io/commaai/openpilot-base:latest
           docker push docker.io/commaai/openpilot-base:latest
           docker tag tmppilot docker.io/commaai/openpilotci:latest
           docker push docker.io/commaai/openpilotci:latest
