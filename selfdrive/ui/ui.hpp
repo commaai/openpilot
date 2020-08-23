@@ -184,29 +184,15 @@ typedef struct UIState {
   // vision state
   bool vision_connected;
   bool vision_connect_firstrun;
-  int ipc_fd;
-
-  VIPCBuf bufs[UI_BUF_COUNT];
-  VIPCBuf front_bufs[UI_BUF_COUNT];
-  int cur_vision_idx;
-  int cur_vision_front_idx;
+  VisionStream stream;
 
   GLuint frame_program;
   GLuint frame_texs[UI_BUF_COUNT];
   EGLImageKHR khr[UI_BUF_COUNT];
   void *priv_hnds[UI_BUF_COUNT];
-  GLuint frame_front_texs[UI_BUF_COUNT];
-  EGLImageKHR khr_front[UI_BUF_COUNT];
-  void *priv_hnds_front[UI_BUF_COUNT];
 
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
-
-  int rgb_width, rgb_height, rgb_stride;
-  size_t rgb_buf_len;
-
-  int rgb_front_width, rgb_front_height, rgb_front_stride;
-  size_t rgb_front_buf_len;
 
   UIScene scene;
   bool awake;
