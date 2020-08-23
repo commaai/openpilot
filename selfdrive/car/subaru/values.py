@@ -168,11 +168,10 @@ FW_VERSIONS = {
       b'z\xc0\x00\x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
-      b'\x00\x00\x64\xb5\x1f\x40\x20\x0e',
+      b'\x00\x00d\xb5\x1f@ \x0e',
       b'\x00\x00d\xdc\x1f@ \x0e',
       b'\x00\x00e\x1c\x1f@ \x14',
       b'\x00\x00d)\x1f@ \a',
-      b'\x00\x00d\xb5\x1f@ \x0e',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',
