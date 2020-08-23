@@ -329,7 +329,7 @@ int main(int argc, char* argv[]) {
     // safe to do this outside the lock?
     if (should_swap) {
       double u2 = millis_since_boot();
-      if (u2-u1 > 66) {
+      if (!s->scene.frontview && (u2-u1 > 66)) {
         // warn on sub 15fps
         LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
       }
