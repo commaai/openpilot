@@ -109,7 +109,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j3" >> Dockerfile.openpilot && eval "$BUILD"
+        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j\$(nproc)" >> Dockerfile.openpilotci && eval "$BUILD"
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
