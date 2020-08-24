@@ -392,7 +392,7 @@ void hardware_control_thread() {
   LOGD("start hardware control thread");
   SubMaster sm({"thermal", "frontFrame"});
 
-  // Only control fan speed on UNO
+  // Other pandas don't have hardware to control
   if (panda->hw_type != cereal::HealthData::HwType::UNO && panda->hw_type != cereal::HealthData::HwType::DOS) return;
 
   uint64_t last_front_frame_t = 0;
