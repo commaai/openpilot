@@ -453,8 +453,6 @@ void* wideview_thread(void *arg) {
 
     double t2 = millis_since_boot();
 
-    uint8_t *bgr_ptr = (uint8_t*)s->rgb_wide_bufs[rgb_idx].addr;
-
     double yt1 = millis_since_boot();
 
     int yuv_idx = pool_select(&s->yuv_wide_pool);
@@ -462,8 +460,6 @@ void* wideview_thread(void *arg) {
     s->yuv_wide_metas[yuv_idx] = frame_data;
 
     uint8_t* yuv_ptr_y = s->yuv_wide_bufs[yuv_idx].y;
-    uint8_t* yuv_ptr_u = s->yuv_wide_bufs[yuv_idx].u;
-    uint8_t* yuv_ptr_v = s->yuv_wide_bufs[yuv_idx].v;
     cl_mem yuv_wide_cl = s->yuv_wide_cl[yuv_idx];
     rgb_to_yuv_queue(&s->wide_rgb_to_yuv_state, q, s->rgb_wide_bufs_cl[rgb_idx], yuv_wide_cl);
     visionbuf_sync(&s->yuv_wide_ion[yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
@@ -476,7 +472,7 @@ void* wideview_thread(void *arg) {
 
     // send frame event
     {
-      if (s->wide_frame_sock != NULL) {
+      if (s->pm != NULL) {
         capnp::MallocMessageBuilder msg;
         cereal::Event::Builder event = msg.initRoot<cereal::Event>();
         event.setLogMonoTime(nanos_since_boot());
@@ -494,16 +490,7 @@ void* wideview_thread(void *arg) {
         framed.setLensTruePos(frame_data.lens_true_pos);
         framed.setGainFrac(frame_data.gain_frac);
 
-#if !defined(QCOM) && !defined(QCOM2)
-        framed.setImage(kj::arrayPtr((const uint8_t*)s->yuv_ion[yuv_idx].addr, s->yuv_buf_size));
-#endif
-
-        kj::ArrayPtr<const float> transform_vs(&s->yuv_transform.v[0], 9);
-        framed.setTransform(transform_vs);
-
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
-        s->wide_frame_sock->send((char*)bytes.begin(), bytes.size());
+        s->pm->send("wideFrame", msg);
       }
     }
 
