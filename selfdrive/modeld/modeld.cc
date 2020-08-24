@@ -157,8 +157,12 @@ int main(int argc, char **argv) {
 
       if (sm.update(0) > 0){
         // TODO: path planner timeout?
-        desire = ((int)sm["pathPlan"].getPathPlan().getDesire()) - 1;
-        frame_id = sm["frame"].getFrame().getFrameId();
+        if (sm.updated("pathPlan")) {
+          desire = ((int)sm["pathPlan"].getPathPlan().getDesire()) - 1;
+        }
+        if (sm.updated("frame")) {
+          frame_id = sm["frame"].getFrame().getFrameId();
+        }
       }
 
       double mt1 = 0, mt2 = 0;
