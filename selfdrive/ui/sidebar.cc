@@ -124,7 +124,7 @@ static void ui_draw_sidebar_temp_metric(UIState *s) {
   char temp_value_str[32];
   char temp_value_unit[32];
   const int temp_y_offset = 0;
-  snprintf(temp_value_str, sizeof(temp_value_str), "%d", s->scene.thermal.getPa0());
+  snprintf(temp_value_str, sizeof(temp_value_str), "%.0f", s->scene.thermal.getAmbient());
   snprintf(temp_value_unit, sizeof(temp_value_unit), "%s", "°C");
   snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");
   strcat(temp_value_str, temp_value_unit);
