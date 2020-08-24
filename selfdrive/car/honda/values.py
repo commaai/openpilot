@@ -897,6 +897,7 @@ FW_VERSIONS = {
       b'77959-TXM-A230\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TXM-A030\x00\x00',
       b'57114-TXM-A040\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
@@ -906,6 +907,7 @@ FW_VERSIONS = {
       b'38897-TXM-A020\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TXM-A010\x00\x00',
       b'78109-TXM-A020\x00\x00',
     ],
   },
