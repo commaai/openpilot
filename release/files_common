@@ -18,6 +18,8 @@ apk/ai.comma*.apk
 common/.gitignore
 common/__init__.py
 common/android.py
+common/hardware.py
+common/gpio.py
 common/realtime.py
 common/clock.pyx
 common/timeout.py
