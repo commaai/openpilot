@@ -9,7 +9,7 @@ from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
-from common.android import ANDROID, get_network_type, get_network_strength
+from common.android import get_network_type, get_network_strength
 from common.params import Params, put_nonblocking # pylint: disable=no-name-in-module, import-error
 from common.realtime import sec_since_boot, DT_TRML
 from common.numpy_fast import clip, interp
