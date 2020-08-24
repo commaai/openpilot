@@ -35,8 +35,6 @@ def mpc_vwr_thread(addr="127.0.0.1"):
   path_x = np.arange(0, 100)
   mpc_path_x = np.arange(0, 49)
 
-  p_path_y = np.zeros(100)
-
   l_path_y = np.zeros(100)
   r_path_y = np.zeros(100)
   mpc_path_y = np.zeros(49)
