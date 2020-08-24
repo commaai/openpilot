@@ -11,9 +11,14 @@ env:
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
   BUILD: |
-      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+      # build the openpilot docker base image
+      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
+      docker pull docker.io/commaai/openpilot-base:latest || true
+      docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot_base .
+
+      # build the final CI image
       docker pull docker.io/commaai/openpilotci:latest || true
-      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilot .
+      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
 
 jobs:
   build_release:
@@ -30,7 +35,7 @@ jobs:
       run: |
         mkdir $TEST_DIR
         cp -pR --parents $(cat release/files_common) $TEST_DIR
-        cp Dockerfile.openpilot $TEST_DIR
+        cp Dockerfile.openpilot_base Dockerfile.openpilotci $TEST_DIR
 
         # need this to build on x86
         cp -pR --parents phonelibs/libyuv phonelibs/snpe \
@@ -88,6 +93,8 @@ jobs:
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag commaai/openpilot-base:latest docker.io/commaai/openpilot-base:latest
+          docker push docker.io/commaai/openpilot-base:latest
           docker tag tmppilot docker.io/commaai/openpilotci:latest
           docker push docker.io/commaai/openpilotci:latest
 
