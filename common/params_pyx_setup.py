@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 from common.cython_hacks import BuildExtWithoutPlatformSuffix
 
 sourcefiles = ['params_wrapper.pyx']
-extra_compile_args = ["-std=c++11"]
+extra_compile_args = ["-std=c++17"]
 
 setup(name='Common',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},
@@ -14,6 +14,5 @@ setup(name='Common',
           sources=sourcefiles,
           extra_compile_args=extra_compile_args
         )
-      ),
-      nthreads=4,
+      )
 )
