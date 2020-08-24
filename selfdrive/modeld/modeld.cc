@@ -43,6 +43,13 @@ void* live_thread(void *arg) {
     0.0, 910.0, 437.0,
     0.0,   0.0,   1.0;
 
+    // debayering does a 2x downscale
+  mat3 yuv_transform = transform_scale_buffer((mat3){{
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0,
+  }}, 0.5);
+
   while (!do_exit) {
     if (sm.update(10) > 0){
 
@@ -59,12 +66,13 @@ void* live_thread(void *arg) {
       camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
 
       auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
-
-      pthread_mutex_lock(&transform_lock);
+      mat3 transform = {};
       for (int i=0; i<3*3; i++) {
-        cur_transform.v[i] = warp_matrix(i / 3, i % 3);
+        transform.v[i] = warp_matrix(i / 3, i % 3);
       }
-
+      mat3 model_transform = matmul3(yuv_transform, transform);
+      pthread_mutex_lock(&transform_lock);
+      cur_transform = model_transform;
       run_model = true;
       pthread_mutex_unlock(&transform_lock);
     }
@@ -109,13 +117,6 @@ int main(int argc, char **argv) {
   model_init(&model, device_id, context, true);
   LOGW("models loaded, modeld starting");
 
-  // debayering does a 2x downscale
-  mat3 yuv_transform = transform_scale_buffer((mat3){{
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
-  }}, 0.5);
-
   // loop
   VisionStream stream;
   while (!do_exit) {
@@ -151,7 +152,7 @@ int main(int argc, char **argv) {
       }
 
       pthread_mutex_lock(&transform_lock);
-      mat3 transform = cur_transform;
+      mat3 model_transform = cur_transform;
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
@@ -168,8 +169,6 @@ int main(int argc, char **argv) {
           vec_desire[desire] = 1.0;
         }
 
-        mat3 model_transform = matmul3(yuv_transform, transform);
-        
         mt1 = millis_since_boot();
 
         // TODO: don't make copies!
