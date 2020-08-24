@@ -1,97 +1,52 @@
-FROM ubuntu:16.04
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
+FROM commaai/openpilot-base:latest
 
-# TODO: start from CI container
+ENV PYTHONPATH $HOME/openpilot:${PYTHONPATH}
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    autoconf \
-    build-essential \
-    bzip2 \
-    capnproto \
-    libcapnp-dev \
-    clang \
-    cmake \
-    cppcheck \
-    curl \
-    ffmpeg \
+RUN apt-get update && apt-get install -y \
+
+    dbus \
     gcc-arm-none-eabi \
-    git \
-    iputils-ping \
-    libarchive-dev \
-    libbz2-dev \
-    libcurl4-openssl-dev \
-    libeigen3-dev \
-    libffi-dev \
-    libglew-dev \
-    libgles2-mesa-dev \
-    libglfw3-dev \
-    libglib2.0-0 \
-    liblzma-dev \
-    libomp-dev \
-    libopencv-dev \
-    libssl-dev \
-    libsqlite3-dev \
-    libusb-1.0-0-dev \
-    libczmq-dev \
-    libzmq3-dev \
-    locales \
-    ocl-icd-libopencl1 \
-    ocl-icd-opencl-dev \
-    opencl-headers \
-    python-dev \
-    python-pip \
-    qt5-default \
-    sudo \
-    wget \
+    tmux \
+    vim \
+
+    # libglvnd dependencies
+    automake \
+    libtool \
+    libxext-dev \
+    libx11-dev \
+    x11proto-gl-dev \
   && rm -rf /var/lib/apt/lists/*
 
-RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+RUN dbus-uuidgen > /etc/machine-id
 
-RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
+# we can apt-get after moving to a newer ubuntu
+WORKDIR /opt/libglvnd
+RUN git clone --branch="0.1.1" https://github.com/NVIDIA/libglvnd.git . && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr/local --libdir=/usr/local/lib/x86_64-linux-gnu && \
+    make -j"$(nproc)" install-strip && \
+    find /usr/local/lib/x86_64-linux-gnu -type f -name 'lib*.la' -delete
 
-COPY Pipfile Pipfile.lock /tmp/
-RUN pyenv install 3.8.2 && \
-    pyenv global 3.8.2 && \
-    pyenv rehash && \
-    pip install --no-cache-dir --upgrade pip==20.1.1 && \
-    pip install --no-cache-dir pipenv==2018.11.26 && \
-    cd /tmp && \
-    pipenv install --dev --deploy --clear && \
-    pip uninstall -y pipenv
+ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
+# get same tmux config used on NEOS for debugging
+RUN cd $HOME && \
+    wget https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
 
-# new stuff for CARLA
+RUN mkdir -p $HOME/openpilot
 
-# Dependencies for glvnd and X11.
-RUN apt-get update \
-  && apt-get install -y -qq --no-install-recommends \
-    libglvnd0 \
-    libgl1 \
-    libglx0 \
-    libegl1 \
-    libxext6 \
-    libx11-6 \
-  && rm -rf /var/lib/apt/lists/*
+COPY SConstruct $HOME/openpilot/
 
-RUN mkdir -p /tmp/openpilot
+COPY ./phonelibs $HOME/openpilot/phonelibs
+COPY ./laika $HOME/openpilot/laika
+COPY ./laika_repo $HOME/openpilot/laika_repo
+COPY ./rednose $HOME/openpilot/rednose
+COPY ./tools $HOME/openpilot/tools
+COPY ./common $HOME/openpilot/common
+COPY ./models $HOME/openpilot/models
+COPY ./opendbc $HOME/openpilot/opendbc
+COPY ./cereal $HOME/openpilot/cereal
+COPY ./panda $HOME/openpilot/panda
+COPY ./selfdrive $HOME/openpilot/selfdrive
 
-COPY SConstruct /tmp/openpilot/
-
-COPY ./pyextra /tmp/openpilot/pyextra
-COPY ./phonelibs /tmp/openpilot/phonelibs
-COPY ./laika /tmp/openpilot/laika
-COPY ./laika_repo /tmp/openpilot/laika_repo
-COPY ./rednose /tmp/openpilot/rednose
-COPY ./tools /tmp/openpilot/tools
-COPY ./release /tmp/openpilot/release
-COPY ./common /tmp/openpilot/common
-COPY ./models /tmp/openpilot/models
-COPY ./opendbc /tmp/openpilot/opendbc
-COPY ./cereal /tmp/openpilot/cereal
-COPY ./panda /tmp/openpilot/panda
-COPY ./selfdrive /tmp/openpilot/selfdrive
+WORKDIR $HOME/openpilot
