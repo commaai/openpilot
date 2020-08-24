@@ -14,6 +14,10 @@
 #include <libgen.h>
 #include <limits.h>     /* PATH_MAX */
 #include <errno.h>
+#include <filesystem> 
+//#include <experimental/filesystem>
+
+namespace fs = std::filesystem;
 
 using std::cout;
 using std::endl;
