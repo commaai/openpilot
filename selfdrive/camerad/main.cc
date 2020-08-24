@@ -379,6 +379,7 @@ void* frontview_thread(void *arg) {
   return NULL;
 }
 
+#ifdef QCOM2
 // wide
 void* wideview_thread(void *arg) {
   int err;
@@ -545,6 +546,7 @@ void* wideview_thread(void *arg) {
 
   return NULL;
 }
+#endif
 
 // processing
 void* processing_thread(void *arg) {
