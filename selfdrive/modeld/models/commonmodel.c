@@ -7,25 +7,23 @@
 void frame_init(ModelFrame* frame, int width, int height,
                       cl_device_id device_id, cl_context context) {
   int err;
-  frame->device_id = device_id;
-  frame->context = context;
 
   transform_init(&frame->transform, context, device_id);
   frame->transformed_width = width;
   frame->transformed_height = height;
 
-  frame->transformed_y_cl = clCreateBuffer(frame->context, CL_MEM_READ_WRITE,
+  frame->transformed_y_cl = clCreateBuffer(context, CL_MEM_READ_WRITE,
                                            (size_t)frame->transformed_width*frame->transformed_height, NULL, &err);
   assert(err == 0);
-  frame->transformed_u_cl = clCreateBuffer(frame->context, CL_MEM_READ_WRITE,
+  frame->transformed_u_cl = clCreateBuffer(context, CL_MEM_READ_WRITE,
                                            (size_t)(frame->transformed_width/2)*(frame->transformed_height/2), NULL, &err);
   assert(err == 0);
-  frame->transformed_v_cl = clCreateBuffer(frame->context, CL_MEM_READ_WRITE,
+  frame->transformed_v_cl = clCreateBuffer(context, CL_MEM_READ_WRITE,
                                            (size_t)(frame->transformed_width/2)*(frame->transformed_height/2), NULL, &err);
   assert(err == 0);
 
   frame->net_input_size = ((width*height*3)/2)*sizeof(float);
-  frame->net_input = clCreateBuffer(frame->context, CL_MEM_READ_WRITE,
+  frame->net_input = clCreateBuffer(context, CL_MEM_READ_WRITE,
                                 frame->net_input_size, (void*)NULL, &err);
   assert(err == 0);
 
