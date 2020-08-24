@@ -17,7 +17,6 @@ env:
       docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot_base .
 
       # build the final CI image
-      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilotci) || true
       docker pull docker.io/commaai/openpilotci:latest || true
       docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
 
