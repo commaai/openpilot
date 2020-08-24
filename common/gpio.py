@@ -9,14 +9,14 @@ GPIO_STM_BOOT0 = 134
 def gpio_init(pin, output):
   try:
     with open(f"/sys/class/gpio/gpio{pin}/direction", 'wb') as f:
-      f.write(r"out" if output else r"in")
-  except Exception:
-    print(f"Failed to set gpio {pin} direction")
+      f.write(b"out" if output else b"in")
+  except Exception as e:
+    print(f"Failed to set gpio {pin} direction: {e}")
 
 
 def gpio_set(pin, high):
   try:
     with open(f"/sys/class/gpio/gpio{pin}/value", 'wb') as f:
-      f.write(r"1" if high else r"0")
-  except Exception:
-    print(f"Failed to set gpio {pin} value")
+      f.write(b"1" if high else b"0")
+  except Exception as e:
+    print(f"Failed to set gpio {pin} value: {e}")
