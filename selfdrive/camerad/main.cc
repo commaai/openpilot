@@ -632,7 +632,6 @@ void* processing_thread(void *arg) {
 
     visionbuf_sync(&s->rgb_bufs[rgb_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
-<<<<<<< HEAD
 #ifdef NOSCREEN
   if (frame_data.frame_id % 4 == 1) {
     sendrgb(&s->cameras, (uint8_t*) s->rgb_bufs[rgb_idx].addr, s->rgb_bufs[rgb_idx].len, 0);
