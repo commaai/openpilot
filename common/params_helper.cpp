@@ -15,9 +15,6 @@
 #include <limits.h>     /* PATH_MAX */
 #include <errno.h>
 
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-
 using std::cout;
 using std::endl;
 
