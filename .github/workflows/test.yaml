@@ -78,6 +78,21 @@ jobs:
   #  - name: Brew cleanup
   #    run: brew cleanup # keeps our cache small
 
+  build_webcam:
+    name: build webcam
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    env:
+      TEST_DIR: tmppilot
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Build openpilot and run quick check
+      run: $RUN "cd /tmp/openpilot && use_webcam=1 scons -j$(nproc)"
+
   docker_push:
     name: docker push
     runs-on: ubuntu-16.04
