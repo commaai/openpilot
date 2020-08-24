@@ -1,3 +1,5 @@
+# flake8: noqa
+
 #!/usr/bin/env python
 import numpy as np
 import cv2
@@ -9,7 +11,7 @@ if __name__ == '__main__':
   import zmq
   context = zmq.Context()
   socket = context.socket(zmq.PULL)
-  socket.bind("tcp://192.168.2.221:7769")
+  socket.bind("tcp://192.168.3.4:7769")
   while True:
     try:
       message = socket.recv()
