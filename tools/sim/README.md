@@ -8,9 +8,6 @@ Checkout openpilot
 cd ~/ && git clone https://github.com/commaai/openpilot.git
 ```
 
-Install the dependencies
-
-
 ## Running the simulator
 
 First, start the CARLA server.
@@ -42,12 +39,8 @@ openpilot driving in the simulation with the following keys
 
 |  key  |   functionality   |
 | :---: | :---------------: |
-|   1   | Cruise up 5 mph |
+|   1   |  Cruise up 5 mph  |
 |   2   | Cruise down 5 mph |
 |   3   |   Cruise cancel   |
-|   Up Arrow   |  Throttle  |
-|  Down Arrow    |  Brake  |
-|   Left Arrow   |  Left Turn  |
-|   Right Arrow   |  Right Turn  |
 |   q   |     Exit all      |
 
