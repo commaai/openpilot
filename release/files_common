@@ -215,8 +215,11 @@ selfdrive/common/visionimg.cc
 selfdrive/common/visionimg.h
 selfdrive/common/spinner.c
 selfdrive/common/spinner.h
+
 selfdrive/common/gpio.cc
 selfdrive/common/gpio.h
+selfdrive/common/i2c.cc
+selfdrive/common/i2c.h
 
 
 selfdrive/controls/__init__.py
