@@ -129,7 +129,6 @@ typedef struct UIScene {
 
   cereal::HealthData::HwType hwType;
   int satelliteCount;
-  uint8_t athenaStatus;
 
   cereal::ThermalData::Reader thermal;
   cereal::RadarState::LeadData::Reader lead_data[2];
@@ -220,16 +219,10 @@ typedef struct UIState {
   // timeouts
   int awake_timeout;
   int controls_timeout;
-  int speed_lim_off_timeout;
-  int is_metric_timeout;
-  int longitudinal_control_timeout;
-  int limit_set_speed_timeout;
   int hardware_timeout;
-  int last_athena_ping_timeout;
 
   bool controls_seen;
 
-  uint64_t last_athena_ping;
   int status;
   bool is_metric;
   bool longitudinal_control;

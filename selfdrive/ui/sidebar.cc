@@ -5,6 +5,7 @@
 
 #include "paint.hpp"
 #include "sidebar.hpp"
+#include "common/timing.h"
 
 static void ui_draw_sidebar_background(UIState *s) {
   int sbr_x = !s->scene.uilayout_sidebarcollapsed ? 0 : -(sbr_w) + bdr_s * 2;
@@ -159,9 +160,22 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
 }
 
 static void ui_draw_sidebar_connectivity(UIState *s) {
-  if (s->scene.athenaStatus == NET_DISCONNECTED) {
+  static int last_athena_ping_timeout = 0;
+  static uint8_t athenaStatus = NET_DISCONNECTED;
+  uint64_t last_athena_ping = 0;
+  int param_read = read_param_timeout(&last_athena_ping, "LastAthenaPingTime", &last_athena_ping_timeout);
+  if (param_read != -1) {   // Param was updated this loop
+    if (param_read != 0) {  // Failed to read param
+      athenaStatus = NET_DISCONNECTED;
+    } else if (nanos_since_boot() - last_athena_ping < 70e9) {
+      athenaStatus = NET_CONNECTED;
+    } else {
+      athenaStatus = NET_ERROR;
+    }
+  }
+  if (athenaStatus == NET_DISCONNECTED) {
     ui_draw_sidebar_metric(s, NULL, NULL, 1, 180+158, "CONNECT\nOFFLINE");
-  } else if (s->scene.athenaStatus == NET_CONNECTED) {
+  } else if (athenaStatus == NET_CONNECTED) {
     ui_draw_sidebar_metric(s, NULL, NULL, 0, 180+158, "CONNECT\nONLINE");
   } else {
     ui_draw_sidebar_metric(s, NULL, NULL, 2, 180+158, "CONNECT\nERROR");

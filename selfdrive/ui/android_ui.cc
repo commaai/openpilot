@@ -150,6 +150,12 @@ static void update_offroad_layout_state(UIState *s) {
   if (timeout > 0) {
     timeout--;
   }
+  if (prev_app != s->active_app && s->active_app == cereal::UiLayoutState::App::NONE) {
+    read_param(&s->is_metric, "IsMetric");
+    read_param(&s->longitudinal_control, "LongitudinalControl");
+    read_param(&s->limit_set_speed, "LimitSetSpeed");
+    read_param(&s->speed_lim_off, "SpeedLimitOffset");
+  }
   if (prev_collapsed != s->scene.uilayout_sidebarcollapsed || prev_app != s->active_app || timeout == 0) {
     capnp::MallocMessageBuilder msg;
     auto event = msg.initRoot<cereal::Event>();
@@ -314,20 +320,6 @@ int main(int argc, char* argv[]) {
       ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
 
-    read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
-    read_param_timeout(&s->longitudinal_control, "LongitudinalControl", &s->longitudinal_control_timeout);
-    read_param_timeout(&s->limit_set_speed, "LimitSetSpeed", &s->limit_set_speed_timeout);
-    read_param_timeout(&s->speed_lim_off, "SpeedLimitOffset", &s->limit_set_speed_timeout);
-    int param_read = read_param_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
-    if (param_read != -1) { // Param was updated this loop
-      if (param_read != 0) { // Failed to read param
-        s->scene.athenaStatus = NET_DISCONNECTED;
-      } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
-        s->scene.athenaStatus = NET_CONNECTED;
-      } else {
-        s->scene.athenaStatus = NET_ERROR;
-      }
-    }
     update_offroad_layout_state(s);
 
     pthread_mutex_unlock(&s->lock);
