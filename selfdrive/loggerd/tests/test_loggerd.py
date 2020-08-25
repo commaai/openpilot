@@ -10,16 +10,19 @@ import subprocess
 
 from common.basedir import BASEDIR
 from common.params import Params
+from common.hardware import EON, TICI
 
 CAMERAD_KILL_TIMEOUT = 15
 
 # baseline file sizes for a 2s segment
-# TODO: add check for tici with import hardware flag
-CAMERA_NAME = ['fcamera', 'dcamera']
-CAMERA_BASELINE_SIZE = [1253786, 650920] # fcam, dcam in bytes
-
-# CAMERA_NAME = ['fcamera', 'dcamera', 'ecamera']
-# CAMERA_BASELINE_SIZE = [1253786, 1253786, 1253786]
+if EON:
+  CAMERA_NAME = ['fcamera', 'dcamera']
+  CAMERA_BASELINE_SIZE = [1253786, 650920] # in bytes
+elif TICI:
+  CAMERA_NAME = ['fcamera', 'dcamera', 'ecamera']
+  CAMERA_BASELINE_SIZE = [1253786, 1253786, 1253786]
+else:
+  raise NotImplementedError("unknown hardware type")
 
 rTOL = 0.1 # tolerate a 10% fluctuation based on content
 
