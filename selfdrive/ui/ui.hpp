@@ -256,6 +256,7 @@ void ui_update_sizes(UIState *s);
 void* vision_connect_thread(void *args);
 void check_messages(UIState *s);
 void update_status(UIState *s, int status);
+void update_paramaters(UIState *s);
 
 
 int write_param_float(float param, const char* param_name, bool persistent_param = false);

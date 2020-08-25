@@ -150,12 +150,6 @@ static void update_offroad_layout_state(UIState *s) {
   if (timeout > 0) {
     timeout--;
   }
-  if (prev_app != s->active_app && s->active_app == cereal::UiLayoutState::App::NONE) {
-    read_param(&s->is_metric, "IsMetric");
-    read_param(&s->longitudinal_control, "LongitudinalControl");
-    read_param(&s->limit_set_speed, "LimitSetSpeed");
-    read_param(&s->speed_lim_off, "SpeedLimitOffset");
-  }
   if (prev_collapsed != s->scene.uilayout_sidebarcollapsed || prev_app != s->active_app || timeout == 0) {
     capnp::MallocMessageBuilder msg;
     auto event = msg.initRoot<cereal::Event>();
@@ -320,6 +314,7 @@ int main(int argc, char* argv[]) {
       ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
 
+    update_paramaters(s);
     update_offroad_layout_state(s);
 
     pthread_mutex_unlock(&s->lock);

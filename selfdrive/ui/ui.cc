@@ -43,6 +43,13 @@ void ui_init(UIState *s) {
   ui_nvg_init(s);
 }
 
+static void read_paramaters(UIState *s) {
+  read_param(&s->is_metric, "IsMetric");
+  read_param(&s->longitudinal_control, "LongitudinalControl");
+  read_param(&s->limit_set_speed, "LimitSetSpeed");
+  read_param(&s->speed_lim_off, "SpeedLimitOffset");
+}
+
 static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
                            int num_back_fds, const int *back_fds,
                            const VisionStreamBufs front_bufs, int num_front_fds,
@@ -70,11 +77,17 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->rgb_front_stride = front_bufs.stride;
   s->rgb_front_buf_len = front_bufs.buf_len;
 
-  read_param(&s->speed_lim_off, "SpeedLimitOffset");
-  read_param(&s->is_metric, "IsMetric");
-  read_param(&s->longitudinal_control, "LongitudinalControl");
-  read_param(&s->limit_set_speed, "LimitSetSpeed");
+  read_paramaters(s);
+}
 
+void update_paramaters(UIState *s) {
+  static cereal::UiLayoutState::App prev_app = cereal::UiLayoutState::App::NONE;
+  if (prev_app != s->active_app) {
+    if (s->active_app == cereal::UiLayoutState::App::NONE) {
+      read_paramaters(s);
+    }
+    prev_app = s->active_app;
+  }
 }
 
 void update_status(UIState *s, int status) {
