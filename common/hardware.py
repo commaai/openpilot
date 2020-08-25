@@ -15,7 +15,7 @@ NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 
 
-class Linux(HardwareBase):
+class Pc(HardwareBase):
   def get_sound_card_online(self):
     return True
 
@@ -41,4 +41,4 @@ class Linux(HardwareBase):
 if EON:
   HARDWARE = cast(HardwareBase, Android())
 else:
-  HARDWARE = cast(HardwareBase, Linux())
+  HARDWARE = cast(HardwareBase, Pc())
