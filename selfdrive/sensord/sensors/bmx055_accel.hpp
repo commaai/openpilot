@@ -16,4 +16,5 @@ class BMX055_Accel : public I2CSensor {
 public:
   BMX055_Accel(I2CBus *bus);
   int init();
+  void get_event(cereal::SensorEventData::Builder &event);
 };

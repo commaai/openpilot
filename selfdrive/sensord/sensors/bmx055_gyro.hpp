@@ -13,7 +13,8 @@
 
 class BMX055_Gyro : public I2CSensor {
   uint8_t get_device_address() {return BMX055_GYRO_I2C_ADDR;}
-  public:
-    BMX055_Gyro(I2CBus *bus);
-    int init();
+public:
+  BMX055_Gyro(I2CBus *bus);
+  int init();
+  void get_event(cereal::SensorEventData::Builder &event){};
 };

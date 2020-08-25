@@ -1,6 +1,8 @@
 #pragma once
 
+#include "cereal/gen/cpp/log.capnp.h"
 #include "common/i2c.h"
+#include "sensors/constants.hpp"
 
 class I2CSensor {
 private:
@@ -12,4 +14,5 @@ public:
   int read_register(uint register_address, uint8_t *buffer, uint8_t len);
   int set_register(uint register_address, uint8_t data);
   virtual int init() = 0;
+  virtual void get_event(cereal::SensorEventData::Builder &event) = 0;
 };

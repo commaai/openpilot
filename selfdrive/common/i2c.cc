@@ -11,6 +11,7 @@
 #define UNUSED(x) (void)(x)
 
 #ifdef QCOM2
+// TODO: decide if we want to isntall libi2c-dev everywhere
 #include <linux/i2c-dev.h>
 
 I2CBus::I2CBus(uint8_t bus_id){

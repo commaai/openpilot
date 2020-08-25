@@ -1,5 +1,6 @@
 #include <vector>
 #include <csignal>
+#include <unistd.h>
 #include <sys/resource.h>
 
 #include "messaging.hpp"
@@ -46,64 +47,26 @@ int sensor_loop() {
     }
   }
 
+  PubMaster pm({"sensorEvents"});
+
   while (!do_exit){
-    ;
+    uint64_t log_time = nanos_since_boot();
+
+    capnp::MallocMessageBuilder msg;
+    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+    event.setLogMonoTime(log_time);
+
+    int num_events = sensors.size();
+    auto sensor_events = event.initSensorEvents(num_events);
+
+    for (size_t i = 0; i < num_events; i++){
+      auto event = sensor_events[i];
+      sensors[i]->get_event(event);
+    }
+
+    pm.send("sensorEvents", msg);
+    usleep(10 * 1000); // ~100 Hz
   }
-
-  // init sensors
-
-
-  // init sensors
-  // ret = bmx055_accel_init(i2c_imu_fd);
-  // ret += bmx055_gyro_init(i2c_imu_fd);
-  // ret += bmx055_magn_init(i2c_imu_fd);
-  // if(ret < 0){
-  //   LOGE("BMX055 init failed");
-  //   exit(ret);
-  // }
-
-  // LOG("*** sensor loop");
-  // while (!do_exit) {
-  //   PubMaster pm({"sensorEvents"});
-
-
-  //   while (!do_exit) {
-
-  //     // READ SENSORS HERE
-
-  //     uint64_t log_time = nanos_since_boot();
-
-  //     capnp::MallocMessageBuilder msg;
-  //     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  //     event.setLogMonoTime(log_time);
-
-  //     auto sensor_events = event.initSensorEvents(log_events);
-
-  //     int log_i = 0;
-  //     for (int i = 0; i < n; i++) {
-  //       auto log_event = sensor_events[log_i];
-
-  //       log_event.setSource(cereal::SensorEventData::SensorSource::ANDROID);
-  //       log_event.setVersion(data.version);
-  //       log_event.setSensor(data.sensor);
-  //       log_event.setType(data.type);
-  //       log_event.setTimestamp(data.timestamp);
-
-  //       log_i++;
-  //     }
-
-  //     pm.send("sensorEvents", msg);
-
-  //     if (re_init_sensors){
-  //       LOGE("Resetting sensors");
-  //       re_init_sensors = false;
-  //       break;
-  //     }
-  //   }
-  //   sensors_close(device);
-  // }
-
-
   return 0;
 }
 

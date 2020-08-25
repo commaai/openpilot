@@ -14,7 +14,8 @@
 
 class BMX055_Magn : public I2CSensor{
   uint8_t get_device_address() {return BMX055_MAGN_I2C_ADDR;}
-  public:
-    BMX055_Magn(I2CBus *bus);
-    int init();
+public:
+  BMX055_Magn(I2CBus *bus);
+  int init();
+  void get_event(cereal::SensorEventData::Builder &event){};
 };

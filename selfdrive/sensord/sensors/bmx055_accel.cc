@@ -24,3 +24,12 @@ int BMX055_Accel::init(){
 fail:
   return ret;
 }
+
+void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event){
+  event.setSource(cereal::SensorEventData::SensorSource::ANDROID);
+  event.setVersion(1);
+  event.setSensor(SENSOR_ACCELEROMETER);
+  event.setType(SENSOR_TYPE_ACCELEROMETER);
+
+  // event.setTimestamp(data.timestamp);
+}
