@@ -81,6 +81,7 @@ struct LoggerdState {
   std::mutex lock;
   std::condition_variable cv;
   char segment_path[4096];
+  int segment_len_sec;
   uint32_t last_frame_id;
   uint32_t rotate_last_frame_id;
   int rotate_segment;
@@ -540,6 +541,13 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  if (argc > 1 && strcmp(argv[1], "--test_loggerd") == 0) {
+    s.segment_len_sec = 2;
+  } else {
+    s.segment_len_sec = SEGMENT_LENGTH;
+  }
+  printf("segment length = %ds\n", s.segment_len_sec);
+
   setpriority(PRIO_PROCESS, 0, -12);
 
   clear_locks();
@@ -659,10 +667,10 @@ int main(int argc, char** argv) {
     }
 
     double ts = seconds_since_boot();
-    if (ts - last_rotate_ts > SEGMENT_LENGTH) {
+    if (ts - last_rotate_ts > s.segment_len_sec) {
       // rotate the log
 
-      last_rotate_ts += SEGMENT_LENGTH;
+      last_rotate_ts += s.segment_len_sec;
 
       std::lock_guard<std::mutex> guard(s.lock);
       s.rotate_last_frame_id = s.last_frame_id;
