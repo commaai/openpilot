@@ -1,4 +1,5 @@
 import os
+import random
 from typing import cast
 
 from cereal import log
@@ -20,7 +21,7 @@ class Pc(HardwareBase):
     return True
 
   def get_imei(self, slot):
-    return ""
+    return "%015d" % random.randint(0, 1 << 32)
 
   def get_serial(self):
     return "cccccccc"
