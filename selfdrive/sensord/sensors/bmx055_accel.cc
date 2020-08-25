@@ -1,5 +1,6 @@
 #include <cassert>
 #include "common/swaglog.h"
+#include "common/timing.h"
 
 #include "bmx055_accel.hpp"
 
@@ -23,18 +24,16 @@ int BMX055_Accel::init(){
   }
 
   // High bandwidth
-  ret = set_register(BMX055_ACCEL_I2C_REG_HBW, 0b10000000);
+  ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_ENABLE);
   if (ret < 0){
     goto fail;
   }
 
   // Low bandwidth
-  // ret = set_register(BMX055_ACCEL_I2C_REG_HBW, 0b00000000);
+  // ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_DISABLE);
   // if (ret < 0){
   //   goto fail;
   // }
-
-  // // 10 Hz
   // ret = set_register(BMX055_ACCEL_I2C_REG_BW, BMX055_ACCEL_BW_7_81HZ);
   // if (ret < 0){
   //   goto fail;
@@ -45,6 +44,7 @@ fail:
 }
 
 void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event){
+  uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(BMX055_ACCEL_I2C_REG_FIFO, buffer, sizeof(buffer));
   assert(len == 6);
@@ -55,10 +55,11 @@ void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event){
   float y = read_12_bit(buffer[2], buffer[3]) * scale;
   float z = read_12_bit(buffer[4], buffer[5]) * scale;
 
-  event.setSource(cereal::SensorEventData::SensorSource::ANDROID);
+  event.setSource(cereal::SensorEventData::SensorSource::BMX055);
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);
   event.setType(SENSOR_TYPE_ACCELEROMETER);
+  event.setTimestamp(start_time);
 
   float xyz[] = {x, y, z};
   kj::ArrayPtr<const float> vs(&xyz[0], 3);
