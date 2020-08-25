@@ -40,11 +40,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
-void MainWindow::openSettings(){
+void MainWindow::openSettings() {
   main_layout->setCurrentIndex(1);
 }
 
-void MainWindow::closeSettings(){
+void MainWindow::closeSettings() {
   main_layout->setCurrentIndex(0);
 }
 

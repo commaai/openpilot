@@ -4,7 +4,6 @@
 bool Sound::init(int volume) {
   for (auto &kv : sound_map) {
     auto path = QUrl::fromLocalFile(kv.second.first);
-    //sounds[kv.first] = QSoundEffect();
     sounds[kv.first].setSource(path);
   }
   return true;
@@ -17,7 +16,7 @@ bool Sound::play(AudibleAlert alert) {
 }
 
 void Sound::stop() {
-  sounds[alert].stop();
+  //sounds[alert].stop();
 }
 
 void Sound::setVolume(int volume) {
