@@ -1,6 +1,7 @@
-#include "bmx055_gyro.h"
-
 #include "common/swaglog.h"
+
+#include "bmx055_gyro.hpp"
+
 
 BMX055_Gyro::BMX055_Gyro(I2CBus *i2c_bus){
   bus = i2c_bus;

@@ -1,6 +1,7 @@
-#include "bmx055_magn.h"
-
 #include "common/swaglog.h"
+
+#include "bmx055_magn.hpp"
+
 
 BMX055_Magn::BMX055_Magn(I2CBus *i2c_bus){
   bus = i2c_bus;

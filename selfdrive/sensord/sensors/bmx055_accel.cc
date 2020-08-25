@@ -1,6 +1,7 @@
-#include "bmx055_accel.h"
-
 #include "common/swaglog.h"
+
+#include "bmx055_accel.hpp"
+
 
 BMX055_Accel::BMX055_Accel(I2CBus *i2c_bus){
   bus = i2c_bus;
