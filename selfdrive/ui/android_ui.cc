@@ -82,7 +82,6 @@ static void* light_sensor_thread(void *args) {
   if (err != 0) goto fail;
 
   device->setDelay(device, SENSOR_LIGHT, ms2ns(100));
-  
   while (!do_exit) {
     static const size_t numEvents = 1;
     sensors_event_t buffer[numEvents];

@@ -241,8 +241,6 @@ typedef struct UIState {
   bool started;
   bool vision_seen;
 
-  std::atomic<float> light_sensor;
-
   int touch_fd;
 
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
