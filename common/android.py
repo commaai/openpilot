@@ -1,7 +1,6 @@
 import binascii
 import itertools
 import os
-import random
 import re
 import struct
 import subprocess
