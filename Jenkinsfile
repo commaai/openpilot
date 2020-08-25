@@ -70,7 +70,7 @@ pipeline {
         stage('PC tests') {
           agent {
             dockerfile {
-              filename 'Dockerfile.openpilot'
+              filename 'Dockerfile.openpilotci'
               args '--privileged --shm-size=1G --user=root'
             }
           }
