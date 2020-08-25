@@ -21,7 +21,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     libglew-dev \
     libgles2-mesa-dev \
-    libglfw3-dev \
     libglib2.0-0 \
     liblzma-dev \
     libomp-dev \
