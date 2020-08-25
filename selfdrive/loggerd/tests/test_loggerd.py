@@ -64,7 +64,7 @@ class TestLoggerd(unittest.TestCase):
         print('----')
         print('unittest terminated.')
         print('----')
-        self.assertTrue(False)
+        self.assertTrue(False) # pylint: disable=W1503
 
     signal.signal(signal.SIGINT, terminate)
 
@@ -109,7 +109,7 @@ class TestLoggerd(unittest.TestCase):
     print("checked files in %s" % route_prefix[:-2])
     for cidx in range(len(CAMERA_NAME)):
       szs = np.array(fsz[cidx])
-      print("%s.hevc: count=%d, avg_sz=%d, max_sz=%d, min_sz=%d" % (CAMERA_NAME[cidx], len(szs), szs.mean(), szs.max(), szs.min()))
+      print("%s.hevc: count=%d, avg_sz=%d, max_sz=%d, min_sz=%d" % (CAMERA_NAME[cidx], len(szs), szs.mean().item(), szs.max().item(), szs.min().item()))
 
     for i in range(n_seg):
       shutil.rmtree(route_prefix + '%d' % i)
