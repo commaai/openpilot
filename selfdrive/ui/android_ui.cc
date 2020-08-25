@@ -59,7 +59,6 @@ static void* light_sensor_thread(void *args) {
     smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
     if (smooth_brightness > 255) smooth_brightness = 255;
     pthread_mutex_lock(&s->lock);
-    printf("light_sensor %f\n", light_sensor);
     ui_set_brightness(s, (int)smooth_brightness);
     pthread_mutex_unlock(&s->lock);
   };
