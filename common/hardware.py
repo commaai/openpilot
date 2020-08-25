@@ -45,7 +45,7 @@ class Pc(HardwareBase):
     }
 
   def get_network_strength(self, network_type):
-    pass
+    return NetworkStrength.unknown
 
 
 if EON:
