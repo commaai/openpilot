@@ -5,6 +5,7 @@ import numpy as np
 import os
 import time
 import signal
+import shutil
 import subprocess
 
 from common.basedir import BASEDIR
@@ -106,6 +107,10 @@ class TestLoggerd(unittest.TestCase):
     for cidx in range(len(CAMERA_NAME)):
       szs = np.array(fsz[cidx])
       print("%s.hevc: count=%d, avg_sz=%d, max_sz=%d, min_sz=%d" % (CAMERA_NAME[cidx], len(szs), szs.mean(), szs.max(), szs.min()))
+
+    for i in range(n_seg):
+      shutil.rmtree(route_prefix + '%d' % i)
+
     self.assertTrue(has_files and correct_size)
 
 if __name__ == "__main__":
