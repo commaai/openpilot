@@ -24,20 +24,20 @@ int BMX055_Accel::init(){
   }
 
   // High bandwidth
-  ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_ENABLE);
+  // ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_ENABLE);
+  // if (ret < 0){
+  //   goto fail;
+  // }
+
+  // Low bandwidth
+  ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_DISABLE);
   if (ret < 0){
     goto fail;
   }
-
-  // Low bandwidth
-  // ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_DISABLE);
-  // if (ret < 0){
-  //   goto fail;
-  // }
-  // ret = set_register(BMX055_ACCEL_I2C_REG_BW, BMX055_ACCEL_BW_125HZ);
-  // if (ret < 0){
-  //   goto fail;
-  // }
+  ret = set_register(BMX055_ACCEL_I2C_REG_BW, BMX055_ACCEL_BW_125HZ);
+  if (ret < 0){
+    goto fail;
+  }
 
 fail:
   return ret;
