@@ -40,7 +40,7 @@ int sensor_loop() {
   // Sensor init
   std::vector<I2CSensor *> sensors;
   sensors.push_back(&accel);
-  // sensors.push_back(&gyro);
+  sensors.push_back(&gyro);
   // sensors.push_back(&magn);
 
 

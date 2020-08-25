@@ -6,6 +6,7 @@
 #include "sensors/constants.hpp"
 
 int16_t read_12_bit(uint8_t lsb, uint8_t msb);
+int16_t read_16_bit(uint8_t lsb, uint8_t msb);
 
 
 class I2CSensor {
