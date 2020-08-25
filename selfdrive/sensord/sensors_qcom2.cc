@@ -32,11 +32,15 @@ int sensor_loop() {
     return -1;
   }
 
+  BMX055_Accel accel(i2c_bus_imu);
+  BMX055_Gyro gyro(i2c_bus_imu);
+  BMX055_Magn magn(i2c_bus_imu);
+
   // Sensor init
   std::vector<I2CSensor *> sensors;
-  sensors.push_back(new BMX055_Accel(i2c_bus_imu));
-  sensors.push_back(new BMX055_Gyro(i2c_bus_imu));
-  sensors.push_back(new BMX055_Magn(i2c_bus_imu));
+  sensors.push_back(&accel);
+  sensors.push_back(&gyro);
+  sensors.push_back(&magn);
 
 
   for (I2CSensor * sensor : sensors){
