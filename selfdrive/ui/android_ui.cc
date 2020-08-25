@@ -23,14 +23,48 @@ static void set_do_exit(int sig) {
   do_exit = 1;
 }
 
+static void ui_set_brightness(UIState *s, int brightness) {
+  static int last_brightness = -1;
+  if (last_brightness != brightness && (s->awake || brightness == 0)) {
+    if (set_brightness(brightness)) {
+      last_brightness = brightness;
+    }
+  }
+}
 
 static void* light_sensor_thread(void *args) {
   set_thread_name("light_sensor");
 
   int err;
   UIState *s = (UIState*)args;
-  s->light_sensor = 0.0;
 
+  const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
+
+  float brightness_b, brightness_m;
+  int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
+  result += read_param(&brightness_m, "BRIGHTNESS_M", true);
+
+  if (result != 0) {
+    brightness_b = LEON ? 10.0 : 5.0;
+    brightness_m = LEON ? 2.6 : 1.3;
+    write_param_float(brightness_b, "BRIGHTNESS_B", true);
+    write_param_float(brightness_m, "BRIGHTNESS_M", true);
+  }
+
+  float smooth_brightness = brightness_b;
+
+  auto _set_brightness = [&](float light_sensor) {
+    float clipped_brightness = (light_sensor * brightness_m) + brightness_b;
+    if (clipped_brightness > 512) clipped_brightness = 512;
+    smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
+    if (smooth_brightness > 255) smooth_brightness = 255;
+    pthread_mutex_lock(&s->lock);
+    printf("light_sensor %f\n", light_sensor);
+    ui_set_brightness(s, (int)smooth_brightness);
+    pthread_mutex_unlock(&s->lock);
+  };
+
+  // light sensor is only exposed on EONs
   struct sensors_poll_device_t* device;
   struct sensors_module_t* module;
 
@@ -49,7 +83,7 @@ static void* light_sensor_thread(void *args) {
   if (err != 0) goto fail;
 
   device->setDelay(device, SENSOR_LIGHT, ms2ns(100));
-
+  
   while (!do_exit) {
     static const size_t numEvents = 1;
     sensors_event_t buffer[numEvents];
@@ -59,7 +93,7 @@ static void* light_sensor_thread(void *args) {
       LOG_100("light_sensor_poll failed: %d", n);
     }
     if (n > 0) {
-      s->light_sensor = buffer[0].light;
+      _set_brightness(buffer[0].light);
     }
   }
   sensors_close(device);
@@ -67,18 +101,8 @@ static void* light_sensor_thread(void *args) {
 
 fail:
   LOGE("LIGHT SENSOR IS MISSING");
-  s->light_sensor = 255;
-
+  _set_brightness(255);
   return NULL;
-}
-
-static void ui_set_brightness(UIState *s, int brightness) {
-  static int last_brightness = -1;
-  if (last_brightness != brightness && (s->awake || brightness == 0)) {
-    if (set_brightness(brightness)) {
-      last_brightness = brightness;
-    }
-  }
 }
 
 int event_processing_enabled = -1;
@@ -196,19 +220,6 @@ int main(int argc, char* argv[]) {
   // light sensor scaling params
   const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
 
-  float brightness_b, brightness_m;
-  int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
-  result += read_param(&brightness_m, "BRIGHTNESS_M", true);
-
-  if(result != 0){
-    brightness_b = LEON ? 10.0 : 5.0;
-    brightness_m = LEON ? 2.6 : 1.3;
-    write_param_float(brightness_b, "BRIGHTNESS_B", true);
-    write_param_float(brightness_m, "BRIGHTNESS_M", true);
-  }
-
-  float smooth_brightness = brightness_b;
-
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
   assert(s->sound.init(MIN_VOLUME));
@@ -225,12 +236,6 @@ int main(int argc, char* argv[]) {
     pthread_mutex_lock(&s->lock);
     double u1 = millis_since_boot();
 
-    // light sensor is only exposed on EONs
-    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
-    if (clipped_brightness > 512) clipped_brightness = 512;
-    smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
-    if (smooth_brightness > 255) smooth_brightness = 255;
-    ui_set_brightness(s, (int)smooth_brightness);
     ui_update_sizes(s);
 
     // poll for touch events
