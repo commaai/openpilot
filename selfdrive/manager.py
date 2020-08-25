@@ -239,6 +239,7 @@ car_started_processes = [
   'proclogd',
   'ubloxd',
   'locationd',
+  'clocksd',
 ]
 
 driver_view_processes = [
@@ -255,7 +256,6 @@ if WEBCAM:
 if ANDROID:
   car_started_processes += [
     'sensord',
-    'clocksd',
     'gpsd',
     'dmonitoringmodeld',
   ]
