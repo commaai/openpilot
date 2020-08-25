@@ -26,6 +26,11 @@ fail:
 }
 
 void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event){
+  uint8_t buffer[128];
+  int len = read_register(BMX055_ACCEL_I2C_REG_FIFO, buffer, sizeof(buffer));
+  LOGE("Read %d bytes from accel", len);
+
+
   event.setSource(cereal::SensorEventData::SensorSource::ANDROID);
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);

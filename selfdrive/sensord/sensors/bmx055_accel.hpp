@@ -7,6 +7,7 @@
 
 // Registers of the chip
 #define BMX055_ACCEL_I2C_REG_ID     0x00
+#define BMX055_ACCEL_I2C_REG_FIFO       0x3F
 
 // Constants
 #define BMX055_ACCEL_CHIP_ID        0xFA
