@@ -104,7 +104,7 @@ void Sound::stop() {
 
 void Sound::setVolume(int volume) {
   if (last_volume_ == volume) return;
-  
+
   double current_time = nanos_since_boot();
   if ((current_time - last_set_volume_time_) > (5 * (1e+9))) { // 5s timeout on updating the volume
     char volume_change_cmd[64];
@@ -120,6 +120,10 @@ Sound::~Sound() {
     (*(kv.second->player))->Destroy(kv.second->player);
     delete kv.second;
   }
-  if (outputMix_) (*outputMix_)->Destroy(outputMix_);
-  if (engine_) (*engine_)->Destroy(engine_);
+  if (outputMix_) {
+    (*outputMix_)->Destroy(outputMix_);
+  }
+  if (engine_) {
+    (*engine_)->Destroy(engine_);
+  }
 }
