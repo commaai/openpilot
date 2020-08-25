@@ -200,7 +200,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       f"/usr/include/{arch}-linux-gnu/qt5/QtGui",
       f"/usr/include/{arch}-linux-gnu/qt5/QtCore",
       f"/usr/include/{arch}-linux-gnu/qt5/QtDBus",
-      f"/usr/include/{arch}-linux-gnu/qt5/QtMultiMedia",
+      f"/usr/include/{arch}-linux-gnu/qt5/QtMultimedia",
     ]
 
   qt_env.Tool('qt')
