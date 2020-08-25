@@ -69,11 +69,7 @@ class Android(HardwareBase):
     if slot not in ("0", "1"):
       raise ValueError("SIM slot must be 0 or 1")
 
-    ret = parse_service_call_string(service_call(["iphonesubinfo", "3", "i32", str(slot)]))
-    if not ret:
-      # allow non android to be identified differently
-      ret = "%015d" % random.randint(0, 1 << 32)
-    return ret
+    return parse_service_call_string(service_call(["iphonesubinfo", "3", "i32", str(slot)]))
 
   def get_serial(self):
     ret = getprop("ro.serialno")
