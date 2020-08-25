@@ -34,6 +34,15 @@ class Pc(HardwareBase):
   def get_network_type(self):
     return NetworkType.none
 
+  def get_sim_info(self):
+    return {
+      'sim_id': '',
+      'mcc_mnc': None,
+      'network_type': ["Unknown"],
+      'sim_state': ["ABSENT"],
+      'data_connected': False
+    }
+
   def get_network_strength(self, network_type):
     pass
 

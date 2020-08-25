@@ -26,5 +26,9 @@ class HardwareBase:
     pass
 
   @abstractmethod
+  def get_sim_info(self):
+    pass
+
+  @abstractmethod
   def get_network_strength(self, network_type):
     pass
