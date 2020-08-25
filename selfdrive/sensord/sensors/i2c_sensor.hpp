@@ -11,4 +11,5 @@ public:
   I2CSensor(I2CBus *bus);
   int read_register(uint register_address, uint8_t *buffer, uint8_t len);
   int set_register(uint register_address, uint8_t data);
+  virtual int init() = 0;
 };

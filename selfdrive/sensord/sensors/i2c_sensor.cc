@@ -2,7 +2,6 @@
 #include "i2c_sensor.hpp"
 
 I2CSensor::I2CSensor(I2CBus *bus) : bus(bus){
-  std::cout << "sensor init" << std::endl;
 }
 
 int I2CSensor::read_register(uint register_address, uint8_t *buffer, uint8_t len){

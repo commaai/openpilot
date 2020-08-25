@@ -1,17 +1,6 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-#include <unistd.h>
-#include <assert.h>
-#include <sys/time.h>
-#include <sys/cdefs.h>
-#include <sys/types.h>
+#include <vector>
+#include <csignal>
 #include <sys/resource.h>
-
-#include <pthread.h>
-#include <utils/Timers.h>
 
 #include "messaging.hpp"
 #include "common/i2c.h"
@@ -24,33 +13,45 @@
 #include "sensors/bmx055_magn.hpp"
 
 volatile sig_atomic_t do_exit = 0;
-volatile sig_atomic_t re_init_sensors = 0;
 
 #define I2C_BUS_IMU 1
 
-I2CBus *i2c_bus_imu;
-
-namespace {
 
 void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-void sigpipe_handler(int sig) {
-  LOGE("SIGPIPE received");
-  re_init_sensors = true;
-}
+int sensor_loop() {
+  I2CBus *i2c_bus_imu;
 
-void sensor_loop() {
-  //int ret;
-
-  // init I2C buses
   try {
     i2c_bus_imu = new I2CBus(I2C_BUS_IMU);
   } catch (std::exception &e) {
     LOGE("I2CBus init failed");
-    exit(-1);
+    return -1;
   }
+
+  // Sensor init
+  std::vector<I2CSensor *> sensors;
+  sensors.push_back(new BMX055_Accel(i2c_bus_imu));
+  sensors.push_back(new BMX055_Gyro(i2c_bus_imu));
+  sensors.push_back(new BMX055_Magn(i2c_bus_imu));
+
+
+  for (I2CSensor * sensor : sensors){
+    int err = sensor->init();
+    if (err < 0){
+      LOGE("Error initializing sensors");
+      return -1;
+    }
+  }
+
+  while (!do_exit){
+    ;
+  }
+
+  // init sensors
+
 
   // init sensors
   // ret = bmx055_accel_init(i2c_imu_fd);
@@ -101,17 +102,15 @@ void sensor_loop() {
   //   }
   //   sensors_close(device);
   // }
-}
 
-}// Namespace end
+
+  return 0;
+}
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -13);
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
-  signal(SIGPIPE, (sighandler_t)sigpipe_handler);
 
-  sensor_loop();
-
-  return 0;
+  return sensor_loop();
 }
