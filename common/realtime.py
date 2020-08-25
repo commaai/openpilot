@@ -6,7 +6,7 @@ import subprocess
 import multiprocessing
 from cffi import FFI
 
-from common.android import ANDROID
+from common.hardware import ANDROID
 from common.common_pyx import sec_since_boot  # pylint: disable=no-name-in-module, import-error
 
 

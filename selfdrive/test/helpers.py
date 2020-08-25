@@ -3,7 +3,7 @@ import subprocess
 from functools import wraps
 from nose.tools import nottest
 
-from common.android import ANDROID
+from common.hardware import PC
 from common.apk import update_apks, start_offroad, pm_apply_packages, android_packages
 from common.params import Params
 from selfdrive.version import training_version, terms_version
@@ -19,10 +19,10 @@ def set_params_enabled():
   params.put("CompletedTrainingVersion", training_version)
 
 def phone_only(x):
-  if ANDROID:
-    return x
-  else:
+  if PC:
     return nottest(x)
+  else:
+    return x
 
 def with_processes(processes, init_time=0):
   def wrapper(func):
@@ -68,4 +68,3 @@ def with_apks():
           assert apk_is_not_running, package
     return wrap
   return wrapper
-
