@@ -17,14 +17,14 @@ else:
   qt_libs = ["pthread"]
 
   if arch == "Darwin":
-    qt_env["FRAMEWORKS"] += ["QtWidgets", "QtGui", "QtCore", "QtDBus"]
+    qt_env["FRAMEWORKS"] += ["QtWidgets", "QtGui", "QtCore", "QtDBus", "QtMultimedia"]
   else:
-    qt_libs += ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus"]
+    qt_libs += ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus", "Qt5MultiMedia"]
 
   if arch == "larch64":
     qt_libs += ["GLESv2"]
   else:
     qt_libs += ["GL"]
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/settings.cc"] + src
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/settings.cc", "qt/sound.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)

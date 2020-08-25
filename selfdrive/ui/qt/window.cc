@@ -103,13 +103,6 @@ void GLWindow::mousePressEvent(QMouseEvent *e) {
 }
 
 
-/* HACKS */
-bool Sound::init(int volume) { return true; }
-bool Sound::play(AudibleAlert alert) { printf("play sound: %d\n", (int)alert); return true; }
-void Sound::stop() {}
-void Sound::setVolume(int volume) {}
-Sound::~Sound() {}
-
 GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
   unsigned int texture;
   glGenTextures(1, &texture);

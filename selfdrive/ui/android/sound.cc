@@ -1,26 +1,16 @@
-
-#include "sound.hpp"
 #include <math.h>
 #include <stdlib.h>
 #include <atomic>
 #include "common/swaglog.h"
 #include "common/timing.h"
 
+#include "sound.hpp"
+
 #define LogOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); }
 
 #define ReturnOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; }
-
-static std::map<AudibleAlert, std::pair<const char *, int>> sound_map {
-    {AudibleAlert::CHIME_DISENGAGE, {"../assets/sounds/disengaged.wav", 0}},
-    {AudibleAlert::CHIME_ENGAGE, {"../assets/sounds/engaged.wav", 0}},
-    {AudibleAlert::CHIME_WARNING1, {"../assets/sounds/warning_1.wav", 0}},
-    {AudibleAlert::CHIME_WARNING2, {"../assets/sounds/warning_2.wav", 0}},
-    {AudibleAlert::CHIME_WARNING2_REPEAT, {"../assets/sounds/warning_2.wav", 3}},
-    {AudibleAlert::CHIME_WARNING_REPEAT, {"../assets/sounds/warning_repeat.wav", 3}},
-    {AudibleAlert::CHIME_ERROR, {"../assets/sounds/error.wav", 0}},
-    {AudibleAlert::CHIME_PROMPT, {"../assets/sounds/error.wav", 0}}};
 
 struct Sound::Player {
   SLObjectItf player;
