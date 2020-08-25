@@ -79,8 +79,8 @@ int sensor_loop() {
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -13);
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
+  signal(SIGINT, set_do_exit);
+  signal(SIGTERM, set_do_exit);
 
   return sensor_loop();
 }
