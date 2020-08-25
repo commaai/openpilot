@@ -7,7 +7,7 @@ from common.hardware_base import HardwareBase
 
 EON = os.path.isfile('/EON')
 TICI = os.path.isfile('/TICI')
-PC = (not EON) and (not TICI)
+PC = not (EON or TICI)
 ANDROID = EON
 
 
