@@ -24,6 +24,9 @@
 #define BMX055_GYRO_RANGE_250       0b011
 #define BMX055_GYRO_RANGE_125       0b100
 
+#define BMX055_GYRO_BW_116HZ 0b0010
+
+
 class BMX055_Gyro : public I2CSensor {
   uint8_t get_device_address() {return BMX055_GYRO_I2C_ADDR;}
 public:

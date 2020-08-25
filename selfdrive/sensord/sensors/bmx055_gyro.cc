@@ -23,7 +23,19 @@ int BMX055_Gyro::init(){
   }
 
   // High bandwidth
-  ret = set_register(BMX055_GYRO_I2C_REG_HBW, BMX055_GYRO_HBW_ENABLE);
+  // ret = set_register(BMX055_GYRO_I2C_REG_HBW, BMX055_GYRO_HBW_ENABLE);
+  // if (ret < 0){
+  //   goto fail;
+  // }
+
+  // Low bandwidth
+  ret = set_register(BMX055_GYRO_I2C_REG_HBW, BMX055_GYRO_HBW_DISABLE);
+  if (ret < 0){
+    goto fail;
+  }
+
+  // 116 Hz filter
+  ret = set_register(BMX055_GYRO_I2C_REG_BW, BMX055_GYRO_BW_116HZ);
   if (ret < 0){
     goto fail;
   }
