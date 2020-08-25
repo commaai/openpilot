@@ -1,121 +1,81 @@
-# flake8: noqa
-
-import unittest
-import numpy as np
+#!/usr/bin/env python3
 import os
-import time
-import signal
+import random
 import shutil
-import subprocess
+import time
+import unittest
+from pathlib import Path
 
-from common.basedir import BASEDIR
 from common.params import Params
 from common.hardware import EON, TICI
+from common.timeout import Timeout
+from selfdrive.test.helpers import with_processes
+from selfdrive.loggerd.config import ROOT
 
-CAMERAD_KILL_TIMEOUT = 15
-
-# baseline file sizes for a 2s segment
+# baseline file sizes for a 1s segment, in bytes
+FULL_SIZE = 626893
 if EON:
-  CAMERA_NAME = ['fcamera', 'dcamera']
-  CAMERA_BASELINE_SIZE = [1253786, 650920] # in bytes
+  CAMERAS = {
+    "fcamera": FULL_SIZE,
+    "dcamera": 325460,
+  }
 elif TICI:
-  CAMERA_NAME = ['fcamera', 'dcamera', 'ecamera']
-  CAMERA_BASELINE_SIZE = [1253786, 1253786, 1253786]
-else:
-  raise NotImplementedError("unknown hardware type")
+  CAMERAS = {f"{c}camera": FULL_SIZE for c in ["f", "e", "d"]}
 
 rTOL = 0.1 # tolerate a 10% fluctuation based on content
 
-params = Params()
-ret = params.get("RecordFront")
-if ret is None:
-  has_dcam = False
-else:
-  has_dcam = bool(int(ret))
-
-n_seg = 100
-
-# TODO: add more test
 class TestLoggerd(unittest.TestCase):
 
-  # 0. test recording for 100 segments
-  def test_rotations(self):
-    proc_cam = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
-    time.sleep(1.0)
-    logtmp = open("/tmp/logtmp.txt", 'w+')
-    proc_log = subprocess.Popen([os.path.join(BASEDIR, "selfdrive/loggerd/loggerd"), '--test_loggerd'], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"),\
-                                stdout=logtmp, universal_newlines=True)
+  # TODO: all of loggerd should work on PC
+  @classmethod
+  def setUpClass(cls):
+    if not (EON or TICI):
+      raise unittest.SkipTest
 
-    def terminate(signalNumber, frame, passed=False):
-      # if receive keyboard interrupt, exit everything
-      print('got SIGINT, exiting..')
-      proc_cam.send_signal(signal.SIGINT)
-      proc_log.send_signal(signal.SIGTERM)
-      kill_start = time.time()
-      while proc_cam.poll() is None:
-        if time.time() - kill_start > CAMERAD_KILL_TIMEOUT:
-          from selfdrive.swaglog import cloudlog
-          cloudlog.critical("FORCE REBOOTING PHONE!")
-          os.system("date >> /sdcard/unkillable_reboot")
-          # os.system("reboot")
-          raise RuntimeError
-        continue
-      if not passed:
-        print('----')
-        print('unittest terminated.')
-        print('----')
-        self.assertTrue(False) # pylint: disable=W1503
+  def setUp(self):
+    Params().put("RecordFront", "1")
+    self._clear_logs()
 
-    signal.signal(signal.SIGINT, terminate)
+    self.test_start = time.monotonic()
+    self.segment_length = random.randint(1, 4)
+    os.environ["LOGGERD_TEST"] = "1"
+    os.environ["LOGGERD_SEGMENT_LENGTH"] = self.segment_length
 
-    start_time = time.time()
-    while time.time() - start_time < 2.0 * n_seg:
-      print("%d/%d" % (int(time.time() - start_time), int(2.0 * n_seg)), end='\r')
-      time.sleep(0.5)
-      # pass
+  def tearDown(self):
+    self._clear_logs()
 
-    terminate(0, 0, passed=True)
+  def _clear_logs(self):
+    if os.path.exists(ROOT):
+      shutil.rmtree(ROOT)
 
-    # processing
-    with open("/tmp/logtmp.txt", "r") as f:
-      logtmp_str = f.read()
-    route_prefix = None
-    for row in logtmp_str.split('\n'):
-      if "logging to" in row:
-        route_prefix = row.split("logging to ")[1][:-1]
-        assert(os.path.isdir(route_prefix + '0'))
-        break
-    assert(route_prefix is not None)
+  def _get_last_route_path(self):
+    last_route = sorted(Path(ROOT).iterdir(), key=os.path.getmtime)[-1]
+    return os.path.join(ROOT, last_route)
 
-    has_files = True
-    for i in range(n_seg):
-      for cidx in range(len(CAMERA_NAME)):
-        if cidx == 1 and not has_dcam:
-          continue
-        has_files = has_files and os.path.isfile(route_prefix + '%d/%s.hevc' % (i, CAMERA_NAME[cidx]))
+  # TODO: this should run faster than real time
+  @with_processes(['camerad'])
+  def test_log_rotation(self):
+    # wait for everything to init
+    time.sleep(10)
 
-    correct_size = True
-    fsz = []
-    for _ in CAMERA_NAME:
-      fsz.append([])
-    for i in range(n_seg):
-      for cidx in range(len(CAMERA_NAME)):
-        if cidx == 1 and not has_dcam:
-          continue
-        fsize = os.path.getsize(route_prefix + '%d/%s.hevc' % (i, CAMERA_NAME[cidx]))
-        correct_size = correct_size and CAMERA_BASELINE_SIZE[cidx] * (1 - rTOL) < fsize < CAMERA_BASELINE_SIZE[cidx] * (1 + rTOL)
-        fsz[cidx].append(fsize)
+    # get the route prefix
+    route_path = self._get_last_route_path()
+    print("LOGGING TO PATH: ", route_path)
 
-    print("checked files in %s" % route_prefix[:-2])
-    for cidx in range(len(CAMERA_NAME)):
-      szs = np.array(fsz[cidx])
-      print("%s.hevc: count=%d, avg_sz=%d, max_sz=%d, min_sz=%d" % (CAMERA_NAME[cidx], len(szs), szs.mean().item(), szs.max().item(), szs.min().item()))
+    num_segments = random.randint(80, 150)
+    for i in range(num_segments):
+      if i < num_segments - 1:
+        with Timeout(self.segment_length*2, error_msg=f"timed out waiting for segment {i}"):
+          while not os.path.exists(os.path.join(route_path, str(i))):
+            time.sleep(0.1)
+      else:
+        time.sleep(self.segment_length + 2)
 
-    for i in range(n_seg):
-      shutil.rmtree(route_prefix + '%d' % i)
-
-    self.assertTrue(has_files and correct_size)
+      # check each camera file size
+      for camera, _ in CAMERAS.items():
+        f = os.path.join(ROOT, f"{i}/{camera}.hevc")
+        self.assertTrue(os.path.exists(f))
+        # TODO: check file size
 
 if __name__ == "__main__":
-  print('--- testing loggerd ---')
   unittest.main()

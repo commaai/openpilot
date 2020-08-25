@@ -541,8 +541,8 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  if (argc > 1 && strcmp(argv[1], "--test_loggerd") == 0) {
-    s.segment_len_sec = 2;
+  if (std::getenv("LOGGERD_TEST")) {
+    s.segment_len_sec = int(std::getenv("LOGGERD_SEGMENT_LENGTH"));
   } else {
     s.segment_len_sec = SEGMENT_LENGTH;
   }
