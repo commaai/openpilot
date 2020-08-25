@@ -1,6 +1,7 @@
 #include <vector>
 #include <csignal>
-#include <unistd.h>
+#include <chrono>
+#include <thread>
 #include <sys/resource.h>
 
 #include "messaging.hpp"
@@ -39,8 +40,8 @@ int sensor_loop() {
   // Sensor init
   std::vector<I2CSensor *> sensors;
   sensors.push_back(&accel);
-  sensors.push_back(&gyro);
-  sensors.push_back(&magn);
+  // sensors.push_back(&gyro);
+  // sensors.push_back(&magn);
 
 
   for (I2CSensor * sensor : sensors){
@@ -69,7 +70,9 @@ int sensor_loop() {
     }
 
     pm.send("sensorEvents", msg);
-    usleep(10 * 1000); // ~100 Hz
+
+    // TODO actually run at 100Hz
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   return 0;
 }

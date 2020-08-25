@@ -8,9 +8,20 @@
 // Registers of the chip
 #define BMX055_ACCEL_I2C_REG_ID     0x00
 #define BMX055_ACCEL_I2C_REG_FIFO       0x3F
+#define BMX055_ACCEL_I2C_REG_HBW       0x13
+#define BMX055_ACCEL_I2C_REG_BW       0x10
 
 // Constants
 #define BMX055_ACCEL_CHIP_ID        0xFA
+
+#define BMX055_ACCEL_BW_7_81HZ  0b01000
+#define BMX055_ACCEL_BW_15_63HZ 0b01001
+#define BMX055_ACCEL_BW_31_25HZ 0b01010
+#define BMX055_ACCEL_BW_62_5HZ  0b01011
+#define BMX055_ACCEL_BW_125Hz   0b01100
+#define BMX055_ACCEL_BW_250HZ   0b01101
+#define BMX055_ACCEL_BW_500HZ   0b01110
+#define BMX055_ACCEL_BW_1000HZ  0b01111
 
 class BMX055_Accel : public I2CSensor {
   uint8_t get_device_address() {return BMX055_ACCEL_I2C_ADDR;}

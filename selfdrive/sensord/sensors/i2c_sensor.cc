@@ -1,6 +1,11 @@
 #include <iostream>
 #include "i2c_sensor.hpp"
 
+int16_t read_12_bit(uint8_t lsb, uint8_t msb){
+  uint16_t combined = (uint16_t(msb) << 8) | uint16_t(lsb & 0xF0);
+  return int16_t(combined) / (1 << 4);
+}
+
 I2CSensor::I2CSensor(I2CBus *bus) : bus(bus){
 }
 

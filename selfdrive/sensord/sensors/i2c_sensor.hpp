@@ -1,8 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "common/i2c.h"
 #include "sensors/constants.hpp"
+
+int16_t read_12_bit(uint8_t lsb, uint8_t msb);
+
 
 class I2CSensor {
 private:
