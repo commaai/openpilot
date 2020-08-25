@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sensors/i2c_sensor.hpp"
+
 // Address of the chip on the bus
 #define BMX055_MAGN_I2C_ADDR        0x10
 
@@ -10,13 +12,9 @@
 // Constants
 #define BMX055_MAGN_CHIP_ID         0x32
 
-class BMX055_Magn {
-  private:
-    I2CBus *bus;
-
+class BMX055_Magn : public I2CSensor{
+  uint8_t get_device_address() {return BMX055_MAGN_I2C_ADDR;}
   public:
-    BMX055_Magn(I2CBus *i2c_bus);
-    ~BMX055_Magn();
-
+    BMX055_Magn(I2CBus *bus);
     int init();
 };

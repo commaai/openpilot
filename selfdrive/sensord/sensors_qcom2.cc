@@ -18,10 +18,10 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
-#include "sensors/constants.h"
-#include "sensors/bmx055_accel.h"
-#include "sensors/bmx055_gyro.h"
-#include "sensors/bmx055_magn.h"
+#include "sensors/constants.hpp"
+#include "sensors/bmx055_accel.hpp"
+#include "sensors/bmx055_gyro.hpp"
+#include "sensors/bmx055_magn.hpp"
 
 volatile sig_atomic_t do_exit = 0;
 volatile sig_atomic_t re_init_sensors = 0;

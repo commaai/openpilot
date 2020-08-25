@@ -3,19 +3,13 @@
 #include "bmx055_accel.hpp"
 
 
-BMX055_Accel::BMX055_Accel(I2CBus *i2c_bus){
-  bus = i2c_bus;
-}
-
-BMX055_Accel::~BMX055_Accel(){
-  // TODO: Cleanup
-}
+BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Accel::init(){
   int ret = 0;
   uint8_t buffer[1];
 
-  ret = bus->read_register(BMX055_ACCEL_I2C_ADDR, BMX055_ACCEL_I2C_REG_ID, buffer, 1);
+  ret = read_register(BMX055_ACCEL_I2C_REG_ID, buffer, 1);
   if(ret < 0){
     LOGE("Reading chip ID failed: %d", ret);
     goto fail;

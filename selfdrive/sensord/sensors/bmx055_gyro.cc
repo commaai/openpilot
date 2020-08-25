@@ -3,19 +3,13 @@
 #include "bmx055_gyro.hpp"
 
 
-BMX055_Gyro::BMX055_Gyro(I2CBus *i2c_bus){
-  bus = i2c_bus;
-}
-
-BMX055_Gyro::~BMX055_Gyro(){
-  // TODO: Cleanup
-}
+BMX055_Gyro::BMX055_Gyro(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Gyro::init(){
   int ret = 0;
   uint8_t buffer[1];
 
-  ret = bus->read_register(BMX055_GYRO_I2C_ADDR, BMX055_GYRO_I2C_REG_ID, buffer, 1);
+  ret =read_register(BMX055_GYRO_I2C_REG_ID, buffer, 1);
   if(ret < 0){
     LOGE("Reading chip ID failed: %d", ret);
     goto fail;

@@ -1,13 +1,17 @@
 #include "i2c.h"
 
+#include <cassert>
 #include <unistd.h>
 #include <stdexcept>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <linux/i2c-dev.h>
-
 #include "common/swaglog.h"
+
+#define UNUSED(x) (void)(x)
+
+#ifdef QCOM2
+#include <linux/i2c-dev.h>
 
 I2CBus::I2CBus(uint8_t bus_id){
   char bus_name[20];
@@ -48,3 +52,28 @@ int I2CBus::set_register(uint8_t device_address, uint register_address, uint8_t 
 fail:
   return ret;
 }
+
+#else
+
+I2CBus::I2CBus(uint8_t bus_id){
+  UNUSED(bus_id);
+  i2c_fd = -1;
+}
+
+I2CBus::~I2CBus(){}
+
+int I2CBus::read_register(uint8_t device_address, uint register_address, uint8_t *buffer, uint8_t len){
+  UNUSED(device_address);
+  UNUSED(register_address);
+  UNUSED(buffer);
+  UNUSED(len);
+  return -1;
+}
+
+int I2CBus::set_register(uint8_t device_address, uint register_address, uint8_t data){
+  UNUSED(device_address);
+  UNUSED(register_address);
+  UNUSED(data);
+  return -1;
+}
+#endif
