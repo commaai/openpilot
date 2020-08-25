@@ -18,6 +18,7 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
+#include "sensors/constants.h"
 #include "sensors/bmx055_accel.h"
 #include "sensors/bmx055_gyro.h"
 #include "sensors/bmx055_magn.h"
