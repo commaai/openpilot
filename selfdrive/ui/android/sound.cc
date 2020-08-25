@@ -19,7 +19,7 @@ struct Sound::Player {
   std::atomic<int> repeat;
 };
 
-bool Sound::init(int volume) {
+Sound::Sound() {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
   const SLboolean req[1] = {SL_BOOLEAN_FALSE};
@@ -46,9 +46,6 @@ bool Sound::init(int volume) {
 
     player_[kv.first] = new Sound::Player{player, playItf};
   }
-
-  setVolume(volume);
-  return true;
 }
 
 void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event) {

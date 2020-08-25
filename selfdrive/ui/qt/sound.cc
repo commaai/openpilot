@@ -1,22 +1,23 @@
 #include <QUrl>
 #include "sound.hpp"
 
-bool Sound::init(int volume) {
+Sound::Sound() {
   for (auto &kv : sound_map) {
     auto path = QUrl::fromLocalFile(kv.second.first);
     sounds[kv.first].setSource(path);
   }
-  return true;
 }
 
 bool Sound::play(AudibleAlert alert) {
-  //sounds[alert].setLoopCount(sound_map[alert].second.second);
+  sounds[alert].setLoopCount(sound_map[alert].second);
   sounds[alert].play();
   return true;
 }
 
 void Sound::stop() {
-  //sounds[alert].stop();
+  for (auto &kv : sounds) {
+    kv.second.stop();
+  }
 }
 
 void Sound::setVolume(int volume) {

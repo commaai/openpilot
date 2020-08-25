@@ -24,15 +24,14 @@ static std::map<AudibleAlert, std::pair<const char *, int>> sound_map {
 };
 
 class Sound {
- public:
-  Sound() = default;
-  bool init(int volume);
+public:
+  Sound();
+  ~Sound();
   bool play(AudibleAlert alert);
   void stop();
   void setVolume(int volume);
-  ~Sound();
 
- private:
+private:
 #ifdef QCOM
   SLObjectItf engine_ = nullptr;
   SLObjectItf outputMix_ = nullptr;
