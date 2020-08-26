@@ -85,9 +85,7 @@ static void ui_init_vision(UIState *s) {
   assert(glGetError() == GL_NO_ERROR);
 
   s->scene.uilayout_sidebarcollapsed = true;
-  s->scene.ui_viz_rx = (box_x - sbr_w + bdr_s * 2);
-  s->scene.ui_viz_rw = (box_w + sbr_w - (bdr_s * 2));
-  s->scene.ui_viz_ro = 0;
+  ui_update_sizes(s);
 
   s->alert_blinking_alpha = 1.0;
   s->alert_blinked = false;
@@ -251,7 +249,7 @@ void ui_update(UIState *s) {
       s->vision_connected = true;
     }
   }
-  
+
   if (s->vision_connected) {
     if (!s->started || !visionstream_get(&s->stream, nullptr)) {
       visionstream_destroy(&s->stream);
