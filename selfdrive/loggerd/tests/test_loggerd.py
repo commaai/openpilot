@@ -54,7 +54,7 @@ class TestLoggerd(unittest.TestCase):
     return os.path.join(ROOT, last_route)
 
   # TODO: this should run faster than real time
-  @with_processes(['camerad', 'loggerd'], init_time=2)
+  @with_processes(['camerad', 'loggerd'], init_time=5)
   def test_log_rotation(self):
     # wait for first seg to start being written
     time.sleep(5)
