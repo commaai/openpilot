@@ -217,8 +217,7 @@ persistent_processes = [
   'uploader',
 ]
 
-# TODO: if not PC:
-if not ANDROID:
+if ANDROID:
   persistent_processes += [
     'logcatd',
     'tombstoned',
@@ -256,9 +255,14 @@ if WEBCAM:
 if not PC:
   car_started_processes += [
     'sensord',
-    'gpsd',
     'dmonitoringmodeld',
   ]
+
+if ANDROID:
+  car_started_processes += [
+    'gpsd',
+  ]
+
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
