@@ -561,7 +561,6 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   // s->digital_gain_pre = 4; // for WB
   s->dc_opstate = 0;
   s->dc_gain_enabled = false;
-  s->quad_hdr = true;
   s->analog_gain_frac = 1.0;
   s->analog_gain = 0x8;
   s->exposure_time = 598;
@@ -996,18 +995,18 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor
   const float target_grey = 0.3;
   const float analog_gain_frac_min = 0.25;
-  float analog_gain_frac_max = s->dc_gain_enabled?8.0:1.0;
+  float analog_gain_frac_max = s->dc_gain_enabled?8.0:2.0;
   // const float digital_gain_min = 1.0;
   // const float digital_gain_max = 3.99; // is the correct?
   const int exposure_time_min = 64;
   const int exposure_time_max = 1066; //1416; // no slower than 1/25 sec. calculated from 0x300C and clock freq
   float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.16 );
 
-  if (s->analog_gain_frac > 0.5 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // iso 400
+  if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // iso 800
     s->dc_gain_enabled = true;
     s->analog_gain_frac *= 0.5;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac < 0.25 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // iso 200
+  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // iso 400
     s->dc_gain_enabled = false;
     s->analog_gain_frac *= 2;
     s->dc_opstate = 1;
@@ -1036,10 +1035,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     AG = AG * 4096 + AG * 256 + AG * 16 + AG; 
     printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
   }
-  s->quad_hdr = s->analog_gain_frac < 0.25;
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
-                                                  {0x3082, s->quad_hdr?0xC:0x4}, // HDR
-                                                  // {0x318E, 0x0200}, // PRE_HDR_GAIN_EN
                                                   {0x3362, s->dc_gain_enabled?0x1:0x0}, // DC_GAIN
                                                   {0x305A, 0x00C4}, // red gain
                                                   {0x3058, 0x00B1}, // blue gain
@@ -1056,7 +1052,6 @@ void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   int err, err2;
   int scale = 6;
   int old_width = FRAME_WIDTH;
-  int old_height = FRAME_HEIGHT;
   int new_width = FRAME_WIDTH / scale;
   int new_height = FRAME_HEIGHT / scale;
   uint8_t resized_dat[new_width*new_height*3];

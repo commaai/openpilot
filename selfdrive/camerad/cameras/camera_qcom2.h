@@ -34,7 +34,6 @@ typedef struct CameraState {
   uint16_t analog_gain;
   uint8_t dc_opstate;
   bool dc_gain_enabled;
-  bool quad_hdr;
   int exposure_time;
 
   mat3 transform;
