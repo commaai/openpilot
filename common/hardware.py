@@ -33,7 +33,7 @@ class Pc(HardwareBase):
     print("REBOOT!")
 
   def get_network_type(self):
-    return NetworkType.none
+    return NetworkType.wifi
 
   def get_sim_info(self):
     return {
