@@ -19,12 +19,12 @@ FULL_SIZE = 1253786
 if EON:
   CAMERAS = {
     "fcamera": FULL_SIZE,
-    "dcamera": 650920,
+    "dcamera": 770920,
   }
 elif TICI:
   CAMERAS = {f"{c}camera": FULL_SIZE for c in ["f", "e", "d"]}
 
-FILE_SIZE_TOLERANCE = 0.15
+FILE_SIZE_TOLERANCE = 0.25
 
 class TestLoggerd(unittest.TestCase):
 
