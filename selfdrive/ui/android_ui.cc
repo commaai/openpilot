@@ -210,7 +210,6 @@ int main(int argc, char* argv[]) {
   uint32_t draws = 0;
 
   while (!do_exit) {
-    bool should_swap = false;
     if (!s->started || !s->vision_connected) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
       usleep(30 * 1000);
@@ -241,12 +240,8 @@ int main(int argc, char* argv[]) {
       set_awake(s, true);
       check_messages(s);
 
-      // Visiond process is just stopped, force a redraw to make screen blank again.
       if (!s->started) {
         s->scene.uilayout_sidebarcollapsed = false;
-        ui_draw(s);
-        glFinish();
-        should_swap = true;
       }
     }
 
@@ -265,10 +260,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Don't waste resources on drawing in case screen is off
-    if (s->awake) {
-      ui_draw(s);
-      glFinish();
-      should_swap = true;
+    if (!s->awake) {
+      continue;
     }
 
     s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
@@ -311,15 +304,14 @@ int main(int argc, char* argv[]) {
     }
     update_offroad_layout_state(s, pm);
 
-    if (should_swap) {
-      double u2 = millis_since_boot();
-      if (!s->scene.frontview && (u2-u1 > 66)) {
-        // warn on sub 15fps
-        LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
-      }
-      draws++;
-      framebuffer_swap(s->fb);
+    ui_draw(s);
+    double u2 = millis_since_boot();
+    if (!s->scene.frontview && (u2-u1 > 66)) {
+      // warn on sub 15fps
+      LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
     }
+    draws++;
+    framebuffer_swap(s->fb);
   }
 
   set_awake(s, true);
