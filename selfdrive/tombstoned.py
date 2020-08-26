@@ -12,7 +12,8 @@ MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
 
 
 def get_tombstones():
-  """Returns list of (filename, ctime) for all tombstones in /data/tombstones"""
+  """Returns list of (filename, ctime) for all tombstones in /data/tombstones
+  and apport crashlogs in /var/crash"""
   files = []
   for folder in ["/data/tombstones/", "/var/crash/"]:
     if os.path.exists(folder):
