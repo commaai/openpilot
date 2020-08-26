@@ -8,7 +8,7 @@ from functools import wraps
 import cereal.messaging as messaging
 from cereal import car
 from common.basedir import PARAMS
-from common.android import ANDROID
+from common.hardware import ANDROID
 from common.params import Params
 from common.spinner import Spinner
 from panda import Panda

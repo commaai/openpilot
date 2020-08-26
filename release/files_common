@@ -19,6 +19,7 @@ common/.gitignore
 common/__init__.py
 common/android.py
 common/hardware.py
+common/hardware_base.py
 common/gpio.py
 common/realtime.py
 common/clock.pyx
