@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
       std::string str((char*)data, length);
 
       std::size_t found = str.find("=");
-      if (found!=std::string::npos){
+      if (found != std::string::npos){
         std::string key = str.substr(0, found);
         std::string value = str.substr(found + 1, std::string::npos);
         kv[key] = value;
