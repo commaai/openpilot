@@ -35,6 +35,7 @@ sudo apt-get update && sudo apt-get install -y \
     libczmq-dev \
     libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
     libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev libfreetype6-dev \
+    libsystemd-dev \
     locales \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
