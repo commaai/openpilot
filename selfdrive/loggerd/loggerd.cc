@@ -63,14 +63,10 @@
 #ifndef QCOM2
 #define DCAM_BITRATE 2500000
 #else
-#define DCAM_BITRATE 5000000
+#define DCAM_BITRATE MAIN_BITRATE
 #endif
 
-#ifndef QCOM2
 #define LOG_ROOT "/data/media/0/realdata"
-#else
-#define LOG_ROOT "/userdata"
-#endif
 
 #define ENABLE_LIDAR 0
 
@@ -117,7 +113,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 
   // 0:f, 1:d, 2:e
   if (cam_idx == CAM_IDX_DCAM) {
-    // TODO: add this back
+  // TODO: add this back
 #ifndef QCOM2
     std::vector<char> value = read_db_bytes("RecordFront");
     if (value.size() == 0 || value[0] != '1') return;
@@ -129,7 +125,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   } else if (cam_idx == CAM_IDX_ECAM) {
     set_thread_name("WideCameraEncoder");
   } else {
-    printf("unexpected camera index provided");
+    LOGE("unexpected camera index provided");
     assert(false);
   }
 
@@ -213,7 +209,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
         // all the rotation stuff
         bool should_rotate = false;
         std::unique_lock<std::mutex> lk(s.lock);
-        if (cam_idx == CAM_IDX_FCAM) { // TODO: should wait for three cameras?
+        if (cam_idx == CAM_IDX_FCAM) { // TODO: should wait for three cameras on tici?
           // wait if log camera is older on back camera
           while ( extra.frame_id > s.last_frame_id //if the log camera is older, wait for it to catch up.
                  && (extra.frame_id-s.last_frame_id) < 8 // but if its too old then there probably was a discontinuity (visiond restarted)
@@ -311,7 +307,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
-        
+
         if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
@@ -691,11 +687,11 @@ int main(int argc, char** argv) {
   std::thread front_encoder_thread_handle(encoder_thread, false, false, CAM_IDX_DCAM);
   s.num_encoder += 1;
 
-#ifdef QCOM2
+  #ifdef QCOM2
   // wide camera
   std::thread wide_encoder_thread_handle(encoder_thread, false, false, CAM_IDX_ECAM);
   s.num_encoder += 1;
-#endif
+  #endif
 #endif
 
 #if ENABLE_LIDAR
@@ -771,9 +767,9 @@ int main(int argc, char** argv) {
 
 
 #ifndef DISABLE_ENCODER
-#ifdef QCOM2
+  #ifdef QCOM2
   wide_encoder_thread_handle.join();
-#endif
+  #endif
   front_encoder_thread_handle.join();
   encoder_thread_handle.join();
   LOGW("encoder joined");
