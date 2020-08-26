@@ -66,11 +66,7 @@
 #define DCAM_BITRATE MAIN_BITRATE
 #endif
 
-#ifndef QCOM2
 #define LOG_ROOT "/data/media/0/realdata"
-#else
-#define LOG_ROOT "/userdata"
-#endif
 
 #define ENABLE_LIDAR 0
 
