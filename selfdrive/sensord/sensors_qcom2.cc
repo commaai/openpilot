@@ -55,6 +55,7 @@ int sensor_loop() {
   PubMaster pm({"sensorEvents"});
 
   while (!do_exit){
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     uint64_t log_time = nanos_since_boot();
 
     capnp::MallocMessageBuilder msg;
@@ -71,8 +72,8 @@ int sensor_loop() {
 
     pm.send("sensorEvents", msg);
 
-    // TODO actually run at 100Hz
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
   return 0;
 }
