@@ -220,11 +220,11 @@ persistent_processes = [
 if not PC:
   persistent_processes += [
     'logcatd',
+    'tombstoned',
   ]
 
 if ANDROID:
   persistent_processes += [
-    'tombstoned',
     'updated',
     'deleter',
   ]
