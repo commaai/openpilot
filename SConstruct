@@ -311,7 +311,7 @@ SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/locationd/models/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 
-if arch == "aarch64":
+if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
 
 if arch != "larch64":
