@@ -1,4 +1,5 @@
 # flake8: noqa
+# pylint: disable=W
 
 #!/usr/bin/env python
 import numpy as np
