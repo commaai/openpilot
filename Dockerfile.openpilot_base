@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libopencv-dev \
     libssl-dev \
     libsqlite3-dev \
+    libsystemd-dev \
     libusb-1.0-0-dev \
     libczmq-dev \
     libzmq3-dev \

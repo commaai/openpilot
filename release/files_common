@@ -294,7 +294,8 @@ selfdrive/locationd/calibrationd.py
 selfdrive/locationd/calibration_helpers.py
 
 selfdrive/logcatd/SConscript
-selfdrive/logcatd/logcatd.cc
+selfdrive/logcatd/logcatd_android.cc
+selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
 selfdrive/proclogd/proclogd.cc
