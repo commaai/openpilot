@@ -45,6 +45,55 @@ static void ui_init_vision(UIState *s) {
   read_param(&s->speed_lim_off, "SpeedLimitOffset");
   read_param(&s->is_metric, "IsMetric");
   read_param(&s->longitudinal_control, "LongitudinalControl");
+  read_param(&s->limit_set_speed, "LimitSetSpeed");
+
+  // Set offsets so params don't get read at the same time
+  s->longitudinal_control_timeout = UI_FREQ / 3;
+  s->is_metric_timeout = UI_FREQ / 2;
+  s->limit_set_speed_timeout = UI_FREQ;
+
+  for (int i = 0; i < UI_BUF_COUNT; i++) {
+    if (s->khr[i] != 0) {
+      visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
+      glDeleteTextures(1, &s->frame_texs[i]);
+    }
+
+    VisionImg img = {
+        .fd = s->stream.bufs[i].fd,
+        .format = VISIONIMG_FORMAT_RGB24,
+        .width = s->stream.bufs_info.width,
+        .height = s->stream.bufs_info.height,
+        .stride = s->stream.bufs_info.stride,
+        .bpp = 3,
+        .size = s->stream.bufs_info.buf_len,
+    };
+#ifndef QCOM
+    s->priv_hnds[i] = s->stream.bufs[i].addr;
+#endif
+    s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
+
+    glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // BGR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+  }
+
+  assert(glGetError() == GL_NO_ERROR);
+
+  s->scene.uilayout_sidebarcollapsed = true;
+  s->scene.ui_viz_rx = (box_x - sbr_w + bdr_s * 2);
+  s->scene.ui_viz_rw = (box_w + sbr_w - (bdr_s * 2));
+  s->scene.ui_viz_ro = 0;
+
+  s->alert_blinking_alpha = 1.0;
+  s->alert_blinked = false;
+
+  // Drain sockets
+  s->sm->drain();
 }
 
 void update_status(UIState *s, int status) {
@@ -194,70 +243,19 @@ void ui_update_sizes(UIState *s){
 }
 
 void ui_update(UIState *s) {
+  if (!s->vision_connected && s->started) {
+    const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+    int err = visionstream_init(&s->stream, type, true, nullptr);
+    if (err == 0) {
+      ui_init_vision(s);
+      s->vision_connected = true;
+    }
+  }
+  
   if (s->vision_connected) {
-    if (!s->started) {
+    if (!s->started || !visionstream_get(&s->stream, nullptr)) {
       visionstream_destroy(&s->stream);
       s->vision_connected = false;
     }
-  } else {
-    if (s->started) {
-      const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
-      int err = visionstream_init(&s->stream, type, true, nullptr);
-      if (err == 0) {
-        ui_init_vision(s);
-
-        s->vision_connected = true;
-
-        for (int i = 0; i < UI_BUF_COUNT; i++) {
-          if (s->khr[i] != 0) {
-            visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
-            glDeleteTextures(1, &s->frame_texs[i]);
-          }
-
-          VisionImg img = {
-              .fd = s->stream.bufs[i].fd,
-              .format = VISIONIMG_FORMAT_RGB24,
-              .width = s->stream.bufs_info.width,
-              .height = s->stream.bufs_info.height,
-              .stride = s->stream.bufs_info.stride,
-              .bpp = 3,
-              .size = s->stream.bufs_info.buf_len,
-          };
-#ifndef QCOM
-          s->priv_hnds[i] = s->stream.bufs[i].addr;
-#endif
-          s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
-
-          glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
-          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-          // BGR
-          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-        }
-
-        assert(glGetError() == GL_NO_ERROR);
-
-        s->scene.uilayout_sidebarcollapsed = true;
-        s->scene.ui_viz_rx = (box_x - sbr_w + bdr_s * 2);
-        s->scene.ui_viz_rw = (box_w + sbr_w - (bdr_s * 2));
-        s->scene.ui_viz_ro = 0;
-
-        s->alert_blinking_alpha = 1.0;
-        s->alert_blinked = false;
-
-        // Drain sockets
-        s->sm->drain();
-      } else {
-        LOGW("visionstream connect failed");
-      }
-    }
-  }
-  VIPCBuf *buf = visionstream_get(&s->stream, nullptr);
-  if (!buf) {
-    visionstream_destroy(&s->stream);
-    s->vision_connected = false;
   }
 }
