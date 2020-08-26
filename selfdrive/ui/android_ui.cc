@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
 
   while (!do_exit) {
     bool should_swap = false;
-    if (!s->started) {
+    if (!s->started || !s->vision_connected) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
       usleep(30 * 1000);
     }
