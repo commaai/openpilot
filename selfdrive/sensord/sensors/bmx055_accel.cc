@@ -51,8 +51,8 @@ void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event){
 
   // 12 bit = +-2g
   float scale = 9.81 * 2.0f / (1 << 11);
-  float x = read_12_bit(buffer[0], buffer[1]) * scale;
-  float y = read_12_bit(buffer[2], buffer[3]) * scale;
+  float x = -read_12_bit(buffer[0], buffer[1]) * scale;
+  float y = -read_12_bit(buffer[2], buffer[3]) * scale;
   float z = read_12_bit(buffer[4], buffer[5]) * scale;
 
   event.setSource(cereal::SensorEventData::SensorSource::BMX055);

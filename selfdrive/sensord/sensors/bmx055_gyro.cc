@@ -1,7 +1,10 @@
 #include <cassert>
+#include <cmath>
 #include "common/swaglog.h"
 
 #include "bmx055_gyro.hpp"
+
+#define DEG2RAD(x) ((x) * M_PI / 180.0)
 
 
 BMX055_Gyro::BMX055_Gyro(I2CBus *bus) : I2CSensor(bus) {}
@@ -58,9 +61,9 @@ void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event){
 
   // 16 bit = +- 125 deg/s
   float scale = 125.0f / (1 << 15);
-  float x = read_16_bit(buffer[0], buffer[1]) * scale;
-  float y = read_16_bit(buffer[2], buffer[3]) * scale;
-  float z = read_16_bit(buffer[4], buffer[5]) * scale;
+  float x = -DEG2RAD(read_16_bit(buffer[0], buffer[1]) * scale);
+  float y = -DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
+  float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
   event.setSource(cereal::SensorEventData::SensorSource::BMX055);
   event.setVersion(1);
