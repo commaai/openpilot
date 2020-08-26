@@ -129,7 +129,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   } else if (cam_idx == CAM_IDX_ECAM) {
     set_thread_name("WideCameraEncoder");
   } else {
-    printf("unexpected camera index provided");
+    LOGE("unexpected camera index provided");
     assert(false);
   }
 
