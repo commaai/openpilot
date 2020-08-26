@@ -217,9 +217,13 @@ persistent_processes = [
   'uploader',
 ]
 
-if ANDROID:
+if not PC:
   persistent_processes += [
     'logcatd',
+  ]
+
+if ANDROID:
+  persistent_processes += [
     'tombstoned',
     'updated',
     'deleter',
