@@ -8,6 +8,7 @@ MAX_ANGLE = 87.  # make sure we never command the extremes (0xfff) which cause l
 
 class CAR:
   FUSION = "FORD FUSION 2018"
+  F150 = "FORD F150" 
 
 FINGERPRINTS = {
   CAR.FUSION: [{
@@ -18,7 +19,29 @@ FINGERPRINTS = {
 ECU_FINGERPRINT = {
   Ecu.fwdCamera: [970, 973, 984]
 }
-
+FW_VERSIONS = {
+  CAR.F150: {
+    (Ecu.fwdCamera, 0x706, None): [
+      b'FL3T-14G019-DE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x730, None): [
+      b'GL34-14D003-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    ],
+    (Ecu.esp, 0x760, None): [
+      b'FL34-2D053-BA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'FL3T-14D049-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'FL3A-14C204-ABL\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    ],
+    (Ecu.srs, 0x737, None): [
+      b'GR3T-14C028-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    ],
+  }
+}
 DBC = {
   CAR.FUSION: dbc_dict('ford_fusion_2018_pt', 'ford_fusion_2018_adas'),
+  CAR.F150: dbc_dict('ford_fusion_2018_pt', None),
 }
