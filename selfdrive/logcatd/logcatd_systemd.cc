@@ -48,34 +48,33 @@ int main(int argc, char *argv[]) {
       std::string str((char*)data, length);
 
       std::size_t found = str.find("=");
-
       if (found!=std::string::npos){
         std::string key = str.substr(0, found);
         std::string value = str.substr(found + 1, std::string::npos);
         kv[key] = value;
       }
-
-      json11::Json json(kv);
-
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-      auto androidEntry = event.initAndroidLog();
-
-      if (kv.count("_PID")){
-        androidEntry.setPid(std::atoi(kv["_PID"].c_str()));
-      }
-      if (kv.count("PRIORITY")){
-        androidEntry.setPriority(std::atoi(kv["PRIORITY"].c_str()));
-      }
-      if (kv.count("SYSLOG_IDENTIFIER")){
-        androidEntry.setTag(kv["SYSLOG_IDENTIFIER"]);
-      }
-
-      androidEntry.setTs(timestamp);
-      androidEntry.setMessage(json.dump());
-      pm.send("androidLog", msg);
     }
+
+
+    capnp::MallocMessageBuilder msg;
+    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+    event.setLogMonoTime(nanos_since_boot());
+    auto androidEntry = event.initAndroidLog();
+
+    if (kv.count("_PID")){
+      androidEntry.setPid(std::atoi(kv["_PID"].c_str()));
+    }
+    if (kv.count("PRIORITY")){
+      androidEntry.setPriority(std::atoi(kv["PRIORITY"].c_str()));
+    }
+    if (kv.count("SYSLOG_IDENTIFIER")){
+      androidEntry.setTag(kv["SYSLOG_IDENTIFIER"]);
+    }
+
+    androidEntry.setTs(timestamp);
+
+    androidEntry.setMessage(json11::Json(kv).dump());
+    pm.send("androidLog", msg);
   }
 
   sd_journal_close(journal);
