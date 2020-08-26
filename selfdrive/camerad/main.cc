@@ -45,6 +45,10 @@ void set_do_exit(int sig) {
   do_exit = 1;
 }
 
+/*
+TODO: refactor out camera specific things from here
+*/
+
 struct VisionState;
 
 struct VisionClientState {
