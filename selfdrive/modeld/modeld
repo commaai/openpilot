@@ -1,4 +1,8 @@
 #!/bin/sh
-export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64/:$HOME/openpilot/phonelibs/snpe/larch64:$HOME/openpilot/phonelibs/snpe/x86_64-linux-clang:$LD_LIBRARY_PATH"
+if [ -d /system ]; then
+  export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64/:$LD_LIBRARY_PATH"
+else
+  export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/larch64:$HOME/openpilot/phonelibs/snpe/x86_64-linux-clang:$LD_LIBRARY_PATH"
+fi
 exec ./_modeld
 
