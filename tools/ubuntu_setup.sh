@@ -35,12 +35,14 @@ sudo apt-get update && sudo apt-get install -y \
     libczmq-dev \
     libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
     libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev libfreetype6-dev \
+    libsystemd-dev \
     locales \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
     opencl-headers \
     python-dev \
     python-pip \
+    qt5-default \
     screen \
     sudo \
     vim \
@@ -61,7 +63,8 @@ fi
 # install bashrc
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  echo "source $HOME/openpilot/tools/openpilot_env.sh" >> ~/.bashrc
+  OP_DIR=$(git rev-parse --show-toplevel)
+  echo "source $OP_DIR/tools/openpilot_env.sh" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi

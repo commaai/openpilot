@@ -69,6 +69,7 @@ class Localizer():
 
     self.unix_timestamp_millis = 0
     self.last_gps_fix = 0
+    self.device_fell = False
 
   @staticmethod
   def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov):
@@ -113,66 +114,42 @@ class Localizer():
     #ned_vel_std = self.converter.ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter.ecef2ned(fix_ecef + vel_ecef)
 
     fix = messaging.log.LiveLocationKalman.new_message()
-    fix.positionGeodetic.value = to_float(fix_pos_geo)
-    fix.positionGeodetic.std = to_float(np.nan*np.zeros(3))
-    fix.positionGeodetic.valid = True
-    fix.positionECEF.value = to_float(fix_ecef)
-    fix.positionECEF.std = to_float(fix_ecef_std)
-    fix.positionECEF.valid = True
-    fix.velocityECEF.value = to_float(vel_ecef)
-    fix.velocityECEF.std = to_float(vel_ecef_std)
-    fix.velocityECEF.valid = True
-    fix.velocityNED.value = to_float(ned_vel)
-    fix.velocityNED.std = to_float(np.nan*np.zeros(3))
-    fix.velocityNED.valid = True
-    fix.velocityDevice.value = to_float(vel_device)
-    fix.velocityDevice.std = to_float(vel_device_std)
-    fix.velocityDevice.valid = True
-    fix.accelerationDevice.value = to_float(predicted_state[States.ACCELERATION])
-    fix.accelerationDevice.std = to_float(predicted_std[States.ACCELERATION_ERR])
-    fix.accelerationDevice.valid = True
 
-    fix.orientationECEF.value = to_float(orientation_ecef)
-    fix.orientationECEF.std = to_float(orientation_ecef_std)
-    fix.orientationECEF.valid = True
-    fix.calibratedOrientationECEF.value = to_float(calibrated_orientation_ecef)
-    fix.calibratedOrientationECEF.std = to_float(np.nan*np.zeros(3))
-    fix.calibratedOrientationECEF.valid = True
-    fix.orientationNED.value = to_float(orientation_ned)
-    fix.orientationNED.std = to_float(np.nan*np.zeros(3))
-    fix.orientationNED.valid = True
-    fix.angularVelocityDevice.value = to_float(predicted_state[States.ANGULAR_VELOCITY])
-    fix.angularVelocityDevice.std = to_float(predicted_std[States.ANGULAR_VELOCITY_ERR])
-    fix.angularVelocityDevice.valid = True
+    # write measurements to msg
+    measurements = [
+      # measurement field, value, std, valid
+      (fix.positionGeodetic, fix_pos_geo, np.nan*np.zeros(3), True),
+      (fix.positionECEF, fix_ecef, fix_ecef_std, True),
+      (fix.velocityECEF, vel_ecef, vel_ecef_std, True),
+      (fix.velocityNED, ned_vel, np.nan*np.zeros(3), True),
+      (fix.velocityDevice, vel_device, vel_device_std, True),
+      (fix.accelerationDevice, predicted_state[States.ACCELERATION], predicted_std[States.ACCELERATION_ERR], True),
+      (fix.orientationECEF, orientation_ecef, orientation_ecef_std, True),
+      (fix.calibratedOrientationECEF, calibrated_orientation_ecef, np.nan*np.zeros(3), True),
+      (fix.orientationNED, orientation_ned, np.nan*np.zeros(3), True),
+      (fix.angularVelocityDevice, predicted_state[States.ANGULAR_VELOCITY], predicted_std[States.ANGULAR_VELOCITY_ERR], True),
+      (fix.velocityCalibrated, vel_calib, vel_calib_std, True),
+      (fix.angularVelocityCalibrated, ang_vel_calib, ang_vel_calib_std, True),
+      (fix.accelerationCalibrated, acc_calib, acc_calib_std, True),
+    ]
 
-    fix.velocityCalibrated.value = to_float(vel_calib)
-    fix.velocityCalibrated.std = to_float(vel_calib_std)
-    fix.velocityCalibrated.valid = True
-    fix.angularVelocityCalibrated.value = to_float(ang_vel_calib)
-    fix.angularVelocityCalibrated.std = to_float(ang_vel_calib_std)
-    fix.angularVelocityCalibrated.valid = True
-    fix.accelerationCalibrated.value = to_float(acc_calib)
-    fix.accelerationCalibrated.std = to_float(acc_calib_std)
-    fix.accelerationCalibrated.valid = True
+    for field, value, std, valid in measurements:
+      # TODO: can we write the lists faster?
+      field.value = to_float(value)
+      field.std = to_float(std)
+      field.valid = valid
+
     return fix
 
   def liveLocationMsg(self):
     fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P)
-
-    #if abs(self.posenet_speed - self.car_speed) > max(0.4 * self.car_speed, 5.0):
-    #  self.posenet_invalid_count += 1
-    #else:
-    #  self.posenet_invalid_count = 0
-    #fix.posenetOK = self.posenet_invalid_count < 4
-
-    # experimentally found these values
+    # experimentally found these values, no false positives in 20k minutes of driving
     old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST//2:])
-    std_spike = new_mean/old_mean > 4 and new_mean > 5
+    std_spike = new_mean/old_mean > 4 and new_mean > 7
 
-    if std_spike and self.car_speed > 5:
-      fix.posenetOK = False
-    else:
-      fix.posenetOK = True
+    fix.posenetOK = not (std_spike and self.car_speed > 5)
+    fix.deviceStable = not self.device_fell
+    self.device_fell = False
 
     #fix.gpsWeek = self.time.week
     #fix.gpsTimeOfWeek = self.time.tow
@@ -267,6 +244,10 @@ class Localizer():
 
       # Accelerometer
       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
+        # check if device fell, estimate 10 for g
+        # 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
+        self.device_fell = self.device_fell or (np.linalg.norm(np.array(sensor_reading.acceleration.v) - np.array([10, 0, 0])) > 40)
+
         self.acc_counter += 1
         if self.acc_counter % SENSOR_DECIMATION == 0:
           v = sensor_reading.acceleration.v

@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
-import os
-import re
-import time
-import json
-import random
 import ctypes
 import inspect
-import requests
-import traceback
-import threading
+import json
+import os
+import random
+import re
 import subprocess
+import threading
+import time
+import traceback
 
-from selfdrive.swaglog import cloudlog
-from selfdrive.loggerd.config import ROOT
+import requests
 
-from common import android
-from common.params import Params
+from cereal import log
+from common.hardware import HARDWARE
 from common.api import Api
+from common.params import Params
 from common.xattr import getxattr, setxattr
+from selfdrive.loggerd.config import ROOT
+from selfdrive.swaglog import cloudlog
 
+NetworkType = log.ThermalData.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
@@ -69,13 +71,8 @@ def clear_locks(root):
       cloudlog.exception("clear_locks failed")
 
 def is_on_wifi():
-  # ConnectivityManager.getActiveNetworkInfo()
   try:
-    # TODO: figure out why the android service call sometimes dies with SIGUSR2 (signal from MSGQ)
-    result = android.parse_service_call_string(android.service_call(["connectivity", "2"]))
-    if result is None:
-      return True
-    return 'WIFI' in result
+    return HARDWARE.get_network_type() == NetworkType.wifi
   except Exception:
     cloudlog.exception("is_on_wifi failed")
     return False
