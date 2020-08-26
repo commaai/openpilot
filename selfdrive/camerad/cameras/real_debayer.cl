@@ -1,23 +1,13 @@
 const __constant float3 color_correction[3] = {
-  // Matrix from WBraw -> sRGBD65 (normalized)
+  // post wb CCM
   (float3)(1.17898387, -0.19583185, -0.19881648),
   (float3)(-0.03367879,  1.33692858, -0.02475203),
   (float3)(-0.14530508, -0.14109673,  1.22356851),
 };
-// wait for 24 color calib
-//(float3)(0.44832666,  0.0163177 , -0.00434611),
-//  (float3)(0.51599514,  1.0778389 , -0.32716517),
-//  (float3)(0.0356782 , -0.09415659,  1.33151128),
-const __constant float3 df = (float3)(0.5, 0.5, 0.5);
 
 float3 color_correct(float r, float g, float b) {
   float3 ret = (0,0,0);
 
-  // white balance of daylight
-  // x /= (float3)(0.4609375, 1.0, 0.546875);
-  // x /= (float3)(1.0, 1.0, 1.0);
-  //r = max(0.0, min(1.0, x));
-  // fix up the colors
   ret += r * color_correction[0];
   ret += g * color_correction[1];
   ret += b * color_correction[2];
