@@ -1,5 +1,14 @@
-Import('env', 'common', 'cereal', 'messaging')
-env.Program('_sensord', 'sensors.cc', LIBS=['hardware', common, cereal, messaging, 'capnp', 'zmq', 'kj'])
-lenv = env.Clone()
-lenv['LIBPATH'] += ['/system/vendor/lib64']
-lenv.Program('_gpsd', ['gpsd.cc'], LIBS=['hardware', common, 'diag', 'time_genoff', cereal, messaging, 'capnp', 'zmq', 'kj'])
+Import('env', 'arch', 'common', 'cereal', 'messaging')
+if arch == "aarch64":
+  env.Program('_sensord', 'sensors_qcom.cc', LIBS=['hardware', common, cereal, messaging, 'capnp', 'zmq', 'kj'])
+  lenv = env.Clone()
+  lenv['LIBPATH'] += ['/system/vendor/lib64']
+  lenv.Program('_gpsd', ['gpsd.cc'], LIBS=['hardware', common, 'diag', 'time_genoff', cereal, messaging, 'capnp', 'zmq', 'kj'])
+else:
+  sensors = [
+    'sensors/i2c_sensor.cc',
+    'sensors/bmx055_accel.cc',
+    'sensors/bmx055_gyro.cc',
+    'sensors/bmx055_magn.cc',
+  ]
+  env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=[common, cereal, messaging, 'capnp', 'zmq', 'kj'])

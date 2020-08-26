@@ -5,7 +5,7 @@ import subprocess
 from cereal import log, car
 import cereal.messaging as messaging
 from selfdrive.test.helpers import phone_only, with_processes
-from common.android import get_sound_card_online
+from common.hardware import HARDWARE
 from common.realtime import DT_CTRL
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
@@ -30,7 +30,7 @@ def get_total_writes():
 
 @phone_only
 def test_sound_card_init():
-  assert get_sound_card_online()
+  assert HARDWARE.get_sound_card_online()
 
 
 @phone_only

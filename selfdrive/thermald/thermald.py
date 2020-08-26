@@ -9,9 +9,8 @@ from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
-from common.android import get_network_strength, get_network_type
 from common.filter_simple import FirstOrderFilter
-from common.hardware import EON, TICI
+from common.hardware import EON, HARDWARE, TICI
 from common.numpy_fast import clip, interp
 from common.params import Params, put_nonblocking
 from common.realtime import DT_TRML, sec_since_boot
@@ -241,8 +240,8 @@ def thermald_thread():
     # get_network_type is an expensive call. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
       try:
-        network_type = get_network_type()
-        network_strength = get_network_strength(network_type)
+        network_type = HARDWARE.get_network_type()
+        network_strength = HARDWARE.get_network_strength(network_type)
       except Exception:
         cloudlog.exception("Error getting network status")
 
