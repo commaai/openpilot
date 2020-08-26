@@ -540,6 +540,11 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  int segment_length = SEGMENT_LENGTH;
+  if (getenv("LOGGERD_TEST")) {
+    segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
+  }
+
   setpriority(PRIO_PROCESS, 0, -12);
 
   clear_locks();
@@ -619,7 +624,7 @@ int main(int argc, char** argv) {
   uint64_t bytes_count = 0;
 
   while (!do_exit) {
-    for (auto sock : poller->poll(100 * 1000)){
+    for (auto sock : poller->poll(100 * 1000)) {
       while (true) {
         Message * msg = sock->receive(true);
         if (msg == NULL){
@@ -659,10 +664,10 @@ int main(int argc, char** argv) {
     }
 
     double ts = seconds_since_boot();
-    if (ts - last_rotate_ts > SEGMENT_LENGTH) {
+    if (ts - last_rotate_ts > segment_length) {
       // rotate the log
 
-      last_rotate_ts += SEGMENT_LENGTH;
+      last_rotate_ts += segment_length;
 
       std::lock_guard<std::mutex> guard(s.lock);
       s.rotate_last_frame_id = s.last_frame_id;
