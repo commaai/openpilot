@@ -292,7 +292,7 @@ FW_VERSIONS = {
       b'\xbf\xf2@\x80\x00',
       b'\xbe\xf2@p\x00',
       b'\xbc\xaf\xe0`\x00',
-      b'\xbd\xf2@`\x00"',
+      b'\xbd\xf2@`\x00',
     ],
   },
   # Outback with reversed driver torque signal
