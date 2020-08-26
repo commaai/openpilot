@@ -262,6 +262,7 @@ void* vision_connect_thread(void *args) {
       if (!s->started) {
         visionstream_destroy(&s->stream);
         s->vision_connected = false;
+        s->vision_seen = false;
       }
     } else {
       if (s->started) {
