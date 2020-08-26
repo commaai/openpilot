@@ -46,7 +46,6 @@ class TestLoggerd(unittest.TestCase):
     self._clear_logs()
 
   def _clear_logs(self):
-    return
     if os.path.exists(ROOT):
       shutil.rmtree(ROOT)
 
