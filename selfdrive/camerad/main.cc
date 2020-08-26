@@ -501,10 +501,11 @@ void* wideview_thread(void *arg) {
     tbuffer_dispatch(&s->ui_wide_tb, ui_idx);
 
     // auto exposure over big box
-    const int exposure_x = 120*2;//290;
-    const int exposure_y = 300;//282 + 40; // TODO: fix this? should not use med imo
-    const int exposure_height = 600;// 314;
-    const int exposure_width = 720*2;//560;
+    // TODO: fix this? should not use med imo
+    const int exposure_x = 240;
+    const int exposure_y = 300;
+    const int exposure_height = 600;
+    const int exposure_width = 1440;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
@@ -524,8 +525,6 @@ void* wideview_thread(void *arg) {
           break;
         }
       }
-      // double avg = (double)acc / (big_box_width * big_box_height) - 16;
-      // printf("avg %d\n", lum_med);
 
       camera_autoexposure(&s->cameras.wide, lum_med / 256.0);
     }
@@ -587,7 +586,6 @@ void* processing_thread(void *arg) {
     int ui_idx = tbuffer_select(&s->ui_tb);
     int rgb_idx = ui_idx;
 
-    // double t10 = millis_since_boot();
     cl_event debayer_event;
     if (s->cameras.rear.ci.bayer) {
       err = clSetKernelArg(s->krnl_debayer_rear, 0, sizeof(cl_mem), &s->camera_bufs_cl[buf_idx]);
@@ -617,9 +615,6 @@ void* processing_thread(void *arg) {
     }
     clWaitForEvents(1, &debayer_event);
     clReleaseEvent(debayer_event);
-
-    // double t11 = millis_since_boot();
-    // printf("kernel time: %f ms\n", t11 - t10);
 
     tbuffer_release(&s->cameras.rear.camera_tb, buf_idx);
 
@@ -856,10 +851,17 @@ void* processing_thread(void *arg) {
     tbuffer_dispatch(&s->ui_tb, ui_idx);
 
     // auto exposure over big box
-    const int exposure_x = 120*2;
-    const int exposure_y = 300;// + 40;
-    const int exposure_height = 300*2;// 314;
-    const int exposure_width = 720*2;//560;
+#ifdef QCOM2
+    const int exposure_x = 240;
+    const int exposure_y = 300;
+    const int exposure_height = 600;
+    const int exposure_width = 1440;
+#else
+    const int exposure_x = 290;
+    const int exposure_y = 322;
+    const int exposure_height = 314;
+    const int exposure_width = 560;
+#endif
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
@@ -879,8 +881,6 @@ void* processing_thread(void *arg) {
           break;
         }
       }
-      // double avg = (double)acc / (big_box_width * big_box_height) - 16;
-      // printf("avg %d\n", lum_med);
 
       camera_autoexposure(&s->cameras.rear, lum_med / 256.0);
     }
@@ -1209,24 +1209,23 @@ cl_program build_debayer_program(VisionState *s,
                                  int frame_width, int frame_height, int frame_stride,
                                  int rgb_width, int rgb_height, int rgb_stride,
                                  int bayer_flip, int hdr) {
+#ifdef QCOM2
   assert(rgb_width == frame_width);
   assert(rgb_height == frame_height);
-
-  #ifdef QCOM2
-    int dnew = 1;
-  #else
-    int dnew = 0;
-  #endif
+#else
+  assert(rgb_width == frame_width/2);
+  assert(rgb_height == frame_height/2);
+#endif
 
   char args[4096];
   snprintf(args, sizeof(args),
           "-cl-fast-relaxed-math -cl-denorms-are-zero "
           "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
-            "-DBAYER_FLIP=%d -DHDR=%d -DNEW=%d",
+            "-DBAYER_FLIP=%d -DHDR=%d",
           frame_width, frame_height, frame_stride,
           rgb_width, rgb_height, rgb_stride,
-          bayer_flip, hdr, dnew);
+          bayer_flip, hdr);
 #ifdef QCOM2
   return CLU_LOAD_FROM_FILE(s->context, s->device_id, "cameras/real_debayer.cl", args);
 #else
@@ -1327,7 +1326,6 @@ void init_buffers(VisionState *s) {
   }
   tbuffer_init(&s->ui_tb, UI_BUF_COUNT, "rgb");
 
-  //assert(s->cameras.front.ci.bayer);
   if (s->cameras.front.ci.bayer) {
 #ifdef QCOM2
     s->rgb_front_width = s->cameras.front.ci.frame_width;
