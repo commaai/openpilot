@@ -1544,7 +1544,7 @@ void party(VisionState *s) {
                        processing_thread, s);
   assert(err == 0);
 
-#if !defined(__APPLE__)
+#ifndef __APPLE__
   pthread_t frontview_thread_handle;
   err = pthread_create(&frontview_thread_handle, NULL,
                        frontview_thread, s);
