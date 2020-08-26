@@ -63,7 +63,7 @@
 #ifndef QCOM2
 #define DCAM_BITRATE 2500000
 #else
-#define DCAM_BITRATE 5000000
+#define DCAM_BITRATE MAIN_BITRATE
 #endif
 
 #ifndef QCOM2
