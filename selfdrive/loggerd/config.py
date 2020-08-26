@@ -6,6 +6,8 @@ if os.environ.get('LOGGERD_ROOT', False):
 else:
   ROOT = '/data/media/0/realdata/'
 
+
+CAMERA_FPS = 20
 SEGMENT_LENGTH = 60
 
 
