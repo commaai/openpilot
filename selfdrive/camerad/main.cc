@@ -1486,32 +1486,29 @@ void free_buffers(VisionState *s) {
   // free bufs
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
     visionbuf_free(&s->camera_bufs[i]);
+    visionbuf_free(&s->front_camera_bufs[i]);
 #ifdef QCOM
     visionbuf_free(&s->focus_bufs[i]);
     visionbuf_free(&s->stats_bufs[i]);
+#elif defined(QCOM2)
+    visionbuf_free(&s->wide_camera_bufs[i]);
 #endif
   }
 
-  for (int i=0; i<FRAME_BUF_COUNT; i++) {
-   visionbuf_free(&s->front_camera_bufs[i]);
-  }
-#ifdef QCOM2
-  for (int i=0; i<FRAME_BUF_COUNT; i++) {
-   visionbuf_free(&s->wide_camera_bufs[i]);
-  }
-#endif
   for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_bufs[i]);
     visionbuf_free(&s->rgb_front_bufs[i]);
-  }
 #ifdef QCOM2
-  for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_wide_bufs[i]);
-  }
 #endif
+  }
+
   for (int i=0; i<YUV_COUNT; i++) {
     visionbuf_free(&s->yuv_ion[i]);
     visionbuf_free(&s->yuv_front_ion[i]);
+#ifdef QCOM2
+    visionbuf_free(&s->yuv_wide_ion[i]);
+#endif
   }
 
   clReleaseMemObject(s->rgb_conv_roi_cl);
@@ -1522,7 +1519,11 @@ void free_buffers(VisionState *s) {
   clReleaseProgram(s->prg_debayer_front);
   clReleaseKernel(s->krnl_debayer_rear);
   clReleaseKernel(s->krnl_debayer_front);
-  
+#ifdef QCOM2
+  clReleaseProgram(s->prg_debayer_wide);
+  clReleaseKernel(s->krnl_debayer_wide);
+#endif
+
   clReleaseProgram(s->prg_rgb_laplacian);
   clReleaseKernel(s->krnl_rgb_laplacian);
   
@@ -1617,7 +1618,9 @@ int main(int argc, char *argv[]) {
 
   init_buffers(s);
 
-#if (defined(QCOM) && !defined(QCOM_REPLAY)) || defined(QCOM2)
+#if defined(QCOM) && !defined(QCOM_REPLAY)
+  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+#elif defined(QCOM2)
   s->pm = new PubMaster({"frame", "frontFrame", "wideFrame", "thumbnail"});
 #endif
 

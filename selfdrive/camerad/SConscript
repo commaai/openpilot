@@ -12,7 +12,7 @@ elif arch == "larch64":
   libs += []
   cameras = ['cameras/camera_qcom2.c']
   # no screen
-  env = env.Clone()
+  # env = env.Clone()
   # env.Append(CXXFLAGS = '-DNOSCREEN')
   # env.Append(CFLAGS = '-DNOSCREEN')
 else:
