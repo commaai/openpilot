@@ -178,13 +178,6 @@ int main(int argc, char* argv[]) {
   set_awake(s, true);
   enable_event_processing(true);
 
-  PubMaster *pm = new PubMaster({"offroadLayout"});
-
-  pthread_t connect_thread_handle;
-  err = pthread_create(&connect_thread_handle, NULL,
-                       vision_connect_thread, s);
-  assert(err == 0);
-
   pthread_t light_sensor_thread_handle;
   err = pthread_create(&light_sensor_thread_handle, NULL,
                        light_sensor_thread, s);
@@ -220,10 +213,8 @@ int main(int argc, char* argv[]) {
     bool should_swap = false;
     if (!s->started) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
-      // Don't hold the lock while sleeping, so that vision_connect_thread have chances to get the lock.
       usleep(30 * 1000);
     }
-    pthread_mutex_lock(&s->lock);
     double u1 = millis_since_boot();
 
     // light sensor is only exposed on EONs
@@ -248,11 +239,6 @@ int main(int argc, char* argv[]) {
       check_messages(s);
     } else {
       set_awake(s, true);
-      // Car started, fetch a new rgb image from ipc
-      if (s->vision_connected){
-        ui_update(s);
-      }
-
       check_messages(s);
 
       // Visiond process is just stopped, force a redraw to make screen blank again.
@@ -263,6 +249,8 @@ int main(int argc, char* argv[]) {
         should_swap = true;
       }
     }
+
+    ui_update(s);
 
     // manage wakefulness
     if (s->awake_timeout > 0) {
@@ -323,10 +311,6 @@ int main(int argc, char* argv[]) {
     }
     update_offroad_layout_state(s, pm);
 
-    pthread_mutex_unlock(&s->lock);
-
-    // the bg thread needs to be scheduled, so the main thread needs time without the lock
-    // safe to do this outside the lock?
     if (should_swap) {
       double u2 = millis_since_boot();
       if (!s->scene.frontview && (u2-u1 > 66)) {
@@ -340,12 +324,7 @@ int main(int argc, char* argv[]) {
 
   set_awake(s, true);
 
-  // wake up bg thread to exit
-  pthread_mutex_lock(&s->lock);
-  pthread_mutex_unlock(&s->lock);
-
   // join light_sensor_thread?
-  err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
   delete s->sm;
   delete pm;

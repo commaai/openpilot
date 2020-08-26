@@ -22,14 +22,12 @@ int write_param_float(float param, const char* param_name, bool persistent_param
 }
 
 void ui_init(UIState *s) {
-  pthread_mutex_init(&s->lock, NULL);
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
                          "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"
   });
 
   s->scene.satelliteCount = -1;
   s->started = false;
-  s->vision_seen = false;
 
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
@@ -172,7 +170,6 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (!s->started) {
     if (s->status != STATUS_STOPPED) {
       update_status(s, STATUS_STOPPED);
-      s->vision_seen = false;
       s->controls_seen = false;
       s->active_app = cereal::UiLayoutState::App::HOME;
     }
@@ -197,92 +194,70 @@ void ui_update_sizes(UIState *s){
 }
 
 void ui_update(UIState *s) {
-  if (s->vision_connect_firstrun) {
-    // cant run this in connector thread because opengl.
-    // do this here for now in lieu of a run_on_main_thread event
-
-    for (int i=0; i<UI_BUF_COUNT; i++) {
-      if(s->khr[i] != 0) {
-        visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
-        glDeleteTextures(1, &s->frame_texs[i]);
-      }
-
-      VisionImg img = {
-        .fd = s->stream.bufs[i].fd,
-        .format = VISIONIMG_FORMAT_RGB24,
-        .width = s->stream.bufs_info.width,
-        .height = s->stream.bufs_info.height,
-        .stride = s->stream.bufs_info.stride,
-        .bpp = 3,
-        .size = s->stream.bufs_info.buf_len,
-      };
-      #ifndef QCOM
-        s->priv_hnds[i] = s->stream.bufs[i].addr;
-      #endif
-      s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
-
-      glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+  if (s->vision_connected) {
+    if (!s->started) {
+      visionstream_destroy(&s->stream);
+      s->vision_connected = false;
     }
+  } else {
+    if (s->started) {
+      const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+      int err = visionstream_init(&s->stream, type, true, nullptr);
+      if (err == 0) {
+        ui_init_vision(s);
 
-    assert(glGetError() == GL_NO_ERROR);
+        s->vision_connected = true;
 
-    s->scene.uilayout_sidebarcollapsed = true;
-    s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
-    s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
-    s->scene.ui_viz_ro = 0;
+        for (int i = 0; i < UI_BUF_COUNT; i++) {
+          if (s->khr[i] != 0) {
+            visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
+            glDeleteTextures(1, &s->frame_texs[i]);
+          }
 
-    s->vision_connect_firstrun = false;
+          VisionImg img = {
+              .fd = s->stream.bufs[i].fd,
+              .format = VISIONIMG_FORMAT_RGB24,
+              .width = s->stream.bufs_info.width,
+              .height = s->stream.bufs_info.height,
+              .stride = s->stream.bufs_info.stride,
+              .bpp = 3,
+              .size = s->stream.bufs_info.buf_len,
+          };
+#ifndef QCOM
+          s->priv_hnds[i] = s->stream.bufs[i].addr;
+#endif
+          s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
 
-    s->alert_blinking_alpha = 1.0;
-    s->alert_blinked = false;
+          glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+          // BGR
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+        }
+
+        assert(glGetError() == GL_NO_ERROR);
+
+        s->scene.uilayout_sidebarcollapsed = true;
+        s->scene.ui_viz_rx = (box_x - sbr_w + bdr_s * 2);
+        s->scene.ui_viz_rw = (box_w + sbr_w - (bdr_s * 2));
+        s->scene.ui_viz_ro = 0;
+
+        s->alert_blinking_alpha = 1.0;
+        s->alert_blinked = false;
+
+        // Drain sockets
+        s->sm->drain();
+      } else {
+        LOGW("visionstream connect failed");
+      }
+    }
   }
-  
   VIPCBuf *buf = visionstream_get(&s->stream, nullptr);
   if (!buf) {
     visionstream_destroy(&s->stream);
     s->vision_connected = false;
   }
-}
-
-void* vision_connect_thread(void *args) {
-  set_thread_name("vision_connect");
-
-  UIState *s = (UIState *)args;
-  while (!do_exit) {
-    usleep(100000);
-    pthread_mutex_lock(&s->lock);
-    if (s->vision_connected) {
-      if (!s->started) {
-        visionstream_destroy(&s->stream);
-        s->vision_connected = false;
-        s->vision_seen = false;
-      }
-    } else {
-      if (s->started) {
-        const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
-        int err = visionstream_init(&s->stream, type, true, nullptr);
-        if (err == 0) {
-          ui_init_vision(s);
-
-          s->vision_connected = true;
-          s->vision_seen = true;
-          s->vision_connect_firstrun = true;
-
-          // Drain sockets
-          s->sm->drain();
-        } else {
-          LOGW("visionstream connect failed");
-        }
-      }
-    }
-    pthread_mutex_unlock(&s->lock);
-  }
-  return NULL;
 }
