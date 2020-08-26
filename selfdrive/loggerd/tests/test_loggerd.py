@@ -85,7 +85,7 @@ class TestLoggerd(unittest.TestCase):
                         f"{camera} failed size check: expected {size}, got {file_size}")
 
         # check frame count
-        cmd = "fprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \
+        cmd = f"ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \
                -of default=nokey=1:noprint_wrappers=1 {file_path}"
         expected_frames = self.segment_length * CAMERA_FPS
         frame_count = int(subprocess.check_output(cmd, shell=True, encoding='utf8').strip())
