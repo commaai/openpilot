@@ -154,8 +154,6 @@ typedef struct {
 
 
 typedef struct UIState {
-  pthread_mutex_t lock;
-
   // framebuffer
   FramebufferState *fb;
   int fb_w, fb_h;
@@ -183,7 +181,6 @@ typedef struct UIState {
 
   // vision state
   bool vision_connected;
-  bool vision_connect_firstrun;
   VisionStream stream;
 
   GLuint frame_program;
@@ -208,7 +205,6 @@ typedef struct UIState {
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
-  bool vision_seen;
 
   std::atomic<float> light_sensor;
 
@@ -229,7 +225,6 @@ void ui_init(UIState *s);
 void ui_update(UIState *s);
 void ui_update_sizes(UIState *s);
 
-void* vision_connect_thread(void *args);
 void check_messages(UIState *s);
 void update_status(UIState *s, int status);
 

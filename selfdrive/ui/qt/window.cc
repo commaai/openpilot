@@ -68,24 +68,13 @@ void GLWindow::initializeGL() {
   ui_state->fb_w = vwp_w;
   ui_state->fb_h = vwp_h;
 
-  int err = pthread_create(&connect_thread_handle, NULL,
-                           vision_connect_thread, ui_state);
-  assert(err == 0);
-
   timer->start(50);
 }
 
 void GLWindow::timerUpdate(){
-  pthread_mutex_lock(&ui_state->lock);
-
   ui_update_sizes(ui_state);
-
   check_messages(ui_state);
-  if (ui_state->vision_connected){
-    ui_update(ui_state);
-  }
-  pthread_mutex_unlock(&ui_state->lock);
-
+  ui_update(ui_state);
   update();
 }
 
@@ -94,9 +83,7 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
-  pthread_mutex_lock(&ui_state->lock);
   ui_draw(ui_state);
-  pthread_mutex_unlock(&ui_state->lock);
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *e) {
