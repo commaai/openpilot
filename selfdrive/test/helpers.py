@@ -1,3 +1,4 @@
+import time
 import subprocess
 from functools import wraps
 from nose.tools import nottest
@@ -23,22 +24,25 @@ def phone_only(x):
   else:
     return nottest(x)
 
-def with_processes(processes):
+def with_processes(processes, init_time=0):
   def wrapper(func):
     @wraps(func)
-    def wrap():
+    def wrap(*args, **kwargs):
       # start and assert started
-      [start_managed_process(p) for p in processes]
+      for p in processes:
+        start_managed_process(p)
+        time.sleep(init_time)
       assert all(get_running()[name].exitcode is None for name in processes)
 
       # call the function
       try:
-        func()
+        func(*args, **kwargs)
         # assert processes are still started
         assert all(get_running()[name].exitcode is None for name in processes)
       finally:
         # kill and assert all stopped
-        [kill_managed_process(p) for p in processes]
+        for p in processes:
+          kill_managed_process(p)
         assert len(get_running()) == 0
     return wrap
   return wrapper

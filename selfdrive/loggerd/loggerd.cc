@@ -81,7 +81,6 @@ struct LoggerdState {
   std::mutex lock;
   std::condition_variable cv;
   char segment_path[4096];
-  int segment_len_sec;
   uint32_t last_frame_id;
   uint32_t rotate_last_frame_id;
   int rotate_segment;
@@ -541,12 +540,10 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  if (std::getenv("LOGGERD_TEST")) {
-    s.segment_len_sec = int(std::getenv("LOGGERD_SEGMENT_LENGTH"));
-  } else {
-    s.segment_len_sec = SEGMENT_LENGTH;
+  int segment_length = SEGMENT_LENGTH;
+  if (getenv("LOGGERD_TEST")) {
+    segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
   }
-  printf("segment length = %ds\n", s.segment_len_sec);
 
   setpriority(PRIO_PROCESS, 0, -12);
 
@@ -627,7 +624,7 @@ int main(int argc, char** argv) {
   uint64_t bytes_count = 0;
 
   while (!do_exit) {
-    for (auto sock : poller->poll(100 * 1000)){
+    for (auto sock : poller->poll(100 * 1000)) {
       while (true) {
         Message * msg = sock->receive(true);
         if (msg == NULL){
@@ -667,10 +664,10 @@ int main(int argc, char** argv) {
     }
 
     double ts = seconds_since_boot();
-    if (ts - last_rotate_ts > s.segment_len_sec) {
+    if (ts - last_rotate_ts > segment_length) {
       // rotate the log
 
-      last_rotate_ts += s.segment_len_sec;
+      last_rotate_ts += segment_length;
 
       std::lock_guard<std::mutex> guard(s.lock);
       s.rotate_last_frame_id = s.last_frame_id;

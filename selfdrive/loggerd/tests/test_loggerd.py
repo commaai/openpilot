@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import os
 import random
 import shutil
@@ -12,17 +13,18 @@ from common.timeout import Timeout
 from selfdrive.test.helpers import with_processes
 from selfdrive.loggerd.config import ROOT
 
-# baseline file sizes for a 1s segment, in bytes
-FULL_SIZE = 626893
+
+# baseline file sizes for a 2s segment, in bytes
+FULL_SIZE = 1253786
 if EON:
   CAMERAS = {
     "fcamera": FULL_SIZE,
-    "dcamera": 325460,
+    "dcamera": 650920,
   }
 elif TICI:
   CAMERAS = {f"{c}camera": FULL_SIZE for c in ["f", "e", "d"]}
 
-rTOL = 0.1 # tolerate a 10% fluctuation based on content
+FILE_SIZE_TOLERANCE = 0.15
 
 class TestLoggerd(unittest.TestCase):
 
@@ -36,46 +38,48 @@ class TestLoggerd(unittest.TestCase):
     Params().put("RecordFront", "1")
     self._clear_logs()
 
-    self.test_start = time.monotonic()
-    self.segment_length = random.randint(1, 4)
+    self.segment_length = 2
     os.environ["LOGGERD_TEST"] = "1"
-    os.environ["LOGGERD_SEGMENT_LENGTH"] = self.segment_length
+    os.environ["LOGGERD_SEGMENT_LENGTH"] = str(self.segment_length)
 
   def tearDown(self):
     self._clear_logs()
 
   def _clear_logs(self):
+    return
     if os.path.exists(ROOT):
       shutil.rmtree(ROOT)
 
-  def _get_last_route_path(self):
+  def _get_latest_segment_path(self):
     last_route = sorted(Path(ROOT).iterdir(), key=os.path.getmtime)[-1]
     return os.path.join(ROOT, last_route)
 
   # TODO: this should run faster than real time
-  @with_processes(['camerad'])
+  @with_processes(['camerad', 'loggerd'], init_time=2)
   def test_log_rotation(self):
-    # wait for everything to init
-    time.sleep(10)
-
-    # get the route prefix
-    route_path = self._get_last_route_path()
-    print("LOGGING TO PATH: ", route_path)
+    # wait for first seg to start being written
+    time.sleep(5)
+    route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
 
     num_segments = random.randint(80, 150)
     for i in range(num_segments):
       if i < num_segments - 1:
-        with Timeout(self.segment_length*2, error_msg=f"timed out waiting for segment {i}"):
-          while not os.path.exists(os.path.join(route_path, str(i))):
+        with Timeout(self.segment_length*3, error_msg=f"timed out waiting for segment {i}"):
+          while True:
+            seg_num = int(self._get_latest_segment_path().rsplit("--", 1)[1])
+            if seg_num > i:
+              break
             time.sleep(0.1)
       else:
         time.sleep(self.segment_length + 2)
 
       # check each camera file size
-      for camera, _ in CAMERAS.items():
-        f = os.path.join(ROOT, f"{i}/{camera}.hevc")
-        self.assertTrue(os.path.exists(f))
-        # TODO: check file size
+      for camera, size in CAMERAS.items():
+        f = f"{route_prefix_path}--{i}/{camera}.hevc"
+        self.assertTrue(os.path.exists(f), f"couldn't find {f}")
+        file_size = os.path.getsize(f)
+        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE), 
+                        f"{camera} failed size check: expected {size}, got {file_size}")
 
 if __name__ == "__main__":
   unittest.main()
