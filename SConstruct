@@ -156,6 +156,7 @@ env = Environment(
     "#selfdrive/camerad/include",
     "#selfdrive/loggerd/include",
     "#selfdrive/modeld",
+    "#selfdrive/sensord",
     "#selfdrive/ui",
     "#cereal/messaging",
     "#cereal",
@@ -308,10 +309,10 @@ SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/locationd/models/SConscript'])
+SConscript(['selfdrive/sensord/SConscript'])
 
 if arch == "aarch64":
   SConscript(['selfdrive/logcatd/SConscript'])
-  SConscript(['selfdrive/sensord/SConscript'])
 
 if arch != "larch64":
   SConscript(['selfdrive/ui/SConscript'])
