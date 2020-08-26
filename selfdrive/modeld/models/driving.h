@@ -61,9 +61,6 @@ typedef struct ModelState {
 #ifdef TRAFFIC_CONVENTION
   std::unique_ptr<float[]> traffic_convention;
 #endif
-#ifdef NOSCREEN
-  zsock_t *yuv_sock;
-#endif
 } ModelState;
 
 void model_init(ModelState* s, cl_device_id device_id,

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <czmq.h>
 #include <signal.h>
 #include <eigen3/Eigen/Dense>
 
@@ -205,10 +204,6 @@ int main(int argc, char **argv) {
     visionbuf_free(&yuv_ion);
     visionstream_destroy(&stream);
   }
-
-#ifdef NOSCREEN
-  zsock_destroy(&model.yuv_sock);
-#endif
 
   model_free(&model);
 
