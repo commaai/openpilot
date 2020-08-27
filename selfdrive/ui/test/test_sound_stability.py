@@ -3,8 +3,7 @@ import os
 import random
 import subprocess
 import time
-
-from cereal import car
+from pathlib import Path
 from common.basedir import BASEDIR
 
 os.environ["LD_LIBRARY_PATH"] = ""
@@ -12,16 +11,16 @@ os.environ["LD_LIBRARY_PATH"] = ""
 # pull this from the provisioning tests
 play_sound = os.path.join(BASEDIR, "selfdrive/ui/test/play_sound")
 waste = os.path.join(BASEDIR, "scripts/waste")
+sound_path = Path(os.path.join(BASEDIR, "selfdrive/assets/sounds"))
 
 def sound_test():
 
   # max volume
   vol = 15
-  sound_enums = car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items()
-  all_sounds = [v for k, v in  sound_enums if k != "none"]
+  sound_files = [p.absolute() for p in sound_path.iterdir() if str(p).endswith(".wav")]
 
   # start waste
-  p = subprocess.Popen([waste])
+  p = subprocess.Popen([waste], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
   start_time = time.monotonic()
   frame = 0
@@ -29,10 +28,8 @@ def sound_test():
     # start a few processes
     procs = []
     for _ in range(random.randint(5, 20)):
-      sound = random.choice(all_sounds)
-      p = subprocess.Popen([play_sound, str(sound), str(vol)],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
+      sound = random.choice(sound_files)
+      p = subprocess.Popen([play_sound, str(sound), str(vol)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
       procs.append(p)
       time.sleep(random.uniform(0, 0.75))
 
