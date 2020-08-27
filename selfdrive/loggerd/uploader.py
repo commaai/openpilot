@@ -71,22 +71,15 @@ def clear_locks(root):
       cloudlog.exception("clear_locks failed")
 
 def is_on_wifi():
-  try:
-    return HARDWARE.get_network_type() == NetworkType.wifi
-  except Exception:
-    cloudlog.exception("is_on_wifi failed")
-    return False
+  return HARDWARE.get_network_type() == NetworkType.wifi
 
 def is_on_hotspot():
   try:
     result = subprocess.check_output(["ifconfig", "wlan0"], stderr=subprocess.STDOUT, encoding='utf8')
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
-
-    is_android = result.startswith('192.168.43.')
-    is_ios = result.startswith('172.20.10.')
-    is_entune = result.startswith('10.0.2.')
-
-    return (is_android or is_ios or is_entune)
+    return (result.startswith('192.168.43.') or # android
+            result.startswith('172.20.10.') or # ios
+            result.startswith('10.0.2.')) # toyota entune
   except Exception:
     return False
 
@@ -243,15 +236,12 @@ def uploader_fn(exit_event):
   uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
-  while True:
+  while not exit_event.is_set():
     offroad = params.get("IsOffroad") == b'1'
     allow_raw_upload = (params.get("IsUploadRawEnabled") != b"0") and offroad
     on_hotspot = is_on_hotspot()
     on_wifi = is_on_wifi()
     should_upload = on_wifi and not on_hotspot
-
-    if exit_event.is_set():
-      return
 
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and should_upload)
     if d is None:  # Nothing to upload
