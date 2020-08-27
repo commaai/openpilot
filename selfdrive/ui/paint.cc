@@ -393,17 +393,15 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   int maxspeed_calc = maxspeed * 0.6225 + 0.5;
   float speedlimit = s->scene.speedlimit;
   int speedlim_calc = speedlimit * 2.2369363 + 0.5;
-  int speed_lim_off = s->speed_lim_off * 2.2369363 + 0.5;
   if (s->is_metric) {
     maxspeed_calc = maxspeed + 0.5;
     speedlim_calc = speedlimit * 3.6 + 0.5;
-    speed_lim_off = s->speed_lim_off * 3.6 + 0.5;
   }
 
   bool is_cruise_set = (maxspeed != 0 && maxspeed != SET_SPEED_NA);
   bool is_speedlim_valid = s->scene.speedlimit_valid;
   bool is_set_over_limit = is_speedlim_valid && s->scene.controls_state.getEnabled() &&
-                       is_cruise_set && maxspeed_calc > (speedlim_calc + speed_lim_off);
+                           is_cruise_set && maxspeed_calc > speedlim_calc;
 
   int viz_maxspeed_w = 184;
   int viz_maxspeed_h = 202;
@@ -636,9 +634,9 @@ static void ui_draw_vision(UIState *s) {
   if (scene->alert_size != cereal::ControlsState::AlertSize::NONE) {
     // Controls Alerts
     ui_draw_vision_alert(s, scene->alert_size, s->status,
-                            scene->alert_text1.c_str(), scene->alert_text2.c_str());
-  } else {
-    if (!scene->frontview){ui_draw_vision_footer(s);}
+                         scene->alert_text1.c_str(), scene->alert_text2.c_str());
+  } else if (!scene->frontview) {
+    ui_draw_vision_footer(s);
   }
 }
 

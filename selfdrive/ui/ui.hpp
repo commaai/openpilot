@@ -50,7 +50,6 @@
 #endif
 
 #define UI_BUF_COUNT 4
-//#define DEBUG_TURN
 
 // TODO: Detect dynamically
 #ifdef QCOM2
@@ -141,7 +140,7 @@ typedef struct UIScene {
 
 typedef struct {
   float x, y;
-}vertex_data;
+} vertex_data;
 
 typedef struct {
   vertex_data v[MODEL_PATH_MAX_VERTICES_CNT];
@@ -216,10 +215,8 @@ typedef struct UIState {
   // timeouts
   int awake_timeout;
   int controls_timeout;
-  int speed_lim_off_timeout;
   int is_metric_timeout;
   int longitudinal_control_timeout;
-  int limit_set_speed_timeout;
   int hardware_timeout;
   int last_athena_ping_timeout;
 
@@ -229,8 +226,6 @@ typedef struct UIState {
   int status;
   bool is_metric;
   bool longitudinal_control;
-  bool limit_set_speed;
-  float speed_lim_off;
   bool is_ego_over_limit;
   float alert_blinking_alpha;
   bool alert_blinked;
