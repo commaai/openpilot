@@ -143,7 +143,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   }
 }
 
-static void update_offroad_layout_state(UIState *s, PubMaster &pm) {
+static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
   static int timeout = 0;
   static bool prev_collapsed = false;
   static cereal::UiLayoutState::App prev_app = cereal::UiLayoutState::App::NONE;
@@ -272,7 +272,7 @@ int main(int argc, char* argv[]) {
     }
 
     // manage hardware disconnect
-    if ((s->sm.frame - s->sm.rcv_frame("health")) > 5*UI_FREQ) {
+    if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
       s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
     }
 
@@ -285,7 +285,7 @@ int main(int argc, char* argv[]) {
 
     s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
 
-    bool controls_timeout = (s->sm.frame - s->sm.rcv_frame("controlsState")) > 5*UI_FREQ;
+    bool controls_timeout = (s->sm->frame - s->sm->rcv_frame("controlsState")) > 5*UI_FREQ;
     if (s->started && !s->scene.frontview && controls_timeout) {
       if (!s->controls_seen) {
         // car is started, but controlsState hasn't been seen at all
@@ -319,7 +319,7 @@ int main(int argc, char* argv[]) {
         s->scene.athenaStatus = NET_ERROR;
       }
     }
-    update_offroad_layout_state(s, *pm);
+    update_offroad_layout_state(s, pm);
 
     pthread_mutex_unlock(&s->lock);
 
