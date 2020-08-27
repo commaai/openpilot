@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "camera_qcom.h"
+// TODO: add qcom2 test
 
 bool do_exit = false;
 
@@ -34,7 +35,7 @@ void tbuffer_stop(TBuffer *tb) {
 }
 
 int main() {
-  DualCameraState s={};
+  MultiCameraState s={};
   cameras_init(&s);
   VisionBuf camera_bufs_rear[0x10] = {0};
   VisionBuf camera_bufs_focus[0x10] = {0};

@@ -123,19 +123,19 @@ typedef struct CameraState {
 } CameraState;
 
 
-typedef struct DualCameraState {
+typedef struct MultiCameraState {
   int device;
 
   int ispif_fd;
 
   CameraState rear;
   CameraState front;
-} DualCameraState;
+} MultiCameraState;
 
-void cameras_init(DualCameraState *s);
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front);
-void cameras_run(DualCameraState *s);
-void cameras_close(DualCameraState *s);
+void cameras_init(MultiCameraState *s);
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front);
+void cameras_run(MultiCameraState *s);
+void cameras_close(MultiCameraState *s);
 
 void camera_autoexposure(CameraState *s, float grey_frac);
 void actuator_move(CameraState *s, uint16_t target);
