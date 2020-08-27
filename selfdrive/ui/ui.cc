@@ -93,7 +93,6 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (s->started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
-    s->controls_timeout = 1 * UI_FREQ;
     s->controls_seen = true;
 
     auto alert_sound = scene.controls_state.getAlertSound();

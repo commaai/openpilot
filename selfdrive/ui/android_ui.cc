@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
 
-  if(result != 0){
+  if(result != 0) {
     brightness_b = LEON ? 10.0 : 5.0;
     brightness_m = LEON ? 2.6 : 1.3;
     write_param_float(brightness_b, "BRIGHTNESS_B", true);
@@ -245,10 +245,6 @@ int main(int argc, char* argv[]) {
     if (!s->started) {
       // always process events offroad
       check_messages(s);
-
-      if (s->started) {
-        s->controls_timeout = 5 * UI_FREQ;
-      }
     } else {
       set_awake(s, true);
       // Car started, fetch a new rgb image from ipc
@@ -290,9 +286,8 @@ int main(int argc, char* argv[]) {
 
     s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
 
-    if (s->controls_timeout > 0) {
-      s->controls_timeout--;
-    } else if (s->started && !s->scene.frontview) {
+    bool controls_timeout = (s->sm.frame - s->sm.rcv_frame("controlsState")) > 5*UI_FREQ;
+    if (s->started && !s->scene.frontview && controls_timeout) {
       if (!s->controls_seen) {
         // car is started, but controlsState hasn't been seen at all
         s->scene.alert_text1 = "openpilot Unavailable";

@@ -276,8 +276,8 @@ static void draw_frame(UIState *s) {
 
 static inline bool valid_frame_pt(UIState *s, float x, float y) {
   return x >= 0 && x <= s->rgb_width && y >= 0 && y <= s->rgb_height;
-
 }
+
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
   pvd->cnt = 0;
   int rcount = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, valid_len);
@@ -323,6 +323,7 @@ static void ui_draw_vision_lanes(UIState *s) {
     update_all_lane_lines_data(s, scene->model.getLeftLane(), scene->left_lane_points, pvd);
     update_all_lane_lines_data(s, scene->model.getRightLane(), scene->right_lane_points, pvd + MODEL_LANE_PATH_CNT);
   }
+
   // Draw left lane edge
   ui_draw_lane(
       s, pvd,
@@ -336,6 +337,7 @@ static void ui_draw_vision_lanes(UIState *s) {
   if(s->sm->updated("radarState")) {
     update_all_track_data(s);
   }
+
   // Draw vision path
   ui_draw_track(s, false, &s->track_vertices[0]);
   if (scene->controls_state.getEnabled()) {
@@ -385,9 +387,6 @@ static void ui_draw_world(UIState *s) {
 }
 
 static void ui_draw_vision_maxspeed(UIState *s) {
-  /*if (!s->longitudinal_control){
-    return;
-  }*/
   char maxspeed_str[32];
   float maxspeed = s->scene.controls_state.getVCruise();
   int maxspeed_calc = maxspeed * 0.6225 + 0.5;
