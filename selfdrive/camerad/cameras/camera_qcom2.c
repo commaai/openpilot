@@ -792,7 +792,7 @@ void cameras_init(MultiCameraState *s) {
   camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
   printf("front initted \n");
 #ifdef NOSCREEN
-  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.3.4:7768");
+  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.200.51:7768");
   assert(rgb_sock);
   s->rgb_sock = rgb_sock;
 #endif
@@ -803,13 +803,13 @@ void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *c
 
   LOG("-- Opening devices");
   // video0 is req_mgr, the target of many ioctls
-  s->video0_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
+  s->video0_fd = open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK);
   assert(s->video0_fd >= 0);
   LOGD("opened video0");
   s->rear.video0_fd = s->front.video0_fd = s->wide.video0_fd = s->video0_fd;
 
   // video1 is cam_sync, the target of some ioctls
-  s->video1_fd = open("/dev/video1", O_RDWR | O_NONBLOCK);
+  s->video1_fd = open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK);
   assert(s->video1_fd >= 0);
   LOGD("opened video1");
   s->rear.video1_fd = s->front.video1_fd = s->wide.video1_fd = s->video1_fd;
