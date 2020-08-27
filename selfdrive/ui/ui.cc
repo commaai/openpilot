@@ -27,7 +27,6 @@ void ui_init(UIState *s) {
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
                          "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"
   });
-  s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
   s->scene.satelliteCount = -1;

@@ -143,7 +143,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   }
 }
 
-static void update_offroad_layout_state(UIState *s) {
+static void update_offroad_layout_state(UIState *s, PubMaster &pm) {
   static int timeout = 0;
   static bool prev_collapsed = false;
   static cereal::UiLayoutState::App prev_app = cereal::UiLayoutState::App::NONE;
@@ -176,8 +176,9 @@ int main(int argc, char* argv[]) {
   UIState *s = &uistate;
   ui_init(s);
   set_awake(s, true);
-
   enable_event_processing(true);
+
+  PubMaster *pm = new PubMaster({"offroadLayout"});
 
   pthread_t connect_thread_handle;
   err = pthread_create(&connect_thread_handle, NULL,
@@ -318,7 +319,7 @@ int main(int argc, char* argv[]) {
         s->scene.athenaStatus = NET_ERROR;
       }
     }
-    update_offroad_layout_state(s);
+    update_offroad_layout_state(s, *pm);
 
     pthread_mutex_unlock(&s->lock);
 
@@ -345,6 +346,6 @@ int main(int argc, char* argv[]) {
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
   delete s->sm;
-  delete s->pm;
+  delete pm;
   return 0;
 }
