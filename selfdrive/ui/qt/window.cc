@@ -72,9 +72,9 @@ void GLWindow::initializeGL() {
 }
 
 void GLWindow::timerUpdate(){
-  ui_update_sizes(ui_state);
   check_messages(ui_state);
   ui_update(ui_state);
+  ui_update_sizes(ui_state);
   update();
 }
 
