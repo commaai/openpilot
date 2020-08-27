@@ -1,3 +1,4 @@
+import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
@@ -24,3 +25,10 @@ else:
 
   qt_src = ["qt/ui.cc", "qt/window.cc", "qt/settings.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
+
+
+if os.getenv("PLAYSOUND") is not None:
+  src = ["test/play_sound.cc", "sound.cc"] + src
+  env.Program('test/play_sound', src,
+              LINKFLAGS=linkflags,
+              LIBS=libs)

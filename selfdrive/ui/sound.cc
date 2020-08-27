@@ -1,10 +1,11 @@
-
-#include "sound.hpp"
 #include <math.h>
 #include <stdlib.h>
 #include <atomic>
+
 #include "common/swaglog.h"
 #include "common/timing.h"
+
+#include "sound.hpp"
 
 #define LogOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); }
@@ -104,7 +105,7 @@ void Sound::stop() {
 
 void Sound::setVolume(int volume) {
   if (last_volume_ == volume) return;
-  
+
   double current_time = nanos_since_boot();
   if ((current_time - last_set_volume_time_) > (5 * (1e+9))) { // 5s timeout on updating the volume
     char volume_change_cmd[64];
