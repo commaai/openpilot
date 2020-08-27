@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <map>
 #include <string>
+#include <cstring>
 #include <errno.h>
 
 Thneed *g_thneed = NULL;

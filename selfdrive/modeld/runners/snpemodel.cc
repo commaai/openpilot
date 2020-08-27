@@ -1,5 +1,6 @@
 #pragma clang diagnostic ignored "-Wexceptions"
 
+#include <cstring>
 #include <cassert>
 #include <stdlib.h>
 #include "common/util.h"
