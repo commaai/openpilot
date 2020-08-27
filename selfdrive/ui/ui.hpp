@@ -50,7 +50,6 @@
 #endif
 
 #define UI_BUF_COUNT 4
-//#define SHOW_SPEEDLIMIT 1
 //#define DEBUG_TURN
 
 // TODO: Detect dynamically
@@ -114,9 +113,7 @@ typedef struct UIScene {
   bool speedlimit_valid;
 
   bool is_rhd;
-  bool map_valid;
   bool uilayout_sidebarcollapsed;
-  bool uilayout_mapenabled;
   // responsive layout
   int ui_viz_rx;
   int ui_viz_rw;
@@ -174,7 +171,6 @@ typedef struct UIState {
   int img_wheel;
   int img_turn;
   int img_face;
-  int img_map;
   int img_button_settings;
   int img_button_home;
   int img_battery;

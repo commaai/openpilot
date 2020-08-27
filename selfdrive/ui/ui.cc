@@ -26,9 +26,6 @@ void ui_init(UIState *s) {
   pthread_mutex_init(&s->lock, NULL);
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
                          "health", "ubloxGnss", "driverState", "dMonitoringState"
-#ifdef SHOW_SPEEDLIMIT
-                                    , "liveMapData"
-#endif
   });
   s->pm = new PubMaster({"offroadLayout"});
 
@@ -174,11 +171,6 @@ void handle_message(UIState *s, SubMaster &sm) {
     s->active_app = data.getActiveApp();
     scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
   }
-#ifdef SHOW_SPEEDLIMIT
-  if (sm.updated("liveMapData")) {
-    scene.map_valid = sm["liveMapData"].getLiveMapData().getMapValid();
-  }
-#endif
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
   }
