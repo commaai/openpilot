@@ -221,7 +221,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(DualCameraState *s) {
+void cameras_init(MultiCameraState *s) {
 
   camera_init(&s->rear, CAMERA_ID_LGC920, 20);
   s->rear.transform = (mat3){{
@@ -240,7 +240,7 @@ void cameras_init(DualCameraState *s) {
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear,
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
                   VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats,
                   VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
@@ -254,12 +254,12 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear,
   camera_open(&s->rear, camera_bufs_rear, true);
 }
 
-void cameras_close(DualCameraState *s) {
+void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
 }
 
-void cameras_run(DualCameraState *s) {
+void cameras_run(MultiCameraState *s) {
   set_thread_name("webcam_thread");
 
   int err;

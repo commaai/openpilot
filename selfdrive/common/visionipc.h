@@ -37,6 +37,10 @@ typedef struct VisionUIInfo {
 
   int front_box_x, front_box_y;
   int front_box_width, front_box_height;
+
+  int wide_box_x, wide_box_y;
+  int wide_box_width, wide_box_height;
+
 } VisionUIInfo;
 
 typedef struct VisionStreamBufs {
