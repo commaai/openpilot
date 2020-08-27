@@ -25,7 +25,7 @@ int write_param_float(float param, const char* param_name, bool persistent_param
 void ui_init(UIState *s) {
   pthread_mutex_init(&s->lock, NULL);
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
-                         "health", "ubloxGnss", "driverState", "dMonitoringState"
+                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"
   });
   s->pm = new PubMaster({"offroadLayout"});
 
@@ -69,10 +69,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
 
   read_param(&s->is_metric, "IsMetric");
   read_param(&s->longitudinal_control, "LongitudinalControl");
-
-  // Set offsets so params don't get read at the same time
-  s->longitudinal_control_timeout = UI_FREQ / 3;
-  s->is_metric_timeout = UI_FREQ / 2;
+  s->is_metric_timeout = UI_FREQ;
 }
 
 void update_status(UIState *s, int status) {
@@ -90,7 +87,7 @@ static inline void fill_path_points(const cereal::ModelData::PathData::Reader &p
 
 void handle_message(UIState *s, SubMaster &sm) {
   UIScene &scene = s->scene;
-  if (s->started && sm.updated("controlsState")) {
+  if (sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
     s->controls_seen = true;
@@ -179,6 +176,9 @@ void handle_message(UIState *s, SubMaster &sm) {
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
   }
+  if (sm.updated("carParams")) {
+    s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
+  }
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
   }
@@ -186,10 +186,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  }
-
-  // timeout on frontview
-  if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
+  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
     scene.frontview = false;
   }
 
