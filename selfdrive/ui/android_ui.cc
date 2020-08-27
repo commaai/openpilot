@@ -271,9 +271,7 @@ int main(int argc, char* argv[]) {
     }
 
     // manage hardware disconnect
-    if (s->hardware_timeout > 0) {
-      s->hardware_timeout--;
-    } else {
+    if ((s->sm.frame - s->sm.rcv_frame("health")) > 5*UI_FREQ) {
       s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
     }
 

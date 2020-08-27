@@ -178,7 +178,6 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
-    s->hardware_timeout = 5*UI_FREQ; // 5 seconds
   }
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
