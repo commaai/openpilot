@@ -85,8 +85,6 @@ static void ui_init_vision(UIState *s) {
   assert(glGetError() == GL_NO_ERROR);
 
   s->scene.uilayout_sidebarcollapsed = true;
-  ui_update_sizes(s);
-
   s->alert_blinking_alpha = 1.0;
   s->alert_blinked = false;
 

@@ -222,7 +222,6 @@ int main(int argc, char* argv[]) {
     smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
     if (smooth_brightness > 255) smooth_brightness = 255;
     ui_set_brightness(s, (int)smooth_brightness);
-    ui_update_sizes(s);
 
     // poll for touch events
     int touch_x = -1, touch_y = -1;
@@ -246,6 +245,7 @@ int main(int argc, char* argv[]) {
     }
 
     ui_update(s);
+    ui_update_sizes(s);
 
     // manage wakefulness
     if (s->awake_timeout > 0) {
