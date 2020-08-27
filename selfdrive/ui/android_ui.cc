@@ -157,7 +157,7 @@ static void update_offroad_layout_state(UIState *s, PubMaster &pm) {
     auto layout = event.initUiLayoutState();
     layout.setActiveApp(s->active_app);
     layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
-    s->pm->send("offroadLayout", msg);
+    pm->send("offroadLayout", msg);
     LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
     prev_collapsed = s->scene.uilayout_sidebarcollapsed;
     prev_app = s->active_app;
