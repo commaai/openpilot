@@ -25,12 +25,8 @@ int write_param_float(float param, const char* param_name, bool persistent_param
 void ui_init(UIState *s) {
   pthread_mutex_init(&s->lock, NULL);
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
-                         "health", "ubloxGnss", "driverState", "dMonitoringState"
-#ifdef SHOW_SPEEDLIMIT
-                                    , "liveMapData"
-#endif
+                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"
   });
-  s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
   s->scene.satelliteCount = -1;
@@ -70,15 +66,9 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->rgb_front_stride = front_bufs.stride;
   s->rgb_front_buf_len = front_bufs.buf_len;
 
-  read_param(&s->speed_lim_off, "SpeedLimitOffset");
   read_param(&s->is_metric, "IsMetric");
   read_param(&s->longitudinal_control, "LongitudinalControl");
-  read_param(&s->limit_set_speed, "LimitSetSpeed");
-
-  // Set offsets so params don't get read at the same time
-  s->longitudinal_control_timeout = UI_FREQ / 3;
-  s->is_metric_timeout = UI_FREQ / 2;
-  s->limit_set_speed_timeout = UI_FREQ;
+  s->is_metric_timeout = UI_FREQ;
 }
 
 void update_status(UIState *s, int status) {
@@ -96,10 +86,9 @@ static inline void fill_path_points(const cereal::ModelData::PathData::Reader &p
 
 void handle_message(UIState *s, SubMaster &sm) {
   UIScene &scene = s->scene;
-  if (s->started && sm.updated("controlsState")) {
+  if (sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
-    s->controls_timeout = 1 * UI_FREQ;
     s->controls_seen = true;
 
     auto alert_sound = scene.controls_state.getAlertSound();
@@ -174,11 +163,6 @@ void handle_message(UIState *s, SubMaster &sm) {
     s->active_app = data.getActiveApp();
     scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
   }
-#ifdef SHOW_SPEEDLIMIT
-  if (sm.updated("liveMapData")) {
-    scene.map_valid = sm["liveMapData"].getLiveMapData().getMapValid();
-  }
-#endif
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
   }
@@ -190,7 +174,9 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
-    s->hardware_timeout = 5*UI_FREQ; // 5 seconds
+  }
+  if (sm.updated("carParams")) {
+    s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
@@ -199,10 +185,7 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  }
-
-  // timeout on frontview
-  if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
+  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
     scene.frontview = false;
   }
 
