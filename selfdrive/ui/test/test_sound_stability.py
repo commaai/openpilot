@@ -8,15 +8,20 @@ from cereal import car
 from common.basedir import BASEDIR
 
 os.environ["LD_LIBRARY_PATH"] = ""
+
+# pull this from the provisioning tests
 play_sound = os.path.join(BASEDIR, "selfdrive/ui/test/play_sound")
+waste = os.path.join(BASEDIR, "scripts/waste")
 
 def sound_test():
 
-  sound_enums = car.CarControl.AudibleAlert.schema.enumerants.items()
-  all_sounds = [v for k, v in  sound_enums if k != "none"]
-
   # max volume
   vol = 15
+  sound_enums = car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items()
+  all_sounds = [v for k, v in  sound_enums if k != "none"]
+
+  # start waste
+  p = subprocess.Popen([waste])
 
   start_time = time.monotonic()
   frame = 0
@@ -41,7 +46,6 @@ def sound_test():
     with open("/tmp/sound_stats.txt", "a") as f:
       f.write(stats)
     print(stats)
-
     frame +=1
 
 if __name__ == "__main__":
