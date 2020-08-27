@@ -2,8 +2,7 @@
 
 #include "window.hpp"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   QSurfaceFormat fmt;
 #ifdef __APPLE__
   fmt.setVersion(3, 2);
