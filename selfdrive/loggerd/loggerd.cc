@@ -104,14 +104,13 @@ LoggerdState s;
 void encoder_thread(bool is_streaming, bool raw_clips, Camera camera) {
   int err;
 
-  // TODO: use camera name
-  set_thread_name("FrontCameraEncoder");
+  std::string thread_name = camera.name + "CameraEncoder";
+  set_thread_name(thread_name.c_str());
 
   VisionStream stream;
-
-  bool encoder_inited = false;
   EncoderState encoder;
   EncoderState encoder_alt;
+  bool encoder_inited = false;
   bool has_encoder_alt = false;
 
   int encoder_segment = -1;
