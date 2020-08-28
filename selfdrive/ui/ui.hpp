@@ -211,11 +211,7 @@ typedef struct UIState {
   UIScene scene;
   bool awake;
 
-  // timeouts
   int awake_timeout;
-  int is_metric_timeout;
-  int last_athena_ping_timeout;
-
   bool controls_seen;
 
   uint64_t last_athena_ping;
@@ -273,18 +269,6 @@ int read_param(T* param, const char *param_name, bool persistent_param = false){
       *param = param_orig;
       result = -1;
     }
-  }
-  return result;
-}
-
-template <class T>
-int read_param_timeout(T* param, const char* param_name, int* timeout, bool persistent_param = false) {
-  int result = -1;
-  if (*timeout > 0){
-    (*timeout)--;
-  } else {
-    *timeout = 2 * UI_FREQ; // 0.5Hz
-    result = read_param(param, param_name, persistent_param);
   }
   return result;
 }
