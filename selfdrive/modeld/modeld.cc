@@ -46,8 +46,8 @@ void* live_thread(void *arg) {
 #else
   Eigen::Matrix<float, 3, 3> eon_intrinsics;
   eon_intrinsics <<
-    2648.0/2, 0.0, 1928.0/2,
-    0.0, 2648.0/2, 1208.0/2,
+    2648.0, 0.0, 1928.0/2,
+    0.0, 2648.0, 1208.0/2,
     0.0,   0.0,   1.0;
 #endif
 
