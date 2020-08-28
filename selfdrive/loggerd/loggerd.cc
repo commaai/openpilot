@@ -68,8 +68,6 @@
 
 #define LOG_ROOT "/data/media/0/realdata"
 
-#define ENABLE_LIDAR 0
-
 #define RAW_CLIP_LENGTH 100 // 5 seconds at 20fps
 #define RAW_CLIP_FREQUENCY (randrange(61, 8*60)) // once every ~4 minutes
 
@@ -389,78 +387,6 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 }
 #endif
 
-#if ENABLE_LIDAR
-
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-
-#define VELODYNE_DATA_PORT 2368
-#define VELODYNE_TELEMETRY_PORT 8308
-
-#define MAX_LIDAR_PACKET 2048
-
-int lidar_thread() {
-  // increase kernel max buffer size
-  system("sysctl -w net.core.rmem_max=26214400");
-  set_thread_name("lidar");
-
-  int sock;
-  if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    perror("cannot create socket");
-    return -1;
-  }
-
-  int a = 26214400;
-  if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &a, sizeof(int)) == -1) {
-    perror("cannot set socket opts");
-    return -1;
-  }
-
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(struct sockaddr_in));
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(VELODYNE_DATA_PORT);
-  inet_aton("192.168.5.11", &(addr.sin_addr));
-
-  if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-    perror("cannot bind LIDAR socket");
-    return -1;
-  }
-
-  capnp::byte buf[MAX_LIDAR_PACKET];
-
-  while (!do_exit) {
-    // receive message
-    struct sockaddr from;
-    socklen_t fromlen = sizeof(from);
-    int cnt = recvfrom(sock, (void *)buf, MAX_LIDAR_PACKET, 0, &from, &fromlen);
-    if (cnt <= 0) {
-      printf("bug in lidar recieve!\n");
-      continue;
-    }
-
-    // create message for log
-    capnp::MallocMessageBuilder msg;
-    auto event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto lidar_pts = event.initLidarPts();
-
-    // copy in the buffer
-    // TODO: can we remove this copy? does it matter?
-    kj::ArrayPtr<capnp::byte> bufferPtr = kj::arrayPtr(buf, cnt);
-    lidar_pts.setPkt(bufferPtr);
-
-    // log it
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    logger_log(&s.logger, bytes.begin(), bytes.size());
-  }
-  return 0;
-}
-#endif
-
 }
 
 void append_property(const char* key, const char* value, void *cookie) {
@@ -694,10 +620,6 @@ int main(int argc, char** argv) {
   #endif
 #endif
 
-#if ENABLE_LIDAR
-  std::thread lidar_thread_handle(lidar_thread);
-#endif
-
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
 
@@ -773,11 +695,6 @@ int main(int argc, char** argv) {
   front_encoder_thread_handle.join();
   encoder_thread_handle.join();
   LOGW("encoder joined");
-#endif
-
-#if ENABLE_LIDAR
-  lidar_thread_handle.join();
-  LOGW("lidar joined");
 #endif
 
   logger_close(&s.logger);
