@@ -44,10 +44,10 @@
 #define DISABLE_ENCODER
 #endif
 
-
 #ifndef DISABLE_ENCODER
 #include "encoder.h"
 #include "raw_logger.h"
+#include "cameras.h"
 #endif
 
 #include "cereal/gen/cpp/log.capnp.h"
@@ -58,13 +58,6 @@
 
 #define CAMERA_FPS 20
 #define SEGMENT_LENGTH 60
-
-#define MAIN_BITRATE 5000000
-#ifndef QCOM2
-#define DCAM_BITRATE 2500000
-#else
-#define DCAM_BITRATE MAIN_BITRATE
-#endif
 
 #define LOG_ROOT "/data/media/0/realdata"
 
@@ -108,26 +101,11 @@ struct LoggerdState {
 LoggerdState s;
 
 #ifndef DISABLE_ENCODER
-void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
+void encoder_thread(bool is_streaming, bool raw_clips, Camera camera) {
   int err;
 
-  // 0:f, 1:d, 2:e
-  if (cam_idx == CAM_IDX_DCAM) {
-  // TODO: add this back
-#ifndef QCOM2
-    std::vector<char> value = read_db_bytes("RecordFront");
-    if (value.size() == 0 || value[0] != '1') return;
-    LOGW("recording front camera");
-#endif
-    set_thread_name("FrontCameraEncoder");
-  } else if (cam_idx == CAM_IDX_FCAM) {
-    set_thread_name("RearCameraEncoder");
-  } else if (cam_idx == CAM_IDX_ECAM) {
-    set_thread_name("WideCameraEncoder");
-  } else {
-    LOGE("unexpected camera index provided");
-    assert(false);
-  }
+  // TODO: use camera name
+  set_thread_name("FrontCameraEncoder");
 
   VisionStream stream;
 
@@ -139,20 +117,14 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   int encoder_segment = -1;
   int cnt = 0;
 
-  PubSocket *idx_sock = PubSocket::create(s.ctx, cam_idx == CAM_IDX_DCAM ? "frontEncodeIdx" : (cam_idx == CAM_IDX_ECAM ? "wideEncodeIdx" : "encodeIdx"));
+  PubSocket *idx_sock = PubSocket::create(s.ctx, camera.encode_pkt_name);
   assert(idx_sock != NULL);
 
   LoggerHandle *lh = NULL;
 
   while (!do_exit) {
     VisionStreamBufs buf_info;
-    if (cam_idx == CAM_IDX_DCAM) {
-      err = visionstream_init(&stream, VISION_STREAM_YUV_FRONT, false, &buf_info);
-    } else if (cam_idx == CAM_IDX_FCAM) {
-      err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
-    } else if (cam_idx == CAM_IDX_ECAM) {
-      err = visionstream_init(&stream, VISION_STREAM_YUV_WIDE, false, &buf_info);
-    }
+    err = visionstream_init(&stream, camera.vision_stream, false, &buf_info);
     if (err != 0) {
       LOGD("visionstream connect fail");
       usleep(100000);
@@ -161,11 +133,11 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-      encoder_init(&encoder, cam_idx == CAM_IDX_DCAM ? "dcamera.hevc" : (cam_idx == CAM_IDX_ECAM ? "ecamera.hevc" : "fcamera.hevc"), buf_info.width, buf_info.height, CAMERA_FPS, cam_idx == CAM_IDX_DCAM ? DCAM_BITRATE:MAIN_BITRATE, true, false);
+      encoder_init(&encoder, camera.log_file, buf_info.width, buf_info.height, CAMERA_FPS, camera.bitrate, true, false);
 
       #ifndef QCOM2
       // TODO: fix qcamera on tici
-      if (cam_idx == CAM_IDX_FCAM) {
+      if (camera.type == F_CAMERA) {
         encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
         has_encoder_alt = true;
       }
@@ -209,9 +181,9 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
         // all the rotation stuff
         bool should_rotate = false;
         std::unique_lock<std::mutex> lk(s.lock);
-        if (cam_idx == CAM_IDX_FCAM) { // TODO: should wait for three cameras on tici?
+        if (camera.type == F_CAMERA) { // TODO: should wait for three cameras on tici?
           // wait if log camera is older on back camera
-          while ( extra.frame_id > s.last_frame_id //if the log camera is older, wait for it to catch up.
+          while (extra.frame_id > s.last_frame_id //if the log camera is older, wait for it to catch up.
                  && (extra.frame_id-s.last_frame_id) < 8 // but if its too old then there probably was a discontinuity (visiond restarted)
                  && !do_exit) {
             s.cv.wait(lk);
@@ -251,7 +223,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           pthread_mutex_unlock(&s.rotate_lock);
 
           while(s.should_close > 0 && s.should_close < s.num_encoder) {
-            // printf("%d waiting for others to reach close, %d/%d \n", cam_idx, s.should_close, s.num_encoder);
+            // printf("%d waiting for others to reach close, %d/%d \n", camera.type, s.should_close, s.num_encoder);
             s.cv.wait(lk);
           }
 
@@ -269,7 +241,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           pthread_mutex_unlock(&s.rotate_lock);
 
           while(s.finish_close > 0 && s.finish_close < s.num_encoder) {
-            // printf("%d waiting for others to actually close, %d/%d \n", cam_idx, s.finish_close, s.num_encoder);
+            // printf("%d waiting for others to actually close, %d/%d \n", camera.type, s.finish_close, s.num_encoder);
             s.cv.wait(lk);
           }
           s.finish_close = 0;
@@ -296,11 +268,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
         event.setLogMonoTime(nanos_since_boot());
         auto eidx = event.initEncodeIdx();
         eidx.setFrameId(extra.frame_id);
-#ifdef QCOM2
-        eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
-#else
-        eidx.setType(cam_idx == CAM_IDX_DCAM ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
-#endif
+        eidx.setType(camera.encode_type);
         eidx.setEncodeId(cnt);
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
@@ -678,19 +646,14 @@ int main(int argc, char** argv) {
   s.finish_close = 0;
   s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
+
+  std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, is_streaming, false, CAM_IDX_FCAM);
-  s.num_encoder += 1;
-
-  // front camera
-  std::thread front_encoder_thread_handle(encoder_thread, false, false, CAM_IDX_DCAM);
-  s.num_encoder += 1;
-
+  encoder_threads.push_back(std::thread(encoder_thread, is_streaming, false, fCamera));
+  encoder_threads.push_back(std::thread(encoder_thread, false, false, dCamera));
   #ifdef QCOM2
-  // wide camera
-  std::thread wide_encoder_thread_handle(encoder_thread, false, false, CAM_IDX_ECAM);
-  s.num_encoder += 1;
+  encoder_threads.push_back(std::thread(encoder_thread, false, false, wCamera));
   #endif
 #endif
 
@@ -762,17 +725,13 @@ int main(int argc, char** argv) {
     }
   }
 
+#ifndef DISABLE_ENCODER
   LOGW("joining threads");
   s.cv.notify_all();
-
-
-#ifndef DISABLE_ENCODER
-  #ifdef QCOM2
-  wide_encoder_thread_handle.join();
-  #endif
-  front_encoder_thread_handle.join();
-  encoder_thread_handle.join();
-  LOGW("encoder joined");
+  for(std::thread t : encoder_threads) {
+    t.join();
+  }
+  LOGW("encoder threads joined");
 #endif
 
 #if ENABLE_LIDAR
