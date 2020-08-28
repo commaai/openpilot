@@ -308,9 +308,11 @@ int main(int argc, char* argv[]) {
       ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
 
-    read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
-    int param_read = read_param_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
-    if (param_read != -1) { // Param was updated this loop
+
+    if (s->sm->frame % (2*UI_FREQ) == 0) {
+      read_param(&s->is_metric, "IsMetric");
+    } else if (s->sm->frame % (3*UI_FREQ) == 0) {
+      int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
       if (param_read != 0) { // Failed to read param
         s->scene.athenaStatus = NET_DISCONNECTED;
       } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
