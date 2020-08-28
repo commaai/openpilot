@@ -68,7 +68,6 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
 
   read_param(&s->is_metric, "IsMetric");
   read_param(&s->longitudinal_control, "LongitudinalControl");
-  s->is_metric_timeout = UI_FREQ;
 }
 
 void update_status(UIState *s, int status) {
