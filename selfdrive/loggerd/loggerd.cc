@@ -649,12 +649,12 @@ int main(int argc, char** argv) {
 
   std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
-  // rear camera
   encoder_threads.push_back(std::thread(encoder_thread, is_streaming, false, fCamera));
   encoder_threads.push_back(std::thread(encoder_thread, false, false, dCamera));
   #ifdef QCOM2
   encoder_threads.push_back(std::thread(encoder_thread, false, false, wCamera));
   #endif
+  s.num_encoder = encoder_threads.size();
 #endif
 
 #if ENABLE_LIDAR
