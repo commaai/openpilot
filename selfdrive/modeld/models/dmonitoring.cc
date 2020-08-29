@@ -2,6 +2,7 @@
 #include "dmonitoring.h"
 #include "common/mat.h"
 #include "common/timing.h"
+#include "common/params.h"
 
 #include <libyuv.h>
 

@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
     LOGW("connected with buffer size: %d", buf_info.buf_len);
 
     double last = 0;
-    int chk_counter = 0;
     while (!do_exit) {
       VIPCBuf *buf;
       VIPCBufExtra extra;
