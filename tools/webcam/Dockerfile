@@ -14,7 +14,7 @@ RUN export OPENCV_VERSION='4.2.0' && \
     sudo apt-get install -y libtbb-dev libeigen3-dev && \
 
     wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz && \
-    tar -xvf ${OPENCV_VERSION}.zip && rm ${OPENCV_VERSION}.tar.gz && \
+    tar -xvf ${OPENCV_VERSION}.tar.gz && rm ${OPENCV_VERSION}.tar.gz && \
     mv opencv-${OPENCV_VERSION} OpenCV && \
     cd OpenCV && mkdir build && cd build && \
     cmake -DWITH_OPENGL=ON -DFORCE_VTK=ON -DWITH_TBB=ON -DWITH_GDAL=ON \
