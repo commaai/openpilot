@@ -10,12 +10,13 @@ env:
   PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
-  BUILD: |
+  BUILD_BASE: |
       # build the openpilot docker base image
       docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull docker.io/commaai/openpilot-base:latest || true
       docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot_base .
-
+  BUILD: |
+      $BUILD_BASE
       # build the final CI image
       docker pull docker.io/commaai/openpilotci:latest || true
       docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
@@ -87,8 +88,10 @@ jobs:
       with:
         submodules: true
     - name: Build Docker image
-      run: eval "$BUILD"
-    - name: Build openpilot and run quick check
+      run: |
+        eval "$BUILD"
+        docker build -t tmppilot -f tools/webcam/Dockerfile .
+    - name: Build openpilot
       run: $RUN "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
 
   docker_push:
