@@ -183,14 +183,12 @@ struct VisionState {
 void* frontview_thread(void *arg) {
   int err;
   VisionState *s = (VisionState*)arg;
+  s->rhd_front = read_db_bool("IsRHD");
 
   set_thread_name("frontview");
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
   SubMaster sm({"driverState"});
-
-  std::vector<char> result = read_db_bytes("IsRHD");
-  s->rhd_front = result.size() > 0 && result[0] == '1';
 
   cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
   assert(err == 0);
