@@ -22,8 +22,9 @@ void dmonitoring_init(DMonitoringModelState* s) {
   const char* model_path = "../../models/dmonitoring_model.dlc";
 #endif
   s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
-  s->is_rhd = false;
-  s->is_rhd_checked = false;
+
+  std::vector<char> result = read_db_bytes("IsRHD");
+  s->is_rhd = result.size() > 0 && result[0] == '1';
 }
 
 template <class T>

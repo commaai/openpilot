@@ -58,23 +58,9 @@ int main(int argc, char **argv) {
         printf("visionstream get failed\n");
         break;
       }
-      //printf("frame_id: %d %dx%d\n", extra.frame_id, buf_info.width, buf_info.height);
-      if (!dmonitoringmodel.is_rhd_checked) {
-        if (chk_counter >= RHD_CHECK_INTERVAL) {
-          if (sm.update(0) > 0) {
-            auto state = sm["dMonitoringState"].getDMonitoringState();
-            dmonitoringmodel.is_rhd = state.getIsRHD();
-            dmonitoringmodel.is_rhd_checked = state.getRhdChecked();
-          }
-          chk_counter = 0;
-        }
-        chk_counter += 1;
-      }
 
       double t1 = millis_since_boot();
-
       DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf_info.width, buf_info.height);
-
       double t2 = millis_since_boot();
 
       // send dm packet
