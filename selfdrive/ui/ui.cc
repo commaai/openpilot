@@ -42,15 +42,8 @@ static void ui_init_vision(UIState *s) {
   s->scene.fullview = getenv("FULLVIEW") != NULL;
   s->scene.world_objects_visible = false;  // Invisible until we receive a calibration message.
 
-  read_param(&s->speed_lim_off, "SpeedLimitOffset");
   read_param(&s->is_metric, "IsMetric");
   read_param(&s->longitudinal_control, "LongitudinalControl");
-  read_param(&s->limit_set_speed, "LimitSetSpeed");
-
-  // Set offsets so params don't get read at the same time
-  s->longitudinal_control_timeout = UI_FREQ / 3;
-  s->is_metric_timeout = UI_FREQ / 2;
-  s->limit_set_speed_timeout = UI_FREQ;
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     if (s->khr[i] != 0) {
