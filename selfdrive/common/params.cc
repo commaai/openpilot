@@ -366,3 +366,8 @@ std::vector<char> read_db_bytes(const char* param_name, bool persistent_param) {
   }
   return bytes;
 }
+
+bool read_db_bool(const char* param_name, bool persistent_param) {
+  std::vector<char> bytes = read_db_bytes(param_name, persistent_param);
+  return bytes.size() > 0 and bytes[0] == '1';
+}
