@@ -276,7 +276,6 @@ static void draw_frame(UIState *s) {
 
 static inline bool valid_frame_pt(UIState *s, float x, float y) {
   return x >= 0 && x <= s->stream.bufs_info.width && y >= 0 && y <= s->stream.bufs_info.height;
-
 }
 
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {

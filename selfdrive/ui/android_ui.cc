@@ -178,6 +178,7 @@ int main(int argc, char* argv[]) {
   set_awake(s, true);
   enable_event_processing(true);
 
+  PubMaster *pm = new PubMaster({"offroadLayout"});
   pthread_t light_sensor_thread_handle;
   err = pthread_create(&light_sensor_thread_handle, NULL,
                        light_sensor_thread, s);
