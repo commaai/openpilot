@@ -4,7 +4,7 @@ import cereal.messaging as messaging
 from selfdrive.manager import start_managed_process, kill_managed_process
 
 services = ['controlsState', 'thermal']  # the services needed to be spoofed to start ui offroad
-procs = ['camerad', 'ui']
+procs = ['camerad', 'ui', 'modeld', 'calibrationd']
 [start_managed_process(p) for p in procs]  # start needed processes
 pm = messaging.PubMaster(services)
 
