@@ -86,7 +86,7 @@ class Controls:
     controller_available = self.CP.enableCamera and self.CI.CC is not None and not passive
     community_feature_disallowed = self.CP.communityFeature and not community_feature_toggle
     self.read_only = not car_recognized or not controller_available or \
-                       self.CP.dashcamOnly or community_feature_disallowed
+                     self.CP.dashcamOnly or community_feature_disallowed
     if self.read_only:
       self.CP.safetyModel = car.CarParams.SafetyModel.noOutput
 
@@ -184,7 +184,7 @@ class Controls:
     if self.sm['pathPlan'].laneChangeState == LaneChangeState.preLaneChange:
       direction = self.sm['pathPlan'].laneChangeDirection
       if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
-         (CS.rightBlindspot and direction == LaneChangeDirection.right):
+              (CS.rightBlindspot and direction == LaneChangeDirection.right):
         self.events.add(EventName.laneChangeBlocked)
       else:
         if direction == LaneChangeDirection.left:
@@ -192,10 +192,10 @@ class Controls:
         else:
           self.events.add(EventName.preLaneChangeRight)
     elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
-                                        LaneChangeState.laneChangeFinishing]:
+                                                 LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
 
-    if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
+    if self.can_rcv_error or not CS.canValid and self.sm.frame > 5 / DT_CTRL:
       self.events.add(EventName.canError)
     if self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
@@ -209,7 +209,7 @@ class Controls:
     if not self.sm['liveLocationKalman'].sensorsOK and os.getenv("NOSENSOR") is None:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
-    if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
+    if not self.sm['liveLocationKalman'].gpsOK and self.distance_traveled > 1000 and os.getenv("NOSENSOR") is None:
       # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
       self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
@@ -234,7 +234,7 @@ class Controls:
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
-       and not self.CP.radarOffCan and CS.vEgo < 0.3:
+            and not self.CP.radarOffCan and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
 
   def data_sample(self):
@@ -300,7 +300,7 @@ class Controls:
         if self.state == State.enabled:
           if self.events.any(ET.SOFT_DISABLE):
             self.state = State.softDisabling
-            self.soft_disable_timer = 300   # 3s
+            self.soft_disable_timer = 300  # 3s
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
         # SOFT DISABLING
@@ -375,7 +375,7 @@ class Controls:
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
-      abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
+                              abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
 
     if angle_control_saturated and not CS.steeringPressed and self.active:
       self.saturated_count += 1
@@ -384,7 +384,7 @@ class Controls:
 
     # Send a "steering required alert" if saturation count has reached the limit
     if (lac_log.saturated and not CS.steeringPressed) or \
-       (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
+            (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
       # Check if we deviated from the path
       left_deviation = actuators.steer > 0 and path_plan.dPoly[3] > 0.1
       right_deviation = actuators.steer < 0 and path_plan.dPoly[3] < -0.1
@@ -423,7 +423,7 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
-                    and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
+                  and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
     meta = self.sm['model'].meta
     if len(meta.desirePrediction) and ldw_allowed:
@@ -449,7 +449,7 @@ class Controls:
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
     force_decel = (self.sm['dMonitoringState'].awarenessStatus < 0.) or \
-                    (self.state == State.softDisabling)
+                  (self.state == State.softDisabling)
 
     steer_angle_rad = (CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD
 
@@ -513,14 +513,14 @@ class Controls:
     self.pm.send('carState', cs_send)
 
     # carEvents - logged every second or on change
-    if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
+    if self.sm.frame % int(1. / DT_CTRL) == 0 or self.events.names != self.events_prev:
       ce_send = messaging.new_message('carEvents', len(self.events))
       ce_send.carEvents = car_events
       self.pm.send('carEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
     # carParams - logged every 50 seconds (> 1 per segment)
-    if (self.sm.frame % int(50. / DT_CTRL) == 0):
+    if self.sm.frame % int(50. / DT_CTRL) == 0:
       cp_send = messaging.new_message('carParams')
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
@@ -563,6 +563,7 @@ class Controls:
       self.step()
       self.rk.monitor_time()
       self.prof.display()
+
 
 def main(sm=None, pm=None, logcan=None):
   controls = Controls(sm, pm, logcan)
