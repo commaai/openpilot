@@ -625,8 +625,17 @@ if __name__ == "__main__":
 
     # Show last 3 lines of traceback
     error = traceback.format_exc().splitlines()
+    error = [line for line in error if 'importlib._bootstrap' not in line][-4*2:]
+    # error_new = []
+    # file_count = 0
+    # for line in error[::-1]:
+    #   error_new.append(line)
+    #   file_count += 1
+    #   if file_count > 2:
+    #     break
+
     print(error)
-    error = '\n'.join(error[3:])
+    error = '\n'.join(error)
 
     error = "Manager failed to start\n \n" + error
     with TextWindow(error) as t:
