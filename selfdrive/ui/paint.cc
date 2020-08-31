@@ -256,11 +256,11 @@ static void draw_frame(UIState *s) {
     glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
   } else if (!scene->frontview && s->cur_vision_idx >= 0) {
     glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
-    #ifndef QCOM
-      // TODO: a better way to do this?
-      //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
-    #endif
+
+    // TODO: a better way to do this?
+#ifndef QCOM
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->rgb_width, s->rgb_height, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
+#endif
   }
 
   glUseProgram(s->frame_program);
@@ -690,9 +690,12 @@ void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &
   nvgFill(vg);
 }
 
-#ifdef NANOVG_GL3_IMPLEMENTATION
 static const char frame_vertex_shader[] =
+#ifdef NANOVG_GL3_IMPLEMENTATION
   "#version 150 core\n"
+#else
+  "#version 300 es\n"
+#endif
   "in vec4 aPosition;\n"
   "in vec4 aTexCoord;\n"
   "uniform mat4 uTransform;\n"
@@ -703,7 +706,11 @@ static const char frame_vertex_shader[] =
   "}\n";
 
 static const char frame_fragment_shader[] =
+#ifdef NANOVG_GL3_IMPLEMENTATION
   "#version 150 core\n"
+#else
+  "#version 300 es\n"
+#endif
   "precision mediump float;\n"
   "uniform sampler2D uTexture;\n"
   "in vec4 vTexCoord;\n"
@@ -711,25 +718,6 @@ static const char frame_fragment_shader[] =
   "void main() {\n"
   "  colorOut = texture(uTexture, vTexCoord.xy);\n"
   "}\n";
-#else
-static const char frame_vertex_shader[] =
-  "attribute vec4 aPosition;\n"
-  "attribute vec4 aTexCoord;\n"
-  "uniform mat4 uTransform;\n"
-  "varying vec4 vTexCoord;\n"
-  "void main() {\n"
-  "  gl_Position = uTransform * aPosition;\n"
-  "  vTexCoord = aTexCoord;\n"
-  "}\n";
-
-static const char frame_fragment_shader[] =
-  "precision mediump float;\n"
-  "uniform sampler2D uTexture;\n"
-  "varying vec4 vTexCoord;\n"
-  "void main() {\n"
-  "  gl_FragColor = texture2D(uTexture, vTexCoord.xy);\n"
-  "}\n";
-#endif
 
 static const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
