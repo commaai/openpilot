@@ -89,7 +89,7 @@ assert(font >= 0);
   int b_h = 150;
 
   nvgBeginPath(vg);
-  nvgFillColor(vg, nvgRGBA(8, 8, 8, 178));
+  nvgFillColor(vg, nvgRGBA(8, 8, 8, 255));
   nvgRoundedRect(vg, b_x, b_y, b_w, b_h, 20);
   nvgFill(vg);
 
