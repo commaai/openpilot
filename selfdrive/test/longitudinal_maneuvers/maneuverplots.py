@@ -6,7 +6,8 @@ import pylab
 
 from selfdrive.config import Conversions as CV
 
-class ManeuverPlot():
+
+class ManeuverPlot:
   def __init__(self, title=None):
     self.time_array = []
 
@@ -39,8 +40,8 @@ class ManeuverPlot():
     self.title = title
 
   def add_data(self, time, gas, brake, steer_torque, distance, speed,
-    acceleration, up_accel_cmd, ui_accel_cmd, uf_accel_cmd, d_rel, v_rel,
-    v_lead, v_target_lead, pid_speed, cruise_speed, jerk_factor, a_target, fcw):
+               acceleration, up_accel_cmd, ui_accel_cmd, uf_accel_cmd, d_rel, v_rel,
+               v_lead, v_target_lead, pid_speed, cruise_speed, jerk_factor, a_target, fcw):
     self.time_array.append(time)
     self.gas_array.append(gas)
     self.brake_array.append(brake)

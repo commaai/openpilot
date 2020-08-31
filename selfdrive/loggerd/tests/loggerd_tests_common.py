@@ -7,32 +7,35 @@ import unittest
 
 import selfdrive.loggerd.uploader as uploader
 
+
 def create_random_file(file_path, size_mb, lock=False):
-    try:
-      os.mkdir(os.path.dirname(file_path))
-    except OSError:
-      pass
+  try:
+    os.mkdir(os.path.dirname(file_path))
+  except OSError:
+    pass
 
-    lock_path = file_path + ".lock"
-    os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
+  lock_path = file_path + ".lock"
+  os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
 
-    chunks = 128
-    chunk_bytes = int(size_mb * 1024 * 1024 / chunks)
-    data = os.urandom(chunk_bytes)
+  chunks = 128
+  chunk_bytes = int(size_mb * 1024 * 1024 / chunks)
+  data = os.urandom(chunk_bytes)
 
-    with open(file_path, 'wb') as f:
-      for _ in range(chunks):
-        f.write(data)
+  with open(file_path, 'wb') as f:
+    for _ in range(chunks):
+      f.write(data)
 
-    if not lock:
-        os.remove(lock_path)
+  if not lock:
+    os.remove(lock_path)
 
-class MockResponse():
+
+class MockResponse:
   def __init__(self, text, status_code):
     self.text = text
     self.status_code = status_code
 
-class MockApi():
+
+class MockApi:
   def __init__(self, dongle_id):
     pass
 
@@ -42,7 +45,8 @@ class MockApi():
   def get_token(self):
     return "fake-token"
 
-class MockApiIgnore():
+
+class MockApiIgnore:
   def __init__(self, dongle_id):
     pass
 
@@ -52,7 +56,8 @@ class MockApiIgnore():
   def get_token(self):
     return "fake-token"
 
-class MockParams():
+
+class MockParams:
   def __init__(self):
     self.params = {
       "DongleId": b"0000000000000000",
@@ -62,6 +67,7 @@ class MockParams():
 
   def get(self, k):
     return self.params[k]
+
 
 class UploaderTestCase(unittest.TestCase):
   f_type = "UNKNOWN"

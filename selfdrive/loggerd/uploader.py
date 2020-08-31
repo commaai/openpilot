@@ -26,6 +26,7 @@ UPLOAD_ATTR_VALUE = b'1'
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
+
 def raise_on_thread(t, exctype):
   '''Raises an exception in the threads with id tid'''
   for ctid, tobj in threading._active.items():
@@ -48,8 +49,10 @@ def raise_on_thread(t, exctype):
     ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
     raise SystemError("PyThreadState_SetAsyncExc failed")
 
+
 def get_directory_sort(d):
   return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
+
 
 def listdir_by_creation(d):
   try:
@@ -59,6 +62,7 @@ def listdir_by_creation(d):
   except OSError:
     cloudlog.exception("listdir_by_creation failed")
     return list()
+
 
 def clear_locks(root):
   for logname in os.listdir(root):
@@ -70,20 +74,23 @@ def clear_locks(root):
     except OSError:
       cloudlog.exception("clear_locks failed")
 
+
 def is_on_wifi():
   return HARDWARE.get_network_type() == NetworkType.wifi
+
 
 def is_on_hotspot():
   try:
     result = subprocess.check_output(["ifconfig", "wlan0"], stderr=subprocess.STDOUT, encoding='utf8')
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
-    return (result.startswith('192.168.43.') or # android
-            result.startswith('172.20.10.') or # ios
-            result.startswith('10.0.2.')) # toyota entune
+    return (result.startswith('192.168.43.') or  # android
+            result.startswith('172.20.10.') or  # ios
+            result.startswith('10.0.2.'))  # toyota entune
   except Exception:
     return False
 
-class Uploader():
+
+class Uploader:
   def __init__(self, dongle_id, root):
     self.dongle_id = dongle_id
     self.api = Api(dongle_id)
@@ -152,7 +159,7 @@ class Uploader():
 
   def do_upload(self, key, fn):
     try:
-      url_resp = self.api.get("v1.3/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
+      url_resp = self.api.get("v1.3/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
       if url_resp.status_code == 412:
         self.last_resp = url_resp
         return
@@ -165,7 +172,7 @@ class Uploader():
       if fake_upload:
         cloudlog.info("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)
 
-        class FakeResponse():
+        class FakeResponse:
           def __init__(self):
             self.status_code = 200
 
@@ -223,6 +230,7 @@ class Uploader():
 
     return success
 
+
 def uploader_fn(exit_event):
   cloudlog.info("uploader_fn")
 
@@ -258,11 +266,13 @@ def uploader_fn(exit_event):
     else:
       cloudlog.info("backoff %r", backoff)
       time.sleep(backoff + random.uniform(0, backoff))
-      backoff = min(backoff*2, 120)
+      backoff = min(backoff * 2, 120)
     cloudlog.info("upload done, success=%r", success)
+
 
 def main():
   uploader_fn(threading.Event())
+
 
 if __name__ == "__main__":
   main()

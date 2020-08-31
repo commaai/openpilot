@@ -14,7 +14,7 @@ except Exception:
   pass
 
 
-class VisionTest():
+class VisionTest:
   """A version of the vision model that can be run on a desktop.
 
      WARNING: This class is not thread safe. VisionTest objects cannot be
