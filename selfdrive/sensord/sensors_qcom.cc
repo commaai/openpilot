@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
@@ -22,17 +21,7 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
-#define SENSOR_ACCELEROMETER 1
-#define SENSOR_MAGNETOMETER 2
-#define SENSOR_GYRO 4
-
-// ACCELEROMETER_UNCALIBRATED is only in Android O
-// https://developer.android.com/reference/android/hardware/Sensor.html#STRING_TYPE_ACCELEROMETER_UNCALIBRATED
-#define SENSOR_MAGNETOMETER_UNCALIBRATED 3
-#define SENSOR_GYRO_UNCALIBRATED 5
-
-#define SENSOR_PROXIMITY 6
-#define SENSOR_LIGHT 7
+#include "sensors_qcom.h"
 
 volatile sig_atomic_t do_exit = 0;
 volatile sig_atomic_t re_init_sensors = 0;
@@ -93,9 +82,7 @@ void sensor_loop() {
     };
 
     for (auto &s : sensors) {
-      device->activate(device, s.first, 0);
-      device->activate(device, s.first, 1);
-      device->setDelay(device, s.first, s.second);
+      init_sensor(device, s.first, s.second);
     }
 
     static const size_t numEvents = 16;

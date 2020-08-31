@@ -18,6 +18,8 @@
 #include <hardware/sensors.h>
 #include <utils/Timers.h>
 
+#include "sensors_qcom.h"
+
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
@@ -41,14 +43,8 @@ static void* light_sensor_thread(void *args) {
   struct sensor_t const* list;
   module->get_sensors_list(module, &list);
 
-  int SENSOR_LIGHT = 7;
-
-  err = device->activate(device, SENSOR_LIGHT, 0);
+  err = init_sensor(device, SENSOR_LIGHT, ms2ns(100));
   if (err != 0) goto fail;
-  err = device->activate(device, SENSOR_LIGHT, 1);
-  if (err != 0) goto fail;
-
-  device->setDelay(device, SENSOR_LIGHT, ms2ns(100));
 
   while (!do_exit) {
     static const size_t numEvents = 1;
