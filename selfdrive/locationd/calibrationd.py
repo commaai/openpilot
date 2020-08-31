@@ -156,7 +156,7 @@ def calibrationd_thread(sm=None, pm=None):
 
   send_counter = 0
   while 1:
-    sm.update()
+    sm.update(wait_for="cameraOdometry")
 
     # if no inputs still publish calibration
     if not sm.updated['carState'] and not sm.updated['cameraOdometry']:
@@ -165,15 +165,16 @@ def calibrationd_thread(sm=None, pm=None):
 
     if sm.updated['carState']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
-      if send_counter % 25 == 0:
-        calibrator.send_data(pm)
-      send_counter += 1
 
     if sm.updated['cameraOdometry']:
       new_vp = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                           sm['cameraOdometry'].rot,
                                           sm['cameraOdometry'].transStd,
                                           sm['cameraOdometry'].rotStd)
+
+      if send_counter % 5 == 0:
+        calibrator.send_data(pm)
+      send_counter += 1
 
       if DEBUG and new_vp is not None:
         print('got new vp', new_vp)
