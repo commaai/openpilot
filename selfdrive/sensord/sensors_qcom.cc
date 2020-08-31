@@ -11,7 +11,7 @@
 
 #include <pthread.h>
 #include <map>
-#include <vector>
+#include <set>
 
 #include <cutils/log.h>
 #include <hardware/sensors.h>
