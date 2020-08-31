@@ -63,7 +63,7 @@ assert(font >= 0);
   nvgFontSize(vg, 65.0f);
 
   if (argc >= 2) {
-    float x = 100;
+    float x = 80;
     float y = 150;
 
     // Copy text
