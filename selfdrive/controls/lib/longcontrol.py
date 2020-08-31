@@ -26,7 +26,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
   stopping_condition = (v_ego < 2.0 and cruise_standstill) or \
                        (v_ego < STOPPING_EGO_SPEED and
                         ((v_pid < STOPPING_TARGET_SPEED and v_target < STOPPING_TARGET_SPEED) or
-                        brake_pressed))
+                         brake_pressed))
 
   starting_condition = v_target > STARTING_TARGET_SPEED and not cruise_standstill
 
@@ -55,7 +55,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
   return long_control_state
 
 
-class LongControl():
+class LongControl:
   def __init__(self, CP, compute_gb):
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
