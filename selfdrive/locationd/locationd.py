@@ -13,12 +13,11 @@ from selfdrive.locationd.models.live_kf import LiveKalman, States, ObservationKi
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
 
-#from datetime import datetime
-#from laika.gps_time import GPSTime
+# from datetime import datetime
+# from laika.gps_time import GPSTime
 
 from sympy.utilities.lambdify import lambdify
 from rednose.helpers.sympy_helpers import euler_rotate
-
 
 VISION_DECIMATION = 2
 SENSOR_DECIMATION = 10
@@ -39,13 +38,13 @@ def get_H():
   vy = sp.Symbol('vy')
   vz = sp.Symbol('vz')
 
-  h = euler_rotate(roll, pitch, yaw).T*(sp.Matrix([vx, vy, vz]))
+  h = euler_rotate(roll, pitch, yaw).T * (sp.Matrix([vx, vy, vz]))
   H = h.jacobian(sp.Matrix([roll, pitch, yaw, vx, vy, vz]))
   H_f = lambdify([roll, pitch, yaw, vx, vy, vz], H)
   return H_f
 
 
-class Localizer():
+class Localizer:
   def __init__(self, disabled_logs=None, dog=None):
     if disabled_logs is None:
       disabled_logs = []
@@ -63,7 +62,7 @@ class Localizer():
     self.posenet_invalid_count = 0
     self.posenet_speed = 0
     self.car_speed = 0
-    self.posenet_stds = 10*np.ones((POSENET_STD_HIST))
+    self.posenet_stds = 10 * np.ones((POSENET_STD_HIST))
 
     self.converter = coord.LocalCoord.from_ecef(self.kf.x[States.ECEF_POS])
 
@@ -80,7 +79,7 @@ class Localizer():
     vel_ecef = predicted_state[States.ECEF_VELOCITY]
     vel_ecef_std = predicted_std[States.ECEF_VELOCITY_ERR]
     fix_pos_geo = coord.ecef2geodetic(fix_ecef)
-    #fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
+    # fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
     orientation_ecef = euler_from_quat(predicted_state[States.ECEF_ORIENTATION])
     orientation_ecef_std = predicted_std[States.ECEF_ORIENTATION_ERR]
     device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
@@ -89,11 +88,11 @@ class Localizer():
     acc_calib = calib_from_device.dot(predicted_state[States.ACCELERATION])
     acc_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
       predicted_cov[States.ACCELERATION_ERR, States.ACCELERATION_ERR]).dot(
-        calib_from_device.T)))
+      calib_from_device.T)))
     ang_vel_calib = calib_from_device.dot(predicted_state[States.ANGULAR_VELOCITY])
     ang_vel_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
       predicted_cov[States.ANGULAR_VELOCITY_ERR, States.ANGULAR_VELOCITY_ERR]).dot(
-        calib_from_device.T)))
+      calib_from_device.T)))
 
     vel_device = device_from_ecef.dot(vel_ecef)
     device_from_ecef_eul = euler_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
@@ -109,24 +108,24 @@ class Localizer():
       vel_device_cov).dot(calib_from_device.T)))
 
     orientation_ned = ned_euler_from_ecef(fix_ecef, orientation_ecef)
-    #orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
+    # orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
     ned_vel = converter.ecef2ned(fix_ecef + vel_ecef) - converter.ecef2ned(fix_ecef)
-    #ned_vel_std = self.converter.ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter.ecef2ned(fix_ecef + vel_ecef)
+    # ned_vel_std = self.converter.ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter.ecef2ned(fix_ecef + vel_ecef)
 
     fix = messaging.log.LiveLocationKalman.new_message()
 
     # write measurements to msg
     measurements = [
       # measurement field, value, std, valid
-      (fix.positionGeodetic, fix_pos_geo, np.nan*np.zeros(3), True),
+      (fix.positionGeodetic, fix_pos_geo, np.nan * np.zeros(3), True),
       (fix.positionECEF, fix_ecef, fix_ecef_std, True),
       (fix.velocityECEF, vel_ecef, vel_ecef_std, True),
-      (fix.velocityNED, ned_vel, np.nan*np.zeros(3), True),
+      (fix.velocityNED, ned_vel, np.nan * np.zeros(3), True),
       (fix.velocityDevice, vel_device, vel_device_std, True),
       (fix.accelerationDevice, predicted_state[States.ACCELERATION], predicted_std[States.ACCELERATION_ERR], True),
       (fix.orientationECEF, orientation_ecef, orientation_ecef_std, True),
-      (fix.calibratedOrientationECEF, calibrated_orientation_ecef, np.nan*np.zeros(3), True),
-      (fix.orientationNED, orientation_ned, np.nan*np.zeros(3), True),
+      (fix.calibratedOrientationECEF, calibrated_orientation_ecef, np.nan * np.zeros(3), True),
+      (fix.orientationNED, orientation_ned, np.nan * np.zeros(3), True),
       (fix.angularVelocityDevice, predicted_state[States.ANGULAR_VELOCITY], predicted_std[States.ANGULAR_VELOCITY_ERR], True),
       (fix.velocityCalibrated, vel_calib, vel_calib_std, True),
       (fix.angularVelocityCalibrated, ang_vel_calib, ang_vel_calib_std, True),
@@ -144,15 +143,15 @@ class Localizer():
   def liveLocationMsg(self):
     fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P)
     # experimentally found these values, no false positives in 20k minutes of driving
-    old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST//2:])
-    std_spike = new_mean/old_mean > 4 and new_mean > 7
+    old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST // 2]), np.mean(self.posenet_stds[POSENET_STD_HIST // 2:])
+    std_spike = new_mean / old_mean > 4 and new_mean > 7
 
     fix.posenetOK = not (std_spike and self.car_speed > 5)
     fix.deviceStable = not self.device_fell
     self.device_fell = False
 
-    #fix.gpsWeek = self.time.week
-    #fix.gpsTimeOfWeek = self.time.tow
+    # fix.gpsWeek = self.time.week
+    # fix.gpsTimeOfWeek = self.time.tow
     fix.unixTimestampMillis = self.unix_timestamp_millis
 
     if np.linalg.norm(fix.positionECEF.std) < 50 and self.calibrated:
@@ -180,19 +179,19 @@ class Localizer():
     self.converter = coord.LocalCoord.from_geodetic([log.latitude, log.longitude, log.altitude])
     ecef_pos = self.converter.ned2ecef([0, 0, 0])
     ecef_vel = self.converter.ned2ecef(np.array(log.vNED)) - ecef_pos
-    ecef_pos_R = np.diag([(3*log.verticalAccuracy)**2]*3)
-    ecef_vel_R = np.diag([(log.speedAccuracy)**2]*3)
+    ecef_pos_R = np.diag([(3 * log.verticalAccuracy) ** 2] * 3)
+    ecef_vel_R = np.diag([(log.speedAccuracy) ** 2] * 3)
 
-    #self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
+    # self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
     self.unix_timestamp_millis = log.timestamp
-    gps_est_error = np.sqrt((self.kf.x[0] - ecef_pos[0])**2 +
-                            (self.kf.x[1] - ecef_pos[1])**2 +
-                            (self.kf.x[2] - ecef_pos[2])**2)
+    gps_est_error = np.sqrt((self.kf.x[0] - ecef_pos[0]) ** 2 +
+                            (self.kf.x[1] - ecef_pos[1]) ** 2 +
+                            (self.kf.x[2] - ecef_pos[2]) ** 2)
 
     orientation_ecef = euler_from_quat(self.kf.x[States.ECEF_ORIENTATION])
     orientation_ned = ned_euler_from_ecef(ecef_pos, orientation_ecef)
     orientation_ned_gps = np.array([0, 0, np.radians(log.bearing)])
-    orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
+    orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2 * np.pi) - np.pi
     if np.linalg.norm(ecef_vel) > 5 and np.linalg.norm(orientation_error) > 1:
       cloudlog.error("Locationd vs ubloxLocation orientation difference too large, kalman reset")
       initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(ecef_pos, orientation_ned_gps))
@@ -222,7 +221,7 @@ class Localizer():
       rot_device_std = self.device_from_calib.dot(log.rotStd)
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_ROTATION,
-                         np.concatenate([rot_device, 10*rot_device_std]))
+                         np.concatenate([rot_device, 10 * rot_device_std]))
       trans_device = self.device_from_calib.dot(log.trans)
       trans_device_std = self.device_from_calib.dot(log.transStd)
       self.posenet_speed = np.linalg.norm(trans_device)
@@ -230,7 +229,7 @@ class Localizer():
       self.posenet_stds[-1] = trans_device_std[0]
       self.update_kalman(current_time,
                          ObservationKind.CAMERA_ODO_TRANSLATION,
-                         np.concatenate([trans_device, 10*trans_device_std]))
+                         np.concatenate([trans_device, 10 * trans_device_std]))
 
   def handle_sensors(self, current_time, log):
     # TODO does not yet account for double sensor readings in the log

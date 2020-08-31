@@ -15,7 +15,7 @@ def RW(v_ego, v_l):
   return (v_ego * TR - (v_l - v_ego) * TR + v_ego * v_ego / (2 * G) - v_l * v_l / (2 * G))
 
 
-class FakePubMaster():
+class FakePubMaster:
   def send(self, s, data):
     assert data
 

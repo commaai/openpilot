@@ -10,7 +10,7 @@ from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.locationd.models.loc_kf import parse_pr, parse_prr
 
 
-class States():
+class States:
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
   ECEF_VELOCITY = slice(3, 6)
   CLOCK_BIAS = slice(6, 7)  # clock bias in light-meters,
@@ -20,7 +20,7 @@ class States():
   GLONASS_FREQ_SLOPE = slice(10, 11)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
 
 
-class GNSSKalman():
+class GNSSKalman:
   name = 'gnss'
 
   x_initial = np.array([-2712700.6008, -4281600.6679, 3859300.1830,
@@ -87,22 +87,22 @@ class GNSSKalman():
 
     h_pseudorange_sym = sp.Matrix([
       sp.sqrt(
-        (x - sat_x)**2 +
-        (y - sat_y)**2 +
-        (z - sat_z)**2
+        (x - sat_x) ** 2 +
+        (y - sat_y) ** 2 +
+        (z - sat_z) ** 2
       ) + cb
     ])
 
     h_pseudorange_glonass_sym = sp.Matrix([
       sp.sqrt(
-        (x - sat_x)**2 +
-        (y - sat_y)**2 +
-        (z - sat_z)**2
+        (x - sat_x) ** 2 +
+        (y - sat_y) ** 2 +
+        (z - sat_z) ** 2
       ) + cb + glonass_bias + glonass_freq_slope * glonass_freq
     ])
 
     los_vector = (sp.Matrix(sat_pos_vel_sym[0:3]) - sp.Matrix([x, y, z]))
-    los_vector = los_vector / sp.sqrt(los_vector[0]**2 + los_vector[1]**2 + los_vector[2]**2)
+    los_vector = los_vector / sp.sqrt(los_vector[0] ** 2 + los_vector[1] ** 2 + los_vector[2] ** 2)
     h_pseudorange_rate_sym = sp.Matrix([los_vector[0] * (sat_vx - vx) +
                                         los_vector[1] * (sat_vy - vy) +
                                         los_vector[2] * (sat_vz - vz) +

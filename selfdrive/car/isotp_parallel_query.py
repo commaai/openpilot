@@ -8,7 +8,7 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
-class IsoTpParallelQuery():
+class IsoTpParallelQuery:
   def __init__(self, sendcan, logcan, bus, addrs, request, response, functional_addr=False, debug=False):
     self.sendcan = sendcan
     self.logcan = logcan

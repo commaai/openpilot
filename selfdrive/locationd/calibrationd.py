@@ -19,13 +19,13 @@ MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
 # This is all 20Hz, blocks needed for efficiency
 BLOCK_SIZE = 100
-INPUTS_NEEDED = 5   # allow to update VP every so many frames
-INPUTS_WANTED = 50   # We want a little bit more than we need for stability
+INPUTS_NEEDED = 5  # allow to update VP every so many frames
+INPUTS_WANTED = 50  # We want a little bit more than we need for stability
 WRITE_CYCLES = 10  # write every 1000 cycles
-VP_INIT = np.array([W/2., H/2.])
+VP_INIT = np.array([W / 2., H / 2.])
 
 # These values are needed to accomodate biggest modelframe
-VP_VALIDITY_CORNERS = np.array([[W//2 - 63, 300], [W//2 + 63, 520]])
+VP_VALIDITY_CORNERS = np.array([[W // 2 - 63, 300], [W // 2 + 63, 520]])
 DEBUG = os.getenv("DEBUG") is not None
 
 
@@ -48,7 +48,7 @@ def intrinsics_from_vp(vp):
     [  0.,    0.,     1.]])
 
 
-class Calibrator():
+class Calibrator:
   def __init__(self, param_put=False):
     self.param_put = param_put
     self.vp = copy.copy(VP_INIT)
@@ -102,10 +102,10 @@ class Calibrator():
       # intrinsics are not eon intrinsics, since this is calibrated frame
       intrinsics = intrinsics_from_vp(self.vp)
       new_vp = intrinsics.dot(view_frame_from_device_frame.dot(trans))
-      new_vp = new_vp[:2]/new_vp[2]
+      new_vp = new_vp[:2] / new_vp[2]
       new_vp = sanity_clip(new_vp)
 
-      self.vps[self.block_idx] = (self.idx*self.vps[self.block_idx] + (BLOCK_SIZE - self.idx) * new_vp) / float(BLOCK_SIZE)
+      self.vps[self.block_idx] = (self.idx * self.vps[self.block_idx] + (BLOCK_SIZE - self.idx) * new_vp) / float(BLOCK_SIZE)
       self.idx = (self.idx + 1) % BLOCK_SIZE
       if self.idx == 0:
         self.block_idx += 1

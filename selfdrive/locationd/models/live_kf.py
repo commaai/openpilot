@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 
 import numpy as np
@@ -12,7 +11,7 @@ from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rota
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
 
-class States():
+class States:
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
   ECEF_ORIENTATION = slice(3, 7)  # quat for pose of phone in ecef
   ECEF_VELOCITY = slice(7, 10)  # ecef velocity in m/s
@@ -33,7 +32,7 @@ class States():
   IMU_OFFSET_ERR = slice(19, 22)
 
 
-class LiveKalman():
+class LiveKalman:
   name = 'live'
 
   initial_x = np.array([-2.7e6, 4.2e6, 3.8e6,
@@ -158,17 +157,17 @@ class LiveKalman():
     #
     # Observation functions
     #
-    #imu_rot = euler_rotate(*imu_angles)
+    # imu_rot = euler_rotate(*imu_angles)
     h_gyro_sym = sp.Matrix([vroll + roll_bias,
-                                      vpitch + pitch_bias,
-                                      vyaw + yaw_bias])
+                            vpitch + pitch_bias,
+                            vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
-    gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
+    gravity = quat_rot.T * ((EARTH_GM / ((x ** 2 + y ** 2 + z ** 2) ** (3.0 / 2.0))) * pos)
     h_acc_sym = (gravity + acceleration)
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
-    speed = sp.sqrt(vx**2 + vy**2 + vz**2 + 1e-6)
+    speed = sp.sqrt(vx ** 2 + vy ** 2 + vz ** 2 + 1e-6)
     h_speed_sym = sp.Matrix([speed * odo_scale])
 
     h_pos_sym = sp.Matrix([x, y, z])
@@ -195,15 +194,15 @@ class LiveKalman():
     self.dim_state = self.initial_x.shape[0]
     self.dim_state_err = self.initial_P_diag.shape[0]
 
-    self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
-                      ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
-                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
-                      ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
-                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
-                      ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2]),
-                      ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2**2, .2**2, .2**2, .2**2])}
+    self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2 ** 2),
+                      ObservationKind.PHONE_GYRO: np.diag([0.025 ** 2, 0.025 ** 2, 0.025 ** 2]),
+                      ObservationKind.PHONE_ACCEL: np.diag([.5 ** 2, .5 ** 2, .5 ** 2]),
+                      ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05 ** 2, 0.05 ** 2, 0.05 ** 2]),
+                      ObservationKind.IMU_FRAME: np.diag([0.05 ** 2, 0.05 ** 2, 0.05 ** 2]),
+                      ObservationKind.NO_ROT: np.diag([0.00025 ** 2, 0.00025 ** 2, 0.00025 ** 2]),
+                      ObservationKind.ECEF_POS: np.diag([5 ** 2, 5 ** 2, 5 ** 2]),
+                      ObservationKind.ECEF_VEL: np.diag([.5 ** 2, .5 ** 2, .5 ** 2]),
+                      ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2 ** 2, .2 ** 2, .2 ** 2, .2 ** 2])}
 
     # init filter
     self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2)
@@ -266,21 +265,21 @@ class LiveKalman():
     z = np.array(speed)
     R = np.zeros((len(speed), 1, 1))
     for i, _ in enumerate(z):
-      R[i, :, :] = np.diag([0.2**2])
+      R[i, :, :] = np.diag([0.2 ** 2])
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_odo_trans(self, trans, t, kind):
     z = trans[:, :3]
     R = np.zeros((len(trans), 3, 3))
     for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(trans[i, 3:]**2)
+      R[i, :, :] = np.diag(trans[i, 3:] ** 2)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_odo_rot(self, rot, t, kind):
     z = rot[:, :3]
     R = np.zeros((len(rot), 3, 3))
     for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(rot[i, 3:]**2)
+      R[i, :, :] = np.diag(rot[i, 3:] ** 2)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
 
