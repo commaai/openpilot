@@ -18,7 +18,7 @@ def dmonitoringd_thread(sm=None, pm=None):
     pm = messaging.PubMaster(['dMonitoringState'])
 
   if sm is None:
-    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model'])
+    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model'], poll=['driverState'])
 
   driver_status = DriverStatus()
   driver_status.is_rhd_region = Params().get("IsRHD") == b"1"
@@ -40,7 +40,7 @@ def dmonitoringd_thread(sm=None, pm=None):
 
   # 10Hz <- dmonitoringmodeld
   while True:
-    sm.update(wait_for="driverState")
+    sm.update()
 
     # Get interaction
     if sm.updated['carState']:
