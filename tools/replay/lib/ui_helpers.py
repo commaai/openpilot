@@ -29,7 +29,7 @@ _FULL_FRAME_SIZE = {
 _BB_TO_FULL_FRAME = {}
 _FULL_FRAME_TO_BB = {}
 _INTRINSICS = {}
-for width, height, focal in [(1164, 874, 910), (1928, 1208, 1324)]:
+for width, height, focal in [(1164, 874, 910), (1928, 1208, 2648)]:
   sz = width * height
   _BB_SCALE = width / 640.
   _BB_TO_FULL_FRAME[sz] = np.asarray([
