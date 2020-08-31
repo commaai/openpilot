@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 
 import numpy as np
@@ -17,7 +16,7 @@ def parse_prr(m):
   from laika.raw_gnss import GNSSMeasurement
   sat_pos_vel_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
                                   m[GNSSMeasurement.SAT_VEL]))
-  R_i = np.atleast_2d(m[GNSSMeasurement.PRR_STD]**2)
+  R_i = np.atleast_2d(m[GNSSMeasurement.PRR_STD] ** 2)
   z_i = m[GNSSMeasurement.PRR]
   return z_i, R_i, sat_pos_vel_i
 
@@ -29,11 +28,11 @@ def parse_pr(m):
   sat_pos_freq_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
                                    np.array([m[GNSSMeasurement.GLONASS_FREQ]])))
   z_i = np.atleast_1d(pseudorange)
-  R_i = np.atleast_2d(pseudorange_stdev**2)
+  R_i = np.atleast_2d(pseudorange_stdev ** 2)
   return z_i, R_i, sat_pos_freq_i
 
 
-class States():
+class States:
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
   ECEF_ORIENTATION = slice(3, 7)  # quat for orientation of phone in ecef
   ECEF_VELOCITY = slice(7, 10)  # ecef velocity in m/s
@@ -68,7 +67,7 @@ class States():
   ACCELEROMETER_SCALE_ERR = slice(28, 29)
 
 
-class LocKalman():
+class LocKalman:
   name = "loc"
   x_initial = np.array([0, 0, 0,
                         1, 0, 0, 0,
@@ -261,22 +260,22 @@ class LocKalman():
 
     h_pseudorange_sym = sp.Matrix([
       sp.sqrt(
-        (x - sat_x)**2 +
-        (y - sat_y)**2 +
-        (z - sat_z)**2
+        (x - sat_x) ** 2 +
+        (y - sat_y) ** 2 +
+        (z - sat_z) ** 2
       ) + cb[0]
     ])
 
     h_pseudorange_glonass_sym = sp.Matrix([
       sp.sqrt(
-        (x - sat_x)**2 +
-        (y - sat_y)**2 +
-        (z - sat_z)**2
+        (x - sat_x) ** 2 +
+        (y - sat_y) ** 2 +
+        (z - sat_z) ** 2
       ) + cb[0] + glonass_bias[0] + glonass_freq_slope[0] * glonass_freq
     ])
 
     los_vector = (sp.Matrix(sat_pos_vel_sym[0:3]) - sp.Matrix([x, y, z]))
-    los_vector = los_vector / sp.sqrt(los_vector[0]**2 + los_vector[1]**2 + los_vector[2]**2)
+    los_vector = los_vector / sp.sqrt(los_vector[0] ** 2 + los_vector[1] ** 2 + los_vector[2] ** 2)
     h_pseudorange_rate_sym = sp.Matrix([los_vector[0] * (sat_vx - vx) +
                                         los_vector[1] * (sat_vy - vy) +
                                         los_vector[2] * (sat_vz - vz) +
@@ -289,11 +288,11 @@ class LocKalman():
 
     pos = sp.Matrix([x, y, z])
     # add 1 for stability, prevent division by 0
-    gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2 + 1)**(3.0 / 2.0))) * pos)
+    gravity = quat_rot.T * ((EARTH_GM / ((x ** 2 + y ** 2 + z ** 2 + 1) ** (3.0 / 2.0))) * pos)
     h_acc_sym = imu_rot * (accel_scale[0] * (gravity + acceleration))
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
-    speed = sp.sqrt(vx**2 + vy**2 + vz**2)
+    speed = sp.sqrt(vx ** 2 + vy ** 2 + vz ** 2)
     h_speed_sym = sp.Matrix([speed * odo_scale])
 
     # orb stuff
@@ -301,7 +300,7 @@ class LocKalman():
     orb_pos_rot_sym = quat_rot.T * orb_pos_sym
     s = orb_pos_rot_sym[0]
     h_orb_point_sym = sp.Matrix([(1 / s) * (orb_pos_rot_sym[1]),
-                                (1 / s) * (orb_pos_rot_sym[2])])
+                                 (1 / s) * (orb_pos_rot_sym[2])])
 
     h_pos_sym = sp.Matrix([x, y, z])
     h_imu_frame_sym = sp.Matrix(imu_angles)
@@ -334,7 +333,7 @@ class LocKalman():
       track_pos_sym = sp.Matrix([track_x - x, track_y - y, track_z - z])
       track_pos_rot_sym = quat_rot.T * track_pos_sym
       h_track_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
-                                      focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
+                                       focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
 
       h_msckf_test_sym = sp.Matrix(np.zeros(((1 + N) * 3, 1)))
       h_msckf_test_sym[-3:, :] = sp.Matrix([track_x - x, track_y - y, track_z - z])
@@ -362,13 +361,13 @@ class LocKalman():
   def __init__(self, generated_dir, N=4, max_tracks=3000):
     name = f"{self.name}_{N}"
 
-    self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
-                      ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
-                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
-                      ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.NO_ROT: np.diag([0.0025**2, 0.0025**2, 0.0025**2]),
-                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2])}
+    self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2 ** 2),
+                      ObservationKind.PHONE_GYRO: np.diag([0.025 ** 2, 0.025 ** 2, 0.025 ** 2]),
+                      ObservationKind.PHONE_ACCEL: np.diag([.5 ** 2, .5 ** 2, .5 ** 2]),
+                      ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05 ** 2, 0.05 ** 2, 0.05 ** 2]),
+                      ObservationKind.IMU_FRAME: np.diag([0.05 ** 2, 0.05 ** 2, 0.05 ** 2]),
+                      ObservationKind.NO_ROT: np.diag([0.0025 ** 2, 0.0025 ** 2, 0.0025 ** 2]),
+                      ObservationKind.ECEF_POS: np.diag([5 ** 2, 5 ** 2, 5 ** 2])}
 
     # MSCKF stuff
     self.N = N
@@ -495,28 +494,28 @@ class LocKalman():
     z = orb[:, :2]
     R = np.zeros((len(orb), 2, 2))
     for i, _ in enumerate(z):
-      R[i, :, :] = np.diag([10**2, 10**2])
+      R[i, :, :] = np.diag([10 ** 2, 10 ** 2])
     return self.filter.predict_and_update_batch(t, kind, z, R, true_pos)
 
   def predict_and_update_odo_speed(self, speed, t, kind):
     z = np.array(speed)
     R = np.zeros((len(speed), 1, 1))
     for i, _ in enumerate(z):
-      R[i, :, :] = np.diag([0.2**2])
+      R[i, :, :] = np.diag([0.2 ** 2])
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_odo_trans(self, trans, t, kind):
     z = trans[:, :3]
     R = np.zeros((len(trans), 3, 3))
     for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(trans[i, 3:]**2)
+      R[i, :, :] = np.diag(trans[i, 3:] ** 2)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_odo_rot(self, rot, t, kind):
     z = rot[:, :3]
     R = np.zeros((len(rot), 3, 3))
     for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(rot[i, 3:]**2)
+      R[i, :, :] = np.diag(rot[i, 3:] ** 2)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_orb_features(self, tracks, t, kind):
@@ -537,7 +536,7 @@ class LocKalman():
 
         ecef_pos[i] = self.computer.compute_pos(poses, img_positions[:-1])
         z[i] = img_positions.flatten()
-        R[i, :, :] = np.diag([0.005**2] * (k))
+        R[i, :, :] = np.diag([0.005 ** 2] * (k))
         if np.isfinite(ecef_pos[i][0]):
           good_counter += 1
           if good_counter > self.max_tracks:
@@ -553,7 +552,7 @@ class LocKalman():
 
     y_full = np.zeros((z.shape[0], z.shape[1] - 3))
     if sum(good_idxs) > 0:
-        y_full[good_idxs] = np.array(ret[6])
+      y_full[good_idxs] = np.array(ret[6])
     ret = ret[:6] + (y_full, z, ecef_pos)
     return ret
 
@@ -563,7 +562,7 @@ class LocKalman():
     R = np.zeros((len(test_data), len(z[0]), len(z[0])))
     ecef_pos = [self.x[:3]]
     for i, _ in enumerate(z):
-      R[i, :, :] = np.diag([0.1**2] * len(z[0]))
+      R[i, :, :] = np.diag([0.1 ** 2] * len(z[0]))
     ret = self.filter.predict_and_update_batch(t, kind, z, R, ecef_pos)
     self.filter.augment()
     return ret
