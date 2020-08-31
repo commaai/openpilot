@@ -10,7 +10,7 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # Accel limits
-ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
+ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscillations within this value
 ACCEL_MAX = 1.5  # 1.5 m/s2
 ACCEL_MIN = -3.0  # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
@@ -30,7 +30,7 @@ def accel_hysteresis(accel, accel_steady, enabled):
   return accel, accel_steady
 
 
-class CarController():
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.last_steer = 0
     self.accel_steady = 0.
@@ -78,7 +78,7 @@ class CarController():
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
+    if not enabled or frame - self.last_fault_frame < 200:
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -127,7 +127,7 @@ class CarController():
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead))
 
-    if (frame % 2 == 0) and (CS.CP.enableGasInterceptor):
+    if (frame % 2 == 0) and CS.CP.enableGasInterceptor:
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
       can_sends.append(create_gas_command(self.packer, apply_gas, frame // 2))
