@@ -49,7 +49,6 @@ void MainWindow::closeSettings(){
 }
 
 
-
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
@@ -72,9 +71,7 @@ void GLWindow::initializeGL() {
 }
 
 void GLWindow::timerUpdate(){
-  check_messages(ui_state);
   ui_update(ui_state);
-  ui_update_sizes(ui_state);
   update();
 }
 
@@ -99,7 +96,6 @@ void GLWindow::mousePressEvent(QMouseEvent *e) {
   if (ui_state->started && (e->x() >= ui_state->scene.ui_viz_rx - bdr_s)){
     ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
   }
-
 }
 
 

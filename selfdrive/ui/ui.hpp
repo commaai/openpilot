@@ -174,6 +174,8 @@ typedef struct UIState {
   int img_battery_charging;
   int img_network[6];
 
+  Sound sound;
+
   // sockets
   SubMaster *sm;
 
@@ -192,8 +194,8 @@ typedef struct UIState {
   GLint frame_texture_loc, frame_transform_loc;
 
   UIScene scene;
-  bool awake;
 
+  bool awake;
   int awake_timeout;
 
   uint64_t last_athena_ping;
@@ -217,18 +219,16 @@ typedef struct UIState {
   model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 
   track_vertices_data track_vertices[2];
-
-  Sound sound;
 } UIState;
 
 
 void ui_init(UIState *s);
 void ui_update(UIState *s);
 
-void check_messages(UIState *s);
 void update_status(UIState *s, int status);
 
 
+// TODO: why is this here?
 int write_param_float(float param, const char* param_name, bool persistent_param = false);
 template <class T>
 int read_param(T* param, const char *param_name, bool persistent_param = false){

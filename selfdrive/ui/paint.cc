@@ -254,9 +254,9 @@ static void draw_frame(UIState *s) {
   if (s->stream.last_idx >= 0) {
     glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->stream.last_idx]);
 #ifndef QCOM
-    if (!scene->frontview) {
+    if (s->scene.frontview) {
       // TODO: a better way to do this?
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->rgb_width, s->rgb_height, 0, GL_RGB, GL_UNSIGNED_BYTE, s->stream.bufs[s->stream.last_idx].addr);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->stream.bufs_info.width, s->stream.bufs_info.height, 0, GL_RGB, GL_UNSIGNED_BYTE, s->stream.bufs[s->stream.last_idx].addr);
     }
 #endif
   }
@@ -629,7 +629,6 @@ static void ui_draw_vision(UIState *s) {
   }
 
   if (scene->alert_size != cereal::ControlsState::AlertSize::NONE) {
-    // Controls Alerts
     ui_draw_vision_alert(s, scene->alert_size, s->status,
                          scene->alert_text1.c_str(), scene->alert_text2.c_str());
   } else if (!scene->frontview) {

@@ -249,6 +249,7 @@ void ui_update(UIState *s) {
     if (s->status != STATUS_STOPPED) {
       update_status(s, STATUS_STOPPED);
       s->active_app = cereal::UiLayoutState::App::HOME;
+      s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
     }
   } else if (s->status == STATUS_STOPPED) {
     update_status(s, STATUS_DISENGAGED);
@@ -276,7 +277,6 @@ void ui_update(UIState *s) {
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       update_status(s, STATUS_ALERT);
     }
-    ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
   }
 
   // Sample params
@@ -294,4 +294,3 @@ void ui_update(UIState *s) {
   }
 
 }
-
