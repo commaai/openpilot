@@ -122,7 +122,7 @@ def fsync_dir(path):
     os.close(fd)
 
 
-class FileLock():
+class FileLock:
   def __init__(self, path, create):
     self._path = path
     self._create = create
@@ -138,7 +138,7 @@ class FileLock():
       self._fd = None
 
 
-class DBAccessor():
+class DBAccessor:
   def __init__(self, path):
     self._path = path
     self._vals = None
@@ -284,7 +284,7 @@ class DBWriter(DBAccessor):
       finally:
         # If the rename worked, we can delete the old data. Otherwise delete the new one.
         success = new_data_path is not None and os.path.exists(data_path) and (
-          os.readlink(data_path) == os.path.basename(tempdir_path))
+                os.readlink(data_path) == os.path.basename(tempdir_path))
 
         if success:
           if old_data_path is not None:
@@ -337,7 +337,7 @@ def write_db(params_path, key, value):
     lock.release()
 
 
-class Params():
+class Params:
   def __init__(self, db=PARAMS):
     self.db = db
 

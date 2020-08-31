@@ -2,7 +2,8 @@ import sys
 import pygame  # pylint: disable=import-error
 import cv2  # pylint: disable=import-error
 
-class Window():
+
+class Window:
   def __init__(self, w, h, caption="window", double=False):
     self.w = w
     self.h = h
@@ -10,14 +11,14 @@ class Window():
     pygame.display.set_caption(caption)
     self.double = double
     if self.double:
-      self.screen = pygame.display.set_mode((w*2, h*2))
+      self.screen = pygame.display.set_mode((w * 2, h * 2))
     else:
       self.screen = pygame.display.set_mode((w, h))
 
   def draw(self, out):
     pygame.event.pump()
     if self.double:
-      out2 = cv2.resize(out, (self.w*2, self.h*2))
+      out2 = cv2.resize(out, (self.w * 2, self.h * 2))
       pygame.surfarray.blit_array(self.screen, out2.swapaxes(0, 1))
     else:
       pygame.surfarray.blit_array(self.screen, out.swapaxes(0, 1))
@@ -38,8 +39,10 @@ class Window():
         mx, my = pygame.mouse.get_pos()
         return mx, my
 
+
 if __name__ == "__main__":
   import numpy as np
+
   win = Window(200, 200, double=True)
   img = np.zeros((200, 200, 3), np.uint8)
   while 1:

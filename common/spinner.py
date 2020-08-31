@@ -3,7 +3,7 @@ import subprocess
 from common.basedir import BASEDIR
 
 
-class Spinner():
+class Spinner:
   def __init__(self, noop=False):
     # spinner is currently only implemented for android
     self.spinner_proc = None
@@ -45,6 +45,7 @@ class Spinner():
 
 if __name__ == "__main__":
   import time
+
   with Spinner() as s:
     s.update("Spinner text")
     time.sleep(5.0)

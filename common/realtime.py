@@ -9,17 +9,16 @@ from cffi import FFI
 from common.hardware import ANDROID
 from common.common_pyx import sec_since_boot  # pylint: disable=no-name-in-module, import-error
 
-
 # time step for each process
 DT_CTRL = 0.01  # controlsd
 DT_MDL = 0.05  # model
 DT_DMON = 0.1  # driver monitoring
 DT_TRML = 0.5  # thermald and manager
 
-
 ffi = FFI()
 ffi.cdef("long syscall(long number, ...);")
 libc = ffi.dlopen(None)
+
 
 def _get_tid():
   if platform.machine() == "x86_64":
@@ -39,6 +38,7 @@ def set_realtime_priority(level):
 
   return subprocess.call(['chrt', '-f', '-p', str(level), str(_get_tid())])
 
+
 def set_core_affinity(core):
   if os.getuid() != 0:
     print("not setting affinity, not root")
@@ -50,7 +50,7 @@ def set_core_affinity(core):
     return -1
 
 
-class Ratekeeper():
+class Ratekeeper:
   def __init__(self, rate, print_delay_threshold=0.):
     """Rate in Hz for ratekeeping. print_delay_threshold must be nonnegative."""
     self._interval = 1. / rate
