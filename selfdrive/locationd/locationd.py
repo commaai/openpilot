@@ -289,7 +289,7 @@ def locationd_thread(sm, pm, disabled_logs=None):
   localizer = Localizer(disabled_logs=disabled_logs)
 
   while True:
-    sm.update()
+    sm.update(wait_for="cameraOdometry")
 
     for sock, updated in sm.updated.items():
       if updated and sm.valid[sock]:
