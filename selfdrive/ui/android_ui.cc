@@ -186,7 +186,6 @@ int main(int argc, char* argv[]) {
 
   TouchState touch = {0};
   touch_init(&touch);
-  s->touch_fd = touch.fd;
 
   // light sensor scaling params
   const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;

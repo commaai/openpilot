@@ -237,8 +237,6 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
 }
 
 static void draw_frame(UIState *s) {
-  const UIScene *scene = &s->scene;
-
   if (s->scene.frontview) {
     glBindVertexArray(s->frame_vao[1]);
   } else {

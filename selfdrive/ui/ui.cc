@@ -236,13 +236,13 @@ void ui_update(UIState *s) {
 
   SubMaster &sm = *(s->sm);
   bool started_prev = s->started;
-  update_sockets();
+  update_sockets(s);
   if (s->started && !started_prev) {
     s->started_frame = sm.frame;
   }
 
-  ui_update_sizes();
-  ui_update_vision();
+  ui_update_sizes(s);
+  ui_update_vision(s);
 
   // Handle onroad/offroad transition
   if (!s->started) {
