@@ -10,7 +10,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
                       right_lane, left_lane_depart, right_lane_depart):
-  sys_warning = (visual_alert == VisualAlert.steerRequired)
+  sys_warning = visual_alert == VisualAlert.steerRequired
 
   # initialize to no line visible
   sys_state = 1
@@ -35,7 +35,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController():
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
@@ -62,7 +62,7 @@ class CarController():
 
     self.apply_steer_last = apply_steer
 
-    sys_warning, sys_state, left_lane_warning, right_lane_warning =\
+    sys_warning, sys_state, left_lane_warning, right_lane_warning = \
       process_hud_alert(enabled, self.car_fingerprint, visual_alert,
                         left_lane, right_lane, left_lane_depart, right_lane_depart)
 
@@ -76,7 +76,7 @@ class CarController():
       can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
     elif CS.out.cruiseState.standstill:
       # send resume at a max freq of 5Hz
-      if (frame - self.last_resume_frame)*DT_CTRL > 0.2:
+      if (frame - self.last_resume_frame) * DT_CTRL > 0.2:
         can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
         self.last_resume_frame = frame
 
