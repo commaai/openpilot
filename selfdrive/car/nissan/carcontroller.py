@@ -6,14 +6,14 @@ from selfdrive.car.nissan.values import CAR, STEER_THRESHOLD
 
 # Steer angle limits
 ANGLE_DELTA_BP = [0., 5., 15.]
-ANGLE_DELTA_V = [5., .8, .15]     # windup limit
-ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
-LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
+ANGLE_DELTA_V = [5., .8, .15]  # windup limit
+ANGLE_DELTA_VU = [5., 3.5, 0.4]  # unwind limit
+LKAS_MAX_TORQUE = 1  # A value of 1 is easy to overpower
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-class CarController():
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
@@ -70,17 +70,17 @@ class CarController():
       cruise_cancel = 1
 
     if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL] and cruise_cancel:
-        can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, CS.cruise_throttle_msg, frame))
+      can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, CS.cruise_throttle_msg, frame))
 
     # TODO: Find better way to cancel!
     # For some reason spamming the cancel button is unreliable on the Leaf
     # We now cancel by making propilot think the seatbelt is unlatched,
     # this generates a beep and a warning message every time you disengage
     if self.CP.carFingerprint == CAR.LEAF and frame % 2 == 0:
-        can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, cruise_cancel))
+      can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, cruise_cancel))
 
     can_sends.append(nissancan.create_steering_control(
-        self.packer, self.car_fingerprint, apply_angle, frame, enabled, self.lkas_max_torque))
+      self.packer, self.car_fingerprint, apply_angle, frame, enabled, self.lkas_max_torque))
 
     if frame % 2 == 0:
       can_sends.append(nissancan.create_lkas_hud_msg(
