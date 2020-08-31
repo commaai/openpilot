@@ -195,9 +195,10 @@ typedef struct UIState {
   bool awake;
 
   int awake_timeout;
-  bool controls_seen;
 
   uint64_t last_athena_ping;
+  uint64_t started_frame;
+
   int status;
   bool is_metric;
   bool longitudinal_control;
@@ -223,7 +224,6 @@ typedef struct UIState {
 
 void ui_init(UIState *s);
 void ui_update(UIState *s);
-void ui_update_sizes(UIState *s);
 
 void check_messages(UIState *s);
 void update_status(UIState *s, int status);

@@ -217,11 +217,21 @@ int main(int argc, char* argv[]) {
     }
     double u1 = millis_since_boot();
 
-    // light sensor is only exposed on EONs
-    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
-    if (clipped_brightness > 512) clipped_brightness = 512;
-    smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
-    if (smooth_brightness > 255) smooth_brightness = 255;
+    ui_update(s);
+
+    if (s->started) {
+      set_awake(s, true);
+      if(s->started_frame == (s->sm)->frame) {
+        s->scene.uilayout_sidebarcollapsed = false;
+      }
+    }
+
+    // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
+
+    // set brightness
+    float clipped_brightness = fmin(512, (s->light_sensor*brightness_m) + brightness_b);
+    smooth_brightness = fmin(255, clipped_brightness * 0.01 + smooth_brightness * 0.99);
     ui_set_brightness(s, (int)smooth_brightness);
 
     // poll for touch events
@@ -233,21 +243,6 @@ int main(int argc, char* argv[]) {
       handle_vision_touch(s, touch_x, touch_y);
     }
 
-    if (!s->started) {
-      // always process events offroad
-      check_messages(s);
-    } else {
-      set_awake(s, true);
-      check_messages(s);
-
-      if (!s->started) {
-        s->scene.uilayout_sidebarcollapsed = false;
-      }
-    }
-
-    ui_update(s);
-    ui_update_sizes(s);
-
     // manage wakefulness
     if (s->awake_timeout > 0) {
       s->awake_timeout--;
@@ -255,54 +250,11 @@ int main(int argc, char* argv[]) {
       set_awake(s, false);
     }
 
-    // manage hardware disconnect
-    if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
-      s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
-    }
-
     // Don't waste resources on drawing in case screen is off
     if (!s->awake) {
       continue;
     }
 
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
-
-    bool controls_timeout = (s->sm->frame - s->sm->rcv_frame("controlsState")) > 5*UI_FREQ;
-    if (s->started && !s->scene.frontview && controls_timeout) {
-      if (!s->controls_seen) {
-        // car is started, but controlsState hasn't been seen at all
-        s->scene.alert_text1 = "openpilot Unavailable";
-        s->scene.alert_text2 = "Waiting for controls to start";
-        s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
-      } else {
-        // car is started, but controls is lagging or died
-        LOGE("Controls unresponsive");
-
-        if (s->scene.alert_text2 != "Controls Unresponsive") {
-          s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT);
-        }
-
-        s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
-        s->scene.alert_text2 = "Controls Unresponsive";
-        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-        update_status(s, STATUS_ALERT);
-      }
-      ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
-    }
-
-
-    if (s->sm->frame % (2*UI_FREQ) == 0) {
-      read_param(&s->is_metric, "IsMetric");
-    } else if (s->sm->frame % (3*UI_FREQ) == 0) {
-      int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
-      if (param_read != 0) { // Failed to read param
-        s->scene.athenaStatus = NET_DISCONNECTED;
-      } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
-        s->scene.athenaStatus = NET_CONNECTED;
-      } else {
-        s->scene.athenaStatus = NET_ERROR;
-      }
-    }
     update_offroad_layout_state(s, pm);
 
     ui_draw(s);
@@ -317,7 +269,7 @@ int main(int argc, char* argv[]) {
 
   set_awake(s, true);
 
-  // join light_sensor_thread?
+  err = pthread_join(light_sensor_thread_handle, NULL);
   assert(err == 0);
   delete s->sm;
   delete pm;
