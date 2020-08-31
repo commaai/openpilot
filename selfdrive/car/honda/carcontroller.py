@@ -10,13 +10,14 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
-  brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small oscillations within this value
+  brake_hyst_on = 0.02  # to activate brakes exceed this value
+  brake_hyst_off = 0.005  # to deactivate brakes below this value
+  brake_hyst_gap = 0.01  # don't change brake command for small oscillations within this value
 
-  #*** hysteresis logic to avoid brake blinking. go above 0.1 to trigger
+  # *** hysteresis logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
     brake = 0.
   braking = brake > 0.
@@ -71,20 +72,22 @@ def process_hud_alert(hud_alert):
 
 
 HUDData = namedtuple("HUDData",
-                     ["pcm_accel", "v_cruise",  "car",
-                     "lanes", "fcw", "acc_alert", "steer_required"])
+                     ["pcm_accel", "v_cruise", "car",
+                      "lanes", "fcw", "acc_alert", "steer_required"])
 
-class CarControllerParams():
+
+class CarControllerParams:
   def __init__(self, CP):
-      self.BRAKE_MAX = 1024//4
-      self.STEER_MAX = CP.lateralParams.torqueBP[-1]
-      # mirror of list (assuming first item is zero) for interp of signed request values
-      assert(CP.lateralParams.torqueBP[0] == 0)
-      assert(CP.lateralParams.torqueBP[0] == 0)
-      self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
-      self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
+    self.BRAKE_MAX = 1024 // 4
+    self.STEER_MAX = CP.lateralParams.torqueBP[-1]
+    # mirror of list (assuming first item is zero) for interp of signed request values
+    assert (CP.lateralParams.torqueBP[0] == 0)
+    assert (CP.lateralParams.torqueBP[0] == 0)
+    self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
+    self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
-class CarController():
+
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.braking = False
     self.brake_steady = 0.
@@ -147,15 +150,15 @@ class CarController():
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
-      lkas_active, CS.CP.carFingerprint, idx, CS.CP.isPandaBlack))
+                                                      lkas_active, CS.CP.carFingerprint, idx, CS.CP.isPandaBlack))
 
     # Send dashboard UI commands.
-    if (frame % 10) == 0:
-      idx = (frame//10) % 4
+    if frame % 10 == 0:
+      idx = (frame // 10) % 4
       can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.is_metric, idx, CS.CP.isPandaBlack, CS.stock_hud))
 
     if CS.CP.radarOffCan:
-      if (frame % 2) == 0:
+      if frame % 2 == 0:
         idx = frame // 2
         can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, CS.CP.carFingerprint, idx, CS.CP.isPandaBlack))
       # If using stock ACC, spam cancel command to kill gas when OP disengages.
@@ -166,12 +169,12 @@ class CarController():
 
     else:
       # Send gas and brake commands.
-      if (frame % 2) == 0:
+      if frame % 2 == 0:
         idx = frame // 2
         ts = frame * DT_CTRL
         pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
         can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
-          pcm_override, pcm_cancel_cmd, hud.fcw, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack, CS.stock_brake))
+                                                       pcm_override, pcm_cancel_cmd, hud.fcw, idx, CS.CP.carFingerprint, CS.CP.isPandaBlack, CS.stock_brake))
         self.apply_brake_last = apply_brake
 
         if CS.CP.enableGasInterceptor:
