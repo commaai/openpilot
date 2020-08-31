@@ -690,9 +690,13 @@ void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &
   nvgFill(vg);
 }
 
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#if defined(NANOVG_GL3_IMPLEMENTATION) || defined(QCOM2)
 static const char frame_vertex_shader[] =
+#ifdef QCOM2
+  "#version 300 es\n"
+#else
   "#version 150 core\n"
+#endif
   "in vec4 aPosition;\n"
   "in vec4 aTexCoord;\n"
   "uniform mat4 uTransform;\n"
@@ -703,7 +707,11 @@ static const char frame_vertex_shader[] =
   "}\n";
 
 static const char frame_fragment_shader[] =
+#ifdef QCOM2
+  "#version 300 es\n"
+#else
   "#version 150 core\n"
+#endif
   "precision mediump float;\n"
   "uniform sampler2D uTexture;\n"
   "in vec4 vTexCoord;\n"
