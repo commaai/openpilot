@@ -15,8 +15,8 @@ ACCEL_MAX = 1.5  # 1.5 m/s2
 ACCEL_MIN = -3.0  # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
-def accel_hysteresis(accel, accel_steady, enabled):
 
+def accel_hysteresis(accel, accel_steady, enabled):
   # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
   if not enabled:
     # send 0 when disabled, otherwise acc faults
@@ -101,8 +101,8 @@ class CarController():
 
     can_sends = []
 
-    #*** control msgs ***
-    #print("steer {0} {1} {2} {3}".format(apply_steer, min_lim, max_lim, CS.steer_torque_motor)
+    # *** control msgs ***
+    # print("steer {0} {1} {2} {3}".format(apply_steer, min_lim, max_lim, CS.steer_torque_motor)
 
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
@@ -117,7 +117,7 @@ class CarController():
 
     # we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
-      lead = lead or CS.out.vEgo < 12.    # at low speed we always assume the lead is present do ACC can be engaged
+      lead = lead or CS.out.vEgo < 12.  # at low speed we always assume the lead is present do ACC can be engaged
 
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and CS.CP.carFingerprint == CAR.LEXUS_IS:
@@ -130,7 +130,7 @@ class CarController():
     if (frame % 2 == 0) and (CS.CP.enableGasInterceptor):
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
-      can_sends.append(create_gas_command(self.packer, apply_gas, frame//2))
+      can_sends.append(create_gas_command(self.packer, apply_gas, frame // 2))
 
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display
@@ -140,7 +140,7 @@ class CarController():
 
     send_ui = False
     if ((fcw_alert or steer_alert) and not self.alert_active) or \
-       (not (fcw_alert or steer_alert) and self.alert_active):
+            (not (fcw_alert or steer_alert) and self.alert_active):
       send_ui = True
       self.alert_active = not self.alert_active
     elif pcm_cancel_cmd:
@@ -153,7 +153,7 @@ class CarController():
     if frame % 100 == 0 and Ecu.dsu in self.fake_ecus:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
-    #*** static msgs ***
+    # *** static msgs ***
 
     for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
       if frame % fr_step == 0 and ecu in self.fake_ecus and CS.CP.carFingerprint in cars:
