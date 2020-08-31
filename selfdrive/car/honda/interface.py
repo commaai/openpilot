@@ -16,6 +16,7 @@ A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
+
 def compute_gb_honda(accel, speed):
   creep_brake = 0.0
   creep_speed = 2.3
@@ -83,14 +84,14 @@ class CarInterface(CarInterfaceBase):
       self.compute_gb = compute_gb_honda
 
   @staticmethod
-  def compute_gb(accel, speed): # pylint: disable=method-hidden
+  def compute_gb(accel, speed):  # pylint: disable=method-hidden
     raise NotImplementedError
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
 
     # normalized max accel. Allowing max accel at low speed causes speed overshoots
-    max_accel_bp = [10, 20]    # m/s
+    max_accel_bp = [10, 20]  # m/s
     max_accel_v = [0.714, 1.0]  # unit of max accel
     max_accel = interp(v_ego, max_accel_bp, max_accel_v)
 
@@ -116,7 +117,7 @@ class CarInterface(CarInterfaceBase):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
+    return max(max_accel, a_target / A_ACC_MAX) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
@@ -410,7 +411,7 @@ class CarInterface(CarInterfaceBase):
     ret.gasMaxBP = [0.]  # m/s
     ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.]  # max gas allowed
     ret.brakeMaxBP = [5., 20.]  # m/s
-    ret.brakeMaxV = [1., 0.8]   # max brake allowed
+    ret.brakeMaxV = [1., 0.8]  # max brake allowed
 
     ret.stoppingControl = True
     ret.startAccel = 0.5
@@ -489,7 +490,7 @@ class CarInterface(CarInterfaceBase):
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
     if self.CP.enableCruise and not ret.cruiseState.enabled \
-       and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
+            and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
       # non loud alert if cruise disables below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
         events.add(EventName.speedTooLow)
@@ -520,7 +521,7 @@ class CarInterface(CarInterfaceBase):
       if ((cur_time - self.last_enable_pressed) < 0.2 and
           (cur_time - self.last_enable_sent) > 0.2 and
           ret.cruiseState.enabled) or \
-         (enable_pressed and events.any(ET.NO_ENTRY)):
+              (enable_pressed and events.any(ET.NO_ENTRY)):
         events.add(EventName.buttonEnable)
         self.last_enable_sent = cur_time
     elif enable_pressed:
