@@ -628,7 +628,7 @@ if __name__ == "__main__":
     for line in traceback.format_exc().splitlines():
       spaces = len(line) - len(line.lstrip())
       if spaces == 2:
-        error.append(line.lstrip)
+        error.append(line.lstrip())
       else:
         error.append(line)
     # error_new = []
