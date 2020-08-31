@@ -4,8 +4,8 @@ from selfdrive.car.subaru.values import CAR, PREGLOBAL_CARS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-class CarInterface(CarInterfaceBase):
 
+class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed):
     return float(accel) / 4.0
@@ -39,7 +39,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.89
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 13.5
-      ret.steerActuatorDelay = 0.3   # end-to-end angle controller
+      ret.steerActuatorDelay = 0.3  # end-to-end angle controller
       ret.lateralTuning.pid.kf = 0.00003
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0025, 0.1], [0.00025, 0.01]]
@@ -49,7 +49,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 15
-      ret.steerActuatorDelay = 0.4   # end-to-end angle controller
+      ret.steerActuatorDelay = 0.4  # end-to-end angle controller
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.3], [0.02, 0.03]]
@@ -58,18 +58,18 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 17           # learned, 14 stock
+      ret.steerRatio = 17  # learned, 14 stock
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kf = 0.000038
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
     if candidate in [CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]:
-      ret.safetyParam = 1 # Outback 2018-2019 and Forester have reversed driver torque signal
+      ret.safetyParam = 1  # Outback 2018-2019 and Forester have reversed driver torque signal
       ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 20           # learned, 14 stock
+      ret.steerRatio = 20  # learned, 14 stock
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kf = 0.000039
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 10., 20.], [0., 10., 20.]]
@@ -79,7 +79,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 12.5   # 14.5 stock
+      ret.steerRatio = 12.5  # 14.5 stock
       ret.steerActuatorDelay = 0.15
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 20.], [0., 20.]]
@@ -89,7 +89,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 20           # learned, 14 stock
+      ret.steerRatio = 20  # learned, 14 stock
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kf = 0.000039
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 10., 20.], [0., 10., 20.]]
