@@ -627,10 +627,8 @@ if __name__ == "__main__":
     error = []
     for line in traceback.format_exc().splitlines()[-(4*2+1):]:
       spaces = len(line) - len(line.lstrip())
-      if spaces == 2:
-        error.append(line.lstrip())
-      else:
-        error.append(line)
+      line = ' ' * spaces + line
+      error.append(line)
     # error_new = []
     # file_count = 0
     # for line in error[::-1]:
