@@ -13,8 +13,6 @@ from selfdrive.swaglog import cloudlog
 
 KalmanStatus = log.LiveLocationKalman.Status
 
-CARSTATE_DECIMATION = 5
-
 
 class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset):
@@ -28,13 +26,11 @@ class ParamsLearner:
     self.kf.filter.set_stiffness_rear(CP.tireStiffnessRear)  # pylint: disable=no-member
 
     self.active = False
+    self.valid = True
 
     self.speed = 0
-    self.steering_pressed = False
     self.steering_angle = 0
-    self.carstate_counter = 0
-
-    self.valid = True
+    self.steering_pressed = False
 
   def handle_log(self, t, which, msg):
     if which == 'liveLocationKalman':
@@ -51,18 +47,16 @@ class ParamsLearner:
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[[0]]]))
 
     elif which == 'carState':
-      self.carstate_counter += 1
-      if self.carstate_counter % CARSTATE_DECIMATION == 0:
-        self.steering_angle = msg.steeringAngle
-        self.steering_pressed = msg.steeringPressed
-        self.speed = msg.vEgo
+      self.steering_angle = msg.steeringAngle
+      self.steering_pressed = msg.steeringPressed
+      self.speed = msg.vEgo
 
-        in_linear_region = abs(self.steering_angle) < 45 or not self.steering_pressed
-        self.active = self.speed > 5 and in_linear_region
+      in_linear_region = abs(self.steering_angle) < 45 or not self.steering_pressed
+      self.active = self.speed > 5 and in_linear_region
 
-        if self.active:
-          self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[[math.radians(msg.steeringAngle)]]]))
-          self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[[self.speed]]]))
+      if self.active:
+        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[[math.radians(msg.steeringAngle)]]]))
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[[self.speed]]]))
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
@@ -76,13 +70,12 @@ def main(sm=None, pm=None):
   if pm is None:
     pm = messaging.PubMaster(['liveParameters'])
 
-  params_reader = Params()
   # wait for stats about the car to come in from controls
   cloudlog.info("paramsd is waiting for CarParams")
-  CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
+  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
   cloudlog.info("paramsd got CarParams")
 
-  params = params_reader.get("LiveParameters")
+  params = Params().get("LiveParameters")
 
   # Check if car model matches
   if params is not None:
@@ -116,7 +109,7 @@ def main(sm=None, pm=None):
       t = sm.logMonoTime[which] * 1e-9
       learner.handle_log(t, which, sm[which])
 
-    if sm.updated['carState'] and (learner.carstate_counter % CARSTATE_DECIMATION == 0):
+    if sm.updated['liveLocationKalman']:
       msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']
 
@@ -135,7 +128,7 @@ def main(sm=None, pm=None):
         min_sr <= msg.liveParameters.steerRatio <= max_sr,
       ))
 
-      if learner.carstate_counter % 6000 == 0:   # once a minute
+      if sm.frame % 5: # once a minute
         params = {
           'carFingerprint': CP.carFingerprint,
           'steerRatio': msg.liveParameters.steerRatio,
