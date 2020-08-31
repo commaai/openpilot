@@ -9,7 +9,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 
-class LatControlINDI():
+class LatControlINDI:
   def __init__(self, CP):
     self.angle_steers_des = 0.
 

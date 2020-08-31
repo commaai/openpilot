@@ -5,7 +5,7 @@ from common.realtime import DT_CTRL
 from cereal import log
 
 
-class LatControlLQR():
+class LatControlLQR:
   def __init__(self, CP):
     self.scale = CP.lateralTuning.lqr.scale
     self.ki = CP.lateralTuning.lqr.ki
@@ -47,7 +47,7 @@ class LatControlLQR():
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, CS.vEgo)
-    torque_scale = (0.45 + CS.vEgo / 60.0)**2  # Scale actuator model with speed
+    torque_scale = (0.45 + CS.vEgo / 60.0) ** 2  # Scale actuator model with speed
 
     steering_angle = CS.steeringAngle
 
@@ -80,7 +80,7 @@ class LatControlLQR():
         control = lqr_output + i
 
         if (error >= 0 and (control <= steers_max or i < 0.0)) or \
-           (error <= 0 and (control >= -steers_max or i > 0.0)):
+                (error <= 0 and (control >= -steers_max or i > 0.0)):
           self.i_lqr = i
 
       self.output_steer = lqr_output + self.i_lqr
