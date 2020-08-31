@@ -70,29 +70,31 @@ void sensor_loop() {
       LOGD("sensor %4d: %4d %60s  %d-%ld us", i, list[i].handle, list[i].name, list[i].minDelay, list[i].maxDelay);
     }
 
-    device->activate(device, SENSOR_MAGNETOMETER_UNCALIBRATED, 0);
-    device->activate(device, SENSOR_GYRO_UNCALIBRATED, 0);
-    device->activate(device, SENSOR_ACCELEROMETER, 0);
-    device->activate(device, SENSOR_MAGNETOMETER, 0);
-    device->activate(device, SENSOR_GYRO, 0);
-    device->activate(device, SENSOR_PROXIMITY, 0);
-    device->activate(device, SENSOR_LIGHT, 0);
+    std::vector<int> sensor_types = {
+      SENSOR_TYPE_ACCELEROMETER,
+      SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED,
+      SENSOR_TYPE_MAGNETIC_FIELD,
+      SENSOR_TYPE_GYROSCOPE_UNCALIBRATED,
+      SENSOR_TYPE_GYROSCOPE,
+      SENSOR_TYPE_PROXIMITY,
+      SENSOR_TYPE_LIGHT,
+    };
 
-    device->activate(device, SENSOR_MAGNETOMETER_UNCALIBRATED, 1);
-    device->activate(device, SENSOR_GYRO_UNCALIBRATED, 1);
-    device->activate(device, SENSOR_ACCELEROMETER, 1);
-    device->activate(device, SENSOR_MAGNETOMETER, 1);
-    device->activate(device, SENSOR_GYRO, 1);
-    device->activate(device, SENSOR_PROXIMITY, 1);
-    device->activate(device, SENSOR_LIGHT, 1);
+    std::map<int, int64_t> sensors = {
+      {SENSOR_GYRO_UNCALIBRATED, ms2ns(10)},
+      {SENSOR_MAGNETOMETER_UNCALIBRATED, ms2ns(100)},
+      {SENSOR_ACCELEROMETER, ms2ns(10)},
+      {SENSOR_GYRO, ms2ns(10)},
+      {SENSOR_MAGNETOMETER, ms2ns(100)},
+      {SENSOR_PROXIMITY, ms2ns(100)},
+      {SENSOR_LIGHT, ms2ns(100)}
+    };
 
-    device->setDelay(device, SENSOR_GYRO_UNCALIBRATED, ms2ns(10));
-    device->setDelay(device, SENSOR_MAGNETOMETER_UNCALIBRATED, ms2ns(100));
-    device->setDelay(device, SENSOR_ACCELEROMETER, ms2ns(10));
-    device->setDelay(device, SENSOR_GYRO, ms2ns(10));
-    device->setDelay(device, SENSOR_MAGNETOMETER, ms2ns(100));
-    device->setDelay(device, SENSOR_PROXIMITY, ms2ns(100));
-    device->setDelay(device, SENSOR_LIGHT, ms2ns(100));
+    for (auto &s : sensors) {
+      device->activate(device, s.first, 0);
+      device->activate(device, s.first, 1);
+      device->setDelay(device, s.first, s.second);
+    }
 
     static const size_t numEvents = 16;
     sensors_event_t buffer[numEvents];
@@ -107,26 +109,14 @@ void sensor_loop() {
 
       int log_events = 0;
       for (int i=0; i < n; i++) {
-        switch (buffer[i].type) {
-        case SENSOR_TYPE_ACCELEROMETER:
-        case SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED:
-        case SENSOR_TYPE_MAGNETIC_FIELD:
-        case SENSOR_TYPE_GYROSCOPE_UNCALIBRATED:
-        case SENSOR_TYPE_GYROSCOPE:
-        case SENSOR_TYPE_PROXIMITY:
-        case SENSOR_TYPE_LIGHT:
+        if (sensor_types.find(buffer[i].type) != sensor_types.end()) {
           log_events++;
-          break;
-        default:
-          continue;
         }
       }
 
-      uint64_t log_time = nanos_since_boot();
-
       capnp::MallocMessageBuilder msg;
       cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(log_time);
+      event.setLogMonoTime(nanos_since_boot());
 
       auto sensor_events = event.initSensorEvents(log_events);
 
@@ -135,21 +125,11 @@ void sensor_loop() {
 
         const sensors_event_t& data = buffer[i];
 
-        switch (data.type) {
-        case SENSOR_TYPE_ACCELEROMETER:
-        case SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED:
-        case SENSOR_TYPE_MAGNETIC_FIELD:
-        case SENSOR_TYPE_GYROSCOPE_UNCALIBRATED:
-        case SENSOR_TYPE_GYROSCOPE:
-        case SENSOR_TYPE_PROXIMITY:
-        case SENSOR_TYPE_LIGHT:
-          break;
-        default:
+        if (sensor_types.find(data.type) == sensor_types.end()) {
           continue;
         }
 
         auto log_event = sensor_events[log_i];
-
         log_event.setSource(cereal::SensorEventData::SensorSource::ANDROID);
         log_event.setVersion(data.version);
         log_event.setSensor(data.sensor);
@@ -157,45 +137,39 @@ void sensor_loop() {
         log_event.setTimestamp(data.timestamp);
 
         switch (data.type) {
-        case SENSOR_TYPE_ACCELEROMETER: {
+        case SENSOR_TYPE_ACCELEROMETER:
           auto svec = log_event.initAcceleration();
           kj::ArrayPtr<const float> vs(&data.acceleration.v[0], 3);
           svec.setV(vs);
           svec.setStatus(data.acceleration.status);
           break;
-        }
-        case SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED: {
+        case SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED:
           auto svec = log_event.initMagneticUncalibrated();
           // assuming the uncalib and bias floats are contiguous in memory
           kj::ArrayPtr<const float> vs(&data.uncalibrated_magnetic.uncalib[0], 6);
           svec.setV(vs);
           break;
-        }
-        case SENSOR_TYPE_MAGNETIC_FIELD: {
+        case SENSOR_TYPE_MAGNETIC_FIELD:
           auto svec = log_event.initMagnetic();
           kj::ArrayPtr<const float> vs(&data.magnetic.v[0], 3);
           svec.setV(vs);
           svec.setStatus(data.magnetic.status);
           break;
-        }
-        case SENSOR_TYPE_GYROSCOPE_UNCALIBRATED: {
+        case SENSOR_TYPE_GYROSCOPE_UNCALIBRATED:
           auto svec = log_event.initGyroUncalibrated();
           // assuming the uncalib and bias floats are contiguous in memory
           kj::ArrayPtr<const float> vs(&data.uncalibrated_gyro.uncalib[0], 6);
           svec.setV(vs);
           break;
-        }
-        case SENSOR_TYPE_GYROSCOPE: {
+        case SENSOR_TYPE_GYROSCOPE:
           auto svec = log_event.initGyro();
           kj::ArrayPtr<const float> vs(&data.gyro.v[0], 3);
           svec.setV(vs);
           svec.setStatus(data.gyro.status);
           break;
-        }
-        case SENSOR_TYPE_PROXIMITY: {
+        case SENSOR_TYPE_PROXIMITY:
           log_event.setProximity(data.distance);
           break;
-        }
         case SENSOR_TYPE_LIGHT:
           log_event.setLight(data.light);
           break;
