@@ -624,20 +624,7 @@ if __name__ == "__main__":
     cloudlog.exception("Manager failed to start")
 
     # Show last 3 lines of traceback
-    error = []
-    for line in traceback.format_exc().splitlines()[-(4*2+1):]:
-      spaces = len(line) - len(line.lstrip())
-      line = ' ' * spaces + line
-      error.append(line)
-    # error_new = []
-    # file_count = 0
-    # for line in error[::-1]:
-    #   error_new.append(line)
-    #   file_count += 1
-    #   if file_count > 2:
-    #     break
-
-    print(error)
+    error = [' ' * (len(line) - len(line.lstrip())) + line for line in traceback.format_exc().splitlines()[-(4*2+1):]]
     error = '\n'.join(error)
 
     error = "Manager failed to start\n \n" + error
