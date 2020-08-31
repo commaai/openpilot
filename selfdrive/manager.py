@@ -626,9 +626,9 @@ if __name__ == "__main__":
     # Show last 4 lines of traceback
     error = traceback.format_exc().splitlines()[-(5 * 2 + 1):]
     error = [' ' * (len(line) - len(line.lstrip())) + line for line in error]  # double up indentation
-    error = [line.replace('/data', '') for line in error]  # make line lengths shorter
+    error = '\n'.join([line.replace('/data', '') for line in error])  # make line lengths shorter
 
-    error = "Manager failed to start\n \n" + '\n'.join(error)
+    error = "Manager failed to start\n \n" + error
     with TextWindow(error) as t:
       t.wait_for_exit()
 
