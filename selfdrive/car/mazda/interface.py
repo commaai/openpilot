@@ -8,8 +8,8 @@ from selfdrive.car.interfaces import CarInterfaceBase
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
-class CarInterface(CarInterfaceBase):
 
+class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed):
     return float(accel) / 4.0
@@ -31,7 +31,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.8
-    tire_stiffness_factor = 0.70   # not optimized yet
+    tire_stiffness_factor = 0.70  # not optimized yet
 
     if candidate in [CAR.CX5]:
       ret.mass = 3655 * CV.LB_TO_KG + STD_CARGO_KG
