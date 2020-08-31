@@ -60,7 +60,7 @@ assert(font >= 0);
 
   // Text
   nvgFillColor(vg, COLOR_WHITE);
-  nvgFontSize(vg, 68.0f);
+  nvgFontSize(vg, 67.0f);
 
   if (argc >= 2) {
     float x = 80;
