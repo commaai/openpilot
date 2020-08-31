@@ -6,6 +6,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 GEAR = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
+
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
@@ -78,7 +79,7 @@ class CarInterface(CarInterfaceBase):
     # TODO: add a field for this to carState, car interface code shouldn't write params
     # Update the device metric configuration to match the car at first startup,
     # or if there's been a change.
-    #if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
+    # if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
     #  put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
 
     # Check for and process state-change events (button press or release) from
@@ -110,9 +111,9 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                   c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert,
-                   c.hudControl.leftLaneVisible,
-                   c.hudControl.rightLaneVisible)
+                               c.hudControl.visualAlert,
+                               c.hudControl.audibleAlert,
+                               c.hudControl.leftLaneVisible,
+                               c.hudControl.rightLaneVisible)
     self.frame += 1
     return can_sends
