@@ -628,7 +628,7 @@ if __name__ == "__main__":
     # error = [' ' * (len(line) - len(line.lstrip())) + line for line in error]  # double up indentation
     # error = '\n'.join([line.replace('/data', '') for line in error])  # make line lengths shorter
 
-    error = "Manager failed to start\n \n" + error
+    error = "Manager failed to start\n \n" + '\n'.join(error)
     with TextWindow(error) as t:
       t.wait_for_exit()
 
