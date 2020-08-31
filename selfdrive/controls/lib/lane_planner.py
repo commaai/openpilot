@@ -82,7 +82,7 @@ class LanePlanner:
       self.r_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeRight - 1]
 
   def update_d_poly(self, v_ego):
-    # only offset left and right lane lines; p_poly is the path of the camera
+    # only offset left and right lane lines; p_poly is the path of the camera, not car
     self.l_poly[3] += CAMERA_OFFSET
     self.r_poly[3] += CAMERA_OFFSET
     self.p_poly[3] += CAMERA_OFFSET - 0.06
