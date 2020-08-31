@@ -46,7 +46,7 @@ def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_
   return states
 
 
-class PathPlanner():
+class PathPlanner:
   def __init__(self, CP):
     self.LP = LanePlanner()
 
@@ -106,7 +106,7 @@ class PathPlanner():
     elif sm['carState'].rightBlinker:
       self.lane_change_direction = LaneChangeDirection.right
 
-    if (not active) or (self.lane_change_timer > LANE_CHANGE_TIME_MAX) or (not one_blinker) or (not self.lane_change_enabled):
+    if not active or self.lane_change_timer > LANE_CHANGE_TIME_MAX or not one_blinker or not self.lane_change_enabled:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
     else:
@@ -135,7 +135,7 @@ class PathPlanner():
       # starting
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
         # fade out over .5s
-        self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2*DT_MDL, 0.0)
+        self.lane_change_ll_prob = max(self.lane_change_ll_prob - 2 * DT_MDL, 0.0)
         # 98% certainty
         if lane_change_prob < 0.02 and self.lane_change_ll_prob < 0.01:
           self.lane_change_state = LaneChangeState.laneChangeFinishing
@@ -195,7 +195,7 @@ class PathPlanner():
         self.last_cloudlog_t = t
         cloudlog.warning("Lateral mpc - nan: True")
 
-    if self.mpc_solution[0].cost > 20000. or mpc_nans:   # TODO: find a better way to detect when MPC did not converge
+    if self.mpc_solution[0].cost > 20000. or mpc_nans:  # TODO: find a better way to detect when MPC did not converge
       self.solution_invalid_cnt += 1
     else:
       self.solution_invalid_cnt = 0

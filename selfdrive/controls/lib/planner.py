@@ -19,18 +19,18 @@ MAX_SPEED = 255.0
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 MAX_SPEED_ERROR = 2.0
-AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
+AWARENESS_DECEL = -0.2  # car smoothly decel at .2m/s^2 when user is distracted
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
 _A_CRUISE_MIN_V = [-1.0, -.8, -.67, -.5, -.30]
-_A_CRUISE_MIN_BP = [   0., 5.,  10., 20.,  40.]
+_A_CRUISE_MIN_BP = [0., 5., 10., 20., 40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
 _A_CRUISE_MAX_V = [1.2, 1.2, 0.65, .4]
 _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 0.65, .4]
-_A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.]
+_A_CRUISE_MAX_BP = [0., 6.4, 22.5, 40.]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -57,13 +57,13 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
 
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
-  a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
+  a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+  a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-class Planner():
+class Planner:
   def __init__(self, CP):
     self.CP = CP
 
@@ -125,7 +125,7 @@ class Planner():
     lead_1 = sm['radarState'].leadOne
     lead_2 = sm['radarState'].leadTwo
 
-    enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
+    enabled = long_control_state == LongCtrlState.pid or long_control_state == LongCtrlState.stopping
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
     # Calculate speed for normal cruise control
