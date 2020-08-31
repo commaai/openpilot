@@ -143,7 +143,6 @@ env = Environment(
     "#phonelibs/openmax/include",
     "#phonelibs/json11",
     "#phonelibs/curl/include",
-    #"#phonelibs/opencv/include", # use opencv4 instead
     "#phonelibs/libgralloc/include",
     "#phonelibs/android_frameworks_native/include",
     "#phonelibs/android_hardware_libhardware/include",
