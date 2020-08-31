@@ -15,6 +15,7 @@ NUM_SLOTS = 20
 # messages that are present in DBC
 LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
+
 def create_radar_can_parser(car_fingerprint):
   if car_fingerprint not in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS):
     return None
@@ -22,21 +23,22 @@ def create_radar_can_parser(car_fingerprint):
   # C1A-ARS3-A by Continental
   radar_targets = list(range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS))
   signals = list(zip(['FLRRNumValidTargets',
-                 'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
-                 'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
-                 'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
-                ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
-                ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
-                ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
-                [RADAR_HEADER_MSG] * 7 + radar_targets * 6,
-                [0] * 7 +
-                [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
-                [0.0] * NUM_SLOTS + [0] * NUM_SLOTS))
+                      'FLRRSnsrBlckd', 'FLRRYawRtPlsblityFlt',
+                      'FLRRHWFltPrsntInt', 'FLRRAntTngFltPrsnt',
+                      'FLRRAlgnFltPrsnt', 'FLRRSnstvFltPrsntInt'] +
+                     ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
+                     ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
+                     ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
+                     [RADAR_HEADER_MSG] * 7 + radar_targets * 6,
+                     [0] * 7 +
+                     [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
+                     [0.0] * NUM_SLOTS + [0.0] * NUM_SLOTS +
+                     [0.0] * NUM_SLOTS + [0] * NUM_SLOTS))
 
   checks = []
 
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, CanBus.OBSTACLE)
+
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
@@ -61,8 +63,8 @@ class RadarInterface(RadarInterfaceBase):
     ret = car.RadarData.new_message()
     header = self.rcp.vl[RADAR_HEADER_MSG]
     fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
-      header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
-      header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
+            header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
+            header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")

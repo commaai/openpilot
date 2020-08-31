@@ -14,16 +14,16 @@ from selfdrive.controls.lib.radar_helpers import Cluster, Track
 from selfdrive.swaglog import cloudlog
 
 
-class KalmanParams():
+class KalmanParams:
   def __init__(self, dt):
     # Lead Kalman Filter params, calculating K from A, C, Q, R requires the control library.
     # hardcoding a lookup table to compute K for values of radar_ts between 0.1s and 1.0s
     assert dt > .01 and dt < .1, "Radar time step must be between .01s and 0.1s"
     self.A = [[1.0, dt], [0.0, 1.0]]
     self.C = [1.0, 0.0]
-    #Q = np.matrix([[10., 0.0], [0.0, 100.]])
-    #R = 1e3
-    #K = np.matrix([[ 0.05705578], [ 0.03073241]])
+    # Q = np.matrix([[10., 0.0], [0.0, 100.]])
+    # R = 1e3
+    # K = np.matrix([[ 0.05705578], [ 0.03073241]])
     dts = [dt * 0.01 for dt in range(1, 11)]
     K0 = [0.12288, 0.14557, 0.16523, 0.18282, 0.19887, 0.21372, 0.22761, 0.24069, 0.2531, 0.26491]
     K1 = [0.29666, 0.29331, 0.29043, 0.28787, 0.28555, 0.28342, 0.28144, 0.27958, 0.27783, 0.27617]
@@ -32,7 +32,7 @@ class KalmanParams():
 
 def laplacian_cdf(x, mu, b):
   b = max(b, 1e-4)
-  return math.exp(-abs(x-mu)/b)
+  return math.exp(-abs(x - mu) / b)
 
 
 def match_vision_to_cluster(v_ego, lead, clusters):
@@ -51,7 +51,7 @@ def match_vision_to_cluster(v_ego, lead, clusters):
 
   # if no 'sane' match is found return -1
   # stationary radar points can be false positives
-  dist_sane = abs(cluster.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
+  dist_sane = abs(cluster.dRel - offset_vision_dist) < max([offset_vision_dist * .25, 5.0])
   vel_sane = (abs(cluster.vRel - lead.relVel) < 10) or (v_ego + cluster.vRel > 3)
   if dist_sane and vel_sane:
     return cluster
@@ -78,13 +78,13 @@ def get_lead(v_ego, ready, clusters, lead_msg, low_speed_override=True):
       closest_cluster = min(low_speed_clusters, key=lambda c: c.dRel)
 
       # Only choose new cluster if it is actually closer than the previous one
-      if (not lead_dict['status']) or (closest_cluster.dRel < lead_dict['dRel']):
+      if not lead_dict['status'] or closest_cluster.dRel < lead_dict['dRel']:
         lead_dict = closest_cluster.get_RadarState()
 
   return lead_dict
 
 
-class RadarD():
+class RadarD:
   def __init__(self, radar_ts, delay=0):
     self.current_time = 0
 
@@ -95,12 +95,12 @@ class RadarD():
 
     # v_ego
     self.v_ego = 0.
-    self.v_ego_hist = deque([0], maxlen=delay+1)
+    self.v_ego_hist = deque([0], maxlen=delay + 1)
 
     self.ready = False
 
   def update(self, frame, sm, rr, has_radar):
-    self.current_time = 1e-9*max([sm.logMonoTime[key] for key in sm.logMonoTime.keys()])
+    self.current_time = 1e-9 * max([sm.logMonoTime[key] for key in sm.logMonoTime.keys()])
 
     if sm.updated['controlsState']:
       self.active = sm['controlsState'].active
@@ -212,7 +212,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
     sm.update(0)
 
     dat = RD.update(rk.frame, sm, rr, has_radar)
-    dat.radarState.cumLagMs = -rk.remaining*1000.
+    dat.radarState.cumLagMs = -rk.remaining * 1000.
 
     pm.send('radarState', dat)
 

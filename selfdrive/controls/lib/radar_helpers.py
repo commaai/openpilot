@@ -1,19 +1,18 @@
 from common.kalman.simple_kalman import KF1D
 from selfdrive.config import RADAR_TO_CAMERA
 
-
 # the longer lead decels, the more likely it will keep decelerating
 # TODO is this a good default?
 _LEAD_ACCEL_TAU = 1.5
 
 # radar tracks
-SPEED, ACCEL = 0, 1   # Kalman filter states enum
+SPEED, ACCEL = 0, 1  # Kalman filter states enum
 
 # stationary qualification parameters
-v_ego_stationary = 4.   # no stationary object flag below this speed
+v_ego_stationary = 4.  # no stationary object flag below this speed
 
 
-class Track():
+class Track:
   def __init__(self, v_lead, kalman_params):
     self.cnt = 0
     self.aLeadTau = _LEAD_ACCEL_TAU
@@ -24,11 +23,11 @@ class Track():
 
   def update(self, d_rel, y_rel, v_rel, v_lead, measured):
     # relative values, copy
-    self.dRel = d_rel   # LONG_DIST
-    self.yRel = y_rel   # -LAT_DIST
-    self.vRel = v_rel   # REL_SPEED
+    self.dRel = d_rel  # LONG_DIST
+    self.yRel = y_rel  # -LAT_DIST
+    self.vRel = v_rel  # REL_SPEED
     self.vLead = v_lead
-    self.measured = measured   # measured or estimate
+    self.measured = measured  # measured or estimate
 
     # computed velocity and accelerations
     if self.cnt > 0:
@@ -47,18 +46,19 @@ class Track():
 
   def get_key_for_cluster(self):
     # Weigh y higher since radar is inaccurate in this dimension
-    return [self.dRel, self.yRel*2, self.vRel]
+    return [self.dRel, self.yRel * 2, self.vRel]
 
   def reset_a_lead(self, aLeadK, aLeadTau):
     self.kf = KF1D([[self.vLead], [aLeadK]], self.K_A, self.K_C, self.K_K)
     self.aLeadK = aLeadK
     self.aLeadTau = aLeadTau
 
+
 def mean(l):
   return sum(l) / len(l)
 
 
-class Cluster():
+class Cluster:
   def __init__(self):
     self.tracks = set()
 

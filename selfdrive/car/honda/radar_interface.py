@@ -4,13 +4,14 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.honda.values import DBC
 
+
 def _create_nidec_can_parser(car_fingerprint):
   radar_messages = [0x400] + list(range(0x430, 0x43A)) + list(range(0x440, 0x446))
   signals = list(zip(['RADAR_STATE'] +
-                ['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
-                ['REL_SPEED'] * 16,
-                [0x400] + radar_messages[1:] * 4,
-                [0] + [255] * 16 + [1] * 16 + [0] * 16 + [0] * 16))
+                     ['LONG_DIST'] * 16 + ['NEW_TRACK'] * 16 + ['LAT_DIST'] * 16 +
+                     ['REL_SPEED'] * 16,
+                     [0x400] + radar_messages[1:] * 4,
+                     [0] + [255] * 16 + [1] * 16 + [0] * 16 + [0] * 16))
   checks = list(zip([0x445], [20]))
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
@@ -24,7 +25,7 @@ class RadarInterface(RadarInterfaceBase):
     self.radar_off_can = CP.radarOffCan
     self.radar_ts = CP.radarTimeStep
 
-    self.delay = int(round(0.1 / CP.radarTimeStep))   # 0.1s delay of radar
+    self.delay = int(round(0.1 / CP.radarTimeStep))  # 0.1s delay of radar
 
     # Nidec
     if self.radar_off_can:
