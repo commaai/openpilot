@@ -11,7 +11,7 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
 
-class LongitudinalMpc():
+class LongitudinalMpc:
   def __init__(self, mpc_id):
     self.mpc_id = mpc_id
 
@@ -67,7 +67,7 @@ class LongitudinalMpc():
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
 
-      if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
+      if v_lead < 0.1 or -a_lead / 2.0 > v_lead:
         v_lead = 0.0
         a_lead = 0.0
 
@@ -111,7 +111,7 @@ class LongitudinalMpc():
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal mpc %d reset - backwards: %s crashing: %s nan: %s" % (
-                          self.mpc_id, backwards, crashing, nans))
+          self.mpc_id, backwards, crashing, nans))
 
       self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
                        MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
