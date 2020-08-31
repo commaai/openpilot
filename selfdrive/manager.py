@@ -625,7 +625,7 @@ if __name__ == "__main__":
 
     # Show last 3 lines of traceback
     error = traceback.format_exc().splitlines()
-    error = [line for line in error if 'importlib._bootstrap' not in line][-3*2+1:]
+    error = [line for line in error][-(3*2+1):]
     # error_new = []
     # file_count = 0
     # for line in error[::-1]:

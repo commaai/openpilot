@@ -64,7 +64,7 @@ assert(font >= 0);
 
   if (argc >= 2) {
     float x = 100;
-    float y = 150;
+    float y = 100;
 
     // Copy text
     char * text = malloc(MAX_TEXT_SIZE);
