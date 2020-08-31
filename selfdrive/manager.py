@@ -625,6 +625,7 @@ if __name__ == "__main__":
 
     # Show last 3 lines of traceback
     error = [' ' * (len(line) - len(line.lstrip())) + line for line in traceback.format_exc().splitlines()[-(4*2+1):]]
+    error = [line.replace('/data', '.') for line in error]
     error = '\n'.join(error)
 
     error = "Manager failed to start\n \n" + error
