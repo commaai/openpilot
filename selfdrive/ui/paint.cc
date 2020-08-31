@@ -256,11 +256,11 @@ static void draw_frame(UIState *s) {
     glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
   } else if (!scene->frontview && s->cur_vision_idx >= 0) {
     glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
-    #ifndef QCOM
-      // TODO: a better way to do this?
-      //printf("%d\n", ((int*)s->priv_hnds[s->cur_vision_idx])[0]);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1164, 874, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
-    #endif
+
+    // TODO: a better way to do this?
+#ifndef QCOM
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->rgb_width, s->rgb_height, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
+#endif
   }
 
   glUseProgram(s->frame_program);
