@@ -8,6 +8,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
 
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed):
@@ -31,8 +32,8 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
-      ret.steerRatio = 15.74   # unknown end-to-end spec
-      tire_stiffness_factor = 0.6371   # hand-tune
+      ret.steerRatio = 15.74  # unknown end-to-end spec
+      tire_stiffness_factor = 0.6371  # hand-tune
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
 
       ret.lateralTuning.init('indi')
@@ -43,10 +44,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.5
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
-      stop_and_go = True if (candidate in CAR.RAV4H) else False
+      stop_and_go = True if candidate in CAR.RAV4H else False
       ret.safetyParam = 73
       ret.wheelbase = 2.65
-      ret.steerRatio = 16.88   # 14.5 is spec end-to-end
+      ret.steerRatio = 16.88  # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.init('lqr')
@@ -69,7 +70,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
-      ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kf = 0.00003  # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RX:
       stop_and_go = True
@@ -89,7 +90,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kf = 0.00006  # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RX_TSS2:
       stop_and_go = True
@@ -279,7 +280,7 @@ class CarInterface(CarInterfaceBase):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
+    ret.minEnableSpeed = -1. if stop_and_go or ret.enableGasInterceptor else 19. * CV.MPH_TO_MS
 
     # removing the DSU disables AEB and it's considered a community maintained feature
     # intercepting the DSU is a community feature since it requires unofficial hardware
@@ -338,7 +339,6 @@ class CarInterface(CarInterfaceBase):
   # pass in a car.CarControl
   # to be called @ 100hz
   def apply(self, c):
-
     can_sends = self.CC.update(c.enabled, self.CS, self.frame,
                                c.actuators, c.cruiseControl.cancel,
                                c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
