@@ -85,7 +85,7 @@ static inline void fill_path_points(const cereal::ModelData::PathData::Reader &p
 
 void handle_message(UIState *s, SubMaster &sm) {
   UIScene &scene = s->scene;
-  if (sm.updated("controlsState")) {
+  if (s->started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
     s->controls_seen = true;
@@ -196,12 +196,6 @@ void handle_message(UIState *s, SubMaster &sm) {
       s->vision_seen = false;
       s->controls_seen = false;
       s->active_app = cereal::UiLayoutState::App::HOME;
-
-      #ifndef QCOM
-      // disconnect from visionipc on PC
-      close(s->ipc_fd);
-      s->ipc_fd = -1;
-      #endif
     }
   } else if (s->status == STATUS_STOPPED) {
     update_status(s, STATUS_DISENGAGED);
