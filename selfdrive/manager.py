@@ -623,12 +623,12 @@ if __name__ == "__main__":
     add_logentries_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
 
-    # Show last 3 lines of traceback
-    error = [' ' * (len(line) - len(line.lstrip())) + line for line in traceback.format_exc().splitlines()[-(4*2+1):]]
-    error = [line.replace('/data', '.') for line in error]
-    error = '\n'.join(error)
+    # Show last 4 lines of traceback
+    error = traceback.format_exc().splitlines()[-(4 * 2 + 1):]
+    error = [' ' * (len(line) - len(line.lstrip())) + line for line in error]  # double up indentation
+    error = [line.replace('/data', '') for line in error]  # make line lengths shorter
 
-    error = "Manager failed to start\n \n" + error
+    error = "Manager failed to start\n \n" + '\n'.join(error)
     with TextWindow(error) as t:
       t.wait_for_exit()
 
