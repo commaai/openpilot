@@ -60,11 +60,11 @@ assert(font >= 0);
 
   // Text
   nvgFillColor(vg, COLOR_WHITE);
-  nvgFontSize(vg, 70.0f);
+  nvgFontSize(vg, 65.0f);
 
   if (argc >= 2) {
     float x = 100;
-    float y = 100;
+    float y = 150;
 
     // Copy text
     char * text = malloc(MAX_TEXT_SIZE);
