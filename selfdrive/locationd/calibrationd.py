@@ -147,7 +147,7 @@ class Calibrator():
 
 def calibrationd_thread(sm=None, pm=None):
   if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry', 'carState'])
+    sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll=['cameraOdometry'])
 
   if pm is None:
     pm = messaging.PubMaster(['liveCalibration'])
@@ -165,9 +165,6 @@ def calibrationd_thread(sm=None, pm=None):
 
     if sm.updated['carState']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
-      if send_counter % 25 == 0:
-        calibrator.send_data(pm)
-      send_counter += 1
 
     if sm.updated['cameraOdometry']:
       new_vp = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
@@ -178,6 +175,10 @@ def calibrationd_thread(sm=None, pm=None):
       if DEBUG and new_vp is not None:
         print('got new vp', new_vp)
 
+      # 4Hz driven by cameraOdometry
+      if send_counter % 5 == 0:
+        calibrator.send_data(pm)
+      send_counter += 1
 
 def main(sm=None, pm=None):
   calibrationd_thread(sm, pm)
