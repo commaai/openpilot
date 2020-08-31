@@ -6,7 +6,7 @@ from common.realtime import sec_since_boot
 from selfdrive.controls.lib.longitudinal_mpc_model import libmpc_py
 
 
-class LongitudinalMpcModel():
+class LongitudinalMpcModel:
   def __init__(self):
 
     self.setup_mpc()

@@ -70,7 +70,7 @@ class VisionIPCError(Exception):
   pass
 
 
-class VisionIPC():
+class VisionIPC:
   def __init__(self, front=False):
     self.clib = ffi.dlopen(os.path.join(gf_dir, "libvisionipc.so"))
 
@@ -89,5 +89,5 @@ class VisionIPC():
   def get(self):
     buf = self.clib.visionstream_get(self.s, ffi.NULL)
     pbuf = ffi.buffer(buf.addr, buf.len)
-    ret = np.frombuffer(pbuf, dtype=np.uint8).reshape((-1, self.buf_info.stride//3, 3))
+    ret = np.frombuffer(pbuf, dtype=np.uint8).reshape((-1, self.buf_info.stride // 3, 3))
     return ret[:self.buf_info.height, :self.buf_info.width, [2, 1, 0]]

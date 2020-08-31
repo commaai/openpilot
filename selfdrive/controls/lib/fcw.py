@@ -7,7 +7,7 @@ _FCW_A_ACT_V = [-3., -2.]
 _FCW_A_ACT_BP = [0., 30.]
 
 
-class FCWChecker():
+class FCWChecker:
   def __init__(self):
     self.reset_lead(0.0)
     self.common_counters = defaultdict(lambda: 0)
@@ -35,7 +35,7 @@ class FCWChecker():
     a_rel = np.minimum(a_rel, v_lead / t_decel)
 
     # delta of the quadratic equation to solve for ttc
-    delta = v_rel**2 + 2 * x_lead * a_rel
+    delta = v_rel ** 2 + 2 * x_lead * a_rel
 
     # assign an arbitrary high ttc value if there is no solution to ttc
     if delta < 0.1 or (np.sqrt(delta) + v_rel < 0.1):
@@ -53,7 +53,7 @@ class FCWChecker():
     self.common_counters['blinkers'] = self.common_counters['blinkers'] + 10.0 / (20 * 3.0) if not blinkers else 0
     self.common_counters['v_ego'] = self.common_counters['v_ego'] + 1 if v_ego > 5.0 else 0
 
-    if (fcw_lead > 0.99):
+    if fcw_lead > 0.99:
       ttc = self.calc_ttc(v_ego, a_ego, x_lead, v_lead, a_lead)
       self.counters['ttc'] = self.counters['ttc'] + 1 if ttc < 2.5 else 0
       self.counters['v_lead_max'] = self.counters['v_lead_max'] + 1 if self.v_lead_max > 2.5 else 0

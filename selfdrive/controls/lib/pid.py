@@ -1,6 +1,7 @@
 import numpy as np
 from common.numpy_fast import clip, interp
 
+
 def apply_deadzone(error, deadzone):
   if error > deadzone:
     error -= deadzone
@@ -10,7 +11,8 @@ def apply_deadzone(error, deadzone):
     error = 0.
   return error
 
-class PIController():
+
+class PIController:
   def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
@@ -36,7 +38,7 @@ class PIController():
     return interp(self.speed, self._k_i[0], self._k_i[1])
 
   def _check_saturation(self, control, check_saturation, error):
-    saturated = (control < self.neg_limit) or (control > self.pos_limit)
+    saturated = control < self.neg_limit or control > self.pos_limit
 
     if saturated and check_saturation and abs(error) > 0.1:
       self.sat_count += self.sat_count_rate
@@ -75,7 +77,7 @@ class PIController():
       # or when i will move towards the sign of the error
       if ((error >= 0 and (control <= self.pos_limit or i < 0.0)) or
           (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
-         not freeze_integrator:
+              not freeze_integrator:
         self.i = i
 
     control = self.p + self.f + self.i

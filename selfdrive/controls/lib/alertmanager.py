@@ -13,7 +13,6 @@ AlertStatus = log.ControlsState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
-
 with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
   OFFROAD_ALERTS = json.load(f)
 
@@ -29,8 +28,7 @@ def set_offroad_alert(alert, show_alert, extra_text=None):
     Params().delete(alert)
 
 
-class AlertManager():
-
+class AlertManager:
   def __init__(self):
     self.activealerts = []
 
