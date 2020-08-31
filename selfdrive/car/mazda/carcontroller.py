@@ -3,7 +3,8 @@ from selfdrive.car.mazda.values import SteerLimitParams, Buttons
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 
-class CarController():
+
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
     self.packer = CANPacker(dbc_name)
