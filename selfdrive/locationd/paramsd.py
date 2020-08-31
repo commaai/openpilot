@@ -66,7 +66,7 @@ class ParamsLearner:
 
 def main(sm=None, pm=None):
   if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'carState'])
+    sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
   if pm is None:
     pm = messaging.PubMaster(['liveParameters'])
 
@@ -128,7 +128,7 @@ def main(sm=None, pm=None):
         min_sr <= msg.liveParameters.steerRatio <= max_sr,
       ))
 
-      if sm.frame % 5: # once a minute
+      if sm.frame % 5*60: # once a minute
         params = {
           'carFingerprint': CP.carFingerprint,
           'steerRatio': msg.liveParameters.steerRatio,
