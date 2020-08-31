@@ -21,7 +21,7 @@ def _slice(n):
   return s
 
 
-class States():
+class States:
   # Vehicle model params
   STIFFNESS = _slice(1)  # [-]
   STEER_RATIO = _slice(1)  # [-]
@@ -49,23 +49,23 @@ class CarKalman(KalmanFilter):
 
   # process noise
   Q = np.diag([
-    (.05 / 100)**2,
-    .01**2,
-    math.radians(0.02)**2,
-    math.radians(0.25)**2,
+    (.05 / 100) ** 2,
+    .01 ** 2,
+    math.radians(0.02) ** 2,
+    math.radians(0.25) ** 2,
 
-    .1**2, .01**2,
-    math.radians(0.1)**2,
-    math.radians(0.1)**2,
+    .1 ** 2, .01 ** 2,
+    math.radians(0.1) ** 2,
+    math.radians(0.1) ** 2,
   ])
   P_initial = Q.copy()
 
   obs_noise: Dict[int, Any] = {
-    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
-    ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
-    ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
-    ObservationKind.STIFFNESS: np.atleast_2d(5.0**2),
-    ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1**2),
+    ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01) ** 2),
+    ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0) ** 2),
+    ObservationKind.STEER_RATIO: np.atleast_2d(5.0 ** 2),
+    ObservationKind.STIFFNESS: np.atleast_2d(5.0 ** 2),
+    ObservationKind.ROAD_FRAME_X_SPEED: np.atleast_2d(0.1 ** 2),
   }
 
   global_vars = [
@@ -106,7 +106,7 @@ class CarKalman(KalmanFilter):
     A[0, 0] = -(cF + cR) / (m * u)
     A[0, 1] = -(cF * aF - cR * aR) / (m * u) - u
     A[1, 0] = -(cF * aF - cR * aR) / (j * u)
-    A[1, 1] = -(cF * aF**2 + cR * aR**2) / (j * u)
+    A[1, 1] = -(cF * aF ** 2 + cR * aR ** 2) / (j * u)
 
     B = sp.Matrix(np.zeros((2, 1)))
     B[0, 0] = cF / m / sR

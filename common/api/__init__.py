@@ -4,10 +4,11 @@ from datetime import datetime, timedelta
 from common.basedir import PERSIST
 from selfdrive.version import version
 
-class Api():
+
+class Api:
   def __init__(self, dongle_id):
     self.dongle_id = dongle_id
-    with open(PERSIST+'/comma/id_rsa') as f:
+    with open(PERSIST + '/comma/id_rsa') as f:
       self.private_key = f.read()
 
   def get(self, *args, **kwargs):
@@ -29,13 +30,14 @@ class Api():
     }
     return jwt.encode(payload, self.private_key, algorithm='RS256').decode('utf8')
 
+
 def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
   backend = "https://api.commadotai.com/"
 
   headers = {}
   if access_token is not None:
-    headers['Authorization'] = "JWT "+access_token
+    headers['Authorization'] = "JWT " + access_token
 
   headers['User-Agent'] = "openpilot-" + version
 
-  return requests.request(method, backend+endpoint, timeout=timeout, headers=headers, params=params)
+  return requests.request(method, backend + endpoint, timeout=timeout, headers=headers, params=params)

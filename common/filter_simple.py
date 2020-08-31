@@ -1,4 +1,4 @@
-class FirstOrderFilter():
+class FirstOrderFilter:
   # first order filter
   def __init__(self, x0, ts, dt):
     self.k = (dt / ts) / (1. + dt / ts)
