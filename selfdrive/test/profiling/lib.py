@@ -7,7 +7,7 @@ class ReplayDone(Exception):
   pass
 
 
-class SubSocket():
+class SubSocket:
   def __init__(self, msgs, trigger):
     self.i = 0
     self.trigger = trigger
@@ -30,7 +30,7 @@ class SubSocket():
       return msg.to_bytes()
 
 
-class PubSocket():
+class PubSocket:
   def send(self, data):
     pass
 

@@ -20,10 +20,12 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.honda.interface import CarInterface
 
 from opendbc.can.dbc import dbc
+
 honda = dbc(os.path.join(DBC_PATH, "honda_civic_touring_2016_can_generated.dbc"))
 
 # Trick: set 0x201 (interceptor) in fingerprints for gas is controlled like if there was an interceptor
 CP = CarInterface.get_params(CAR.CIVIC, {0: {0x201: 6}, 1: {}, 2: {}, 3: {}})
+
 
 # Honda checksum
 def can_cksum(mm):
@@ -31,12 +33,13 @@ def can_cksum(mm):
   for c in mm:
     s += (c >> 4)
     s += c & 0xF
-  s = 8-s
+  s = 8 - s
   s %= 0x10
   return s
 
+
 def fix(msg, addr):
-  msg2 = msg[0:-1] + (msg[-1] | can_cksum(struct.pack("I", addr)+msg)).to_bytes(1, 'little')
+  msg2 = msg[0:-1] + (msg[-1] | can_cksum(struct.pack("I", addr) + msg)).to_bytes(1, 'little')
   return msg2
 
 
@@ -44,10 +47,10 @@ def car_plant(pos, speed, grade, gas, brake):
   # vehicle parameters
   mass = 1700
   aero_cd = 0.3
-  force_peak = mass*3.
-  force_brake_peak = -mass*10.  # 1g
-  power_peak = 100000   # 100kW
-  speed_base = power_peak/force_peak
+  force_peak = mass * 3.
+  force_brake_peak = -mass * 10.  # 1g
+  power_peak = 100000  # 100kW
+  speed_base = power_peak / force_peak
   rolling_res = 0.01
   g = 9.81
   frontal_area = 2.2
@@ -57,7 +60,7 @@ def car_plant(pos, speed, grade, gas, brake):
   creep_accel_v = [1., 0.]
   creep_accel_bp = [0., 1.5]
 
-  #*** longitudinal model ***
+  # *** longitudinal model ***
   # find speed where peak torque meets peak power
   force_brake = brake * force_brake_peak * brake_to_peak_linear_slope
   if speed < speed_base:  # torque control
@@ -70,12 +73,13 @@ def car_plant(pos, speed, grade, gas, brake):
   creep_accel = np.interp(speed, creep_accel_bp, creep_accel_v)
   force_creep = creep_accel * mass
 
-  force_resistance = -(rolling_res * mass * g + 0.5 * speed**2 * aero_cd * air_density * frontal_area)
+  force_resistance = -(rolling_res * mass * g + 0.5 * speed ** 2 * aero_cd * air_density * frontal_area)
   force = force_gas + force_brake + force_resistance + force_grade + force_creep
   acceleration = force / mass
 
   # TODO: lateral model
   return speed, acceleration
+
 
 def get_car_can_parser():
   dbc_f = 'honda_civic_touring_2016_can_generated'
@@ -93,16 +97,19 @@ def get_car_can_parser():
   ]
   return CANParser(dbc_f, signals, checks, 0)
 
+
 def to_3_byte(x):
   # Convert into 12 bit value
   s = struct.pack("!H", int(x))
   return binascii.hexlify(s)[1:]
 
+
 def to_3s_byte(x):
   s = struct.pack("!h", int(x))
   return binascii.hexlify(s)[1:]
 
-class Plant():
+
+class Plant:
   messaging_initialized = False
 
   def __init__(self, lead_relevancy=False, rate=100, speed=0.0, distance_lead=2.0):
@@ -137,7 +144,7 @@ class Plant():
     self.distance, self.distance_prev = 0., 0.
     self.speed, self.speed_prev = speed, speed
     self.steer_error, self.brake_error, self.steer_not_allowed = 0, 0, 0
-    self.gear_shifter = 8   # D gear
+    self.gear_shifter = 8  # D gear
     self.pedal_gas = 0
     self.cruise_setting = 0
 
@@ -147,10 +154,10 @@ class Plant():
     self.lead_relevancy = lead_relevancy
 
     # lead car
-    self.distance_lead, self.distance_lead_prev = distance_lead , distance_lead
+    self.distance_lead, self.distance_lead_prev = distance_lead, distance_lead
 
     self.rk = Ratekeeper(rate, print_delay_threshold=100)
-    self.ts = 1./rate
+    self.ts = 1. / rate
 
     self.cp = get_car_can_parser()
     self.response_seen = False
@@ -213,7 +220,7 @@ class Plant():
       gas = 0.0
 
     if self.cp.vl[0xe4]['STEER_TORQUE_REQUEST']:
-      steer_torque = self.cp.vl[0xe4]['STEER_TORQUE']*1.0/0xf00
+      steer_torque = self.cp.vl[0xe4]['STEER_TORQUE'] * 1.0 / 0xf00
     else:
       steer_torque = 0.0
 
@@ -228,7 +235,7 @@ class Plant():
       acceleration = 0
 
     # ******** lateral ********
-    self.angle_steer -= (steer_torque/10.0) * self.ts
+    self.angle_steer -= (steer_torque / 10.0) * self.ts
 
     # *** radar model ***
     if self.lead_relevancy:
@@ -240,79 +247,79 @@ class Plant():
     lateral_pos_rel = 0.
 
     # print at 5hz
-    if (self.frame % (self.rate//5)) == 0:
+    if self.frame % (self.rate // 5) == 0:
       print("%6.2f m  %6.2f m/s  %6.2f m/s2   %.2f ang   gas: %.2f  brake: %.2f  steer: %5.2f     lead_rel: %6.2f m  %6.2f m/s"
             % (distance, speed, acceleration, self.angle_steer, gas, brake, steer_torque, d_rel, v_rel))
 
     # ******** publish the car ********
     vls_tuple = namedtuple('vls', [
-           'XMISSION_SPEED',
-           'WHEEL_SPEED_FL', 'WHEEL_SPEED_FR', 'WHEEL_SPEED_RL', 'WHEEL_SPEED_RR',
-           'STEER_ANGLE', 'STEER_ANGLE_RATE', 'STEER_TORQUE_SENSOR', 'STEER_TORQUE_MOTOR',
-           'LEFT_BLINKER', 'RIGHT_BLINKER',
-           'GEAR',
-           'WHEELS_MOVING',
-           'BRAKE_ERROR_1', 'BRAKE_ERROR_2',
-           'SEATBELT_DRIVER_LAMP', 'SEATBELT_DRIVER_LATCHED',
-           'BRAKE_PRESSED', 'BRAKE_SWITCH',
-           'CRUISE_BUTTONS',
-           'ESP_DISABLED',
-           'HUD_LEAD',
-           'USER_BRAKE',
-           'STEER_STATUS',
-           'GEAR_SHIFTER',
-           'PEDAL_GAS',
-           'CRUISE_SETTING',
-           'ACC_STATUS',
+      'XMISSION_SPEED',
+      'WHEEL_SPEED_FL', 'WHEEL_SPEED_FR', 'WHEEL_SPEED_RL', 'WHEEL_SPEED_RR',
+      'STEER_ANGLE', 'STEER_ANGLE_RATE', 'STEER_TORQUE_SENSOR', 'STEER_TORQUE_MOTOR',
+      'LEFT_BLINKER', 'RIGHT_BLINKER',
+      'GEAR',
+      'WHEELS_MOVING',
+      'BRAKE_ERROR_1', 'BRAKE_ERROR_2',
+      'SEATBELT_DRIVER_LAMP', 'SEATBELT_DRIVER_LATCHED',
+      'BRAKE_PRESSED', 'BRAKE_SWITCH',
+      'CRUISE_BUTTONS',
+      'ESP_DISABLED',
+      'HUD_LEAD',
+      'USER_BRAKE',
+      'STEER_STATUS',
+      'GEAR_SHIFTER',
+      'PEDAL_GAS',
+      'CRUISE_SETTING',
+      'ACC_STATUS',
 
-           'CRUISE_SPEED_PCM',
-           'CRUISE_SPEED_OFFSET',
+      'CRUISE_SPEED_PCM',
+      'CRUISE_SPEED_OFFSET',
 
-           'DOOR_OPEN_FL', 'DOOR_OPEN_FR', 'DOOR_OPEN_RL', 'DOOR_OPEN_RR',
+      'DOOR_OPEN_FL', 'DOOR_OPEN_FR', 'DOOR_OPEN_RL', 'DOOR_OPEN_RR',
 
-           'CAR_GAS',
-           'MAIN_ON',
-           'EPB_STATE',
-           'BRAKE_HOLD_ACTIVE',
-           'INTERCEPTOR_GAS',
-           'INTERCEPTOR_GAS2',
-           'IMPERIAL_UNIT',
-           'MOTOR_TORQUE',
-           ])
+      'CAR_GAS',
+      'MAIN_ON',
+      'EPB_STATE',
+      'BRAKE_HOLD_ACTIVE',
+      'INTERCEPTOR_GAS',
+      'INTERCEPTOR_GAS2',
+      'IMPERIAL_UNIT',
+      'MOTOR_TORQUE',
+    ])
     vls = vls_tuple(
-           self.speed_sensor(speed),
-           self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
-           self.angle_steer, self.angle_steer_rate, 0, 0,  # Steer torque sensor
-           0, 0,  # Blinkers
-           self.gear_choice,
-           speed != 0,
-           self.brake_error, self.brake_error,
-           not self.seatbelt, self.seatbelt,  # Seatbelt
-           self.brake_pressed, 0.,  # Brake pressed, Brake switch
-           cruise_buttons,
-           self.esp_disabled,
-           0,  # HUD lead
-           self.user_brake,
-           self.steer_error,
-           self.gear_shifter,
-           self.pedal_gas,
-           self.cruise_setting,
-           self.acc_status,
+      self.speed_sensor(speed),
+      self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed), self.speed_sensor(speed),
+      self.angle_steer, self.angle_steer_rate, 0, 0,  # Steer torque sensor
+      0, 0,  # Blinkers
+      self.gear_choice,
+      speed != 0,
+      self.brake_error, self.brake_error,
+      not self.seatbelt, self.seatbelt,  # Seatbelt
+      self.brake_pressed, 0.,  # Brake pressed, Brake switch
+      cruise_buttons,
+      self.esp_disabled,
+      0,  # HUD lead
+      self.user_brake,
+      self.steer_error,
+      self.gear_shifter,
+      self.pedal_gas,
+      self.cruise_setting,
+      self.acc_status,
 
-           self.v_cruise,
-           0,  # Cruise speed offset
+      self.v_cruise,
+      0,  # Cruise speed offset
 
-           0, 0, 0, 0,  # Doors
+      0, 0, 0, 0,  # Doors
 
-           self.user_gas,
-           self.main_on,
-           0,  # EPB State
-           0,  # Brake hold
-           0,  # Interceptor feedback
-           0,  # Interceptor 2 feedback
-           False,
-           0,
-           )
+      self.user_gas,
+      self.main_on,
+      0,  # EPB State
+      0,  # Brake hold
+      0,  # Interceptor feedback
+      0,  # Interceptor 2 feedback
+      False,
+      0,
+    )
 
     # TODO: publish each message at proper frequency
     can_msgs = []
@@ -396,7 +403,7 @@ class Plant():
       fp = messaging.new_message('frame')
       md.model.frameId = 0
       for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
-        x.points = [0.0]*50
+        x.points = [0.0] * 50
         x.prob = 1.0
         x.std = 1.0
 
@@ -460,11 +467,13 @@ class Plant():
       "controls_state_msgs": controls_state_msgs,
     }
 
+
 # simple engage in standalone mode
 def plant_thread(rate=100):
   plant = Plant(rate)
   while 1:
     plant.step()
+
 
 if __name__ == "__main__":
   plant_thread()

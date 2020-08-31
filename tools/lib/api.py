@@ -1,9 +1,11 @@
 import os
 import requests
 from tools.lib.auth_config import clear_token
+
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
-class CommaApi():
+
+class CommaApi:
   def __init__(self, token=None):
     self.session = requests.Session()
     self.session.headers['User-agent'] = 'OpenpilotTools'
@@ -29,8 +31,10 @@ class CommaApi():
   def post(self, endpoint, **kwargs):
     return self.request('POST', endpoint, **kwargs)
 
+
 class APIError(Exception):
   pass
+
 
 class UnauthorizedError(Exception):
   pass
