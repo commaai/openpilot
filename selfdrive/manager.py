@@ -624,7 +624,9 @@ if __name__ == "__main__":
     cloudlog.exception("Manager failed to start")
 
     # Show last 3 lines of traceback
-    error = '\n'.join(traceback.format_exc().splitlines()[3:])
+    error = traceback.format_exc().splitlines()
+    print(error)
+    error = '\n'.join(error[3:])
 
     error = "Manager failed to start\n \n" + error
     with TextWindow(error) as t:
