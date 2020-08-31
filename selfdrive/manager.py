@@ -12,9 +12,9 @@ import textwrap
 from typing import Dict, List
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 
-
 from common.basedir import BASEDIR, PARAMS
 from common.hardware import HARDWARE, ANDROID, PC
+
 WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
@@ -33,6 +33,7 @@ except PermissionError:
 if ANDROID:
   os.chmod("/dev/shm", 0o777)
 
+
 def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
@@ -43,7 +44,7 @@ def unblock_stdout():
     signal.signal(signal.SIGTERM, lambda signum, frame: os.kill(child_pid, signal.SIGTERM))
 
     fcntl.fcntl(sys.stdout, fcntl.F_SETFL,
-       fcntl.fcntl(sys.stdout, fcntl.F_GETFL) | os.O_NONBLOCK)
+                fcntl.fcntl(sys.stdout, fcntl.F_GETFL) | os.O_NONBLOCK)
 
     while True:
       try:
@@ -115,7 +116,7 @@ if not prebuilt:
 
     if scons.returncode != 0:
       # Read remaining output
-      r = scons.stderr.read().split(b'\n')   # type: ignore
+      r = scons.stderr.read().split(b'\n')  # type: ignore
       compile_output += r
 
       if retry:
@@ -176,7 +177,7 @@ managed_processes = {
   "tombstoned": "selfdrive.tombstoned",
   "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
-  "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
+  "boardd": ("selfdrive/boardd", ["./boardd"]),  # not used directly
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
@@ -197,6 +198,7 @@ daemon_processes = {
 running: Dict[str, Process] = {}
 def get_running():
   return running
+
 
 # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
 unkillable_processes = ['camerad']
@@ -277,6 +279,7 @@ def register_managed_process(name, desc, car_started=False):
   else:
     persistent_processes.append(name)
 
+
 # ****************** process management functions ******************
 def nativelauncher(pargs, cwd):
   # exec the process
@@ -286,6 +289,7 @@ def nativelauncher(pargs, cwd):
   os.chmod(pargs[0], 0o700)
 
   os.execvp(pargs[0], pargs)
+
 
 def start_managed_process(name):
   if name in running or name not in managed_processes:
@@ -300,6 +304,7 @@ def start_managed_process(name):
     cloudlog.info("starting process %s" % name)
     running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
   running[name].start()
+
 
 def start_daemon_process(name):
   params = Params()
@@ -326,6 +331,7 @@ def start_daemon_process(name):
 
   params.put(pid_param, str(proc.pid))
 
+
 def prepare_managed_process(p):
   proc = managed_processes[p]
   if isinstance(proc, str):
@@ -339,7 +345,7 @@ def prepare_managed_process(p):
       subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, proc[0]))
     except subprocess.CalledProcessError:
       # make clean if the build failed
-      cloudlog.warning("building %s failed, make clean" % (proc, ))
+      cloudlog.warning("building %s failed, make clean" % (proc,))
       subprocess.check_call(["make", "clean"], cwd=os.path.join(BASEDIR, proc[0]))
       subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, proc[0]))
 
@@ -416,7 +422,7 @@ def manager_init(should_register=True):
     else:
       raise Exception("server registration failed")
   else:
-    dongle_id = "c"*16
+    dongle_id = "c" * 16
 
   # set dongle id
   cloudlog.info("dongle id is " + dongle_id)
@@ -441,6 +447,7 @@ def manager_init(should_register=True):
     os.chmod(BASEDIR, 0o755)
     os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
+
 
 def manager_thread():
   # now loop
@@ -528,6 +535,7 @@ def manager_thread():
     if params.get("DoUninstall", encoding='utf8') == "1":
       break
 
+
 def manager_prepare(spinner=None):
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -540,12 +548,14 @@ def manager_prepare(spinner=None):
       spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
     prepare_managed_process(p)
 
+
 def uninstall():
   cloudlog.warning("uninstalling")
   with open('/cache/recovery/command', 'w') as f:
     f.write('--wipe_data\n')
   # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
   HARDWARE.reboot(reason="recovery")
+
 
 def main():
   os.environ['PARAMS_PATH'] = PARAMS
