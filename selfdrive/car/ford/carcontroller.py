@@ -3,11 +3,11 @@ from selfdrive.car import make_can_msg
 from selfdrive.car.ford.fordcan import create_steer_command, create_lkas_ui, spam_cancel_button
 from opendbc.can.packer import CANPacker
 
-
 MAX_STEER_DELTA = 1
 TOGGLE_DEBUG = False
 
-class CarController():
+
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.packer = CANPacker(dbc_name)
     self.enable_camera = CP.enableCamera
@@ -19,47 +19,42 @@ class CarController():
     self.lkas_action = 0
 
   def update(self, enabled, CS, frame, actuators, visual_alert, pcm_cancel):
-
     can_sends = []
     steer_alert = visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired
 
     apply_steer = actuators.steer
 
     if self.enable_camera:
-
       if pcm_cancel:
-        #print "CANCELING!!!!"
+        # print "CANCELING!!!!"
         can_sends.append(spam_cancel_button(self.packer))
 
-      if (frame % 3) == 0:
-
-        curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
+      if frame % 3 == 0:
+        curvature = self.vehicle_model.calc_curvature(actuators.steerAngle * 3.1415 / 180., CS.out.vEgo)
 
         # The use of the toggle below is handy for trying out the various LKAS modes
         if TOGGLE_DEBUG:
           self.lkas_action += int(CS.out.genericToggle and not self.generic_toggle_last)
           self.lkas_action &= 0xf
         else:
-          self.lkas_action = 5   # 4 and 5 seem the best. 8 and 9 seem to aggressive and laggy
+          self.lkas_action = 5  # 4 and 5 seem the best. 8 and 9 seem to aggressive and laggy
 
         can_sends.append(create_steer_command(self.packer, apply_steer, enabled,
                                               CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
         self.generic_toggle_last = CS.out.genericToggle
 
-      if (frame % 100) == 0:
-
+      if frame % 100 == 0:
         can_sends.append(make_can_msg(973, b'\x00\x00\x00\x00\x00\x00\x00\x00', 0))
-        #can_sends.append(make_can_msg(984, b'\x00\x00\x00\x00\x80\x45\x60\x30', 0))
+        # can_sends.append(make_can_msg(984, b'\x00\x00\x00\x00\x80\x45\x60\x30', 0))
 
-      if (frame % 100) == 0 or (self.enabled_last != enabled) or (self.main_on_last != CS.out.cruiseState.available) or \
-         (self.steer_alert_last != steer_alert):
+      if frame % 100 == 0 or self.enabled_last != enabled or self.main_on_last != CS.out.cruiseState.available or \
+              self.steer_alert_last != steer_alert:
         can_sends.append(create_lkas_ui(self.packer, CS.out.cruiseState.available, enabled, steer_alert))
 
-      if (frame % 200) == 0:
+      if frame % 200 == 0:
         can_sends.append(make_can_msg(1875, b'\x80\xb0\x55\x55\x78\x90\x00\x00', 1))
 
-      if (frame % 10) == 0:
-
+      if frame % 10 == 0:
         can_sends.append(make_can_msg(1648, b'\x00\x00\x00\x40\x00\x00\x50\x00', 1))
         can_sends.append(make_can_msg(1649, b'\x10\x10\xf1\x70\x04\x00\x00\x00', 1))
 
