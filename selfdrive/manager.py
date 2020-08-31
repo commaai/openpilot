@@ -624,8 +624,8 @@ if __name__ == "__main__":
     cloudlog.exception("Manager failed to start")
 
     # Show last 3 lines of traceback
-    error = [line.replace('/data/openpilot', '') for line in traceback.format_exc(-3).splitlines()]
-    error = "Manager failed to start\n \n" + '\n'.join(error)
+    error = traceback.format_exc(-3)
+    error = "Manager failed to start\n \n" + error
     with TextWindow(error) as t:
       t.wait_for_exit()
 
