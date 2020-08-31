@@ -11,6 +11,8 @@
 #include <sys/resource.h>
 
 #include <pthread.h>
+#include <map>
+#include <vector>
 
 #include <cutils/log.h>
 #include <hardware/sensors.h>
