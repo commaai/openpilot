@@ -625,7 +625,7 @@ if __name__ == "__main__":
 
     # Show last 3 lines of traceback
     error = traceback.format_exc().splitlines()
-    error = [line for line in error][-(4*2+1):]
+    error = [' ' * (len(line) - len(line.lstrip(' '))) + line for line in error][-(4*2+1):]
     # error_new = []
     # file_count = 0
     # for line in error[::-1]:
