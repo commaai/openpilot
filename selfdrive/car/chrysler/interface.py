@@ -8,7 +8,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed):
-    return accel / 3.0
+    return float(accel) / 3.0
 
   @staticmethod
   def get_params(candidate, fingerprint=None, has_relay=False, car_fw=None):
