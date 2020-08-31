@@ -318,6 +318,7 @@ selfdrive/loggerd/deleter.py
 selfdrive/sensord/SConscript
 selfdrive/sensord/gpsd.cc
 selfdrive/sensord/libdiag.h
+selfdrive/sensord/sensors_qcom.h
 selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
