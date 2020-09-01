@@ -74,7 +74,6 @@ struct LoggerdState {
   std::condition_variable cv;
   uint32_t last_frame_id;
   uint32_t rotate_last_frame_id;
-  int rotate_segment;
   int rotate_seq_id;
 
   pthread_mutex_t rotate_lock;
@@ -82,7 +81,6 @@ struct LoggerdState {
   int should_close;
   int finish_close;
 };
-
 LoggerdState s = {};
 
 #ifndef DISABLE_ENCODER
@@ -198,10 +196,10 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
                  && !do_exit) {
             s.cv.wait(lk);
           }
-          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.rotate_segment && s.rotate_seq_id == my_idx;
+          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.logger->getPart() && s.rotate_seq_id == cam_idx;
         } else {
           // front camera is best effort
-          should_rotate = encoder_segment < s.rotate_segment && s.rotate_seq_id == my_idx;
+          should_rotate = encoder_segment < s.logger->getPart() && s.rotate_seq_id == my_idx;
         }
         if (do_exit) break;
 
@@ -209,7 +207,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
         if (should_rotate) {
           LOG("rotate encoder to %s", s.logger->getSegmentPath());
 
-          encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
+          encoder_rotate(&encoder, s.logger->getSegmentPath(), s.logger->getPart());
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
 
           if (has_encoder_alt) {
