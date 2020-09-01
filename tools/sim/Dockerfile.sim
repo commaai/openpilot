@@ -33,7 +33,7 @@ ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gn
 RUN cd $HOME && \
     wget https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
 
-COPY ./tools/sim/lib/install_carla.sh /tmp
+COPY ./tools/sim/install_carla.sh /tmp
 RUN /tmp/install_carla.sh
 
 RUN mkdir -p $HOME/openpilot
