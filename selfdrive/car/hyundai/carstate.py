@@ -374,7 +374,7 @@ class CarState(CarStateBase):
       ]
       checks += [("FCA11", 50)]
 
-    if CP.carFingerprint in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
+    if CP.carFingerprint in [CAR.SANTA_FE]:
       checks.remove(("TCS13", 50))
     if CP.spasEnabled:
       if CP.mdpsBus == 1:
