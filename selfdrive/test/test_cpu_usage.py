@@ -17,7 +17,7 @@ def print_cpu_usage(first_proc, last_proc):
   procs = [
     ("selfdrive.controls.controlsd", 66.15),
     ("./loggerd", 33.90),
-    ("selfdrive.locationd.locationd", 18.5),
+    ("selfdrive.locationd.locationd", 29.5),
     ("selfdrive.controls.plannerd", 11.84),
     ("selfdrive.locationd.paramsd", 11.53),
     ("./_modeld", 7.12),
@@ -25,8 +25,8 @@ def print_cpu_usage(first_proc, last_proc):
     ("./_ui", 9.54),
     ("./camerad", 7.07),
     ("./_sensord", 6.17),
+    ("selfdrive.locationd.calibrationd", 6.0),
     ("./boardd", 3.63),
-    ("selfdrive.locationd.calibrationd", 2.93),
     ("./_dmonitoringmodeld", 2.67),
     ("selfdrive.logmessaged", 2.71),
     ("selfdrive.thermald.thermald", 2.41),
