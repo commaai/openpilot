@@ -186,27 +186,23 @@ int main(int argc, char* argv[]) {
   TouchState touch = {0};
   touch_init(&touch);
 
-  // light sensor scaling params
+  // light sensor scaling and volume params
   const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
 
   float brightness_b = 0, brightness_m = 0;
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
-
   if(result != 0) {
     brightness_b = LEON ? 10.0 : 5.0;
     brightness_m = LEON ? 2.6 : 1.3;
     write_param_float(brightness_b, "BRIGHTNESS_B", true);
     write_param_float(brightness_m, "BRIGHTNESS_M", true);
   }
-
   float smooth_brightness = brightness_b;
 
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
   assert(s->sound.init(MIN_VOLUME));
-
-  uint32_t draws = 0;
 
   while (!do_exit) {
     if (!s->started || !s->vision_connected) {
@@ -220,14 +216,6 @@ int main(int argc, char* argv[]) {
     if (s->started) {
       set_awake(s, true);
     }
-
-    // up one notch every 5 m/s
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
-
-    // set brightness
-    float clipped_brightness = fmin(512, (s->light_sensor*brightness_m) + brightness_b);
-    smooth_brightness = fmin(255, clipped_brightness * 0.01 + smooth_brightness * 0.99);
-    ui_set_brightness(s, (int)smooth_brightness);
 
     // poll for touch events
     int touch_x = -1, touch_y = -1;
@@ -250,15 +238,22 @@ int main(int argc, char* argv[]) {
       continue;
     }
 
+    // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
+
+    // set brightness
+    float clipped_brightness = fmin(512, (s->light_sensor*brightness_m) + brightness_b);
+    smooth_brightness = fmin(255, clipped_brightness * 0.01 + smooth_brightness * 0.99);
+    ui_set_brightness(s, (int)smooth_brightness);
+
     update_offroad_layout_state(s, pm);
 
     ui_draw(s);
     double u2 = millis_since_boot();
     if (!s->scene.frontview && (u2-u1 > 66)) {
       // warn on sub 15fps
-      LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
+      LOGW("slow frame(%d) time: %.2f", (s->sm)->frame, u2-u1);
     }
-    draws++;
     framebuffer_swap(s->fb);
   }
 

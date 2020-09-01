@@ -94,7 +94,6 @@ class Controls:
     cp_bytes = self.CP.to_bytes()
     params.put("CarParams", cp_bytes)
     put_nonblocking("CarParamsCache", cp_bytes)
-    put_nonblocking("LongitudinalControl", "1" if self.CP.openpilotLongitudinalControl else "0")
 
     self.CC = car.CarControl.new_message()
     self.AM = AlertManager()

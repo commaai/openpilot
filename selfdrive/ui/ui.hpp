@@ -11,8 +11,9 @@
 #define NANOVG_GLES3_IMPLEMENTATION
 #define nvgCreate nvgCreateGLES3
 #endif
-#include <atomic>
 
+#include <atomic>
+#include <map>
 #include <string>
 #include <sstream>
 #include <pthread.h>
@@ -26,16 +27,6 @@
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "sound.hpp"
-
-#define STATUS_OFFROAD 0
-#define STATUS_DISENGAGED 1
-#define STATUS_ENGAGED 2
-#define STATUS_WARNING 3
-#define STATUS_ALERT 4
-
-#define NET_CONNECTED 0
-#define NET_DISCONNECTED 1
-#define NET_ERROR 2
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -90,23 +81,40 @@ const int TRACK_POINTS_MAX_CNT = 50 * 2;
 
 const int SET_SPEED_NA = 255;
 
-const uint8_t bg_colors[][4] = {
-  [STATUS_OFFROAD] = {0x07, 0x23, 0x39, 0xff},
-  [STATUS_DISENGAGED] = {0x17, 0x33, 0x49, 0xff},
-  [STATUS_ENGAGED] = {0x17, 0x86, 0x44, 0xff},
-  [STATUS_WARNING] = {0xDA, 0x6F, 0x25, 0xff},
-  [STATUS_ALERT] = {0xC9, 0x22, 0x31, 0xff},
+typedef struct Color {
+  uint8_t r, g, b;
+} Color;
+
+typedef enum NetStatus {
+  NET_CONNECTED,
+  NET_DISCONNECTED,
+  NET_ERROR,
+} NetStatus;
+
+typedef enum UIStatus {
+  STATUS_OFFROAD,
+  STATUS_DISENGAGED,
+  STATUS_ENGAGED,
+  STATUS_WARNING,
+  STATUS_ALERT,
+} UIStatus;
+
+static std::map<UIStatus, Color> bg_colors = {
+  {STATUS_OFFROAD, {0x07, 0x23, 0x39}},
+  {STATUS_DISENGAGED, {0x17, 0x33, 0x49}},
+  {STATUS_ENGAGED, {0x17, 0x86, 0x44}},
+  {STATUS_WARNING, {0xDA, 0x6F, 0x25}},
+  {STATUS_ALERT, {0xC9, 0x22, 0x31}},
 };
 
 typedef struct UIScene {
   int frontview;
-  int fullview;
 
   float mpc_x[50];
   float mpc_y[50];
 
-  bool world_objects_visible;
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
+  bool world_objects_visible;
 
   float speedlimit;
   bool speedlimit_valid;
@@ -123,7 +131,7 @@ typedef struct UIScene {
 
   cereal::HealthData::HwType hwType;
   int satelliteCount;
-  uint8_t athenaStatus;
+  NetStatus athenaStatus;
 
   cereal::ThermalData::Reader thermal;
   cereal::RadarState::LeadData::Reader lead_data[2];
@@ -173,9 +181,11 @@ typedef struct UIState {
   int img_network[6];
 
   Sound sound;
+  UIScene scene;
 
   // sockets
   SubMaster *sm;
+  UIStatus status;
 
   cereal::UiLayoutState::App active_app;
 
@@ -190,35 +200,27 @@ typedef struct UIState {
 
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
+  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
+  mat4 rear_frame_mat, front_frame_mat;
 
-  UIScene scene;
-
+  // device state
   bool awake;
   int awake_timeout;
+  std::atomic<float> light_sensor;
 
   uint64_t last_athena_ping;
   uint64_t started_frame;
 
-  int status;
   bool is_metric;
   bool longitudinal_control;
-  bool is_ego_over_limit;
   float alert_blinking_alpha;
   bool alert_blinked;
   bool started;
-
-  std::atomic<float> light_sensor;
-
-  int touch_fd;
-
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
 
   model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 
   track_vertices_data track_vertices[2];
 } UIState;
-
 
 void ui_init(UIState *s);
 void ui_update(UIState *s);

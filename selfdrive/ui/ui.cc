@@ -23,13 +23,12 @@ int write_param_float(float param, const char* param_name, bool persistent_param
 
 void ui_init(UIState *s) {
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
-                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"
-  });
+                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"});
 
   s->started = false;
+  s->status = STATUS_OFFROAD;
   s->scene.satelliteCount = -1;
   read_param(&s->is_metric, "IsMetric");
-  read_param(&s->longitudinal_control, "LongitudinalControl");
 
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
@@ -48,13 +47,13 @@ static void ui_init_vision(UIState *s) {
     }
 
     VisionImg img = {
-        .fd = s->stream.bufs[i].fd,
-        .format = VISIONIMG_FORMAT_RGB24,
-        .width = s->stream.bufs_info.width,
-        .height = s->stream.bufs_info.height,
-        .stride = s->stream.bufs_info.stride,
-        .bpp = 3,
-        .size = s->stream.bufs_info.buf_len,
+      .fd = s->stream.bufs[i].fd,
+      .format = VISIONIMG_FORMAT_RGB24,
+      .width = s->stream.bufs_info.width,
+      .height = s->stream.bufs_info.height,
+      .stride = s->stream.bufs_info.stride,
+      .bpp = 3,
+      .size = s->stream.bufs_info.buf_len,
     };
 #ifndef QCOM
     s->priv_hnds[i] = s->stream.bufs[i].addr;
@@ -70,25 +69,25 @@ static void ui_init_vision(UIState *s) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
   }
-
   assert(glGetError() == GL_NO_ERROR);
 }
 
 void ui_update_vision(UIState *s) {
+
+  // TODO: check the stream type is right for the driverview -> onroad case
+
   const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
-
-  bool wrong_stream = type != s->stream.bufs_info.type;
-  if (s->vision_connected && (!s->started || !visionstream_get(&s->stream, nullptr) || wrong_stream)) {
-    visionstream_destroy(&s->stream);
-    s->vision_connected = false;
-  }
-
   if (!s->vision_connected && s->started) {
     int err = visionstream_init(&s->stream, type, true, nullptr);
     if (err == 0) {
       ui_init_vision(s);
       s->vision_connected = true;
     }
+  }
+
+  if (s->vision_connected && (!s->started || !visionstream_get(&s->stream, nullptr))) {
+    visionstream_destroy(&s->stream);
+    s->vision_connected = false;
   }
 }
 
@@ -109,7 +108,7 @@ void update_sockets(UIState *s) {
   UIScene &scene = s->scene;
   SubMaster &sm = *(s->sm);
 
-  if (sm.updated("controlsState")) {
+  if (s->started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
 

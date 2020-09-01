@@ -224,9 +224,9 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
   NVGpaint track_bg;
   if (is_mpc) {
     // Draw colored MPC track
-    const uint8_t *clr = bg_colors[s->status];
+    const Color clr = bg_colors[s->status];
     track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
-      nvgRGBA(clr[0], clr[1], clr[2], 255), nvgRGBA(clr[0], clr[1], clr[2], 255/2));
+      nvgRGBA(clr.r, clr.g, clr.b, 255), nvgRGBA(clr.r, clr.g, clr.b, 255/2));
   } else {
     // Draw white vision track
     track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
@@ -237,16 +237,12 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
 }
 
 static void draw_frame(UIState *s) {
+  mat4 *out_mat;
   if (s->scene.frontview) {
     glBindVertexArray(s->frame_vao[1]);
-  } else {
-    glBindVertexArray(s->frame_vao[0]);
-  }
-
-  mat4 *out_mat;
-  if (s->scene.frontview || s->scene.fullview) {
     out_mat = &s->front_frame_mat;
   } else {
+    glBindVertexArray(s->frame_vao[0]);
     out_mat = &s->rear_frame_mat;
   }
   glActiveTexture(GL_TEXTURE0);
@@ -256,7 +252,8 @@ static void draw_frame(UIState *s) {
 #ifndef QCOM
     if (s->scene.frontview) {
       // TODO: a better way to do this?
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->stream.bufs_info.width, s->stream.bufs_info.height, 0, GL_RGB, GL_UNSIGNED_BYTE, s->stream.bufs[s->stream.last_idx].addr);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->stream.bufs_info.width, s->stream.bufs_info.height,
+                   0, GL_RGB, GL_UNSIGNED_BYTE, s->stream.bufs[s->stream.last_idx].addr);
     }
 #endif
   }
@@ -417,7 +414,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   if (is_set_over_limit) {
     color = COLOR_OCHRE;
   } else if (is_speedlim_valid) {
-    color = s->is_ego_over_limit ? COLOR_WHITE_ALPHA(20) : COLOR_WHITE;
+    color = COLOR_WHITE;
   }
 
   ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
@@ -617,7 +614,7 @@ static void ui_draw_vision(UIState *s) {
   glViewport(0, 0, s->fb_w, s->fb_h);
 
   // Draw augmented elements
-  if (!scene->frontview && !scene->fullview) {
+  if (!scene->frontview) {
     ui_draw_world(s);
   }
 
@@ -637,11 +634,8 @@ static void ui_draw_vision(UIState *s) {
 }
 
 static void ui_draw_background(UIState *s) {
-  int bg_status = s->status;
-  assert(bg_status < ARRAYSIZE(bg_colors));
-  const uint8_t *color = bg_colors[bg_status];
-
-  glClearColor(color[0]/256.0, color[1]/256.0, color[2]/256.0, 1.0);
+  const Color color = bg_colors[s->status];
+  glClearColor(color.r/256.0, color.g/256.0, color.b/256.0, 1.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
@@ -649,7 +643,7 @@ void ui_draw(UIState *s) {
   const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
   s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
   s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
-  s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
+  s->scene.ui_viz_ro = hasSidebar ? - (sbr_w - 6 * bdr_s) : 0;
 
   ui_draw_background(s);
   glEnable(GL_BLEND);

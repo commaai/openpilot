@@ -571,7 +571,6 @@ def main():
     ("IsUploadRawEnabled", "1"),
     ("IsLdwEnabled", "1"),
     ("IsGeofenceEnabled", "-1"),
-    ("LongitudinalControl", "0"),
     ("LimitSetSpeed", "0"),
     ("LimitSetSpeedNeural", "0"),
     ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
