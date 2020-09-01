@@ -479,15 +479,16 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
 
 void enqueue_buffer(struct CameraState *s, int i) {
   int ret;
-  int request_id = s->frame_id;
+  int request_id = s->camera_bufs_metadata[i].frame_id;
+
   if (s->buf_handle[i]) {
     release(s->video0_fd, s->buf_handle[i]);
     // wait
-    //struct cam_sync_wait sync_wait = {0};
-    //sync_wait.sync_obj = s->sync_objs[i];
-    //sync_wait.timeout_ms = 175;
-    //ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    //LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
+    // struct cam_sync_wait sync_wait = {0};
+    // sync_wait.sync_obj = s->sync_objs[i];
+    // sync_wait.timeout_ms = 100;
+    // ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
  
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
@@ -496,8 +497,6 @@ void enqueue_buffer(struct CameraState *s, int i) {
     ret = cam_control(s->video1_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
     LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
   }
-  // new request_ids
-  s->request_ids[i] = request_id;
 
   // do stuff
   struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
@@ -949,32 +948,32 @@ void cameras_run(MultiCameraState *s) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       uint64_t timestamp = event_data->u.frame_msg.timestamp;
       LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
-      // printf("sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
+      printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
      if (event_data->u.frame_msg.request_id != 0 || (event_data->u.frame_msg.request_id == 0 &&
          ((s->rear.first && event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) ||
           (s->wide.first && event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) ||
           (s->front.first && event_data->session_hdl == s->front.req_mgr_session_info.session_hdl)))) {
         if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
+          if (event_data->u.frame_msg.request_id > 0) {s->rear.first = false;}
           s->rear.frame_id++;
           //printf("rear %d\n", s->rear.frame_id);
-          if (event_data->u.frame_msg.request_id > 0) {s->rear.first = false;}
           int buf_idx = s->rear.frame_id % FRAME_BUF_COUNT;
           s->rear.camera_bufs_metadata[buf_idx].frame_id = s->rear.frame_id;
           s->rear.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
           tbuffer_dispatch(&s->rear.camera_tb, buf_idx);
         } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
+          if (event_data->u.frame_msg.request_id > 0) {s->wide.first = false;}
           s->wide.frame_id++;
           //printf("wide %d\n", s->wide.frame_id);
-          if (event_data->u.frame_msg.request_id > 0) {s->wide.first = false;}
           int buf_idx = s->wide.frame_id % FRAME_BUF_COUNT;
           s->wide.camera_bufs_metadata[buf_idx].frame_id = s->wide.frame_id;
           s->wide.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
           tbuffer_dispatch(&s->wide.camera_tb, buf_idx);
         } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
+          if (event_data->u.frame_msg.request_id > 0) {s->front.first = false;}
           s->front.frame_id++;
           //printf("front %d\n", s->front.frame_id);
-          if (event_data->u.frame_msg.request_id > 0) {s->front.first = false;}
           int buf_idx = s->front.frame_id % FRAME_BUF_COUNT;
           s->front.camera_bufs_metadata[buf_idx].frame_id = s->front.frame_id;
           s->front.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
@@ -1027,13 +1026,13 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   if (s->analog_gain_frac > 4) {
     s->analog_gain_frac = 8.0;
     AG = 0xEEEE;
-    printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
+    // printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
   } else {
     AG = -(1.147 * s->analog_gain_frac * s->analog_gain_frac) + (7.67 * s->analog_gain_frac) - 0.1;
     if (AG - s->analog_gain == -1) {AG = s->analog_gain;}
     s->analog_gain = AG;
     AG = AG * 4096 + AG * 256 + AG * 16 + AG; 
-    printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
+    // printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
   }
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
                                                   {0x3362, s->dc_gain_enabled?0x1:0x0}, // DC_GAIN
