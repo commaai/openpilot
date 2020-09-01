@@ -206,6 +206,17 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   else:
     return [], False
 
+def paramsd_rcv_callback(msg, CP, cfg, fsm):
+  if msg.which() == 'carState':
+    if ((fsm.frame + 1) % 5) == 0:
+      recv_socks = ["liveParameters"]
+    else:
+      recv_socks = []
+    return recv_socks, True
+  else:
+    return [], False
+
+
 
 CONFIGS = [
   ProcessConfig(
@@ -275,7 +286,17 @@ CONFIGS = [
     should_recv_callback=None,
     tolerance=1e-7,  # Numpy gives different results based on CPU features after version 19
   ),
-
+  ProcessConfig(
+    proc_name="paramsd",
+    pub_sub={
+      "liveLocAtionKalman": ["liveParameters"],
+      "carState": []
+    },
+    ignore=["logMonoTime", "valid"],
+    init_callback=get_car_params,
+    should_recv_callback=paramsd_rcv_callback,
+    tolerance=1e-7,  # Numpy gives different results based on CPU features after version 19
+  ),
 ]
 
 def replay_process(cfg, lr):
