@@ -41,7 +41,6 @@ class CarController():
     self.car_fingerprint = CP.carFingerprint
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
-    self.last_resume_frame = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
@@ -74,11 +73,8 @@ class CarController():
 
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
-    elif CS.out.cruiseState.standstill:
-      # send resume at a max freq of 5Hz
-      if (frame - self.last_resume_frame)*DT_CTRL > 0.2:
-        can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
-        self.last_resume_frame = frame
+    elif CS.out.cruiseState.standstill and CS.objrelVel > 0.:
+      can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL))
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ]:
