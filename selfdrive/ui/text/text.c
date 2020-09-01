@@ -63,7 +63,7 @@ assert(font >= 0);
   nvgFontSize(vg, 75.0f);
 
   if (argc >= 2) {
-    float x = 80;
+    float x = 150;
     float y = 150;
 
     // Copy text
@@ -83,8 +83,8 @@ assert(font >= 0);
   }
 
   // Button
-  int b_x = 1550;
-  int b_y = 850;
+  int b_x = 1500;
+  int b_y = 800;
   int b_w = 300;
   int b_h = 150;
 
