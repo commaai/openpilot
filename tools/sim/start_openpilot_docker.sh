@@ -3,6 +3,8 @@
 # expose X to the container
 xhost +local:root
 
+docker pull commaai/openpilot-sim:latest
+
 docker run \
   --rm \
   -it \
