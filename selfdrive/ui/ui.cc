@@ -199,7 +199,7 @@ void update_sockets(UIState *s) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
+  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
 
@@ -228,7 +228,7 @@ void ui_update(UIState *s) {
   }
 
   // Handle controls timeout
-  bool controls_timeout = ((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 5*UI_FREQ;
+  bool controls_timeout = ((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 10*UI_FREQ;
   if (s->started && !s->scene.frontview && controls_timeout) {
     if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
