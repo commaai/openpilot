@@ -130,9 +130,8 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
     if (touch_x >= settings_btn_x && touch_x < (settings_btn_x + settings_btn_w)
         && touch_y >= settings_btn_y && touch_y < (settings_btn_y + settings_btn_h)) {
       s->active_app = cereal::UiLayoutState::App::SETTINGS;
-    }
-    else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
-             && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
+    } else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
+               && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
       if (s->started) {
         s->active_app = cereal::UiLayoutState::App::NONE;
         s->scene.uilayout_sidebarcollapsed = true;
@@ -220,9 +219,6 @@ int main(int argc, char* argv[]) {
 
     if (s->started) {
       set_awake(s, true);
-      if(s->started_frame == (s->sm)->frame) {
-        s->scene.uilayout_sidebarcollapsed = false;
-      }
     }
 
     // up one notch every 5 m/s

@@ -38,11 +38,8 @@ void ui_init(UIState *s) {
 }
 
 static void ui_init_vision(UIState *s) {
-  if (!s->scene.frontview) {
-    s->scene.frontview = getenv("FRONTVIEW") != NULL;
-  }
-  s->scene.fullview = getenv("FULLVIEW") != NULL;
-  s->scene.world_objects_visible = false;  // Invisible until we receive a calibration message.
+  // Invisible until we receive a calibration message.
+  s->scene.world_objects_visible = false;
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     if (s->khr[i] != 0) {
@@ -75,36 +72,23 @@ static void ui_init_vision(UIState *s) {
   }
 
   assert(glGetError() == GL_NO_ERROR);
-
-  s->scene.uilayout_sidebarcollapsed = true;
-  s->alert_blinking_alpha = 1.0;
-  s->alert_blinked = false;
-
-  // TODO: shouldn't be here
-  // Drain sockets
-  s->sm->drain();
 }
 
 void ui_update_vision(UIState *s) {
+  const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+
+  bool wrong_stream = type != s->stream.bufs_info.type;
+  if (s->vision_connected && (!s->started || !visionstream_get(&s->stream, nullptr) || wrong_stream)) {
+    visionstream_destroy(&s->stream);
+    s->vision_connected = false;
+  }
+
   if (!s->vision_connected && s->started) {
-    const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
     int err = visionstream_init(&s->stream, type, true, nullptr);
     if (err == 0) {
       ui_init_vision(s);
       s->vision_connected = true;
     }
-  }
-
-  if (s->vision_connected && (!s->started || !visionstream_get(&s->stream, nullptr))) {
-    visionstream_destroy(&s->stream);
-    s->vision_connected = false;
-  }
-}
-
-
-void update_status(UIState *s, int status) {
-  if (s->status != status) {
-    s->status = status;
   }
 }
 
@@ -143,11 +127,11 @@ void update_sockets(UIState *s) {
     scene.alert_type = scene.controls_state.getAlertType();
     auto alertStatus = scene.controls_state.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-      update_status(s, STATUS_WARNING);
+      s->status = STATUS_WARNING;
     } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
-      update_status(s, STATUS_ALERT);
+      s->status = STATUS_ALERT;
     } else{
-      update_status(s, scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED);
+      s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
 
     float alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
@@ -203,10 +187,8 @@ void update_sockets(UIState *s) {
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
   } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
-    // manage hardware disconnect
     scene.hwType = cereal::HealthData::HwType::UNKNOWN;
   }
-
   if (sm.updated("carParams")) {
     s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
@@ -224,65 +206,53 @@ void update_sockets(UIState *s) {
   s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
-void ui_update_sizes(UIState *s){
-  // resize vision for collapsing sidebar
-  const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-  s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
-  s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
-  s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
-}
-
 void ui_update(UIState *s) {
 
-  SubMaster &sm = *(s->sm);
-  bool started_prev = s->started;
   update_sockets(s);
-  if (s->started && !started_prev) {
-    s->started_frame = sm.frame;
-  }
-
-  ui_update_sizes(s);
   ui_update_vision(s);
 
   // Handle onroad/offroad transition
-  if (!s->started) {
-    if (s->status != STATUS_STOPPED) {
-      update_status(s, STATUS_STOPPED);
-      s->active_app = cereal::UiLayoutState::App::HOME;
-      s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
-    }
-  } else if (s->status == STATUS_STOPPED) {
-    update_status(s, STATUS_DISENGAGED);
+  if (!s->started && s->status != STATUS_OFFROAD) {
+    s->status = STATUS_OFFROAD;
+    s->active_app = cereal::UiLayoutState::App::HOME;
+    s->scene.uilayout_sidebarcollapsed = false;
+  } else if (s->started && s->status == STATUS_OFFROAD) {
+    s->status = STATUS_DISENGAGED;
+    s->started_frame = s->sm->frame;
+
     s->active_app = cereal::UiLayoutState::App::NONE;
+    s->scene.uilayout_sidebarcollapsed = true;
+    s->alert_blinked = false;
+    s->alert_blinking_alpha = 1.0;
+    s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
 
   // Handle controls timeout
-  bool controls_timeout = (sm.frame - sm.rcv_frame("controlsState")) > 5*UI_FREQ;
+  bool controls_timeout = ((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 5*UI_FREQ;
   if (s->started && !s->scene.frontview && controls_timeout) {
-    if (sm.rcv_frame("controlsState") < s->started_frame) {
+    if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
       s->scene.alert_text1 = "openpilot Unavailable";
       s->scene.alert_text2 = "Waiting for controls to start";
       s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
     } else {
       // car is started, but controls is lagging or died
-      LOGE("Controls unresponsive");
-
       if (s->scene.alert_text2 != "Controls Unresponsive") {
         s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT);
+        LOGE("Controls unresponsive");
       }
 
       s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
       s->scene.alert_text2 = "Controls Unresponsive";
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-      update_status(s, STATUS_ALERT);
+      s->status = STATUS_ALERT;
     }
   }
 
   // Sample params
-  if (s->sm->frame % (5*UI_FREQ) == 0) {
+  if ((s->sm)->frame % (5*UI_FREQ) == 0) {
     read_param(&s->is_metric, "IsMetric");
-  } else if (s->sm->frame % (6*UI_FREQ) == 0) {
+  } else if ((s->sm)->frame % (6*UI_FREQ) == 0) {
     int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
     if (param_read != 0) { // Failed to read param
       s->scene.athenaStatus = NET_DISCONNECTED;
@@ -292,5 +262,4 @@ void ui_update(UIState *s) {
       s->scene.athenaStatus = NET_ERROR;
     }
   }
-
 }

@@ -24,7 +24,7 @@ const mat3 intrinsic_matrix = (mat3){{
 }};
 
 const uint8_t alert_colors[][4] = {
-  [STATUS_STOPPED] = {0x07, 0x23, 0x39, 0xf1},
+  [STATUS_OFFROAD] = {0x07, 0x23, 0x39, 0xf1},
   [STATUS_DISENGAGED] = {0x17, 0x33, 0x49, 0xc8},
   [STATUS_ENGAGED] = {0x17, 0x86, 0x44, 0xf1},
   [STATUS_WARNING] = {0xDA, 0x6F, 0x25, 0xf1},
@@ -646,13 +646,18 @@ static void ui_draw_background(UIState *s) {
 }
 
 void ui_draw(UIState *s) {
+  const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
+  s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
+  s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
+  s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
+
   ui_draw_background(s);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, s->fb_w, s->fb_h);
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
-  if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED && s->vision_connected) {
+  if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_OFFROAD && s->vision_connected) {
     ui_draw_vision(s);
   }
   nvgEndFrame(s->vg);

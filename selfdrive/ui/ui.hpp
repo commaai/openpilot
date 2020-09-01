@@ -27,7 +27,7 @@
 #include "common/params.h"
 #include "sound.hpp"
 
-#define STATUS_STOPPED 0
+#define STATUS_OFFROAD 0
 #define STATUS_DISENGAGED 1
 #define STATUS_ENGAGED 2
 #define STATUS_WARNING 3
@@ -91,7 +91,7 @@ const int TRACK_POINTS_MAX_CNT = 50 * 2;
 const int SET_SPEED_NA = 255;
 
 const uint8_t bg_colors[][4] = {
-  [STATUS_STOPPED] = {0x07, 0x23, 0x39, 0xff},
+  [STATUS_OFFROAD] = {0x07, 0x23, 0x39, 0xff},
   [STATUS_DISENGAGED] = {0x17, 0x33, 0x49, 0xff},
   [STATUS_ENGAGED] = {0x17, 0x86, 0x44, 0xff},
   [STATUS_WARNING] = {0xDA, 0x6F, 0x25, 0xff},
@@ -114,9 +114,7 @@ typedef struct UIScene {
   bool is_rhd;
   bool uilayout_sidebarcollapsed;
   // responsive layout
-  int ui_viz_rx;
-  int ui_viz_rw;
-  int ui_viz_ro;
+  int ui_viz_rx, ui_viz_rw, ui_viz_ro;
 
   std::string alert_text1;
   std::string alert_text2;
@@ -224,9 +222,6 @@ typedef struct UIState {
 
 void ui_init(UIState *s);
 void ui_update(UIState *s);
-
-void update_status(UIState *s, int status);
-
 
 // TODO: why is this here?
 int write_param_float(float param, const char* param_name, bool persistent_param = false);
