@@ -105,7 +105,7 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, int align, int flags, uint32_t *ha
     assert(ptr != MAP_FAILED);
   }
 
-  LOGD("alloced: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
+  // LOGD("alloced: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
 
   return ptr;
 }
@@ -157,7 +157,7 @@ void sensors_poke(struct CameraState *s, int request_id) {
 }
 
 void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int len, int op_code) {
-  LOGD("sensors_i2c: %d", len);
+  // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
   struct cam_packet *pkt = alloc(s->video0_fd, size, 8,
@@ -495,7 +495,7 @@ void enqueue_buffer(struct CameraState *s, int i) {
     strcpy(sync_destroy.name, "NodeOutputPortFence");
     sync_destroy.sync_obj = s->sync_objs[i];
     ret = cam_control(s->video1_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
-    LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
+    // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
   }
 
   // do stuff
@@ -504,13 +504,13 @@ void enqueue_buffer(struct CameraState *s, int i) {
   req_mgr_sched_request.link_hdl = s->link_handle;
   req_mgr_sched_request.req_id = request_id;
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
-  LOGD("sched req: %d %d", ret, request_id);
+  // LOGD("sched req: %d %d", ret, request_id);
 
   // create output fence
   struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
   ret = cam_control(s->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-  LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
   s->sync_objs[i] = sync_create.sync_obj;
 
   // configure ISP to put the image in place
@@ -520,12 +520,12 @@ void enqueue_buffer(struct CameraState *s, int i) {
   mem_mgr_map_cmd.flags = 1;
   mem_mgr_map_cmd.fd = s->bufs[i].fd;
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-  LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+  // LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
   s->buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
   
   // poke sensor
   sensors_poke(s, request_id);
-  LOGD("Poked sensor");
+  // LOGD("Poked sensor");
   
   // push the buffer
   config_isp(s, s->buf_handle[i], s->sync_objs[i], request_id, s->buf0_handle, 65632*(i+1));
@@ -947,8 +947,8 @@ void cameras_run(MultiCameraState *s) {
     if (ev.type == 0x8000000) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       uint64_t timestamp = event_data->u.frame_msg.timestamp;
-      LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
-      printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
+      // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
+      // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
      if (event_data->u.frame_msg.request_id != 0 || (event_data->u.frame_msg.request_id == 0 &&
          ((s->rear.first && event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) ||
