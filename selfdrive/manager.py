@@ -14,7 +14,7 @@ from selfdrive.swaglog import cloudlog, add_logentries_handler
 
 
 from common.basedir import BASEDIR, PARAMS
-from common.android import ANDROID
+from common.hardware import HARDWARE, ANDROID, PC
 WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
@@ -156,7 +156,6 @@ from selfdrive.registration import register
 from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
-from common import android
 from common.apk import update_apks, pm_apply_packages, start_offroad
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
@@ -218,10 +217,14 @@ persistent_processes = [
   'uploader',
 ]
 
-if ANDROID:
+if not PC:
   persistent_processes += [
     'logcatd',
     'tombstoned',
+  ]
+
+if ANDROID:
+  persistent_processes += [
     'updated',
     'deleter',
   ]
@@ -238,11 +241,11 @@ car_started_processes = [
   'proclogd',
   'ubloxd',
   'locationd',
+  'clocksd',
 ]
 
 driver_view_processes = [
   'camerad',
-  'dmonitoringd',
   'dmonitoringmodeld'
 ]
 
@@ -252,14 +255,18 @@ if WEBCAM:
     'dmonitoringmodeld',
   ]
 
-if ANDROID:
+if not PC:
   car_started_processes += [
     'sensord',
-    'clocksd',
-    'gpsd',
     'dmonitoringd',
     'dmonitoringmodeld',
   ]
+
+if ANDROID:
+  car_started_processes += [
+    'gpsd',
+  ]
+
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
@@ -366,6 +373,7 @@ def kill_managed_process(name):
         join_process(running[name], 15)
         if running[name].exitcode is None:
           cloudlog.critical("unkillable process %s failed to die!" % name)
+          # TODO: Use method from HARDWARE
           if ANDROID:
             cloudlog.critical("FORCE REBOOTING PHONE!")
             os.system("date >> /sdcard/unkillable_reboot")
@@ -537,7 +545,7 @@ def uninstall():
   with open('/cache/recovery/command', 'w') as f:
     f.write('--wipe_data\n')
   # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
-  android.reboot(reason="recovery")
+  HARDWARE.reboot(reason="recovery")
 
 def main():
   os.environ['PARAMS_PATH'] = PARAMS
@@ -563,7 +571,6 @@ def main():
     ("IsUploadRawEnabled", "1"),
     ("IsLdwEnabled", "1"),
     ("IsGeofenceEnabled", "-1"),
-    ("SpeedLimitOffset", "0"),
     ("LongitudinalControl", "0"),
     ("LimitSetSpeed", "0"),
     ("LimitSetSpeedNeural", "0"),

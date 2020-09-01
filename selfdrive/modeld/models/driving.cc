@@ -54,14 +54,11 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
   s->traffic_convention = std::make_unique<float[]>(TRAFFIC_CONVENTION_LEN);
   s->m->addTrafficConvention(s->traffic_convention.get(), TRAFFIC_CONVENTION_LEN);
 
-  std::vector<char> result = read_db_bytes("IsRHD");
-  if (result.size() > 0) {
-    bool is_rhd = result[0] == '1';
-    if (is_rhd) {
-      s->traffic_convention[1] = 1.0;
-    } else {
-      s->traffic_convention[0] = 1.0;
-    }
+  bool is_rhd = read_db_bool("IsRHD");
+  if (is_rhd) {
+    s->traffic_convention[1] = 1.0;
+  } else {
+    s->traffic_convention[0] = 1.0;
   }
 #endif
 

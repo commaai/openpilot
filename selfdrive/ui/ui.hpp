@@ -50,8 +50,6 @@
 #endif
 
 #define UI_BUF_COUNT 4
-//#define SHOW_SPEEDLIMIT 1
-//#define DEBUG_TURN
 
 // TODO: Detect dynamically
 #ifdef QCOM2
@@ -114,9 +112,7 @@ typedef struct UIScene {
   bool speedlimit_valid;
 
   bool is_rhd;
-  bool map_valid;
   bool uilayout_sidebarcollapsed;
-  bool uilayout_mapenabled;
   // responsive layout
   int ui_viz_rx;
   int ui_viz_rw;
@@ -144,7 +140,7 @@ typedef struct UIScene {
 
 typedef struct {
   float x, y;
-}vertex_data;
+} vertex_data;
 
 typedef struct {
   vertex_data v[MODEL_PATH_MAX_VERTICES_CNT];
@@ -174,7 +170,6 @@ typedef struct UIState {
   int img_wheel;
   int img_turn;
   int img_face;
-  int img_map;
   int img_button_settings;
   int img_button_home;
   int img_battery;
@@ -183,7 +178,6 @@ typedef struct UIState {
 
   // sockets
   SubMaster *sm;
-  PubMaster *pm;
 
   cereal::UiLayoutState::App active_app;
 
@@ -217,24 +211,13 @@ typedef struct UIState {
   UIScene scene;
   bool awake;
 
-  // timeouts
   int awake_timeout;
-  int controls_timeout;
-  int speed_lim_off_timeout;
-  int is_metric_timeout;
-  int longitudinal_control_timeout;
-  int limit_set_speed_timeout;
-  int hardware_timeout;
-  int last_athena_ping_timeout;
-
   bool controls_seen;
 
   uint64_t last_athena_ping;
   int status;
   bool is_metric;
   bool longitudinal_control;
-  bool limit_set_speed;
-  float speed_lim_off;
   bool is_ego_over_limit;
   float alert_blinking_alpha;
   bool alert_blinked;
@@ -286,18 +269,6 @@ int read_param(T* param, const char *param_name, bool persistent_param = false){
       *param = param_orig;
       result = -1;
     }
-  }
-  return result;
-}
-
-template <class T>
-int read_param_timeout(T* param, const char* param_name, int* timeout, bool persistent_param = false) {
-  int result = -1;
-  if (*timeout > 0){
-    (*timeout)--;
-  } else {
-    *timeout = 2 * UI_FREQ; // 0.5Hz
-    result = read_param(param, param_name, persistent_param);
   }
   return result;
 }

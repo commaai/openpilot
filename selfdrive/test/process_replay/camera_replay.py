@@ -5,7 +5,7 @@ import time
 from typing import Any
 from tqdm import tqdm
 
-from common.android import ANDROID
+from common.hardware import ANDROID
 os.environ['CI'] = "1"
 if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
@@ -101,4 +101,3 @@ if __name__ == "__main__":
       f.write(diff2)
 
     sys.exit(int(failed))
-

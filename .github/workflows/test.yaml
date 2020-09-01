@@ -56,7 +56,7 @@ jobs:
   build_mac:
     name: build macos
     runs-on: macos-10.15
-    timeout-minutes: 35
+    timeout-minutes: 60
     steps:
     - uses: actions/checkout@v2
       with:
@@ -109,7 +109,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j3" >> Dockerfile.openpilot && eval "$BUILD"
+        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j\$(nproc)" >> Dockerfile.openpilotci && eval "$BUILD"
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}

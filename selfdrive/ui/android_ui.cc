@@ -143,7 +143,7 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   }
 }
 
-static void update_offroad_layout_state(UIState *s) {
+static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
   static int timeout = 0;
   static bool prev_collapsed = false;
   static cereal::UiLayoutState::App prev_app = cereal::UiLayoutState::App::NONE;
@@ -157,7 +157,7 @@ static void update_offroad_layout_state(UIState *s) {
     auto layout = event.initUiLayoutState();
     layout.setActiveApp(s->active_app);
     layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
-    s->pm->send("offroadLayout", msg);
+    pm->send("offroadLayout", msg);
     LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
     prev_collapsed = s->scene.uilayout_sidebarcollapsed;
     prev_app = s->active_app;
@@ -176,8 +176,9 @@ int main(int argc, char* argv[]) {
   UIState *s = &uistate;
   ui_init(s);
   set_awake(s, true);
-
   enable_event_processing(true);
+
+  PubMaster *pm = new PubMaster({"offroadLayout"});
 
   pthread_t connect_thread_handle;
   err = pthread_create(&connect_thread_handle, NULL,
@@ -196,11 +197,11 @@ int main(int argc, char* argv[]) {
   // light sensor scaling params
   const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
 
-  float brightness_b, brightness_m;
+  float brightness_b = 0, brightness_m = 0;
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
 
-  if(result != 0){
+  if(result != 0) {
     brightness_b = LEON ? 10.0 : 5.0;
     brightness_m = LEON ? 2.6 : 1.3;
     write_param_float(brightness_b, "BRIGHTNESS_B", true);
@@ -245,10 +246,6 @@ int main(int argc, char* argv[]) {
     if (!s->started) {
       // always process events offroad
       check_messages(s);
-
-      if (s->started) {
-        s->controls_timeout = 5 * UI_FREQ;
-      }
     } else {
       set_awake(s, true);
       // Car started, fetch a new rgb image from ipc
@@ -275,9 +272,7 @@ int main(int argc, char* argv[]) {
     }
 
     // manage hardware disconnect
-    if (s->hardware_timeout > 0) {
-      s->hardware_timeout--;
-    } else {
+    if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
       s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
     }
 
@@ -290,9 +285,8 @@ int main(int argc, char* argv[]) {
 
     s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
 
-    if (s->controls_timeout > 0) {
-      s->controls_timeout--;
-    } else if (s->started && !s->scene.frontview) {
+    bool controls_timeout = (s->sm->frame - s->sm->rcv_frame("controlsState")) > 5*UI_FREQ;
+    if (s->started && !s->scene.frontview && controls_timeout) {
       if (!s->controls_seen) {
         // car is started, but controlsState hasn't been seen at all
         s->scene.alert_text1 = "openpilot Unavailable";
@@ -314,12 +308,11 @@ int main(int argc, char* argv[]) {
       ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
 
-    read_param_timeout(&s->is_metric, "IsMetric", &s->is_metric_timeout);
-    read_param_timeout(&s->longitudinal_control, "LongitudinalControl", &s->longitudinal_control_timeout);
-    read_param_timeout(&s->limit_set_speed, "LimitSetSpeed", &s->limit_set_speed_timeout);
-    read_param_timeout(&s->speed_lim_off, "SpeedLimitOffset", &s->limit_set_speed_timeout);
-    int param_read = read_param_timeout(&s->last_athena_ping, "LastAthenaPingTime", &s->last_athena_ping_timeout);
-    if (param_read != -1) { // Param was updated this loop
+
+    if (s->sm->frame % (2*UI_FREQ) == 0) {
+      read_param(&s->is_metric, "IsMetric");
+    } else if (s->sm->frame % (3*UI_FREQ) == 0) {
+      int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
       if (param_read != 0) { // Failed to read param
         s->scene.athenaStatus = NET_DISCONNECTED;
       } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
@@ -328,7 +321,7 @@ int main(int argc, char* argv[]) {
         s->scene.athenaStatus = NET_ERROR;
       }
     }
-    update_offroad_layout_state(s);
+    update_offroad_layout_state(s, pm);
 
     pthread_mutex_unlock(&s->lock);
 
@@ -355,6 +348,6 @@ int main(int argc, char* argv[]) {
   err = pthread_join(connect_thread_handle, NULL);
   assert(err == 0);
   delete s->sm;
-  delete s->pm;
+  delete pm;
   return 0;
 }
