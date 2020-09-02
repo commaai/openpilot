@@ -16,7 +16,6 @@
 #include <map>
 #include <string>
 #include <sstream>
-#include <pthread.h>
 
 #include "nanovg.h"
 
@@ -35,10 +34,6 @@
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
 #define COLOR_OCHRE nvgRGBA(218, 111, 37, 255)
-
-#ifndef QCOM
-  #define UI_60FPS
-#endif
 
 #define UI_BUF_COUNT 4
 
@@ -108,7 +103,6 @@ static std::map<UIStatus, Color> bg_colors = {
 };
 
 typedef struct UIScene {
-  int frontview;
 
   float mpc_x[50];
   float mpc_y[50];
@@ -120,6 +114,7 @@ typedef struct UIScene {
   bool speedlimit_valid;
 
   bool is_rhd;
+  bool frontview;
   bool uilayout_sidebarcollapsed;
   // responsive layout
   int ui_viz_rx, ui_viz_rw, ui_viz_ro;
@@ -180,19 +175,18 @@ typedef struct UIState {
   int img_battery_charging;
   int img_network[6];
 
-  Sound sound;
-  UIScene scene;
-
-  // sockets
   SubMaster *sm;
-  UIStatus status;
 
+  Sound sound;
+  UIStatus status;
+  UIScene scene;
   cereal::UiLayoutState::App active_app;
 
   // vision state
   bool vision_connected;
   VisionStream stream;
 
+  // graphics
   GLuint frame_program;
   GLuint frame_texs[UI_BUF_COUNT];
   EGLImageKHR khr[UI_BUF_COUNT];
@@ -208,24 +202,22 @@ typedef struct UIState {
   int awake_timeout;
   std::atomic<float> light_sensor;
 
+  bool started;
+  bool is_metric;
+  bool longitudinal_control;
   uint64_t last_athena_ping;
   uint64_t started_frame;
 
-  bool is_metric;
-  bool longitudinal_control;
-  float alert_blinking_alpha;
   bool alert_blinked;
-  bool started;
-
-  model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
+  float alert_blinking_alpha;
 
   track_vertices_data track_vertices[2];
+  model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
 } UIState;
 
 void ui_init(UIState *s);
 void ui_update(UIState *s);
 
-// TODO: why is this here?
 int write_param_float(float param, const char* param_name, bool persistent_param = false);
 template <class T>
 int read_param(T* param, const char *param_name, bool persistent_param = false){

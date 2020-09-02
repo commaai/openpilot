@@ -73,11 +73,9 @@ static void ui_init_vision(UIState *s) {
 }
 
 void ui_update_vision(UIState *s) {
-
   // TODO: check the stream type is right for the driverview -> onroad case
-
-  const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
   if (!s->vision_connected && s->started) {
+    const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
     int err = visionstream_init(&s->stream, type, true, nullptr);
     if (err == 0) {
       ui_init_vision(s);
@@ -112,6 +110,7 @@ void update_sockets(UIState *s) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
 
+    // TODO: the alert stuff shouldn't be handled here
     auto alert_sound = scene.controls_state.getAlertSound();
     if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
@@ -248,7 +247,7 @@ void ui_update(UIState *s) {
     }
   }
 
-  // Sample params
+  // Read params
   if ((s->sm)->frame % (5*UI_FREQ) == 0) {
     read_param(&s->is_metric, "IsMetric");
   } else if ((s->sm)->frame % (6*UI_FREQ) == 0) {

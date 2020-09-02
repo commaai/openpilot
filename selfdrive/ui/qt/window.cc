@@ -71,7 +71,7 @@ void GLWindow::initializeGL() {
 }
 
 void GLWindow::timerUpdate(){
-  ui_update(ui_state);
+  //ui_update(ui_state);
   update();
 }
 
@@ -80,6 +80,7 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
+  ui_update(ui_state);
   ui_draw(ui_state);
 }
 

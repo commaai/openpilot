@@ -213,10 +213,6 @@ int main(int argc, char* argv[]) {
 
     ui_update(s);
 
-    if (s->started) {
-      set_awake(s, true);
-    }
-
     // poll for touch events
     int touch_x = -1, touch_y = -1;
     int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
@@ -227,6 +223,10 @@ int main(int argc, char* argv[]) {
     }
 
     // manage wakefulness
+    if (s->started) {
+      set_awake(s, true);
+    }
+
     if (s->awake_timeout > 0) {
       s->awake_timeout--;
     } else {
