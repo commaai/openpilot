@@ -62,6 +62,7 @@ GLWindow::~GLWindow() {
 
 void GLWindow::initializeGL() {
   initializeOpenGLFunctions();
+  std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
   ui_state = new UIState();
   ui_init(ui_state);
