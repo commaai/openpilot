@@ -50,7 +50,6 @@ void set_thread_name(const char* name) {
 
 int set_realtime_priority(int level) {
 #ifdef __linux__
-
   long tid = syscall(SYS_gettid);
 
   // should match python using chrt
@@ -64,8 +63,7 @@ int set_realtime_priority(int level) {
 }
 
 int set_core_affinity(int core) {
-#ifdef QCOM
-
+#ifdef __linux__
   long tid = syscall(SYS_gettid);
   cpu_set_t rt_cpu;
 
