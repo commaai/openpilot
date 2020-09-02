@@ -105,7 +105,7 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, int align, int flags, uint32_t *ha
     assert(ptr != MAP_FAILED);
   }
 
-  LOGD("alloced: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
+  // LOGD("alloced: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
 
   return ptr;
 }
@@ -157,7 +157,7 @@ void sensors_poke(struct CameraState *s, int request_id) {
 }
 
 void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int len, int op_code) {
-  LOGD("sensors_i2c: %d", len);
+  // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
   struct cam_packet *pkt = alloc(s->video0_fd, size, 8,
@@ -479,25 +479,24 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
 
 void enqueue_buffer(struct CameraState *s, int i) {
   int ret;
-  int request_id = s->frame_id;
+  int request_id = s->camera_bufs_metadata[i].frame_id;
+
   if (s->buf_handle[i]) {
     release(s->video0_fd, s->buf_handle[i]);
     // wait
-    //struct cam_sync_wait sync_wait = {0};
-    //sync_wait.sync_obj = s->sync_objs[i];
-    //sync_wait.timeout_ms = 175;
-    //ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    //LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
+    // struct cam_sync_wait sync_wait = {0};
+    // sync_wait.sync_obj = s->sync_objs[i];
+    // sync_wait.timeout_ms = 100;
+    // ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
  
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
     strcpy(sync_destroy.name, "NodeOutputPortFence");
     sync_destroy.sync_obj = s->sync_objs[i];
     ret = cam_control(s->video1_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
-    LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
+    // LOGD("fence destroy: %d %d", ret, sync_destroy.sync_obj);
   }
-  // new request_ids
-  s->request_ids[i] = request_id;
 
   // do stuff
   struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
@@ -505,13 +504,13 @@ void enqueue_buffer(struct CameraState *s, int i) {
   req_mgr_sched_request.link_hdl = s->link_handle;
   req_mgr_sched_request.req_id = request_id;
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
-  LOGD("sched req: %d %d", ret, request_id);
+  // LOGD("sched req: %d %d", ret, request_id);
 
   // create output fence
   struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
   ret = cam_control(s->video1_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
-  LOGD("fence req: %d %d", ret, sync_create.sync_obj);
+  // LOGD("fence req: %d %d", ret, sync_create.sync_obj);
   s->sync_objs[i] = sync_create.sync_obj;
 
   // configure ISP to put the image in place
@@ -521,12 +520,12 @@ void enqueue_buffer(struct CameraState *s, int i) {
   mem_mgr_map_cmd.flags = 1;
   mem_mgr_map_cmd.fd = s->bufs[i].fd;
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-  LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+  // LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
   s->buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
   
   // poke sensor
   sensors_poke(s, request_id);
-  LOGD("Poked sensor");
+  // LOGD("Poked sensor");
   
   // push the buffer
   config_isp(s, s->buf_handle[i], s->sync_objs[i], request_id, s->buf0_handle, 65632*(i+1));
@@ -948,33 +947,33 @@ void cameras_run(MultiCameraState *s) {
     if (ev.type == 0x8000000) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       uint64_t timestamp = event_data->u.frame_msg.timestamp;
-      LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
-      // printf("sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
+      // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
+      // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
      if (event_data->u.frame_msg.request_id != 0 || (event_data->u.frame_msg.request_id == 0 &&
          ((s->rear.first && event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) ||
           (s->wide.first && event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) ||
           (s->front.first && event_data->session_hdl == s->front.req_mgr_session_info.session_hdl)))) {
         if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
+          if (event_data->u.frame_msg.request_id > 0) {s->rear.first = false;}
           s->rear.frame_id++;
           //printf("rear %d\n", s->rear.frame_id);
-          if (event_data->u.frame_msg.request_id > 0) {s->rear.first = false;}
           int buf_idx = s->rear.frame_id % FRAME_BUF_COUNT;
           s->rear.camera_bufs_metadata[buf_idx].frame_id = s->rear.frame_id;
           s->rear.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
           tbuffer_dispatch(&s->rear.camera_tb, buf_idx);
         } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
+          if (event_data->u.frame_msg.request_id > 0) {s->wide.first = false;}
           s->wide.frame_id++;
           //printf("wide %d\n", s->wide.frame_id);
-          if (event_data->u.frame_msg.request_id > 0) {s->wide.first = false;}
           int buf_idx = s->wide.frame_id % FRAME_BUF_COUNT;
           s->wide.camera_bufs_metadata[buf_idx].frame_id = s->wide.frame_id;
           s->wide.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
           tbuffer_dispatch(&s->wide.camera_tb, buf_idx);
         } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
+          if (event_data->u.frame_msg.request_id > 0) {s->front.first = false;}
           s->front.frame_id++;
           //printf("front %d\n", s->front.frame_id);
-          if (event_data->u.frame_msg.request_id > 0) {s->front.first = false;}
           int buf_idx = s->front.frame_id % FRAME_BUF_COUNT;
           s->front.camera_bufs_metadata[buf_idx].frame_id = s->front.frame_id;
           s->front.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
@@ -1027,13 +1026,13 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   if (s->analog_gain_frac > 4) {
     s->analog_gain_frac = 8.0;
     AG = 0xEEEE;
-    printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
+    // printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
   } else {
     AG = -(1.147 * s->analog_gain_frac * s->analog_gain_frac) + (7.67 * s->analog_gain_frac) - 0.1;
     if (AG - s->analog_gain == -1) {AG = s->analog_gain;}
     s->analog_gain = AG;
     AG = AG * 4096 + AG * 256 + AG * 16 + AG; 
-    printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
+    // printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
   }
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
                                                   {0x3362, s->dc_gain_enabled?0x1:0x0}, // DC_GAIN

@@ -16,21 +16,21 @@ def cputime_total(ct):
 def print_cpu_usage(first_proc, last_proc):
   procs = [
     ("selfdrive.controls.controlsd", 66.15),
-    ("selfdrive.locationd.locationd", 34.38),
     ("./loggerd", 33.90),
-    ("selfdrive.controls.plannerd", 19.77),
-    ("./_modeld", 12.74),
+    ("selfdrive.locationd.locationd", 29.5),
+    ("selfdrive.controls.plannerd", 11.84),
     ("selfdrive.locationd.paramsd", 11.53),
+    ("./_modeld", 7.12),
     ("selfdrive.controls.radard", 9.54),
     ("./_ui", 9.54),
     ("./camerad", 7.07),
-    ("selfdrive.locationd.calibrationd", 6.81),
     ("./_sensord", 6.17),
-    ("selfdrive.monitoring.dmonitoringd", 5.48),
+    ("selfdrive.locationd.calibrationd", 6.0),
     ("./boardd", 3.63),
     ("./_dmonitoringmodeld", 2.67),
     ("selfdrive.logmessaged", 2.71),
     ("selfdrive.thermald.thermald", 2.41),
+    ("selfdrive.monitoring.dmonitoringd", 1.90),
     ("./proclogd", 1.54),
     ("./_gpsd", 0.09),
     ("./clocksd", 0.02),
@@ -51,7 +51,7 @@ def print_cpu_usage(first_proc, last_proc):
       if cpu_usage > max(normal_cpu_usage * 1.1, normal_cpu_usage + 5.0):
         result += f"Warning {proc_name} using more CPU than normal\n"
         r = False
-      elif cpu_usage < min(normal_cpu_usage * 0.3, max(normal_cpu_usage - 1.0, 0.0)):
+      elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
         result += f"Warning {proc_name} using less CPU than normal\n"
         r = False
       result += f"{proc_name.ljust(35)}  {cpu_usage:.2f}%\n"
