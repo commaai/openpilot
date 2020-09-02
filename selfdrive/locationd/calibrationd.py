@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+'''
+This process finds calibration values. More info on what these calibration values
+are can be found here https://github.com/commaai/openpilot/tree/master/common/transformations
+While the roll calibration is a real value that can be estimated, here we assume it zero,
+and the image input into the neural network is not corrected for roll.
+'''
+
 import os
 import copy
 import json
