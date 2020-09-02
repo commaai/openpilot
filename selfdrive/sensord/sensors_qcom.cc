@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
@@ -176,10 +177,9 @@ void sensor_loop() {
           log_event.setProximity(data.distance);
           break;
         }
-        case SENSOR_TYPE_LIGHT: {
+        case SENSOR_TYPE_LIGHT:
           log_event.setLight(data.light);
           break;
-        }
         }
 
         log_i++;
