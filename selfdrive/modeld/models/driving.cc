@@ -9,14 +9,15 @@
 #include "common/params.h"
 #include "driving.h"
 
-#define PATH_IDX 0
-#define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2 + 1
-#define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 2
-#define LEAD_IDX RL_IDX + MODEL_PATH_DISTANCE*2 + 2
-#define LONG_X_IDX LEAD_IDX + MDN_GROUP_SIZE*LEAD_MDN_N + SELECTION
-#define LONG_V_IDX LONG_X_IDX + TIME_DISTANCE*2
-#define LONG_A_IDX LONG_V_IDX + TIME_DISTANCE*2
-#define DESIRE_STATE_IDX LONG_A_IDX + TIME_DISTANCE*2
+#define TRAJECTORY_SIZE 33
+#define TRAJECTORY_TIME 10.0
+#define PLAN_IDX 0
+#define LL_IDX PLAN_IDX + PLAN_MHP_N*PLAN_MHP_GROUP_SIZE
+#define LL_PROB_IDX LL_IDX + 4*2*2*33
+#define RE_IDX LL_PROB_IDX + 4
+#define LEAD_IDX RE_IDX + 2*2*2*33
+#define LEAD_PROB_IDX LEAD_MHP_N*LEAD_MHP_GROUP_SIZE
+#define DESIRE_STATE_IDX LEAD_PROB_IDX + 3
 #define META_IDX DESIRE_STATE_IDX + DESIRE_LEN
 #define POSE_IDX META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE
 #define OUTPUT_SIZE  POSE_IDX + POSE_SIZE
@@ -29,6 +30,8 @@
 // #define DUMP_YUV
 
 Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> vander;
+float X_IDXS[TRAJECTORY_SIZE];
+float T_IDXS[TRAJECTORY_SIZE];
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context, int temporal) {
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
@@ -63,9 +66,11 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 #endif
 
   // Build Vandermonde matrix
-  for(int i = 0; i < MODEL_PATH_DISTANCE; i++) {
+  for(int i = 0; i < TRAJECTORY_SIZE; i++) {
     for(int j = 0; j < POLYFIT_DEGREE - 1; j++) {
-      vander(i, j) = pow(i, POLYFIT_DEGREE-j-1);
+      X_IDXS[i] = (192.0/1024.0) * (i**2)
+      T_IDXS[i] = (10.0/1024.0) * (i**2)
+      vander(i, j) = pow(X_IDXS[i], POLYFIT_DEGREE-j-1);
     }
   }
 }
@@ -108,12 +113,11 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   // net outputs
   ModelDataRaw net_outputs;
   net_outputs.path = &s->output[PATH_IDX];
-  net_outputs.left_lane = &s->output[LL_IDX];
-  net_outputs.right_lane = &s->output[RL_IDX];
+  net_outputs.lane_lines = &s->output[LL_IDX];
+  net_outputs.lane_lines_prob = &s->output[LL_PROB_IDX];
+  net_outputs.road_edges = &s->output[RE_IDX];
   net_outputs.lead = &s->output[LEAD_IDX];
-  net_outputs.long_x = &s->output[LONG_X_IDX];
-  net_outputs.long_v = &s->output[LONG_V_IDX];
-  net_outputs.long_a = &s->output[LONG_A_IDX];
+  net_outputs.lead_prob = &s->output[LEAD_PROB_IDX];
   net_outputs.meta = &s->output[DESIRE_STATE_IDX];
   net_outputs.pose = &s->output[POSE_IDX];
   return net_outputs;
@@ -151,26 +155,19 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   out[3] = y0;
 }
 
-void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bool has_prob, const float offset) {
-  float points_arr[MODEL_PATH_DISTANCE];
-  float stds_arr[MODEL_PATH_DISTANCE];
+void fill_path(cereal::ModelData::PathData::Builder path, const float * data, float valid_len, float prob) {
+  float points_arr[TRAJECTORY_SIZE];
+  float stds_arr[TRAJECTORY_SIZE];
   float poly_arr[POLYFIT_DEGREE];
   float std;
   float prob;
   float valid_len;
 
-  // clamp to 5 and MODEL_PATH_DISTANCE
-  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, data[MODEL_PATH_DISTANCE*2]));
-  for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
-    points_arr[i] = data[i] + offset;
-    stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]) + 1e-6;
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
+    points_arr[i] = data[16*i];
+    stds_arr[i] = exp(data[30*33 + 16*i]);
   }
-  if (has_prob) {
-    prob =  sigmoid(data[MODEL_PATH_DISTANCE*2 + 1]);
-  } else {
-    prob = 1.0;
-  }
-  std = softplus(data[MODEL_PATH_DISTANCE]) + 1e-6;
+  std = stds_arr[0];
   poly_fit(points_arr, stds_arr, poly_arr, valid_len);
 
   if (std::getenv("DEBUG")){
@@ -214,23 +211,6 @@ void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_dat
   meta.setDesirePrediction(desire_pred);
 }
 
-void fill_longi(cereal::ModelData::LongitudinalData::Builder longi, const float * long_x_data, const float * long_v_data, const float * long_a_data) {
-  // just doing 10 vals, 1 every sec for now
-  float dist_arr[TIME_DISTANCE/10];
-  float speed_arr[TIME_DISTANCE/10];
-  float accel_arr[TIME_DISTANCE/10];
-  for (int i=0; i<TIME_DISTANCE/10; i++) {
-    dist_arr[i] = long_x_data[i*10];
-    speed_arr[i] = long_v_data[i*10];
-    accel_arr[i] = long_a_data[i*10];
-  }
-  kj::ArrayPtr<const float> dist(&dist_arr[0], ARRAYSIZE(dist_arr));
-  longi.setDistances(dist);
-  kj::ArrayPtr<const float> speed(&speed_arr[0], ARRAYSIZE(speed_arr));
-  longi.setSpeeds(speed);
-  kj::ArrayPtr<const float> accel(&accel_arr[0], ARRAYSIZE(accel_arr));
-  longi.setAccelerations(accel);
-}
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                    uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
@@ -243,10 +223,25 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
 
-  fill_path(framed.initPath(), net_outputs.path, false, 0);
-  fill_path(framed.initLeftLane(), net_outputs.left_lane, true, 1.8);
-  fill_path(framed.initRightLane(), net_outputs.right_lane, true, -1.8);
-  fill_longi(framed.initLongitudinal(), net_outputs.long_x, net_outputs.long_v, net_outputs.long_a);
+  // Find the distribution that corresponds to the most probable plan
+  int plan_mhp_max_idx = 0;
+  for (int i=1; i<PLAN_MHP_N; i++) {
+    if (net_outputs.lead[(i + 1)*PLAN_MHP_GROUP_SIZE - 1] >
+        net_outputs.lead[(plan_mhp_max_idx + 1)*PLAN_MHP_GROUP_SIZE - 1]) {
+      plan_mhp_max_idx = i;
+    }
+  }
+  // x pos at 10s is a good valid_len
+  float valid_len = net_outputs.plan[plan_mhp_max_idx*PLAN_MHP_GROUP_SIZE + 15*33];
+  // clamp to 5 and MODEL_PATH_DISTANCE
+  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, valid_len));
+  auto lpath = framed.initPath();
+  fill_path(lpath, net_outputs.plan[plan_mhp_max_idx*PLAN_MHP_GROUP_SIZE], valid_len);
+  
+  auto left_lane = framed.initLeftLane();
+  fill_path(left_lane, net_outputs.left_lane, true, 1.8);
+  auto right_lane = framed.initRightLane();
+  fill_path(right_lane, net_outputs.right_lane, true, -1.8);
 
   // Find the distribution that corresponds to the current lead
   int mdn_max_idx = 0;
