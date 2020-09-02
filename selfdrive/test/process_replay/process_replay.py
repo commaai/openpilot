@@ -205,12 +205,6 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
     recv_socks = ["liveCalibration"]
   return recv_socks, msg.which() == 'carState'
 
-def paramsd_rcv_callback(msg, CP, cfg, fsm):
-  recv_socks = []
-  if msg.which() == 'carState' and ((fsm.frame + 2) % 5) == 0:
-    recv_socks = ["liveParameters"]
-  return recv_socks, msg.which() == 'carState'
-
 
 CONFIGS = [
   ProcessConfig(
@@ -283,12 +277,12 @@ CONFIGS = [
   ProcessConfig(
     proc_name="paramsd",
     pub_sub={
-      "carState": ["liveParameters"],
-      "liveLocationKalman": []
+      "liveLocationKalman": ["liveParameters"],
+      "carState": []
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
-    should_recv_callback=paramsd_rcv_callback,
+    should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
 ]
