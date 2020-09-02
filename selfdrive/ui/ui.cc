@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <signal.h>
 #include <unistd.h>
 #include <assert.h>
+#include <poll.h>
 #include <sys/mman.h>
-#include <czmq.h>
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -18,7 +19,7 @@ extern volatile sig_atomic_t do_exit;
 int write_param_float(float param, const char* param_name, bool persistent_param) {
   char s[16];
   int size = snprintf(s, sizeof(s), "%f", param);
-  return write_db_value(param_name, s, MIN(size, sizeof(s)), persistent_param);
+  return write_db_value(param_name, s, size < sizeof(s) ? size : sizeof(s), persistent_param);
 }
 
 void ui_init(UIState *s) {
@@ -83,10 +84,26 @@ void ui_update_vision(UIState *s) {
     }
   }
 
-  if (s->vision_connected && (!s->started || !visionstream_get(&s->stream, nullptr))) {
-    visionstream_destroy(&s->stream);
-    s->vision_connected = false;
+  if (s->vision_connected) {
+    if (!s->started) goto destroy;
+
+    // poll for a new frame
+    const int timeout = 1000 / UI_FREQ;
+    struct pollfd fds[1] = {{
+      .fd = s->stream.ipc_fd,
+      .events = POLLIN,
+    }};
+    int ret = poll(fds, 1, timeout);
+    if (ret >= 0) {
+      if (!visionstream_get(&s->stream, nullptr)) goto destroy;
+    }
   }
+
+  return;
+
+destroy:
+  visionstream_destroy(&s->stream);
+  s->vision_connected = false;
 }
 
 static inline void fill_path_points(const cereal::ModelData::PathData::Reader &path, float *points) {
