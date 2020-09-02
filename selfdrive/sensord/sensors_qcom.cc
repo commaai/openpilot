@@ -9,7 +9,6 @@
 #include <sys/types.h>
 #include <sys/resource.h>
 
-#include <pthread.h>
 #include <map>
 #include <set>
 
@@ -21,7 +20,16 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
-#include "sensors_qcom.h"
+// ACCELEROMETER_UNCALIBRATED is only in Android O
+// https://developer.android.com/reference/android/hardware/Sensor.html#STRING_TYPE_ACCELEROMETER_UNCALIBRATED
+
+#define SENSOR_ACCELEROMETER 1
+#define SENSOR_MAGNETOMETER 2
+#define SENSOR_GYRO 4
+#define SENSOR_MAGNETOMETER_UNCALIBRATED 3
+#define SENSOR_GYRO_UNCALIBRATED 5
+#define SENSOR_PROXIMITY 6
+#define SENSOR_LIGHT 7
 
 volatile sig_atomic_t do_exit = 0;
 volatile sig_atomic_t re_init_sensors = 0;
@@ -82,7 +90,9 @@ void sensor_loop() {
     };
 
     for (auto &s : sensors) {
-      init_sensor(device, s.first, s.second);
+      device->activate(device, s.first, 0);
+      device->activate(device, s.first, 1);
+      device->setDelay(device, s.first, s.second);
     }
 
     // TODO: why is this 16?
