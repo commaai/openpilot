@@ -68,8 +68,8 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
   // Build Vandermonde matrix
   for(int i = 0; i < TRAJECTORY_SIZE; i++) {
     for(int j = 0; j < POLYFIT_DEGREE - 1; j++) {
-      X_IDXS[i] = (192.0/1024.0) * (i**2)
-      T_IDXS[i] = (10.0/1024.0) * (i**2)
+      X_IDXS[i] = (192.0/1024.0) * (pow(i,2));
+      T_IDXS[i] = (10.0/1024.0) * (pow(i,2));
       vander(i, j) = pow(X_IDXS[i], POLYFIT_DEGREE-j-1);
     }
   }
@@ -112,7 +112,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 
   // net outputs
   ModelDataRaw net_outputs;
-  net_outputs.path = &s->output[PATH_IDX];
+  net_outputs.plan = &s->output[PLAN_IDX];
   net_outputs.lane_lines = &s->output[LL_IDX];
   net_outputs.lane_lines_prob = &s->output[LL_PROB_IDX];
   net_outputs.road_edges = &s->output[RE_IDX];
@@ -155,20 +155,18 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   out[3] = y0;
 }
 
-void fill_path(cereal::ModelData::PathData::Builder path, const float * data, float valid_len, float prob) {
+void fill_path(cereal::ModelData::PathData::Builder path, const float * data, float valid_len, int valid_len_idx, float prob) {
   float points_arr[TRAJECTORY_SIZE];
   float stds_arr[TRAJECTORY_SIZE];
   float poly_arr[POLYFIT_DEGREE];
   float std;
-  float prob;
-  float valid_len;
 
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     points_arr[i] = data[16*i];
     stds_arr[i] = exp(data[30*33 + 16*i]);
   }
   std = stds_arr[0];
-  poly_fit(points_arr, stds_arr, poly_arr, valid_len);
+  poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
 
   if (std::getenv("DEBUG")){
     kj::ArrayPtr<const float> stds(&stds_arr[0], ARRAYSIZE(stds_arr));
@@ -186,18 +184,15 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, fl
 }
 
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, int mdn_max_idx, int t_offset) {
-  const double x_scale = 10.0;
-  const double y_scale = 10.0;
-
-  lead.setProb(sigmoid(data[LEAD_MDN_N*MDN_GROUP_SIZE + t_offset]));
-  lead.setDist(x_scale * data[mdn_max_idx*MDN_GROUP_SIZE]);
-  lead.setStd(x_scale * softplus(data[mdn_max_idx*MDN_GROUP_SIZE + MDN_VALS]));
-  lead.setRelY(y_scale * data[mdn_max_idx*MDN_GROUP_SIZE + 1]);
-  lead.setRelYStd(y_scale * softplus(data[mdn_max_idx*MDN_GROUP_SIZE + MDN_VALS + 1]));
-  lead.setRelVel(data[mdn_max_idx*MDN_GROUP_SIZE + 2]);
-  lead.setRelVelStd(softplus(data[mdn_max_idx*MDN_GROUP_SIZE + MDN_VALS + 2]));
-  lead.setRelA(data[mdn_max_idx*MDN_GROUP_SIZE + 3]);
-  lead.setRelAStd(softplus(data[mdn_max_idx*MDN_GROUP_SIZE + MDN_VALS + 3]));
+  lead.setProb(sigmoid(data[LEAD_MHP_N*LEAD_MHP_GROUP_SIZE + t_offset]));
+  lead.setDist(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE]);
+  lead.setStd(exp(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + LEAD_MHP_VALS]));
+  lead.setRelY(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 1]);
+  lead.setRelYStd(exp(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + LEAD_MHP_VALS + 1]));
+  lead.setRelVel(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 2]);
+  lead.setRelVelStd(exp(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + LEAD_MHP_VALS + 2]));
+  lead.setRelA(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 3]);
+  lead.setRelAStd(exp(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + LEAD_MHP_VALS + 3]));
 }
 
 void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_data) {
@@ -235,19 +230,28 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   float valid_len = net_outputs.plan[plan_mhp_max_idx*PLAN_MHP_GROUP_SIZE + 15*33];
   // clamp to 5 and MODEL_PATH_DISTANCE
   valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, valid_len));
+  int valid_len_idx = 0;
+  for (int i=1; i<TRAJECTORY_SIZE; i++) {
+    if (valid_len > X_IDXS[valid_len_idx]){
+      valid_len_idx = i;
+    }
+  }
+
   auto lpath = framed.initPath();
-  fill_path(lpath, net_outputs.plan[plan_mhp_max_idx*PLAN_MHP_GROUP_SIZE], valid_len);
+  fill_path(lpath, &net_outputs.plan[plan_mhp_max_idx*PLAN_MHP_GROUP_SIZE], valid_len, valid_len_idx, 1.0);
   
   auto left_lane = framed.initLeftLane();
-  fill_path(left_lane, net_outputs.left_lane, true, 1.8);
+  fill_path(left_lane, &net_outputs.lane_lines[1*4*33], valid_len, valid_len_idx,
+            sigmoid(net_outputs.lane_lines_prob[1]));
   auto right_lane = framed.initRightLane();
-  fill_path(right_lane, net_outputs.right_lane, true, -1.8);
+  fill_path(right_lane, &net_outputs.lane_lines[2*4*33], valid_len, valid_len_idx,
+            sigmoid(net_outputs.lane_lines_prob[2]));
 
   // Find the distribution that corresponds to the current lead
   int mdn_max_idx = 0;
   int t_offset = 0;
-  for (int i=1; i<LEAD_MDN_N; i++) {
-    if (net_outputs.lead[i*MDN_GROUP_SIZE + 8 + t_offset] > net_outputs.lead[mdn_max_idx*MDN_GROUP_SIZE + 8 + t_offset]) {
+  for (int i=1; i<LEAD_MHP_N; i++) {
+    if (net_outputs.lead[i*LEAD_MHP_GROUP_SIZE + 8 + t_offset] > net_outputs.lead[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 8 + t_offset]) {
       mdn_max_idx = i;
     }
   }
@@ -255,8 +259,8 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   // Find the distribution that corresponds to the lead in 2s
   mdn_max_idx = 0;
   t_offset = 1;
-  for (int i=1; i<LEAD_MDN_N; i++) {
-    if (net_outputs.lead[i*MDN_GROUP_SIZE + 8 + t_offset] > net_outputs.lead[mdn_max_idx*MDN_GROUP_SIZE + 8 + t_offset]) {
+  for (int i=1; i<LEAD_MHP_N; i++) {
+    if (net_outputs.lead[i*LEAD_MHP_GROUP_SIZE + 8 + t_offset] > net_outputs.lead[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 8 + t_offset]) {
       mdn_max_idx = i;
     }
   }
@@ -275,10 +279,10 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   for (int i =0; i < 3; i++) {
     trans_arr[i] = net_outputs.pose[i];
-    trans_std_arr[i] = softplus(net_outputs.pose[6 + i]) + 1e-6;
+    trans_std_arr[i] = exp(net_outputs.pose[6 + i]);
 
-    rot_arr[i] = M_PI * net_outputs.pose[3 + i] / 180.0;
-    rot_std_arr[i] = M_PI * (softplus(net_outputs.pose[9 + i]) + 1e-6) / 180.0;
+    rot_arr[i] = net_outputs.pose[3 + i];
+    rot_std_arr[i] = exp(net_outputs.pose[9 + i]);
   }
 
   MessageBuilder msg;
