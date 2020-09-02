@@ -201,10 +201,9 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
   recv_socks = []
-  if msg.which() == 'carState' and ((fsm.frame + 1) % 25) == 0:
+  if fsm.frame == 0 or (msg.which() == 'cameraOdometry' and (fsm.frame % 5) == 0):
     recv_socks = ["liveCalibration"]
-  return recv_socks, msg.which() == 'carState'
-
+  return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 
 CONFIGS = [
   ProcessConfig(

@@ -145,27 +145,18 @@ class Calibrator():
 
 def calibrationd_thread(sm=None, pm=None):
   if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry', 'carState'])
+    sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll=['cameraOdometry'])
 
   if pm is None:
     pm = messaging.PubMaster(['liveCalibration'])
 
   calibrator = Calibrator(param_put=True)
 
-  send_counter = 0
   while 1:
     sm.update()
 
-    # if no inputs still publish calibration
-    if not sm.updated['carState'] and not sm.updated['cameraOdometry']:
-      calibrator.send_data(pm)
-      continue
-
     if sm.updated['carState']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
-      if send_counter % 25 == 0:
-        calibrator.send_data(pm)
-      send_counter += 1
 
     if sm.updated['cameraOdometry']:
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
@@ -176,6 +167,9 @@ def calibrationd_thread(sm=None, pm=None):
       if DEBUG and new_rpy is not None:
         print('got new rpy', new_rpy)
 
+    # 4Hz driven by cameraOdometry
+    if sm.frame % 5 == 0:
+      calibrator.send_data(pm)
 
 def main(sm=None, pm=None):
   calibrationd_thread(sm, pm)
