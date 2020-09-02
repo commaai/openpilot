@@ -101,8 +101,8 @@ class Calibrator():
                         (self.valid_blocks < INPUTS_NEEDED))
     if straight_and_fast and certain_if_calib:
       observed_rpy = np.array([0,
-                               -np.arctan2(trans[1], trans[0]),
-                               np.arctan2(trans[2], trans[0])])
+                               np.arctan2(trans[1], trans[0]),
+                               -np.arctan2(trans[2], trans[0])])
       new_rpy = euler_from_rot(rot_from_euler(self.rpy).dot(rot_from_euler(observed_rpy)))
       new_rpy = sanity_clip(new_rpy)
 
