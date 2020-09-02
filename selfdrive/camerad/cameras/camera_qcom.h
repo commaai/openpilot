@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <czmq.h>
+#include <memory>
 #include <atomic>
 #include "messaging.hpp"
 
@@ -12,11 +13,7 @@
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
-#include "common/mat.h"
-#include "common/visionbuf.h"
-#include "common/buffering.h"
-#include "common/utilpp.h"
-
+#include "../imgproc/utils.h"
 #include "camera_common.h"
 
 #define FRAME_BUF_COUNT 4
@@ -39,10 +36,6 @@
 
 #define FOCUS_RECOVER_PATIENCE 50 // 2.5 seconds of complete blur
 #define FOCUS_RECOVER_STEPS 240 // 6 seconds
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct CameraState CameraState;
 
@@ -131,19 +124,32 @@ typedef struct MultiCameraState {
   unique_fd msmcfg_fd;
   unique_fd v4l_fd;
 
+  cl_mem rgb_conv_roi_cl, rgb_conv_result_cl, rgb_conv_filter_cl;
+  uint16_t lapres[(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)];
+
+  VisionBuf focus_bufs[FRAME_BUF_COUNT];
+  VisionBuf stats_bufs[FRAME_BUF_COUNT];
+
+  cl_program prg_rgb_laplacian;
+  cl_kernel krnl_rgb_laplacian;
+
+  std::unique_ptr<uint8_t[]> rgb_roi_buf;
+  std::unique_ptr<int16_t[]> conv_result;
+
+  int conv_cl_localMemSize;
+  size_t conv_cl_globalWorkSize[2];
+  size_t conv_cl_localWorkSize[2];
+
   CameraState rear;
   CameraState front;
 } MultiCameraState;
 
 void cameras_init(MultiCameraState *s);
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front);
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 
 void camera_autoexposure(CameraState *s, float grey_frac);
 void actuator_move(CameraState *s, uint16_t target);
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, int data_type);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
+void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm);

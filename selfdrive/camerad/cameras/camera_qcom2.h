@@ -1,25 +1,14 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
 #include <czmq.h>
 
-#include "common/mat.h"
-#include "common/visionbuf.h"
-#include "common/buffering.h"
-
 #include "camera_common.h"
-
 #include "media/cam_req_mgr.h"
 
 #define FRAME_BUF_COUNT 4
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 typedef struct CameraState {
   CameraInfo ci;
@@ -68,8 +57,11 @@ typedef struct CameraState {
   int idx_offset;
   bool skipped;
 
-  struct cam_req_mgr_session_info req_mgr_session_info;
+  int debayer_cl_localMemSize;
+  size_t debayer_cl_globalWorkSize[2];
+  size_t debayer_cl_localWorkSize[2];
 
+  struct cam_req_mgr_session_info req_mgr_session_info;
 } CameraState;
 
 typedef struct MultiCameraState {
@@ -90,16 +82,11 @@ typedef struct MultiCameraState {
 } MultiCameraState;
 
 void cameras_init(MultiCameraState *s);
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
 void cameras_run(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
+void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm);
+void camera_wide_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm);
 #ifdef NOSCREEN
 void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
 #endif
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-#endif
-

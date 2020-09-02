@@ -111,9 +111,7 @@ void cameras_init(MultiCameraState *s) {
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
-                  VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats,
-                  VisionBuf *camera_bufs_front) {
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
 
@@ -132,4 +130,8 @@ void cameras_run(MultiCameraState *s) {
   set_thread_name("frame_streaming");
   run_frame_stream(s);
   cameras_close(s);
+}
+
+void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
+  common_camera_process_buf(s, b, cnt, pm);
 }

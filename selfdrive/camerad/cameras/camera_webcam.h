@@ -1,5 +1,4 @@
-#ifndef CAMERA_WEBCAM
-#define CAMERA_WEBCAM
+#pragma once
 
 #include <stdbool.h>
 
@@ -9,17 +8,9 @@
 #include <CL/cl.h>
 #endif
 
-#include "common/mat.h"
-
-#include "buffering.h"
-#include "common/visionbuf.h"
 #include "camera_common.h"
 
 #define FRAME_BUF_COUNT 16
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct CameraState {
   int camera_id;
@@ -47,12 +38,8 @@ typedef struct MultiCameraState {
 } MultiCameraState;
 
 void cameras_init(MultiCameraState *s);
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front);
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-#endif
+void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm);

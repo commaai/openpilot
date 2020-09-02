@@ -1,8 +1,13 @@
-#ifndef CAMERA_COMMON_H
-#define CAMERA_COMMON_H
+#pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+
+#include "common/buffering.h"
+#include "common/mat.h"
+#include "common/visionbuf.h"
+#include "messaging.hpp"
+#include "transforms/rgb_to_yuv.h"
 
 #include "common/visionipc.h"
 
@@ -23,12 +28,11 @@
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define UI_BUF_COUNT 4
+#define YUV_COUNT 40
 
 typedef struct CameraInfo {
-  const char* name;
+  const char *name;
   int frame_width, frame_height;
   int frame_stride;
   bool bayer;
@@ -64,8 +68,49 @@ typedef struct FrameMetadata {
 
 extern CameraInfo cameras_supported[CAMERA_ID_MAX];
 
-#ifdef __cplusplus
-}
-#endif
+typedef struct {
+  uint8_t *y, *u, *v;
+} YUVBuf;
 
-#endif
+struct CameraState;
+class CameraBuf {
+  public:
+  cl_kernel krnl_debayer;
+  cl_command_queue q;
+
+  TBuffer ui_tb;
+  TBuffer *yuv_tb;
+
+  Pool yuv_pool;
+  VisionBuf yuv_ion[YUV_COUNT];
+  YUVBuf yuv_bufs[YUV_COUNT];
+  FrameMetadata yuv_metas[YUV_COUNT];
+  size_t yuv_buf_size;
+  int yuv_width, yuv_height;
+  RGBToYUVState rgb_to_yuv_state;
+
+  int rgb_width, rgb_height, rgb_stride;
+  VisionBuf rgb_bufs[UI_BUF_COUNT];
+
+  VisionBuf *camera_bufs;
+
+  VisionBuf *cur_rgb_buf;
+  YUVBuf *cur_yuv_buf;
+  VisionBuf *cur_yuv_ion_buf;
+
+  mat3 yuv_transform;
+
+  void init(cl_device_id device_id, cl_context context, CameraState *s, const char *name);
+  void free();
+  bool acquire(CameraState *s);
+  void release();
+  void stop();
+  const FrameMetadata &frameMetaData() const { return yuv_metas[cur_yuv_idx]; }
+
+  private:
+  int cur_yuv_idx, cur_rgb_idx;
+};
+
+struct MultiCameraState;
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
+void common_camera_process_buf(MultiCameraState *s, const CameraBuf *b, int cnt, PubMaster *pm);

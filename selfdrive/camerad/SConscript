@@ -10,7 +10,7 @@ if arch == "aarch64":
     cameras = ['cameras/camera_qcom.cc']
 elif arch == "larch64":
   libs += []
-  cameras = ['cameras/camera_qcom2.c']
+  cameras = ['cameras/camera_qcom2.cc']
   # no screen
   # env = env.Clone()
   # env.Append(CXXFLAGS = '-DNOSCREEN')
@@ -36,6 +36,7 @@ env.SharedLibrary('snapshot/visionipc',
 
 env.Program('camerad', [
     'main.cc',
+    'cameras/camera_common.cc',
     'transforms/rgb_to_yuv.c',
     'imgproc/utils.cc',
     cameras,

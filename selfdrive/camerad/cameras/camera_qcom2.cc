@@ -23,6 +23,8 @@
 
 #include "sensor2_i2c.h"
 
+#define DEBAYER_LOCAL_WORKSIZE 16
+
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
 //#define FRAME_STRIDE 1936 // for 8 bit output
@@ -144,7 +146,7 @@ void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
 void sensors_poke(struct CameraState *s, int request_id) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet);
-  struct cam_packet *pkt = alloc(s->video0_fd, size, 8,
+  struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, size, 8,
     CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
   pkt->num_cmd_buf = 1;
   pkt->kmd_cmd_buf_index = -1;
@@ -170,7 +172,7 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
-  struct cam_packet *pkt = alloc(s->video0_fd, size, 8,
+  struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, size, 8,
     CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
   pkt->num_cmd_buf = 1;
   pkt->kmd_cmd_buf_index = -1;
@@ -180,8 +182,8 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
 
   buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_cmd_i2c_random_wr) + (len-1)*sizeof(struct i2c_random_wr_payload);
   buf_desc[0].type = CAM_CMD_BUF_I2C;
-  struct cam_cmd_power *power = alloc(s->video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
-  struct cam_cmd_i2c_random_wr *i2c_random_wr = (void*)power;
+  struct cam_cmd_power *power = (struct cam_cmd_power *)alloc(s->video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)power;
   i2c_random_wr->header.count = len;
   i2c_random_wr->header.op_code = 1;
   i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
@@ -207,7 +209,7 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
 void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
-  struct cam_packet *pkt = alloc(video0_fd, size, 8,
+  struct cam_packet *pkt = (struct cam_packet *)alloc(video0_fd, size, 8,
     CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = -1;
@@ -217,7 +219,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
 
   buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_cmd_i2c_info) + sizeof(struct cam_cmd_probe);
   buf_desc[0].type = CAM_CMD_BUF_LEGACY;
-  struct cam_cmd_i2c_info *i2c_info = alloc(video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)alloc(video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
   struct cam_cmd_probe *probe = (struct cam_cmd_probe *)((uint8_t *)i2c_info) + sizeof(struct cam_cmd_i2c_info);
 
   switch (camera_num) {
@@ -254,7 +256,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   //buf_desc[1].size = buf_desc[1].length = 148;
   buf_desc[1].size = buf_desc[1].length = 196;
   buf_desc[1].type = CAM_CMD_BUF_I2C;
-  struct cam_cmd_power *power = alloc(video0_fd, buf_desc[1].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[1].mem_handle);
+  struct cam_cmd_power *power = (struct cam_cmd_power *)alloc(video0_fd, buf_desc[1].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[1].mem_handle);
   memset(power, 0, buf_desc[1].size);
   struct cam_cmd_unconditional_wait *unconditional_wait;
 
@@ -273,39 +275,39 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->power_settings[1].power_seq_type = 1; // analog
   power->power_settings[2].power_seq_type = 2; // digital
   power->power_settings[3].power_seq_type = 8; // reset low
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
+  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
-  unconditional_wait = (void*)power;
+  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
   unconditional_wait->delay = 5;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (void*)power + sizeof(struct cam_cmd_unconditional_wait);
+  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
 
   // set clock
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
   power->power_settings[0].config_val_low = 24000000; //Hz
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
+  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
-  unconditional_wait = (void*)power;
+  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
   unconditional_wait->delay = 10; // ms
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (void*)power + sizeof(struct cam_cmd_unconditional_wait);
+  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
 
   // 8,1 is this reset?
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 1;
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
+  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
-  unconditional_wait = (void*)power;
+  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
   unconditional_wait->delay = 100; // ms
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (void*)power + sizeof(struct cam_cmd_unconditional_wait);
+  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
 
   // probe happens here
 
@@ -314,39 +316,39 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 0;
   power->power_settings[0].config_val_low = 0;
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
+  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
-  unconditional_wait = (void*)power;
+  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
   unconditional_wait->delay = 1;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (void*)power + sizeof(struct cam_cmd_unconditional_wait);
+  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
 
   // reset high
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 1;
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
+  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
-  unconditional_wait = (void*)power;
+  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
   unconditional_wait->delay = 1;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (void*)power + sizeof(struct cam_cmd_unconditional_wait);
+  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
 
   // reset low
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 0;
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
+  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
-  unconditional_wait = (void*)power;
+  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
   unconditional_wait->delay = 1;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (void*)power + sizeof(struct cam_cmd_unconditional_wait);
+  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
 
   // 7750
   /*power->count = 1;
@@ -360,7 +362,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->power_settings[0].power_seq_type = 2;
   power->power_settings[1].power_seq_type = 1;
   power->power_settings[2].power_seq_type = 3;
-  power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));
+  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
   LOGD("probing the sensor");
   int ret = cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
@@ -380,7 +382,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
   }
-  struct cam_packet *pkt = alloc(s->video0_fd, size, 8,
+  struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, size, 8,
     CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
@@ -398,7 +400,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   }
   pkt->header.size = size;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
-  struct cam_buf_io_cfg *io_cfg = (void*)&pkt->payload + pkt->io_configs_offset;
+  struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
 
   // TODO: support MMU
   buf_desc[0].size = 65624;
@@ -417,7 +419,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   }
   buf_desc[1].type = CAM_CMD_BUF_GENERIC;
   buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
-  uint32_t *buf2 = alloc(s->video0_fd, buf_desc[1].size, 0x20, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[1].mem_handle);
+  uint32_t *buf2 = (uint32_t *)alloc(s->video0_fd, buf_desc[1].size, 0x20, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[1].mem_handle);
 
   // cam_isp_packet_generic_blob_handler
   uint32_t tmp[] = {
@@ -576,6 +578,12 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->exposure_time = 598;
   s->request_id_last = 0;
   s->skipped = true;
+  
+  s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
+  s->debayer_cl_globalWorkSize[0] = s->ci.frame_width;
+  s->debayer_cl_globalWorkSize[1] = s->ci.frame_height;
+  s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
+  s->debayer_cl_localWorkSize[1] = DEBAYER_LOCAL_WORKSIZE;
 }
 
 static void camera_open(CameraState *s, VisionBuf* b) {
@@ -640,7 +648,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   isp_resource.length = sizeof(struct cam_isp_in_port_info) + sizeof(struct cam_isp_out_port_info)*(1-1);
   isp_resource.handle_type = CAM_HANDLE_USER_POINTER;
 
-  struct cam_isp_in_port_info *in_port_info = malloc(isp_resource.length);
+  struct cam_isp_in_port_info *in_port_info = (struct cam_isp_in_port_info *)malloc(isp_resource.length);
   isp_resource.res_hdl = (uint64_t)in_port_info;
 
   switch (s->camera_num) {
@@ -733,7 +741,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   LOG("-- Config CSI PHY");
   {
     uint32_t cam_packet_handle = 0;
-    struct cam_packet *pkt = alloc(s->video0_fd, sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1, 8,
+    struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1, 8,
       CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
     pkt->num_cmd_buf = 1;
     pkt->kmd_cmd_buf_index = -1;
@@ -741,7 +749,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
 
     buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_csiphy_info);
     buf_desc[0].type = CAM_CMD_BUF_GENERIC;
-    struct cam_csiphy_info *csiphy_info = alloc(s->video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
+    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)alloc(s->video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
 
     csiphy_info->lane_mask = 0x1f;
     csiphy_info->lane_assign = 0x3210;// skip clk. How is this 16 bit for 5 channels??
@@ -808,7 +816,7 @@ void cameras_init(MultiCameraState *s) {
 #endif
 }
 
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide) {
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide) {
   int ret;
 
   LOG("-- Opening devices");
@@ -1061,12 +1069,12 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   }
 
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
-                                                  {0x3362, s->dc_gain_enabled?0x1:0x0}, // DC_GAIN
+                                                  {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
                                                   {0x305A, 0x00D1}, // red gain
                                                   {0x3058, 0x0118}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
-                                                  {0x3012, s->exposure_time}}; // integ time
+                                                  {0x3012, (uint16_t)s->exposure_time}}; // integ time
                                                   //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
@@ -1101,3 +1109,26 @@ void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   //printf("zmq errcode %d, %d\n",err,err2);
 }
 #endif
+
+void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
+  common_camera_process_buf(s, b, cnt, pm);
+}
+
+void camera_wide_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
+  const FrameMetadata &frame_data = b->frameMetaData();
+  if (pm != nullptr) {
+    capnp::MallocMessageBuilder msg;
+    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+    event.setLogMonoTime(nanos_since_boot());
+    auto framed = event.initWideFrame();
+    fill_frame_data(framed, frame_data, cnt);
+    pm->send("wideFrame", msg);
+  }
+
+#ifdef NOSCREEN
+  if (frame_data.frame_id % 4 == 0) {
+    sendrgb(s, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, 1);
+  }
+#endif
+}
+

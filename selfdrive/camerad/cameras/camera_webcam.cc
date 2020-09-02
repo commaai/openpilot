@@ -8,7 +8,6 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "buffering.h"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
@@ -240,9 +239,7 @@ void cameras_init(MultiCameraState *s) {
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
-                  VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats,
-                  VisionBuf *camera_bufs_front) {
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
   int err;
@@ -273,4 +270,8 @@ void cameras_run(MultiCameraState *s) {
   err = pthread_join(rear_thread_handle, NULL);
   assert(err == 0);
   cameras_close(s);
+}
+
+void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
+  common_camera_process_buf(s, b, cnt, pm);
 }

@@ -71,16 +71,15 @@ VisionBuf visionbuf_allocate(size_t len) {
   };
 }
 
-VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx, cl_mem *out_mem) {
+VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx) {
   VisionBuf r = visionbuf_allocate(len);
-  *out_mem = visionbuf_to_cl(&r, device_id, ctx);
-  r.buf_cl = *out_mem;
+  visionbuf_to_cl(&r, device_id, ctx);
   return r;
 }
 
 cl_mem visionbuf_to_cl(const VisionBuf* buf, cl_device_id device_id, cl_context ctx) {
   int err = 0;
-
+  VisionBuf *w_buf = (VisionBuf*)buf;
   assert(((uintptr_t)buf->addr % DEVICE_PAGE_SIZE_CL) == 0);
 
   cl_mem_ion_host_ptr ion_cl = {0};
@@ -93,7 +92,7 @@ cl_mem visionbuf_to_cl(const VisionBuf* buf, cl_device_id device_id, cl_context 
                               CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
                               buf->len, &ion_cl, &err);
   assert(err == 0);
-
+  w_buf->buf_cl = mem;
   return mem;
 }
 

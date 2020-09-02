@@ -22,6 +22,7 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/params.h"
+#include "clutil.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -455,8 +456,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
   int err;
 
-  struct msm_eeprom_cfg_data cfg;
- memset(&cfg, 0, sizeof(struct msm_eeprom_cfg_data));
+  struct msm_eeprom_cfg_data cfg = {};
   cfg.cfgtype = CFG_EEPROM_GET_CAL_DATA;
   err = ioctl(eeprom_fd, VIDIOC_MSM_EEPROM_CFG, &cfg);
   assert(err >= 0);
@@ -556,8 +556,7 @@ static void sensors_init(MultiCameraState *s) {
   }
   assert(sensorinit_fd >= 0);
 
-  struct sensor_init_cfg_data sensor_init_cfg;
-  memset(&sensor_init_cfg, 0, sizeof(struct sensor_init_cfg_data));
+  struct sensor_init_cfg_data sensor_init_cfg = {};
 
   // init rear sensor
 
@@ -1073,31 +1072,17 @@ static void sensors_init(MultiCameraState *s) {
 static void camera_open(CameraState *s, bool rear) {
   int err;
 
-  struct sensorb_cfg_data sensorb_cfg_data;
-  memset(&sensorb_cfg_data, 0, sizeof(struct sensorb_cfg_data));
-  struct csid_cfg_data csid_cfg_data;
-  memset(&csid_cfg_data, 0, sizeof(struct csid_cfg_data));
-  struct csiphy_cfg_data csiphy_cfg_data;
-  memset(&csiphy_cfg_data, 0, sizeof(struct csiphy_cfg_data));
-  struct msm_camera_csiphy_params csiphy_params;
-  memset(&csiphy_params, 0, sizeof(struct msm_camera_csiphy_params));
-  struct msm_camera_csid_params csid_params;
-  memset(&csid_params, 0, sizeof(struct msm_camera_csid_params));
-  struct msm_vfe_input_cfg input_cfg;
-  memset(&input_cfg, 0, sizeof(struct msm_vfe_input_cfg));
-  struct msm_vfe_axi_stream_update_cmd update_cmd;
-  memset(&update_cmd, 0, sizeof(struct msm_vfe_axi_stream_update_cmd));
-  struct v4l2_event_subscription sub;
-  memset(&sub, 0, sizeof(struct v4l2_event_subscription));
-  struct ispif_cfg_data ispif_cfg_data;
-  memset(&ispif_cfg_data, 0, sizeof(struct ispif_cfg_data));
-  struct msm_vfe_cfg_cmd_list cfg_cmd_list;
-  memset(&cfg_cmd_list, 0, sizeof(struct msm_vfe_cfg_cmd_list));
+  struct sensorb_cfg_data sensorb_cfg_data = {};
+  struct csid_cfg_data csid_cfg_data = {};
+  struct csiphy_cfg_data csiphy_cfg_data = {};
+  struct msm_camera_csiphy_params csiphy_params = {};
+  struct msm_camera_csid_params csid_params = {};
+  struct msm_vfe_input_cfg input_cfg = {};
+  struct msm_vfe_axi_stream_update_cmd update_cmd = {};
+  struct v4l2_event_subscription sub = {};
 
-  struct msm_actuator_cfg_data actuator_cfg_data;
-  memset(&actuator_cfg_data, 0, sizeof(struct msm_actuator_cfg_data));
-  struct msm_ois_cfg_data ois_cfg_data;
-  memset(&ois_cfg_data, 0, sizeof(struct msm_ois_cfg_data));
+  struct msm_actuator_cfg_data actuator_cfg_data = {};
+  struct msm_ois_cfg_data ois_cfg_data = {};
 
   // open devices
   const char *sensor_dev;
@@ -1827,16 +1812,55 @@ static void front_start(CameraState *s) {
   LOG("sensor start regs: %d", err);
 }
 
+cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
+  char args[4096];
+  snprintf(args, sizeof(args),
+          "-cl-fast-relaxed-math -cl-denorms-are-zero "
+          "-DIMAGE_W=%d -DIMAGE_H=%d -DFLIP_RB=%d "
+          "-DFILTER_SIZE=%d -DHALF_FILTER_SIZE=%d -DTWICE_HALF_FILTER_SIZE=%d -DHALF_FILTER_SIZE_IMAGE_W=%d",
+          image_w, image_h, 1,
+          filter_size, filter_size/2, (filter_size/2)*2, (filter_size/2)*image_w);
+  return CLU_LOAD_FROM_FILE(context, device_id, "imgproc/conv.cl", args);
+}
 
-
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
   int err;
+  int rgb_width = s->rear.ci.frame_width;
+  int rgb_height = s->rear.ci.frame_height;
+  if (s->rear.ci.bayer) {
+    rgb_width = s->rear.ci.frame_width / 2;
+    rgb_height = s->rear.ci.frame_height / 2;
+  }
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    // TODO: make lengths correct
+    s->focus_bufs[i] = visionbuf_allocate(0xb80);
+    s->stats_bufs[i] = visionbuf_allocate(0xb80);
+  }
+  s->prg_rgb_laplacian = build_conv_program(camera_bufs_rear->device_id, camera_bufs_rear->ctx, rgb_width/NUM_SEGMENTS_X, rgb_height/NUM_SEGMENTS_Y, 3);
+  s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
+  assert(err == 0);
+  // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
+  s->rgb_conv_roi_cl = clCreateBuffer(camera_bufs_rear->ctx, CL_MEM_READ_WRITE,
+      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, NULL);
+  s->rgb_conv_result_cl = clCreateBuffer(camera_bufs_rear->ctx, CL_MEM_READ_WRITE,
+      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, NULL);
+  s->rgb_conv_filter_cl = clCreateBuffer(camera_bufs_rear->ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+      9 * sizeof(int16_t), (void*)&lapl_conv_krnl, NULL);
+  s->conv_cl_localMemSize = ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) ) * ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) );
+  s->conv_cl_localMemSize *= 3 * sizeof(uint8_t);
+  s->conv_cl_globalWorkSize[0] = rgb_width/NUM_SEGMENTS_X;
+  s->conv_cl_globalWorkSize[1] = rgb_height/NUM_SEGMENTS_Y;
+  s->conv_cl_localWorkSize[0] = CONV_LOCAL_WORKSIZE;
+  s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
 
-  struct ispif_cfg_data ispif_cfg_data;
-  memset(&ispif_cfg_data, 0, sizeof(struct ispif_cfg_data));
+  for (int i=0; i<ARRAYSIZE(s->lapres); i++) {s->lapres[i] = 16160;}
 
-  struct msm_ispif_param_data ispif_params;
-  memset(&ispif_params, 0, sizeof(struct msm_ispif_param_data));
+  const size_t size = (rgb_width/NUM_SEGMENTS_X)*(rgb_height/NUM_SEGMENTS_Y);
+  s->rgb_roi_buf = std::make_unique<uint8_t[]>(size*3);
+  s->conv_result = std::make_unique<int16_t[]>(size);
+
+  struct ispif_cfg_data ispif_cfg_data = {};
+  struct msm_ispif_param_data ispif_params = {};
   ispif_params.num = 4;
   // rear camera
   ispif_params.entries[0].vfe_intf = VFE0;
@@ -1894,8 +1918,8 @@ void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *c
 
   LOG("*** open rear ***");
   s->rear.ss[0].bufs = camera_bufs_rear;
-  s->rear.ss[1].bufs = camera_bufs_focus;
-  s->rear.ss[2].bufs = camera_bufs_stats;
+  s->rear.ss[1].bufs = s->focus_bufs;
+  s->rear.ss[2].bufs = s->stats_bufs;
   camera_open(&s->rear, true);
 
   if (getenv("CAMERA_TEST")) {
@@ -2224,4 +2248,92 @@ void cameras_run(MultiCameraState *s) {
 void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    visionbuf_free(&s->focus_bufs[i]);
+    visionbuf_free(&s->stats_bufs[i]);
+  }
+  clReleaseMemObject(s->rgb_conv_roi_cl);
+  clReleaseMemObject(s->rgb_conv_result_cl);
+  clReleaseMemObject(s->rgb_conv_filter_cl);
+
+  clReleaseProgram(s->prg_rgb_laplacian);
+  clReleaseKernel(s->krnl_rgb_laplacian);
+}
+
+void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
+  // cache rgb roi and write to cl
+  int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
+  int roi_x_offset = roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
+  int roi_y_offset = roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
+
+  uint8_t *rgb_roi_buf = s->rgb_roi_buf.get();
+  uint8_t *rgb_bufs =  (uint8_t *)b->cur_rgb_buf->addr +
+               (ROI_Y_MIN + roi_y_offset) * b->rgb_height / NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 +
+               (ROI_X_MIN + roi_x_offset) * b->rgb_width / NUM_SEGMENTS_X * 3;
+
+  for (int r = 0; r < (b->rgb_height / NUM_SEGMENTS_Y); r++) {
+    memcpy(rgb_roi_buf, rgb_bufs, b->rgb_width / NUM_SEGMENTS_X * 3);
+    rgb_roi_buf += (b->rgb_width / NUM_SEGMENTS_X) * 3;
+    rgb_bufs += FULL_STRIDE_X * 3;
+  }
+
+  assert(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0,
+                              b->rgb_width / NUM_SEGMENTS_X * b->rgb_height / NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), s->rgb_roi_buf.get(), 0, 0, 0) == 0);
+  assert(clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *)&s->rgb_conv_roi_cl) == 0);
+  assert(clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *)&s->rgb_conv_result_cl) == 0);
+  assert(clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *)&s->rgb_conv_filter_cl) == 0);
+  assert(clSetKernelArg(s->krnl_rgb_laplacian, 3, s->conv_cl_localMemSize, 0) == 0);
+  cl_event conv_event;
+  assert(clEnqueueNDRangeKernel(b->q, s->krnl_rgb_laplacian, 2, NULL,
+                                s->conv_cl_globalWorkSize, s->conv_cl_localWorkSize, 0, 0, &conv_event) == 0);
+  clWaitForEvents(1, &conv_event);
+  clReleaseEvent(conv_event);
+
+  assert(clEnqueueReadBuffer(b->q, s->rgb_conv_result_cl, true, 0,
+                             b->rgb_width / NUM_SEGMENTS_X * b->rgb_height / NUM_SEGMENTS_Y * sizeof(int16_t), s->conv_result.get(), 0, 0, 0) == 0);
+
+  get_lapmap_one(s->conv_result.get(), &s->lapres[roi_id], b->rgb_width / NUM_SEGMENTS_X, b->rgb_height / NUM_SEGMENTS_Y);
+
+  // setup self recover
+  const float lens_true_pos = s->rear.lens_true_pos;
+  std::atomic<int>& self_recover = s->rear.self_recover;
+  if (is_blur(&s->lapres[0]) &&
+      (lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN) + 1 ||
+       lens_true_pos > (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP) - 1) &&
+      self_recover < 2) {
+    // truly stuck, needs help
+    self_recover -= 1;
+    if (self_recover < -FOCUS_RECOVER_PATIENCE) {
+      LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
+           lens_true_pos, self_recover.load());
+      self_recover = FOCUS_RECOVER_STEPS + ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M)) ? 1 : 0);  // parity determined by which end is stuck at
+    }
+  } else if ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M - LP3_AF_DAC_3SIG : OP3T_AF_DAC_M - OP3T_AF_DAC_3SIG) ||
+              lens_true_pos > (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M + LP3_AF_DAC_3SIG : OP3T_AF_DAC_M + OP3T_AF_DAC_3SIG)) &&
+             self_recover < 2) {
+    // in suboptimal position with high prob, but may still recover by itself
+    self_recover -= 1;
+    if (self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
+      LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover.load());
+      self_recover = FOCUS_RECOVER_STEPS / 2 + ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M)) ? 1 : 0);
+    }
+  } else if (self_recover < 0) {
+    self_recover += 1;  // reset if fine
+  }
+
+  if (pm != nullptr) {
+    capnp::MallocMessageBuilder msg;
+    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+    event.setLogMonoTime(nanos_since_boot());
+    auto framed = event.initFrame();
+    fill_frame_data(framed, b->frameMetaData(), cnt);
+#ifndef QCOM_REPLAY
+    framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));
+    framed.setFocusConf(kj::ArrayPtr<const uint8_t>(&s->rear.confidence[0], NUM_FOCUS));
+    framed.setSharpnessScore(kj::ArrayPtr<const uint16_t>(&s->lapres[0], ARRAYSIZE(s->lapres)));
+    framed.setRecoverState(self_recover);
+#endif
+    framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+    pm->send("frame", msg);
+  }
 }
