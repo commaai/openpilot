@@ -686,6 +686,7 @@ FW_VERSIONS = {
       b'\x01F15260E051\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
+      b'\x01896630E62200\x00\x00\x00\x00',
       b'\x01896630E64100\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
