@@ -17,33 +17,39 @@
 #include <memory>
 #include "messaging.hpp"
 
+#define MODEL_NAME "supercombo_dlc"
+
 #define MODEL_WIDTH 512
 #define MODEL_HEIGHT 256
 #define MODEL_FRAME_SIZE MODEL_WIDTH * MODEL_HEIGHT * 3 / 2
-#define MODEL_NAME "supercombo_dlc"
-
 #define DESIRE_LEN 8
 #define TRAFFIC_CONVENTION_LEN 2
-#define LEAD_MDN_N 5 // probs for 5 groups
-#define MDN_VALS 4 // output xyva for each lead group
-#define SELECTION 3 //output 3 group (lead now, in 2s and 6s)
-#define MDN_GROUP_SIZE 11
-#define TIME_DISTANCE 100
+
+#define PLAM_MHP_N 5
+#define PLAN_MHP_VALS 30*33
+#define PLAN_MHP_SELECTION 1
+#define PLAN_MHP_GROUP_SIZE 2*LEAD_MHP_VALS + PLAN_MHP_SELECTION
+
+#define LEAD_MHP_N 5
+#define LEAD_MHP_VALS 4
+#define LEAD_MHP_SELECTION 3
+#define LEAD_MHP_GROUP_SIZE 2*LEAD_MHP_VALS + LEAD_MHP_SELECTION
+
 #define POSE_SIZE 12
 
 #define MODEL_FREQ 20
 #define MAX_FRAME_DROP 0.05
 
 struct ModelDataRaw {
-    float *path;
-    float *left_lane;
-    float *right_lane;
+    float *plan;
+    float *lane_lines;
+    float *lane_lines_prob;
+    float *road_edges;
     float *lead;
-    float *long_x;
-    float *long_v;
-    float *long_a;
+    float *lead_prob;
     float *desire_state;
     float *meta;
+    float *desire_pred;
     float *pose;
   };
 
