@@ -36,7 +36,8 @@ def is_calibration_valid(rpy):
 def sanity_clip(rpy):
   if np.isnan(rpy).any():
     rpy = RPY_INIT
-  return np.array([np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
+  return np.array([rpy[0],
+                   np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
                    np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
 
 
