@@ -1,19 +1,16 @@
 #include <stdint.h>
 #include <hardware/sensors.h>
 
+// ACCELEROMETER_UNCALIBRATED is only in Android O
+// https://developer.android.com/reference/android/hardware/Sensor.html#STRING_TYPE_ACCELEROMETER_UNCALIBRATED
+
 #define SENSOR_ACCELEROMETER 1
 #define SENSOR_MAGNETOMETER 2
 #define SENSOR_GYRO 4
-
-// ACCELEROMETER_UNCALIBRATED is only in Android O
-// https://developer.android.com/reference/android/hardware/Sensor.html#STRING_TYPE_ACCELEROMETER_UNCALIBRATED
 #define SENSOR_MAGNETOMETER_UNCALIBRATED 3
 #define SENSOR_GYRO_UNCALIBRATED 5
-
 #define SENSOR_PROXIMITY 6
 #define SENSOR_LIGHT 7
-
-
 
 int init_sensor(struct sensors_poll_device_t* device, int sensor, int64_t delay) {
   int err;
