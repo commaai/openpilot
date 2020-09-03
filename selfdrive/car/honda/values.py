@@ -909,6 +909,7 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TXM-A010\x00\x00',
       b'78109-TXM-A020\x00\x00',
+      b'78109-TXM-A110\x00\x00',
     ],
   },
   CAR.HRV: {
