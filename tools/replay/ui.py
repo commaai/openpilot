@@ -72,7 +72,7 @@ def ui_thread(addr, frame_address):
   calibration = None
   img = np.zeros((480, 640, 3), dtype='uint8')
   imgff = None
-  num_px = None
+  num_px = 0
   img_transform = np.eye(3)
 
   imgw = np.zeros((160, 320, 3), dtype=np.uint8)  # warped image
@@ -128,7 +128,7 @@ def ui_thread(addr, frame_address):
     if fpkt.frame.transform:
       img_transform = np.array(fpkt.frame.transform).reshape(3, 3)
 
-    num_px = len(rgb_img_raw) / 3
+    num_px = len(rgb_img_raw) // 3
     if rgb_img_raw and num_px in _FULL_FRAME_SIZE.keys():
       FULL_FRAME_SIZE = _FULL_FRAME_SIZE[num_px]
 
