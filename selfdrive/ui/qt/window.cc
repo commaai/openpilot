@@ -63,6 +63,9 @@ GLWindow::~GLWindow() {
 void GLWindow::initializeGL() {
   initializeOpenGLFunctions();
   std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+  std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
+  std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
+  std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
   ui_state = new UIState();
   ui_init(ui_state);
