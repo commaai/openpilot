@@ -211,13 +211,20 @@ void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, fl
 }
 
 void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_data) {
-  kj::ArrayPtr<const float> desire_state(&meta_data[0], DESIRE_LEN);
+  float desire_state_softmax[DESIRE_LEN];
+  float desire_pred_softmax[4*DESIRE_LEN];
+  softmax(&meta_data[0], desire_state_softmax, DESIRE_LEN);
+  for (int i=0; i<4; i++) {
+    softmax(&meta_data[DESIRE_LEN + OTHER_META_SIZE + i*DESIRE_LEN],
+            &desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
+  }
+  kj::ArrayPtr<const float> desire_state(desire_state_softmax, DESIRE_LEN);
   meta.setDesireState(desire_state);
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
   meta.setGasDisengageProb(sigmoid(meta_data[DESIRE_LEN + 1]));
   meta.setBrakeDisengageProb(sigmoid(meta_data[DESIRE_LEN + 2]));
   meta.setSteerOverrideProb(sigmoid(meta_data[DESIRE_LEN + 3]));
-  kj::ArrayPtr<const float> desire_pred(&meta_data[DESIRE_LEN + OTHER_META_SIZE], DESIRE_PRED_SIZE);
+  kj::ArrayPtr<const float> desire_pred(desire_pred_softmax, DESIRE_PRED_SIZE);
   meta.setDesirePrediction(desire_pred);
 }
 
