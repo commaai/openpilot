@@ -12,11 +12,11 @@
 #define TRAJECTORY_SIZE 33
 #define TRAJECTORY_TIME 10.0
 #define PLAN_IDX 0
-#define LL_IDX PLAN_IDX + PLAN_MHP_N*PLAN_MHP_GROUP_SIZE
+#define LL_IDX PLAN_IDX + PLAN_MHP_N*(PLAN_MHP_GROUP_SIZE)
 #define LL_PROB_IDX LL_IDX + 4*2*2*33
 #define RE_IDX LL_PROB_IDX + 4
 #define LEAD_IDX RE_IDX + 2*2*2*33
-#define LEAD_PROB_IDX LEAD_IDX + LEAD_MHP_N*LEAD_MHP_GROUP_SIZE
+#define LEAD_PROB_IDX LEAD_IDX + LEAD_MHP_N*(LEAD_MHP_GROUP_SIZE)
 #define DESIRE_STATE_IDX LEAD_PROB_IDX + 3
 #define META_IDX DESIRE_STATE_IDX + DESIRE_LEN
 #define POSE_IDX META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE
@@ -155,26 +155,38 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   out[3] = y0;
 }
 
-void fill_path(cereal::ModelData::PathData::Builder path, const float * data, float valid_len, int valid_len_idx, float prob) {
+void fill_path(cereal::ModelData::PathData::Builder path, const float * data, float valid_len, int valid_len_idx) {
   float points_arr[TRAJECTORY_SIZE];
   float stds_arr[TRAJECTORY_SIZE];
   float poly_arr[POLYFIT_DEGREE];
   float std;
 
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    points_arr[i] = data[16*i];
-    stds_arr[i] = exp(data[30*33 + 16*i]);
+    points_arr[i] = data[30*i + 16];
+    stds_arr[i] = exp(data[30*(33 + i) + 16]);
   }
   std = stds_arr[0];
   poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
 
-  if (std::getenv("DEBUG")){
-    kj::ArrayPtr<const float> stds(&stds_arr[0], ARRAYSIZE(stds_arr));
-    path.setStds(stds);
+  kj::ArrayPtr<const float> poly(&poly_arr[0], ARRAYSIZE(poly_arr));
+  path.setPoly(poly);
+  path.setProb(1.0);
+  path.setStd(std);
+  path.setValidLen(valid_len);
+}
 
-    kj::ArrayPtr<const float> points(&points_arr[0], ARRAYSIZE(points_arr));
-    path.setPoints(points);
+void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * data, int ll_idx, float valid_len, int valid_len_idx, float prob) {
+  float points_arr[TRAJECTORY_SIZE];
+  float stds_arr[TRAJECTORY_SIZE];
+  float poly_arr[POLYFIT_DEGREE];
+  float std;
+
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
+    points_arr[i] = data[2*33*ll_idx + 2*i];
+    stds_arr[i] = data[2*33*(4 + ll_idx) + 2*i];
   }
+  std = stds_arr[0];
+  poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
 
   kj::ArrayPtr<const float> poly(&poly_arr[0], ARRAYSIZE(poly_arr));
   path.setPoly(poly);
@@ -183,16 +195,16 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, fl
   path.setValidLen(valid_len);
 }
 
-void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, int mdn_max_idx, int t_offset) {
-  lead.setProb(sigmoid(data[LEAD_MHP_N*LEAD_MHP_GROUP_SIZE + t_offset]));
-  lead.setDist(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE]);
-  lead.setStd(exp(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + LEAD_MHP_VALS]));
-  lead.setRelY(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 1]);
-  lead.setRelYStd(exp(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + LEAD_MHP_VALS + 1]));
-  lead.setRelVel(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 2]);
-  lead.setRelVelStd(exp(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + LEAD_MHP_VALS + 2]));
-  lead.setRelA(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 3]);
-  lead.setRelAStd(exp(data[mdn_max_idx*LEAD_MHP_GROUP_SIZE + LEAD_MHP_VALS + 3]));
+void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, float prob) {
+  lead.setProb(prob);
+  lead.setDist(data[0]);
+  lead.setStd(exp(data[LEAD_MHP_VALS]));
+  lead.setRelY(data[1]);
+  lead.setRelYStd(exp(data[LEAD_MHP_VALS + 1]));
+  lead.setRelVel(data[2]);
+  lead.setRelVelStd(exp(data[LEAD_MHP_VALS + 2]));
+  lead.setRelA(data[3]);
+  lead.setRelAStd(exp(data[LEAD_MHP_VALS + 3]));
 }
 
 void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_data) {
@@ -221,51 +233,57 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   // Find the distribution that corresponds to the most probable plan
   int plan_mhp_max_idx = 0;
   for (int i=1; i<PLAN_MHP_N; i++) {
-    if (net_outputs.lead[(i + 1)*PLAN_MHP_GROUP_SIZE - 1] >
-        net_outputs.lead[(plan_mhp_max_idx + 1)*PLAN_MHP_GROUP_SIZE - 1]) {
+    if (net_outputs.plan[(i + 1)*(PLAN_MHP_GROUP_SIZE) - 1] >
+        net_outputs.plan[(plan_mhp_max_idx + 1)*(PLAN_MHP_GROUP_SIZE) - 1]) {
       plan_mhp_max_idx = i;
     }
   }
   // x pos at 10s is a good valid_len
-  float valid_len = net_outputs.plan[plan_mhp_max_idx*PLAN_MHP_GROUP_SIZE + 15*33];
+  float valid_len = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*32];
   // clamp to 5 and MODEL_PATH_DISTANCE
   valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, valid_len));
   int valid_len_idx = 0;
   for (int i=1; i<TRAJECTORY_SIZE; i++) {
-    if (valid_len > X_IDXS[valid_len_idx]){
+    if (valid_len >= X_IDXS[valid_len_idx]){
       valid_len_idx = i;
     }
   }
 
   auto lpath = framed.initPath();
-  fill_path(lpath, &net_outputs.plan[plan_mhp_max_idx*PLAN_MHP_GROUP_SIZE], valid_len, valid_len_idx, 1.0);
+  fill_path(lpath, &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)], valid_len, valid_len_idx);
   
   auto left_lane = framed.initLeftLane();
-  fill_path(left_lane, &net_outputs.lane_lines[1*4*33], valid_len, valid_len_idx,
-            sigmoid(net_outputs.lane_lines_prob[1]));
+  int ll_idx = 1;
+  fill_lane_line(left_lane, net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
+            sigmoid(net_outputs.lane_lines_prob[ll_idx]));
   auto right_lane = framed.initRightLane();
-  fill_path(right_lane, &net_outputs.lane_lines[2*4*33], valid_len, valid_len_idx,
-            sigmoid(net_outputs.lane_lines_prob[2]));
+  ll_idx = 2;
+  fill_lane_line(right_lane, net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
+            sigmoid(net_outputs.lane_lines_prob[ll_idx]));
 
   // Find the distribution that corresponds to the current lead
   int mdn_max_idx = 0;
   int t_offset = 0;
   for (int i=1; i<LEAD_MHP_N; i++) {
-    if (net_outputs.lead[i*LEAD_MHP_GROUP_SIZE + 8 + t_offset] > net_outputs.lead[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 8 + t_offset]) {
+    if (net_outputs.lead[(i+1)*(LEAD_MHP_GROUP_SIZE) + t_offset - 3] >
+        net_outputs.lead[(mdn_max_idx + 1)*(LEAD_MHP_GROUP_SIZE) + t_offset - 3]) {
       mdn_max_idx = i;
     }
   }
-  fill_lead(framed.initLead(), net_outputs.lead, mdn_max_idx, t_offset);
+  fill_lead(framed.initLead(), &net_outputs.lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)], sigmoid(net_outputs.lead_prob[t_offset]));
   // Find the distribution that corresponds to the lead in 2s
   mdn_max_idx = 0;
   t_offset = 1;
   for (int i=1; i<LEAD_MHP_N; i++) {
-    if (net_outputs.lead[i*LEAD_MHP_GROUP_SIZE + 8 + t_offset] > net_outputs.lead[mdn_max_idx*LEAD_MHP_GROUP_SIZE + 8 + t_offset]) {
+    if (net_outputs.lead[(i+1)*(LEAD_MHP_GROUP_SIZE) + t_offset - 3] >
+        net_outputs.lead[(mdn_max_idx + 1)*(LEAD_MHP_GROUP_SIZE) + t_offset - 3]) {
       mdn_max_idx = i;
     }
   }
-  fill_lead(framed.initLeadFuture(), net_outputs.lead, mdn_max_idx, t_offset);
+  fill_lead(framed.initLeadFuture(), &net_outputs.lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)], sigmoid(net_outputs.lead_prob[t_offset]));
+
   fill_meta(framed.initMeta(), net_outputs.meta);
+  event.setValid(frame_drop < MAX_FRAME_DROP);
 
   pm.send("model", msg);
 }
