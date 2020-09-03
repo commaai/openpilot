@@ -85,7 +85,6 @@ keys = {
   "LimitSetSpeed": [TxType.PERSISTENT],
   "LimitSetSpeedNeural": [TxType.PERSISTENT],
   "LiveParameters": [TxType.PERSISTENT],
-  "LongitudinalControl": [TxType.PERSISTENT],
   "OpenpilotEnabledToggle": [TxType.PERSISTENT],
   "LaneChangeEnabled": [TxType.PERSISTENT],
   "PandaFirmware": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],

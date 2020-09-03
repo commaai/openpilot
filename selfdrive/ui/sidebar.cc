@@ -159,12 +159,13 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
 }
 
 static void ui_draw_sidebar_connectivity(UIState *s) {
-  static std::map<NetStatus, const char *> connectivity_text = {
-    {NET_ERROR, "CONNECT\nERROR"},
-    {NET_CONNECTED, "CONNECT\nONLINE"},
-    {NET_DISCONNECTED, "CONNECT\nOFFLINE"},
+  static std::map<NetStatus, std::pair<const char *, int>> connectivity_map = {
+    {NET_ERROR, {"CONNECT\nERROR", 2}},
+    {NET_CONNECTED, {"CONNECT\nONLINE", 0}},
+    {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
   };
-  ui_draw_sidebar_metric(s, NULL, NULL, 1, 180+158, connectivity_text[s->scene.athenaStatus]);
+  auto net_params = connectivity_map[s->scene.athenaStatus];
+  ui_draw_sidebar_metric(s, NULL, NULL, net_params.second, 180+158, net_params.first);
 }
 
 void ui_draw_sidebar(UIState *s) {
