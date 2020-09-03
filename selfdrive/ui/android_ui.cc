@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <sys/resource.h>
 
 #include "common/util.h"
@@ -167,7 +168,6 @@ int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
 
-  zsys_handler_set(NULL);
   signal(SIGINT, (sighandler_t)set_do_exit);
 
   UIState uistate = {};
