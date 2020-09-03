@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <signal.h>
 #include <unistd.h>
 #include <assert.h>
+#include <poll.h>
 #include <sys/mman.h>
-#include <czmq.h>
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -15,23 +16,20 @@
 
 extern volatile sig_atomic_t do_exit;
 
-
 int write_param_float(float param, const char* param_name, bool persistent_param) {
   char s[16];
   int size = snprintf(s, sizeof(s), "%f", param);
-  return write_db_value(param_name, s, MIN(size, sizeof(s)), persistent_param);
+  return write_db_value(param_name, s, size < sizeof(s) ? size : sizeof(s), persistent_param);
 }
 
 void ui_init(UIState *s) {
-  pthread_mutex_init(&s->lock, NULL);
   s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
-                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"
-  });
+                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"});
 
-  s->ipc_fd = -1;
-  s->scene.satelliteCount = -1;
   s->started = false;
-  s->vision_seen = false;
+  s->status = STATUS_OFFROAD;
+  s->scene.satelliteCount = -1;
+  read_param(&s->is_metric, "IsMetric");
 
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
@@ -39,41 +37,72 @@ void ui_init(UIState *s) {
   ui_nvg_init(s);
 }
 
-static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
-                           int num_back_fds, const int *back_fds,
-                           const VisionStreamBufs front_bufs, int num_front_fds,
-                           const int *front_fds) {
-  assert(num_back_fds == UI_BUF_COUNT);
-  assert(num_front_fds == UI_BUF_COUNT);
+static void ui_init_vision(UIState *s) {
+  // Invisible until we receive a calibration message.
+  s->scene.world_objects_visible = false;
 
-  vipc_bufs_load(s->bufs, &back_bufs, num_back_fds, back_fds);
-  vipc_bufs_load(s->front_bufs, &front_bufs, num_front_fds, front_fds);
+  for (int i = 0; i < UI_BUF_COUNT; i++) {
+    if (s->khr[i] != 0) {
+      visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
+      glDeleteTextures(1, &s->frame_texs[i]);
+    }
 
-  s->cur_vision_idx = -1;
-  s->cur_vision_front_idx = -1;
+    VisionImg img = {
+      .fd = s->stream.bufs[i].fd,
+      .format = VISIONIMG_FORMAT_RGB24,
+      .width = s->stream.bufs_info.width,
+      .height = s->stream.bufs_info.height,
+      .stride = s->stream.bufs_info.stride,
+      .bpp = 3,
+      .size = s->stream.bufs_info.buf_len,
+    };
+#ifndef QCOM
+    s->priv_hnds[i] = s->stream.bufs[i].addr;
+#endif
+    s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
 
-  s->scene.frontview = getenv("FRONTVIEW") != NULL;
-  s->scene.fullview = getenv("FULLVIEW") != NULL;
-  s->scene.world_objects_visible = false;  // Invisible until we receive a calibration message.
+    glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-  s->rgb_width = back_bufs.width;
-  s->rgb_height = back_bufs.height;
-  s->rgb_stride = back_bufs.stride;
-  s->rgb_buf_len = back_bufs.buf_len;
-
-  s->rgb_front_width = front_bufs.width;
-  s->rgb_front_height = front_bufs.height;
-  s->rgb_front_stride = front_bufs.stride;
-  s->rgb_front_buf_len = front_bufs.buf_len;
-
-  read_param(&s->is_metric, "IsMetric");
-  read_param(&s->longitudinal_control, "LongitudinalControl");
+    // BGR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+  }
+  assert(glGetError() == GL_NO_ERROR);
 }
 
-void update_status(UIState *s, int status) {
-  if (s->status != status) {
-    s->status = status;
+void ui_update_vision(UIState *s) {
+
+  if (!s->vision_connected && s->started) {
+    const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+    int err = visionstream_init(&s->stream, type, true, nullptr);
+    if (err == 0) {
+      ui_init_vision(s);
+      s->vision_connected = true;
+    }
   }
+
+  if (s->vision_connected) {
+    if (!s->started) goto destroy;
+
+    // poll for a new frame
+    struct pollfd fds[1] = {{
+      .fd = s->stream.ipc_fd,
+      .events = POLLOUT,
+    }};
+    int ret = poll(fds, 1, 100);
+    if (ret > 0) {
+      if (!visionstream_get(&s->stream, nullptr)) goto destroy;
+    }
+  }
+
+  return;
+
+destroy:
+  visionstream_destroy(&s->stream);
+  s->vision_connected = false;
 }
 
 static inline void fill_path_points(const cereal::ModelData::PathData::Reader &path, float *points) {
@@ -83,13 +112,21 @@ static inline void fill_path_points(const cereal::ModelData::PathData::Reader &p
   }
 }
 
-void handle_message(UIState *s, SubMaster &sm) {
+void update_sockets(UIState *s) {
+
   UIScene &scene = s->scene;
+  SubMaster &sm = *(s->sm);
+
+  // poll sockets
+  if (sm.update(0) == 0){
+    return;
+  }
+
   if (s->started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
-    s->controls_seen = true;
 
+    // TODO: the alert stuff shouldn't be handled here
     auto alert_sound = scene.controls_state.getAlertSound();
     if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
@@ -104,11 +141,11 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.alert_type = scene.controls_state.getAlertType();
     auto alertStatus = scene.controls_state.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-      update_status(s, STATUS_WARNING);
+      s->status = STATUS_WARNING;
     } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
-      update_status(s, STATUS_ALERT);
+      s->status = STATUS_ALERT;
     } else{
-      update_status(s, scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED);
+      s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
 
     float alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
@@ -147,16 +184,6 @@ void handle_message(UIState *s, SubMaster &sm) {
     fill_path_points(scene.model.getLeftLane(), scene.left_lane_points);
     fill_path_points(scene.model.getRightLane(), scene.right_lane_points);
   }
-  // else if (which == cereal::Event::LIVE_MPC) {
-  //   auto data = event.getLiveMpc();
-  //   auto x_list = data.getX();
-  //   auto y_list = data.getY();
-  //   for (int i = 0; i < 50; i++){
-  //     scene.mpc_x[i] = x_list[i];
-  //     scene.mpc_y[i] = y_list[i];
-  //   }
-  //   s->livempc_or_radarstate_changed = true;
-  // }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
     s->active_app = data.getActiveApp();
@@ -173,6 +200,8 @@ void handle_message(UIState *s, SubMaster &sm) {
   }
   if (sm.updated("health")) {
     scene.hwType = sm["health"].getHealth().getHwType();
+  } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
+    scene.hwType = cereal::HealthData::HwType::UNKNOWN;
   }
   if (sm.updated("carParams")) {
     s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
@@ -184,267 +213,67 @@ void handle_message(UIState *s, SubMaster &sm) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > 1*UI_FREQ) {
+  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
 
   s->started = scene.thermal.getStarted() || scene.frontview;
-  // Handle onroad/offroad transition
-  if (!s->started) {
-    if (s->status != STATUS_STOPPED) {
-      update_status(s, STATUS_STOPPED);
-      s->vision_seen = false;
-      s->controls_seen = false;
-      s->active_app = cereal::UiLayoutState::App::HOME;
-    }
-  } else if (s->status == STATUS_STOPPED) {
-    update_status(s, STATUS_DISENGAGED);
-    s->active_app = cereal::UiLayoutState::App::NONE;
-  }
-}
-
-void check_messages(UIState *s) {
-  if (s->sm->update(0) > 0){
-    handle_message(s, *(s->sm));
-  }
-}
-
-void ui_update_sizes(UIState *s){
-  // resize vision for collapsing sidebar
-  const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
-  s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
-  s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
-  s->scene.ui_viz_ro = hasSidebar ? -(sbr_w - 6 * bdr_s) : 0;
 }
 
 void ui_update(UIState *s) {
-  int err;
 
-  if (s->vision_connect_firstrun) {
-    // cant run this in connector thread because opengl.
-    // do this here for now in lieu of a run_on_main_thread event
+  update_sockets(s);
+  ui_update_vision(s);
 
-    for (int i=0; i<UI_BUF_COUNT; i++) {
-      if(s->khr[i] != 0) {
-        visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
-        glDeleteTextures(1, &s->frame_texs[i]);
-      }
+  // Handle onroad/offroad transition
+  if (!s->started && s->status != STATUS_OFFROAD) {
+    s->status = STATUS_OFFROAD;
+    s->active_app = cereal::UiLayoutState::App::HOME;
+    s->scene.uilayout_sidebarcollapsed = false;
+  } else if (s->started && s->status == STATUS_OFFROAD) {
+    s->status = STATUS_DISENGAGED;
+    s->started_frame = s->sm->frame;
 
-      VisionImg img = {
-        .fd = s->bufs[i].fd,
-        .format = VISIONIMG_FORMAT_RGB24,
-        .width = s->rgb_width,
-        .height = s->rgb_height,
-        .stride = s->rgb_stride,
-        .bpp = 3,
-        .size = s->rgb_buf_len,
-      };
-      #ifndef QCOM
-        s->priv_hnds[i] = s->bufs[i].addr;
-      #endif
-      s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
-
-      glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-    }
-
-    for (int i=0; i<UI_BUF_COUNT; i++) {
-      if(s->khr_front[i] != 0) {
-        visionimg_destroy_gl(s->khr_front[i], s->priv_hnds_front[i]);
-        glDeleteTextures(1, &s->frame_front_texs[i]);
-      }
-
-      VisionImg img = {
-        .fd = s->front_bufs[i].fd,
-        .format = VISIONIMG_FORMAT_RGB24,
-        .width = s->rgb_front_width,
-        .height = s->rgb_front_height,
-        .stride = s->rgb_front_stride,
-        .bpp = 3,
-        .size = s->rgb_front_buf_len,
-      };
-      #ifndef QCOM
-        s->priv_hnds_front[i] = s->bufs[i].addr;
-      #endif
-      s->frame_front_texs[i] = visionimg_to_gl(&img, &s->khr_front[i], &s->priv_hnds_front[i]);
-
-      glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[i]);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-    }
-
-    assert(glGetError() == GL_NO_ERROR);
-
+    s->active_app = cereal::UiLayoutState::App::NONE;
     s->scene.uilayout_sidebarcollapsed = true;
-    s->scene.ui_viz_rx = (box_x-sbr_w+bdr_s*2);
-    s->scene.ui_viz_rw = (box_w+sbr_w-(bdr_s*2));
-    s->scene.ui_viz_ro = 0;
-
-    s->vision_connect_firstrun = false;
-
-    s->alert_blinking_alpha = 1.0;
     s->alert_blinked = false;
+    s->alert_blinking_alpha = 1.0;
+    s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
 
-  zmq_pollitem_t polls[1] = {{0}};
-  // Take an rgb image from visiond if there is one
-  assert(s->ipc_fd >= 0);
-  while(true) {
-    if (s->ipc_fd < 0) {
-      // TODO: rethink this, for now it should only trigger on PC
-      LOGW("vision disconnected by other thread");
-      s->vision_connected = false;
-      return;
-    }
-    polls[0].fd = s->ipc_fd;
-    polls[0].events = ZMQ_POLLIN;
-    #ifdef UI_60FPS
-      // uses more CPU in both UI and surfaceflinger
-      // 16% / 21%
-      int ret = zmq_poll(polls, 1, 1);
-    #else
-      // 9% / 13% = a 14% savings
-      int ret = zmq_poll(polls, 1, 1000);
-    #endif
-    if (ret < 0) {
-      if (errno == EINTR || errno == EAGAIN) continue;
-
-      LOGE("poll failed (%d - %d)", ret, errno);
-      close(s->ipc_fd);
-      s->ipc_fd = -1;
-      s->vision_connected = false;
-      return;
-    } else if (ret == 0) {
-      break;
-    }
-    // vision ipc event
-    VisionPacket rp;
-    err = vipc_recv(s->ipc_fd, &rp);
-    if (err <= 0) {
-      LOGW("vision disconnected");
-      close(s->ipc_fd);
-      s->ipc_fd = -1;
-      s->vision_connected = false;
-      return;
-    }
-    if (rp.type == VIPC_STREAM_ACQUIRE) {
-      bool front = rp.d.stream_acq.type == VISION_STREAM_RGB_FRONT;
-      int idx = rp.d.stream_acq.idx;
-
-      int release_idx;
-      if (front) {
-        release_idx = s->cur_vision_front_idx;
-      } else {
-        release_idx = s->cur_vision_idx;
-      }
-      if (release_idx >= 0) {
-        VisionPacket rep = {
-          .type = VIPC_STREAM_RELEASE,
-          .d = { .stream_rel = {
-            .type = rp.d.stream_acq.type,
-            .idx = release_idx,
-          }},
-        };
-        vipc_send(s->ipc_fd, &rep);
-      }
-
-      if (front) {
-        assert(idx < UI_BUF_COUNT);
-        s->cur_vision_front_idx = idx;
-      } else {
-        assert(idx < UI_BUF_COUNT);
-        s->cur_vision_idx = idx;
-        // printf("v %d\n", ((uint8_t*)s->bufs[idx].addr)[0]);
-      }
+  // Handle controls timeout
+  bool controls_timeout = ((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 10*UI_FREQ;
+  if (s->started && !s->scene.frontview && controls_timeout) {
+    if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
+      // car is started, but controlsState hasn't been seen at all
+      s->scene.alert_text1 = "openpilot Unavailable";
+      s->scene.alert_text2 = "Waiting for controls to start";
+      s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
     } else {
-      assert(false);
+      // car is started, but controls is lagging or died
+      if (s->scene.alert_text2 != "Controls Unresponsive") {
+        s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT);
+        LOGE("Controls unresponsive");
+      }
+
+      s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
+      s->scene.alert_text2 = "Controls Unresponsive";
+      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      s->status = STATUS_ALERT;
     }
-    break;
-  }
-}
-
-static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
-  int err;
-  LOGW("vision_subscribe type:%d", type);
-
-  VisionPacket p1 = {
-    .type = VIPC_STREAM_SUBSCRIBE,
-    .d = { .stream_sub = { .type = type, .tbuffer = true, }, },
-  };
-  err = vipc_send(fd, &p1);
-  if (err < 0) {
-    close(fd);
-    return 0;
   }
 
-  do {
-    err = vipc_recv(fd, rp);
-    if (err <= 0) {
-      close(fd);
-      return 0;
+  // Read params
+  if ((s->sm)->frame % (5*UI_FREQ) == 0) {
+    read_param(&s->is_metric, "IsMetric");
+  } else if ((s->sm)->frame % (6*UI_FREQ) == 0) {
+    int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
+    if (param_read != 0) { // Failed to read param
+      s->scene.athenaStatus = NET_DISCONNECTED;
+    } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
+      s->scene.athenaStatus = NET_CONNECTED;
+    } else {
+      s->scene.athenaStatus = NET_ERROR;
     }
-
-    // release what we aren't ready for yet
-    if (rp->type == VIPC_STREAM_ACQUIRE) {
-      VisionPacket rep = {
-        .type = VIPC_STREAM_RELEASE,
-        .d = { .stream_rel = {
-          .type = rp->d.stream_acq.type,
-          .idx = rp->d.stream_acq.idx,
-        }},
-      };
-      vipc_send(fd, &rep);
-    }
-  } while (rp->type != VIPC_STREAM_BUFS || rp->d.stream_bufs.type != type);
-
-  return 1;
-}
-
-void* vision_connect_thread(void *args) {
-  set_thread_name("vision_connect");
-
-  UIState *s = (UIState*)args;
-  while (!do_exit) {
-    usleep(100000);
-    pthread_mutex_lock(&s->lock);
-    bool connected = s->vision_connected;
-    pthread_mutex_unlock(&s->lock);
-    if (connected) continue;
-
-    int fd = vipc_connect();
-    if (fd < 0) continue;
-
-    VisionPacket back_rp, front_rp;
-    if (!vision_subscribe(fd, &back_rp, VISION_STREAM_RGB_BACK)) continue;
-    if (!vision_subscribe(fd, &front_rp, VISION_STREAM_RGB_FRONT)) continue;
-
-    pthread_mutex_lock(&s->lock);
-    assert(!s->vision_connected);
-    s->ipc_fd = fd;
-
-    ui_init_vision(s,
-                   back_rp.d.stream_bufs, back_rp.num_fds, back_rp.fds,
-                   front_rp.d.stream_bufs, front_rp.num_fds, front_rp.fds);
-
-    s->vision_connected = true;
-    s->vision_seen = true;
-    s->vision_connect_firstrun = true;
-
-    // Drain sockets
-    s->sm->drain();
-
-    pthread_mutex_unlock(&s->lock);
   }
-  return NULL;
 }

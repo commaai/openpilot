@@ -24,7 +24,7 @@ const mat3 intrinsic_matrix = (mat3){{
 }};
 
 const uint8_t alert_colors[][4] = {
-  [STATUS_STOPPED] = {0x07, 0x23, 0x39, 0xf1},
+  [STATUS_OFFROAD] = {0x07, 0x23, 0x39, 0xf1},
   [STATUS_DISENGAGED] = {0x17, 0x33, 0x49, 0xc8},
   [STATUS_ENGAGED] = {0x17, 0x86, 0x44, 0xf1},
   [STATUS_WARNING] = {0xDA, 0x6F, 0x25, 0xf1},
@@ -224,9 +224,9 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
   NVGpaint track_bg;
   if (is_mpc) {
     // Draw colored MPC track
-    const uint8_t *clr = bg_colors[s->status];
+    const Color clr = bg_colors[s->status];
     track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
-      nvgRGBA(clr[0], clr[1], clr[2], 255), nvgRGBA(clr[0], clr[1], clr[2], 255/2));
+      nvgRGBA(clr.r, clr.g, clr.b, 255), nvgRGBA(clr.r, clr.g, clr.b, 255/2));
   } else {
     // Draw white vision track
     track_bg = nvgLinearGradient(s->vg, vwp_w, vwp_h, vwp_w, vwp_h*.4,
@@ -237,29 +237,22 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
 }
 
 static void draw_frame(UIState *s) {
-  const UIScene *scene = &s->scene;
-
+  mat4 *out_mat;
   if (s->scene.frontview) {
     glBindVertexArray(s->frame_vao[1]);
-  } else {
-    glBindVertexArray(s->frame_vao[0]);
-  }
-
-  mat4 *out_mat;
-  if (s->scene.frontview || s->scene.fullview) {
     out_mat = &s->front_frame_mat;
   } else {
+    glBindVertexArray(s->frame_vao[0]);
     out_mat = &s->rear_frame_mat;
   }
   glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
-  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
 
-    // TODO: a better way to do this?
-#ifndef QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->rgb_width, s->rgb_height, 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->cur_vision_idx]);
+  if (s->stream.last_idx >= 0) {
+    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->stream.last_idx]);
+#ifndef __aarch64__
+    // this is handled in ion on QCOM
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->stream.bufs_info.width, s->stream.bufs_info.height,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->stream.last_idx]);
 #endif
   }
 
@@ -275,7 +268,7 @@ static void draw_frame(UIState *s) {
 }
 
 static inline bool valid_frame_pt(UIState *s, float x, float y) {
-  return x >= 0 && x <= s->rgb_width && y >= 0 && y <= s->rgb_height;
+  return x >= 0 && x <= s->stream.bufs_info.width && y >= 0 && y <= s->stream.bufs_info.height;
 }
 
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
@@ -325,14 +318,10 @@ static void ui_draw_vision_lanes(UIState *s) {
   }
 
   // Draw left lane edge
-  ui_draw_lane(
-      s, pvd,
-      nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLeftLane().getProb()));
+  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLeftLane().getProb()));
 
   // Draw right lane edge
-  ui_draw_lane(
-      s, pvd + MODEL_LANE_PATH_CNT,
-      nvgRGBAf(1.0, 1.0, 1.0, scene->model.getRightLane().getProb()));
+  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getRightLane().getProb()));
 
   if(s->sm->updated("radarState")) {
     update_all_track_data(s);
@@ -369,7 +358,7 @@ static void ui_draw_world(UIState *s) {
 
   nvgTranslate(s->vg, -w / 2, -1080.0f / 2);
   nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, w / s->rgb_width, 1080.0f / s->rgb_height);
+  nvgScale(s->vg, w / s->stream.bufs_info.width, 1080.0f / s->stream.bufs_info.height);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
@@ -390,17 +379,11 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   char maxspeed_str[32];
   float maxspeed = s->scene.controls_state.getVCruise();
   int maxspeed_calc = maxspeed * 0.6225 + 0.5;
-  float speedlimit = s->scene.speedlimit;
-  int speedlim_calc = speedlimit * 2.2369363 + 0.5;
   if (s->is_metric) {
     maxspeed_calc = maxspeed + 0.5;
-    speedlim_calc = speedlimit * 3.6 + 0.5;
   }
 
   bool is_cruise_set = (maxspeed != 0 && maxspeed != SET_SPEED_NA);
-  bool is_speedlim_valid = s->scene.speedlimit_valid;
-  bool is_set_over_limit = is_speedlim_valid && s->scene.controls_state.getEnabled() &&
-                           is_cruise_set && maxspeed_calc > speedlim_calc;
 
   int viz_maxspeed_w = 184;
   int viz_maxspeed_h = 202;
@@ -411,17 +394,10 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   viz_maxspeed_xo = 0;
 
   // Draw Background
-  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h,
-               is_set_over_limit ? nvgRGBA(218, 111, 37, 180) : COLOR_BLACK_ALPHA(100), 30);
+  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_BLACK_ALPHA(100), 30);
 
   // Draw Border
   NVGcolor color = COLOR_WHITE_ALPHA(100);
-  if (is_set_over_limit) {
-    color = COLOR_OCHRE;
-  } else if (is_speedlim_valid) {
-    color = s->is_ego_over_limit ? COLOR_WHITE_ALPHA(20) : COLOR_WHITE;
-  }
-
   ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
@@ -549,10 +525,10 @@ static void ui_draw_vision_header(UIState *s) {
                         (box_y+(header_h-(header_h/2.5))),
                         ui_viz_rx, box_y+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
+
   ui_draw_rect(s->vg, ui_viz_rx, box_y, ui_viz_rw, header_h, gradient);
 
   ui_draw_vision_maxspeed(s);
-
   ui_draw_vision_speed(s);
   ui_draw_vision_event(s);
 }
@@ -575,7 +551,7 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
   const uint8_t *color = alert_colors[va_color];
   int alr_s = alert_size_map[va_size];
 
-  const int alr_x = scene->ui_viz_rx- bdr_s;
+  const int alr_x = scene->ui_viz_rx - bdr_s;
   const int alr_w = scene->ui_viz_rw + (bdr_s*2);
   const int alr_h = alr_s+(va_size==cereal::ControlsState::AlertSize::NONE?0:bdr_s);
   const int alr_y = vwp_h-alr_h;
@@ -619,7 +595,7 @@ static void ui_draw_vision(UIState *s) {
   glViewport(0, 0, s->fb_w, s->fb_h);
 
   // Draw augmented elements
-  if (!scene->frontview && !scene->fullview) {
+  if (!scene->frontview) {
     ui_draw_world(s);
   }
 
@@ -631,7 +607,6 @@ static void ui_draw_vision(UIState *s) {
   }
 
   if (scene->alert_size != cereal::ControlsState::AlertSize::NONE) {
-    // Controls Alerts
     ui_draw_vision_alert(s, scene->alert_size, s->status,
                          scene->alert_text1.c_str(), scene->alert_text2.c_str());
   } else if (!scene->frontview) {
@@ -640,22 +615,25 @@ static void ui_draw_vision(UIState *s) {
 }
 
 static void ui_draw_background(UIState *s) {
-  int bg_status = s->status;
-  assert(bg_status < ARRAYSIZE(bg_colors));
-  const uint8_t *color = bg_colors[bg_status];
-
-  glClearColor(color[0]/256.0, color[1]/256.0, color[2]/256.0, 1.0);
+  const Color color = bg_colors[s->status];
+  glClearColor(color.r/256.0, color.g/256.0, color.b/256.0, 1.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
 void ui_draw(UIState *s) {
+  const bool hasSidebar = !s->scene.uilayout_sidebarcollapsed;
+  s->scene.ui_viz_rx = hasSidebar ? box_x : (box_x - sbr_w + (bdr_s * 2));
+  s->scene.ui_viz_rw = hasSidebar ? box_w : (box_w + sbr_w - (bdr_s * 2));
+  s->scene.ui_viz_ro = hasSidebar ? - (sbr_w - 6 * bdr_s) : 0;
+
   ui_draw_background(s);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, s->fb_w, s->fb_h);
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
-  if (s->started && s->active_app == cereal::UiLayoutState::App::NONE && s->status != STATUS_STOPPED && s->vision_seen) {
+  if (s->started && s->active_app == cereal::UiLayoutState::App::NONE &&
+      s->status != STATUS_OFFROAD && s->vision_connected) {
     ui_draw_vision(s);
   }
   nvgEndFrame(s->vg);
@@ -820,7 +798,7 @@ void ui_nvg_init(UIState *s) {
       { 1.0, -1.0, x1, y1}, //br
     };
 
-    glGenVertexArrays(1,&s->frame_vao[i]);
+    glGenVertexArrays(1, &s->frame_vao[i]);
     glBindVertexArray(s->frame_vao[i]);
     glGenBuffers(1, &s->frame_vbo[i]);
     glBindBuffer(GL_ARRAY_BUFFER, s->frame_vbo[i]);
@@ -841,10 +819,8 @@ void ui_nvg_init(UIState *s) {
   s->front_frame_mat = matmul(device_transform, full_to_wide_frame_transform);
   s->rear_frame_mat = matmul(device_transform, frame_transform);
 
-  for(int i = 0;i < UI_BUF_COUNT; i++) {
+  for(int i = 0; i < UI_BUF_COUNT; i++) {
     s->khr[i] = 0;
     s->priv_hnds[i] = NULL;
-    s->khr_front[i] = 0;
-    s->priv_hnds_front[i] = NULL;
   }
 }

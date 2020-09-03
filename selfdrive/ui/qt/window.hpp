@@ -45,7 +45,6 @@ protected:
 private:
   QTimer * timer;
   UIState * ui_state;
-  pthread_t connect_thread_handle;
 
 public slots:
   void timerUpdate();
