@@ -110,9 +110,6 @@ typedef struct UIScene {
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
   bool world_objects_visible;
 
-  float speedlimit;
-  bool speedlimit_valid;
-
   bool is_rhd;
   bool frontview;
   bool uilayout_sidebarcollapsed;

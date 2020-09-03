@@ -379,16 +379,11 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   char maxspeed_str[32];
   float maxspeed = s->scene.controls_state.getVCruise();
   int maxspeed_calc = maxspeed * 0.6225 + 0.5;
-  float speedlimit = s->scene.speedlimit;
-  int speedlim_calc = speedlimit * 2.2369363 + 0.5;
   if (s->is_metric) {
     maxspeed_calc = maxspeed + 0.5;
-    speedlim_calc = speedlimit * 3.6 + 0.5;
   }
 
   bool is_cruise_set = (maxspeed != 0 && maxspeed != SET_SPEED_NA);
-  bool is_set_over_limit = s->scene.speedlimit_valid && s->scene.controls_state.getEnabled() &&
-                           is_cruise_set && maxspeed_calc > speedlim_calc;
 
   int viz_maxspeed_w = 184;
   int viz_maxspeed_h = 202;
@@ -399,17 +394,10 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   viz_maxspeed_xo = 0;
 
   // Draw Background
-  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h,
-               is_set_over_limit ? nvgRGBA(218, 111, 37, 180) : COLOR_BLACK_ALPHA(100), 30);
+  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_BLACK_ALPHA(100), 30);
 
   // Draw Border
   NVGcolor color = COLOR_WHITE_ALPHA(100);
-  if (is_set_over_limit) {
-    color = COLOR_OCHRE;
-  } else if (s->scene.speedlimit_valid) {
-    color = COLOR_WHITE;
-  }
-
   ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
