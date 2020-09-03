@@ -114,13 +114,13 @@ static inline void fill_path_points(const cereal::ModelData::PathData::Reader &p
 
 void update_sockets(UIState *s) {
 
-  // poll sockets
-  if (s->sm->update(0) == 0){
-    return;
-  }
-
   UIScene &scene = s->scene;
   SubMaster &sm = *(s->sm);
+
+  // poll sockets
+  if (sm.update(0) == 0){
+    return;
+  }
 
   if (s->started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
-#include <czmq.h>
 
 #include "common/util.h"
 #include "common/utilpp.h"
@@ -252,7 +251,7 @@ int main(int argc, char* argv[]) {
     double u2 = millis_since_boot();
     if (!s->scene.frontview && (u2-u1 > 66)) {
       // warn on sub 15fps
-      LOGW("slow frame(%d) time: %.2f", (s->sm)->frame, u2-u1);
+      LOGW("slow frame(%llu) time: %.2f", (s->sm)->frame, u2-u1);
     }
     framebuffer_swap(s->fb);
   }
