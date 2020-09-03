@@ -11,6 +11,7 @@
 
 #define TRAJECTORY_SIZE 33
 #define TRAJECTORY_TIME 10.0
+#define TRAJECTORY_DISTANCE 192.0
 #define PLAN_IDX 0
 #define LL_IDX PLAN_IDX + PLAN_MHP_N*(PLAN_MHP_GROUP_SIZE)
 #define LL_PROB_IDX LL_IDX + 4*2*2*33
@@ -68,8 +69,8 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
   // Build Vandermonde matrix
   for(int i = 0; i < TRAJECTORY_SIZE; i++) {
     for(int j = 0; j < POLYFIT_DEGREE - 1; j++) {
-      X_IDXS[i] = (192.0/1024.0) * (pow(i,2));
-      T_IDXS[i] = (10.0/1024.0) * (pow(i,2));
+      X_IDXS[i] = (TRAJECTORY_DISTANCE/1024.0) * (pow(i,2));
+      T_IDXS[i] = (TRAJECTORY_TIME/1024.0) * (pow(i,2));
       vander(i, j) = pow(X_IDXS[i], POLYFIT_DEGREE-j-1);
     }
   }
@@ -162,7 +163,8 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, fl
   float std;
 
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    points_arr[i] = data[30*i + 16];
+    // negative sign because mpc has left positive
+    points_arr[i] = -data[30*i + 16];
     stds_arr[i] = exp(data[30*(33 + i) + 16]);
   }
   std = stds_arr[0];
@@ -182,7 +184,8 @@ void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * dat
   float std;
 
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    points_arr[i] = data[2*33*ll_idx + 2*i];
+    // negative sign because mpc has left positive
+    points_arr[i] = -data[2*33*ll_idx + 2*i];
     stds_arr[i] = data[2*33*(4 + ll_idx) + 2*i];
   }
   std = stds_arr[0];
@@ -210,10 +213,10 @@ void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, fl
 void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_data) {
   kj::ArrayPtr<const float> desire_state(&meta_data[0], DESIRE_LEN);
   meta.setDesireState(desire_state);
-  meta.setEngagedProb(meta_data[DESIRE_LEN]);
-  meta.setGasDisengageProb(meta_data[DESIRE_LEN + 1]);
-  meta.setBrakeDisengageProb(meta_data[DESIRE_LEN + 2]);
-  meta.setSteerOverrideProb(meta_data[DESIRE_LEN + 3]);
+  meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
+  meta.setGasDisengageProb(sigmoid(meta_data[DESIRE_LEN + 1]));
+  meta.setBrakeDisengageProb(sigmoid(meta_data[DESIRE_LEN + 2]));
+  meta.setSteerOverrideProb(sigmoid(meta_data[DESIRE_LEN + 3]));
   kj::ArrayPtr<const float> desire_pred(&meta_data[DESIRE_LEN + OTHER_META_SIZE], DESIRE_PRED_SIZE);
   meta.setDesirePrediction(desire_pred);
 }
