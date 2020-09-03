@@ -74,7 +74,7 @@ static void ui_init_vision(UIState *s) {
 }
 
 void ui_update_vision(UIState *s) {
-  // TODO: check the stream type is right for the driverview -> onroad case
+
   if (!s->vision_connected && s->started) {
     const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
     int err = visionstream_init(&s->stream, type, true, nullptr);
@@ -88,13 +88,12 @@ void ui_update_vision(UIState *s) {
     if (!s->started) goto destroy;
 
     // poll for a new frame
-    const int timeout = 1000 / UI_FREQ;
     struct pollfd fds[1] = {{
       .fd = s->stream.ipc_fd,
-      .events = POLLIN,
+      .events = POLLOUT,
     }};
-    int ret = poll(fds, 1, timeout);
-    if (ret >= 0) {
+    int ret = poll(fds, 1, 100);
+    if (ret > 0) {
       if (!visionstream_get(&s->stream, nullptr)) goto destroy;
     }
   }
