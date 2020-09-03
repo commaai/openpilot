@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <sys/resource.h>
-#include <czmq.h>
 
 #include "common/util.h"
 #include "common/utilpp.h"
@@ -130,9 +130,8 @@ static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
     if (touch_x >= settings_btn_x && touch_x < (settings_btn_x + settings_btn_w)
         && touch_y >= settings_btn_y && touch_y < (settings_btn_y + settings_btn_h)) {
       s->active_app = cereal::UiLayoutState::App::SETTINGS;
-    }
-    else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
-             && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
+    } else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
+               && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
       if (s->started) {
         s->active_app = cereal::UiLayoutState::App::NONE;
         s->scene.uilayout_sidebarcollapsed = true;
@@ -169,7 +168,6 @@ int main(int argc, char* argv[]) {
   int err;
   setpriority(PRIO_PROCESS, 0, -14);
 
-  zsys_handler_set(NULL);
   signal(SIGINT, (sighandler_t)set_do_exit);
 
   UIState uistate = {};
@@ -179,12 +177,6 @@ int main(int argc, char* argv[]) {
   enable_event_processing(true);
 
   PubMaster *pm = new PubMaster({"offroadLayout"});
-
-  pthread_t connect_thread_handle;
-  err = pthread_create(&connect_thread_handle, NULL,
-                       vision_connect_thread, s);
-  assert(err == 0);
-
   pthread_t light_sensor_thread_handle;
   err = pthread_create(&light_sensor_thread_handle, NULL,
                        light_sensor_thread, s);
@@ -192,47 +184,33 @@ int main(int argc, char* argv[]) {
 
   TouchState touch = {0};
   touch_init(&touch);
-  s->touch_fd = touch.fd;
 
-  // light sensor scaling params
+  // light sensor scaling and volume params
   const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
 
   float brightness_b = 0, brightness_m = 0;
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
-
   if(result != 0) {
     brightness_b = LEON ? 10.0 : 5.0;
     brightness_m = LEON ? 2.6 : 1.3;
     write_param_float(brightness_b, "BRIGHTNESS_B", true);
     write_param_float(brightness_m, "BRIGHTNESS_M", true);
   }
-
   float smooth_brightness = brightness_b;
 
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
   assert(s->sound.init(MIN_VOLUME));
 
-  int draws = 0;
-
   while (!do_exit) {
-    bool should_swap = false;
-    if (!s->started) {
+    if (!s->started || !s->vision_connected) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
-      // Don't hold the lock while sleeping, so that vision_connect_thread have chances to get the lock.
       usleep(30 * 1000);
     }
-    pthread_mutex_lock(&s->lock);
     double u1 = millis_since_boot();
 
-    // light sensor is only exposed on EONs
-    float clipped_brightness = (s->light_sensor*brightness_m) + brightness_b;
-    if (clipped_brightness > 512) clipped_brightness = 512;
-    smooth_brightness = clipped_brightness * 0.01 + smooth_brightness * 0.99;
-    if (smooth_brightness > 255) smooth_brightness = 255;
-    ui_set_brightness(s, (int)smooth_brightness);
-    ui_update_sizes(s);
+    ui_update(s);
 
     // poll for touch events
     int touch_x = -1, touch_y = -1;
@@ -243,109 +221,44 @@ int main(int argc, char* argv[]) {
       handle_vision_touch(s, touch_x, touch_y);
     }
 
-    if (!s->started) {
-      // always process events offroad
-      check_messages(s);
-    } else {
+    // manage wakefulness
+    if (s->started) {
       set_awake(s, true);
-      // Car started, fetch a new rgb image from ipc
-      if (s->vision_connected){
-        ui_update(s);
-      }
-
-      check_messages(s);
-
-      // Visiond process is just stopped, force a redraw to make screen blank again.
-      if (!s->started) {
-        s->scene.uilayout_sidebarcollapsed = false;
-        ui_draw(s);
-        glFinish();
-        should_swap = true;
-      }
     }
 
-    // manage wakefulness
     if (s->awake_timeout > 0) {
       s->awake_timeout--;
     } else {
       set_awake(s, false);
     }
 
-    // manage hardware disconnect
-    if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
-      s->scene.hwType = cereal::HealthData::HwType::UNKNOWN;
-    }
-
     // Don't waste resources on drawing in case screen is off
-    if (s->awake) {
-      ui_draw(s);
-      glFinish();
-      should_swap = true;
+    if (!s->awake) {
+      continue;
     }
 
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5)); // up one notch every 5 m/s
+    // up one notch every 5 m/s
+    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
 
-    bool controls_timeout = (s->sm->frame - s->sm->rcv_frame("controlsState")) > 5*UI_FREQ;
-    if (s->started && !s->scene.frontview && controls_timeout) {
-      if (!s->controls_seen) {
-        // car is started, but controlsState hasn't been seen at all
-        s->scene.alert_text1 = "openpilot Unavailable";
-        s->scene.alert_text2 = "Waiting for controls to start";
-        s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
-      } else {
-        // car is started, but controls is lagging or died
-        LOGE("Controls unresponsive");
+    // set brightness
+    float clipped_brightness = fmin(512, (s->light_sensor*brightness_m) + brightness_b);
+    smooth_brightness = fmin(255, clipped_brightness * 0.01 + smooth_brightness * 0.99);
+    ui_set_brightness(s, (int)smooth_brightness);
 
-        if (s->scene.alert_text2 != "Controls Unresponsive") {
-          s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT);
-        }
-
-        s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
-        s->scene.alert_text2 = "Controls Unresponsive";
-        s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-        update_status(s, STATUS_ALERT);
-      }
-      ui_draw_vision_alert(s, s->scene.alert_size, s->status, s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
-    }
-
-
-    if (s->sm->frame % (2*UI_FREQ) == 0) {
-      read_param(&s->is_metric, "IsMetric");
-    } else if (s->sm->frame % (3*UI_FREQ) == 0) {
-      int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
-      if (param_read != 0) { // Failed to read param
-        s->scene.athenaStatus = NET_DISCONNECTED;
-      } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
-        s->scene.athenaStatus = NET_CONNECTED;
-      } else {
-        s->scene.athenaStatus = NET_ERROR;
-      }
-    }
     update_offroad_layout_state(s, pm);
 
-    pthread_mutex_unlock(&s->lock);
-
-    // the bg thread needs to be scheduled, so the main thread needs time without the lock
-    // safe to do this outside the lock?
-    if (should_swap) {
-      double u2 = millis_since_boot();
-      if (u2-u1 > 66) {
-        // warn on sub 15fps
-        LOGW("slow frame(%d) time: %.2f", draws, u2-u1);
-      }
-      draws++;
-      framebuffer_swap(s->fb);
+    ui_draw(s);
+    double u2 = millis_since_boot();
+    if (!s->scene.frontview && (u2-u1 > 66)) {
+      // warn on sub 15fps
+      LOGW("slow frame(%llu) time: %.2f", (s->sm)->frame, u2-u1);
     }
+    framebuffer_swap(s->fb);
   }
 
   set_awake(s, true);
 
-  // wake up bg thread to exit
-  pthread_mutex_lock(&s->lock);
-  pthread_mutex_unlock(&s->lock);
-
-  // join light_sensor_thread?
-  err = pthread_join(connect_thread_handle, NULL);
+  err = pthread_join(light_sensor_thread_handle, NULL);
   assert(err == 0);
   delete s->sm;
   delete pm;
