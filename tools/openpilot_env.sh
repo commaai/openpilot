@@ -1,5 +1,9 @@
 if [ -z "$OPENPILOT_ENV" ]; then
-  export PYTHONPATH="$HOME/openpilot"
+  openpilot_dir="$HOME/openpilotricardo"
+  if [ ! -d $openpilot_dir ]; then
+    openpilot_dir=`find / -type d -name "openpilotricardo" 2>/dev/null | head -n 1`
+  fi
+  export PYTHONPATH="$openpilot_dir"
 
   unamestr=`uname`
   if [[ "$unamestr" == 'Linux' ]]; then

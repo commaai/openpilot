@@ -18,14 +18,26 @@ AddOption('--asan',
 cython_dependencies = [Value(v) for v in (sys.version, distutils.__version__, Cython.__version__)]
 Export('cython_dependencies')
 
+Help("\nType: 'scons cc=1' for cross-compilation.\n")
+Help("\nType: 'scons use_webcam=1' for web camera support.\n")
+Help("\nNote: you can combine all the parameters shown above\n")
+
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
 if arch == "aarch64" and not os.path.isdir("/system"):
   arch = "larch64"
 
+uname = platform.uname()
+is_ubuntu = 'Ubuntu' in uname.version
+
 webcam = bool(ARGUMENTS.get("use_webcam", 0))
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
+
+cc = bool(ARGUMENTS.get("cc", 0))
+if cc:
+  print("----> Cross-compiling for ARM64.... ")
 
 if arch == "aarch64" or arch == "larch64":
   lenv = {
@@ -95,14 +107,25 @@ else:
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
   else:
     libpath = [
-      "#phonelibs/snpe/x86_64-linux-clang",
-      "#phonelibs/libyuv/x64/lib",
       "#external/tensorflow/lib",
       "#cereal",
       "#selfdrive/common",
-      "/usr/lib",
-      "/usr/local/lib",
     ]
+
+    if cc:
+      libpath += [
+        "#phonelibs/snpe/larch64",
+        "#phonelibs/libyuv/larch64/lib",
+        "/usr/lib/aarch64-linux-gnu/",
+        "/lib/aarch64-linux-gnu/",
+      ]
+    else:
+      libpath += [
+        "#phonelibs/snpe/x86_64-linux-clang",
+        "#phonelibs/libyuv/x64/lib",
+        "/usr/lib",
+        "/usr/local/lib",
+      ]
 
   rpath = [
     "external/tensorflow/lib",
@@ -122,6 +145,11 @@ else:
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
+
+crosscompile_flags = ["-mcpu=cortex-a57", 
+                      "-march=armv8-a", 
+                      "--target=aarch64-linux-gnu",
+                      "--prefix=$HOME/linker_bin/"]
 
 env = Environment(
   ENV=lenv,
@@ -176,6 +204,26 @@ env = Environment(
     "#phonelibs",
   ]
 )
+
+if cc:
+  env.Append(CCFLAGS=["-Wno-builtin-requires-header",
+                      "-Wno-incomplete-setjmp-declaration"])
+  env.Append(CPPPATH=["/usr/aarch64-linux-gnu/include"])
+  env.Append(LINKFLAGS=["-mcpu=cortex-a57", 
+                        "-march=armv8-a", 
+                        "--target=aarch64-linux-gnu"])
+  env.Append(CFLAGS=crosscompile_flags)
+  env.Append(CXXFLAGS=crosscompile_flags)
+  env.Append(LIBPATH=["/usr/aarch64-linux-gnu/lib"])
+
+if webcam:
+  env.Append(CPPDEFINES=['CL_USE_DEPRECATED_OPENCL_1_2_APIS'])
+
+if is_ubuntu:
+  env.Append(CCFLAGS=["-Wno-c99-designator",
+                      "-Wno-reorder-init-list",
+                      "-Wno-unused-variable",
+                      "-Wno-gnu-inline-cpp-without-extern"])
 
 qt_env = None
 if arch in ["x86_64", "Darwin", "larch64"]:
@@ -250,7 +298,7 @@ def abspath(x):
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY', 'cc')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
