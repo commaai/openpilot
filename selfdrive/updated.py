@@ -283,8 +283,8 @@ def main():
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-  except IOError:
-    raise RuntimeError("couldn't get overlay lock; is another updated running?")
+  except IOError as e:
+    raise RuntimeError("couldn't get overlay lock; is another updated running?") from e
 
   # Wait for IsOffroad to be set before our first update attempt
   wait_helper = WaitTimeHelper(proc)
