@@ -27,8 +27,8 @@ def index_log(fn):
 
   try:
     dat = subprocess.check_output([index_log, fn, "-"])
-  except subprocess.CalledProcessError:
-    raise DataUnreadableError("%s capnp is corrupted/truncated" % fn)
+  except subprocess.CalledProcessError as e:
+    raise DataUnreadableError("%s capnp is corrupted/truncated" % fn) from e
   return np.frombuffer(dat, dtype=np.uint64)
 
 def event_read_multiple_bytes(dat):
