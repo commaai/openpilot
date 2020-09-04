@@ -120,42 +120,28 @@ static void ui_draw_sidebar_temp_metric(UIState *s) {
       {cereal::ThermalData::ThermalStatus::YELLOW, 1},
       {cereal::ThermalData::ThermalStatus::RED, 2},
       {cereal::ThermalData::ThermalStatus::DANGER, 3}};
-  char temp_label_str[32];
-  char temp_value_str[32];
-  char temp_value_unit[32];
-  const int temp_y_offset = 0;
-  snprintf(temp_value_str, sizeof(temp_value_str), "%.0f", s->scene.thermal.getAmbient());
-  snprintf(temp_value_unit, sizeof(temp_value_unit), "%s", "°C");
-  snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");
-  strcat(temp_value_str, temp_value_unit);
-
-  ui_draw_sidebar_metric(s, temp_label_str, temp_value_str, temp_severity_map[s->scene.thermal.getThermalStatus()], temp_y_offset, NULL);
+  std::string temp_val = std::to_string((int)s->scene.thermal.getAmbient()) + "°C";
+  ui_draw_sidebar_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.thermal.getThermalStatus()], 0, NULL);
 }
 
 static void ui_draw_sidebar_panda_metric(UIState *s) {
-  int panda_severity = 2;
-  char panda_message_str[32];
   const int panda_y_offset = 32 + 148;
 
+  int panda_severity = 0;
+  std::string panda_message = "VEHICLE\nONLINE";
   if (s->scene.hwType == cereal::HealthData::HwType::UNKNOWN) {
     panda_severity = 2;
-    snprintf(panda_message_str, sizeof(panda_message_str), "%s", "NO\nVEHICLE");
-  } else {
-    if (s->started){
-      if (s->scene.satelliteCount < 6) {
-        panda_severity = 1;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nNO GPS");
-      } else if (s->scene.satelliteCount >= 6) {
-        panda_severity = 0;
-        snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nGOOD GPS");
-      }
+    panda_message = "NO\nVEHICLE";
+  } else if (s->started) {
+    if (s->scene.satelliteCount < 6) {
+      panda_severity = 1;
+      panda_message = "VEHICLE\nNO GPS";
     } else {
       panda_severity = 0;
-      snprintf(panda_message_str, sizeof(panda_message_str), "%s", "VEHICLE\nONLINE");
+      panda_message = "VEHICLE\nGOOD GPS";
     }
   }
-
-  ui_draw_sidebar_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message_str);
+  ui_draw_sidebar_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message.c_str());
 }
 
 static void ui_draw_sidebar_connectivity(UIState *s) {
@@ -170,7 +156,7 @@ static void ui_draw_sidebar_connectivity(UIState *s) {
 
 void ui_draw_sidebar(UIState *s) {
   ui_draw_sidebar_background(s);
-  if (s->scene.uilayout_sidebarcollapsed){
+  if (s->scene.uilayout_sidebarcollapsed) {
     return;
   }
   ui_draw_sidebar_settings_button(s);
