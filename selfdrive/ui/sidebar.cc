@@ -13,12 +13,12 @@ static void ui_draw_sidebar_background(UIState *s) {
 
 static void ui_draw_sidebar_settings_button(UIState *s) {
   const float alpha = s->active_app == cereal::UiLayoutState::App::SETTINGS ? 1.0f : 0.65f;
-  ui_draw_image(s->vg, settings_btn_x, settings_btn_y, settings_btn_w, settings_btn_h, s->img_button_settings, alpha);
+  ui_draw_image(s->vg, settings_btn.x, settings_btn.y, settings_btn.w, settings_btn.h, s->img_button_settings, alpha);
 }
 
 static void ui_draw_sidebar_home_button(UIState *s) {
   const float alpha = s->active_app == cereal::UiLayoutState::App::HOME ? 1.0f : 0.65f;;
-  ui_draw_image(s->vg, home_btn_x, home_btn_y, home_btn_w, home_btn_h, s->img_button_home, alpha);
+  ui_draw_image(s->vg, home_btn.x, home_btn.y, home_btn.w, home_btn.h, s->img_button_home, alpha);
 }
 
 static void ui_draw_sidebar_network_strength(UIState *s) {

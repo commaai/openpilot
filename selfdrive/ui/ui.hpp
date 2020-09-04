@@ -37,6 +37,11 @@
 
 #define UI_BUF_COUNT 4
 
+typedef struct Rect {
+  int x, y, w, h;
+  bool ptInRect(int px, int py) const{ return px>=x&&px<(x+w)&&py>=y&&py<(y+h); }
+} Rect;
+
 // TODO: Detect dynamically
 #ifdef QCOM2
 const int vwp_w = 2160;
@@ -59,14 +64,8 @@ const int ff_xoffset = 32;
 const int header_h = 420;
 const int footer_h = 280;
 const int footer_y = vwp_h-bdr_s-footer_h;
-const int settings_btn_h = 117;
-const int settings_btn_w = 200;
-const int settings_btn_x = 50;
-const int settings_btn_y = 35;
-const int home_btn_h = 180;
-const int home_btn_w = 180;
-const int home_btn_x = 60;
-const int home_btn_y = vwp_h - home_btn_h - 40;
+const Rect settings_btn = {50, 35, 200, 117};
+const Rect home_btn = {60, vwp_h - 180 - 40, 180, 60};
 
 const int UI_FREQ = 20;   // Hz
 
