@@ -85,7 +85,6 @@ static std::map<UIStatus, NVGcolor> bg_colors = {
 
 typedef struct UIScene {
 
-  bool world_objects_visible;
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
   bool world_objects_visible;
 
