@@ -42,11 +42,6 @@ static void ui_init_vision(UIState *s) {
   s->scene.world_objects_visible = false;
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
-    if (s->khr[i] != 0) {
-      visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
-      glDeleteTextures(1, &s->frame_texs[i]);
-    }
-
     VisionImg img = {
       .fd = s->stream.bufs[i].fd,
       .format = VISIONIMG_FORMAT_RGB24,
@@ -56,12 +51,8 @@ static void ui_init_vision(UIState *s) {
       .bpp = 3,
       .size = s->stream.bufs_info.buf_len,
     };
-#ifndef QCOM
-    s->priv_hnds[i] = s->stream.bufs[i].addr;
-#endif
-    s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
-
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
+    s->texture[i].reset(new EGLImageTexture(img, s->stream.bufs[i].addr));
+    glBindTexture(GL_TEXTURE_2D, s->texture[i]->frame_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 

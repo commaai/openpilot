@@ -14,6 +14,7 @@
 
 #include <atomic>
 #include <map>
+#include <memory>
 #include <string>
 #include <sstream>
 
@@ -186,10 +187,6 @@ typedef struct UIState {
   // graphics
   GLuint frame_program;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-<<<<<<< 6d2ae64a44174d7ce7a2329ff0dead982b30fe45
-=======
-  std::unique_ptr<EGLImageTexture> front_texture[UI_BUF_COUNT];
->>>>>>> rebase master
 
   GLint frame_pos_loc, frame_texcoord_loc;
   GLint frame_texture_loc, frame_transform_loc;
