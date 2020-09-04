@@ -118,10 +118,13 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
     LOGW("recording front camera");
 #endif
     set_thread_name("FrontCameraEncoder");
+    s.num_encoder += 1;
   } else if (cam_idx == CAM_IDX_FCAM) {
     set_thread_name("RearCameraEncoder");
+    s.num_encoder += 1;
   } else if (cam_idx == CAM_IDX_ECAM) {
     set_thread_name("WideCameraEncoder");
+    s.num_encoder += 1;
   } else {
     LOGE("unexpected camera index provided");
     assert(false);
@@ -607,16 +610,13 @@ int main(int argc, char** argv) {
 #ifndef DISABLE_ENCODER
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, is_streaming, false, CAM_IDX_FCAM);
-  s.num_encoder += 1;
 
   // front camera
   std::thread front_encoder_thread_handle(encoder_thread, false, false, CAM_IDX_DCAM);
-  s.num_encoder += 1;
 
   #ifdef QCOM2
   // wide camera
   std::thread wide_encoder_thread_handle(encoder_thread, false, false, CAM_IDX_ECAM);
-  s.num_encoder += 1;
   #endif
 #endif
 
