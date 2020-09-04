@@ -142,7 +142,7 @@ def go(q):
 
   world_map = world.get_map()
 
-  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[-1]
+  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[0]
   # vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
   vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
 
@@ -151,7 +151,7 @@ def go(q):
   # make tires less slippery
   # wheel_control = carla.WheelPhysicsControl(tire_friction=5)
   physics_control = vehicle.get_physics_control()
-  physics_control.mass = 1326
+  physics_control.mass = 126
   # physics_control.wheels = [wheel_control]*4
   physics_control.torque_curve = [[20.0, 500.0], [5000.0, 500.0]]
   physics_control.gear_switch_time = 0.0

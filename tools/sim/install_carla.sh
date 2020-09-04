@@ -10,3 +10,6 @@ mkdir -p carla_tmp
 cd carla_tmp
 tar xvf ../$FILE
 easy_install PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true
+cd ..
+rm -rf /tmp/$FILE
+rm -rf carla_tmp
