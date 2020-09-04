@@ -25,9 +25,8 @@ MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
 # This is all 20Hz, blocks needed for efficiency
 BLOCK_SIZE = 100
-INPUTS_NEEDED = 5   # allow to update VP every so many frames
+INPUTS_NEEDED = 5   # Minimum blocks needed for valid calibration
 INPUTS_WANTED = 50   # We want a little bit more than we need for stability
-WRITE_CYCLES = 10  # write every 1000 cycles
 RPY_INIT = np.array([0,0,0])
 
 # These values are needed to accomodate biggest modelframe
