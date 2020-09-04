@@ -593,7 +593,12 @@ EVENTS = {
   },
 
   EventName.calibrationInvalid: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Calibration Invalid: Reposition Device and Recalibrate"),
+    ET.PERMANENT: Alert(
+      "Calibration Invalid",
+      "Reposition Device and Recalibrate",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.SOFT_DISABLE: SoftDisableAlert("Calibration Invalid: Reposition Device & Recalibrate"),
     ET.NO_ENTRY: NoEntryAlert("Calibration Invalid: Reposition Device & Recalibrate"),
   },
 
