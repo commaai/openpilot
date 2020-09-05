@@ -484,10 +484,10 @@ void enqueue_buffer(struct CameraState *s, int i) {
   if (s->buf_handle[i]) {
     release(s->video0_fd, s->buf_handle[i]);
     // wait
-    // struct cam_sync_wait sync_wait = {0};
-    // sync_wait.sync_obj = s->sync_objs[i];
-    // sync_wait.timeout_ms = 100;
-    // ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    struct cam_sync_wait sync_wait = {0};
+    sync_wait.sync_obj = s->sync_objs[i];
+    sync_wait.timeout_ms = 50;
+    ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
  
     // destroy old output fence
@@ -563,9 +563,9 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->analog_gain_frac = 1.0;
   s->analog_gain = 0x8;
   s->exposure_time = 598;
-  s->frame_id = -1;
+  s->frame_id = 0;
   s->first = true;
-  //s->missed_frame = 0;
+  // s->n_skipped = 0;
 }
 
 static void camera_open(CameraState *s, VisionBuf* b) {
@@ -791,7 +791,7 @@ void cameras_init(MultiCameraState *s) {
   camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
   printf("front initted \n");
 #ifdef NOSCREEN
-  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.200.51:7768");
+  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.3.4:7768");
   assert(rgb_sock);
   s->rgb_sock = rgb_sock;
 #endif
@@ -925,6 +925,18 @@ void cameras_run(MultiCameraState *s) {
   sensors_i2c(&s->front, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
     CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 
+  for (int i=0;i<4;++i) {
+    s->rear.frame_id++;
+    s->rear.camera_bufs_metadata[i].frame_id = s->rear.frame_id;
+    enqueue_buffer(&s->rear, i);
+    s->wide.frame_id++;
+    s->wide.camera_bufs_metadata[i].frame_id = s->wide.frame_id;
+    enqueue_buffer(&s->wide, i);
+    s->front.frame_id++;
+    s->front.camera_bufs_metadata[i].frame_id = s->front.frame_id;
+    enqueue_buffer(&s->front, i);
+  }
+
   // poll events
   LOG("-- Dequeueing Video events");
   while (!do_exit) {
@@ -950,31 +962,34 @@ void cameras_run(MultiCameraState *s) {
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
-     if (event_data->u.frame_msg.request_id != 0 || (event_data->u.frame_msg.request_id == 0 &&
-         ((s->rear.first && event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) ||
-          (s->wide.first && event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) ||
-          (s->front.first && event_data->session_hdl == s->front.req_mgr_session_info.session_hdl)))) {
+     if (event_data->u.frame_msg.request_id != 0) {
         if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
-          if (event_data->u.frame_msg.request_id > 0) {s->rear.first = false;}
+          if (event_data->u.frame_msg.request_id > -1) {s->rear.first = false;}
           s->rear.frame_id++;
+          //s->rear.n_skipped = 0;
           //printf("rear %d\n", s->rear.frame_id);
-          int buf_idx = s->rear.frame_id % FRAME_BUF_COUNT;
+          int buf_idx = (s->rear.frame_id - 1) % FRAME_BUF_COUNT;
+          //printf("frame_id/buf_idx 0 = %d / %d\n", s->rear.frame_id, buf_idx);
           s->rear.camera_bufs_metadata[buf_idx].frame_id = s->rear.frame_id;
           s->rear.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
           tbuffer_dispatch(&s->rear.camera_tb, buf_idx);
         } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
-          if (event_data->u.frame_msg.request_id > 0) {s->wide.first = false;}
+          if (event_data->u.frame_msg.request_id > -1) {s->wide.first = false;}
           s->wide.frame_id++;
+          //s->wide.n_skipped = 0;
           //printf("wide %d\n", s->wide.frame_id);
-          int buf_idx = s->wide.frame_id % FRAME_BUF_COUNT;
+          int buf_idx = (s->wide.frame_id - 1) % FRAME_BUF_COUNT;
+          //printf("frame_id/buf_idx 1 = %d / %d\n", s->wide.frame_id, buf_idx);
           s->wide.camera_bufs_metadata[buf_idx].frame_id = s->wide.frame_id;
           s->wide.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
           tbuffer_dispatch(&s->wide.camera_tb, buf_idx);
-        } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
-          if (event_data->u.frame_msg.request_id > 0) {s->front.first = false;}
+        } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) { 
+          if (event_data->u.frame_msg.request_id > -1) {s->front.first = false;}
           s->front.frame_id++;
+          //s->front.n_skipped = 0;
           //printf("front %d\n", s->front.frame_id);
-          int buf_idx = s->front.frame_id % FRAME_BUF_COUNT;
+          int buf_idx = (s->front.frame_id - 1) % FRAME_BUF_COUNT;
+          //printf("frame_id/buf_idx 2 = %d / %d\n", s->front.frame_id, buf_idx);
           s->front.camera_bufs_metadata[buf_idx].frame_id = s->front.frame_id;
           s->front.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
           tbuffer_dispatch(&s->front.camera_tb, buf_idx);
