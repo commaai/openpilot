@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import time
 import unittest
+from parameterized import parameterized
 from pathlib import Path
 
 from common.params import Params
@@ -25,6 +26,8 @@ if EON:
 elif TICI:
   CAMERAS = {f"{c}camera": FULL_SIZE for c in ["f", "e", "d"]}
 
+ALL_CAMERA_COMBINATIONS = [(cameras,) for cameras in [CAMERAS, {k:CAMERAS[k] for k in CAMERAS if k!='dcamera'}]]
+
 FRAME_TOLERANCE = 2
 FILE_SIZE_TOLERANCE = 0.25
 
@@ -36,8 +39,10 @@ class TestLoggerd(unittest.TestCase):
     if not (EON or TICI):
       raise unittest.SkipTest
 
-  def setUp(self):
-    Params().put("RecordFront", "1")
+  @parameterized.expand(ALL_CAMERA_COMBINATIONS)
+  def setUp(self, cameras):
+
+    Params().put("RecordFront", "1" if 'dcamera' in cameras else "0")
     self._clear_logs()
 
     self.segment_length = 2
@@ -56,8 +61,9 @@ class TestLoggerd(unittest.TestCase):
     return os.path.join(ROOT, last_route)
 
   # TODO: this should run faster than real time
+  @parameterized.expand(ALL_CAMERA_COMBINATIONS)
   @with_processes(['camerad', 'loggerd'], init_time=5)
-  def test_log_rotation(self):
+  def test_log_rotation(self, cameras):
     # wait for first seg to start being written
     time.sleep(5)
     route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
@@ -75,7 +81,7 @@ class TestLoggerd(unittest.TestCase):
         time.sleep(self.segment_length + 2)
 
       # check each camera file size
-      for camera, size in CAMERAS.items():
+      for camera, size in cameras.items():
         file_path = f"{route_prefix_path}--{i}/{camera}.hevc"
 
         # check file size
