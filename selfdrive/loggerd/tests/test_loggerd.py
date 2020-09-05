@@ -22,6 +22,7 @@ if EON:
   CAMERAS = {
     "fcamera": FULL_SIZE,
     "dcamera": 770920,
+    "qcamera": 38533,
   }
 elif TICI:
   CAMERAS = {f"{c}camera": FULL_SIZE for c in ["f", "e", "d"]}
@@ -78,13 +79,17 @@ class TestLoggerd(unittest.TestCase):
     for i in trange(num_segments):
       # check each camera file size
       for camera, size in cameras.items():
-        file_path = f"{route_prefix_path}--{i}/{camera}.hevc"
+        ext = "ts" if camera=='qcamera' else "hevc"
+        file_path = f"{route_prefix_path}--{i}/{camera}.{ext}"
 
         # check file size
         self.assertTrue(os.path.exists(file_path), f"couldn't find {file_path}")
         file_size = os.path.getsize(file_path)
         self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE),
                         f"{camera} failed size check: expected {size}, got {file_size}")
+
+        if camera == 'qcamera':
+          continue
 
         # check frame count
         cmd = f"ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \

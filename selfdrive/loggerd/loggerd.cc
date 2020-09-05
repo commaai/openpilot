@@ -268,6 +268,12 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           encoder_open(&encoder, encoder.next_path);
           encoder.segment = encoder.next_segment;
           encoder.rotating = false;
+          if (has_encoder_alt) {
+            encoder_close(&encoder_alt);
+            encoder_open(&encoder_alt, encoder_alt.next_path);
+            encoder_alt.segment = encoder_alt.next_segment;
+            encoder_alt.rotating = false;
+          }
           s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
