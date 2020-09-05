@@ -8,6 +8,7 @@ import time
 import unittest
 from parameterized import parameterized
 from pathlib import Path
+from tqdm import trange
 
 from common.params import Params
 from common.hardware import EON, TICI
@@ -39,10 +40,7 @@ class TestLoggerd(unittest.TestCase):
     if not (EON or TICI):
       raise unittest.SkipTest
 
-  @parameterized.expand(ALL_CAMERA_COMBINATIONS)
-  def setUp(self, cameras):
-
-    Params().put("RecordFront", "1" if 'dcamera' in cameras else "0")
+  def setUp(self):
     self._clear_logs()
 
     self.segment_length = 2
@@ -60,26 +58,23 @@ class TestLoggerd(unittest.TestCase):
     last_route = sorted(Path(ROOT).iterdir(), key=os.path.getmtime)[-1]
     return os.path.join(ROOT, last_route)
 
+  @with_processes(['camerad', 'loggerd'], init_time=5)
+  def _log_data(self, t):
+    time.sleep(t)
+
   # TODO: this should run faster than real time
   @parameterized.expand(ALL_CAMERA_COMBINATIONS)
-  @with_processes(['camerad', 'loggerd'], init_time=5)
   def test_log_rotation(self, cameras):
-    # wait for first seg to start being written
-    time.sleep(5)
-    route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
+    print("checking targets:", cameras)
+    Params().put("RecordFront", "1" if 'dcamera' in cameras else "0")
+    time.sleep(1)
 
     num_segments = random.randint(80, 150)
-    for i in range(num_segments):
-      if i < num_segments - 1:
-        with Timeout(self.segment_length*3, error_msg=f"timed out waiting for segment {i}"):
-          while True:
-            seg_num = int(self._get_latest_segment_path().rsplit("--", 1)[1])
-            if seg_num > i:
-              break
-            time.sleep(0.1)
-      else:
-        time.sleep(self.segment_length + 2)
+    self._log_data(self.segment_length * num_segments + 5)
+    time.sleep(5)
 
+    route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
+    for i in trange(num_segments):
       # check each camera file size
       for camera, size in cameras.items():
         file_path = f"{route_prefix_path}--{i}/{camera}.hevc"
