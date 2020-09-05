@@ -42,16 +42,8 @@ static void ui_init_vision(UIState *s) {
   s->scene.world_objects_visible = false;
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
-    VisionImg img = {
-      .fd = s->stream.bufs[i].fd,
-      .format = VISIONIMG_FORMAT_RGB24,
-      .width = s->stream.bufs_info.width,
-      .height = s->stream.bufs_info.height,
-      .stride = s->stream.bufs_info.stride,
-      .bpp = 3,
-      .size = s->stream.bufs_info.buf_len,
-    };
-    s->texture[i].reset(new EGLImageTexture(img, s->stream.bufs[i].addr));
+    auto info = s->stream.bufs_info;
+    s->texture[i].reset(new EGLImageTexture(info.width, info.height, info.stride, info.buf_len, 3, s->stream.bufs[i].fd, s->stream.bufs[i].addr));
     glBindTexture(GL_TEXTURE_2D, s->texture[i]->frame_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
