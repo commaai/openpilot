@@ -118,13 +118,10 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
     LOGW("recording front camera");
 #endif
     set_thread_name("FrontCameraEncoder");
-    s.num_encoder += 1;
   } else if (cam_idx == CAM_IDX_FCAM) {
     set_thread_name("RearCameraEncoder");
-    s.num_encoder += 1;
   } else if (cam_idx == CAM_IDX_ECAM) {
     set_thread_name("WideCameraEncoder");
-    s.num_encoder += 1;
   } else {
     LOGE("unexpected camera index provided");
     assert(false);
@@ -137,6 +134,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   EncoderState encoder_alt;
   bool has_encoder_alt = false;
 
+  s.num_encoder += 1;
   int encoder_segment = -1;
   int cnt = 0;
 
