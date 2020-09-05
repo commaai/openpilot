@@ -89,7 +89,7 @@ class TestLoggerd(unittest.TestCase):
         # check frame count
         cmd = f"ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \
                -of default=nokey=1:noprint_wrappers=1 {file_path}"
-        expected_frames = self.segment_length * CAMERA_FPS
+        expected_frames = self.segment_length * CAMERA_FPS // 2 if (EON and camera=='dcamera') else self.segment_length * CAMERA_FPS
         frame_count = int(subprocess.check_output(cmd, shell=True, encoding='utf8').strip())
         self.assertTrue(abs(expected_frames - frame_count) <= FRAME_TOLERANCE,
                         f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
