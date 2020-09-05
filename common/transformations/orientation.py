@@ -46,7 +46,6 @@ quats_from_rotations = rot2quat
 quat_from_rot = rot2quat
 rotations_from_quats = quat2rot
 rot_from_quat = quat2rot
-rot_from_quat = quat2rot
 euler_from_rot = rot2euler
 euler_from_quat = quat2euler
 rot_from_euler = euler2rot

@@ -63,9 +63,9 @@ setup(name='CAN parser',
           include_dirs=include_dirs,
           extra_link_args=extra_link_args,
         ),
+        nthreads=4,
         annotate=ANNOTATE
       ),
-      nthreads=4,
 )
 
 if platform.system() == "Darwin":
@@ -85,9 +85,9 @@ setup(name='CAN packer',
           include_dirs=include_dirs,
           extra_link_args=extra_link_args,
         ),
+        nthreads=4,
         annotate=ANNOTATE
       ),
-      nthreads=4,
 )
 
 if platform.system() == "Darwin":

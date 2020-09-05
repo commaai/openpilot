@@ -332,6 +332,7 @@ void* frontview_thread(void *arg) {
     //double t2 = millis_since_boot();
     //LOGD("front process: %.2fms", t2-t1);
   }
+  clReleaseCommandQueue(q);
 
   return NULL;
 }
@@ -344,6 +345,11 @@ void* processing_thread(void *arg) {
 
   err = set_realtime_priority(51);
   LOG("setpriority returns %d", err);
+
+#if defined(QCOM) && !defined(QCOM_REPLAY)
+  std::unique_ptr<uint8_t[]> rgb_roi_buf = std::make_unique<uint8_t[]>((s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3);
+  std::unique_ptr<int16_t[]> conv_result = std::make_unique<int16_t[]>((s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y));
+#endif
 
   // init cl stuff
 #ifdef __APPLE__
@@ -416,13 +422,12 @@ void* processing_thread(void *arg) {
     /*double t10 = millis_since_boot();*/
 
     // cache rgb roi and write to cl
-    uint8_t *rgb_roi_buf = new uint8_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)*3];
     int roi_id = cnt % ((ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)); // rolling roi
     int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
     int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
 
     for (int r=0;r<(s->rgb_height/NUM_SEGMENTS_Y);r++) {
-      memcpy(rgb_roi_buf + r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
+      memcpy(rgb_roi_buf.get() + r * (s->rgb_width/NUM_SEGMENTS_X) * 3,
               (uint8_t *) s->rgb_bufs[rgb_idx].addr + \
                 (ROI_Y_MIN + roi_y_offset) * s->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 + \
                 (ROI_X_MIN + roi_x_offset) * s->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
@@ -430,7 +435,7 @@ void* processing_thread(void *arg) {
     }
 
     err = clEnqueueWriteBuffer (q, s->rgb_conv_roi_cl, true, 0,
-        s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), rgb_roi_buf, 0, 0, 0);
+        s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), rgb_roi_buf.get(), 0, 0, 0);
     assert(err == 0);
 
     /*double t11 = millis_since_boot();
@@ -453,48 +458,45 @@ void* processing_thread(void *arg) {
     clWaitForEvents(1, &conv_event);
     clReleaseEvent(conv_event);
 
-    int16_t *conv_result = new int16_t[(s->rgb_width/NUM_SEGMENTS_X)*(s->rgb_height/NUM_SEGMENTS_Y)];
     err = clEnqueueReadBuffer(q, s->rgb_conv_result_cl, true, 0,
-       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), conv_result, 0, 0, 0);
+       s->rgb_width/NUM_SEGMENTS_X * s->rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), conv_result.get(), 0, 0, 0);
     assert(err == 0);
 
     /*t11 = millis_since_boot();
     printf("conv time: %f ms\n", t11 - t10);
     t10 = millis_since_boot();*/
 
-    get_lapmap_one(conv_result, &s->lapres[roi_id], s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y);
+    get_lapmap_one(conv_result.get(), &s->lapres[roi_id], s->rgb_width/NUM_SEGMENTS_X, s->rgb_height/NUM_SEGMENTS_Y);
 
     /*t11 = millis_since_boot();
     printf("pool time: %f ms\n", t11 - t10);
     t10 = millis_since_boot();*/
-
-    delete [] rgb_roi_buf;
-    delete [] conv_result;
 
     /*t11 = millis_since_boot();
     printf("process time: %f ms\n ----- \n", t11 - t10);
     t10 = millis_since_boot();*/
 
     // setup self recover
+    const float lens_true_pos = s->cameras.rear.lens_true_pos;
     if (is_blur(&s->lapres[0]) &&
-       (s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN)+1 ||
-        s->cameras.rear.lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP)-1) &&
+       (lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN)+1 ||
+        lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP)-1) &&
        s->cameras.rear.self_recover < 2) {
       // truly stuck, needs help
       s->cameras.rear.self_recover -= 1;
       if (s->cameras.rear.self_recover < -FOCUS_RECOVER_PATIENCE) {
         LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
-                                      s->cameras.rear.lens_true_pos, s->cameras.rear.self_recover);
-        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS + ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0); // parity determined by which end is stuck at
+                                      lens_true_pos, s->cameras.rear.self_recover.load());
+        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS + ((lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0); // parity determined by which end is stuck at
       }
-    } else if ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M - LP3_AF_DAC_3SIG:OP3T_AF_DAC_M - OP3T_AF_DAC_3SIG) ||
-               s->cameras.rear.lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M + LP3_AF_DAC_3SIG:OP3T_AF_DAC_M + OP3T_AF_DAC_3SIG)) &&
+    } else if ((lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M - LP3_AF_DAC_3SIG:OP3T_AF_DAC_M - OP3T_AF_DAC_3SIG) ||
+               lens_true_pos > (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M + LP3_AF_DAC_3SIG:OP3T_AF_DAC_M + OP3T_AF_DAC_3SIG)) &&
               s->cameras.rear.self_recover < 2) {
       // in suboptimal position with high prob, but may still recover by itself
       s->cameras.rear.self_recover -= 1;
       if (s->cameras.rear.self_recover < -(FOCUS_RECOVER_PATIENCE*3)) {
-        LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", s->cameras.rear.lens_true_pos, s->cameras.rear.self_recover);
-        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS/2 + ((s->cameras.rear.lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0);
+        LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, s->cameras.rear.self_recover.load());
+        s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS/2 + ((lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0);
       }
     } else if (s->cameras.rear.self_recover < 0) {
       s->cameras.rear.self_recover += 1; // reset if fine
@@ -504,7 +506,9 @@ void* processing_thread(void *arg) {
 
     double t2 = millis_since_boot();
 
+#ifndef QCOM2
     uint8_t *bgr_ptr = (uint8_t*)s->rgb_bufs[rgb_idx].addr;
+#endif
 
     double yt1 = millis_since_boot();
 
@@ -668,6 +672,7 @@ void* processing_thread(void *arg) {
     LOGD("queued: %.2fms, yuv: %.2f, | processing: %.3fms", (t2-t1), (yt2-yt1), (t5-t1));
   }
 
+  clReleaseCommandQueue(q);
   return NULL;
 }
 
@@ -1173,25 +1178,33 @@ void free_buffers(VisionState *s) {
   // free bufs
   for (int i=0; i<FRAME_BUF_COUNT; i++) {
     visionbuf_free(&s->camera_bufs[i]);
+    visionbuf_free(&s->front_camera_bufs[i]);
     visionbuf_free(&s->focus_bufs[i]);
     visionbuf_free(&s->stats_bufs[i]);
   }
 
-  for (int i=0; i<FRAME_BUF_COUNT; i++) {
-   visionbuf_free(&s->front_camera_bufs[i]);
-  }
-
   for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_bufs[i]);
-  }
-
-  for (int i=0; i<UI_BUF_COUNT; i++) {
     visionbuf_free(&s->rgb_front_bufs[i]);
   }
 
   for (int i=0; i<YUV_COUNT; i++) {
     visionbuf_free(&s->yuv_ion[i]);
+    visionbuf_free(&s->yuv_front_ion[i]);
   }
+
+  clReleaseMemObject(s->rgb_conv_roi_cl);
+  clReleaseMemObject(s->rgb_conv_result_cl);
+  clReleaseMemObject(s->rgb_conv_filter_cl);
+
+  clReleaseProgram(s->prg_debayer_rear);
+  clReleaseProgram(s->prg_debayer_front);
+  clReleaseKernel(s->krnl_debayer_rear);
+  clReleaseKernel(s->krnl_debayer_front);
+  
+  clReleaseProgram(s->prg_rgb_laplacian);
+  clReleaseKernel(s->krnl_rgb_laplacian);
+  
 }
 
 void party(VisionState *s) {
@@ -1255,7 +1268,7 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  VisionState state = {0};
+  VisionState state = {};
   VisionState *s = &state;
 
   clu_init();

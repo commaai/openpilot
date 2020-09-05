@@ -27,6 +27,13 @@ def get_startup_event(car_recognized, controller_available):
   return event
 
 
+def get_one_can(logcan):
+  while True:
+    can = messaging.recv_one_retry(logcan)
+    if len(can.can) > 0:
+      return can
+
+
 def load_interfaces(brand_names):
   ret = {}
   for brand_name in brand_names:
@@ -114,7 +121,7 @@ def fingerprint(logcan, sendcan, has_relay):
   done = False
 
   while not done:
-    a = messaging.get_one_can(logcan)
+    a = get_one_can(logcan)
 
     for can in a.can:
       # need to independently try to fingerprint both bus 0 and 1 to work
