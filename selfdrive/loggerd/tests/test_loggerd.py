@@ -26,6 +26,8 @@ if EON:
   }
 elif TICI:
   CAMERAS = {f"{c}camera": FULL_SIZE for c in ["f", "e", "d"]}
+else:
+  CAMERAS = {}
 
 ALL_CAMERA_COMBINATIONS = [(cameras,) for cameras in [CAMERAS, {k:CAMERAS[k] for k in CAMERAS if k!='dcamera'}]]
 
