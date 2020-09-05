@@ -95,7 +95,7 @@ void GLWindow::mousePressEvent(QMouseEvent *e) {
   }
 
   // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.ui_viz_rx - bdr_s)){
+  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)){
     ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
   }
 }

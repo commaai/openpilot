@@ -116,7 +116,7 @@ static void set_awake(UIState *s, bool awake) {
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+  if (s->started && (touch_x >= s->scene.viz_rect.x - bdr_s)
       && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;

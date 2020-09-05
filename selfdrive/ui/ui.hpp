@@ -39,33 +39,18 @@
 
 typedef struct Rect {
   int x, y, w, h;
+  int centerX() const {return x+w/2;}
+  int right() const {return x+w;}
+  int bottom() const {return y+h;}
   bool ptInRect(int px, int py) const{ return px>=x&&px<(x+w)&&py>=y&&py<(y+h); }
 } Rect;
 
-// TODO: Detect dynamically
-#ifdef QCOM2
-const int vwp_w = 2160;
-#else
-const int vwp_w = 1920;
-#endif
-
-const int vwp_h = 1080;
-const int nav_w = 640;
-const int nav_ww= 760;
 const int sbr_w = 300;
 const int bdr_s = 30;
-
-const int box_x = sbr_w+bdr_s;
-const int box_y = bdr_s;
-const int box_w = vwp_w-sbr_w-(bdr_s*2);
-const int box_h = vwp_h-(bdr_s*2);
-const int viz_w = vwp_w-(bdr_s*2);
-const int ff_xoffset = 32;
 const int header_h = 420;
 const int footer_h = 280;
-const int footer_y = vwp_h-bdr_s-footer_h;
 const Rect settings_btn = {50, 35, 200, 117};
-const Rect home_btn = {60, vwp_h - 180 - 40, 180, 60};
+const Rect home_btn = {60, 1080 - 180 - 40, 180, 180};
 
 const int UI_FREQ = 20;   // Hz
 
@@ -113,7 +98,8 @@ typedef struct UIScene {
   bool frontview;
   bool uilayout_sidebarcollapsed;
   // responsive layout
-  int ui_viz_rx, ui_viz_rw, ui_viz_ro;
+  Rect viz_rect;
+  int ui_viz_ro;
 
   std::string alert_text1;
   std::string alert_text2;

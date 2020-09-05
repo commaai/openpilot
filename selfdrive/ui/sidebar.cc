@@ -8,7 +8,7 @@
 
 static void ui_draw_sidebar_background(UIState *s) {
   int sbr_x = !s->scene.uilayout_sidebarcollapsed ? 0 : -(sbr_w) + bdr_s * 2;
-  ui_draw_rect(s->vg, sbr_x, 0, sbr_w, vwp_h, COLOR_BLACK_ALPHA(85));
+  ui_draw_rect(s->vg, sbr_x, 0, sbr_w, s->fb_h, COLOR_BLACK_ALPHA(85));
 }
 
 static void ui_draw_sidebar_settings_button(UIState *s) {
