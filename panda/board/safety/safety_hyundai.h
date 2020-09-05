@@ -13,7 +13,7 @@ int OP_CLU_live = 0;
 int OP_SCC_live = 0;
 int car_SCC_live = 0;
 int OP_EMS_live = 0;
-int hyundai_mdps_bus = 0;
+int hyundai_mdps_bus = -1;
 bool hyundai_LCAN_on_bus1 = false;
 bool hyundai_forward_bus1 = false;
 const CanMsg HYUNDAI_TX_MSGS[] = {
@@ -127,12 +127,17 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
   if (bus == 1 && hyundai_LCAN_on_bus1) {valid = false;}
 
-  // check if we have a MDPS on Bus1 and LCAN not on the bus
-  if (bus == 1 && (addr == 593 || addr == 897) && !hyundai_LCAN_on_bus1) {
-    if (hyundai_mdps_bus != bus || !hyundai_forward_bus1) {
+  // check MDPS on Bus
+  if ((addr == 593 || addr == 897) && hyundai_mdps_bus != bus) {
+    if (bus == 0){
+      hyundai_mdps_bus = bus;
+      if (!hyundai_forward_bus1 && board_has_obd()) {
+        current_board->set_can_mode(CAN_MODE_NORMAL);
+      }
+    } else if (bus == 1 && !hyundai_LCAN_on_bus1) {
       hyundai_mdps_bus = bus;
       hyundai_forward_bus1 = true;
-    }
+    } 
   }
   // check if we have a SCC on Bus1 and LCAN not on the bus
   if (bus == 1 && addr == 1057 && !hyundai_LCAN_on_bus1) {
@@ -377,6 +382,10 @@ static void hyundai_init(int16_t param) {
   relay_malfunction_reset();
 
   hyundai_legacy = false;
+
+  if (board_has_obd()) {
+    current_board->set_can_mode(CAN_MODE_OBD_CAN2);
+    }
 }
 
 static void hyundai_legacy_init(int16_t param) {
@@ -385,6 +394,10 @@ static void hyundai_legacy_init(int16_t param) {
   relay_malfunction_reset();
 
   hyundai_legacy = true;
+
+  if (board_has_obd()) {
+    current_board->set_can_mode(CAN_MODE_OBD_CAN2);
+    }
 }
 
 const safety_hooks hyundai_hooks = {
