@@ -98,11 +98,6 @@ class PathPlanner():
 
     self.LP.parse_model(sm['model'])
 
-    # Update LCA toggle status every 1 min
-    if (sm.frame % 6000 == 0):
-      self.lane_change_enabled = Params().get('LaneChangeEnabled') == b'1'
-      self.auto_lane_change_enabled = Params().get('AutoLaneChangeEnabled') == b'1'
-
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN

@@ -275,11 +275,6 @@ class CarInterface(CarInterfaceBase):
     self.cp2.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    # Update toggles status every 1 min
-    if (self.frame % 6000 == 0):
-      self.mad_mode_enabled = Params().get('MadModeEnabled') == b'1'
-      self.CC.longcontrol = Params().get('LongControlEnabled') == b'1'
-
     ret = self.CS.update(self.cp, self.cp2, self.cp_cam)
     ret.canValid = self.cp.can_valid and self.cp2.can_valid and self.cp_cam.can_valid
 
@@ -289,7 +284,7 @@ class CarInterface(CarInterfaceBase):
       self.CP.enableCruise = True
 
     # most HKG cars has no long control, it is safer and easier to engage by main on
-    if not self.CP.openpilotLongitudinalControl:
+    if self.mad_mode_enabled and not self.CC.longcontrol:
       ret.cruiseState.enabled = ret.cruiseState.available
     # some Optima only has blinker flash signal
     if self.CP.carFingerprint == CAR.OPTIMA:
@@ -348,7 +343,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.turningIndicatorOn)
     if self.lkas_button_alert:
       events.add(EventName.lkasButtonOff)
-    if not self.CC.longcontrol and EventName.pedalPressed in events.events:
+    if self.mad_mode_enabled and not self.CC.longcontrol and EventName.pedalPressed in events.events:
       events.events.remove(EventName.pedalPressed)
 
   # handle button presses
