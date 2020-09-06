@@ -54,6 +54,7 @@ class PathPlanner():
     self.setup_mpc()
     self.solution_invalid_cnt = 0
     self.lane_change_enabled = Params().get('LaneChangeEnabled') == b'1'
+    self.auto_lane_change_enabled = Params().get('AutoLaneChangeEnabled') == b'1'
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
@@ -97,6 +98,11 @@ class PathPlanner():
 
     self.LP.parse_model(sm['model'])
 
+    # Update LCA toggle status every 1 min
+    if (sm.frame % 6000 == 0):
+      self.lane_change_enabled = Params().get('LaneChangeEnabled') == b'1'
+      self.auto_lane_change_enabled = Params().get('AutoLaneChangeEnabled') == b'1'
+
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
@@ -113,7 +119,7 @@ class PathPlanner():
       torque_applied = sm['carState'].steeringPressed and \
                        ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                         (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right)) or \
-                        CP.autoLcaEnabled and 3.25 > self.auto_lane_change_timer > 3.
+                        self.auto_lane_change_enabled and 3.25 > self.auto_lane_change_timer > 3.
 
       blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                             (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
