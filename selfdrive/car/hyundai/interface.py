@@ -5,6 +5,7 @@ from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.pathplanner import LANE_CHANGE_SPEED_MIN
+from common.params import Params
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
@@ -14,6 +15,7 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
     self.cp2 = self.CS.get_can2_parser(CP)
+    self.mad_mode_enabled = Params().get('MadModeEnabled') == b'1'
     self.lkas_button_alert = False
 
   @staticmethod
@@ -220,11 +222,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
 
-    # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in [CAR.GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.SORENTO, CAR.SONATA19, 
-                     CAR.OPTIMA, CAR.VELOSTER, CAR.STINGER, CAR.GENESIS_G70]:
-      ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
-
     ret.centerToFront = ret.wheelbase * 0.4
 
     # TODO: get actual value, for now starting with reasonable value for
@@ -267,9 +264,8 @@ class CarInterface(CarInterfaceBase):
     ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] and 1296 not in fingerprint[1] \
                                                                      else 2 if 1056 in fingerprint[2] else -1
     ret.radarOffCan = ret.sccBus == -1
-    ret.openpilotLongitudinalControl = False #TODO make ui toggle
+    ret.openpilotLongitudinalControl = Params().get('LongControlEnabled') == b'1'
     ret.enableCruise = not ret.radarOffCan
-    ret.autoLcaEnabled = False
     ret.spasEnabled = False
 
     return ret
@@ -278,6 +274,11 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
     self.cp2.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
+
+    # Update toggles status every 1 min
+    if (self.frame % 6000 == 0):
+      self.mad_mode_enabled = Params().get('MadModeEnabled') == b'1'
+      self.CC.longcontrol = Params().get('LongControlEnabled') == b'1'
 
     ret = self.CS.update(self.cp, self.cp2, self.cp_cam)
     ret.canValid = self.cp.can_valid and self.cp2.can_valid and self.cp_cam.can_valid

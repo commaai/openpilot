@@ -115,7 +115,6 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     deviceFalling @90;
     turningIndicatorOn @91;
     lkasButtonOff @92;
-    autoLaneChange @93;
   }
 }
 
