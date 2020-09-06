@@ -115,6 +115,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     deviceFalling @90;
     turningIndicatorOn @91;
     lkasButtonOff @92;
+    autoLaneChange @93;
   }
 }
 
@@ -411,8 +412,7 @@ struct CarParams {
   mdpsBus @51: Int8;
   sasBus @52: Int8;
   sccBus @53: Int8;
-  autoLcaEnabled @54: Bool;
-  spasEnabled @55: Bool;
+  spasEnabled @54: Bool;
 
   struct LateralParams {
     torqueBP @0 :List(Int32);
