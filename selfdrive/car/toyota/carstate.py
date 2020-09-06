@@ -51,12 +51,15 @@ class CarState(CarStateBase):
     if abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']) > 1e-3:
       self.accurate_steer_angle_seen = True
 
-    if self.accurate_steer_angle_seen:
-      ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
+    if self.accurate_steer_angle_seen or self.CP.hasZss:
+      if self.CP.hasZss:
+        ret.steeringAngle = cp.vl["SECONDARY_STEER_ANGLE"]['ZORRO_STEER'] - self.angle_offset
+      else:
+        ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
 
       if self.needs_angle_offset:
         angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
-        if abs(angle_wheel) > 1e-3 and abs(ret.steeringAngle) > 1e-3:
+        if (abs(angle_wheel) > 1e-3 and abs(ret.steeringAngle) > 1e-3) or self.CP.hasZss:
           self.needs_angle_offset = False
           self.angle_offset = ret.steeringAngle - angle_wheel
     else:
@@ -164,6 +167,8 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint == CAR.PRIUS:
       signals += [("STATE", "AUTOPARK_STATUS", 0)]
+    if CP.hasZss:
+      signals += [("ZORRO_STEER", "SECONDARY_STEER_ANGLE", 0)]
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
