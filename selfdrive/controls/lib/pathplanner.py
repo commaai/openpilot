@@ -237,6 +237,7 @@ class PathPlanner():
     plan_send.pathPlan.desire = desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
     plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
+    plan_send.pathPlan.autoLaneChangeEnabled = self.auto_lane_change_enabled
     plan_send.pathPlan.autoLaneChangeTimer = 3 - int(self.auto_lane_change_timer)
 
     pm.send('pathPlan', plan_send)
