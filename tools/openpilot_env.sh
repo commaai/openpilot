@@ -1,7 +1,7 @@
 if [ -z "$OPENPILOT_ENV" ]; then
-  openpilot_dir="$HOME/openpilotricardo"
+  openpilot_dir="$HOME/openpilot"
   if [ ! -d $openpilot_dir ]; then
-    openpilot_dir=`find / -type d -name "openpilotricardo" 2>/dev/null | head -n 1`
+    openpilot_dir=`find / -type d -name "openpilot" 2>/dev/null | head -n 1`
   fi
   export PYTHONPATH="$openpilot_dir"
 
