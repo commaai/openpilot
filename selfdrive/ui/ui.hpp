@@ -200,6 +200,7 @@ typedef struct UIState {
   std::atomic<float> light_sensor;
 
   bool started;
+  bool ignition;
   bool is_metric;
   bool longitudinal_control;
   uint64_t last_athena_ping;

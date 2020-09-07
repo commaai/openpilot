@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
     }
 
     // manage wakefulness
-    if (s->started) {
+    if (s->started || s->ignition) {
       set_awake(s, true);
     }
 
