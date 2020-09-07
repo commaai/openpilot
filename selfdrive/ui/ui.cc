@@ -199,7 +199,9 @@ void update_sockets(UIState *s) {
     }
   }
   if (sm.updated("health")) {
-    scene.hwType = sm["health"].getHealth().getHwType();
+    auto health = sm["health"].getHealth();
+    scene.hwType = health.getHwType();
+    s->ignition = health.getIgnitionLine() || health.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
     scene.hwType = cereal::HealthData::HwType::UNKNOWN;
   }
