@@ -65,9 +65,8 @@ echo -e "\e[1;32m Pyenv Installed SUCCESSFULLY!... \e[0m"
 # install bashrc
 echo -e "\e[1;34m Updating bashrc... \e[0m"
 if [ -z "$OPENPILOT_ENV" ]; then
-  echo "source $HOME/openpilotricardo/tools/openpilot_env.sh" >> ~/.bashrc
-  #source $HOME/openpilotricardo/tools/openpilot_env.sh
-  #source ~/.bashrc
+  echo "source $HOME/openpilot/tools/openpilot_env.sh" >> ~/.bashrc
+  source ~/.bashrc
   echo -e "\e[1;32m openpilot_env added to bashrc... \e[0m"
 fi
 
@@ -77,7 +76,7 @@ sudo mkdir -p /data/media/0/realdata
 sudo chown $USER /data/media/0/realdata
 
 # in the openpilot repo
-cd $HOME/openpilotricardo
+cd $HOME/openpilot
 
 # install python 3.8.2 globally (you should move to python3 anyway)
 pyenv install -s 3.8.2 

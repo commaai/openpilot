@@ -6,9 +6,9 @@ GIT_IS_AVAILABLE=$?
 if [ $GIT_IS_AVAILABLE -eq 0 ]; then 
     openpilot_dir=$(git rev-parse --show-toplevel)
 else
-    openpilot_dir="$HOME/openpilotricardo"
+    openpilot_dir="$HOME/openpilot"
     if [ ! -d $openpilot_dir ]; then
-        openpilot_dir=`find / -type d -name "openpilotricardo" 2>/dev/null | head -n 1`
+        openpilot_dir=`find / -type d -name "openpilot" 2>/dev/null | head -n 1`
     fi
 fi
 
