@@ -36,7 +36,7 @@ git reset xx979xx/HKG_community --hard
 
 Changes:
 ------
-- <b>  UI Toggles for community features:</b> you do not have to modify the code to enable/disable community features anymore, find the new toggels in Developer Settings.
+- <b>  UI Toggles for community features:</b> you do not have to modify the code to enable/disable community features anymore, find the new toggels in Developer Settings. Toggles take affect from next drive, if you are already driving, restart or disconnect your device will end the current drive.i.e.
 - <b>  HKG longitudinal control:</b> warrings: it is beta, be carful!! Openpilot will control the speed of your car, you can engage with cruise button.
 if your car has SCC on bus0 (CAN1) you have to disable it, otherwise this won't works.
 To enable long control, find the option under Developer Settings in your device.
