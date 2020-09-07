@@ -136,7 +136,7 @@ void safety_tick(const safety_hooks *hooks) {
       bool lagging = elapsed_time > MAX(hooks->addr_check[i].msg[hooks->addr_check[i].index].expected_timestep * MAX_MISSED_MSGS, 1e6);
       hooks->addr_check[i].lagging = lagging;
       if (lagging) {
-        //controls_allowed = 0;
+        controls_allowed = 0;
       }
     }
   }
