@@ -15,7 +15,7 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
     self.cp2 = self.CS.get_can2_parser(CP)
-    self.mad_mode_enabled = Params().get('MadModeEnabled') == b'1'
+    self.mad_mode_enabled = Params().get('MadModeEnabled') == b'1' # only for non-SCC cars
     self.lkas_button_alert = False
 
   @staticmethod
