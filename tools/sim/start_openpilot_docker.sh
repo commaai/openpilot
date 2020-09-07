@@ -15,5 +15,3 @@ docker run --net=host\
   commaai/openpilot-sim:latest \
   /bin/bash -c 'cd /openpilot && tmux'
   #/bin/bash \
-
-#docker run --shm-size 1G --rm --net=host -e PASSIVE=0 -e NOBOARD=1 -e NOSENSOR=1 --volume="$HOME/.Xauthority:/root/.Xauthority:rw" --gpus all -e DISPLAY=$DISPLAY -it commaai/openpilot-sim:latest /bin/bash

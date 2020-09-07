@@ -90,8 +90,9 @@ def fake_gps():
   pm = messaging.PubMaster(['gpsLocationExternal'])
   while 1:
     dat = messaging.new_message('gpsLocationExternal')
-    if dat!= None:
+    if dat is not None:
       pm.send('gpsLocationExternal', dat)
+    #Don't put sleep into if statement, too much CPU usage could occur. 
     time.sleep(0.01)
 
 def fake_driver_monitoring():
