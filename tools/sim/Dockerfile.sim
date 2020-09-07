@@ -1,4 +1,9 @@
 FROM commaai/openpilot-base:latest
+#Carla
+
+COPY ./tools/sim/install_carla.sh /tmp
+RUN /tmp/install_carla.sh
+
 #Intel openCL
 RUN apt-get update && apt-get install -y \
     apt-utils \
@@ -97,9 +102,6 @@ ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gn
 # get same tmux config used on NEOS for debugging
 RUN cd $HOME && \
     wget https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
-
-COPY ./tools/sim/install_carla.sh /tmp
-RUN /tmp/install_carla.sh
 
 RUN mkdir -p $HOME/openpilot
 

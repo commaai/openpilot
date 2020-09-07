@@ -194,47 +194,48 @@ class Controls:
     elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
                                         LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
-
-    #if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
-    #  self.events.add(EventName.canError)
-    #if self.mismatch_counter >= 200:
-    #  self.events.add(EventName.controlsMismatch)
-    #if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
-    #  # only plan not being received: radar not communicating
-    #  self.events.add(EventName.radarCommIssue)
-    #elif not self.sm.all_alive_and_valid():
-    #  self.events.add(EventName.commIssue)
-    #if not self.sm['pathPlan'].mpcSolutionValid:
-    #  self.events.add(EventName.plannerError)
-    #if not self.sm['liveLocationKalman'].sensorsOK and os.getenv("NOSENSOR") is None:
-    #  if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
-    #    self.events.add(EventName.sensorDataInvalid)
-    #if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
-    #  # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
-    #  self.events.add(EventName.noGps)
-    #if not self.sm['pathPlan'].paramsValid:
-    #  self.events.add(EventName.vehicleModelInvalid)
-    #if not self.sm['liveLocationKalman'].posenetOK:
-    #  self.events.add(EventName.posenetInvalid)
-    #if not self.sm['liveLocationKalman'].deviceStable:
-    #  self.events.add(EventName.deviceFalling)
-    #if not self.sm['frame'].recoverState < 2:
-    #  # counter>=2 is active
-    #  self.events.add(EventName.focusRecoverActive)
-    #if not self.sm['plan'].radarValid:
-    #  self.events.add(EventName.radarFault)
-    #if self.sm['plan'].radarCanError:
-    #  self.events.add(EventName.radarCanError)
-    #if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
-      #self.events.add(EventName.relayMalfunction)
-    #if self.sm['plan'].fcw:
-    #  self.events.add(EventName.fcw)
-    #if self.sm['model'].frameDropPerc > 1:
+    
+    if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
+      self.events.add(EventName.canError)
+    if self.mismatch_counter >= 200:
+      self.events.add(EventName.controlsMismatch)
+    if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
+      # only plan not being received: radar not communicating
+      self.events.add(EventName.radarCommIssue)
+    elif not self.sm.all_alive_and_valid():
+      self.events.add(EventName.commIssue)
+    if not self.sm['pathPlan'].mpcSolutionValid:
+      self.events.add(EventName.plannerError)
+    if not self.sm['liveLocationKalman'].sensorsOK and os.getenv("NOSENSOR") is None:
+      if self.sm.frame > 5 / DT_CTRL:  # Give locationd som`2`1e time to receive all the inputs
+        self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
+      # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
+      self.events.add(EventName.noGps)
+    if not self.sm['pathPlan'].paramsValid:
+      self.events.add(EventName.vehicleModelInvalid)
+    if not self.sm['liveLocationKalman'].posenetOK:
+      self.events.add(EventName.posenetInvalid)
+    if not self.sm['liveLocationKalman'].deviceStable:
+      self.events.add(EventName.deviceFalling)
+    if not self.sm['frame'].recoverState < 2:
+      # counter>=2 is active
+      self.events.add(EventName.focusRecoverActive)
+    if not self.sm['plan'].radarValid:
+      self.events.add(EventName.radarFault)
+    if self.sm['plan'].radarCanError:
+      self.events.add(EventName.radarCanError)
+    if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
+      self.events.add(EventName.relayMalfunction)
+    if self.sm['plan'].fcw:
+      self.events.add(EventName.fcw)
+    if self.sm['model'].frameDropPerc > 1:
       #self.events.add(EventName.modeldLagging)
+      pass
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
-       and not self.CP.radarOffCan and CS.vEgo < 0.3:
+and not self.CP.radarOffCan and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
 
   def data_sample(self):
