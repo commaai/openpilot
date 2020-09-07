@@ -1,4 +1,5 @@
 import copy
+from collections import deque
 from cereal import car
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
@@ -6,12 +7,14 @@ from selfdrive.config import Conversions as CV
 from opendbc.can.parser import CANParser
 from selfdrive.car.nissan.values import CAR, DBC, STEER_THRESHOLD
 
+TORQUE_SAMPLES = 12
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
 
+    self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
   def update(self, cp, cp_adas, cp_cam):
@@ -60,7 +63,9 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = speed * conversion
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
-    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+    self.steeringTorqueSamples.append(ret.steeringTorque)
+    # Filtering driver torque to prevent steeringPressed false positives
+    ret.steeringPressed = bool(abs(sum(self.steeringTorqueSamples) / TORQUE_SAMPLES) > STEER_THRESHOLD)
 
     ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 

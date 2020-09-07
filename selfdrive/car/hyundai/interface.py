@@ -5,6 +5,7 @@ from selfdrive.car.hyundai.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.pathplanner import LANE_CHANGE_SPEED_MIN
+from common.params import Params
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
@@ -14,6 +15,7 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
     self.cp2 = self.CS.get_can2_parser(CP)
+    self.mad_mode_enabled = Params().get('MadModeEnabled') == b'1'
     self.lkas_button_alert = False
 
   @staticmethod
@@ -105,10 +107,10 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KONA:
-      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
-      ret.steerRatio = 13.73  # Spec
+      ret.steerRatio = 13.73 * 1.15  # Spec
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
@@ -262,9 +264,8 @@ class CarInterface(CarInterfaceBase):
     ret.sccBus = 0 if 1056 in fingerprint[0] else 1 if 1056 in fingerprint[1] and 1296 not in fingerprint[1] \
                                                                      else 2 if 1056 in fingerprint[2] else -1
     ret.radarOffCan = ret.sccBus == -1
-    ret.openpilotLongitudinalControl = False #TODO make ui toggle
+    ret.openpilotLongitudinalControl = Params().get('LongControlEnabled') == b'1'
     ret.enableCruise = not ret.radarOffCan
-    ret.autoLcaEnabled = False
     ret.spasEnabled = False
 
     return ret
@@ -283,7 +284,7 @@ class CarInterface(CarInterfaceBase):
       self.CP.enableCruise = True
 
     # most HKG cars has no long control, it is safer and easier to engage by main on
-    if not self.CP.openpilotLongitudinalControl:
+    if self.mad_mode_enabled and not self.CC.longcontrol:
       ret.cruiseState.enabled = ret.cruiseState.available
     # some Optima only has blinker flash signal
     if self.CP.carFingerprint == CAR.OPTIMA:
@@ -342,7 +343,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.turningIndicatorOn)
     if self.lkas_button_alert:
       events.add(EventName.lkasButtonOff)
-    if not self.CC.longcontrol and EventName.pedalPressed in events.events:
+    if self.mad_mode_enabled and not self.CC.longcontrol and EventName.pedalPressed in events.events:
       events.events.remove(EventName.pedalPressed)
 
   # handle button presses

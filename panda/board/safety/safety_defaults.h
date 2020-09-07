@@ -159,6 +159,9 @@ static void alloutput_init(int16_t param) {
   UNUSED(param);
   controls_allowed = true;
   relay_malfunction_reset();
+  if (board_has_obd()) {
+    current_board->set_can_mode(CAN_MODE_OBD_CAN2);
+    }
 }
 
 static int alloutput_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {

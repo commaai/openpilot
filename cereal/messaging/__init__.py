@@ -122,13 +122,6 @@ def recv_one_retry(sock):
     if dat is not None:
       return log.Event.from_bytes(dat)
 
-# TODO: This does not belong in messaging
-def get_one_can(logcan):
-  while True:
-    can = recv_one_retry(logcan)
-    if len(can.can) > 0:
-      return can
-
 class SubMaster():
   def __init__(self, services, ignore_alive=None, addr="127.0.0.1"):
     self.poller = Poller()

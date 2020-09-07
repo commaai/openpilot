@@ -54,6 +54,7 @@ class PathPlanner():
     self.setup_mpc()
     self.solution_invalid_cnt = 0
     self.lane_change_enabled = Params().get('LaneChangeEnabled') == b'1'
+    self.auto_lane_change_enabled = Params().get('AutoLaneChangeEnabled') == b'1'
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
@@ -113,7 +114,7 @@ class PathPlanner():
       torque_applied = sm['carState'].steeringPressed and \
                        ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                         (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right)) or \
-                        CP.autoLcaEnabled and 3.25 > self.auto_lane_change_timer > 3.
+                        self.auto_lane_change_enabled and 3.25 > self.auto_lane_change_timer > 3.
 
       blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                             (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
@@ -231,6 +232,7 @@ class PathPlanner():
     plan_send.pathPlan.desire = desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
     plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
+    plan_send.pathPlan.autoLaneChangeEnabled = self.auto_lane_change_enabled
     plan_send.pathPlan.autoLaneChangeTimer = 3 - int(self.auto_lane_change_timer)
 
     pm.send('pathPlan', plan_send)

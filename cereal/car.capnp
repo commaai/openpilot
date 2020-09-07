@@ -112,9 +112,10 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     wrongCruiseMode @87;
     neosUpdateRequired @88;
     modeldLagging @89;
-    turningIndicatorOn @90;
-    lkasButtonOff @91;
-    autoLaneChange @92;
+    deviceFalling @90;
+    turningIndicatorOn @91;
+    lkasButtonOff @92;
+    autoLaneChange @93;
   }
 }
 
@@ -411,8 +412,7 @@ struct CarParams {
   mdpsBus @51: Int8;
   sasBus @52: Int8;
   sccBus @53: Int8;
-  autoLcaEnabled @54: Bool;
-  spasEnabled @55: Bool;
+  spasEnabled @54: Bool;
 
   struct LateralParams {
     torqueBP @0 :List(Int32);
@@ -482,6 +482,7 @@ struct CarParams {
     volkswagenPq @21;
     subaruLegacy @22;  # pre-Global platform
     hyundaiLegacy @23;
+    hyundaiCommunity @24;
   }
 
   enum SteerControlType {
