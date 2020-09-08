@@ -195,12 +195,12 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
   else:
     qt_dirs = [
-      f"/usr/include/{arch}-linux-gnu/qt5",
-      f"/usr/include/{arch}-linux-gnu/qt5/QtWidgets",
-      f"/usr/include/{arch}-linux-gnu/qt5/QtGui",
-      f"/usr/include/{arch}-linux-gnu/qt5/QtCore",
-      f"/usr/include/{arch}-linux-gnu/qt5/QtDBus",
-      f"/usr/include/{arch}-linux-gnu/qt5/QtMultimedia",
+      f"/usr/include/{real_arch}-linux-gnu/qt5",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtWidgets",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
     ]
 
   qt_env.Tool('qt')
