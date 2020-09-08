@@ -344,7 +344,7 @@ static void ui_draw_world(UIState *s) {
   nvgSave(s->vg);
   nvgScissor(s->vg, viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
 
-  nvgTranslate(s->vg, viz_rect.x+scene->ui_viz_ro, (viz_rect.h-inner_height)/2.0);
+  nvgTranslate(s->vg, viz_rect.x+scene->ui_viz_ro, viz_rect.y + (viz_rect.h-inner_height)/2.0);
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
 
   float w = 1440.0f; // Why 1440?
@@ -586,11 +586,13 @@ static void ui_draw_vision(UIState *s) {
   glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
+
+  glViewport(0, 0, s->fb_w, s->fb_h);
+
   // Draw augmented elements
   if (!scene->frontview && scene->world_objects_visible) {
     ui_draw_world(s);
   }
-  glViewport(0, 0, s->fb_w, s->fb_h);
   // Set Speed, Current Speed, Status/Events
   if (!scene->frontview) {
     ui_draw_vision_header(s);
