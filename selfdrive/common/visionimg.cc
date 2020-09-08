@@ -65,26 +65,33 @@ VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf) {
     .bpp = 3,
   };
 }
-#ifdef QCOM
-EGLImageTexture::EGLImageTexture(int width, int height, int stride, int size, int bpp,int fd, void *addr) {
-  assert((size % stride) == 0);
-  assert((stride % bpp) == 0);
-  int format = HAL_PIXEL_FORMAT_RGB_888;
-  private_handle = new private_handle_t(
-      fd, size, private_handle_t::PRIV_FLAGS_USES_ION | private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
-      0, format, stride / bpp, size / stride, width, height);
 
-  GraphicBuffer *buf = new GraphicBuffer(
-      width, height, (PixelFormat)format, GraphicBuffer::USAGE_HW_TEXTURE,
-      stride / bpp, (private_handle_t *)private_handle, false);
+#ifdef QCOM
+EGLImageTexture::EGLImageTexture(const VisionImg *img, void *addr) {
+  assert((img->size % img->stride) == 0);
+  assert((img->stride % img->bpp) == 0);
+
+  int format = 0;
+  if (img->format == VISIONIMG_FORMAT_RGB24) {
+    format = HAL_PIXEL_FORMAT_RGB_888;
+  } else {
+    assert(false);
+  }
+  private_handle = new private_handle_t(img->fd, img->size,
+                             private_handle_t::PRIV_FLAGS_USES_ION|private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
+                             0, format,
+                             img->stride/img->bpp, img->size/img->stride,
+                             img->width, img->height);
+
+  GraphicBuffer* gb = new GraphicBuffer(img->width, img->height, (PixelFormat)format,
+                                        GraphicBuffer::USAGE_HW_TEXTURE, img->stride/img->bpp, (private_handle_t*)private_handle, false);
 
   EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   assert(display != EGL_NO_DISPLAY);
 
   EGLint img_attrs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE};
-  img_khr = eglCreateImageKHR(
-      display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID,
-      (EGLClientBuffer)buf->getNativeBuffer(), img_attrs);
+  img_khr = eglCreateImageKHR(display, EGL_NO_CONTEXT,
+                              EGL_NATIVE_BUFFER_ANDROID, gb->getNativeBuffer(), img_attrs);
   assert(img_khr != EGL_NO_IMAGE_KHR);
 
   glGenTextures(1, &frame_tex);
@@ -99,5 +106,5 @@ EGLImageTexture::~EGLImageTexture() {
   eglDestroyImageKHR(display, img_khr);
   delete (private_handle_t*)private_handle;
 }
+
 #endif
- 

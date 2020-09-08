@@ -104,19 +104,12 @@ void GLWindow::mousePressEvent(QMouseEvent *e) {
 }
 
 
-/* HACKS */
-bool Sound::init(int volume) { return true; }
-bool Sound::play(AudibleAlert alert) { printf("play sound: %d\n", (int)alert); return true; }
-void Sound::stop() {}
-void Sound::setVolume(int volume) {}
-Sound::~Sound() {}
-
-EGLImageTexture::EGLImageTexture(int width, int height, int stride, int size, int bpp,int fd, void *addr) {
-  assert((size % stride) == 0);
-  assert((stride % bpp) == 0);
+EGLImageTexture::EGLImageTexture(const VisionImg *img, void *addr) {
+  assert((img->size % img->stride) == 0);
+  assert((img->stride % img->bpp) == 0);
   glGenTextures(1, &frame_tex);
   glBindTexture(GL_TEXTURE_2D, frame_tex);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, addr);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img->width, img->height, 0, GL_RGB, GL_UNSIGNED_BYTE, addr);
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 

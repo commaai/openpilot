@@ -23,10 +23,9 @@ VisionImg visionimg_alloc_rgb24(int width, int height, VisionBuf *out_buf);
 
 class EGLImageTexture {
  public:
-  EGLImageTexture(int width, int height, int stride, int size, int bpp, int fd, void *addr);
+  EGLImageTexture(const VisionImg *, void *addr);
   ~EGLImageTexture();
   GLuint frame_tex = 0;
-private:
 #ifdef QCOM
   void *private_handle = nullptr;
   EGLImageKHR img_khr = 0;
