@@ -13,5 +13,4 @@ docker run --net=host\
   --shm-size 1G \
   -e DISPLAY=$DISPLAY \
   commaai/openpilot-sim:latest \
-  /bin/bash -c 'cd /openpilot && tmux'
-  #/bin/bash \
+  /bin/bash -c "cd tools && cd sim && sh tmux_script.sh"

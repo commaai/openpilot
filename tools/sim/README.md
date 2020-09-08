@@ -16,21 +16,7 @@ cd ~/openpilot/tools/sim
 ./start_carla.sh
 ```
 
-
-The next steps can either run on your local machine or in the openpilot-sim docker container.
-Use `start_openpilot_docker.sh` to start the docker container and start a shell inside of it.
-
-Next, start the bridge.
-```
-cd ~/openpilot/tools/sim
-./bridge.py
-```
-
-Then, start the bridge.
-```
-cd ~/openpilot/tools/sim
-./launch_openpilot.sh
-```
+Then use `start_openpilot_docker.sh` to start the docker container. 
 
 ## Controls
 
