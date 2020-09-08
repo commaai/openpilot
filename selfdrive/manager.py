@@ -239,7 +239,6 @@ car_started_processes = [
   'camerad',
   'modeld',
   'proclogd',
-  'ubloxd',
   'locationd',
   'clocksd',
 ]
@@ -257,6 +256,7 @@ if WEBCAM:
 
 if not PC:
   car_started_processes += [
+    'ubloxd',
     'sensord',
     'dmonitoringd',
     'dmonitoringmodeld',
