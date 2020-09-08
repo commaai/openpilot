@@ -906,16 +906,6 @@ static void cameras_close(MultiCameraState *s) {
 #endif
 }
 
-struct video_event_data {
-  int32_t   session_hdl;
-  int32_t   link_hdl;
-  int32_t   frame_id;
-  int32_t   reserved;
-  int64_t   req_id;
-  uint64_t  tv_sec;
-  uint64_t  tv_usec;
-};
-
 void cameras_run(MultiCameraState *s) {
   // start devices
   LOG("-- Start devices");
