@@ -249,7 +249,7 @@ static void draw_frame(UIState *s) {
 
   if (s->stream.last_idx >= 0) {
     glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->stream.last_idx]);
-#ifndef __aarch64__
+#ifndef QCOM
     // this is handled in ion on QCOM
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->stream.bufs_info.width, s->stream.bufs_info.height,
                  0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->stream.last_idx]);
