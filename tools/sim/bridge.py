@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # type: ignore
 import carla # pylint: disable=import-error
-import os
 import time
 import math
 import atexit
