@@ -211,7 +211,6 @@ class Controls:
         self.events.add(EventName.sensorDataInvalid)
     if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
       # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
-      if 
       self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
