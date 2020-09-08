@@ -39,10 +39,12 @@
 
 typedef struct Rect {
   int x, y, w, h;
-  int centerX() const {return x+w/2;}
-  int right() const {return x+w;}
-  int bottom() const {return y+h;}
-  bool ptInRect(int px, int py) const{ return px>=x&&px<(x+w)&&py>=y&&py<(y+h); }
+  int centerX() const { return x + w / 2; }
+  int right() const { return x + w; }
+  int bottom() const { return y + h; }
+  bool ptInRect(int px, int py) const {
+    return px >= x && px < (x + w) && py >= y && py < (y + h);
+  }
 } Rect;
 
 const int sbr_w = 300;
