@@ -152,7 +152,7 @@ def go(q):
   # make tires less slippery
   # wheel_control = carla.WheelPhysicsControl(tire_friction=5)
   physics_control = vehicle.get_physics_control()
-  physics_control.mass = 126
+  physics_control.mass = 2326
   # physics_control.wheels = [wheel_control]*4
   physics_control.torque_curve = [[20.0, 500.0], [5000.0, 500.0]]
   physics_control.gear_switch_time = 0.0
@@ -318,7 +318,7 @@ def go(q):
     steer_out = steer_carla * (max_steer_angle * STEER_RATIO * -1)
     old_steer = steer_carla * (max_steer_angle * STEER_RATIO * -1)
 
-    vc.throttle = throttle_out
+    vc.throttle = throttle_out/0.6
     vc.steer = steer_carla
     vc.brake = brake_out
     vehicle.apply_control(vc)
