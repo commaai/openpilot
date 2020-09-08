@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # type: ignore
 import carla # pylint: disable=import-error
+import os
 import time
 import math
 import atexit
@@ -90,9 +91,7 @@ def fake_gps():
   pm = messaging.PubMaster(['gpsLocationExternal'])
   while 1:
     dat = messaging.new_message('gpsLocationExternal')
-    if dat is not None:
-      pm.send('gpsLocationExternal', dat)
-    #Don't put sleep into if statement, too much CPU usage could occur. 
+    pm.send('gpsLocationExternal', dat)
     time.sleep(0.01)
 
 def fake_driver_monitoring():
