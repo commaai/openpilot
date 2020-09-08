@@ -291,7 +291,6 @@ selfdrive/locationd/models/car_kf.py
 selfdrive/locationd/models/constants.py
 
 selfdrive/locationd/calibrationd.py
-selfdrive/locationd/calibration_helpers.py
 
 selfdrive/logcatd/SConscript
 selfdrive/logcatd/logcatd_android.cc
