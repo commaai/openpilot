@@ -162,7 +162,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
 
     generic_rx_checks((addr == 832 && bus == 0));
-  } else {
+  } else if (bus != 1 || !hyundai_LCAN_on_bus1){
     puts("  CAN RX invalid: "); puth(addr); puts("\n");
   }
   return valid;
