@@ -134,7 +134,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (addr == 608 && OP_SCC_live && bus == 0) {
       gas_pressed = (GET_BYTE(to_push, 7) >> 6) != 0;
     }
-    if (addr == 881 && hyundai_legacy && OP_SCC_live && bus == 0) {
+    if (addr == 881 && OP_SCC_live && bus == 0) {
       gas_pressed = (((GET_BYTE(to_push, 4) & 0x7F) << 1) | GET_BYTE(to_push, 3) >> 7) != 0;
     }
     // sample wheel speed, averaging opposite corners
