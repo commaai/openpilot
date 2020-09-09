@@ -130,9 +130,9 @@ void update_sockets(UIState *s) {
     auto alert_sound = scene.controls_state.getAlertSound();
     if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
-        s->sound.stop();
+        s->sound->stop();
       } else {
-        s->sound.play(alert_sound);
+        s->sound->play(alert_sound);
       }
     }
     scene.alert_text1 = scene.controls_state.getAlertText1();
@@ -254,7 +254,7 @@ void ui_update(UIState *s) {
     } else {
       // car is started, but controls is lagging or died
       if (s->scene.alert_text2 != "Controls Unresponsive") {
-        s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT);
+        s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
         LOGE("Controls unresponsive");
       }
 

@@ -7,6 +7,7 @@
 #include <QOpenGLFunctions>
 #include <QStackedLayout>
 
+#include "qt/qt_sound.hpp"
 #include "ui/ui.hpp"
 
 class MainWindow : public QWidget
@@ -45,6 +46,7 @@ protected:
 private:
   QTimer * timer;
   UIState * ui_state;
+  QtSound sound;
 
 public slots:
   void timerUpdate();

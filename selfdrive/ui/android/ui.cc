@@ -12,6 +12,7 @@
 
 #include "ui.hpp"
 #include "paint.hpp"
+#include "android/sl_sound.hpp"
 
 // Includes for light sensor
 #include <cutils/properties.h>
@@ -169,10 +170,13 @@ int main(int argc, char* argv[]) {
   setpriority(PRIO_PROCESS, 0, -14);
 
   signal(SIGINT, (sighandler_t)set_do_exit);
+  SLSound sound;
 
   UIState uistate = {};
   UIState *s = &uistate;
   ui_init(s);
+  s->sound = &sound;
+
   set_awake(s, true);
   enable_event_processing(true);
 
@@ -201,7 +205,7 @@ int main(int argc, char* argv[]) {
 
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
-  assert(s->sound.init(MIN_VOLUME));
+  s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
     if (!s->started || !s->vision_connected) {
@@ -238,7 +242,7 @@ int main(int argc, char* argv[]) {
     }
 
     // up one notch every 5 m/s
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
+    s->sound->setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
 
     // set brightness
     float clipped_brightness = fmin(512, (s->light_sensor*brightness_m) + brightness_b);

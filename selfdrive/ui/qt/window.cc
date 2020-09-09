@@ -13,7 +13,6 @@
 #include "settings.hpp"
 
 #include "paint.hpp"
-#include "sound.hpp"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -40,11 +39,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
-void MainWindow::openSettings(){
+void MainWindow::openSettings() {
   main_layout->setCurrentIndex(1);
 }
 
-void MainWindow::closeSettings(){
+void MainWindow::closeSettings() {
   main_layout->setCurrentIndex(0);
 }
 
@@ -52,6 +51,7 @@ void MainWindow::closeSettings(){
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
+
 }
 
 GLWindow::~GLWindow() {
@@ -68,6 +68,7 @@ void GLWindow::initializeGL() {
 
   ui_state = new UIState();
   ui_init(ui_state);
+  ui_state->sound = &sound;
   ui_state->fb_w = vwp_w;
   ui_state->fb_h = vwp_h;
 
@@ -102,13 +103,6 @@ void GLWindow::mousePressEvent(QMouseEvent *e) {
   }
 }
 
-
-/* HACKS */
-bool Sound::init(int volume) { return true; }
-bool Sound::play(AudibleAlert alert) { printf("play sound: %d\n", (int)alert); return true; }
-void Sound::stop() {}
-void Sound::setVolume(int volume) {}
-Sound::~Sound() {}
 
 GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
   unsigned int texture;

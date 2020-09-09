@@ -174,7 +174,7 @@ typedef struct UIState {
 
   SubMaster *sm;
 
-  Sound sound;
+  Sound *sound;
   UIStatus status;
   UIScene scene;
   cereal::UiLayoutState::App active_app;
