@@ -102,7 +102,7 @@ def fake_driver_monitoring():
     dat.driverState.faceProb = 1.0
     pm.send('driverState', dat)
 
-    # dmonotirongd output
+    # dmonitoringd output
     dat = messaging.new_message('dMonitoringState')
     dat.dMonitoringState = {
       "faceDetected": True,

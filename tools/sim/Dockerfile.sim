@@ -11,9 +11,26 @@ RUN apt-get update && apt-get install -y \
     tar \
     curl \
     xz-utils \
+
+    beignet-opencl-icd \
+
     alien \
     clinfo \
-    ;
+    dbus \
+    gcc-arm-none-eabi \
+    tmux \
+    vim \
+
+    # libglvnd dependencies
+    automake \
+    libtool \
+    libxext-dev \
+    libx11-dev \
+    x11proto-gl-dev \
+    libpng16-16 \
+  && rm -rf /var/lib/apt/lists/*
+
+
 ARG INTEL_DRIVER=opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
 ARG INTEL_DRIVER_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/9019
 RUN mkdir -p /tmp/opencl-driver-intel
@@ -36,7 +53,6 @@ RUN echo INTEL_DRIVER is $INTEL_DRIVER; \
     fi; \
     rm -rf /tmp/opencl-driver-intel;
 
-RUN apt-get update && apt-get install -y beignet-opencl-icd
 
 #Open[GL,CL] for gpu
 ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES},display
@@ -52,23 +68,6 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,display
 
 #Python
 ENV PYTHONPATH $HOME/openpilot:${PYTHONPATH}
-
-RUN apt-get update && apt-get install -y \
-
-    dbus \
-    gcc-arm-none-eabi \
-    tmux \
-    vim \
-
-    # libglvnd dependencies
-    automake \
-    libtool \
-    libxext-dev \
-    libx11-dev \
-    x11proto-gl-dev \
-    libpng16-16 \
-  && rm -rf /var/lib/apt/lists/*
-
 RUN dbus-uuidgen > /etc/machine-id
 
 # we can apt-get after moving to a newer ubuntu
@@ -86,8 +85,6 @@ RUN cd $HOME && \
     wget https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
 
 RUN mkdir -p $HOME/openpilot
-
-RUN apt-get update && apt-get install -y beignet-opencl-icd
 
 COPY SConstruct $HOME/openpilot/
 
