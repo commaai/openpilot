@@ -201,7 +201,8 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
   recv_socks = []
-  if fsm.frame == 0 or (msg.which() == 'cameraOdometry' and (fsm.frame % 5) == 0):
+  frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
+  if frame == 0 or (msg.which() == 'cameraOdometry' and (frame % 5) == 0):
     recv_socks = ["liveCalibration"]
   return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 

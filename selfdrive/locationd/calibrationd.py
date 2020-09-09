@@ -2,7 +2,7 @@
 '''
 This process finds calibration values. More info on what these calibration values
 are can be found here https://github.com/commaai/openpilot/tree/master/common/transformations
-While the roll calibration is a real value that can be estimated, here we assume it zero,
+While the roll calibration is a real value that can be estimated, here we assume it's zero,
 and the image input into the neural network is not corrected for roll.
 '''
 
@@ -48,7 +48,6 @@ def sanity_clip(rpy):
   return np.array([rpy[0],
                    np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
                    np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
-
 
 
 class Calibrator():
@@ -152,14 +151,12 @@ def calibrationd_thread(sm=None, pm=None):
   while 1:
     sm.update(100)
 
-    if sm.updated['carState']:
-      calibrator.handle_v_ego(sm['carState'].vEgo)
-
     if sm.updated['cameraOdometry']:
+      calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
-                                          sm['cameraOdometry'].rot,
-                                          sm['cameraOdometry'].transStd,
-                                          sm['cameraOdometry'].rotStd)
+                                           sm['cameraOdometry'].rot,
+                                           sm['cameraOdometry'].transStd,
+                                           sm['cameraOdometry'].rotStd)
 
       if DEBUG and new_rpy is not None:
         print('got new rpy', new_rpy)
