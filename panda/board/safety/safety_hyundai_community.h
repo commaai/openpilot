@@ -48,6 +48,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (hyundai_forward_bus1 || !hyundai_LCAN_on_bus1) {
       hyundai_LCAN_on_bus1 = true;
       hyundai_forward_bus1 = false;
+      puts("  LCAN on bus1: forwarding disabled"); puts("\n");
     }
   }
   if (bus == 1 && hyundai_LCAN_on_bus1) {valid = false;}
@@ -58,16 +59,19 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       hyundai_mdps_bus = bus;
       if (!hyundai_forward_bus1 && board_has_obd()) {
         current_board->set_can_mode(CAN_MODE_NORMAL);
+        puts("  MDPS on bus0: harrness set to normal"); puts("\n");
       }
     } else if (bus == 1 && !hyundai_LCAN_on_bus1) {
       hyundai_mdps_bus = bus;
       hyundai_forward_bus1 = true;
+      puts("  MDPS on bus1: forwarding enabled"); puts("\n");
     } 
   }
   // check if we have a SCC on Bus1 and LCAN not on the bus
   if (bus == 1 && addr == 1057 && !hyundai_LCAN_on_bus1) {
     if (!hyundai_forward_bus1) {
       hyundai_forward_bus1 = true;
+      puts("  SCC on bus1: forwarding enabled"); puts("\n");
     }
   }
 
@@ -86,9 +90,11 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
+        puts("  SCC w/ long control: controls allowed"); puts("\n");
       }
       if (!cruise_engaged) {
         controls_allowed = 0;
+        if (controls_allowed) {puts("  SCC w/ long control: controls not allowed"); puts("\n");}
       }
       cruise_engaged_prev = cruise_engaged;
     }
@@ -98,8 +104,10 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
+        puts("  SCC w/o long control: controls allowed"); puts("\n");
       }
       if (!cruise_engaged) {
+        if (controls_allowed) {puts("  SCC w/o long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
       cruise_engaged_prev = cruise_engaged;
@@ -110,8 +118,10 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       int cruise_engaged = (GET_BYTES_04(to_push) >> 25 & 0x1); // ACC main_on signal
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
+        puts("  non-SCC w/ long control: controls allowed"); puts("\n");
       }
       if (!cruise_engaged) {
+        if (controls_allowed) {puts("  non-SCC w/ long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
       cruise_engaged_prev = cruise_engaged;
@@ -123,19 +133,21 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       // enable on both accel and decel buttons falling edge
       if (!cruise_button && (cruise_engaged_prev == 1 || cruise_engaged_prev == 2)) {
         controls_allowed = 1;
+        puts("  non-SCC w/o long control: controls allowed"); puts("\n");
       }
       // disable on cancel rising edge
       if (cruise_button == 4) {
+        if (controls_allowed) {puts("  non-SCC w/o long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
       cruise_engaged_prev = cruise_button;
     }
     // exit controls on rising edge of gas press for cars with long control
-    if (addr == 608 && OP_SCC_live && bus == 0) {
+    if (addr == 608 && OP_SCC_live && bus == 0) { // EMS16
       gas_pressed = (GET_BYTE(to_push, 7) >> 6) != 0;
     }
-    if (addr == 881 && hyundai_legacy && OP_SCC_live && bus == 0) {
-      gas_pressed = (((GET_BYTE(to_push, 4) & 0x7F) << 1) | GET_BYTE(to_push, 3) >> 7) != 0;
+    if (addr == 881 && OP_SCC_live && bus == 0) { // E_EMS11
+      gas_pressed = (((GET_BYTE(to_push, 4) & 0x7F) << 1) | GET_BYTE(to_push, 3) >> 7) > 5;
     }
     // sample wheel speed, averaging opposite corners
     if (addr == 902 && bus == 0) {
@@ -150,6 +162,8 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
 
     generic_rx_checks((addr == 832 && bus == 0));
+  } else {
+    puts("  CAN RX invalid: "); puth(addr); puts("\n");
   }
   return valid;
 }
@@ -162,10 +176,12 @@ static int hyundai_community_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   if (!msg_allowed(to_send, HYUNDAI_COMMUNITY_TX_MSGS, sizeof(HYUNDAI_COMMUNITY_TX_MSGS)/sizeof(HYUNDAI_COMMUNITY_TX_MSGS[0]))) {
     tx = 0;
+    puts("  CAN TX not allowed: "); puth(addr); puts(", "); puth(bus); puts("\n");
   }
 
   if (relay_malfunction) {
     tx = 0;
+    puts("  CAN TX not allowed LKAS on bus0"); puts("\n");
   }
 
   // LKA STEER: safety check
@@ -178,18 +194,24 @@ static int hyundai_community_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     if (controls_allowed) {
 
       // *** global torque limit check ***
-      violation |= max_limit_check(desired_torque, HYUNDAI_MAX_STEER, -HYUNDAI_MAX_STEER);
+      bool torque_check = 0;
+      violation |= torque_check = max_limit_check(desired_torque, HYUNDAI_MAX_STEER, -HYUNDAI_MAX_STEER);
+      if (torque_check) {puts("  LKAS TX not allowed: torque limit check failed!"); puts("\n");}
 
       // *** torque rate limit check ***
-      violation |= driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
+      bool torque_rate_check = 0;
+      violation |= torque_rate_check = driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
         HYUNDAI_MAX_STEER, HYUNDAI_MAX_RATE_UP, HYUNDAI_MAX_RATE_DOWN,
         HYUNDAI_DRIVER_TORQUE_ALLOWANCE, HYUNDAI_DRIVER_TORQUE_FACTOR);
+      if (torque_rate_check) {puts("  LKAS TX not allowed: torque rate limit check failed!"); puts("\n");}
 
       // used next time
       desired_torque_last = desired_torque;
 
       // *** torque real time rate limit check ***
-      violation |= rt_rate_limit_check(desired_torque, rt_torque_last, HYUNDAI_MAX_RT_DELTA);
+      bool torque_rt_check = 0;
+      violation |= torque_rt_check = rt_rate_limit_check(desired_torque, rt_torque_last, HYUNDAI_MAX_RT_DELTA);
+      if (torque_rt_check) {puts("  LKAS TX not allowed: torque real time rate limit check failed!"); puts("\n");}
 
       // every RT_INTERVAL set the new limits
       uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
@@ -202,6 +224,7 @@ static int hyundai_community_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     // no torque if controls is not allowed
     if (!controls_allowed && (desired_torque != 0)) {
       violation = 1;
+      puts("  LKAS torque not allowed: controls not allowed!"); puts("\n");
     }
 
     // reset to 0 if either controls is not allowed or there's a violation
