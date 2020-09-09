@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
 
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
-  s->sound.setVolume(MIN_VOLUME);
+  s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
     if (!s->started || !s->vision_connected) {
@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
     }
 
     // up one notch every 5 m/s
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
+    s->sound->setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
 
     // set brightness
     float clipped_brightness = fmin(512, (s->light_sensor*brightness_m) + brightness_b);
