@@ -721,11 +721,11 @@ EVENTS = {
   },
 
   EventName.reverseGear: {
-    ET.PERMANENT: Alert(
+    ET.WARNING: Alert(
       "Reverse Gear",
       "",
       AlertStatus.normal, AlertSize.full,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Reverse Gear"),
     ET.NO_ENTRY: NoEntryAlert("Reverse Gear"),
   },
