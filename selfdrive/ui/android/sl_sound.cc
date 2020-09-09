@@ -52,6 +52,7 @@ bool SLSound::init() {
 
     player_[kv.first] = new SLSound::Player{player, playItf};
   }
+  return true;
 }
 
 void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event) {
