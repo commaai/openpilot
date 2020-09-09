@@ -1,9 +1,7 @@
 #!/bin/bash
 
 #Requires nvidia docker - https://github.com/NVIDIA/nvidia-docker
-STR=$(apt list --installed| grep -a nvidia-container-toolkit) 
-LEN=${#STR}
-if [ "$LEN" -eq "0" ]; then
+if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
   if [ -z "$INSTALL" ]; then
     echo "Nvidia docker is required. Re-run with INSTALL=1 to automatically install."
     exit 0
