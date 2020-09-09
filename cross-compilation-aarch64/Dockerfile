@@ -25,12 +25,21 @@ RUN dpkg --add-architecture arm64 && \
     dpkg --print-foreign-architectures && \
     apt update
 
-RUN mkdir -p /openpilot/
-
-COPY ./ /openpilot/
-
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH /openpilot:${PYTHONPATH}
 
-RUN cd /openpilot/tools/ && \
-    ./ubuntu_setup.sh -arch arm64
+RUN mkdir -p /openpilot/cereal && \
+    mkdir -p /openpilot/tools
+
+COPY ./ubuntu_setup.sh /openpilot/tools/ubuntu_setup.sh
+COPY ./install_capnp.sh /openpilot/cereal/install_capnp.sh
+COPY ./install_libusb_arm.sh /openpilot/install_libusb_arm.sh
+COPY ./install_ffmpeg_arm.sh /openpilot/install_ffmpeg_arm.sh
+COPY ./Pipfile /openpilot/Pipfile
+COPY ./Pipfile.lock /openpilot/Pipfile.lock
+
+RUN cd /openpilot/tools && ./ubuntu_setup.sh -arch arm64
+
+RUN rm -rf /openpilot/*
+
+VOLUME ["/openpilot"]

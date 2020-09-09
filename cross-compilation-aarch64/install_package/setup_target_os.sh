@@ -66,7 +66,8 @@ echo -e "\e[1;32m Pyenv Installed SUCCESSFULLY!... \e[0m"
 echo -e "\e[1;34m Updating bashrc... \e[0m"
 if [ -z "$OPENPILOT_ENV" ]; then
   echo "source $HOME/openpilot/tools/openpilot_env.sh" >> ~/.bashrc
-  source ~/.bashrc
+  #source $HOME/openpilot/tools/openpilot_env.sh
+  #source ~/.bashrc
   echo -e "\e[1;32m openpilot_env added to bashrc... \e[0m"
 fi
 

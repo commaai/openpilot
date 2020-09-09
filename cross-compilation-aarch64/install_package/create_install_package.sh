@@ -1,18 +1,11 @@
 #!/bin/bash -e
 
-git --version 2>&1 >/dev/null
-GIT_IS_AVAILABLE=$?
-
-if [ $GIT_IS_AVAILABLE -eq 0 ]; then 
-    openpilot_dir=$(git rev-parse --show-toplevel)
-else
-    openpilot_dir="$HOME/openpilot"
-    if [ ! -d $openpilot_dir ]; then
-        openpilot_dir=`find / -type d -name "openpilot" 2>/dev/null | head -n 1`
-    fi
+openpilot_dir="$HOME/openpilot"
+if [ ! -d $openpilot_dir ]; then
+    openpilot_dir=`find / -type d -name "openpilot" 2>/dev/null | head -n 1`
 fi
 
-package_dir=$openpilot_dir"/crosscompiled_package/"
+package_dir=$openpilot_dir"/cross-compilation-aarch64/install_package/"
 dest_dir=$package_dir"openpilot/"
 
 if [ -d $dest_dir ] 
@@ -28,16 +21,14 @@ then
     cd $openpilot_dir
 
     cp -v --parent `find -type f -executable -exec sh -c "file '{}' | grep -q 'aarch64'" \; -print` $dest_dir
-    #cp -v --parent `find . -name "*.so"` $dest_dir
     cp --parent `find . -name "*.py"` $dest_dir
     cp --parent `find . -name "*.sh"` $dest_dir
     cp --parent `find . -name "*.capnp"` $dest_dir
     cp --parent `find . -name "service_list.yaml"` $dest_dir
     cp --parent `find . -name "*ui"` $dest_dir || true
     cp --parent `find . -name "version.h"` $dest_dir
-    cp --parent `find . -name "setup_target_os.sh"` $dest_dir
     cp --parent `find . -name "loggerd"` $dest_dir || true
-    cp cross-compilation-aarch64/Pipfile* $dest_dir
+    cp cross-compilation-aarch64/install_package/Pipfile* $dest_dir
 fi
 
 pushd $dest_dir

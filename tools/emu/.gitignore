@@ -1,0 +1,5 @@
+#Ignoring the ubuntu image files
+
+*.img 
+*.qcow2
+*.iso

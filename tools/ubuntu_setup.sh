@@ -224,7 +224,7 @@ if [ $ARCH == $ARM64 ]; then
     echo -e "\e[1;32m LibUSB for ARM - INSTALLED!... \e[0m"
 
     #FFMPEG cross-compilation and installation for arm64
-    sudo ./install_ffmepg_arm.sh
+    sudo ./install_ffmpeg_arm.sh
     echo -e "\e[1;32m FFMpeg for ARM - INSTALLED!... \e[0m"
   else
     echo -e "\e[1;31m ERROR creating libglfw link - cross compilation will fail \e[0m"
@@ -237,9 +237,11 @@ if [ $SETUP_ERROR == 0 ]; then
   cd $openpilot_dir
 
   # do the rest of the git checkout
-  git lfs pull
-  git submodule init
-  git submodule update
+  if [-d .git]; then
+    git lfs pull
+    git submodule init
+    git submodule update
+  fi
 
   # install python 3.8.2 globally (you should move to python3 anyway)
   pyenv install -s 3.8.2
