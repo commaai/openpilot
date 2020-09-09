@@ -65,6 +65,7 @@ typedef struct CameraState {
   int request_ids[FRAME_BUF_COUNT];
   int request_id_last;
   int frame_id_last;
+  int idx_offset;
   bool skipped;
 
   struct cam_req_mgr_session_info req_mgr_session_info;

@@ -931,6 +931,7 @@ void handle_camera_event(CameraState *s, void *evdat) {
   int real_id = event_data->u.frame_msg.request_id;
 
   if (real_id != 0) { // next ready
+    if (real_id == 1) {s->idx_offset = main_id;}
     int buf_idx = (real_id - 1) % FRAME_BUF_COUNT;
 
     // check for skipped frames
@@ -951,7 +952,7 @@ void handle_camera_event(CameraState *s, void *evdat) {
     // metas
     s->frame_id_last = main_id;
     s->request_id_last = real_id;
-    s->camera_bufs_metadata[buf_idx].frame_id = real_id;
+    s->camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
     s->camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
     s->request_ids[buf_idx] = real_id + FRAME_BUF_COUNT;
 
