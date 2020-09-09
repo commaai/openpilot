@@ -563,7 +563,8 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->analog_gain_frac = 1.0;
   s->analog_gain = 0x8;
   s->exposure_time = 598;
-  // s->n_skipped = 0;
+  s->request_id_last = 0;
+  s->skipped = true;
 }
 
 static void camera_open(CameraState *s, VisionBuf* b) {
@@ -939,28 +940,99 @@ void cameras_run(MultiCameraState *s) {
     if (ev.type == 0x8000000) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       uint64_t timestamp = event_data->u.frame_msg.timestamp;
+      int main_id = event_data->u.frame_msg.frame_id;
       int real_id = event_data->u.frame_msg.request_id;
       int buf_idx = (real_id - 1) % FRAME_BUF_COUNT;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
-     if (event_data->u.frame_msg.request_id != 0) {
+     if (real_id != 0) {
         if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
-          //s->rear.n_skipped = 0;
+          // check for skipped frames
+          if (main_id > s->rear.frame_id_last + 1 && !s->rear.skipped) {
+            // printf("rear skipped %d, re-aligning\n", main_id - (s->rear.frame_id_last + 1));
+            // realign
+            struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+            req_mgr_flush_request.session_hdl = event_data->session_hdl;
+            req_mgr_flush_request.link_hdl = event_data->u.frame_msg.link_hdl;
+            req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+            ret = cam_control(s->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+            for (int i=1;i<FRAME_BUF_COUNT;++i) {
+              s->rear.request_ids[(real_id - 1 + i) % FRAME_BUF_COUNT] = real_id + i;
+              enqueue_buffer(&s->rear, (real_id - 1 + i) % FRAME_BUF_COUNT);
+            }
+            s->rear.skipped = true;
+          } else if (main_id == s->rear.frame_id_last + 1) {
+            s->rear.skipped = false;
+          }
+          // check for dropped requests
+          for (int i=s->rear.request_id_last+1;i<real_id;++i) {
+            // printf("rear misses %d\n", i);
+            s->rear.request_ids[(i - 1) % FRAME_BUF_COUNT] = i + FRAME_BUF_COUNT;
+            enqueue_buffer(&s->rear, (i - 1) % FRAME_BUF_COUNT);
+          }
+          s->rear.frame_id_last = main_id;
+          s->rear.request_id_last = real_id;
           s->rear.camera_bufs_metadata[buf_idx].frame_id = real_id;
           s->rear.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
           s->rear.request_ids[buf_idx] = real_id + FRAME_BUF_COUNT;
           tbuffer_dispatch(&s->rear.camera_tb, buf_idx);
         } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
-          //s->wide.n_skipped = 0;
-          //printf("frame_id/buf_idx 1 = %d / %d\n", s->wide.frame_id, buf_idx);
+          // check for skipped frames
+          if (main_id > s->wide.frame_id_last + 1 && !s->wide.skipped) {
+            // printf("wide skipped %d, re-aligning\n", main_id - (s->wide.frame_id_last + 1));
+            // realign
+            struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+            req_mgr_flush_request.session_hdl = event_data->session_hdl;
+            req_mgr_flush_request.link_hdl = event_data->u.frame_msg.link_hdl;
+            req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+            ret = cam_control(s->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+            for (int i=1;i<FRAME_BUF_COUNT;++i) {
+              s->wide.request_ids[(real_id - 1 + i) % FRAME_BUF_COUNT] = real_id + i;
+              enqueue_buffer(&s->wide, (real_id - 1 + i) % FRAME_BUF_COUNT);
+            }
+            s->wide.skipped = true;
+          } else if (main_id == s->wide.frame_id_last + 1) {
+            s->wide.skipped = false;
+          }
+          // check for dropped requests
+          for (int i=s->wide.request_id_last+1;i<real_id;++i) {
+            // printf("wide misses %d\n", i);
+            s->wide.request_ids[(i - 1) % FRAME_BUF_COUNT] = i + FRAME_BUF_COUNT;
+            enqueue_buffer(&s->wide, (i - 1) % FRAME_BUF_COUNT);
+          }
+          s->wide.frame_id_last = main_id;
+          s->wide.request_id_last = real_id;
           s->wide.camera_bufs_metadata[buf_idx].frame_id = real_id;
           s->wide.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
           s->wide.request_ids[buf_idx] = real_id + FRAME_BUF_COUNT;
           tbuffer_dispatch(&s->wide.camera_tb, buf_idx);
         } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) { 
-          //s->front.n_skipped = 0;
-          //printf("frame_id/buf_idx 2 = %d / %d\n", s->front.frame_id, buf_idx);
+          // check for skipped frames
+          if (main_id > s->front.frame_id_last + 1 && !s->front.skipped) {
+            // printf("front skipped %d, re-aligning\n", main_id - (s->front.frame_id_last + 1));
+            // realign
+            struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+            req_mgr_flush_request.session_hdl = event_data->session_hdl;
+            req_mgr_flush_request.link_hdl = event_data->u.frame_msg.link_hdl;
+            req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+            ret = cam_control(s->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+            for (int i=1;i<FRAME_BUF_COUNT;++i) {
+              s->front.request_ids[(real_id - 1 + i) % FRAME_BUF_COUNT] = real_id + i;
+              enqueue_buffer(&s->front, (real_id - 1 + i) % FRAME_BUF_COUNT);
+            }
+            s->front.skipped = true;
+          } else if (main_id == s->front.frame_id_last + 1) {
+            s->front.skipped = false;
+          }
+          // check for dropped requests
+          for (int i=s->front.request_id_last+1;i<real_id;++i) {
+            // printf("front misses %d\n", i);
+            s->front.request_ids[(i - 1) % FRAME_BUF_COUNT] = i + FRAME_BUF_COUNT;
+            enqueue_buffer(&s->front, (i - 1) % FRAME_BUF_COUNT);
+          }
+          s->front.frame_id_last = main_id;
+          s->front.request_id_last = real_id;
           s->front.camera_bufs_metadata[buf_idx].frame_id = real_id;
           s->front.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
           s->front.request_ids[buf_idx] = real_id + FRAME_BUF_COUNT;
@@ -969,6 +1041,48 @@ void cameras_run(MultiCameraState *s) {
           printf("Unknown vidioc event source\n");
           assert(false);
         } 
+      } else {
+        if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
+          // reset after half second of no response
+          if (main_id > s->rear.frame_id_last + 10 && !s->rear.skipped) {
+            struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+            req_mgr_flush_request.session_hdl = event_data->session_hdl;
+            req_mgr_flush_request.link_hdl = event_data->u.frame_msg.link_hdl;
+            req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+            ret = cam_control(s->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+            for (int i=0;i<FRAME_BUF_COUNT;++i) {
+              s->rear.request_ids[(s->rear.request_id_last + i) % FRAME_BUF_COUNT] = s->rear.request_id_last + 1 + i;
+              enqueue_buffer(&s->rear, (s->rear.request_id_last + i) % FRAME_BUF_COUNT);
+            }
+            s->rear.skipped = true;
+          }
+        } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
+          if (main_id > s->wide.frame_id_last + 10 && !s->wide.skipped) {
+            struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+            req_mgr_flush_request.session_hdl = event_data->session_hdl;
+            req_mgr_flush_request.link_hdl = event_data->u.frame_msg.link_hdl;
+            req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+            ret = cam_control(s->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+            for (int i=0;i<FRAME_BUF_COUNT;++i) {
+              s->wide.request_ids[(s->wide.request_id_last + i) % FRAME_BUF_COUNT] = s->wide.request_id_last + 1 + i;
+              enqueue_buffer(&s->wide, (s->wide.request_id_last + i) % FRAME_BUF_COUNT);
+            }
+            s->wide.skipped = true;
+          }
+        } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
+          if (main_id > s->front.frame_id_last + 10 && !s->front.skipped) {
+            struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+            req_mgr_flush_request.session_hdl = event_data->session_hdl;
+            req_mgr_flush_request.link_hdl = event_data->u.frame_msg.link_hdl;
+            req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+            ret = cam_control(s->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+            for (int i=0;i<FRAME_BUF_COUNT;++i) {
+              s->front.request_ids[(s->front.request_id_last + i) % FRAME_BUF_COUNT] = s->front.request_id_last + 1 + i;
+              enqueue_buffer(&s->front, (s->front.request_id_last + i) % FRAME_BUF_COUNT);
+            }
+            s->front.skipped = true;
+          }
+        }
       }
     }
   }
@@ -1021,16 +1135,18 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     AG = AG * 4096 + AG * 256 + AG * 16 + AG; 
     // printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
   }
+
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
                                                   {0x3362, s->dc_gain_enabled?0x1:0x0}, // DC_GAIN
                                                   {0x305A, 0x00C4}, // red gain
                                                   {0x3058, 0x00B1}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
-                                                  {0x3012, s->exposure_time}, // integ time
-                                                  {0x301A, 0x091C}}; // reset
+                                                  {0x3012, s->exposure_time}}; // integ time
+                                                  //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+
 }
 
 #ifdef NOSCREEN
