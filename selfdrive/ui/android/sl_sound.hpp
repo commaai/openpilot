@@ -14,6 +14,7 @@ public:
   void setVolume(int volume);
 
 private:
+  bool init();
   SLObjectItf engine_ = nullptr;
   SLObjectItf outputMix_ = nullptr;
   int last_volume_ = 0;

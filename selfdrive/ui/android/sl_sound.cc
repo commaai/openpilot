@@ -20,6 +20,12 @@ struct SLSound::Player {
 };
 
 SLSound::SLSound() {
+  if (!init()){
+    throw std::runtime_error("Failed to initialize sound");
+  }
+}
+
+bool SLSound::init() {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
   const SLboolean req[1] = {SL_BOOLEAN_FALSE};
