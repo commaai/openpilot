@@ -593,7 +593,7 @@ EVENTS = {
   },
 
   EventName.calibrationInvalid: {
-    ET.PERMANENT: Alert(
+    ET.WARNING: Alert(
       "Calibration Invalid",
       "Reposition Device and Recalibrate",
       AlertStatus.normal, AlertSize.mid,
