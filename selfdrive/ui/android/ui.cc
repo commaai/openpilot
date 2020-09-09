@@ -12,6 +12,7 @@
 
 #include "ui.hpp"
 #include "paint.hpp"
+#include "android/sl_sound.hpp"
 
 // Includes for light sensor
 #include <cutils/properties.h>
@@ -169,10 +170,13 @@ int main(int argc, char* argv[]) {
   setpriority(PRIO_PROCESS, 0, -14);
 
   signal(SIGINT, (sighandler_t)set_do_exit);
+  SLSound sound;
 
   UIState uistate = {};
   UIState *s = &uistate;
   ui_init(s);
+  s->sound = &sound;
+
   set_awake(s, true);
   enable_event_processing(true);
 

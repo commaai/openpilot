@@ -13,7 +13,6 @@
 #include "settings.hpp"
 
 #include "paint.hpp"
-#include "sound.hpp"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -52,6 +51,7 @@ void MainWindow::closeSettings() {
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
+
 }
 
 GLWindow::~GLWindow() {
@@ -68,6 +68,7 @@ void GLWindow::initializeGL() {
 
   ui_state = new UIState();
   ui_init(ui_state);
+  ui_state->sound = &sound;
   ui_state->fb_w = vwp_w;
   ui_state->fb_h = vwp_h;
 

@@ -1,30 +1,29 @@
 #include <QUrl>
-#include "sound.hpp"
+#include "qt/qt_sound.hpp"
 
-Sound::Sound() {
+QtSound::QtSound() {
   for (auto &kv : sound_map) {
     auto path = QUrl::fromLocalFile(kv.second.first);
     sounds[kv.first].setSource(path);
   }
 }
 
-bool Sound::play(AudibleAlert alert) {
+bool QtSound::play(AudibleAlert alert) {
   sounds[alert].setLoopCount(sound_map[alert].second);
   sounds[alert].play();
   return true;
 }
 
-void Sound::stop() {
+void QtSound::stop() {
   for (auto &kv : sounds) {
     kv.second.stop();
   }
 }
 
-void Sound::setVolume(int volume) {
+void QtSound::setVolume(int volume) {
   // TODO: implement this
 }
 
-Sound::~Sound() {
+QtSound::~QtSound() {
 
 }
-

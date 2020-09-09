@@ -2,13 +2,6 @@
 #include <map>
 #include "cereal/gen/cpp/log.capnp.h"
 
-#ifdef QCOM
-#include <SLES/OpenSLES.h>
-#include <SLES/OpenSLES_Android.h>
-#else
-#include <QSoundEffect>
-#endif
-
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 static std::map<AudibleAlert, std::pair<const char *, int>> sound_map {
@@ -25,23 +18,7 @@ static std::map<AudibleAlert, std::pair<const char *, int>> sound_map {
 
 class Sound {
 public:
-  Sound();
-  ~Sound();
-  bool play(AudibleAlert alert);
-  void stop();
-  void setVolume(int volume);
-
-private:
-#ifdef QCOM
-  SLObjectItf engine_ = nullptr;
-  SLObjectItf outputMix_ = nullptr;
-  int last_volume_ = 0;
-  double last_set_volume_time_ = 0.;
-  AudibleAlert currentSound_ = AudibleAlert::NONE;
-  struct Player;
-  std::map<AudibleAlert, Player *> player_;
-  friend void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event);
-#else
-  std::map<AudibleAlert, QSoundEffect> sounds;
-#endif
+  virtual bool play(AudibleAlert alert) = 0;
+  virtual void stop() = 0;
+  virtual void setVolume(int volume) = 0;
 };
