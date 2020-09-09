@@ -1,20 +1,21 @@
 #!/bin/bash
 
-# Requires nvidia docker - https://github.com/NVIDIA/nvidia-docker
-#if [ -z "$(which nvidia-docker)" ]; then
-#  if [ -z "$INSTALL" ]; then
-#    echo "Nvidia docker is required. Re-run with INSTALL=1 to automatically install."
-#    exit 0
-#  else
-#    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-#    echo $distribution
-#    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-#    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-#
-#    sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
-#    sudo systemctl restart docker
-#  fi
-#fi
+#Requires nvidia docker - https://github.com/NVIDIA/nvidia-docker
+STR=$(apt list --installed| grep -a nvidia-container-toolkit) 
+LEN=${#STR}
+if [ "$LEN" -eq "0" ]; then
+  if [ -z "$INSTALL" ]; then
+    echo "Nvidia docker is required. Re-run with INSTALL=1 to automatically install."
+    exit 0
+  else
+    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+    echo $distribution
+    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+    sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+    sudo systemctl restart docker
+  fi
+fi
 
 docker pull carlasim/carla:0.9.7
 docker run --net=host --gpus all carlasim/carla:0.9.7 
