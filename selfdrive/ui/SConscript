@@ -19,7 +19,7 @@ else:
   if arch == "Darwin":
     qt_env["FRAMEWORKS"] += ["QtWidgets", "QtGui", "QtCore", "QtDBus", "QtMultimedia"]
   else:
-    qt_libs += ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus", "Qt5MultiMedia"]
+    qt_libs += ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus", "Qt5Multimedia"]
 
   if arch == "larch64":
     qt_libs += ["GLESv2"]
