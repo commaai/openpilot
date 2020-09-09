@@ -593,7 +593,7 @@ EVENTS = {
   },
 
   EventName.calibrationInvalid: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "Calibration Invalid",
       "Reposition Device and Recalibrate",
       AlertStatus.normal, AlertSize.mid,
@@ -721,7 +721,7 @@ EVENTS = {
   },
 
   EventName.reverseGear: {
-    ET.WARNING: Alert(
+    ET.PERMANENT: Alert(
       "Reverse Gear",
       "",
       AlertStatus.normal, AlertSize.full,
