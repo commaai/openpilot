@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-dev \
     python-pip \
     qt5-default \
+    qtmultimedia5-dev \
     sudo \
     wget \
   && rm -rf /var/lib/apt/lists/*
