@@ -186,7 +186,7 @@ void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * dat
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     // negative sign because mpc has left positive
     points_arr[i] = -data[2*33*ll_idx + 2*i];
-    stds_arr[i] = data[2*33*(4 + ll_idx) + 2*i];
+    stds_arr[i] = exp(data[2*33*(4 + ll_idx) + 2*i]);
   }
   std = stds_arr[0];
   poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
