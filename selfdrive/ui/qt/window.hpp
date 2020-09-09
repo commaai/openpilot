@@ -26,7 +26,7 @@ public slots:
 
 };
 
-const int vwp_w = 1920;
+const int vwp_w = 2160;
 const int vwp_h = 1080;
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions
 {
