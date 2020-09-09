@@ -42,7 +42,9 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   valid = addr_safety_check(to_push, hyundai_community_rx_checks, HYUNDAI_COMMUNITY_RX_CHECK_LEN,
                             hyundai_get_checksum, hyundai_compute_checksum,
                             hyundai_get_counter);
-
+  if (!valid){
+    puts("  CAN RX invalid: "); puth(addr); puts("\n");
+  }
   // check if we have a LCAN on Bus1
   if (bus == 1 && (addr == 1296 || addr == 524)) {
     if (hyundai_forward_bus1 || !hyundai_LCAN_on_bus1) {
@@ -162,8 +164,6 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
 
     generic_rx_checks((addr == 832 && bus == 0));
-  } else if (bus != 1 || !hyundai_LCAN_on_bus1){
-    puts("  CAN RX invalid: "); puth(addr); puts("\n");
   }
   return valid;
 }
