@@ -40,7 +40,7 @@ class TestStartup(unittest.TestCase):
   def test_startup_alert(self, expected_event, car, toggle_enabled):
 
     # TODO: this should be done without any real sockets
-    sm = messaging.SubMaster(['controlsState'])
+    controls_sock = messaging.sub_sock("controlsState")
     pm = messaging.PubMaster(['can', 'health'])
     Params().put("CommunityFeaturesToggle", b"1" if toggle_enabled else b"0")
 
@@ -60,10 +60,10 @@ class TestStartup(unittest.TestCase):
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
 
-      time.sleep(0.05)
-      sm.update(0)
-      if sm.updated["controlsState"]:
-        event_name = sm["controlsState"].alertType.split("/")[0]
+      time.sleep(0.01)
+      msgs = messaging.drain_sock(controls_sock)
+      if len(msgs):
+        event_name = msgs[0].controlsState.alertType.split("/")[0]
         self.assertEqual(EVENT_NAME[expected_event], event_name,
                          f"expected {EVENT_NAME[expected_event]} for '{car}', got {event_name}")
         break
