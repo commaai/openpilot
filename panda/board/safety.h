@@ -138,6 +138,7 @@ void safety_tick(const safety_hooks *hooks) {
       hooks->addr_check[i].lagging = lagging;
       if (lagging) {
         controls_allowed = 0;
+        puts("  CAN RX lag: "); puts(" controls not allowed\n");
       }
     }
   }
@@ -158,6 +159,7 @@ bool is_msg_valid(AddrCheckStruct addr_list[], int index) {
     if ((!addr_list[index].valid_checksum) || (addr_list[index].wrong_counters >= MAX_WRONG_COUNTERS)) {
       valid = false;
       controls_allowed = 0;
+      puts("  CAN RX invalid: "); puts(" controls not allowed\n");
     }
   }
   return valid;
@@ -205,12 +207,14 @@ void generic_rx_checks(bool stock_ecu_detected) {
   // exit controls on rising edge of gas press
   if (gas_pressed && !gas_pressed_prev && !(unsafe_mode & UNSAFE_DISABLE_DISENGAGE_ON_GAS)) {
     controls_allowed = 0;
+    puts("  gas pressed w/ long control: controls not allowed"); puts("\n");
   }
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
   if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
     controls_allowed = 0;
+    puts("  brake pressed w/ long control: controls not allowed"); puts("\n");
   }
   brake_pressed_prev = brake_pressed;
 
