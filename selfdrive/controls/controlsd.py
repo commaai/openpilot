@@ -27,6 +27,7 @@ LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
+SIMULATION = "SIMULATION" in os.environ
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
@@ -193,7 +194,7 @@ class Controls:
     elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
                                         LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
-
+    
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
     if self.mismatch_counter >= 200:
@@ -210,7 +211,9 @@ class Controls:
         self.events.add(EventName.sensorDataInvalid)
     if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
       # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
-      self.events.add(EventName.noGps)
+      # GPS is not yet working in a simulation
+      if not SIMULATION:
+        self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
@@ -229,11 +232,12 @@ class Controls:
     if self.sm['plan'].fcw:
       self.events.add(EventName.fcw)
     if self.sm['model'].frameDropPerc > 1:
-      self.events.add(EventName.modeldLagging)
+      if not SIMULATION:
+        self.events.add(EventName.modeldLagging)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
-       and not self.CP.radarOffCan and CS.vEgo < 0.3:
+      and not self.CP.radarOffCan and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
 
   def data_sample(self):
