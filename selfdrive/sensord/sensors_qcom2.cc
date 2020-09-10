@@ -9,6 +9,7 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
+#include "sensors/sensor.hpp"
 #include "sensors/constants.hpp"
 #include "sensors/bmx055_accel.hpp"
 #include "sensors/bmx055_gyro.hpp"
@@ -38,13 +39,13 @@ int sensor_loop() {
   BMX055_Magn magn(i2c_bus_imu);
 
   // Sensor init
-  std::vector<I2CSensor *> sensors;
+  std::vector<Sensor *> sensors;
   sensors.push_back(&accel);
   sensors.push_back(&gyro);
   // sensors.push_back(&magn);
 
 
-  for (I2CSensor * sensor : sensors){
+  for (Sensor * sensor : sensors){
     int err = sensor->init();
     if (err < 0){
       LOGE("Error initializing sensors");
