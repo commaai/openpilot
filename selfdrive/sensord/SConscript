@@ -6,6 +6,7 @@ if arch == "aarch64":
   lenv.Program('_gpsd', ['gpsd.cc'], LIBS=['hardware', common, 'diag', 'time_genoff', cereal, messaging, 'capnp', 'zmq', 'kj'])
 else:
   sensors = [
+    'sensors/file_sensor.cc',
     'sensors/i2c_sensor.cc',
     'sensors/bmx055_accel.cc',
     'sensors/bmx055_gyro.cc',
