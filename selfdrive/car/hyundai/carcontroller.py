@@ -81,7 +81,7 @@ class CarController():
       self.resumebuttoncnt = 0
     elif CS.out.cruiseState.standstill:
       # send resume at a max freq of 5Hz
-      if (frame - self.last_resume_frame) > 10 and CS.lead_rel_vel > 0.:
+      if (frame - self.lastresumeframe) > 10 and CS.lead_rel_vel > 0.:
         can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL, self.resumebuttoncnt))
         self.resumebuttoncnt += 1
         if self.resumebuttoncnt > 5:
