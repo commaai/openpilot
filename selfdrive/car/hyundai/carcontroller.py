@@ -1,5 +1,4 @@
 from cereal import car
-from common.realtime import DT_CTRL
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
@@ -79,9 +78,9 @@ class CarController():
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL, cnt))
       self.resumebuttoncnt = 0
-    elif CS.out.cruiseState.standstill:
+    elif CS.out.cruiseState.standstill and CS.lead_rel_vel > 0.:
       # send resume at a max freq of 5Hz
-      if (frame - self.lastresumeframe) > 10 and CS.lead_rel_vel > 0.:
+      if (frame - self.lastresumeframe) > 10:
         can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL, self.resumebuttoncnt))
         self.resumebuttoncnt += 1
         if self.resumebuttoncnt > 5:
