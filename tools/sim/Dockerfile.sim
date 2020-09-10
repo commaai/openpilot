@@ -1,0 +1,104 @@
+FROM commaai/openpilot-base:latest
+#Carla
+
+COPY ./tools/sim/install_carla.sh /tmp
+RUN /tmp/install_carla.sh
+
+#Intel openCL- run openCL on CPU
+RUN apt-get update && apt-get install -y \
+    apt-utils \
+    unzip \
+    tar \
+    curl \
+    xz-utils \
+
+    beignet-opencl-icd \
+
+    alien \
+    clinfo \
+    dbus \
+    gcc-arm-none-eabi \
+    tmux \
+    vim \
+
+    # libglvnd dependencies
+    automake \
+    libtool \
+    libxext-dev \
+    libx11-dev \
+    x11proto-gl-dev \
+    libpng16-16 \
+  && rm -rf /var/lib/apt/lists/*
+
+
+ARG INTEL_DRIVER=opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
+ARG INTEL_DRIVER_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/9019
+RUN mkdir -p /tmp/opencl-driver-intel
+WORKDIR /tmp/opencl-driver-intel
+RUN echo INTEL_DRIVER is $INTEL_DRIVER; \
+    curl -O $INTEL_DRIVER_URL/$INTEL_DRIVER; \
+    if echo $INTEL_DRIVER | grep -q "[.]zip$"; then \
+        unzip $INTEL_DRIVER; \
+        mkdir fakeroot; \
+        for f in intel-opencl-*.tar.xz; do tar -C fakeroot -Jxvf $f; done; \
+        cp -R fakeroot/* /; \
+        ldconfig; \
+    else \
+        tar -xzf $INTEL_DRIVER; \
+        for i in $(basename $INTEL_DRIVER .tgz)/rpm/*.rpm; do alien --to-deb $i; done; \
+        dpkg -i *.deb; \
+        rm -rf $INTEL_DRIVER $(basename $INTEL_DRIVER .tgz) *.deb; \
+        mkdir -p /etc/OpenCL/vendors; \
+        echo /opt/intel/*/lib64/libintelocl.so > /etc/OpenCL/vendors/intel.icd; \
+    fi; \
+    rm -rf /tmp/opencl-driver-intel;
+
+
+#Open[GL,CL] for gpu
+ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES},display
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        mesa-utils \
+        ocl-icd-libopencl1 \
+        clinfo && \
+    rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /etc/OpenCL/vendors && \
+    echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,display
+
+#Python
+ENV PYTHONPATH $HOME/openpilot:${PYTHONPATH}
+RUN dbus-uuidgen > /etc/machine-id
+
+# we can apt-get after moving to a newer ubuntu
+WORKDIR /opt/libglvnd
+RUN git clone --branch="0.1.1" https://github.com/NVIDIA/libglvnd.git . && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr/local --libdir=/usr/local/lib/x86_64-linux-gnu && \
+    make -j"$(nproc)" install-strip && \
+    find /usr/local/lib/x86_64-linux-gnu -type f -name 'lib*.la' -delete
+
+ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+# get same tmux config used on NEOS for debugging
+RUN cd $HOME && \
+    wget https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
+
+RUN mkdir -p $HOME/openpilot
+
+COPY SConstruct $HOME/openpilot/
+
+COPY ./phonelibs $HOME/openpilot/phonelibs
+COPY ./laika $HOME/openpilot/laika
+COPY ./laika_repo $HOME/openpilot/laika_repo
+COPY ./rednose $HOME/openpilot/rednose
+COPY ./common $HOME/openpilot/common
+COPY ./models $HOME/openpilot/models
+COPY ./opendbc $HOME/openpilot/opendbc
+COPY ./cereal $HOME/openpilot/cereal
+COPY ./panda $HOME/openpilot/panda
+COPY ./selfdrive $HOME/openpilot/selfdrive
+COPY ./tools $HOME/openpilot/tools
+
+WORKDIR $HOME/openpilot
+RUN scons -j40
