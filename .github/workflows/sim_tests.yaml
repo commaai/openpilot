@@ -8,6 +8,7 @@ jobs:
     name: build container
     runs-on: ubuntu-16.04
     timeout-minutes: 50
+    if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
