@@ -26,6 +26,7 @@ MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 BLOCK_SIZE = 100
 INPUTS_NEEDED = 5   # Minimum blocks needed for valid calibration
 INPUTS_WANTED = 50   # We want a little bit more than we need for stability
+MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0,0,0])
 
 # These values are needed to accomodate biggest modelframe
@@ -33,10 +34,12 @@ PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
 
+
 class Calibration:
   UNCALIBRATED = 0
   CALIBRATED = 1
   INVALID = 2
+
 
 def is_calibration_valid(rpy):
   return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
@@ -53,38 +56,64 @@ def sanity_clip(rpy):
 class Calibrator():
   def __init__(self, param_put=False):
     self.param_put = param_put
-    self.rpy = copy.copy(RPY_INIT)
-    self.rpys = np.zeros((INPUTS_WANTED, 3))
-    self.idx = 0
-    self.block_idx = 0
-    self.valid_blocks = 0
-    self.cal_status = Calibration.UNCALIBRATED
-    self.just_calibrated = False
-    self.v_ego = 0
 
     # Read saved calibration
     calibration_params = Params().get("CalibrationParams")
+
+    rpy_init = RPY_INIT
+    valid_blocks = 0
+
     if param_put and calibration_params:
       try:
         calibration_params = json.loads(calibration_params)
-        self.rpy = calibration_params["calib_radians"]
-        if not np.isfinite(self.rpy).all():
-          self.rpy = copy.copy(RPY_INIT)
-        self.rpys = np.tile(self.rpy, (INPUTS_WANTED, 1))
-        self.valid_blocks = calibration_params['valid_blocks']
-        if not np.isfinite(self.valid_blocks) or self.valid_blocks < 0:
-          self.valid_blocks = 0
-        self.update_status()
+        rpy_init = calibration_params["calib_radians"]
+        valid_blocks = calibration_params['valid_blocks']
       except Exception:
         cloudlog.exception("CalibrationParams file found but error encountered")
+    self.reset(rpy_init, valid_blocks)
+    self.update_status()
+
+  def reset(self, rpy_init=RPY_INIT, valid_blocks=0):
+    if not np.isfinite(self.rpy).all():
+        self.rpy = copy.copy(RPY_INIT)
+    else:
+      self.rpy = rpy_init
+    if not np.isfinite(valid_blocks) or valid_blocks < 0:
+        self.valid_blocks = 0
+    else:
+      self.valid_blocks
+    self.rpys = np.tile(self.rpy, (INPUTS_WANTED, 1))
+
+    self.idx = 0
+    self.block_idx = 0
+    self.v_ego = 0
 
   def update_status(self):
-    start_status = self.cal_status
+    write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 0)
+
+    if self.valid_blocks > 0:
+      max_rpy_calib = np.array(np.max(self.rpys[:self.valid_blocks], axis=0))
+      min_rpy_calib = np.array(np.min(self.rpys[:self.valid_blocks], axis=0))
+      self.calib_spread = np.abs(max_rpy_calib - min_rpy_calib)
+    else:
+      self.calib_spread = np.zeros(3)
+
     if self.valid_blocks < INPUTS_NEEDED:
       self.cal_status = Calibration.UNCALIBRATED
     else:
+      if self.cal_status == Calibration.UNCALIBRATED:
+        write_this_cycle = False
       self.cal_status = Calibration.CALIBRATED if is_calibration_valid(self.rpy) else Calibration.INVALID
-    self.just_calibrated = start_status == Calibration.UNCALIBRATED and self.cal_status != Calibration.UNCALIBRATED
+
+    # if spread is too high, assume mounting was changed and reset to last block
+    if max(self.calib_spread) > MAX_ALLOWED_SPREAD:
+      self.reset(self.rpys[self.block_idx - 1])
+
+    if self.param_put and write_this_cycle:
+      # TODO: this should use the liveCalibration struct from cereal
+      cal_params = {"calib_radians": list(self.rpy),
+                    "valid_blocks": self.valid_blocks}
+      put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
 
   def handle_v_ego(self, v_ego):
     self.v_ego = v_ego
@@ -110,22 +139,11 @@ class Calibrator():
         self.rpy = np.mean(self.rpys[:self.valid_blocks], axis=0)
       self.update_status()
 
-      # TODO: this should use the liveCalibration struct from cereal
-      if self.param_put and ((self.idx == 0 and self.block_idx == 0) or self.just_calibrated):
-        cal_params = {"calib_radians": list(self.rpy),
-                      "valid_blocks": self.valid_blocks}
-        put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
       return new_rpy
     else:
       return None
 
   def send_data(self, pm):
-    if self.valid_blocks > 0:
-      max_rpy_calib = np.array(np.max(self.rpys[:self.valid_blocks], axis=0))
-      min_rpy_calib = np.array(np.min(self.rpys[:self.valid_blocks], axis=0))
-      calib_spread = np.abs(max_rpy_calib - min_rpy_calib)
-    else:
-      calib_spread = np.zeros(3)
     extrinsic_matrix = get_view_frame_from_road_frame(0, self.rpy[1], self.rpy[2], model_height)
 
     cal_send = messaging.new_message('liveCalibration')
@@ -134,7 +152,7 @@ class Calibrator():
     cal_send.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
     cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
     cal_send.liveCalibration.rpyCalib = [float(x) for x in self.rpy]
-    cal_send.liveCalibration.rpyCalibSpread = [float(x) for x in calib_spread]
+    cal_send.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
 
     pm.send('liveCalibration', cal_send)
 
@@ -165,6 +183,7 @@ def calibrationd_thread(sm=None, pm=None):
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:
       calibrator.send_data(pm)
+
 
 def main(sm=None, pm=None):
   calibrationd_thread(sm, pm)
