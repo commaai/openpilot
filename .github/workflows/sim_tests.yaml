@@ -1,10 +1,7 @@
 name: simulator
 on:
-  push:
-
-  # TODO: remove the push trigger, and only run on schedule
-  #schedule:
-  #- cron: '0 * * * *'
+  schedule:
+  - cron: '0 * * * *'
 
 jobs:
   docker_build:
