@@ -14,7 +14,7 @@
 #include "sensors/bmx055_accel.hpp"
 #include "sensors/bmx055_gyro.hpp"
 #include "sensors/bmx055_magn.hpp"
-#include "sensors/file_sensor.hpp"
+#include "sensors/light_sensor.hpp"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -38,7 +38,7 @@ int sensor_loop() {
   BMX055_Accel accel(i2c_bus_imu);
   BMX055_Gyro gyro(i2c_bus_imu);
   BMX055_Magn magn(i2c_bus_imu);
-  FileSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
+  LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
   // Sensor init
   std::vector<Sensor *> sensors;

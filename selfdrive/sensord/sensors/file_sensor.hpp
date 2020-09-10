@@ -8,12 +8,12 @@
 
 
 class FileSensor : public Sensor {
-private:
+protected:
   std::ifstream file;
 
 public:
   FileSensor(std::string filename);
   ~FileSensor();
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  virtual void get_event(cereal::SensorEventData::Builder &event) = 0;
 };
