@@ -3,12 +3,11 @@
 # pylint: skip-file
 # type: ignore
 
-import argparse
 import time
 
 import cereal.messaging as messaging
 from selfdrive.car.honda.interface import CarInterface
-from selfdrive.controls.lib.events import ET, EVENTS, Alert, Events
+from selfdrive.controls.lib.events import ET, EVENTS, Events
 from selfdrive.controls.lib.alertmanager import AlertManager
 
 
