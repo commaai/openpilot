@@ -796,10 +796,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   LOGD("start sensor: %d", ret);
   ret = device_control(s->sensor_fd, CAM_START_DEV, s->session_handle, s->sensor_dev_handle);
 
-  for (int i=0;i<FRAME_BUF_COUNT;++i) {
-    s->request_ids[i] = i+1; // valid req_ids start from 1
-    enqueue_buffer(s, i);
-  }
+  enqueue_req_multi(s, 1, FRAME_BUF_COUNT);
 }
 
 void cameras_init(MultiCameraState *s) {
@@ -960,9 +957,10 @@ void handle_camera_event(CameraState *s, void *evdat) {
     tbuffer_dispatch(&s->camera_tb, buf_idx);
   } else { // not ready
     // reset after half second of no response
-    if (main_id > s->frame_id_last + 10  && !s->skipped) {
+    if (main_id > s->frame_id_last + 10) {
       clear_req_queue(s->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
       enqueue_req_multi(s, s->request_id_last + 1, FRAME_BUF_COUNT);
+      s->frame_id_last = main_id;
       s->skipped = true;
     }
   }
