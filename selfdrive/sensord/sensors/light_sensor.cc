@@ -14,7 +14,7 @@ void LightSensor::get_event(cereal::SensorEventData::Builder &event){
   int value;
   file >> value;
 
-  event.setSource(cereal::SensorEventData::SensorSource::ANDROID);
+  event.setSource(cereal::SensorEventData::SensorSource::RPR0521);
   event.setVersion(1);
   event.setSensor(SENSOR_LIGHT);
   event.setType(SENSOR_TYPE_LIGHT);
