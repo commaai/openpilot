@@ -3,7 +3,7 @@ from functools import total_ordering
 from cereal import log, car
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
-from selfdrive.locationd.calibration_helpers import Filter
+from selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
 
 AlertSize = log.ControlsState.AlertSize
 AlertStatus = log.ControlsState.AlertStatus
@@ -184,7 +184,7 @@ def below_steer_speed_alert(CP, sm, metric):
     Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3)
 
 def calibration_incomplete_alert(CP, sm, metric):
-  speed = int(Filter.MIN_SPEED * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
+  speed = int(MIN_SPEED_FILTER * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
   unit = "km/h" if metric else "mph"
   return Alert(
     "Calibration in Progress: %d%%" % sm['liveCalibration'].calPerc,

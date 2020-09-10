@@ -2,7 +2,7 @@
 '''
 This process finds calibration values. More info on what these calibration values
 are can be found here https://github.com/commaai/openpilot/tree/master/common/transformations
-While the roll calibration is a real value that can be estimated, here we assume it zero,
+While the roll calibration is a real value that can be estimated, here we assume it's zero,
 and the image input into the neural network is not corrected for roll.
 '''
 
@@ -12,7 +12,6 @@ import json
 import numpy as np
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
-from selfdrive.locationd.calibration_helpers import Calibration
 from selfdrive.swaglog import cloudlog
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
@@ -34,6 +33,10 @@ PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
 
+class Calibration:
+  UNCALIBRATED = 0
+  CALIBRATED = 1
+  INVALID = 2
 
 def is_calibration_valid(rpy):
   return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
@@ -45,7 +48,6 @@ def sanity_clip(rpy):
   return np.array([rpy[0],
                    np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
                    np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
-
 
 
 class Calibrator():
@@ -60,12 +62,9 @@ class Calibrator():
     self.just_calibrated = False
     self.v_ego = 0
 
-    # Read calibration
-    if param_put:
-      calibration_params = Params().get("CalibrationParams")
-    else:
-      calibration_params = None
-    if calibration_params:
+    # Read saved calibration
+    calibration_params = Params().get("CalibrationParams")
+    if param_put and calibration_params:
       try:
         calibration_params = json.loads(calibration_params)
         self.rpy = calibration_params["calib_radians"]
@@ -85,11 +84,7 @@ class Calibrator():
       self.cal_status = Calibration.UNCALIBRATED
     else:
       self.cal_status = Calibration.CALIBRATED if is_calibration_valid(self.rpy) else Calibration.INVALID
-    end_status = self.cal_status
-
-    self.just_calibrated = False
-    if start_status == Calibration.UNCALIBRATED and end_status != Calibration.UNCALIBRATED:
-      self.just_calibrated = True
+    self.just_calibrated = start_status == Calibration.UNCALIBRATED and self.cal_status != Calibration.UNCALIBRATED
 
   def handle_v_ego(self, v_ego):
     self.v_ego = v_ego
@@ -115,6 +110,7 @@ class Calibrator():
         self.rpy = np.mean(self.rpys[:self.valid_blocks], axis=0)
       self.update_status()
 
+      # TODO: this should use the liveCalibration struct from cereal
       if self.param_put and ((self.idx == 0 and self.block_idx == 0) or self.just_calibrated):
         cal_params = {"calib_radians": list(self.rpy),
                       "valid_blocks": self.valid_blocks}
@@ -145,37 +141,29 @@ class Calibrator():
 
 def calibrationd_thread(sm=None, pm=None):
   if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry', 'carState'])
+    sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll=['cameraOdometry'])
 
   if pm is None:
     pm = messaging.PubMaster(['liveCalibration'])
 
   calibrator = Calibrator(param_put=True)
 
-  send_counter = 0
   while 1:
-    sm.update()
-
-    # if no inputs still publish calibration
-    if not sm.updated['carState'] and not sm.updated['cameraOdometry']:
-      calibrator.send_data(pm)
-      continue
-
-    if sm.updated['carState']:
-      calibrator.handle_v_ego(sm['carState'].vEgo)
-      if send_counter % 25 == 0:
-        calibrator.send_data(pm)
-      send_counter += 1
+    sm.update(100)
 
     if sm.updated['cameraOdometry']:
+      calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
-                                          sm['cameraOdometry'].rot,
-                                          sm['cameraOdometry'].transStd,
-                                          sm['cameraOdometry'].rotStd)
+                                           sm['cameraOdometry'].rot,
+                                           sm['cameraOdometry'].transStd,
+                                           sm['cameraOdometry'].rotStd)
 
       if DEBUG and new_rpy is not None:
         print('got new rpy', new_rpy)
 
+    # 4Hz driven by cameraOdometry
+    if sm.frame % 5 == 0:
+      calibrator.send_data(pm)
 
 def main(sm=None, pm=None):
   calibrationd_thread(sm, pm)
