@@ -81,7 +81,7 @@ class Calibrator():
     if not np.isfinite(valid_blocks) or valid_blocks < 0:
         self.valid_blocks = 0
     else:
-      self.valid_blocks
+      self.valid_blocks = valid_blocks
     self.rpys = np.tile(self.rpy, (INPUTS_WANTED, 1))
 
     self.idx = 0
