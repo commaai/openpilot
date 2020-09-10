@@ -9,10 +9,12 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
+#include "sensors/sensor.hpp"
 #include "sensors/constants.hpp"
 #include "sensors/bmx055_accel.hpp"
 #include "sensors/bmx055_gyro.hpp"
 #include "sensors/bmx055_magn.hpp"
+#include "sensors/light_sensor.hpp"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -36,15 +38,17 @@ int sensor_loop() {
   BMX055_Accel accel(i2c_bus_imu);
   BMX055_Gyro gyro(i2c_bus_imu);
   BMX055_Magn magn(i2c_bus_imu);
+  LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
   // Sensor init
-  std::vector<I2CSensor *> sensors;
+  std::vector<Sensor *> sensors;
   sensors.push_back(&accel);
   sensors.push_back(&gyro);
+  sensors.push_back(&light);
   // sensors.push_back(&magn);
 
 
-  for (I2CSensor * sensor : sensors){
+  for (Sensor * sensor : sensors){
     int err = sensor->init();
     if (err < 0){
       LOGE("Error initializing sensors");
