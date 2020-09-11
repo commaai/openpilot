@@ -213,7 +213,7 @@ class DriverStatus():
     self._set_timers(self.face_detected and not is_model_uncertain)
     if self.face_detected and not self.pose.low_std:
       if not is_model_uncertain:
-        self.step_change *= max(0, (model_std_max-0.5)*(model_std_max-2))
+        self.step_change *= min(1.0, max(0.6, 1.6*(model_std_max-0.5)*(model_std_max-2)))
       self.hi_stds += 1
     elif self.face_detected and self.pose.low_std:
       self.hi_stds = 0
