@@ -22,13 +22,13 @@ MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
-# This is all 20Hz, blocks needed for efficiency
-SMOOTH_CYCLES = 400  # 20 seconds
-BLOCK_SIZE = 100  # 5 seconds
+# This is at model frequency, blocks needed for efficiency
+SMOOTH_CYCLES = 400
+BLOCK_SIZE = 100
 INPUTS_NEEDED = 5   # Minimum blocks needed for valid calibration
 INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 MAX_ALLOWED_SPREAD = np.radians(2)
-RPY_INIT = np.array([0,0,0])
+RPY_INIT = np.array([0.0,0.0,0.0])
 
 # These values are needed to accomodate biggest modelframe
 PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
@@ -121,7 +121,7 @@ class Calibrator():
     if self.param_put and write_this_cycle:
       # TODO: this should use the liveCalibration struct from cereal
       cal_params = {"calib_radians": list(self.rpy),
-                    "valid_blocks": self.valid_blocks}
+                    "valid_blocks": int(self.valid_blocks)}
       put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
 
   def handle_v_ego(self, v_ego):
