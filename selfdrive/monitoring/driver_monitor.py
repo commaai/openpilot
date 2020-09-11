@@ -116,6 +116,7 @@ class DriverStatus():
     self.step_change = 0.
     self.active_monitoring_mode = True
     self.hi_stds = 0
+    self.hi_std_alert_enabled = True
     self.threshold_prompt = _DISTRACTED_PROMPT_TIME_TILL_TERMINAL / _DISTRACTED_TIME
 
     self.is_rhd_region = False
@@ -228,8 +229,9 @@ class DriverStatus():
     driver_attentive = self.driver_distraction_filter.x < 0.37
     awareness_prev = self.awareness
 
-    if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT:
+    if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT and self.hi_std_alert_enabled:
       events.add(EventName.driverMonitorLowAcc)
+      self.hi_std_alert_enabled = False # only showed once until orange prompt resets it
 
     if (driver_attentive and self.face_detected and self.pose.low_std and self.awareness > 0):
       # only restore awareness when paying attention and alert is not red
@@ -255,6 +257,7 @@ class DriverStatus():
     elif self.awareness <= self.threshold_prompt:
       # prompt orange alert
       alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
+      self.hi_std_alert_enabled = True
     elif self.awareness <= self.threshold_pre:
       # pre green alert
       alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive
