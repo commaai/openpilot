@@ -26,7 +26,6 @@ int main(int argc, char **argv) {
   set_realtime_priority(51);
 
 #ifdef QCOM2
-  // TODO: remove this once the models runs on the DSP
   set_core_affinity(5);
 #endif
 
