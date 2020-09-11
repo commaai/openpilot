@@ -10,7 +10,7 @@ First, start the CARLA server.
 
 Then start bridge and openpilot.
 ```
-start_openpilot_docker.sh
+./start_openpilot_docker.sh
 ``` 
 
 To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed. 
