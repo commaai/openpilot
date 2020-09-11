@@ -215,6 +215,7 @@ persistent_processes = [
   'logmessaged',
   'ui',
   'uploader',
+  'deleter',
 ]
 
 if not PC:
@@ -226,7 +227,6 @@ if not PC:
 if ANDROID:
   persistent_processes += [
     'updated',
-    'deleter',
   ]
 
 car_started_processes = [
