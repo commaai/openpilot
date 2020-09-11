@@ -22,7 +22,12 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #else
   const char* model_path = "../../models/dmonitoring_model.dlc";
 #endif
-  s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
+#ifdef QCOM2
+  int runtime = USE_CPU_RUNTIME;
+#else
+  int runtime = USE_DSP_RUNTIME;
+#endif
+  s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, runtime);
   s->is_rhd = read_db_bool("IsRHD");
 }
 
