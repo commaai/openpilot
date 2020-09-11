@@ -68,6 +68,7 @@ class PIController():
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
     d = self.k_d * (error - self.last_error)
+    self.last_error = float(error)
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
@@ -90,7 +91,6 @@ class PIController():
       control = self.convert(control, speed=self.speed)
 
     self.saturated = self._check_saturation(control, check_saturation, error)
-    self.last_error = float(error)
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
