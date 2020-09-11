@@ -1,27 +1,22 @@
 openpilot in simulator
 =====================
 
-## Setup
-
-Checkout openpilot
-```
-cd ~/ && git clone https://github.com/commaai/openpilot.git
-```
 
 ## Running the simulator
-
 First, start the CARLA server.
 ```
-cd ~/openpilot/tools/sim
 ./start_carla.sh
 ```
 
-Then use `start_openpilot_docker.sh` to start the docker container. 
+Then start bridge and openpilot.
+```
+start_openpilot_docker.sh
+``` 
 
+To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed. 
 ## Controls
 
-Now put the focus on the terminal running bridge.py and you can control
-openpilot driving in the simulation with the following keys
+You can control openpilot driving in the simulation with the following keys
 
 |  key  |   functionality   |
 | :---: | :---------------: |
