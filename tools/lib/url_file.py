@@ -10,6 +10,9 @@ from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 
+#Cache chunk size
+CACHE_SIZE=1000000
+
 class URLFile(object):
   _tlocal = threading.local()
 
@@ -33,13 +36,27 @@ class URLFile(object):
       self._local_file.close()
       self._local_file = None
 
-  @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
+
   def read(self, ll=None):
+    #Check in cache
+    file = self._url
+    pl = self._pos
+    pr = self._pos=ll-1 if ll is not None else None
+    #Largest multiple of cache size lower than pl
+    left_mult=(pl/CACHE_SIZE)*CACHE_SIZE
+    while True:
+      right=min(pr,left_mult+CACHE_SIZE)
+      if right == pr:
+        break
+    return read_aux(self, ll)
+
+  @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
+  def read_aux(self, ll=None):
     if ll is None:
       trange = 'bytes=%d-' % self._pos
     else:
       trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
-
+    print("Loading from "+str(self._pos)+" with length "+str(ll)+" until "+str(trange))
     dats = BytesIO()
     c = self._curl
     c.setopt(pycurl.URL, self._url)
