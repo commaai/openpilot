@@ -107,9 +107,9 @@ class Calibrator():
     if self.valid_blocks < INPUTS_NEEDED:
       self.cal_status = Calibration.UNCALIBRATED
     elif is_calibration_valid(self.rpy):
-      self.cal_status = Calibration.INVALID
-    else:
       self.cal_status = Calibration.CALIBRATED
+    else:
+      self.cal_status = Calibration.INVALID
 
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transistion are not good foor feedback loop through supercombo model.
