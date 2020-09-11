@@ -97,8 +97,6 @@ class Calibrator():
       self.old_rpy_weight = 1.0
 
   def update_status(self):
-    write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 0)
-
     if self.valid_blocks > 0:
       max_rpy_calib = np.array(np.max(self.rpys[:self.valid_blocks], axis=0))
       min_rpy_calib = np.array(np.min(self.rpys[:self.valid_blocks], axis=0))
@@ -108,16 +106,17 @@ class Calibrator():
 
     if self.valid_blocks < INPUTS_NEEDED:
       self.cal_status = Calibration.UNCALIBRATED
+    elif is_calibration_valid(self.rpy):
+      self.cal_status = Calibration.INVALID
     else:
-      if self.cal_status == Calibration.UNCALIBRATED:
-        write_this_cycle = False
-      self.cal_status = Calibration.CALIBRATED if is_calibration_valid(self.rpy) else Calibration.INVALID
+      self.cal_status = Calibration.CALIBRATED
 
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transistion are not good foor feedback loop through supercombo model.
     if max(self.calib_spread) > MAX_ALLOWED_SPREAD:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=INPUTS_NEEDED, smooth_from=self.rpy)
 
+    write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
       # TODO: this should use the liveCalibration struct from cereal
       cal_params = {"calib_radians": list(self.rpy),
