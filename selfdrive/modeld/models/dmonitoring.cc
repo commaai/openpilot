@@ -8,7 +8,7 @@
 
 #define MODEL_WIDTH 320
 #define MODEL_HEIGHT 640
-#define FULL_W 852
+#define FULL_W 852 // should get these numbers from camerad
 
 #if defined(QCOM) || defined(QCOM2)
 #define input_lambda(x) (x - 128.f) * 0.0078125f
@@ -46,8 +46,22 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   uint8_t *raw_u_buf = raw_y_buf + (width * height);
   uint8_t *raw_v_buf = raw_u_buf + ((width/2) * (height/2));
 
+#ifndef QCOM2
   int cropped_width = height/2;
   int cropped_height = height;
+  int crop_x_offset = 0;
+  int crop_y_offset = 0;
+#else
+
+  const int full_width_tici = 1928;
+  const int full_height_tici = 1208;
+  const int adapt_width_tici = 808;
+
+  int cropped_width = adapt_width_tici;
+  int cropped_height = adapt_width_tici / 1.33;
+  int crop_x_offset = full_width_tici / 2 - cropped_width / 2;
+  int crop_y_offset = full_height_tici / 2 - cropped_height / 2;
+#endif
 
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
@@ -57,11 +71,11 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   uint8_t *cropped_v_buf = cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
 
   if (!s->is_rhd) {
-    for (int r = 0; r < height/2; r++) {
-      memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + 2*r*width + (width - cropped_width), cropped_width);
-      memcpy(cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r+1)*width + (width - cropped_width), cropped_width);
-      memcpy(cropped_u_buf + r*cropped_width/2, raw_u_buf + r*width/2 + ((width/2) - (cropped_width/2)), cropped_width/2);
-      memcpy(cropped_v_buf + r*cropped_width/2, raw_v_buf + r*width/2 + ((width/2) - (cropped_width/2)), cropped_width/2);
+    for (int r = 0; r < cropped_height/2; r++) {
+      memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + (2*r + crop_y_offset)*width + (width - cropped_width) + crop_x_offset, cropped_width);
+      memcpy(cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + ((2*r + crop_y_offset)+1)*width + (width - cropped_width) + crop_x_offset, cropped_width);
+      memcpy(cropped_u_buf + r*cropped_width/2, raw_u_buf + (r + (crop_y_offset/2))*width/2 + ((width/2) - (cropped_width/2)) + (crop_x_offset/2), cropped_width/2);
+      memcpy(cropped_v_buf + r*cropped_width/2, raw_v_buf + (r + (crop_y_offset/2))*width/2 + ((width/2) - (cropped_width/2)) + (crop_x_offset/2), cropped_width/2);
     }
   } else {
     // not tested
