@@ -42,9 +42,9 @@ RUN echo INTEL_DRIVER is $INTEL_DRIVER; \
 # Open[GL,CL] for gpu
 ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES},display
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        mesa-utils \
-        ocl-icd-libopencl1 \
-    rm -rf /var/lib/apt/lists/*
+      mesa-utils \
+      ocl-icd-libopencl1 \
+    && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /etc/OpenCL/vendors && \
     echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 ENV NVIDIA_VISIBLE_DEVICES all
