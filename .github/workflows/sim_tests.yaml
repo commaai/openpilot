@@ -1,8 +1,7 @@
 name: simulator
 on:
   push
-  #schedule:
-  #- cron: '0 * * * *'
+  pull_request
 
 jobs:
   docker_build:
@@ -20,7 +19,7 @@ jobs:
         docker pull commaai/openpilot-sim:latest || true
         tools/sim/build_container.sh
     - name: Push to dockerhub
-      #if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       run: |
         docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN }}
         docker tag commaai/openpilot-sim docker.io/commaai/openpilot-sim:latest
