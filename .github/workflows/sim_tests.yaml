@@ -1,14 +1,14 @@
 name: simulator
 on:
-  schedule:
-  - cron: '0 * * * *'
+  push:
+  pull_request:
 
 jobs:
   docker_build:
     name: build container
     runs-on: ubuntu-16.04
     timeout-minutes: 50
-    if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -16,8 +16,10 @@ jobs:
         lfs: true
     - name: Docker build
       run: |
+        docker pull commaai/openpilot-sim:latest || true
         tools/sim/build_container.sh
     - name: Push to dockerhub
+      if: github.ref == 'refs/heads/master'
       run: |
         docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN }}
         docker tag commaai/openpilot-sim docker.io/commaai/openpilot-sim:latest
