@@ -17,7 +17,7 @@ jobs:
         lfs: true
     - name: Docker build
       run: |
-        docker pull commai/openpilot-sim:latest
+        docker pull commaai/openpilot-sim:latest || true
         tools/sim/build_container.sh
     - name: Push to dockerhub
       #if: github.ref == 'refs/heads/master'
