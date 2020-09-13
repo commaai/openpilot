@@ -149,7 +149,8 @@ def calibrationd_thread(sm=None, pm=None):
   calibrator = Calibrator(param_put=True)
 
   while 1:
-    sm.update(100)
+    timeout = 0 if sm.frame == -1 else 100
+    sm.update(timeout)
 
     if sm.updated['cameraOdometry']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
