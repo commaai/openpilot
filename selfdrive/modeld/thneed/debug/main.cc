@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include "include/msm_kgsl.h"
+#include "common/clutil.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
@@ -601,18 +602,8 @@ void *dlsym(void *handle, const char *symbol) {
 
 int main(int argc, char* argv[]) {
   int err;
-  cl_platform_id platform_id = NULL;
-  cl_device_id device_id = NULL;
-  cl_uint num_devices;
-  cl_uint num_platforms;
-
   start_time = nanos_since_boot();
-
-  err = clGetPlatformIDs(1, &platform_id, &num_platforms);
-  assert(err == 0);
-  err = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
-  assert(err == 0);
-
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_uint tmp;
 
   // sweet this is 64!

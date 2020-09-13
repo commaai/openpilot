@@ -9,9 +9,6 @@
 #include "common/params.h"
 #include "driving.h"
 
-
-
-
 #define PATH_IDX 0
 #define LL_IDX PATH_IDX + MODEL_PATH_DISTANCE*2 + 1
 #define RL_IDX LL_IDX + MODEL_PATH_DISTANCE*2 + 2
@@ -48,26 +45,20 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 #endif
 
 #ifdef DESIRE
-  s->prev_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
-  for (int i = 0; i < DESIRE_LEN; i++) s->prev_desire[i] = 0.0;
-  s->pulse_desire = (float*)malloc(DESIRE_LEN * sizeof(float));
-  for (int i = 0; i < DESIRE_LEN; i++) s->pulse_desire[i] = 0.0;
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
+  s->prev_desire = std::make_unique<float[]>(DESIRE_LEN);
+  s->pulse_desire = std::make_unique<float[]>(DESIRE_LEN);
+  s->m->addDesire(s->pulse_desire.get(), DESIRE_LEN);
 #endif
 
 #ifdef TRAFFIC_CONVENTION
-  s->traffic_convention = (float*)malloc(TRAFFIC_CONVENTION_LEN * sizeof(float));
-  for (int i = 0; i < TRAFFIC_CONVENTION_LEN; i++) s->traffic_convention[i] = 0.0;
-  s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
+  s->traffic_convention = std::make_unique<float[]>(TRAFFIC_CONVENTION_LEN);
+  s->m->addTrafficConvention(s->traffic_convention.get(), TRAFFIC_CONVENTION_LEN);
 
-  std::vector<char> result = read_db_bytes("IsRHD");
-  if (result.size() > 0) {
-    bool is_rhd = result[0] == '1';
-    if (is_rhd) {
-      s->traffic_convention[1] = 1.0;
-    } else {
-      s->traffic_convention[0] = 1.0;
-    }
+  bool is_rhd = read_db_bool("IsRHD");
+  if (is_rhd) {
+    s->traffic_convention[1] = 1.0;
+  } else {
+    s->traffic_convention[0] = 1.0;
   }
 #endif
 
@@ -78,8 +69,6 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
     }
   }
 }
-
-
 
 ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
@@ -99,7 +88,6 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
     }
   }
 #endif
-
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
@@ -163,7 +151,6 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   out[3] = y0;
 }
 
-
 void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bool has_prob, const float offset) {
   float points_arr[MODEL_PATH_DISTANCE];
   float stds_arr[MODEL_PATH_DISTANCE];
@@ -172,8 +159,8 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, bo
   float prob;
   float valid_len;
 
-  // clamp to 5 and 192
-  valid_len = fmin(192, fmax(5, data[MODEL_PATH_DISTANCE*2]));
+  // clamp to 5 and MODEL_PATH_DISTANCE
+  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, data[MODEL_PATH_DISTANCE*2]));
   for (int i=0; i<MODEL_PATH_DISTANCE; i++) {
     points_arr[i] = data[i] + offset;
     stds_arr[i] = softplus(data[MODEL_PATH_DISTANCE + i]) + 1e-6;

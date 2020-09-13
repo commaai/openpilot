@@ -110,6 +110,7 @@ void visionbuf_free(const VisionBuf* buf) {
 #if __OPENCL_VERSION__ >= 200
     clSVMFree(buf->ctx, buf->addr);
 #else
+    clReleaseCommandQueue(buf->copy_q);
     munmap(buf->addr, buf->len);
     close(buf->fd);
 #endif

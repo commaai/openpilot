@@ -1,4 +1,9 @@
+#include <vector>
+#include <tuple>
+#include <string>
 #include "messaging.hpp"
+#include "cereal/gen/cpp/log.capnp.h"
+#include "cereal/gen/cpp/car.capnp.h"
 
 typedef struct {
 	long address;
@@ -11,7 +16,8 @@ extern "C" {
 
 void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendCan, bool valid) {
   MessageBuilder msg;
-  cereal::Event::Builder event = msg.initEvent(valid);
+  auto event = msg.initEvent();
+  event.setValid(valid);
 
   auto canData = sendCan ? event.initSendcan(can_list.size()) : event.initCan(can_list.size());
   int j = 0;

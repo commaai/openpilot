@@ -18,7 +18,7 @@ AddOption('--asan',
 cython_dependencies = [Value(v) for v in (sys.version, distutils.__version__, Cython.__version__)]
 Export('cython_dependencies')
 
-arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
+real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
 if arch == "aarch64" and not os.path.isdir("/system"):
@@ -143,7 +143,6 @@ env = Environment(
     "#phonelibs/openmax/include",
     "#phonelibs/json11",
     "#phonelibs/curl/include",
-    #"#phonelibs/opencv/include", # use opencv4 instead
     "#phonelibs/libgralloc/include",
     "#phonelibs/android_frameworks_native/include",
     "#phonelibs/android_hardware_libhardware/include",
@@ -156,6 +155,8 @@ env = Environment(
     "#selfdrive/camerad/include",
     "#selfdrive/loggerd/include",
     "#selfdrive/modeld",
+    "#selfdrive/sensord",
+    "#selfdrive/ui",
     "#cereal/messaging",
     "#cereal",
     "#opendbc/can",
@@ -175,6 +176,43 @@ env = Environment(
     "#phonelibs",
   ]
 )
+
+qt_env = None
+if arch in ["x86_64", "Darwin", "larch64"]:
+  qt_env = env.Clone()
+
+  if arch == "Darwin":
+    qt_env['QTDIR'] = "/usr/local/opt/qt"
+    QT_BASE = "/usr/local/opt/qt/"
+    qt_dirs = [
+      QT_BASE + "include/",
+      QT_BASE + "include/QtWidgets",
+      QT_BASE + "include/QtGui",
+      QT_BASE + "include/QtCore",
+      QT_BASE + "include/QtDBus",
+      QT_BASE + "include/QtMultimedia",
+    ]
+    qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
+  else:
+    qt_dirs = [
+      f"/usr/include/{real_arch}-linux-gnu/qt5",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtWidgets",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
+    ]
+
+  qt_env.Tool('qt')
+  qt_env['CPPPATH'] += qt_dirs
+  qt_flags = [
+    "-D_REENTRANT",
+    "-DQT_NO_DEBUG",
+    "-DQT_WIDGETS_LIB",
+    "-DQT_GUI_LIB",
+    "-DQT_CORE_LIB"
+  ]
+  qt_env['CXXFLAGS'] += qt_flags
 
 if os.environ.get('SCONS_CACHE'):
   cache_dir = '/tmp/scons_cache'
@@ -214,7 +252,7 @@ def abspath(x):
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -255,16 +293,18 @@ SConscript(['selfdrive/controls/lib/longitudinal_mpc_model/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
+SConscript(['selfdrive/clocksd/SConscript'])
 
-SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/locationd/models/SConscript'])
+SConscript(['selfdrive/sensord/SConscript'])
+SConscript(['selfdrive/ui/SConscript'])
 
-if arch == "aarch64":
+if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
-  SConscript(['selfdrive/sensord/SConscript'])
-  SConscript(['selfdrive/clocksd/SConscript'])
-else:
+
+
+if arch == "x86_64":
   SConscript(['tools/lib/index_log/SConscript'])
