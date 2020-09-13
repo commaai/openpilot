@@ -42,6 +42,9 @@ def dmonitoringd_thread(sm=None, pm=None):
   while True:
     sm.update()
 
+    if not sm.updated['driverState']:
+      continue
+
     # Get interaction
     if sm.updated['carState']:
       v_cruise = sm['carState'].cruiseState.speed
