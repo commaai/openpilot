@@ -300,10 +300,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
         }
 
         // publish encode index
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-        auto eidx = event.initEncodeIdx();
+        MessageBuilder msg;
+        auto eidx = msg.initEvent().initEncodeIdx();
         eidx.setFrameId(extra.frame_id);
 #ifdef QCOM2
         eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
@@ -337,10 +335,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           }
 
           // publish encode index
-          capnp::MallocMessageBuilder msg;
-          cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-          event.setLogMonoTime(nanos_since_boot());
-          auto eidx = event.initEncodeIdx();
+          MessageBuilder msg;
+          auto eidx = msg.initEvent().initEncodeIdx();
           eidx.setFrameId(extra.frame_id);
           eidx.setType(cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP);
           eidx.setEncodeId(cnt);

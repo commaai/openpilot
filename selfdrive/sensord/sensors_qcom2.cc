@@ -62,8 +62,8 @@ int sensor_loop() {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     uint64_t log_time = nanos_since_boot();
 
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+    MessageBuilder msg;
+    auto event = msg.initEvent();
     event.setLogMonoTime(log_time);
 
     int num_events = sensors.size();

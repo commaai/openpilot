@@ -190,8 +190,8 @@ void can_recv(PubMaster &pm) {
   uint64_t start_time = nanos_since_boot();
 
   // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  MessageBuilder msg;
+  auto event = msg.initEvent();
   event.setLogMonoTime(start_time);
 
   int recv = panda->can_receive(event);
@@ -275,10 +275,8 @@ void can_health_thread() {
 
   // Broadcast empty health message when panda is not yet connected
   while (!panda){
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto healthData = event.initHealth();
+    MessageBuilder msg;
+    auto healthData  = msg.initEvent().initHealth();
 
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
     pm.send("health", msg);
@@ -287,10 +285,8 @@ void can_health_thread() {
 
   // run at 2hz
   while (!do_exit && panda->connected) {
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto healthData = event.initHealth();
+    MessageBuilder msg;
+    auto healthData = msg.initEvent().initHealth();
 
     health_t health = panda->get_health();
 
@@ -460,10 +456,8 @@ void hardware_control_thread() {
 
 static void pigeon_publish_raw(PubMaster &pm, std::string dat) {
   // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto ublox_raw = event.initUbloxRaw(dat.length());
+  MessageBuilder msg;
+  auto ublox_raw = msg.initEvent().initUbloxRaw(dat.length());
   memcpy(ublox_raw.begin(), dat.data(), dat.length());
 
   pm.send("ubloxRaw", msg);
