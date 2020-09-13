@@ -60,16 +60,12 @@ int sensor_loop() {
 
   while (!do_exit){
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    uint64_t log_time = nanos_since_boot();
 
+    const int num_events = sensors.size();
     MessageBuilder msg;
-    auto event = msg.initEvent();
-    event.setLogMonoTime(log_time);
+    auto sensor_events = msg.initEvent().initSensorEvents(num_events);
 
-    int num_events = sensors.size();
-    auto sensor_events = event.initSensorEvents(num_events);
-
-    for (size_t i = 0; i < num_events; i++){
+    for (int i = 0; i < num_events; i++){
       auto event = sensor_events[i];
       sensors[i]->get_event(event);
     }
