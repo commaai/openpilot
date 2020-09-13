@@ -2267,7 +2267,7 @@ void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* p
   int roi_y_offset = roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
 
   uint8_t *rgb_roi_buf = s->rgb_roi_buf.get();
-  uint8_t *rgb_bufs =  (uint8_t *)b->cur_rgb_buf->addr +
+  uint8_t *rgb_bufs =  (uint8_t *)b->rgb_bufs[b-cur_rgb_idx]->addr +
                (ROI_Y_MIN + roi_y_offset) * b->rgb_height / NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 +
                (ROI_X_MIN + roi_x_offset) * b->rgb_width / NUM_SEGMENTS_X * 3;
 
@@ -2326,7 +2326,7 @@ void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* p
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
     event.setLogMonoTime(nanos_since_boot());
     auto framed = event.initFrame();
-    fill_frame_data(framed, b->frameMetaData(), cnt);
+    fill_frame_data(framed, b->yuv_metas[b->cur_yuv_idx], cnt);
 #ifndef QCOM_REPLAY
     framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));
     framed.setFocusConf(kj::ArrayPtr<const uint8_t>(&s->rear.confidence[0], NUM_FOCUS));

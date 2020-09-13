@@ -1115,7 +1115,7 @@ void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* p
 }
 
 void camera_wide_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
-  const FrameMetadata &frame_data = b->frameMetaData();
+  const FrameMetadata &frame_data = b->yuv_metas[b->cur_yuv_idx];
   if (pm != nullptr) {
     capnp::MallocMessageBuilder msg;
     cereal::Event::Builder event = msg.initRoot<cereal::Event>();
@@ -1127,8 +1127,7 @@ void camera_wide_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMast
 
 #ifdef NOSCREEN
   if (frame_data.frame_id % 4 == 0) {
-    sendrgb(s, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, 1);
+    sendrgb(s, (uint8_t *)b->rgb_bufs[b-cur_rgb_idx]->addr, b->rgb_bufs[b-cur_rgb_idx]->len, 1);
   }
 #endif
 }
-

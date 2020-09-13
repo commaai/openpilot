@@ -5,7 +5,10 @@
 
 #include "common/buffering.h"
 #include "common/mat.h"
+#include "common/swaglog.h"
 #include "common/visionbuf.h"
+#include "common/visionimg.h"
+#include "imgproc/utils.h"
 #include "messaging.hpp"
 #include "transforms/rgb_to_yuv.h"
 
@@ -72,9 +75,7 @@ typedef struct {
   uint8_t *y, *u, *v;
 } YUVBuf;
 
-struct CameraState;
-class CameraBuf {
-  public:
+typedef struct CameraBuf {
   cl_kernel krnl_debayer;
   cl_command_queue q;
 
@@ -94,22 +95,10 @@ class CameraBuf {
 
   VisionBuf *camera_bufs;
 
-  VisionBuf *cur_rgb_buf;
-  YUVBuf *cur_yuv_buf;
-  VisionBuf *cur_yuv_ion_buf;
-
   mat3 yuv_transform;
 
-  void init(cl_device_id device_id, cl_context context, CameraState *s, const char *name);
-  void free();
-  bool acquire(CameraState *s);
-  void release();
-  void stop();
-  const FrameMetadata &frameMetaData() const { return yuv_metas[cur_yuv_idx]; }
-
-  private:
   int cur_yuv_idx, cur_rgb_idx;
-};
+} CameraBuf;
 
 struct MultiCameraState;
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
