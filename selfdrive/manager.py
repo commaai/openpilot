@@ -245,6 +245,7 @@ car_started_processes = [
 
 driver_view_processes = [
   'camerad',
+  'dmonitoringd',
   'dmonitoringmodeld'
 ]
 

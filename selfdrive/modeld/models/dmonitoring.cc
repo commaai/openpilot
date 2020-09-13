@@ -8,7 +8,7 @@
 
 #define MODEL_WIDTH 320
 #define MODEL_HEIGHT 640
-#define FULL_W 852
+#define FULL_W 852 // should get these numbers from camerad
 
 #if defined(QCOM) || defined(QCOM2)
 #define input_lambda(x) (x - 128.f) * 0.0078125f
@@ -22,7 +22,12 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #else
   const char* model_path = "../../models/dmonitoring_model.dlc";
 #endif
-  s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, USE_DSP_RUNTIME);
+#ifdef QCOM2
+  int runtime = USE_CPU_RUNTIME;
+#else
+  int runtime = USE_DSP_RUNTIME;
+#endif
+  s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, runtime);
   s->is_rhd = read_db_bool("IsRHD");
 }
 
@@ -35,14 +40,31 @@ static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
-
   uint8_t *raw_buf = (uint8_t*) stream_buf;
   uint8_t *raw_y_buf = raw_buf;
   uint8_t *raw_u_buf = raw_y_buf + (width * height);
   uint8_t *raw_v_buf = raw_u_buf + ((width/2) * (height/2));
 
-  int cropped_width = height/2;
-  int cropped_height = height;
+#ifndef QCOM2
+  const int cropped_width = height/2;
+  const int cropped_height = height;
+  const int global_x_offset = 0;
+  const int global_y_offset = 0;
+  const int crop_x_offset = width - cropped_width;
+  const int crop_y_offset = 0;
+#else
+
+  const int full_width_tici = 1928;
+  const int full_height_tici = 1208;
+  const int adapt_width_tici = 808;
+
+  const int cropped_height = adapt_width_tici / 1.33;
+  const int cropped_width = cropped_height / 2;
+  const int global_x_offset = full_width_tici / 2 - adapt_width_tici / 2;
+  const int global_y_offset = full_height_tici / 2 - cropped_height / 2;
+  const int crop_x_offset = adapt_width_tici - cropped_width;
+  const int crop_y_offset = 0;
+#endif
 
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
@@ -52,22 +74,21 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   uint8_t *cropped_v_buf = cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
 
   if (!s->is_rhd) {
-    for (int r = 0; r < height/2; r++) {
-      memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + 2*r*width + (width - cropped_width), cropped_width);
-      memcpy(cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r+1)*width + (width - cropped_width), cropped_width);
-      memcpy(cropped_u_buf + r*cropped_width/2, raw_u_buf + r*width/2 + ((width/2) - (cropped_width/2)), cropped_width/2);
-      memcpy(cropped_v_buf + r*cropped_width/2, raw_v_buf + r*width/2 + ((width/2) - (cropped_width/2)), cropped_width/2);
+    for (int r = 0; r < cropped_height/2; r++) {
+      memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset)*width + global_x_offset + crop_x_offset, cropped_width);
+      memcpy(cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset + 1)*width + global_x_offset + crop_x_offset, cropped_width);
+      memcpy(cropped_u_buf + r*cropped_width/2, raw_u_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + (global_x_offset + crop_x_offset)/2, cropped_width/2);
+      memcpy(cropped_v_buf + r*cropped_width/2, raw_v_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + (global_x_offset + crop_x_offset)/2, cropped_width/2);
     }
   } else {
-    // not tested
     uint8_t *premirror_cropped_y_buf = get_buffer(s->premirror_cropped_buf, cropped_width*cropped_height*3/2);
     uint8_t *premirror_cropped_u_buf = premirror_cropped_y_buf + (cropped_width * cropped_height);
     uint8_t *premirror_cropped_v_buf = premirror_cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
     for (int r = 0; r < height/2; r++) {
-      memcpy(premirror_cropped_y_buf + 2*r*cropped_width, raw_y_buf + 2*r*width, cropped_width);
-      memcpy(premirror_cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r+1)*width, cropped_width);
-      memcpy(premirror_cropped_u_buf + r*cropped_width/2, raw_u_buf + r*width/2, cropped_width/2);
-      memcpy(premirror_cropped_v_buf + r*cropped_width/2, raw_v_buf + r*width/2, cropped_width/2);
+      memcpy(premirror_cropped_y_buf + (2*r)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset)*width + global_x_offset, cropped_width);
+      memcpy(premirror_cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset + 1)*width + global_x_offset, cropped_width);
+      memcpy(premirror_cropped_u_buf + r*cropped_width/2, raw_u_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + global_x_offset/2, cropped_width/2);
+      memcpy(premirror_cropped_v_buf + r*cropped_width/2, raw_v_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + global_x_offset/2, cropped_width/2);
     }
     libyuv::I420Mirror(premirror_cropped_y_buf, cropped_width,
                        premirror_cropped_u_buf, cropped_width/2,
