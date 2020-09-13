@@ -90,15 +90,12 @@ void GLWindow::paintGL() {
 
 void GLWindow::mousePressEvent(QMouseEvent *e) {
   // Settings button click
-  if (!ui_state->scene.uilayout_sidebarcollapsed && e->x() <= sbr_w) {
-    if (e->x() >= settings_btn_x && e->x() < (settings_btn_x + settings_btn_w)
-        && e->y() >= settings_btn_y && e->y() < (settings_btn_y + settings_btn_h)) {
-      emit openSettings();
-    }
+  if (!ui_state->scene.uilayout_sidebarcollapsed && settings_btn.ptInRect(e->x(), e->y())) {
+    emit openSettings();
   }
 
   // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.ui_viz_rx - bdr_s)){
+  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)){
     ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
   }
 }
