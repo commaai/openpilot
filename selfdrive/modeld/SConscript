@@ -1,7 +1,7 @@
 Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
 lenv = env.Clone()
 
-libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
+libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'symphony-cpu', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
 
 TEST_THNEED = False
 
