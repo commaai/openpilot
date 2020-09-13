@@ -116,7 +116,7 @@ static void set_awake(UIState *s, bool awake) {
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+  if (s->started && (touch_x >= s->scene.viz_rect.x - bdr_s)
       && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
@@ -128,11 +128,9 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
 
 static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   if (!s->scene.uilayout_sidebarcollapsed && touch_x <= sbr_w) {
-    if (touch_x >= settings_btn_x && touch_x < (settings_btn_x + settings_btn_w)
-        && touch_y >= settings_btn_y && touch_y < (settings_btn_y + settings_btn_h)) {
+    if (settings_btn.ptInRect(touch_x, touch_y)) {
       s->active_app = cereal::UiLayoutState::App::SETTINGS;
-    } else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
-               && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
+    } else if (home_btn.ptInRect(touch_x, touch_y)) {
       if (s->started) {
         s->active_app = cereal::UiLayoutState::App::NONE;
         s->scene.uilayout_sidebarcollapsed = true;
