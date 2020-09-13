@@ -254,7 +254,7 @@ void can_recv_thread() {
       useconds_t sleep = remaining / 1000;
       usleep(sleep);
     } else {
-      LOGW("missed cycle");
+      LOGW("missed cycle %lld (%lld)", remaining, -1*remaining/dt);
       next_frame_time = cur_time;
     }
 
