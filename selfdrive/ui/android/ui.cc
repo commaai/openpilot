@@ -149,7 +149,7 @@ static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
   }
   if (prev_collapsed != s->scene.uilayout_sidebarcollapsed || prev_app != s->active_app || timeout == 0) {
     MessageBuilder msg;
-    auto layout = event.initEvent().initUiLayoutState();
+    auto layout = msg.initEvent().initUiLayoutState();
     layout.setActiveApp(s->active_app);
     layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
     pm->send("offroadLayout", msg);
