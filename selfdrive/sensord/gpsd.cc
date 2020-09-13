@@ -35,7 +35,6 @@ void set_do_exit(int sig) {
 
 void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
 
-  uint64_t log_time = nanos_since_boot();
   uint64_t log_time_wall = nanos_since_epoch();
 
   MessageBuilder msg;
