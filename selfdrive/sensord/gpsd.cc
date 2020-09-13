@@ -48,7 +48,6 @@ void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
 
 void location_callback(GpsLocation* location) {
   //printf("got location callback\n");
-  uint64_t log_time = nanos_since_boot();
 
   MessageBuilder msg;
   auto locationData = msg.initEvent().initGpsLocation();
