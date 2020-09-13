@@ -189,9 +189,7 @@ void usb_retry_connect() {
 void can_recv(PubMaster &pm) {
   // create message
   MessageBuilder msg;
-  auto event = msg.initEvent();
-
-  int recv = panda->can_receive(event);
+  int recv = panda->can_receive(msg.initEvent());
   if (recv){
     pm.send("can", msg);
   }
