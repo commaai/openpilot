@@ -187,13 +187,9 @@ void usb_retry_connect() {
 }
 
 void can_recv(PubMaster &pm) {
-  uint64_t start_time = nanos_since_boot();
-
   // create message
   MessageBuilder msg;
   auto event = msg.initEvent();
-  event.setLogMonoTime(start_time);
-
   int recv = panda->can_receive(event);
   if (recv){
     pm.send("can", msg);

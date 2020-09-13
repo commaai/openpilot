@@ -404,10 +404,8 @@ void append_property(const char* key, const char* value, void *cookie) {
 }
 
 kj::Array<capnp::word> gen_init_data() {
-  capnp::MallocMessageBuilder msg;
-  auto event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto init = event.initInitData();
+  MessageBuilder msg;
+  auto init = msg.initEvent().initInitData();
 
   init.setDeviceType(cereal::InitData::DeviceType::NEO);
   init.setVersion(capnp::Text::Reader(COMMA_VERSION));
@@ -509,11 +507,8 @@ static void bootlog() {
   LOGW("bootlog to %s", s.segment_path);
 
   {
-    capnp::MallocMessageBuilder msg;
-    auto event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-
-    auto boot = event.initBoot();
+    MessageBuilder msg;
+    auto boot = msg.initEvent().initBoot();
 
     boot.setWallTimeNanos(nanos_since_epoch());
 
