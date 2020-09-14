@@ -186,6 +186,7 @@ void* frontview_thread(void *arg) {
   s->rhd_front = read_db_bool("IsRHD");
 
   set_thread_name("frontview");
+  err = set_realtime_priority(51);
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
   SubMaster sm({"driverState"});
@@ -235,6 +236,7 @@ void* frontview_thread(void *arg) {
     }
     clWaitForEvents(1, &debayer_event);
     clReleaseEvent(debayer_event);
+
     tbuffer_release(&s->cameras.front.camera_tb, buf_idx);
     visionbuf_sync(&s->rgb_front_bufs[ui_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
@@ -279,6 +281,7 @@ void* frontview_thread(void *arg) {
       int x_end;
       int y_start;
       int y_end;
+      int skip = 1;
 
       if (s->front_meteringbox_xmax > 0)
       {
@@ -297,11 +300,12 @@ void* frontview_thread(void *arg) {
 #ifdef QCOM2
       x_start = 0.15*s->rgb_front_width;
       x_end = 0.85*s->rgb_front_width;
-      y_start = 0.15*s->rgb_front_height;
-      y_end = 0.85*s->rgb_front_height;
+      y_start = 0.5*s->rgb_front_height;
+      y_end = 0.75*s->rgb_front_height;
+      skip = 2;
 #endif
       uint32_t lum_binning[256] = {0,};
-      for (int y = y_start; y < y_end; ++y) {
+      for (int y = y_start; y < y_end; y += skip) {
         for (int x = x_start; x < x_end; x += 2) { // every 2nd col
           const uint8_t *pix = &bgr_front_ptr[y * s->rgb_front_stride + x * 3];
           unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
@@ -315,7 +319,7 @@ void* frontview_thread(void *arg) {
           lum_binning[std::min(lum / 3, 255u)]++;
         }
       }
-      const unsigned int lum_total = (y_end - y_start) * (x_end - x_start)/2;
+      const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
       unsigned int lum_cur = 0;
       int lum_med = 0;
       for (lum_med=0; lum_med<256; lum_med++) {
@@ -385,7 +389,7 @@ void* wideview_thread(void *arg) {
 
   set_thread_name("wideview");
 
-  err = set_realtime_priority(1);
+  err = set_realtime_priority(51);
   LOG("setpriority returns %d", err);
 
   // init cl stuff
@@ -493,20 +497,20 @@ void* wideview_thread(void *arg) {
 
     // auto exposure over big box
     // TODO: fix this? should not use med imo
-    const int exposure_x = 240;
+    const int exposure_x = 384;
     const int exposure_y = 300;
-    const int exposure_height = 600;
-    const int exposure_width = 1440;
+    const int exposure_height = 400;
+    const int exposure_width = 1152;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
-      for (int y=0; y<exposure_height; y++) {
-        for (int x=0; x<exposure_width; x++) {
+      for (int y=0; y<exposure_height; y+=2) {
+        for (int x=0; x<exposure_width; x+=2) {
           uint8_t lum = yuv_ptr_y[((exposure_y+y)*s->yuv_wide_width) + exposure_x + x];
           lum_binning[lum]++;
         }
       }
-      const unsigned int lum_total = exposure_height * exposure_width;
+      const unsigned int lum_total = exposure_height * exposure_width / 4;
       unsigned int lum_cur = 0;
       int lum_med = 0;
       for (lum_med=0; lum_med<256; lum_med++) {
@@ -837,26 +841,28 @@ void* processing_thread(void *arg) {
 
     // auto exposure over big box
 #ifdef QCOM2
-    const int exposure_x = 240;
+    const int exposure_x = 384;
     const int exposure_y = 300;
-    const int exposure_height = 600;
-    const int exposure_width = 1440;
+    const int exposure_height = 400;
+    const int exposure_width = 1152;
+    const int skip = 2;
 #else
     const int exposure_x = 290;
     const int exposure_y = 322;
     const int exposure_height = 314;
     const int exposure_width = 560;
+    const int skip = 1;
 #endif
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
-      for (int y=0; y<exposure_height; y++) {
-        for (int x=0; x<exposure_width; x++) {
+      for (int y=0; y<exposure_height; y+=skip) {
+        for (int x=0; x<exposure_width; x+=skip) {
           uint8_t lum = yuv_ptr_y[((exposure_y+y)*s->yuv_width) + exposure_x + x];
           lum_binning[lum]++;
         }
       }
-      const unsigned int lum_total = exposure_height * exposure_width;
+      const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
       unsigned int lum_cur = 0;
       int lum_med = 0;
       for (lum_med=0; lum_med<256; lum_med++) {
