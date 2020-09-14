@@ -9,3 +9,4 @@ void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r = 0, int width = 0);
 void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r = 0);
 void ui_nvg_init(UIState *s);
+void ui_nvg_destroy(UIState *s);

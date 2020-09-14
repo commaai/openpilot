@@ -119,3 +119,6 @@ FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,
                                    int *out_w, int *out_h) {
   return (FramebufferState*)1; // not null
 }
+
+void framebuffer_destroy(FramebufferState *s) {}
+

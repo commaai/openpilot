@@ -3,7 +3,7 @@
 
 #include "glutil.h"
 
-GLuint load_shader(GLenum shaderType, const char *src) {
+static GLuint load_shader(GLenum shaderType, const char *src) {
   GLint status = 0, len = 0;
   GLuint shader;
 
@@ -31,39 +31,44 @@ GLuint load_shader(GLenum shaderType, const char *src) {
   return 0;
 }
 
-GLuint load_program(const char *vert_src, const char *frag_src) {
-  GLuint vert, frag, prog;
+int frame_shader_init(FrameShader *s, const char *vert_src, const char *frag_src) {
   GLint status = 0, len = 0;
 
-  if (!(vert = load_shader(GL_VERTEX_SHADER, vert_src)))
+  if (!(s->vert = load_shader(GL_VERTEX_SHADER, vert_src)))
     return 0;
-  if (!(frag = load_shader(GL_FRAGMENT_SHADER, frag_src)))
+  if (!(s->frag = load_shader(GL_FRAGMENT_SHADER, frag_src)))
     goto fail_frag;
-  if (!(prog = glCreateProgram()))
+  if (!(s->prog = glCreateProgram()))
     goto fail_prog;
 
-  glAttachShader(prog, vert);
-  glAttachShader(prog, frag);
-  glLinkProgram(prog);
+  glAttachShader(s->prog, s->vert);
+  glAttachShader(s->prog, s->frag);
+  glLinkProgram(s->prog);
 
-  glGetProgramiv(prog, GL_LINK_STATUS, &status);
+  glGetProgramiv(s->prog, GL_LINK_STATUS, &status);
   if (status)
-    return prog;
+    return 1;
 
-  glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+  glGetProgramiv(s->prog, GL_INFO_LOG_LENGTH, &len);
   if (len) {
     char *buf = (char*) malloc(len);
     if (buf) {
-      glGetProgramInfoLog(prog, len, NULL, buf);
+      glGetProgramInfoLog(s->prog, len, NULL, buf);
       buf[len-1] = 0;
       fprintf(stderr, "error linking program:\n%s\n", buf);
       free(buf);
     }
   }
-  glDeleteProgram(prog);
+  glDeleteProgram(s->prog);
 fail_prog:
-  glDeleteShader(frag);
+  glDeleteShader(s->frag);
 fail_frag:
-  glDeleteShader(vert);
+  glDeleteShader(s->vert);
   return 0;
+}
+
+void frame_shader_destroy(FrameShader *s) {
+  glDeleteShader(s->vert);
+  glDeleteShader(s->frag);
+  glDeleteProgram(s->prog);
 }

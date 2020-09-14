@@ -256,7 +256,7 @@ static void draw_frame(UIState *s) {
 #endif
   }
 
-  glUseProgram(s->frame_program);
+  glUseProgram(s->frame_shader.prog);
   glUniform1i(s->frame_texture_loc, 0);
   glUniformMatrix4fv(s->frame_transform_loc, 1, GL_TRUE, out_mat->v);
 
@@ -750,14 +750,13 @@ void ui_nvg_init(UIState *s) {
   }
 
   // init gl
-  s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
-  assert(s->frame_program);
+  assert(frame_shader_init(&s->frame_shader, frame_vertex_shader, frame_fragment_shader));
 
-  s->frame_pos_loc = glGetAttribLocation(s->frame_program, "aPosition");
-  s->frame_texcoord_loc = glGetAttribLocation(s->frame_program, "aTexCoord");
+  s->frame_pos_loc = glGetAttribLocation(s->frame_shader.prog, "aPosition");
+  s->frame_texcoord_loc = glGetAttribLocation(s->frame_shader.prog, "aTexCoord");
 
-  s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
-  s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
+  s->frame_texture_loc = glGetUniformLocation(s->frame_shader.prog, "uTexture");
+  s->frame_transform_loc = glGetUniformLocation(s->frame_shader.prog, "uTransform");
 
   glViewport(0, 0, s->fb_w, s->fb_h);
 
@@ -820,4 +819,27 @@ void ui_nvg_init(UIState *s) {
     s->khr[i] = 0;
     s->priv_hnds[i] = NULL;
   }
+}
+
+void ui_nvg_destroy(UIState *s) {
+  nvgDeleteImage(s->vg, s->img_wheel);
+  nvgDeleteImage(s->vg, s->img_turn);
+  nvgDeleteImage(s->vg, s->img_face);
+  nvgDeleteImage(s->vg, s->img_button_settings);
+  nvgDeleteImage(s->vg, s->img_button_home);
+  nvgDeleteImage(s->vg, s->img_battery);
+  nvgDeleteImage(s->vg, s->img_battery_charging);
+
+  for(int i=0;i<=5;++i) {
+    nvgDeleteImage(s->vg, s->img_network[i]);
+  }
+
+  for(int i = 0; i < 2; i++) {
+    glDeleteVertexArrays(1, &s->frame_vao[i]);
+    glDeleteBuffers(1, &s->frame_vbo[i]);
+    glDeleteBuffers(1, &s->frame_ibo[i]);
+  }
+
+  frame_shader_destroy(&s->frame_shader);
+  nvgDelete(s->vg);
 }

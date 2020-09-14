@@ -37,6 +37,12 @@ void ui_init(UIState *s) {
   ui_nvg_init(s);
 }
 
+void ui_destroy(UIState *s) {
+  delete s->sm;
+  ui_nvg_destroy(s);
+  framebuffer_destroy(s->fb);
+}
+
 static void ui_init_vision(UIState *s) {
   // Invisible until we receive a calibration message.
   s->scene.world_objects_visible = false;

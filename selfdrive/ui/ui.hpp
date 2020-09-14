@@ -5,11 +5,13 @@
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
 #define nvgCreate nvgCreateGL3
+#define nvgDelete nvgDeleteGL3
 #else
 #include <GLES3/gl3.h>
 #include <EGL/egl.h>
 #define NANOVG_GLES3_IMPLEMENTATION
 #define nvgCreate nvgCreateGLES3
+#define nvgDelete nvgDeleteGLES3
 #endif
 
 #include <atomic>
@@ -171,7 +173,7 @@ typedef struct UIState {
   VisionStream stream;
 
   // graphics
-  GLuint frame_program;
+  FrameShader frame_shader;
   GLuint frame_texs[UI_BUF_COUNT];
   EGLImageKHR khr[UI_BUF_COUNT];
   void *priv_hnds[UI_BUF_COUNT];
@@ -201,6 +203,7 @@ typedef struct UIState {
 } UIState;
 
 void ui_init(UIState *s);
+void ui_destroy(UIState *s);
 void ui_update(UIState *s);
 
 int write_param_float(float param, const char* param_name, bool persistent_param = false);

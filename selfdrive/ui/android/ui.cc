@@ -259,7 +259,9 @@ int main(int argc, char* argv[]) {
 
   err = pthread_join(light_sensor_thread_handle, NULL);
   assert(err == 0);
-  delete s->sm;
+  
+  ui_destroy(s);
+
   delete pm;
   return 0;
 }

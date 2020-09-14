@@ -10,9 +10,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct FrameShader{
+  GLuint vert;
+  GLuint frag;
+  GLuint prog;
+} FrameShader;
 
-GLuint load_shader(GLenum shaderType, const char *src);
-GLuint load_program(const char *vert_src, const char *frag_src);
+int frame_shader_init(FrameShader *s, const char *vert_src, const char *frag_src);
+void frame_shader_destroy(FrameShader *s);
 
 #ifdef __cplusplus
 }

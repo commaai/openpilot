@@ -147,3 +147,10 @@ extern "C" FramebufferState* framebuffer_init(
 
   return s;
 }
+
+extern "C" void framebuffer_destroy(FramebufferState *s) {
+  eglDestroyContext(s->display, s->context);
+  eglDestroySurface(s->display, s->surface);
+  eglTerminate(s->display);
+  delete s;
+}
