@@ -56,6 +56,7 @@ GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
 
 GLWindow::~GLWindow() {
   makeCurrent();
+  ui_destroy(ui_state);
   doneCurrent();
 }
 

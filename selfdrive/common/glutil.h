@@ -10,6 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 typedef struct FrameShader{
   GLuint vert;
   GLuint frag;
