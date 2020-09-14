@@ -58,6 +58,7 @@ class URLFile(object):
     return length
 
   def read(self, ll=None):
+    print("lol")
     #if not "FILEREADER_CACHE" in os.environ:
     #  return self.read_aux(ll=ll)
     pl = self._pos
@@ -69,14 +70,15 @@ class URLFile(object):
       self._pos = position
       increment = self._pos / CACHE_SIZE
       file_name = (self._url.split("?")[0] + str(increment)).replace("/","").replace(".","").replace(":","")
-      full_path = "tmp/" + file_name[-100:] + ".txt"
+      full_path = "/tmp/" + file_name[-100:] + ".txt"
       #If we don't have a file, download it
       if not os.path.exists(full_path):
-        #print("Downloading")
+        print("Downloading")
         data = self.read_aux(ll = CACHE_SIZE)
         with open(full_path, "wb") as new_cached_file:
           new_cached_file.write(data)
-
+      else:
+        print(os.path.abspath(full_path))
       with open(full_path, "rb") as cached_file:
         temp = cached_file.read()
         response += temp[max(0, pl-position) : min(CACHE_SIZE, pr - position)]
