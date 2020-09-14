@@ -228,6 +228,132 @@ void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_dat
   meta.setDesirePrediction(desire_pred);
 }
 
+void fill_meta_v2(cereal::ModelDataV2::MetaData::Builder meta, const float * meta_data) {
+  float desire_state_softmax[DESIRE_LEN];
+  float desire_pred_softmax[4*DESIRE_LEN];
+  softmax(&meta_data[0], desire_state_softmax, DESIRE_LEN);
+  for (int i=0; i<4; i++) {
+    softmax(&meta_data[DESIRE_LEN + OTHER_META_SIZE + i*DESIRE_LEN],
+            &desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
+  }
+  kj::ArrayPtr<const float> desire_state(desire_state_softmax, DESIRE_LEN);
+  meta.setDesireState(desire_state);
+  meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
+  meta.setGasDisengageProb(sigmoid(meta_data[DESIRE_LEN + 1]));
+  meta.setBrakeDisengageProb(sigmoid(meta_data[DESIRE_LEN + 2]));
+  meta.setSteerOverrideProb(sigmoid(meta_data[DESIRE_LEN + 3]));
+  kj::ArrayPtr<const float> desire_pred(desire_pred_softmax, DESIRE_PRED_SIZE);
+  meta.setDesirePrediction(desire_pred);
+}
+
+void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
+               int column_offset, int columns, float * plan_t_arr) {
+  float x_arr[TRAJECTORY_SIZE];
+  float y_arr[TRAJECTORY_SIZE];
+  float z_arr[TRAJECTORY_SIZE];
+  float x_std_arr[TRAJECTORY_SIZE];
+  float y_std_arr[TRAJECTORY_SIZE];
+  float z_std_arr[TRAJECTORY_SIZE];
+  float t_arr[TRAJECTORY_SIZE];
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
+    if (column_offset >= 0) {
+      t_arr[i] = T_IDXS[i];
+      x_arr[i] = data[i*columns + 0 + column_offset];
+      x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0 + column_offset];
+    } else {
+      x_arr[i] = X_IDXS[i];
+      x_std_arr[i] = NAN;
+      t_arr[i] = plan_t_arr[i];
+    }
+    y_arr[i] = data[i*columns + 1 + column_offset];
+    y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
+    z_arr[i] = data[i*columns + 2 + column_offset];
+    z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
+  }
+  kj::ArrayPtr<const float> x(x_arr, TRAJECTORY_SIZE);
+  kj::ArrayPtr<const float> y(y_arr, TRAJECTORY_SIZE);
+  kj::ArrayPtr<const float> z(z_arr, TRAJECTORY_SIZE);
+  kj::ArrayPtr<const float> x_std(x_std_arr, TRAJECTORY_SIZE);
+  kj::ArrayPtr<const float> y_std(y_std_arr, TRAJECTORY_SIZE);
+  kj::ArrayPtr<const float> z_std(z_std_arr, TRAJECTORY_SIZE);
+  kj::ArrayPtr<const float> t(t_arr, TRAJECTORY_SIZE);
+  xyzt.setX(x);
+  xyzt.setY(y);
+  xyzt.setZ(z);
+  xyzt.setXStd(x_std);
+  xyzt.setYStd(y_std);
+  xyzt.setZStd(z_std);
+  xyzt.setT(t);
+}
+
+
+void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
+                     uint32_t vipc_dropped_frames, float frame_drop,
+                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
+  // make msg
+  capnp::MallocMessageBuilder msg;
+  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
+  event.setLogMonoTime(nanos_since_boot());
+
+  uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
+
+  auto framed = event.initModelV2();
+  framed.setFrameId(vipc_frame_id);
+  framed.setFrameAge(frame_age);
+  framed.setFrameDropPerc(frame_drop * 100);
+  framed.setTimestampEof(timestamp_eof);
+
+  // Find the distribution that corresponds to the most probable plan
+  int plan_mhp_max_idx = 0;
+  for (int i=1; i<PLAN_MHP_N; i++) {
+    if (net_outputs.plan[(i + 1)*(PLAN_MHP_GROUP_SIZE) - 1] >
+        net_outputs.plan[(plan_mhp_max_idx + 1)*(PLAN_MHP_GROUP_SIZE) - 1]) {
+      plan_mhp_max_idx = i;
+    }
+  }
+  // x pos at 10s is a good valid_len
+  float valid_len = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*32];
+  // clamp to 5 and MODEL_PATH_DISTANCE
+  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, valid_len));
+  int valid_len_idx = 0;
+  for (int i=1; i<TRAJECTORY_SIZE; i++) {
+    if (valid_len >= X_IDXS[valid_len_idx]){
+      valid_len_idx = i;
+    }
+  }
+
+  float * best_plan = &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)];
+  float plan_t_arr[TRAJECTORY_SIZE];
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
+    plan_t_arr[i] = best_plan[i*(PLAN_MHP_COLUMNS + 15)];
+  }
+
+
+  auto position = framed.initPosition();
+  fill_xyzt(position, best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr);
+  auto orientation = framed.initOrientation();
+  fill_xyzt(orientation, best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr);
+  auto velocity = framed.initVelocity();
+  fill_xyzt(velocity, best_plan, PLAN_MHP_COLUMNS, 6, plan_t_arr);
+  auto orientation_rate = framed.initOrientationRate();
+  fill_xyzt(orientation_rate, best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
+
+  auto lane_lines = framed.initLaneLines(4);
+  fill_xyzt(lane_lines[0], &net_outputs.lane_lines[0*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+  fill_xyzt(lane_lines[1], &net_outputs.lane_lines[1*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+  fill_xyzt(lane_lines[2], &net_outputs.lane_lines[2*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+  fill_xyzt(lane_lines[3], &net_outputs.lane_lines[3*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+
+  auto road_edges = framed.initRoadEdges(2);
+  fill_xyzt(road_edges[0], &net_outputs.lane_lines[0*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+  fill_xyzt(road_edges[1], &net_outputs.lane_lines[1*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+
+  auto meta = framed.initMeta();
+  fill_meta_v2(meta, net_outputs.meta);
+  event.setValid(frame_drop < MAX_FRAME_DROP);
+
+  pm.send("modelV2", msg);
+}
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                    uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
