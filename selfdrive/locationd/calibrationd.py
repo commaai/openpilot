@@ -133,6 +133,8 @@ class Calibrator():
       return self.rpy
 
   def handle_cam_odom(self, trans, rot, trans_std, rot_std):
+    self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
+
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
     certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < MAX_VEL_ANGLE_STD) or
                         (self.valid_blocks < INPUTS_NEEDED))
@@ -152,7 +154,6 @@ class Calibrator():
       if self.valid_blocks > 0:
         self.rpy = np.mean(self.rpys[:self.valid_blocks], axis=0)
 
-      self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
       self.update_status()
 
