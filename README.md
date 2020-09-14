@@ -285,7 +285,7 @@ curl https://raw.githubusercontent.com/commaai/openpilot/master/tools/sim/start_
 ```
 2) Start openpilot on second terminal
 ```
-curl https://raw.githubusercontent.com/commaai/openpilot/master/tools/sim/start_openpilot_docker.sh > start.sh; bash start.sh
+bash -c "$(curl https://raw.githubusercontent.com/commaai/openpilot/master/tools/sim/start_openpilot_docker.sh)"
 ```
 3) Press 1 to engage openpilot
 
