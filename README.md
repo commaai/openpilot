@@ -279,14 +279,13 @@ Check out the tools directory in master: lots of tools you can use to replay dri
 
 For simplified development/experimentation/testing, you have the option to run openpilot and Carla driving simulator in Docker, which allows you to develop openpilot software without buying/having a supported car. 
 Steps:
-1) Start the CARLA server.
+1) Start the CARLA server on first terminal
 ```
-cd ~/openpilot/tools/sim
-./start_carla.sh
+curl https://raw.githubusercontent.com/commaai/openpilot/master/tools/sim/start_carla.sh | bash
 ```
-2) Start openpilot
+2) Start openpilot on second terminal
 ```
-./start_openpilot_docker.sh
+curl https://raw.githubusercontent.com/commaai/openpilot/master/tools/sim/start_openpilot_docker.sh > start.sh; bash start.sh
 ```
 3) Press 1 to engage openpilot
 
