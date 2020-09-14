@@ -71,6 +71,11 @@ int main(int argc, char **argv) {
 
       LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
+#ifdef QCOM2
+      // this makes it run at about 2.7Hz on tici CPU to deal with modeld lags
+      // TODO: DSP needs to be freed (again)
+      usleep(250000);
+#endif
     }
     visionstream_destroy(&stream);
   }
