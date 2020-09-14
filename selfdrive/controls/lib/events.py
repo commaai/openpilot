@@ -413,7 +413,7 @@ EVENTS = {
       "CHECK DRIVER FACE VISIBILITY",
       "Driver Monitor Model Output Uncertain",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .4, 0., 1.),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .4, 0., 1.5),
   },
 
   EventName.manualRestart: {
