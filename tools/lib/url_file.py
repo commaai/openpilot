@@ -72,7 +72,7 @@ class URLFile(object):
       self._pos = position
       increment = self._pos / CACHE_SIZE
       file_name = sha256((self._url.split("?")[0] + " " + str(increment)).encode('utf-8')).hexdigest()
-      full_path = "/tmp/" + str(file_name) + ".txt"
+      full_path = "/tmp/" + str(file_name)
       #If we don't have a file, download it
       if not os.path.exists(full_path):
         #print("Downloading")
@@ -93,12 +93,12 @@ class URLFile(object):
         return response
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
-  def read_aux(self, ll=None):
+  def read(self, ll=None):
     if ll is None:
-      trange = 'bytes=%d-%d' % (self._pos, self.get_length())
+      trange = 'bytes=%d-' % self._pos
     else:
       trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
-    #print(trange)
+
     dats = BytesIO()
     c = self._curl
     c.setopt(pycurl.URL, self._url)
@@ -139,7 +139,6 @@ class URLFile(object):
 
     ret = dats.getvalue()
     self._pos += len(ret)
-    #print("Length downloaded " + str(len(ret)))
     return ret
 
   def seek(self, pos):
