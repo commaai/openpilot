@@ -1,18 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <unistd.h>
+#include "visionipc.h"
+
 #include <assert.h>
 #include <errno.h>
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/mman.h>
-#include <sys/socket.h>
 #include <sys/un.h>
+#include <unistd.h>
 
 #include "ipc.h"
-
-#include "visionipc.h"
 
 typedef struct VisionPacketWire {
   int type;
@@ -22,7 +18,6 @@ typedef struct VisionPacketWire {
 int vipc_connect() {
   return ipc_connect(VIPC_SOCKET_PATH);
 }
-
 
 int vipc_recv(int fd, VisionPacket *out_p) {
   VisionPacketWire p = {0};
@@ -54,21 +49,13 @@ int vipc_send(int fd, const VisionPacket *p2) {
 void vipc_bufs_load(VIPCBuf *bufs, const VisionStreamBufs *stream_bufs,
                      int num_fds, const int* fds) {
   for (int i=0; i<num_fds; i++) {
-    if (bufs[i].addr) {
-      munmap(bufs[i].addr, bufs[i].len);
-      bufs[i].addr = NULL;
-      close(bufs[i].fd);
-    }
     bufs[i].fd = fds[i];
     bufs[i].len = stream_bufs->buf_len;
-    bufs[i].addr = mmap(NULL, bufs[i].len,
-                        PROT_READ | PROT_WRITE,
-                        MAP_SHARED, bufs[i].fd, 0);
+    bufs[i].addr = mmap(NULL, bufs[i].len, PROT_READ, MAP_SHARED, bufs[i].fd, 0);
     // printf("b %d %zu -> %p\n", bufs[i].fd, bufs[i].len, bufs[i].addr);
     assert(bufs[i].addr != MAP_FAILED);
   }
 }
-
 
 int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, VisionStreamBufs *out_bufs_info) {
   int err;
@@ -119,19 +106,17 @@ int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, Visi
   return 0;
 }
 
-void visionstream_release(VisionStream *s) {
-  int err;
-  if (s->last_idx >= 0) {
-    VisionPacket rep = {
-      .type = VIPC_STREAM_RELEASE,
-      .d = { .stream_rel = {
-        .type = s->last_type,
-        .idx = s->last_idx,
-      }}
-    };
-    err = vipc_send(s->ipc_fd, &rep);
-    s->last_idx = -1;
-  }
+static int visionstream_release(VisionStream *s) {
+  VisionPacket rep = {
+    .type = VIPC_STREAM_RELEASE,
+    .d = { .stream_rel = {
+      .type = s->last_type,
+      .idx = s->last_idx,
+    }}
+  };
+  int err = vipc_send(s->ipc_fd, &rep);
+  s->last_idx = -1;
+  return err;
 }
 
 VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra) {
@@ -145,14 +130,7 @@ VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra) {
   assert(rp.type == VIPC_STREAM_ACQUIRE);
 
   if (s->last_idx >= 0) {
-    VisionPacket rep = {
-      .type = VIPC_STREAM_RELEASE,
-      .d = { .stream_rel = {
-        .type = s->last_type,
-        .idx = s->last_idx,
-      }}
-    };
-    err = vipc_send(s->ipc_fd, &rep);
+    err = visionstream_release(s);
     if (err <= 0) {
       return NULL;
     }
@@ -170,18 +148,8 @@ VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra) {
 }
 
 void visionstream_destroy(VisionStream *s) {
-  int err;
-
   if (s->last_idx >= 0) {
-    VisionPacket rep = {
-      .type = VIPC_STREAM_RELEASE,
-      .d = { .stream_rel = {
-        .type = s->last_type,
-        .idx = s->last_idx,
-      }}
-    };
-    err = vipc_send(s->ipc_fd, &rep);
-    s->last_idx = -1;
+    visionstream_release(s);
   }
 
   for (int i=0; i<s->num_bufs; i++) {
