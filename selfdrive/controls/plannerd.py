@@ -3,7 +3,7 @@ import gc
 
 from cereal import car
 from common.params import Params
-from common.realtime import set_realtime_priority
+from common.realtime import PRIO_CTRL_LOW, set_realtime_priority
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -15,7 +15,7 @@ def plannerd_thread(sm=None, pm=None):
   gc.disable()
 
   # start the loop
-  set_realtime_priority(52)
+  set_realtime_priority(PRIO_CTRL_LOW)
 
   cloudlog.info("plannerd is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))

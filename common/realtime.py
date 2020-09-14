@@ -10,6 +10,11 @@ from common.hardware import PC
 from common.common_pyx import sec_since_boot  # pylint: disable=no-name-in-module, import-error
 
 
+ffi = FFI()
+ffi.cdef("long syscall(long number, ...);")
+libc = ffi.dlopen(None)
+
+
 # time step for each process
 DT_CTRL = 0.01  # controlsd
 DT_MDL = 0.05  # model
@@ -17,9 +22,9 @@ DT_DMON = 0.1  # driver monitoring
 DT_TRML = 0.5  # thermald and manager
 
 
-ffi = FFI()
-ffi.cdef("long syscall(long number, ...);")
-libc = ffi.dlopen(None)
+MIN_RT_PRIO = 52 # highest android process priority is 51
+PRIO_CTRL_LOW = MIN_RT_PRIO
+PRIO_CTRL_HIGH = MIN_RT_PRIO + 1
 
 
 def _get_tid():
