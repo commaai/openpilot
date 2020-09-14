@@ -49,7 +49,7 @@ selfdrive/modeld/_modeld
 selfdrive/modeld/_dmonitoringmodeld
 /src/
 
-tools/replay/tmp/
+tools/replay/tmp/*
 
 one
 openpilot

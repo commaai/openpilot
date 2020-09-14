@@ -83,7 +83,6 @@ class URLFile(object):
 
       position += CACHE_SIZE
       if position >= pr:
-        self._pos=pl
         return response
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
@@ -92,6 +91,7 @@ class URLFile(object):
       trange = 'bytes=%d-' % self._pos
     else:
       trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
+
     dats = BytesIO()
     c = self._curl
     c.setopt(pycurl.URL, self._url)
