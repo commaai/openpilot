@@ -7,9 +7,6 @@ else:
 
 
 def FileReader(fn, debug=False):
-  print("SPAM!!!!!!!!!!!!!!!!!")
-  print(fn)
-  print("\n\n\n\n")
   if fn.startswith("http://") or fn.startswith("https://"):
     return URLFile(fn, debug=debug)
   else:

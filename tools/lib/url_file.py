@@ -9,7 +9,6 @@ import pycurl
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
-
 #Cache chunk size
 CACHE_SIZE=1000000
 
@@ -19,6 +18,7 @@ class URLFile(object):
   def __init__(self, url, debug=False):
     self._url = url
     self._pos = 0
+    self._length = None
     self._local_file = None
     self._debug = debug
 
@@ -36,19 +36,55 @@ class URLFile(object):
       self._local_file.close()
       self._local_file = None
 
+  def get_curl(self):
+    curl = pycurl.Curl()
+    curl.setopt(pycurl.NOSIGNAL, 1)
+    curl.setopt(pycurl.TIMEOUT_MS, 500000)
+    curl.setopt(pycurl.FOLLOWLOCATION, True)
+    return curl
+
+  @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
+  def get_length(self):
+    if self._length is not None:
+      return self._length
+
+    c = self.get_curl()
+    c.setopt(pycurl.URL, self._url)
+    c.setopt(c.NOBODY, 1)
+    c.perform()
+
+    length = int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
+    self._length = length
+    return length
 
   def read(self, ll=None):
-    #Check in cache
-    file = self._url
+    #if not "FILEREADER_CACHE" in os.environ:
+    #  return self.read_aux(ll=ll)
     pl = self._pos
-    pr = self._pos=ll-1 if ll is not None else None
+    pr = self._pos + ll if ll is not None else self.get_length()
     #Largest multiple of cache size lower than pl
-    left_mult=(pl/CACHE_SIZE)*CACHE_SIZE
+    position = (int) (pl / CACHE_SIZE) * CACHE_SIZE
+    response = bytes("", encoding="utf-8")
     while True:
-      right=min(pr,left_mult+CACHE_SIZE)
-      if right == pr:
-        break
-    return read_aux(self, ll)
+      self._pos = position
+      increment = self._pos / CACHE_SIZE
+      file_name = (self._url.split("?")[0] + str(increment)).replace("/","").replace(".","").replace(":","")
+      full_path = "tmp/" + file_name[-100:] + ".txt"
+      #If we don't have a file, download it
+      if not os.path.exists(full_path):
+        #print("Downloading")
+        data = self.read_aux(ll = CACHE_SIZE)
+        with open(full_path, "wb") as new_cached_file:
+          new_cached_file.write(data)
+
+      with open(full_path, "rb") as cached_file:
+        temp = cached_file.read()
+        response += temp[max(0, pl-position) : min(CACHE_SIZE, pr - position)]
+
+      position += CACHE_SIZE
+      if position >= pr:
+        self._pos=pl
+        return response
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def read_aux(self, ll=None):
@@ -56,7 +92,6 @@ class URLFile(object):
       trange = 'bytes=%d-' % self._pos
     else:
       trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
-    print("Loading from "+str(self._pos)+" with length "+str(ll)+" until "+str(trange))
     dats = BytesIO()
     c = self._curl
     c.setopt(pycurl.URL, self._url)
