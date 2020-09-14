@@ -37,8 +37,8 @@ const mat3 intrinsic_matrix = (mat3){{
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
-bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float *out_x, float *out_y) {
-  const vec4 car_space_projective = (vec4){{in_x, in_y, 0., 1.}};
+bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, float *out_x, float *out_y) {
+  const vec4 car_space_projective = (vec4){{in_x, in_y, in_z., 1.}};
   // We'll call the car space point p.
   // First project into normalized image coordinates with the extrinsics matrix.
   const vec4 Ep4 = matvecmul(s->scene.extrinsic_matrix, car_space_projective);
@@ -204,21 +204,23 @@ static void draw_frame(UIState *s) {
 }
 
 static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
-  int rcount = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, valid_len);
+  // TODO check that this doesn't overflow max vertex buffer
+  int max_idx;
   vertex_data *v = &pvd->v[0];
-  for (int i = 0; i < rcount; i++) {
-    v += car_space_to_full_frame(s, i, points[i] - off, &v->x, &v->y);
+  for (i = 0; ((i < TRAJECTORY_SIZE) and (line.x[i] < fmax(MIN_DRAW_DISTANCE, max_distance)); i++) {
+    v += car_space_to_full_frame(s, line.x[i], points[i] - off, line.z[i], &v->x, &v->y);
+    max_idx = i;
   }
-  for (int i = rcount - 1; i > 0; i--) {
-    v += car_space_to_full_frame(s, i, points[i] + off, &v->x, &v->y);
+  for (int i = max_idx - 1; i > 0; i--) {
+    v += car_space_to_full_frame(s, line.x[i], line.y[i] + off, line.z[i], &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
 
-static void update_all_lane_lines_data(UIState *s, const cereal::ModelData::PathData::Reader &path, const float *points, model_path_vertices_data *pstart) {
-  update_lane_line_data(s, points, 0.025*path.getProb(), pstart, path.getValidLen());
-  update_lane_line_data(s, points, fmin(path.getStd(), 0.7), pstart + 1, path.getValidLen());
-}
+//statVic void update_lane_line_data(UIState *s, , const float *points, model_path_vertices_data *pstart) {
+//  update_lane_line_data(s, points, 0.025*path.getProb(), pstart, sc);
+  //update_lane_line_data(s, points, fmin(path.getStd(), 0.7), pstart + 1, path.getValidLen());
+//}
 
 static void ui_draw_lane(UIState *s, model_path_vertices_data *pstart, NVGcolor color) {
   ui_draw_lines(s, pstart->v, pstart->cnt, &color, nullptr);
@@ -227,14 +229,14 @@ static void ui_draw_lane(UIState *s, model_path_vertices_data *pstart, NVGcolor 
   ui_draw_lines(s, pstart->v, pstart->cnt, &color, nullptr);
 }
 
-static void ui_draw_vision_lanes(UIState *s) {
+static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
   auto left_lane = scene->model.getLeftLane();
   auto right_lane = scene->model.getRightLane();
   model_path_vertices_data *pvd = &s->model_path_vertices[0];
-  if(s->sm->updated("model")) {
-    update_all_lane_lines_data(s, left_lane, scene->left_lane_points, pvd);
-    update_all_lane_lines_data(s, right_lane, scene->right_lane_points, pvd + MODEL_LANE_PATH_CNT);
+  if(s->sm->updated("modelV2")) {
+    update_lane_line_data(s, scene->left_lane_line, 0.025*s->lane_line_probs[1], pvd, scene->max_distance);
+    update_lane_line_data(s, scene->right_lane_line, 0.025*s->lane_line_probs[2], pvd + MODEL_LANE_PATH_CNT, scene->max_distance);
   }
 
   // Draw left lane edge
@@ -269,7 +271,7 @@ static void ui_draw_world(UIState *s) {
   nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 
   // Draw lane edges and vision/mpc tracks
-  ui_draw_vision_lanes(s);
+  ui_draw_vision_lane_lines(s);
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->longitudinal_control) {
