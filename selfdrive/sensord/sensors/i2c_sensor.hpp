@@ -3,13 +3,14 @@
 #include <cstdint>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "common/i2c.h"
+#include "sensors/sensor.hpp"
 #include "sensors/constants.hpp"
 
 int16_t read_12_bit(uint8_t lsb, uint8_t msb);
 int16_t read_16_bit(uint8_t lsb, uint8_t msb);
 
 
-class I2CSensor {
+class I2CSensor : public Sensor {
 private:
   I2CBus *bus;
   virtual uint8_t get_device_address() = 0;

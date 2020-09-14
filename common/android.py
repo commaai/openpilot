@@ -13,11 +13,13 @@ NetworkStrength = log.ThermalData.NetworkStrength
 
 
 def service_call(call):
-  ret = subprocess.check_output(["service", "call", *call], encoding='utf8').strip()
-  if 'Parcel' not in ret:
+  try:
+    ret = subprocess.check_output(["service", "call", *call], encoding='utf8').strip()
+    if 'Parcel' not in ret:
+      return None
+    return parse_service_call_bytes(ret)
+  except subprocess.CalledProcessError:
     return None
-
-  return parse_service_call_bytes(ret)
 
 
 def parse_service_call_unpack(r, fmt):

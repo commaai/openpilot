@@ -10,14 +10,14 @@ import numpy as np
 import pygame  # pylint: disable=import-error
 
 from common.basedir import BASEDIR
-from common.transformations.camera import FULL_FRAME_SIZE, eon_intrinsics
 from common.transformations.model import (MODEL_CX, MODEL_CY, MODEL_INPUT_SIZE,
                                           get_camera_frame_from_model_frame)
 from selfdrive.car.toyota.interface import CarInterface as ToyotaInterface
 from selfdrive.config import UIParams as UP
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 import cereal.messaging as messaging
-from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, BLACK, BLUE, GREEN,
+from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _INTRINSICS,
+                                         BLACK, BLUE, GREEN,
                                          YELLOW, RED,
                                          CalibrationTransformsForWarpMatrix,
                                          draw_lead_car, draw_lead_on, draw_mpc,
@@ -67,11 +67,14 @@ def ui_thread(addr, frame_address):
 
   frame = messaging.sub_sock('frame', addr=addr, conflate=True)
   sm = messaging.SubMaster(['carState', 'plan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'liveTracks', 'model', 'liveMpc', 'liveParameters', 'pathPlan'], addr=addr)
+                            'liveTracks', 'model', 'liveMpc', 'liveParameters', 'pathPlan', 'frame'], addr=addr)
 
   calibration = None
   img = np.zeros((480, 640, 3), dtype='uint8')
-  imgff = np.zeros((FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3), dtype=np.uint8)
+  imgff = None
+  num_px = 0
+  img_transform = np.eye(3)
+
   imgw = np.zeros((160, 320, 3), dtype=np.uint8)  # warped image
   lid_overlay_blank = get_blank_lid_overlay(UP)
 
@@ -124,26 +127,27 @@ def ui_thread(addr, frame_address):
 
     if fpkt.frame.transform:
       img_transform = np.array(fpkt.frame.transform).reshape(3, 3)
-    else:
-      # assume frame is flipped
-      img_transform = np.array([
-        [-1.0,  0.0, FULL_FRAME_SIZE[0]-1],
-        [ 0.0, -1.0, FULL_FRAME_SIZE[1]-1],
-        [ 0.0,  0.0, 1.0]
-      ])
 
-    if rgb_img_raw and len(rgb_img_raw) == FULL_FRAME_SIZE[0] * FULL_FRAME_SIZE[1] * 3:
+    num_px = len(rgb_img_raw) // 3
+    if rgb_img_raw and num_px in _FULL_FRAME_SIZE.keys():
+      FULL_FRAME_SIZE = _FULL_FRAME_SIZE[num_px]
+
+      imgff_shape = (FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3)
+
+      if imgff is None or imgff.shape != imgff_shape:
+        imgff = np.zeros(imgff_shape, dtype=np.uint8)
+
       imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3))
       imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
-      cv2.warpAffine(imgff, np.dot(img_transform, _BB_TO_FULL_FRAME)[:2],
-        (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
+      cv2.warpAffine(imgff, np.dot(img_transform, _BB_TO_FULL_FRAME[num_px])[:2],
+                     (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
 
-      intrinsic_matrix = eon_intrinsics
+      intrinsic_matrix = _INTRINSICS[num_px]
     else:
       img.fill(0)
       intrinsic_matrix = np.eye(3)
 
-    if calibration is not None:
+    if calibration is not None and imgff is not None:
       transform = np.dot(img_transform, calibration.model_to_full_frame)
       imgw = cv2.warpAffine(imgff, transform[:2], (MODEL_INPUT_SIZE[0], MODEL_INPUT_SIZE[1]), flags=cv2.WARP_INVERSE_MAP)
     else:
@@ -189,11 +193,11 @@ def ui_thread(addr, frame_address):
     # draw all radar points
     maybe_update_radar_points(sm['liveTracks'], top_down[1])
 
-    if sm.updated['liveCalibration']:
+    if sm.updated['liveCalibration'] and num_px:
       extrinsic_matrix = np.asarray(sm['liveCalibration'].extrinsicMatrix).reshape(3, 4)
       ke = intrinsic_matrix.dot(extrinsic_matrix)
       warp_matrix = get_camera_frame_from_model_frame(ke)
-      calibration = CalibrationTransformsForWarpMatrix(warp_matrix, intrinsic_matrix, extrinsic_matrix)
+      calibration = CalibrationTransformsForWarpMatrix(num_px, warp_matrix, intrinsic_matrix, extrinsic_matrix)
 
     # draw red pt for lead car in the main img
     for lead in [sm['radarState'].leadOne, sm['radarState'].leadTwo]:

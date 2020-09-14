@@ -6,7 +6,7 @@ from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.controls.lib.events import Events
 from selfdrive.monitoring.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
-from selfdrive.locationd.calibration_helpers import Calibration
+from selfdrive.locationd.calibrationd import Calibration
 
 
 def dmonitoringd_thread(sm=None, pm=None):
@@ -41,6 +41,9 @@ def dmonitoringd_thread(sm=None, pm=None):
   # 10Hz <- dmonitoringmodeld
   while True:
     sm.update()
+
+    if not sm.updated['driverState']:
+      continue
 
     # Get interaction
     if sm.updated['carState']:

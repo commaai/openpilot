@@ -201,16 +201,10 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
   recv_socks = []
-  if msg.which() == 'carState' and ((fsm.frame + 1) % 25) == 0:
+  frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
+  if frame == 0 or (msg.which() == 'cameraOdometry' and (frame % 5) == 0):
     recv_socks = ["liveCalibration"]
-  return recv_socks, msg.which() == 'carState'
-
-def paramsd_rcv_callback(msg, CP, cfg, fsm):
-  recv_socks = []
-  if msg.which() == 'carState' and ((fsm.frame + 2) % 5) == 0:
-    recv_socks = ["liveParameters"]
-  return recv_socks, msg.which() == 'carState'
-
+  return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 
 CONFIGS = [
   ProcessConfig(
@@ -283,12 +277,12 @@ CONFIGS = [
   ProcessConfig(
     proc_name="paramsd",
     pub_sub={
-      "carState": ["liveParameters"],
-      "liveLocationKalman": []
+      "liveLocationKalman": ["liveParameters"],
+      "carState": []
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
-    should_recv_callback=paramsd_rcv_callback,
+    should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
 ]

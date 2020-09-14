@@ -190,6 +190,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       QT_BASE + "include/QtGui",
       QT_BASE + "include/QtCore",
       QT_BASE + "include/QtDBus",
+      QT_BASE + "include/QtMultimedia",
     ]
     qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
   else:
@@ -199,6 +200,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
     ]
 
   qt_env.Tool('qt')

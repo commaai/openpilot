@@ -1,45 +1,65 @@
 #!/usr/bin/env python3
 # type: ignore
+import carla # pylint: disable=import-error
 import time
 import math
 import atexit
 import numpy as np
 import threading
-import random
 import cereal.messaging as messaging
 import argparse
 from common.params import Params
-from common.realtime import Ratekeeper
-from lib.can import can_function, sendcan_function
-from lib.helpers import FakeSteeringWheel
+from common.realtime import Ratekeeper, DT_DMON
+from lib.can import can_function
 from selfdrive.car.honda.values import CruiseButtons
+from selfdrive.test.helpers import set_params_enabled
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
-parser.add_argument('--autopilot', action='store_true')
 parser.add_argument('--joystick', action='store_true')
-parser.add_argument('--realmonitoring', action='store_true')
 args = parser.parse_args()
 
-pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
-
 W, H = 1164, 874
+REPEAT_COUNTER = 5
+PRINT_DECIMATION = 100
+STEER_RATIO = 15.
 
+pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
+sm = messaging.SubMaster(['carControl','controlsState'])
+
+class VehicleState:
+  def __init__(self):
+    self.speed = 0
+    self.angle = 0
+    self.cruise_button= 0
+    self.is_engaged=False
+
+def steer_rate_limit(old, new):
+  # Rate limiting to 0.5 degrees per step
+  limit = 0.5
+  if new > old + limit:
+    return old + limit
+  elif new < old - limit:
+    return old - limit
+  else:
+    return new
+
+frame_id = 0
 def cam_callback(image):
+  global frame_id
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
   img = np.reshape(img, (H, W, 4))
   img = img[:, :, [0, 1, 2]].copy()
 
   dat = messaging.new_message('frame')
   dat.frame = {
-    "frameId": image.frame,
+    "frameId": frame_id, # TODO: can we get frame ID from the CARLA camera?
     "image": img.tostring(),
     "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
   pm.send('frame', dat)
+  frame_id += 1
 
 def imu_callback(imu):
-  #print(imu, imu.accelerometer)
-
   dat = messaging.new_message('sensorEvents', 2)
   dat.sensorEvents[0].sensor = 4
   dat.sensorEvents[0].type = 0x10
@@ -54,7 +74,6 @@ def imu_callback(imu):
 
 def health_function():
   pm = messaging.PubMaster(['health'])
-  rk = Ratekeeper(1.0)
   while 1:
     dat = messaging.new_message('health')
     dat.valid = True
@@ -64,59 +83,78 @@ def health_function():
       'controlsAllowed': True
     }
     pm.send('health', dat)
-    rk.keep_time()
+    time.sleep(0.5)
+
+def fake_gps():
+  # TODO: read GPS from CARLA
+  pm = messaging.PubMaster(['gpsLocationExternal'])
+  while 1:
+    dat = messaging.new_message('gpsLocationExternal')
+    pm.send('gpsLocationExternal', dat)
+    time.sleep(0.01)
 
 def fake_driver_monitoring():
-  if args.realmonitoring:
-    return
-  pm = messaging.PubMaster(['driverState'])
+  pm = messaging.PubMaster(['driverState','dMonitoringState'])
   while 1:
+
+    # dmonitoringmodeld output
     dat = messaging.new_message('driverState')
     dat.driverState.faceProb = 1.0
     pm.send('driverState', dat)
-    time.sleep(0.1)
+
+    # dmonitoringd output
+    dat = messaging.new_message('dMonitoringState')
+    dat.dMonitoringState = {
+      "faceDetected": True,
+      "isDistracted": False,
+      "awarenessStatus": 1.,
+      "isRHD": False,
+    }
+    pm.send('dMonitoringState', dat)
+
+    time.sleep(DT_DMON)
+
+def can_function_runner(vs):
+  i = 0
+  while 1:
+    can_function(pm, vs.speed, vs.angle, i, vs.cruise_button, vs.is_engaged)
+    time.sleep(0.01)
+    i+=1
+
 
 def go(q):
-  threading.Thread(target=health_function).start()
-  threading.Thread(target=fake_driver_monitoring).start()
 
+  # setup CARLA
   client = carla.Client("127.0.0.1", 2000)
-  client.set_timeout(5.0)
+  client.set_timeout(10.0)
   world = client.load_world('Town04')
-  settings = world.get_settings()
-  settings.fixed_delta_seconds = 0.05
-  world.apply_settings(settings)
-
-  weather = carla.WeatherParameters(
-      cloudyness=0.1,
-      precipitation=0.0,
-      precipitation_deposits=0.0,
-      wind_intensity=0.0,
-      sun_azimuth_angle=15.0,
-      sun_altitude_angle=75.0)
-  world.set_weather(weather)
+  world.set_weather(carla.WeatherParameters(
+    cloudyness=0.1,
+    precipitation=0.0,
+    precipitation_deposits=0.0,
+    wind_intensity=0.0,
+    sun_azimuth_angle=15.0,
+    sun_altitude_angle=75.0
+  ))
 
   blueprint_library = world.get_blueprint_library()
-  # for blueprint in blueprint_library.filter('sensor.*'):
-  #    print(blueprint.id)
-  # exit(0)
 
   world_map = world.get_map()
-  vehicle_bp = random.choice(blueprint_library.filter('vehicle.tesla.*'))
+
+  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[0]
+  # vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
   vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
 
+  max_steer_angle = vehicle.get_physics_control().wheels[0].max_steer_angle
+
   # make tires less slippery
-  wheel_control = carla.WheelPhysicsControl(tire_friction=5)
+  # wheel_control = carla.WheelPhysicsControl(tire_friction=5)
   physics_control = vehicle.get_physics_control()
-  physics_control.mass = 1326
-  physics_control.wheels = [wheel_control]*4
+  physics_control.mass = 2326
+  # physics_control.wheels = [wheel_control]*4
   physics_control.torque_curve = [[20.0, 500.0], [5000.0, 500.0]]
   physics_control.gear_switch_time = 0.0
   vehicle.apply_physics_control(physics_control)
-
-  if args.autopilot:
-    vehicle.set_autopilot(True)
-  # print(vehicle.get_speed_limit())
 
   blueprint = blueprint_library.find('sensor.camera.rgb')
   blueprint.set_attribute('image_size_x', str(W))
@@ -140,47 +178,62 @@ def go(q):
     print("done")
   atexit.register(destroy)
 
+
+  vehicle_state = VehicleState()
+
+  # launch fake car threads
+  threading.Thread(target=health_function).start()
+  threading.Thread(target=fake_driver_monitoring).start()
+  threading.Thread(target=fake_gps).start()
+  threading.Thread(target=can_function_runner, args=(vehicle_state,)).start()
+
   # can loop
-  sendcan = messaging.sub_sock('sendcan')
   rk = Ratekeeper(100, print_delay_threshold=0.05)
 
   # init
-  A_throttle = 2.
-  A_brake = 2.
-  A_steer_torque = 1.
-  fake_wheel = FakeSteeringWheel()
-  is_openpilot_engaged = False
-  in_reverse = False
+  throttle_ease_out_counter = REPEAT_COUNTER
+  brake_ease_out_counter = REPEAT_COUNTER
+  steer_ease_out_counter = REPEAT_COUNTER
 
-  throttle_out = 0
-  brake_out = 0
-  steer_angle_out = 0
+
+  vc = carla.VehicleControl(throttle=0, steer=0, brake=0, reverse=False)
+
+  is_openpilot_engaged = False
+  throttle_out = steer_out = brake_out = 0
+  throttle_op = steer_op = brake_op = 0
+  throttle_manual = steer_manual = brake_manual = 0
+
+  old_steer = old_brake = old_throttle = 0
+  throttle_manual_multiplier = 0.7 #keyboard signal is always 1
+  brake_manual_multiplier = 0.7 #keyboard signal is always 1
+  steer_manual_multiplier = 45 * STEER_RATIO  #keyboard signal is always 1
+
 
   while 1:
+    # 1. Read the throttle, steer and brake from op or manual controls
+    # 2. Set instructions in Carla
+    # 3. Send current carstate to op via can
+
     cruise_button = 0
+    throttle_out = steer_out = brake_out = 0
+    throttle_op = steer_op = brake_op = 0
+    throttle_manual = steer_manual = brake_manual = 0
 
-    # check for a input message, this will not block
+    # --------------Step 1-------------------------------
     if not q.empty():
-      print("here")
       message = q.get()
-
       m = message.split('_')
       if m[0] == "steer":
-        steer_angle_out = float(m[1])
-        fake_wheel.set_angle(steer_angle_out)  # touching the wheel overrides fake wheel angle
-        # print(" === steering overriden === ")
+        steer_manual = float(m[1])
+        is_openpilot_engaged = False
       if m[0] == "throttle":
-        throttle_out = float(m[1]) / 100.
-        if throttle_out > 0.3:
-          cruise_button = CruiseButtons.CANCEL
-          is_openpilot_engaged = False
+        throttle_manual = float(m[1])
+        is_openpilot_engaged = False
       if m[0] == "brake":
-        brake_out = float(m[1]) / 100.
-        if brake_out > 0.3:
-          cruise_button = CruiseButtons.CANCEL
-          is_openpilot_engaged = False
+        brake_manual = float(m[1])
+        is_openpilot_engaged = False
       if m[0] == "reverse":
-        in_reverse = not in_reverse
+        #in_reverse = not in_reverse
         cruise_button = CruiseButtons.CANCEL
         is_openpilot_engaged = False
       if m[0] == "cruise":
@@ -194,41 +247,101 @@ def go(q):
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
 
-    vel = vehicle.get_velocity()
-    speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) * 3.6
-    can_function(pm, speed, fake_wheel.angle, rk.frame, cruise_button=cruise_button, is_engaged=is_openpilot_engaged)
+      throttle_out = throttle_manual * throttle_manual_multiplier
+      steer_out = steer_manual * steer_manual_multiplier
+      brake_out = brake_manual * brake_manual_multiplier
 
-    if rk.frame % 1 == 0:  # 20Hz?
-      throttle_op, brake_op, steer_torque_op = sendcan_function(sendcan)
-      # print(" === torq, ",steer_torque_op, " ===")
-      if is_openpilot_engaged:
-        fake_wheel.response(steer_torque_op * A_steer_torque, speed)
-        throttle_out = throttle_op * A_throttle
-        brake_out = brake_op * A_brake
-        steer_angle_out = fake_wheel.angle
-        # print(steer_torque_op)
-      # print(steer_angle_out)
-      vc = carla.VehicleControl(throttle=throttle_out, steer=steer_angle_out / 3.14, brake=brake_out, reverse=in_reverse)
-      vehicle.apply_control(vc)
+      #steer_out = steer_out
+      # steer_out = steer_rate_limit(old_steer, steer_out)
+      old_steer = steer_out
+      old_throttle = throttle_out
+      old_brake = brake_out
+
+      # print('message',old_throttle, old_steer, old_brake)
+
+    if is_openpilot_engaged:
+      sm.update(0)
+      throttle_op = sm['carControl'].actuators.gas #[0,1]
+      brake_op = sm['carControl'].actuators.brake #[0,1]
+      steer_op = sm['controlsState'].angleSteersDes # degrees [-180,180]
+
+      throttle_out = throttle_op
+      steer_out = steer_op
+      brake_out = brake_op
+
+      steer_out = steer_rate_limit(old_steer, steer_out)
+      old_steer = steer_out
+
+    # OP Exit conditions
+    # if throttle_out > 0.3:
+    #   cruise_button = CruiseButtons.CANCEL
+    #   is_openpilot_engaged = False
+    # if brake_out > 0.3:
+    #   cruise_button = CruiseButtons.CANCEL
+    #   is_openpilot_engaged = False
+    # if steer_out > 0.3:
+    #   cruise_button = CruiseButtons.CANCEL
+    #   is_openpilot_engaged = False
+
+    else:
+      if throttle_out==0 and old_throttle>0:
+        if throttle_ease_out_counter>0:
+          throttle_out = old_throttle
+          throttle_ease_out_counter += -1
+        else:
+          throttle_ease_out_counter = REPEAT_COUNTER
+          old_throttle = 0
+
+      if brake_out==0 and old_brake>0:
+        if brake_ease_out_counter>0:
+          brake_out = old_brake
+          brake_ease_out_counter += -1
+        else:
+          brake_ease_out_counter = REPEAT_COUNTER
+          old_brake = 0
+
+      if steer_out==0 and old_steer!=0:
+        if steer_ease_out_counter>0:
+          steer_out = old_steer
+          steer_ease_out_counter += -1
+        else:
+          steer_ease_out_counter = REPEAT_COUNTER
+          old_steer = 0
+
+    # --------------Step 2-------------------------------
+
+    steer_carla = steer_out / (max_steer_angle * STEER_RATIO * -1)
+
+    steer_carla = np.clip(steer_carla, -1,1)
+    steer_out = steer_carla * (max_steer_angle * STEER_RATIO * -1)
+    old_steer = steer_carla * (max_steer_angle * STEER_RATIO * -1)
+
+    vc.throttle = throttle_out/0.6
+    vc.steer = steer_carla
+    vc.brake = brake_out
+    vehicle.apply_control(vc)
+
+    # --------------Step 3-------------------------------
+    vel = vehicle.get_velocity()
+    speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) # in m/s
+    vehicle_state.speed = speed
+    vehicle_state.angle = steer_out
+    vehicle_state.cruise_button = cruise_button
+    vehicle_state.is_engaged = is_openpilot_engaged
+
+    if rk.frame%PRINT_DECIMATION == 0:
+      print("frame: ", "engaged:", is_openpilot_engaged, "; throttle: ", round(vc.throttle, 3), "; steer(c/deg): ", round(vc.steer, 3), round(steer_out, 3), "; brake: ", round(vc.brake, 3))
 
     rk.keep_time()
 
 if __name__ == "__main__":
-  params = Params()
-  params.delete("Offroad_ConnectivityNeeded")
-  from selfdrive.version import terms_version, training_version
-  params.put("HasAcceptedTerms", terms_version)
-  params.put("CompletedTrainingVersion", training_version)
-  params.put("CommunityFeaturesToggle", "1")
-  params.put("CalibrationParams", '{"vanishing_point": [582.06, 442.78], "valid_blocks": 20}')
 
-  # no carla, still run
-  try:
-    import carla
-  except ImportError:
-    print("WARNING: NO CARLA")
-    while 1:
-      time.sleep(1)
+  # make sure params are in a good state
+  params = Params()
+  params.clear_all()
+  set_params_enabled()
+  params.delete("Offroad_ConnectivityNeeded")
+  params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
   from multiprocessing import Process, Queue
   q = Queue()

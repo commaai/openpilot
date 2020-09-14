@@ -115,11 +115,8 @@ void sensor_loop() {
         }
       }
 
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-
-      auto sensor_events = event.initSensorEvents(log_events);
+      MessageBuilder msg;
+      auto sensor_events = msg.initEvent().initSensorEvents(log_events);
 
       int log_i = 0;
       for (int i = 0; i < n; i++) {

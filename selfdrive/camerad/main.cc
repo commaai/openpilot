@@ -347,11 +347,8 @@ void* frontview_thread(void *arg) {
     // send frame event
     {
       if (s->pm != NULL) {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initFrontFrame();
+        MessageBuilder msg;
+        auto framed = msg.initEvent().initFrontFrame();
         framed.setFrameId(frame_data.frame_id);
         framed.setEncodeId(cnt);
         framed.setTimestampEof(frame_data.timestamp_eof);
@@ -478,11 +475,8 @@ void* wideview_thread(void *arg) {
     // send frame event
     {
       if (s->pm != NULL) {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initWideFrame();
+        MessageBuilder msg;
+        auto framed = msg.initEvent().initWideFrame();
         framed.setFrameId(frame_data.frame_id);
         framed.setEncodeId(cnt);
         framed.setTimestampEof(frame_data.timestamp_eof);
@@ -744,11 +738,8 @@ void* processing_thread(void *arg) {
     // send frame event
     {
       if (s->pm != NULL) {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initFrame();
+        MessageBuilder msg;
+        auto framed = msg.initEvent().initFrame();
         framed.setFrameId(frame_data.frame_id);
         framed.setEncodeId(cnt);
         framed.setTimestampEof(frame_data.timestamp_eof);
@@ -832,11 +823,8 @@ void* processing_thread(void *arg) {
       free(row);
       jpeg_finish_compress(&cinfo);
 
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-
-      auto thumbnaild = event.initThumbnail();
+      MessageBuilder msg;
+      auto thumbnaild = msg.initEvent().initThumbnail();
       thumbnaild.setFrameId(frame_data.frame_id);
       thumbnaild.setTimestampEof(frame_data.timestamp_eof);
       thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));

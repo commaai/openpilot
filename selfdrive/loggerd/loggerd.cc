@@ -112,11 +112,11 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   // 0:f, 1:d, 2:e
   if (cam_idx == CAM_IDX_DCAM) {
   // TODO: add this back
-#ifndef QCOM2
+  #ifndef QCOM2
     std::vector<char> value = read_db_bytes("RecordFront");
     if (value.size() == 0 || value[0] != '1') return;
     LOGW("recording front camera");
-#endif
+  #endif
     set_thread_name("FrontCameraEncoder");
   } else if (cam_idx == CAM_IDX_FCAM) {
     set_thread_name("RearCameraEncoder");
@@ -133,6 +133,11 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   EncoderState encoder;
   EncoderState encoder_alt;
   bool has_encoder_alt = false;
+
+  pthread_mutex_lock(&s.rotate_lock);
+  int my_idx = s.num_encoder;
+  s.num_encoder += 1;
+  pthread_mutex_unlock(&s.rotate_lock);
 
   int encoder_segment = -1;
   int cnt = 0;
@@ -214,10 +219,10 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
                  && !do_exit) {
             s.cv.wait(lk);
           }
-          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.rotate_segment && s.rotate_seq_id == cam_idx;
+          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.rotate_segment && s.rotate_seq_id == my_idx;
         } else {
           // front camera is best effort
-          should_rotate = encoder_segment < s.rotate_segment && s.rotate_seq_id == cam_idx;
+          should_rotate = encoder_segment < s.rotate_segment && s.rotate_seq_id == my_idx;
         }
         if (do_exit) break;
 
@@ -226,7 +231,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           LOG("rotate encoder to %s", s.segment_path);
 
           encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
-          s.rotate_seq_id = (cam_idx + 1) % s.num_encoder;
+          s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
 
           if (has_encoder_alt) {
             encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
@@ -249,7 +254,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           pthread_mutex_unlock(&s.rotate_lock);
 
           while(s.should_close > 0 && s.should_close < s.num_encoder) {
-            // printf("%d waiting for others to reach close, %d/%d \n", cam_idx, s.should_close, s.num_encoder);
+            // printf("%d waiting for others to reach close, %d/%d \n", my_idx, s.should_close, s.num_encoder);
             s.cv.wait(lk);
           }
 
@@ -263,11 +268,17 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           encoder_open(&encoder, encoder.next_path);
           encoder.segment = encoder.next_segment;
           encoder.rotating = false;
+          if (has_encoder_alt) {
+            encoder_close(&encoder_alt);
+            encoder_open(&encoder_alt, encoder_alt.next_path);
+            encoder_alt.segment = encoder_alt.next_segment;
+            encoder_alt.rotating = false;
+          }
           s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
           while(s.finish_close > 0 && s.finish_close < s.num_encoder) {
-            // printf("%d waiting for others to actually close, %d/%d \n", cam_idx, s.finish_close, s.num_encoder);
+            // printf("%d waiting for others to actually close, %d/%d \n", my_idx, s.finish_close, s.num_encoder);
             s.cv.wait(lk);
           }
           s.finish_close = 0;
@@ -289,10 +300,8 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
         }
 
         // publish encode index
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-        auto eidx = event.initEncodeIdx();
+        MessageBuilder msg;
+        auto eidx = msg.initEvent().initEncodeIdx();
         eidx.setFrameId(extra.frame_id);
 #ifdef QCOM2
         eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
@@ -303,8 +312,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
+        auto bytes = msg.toBytes();
 
         if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
@@ -326,18 +334,15 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           }
 
           // publish encode index
-          capnp::MallocMessageBuilder msg;
-          cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-          event.setLogMonoTime(nanos_since_boot());
-          auto eidx = event.initEncodeIdx();
+          MessageBuilder msg;
+          auto eidx = msg.initEvent().initEncodeIdx();
           eidx.setFrameId(extra.frame_id);
           eidx.setType(cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP);
           eidx.setEncodeId(cnt);
           eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
 
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
+          auto bytes = msg.toBytes();
           if (lh) {
             lh_log(lh, bytes.begin(), bytes.size(), false);
           }
@@ -397,10 +402,8 @@ void append_property(const char* key, const char* value, void *cookie) {
 }
 
 kj::Array<capnp::word> gen_init_data() {
-  capnp::MallocMessageBuilder msg;
-  auto event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto init = event.initInitData();
+  MessageBuilder msg;
+  auto init = msg.initEvent().initInitData();
 
   init.setDeviceType(cereal::InitData::DeviceType::NEO);
   init.setVersion(capnp::Text::Reader(COMMA_VERSION));
@@ -502,11 +505,8 @@ static void bootlog() {
   LOGW("bootlog to %s", s.segment_path);
 
   {
-    capnp::MallocMessageBuilder msg;
-    auto event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-
-    auto boot = event.initBoot();
+    MessageBuilder msg;
+    auto boot = msg.initEvent().initBoot();
 
     boot.setWallTimeNanos(nanos_since_epoch());
 
@@ -516,8 +516,7 @@ static void bootlog() {
     std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
     boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
+    auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size(), false);
   }
 
@@ -607,16 +606,13 @@ int main(int argc, char** argv) {
 #ifndef DISABLE_ENCODER
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, is_streaming, false, CAM_IDX_FCAM);
-  s.num_encoder += 1;
 
   // front camera
   std::thread front_encoder_thread_handle(encoder_thread, false, false, CAM_IDX_DCAM);
-  s.num_encoder += 1;
 
   #ifdef QCOM2
   // wide camera
   std::thread wide_encoder_thread_handle(encoder_thread, false, false, CAM_IDX_ECAM);
-  s.num_encoder += 1;
   #endif
 #endif
 
