@@ -53,30 +53,30 @@ jobs:
                 scons -j$(nproc) && \
                 $UNIT_TEST selfdrive/car"
 
-  build_mac:
-    name: build macos
-    runs-on: macos-10.15
-    timeout-minutes: 60
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Cache dependencies
-      id: dependency-cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.pyenv
-          ~/Library/Caches/pip
-          ~/Library/Caches/pipenv
-          ~/Library/Caches/Homebrew
-        key: ${{ hashFiles('tools/mac_setup.sh') }}
-    - name: Install dependencies
-      run: ./tools/mac_setup.sh
-    - name: Build openpilot
-      run: eval "$(pyenv init -)" && scons -j$(nproc)
-    - name: Brew cleanup
-      run: brew cleanup # keeps our cache small
+  #build_mac:
+  #  name: build macos
+  #  runs-on: macos-10.15
+  #  timeout-minutes: 60
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #    with:
+  #      submodules: true
+  #  - name: Cache dependencies
+  #    id: dependency-cache
+  #    uses: actions/cache@v2
+  #    with:
+  #      path: |
+  #        ~/.pyenv
+  #        ~/Library/Caches/pip
+  #        ~/Library/Caches/pipenv
+  #        ~/Library/Caches/Homebrew
+  #      key: ${{ hashFiles('tools/mac_setup.sh') }}
+  #  - name: Install dependencies
+  #    run: ./tools/mac_setup.sh
+  #  - name: Build openpilot
+  #    run: eval "$(pyenv init -)" && scons -j$(nproc)
+  #  - name: Brew cleanup
+  #    run: brew cleanup # keeps our cache small
 
   docker_push:
     name: docker push

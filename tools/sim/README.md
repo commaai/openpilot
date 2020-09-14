@@ -1,34 +1,22 @@
 openpilot in simulator
 =====================
-Needs Ubuntu 16.04
 
-## Checkout openpilot
-```
-cd ~/
-git clone https://github.com/commaai/openpilot.git
 
-# Add export PYTHONPATH=$HOME/openpilot to your bashrc
-# Have a working tensorflow+keras in python3.7.3 (with [packages] in openpilot/Pipfile)
+## Running the simulator
+First, start the CARLA server.
 ```
-## Install (in terminal 1)
+./start_carla.sh
 ```
-cd ~/openpilot/tools/sim
-./start_carla.sh  # install CARLA 0.9.7 and start the server
+
+Then start bridge and openpilot.
 ```
-## openpilot (in terminal 2)
-```
-cd ~/openpilot/selfdrive/
-PASSIVE=0 NOBOARD=1 ./manager.py
-```
-## bridge (in terminal 3)
-```
-# links carla to openpilot, will "start the car" according to manager
-cd ~/openpilot/tools/sim
-./bridge.py
-```
+./start_openpilot_docker.sh
+``` 
+
+To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed. 
 ## Controls
-Now put the focus on the terminal running bridge.py and you can control
-openpilot driving in the simulation with the following keys
+
+You can control openpilot driving in the simulation with the following keys
 
 |  key  |   functionality   |
 | :---: | :---------------: |
@@ -36,5 +24,4 @@ openpilot driving in the simulation with the following keys
 |   2   | Cruise down 5 mph |
 |   3   |   Cruise cancel   |
 |   q   |     Exit all      |
-
 

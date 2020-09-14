@@ -7,11 +7,11 @@
 #include "common/utilpp.h"
 #include "common/params.h"
 #include "common/touch.h"
-#include "common/timing.h"
 #include "common/swaglog.h"
 
 #include "ui.hpp"
 #include "paint.hpp"
+#include "android/sl_sound.hpp"
 
 // Includes for light sensor
 #include <cutils/properties.h>
@@ -115,7 +115,7 @@ static void set_awake(UIState *s, bool awake) {
 }
 
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
-  if (s->started && (touch_x >= s->scene.ui_viz_rx - bdr_s)
+  if (s->started && (touch_x >= s->scene.viz_rect.x - bdr_s)
       && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
@@ -127,11 +127,9 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
 
 static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
   if (!s->scene.uilayout_sidebarcollapsed && touch_x <= sbr_w) {
-    if (touch_x >= settings_btn_x && touch_x < (settings_btn_x + settings_btn_w)
-        && touch_y >= settings_btn_y && touch_y < (settings_btn_y + settings_btn_h)) {
+    if (settings_btn.ptInRect(touch_x, touch_y)) {
       s->active_app = cereal::UiLayoutState::App::SETTINGS;
-    } else if (touch_x >= home_btn_x && touch_x < (home_btn_x + home_btn_w)
-               && touch_y >= home_btn_y && touch_y < (home_btn_y + home_btn_h)) {
+    } else if (home_btn.ptInRect(touch_x, touch_y)) {
       if (s->started) {
         s->active_app = cereal::UiLayoutState::App::NONE;
         s->scene.uilayout_sidebarcollapsed = true;
@@ -150,10 +148,8 @@ static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
     timeout--;
   }
   if (prev_collapsed != s->scene.uilayout_sidebarcollapsed || prev_app != s->active_app || timeout == 0) {
-    capnp::MallocMessageBuilder msg;
-    auto event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto layout = event.initUiLayoutState();
+    MessageBuilder msg;
+    auto layout = msg.initEvent().initUiLayoutState();
     layout.setActiveApp(s->active_app);
     layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
     pm->send("offroadLayout", msg);
@@ -169,10 +165,13 @@ int main(int argc, char* argv[]) {
   setpriority(PRIO_PROCESS, 0, -14);
 
   signal(SIGINT, (sighandler_t)set_do_exit);
+  SLSound sound;
 
   UIState uistate = {};
   UIState *s = &uistate;
   ui_init(s);
+  s->sound = &sound;
+
   set_awake(s, true);
   enable_event_processing(true);
 
@@ -201,7 +200,7 @@ int main(int argc, char* argv[]) {
 
   const int MIN_VOLUME = LEON ? 12 : 9;
   const int MAX_VOLUME = LEON ? 15 : 12;
-  assert(s->sound.init(MIN_VOLUME));
+  s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
     if (!s->started || !s->vision_connected) {
@@ -222,7 +221,7 @@ int main(int argc, char* argv[]) {
     }
 
     // manage wakefulness
-    if (s->started) {
+    if (s->started || s->ignition) {
       set_awake(s, true);
     }
 
@@ -238,7 +237,7 @@ int main(int argc, char* argv[]) {
     }
 
     // up one notch every 5 m/s
-    s->sound.setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
+    s->sound->setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
 
     // set brightness
     float clipped_brightness = fmin(512, (s->light_sensor*brightness_m) + brightness_b);

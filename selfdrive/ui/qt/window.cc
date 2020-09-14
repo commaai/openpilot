@@ -13,7 +13,6 @@
 #include "settings.hpp"
 
 #include "paint.hpp"
-#include "sound.hpp"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -40,11 +39,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
-void MainWindow::openSettings(){
+void MainWindow::openSettings() {
   main_layout->setCurrentIndex(1);
 }
 
-void MainWindow::closeSettings(){
+void MainWindow::closeSettings() {
   main_layout->setCurrentIndex(0);
 }
 
@@ -52,6 +51,7 @@ void MainWindow::closeSettings(){
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
+
 }
 
 GLWindow::~GLWindow() {
@@ -68,6 +68,7 @@ void GLWindow::initializeGL() {
 
   ui_state = new UIState();
   ui_init(ui_state);
+  ui_state->sound = &sound;
   ui_state->fb_w = vwp_w;
   ui_state->fb_h = vwp_h;
 
@@ -89,26 +90,16 @@ void GLWindow::paintGL() {
 
 void GLWindow::mousePressEvent(QMouseEvent *e) {
   // Settings button click
-  if (!ui_state->scene.uilayout_sidebarcollapsed && e->x() <= sbr_w) {
-    if (e->x() >= settings_btn_x && e->x() < (settings_btn_x + settings_btn_w)
-        && e->y() >= settings_btn_y && e->y() < (settings_btn_y + settings_btn_h)) {
-      emit openSettings();
-    }
+  if (!ui_state->scene.uilayout_sidebarcollapsed && settings_btn.ptInRect(e->x(), e->y())) {
+    emit openSettings();
   }
 
   // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.ui_viz_rx - bdr_s)){
+  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)){
     ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
   }
 }
 
-
-/* HACKS */
-bool Sound::init(int volume) { return true; }
-bool Sound::play(AudibleAlert alert) { printf("play sound: %d\n", (int)alert); return true; }
-void Sound::stop() {}
-void Sound::setVolume(int volume) {}
-Sound::~Sound() {}
 
 GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
   unsigned int texture;

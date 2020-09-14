@@ -130,9 +130,9 @@ void update_sockets(UIState *s) {
     auto alert_sound = scene.controls_state.getAlertSound();
     if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
-        s->sound.stop();
+        s->sound->stop();
       } else {
-        s->sound.play(alert_sound);
+        s->sound->play(alert_sound);
       }
     }
     scene.alert_text1 = scene.controls_state.getAlertText1();
@@ -199,7 +199,9 @@ void update_sockets(UIState *s) {
     }
   }
   if (sm.updated("health")) {
-    scene.hwType = sm["health"].getHealth().getHwType();
+    auto health = sm["health"].getHealth();
+    scene.hwType = health.getHwType();
+    s->ignition = health.getIgnitionLine() || health.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
     scene.hwType = cereal::HealthData::HwType::UNKNOWN;
   }
@@ -242,17 +244,16 @@ void ui_update(UIState *s) {
   }
 
   // Handle controls timeout
-  bool controls_timeout = ((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 10*UI_FREQ;
-  if (s->started && !s->scene.frontview && controls_timeout) {
+  if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 5*UI_FREQ) {
     if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
       s->scene.alert_text1 = "openpilot Unavailable";
       s->scene.alert_text2 = "Waiting for controls to start";
       s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
-    } else {
+    } else if (((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 5*UI_FREQ) {
       // car is started, but controls is lagging or died
       if (s->scene.alert_text2 != "Controls Unresponsive") {
-        s->sound.play(AudibleAlert::CHIME_WARNING_REPEAT);
+        s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
         LOGE("Controls unresponsive");
       }
 
