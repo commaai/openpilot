@@ -38,7 +38,7 @@ const mat3 intrinsic_matrix = (mat3){{
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
 bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, float *out_x, float *out_y) {
-  const vec4 car_space_projective = (vec4){{in_x, in_y, in_z., 1.}};
+  const vec4 car_space_projective = (vec4){{in_x, in_y, in_z, 1.}};
   // We'll call the car space point p.
   // First project into normalized image coordinates with the extrinsics matrix.
   const vec4 Ep4 = matvecmul(s->scene.extrinsic_matrix, car_space_projective);
@@ -54,10 +54,6 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
   return *out_x >= 0 && *out_y >= 0;
 }
 
-// Calculate an interpolation between two numbers at a specific increment
-static float lerp(float v0, float v1, float t) {
-  return (1 - t) * v0 + t * v1;
-}
 
 static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, float size, NVGcolor color, int font){
   nvgFontFaceId(vg, font);
@@ -69,7 +65,7 @@ static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, f
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
   float x, y;
-  if (!car_space_to_full_frame(s, x_in, y_in, &x, &y)) {
+  if (!car_space_to_full_frame(s, x_in, y_in, 0.0, &x, &y)) {
     return;
   }
 
@@ -151,17 +147,19 @@ static void ui_draw_lines(UIState *s, const vertex_data *v, const int cnt, NVGco
 static void update_track_data(UIState *s, track_vertices_data *pvd) {
   const UIScene *scene = &s->scene;
   const float off = 0.5;
-  const float *points = scene->path_points;
+  int max_idx;
+  line l = scene->path;
   float lead_d = scene->lead_data[0].getDRel()*2.;
-  float path_height = (lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
-  path_height = fmin(path_height, scene->model.getPath().getValidLen());
+  float path_length = (lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
+  path_length = fmin(path_length, scene->max_distance);
 
   vertex_data *v = &pvd->v[0];
-  for (int i = 0; i <= path_height; i++) {
-    v += car_space_to_full_frame(s, lerp(i+1.0, i, i/100.0), points[i] - off, &v->x, &v->y);
+  for (int i = 0; l.x[i] <= path_length and i < TRAJECTORY_SIZE; i++) {
+    v += car_space_to_full_frame(s, l.x[i], l.y[i] - off, l.z[i], &v->x, &v->y);
+    max_idx = i;
   }
-  for (int i = path_height; i >= 0; i--) {
-    v += car_space_to_full_frame(s, lerp(i+1.0, i, i/100.0), points[i] + off, &v->x, &v->y);
+  for (int i = max_idx; i >= 0; i--) {
+    v += car_space_to_full_frame(s, l.x[i], l.y[i] + off, l.z[i], &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -203,16 +201,16 @@ static void draw_frame(UIState *s) {
   glBindVertexArray(0);
 }
 
-static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
+static void update_lane_line_data(UIState *s, line l, float off, model_path_vertices_data *pvd, float max_distance) {
   // TODO check that this doesn't overflow max vertex buffer
   int max_idx;
   vertex_data *v = &pvd->v[0];
-  for (i = 0; ((i < TRAJECTORY_SIZE) and (line.x[i] < fmax(MIN_DRAW_DISTANCE, max_distance)); i++) {
-    v += car_space_to_full_frame(s, line.x[i], points[i] - off, line.z[i], &v->x, &v->y);
+  for (int i = 0; ((i < TRAJECTORY_SIZE) and (l.x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
+    v += car_space_to_full_frame(s, l.x[i], l.y[i] - off, l.z[i], &v->x, &v->y);
     max_idx = i;
   }
   for (int i = max_idx - 1; i > 0; i--) {
-    v += car_space_to_full_frame(s, line.x[i], line.y[i] + off, line.z[i], &v->x, &v->y);
+    v += car_space_to_full_frame(s, l.x[i], l.y[i] + off, l.z[i], &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -231,19 +229,17 @@ static void ui_draw_lane(UIState *s, model_path_vertices_data *pstart, NVGcolor 
 
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
-  auto left_lane = scene->model.getLeftLane();
-  auto right_lane = scene->model.getRightLane();
   model_path_vertices_data *pvd = &s->model_path_vertices[0];
   if(s->sm->updated("modelV2")) {
-    update_lane_line_data(s, scene->left_lane_line, 0.025*s->lane_line_probs[1], pvd, scene->max_distance);
-    update_lane_line_data(s, scene->right_lane_line, 0.025*s->lane_line_probs[2], pvd + MODEL_LANE_PATH_CNT, scene->max_distance);
+    update_lane_line_data(s, scene->left_lane_line, 0.025*scene->lane_line_probs[1], pvd, scene->max_distance);
+    update_lane_line_data(s, scene->right_lane_line, 0.025*scene->lane_line_probs[2], pvd + MODEL_LANE_PATH_CNT, scene->max_distance);
   }
 
   // Draw left lane edge
-  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, left_lane.getProb()));
+  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[1]));
 
   // Draw right lane edge
-  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, right_lane.getProb()));
+  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[2]));
 
   if(s->sm->updated("radarState")) {
     update_track_data(s, &s->track_vertices);
