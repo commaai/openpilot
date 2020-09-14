@@ -20,6 +20,7 @@ Export('cython_dependencies')
 
 Help("\nType: 'scons cc=1' for cross-compilation.\n")
 Help("\nType: 'scons use_webcam=1' for web camera support.\n")
+Help("\nType: 'scons new_compiler=1' in case you have installed the latest version of CLANG and GCC\n")
 Help("\nNote: you can combine all the parameters shown above\n")
 
 
@@ -38,6 +39,8 @@ QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 cc = bool(ARGUMENTS.get("cc", 0))
 if cc:
   print("----> Cross-compiling for ARM64.... ")
+
+new_compiler = bool(ARGUMENTS.get("new_compiler", 0))
 
 if arch == "aarch64" or arch == "larch64":
   lenv = {
@@ -219,7 +222,7 @@ if cc:
 if webcam:
   env.Append(CPPDEFINES=['CL_USE_DEPRECATED_OPENCL_1_2_APIS'])
 
-if is_ubuntu:
+if is_ubuntu and new_compiler:
   env.Append(CCFLAGS=["-Wno-c99-designator",
                       "-Wno-reorder-init-list",
                       "-Wno-unused-variable",
