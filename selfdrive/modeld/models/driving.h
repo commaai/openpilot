@@ -26,6 +26,7 @@
 #define TRAFFIC_CONVENTION_LEN 2
 
 #define PLAN_MHP_N 5
+#define PLAN_MHP_COLUMNS 30
 #define PLAN_MHP_VALS 30*33
 #define PLAN_MHP_SELECTION 1
 #define PLAN_MHP_GROUP_SIZE (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION)
@@ -77,6 +78,8 @@ void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
+                   uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data, uint64_t timestamp_eof);
+void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                    uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data, uint64_t timestamp_eof);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data, uint64_t timestamp_eof);

@@ -256,6 +256,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   float z_std_arr[TRAJECTORY_SIZE];
   float t_arr[TRAJECTORY_SIZE];
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
+    // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
       t_arr[i] = T_IDXS[i];
       x_arr[i] = data[i*columns + 0 + column_offset];
