@@ -50,6 +50,7 @@ selfdrive/modeld/_dmonitoringmodeld
 /src/
 
 tools/replay/tmp/*
+!tools/replay/tmp/.gitkeep
 
 one
 openpilot
