@@ -130,6 +130,7 @@ typedef struct UIScene {
   line left_road_edge;
   line right_road_edge;
   float max_distance;
+  float lane_line_probs[4];
 } UIScene;
 
 typedef struct {

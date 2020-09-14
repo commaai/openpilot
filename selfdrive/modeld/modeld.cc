@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  PubMaster pm({"model", "cameraOdometry"});
+  PubMaster pm({"modelV2", "model", "cameraOdometry"});
   SubMaster sm({"pathPlan", "frame"});
 
 #if defined(QCOM) || defined(QCOM2)

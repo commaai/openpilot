@@ -292,13 +292,11 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   // make msg
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
+  MessageBuilder msg;
+  auto framed = msg.initEvent(frame_drop < MAX_FRAME_DROP).initModelV2();
 
   uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
 
-  auto framed = event.initModelV2();
   framed.setFrameId(vipc_frame_id);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
@@ -340,10 +338,13 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   fill_xyzt(orientation_rate, best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
 
   auto lane_lines = framed.initLaneLines(4);
-  fill_xyzt(lane_lines[0], &net_outputs.lane_lines[0*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
-  fill_xyzt(lane_lines[1], &net_outputs.lane_lines[1*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
-  fill_xyzt(lane_lines[2], &net_outputs.lane_lines[2*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
-  fill_xyzt(lane_lines[3], &net_outputs.lane_lines[3*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+  float lane_line_probs_arr[4];
+  for (int i = 0; i < 4; i++) {
+    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
+  }
+  kj::ArrayPtr<const float> lane_line_probs(lane_line_probs_arr, 4);
+  framed.setLaneLineProbs(lane_line_probs);
 
   auto road_edges = framed.initRoadEdges(2);
   fill_xyzt(road_edges[0], &net_outputs.lane_lines[0*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
@@ -351,7 +352,6 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   auto meta = framed.initMeta();
   fill_meta_v2(meta, net_outputs.meta);
-  event.setValid(frame_drop < MAX_FRAME_DROP);
 
   pm.send("modelV2", msg);
 }
@@ -420,7 +420,6 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   fill_lead(framed.initLeadFuture(), &net_outputs.lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)], sigmoid(net_outputs.lead_prob[t_offset]));
 
   fill_meta(framed.initMeta(), net_outputs.meta);
-  event.setValid(frame_drop < MAX_FRAME_DROP);
 
   pm.send("model", msg);
 }
