@@ -253,20 +253,20 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
       
-     elif candidate == CAR.PRIUS_TSS2:
-       stop_and_go = True
-       ret.safetyParam = 73
-       ret.wheelbase = 2.70
-       ret.steerRatio = 15.74   # unknown end-to-end spec
-       tire_stiffness_factor = 0.6371   # hand-tune
-       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
+    elif candidate == CAR.PRIUS_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.70
+      ret.steerRatio = 15.74   # unknown end-to-end spec
+      tire_stiffness_factor = 0.6371   # hand-tune
+      ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
 
-       ret.lateralTuning.init('indi')
-       ret.lateralTuning.indi.innerLoopGain = 6
-       ret.lateralTuning.indi.outerLoopGain = 15.0
-       ret.lateralTuning.indi.timeConstant = 5.5
-       ret.lateralTuning.indi.actuatorEffectiveness = 6.0
-       ret.steerActuatorDelay = 0.60
+      ret.lateralTuning.init('indi')
+      ret.lateralTuning.indi.innerLoopGain = 6
+      ret.lateralTuning.indi.outerLoopGain = 15.0
+      ret.lateralTuning.indi.timeConstant = 5.5
+      ret.lateralTuning.indi.actuatorEffectiveness = 6.0
+      ret.steerActuatorDelay = 0.60
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
