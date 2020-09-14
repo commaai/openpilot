@@ -23,7 +23,7 @@ int write_param_float(float param, const char* param_name, bool persistent_param
 }
 
 void ui_init(UIState *s) {
-  s->sm = new SubMaster({"model", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
+  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
                          "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState"});
 
   s->started = false;
@@ -105,10 +105,14 @@ destroy:
   s->vision_connected = false;
 }
 
-static inline void fill_path_points(const cereal::ModelData::PathData::Reader &path, float *points) {
-  const capnp::List<float>::Reader &poly = path.getPoly();
-  for (int i = 0; i < path.getValidLen(); i++) {
-    points[i] = poly[0] * (i * i * i) + poly[1] * (i * i) + poly[2] * i + poly[3];
+static inline void fill_line(const cereal::ModelDataV2::XYZTData::Reader &line_msg, line l) {
+  const capnp::List<float>::Reader &x = line_msg.getX();
+  const capnp::List<float>::Reader &y = line_msg.getY();
+  const capnp::List<float>::Reader &z = line_msg.getZ();
+  for (int i = 0; i < TRAJECTORY_SIZE; i++) {
+    l.x[i] = x[i];
+    l.y[i] = y[i];
+    l.z[i] = z[i];
   }
 }
 
@@ -178,11 +182,15 @@ void update_sockets(UIState *s) {
       scene.extrinsic_matrix.v[i] = extrinsicl[i];
     }
   }
-  if (sm.updated("model")) {
-    scene.model = sm["model"].getModel();
-    fill_path_points(scene.model.getPath(), scene.path_points);
-    fill_path_points(scene.model.getLeftLane(), scene.left_lane_points);
-    fill_path_points(scene.model.getRightLane(), scene.right_lane_points);
+  if (sm.updated("modelV2")) {
+    scene.model = sm["modelV2"].getModelV2();
+    fill_line(scene.model.getPosition(), scene.path);
+    // TODO is this indexing allowed
+    scene.max_distance = scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1];
+    fill_line(scene.model.getLaneLines()[0], scene.outer_left_lane_line);
+    fill_line(scene.model.getLaneLines()[1], scene.left_lane_line);
+    fill_line(scene.model.getLaneLines()[2], scene.right_lane_line);
+    fill_line(scene.model.getLaneLines()[3], scene.outer_right_lane_line);
   }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
