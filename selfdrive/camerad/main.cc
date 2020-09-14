@@ -222,10 +222,8 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 void common_camera_process_buf(MultiCameraState *s, const CameraBuf *b, int cnt, PubMaster* pm) {
   const FrameMetadata &frame_data = b->yuv_metas[b->cur_yuv_idx];
   if (pm != nullptr) {
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto framed = event.initFrame();
+    MessageBuilder msg;
+    auto framed = msg.initEvent().initFrame();
     fill_frame_data(framed, frame_data, cnt);
 
 #if !defined(QCOM) && !defined(QCOM2)
@@ -297,7 +295,7 @@ void* frontview_thread(VisionState *s) {
   const bool rhd_front = read_db_bool("IsRHD");
 
   set_thread_name("frontview");
-  err = set_realtime_priority(51);
+  set_realtime_priority(51);
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
   SubMaster sm({"driverState"});
@@ -334,6 +332,7 @@ void* frontview_thread(VisionState *s) {
     {
       // use driver face crop for AE
       int x_start, x_end, y_start, y_end;
+      int skip = 1;
 
       if (meteringbox_xmax > 0) {
         x_start = std::max(0, meteringbox_xmin);
@@ -349,8 +348,9 @@ void* frontview_thread(VisionState *s) {
 #ifdef QCOM2
       x_start = 0.15 * b->rgb_width;
       x_end = 0.85 * b->rgb_width;
-      y_start = 0.15 * b->rgb_height;
-      y_end = 0.85 * b->rgb_height;
+      y_start = 0.5 * b->rgb_height;
+      y_end = 0.75 * b->rgb_height;
+      skip = 2;
 #endif
       const uint8_t *bgr_front_ptr = (const uint8_t*)b->rgb_bufs[b->cur_rgb_idx].addr;
       uint32_t lum_binning[256] = {0,};
@@ -368,16 +368,14 @@ void* frontview_thread(VisionState *s) {
           lum_binning[std::min(lum / 3, 255u)]++;
         }
       }
-      const unsigned int lum_total = (y_end - y_start) * (x_end - x_start)/2;
+      const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
       autoexposure(&s->cameras.front, lum_binning, ARRAYSIZE(lum_binning), lum_total);
     }
 
     const FrameMetadata &frame_data = b->yuv_metas[b->cur_yuv_idx];
     if (s->pm) {
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-      auto framed = event.initFrontFrame();
+      MessageBuilder msg;
+      auto framed = msg.initEvent().initFrontFrame();
       framed.setFrameType(cereal::FrameData::FrameType::FRONT);
       fill_frame_data(framed, frame_data, cnt);
       s->pm->send("frontFrame", msg);
@@ -420,22 +418,24 @@ void *processing_thread(VisionState *s, const char *tname, CameraState *camera_s
       const int exposure_y = 300;
       const int exposure_height = 400;
       const int exposure_width = 1152;
+      const int skip = 2;
 #else
       const int exposure_x = 290;
       const int exposure_y = 322;
       const int exposure_height = 314;
       const int exposure_width = 560;
+      const int skip = 1;
 #endif
       uint8_t *yuv_ptr_y = b->yuv_bufs[b->cur_yuv_idx].y;
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
-      for (int y = 0; y < exposure_height; y++) {
-        for (int x = 0; x < exposure_width; x++) {
+      for (int y = 0; y < exposure_height; y+=skip) {
+        for (int x = 0; x < exposure_width; x+=skip) {
           uint8_t lum = yuv_ptr_y[((exposure_y + y) * b->yuv_width) + exposure_x + x];
           lum_binning[lum]++;
         }
       }
-      const unsigned int lum_total = exposure_height * exposure_width;
+      const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
       autoexposure(camera_state, lum_binning, ARRAYSIZE(lum_binning), lum_total);
     }
 
@@ -740,7 +740,7 @@ void party(VisionState *s) {
   threads.push_back(std::thread(frontview_thread, s));
 #endif
 #ifdef QCOM2
-  threads.push_back(std::thread(processing_thread, s, "wideview", &s->cameras.wide, &s->wide, 1));
+  threads.push_back(std::thread(processing_thread, s, "wideview", &s->cameras.wide, &s->wide, 51));
 #endif
 
   // priority for cameras

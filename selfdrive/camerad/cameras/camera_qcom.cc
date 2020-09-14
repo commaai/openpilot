@@ -2322,10 +2322,8 @@ void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* p
   }
 
   if (pm != nullptr) {
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto framed = event.initFrame();
+    MessageBuilder msg;
+    auto framed = msg.initEvent().initFrame();
     fill_frame_data(framed, b->yuv_metas[b->cur_yuv_idx], cnt);
 #ifndef QCOM_REPLAY
     framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));

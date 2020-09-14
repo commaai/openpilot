@@ -578,7 +578,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->exposure_time = 598;
   s->request_id_last = 0;
   s->skipped = true;
-  
+
   s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
   s->debayer_cl_globalWorkSize[0] = s->ci.frame_width;
   s->debayer_cl_globalWorkSize[1] = s->ci.frame_height;
@@ -1117,10 +1117,8 @@ void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* p
 void camera_wide_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
   const FrameMetadata &frame_data = b->yuv_metas[b->cur_yuv_idx];
   if (pm != nullptr) {
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto framed = event.initWideFrame();
+    MessageBuilder msg;
+    auto framed = msg.initEvent().initWideFrame();
     fill_frame_data(framed, frame_data, cnt);
     pm->send("wideFrame", msg);
   }
