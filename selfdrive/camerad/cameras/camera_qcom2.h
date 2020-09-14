@@ -15,7 +15,6 @@
 #include "media/cam_req_mgr.h"
 
 #define FRAME_BUF_COUNT 4
-#define METADATA_BUF_COUNT 4
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,8 +62,11 @@ typedef struct CameraState {
   int buf0_handle;
   int buf_handle[FRAME_BUF_COUNT];
   int sync_objs[FRAME_BUF_COUNT];
-  int frame_id;
-  bool first;
+  int request_ids[FRAME_BUF_COUNT];
+  int request_id_last;
+  int frame_id_last;
+  int idx_offset;
+  bool skipped;
 
   struct cam_req_mgr_session_info req_mgr_session_info;
 
