@@ -12,7 +12,7 @@ function two_init {
   # Restrict Android and other system processes to the first two cores
   echo 0-1 > /dev/cpuset/background/cpus
   echo 0-1 > /dev/cpuset/system-background/cpus
-  [ -d "/dev/cpuset/foreground/boost/cpus" ] && echo 0-2 > /dev/cpuset/foreground/boost/cpus  # Not present in < NEOS 15
+  echo 0-1 > /dev/cpuset/foreground/boost/cpus
   echo 0-1 > /dev/cpuset/foreground/cpus
   echo 0-1 > /dev/cpuset/android/cpus
 

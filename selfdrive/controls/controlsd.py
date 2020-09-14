@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import os
-import gc
 from cereal import car, log
 from common.hardware import HARDWARE
 from common.numpy_fast import clip
-from common.realtime import sec_since_boot, set_realtime_priority, set_core_affinity, Ratekeeper, DT_CTRL, PRIO_CTRL_HIGH
+from common.realtime import sec_since_boot, config_rt_process, Ratekeeper, DT_CTRL, PRIO_CTRL_HIGH
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
@@ -43,9 +42,7 @@ EventName = car.CarEvent.EventName
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
-    gc.disable()
-    set_realtime_priority(PRIO_CTRL_HIGH)
-    set_core_affinity(3)
+    config_rt_process(3, PRIO_CTRL_HIGH)
 
     # Setup sockets
     self.pm = pm

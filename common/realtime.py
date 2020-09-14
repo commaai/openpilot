@@ -1,4 +1,5 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
+import gc
 import os
 import time
 import platform
@@ -48,6 +49,12 @@ def set_realtime_priority(level):
 def set_core_affinity(core):
   if not PC:
     os.sched_setaffinity(_get_tid(), [core,])
+
+
+def config_rt_process(core, priority):
+  gc.disable()
+  set_core_affinity(core)
+  set_realtime_priority(priority)
 
 
 class Ratekeeper():
