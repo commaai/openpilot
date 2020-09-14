@@ -521,10 +521,12 @@ int main() {
     // connect to the board
     usb_retry_connect();
 
+    threads.push_back(std::thread(pigeon_thread));
+    usleep(10*1000); // let pigeon init
+
     threads.push_back(std::thread(can_send_thread));
     threads.push_back(std::thread(can_recv_thread));
     threads.push_back(std::thread(hardware_control_thread));
-    threads.push_back(std::thread(pigeon_thread));
 
     for (auto &t : threads) t.join();
 

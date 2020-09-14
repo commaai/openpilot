@@ -188,6 +188,7 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
+  "waste3": ("selfdrive/debug/rt", ["./waste3"]),
 }
 
 daemon_processes = {
@@ -213,34 +214,35 @@ green_temp_processes = ['uploader']
 persistent_processes = [
   'thermald',
   'logmessaged',
-  'ui',
-  'uploader',
-  'deleter',
+  #'ui',
+  #'uploader',
+  #'deleter',
 ]
 
 if not PC:
   persistent_processes += [
-    'logcatd',
-    'tombstoned',
+    #'logcatd',
+    #'tombstoned',
   ]
 
 if ANDROID:
   persistent_processes += [
-    'updated',
+    #'updated',
   ]
 
 car_started_processes = [
   'controlsd',
-  'plannerd',
-  'loggerd',
-  'radard',
-  'calibrationd',
-  'paramsd',
-  'camerad',
-  'modeld',
-  'proclogd',
-  'locationd',
-  'clocksd',
+  'waste3',
+  #'plannerd',
+  #'loggerd',
+  #'radard',
+  #'calibrationd',
+  #'paramsd',
+  #'camerad',
+  #'modeld',
+  #'proclogd',
+  #'locationd',
+  #'clocksd',
 ]
 
 driver_view_processes = [
@@ -257,15 +259,15 @@ if WEBCAM:
 
 if not PC:
   car_started_processes += [
-    'ubloxd',
-    'sensord',
-    'dmonitoringd',
-    'dmonitoringmodeld',
+    #'ubloxd',
+    #'sensord',
+    #'dmonitoringd',
+    #'dmonitoringmodeld',
   ]
 
 if ANDROID:
   car_started_processes += [
-    'gpsd',
+    #'gpsd',
   ]
 
 
@@ -392,9 +394,6 @@ def kill_managed_process(name):
 def cleanup_all_processes(signal, frame):
   cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
 
-  if ANDROID:
-    pm_apply_packages('disable')
-
   for name in list(running.keys()):
     kill_managed_process(name)
   cloudlog.info("everything is dead")
@@ -444,8 +443,6 @@ def manager_init(should_register=True):
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
 def manager_thread():
-  # now loop
-  thermal_sock = messaging.sub_sock('thermal')
 
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
@@ -463,11 +460,6 @@ def manager_thread():
   for p in persistent_processes:
     start_managed_process(p)
 
-  # start offroad
-  if ANDROID:
-    pm_apply_packages('enable')
-    start_offroad()
-
   if os.getenv("NOBOARD") is None:
     start_managed_process("pandad")
 
@@ -477,6 +469,9 @@ def manager_thread():
 
   started_prev = False
   logger_dead = False
+
+  # now loop
+  thermal_sock = messaging.sub_sock('thermal')
 
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
