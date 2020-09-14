@@ -12,7 +12,7 @@ if [ $# -ge 1 ] && [ ! -z "$1" ]; then
   fi
 
   if [ "$1" == "-h" -o "$1" == "--help" ]; then
-    echo "Usage: ./launch_ubuntu_ARM.sh [-diplay [none|vga] -vmpath [path to store VM files] -temp]"
+    echo "Usage: ./launch_ubuntu_ARM.sh [-display [none|vga] -vmpath [path to store VM files] -temp]"
     echo ""
     echo "Optional arguments:"
     echo "  -display    specifies the display mode. Possible values are: none (default),"
