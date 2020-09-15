@@ -148,7 +148,12 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
   const UIScene *scene = &s->scene;
   const float off = 0.5;
   int max_idx;
-  float lead_d = scene->lead_data[0].getDRel()*2.;
+  float lead_d;
+  if(s->sm->updated("radarState")) {
+    lead_d = scene->lead_data[0].getDRel()*2.;
+  } else {
+    lead_d = MAX_DRAW_DISTANCE;
+  }
   float path_length = (lead_d>0.)?lead_d-fmin(lead_d*0.35, 10.):MAX_DRAW_DISTANCE;
   path_length = fmin(path_length, scene->max_distance);
 
@@ -229,18 +234,11 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   if(s->sm->updated("modelV2")) {
     for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
       update_lane_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd + ll_idx*MODEL_LANE_PATH_CNT, scene->max_distance);
+      ui_draw_lane(s, pvd + ll_idx*MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLaneLineProbs()[ll_idx]));
+      update_track_data(s, scene->model.getPosition(), &s->track_vertices);
+      ui_draw_track(s, &s->track_vertices);
     }
   }
-  for (int ll_idx =0; ll_idx < 4; ll_idx++) {
-    ui_draw_lane(s, pvd + ll_idx*MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLaneLineProbs()[ll_idx]));
-  }
-
-  if(s->sm->updated("radarState")) {
-    update_track_data(s, scene->model.getPosition(), &s->track_vertices);
-  }
-
-  // Draw vision path
-  ui_draw_track(s, &s->track_vertices);
 }
 
 // Draw all world space objects.
