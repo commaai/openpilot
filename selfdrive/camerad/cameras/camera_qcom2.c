@@ -551,8 +551,7 @@ void enqueue_req_multi(struct CameraState *s, int start, int n) {
 // ******************* camera *******************
 
 static void camera_release_buffer(void* cookie, int i) {
-  CameraState *s = cookie;
-  enqueue_buffer(s, i);
+  return;
 }
 
 static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps) {
@@ -951,9 +950,9 @@ void handle_camera_event(CameraState *s, void *evdat) {
     s->request_id_last = real_id;
     s->camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
     s->camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
-    s->request_ids[buf_idx] = real_id + FRAME_BUF_COUNT;
 
     // dispatch
+    enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1);
     tbuffer_dispatch(&s->camera_tb, buf_idx);
   } else { // not ready
     // reset after half second of no response
