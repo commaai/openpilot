@@ -1076,15 +1076,22 @@ void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   int err, err2;
   int scale = 6;
   int old_width = FRAME_WIDTH;
+  // int old_height = FRAME_HEIGHT;
   int new_width = FRAME_WIDTH / scale;
   int new_height = FRAME_HEIGHT / scale;
   uint8_t resized_dat[new_width*new_height*3];
+  // int goff, loff;
+  // goff = ((old_width*(scale-1)*old_height/scale)/2);
   memset(&resized_dat, cam_id, 3);
   for (uint32_t r=1;r<new_height;r++) {
     for (uint32_t c=1;c<new_width;c++) {
       resized_dat[(r*new_width+c)*3] = dat[(r*old_width + c)*3*scale];
       resized_dat[(r*new_width+c)*3+1] = dat[(r*old_width + c)*3*scale+1];
       resized_dat[(r*new_width+c)*3+2] = dat[(r*old_width + c)*3*scale+2];
+      // loff = r*old_width + c;
+      // resized_dat[(r*new_width+c)*3] = dat[(goff+loff)*3];
+      // resized_dat[(r*new_width+c)*3+1] = dat[(goff+loff)*3+1];
+      // resized_dat[(r*new_width+c)*3+2] = dat[(goff+loff)*3+2];
     }
   }
   err = zmq_send(zsock_resolve(s->rgb_sock), &resized_dat, new_width*new_height*3, 0);
