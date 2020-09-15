@@ -68,7 +68,7 @@ fail_frag:
 }
 
 void frame_shader_destroy(FrameShader *s) {
+  glDeleteProgram(s->prog);
   glDeleteShader(s->vert);
   glDeleteShader(s->frag);
-  glDeleteProgram(s->prog);
 }
