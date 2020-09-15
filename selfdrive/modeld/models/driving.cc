@@ -247,7 +247,7 @@ void fill_meta_v2(cereal::ModelDataV2::MetaData::Builder meta, const float * met
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
-               int column_offset, int columns, float * plan_t_arr) {
+               int columns, int column_offset, float * plan_t_arr) {
   float x_arr[TRAJECTORY_SIZE];
   float y_arr[TRAJECTORY_SIZE];
   float z_arr[TRAJECTORY_SIZE];
@@ -324,7 +324,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   float * best_plan = &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)];
   float plan_t_arr[TRAJECTORY_SIZE];
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    plan_t_arr[i] = best_plan[i*(PLAN_MHP_COLUMNS + 15)];
+    plan_t_arr[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
   }
 
 
@@ -340,15 +340,15 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   auto lane_lines = framed.initLaneLines(4);
   float lane_line_probs_arr[4];
   for (int i = 0; i < 4; i++) {
-    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
     lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
   }
   kj::ArrayPtr<const float> lane_line_probs(lane_line_probs_arr, 4);
   framed.setLaneLineProbs(lane_line_probs);
 
   auto road_edges = framed.initRoadEdges(2);
-  fill_xyzt(road_edges[0], &net_outputs.lane_lines[0*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
-  fill_xyzt(road_edges[1], &net_outputs.lane_lines[1*TRAJECTORY_SIZE*2], 0, -1, plan_t_arr);
+  fill_xyzt(road_edges[0], &net_outputs.lane_lines[0*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+  fill_xyzt(road_edges[1], &net_outputs.lane_lines[1*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
 
   auto meta = framed.initMeta();
   fill_meta_v2(meta, net_outputs.meta);
