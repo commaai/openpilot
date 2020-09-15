@@ -1031,17 +1031,20 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     s->dc_opstate = 1;
   } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // iso 400
     s->dc_gain_enabled = false;
-    s->analog_gain_frac *= 2;
+    s->analog_gain_frac *= 2.0;
     s->dc_opstate = 1;
+  } else if (s->analog_gain_frac > 1 && exposure_factor < 1) {
+    s->analog_gain_frac /= 2.0;
+    s->dc_opstate = 0;
   } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) {
-    s->analog_gain_frac *= sqrt(exposure_factor);
-    s->exposure_time = max(min(s->exposure_time * sqrt(exposure_factor), exposure_time_max),exposure_time_min);
+    s->analog_gain_frac = max(min(s->analog_gain_frac * sqrt(exposure_factor), analog_gain_frac_max), analog_gain_frac_min);
+    s->exposure_time = max(min(s->exposure_time * sqrt(exposure_factor), exposure_time_max), exposure_time_min);
     s->dc_opstate = 0;
   } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) {
-    s->exposure_time = max(min(s->exposure_time * exposure_factor, exposure_time_max),exposure_time_min);
+    s->exposure_time = max(min(s->exposure_time * exposure_factor, exposure_time_max), exposure_time_min);
     s->dc_opstate = 0;
   } else {
-    s->analog_gain_frac = max(min(s->analog_gain_frac * exposure_factor, analog_gain_frac_max),analog_gain_frac_min);
+    s->analog_gain_frac = max(min(s->analog_gain_frac * exposure_factor, analog_gain_frac_max), analog_gain_frac_min);
     s->dc_opstate = 0;
   }
   // set up config
