@@ -55,9 +55,9 @@ const Rect home_btn = {60, 1080 - 180 - 40, 180, 180};
 
 const int UI_FREQ = 20;   // Hz
 
-const int MODEL_PATH_MAX_VERTICES_CNT = 98;
+const int MODEL_PATH_MAX_VERTICES_CNT = TRAJECTORY_SIZE*2;
 const int MODEL_LANE_PATH_CNT = 2;
-const int TRACK_POINTS_MAX_CNT = 50 * 2;
+const int TRACK_POINTS_MAX_CNT = TRAJECTORY_SIZE*4;
 
 const int SET_SPEED_NA = 255;
 
@@ -135,7 +135,7 @@ typedef struct {
 typedef struct {
   vertex_data v[MODEL_PATH_MAX_VERTICES_CNT];
   int cnt;
-} model_path_vertices_data;
+} line_vertices_data;
 
 typedef struct {
   vertex_data v[TRACK_POINTS_MAX_CNT];
@@ -201,9 +201,7 @@ typedef struct UIState {
   float alert_blinking_alpha;
 
   track_vertices_data track_vertices;
-  model_path_vertices_data model_path_vertices[MODEL_LANE_PATH_CNT * 2];
-
-  Rect video_rect;
+  line_vertices_data lane_line_vertices[MODEL_LANE_PATH_CNT * 4];
 } UIState;
 
 void ui_init(UIState *s);
