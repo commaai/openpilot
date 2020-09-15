@@ -29,7 +29,7 @@ float to_normal(uint x) {
   const float black_level = 0;
   pv = max(0.0, pv - black_level);
   pv /= (1024.0f - black_level);
-  pv = 1.6*pv / (1.0f + 1.6*pv); // reinhard
+  pv = 5*pv / (1.0f + 5*pv); // reinhard
   return pv;
 }
 
