@@ -202,7 +202,8 @@ void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, fl
   lead.setProb(prob);
   lead.setDist(data[0]);
   lead.setStd(exp(data[LEAD_MHP_VALS]));
-  lead.setRelY(data[1]);
+  // TODO make all msgs same format
+  lead.setRelY(-data[1]);
   lead.setRelYStd(exp(data[LEAD_MHP_VALS + 1]));
   lead.setRelVel(data[2]);
   lead.setRelVelStd(exp(data[LEAD_MHP_VALS + 2]));
