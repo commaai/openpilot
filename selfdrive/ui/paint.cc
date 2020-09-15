@@ -149,7 +149,7 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
   const float off = 0.5;
   int max_idx;
   float lead_d = scene->lead_data[0].getDRel()*2.;
-  float path_length = (lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
+  float path_length = (lead_d>0.)?lead_d-fmin(lead_d*0.35, 10.):MAX_DRAW_DISTANCE;
   path_length = fmin(path_length, scene->max_distance);
 
 
