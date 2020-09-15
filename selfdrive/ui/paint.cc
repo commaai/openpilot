@@ -206,11 +206,11 @@ static void update_lane_line_data(UIState *s, const cereal::ModelDataV2::XYZTDat
   int max_idx;
   vertex_data *v = &pvd->v[0];
   for (int i = 0; ((i < TRAJECTORY_SIZE) and (line.getX()[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, 0, &v->x, &v->y);
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i] + 1.22, &v->x, &v->y);
     max_idx = i;
   }
   for (int i = max_idx - 1; i > 0; i--) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, 0, &v->x, &v->y);
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i] + 1.22, &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -229,7 +229,6 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   if(s->sm->updated("modelV2")) {
     for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
       update_lane_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd + ll_idx*MODEL_LANE_PATH_CNT, scene->max_distance);
-      update_lane_line_data(s, scene->model.getLaneLines()[ll_idx], fmin(0.4, scene->model.getLaneLines()[ll_idx].getYStd()[0]), pvd + ll_idx*MODEL_LANE_PATH_CNT + 1, scene->max_distance);
     }
   }
   for (int ll_idx =0; ll_idx < 4; ll_idx++) {
