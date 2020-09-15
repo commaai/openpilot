@@ -106,19 +106,6 @@ destroy:
   s->vision_connected = false;
 }
 
-static inline line fill_line(const cereal::ModelDataV2::XYZTData::Reader &line_msg) {
-  line l;
-  const capnp::List<float>::Reader &x = line_msg.getX();
-  const capnp::List<float>::Reader &y = line_msg.getY();
-  const capnp::List<float>::Reader &z = line_msg.getZ();
-  for (int i = 0; i < TRAJECTORY_SIZE; i++) {
-    l.x[i] = x[i];
-    l.y[i] = y[i];
-    l.z[i] = z[i];
-  }
-  return  l;
-}
-
 void update_sockets(UIState *s) {
 
   UIScene &scene = s->scene;
@@ -186,13 +173,8 @@ void update_sockets(UIState *s) {
   }
   if (sm.updated("modelV2")) {
     scene.model = sm["modelV2"].getModelV2();
-    scene.path = fill_line(scene.model.getPosition());
     // TODO is this indexing allowed
     scene.max_distance = scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1];
-    scene.outer_left_lane_line = fill_line(scene.model.getLaneLines()[0]);
-    scene.left_lane_line = fill_line(scene.model.getLaneLines()[1]);
-    scene.right_lane_line = fill_line(scene.model.getLaneLines()[2]);
-    scene.outer_right_lane_line = fill_line(scene.model.getLaneLines()[3]);
   }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
