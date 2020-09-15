@@ -67,10 +67,10 @@ void GLWindow::initializeGL() {
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
   ui_state = new UIState();
-  ui_init(ui_state);
   ui_state->sound = &sound;
   ui_state->fb_w = vwp_w;
   ui_state->fb_h = vwp_h;
+  ui_init(ui_state);
 
   timer->start(50);
 }
