@@ -2,18 +2,10 @@
 import gc
 import os
 import time
-import platform
-import subprocess
 import multiprocessing
-from cffi import FFI
 
 from common.hardware import PC
 from common.common_pyx import sec_since_boot  # pylint: disable=no-name-in-module, import-error
-
-
-ffi = FFI()
-ffi.cdef("long syscall(long number, ...);")
-libc = ffi.dlopen(None)
 
 
 # time step for each process
@@ -23,32 +15,20 @@ DT_DMON = 0.1  # driver monitoring
 DT_TRML = 0.5  # thermald and manager
 
 
-MIN_RT_PRIO = 52 # highest android process priority is 51
-PRIO_CTRL_LOW = MIN_RT_PRIO
-PRIO_CTRL_HIGH = MIN_RT_PRIO + 1
-
-
-def _get_tid():
-  if platform.machine() == "x86_64":
-    NR_gettid = 186
-  elif platform.machine() == "aarch64":
-    NR_gettid = 178
-  else:
-    raise NotImplementedError
-
-  return libc.syscall(NR_gettid)
+class Priority:
+  MIN_REALTIME = 52 # highest android process priority is 51
+  CTRL_LOW = MIN_REALTIME
+  CTRL_HIGH = MIN_REALTIME + 1
 
 
 def set_realtime_priority(level):
-  if PC:
-    return -1
-  else:
-    return subprocess.call(['chrt', '-f', '-p', str(level), str(_get_tid())])
+  if not PC:
+    os.sched_setscheduler(0, os.SCHED_FIFO, level)
 
 
 def set_core_affinity(core):
   if not PC:
-    os.sched_setaffinity(_get_tid(), [core,])
+    os.sched_setaffinity(0, [core,])
 
 
 def config_rt_process(core, priority):
