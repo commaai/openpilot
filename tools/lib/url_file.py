@@ -11,18 +11,20 @@ from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 #Cache chunk size
-CACHE_SIZE=1000000
+K=1000
+CACHE_SIZE=100 * K
 
 class URLFile(object):
   _tlocal = threading.local()
 
-  def __init__(self, url, debug=False, download=False):
+  def __init__(self, url, debug=False, cache=True):
     self._url = url
     self._pos = 0
     self._length = None
     self._local_file = None
     self._debug = debug
-    self._download = download and not "FILEREADER_CACHE" in os.environ
+    #We download if we cannot cache 
+    self._download = not cache
     try:
       self._curl = self._tlocal.curl
     except AttributeError:
@@ -59,6 +61,7 @@ class URLFile(object):
     return length
 
   def read(self, ll=None):
+    #print(self._download)
     if self._download:
       return self.read_aux(ll=ll)
 
@@ -88,14 +91,15 @@ class URLFile(object):
 
       position += CACHE_SIZE
       if position >= pr:
+        self._pos = pr
         #print("Length cached " + str(len(response)))
         #print(len(response))
         return response
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
-  def read(self, ll=None):
+  def read_aux(self, ll=None):
     if ll is None:
-      trange = 'bytes=%d-' % self._pos
+      trange = 'bytes=%d-%d' % (self._pos, self.get_length()-1)
     else:
       trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
 
@@ -132,6 +136,7 @@ class URLFile(object):
         print("get %s %r %.f slow" % (self._url, trange, t2 - t1))
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
+    #print("Response code was " + str(response_code))
     if response_code == 416:  # Requested Range Not Satisfiable
       return ""
     if response_code != 206 and response_code != 200:
@@ -139,6 +144,7 @@ class URLFile(object):
 
     ret = dats.getvalue()
     self._pos += len(ret)
+    #print("Size "+str(self.get_length())+ " Range " + trange + " gives length " + str(len(ret)))
     return ret
 
   def seek(self, pos):
