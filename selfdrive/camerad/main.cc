@@ -37,7 +37,7 @@
 #define UI_BUF_COUNT 4
 #define DEBAYER_LOCAL_WORKSIZE 16
 #define YUV_COUNT 40
-#define MAX_CLIENTS 5
+#define MAX_CLIENTS 6
 
 extern "C" {
 volatile sig_atomic_t do_exit = 0;
