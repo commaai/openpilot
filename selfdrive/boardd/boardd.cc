@@ -254,7 +254,7 @@ void can_recv_thread() {
       useconds_t sleep = remaining / 1000;
       usleep(sleep);
     } else {
-      LOGW("missed cycle %lld (%lld)", remaining, -1*remaining/dt);
+      LOGW("missed cycle");
       next_frame_time = cur_time;
     }
 
@@ -521,12 +521,10 @@ int main() {
     // connect to the board
     usb_retry_connect();
 
-    threads.push_back(std::thread(pigeon_thread));
-    usleep(10*1000); // let pigeon init
-
     threads.push_back(std::thread(can_send_thread));
     threads.push_back(std::thread(can_recv_thread));
     threads.push_back(std::thread(hardware_control_thread));
+    threads.push_back(std::thread(pigeon_thread));
 
     for (auto &t : threads) t.join();
 
