@@ -144,22 +144,22 @@ static void ui_draw_lines(UIState *s, const vertex_data *v, const int cnt, NVGco
   nvgFill(s->vg);
 }
 
-static void update_track_data(UIState *s, track_vertices_data *pvd) {
+static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, track_vertices_data *pvd) {
   const UIScene *scene = &s->scene;
   const float off = 0.5;
   int max_idx;
-  line l = scene->path;
   float lead_d = scene->lead_data[0].getDRel()*2.;
   float path_length = (lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
   path_length = fmin(path_length, scene->max_distance);
 
+
   vertex_data *v = &pvd->v[0];
-  for (int i = 0; l.x[i] <= path_length and i < TRAJECTORY_SIZE; i++) {
-    v += car_space_to_full_frame(s, l.x[i], l.y[i] - off, l.z[i], &v->x, &v->y);
+  for (int i = 0; line.getX()[i] <= path_length and i < TRAJECTORY_SIZE; i++) {
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i], &v->x, &v->y);
     max_idx = i;
   }
   for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, l.x[i], l.y[i] + off, l.z[i], &v->x, &v->y);
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i], &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -201,26 +201,22 @@ static void draw_frame(UIState *s) {
   glBindVertexArray(0);
 }
 
-static void update_lane_line_data(UIState *s, line l, float off, model_path_vertices_data *pvd, float max_distance) {
+static void update_lane_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, float off, line_vertices_data *pvd, float max_distance) {
   // TODO check that this doesn't overflow max vertex buffer
   int max_idx;
   vertex_data *v = &pvd->v[0];
-  for (int i = 0; ((i < TRAJECTORY_SIZE) and (l.x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, l.x[i], l.y[i] - off, l.z[i], &v->x, &v->y);
+  for (int i = 0; ((i < TRAJECTORY_SIZE) and (line.getX()[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, 0, &v->x, &v->y);
     max_idx = i;
   }
   for (int i = max_idx - 1; i > 0; i--) {
-    v += car_space_to_full_frame(s, l.x[i], l.y[i] + off, l.z[i], &v->x, &v->y);
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, 0, &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
 
-//statVic void update_lane_line_data(UIState *s, , const float *points, model_path_vertices_data *pstart) {
-//  update_lane_line_data(s, points, 0.025*path.getProb(), pstart, sc);
-  //update_lane_line_data(s, points, fmin(path.getStd(), 0.7), pstart + 1, path.getValidLen());
-//}
 
-static void ui_draw_lane(UIState *s, model_path_vertices_data *pstart, NVGcolor color) {
+static void ui_draw_lane(UIState *s, line_vertices_data *pstart, NVGcolor color) {
   ui_draw_lines(s, pstart->v, pstart->cnt, &color, nullptr);
   color.a /= 25;
   pstart += 1;
@@ -229,20 +225,19 @@ static void ui_draw_lane(UIState *s, model_path_vertices_data *pstart, NVGcolor 
 
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
-  model_path_vertices_data *pvd = &s->model_path_vertices[0];
+  line_vertices_data *pvd = &s->lane_line_vertices[0];
   if(s->sm->updated("modelV2")) {
-    update_lane_line_data(s, scene->left_lane_line, 0.025*scene->lane_line_probs[1], pvd, scene->max_distance);
-    update_lane_line_data(s, scene->right_lane_line, 0.025*scene->lane_line_probs[2], pvd + MODEL_LANE_PATH_CNT, scene->max_distance);
+    for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
+      update_lane_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd + ll_idx*MODEL_LANE_PATH_CNT, scene->max_distance);
+      update_lane_line_data(s, scene->model.getLaneLines()[ll_idx], fmin(0.4, scene->model.getLaneLines()[ll_idx].getYStd()[0]), pvd + ll_idx*MODEL_LANE_PATH_CNT + 1, scene->max_distance);
+    }
+  }
+  for (int ll_idx =0; ll_idx < 4; ll_idx++) {
+    ui_draw_lane(s, pvd + ll_idx*MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLaneLineProbs()[ll_idx]));
   }
 
-  // Draw left lane edge
-  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[1]));
-
-  // Draw right lane edge
-  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[2]));
-
   if(s->sm->updated("radarState")) {
-    update_track_data(s, &s->track_vertices);
+    update_track_data(s, scene->model.getPosition(), &s->track_vertices);
   }
 
   // Draw vision path
