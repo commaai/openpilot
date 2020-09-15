@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cmath>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <signal.h>
@@ -174,7 +175,7 @@ void update_sockets(UIState *s) {
   if (sm.updated("modelV2")) {
     scene.model = sm["modelV2"].getModelV2();
     // TODO is this indexing allowed
-    scene.max_distance = scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1];
+    scene.max_distance = fmin(scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
   }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
