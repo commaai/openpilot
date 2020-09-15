@@ -23,7 +23,7 @@ class Priority:
 
 def set_realtime_priority(level):
   if not PC:
-    os.sched_setscheduler(0, os.SCHED_FIFO, level)
+    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(level))
 
 
 def set_core_affinity(core):
