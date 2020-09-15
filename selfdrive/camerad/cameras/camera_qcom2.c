@@ -550,10 +550,6 @@ void enqueue_req_multi(struct CameraState *s, int start, int n) {
 
 // ******************* camera *******************
 
-static void camera_release_buffer(void* cookie, int i) {
-  return;
-}
-
 static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps) {
   LOGD("camera init %d", camera_num);
 
@@ -564,7 +560,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->camera_num = camera_num;
   s->frame_size = s->ci.frame_height * s->ci.frame_stride;
 
-  tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", camera_release_buffer, s);
+  tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", NULL, s);
 
   s->transform = (mat3){{
     1.0, 0.0, 0.0,
