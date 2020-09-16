@@ -15,7 +15,7 @@ K=1000
 CHUNK_SIZE=1000 * K
 
 PATH="/tmp/comma_download_cache/"
-
+LENGTHS_SUBFOLDER="lengths/" 
 class URLFile(object):
   _tlocal = threading.local()
 
@@ -33,8 +33,8 @@ class URLFile(object):
       self._curl = self._tlocal.curl = pycurl.Curl()
     if not os.path.isdir(PATH):
       os.makedirs(PATH)
-    if not os.path.isdir(PATH + "lengths/"):
-      os.makedirs(PATH + "lengths/")
+    if not os.path.isdir(PATH + LENGTHS_SUBFOLDER):
+      os.makedirs(PATH + LENGTHS_SUBFOLDER)
     
 
   def __enter__(self):
@@ -46,25 +46,21 @@ class URLFile(object):
       self._local_file.close()
       self._local_file = None
 
-  def get_curl(self):
-    curl = pycurl.Curl()
-    curl.setopt(pycurl.NOSIGNAL, 1)
-    curl.setopt(pycurl.TIMEOUT_MS, 500000)
-    curl.setopt(pycurl.FOLLOWLOCATION, True)
-    return curl
-
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def get_length(self):
     if self._length is not None:
       return self._length
-    path_to_name = PATH + "lengths/" + str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_length"
+    path_to_name = PATH + LENGTHS_SUBFOLDER + str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_length"
     if os.path.exists(path_to_name):
       with open(path_to_name, "r") as file_length:
           content = file_length.read()
           self._length = int(content)
           return self._length
 
-    c = self.get_curl()
+    c = pycurl.Curl()
+    c.setopt(pycurl.NOSIGNAL, 1)
+    c.setopt(pycurl.TIMEOUT_MS, 500000)
+    c.setopt(pycurl.FOLLOWLOCATION, True)
     c.setopt(pycurl.URL, self._url)
     c.setopt(c.NOBODY, 1)
     c.perform()
