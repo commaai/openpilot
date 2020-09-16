@@ -32,8 +32,6 @@ int main(int argc, char **argv) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  // messaging
-  SubMaster sm({"dMonitoringState"});
   PubMaster pm({"driverState"});
 
   // init the models
