@@ -7,13 +7,14 @@ class TestFileDownload(unittest.TestCase):
 
   def test_downloads(self):
     small_file_url = "https://raw.githubusercontent.com/commaai/openpilot/master/SAFETY.md"
-    
+    large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
+
     #Load full small file
     file_small_cached = URLFile(small_file_url)
     file_small_download = URLFile(small_file_url, cache=False)
     self.assertEqual(file_small_cached.get_length(), file_small_download.get_length())
     self.assertEqual(file_small_cached.read(), file_small_download.read())
-    large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/fcamera.hevc"
+   
 
     #Load the end 100 bytes of both files
     file_small_cached2 = URLFile(small_file_url)

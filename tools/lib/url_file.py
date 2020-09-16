@@ -12,9 +12,10 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 #Cache chunk size
 K=1000
-CACHE_SIZE=100 * K
+CACHE_SIZE=1000 * K
 
-PATH="/tmp/"
+PATH="/tmp/cache/cache2/"
+
 class URLFile(object):
   _tlocal = threading.local()
 
@@ -25,11 +26,16 @@ class URLFile(object):
     self._local_file = None
     self._debug = debug
     #We download if we cannot cache 
-    self._download = not cache
+    self._force_download = not cache
     try:
       self._curl = self._tlocal.curl
     except AttributeError:
       self._curl = self._tlocal.curl = pycurl.Curl()
+    if not os.path.isdir(PATH):
+      os.makedirs(PATH)
+    if not os.path.isdir(PATH + "lengths/"):
+      os.makedirs(PATH + "lengths/")
+    
 
   def __enter__(self):
     return self
@@ -51,6 +57,17 @@ class URLFile(object):
   def get_length(self):
     if self._length is not None:
       return self._length
+    path_to_name = PATH + "lengths/" + str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_length"
+    #print(path_to_name)
+    if os.path.exists(path_to_name):
+      #print("Found file length")
+      with open(path_to_name, "r") as file_length:
+          #print(self._length)
+          content = file_length.read()
+          #print(content)
+          self._length = int(content)
+          #print(self._length)
+          return self._length
 
     c = self.get_curl()
     c.setopt(pycurl.URL, self._url)
@@ -59,15 +76,21 @@ class URLFile(object):
 
     length = int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
     self._length = length
+    with open(path_to_name, "w") as file_length:
+      #print("Writing length " + str(self._length))
+      file_length.write(str(self._length))
     return length
 
   def read(self, ll=None):
-    #print(self._download)
-    if self._download:
+    #print(self._force_download)
+    if self._force_download:
       return self.read_aux(ll=ll)
 
     chunk_begin = self._pos
+    #t1 = time.time()
     chunk_end = self._pos + ll if ll is not None else self.get_length()
+    #t2 = time.time()
+    #print("Time for length :" + str(t2 - t1))
     #Largest multiple of cache size lower than chunk_begin
     position = (chunk_begin // CACHE_SIZE) * CACHE_SIZE
     response = b""
@@ -75,12 +98,12 @@ class URLFile(object):
     while True:
       self._pos = position
       increment = self._pos / CACHE_SIZE
-      file_name = sha256((self._url.split("?")[0] + str(increment)).encode('utf-8')).hexdigest()
+      file_name = str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_" + str(increment)
       full_path = PATH + str(file_name)
       #If we don't have a file, download it
       if not os.path.exists(full_path):
         #print("Downloading")
-        data = self.read_aux(ll = CACHE_SIZE)
+        data = self.read_aux(ll=CACHE_SIZE)
         with open(full_path, "wb") as new_cached_file:
           new_cached_file.write(data)
         #print(str(max(0, chunk_begin-position)) + " " + str(min(CACHE_SIZE, chunk_end - position)))
@@ -142,7 +165,7 @@ class URLFile(object):
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     #print("Response code was " + str(response_code))
     if response_code == 416:  # Requested Range Not Satisfiable
-      return ""
+      raise Exception("Error, range out of bounds {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
     if response_code != 206 and response_code != 200:
       raise Exception("Error {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
 
