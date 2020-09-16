@@ -127,7 +127,7 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
   draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
-static void ui_draw_lines(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
+static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
   if (cnt == 0) return;
 
   nvgBeginPath(s->vg);
@@ -172,7 +172,7 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
 static void ui_draw_track(UIState *s, track_vertices_data *pvd) {
   NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                         COLOR_WHITE, COLOR_WHITE_ALPHA(0));
-  ui_draw_lines(s, &pvd->v[0], pvd->cnt, nullptr, &track_bg);
+  ui_draw_line(s, &pvd->v[0], pvd->cnt, nullptr, &track_bg);
 }
 
 static void draw_frame(UIState *s) {
@@ -206,7 +206,7 @@ static void draw_frame(UIState *s) {
   glBindVertexArray(0);
 }
 
-static void update_lane_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, float off, line_vertices_data *pvd, float max_distance) {
+static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, float off, line_vertices_data *pvd, float max_distance) {
   // TODO check that this doesn't overflow max vertex buffer
   int max_idx;
   vertex_data *v = &pvd->v[0];
@@ -221,26 +221,31 @@ static void update_lane_line_data(UIState *s, const cereal::ModelDataV2::XYZTDat
 }
 
 
-static void ui_draw_lane(UIState *s, line_vertices_data *pstart, NVGcolor color) {
-  ui_draw_lines(s, pstart->v, pstart->cnt, &color, nullptr);
-  color.a /= 25;
-  pstart += 1;
-  ui_draw_lines(s, pstart->v, pstart->cnt, &color, nullptr);
-}
-
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
-  float ll_probs[4];
-  line_vertices_data *pvd = &s->lane_line_vertices[0];
-  if(s->sm->updated("modelV2")) {
-    for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
-      update_lane_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd + ll_idx*MODEL_LANE_PATH_CNT, scene->max_distance);
-      ll_probs[ll_idx] = scene->model.getLaneLineProbs()[ll_idx];
-    }
-    update_track_data(s, scene->model.getPosition(), &s->track_vertices);
-  }
+  // paint lanelines
+  line_vertices_data *pvd_ll = &s->lane_line_vertices[0];
   for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
-    ui_draw_lane(s, pvd + ll_idx*MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, ll_probs[ll_idx]));
+    if(s->sm->updated("modelV2")) {
+      update_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd_ll + ll_idx, scene->max_distance);
+    }
+    NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[ll_idx]);
+    ui_draw_line(s, (pvd_ll + ll_idx)->v, (pvd_ll + ll_idx)->cnt, &color, nullptr);
+  }
+  
+  // paint road edges
+  line_vertices_data *pvd_re = &s->road_edge_vertices[0];
+  for (int re_idx = 0; re_idx < 2; re_idx++) {
+    if(s->sm->updated("modelV2")) {
+      update_line_data(s, scene->model.getRoadEdges()[re_idx], 0.025, pvd_re + re_idx, scene->max_distance);
+    }
+    NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, 0.6);
+    ui_draw_line(s, (pvd_re + re_idx)->v, (pvd_re + re_idx)->cnt, &color, nullptr);
+  }
+  
+  // paint path
+  if(s->sm->updated("modelV2")) {
+    update_track_data(s, scene->model.getPosition(), &s->track_vertices);
   }
   ui_draw_track(s, &s->track_vertices);
 }
