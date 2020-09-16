@@ -56,7 +56,6 @@ const Rect home_btn = {60, 1080 - 180 - 40, 180, 180};
 const int UI_FREQ = 20;   // Hz
 
 const int MODEL_PATH_MAX_VERTICES_CNT = TRAJECTORY_SIZE*2;
-const int MODEL_LANE_PATH_CNT = 2;
 const int TRACK_POINTS_MAX_CNT = TRAJECTORY_SIZE*4;
 
 const int SET_SPEED_NA = 255;
@@ -201,7 +200,8 @@ typedef struct UIState {
   float alert_blinking_alpha;
 
   track_vertices_data track_vertices;
-  line_vertices_data lane_line_vertices[MODEL_LANE_PATH_CNT * 4];
+  line_vertices_data lane_line_vertices[4];
+  line_vertices_data road_edge_vertices[2];
 } UIState;
 
 void ui_init(UIState *s);
