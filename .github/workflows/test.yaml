@@ -240,7 +240,7 @@ jobs:
           $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F test_car_models"
 
   sim_docker_build:
-    name: build container
+    name: build simulator container
     runs-on: ubuntu-16.04
     timeout-minutes: 50
     if: github.repository == 'commaai/openpilot'
