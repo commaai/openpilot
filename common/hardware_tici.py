@@ -18,6 +18,13 @@ class Tici(HardwareBase):
 
     return {kv[0]: kv[1] for kv in [s.split('=') for s in cmdline.split(' ')] if len(kv) == 2}
 
+  @staticmethod
+  def run_at_command(cmd, timeout=0.1):
+    with serial.Serial("/dev/ttyUSB2", timeout=timeout) as ser:
+      ser.write(cmd + b"\r\n")
+      ser.readline() # Modem echos request
+      return ser.readline().decode().rstrip()
+
   def get_sound_card_online(self):
     return True
 
@@ -26,13 +33,12 @@ class Tici(HardwareBase):
       return ""
 
     for _ in range(10):
-      with serial.Serial("/dev/ttyUSB2", timeout=0.1) as ser:
-        ser.write(b"AT+CGSN\r\n")
-        ser.readline() # Modem echos request
-
-        imei = ser.readline().decode().rstrip()
+      try:
+        imei = self.run_at_command(b"AT+CGSN")
         if len(imei) == 15:
           return imei
+      except serial.SerialException:
+        pass
 
     raise RuntimeError("Error getting IMEI")
 
