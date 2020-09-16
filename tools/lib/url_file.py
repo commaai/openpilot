@@ -53,15 +53,16 @@ class URLFile(object):
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def get_length_online(self):
-    c = pycurl.Curl()
+    c = self._curl
+    c.reset()
     c.setopt(pycurl.NOSIGNAL, 1)
     c.setopt(pycurl.TIMEOUT_MS, 500000)
     c.setopt(pycurl.FOLLOWLOCATION, True)
     c.setopt(pycurl.URL, self._url)
     c.setopt(c.NOBODY, 1)
     c.perform()
-
     length = int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
+    c.reset()
     return length
 
   def get_length(self):
@@ -103,7 +104,7 @@ class URLFile(object):
       else:
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()
-      
+
       response += data[max(0, file_begin - position): min(CHUNK_SIZE, file_end - position)]
 
       position += CHUNK_SIZE
