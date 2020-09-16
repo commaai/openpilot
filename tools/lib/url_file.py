@@ -77,7 +77,7 @@ class URLFile(object):
 
     file_begin = self._pos
     file_end = self._pos + ll if ll is not None else self.get_length()
-    #We have to allign with chunks we store. Position is the begginiing of the latest chunk that starts before or at our file
+    #  We have to allign with chunks we store. Position is the begginiing of the latest chunk that starts before or at our file
     position = (file_begin // CHUNK_SIZE) * CHUNK_SIZE
     response = b""
     while True:
@@ -86,7 +86,7 @@ class URLFile(object):
       file_name = str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_" + str(chunk_number)
       full_path = PATH + str(file_name)
       data = None
-      #If we don't have a file, download it
+      #  If we don't have a file, download it
       if not os.path.exists(full_path):
         data = self.read_aux(ll=CHUNK_SIZE)
         with open(full_path, "wb") as new_cached_file:
@@ -142,7 +142,6 @@ class URLFile(object):
         print("get %s %r %.f slow" % (self._url, trange, t2 - t1))
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
-    #print("Response code was " + str(response_code))
     if response_code == 416:  # Requested Range Not Satisfiable
       raise Exception("Error, range out of bounds {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
     if response_code != 206 and response_code != 200:
@@ -150,7 +149,6 @@ class URLFile(object):
 
     ret = dats.getvalue()
     self._pos += len(ret)
-    #print("Size "+str(self.get_length())+ " Range " + trange + " gives length " + str(len(ret)))
     return ret
 
   def seek(self, pos):
