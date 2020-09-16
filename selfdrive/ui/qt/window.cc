@@ -108,7 +108,6 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
-  glRotatef(90, 1, 0, 0);
   ui_draw(ui_state);
 }
 
