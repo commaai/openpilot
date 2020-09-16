@@ -230,15 +230,19 @@ static void ui_draw_lane(UIState *s, line_vertices_data *pstart, NVGcolor color)
 
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
+  float ll_probs[4];
   line_vertices_data *pvd = &s->lane_line_vertices[0];
   if(s->sm->updated("modelV2")) {
     for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
       update_lane_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd + ll_idx*MODEL_LANE_PATH_CNT, scene->max_distance);
-      ui_draw_lane(s, pvd + ll_idx*MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLaneLineProbs()[ll_idx]));
-      update_track_data(s, scene->model.getPosition(), &s->track_vertices);
-      ui_draw_track(s, &s->track_vertices);
+      ll_probs[ll_idx] = scene->model.getLaneLineProbs()[ll_idx];
     }
+    update_track_data(s, scene->model.getPosition(), &s->track_vertices);
   }
+  for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
+    ui_draw_lane(s, pvd + ll_idx*MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, ll_probs[ll_idx]));
+  }
+  ui_draw_track(s, &s->track_vertices);
 }
 
 // Draw all world space objects.
