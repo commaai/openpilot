@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import gc
 from cereal import car
-from common.realtime import set_realtime_priority
 from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.controls.lib.events import Events
@@ -10,10 +8,6 @@ from selfdrive.locationd.calibrationd import Calibration
 
 
 def dmonitoringd_thread(sm=None, pm=None):
-  gc.disable()
-  set_realtime_priority(53)
-
-  # Pub/Sub Sockets
   if pm is None:
     pm = messaging.PubMaster(['dMonitoringState'])
 
