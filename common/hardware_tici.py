@@ -1,23 +1,13 @@
-import os
 import random
-from typing import cast
-
-from cereal import log
-from common.hardware_android import Android
-from common.hardware_tici import Tici
 from common.hardware_base import HardwareBase
-
-EON = os.path.isfile('/EON')
-TICI = os.path.isfile('/TICI')
-PC = not (EON or TICI)
-ANDROID = EON
+from cereal import log
 
 
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 
 
-class Pc(HardwareBase):
+class Tici(HardwareBase):
   def get_sound_card_online(self):
     return True
 
@@ -47,11 +37,3 @@ class Pc(HardwareBase):
 
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
-
-
-if EON:
-  HARDWARE = cast(HardwareBase, Android())
-if TICI:
-  HARDWARE = cast(HardwareBase, Tici())
-else:
-  HARDWARE = cast(HardwareBase, Pc())
