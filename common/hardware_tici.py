@@ -8,6 +8,13 @@ NetworkStrength = log.ThermalData.NetworkStrength
 
 
 class Tici(HardwareBase):
+  @staticmethod
+  def get_cmdline():
+    with open('/proc/cmdline') as f:
+      cmdline = f.read()
+
+    return {kv[0]: kv[1] for kv in [s.split('=') for s in cmdline.split(' ')] if len(kv) == 2}
+
   def get_sound_card_online(self):
     return True
 
@@ -15,7 +22,7 @@ class Tici(HardwareBase):
     return "%015d" % random.randint(0, 1 << 32)
 
   def get_serial(self):
-    return "cccccccc"
+    return self.get_cmdline()['androidboot.serialno']
 
   def get_subscriber_info(self):
     return ""
@@ -37,3 +44,8 @@ class Tici(HardwareBase):
 
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
+
+
+if __name__ == "__main__":
+  t = Tici()
+  print(t.get_serial())
