@@ -1021,24 +1021,24 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   const int exposure_time_max = 1066; //1416; // no slower than 1/25 sec. calculated from 0x300C and clock freq
   float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.16 );
 
-  if (s->analog_gain_frac > 1 && exposure_factor > 0.98 && exposure_factor < 1.02) {
+  if (s->analog_gain_frac > 1 && exposure_factor > 0.98 && exposure_factor < 1.02) { // high analog gains are coarse
     return;
-  } else if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // iso 800
+  } else if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // switch to HCG at iso 800
     s->dc_gain_enabled = true;
     s->analog_gain_frac *= 0.5;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // iso 400
+  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // switch back to LCG at iso 400
     s->dc_gain_enabled = false;
     s->analog_gain_frac *= 2.0;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac > 1 && exposure_factor < 1) {
+  } else if (s->analog_gain_frac > 1 && exposure_factor < 1) { // force gain down first
     s->analog_gain_frac /= 2.0;
     s->dc_opstate = 0;
-  } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) {
+  } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) { // smoother transistion on large stepdowns
     s->analog_gain_frac = max(min(s->analog_gain_frac * sqrt(exposure_factor), analog_gain_frac_max), analog_gain_frac_min);
     s->exposure_time = max(min(s->exposure_time * sqrt(exposure_factor), exposure_time_max), exposure_time_min);
     s->dc_opstate = 0;
-  } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) {
+  } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) { // ramp up shutter time before gain
     s->exposure_time = max(min(s->exposure_time * exposure_factor, exposure_time_max), exposure_time_min);
     s->dc_opstate = 0;
   } else {
