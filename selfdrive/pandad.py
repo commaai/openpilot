@@ -15,11 +15,9 @@ def set_panda_power(power=True):
 
   gpio_init(GPIO_STM_RST_N, True)
   gpio_init(GPIO_STM_BOOT0, True)
-  gpio_init(GPIO_HUB_RST_N, True)
 
   gpio_set(GPIO_STM_RST_N, False)
   gpio_set(GPIO_HUB_RST_N, True)
-  gpio_set(GPIO_STM_BOOT0, False)
 
   time.sleep(0.1)
 
