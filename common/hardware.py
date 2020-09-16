@@ -3,7 +3,7 @@ import random
 from typing import cast
 
 from cereal import log
-from common.android import Android
+from common.hardware_android import Android
 from common.hardware_base import HardwareBase
 
 EON = os.path.isfile('/EON')
