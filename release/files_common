@@ -192,7 +192,8 @@ selfdrive/common/framebuffer.h
 selfdrive/common/framebuffer.cc
 selfdrive/common/glutil.[c,h]
 selfdrive/common/touch.[c,h]
-selfdrive/common/visionipc.[c,h]
+selfdrive/common/visionipc.cc
+selfdrive/common/visionipc.h
 selfdrive/common/visionbuf_cl.c
 selfdrive/common/ipc.[c,h]
 selfdrive/common/swaglog.h

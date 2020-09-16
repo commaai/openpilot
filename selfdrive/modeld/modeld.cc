@@ -130,86 +130,70 @@ int main(int argc, char **argv) {
   model_init(&model, device_id, context, true);
   LOGW("models loaded, modeld starting");
 
-  // loop
+  // setup filter to track dropped frames
+  const float dt = 1. / MODEL_FREQ;
+  const float ts = 5.0;  // 5 s filter time constant
+  const float frame_filter_k = (dt / ts) / (1. + dt / ts);
+  float frames_dropped = 0;
+  uint32_t frame_id = 0, last_vipc_frame_id = 0;
+  double last = 0;
+  int desire = -1;
+
+  cl_mem yuv_cl = nullptr;
+  VisionBuf yuv_ion = {};
+  
   VisionStream stream;
   while (!do_exit) {
-    VisionStreamBufs buf_info;
-    err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
-    if (err) {
-      LOGW("visionstream connect failed");
-      usleep(100000);
+    VIPCBufExtra extra;
+    VIPCBuf *buf = stream.acquire(VISION_STREAM_YUV, true, &extra);
+    if (!buf) {
       continue;
     }
-    LOGW("connected with buffer size: %d", buf_info.buf_len);
-
-    // setup filter to track dropped frames
-    const float dt = 1. / MODEL_FREQ;
-    const float ts = 5.0;  // 5 s filter time constant
-    const float frame_filter_k = (dt / ts) / (1. + dt / ts);
-    float frames_dropped = 0;
-
-    // one frame in memory
-    cl_mem yuv_cl;
-    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context, &yuv_cl);
-
-    uint32_t frame_id = 0, last_vipc_frame_id = 0;
-    double last = 0;
-    int desire = -1;
-    while (!do_exit) {
-      VIPCBuf *buf;
-      VIPCBufExtra extra;
-      buf = visionstream_get(&stream, &extra);
-      if (buf == NULL) {
-        LOGW("visionstream get failed");
-        break;
-      }
-
-      pthread_mutex_lock(&transform_lock);
-      mat3 model_transform = cur_transform;
-      const bool run_model_this_iter = run_model;
-      pthread_mutex_unlock(&transform_lock);
-
-      if (sm.update(0) > 0){
-        // TODO: path planner timeout?
-        desire = ((int)sm["pathPlan"].getPathPlan().getDesire()) - 1;
-        frame_id = sm["frame"].getFrame().getFrameId();
-      }
-
-      double mt1 = 0, mt2 = 0;
-      if (run_model_this_iter) {
-        float vec_desire[DESIRE_LEN] = {0};
-        if (desire >= 0 && desire < DESIRE_LEN) {
-          vec_desire[desire] = 1.0;
-        }
-
-        mt1 = millis_since_boot();
-
-        // TODO: don't make copies!
-        memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
-
-        ModelDataRaw model_buf =
-            model_eval_frame(&model, q, yuv_cl, buf_info.width, buf_info.height,
-                             model_transform, NULL, vec_desire);
-        mt2 = millis_since_boot();
-
-        // tracked dropped frames
-        uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
-        frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
-        float frame_drop_perc = frames_dropped / MODEL_FREQ;
-
-        model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
-        posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
-
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
-        last = mt1;
-        last_vipc_frame_id = extra.frame_id;
-      }
-
+    if (yuv_cl == nullptr) {
+      yuv_ion = visionbuf_allocate_cl(stream.bufs_info.buf_len, device_id, context, &yuv_cl);
     }
-    visionbuf_free(&yuv_ion);
-    visionstream_destroy(&stream);
-  }
+    pthread_mutex_lock(&transform_lock);
+    mat3 model_transform = cur_transform;
+    const bool run_model_this_iter = run_model;
+    pthread_mutex_unlock(&transform_lock);
 
+    if (sm.update(0) > 0) {
+      // TODO: path planner timeout?
+      desire = ((int)sm["pathPlan"].getPathPlan().getDesire()) - 1;
+      frame_id = sm["frame"].getFrame().getFrameId();
+    }
+
+    double mt1 = 0, mt2 = 0;
+    if (run_model_this_iter) {
+      float vec_desire[DESIRE_LEN] = {0};
+      if (desire >= 0 && desire < DESIRE_LEN) {
+        vec_desire[desire] = 1.0;
+      }
+
+      mt1 = millis_since_boot();
+
+      // TODO: don't make copies!
+      memcpy(yuv_ion.addr, buf->addr, stream.bufs_info.buf_len);
+
+      ModelDataRaw model_buf =
+          model_eval_frame(&model, q, yuv_cl, stream.bufs_info.width, stream.bufs_info.height,
+                           model_transform, NULL, vec_desire);
+      mt2 = millis_since_boot();
+
+      // tracked dropped frames
+      uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
+      frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
+      float frame_drop_perc = frames_dropped / MODEL_FREQ;
+
+      model_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
+      posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
+
+      LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_perc);
+      last = mt1;
+      last_vipc_frame_id = extra.frame_id;
+    }
+  }
+  visionbuf_free(&yuv_ion);
   model_free(&model);
 
   LOG("joining live_thread");

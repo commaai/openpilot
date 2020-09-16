@@ -75,16 +75,14 @@ static void ui_init_vision(UIState *s) {
 
 void ui_update_vision(UIState *s) {
 
-  if (!s->vision_connected && s->started) {
+  if (!s->stream.isConnected() && s->started) {
     const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
-    int err = visionstream_init(&s->stream, type, true, nullptr);
-    if (err == 0) {
+    if (s->stream.connect(type, true)) {
       ui_init_vision(s);
-      s->vision_connected = true;
     }
   }
 
-  if (s->vision_connected) {
+  if (s->stream.isConnected()) {
     if (!s->started) goto destroy;
 
     // poll for a new frame
@@ -94,15 +92,14 @@ void ui_update_vision(UIState *s) {
     }};
     int ret = poll(fds, 1, 100);
     if (ret > 0) {
-      if (!visionstream_get(&s->stream, nullptr)) goto destroy;
+      if (!s->stream.recv()) goto destroy;
     }
   }
 
   return;
 
 destroy:
-  visionstream_destroy(&s->stream);
-  s->vision_connected = false;
+  s->stream.disconnect();
 }
 
 static inline void fill_path_points(const cereal::ModelData::PathData::Reader &path, float *points) {

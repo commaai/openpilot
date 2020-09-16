@@ -6,7 +6,6 @@
 
 #define VIPC_SOCKET_PATH "/tmp/vision_socket"
 #define VIPC_MAX_FDS 64
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,20 +91,31 @@ typedef struct VIPCBuf {
   size_t len;
   void* addr;
 } VIPCBuf;
-
-typedef struct VisionStream {
-  int ipc_fd;
-  int last_idx;
-  VisionStreamType last_type;
-  int num_bufs;
-  VisionStreamBufs bufs_info;
-  VIPCBuf *bufs;
-} VisionStream;
-
-int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, VisionStreamBufs *out_bufs_info);
-VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra);
-void visionstream_destroy(VisionStream *s);
-
 #ifdef __cplusplus
 }
+
+#include <memory>
+class VisionStream {
+public:
+  VisionStream() = default;
+  ~VisionStream();
+  bool connect(VisionStreamType type, bool tbuffer);
+  VIPCBuf *recv(VIPCBufExtra *out_extra = nullptr);
+  void disconnect();
+  bool isConnected() const { return ipc_fd >= 0; }
+
+  // advance function
+  VIPCBuf *acquire(VisionStreamType type, bool tbuffer, VIPCBufExtra *out_extra, bool use_poll = false);
+
+  int ipc_fd = -1;
+  int last_idx = -1;
+  VisionStreamType last_type;
+  int num_bufs;
+
+  std::unique_ptr<VIPCBuf[]> bufs;
+  VisionStreamBufs bufs_info;
+
+private:
+  bool release();
+};
 #endif

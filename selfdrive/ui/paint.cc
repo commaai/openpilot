@@ -630,7 +630,7 @@ void ui_draw(UIState *s) {
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
   if (s->started && s->active_app == cereal::UiLayoutState::App::NONE &&
-      s->status != STATUS_OFFROAD && s->vision_connected) {
+      s->status != STATUS_OFFROAD && s->stream.isConnected()) {
     ui_draw_vision(s);
   }
   nvgEndFrame(s->vg);

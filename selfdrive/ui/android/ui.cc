@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
   s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
-    if (!s->started || !s->vision_connected) {
+    if (!s->started || !s->stream.isConnected()) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
       usleep(30 * 1000);
     }

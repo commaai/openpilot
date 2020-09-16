@@ -107,8 +107,6 @@ LoggerdState s;
 
 #ifndef DISABLE_ENCODER
 void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
-  int err;
-
   // 0:f, 1:d, 2:e
   if (cam_idx == CAM_IDX_DCAM) {
   // TODO: add this back
@@ -147,32 +145,35 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 
   LoggerHandle *lh = NULL;
 
+  // dont log a raw clip in the first minute
+  double rawlogger_start_time = seconds_since_boot() + RAW_CLIP_FREQUENCY;
+  int rawlogger_clip_cnt = 0;
+  RawLogger *rawlogger = nullptr;
+
+  VisionStreamType stream_type;
+  if (cam_idx == CAM_IDX_DCAM) {
+    stream_type = VISION_STREAM_YUV_FRONT;
+  } else if (cam_idx == CAM_IDX_FCAM) {
+    stream_type = VISION_STREAM_YUV;
+  } else if (cam_idx == CAM_IDX_ECAM) {
+    stream_type = VISION_STREAM_YUV_WIDE;
+  }
+
   while (!do_exit) {
-    VisionStreamBufs buf_info;
-    if (cam_idx == CAM_IDX_DCAM) {
-      err = visionstream_init(&stream, VISION_STREAM_YUV_FRONT, false, &buf_info);
-    } else if (cam_idx == CAM_IDX_FCAM) {
-      err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
-    } else if (cam_idx == CAM_IDX_ECAM) {
-      err = visionstream_init(&stream, VISION_STREAM_YUV_WIDE, false, &buf_info);
-    }
-    if (err != 0) {
-      LOGD("visionstream connect fail");
-      usleep(100000);
-      continue;
-    }
+    VIPCBufExtra extra;
+    VIPCBuf *buf = stream.acquire(stream_type, false, &extra);
 
     if (!encoder_inited) {
-      LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-      encoder_init(&encoder, cam_idx == CAM_IDX_DCAM ? "dcamera.hevc" : (cam_idx == CAM_IDX_ECAM ? "ecamera.hevc" : "fcamera.hevc"), buf_info.width, buf_info.height, CAMERA_FPS, cam_idx == CAM_IDX_DCAM ? DCAM_BITRATE:MAIN_BITRATE, true, false);
+      LOGD("encoder init %dx%d", stream.bufs_info.width, stream.bufs_info.height);
+      encoder_init(&encoder, cam_idx == CAM_IDX_DCAM ? "dcamera.hevc" : (cam_idx == CAM_IDX_ECAM ? "ecamera.hevc" : "fcamera.hevc"), stream.bufs_info.width, stream.bufs_info.height, CAMERA_FPS, cam_idx == CAM_IDX_DCAM ? DCAM_BITRATE : MAIN_BITRATE, true, false);
 
-      #ifndef QCOM2
+#ifndef QCOM2
       // TODO: fix qcamera on tici
       if (cam_idx == CAM_IDX_FCAM) {
         encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
         has_encoder_alt = true;
       }
-      #endif
+#endif
       encoder_inited = true;
       if (is_streaming) {
         encoder.zmq_ctx = zmq_ctx_new();
@@ -182,198 +183,182 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
       }
     }
 
-    // dont log a raw clip in the first minute
-    double rawlogger_start_time = seconds_since_boot()+RAW_CLIP_FREQUENCY;
-    int rawlogger_clip_cnt = 0;
-    RawLogger *rawlogger = NULL;
-
-    if (raw_clips) {
-      rawlogger = new RawLogger("prcamera", buf_info.width, buf_info.height, CAMERA_FPS);
+    if (raw_clips && !rawlogger) {
+      rawlogger = new RawLogger("prcamera", stream.bufs_info.width, stream.bufs_info.height, CAMERA_FPS);
     }
 
-    while (!do_exit) {
-      VIPCBufExtra extra;
-      VIPCBuf* buf = visionstream_get(&stream, &extra);
-      if (buf == NULL) {
-        LOG("visionstream get failed");
-        break;
+    //uint64_t current_time = nanos_since_boot();
+    //uint64_t diff = current_time - extra.timestamp_eof;
+    //double msdiff = (double) diff / 1000000.0;
+    // printf("logger latency to tsEof: %f\n", msdiff);
+
+    uint8_t *y = (uint8_t *)buf->addr;
+    uint8_t *u = y + (stream.bufs_info.width * stream.bufs_info.height);
+    uint8_t *v = u + (stream.bufs_info.width / 2) * (stream.bufs_info.height / 2);
+
+    {
+      // all the rotation stuff
+      bool should_rotate = false;
+      std::unique_lock<std::mutex> lk(s.lock);
+      if (cam_idx == CAM_IDX_FCAM) {  // TODO: should wait for three cameras on tici?
+        // wait if log camera is older on back camera
+        while (extra.frame_id > s.last_frame_id           //if the log camera is older, wait for it to catch up.
+               && (extra.frame_id - s.last_frame_id) < 8  // but if its too old then there probably was a discontinuity (visiond restarted)
+               && !do_exit) {
+          s.cv.wait(lk);
+        }
+        should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.rotate_segment && s.rotate_seq_id == my_idx;
+      } else {
+        // front camera is best effort
+        should_rotate = encoder_segment < s.rotate_segment && s.rotate_seq_id == my_idx;
       }
+      if (do_exit) break;
 
-      //uint64_t current_time = nanos_since_boot();
-      //uint64_t diff = current_time - extra.timestamp_eof;
-      //double msdiff = (double) diff / 1000000.0;
-      // printf("logger latency to tsEof: %f\n", msdiff);
+      // rotate the encoder if the logger is on a newer segment
+      if (should_rotate) {
+        LOG("rotate encoder to %s", s.segment_path);
 
-      uint8_t *y = (uint8_t*)buf->addr;
-      uint8_t *u = y + (buf_info.width*buf_info.height);
-      uint8_t *v = u + (buf_info.width/2)*(buf_info.height/2);
+        encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
+        s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
 
-      {
-        // all the rotation stuff
-        bool should_rotate = false;
-        std::unique_lock<std::mutex> lk(s.lock);
-        if (cam_idx == CAM_IDX_FCAM) { // TODO: should wait for three cameras on tici?
-          // wait if log camera is older on back camera
-          while ( extra.frame_id > s.last_frame_id //if the log camera is older, wait for it to catch up.
-                 && (extra.frame_id-s.last_frame_id) < 8 // but if its too old then there probably was a discontinuity (visiond restarted)
-                 && !do_exit) {
-            s.cv.wait(lk);
-          }
-          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.rotate_segment && s.rotate_seq_id == my_idx;
-        } else {
-          // front camera is best effort
-          should_rotate = encoder_segment < s.rotate_segment && s.rotate_seq_id == my_idx;
-        }
-        if (do_exit) break;
-
-        // rotate the encoder if the logger is on a newer segment
-        if (should_rotate) {
-          LOG("rotate encoder to %s", s.segment_path);
-
-          encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
-          s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
-
-          if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
-          }
-
-          if (raw_clips) {
-            rawlogger->Rotate(s.segment_path, s.rotate_segment);
-          }
-
-          encoder_segment = s.rotate_segment;
-          if (lh) {
-            lh_close(lh);
-          }
-          lh = logger_get_handle(&s.logger);
-        }
-
-        if (encoder.rotating) {
-          pthread_mutex_lock(&s.rotate_lock);
-          s.should_close += 1;
-          pthread_mutex_unlock(&s.rotate_lock);
-
-          while(s.should_close > 0 && s.should_close < s.num_encoder) {
-            // printf("%d waiting for others to reach close, %d/%d \n", my_idx, s.should_close, s.num_encoder);
-            s.cv.wait(lk);
-          }
-
-          pthread_mutex_lock(&s.rotate_lock);
-          if (s.should_close == s.num_encoder) {
-            s.should_close = 1 - s.num_encoder;
-          } else {
-            s.should_close += 1;
-          }
-          encoder_close(&encoder);
-          encoder_open(&encoder, encoder.next_path);
-          encoder.segment = encoder.next_segment;
-          encoder.rotating = false;
-          if (has_encoder_alt) {
-            encoder_close(&encoder_alt);
-            encoder_open(&encoder_alt, encoder_alt.next_path);
-            encoder_alt.segment = encoder_alt.next_segment;
-            encoder_alt.rotating = false;
-          }
-          s.finish_close += 1;
-          pthread_mutex_unlock(&s.rotate_lock);
-
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder) {
-            // printf("%d waiting for others to actually close, %d/%d \n", my_idx, s.finish_close, s.num_encoder);
-            s.cv.wait(lk);
-          }
-          s.finish_close = 0;
-        }
-      }
-      {
-        // encode hevc
-        int out_segment = -1;
-        int out_id = encoder_encode_frame(&encoder,
-                                          y, u, v,
-                                          buf_info.width, buf_info.height,
-                                          &out_segment, &extra);
         if (has_encoder_alt) {
-          int out_segment_alt = -1;
-          encoder_encode_frame(&encoder_alt,
-                               y, u, v,
-                               buf_info.width, buf_info.height,
-                               &out_segment_alt, &extra);
+          encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
+        }
+
+        if (raw_clips) {
+          rawlogger->Rotate(s.segment_path, s.rotate_segment);
+        }
+
+        encoder_segment = s.rotate_segment;
+        if (lh) {
+          lh_close(lh);
+        }
+        lh = logger_get_handle(&s.logger);
+      }
+
+      if (encoder.rotating) {
+        pthread_mutex_lock(&s.rotate_lock);
+        s.should_close += 1;
+        pthread_mutex_unlock(&s.rotate_lock);
+
+        while (s.should_close > 0 && s.should_close < s.num_encoder) {
+          // printf("%d waiting for others to reach close, %d/%d \n", my_idx, s.should_close, s.num_encoder);
+          s.cv.wait(lk);
+        }
+
+        pthread_mutex_lock(&s.rotate_lock);
+        if (s.should_close == s.num_encoder) {
+          s.should_close = 1 - s.num_encoder;
+        } else {
+          s.should_close += 1;
+        }
+        encoder_close(&encoder);
+        encoder_open(&encoder, encoder.next_path);
+        encoder.segment = encoder.next_segment;
+        encoder.rotating = false;
+        if (has_encoder_alt) {
+          encoder_close(&encoder_alt);
+          encoder_open(&encoder_alt, encoder_alt.next_path);
+          encoder_alt.segment = encoder_alt.next_segment;
+          encoder_alt.rotating = false;
+        }
+        s.finish_close += 1;
+        pthread_mutex_unlock(&s.rotate_lock);
+
+        while (s.finish_close > 0 && s.finish_close < s.num_encoder) {
+          // printf("%d waiting for others to actually close, %d/%d \n", my_idx, s.finish_close, s.num_encoder);
+          s.cv.wait(lk);
+        }
+        s.finish_close = 0;
+      }
+    }
+    {
+      // encode hevc
+      int out_segment = -1;
+      int out_id = encoder_encode_frame(&encoder,
+                                        y, u, v,
+                                        stream.bufs_info.width, stream.bufs_info.height,
+                                        &out_segment, &extra);
+      if (has_encoder_alt) {
+        int out_segment_alt = -1;
+        encoder_encode_frame(&encoder_alt,
+                             y, u, v,
+                             stream.bufs_info.width, stream.bufs_info.height,
+                             &out_segment_alt, &extra);
+      }
+
+      // publish encode index
+      MessageBuilder msg;
+      auto eidx = msg.initEvent().initEncodeIdx();
+      eidx.setFrameId(extra.frame_id);
+#ifdef QCOM2
+      eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
+#else
+      eidx.setType(cam_idx == CAM_IDX_DCAM ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
+#endif
+      eidx.setEncodeId(cnt);
+      eidx.setSegmentNum(out_segment);
+      eidx.setSegmentId(out_id);
+
+      auto bytes = msg.toBytes();
+
+      if (idx_sock->send((char *)bytes.begin(), bytes.size()) < 0) {
+        printf("err sending encodeIdx pkt: %s\n", strerror(errno));
+      }
+      if (lh) {
+        lh_log(lh, bytes.begin(), bytes.size(), false);
+      }
+    }
+
+    if (raw_clips) {
+      double ts = seconds_since_boot();
+      if (ts > rawlogger_start_time) {
+        // encode raw if in clip
+        int out_segment = -1;
+        int out_id = rawlogger->LogFrame(cnt, y, u, v, &out_segment);
+
+        if (rawlogger_clip_cnt == 0) {
+          LOG("starting raw clip in seg %d", out_segment);
         }
 
         // publish encode index
         MessageBuilder msg;
         auto eidx = msg.initEvent().initEncodeIdx();
         eidx.setFrameId(extra.frame_id);
-#ifdef QCOM2
-        eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
-#else
-        eidx.setType(cam_idx == CAM_IDX_DCAM ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
-#endif
+        eidx.setType(cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP);
         eidx.setEncodeId(cnt);
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
 
         auto bytes = msg.toBytes();
-
-        if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
-          printf("err sending encodeIdx pkt: %s\n", strerror(errno));
-        }
         if (lh) {
           lh_log(lh, bytes.begin(), bytes.size(), false);
         }
-      }
 
-      if (raw_clips) {
-        double ts = seconds_since_boot();
-        if (ts > rawlogger_start_time) {
-          // encode raw if in clip
-          int out_segment = -1;
-          int out_id = rawlogger->LogFrame(cnt, y, u, v, &out_segment);
+        // close rawlogger if clip ended
+        rawlogger_clip_cnt++;
+        if (rawlogger_clip_cnt >= RAW_CLIP_LENGTH) {
+          rawlogger->Close();
 
-          if (rawlogger_clip_cnt == 0) {
-            LOG("starting raw clip in seg %d", out_segment);
-          }
+          rawlogger_clip_cnt = 0;
+          rawlogger_start_time = ts + RAW_CLIP_FREQUENCY;
 
-          // publish encode index
-          MessageBuilder msg;
-          auto eidx = msg.initEvent().initEncodeIdx();
-          eidx.setFrameId(extra.frame_id);
-          eidx.setType(cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP);
-          eidx.setEncodeId(cnt);
-          eidx.setSegmentNum(out_segment);
-          eidx.setSegmentId(out_id);
-
-          auto bytes = msg.toBytes();
-          if (lh) {
-            lh_log(lh, bytes.begin(), bytes.size(), false);
-          }
-
-          // close rawlogger if clip ended
-          rawlogger_clip_cnt++;
-          if (rawlogger_clip_cnt >= RAW_CLIP_LENGTH) {
-            rawlogger->Close();
-
-            rawlogger_clip_cnt = 0;
-            rawlogger_start_time = ts+RAW_CLIP_FREQUENCY;
-
-            LOG("ending raw clip in seg %d, next in %.1f sec", out_segment, rawlogger_start_time-ts);
-          }
+          LOG("ending raw clip in seg %d, next in %.1f sec", out_segment, rawlogger_start_time - ts);
         }
       }
-
-      cnt++;
     }
 
-    if (lh) {
-      lh_close(lh);
-      lh = NULL;
-    }
+    cnt++;
+  }
 
-    if (raw_clips) {
-      rawlogger->Close();
-      delete rawlogger;
-    }
+  if (lh) {
+    lh_close(lh);
+    lh = NULL;
+  }
 
-    visionstream_destroy(&stream);
+  if (raw_clips) {
+    rawlogger->Close();
+    delete rawlogger;
   }
 
   delete idx_sock;

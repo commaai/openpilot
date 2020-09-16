@@ -15,23 +15,12 @@ int main() {
   VisionStream stream;
 
   VisionStreamBufs buf_info;
-  while (true) {
-    err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
-    if (err != 0) {
-      printf("visionstream fail\n");
-      usleep(100000);
-    }
-    break;
-  }
-
   RawLogger vidlogger("prcamera", buf_info.width, buf_info.height, 20);
   vidlogger.Open("o1");
-
+  
   for (int cnt=0; cnt<200; cnt++) {
-    VIPCBufExtra extra;
-    VIPSBuf* buf = visionstream_get(&stream, &extra);
+    VIPSBuf* buf = stream.acquire(VISION_STREAM_YUV, false, nullptr);
     if (buf == NULL) {
-      printf("visionstream get failed\n");
       break;
     }
 
@@ -40,8 +29,8 @@ int main() {
     }
 
     uint8_t *y = (uint8_t*)buf->addr;
-    uint8_t *u = y + (buf_info.width*buf_info.height);
-    uint8_t *v = u + (buf_info.width/2)*(buf_info.height/2);
+    uint8_t *u = y + (stream.bufs_info.width*stream.bufs_info.height);
+    uint8_t *v = u + (stream.bufs_info.width/2)*(stream.bufs_info.height/2);
 
     double t1 = millis_since_boot();
     vidlogger.LogFrame(cnt, y, u, v, NULL);
@@ -50,8 +39,5 @@ int main() {
   }
 
   vidlogger.Close();
-
-  visionstream_destroy(&stream);
-
   return 0;
 }

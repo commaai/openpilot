@@ -32,7 +32,7 @@ else:
     env['FRAMEWORKS'] = ['OpenCL']
 
 env.SharedLibrary('snapshot/visionipc',
-  ["#selfdrive/common/visionipc.c", "#selfdrive/common/ipc.c"])
+  ["#selfdrive/common/visionipc.cc", "#selfdrive/common/ipc.c"])
 
 env.Program('camerad', [
     'main.cc',

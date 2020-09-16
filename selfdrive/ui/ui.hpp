@@ -167,7 +167,6 @@ typedef struct UIState {
   cereal::UiLayoutState::App active_app;
 
   // vision state
-  bool vision_connected;
   VisionStream stream;
 
   // graphics
