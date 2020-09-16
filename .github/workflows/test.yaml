@@ -2,8 +2,7 @@ name: openpilot tests
 on:
   push:
   pull_request:
-  schedule:
-  - cron: '0 * * * *'
+  status:
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
@@ -102,7 +101,7 @@ jobs:
     name: docker push prebuilt
     runs-on: ubuntu-16.04
     timeout-minutes: 50
-    if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
+    if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
     needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
     steps:
       - uses: actions/checkout@v2
