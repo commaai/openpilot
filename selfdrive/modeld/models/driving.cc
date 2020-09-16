@@ -348,8 +348,8 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   framed.setLaneLineProbs(lane_line_probs);
 
   auto road_edges = framed.initRoadEdges(2);
-  fill_xyzt(road_edges[0], &net_outputs.lane_lines[0*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-  fill_xyzt(road_edges[1], &net_outputs.lane_lines[1*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+  fill_xyzt(road_edges[0], &net_outputs.road_edges[0*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+  fill_xyzt(road_edges[1], &net_outputs.road_edges[1*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
 
   auto meta = framed.initMeta();
   fill_meta_v2(meta, net_outputs.meta);

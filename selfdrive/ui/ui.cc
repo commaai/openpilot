@@ -176,6 +176,9 @@ void update_sockets(UIState *s) {
     scene.model = sm["modelV2"].getModelV2();
     // TODO is this indexing allowed
     scene.max_distance = fmin(scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
+    for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
+      scene.lane_line_probs[ll_idx] = scene.model.getLaneLineProbs()[ll_idx];
+    }
   }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
