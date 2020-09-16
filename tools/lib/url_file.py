@@ -68,15 +68,16 @@ class URLFile(object):
     if self._length is not None:
       return self._length
     file_length_path = os.path.join(PATH, hash_256(self._url) + "_length")
-    if os.path.exists(file_length_path):
+    if os.path.exists(file_length_path) and not self._force_download:
       with open(file_length_path, "r") as file_length:
           content = file_length.read()
           self._length = int(content)
           return self._length
 
     self._length = self.get_length_online()
-    with atomic_write_in_dir(file_length_path, mode="w") as file_length:
-      file_length.write(str(self._length))
+    if not self._force_download:
+      with atomic_write_in_dir(file_length_path, mode="w") as file_length:
+        file_length.write(str(self._length))
     return self._length
 
   def read(self, ll=None):
