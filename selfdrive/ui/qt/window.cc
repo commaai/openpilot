@@ -27,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   glWindow->setLabel(label);
   glWindow->show();
 #else
-  GLWindow * glWindow = new GLWindow;
+  GLWindow * glWindow = new GLWindow(this);
   main_layout->addWidget(glWindow);
 #endif
 
