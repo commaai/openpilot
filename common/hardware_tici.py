@@ -1,5 +1,3 @@
-import random
-
 import serial
 
 from common.hardware_base import HardwareBase
@@ -15,7 +13,7 @@ class Tici(HardwareBase):
   def run_at_command(cmd, timeout=0.1):
     with serial.Serial("/dev/ttyUSB2", timeout=timeout) as ser:
       ser.write(cmd + b"\r\n")
-      ser.readline() # Modem echos request
+      ser.readline()  # Modem echos request
       return ser.readline().decode().rstrip()
 
   def get_sound_card_online(self):
