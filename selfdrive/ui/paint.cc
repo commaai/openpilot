@@ -3,6 +3,7 @@
 #include <map>
 #include <cmath>
 #include <iostream>
+#include "utilpp.h"
 #include "common/util.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
@@ -433,7 +434,7 @@ static void ui_draw_vision_event(UIState *s) {
   if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
-    ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size, s->img_turn, 1.0f);
+    ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size, s->images.at("img_trafficSign_turn.png"), 1.0f);
   } else {
     // draw steering wheel
     const int bg_wheel_size = 96;
@@ -449,7 +450,7 @@ static void ui_draw_vision_event(UIState *s) {
     }
 
     if (s->scene.controls_state.getEngageable()){
-      ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
+      ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->images.at("img_chffr_wheel.png"), color, 1.0f, bg_wheel_y - 25);
     }
   }
 }
@@ -458,7 +459,7 @@ static void ui_draw_vision_face(UIState *s) {
   const int face_size = 96;
   const int face_x = (s->scene.viz_rect.x + face_size + (bdr_s * 2));
   const int face_y = (s->scene.viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
-  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.dmonitoring_state.getFaceDetected());
+  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->images.at("img_driver_face.png"), s->scene.dmonitoring_state.getFaceDetected());
 }
 
 static void ui_draw_driver_view(UIState *s) {
@@ -511,7 +512,7 @@ static void ui_draw_driver_view(UIState *s) {
   const int face_size = 85;
   const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
   const int y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->dmonitoring_state.getFaceDetected());
+  ui_draw_circle_image(s->vg, x, y, face_size, s->images.at("img_driver_face.png"), scene->dmonitoring_state.getFaceDetected());
 }
 
 static void ui_draw_vision_header(UIState *s) {
@@ -727,26 +728,26 @@ void ui_nvg_init(UIState *s) {
   s->font_sans_bold = nvgCreateFont(s->vg, "sans-bold", "../assets/fonts/opensans_bold.ttf");
   assert(s->font_sans_bold >= 0);
 
-  s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
-  assert(s->img_wheel != 0);
-  s->img_turn = nvgCreateImage(s->vg, "../assets/img_trafficSign_turn.png", 1);
-  assert(s->img_turn != 0);
-  s->img_face = nvgCreateImage(s->vg, "../assets/img_driver_face.png", 1);
-  assert(s->img_face != 0);
-  s->img_button_settings = nvgCreateImage(s->vg, "../assets/images/button_settings.png", 1);
-  assert(s->img_button_settings != 0);
-  s->img_button_home = nvgCreateImage(s->vg, "../assets/images/button_home.png", 1);
-  assert(s->img_button_home != 0);
-  s->img_battery = nvgCreateImage(s->vg, "../assets/images/battery.png", 1);
-  assert(s->img_battery != 0);
-  s->img_battery_charging = nvgCreateImage(s->vg, "../assets/images/battery_charging.png", 1);
-  assert(s->img_battery_charging != 0);
+  const char *images[] = {
+      "../assets/img_chffr_wheel.png",
+      "../assets/img_trafficSign_turn.png",
+      "../assets/img_driver_face.png",
+      "../assets/images/button_settings.png",
+      "../assets/images/button_home.png",
+      "../assets/images/battery.png",
+      "../assets/images/battery_charging.png",
+      "../assets/images/network_0.png",
+      "../assets/images/network_1.png",
+      "../assets/images/network_2.png",
+      "../assets/images/network_3.png",
+      "../assets/images/network_4.png",
+      "../assets/images/network_5.png",
+  };
 
-  for(int i=0;i<=5;++i) {
-    char network_asset[32];
-    snprintf(network_asset, sizeof(network_asset), "../assets/images/network_%d.png", i);
-    s->img_network[i] = nvgCreateImage(s->vg, network_asset, 1);
-    assert(s->img_network[i] != 0);
+  for (int i = 0; i < ARRAYSIZE(images); i++) {
+    int img_id = nvgCreateImage(s->vg, images[i], 1);
+    assert(img_id != 0);
+    s->images[util::base_name(images[i])] = img_id;
   }
 
   // init gl
@@ -822,16 +823,8 @@ void ui_nvg_init(UIState *s) {
 }
 
 void ui_nvg_destroy(UIState *s) {
-  nvgDeleteImage(s->vg, s->img_wheel);
-  nvgDeleteImage(s->vg, s->img_turn);
-  nvgDeleteImage(s->vg, s->img_face);
-  nvgDeleteImage(s->vg, s->img_button_settings);
-  nvgDeleteImage(s->vg, s->img_button_home);
-  nvgDeleteImage(s->vg, s->img_battery);
-  nvgDeleteImage(s->vg, s->img_battery_charging);
-
-  for(int i=0;i<=5;++i) {
-    nvgDeleteImage(s->vg, s->img_network[i]);
+  for (auto img : s->images) {
+    nvgDeleteImage(s->vg, img.second);
   }
 
   for(int i = 0; i < 2; i++) {

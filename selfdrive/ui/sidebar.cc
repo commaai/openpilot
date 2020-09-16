@@ -13,12 +13,12 @@ static void ui_draw_sidebar_background(UIState *s) {
 
 static void ui_draw_sidebar_settings_button(UIState *s) {
   const float alpha = s->active_app == cereal::UiLayoutState::App::SETTINGS ? 1.0f : 0.65f;
-  ui_draw_image(s->vg, settings_btn.x, settings_btn.y, settings_btn.w, settings_btn.h, s->img_button_settings, alpha);
+  ui_draw_image(s->vg, settings_btn.x, settings_btn.y, settings_btn.w, settings_btn.h, s->images.at("button_settings.png"), alpha);
 }
 
 static void ui_draw_sidebar_home_button(UIState *s) {
   const float alpha = s->active_app == cereal::UiLayoutState::App::HOME ? 1.0f : 0.65f;;
-  ui_draw_image(s->vg, home_btn.x, home_btn.y, home_btn.w, home_btn.h, s->img_button_home, alpha);
+  ui_draw_image(s->vg, home_btn.x, home_btn.y, home_btn.w, home_btn.h, s->images.at("button_home.png"), alpha);
 }
 
 static void ui_draw_sidebar_network_strength(UIState *s) {
@@ -32,8 +32,10 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
   const int network_img_w = 176;
   const int network_img_x = 58;
   const int network_img_y = 196;
+  char image[64];
   const int img_idx = s->scene.thermal.getNetworkType() == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.thermal.getNetworkStrength()];
-  ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, s->img_network[img_idx], 1.0f);
+  snprintf(image, sizeof(image), "network_%d.png", img_idx);
+  ui_draw_image(s->vg, network_img_x, network_img_y, network_img_w, network_img_h, s->images.at(image), 1.0f);
 }
 
 static void ui_draw_sidebar_battery_icon(UIState *s) {
@@ -42,7 +44,7 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
   const int battery_img_x = 160;
   const int battery_img_y = 255;
 
-  int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
+  int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->images.at("battery_charging.png") : s->images.at("battery.png");
 
   ui_draw_rect(s->vg, battery_img_x + 6, battery_img_y + 5,
                ((battery_img_w - 19) * (s->scene.thermal.getBatteryPercent() * 0.01)), battery_img_h - 11, COLOR_WHITE);
