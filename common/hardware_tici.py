@@ -1,4 +1,7 @@
 import random
+
+import serial
+
 from common.hardware_base import HardwareBase
 from cereal import log
 
@@ -19,7 +22,19 @@ class Tici(HardwareBase):
     return True
 
   def get_imei(self, slot):
-    return "%015d" % random.randint(0, 1 << 32)
+    if slot != 0:
+      return ""
+
+    for _ in range(10):
+      with serial.Serial("/dev/ttyUSB2", timeout=0.1) as ser:
+        ser.write(b"AT+CGSN\r\n")
+        ser.readline() # Modem echos request
+
+        imei = ser.readline().decode().rstrip()
+        if len(imei) == 15:
+          return imei
+
+    raise RuntimeError("Error getting IMEI")
 
   def get_serial(self):
     return self.get_cmdline()['androidboot.serialno']
@@ -49,3 +64,4 @@ class Tici(HardwareBase):
 if __name__ == "__main__":
   t = Tici()
   print(t.get_serial())
+  print(t.get_imei(0))
