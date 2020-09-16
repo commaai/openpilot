@@ -25,15 +25,6 @@
 using namespace ublox;
 extern volatile sig_atomic_t do_exit;
 
-void write_file(std::string fpath, uint8_t *to_write, int length) {
-  FILE* f = fopen(fpath.c_str(), "wb");
-  if (!f) {
-    std::cout << "Open " << fpath << " failed" << std::endl;
-    return;
-  }
-  fwrite(to_write, length, 1, f);
-  fclose(f);
-}
 
 static size_t len = 0U;
 static size_t consumed = 0U;
@@ -65,7 +56,8 @@ Message * poll_ubloxraw_msg(Poller * poller) {
 
 int send_gps_event(PubSocket *s, const void *buf, size_t length) {
   assert(s);
-  write_file(prefix + "/" + std::to_string(save_idx), (uint8_t *)buf, length);
+  std::string path = prefix + "/" + std::to_string(save_idx);
+  write_file(path.c_str(), buf, length);
   save_idx++;
   return length;
 }

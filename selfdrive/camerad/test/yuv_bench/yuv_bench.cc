@@ -113,14 +113,7 @@ int main() {
   assert(err == 0);
   clFinish(q);
 
+  write_file("out_cl.bin", out_ptr, out_size)
 
-  FILE* of = fopen("out_cl.bin", "wb");
-  fwrite(out_ptr, out_size, 1, of);
-  fclose(of);
-
-
-// #endif
-
-
-    return 0;
+  return 0;
 }

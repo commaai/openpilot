@@ -96,12 +96,10 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
   s->m->execute(s->input_frames, MODEL_FRAME_SIZE*2);
 
-  #ifdef DUMP_YUV
-    FILE *dump_yuv_file = fopen("/sdcard/dump.yuv", "wb");
-    fwrite(new_frame_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file);
-    fclose(dump_yuv_file);
-    assert(1==2);
-  #endif
+#ifdef DUMP_YUV
+  write_file("/sdcard/dump.yuv", new_frame_buf, MODEL_HEIGHT * MODEL_WIDTH * 3 / 2 * sizeof(float));
+  assert(1 == 2);
+#endif
 
   clEnqueueUnmapMemObject(q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
 
