@@ -9,33 +9,38 @@ import pycurl
 from hashlib import sha256
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
+from tools.lib.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
+#  Cache chunk size
+K = 1000
+CHUNK_SIZE = 1000 * K
 
-#Cache chunk size
-K=1000
-CHUNK_SIZE=1000 * K
+PATH = "/tmp/comma_download_cache/"
 
-PATH="/tmp/comma_download_cache/"
-LENGTHS_SUBFOLDER="lengths/" 
+
+def hash_256(link):
+  hsh = str(sha256((link.split("?")[0]).encode('utf-8')).hexdigest())
+  return hsh
+
+
 class URLFile(object):
   _tlocal = threading.local()
 
-  def __init__(self, url, debug=False, cache=True):
+  def __init__(self, url, debug=False, cache=None):
     self._url = url
     self._pos = 0
     self._length = None
     self._local_file = None
     self._debug = debug
-    #We download if we cannot cache 
-    self._force_download = not cache
+    #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
+    self._force_download = not os.environ.get("FILEREADER_CACHE")
+    if cache is not None:
+      self._force_download = not cache
+
     try:
       self._curl = self._tlocal.curl
     except AttributeError:
       self._curl = self._tlocal.curl = pycurl.Curl()
-    if not os.path.isdir(PATH):
-      os.makedirs(PATH)
-    if not os.path.isdir(PATH + LENGTHS_SUBFOLDER):
-      os.makedirs(PATH + LENGTHS_SUBFOLDER)
-    
+    mkdirs_exists_ok(PATH)
 
   def __enter__(self):
     return self
@@ -47,16 +52,7 @@ class URLFile(object):
       self._local_file = None
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
-  def get_length(self):
-    if self._length is not None:
-      return self._length
-    path_to_name = PATH + LENGTHS_SUBFOLDER + str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_length"
-    if os.path.exists(path_to_name):
-      with open(path_to_name, "r") as file_length:
-          content = file_length.read()
-          self._length = int(content)
-          return self._length
-
+  def get_length_online(self):
     c = pycurl.Curl()
     c.setopt(pycurl.NOSIGNAL, 1)
     c.setopt(pycurl.TIMEOUT_MS, 500000)
@@ -66,10 +62,22 @@ class URLFile(object):
     c.perform()
 
     length = int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
-    self._length = length
-    with open(path_to_name, "w") as file_length:
-      file_length.write(str(self._length))
     return length
+
+  def get_length(self):
+    if self._length is not None:
+      return self._length
+    file_length_path = os.path.join(PATH, hash_256(self._url) + "_length")
+    if os.path.exists(file_length_path):
+      with open(file_length_path, "r") as file_length:
+          content = file_length.read()
+          self._length = int(content)
+          return self._length
+
+    self._length = self.get_length_online()
+    with atomic_write_in_dir(file_length_path, mode="w") as file_length:
+      file_length.write(str(self._length))
+    return self._length
 
   def read(self, ll=None):
     if self._force_download:
@@ -83,19 +91,19 @@ class URLFile(object):
     while True:
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
-      file_name = str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_" + str(chunk_number)
-      full_path = PATH + str(file_name)
+      file_name = hash_256(self._url) + "_" + str(chunk_number)
+      full_path = os.path.join(PATH, str(file_name))
       data = None
       #  If we don't have a file, download it
       if not os.path.exists(full_path):
         data = self.read_aux(ll=CHUNK_SIZE)
-        with open(full_path, "wb") as new_cached_file:
+        with atomic_write_in_dir(full_path, mode="wb") as new_cached_file:
           new_cached_file.write(data)
       else:
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()
       
-      response += data[max(0, file_begin - position) : min(CHUNK_SIZE, file_end - position)]
+      response += data[max(0, file_begin - position): min(CHUNK_SIZE, file_end - position)]
 
       position += CHUNK_SIZE
       if position >= file_end:
