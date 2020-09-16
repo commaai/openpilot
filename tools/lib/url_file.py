@@ -12,7 +12,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 #Cache chunk size
 K=1000
-CACHE_SIZE=1000 * K
+CHUNK_SIZE=1000 * K
 
 PATH="/tmp/comma_download_cache/"
 
@@ -79,30 +79,31 @@ class URLFile(object):
     if self._force_download:
       return self.read_aux(ll=ll)
 
-    chunk_begin = self._pos
-    chunk_end = self._pos + ll if ll is not None else self.get_length()
-    position = (chunk_begin // CACHE_SIZE) * CACHE_SIZE
+    file_begin = self._pos
+    file_end = self._pos + ll if ll is not None else self.get_length()
+    #We have to allign with chunks we store. Position is the begginiing of the latest chunk that starts before or at our file
+    position = (file_begin // CHUNK_SIZE) * CHUNK_SIZE
     response = b""
     while True:
       self._pos = position
-      increment = self._pos / CACHE_SIZE
-      file_name = str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_" + str(increment)
+      chunk_number = self._pos / CHUNK_SIZE
+      file_name = str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_" + str(chunk_number)
       full_path = PATH + str(file_name)
       data = None
       #If we don't have a file, download it
       if not os.path.exists(full_path):
-        data = self.read_aux(ll=CACHE_SIZE)
+        data = self.read_aux(ll=CHUNK_SIZE)
         with open(full_path, "wb") as new_cached_file:
           new_cached_file.write(data)
       else:
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()
       
-      response += data[max(0, chunk_begin-position) : min(CACHE_SIZE, chunk_end - position)]
+      response += data[max(0, file_begin - position) : min(CHUNK_SIZE, file_end - position)]
 
-      position += CACHE_SIZE
-      if position >= chunk_end:
-        self._pos = chunk_end
+      position += CHUNK_SIZE
+      if position >= file_end:
+        self._pos = file_end
         return response
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
