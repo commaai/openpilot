@@ -51,7 +51,7 @@ int write_file(const char* path, const void* data, size_t size) {
   ssize_t n = 0;
   do {
     n = write(fd, data, size);
-  } while (n < 0 && errno == EINTR);
+  } while (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
   
   close(fd);
   return n == size ? 0 : -1;
