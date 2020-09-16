@@ -51,7 +51,7 @@ class Pc(HardwareBase):
 
 if EON:
   HARDWARE = cast(HardwareBase, Android())
-if TICI:
+elif TICI:
   HARDWARE = cast(HardwareBase, Tici())
 else:
   HARDWARE = cast(HardwareBase, Pc())
