@@ -8,14 +8,14 @@ NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 
 
-class Tici(HardwareBase):
-  @staticmethod
-  def run_at_command(cmd, timeout=0.1):
-    with serial.Serial("/dev/ttyUSB2", timeout=timeout) as ser:
-      ser.write(cmd + b"\r\n")
-      ser.readline()  # Modem echos request
-      return ser.readline().decode().rstrip()
+def run_at_command(cmd, timeout=0.1):
+  with serial.Serial("/dev/ttyUSB2", timeout=timeout) as ser:
+    ser.write(cmd + b"\r\n")
+    ser.readline()  # Modem echos request
+    return ser.readline().decode().rstrip()
 
+
+class Tici(HardwareBase):
   def get_sound_card_online(self):
     return True
 
@@ -25,7 +25,7 @@ class Tici(HardwareBase):
 
     for _ in range(10):
       try:
-        imei = self.run_at_command(b"AT+CGSN")
+        imei = run_at_command(b"AT+CGSN")
         if len(imei) == 15:
           return imei
       except serial.SerialException:
@@ -56,9 +56,3 @@ class Tici(HardwareBase):
 
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
-
-
-if __name__ == "__main__":
-  t = Tici()
-  print(t.get_serial())
-  print(t.get_imei(0))
