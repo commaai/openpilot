@@ -203,18 +203,23 @@ void can_recv(PubMaster &pm) {
 void can_send_thread() {
   LOGD("start send thread");
 
-  SubMessage message("sendcan");
+  SubMessage subscriber("sendcan", nullptr, 100);
 
-  // run as fast as messages come in
-  while (!do_exit) {
-    if (message.receive()){
-      can_send(message.getEvent());
+  while (!do_exit && panda->connected) {
+    auto event = subscriber.receive();
+    if (!event) {
+      if (errno == EINTR) {
+        do_exit = true;
+      }
+      continue;
     }
-
-    delete msg;
+    //Dont send if older than 1 second
+    if (nanos_since_boot() - event->getLogMonoTime() < 1e9) {
+      if (!fake_send) {
+        panda->can_send(event->getSendcan());
+      }
+    }
   }
-
-  return NULL;
 }
 
 void can_recv_thread() {

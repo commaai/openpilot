@@ -26,23 +26,19 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   UbloxMsgParser parser;
 
-  Context * context = Context::create();
-  SubSocket * subscriber = SubSocket::create(context, "ubloxRaw");
-  assert(subscriber != NULL);
-  subscriber->setTimeout(100);
-
+  SubMessage subscriber("ubloxRaw", nullptr, 100);
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
   while (!do_exit) {
-    Message * msg = subscriber->receive();
-    if (!msg){
+    auto event = subscriber.receive();
+    if (!event) {
       if (errno == EINTR) {
         do_exit = true;
       }
       continue;
     }
 
-    auto ubloxRaw = message.getEvent().getUbloxRaw();
+    auto ubloxRaw = event->getUbloxRaw();
 
     const uint8_t *data = ubloxRaw.begin();
     size_t len = ubloxRaw.size();
@@ -95,7 +91,6 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       }
       bytes_consumed += bytes_consumed_this_time;
     }
-    delete msg;
   }
 
   return 0;
