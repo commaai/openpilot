@@ -14,7 +14,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 K=1000
 CACHE_SIZE=1000 * K
 
-PATH="/tmp/cache/cache2/"
+PATH="/tmp/comma_download_cache/"
 
 class URLFile(object):
   _tlocal = threading.local()
@@ -58,15 +58,10 @@ class URLFile(object):
     if self._length is not None:
       return self._length
     path_to_name = PATH + "lengths/" + str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_length"
-    #print(path_to_name)
     if os.path.exists(path_to_name):
-      #print("Found file length")
       with open(path_to_name, "r") as file_length:
-          #print(self._length)
           content = file_length.read()
-          #print(content)
           self._length = int(content)
-          #print(self._length)
           return self._length
 
     c = self.get_curl()
@@ -77,50 +72,37 @@ class URLFile(object):
     length = int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
     self._length = length
     with open(path_to_name, "w") as file_length:
-      #print("Writing length " + str(self._length))
       file_length.write(str(self._length))
     return length
 
   def read(self, ll=None):
-    #print(self._force_download)
     if self._force_download:
       return self.read_aux(ll=ll)
 
     chunk_begin = self._pos
-    #t1 = time.time()
     chunk_end = self._pos + ll if ll is not None else self.get_length()
-    #t2 = time.time()
-    #print("Time for length :" + str(t2 - t1))
-    #Largest multiple of cache size lower than chunk_begin
     position = (chunk_begin // CACHE_SIZE) * CACHE_SIZE
     response = b""
-    #print(" pozicije "+ str(chunk_begin) + " " + str(chunk_end))
     while True:
       self._pos = position
       increment = self._pos / CACHE_SIZE
       file_name = str(sha256((self._url.split("?")[0]).encode('utf-8')).hexdigest()) + "_" + str(increment)
       full_path = PATH + str(file_name)
+      data = None
       #If we don't have a file, download it
       if not os.path.exists(full_path):
-        #print("Downloading")
         data = self.read_aux(ll=CACHE_SIZE)
         with open(full_path, "wb") as new_cached_file:
           new_cached_file.write(data)
-        #print(str(max(0, chunk_begin-position)) + " " + str(min(CACHE_SIZE, chunk_end - position)))
-        response += data[max(0, chunk_begin-position) : min(CACHE_SIZE, chunk_end - position)]
-        
       else:
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()
-          #print(str(max(0, chunk_begin-position)) + " " + str(min(CACHE_SIZE, chunk_end - position)))
-          response += data[max(0, chunk_begin-position) : min(CACHE_SIZE, chunk_end - position)]
-          #print("LEN= "+ str(len(response)))
+      
+      response += data[max(0, chunk_begin-position) : min(CACHE_SIZE, chunk_end - position)]
 
       position += CACHE_SIZE
       if position >= chunk_end:
         self._pos = chunk_end
-        #print("Length cached " + str(len(response)))
-        #print(len(response))
         return response
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
