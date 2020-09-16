@@ -12,13 +12,6 @@ NetworkStrength = log.ThermalData.NetworkStrength
 
 class Tici(HardwareBase):
   @staticmethod
-  def get_cmdline():
-    with open('/proc/cmdline') as f:
-      cmdline = f.read()
-
-    return {kv[0]: kv[1] for kv in [s.split('=') for s in cmdline.split(' ')] if len(kv) == 2}
-
-  @staticmethod
   def run_at_command(cmd, timeout=0.1):
     with serial.Serial("/dev/ttyUSB2", timeout=timeout) as ser:
       ser.write(cmd + b"\r\n")
