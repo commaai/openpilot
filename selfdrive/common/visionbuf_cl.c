@@ -105,8 +105,10 @@ void visionbuf_free(const VisionBuf* buf) {
     munmap(buf->addr, buf->len);
     close(buf->fd);
   } else {
-    int err = clReleaseMemObject(buf->buf_cl);
-    assert(err == 0);
+    if (buf->buf_cl) {
+      int err = clReleaseMemObject(buf->buf_cl);
+      assert(err == 0);
+    }
 #if __OPENCL_VERSION__ >= 200
     clSVMFree(buf->ctx, buf->addr);
 #else
