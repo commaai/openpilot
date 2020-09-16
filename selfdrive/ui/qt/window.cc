@@ -19,12 +19,17 @@ volatile sig_atomic_t do_exit = 0;
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
 
+#ifdef QCOM2
   QLabel * label = new QLabel(this);
   main_layout->addWidget(label);
 
   GLWindow * glWindow = new GLWindow;
   glWindow->setLabel(label);
   glWindow->show();
+#else
+  GLWindow * glWindow = new GLWindow;
+  main_layout->addWidget(glWindow);
+#endif
 
   SettingsWindow * settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);

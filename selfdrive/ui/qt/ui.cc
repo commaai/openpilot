@@ -19,8 +19,7 @@ int main(int argc, char *argv[]) {
 #ifdef QCOM2
   w.showFullScreen();
 #else
-  w.setFixedSize(vwp_h, vwp_w);
-  // w.setFixedSize(vwp_w, vwp_h);
+  w.setFixedSize(vwp_w, vwp_h);
   w.show();
 #endif
 
