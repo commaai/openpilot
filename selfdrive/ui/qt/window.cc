@@ -19,12 +19,20 @@ volatile sig_atomic_t do_exit = 0;
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
 
+#ifdef QCOM2
+  QLabel * label = new QLabel(this);
+  main_layout->addWidget(label);
+
+  GLWindow * glWindow = new GLWindow;
+  glWindow->setLabel(label);
+  glWindow->show();
+#else
   GLWindow * glWindow = new GLWindow(this);
   main_layout->addWidget(glWindow);
+#endif
 
   SettingsWindow * settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
-
 
   main_layout->setMargin(0);
   setLayout(main_layout);
@@ -52,11 +60,19 @@ GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
+#ifdef QCOM2
+  setFixedWidth(vwp_w);
+  setFixedHeight(vwp_h);
+#endif
 }
 
 GLWindow::~GLWindow() {
   makeCurrent();
   doneCurrent();
+}
+
+void GLWindow::setLabel(QLabel * l){
+  label = l;
 }
 
 void GLWindow::initializeGL() {
@@ -78,6 +94,13 @@ void GLWindow::initializeGL() {
 void GLWindow::timerUpdate(){
   ui_update(ui_state);
   update();
+
+  if (label != NULL){
+    QImage img = grabFramebuffer();
+    QTransform transform;
+    transform.rotate(90);
+    label->setPixmap(QPixmap::fromImage(img).transformed(transform));
+  }
 }
 
 void GLWindow::resizeGL(int w, int h) {
