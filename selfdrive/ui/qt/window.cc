@@ -60,8 +60,10 @@ GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
+#ifdef QCOM2
   setFixedWidth(vwp_w);
   setFixedHeight(vwp_h);
+#endif
 }
 
 GLWindow::~GLWindow() {
