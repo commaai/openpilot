@@ -47,12 +47,7 @@ int write_file(const char* path, const void* data, size_t size) {
   if (fd == -1) {
     return -1;
   }
-  
-  ssize_t n = 0;
-  do {
-    n = write(fd, data, size);
-  } while (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
-  
+  ssize_t n = write(fd, data, size);
   close(fd);
   return n == size ? 0 : -1;
 }
