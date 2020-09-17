@@ -18,7 +18,7 @@ You can test your changes on your machine by running `run_docker_tests.sh`. This
 
 ### Automated Testing
 
-All PRs and commits are automatically checked by Github Actions. Check out `.github/workflows/` for what Github Actions runs. Any new tests sould be added to Github Actions.
+All PRs and commits are automatically checked by Github Actions. Check out `.github/workflows/` for what Github Actions runs. Any new tests should be added to Github Actions.
 
 ### Code Style and Linting
 

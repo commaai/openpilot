@@ -1,31 +1,40 @@
-import os
-import random
-from typing import cast
+import serial
 
-from cereal import log
-from common.hardware_android import Android
-from common.hardware_tici import Tici
 from common.hardware_base import HardwareBase
-
-EON = os.path.isfile('/EON')
-TICI = os.path.isfile('/TICI')
-PC = not (EON or TICI)
-ANDROID = EON
+from cereal import log
 
 
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 
 
-class Pc(HardwareBase):
+def run_at_command(cmd, timeout=0.1):
+  with serial.Serial("/dev/ttyUSB2", timeout=timeout) as ser:
+    ser.write(cmd + b"\r\n")
+    ser.readline()  # Modem echos request
+    return ser.readline().decode().rstrip()
+
+
+class Tici(HardwareBase):
   def get_sound_card_online(self):
     return True
 
   def get_imei(self, slot):
-    return "%015d" % random.randint(0, 1 << 32)
+    if slot != 0:
+      return ""
+
+    for _ in range(10):
+      try:
+        imei = run_at_command(b"AT+CGSN")
+        if len(imei) == 15:
+          return imei
+      except serial.SerialException:
+        pass
+
+    raise RuntimeError("Error getting IMEI")
 
   def get_serial(self):
-    return "cccccccc"
+    return self.get_cmdline()['androidboot.serialno']
 
   def get_subscriber_info(self):
     return ""
@@ -47,11 +56,3 @@ class Pc(HardwareBase):
 
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
-
-
-if EON:
-  HARDWARE = cast(HardwareBase, Android())
-elif TICI:
-  HARDWARE = cast(HardwareBase, Tici())
-else:
-  HARDWARE = cast(HardwareBase, Pc())

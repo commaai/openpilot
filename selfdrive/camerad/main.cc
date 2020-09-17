@@ -1589,6 +1589,9 @@ void party(VisionState *s) {
 
 int main(int argc, char *argv[]) {
   set_realtime_priority(51);
+#ifdef QCOM
+  set_core_affinity(2);
+#endif
 
   zsys_handler_set(NULL);
   signal(SIGINT, (sighandler_t)set_do_exit);

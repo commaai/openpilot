@@ -92,7 +92,9 @@ int main(int argc, char **argv) {
   int err;
   set_realtime_priority(51);
 
-#ifdef QCOM2
+#ifdef QCOM
+  set_core_affinity(2);
+#elif QCOM2
   // CPU usage is much lower when pinned to a single big core
   set_core_affinity(4);
 #endif
