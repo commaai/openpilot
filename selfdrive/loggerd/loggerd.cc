@@ -87,7 +87,7 @@ public:
     }
   }
 
-  void quitWaitLogThread() { cv.notify_all(); }
+  void quitWaitLogThread() { cv.notify_one(); }
 
   bool shouldRotate(uint32_t frame_id) {
     std::unique_lock<std::mutex> lk(lock);
@@ -98,7 +98,7 @@ public:
     lock.lock();
     log_frame_id = frame_id;
     lock.unlock();
-    cv.notify_all();
+    cv.notify_one();
   }
 
   void rotate() {
