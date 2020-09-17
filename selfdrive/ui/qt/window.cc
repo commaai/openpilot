@@ -102,7 +102,7 @@ void GLWindow::timerUpdate(){
     onroad = ui_state->started;
     timer->setInterval(onroad ? 50 : 1000);
 
-    int brightness = onroad ? 1023 : 100;
+    int brightness = onroad ? 1023 : 0;
     std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
     if (brightness_control.is_open()){
       brightness_control << int(brightness) << "\n";
