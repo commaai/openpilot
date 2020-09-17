@@ -32,7 +32,7 @@ class URLFile(object):
     self._local_file = None
     self._debug = debug
     #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
-    self._force_download = not os.environ.get("FILEREADER_CACHE")
+    self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
     if cache is not None:
       self._force_download = not cache
 
