@@ -14,7 +14,7 @@ from tools.lib.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
 K = 1000
 CHUNK_SIZE = 1000 * K
 
-PATH = "/tmp/comma_download_cache/"
+CACHE_DIR = "/tmp/comma_download_cache/"
 
 
 def hash_256(link):
@@ -40,7 +40,7 @@ class URLFile(object):
       self._curl = self._tlocal.curl
     except AttributeError:
       self._curl = self._tlocal.curl = pycurl.Curl()
-    mkdirs_exists_ok(PATH)
+    mkdirs_exists_ok(CACHE_DIR)
 
   def __enter__(self):
     return self
@@ -68,7 +68,7 @@ class URLFile(object):
   def get_length(self):
     if self._length is not None:
       return self._length
-    file_length_path = os.path.join(PATH, hash_256(self._url) + "_length")
+    file_length_path = os.path.join(CACHE_DIR, hash_256(self._url) + "_length")
     if os.path.exists(file_length_path) and not self._force_download:
       with open(file_length_path, "r") as file_length:
           content = file_length.read()
@@ -94,7 +94,7 @@ class URLFile(object):
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
       file_name = hash_256(self._url) + "_" + str(chunk_number)
-      full_path = os.path.join(PATH, str(file_name))
+      full_path = os.path.join(CACHE_DIR, str(file_name))
       data = None
       #  If we don't have a file, download it
       if not os.path.exists(full_path):
