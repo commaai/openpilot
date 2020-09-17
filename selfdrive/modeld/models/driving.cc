@@ -198,6 +198,21 @@ void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * dat
   path.setValidLen(valid_len);
 }
 
+void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float * data, float prob, float t) {
+  lead.setProb(prob);
+  lead.setT(t);
+  float xyva_arr[LEAD_MHP_VALS];
+  float xyva_stds_arr[LEAD_MHP_VALS];
+  for (int i=0; i<LEAD_MHP_VALS; i++) {
+    xyva_arr[i] = data[LEAD_MHP_VALS + i];
+    xyva_stds_arr[i] = exp(data[LEAD_MHP_VALS + i]);
+  }
+  kj::ArrayPtr<const float> xyva(xyva_arr, LEAD_MHP_VALS);
+  kj::ArrayPtr<const float> xyva_stds(xyva_stds_arr, LEAD_MHP_VALS);
+  lead.setXyva(xyva);
+  lead.setXyvaStd(xyva_stds);
+}
+
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, float prob) {
   lead.setProb(prob);
   lead.setDist(data[0]);
@@ -252,39 +267,39 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   float x_arr[TRAJECTORY_SIZE];
   float y_arr[TRAJECTORY_SIZE];
   float z_arr[TRAJECTORY_SIZE];
-  float x_std_arr[TRAJECTORY_SIZE];
-  float y_std_arr[TRAJECTORY_SIZE];
-  float z_std_arr[TRAJECTORY_SIZE];
+  //float x_std_arr[TRAJECTORY_SIZE];
+  //float y_std_arr[TRAJECTORY_SIZE];
+  //float z_std_arr[TRAJECTORY_SIZE];
   float t_arr[TRAJECTORY_SIZE];
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
       t_arr[i] = T_IDXS[i];
       x_arr[i] = data[i*columns + 0 + column_offset];
-      x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0 + column_offset];
+      //x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0 + column_offset];
     } else {
-      x_arr[i] = X_IDXS[i];
-      x_std_arr[i] = NAN;
       t_arr[i] = plan_t_arr[i];
+      x_arr[i] = X_IDXS[i];
+      //x_std_arr[i] = NAN;
     }
     y_arr[i] = data[i*columns + 1 + column_offset];
-    y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
+    //y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
     z_arr[i] = data[i*columns + 2 + column_offset];
-    z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
+    //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
   kj::ArrayPtr<const float> x(x_arr, TRAJECTORY_SIZE);
   kj::ArrayPtr<const float> y(y_arr, TRAJECTORY_SIZE);
   kj::ArrayPtr<const float> z(z_arr, TRAJECTORY_SIZE);
-  kj::ArrayPtr<const float> x_std(x_std_arr, TRAJECTORY_SIZE);
-  kj::ArrayPtr<const float> y_std(y_std_arr, TRAJECTORY_SIZE);
-  kj::ArrayPtr<const float> z_std(z_std_arr, TRAJECTORY_SIZE);
+  //kj::ArrayPtr<const float> x_std(x_std_arr, TRAJECTORY_SIZE);
+  //kj::ArrayPtr<const float> y_std(y_std_arr, TRAJECTORY_SIZE);
+  //kj::ArrayPtr<const float> z_std(z_std_arr, TRAJECTORY_SIZE);
   kj::ArrayPtr<const float> t(t_arr, TRAJECTORY_SIZE);
   xyzt.setX(x);
   xyzt.setY(y);
   xyzt.setZ(z);
-  xyzt.setXStd(x_std);
-  xyzt.setYStd(y_std);
-  xyzt.setZStd(z_std);
+  //xyzt.setXStd(x_std);
+  //xyzt.setYStd(y_std);
+  //xyzt.setZStd(z_std);
   xyzt.setT(t);
 }
 
@@ -295,15 +310,13 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   // make msg
   MessageBuilder msg;
   auto framed = msg.initEvent(frame_drop < MAX_FRAME_DROP).initModelV2();
-
   uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
-
   framed.setFrameId(vipc_frame_id);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
 
-  // Find the distribution that corresponds to the most probable plan
+  // plan 
   int plan_mhp_max_idx = 0;
   for (int i=1; i<PLAN_MHP_N; i++) {
     if (net_outputs.plan[(i + 1)*(PLAN_MHP_GROUP_SIZE) - 1] >
@@ -311,9 +324,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
       plan_mhp_max_idx = i;
     }
   }
-  // x pos at 10s is a good valid_len
   float valid_len = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*32];
-  // clamp to 5 and MODEL_PATH_DISTANCE
   valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, valid_len));
   int valid_len_idx = 0;
   for (int i=1; i<TRAJECTORY_SIZE; i++) {
@@ -328,7 +339,6 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
     plan_t_arr[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
   }
 
-
   auto position = framed.initPosition();
   fill_xyzt(position, best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr);
   auto orientation = framed.initOrientation();
@@ -338,6 +348,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   auto orientation_rate = framed.initOrientationRate();
   fill_xyzt(orientation_rate, best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
 
+  // lane lines
   auto lane_lines = framed.initLaneLines(4);
   float lane_line_probs_arr[4];
   for (int i = 0; i < 4; i++) {
@@ -347,13 +358,29 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   kj::ArrayPtr<const float> lane_line_probs(lane_line_probs_arr, 4);
   framed.setLaneLineProbs(lane_line_probs);
 
+  // road edges
   auto road_edges = framed.initRoadEdges(2);
   fill_xyzt(road_edges[0], &net_outputs.road_edges[0*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
   fill_xyzt(road_edges[1], &net_outputs.road_edges[1*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
 
+  // meta
   auto meta = framed.initMeta();
   fill_meta_v2(meta, net_outputs.meta);
-
+  
+  // leads
+  auto leads = framed.initLeads(LEAD_MHP_SELECTION);
+  int mdn_max_idx = 0;
+  float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
+  for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
+    for (int i=1; i<LEAD_MHP_N; i++) {
+      if (net_outputs.lead[(i+1)*(LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION] >
+          net_outputs.lead[(mdn_max_idx + 1)*(LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION]) {
+        mdn_max_idx = i;
+        fill_lead_v2(leads[t_offset], &net_outputs.lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)],
+                     sigmoid(net_outputs.lead_prob[t_offset]), t_offsets[t_offset]);
+      }
+    }
+  }
   pm.send("modelV2", msg);
 }
 
