@@ -382,12 +382,11 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
     LOG("encoder destroy");
     encoder_close(&encoder);
     encoder_destroy(&encoder);
-  }
-
-  if (has_encoder_alt) {
-    LOG("encoder alt destroy");
-    encoder_close(&encoder_alt);
-    encoder_destroy(&encoder_alt);
+    if (has_encoder_alt) {
+      LOG("encoder alt destroy");
+      encoder_close(&encoder_alt);
+      encoder_destroy(&encoder_alt);
+    }
   }
 }
 #endif
