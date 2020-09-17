@@ -228,7 +228,6 @@ if not PC:
 if ANDROID:
   persistent_processes += [
     'updated',
-    'rtshield',
   ]
 
 car_started_processes = [
@@ -243,6 +242,7 @@ car_started_processes = [
   'proclogd',
   'locationd',
   'clocksd',
+  'rtshield',
 ]
 
 driver_view_processes = [
