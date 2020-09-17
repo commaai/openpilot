@@ -13,6 +13,7 @@
 #include "settings.hpp"
 
 #include "paint.hpp"
+#include "common/util.h"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -20,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
 
 #ifdef QCOM2
+  set_core_affinity(7);
   QLabel * label = new QLabel(this);
   main_layout->addWidget(label);
 
