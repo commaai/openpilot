@@ -67,11 +67,7 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
 static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                        OMX_BUFFERHEADERTYPE *buffer) {
   EncoderState *s = app_data;
-
-  // printf("empty_buffer_done\n");
-
   queue_push(&s->free_in, (void*)buffer);
-
   return OMX_ErrorNone;
 }
 
@@ -79,11 +75,7 @@ static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_dat
 static OMX_ERRORTYPE fill_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                       OMX_BUFFERHEADERTYPE *buffer) {
   EncoderState *s = app_data;
-
-  // printf("fill_buffer_done\n");
-
   queue_push(&s->done_out, (void*)buffer);
-
   return OMX_ErrorNone;
 }
 
@@ -166,28 +158,26 @@ static const char* omx_color_fomat_name(uint32_t format) {
   }
 }
 
-void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale) {
+void encoder_init(EncoderState *s, const LogCameraInfo *info, int width, int height) {
   int err;
 
   memset(s, 0, sizeof(*s));
-  s->filename = filename;
+  s->filename = info->filename;
   s->width = width;
   s->height = height;
-  s->fps = fps;
+  s->fps = info->fps;
   mutex_init_reentrant(&s->lock);
 
-  if (!h265) {
+  if (!info->is_h265) {
     s->remuxing = true;
   }
 
-  if (downscale) {
+  if (info->downscale) {
     s->downscale = true;
     s->y_ptr2 = malloc(s->width*s->height);
     s->u_ptr2 = malloc(s->width*s->height/4);
     s->v_ptr2 = malloc(s->width*s->height/4);
   }
-
-  s->segment = -1;
 
   s->state = OMX_StateLoaded;
 
@@ -199,7 +189,7 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   pthread_mutex_init(&s->state_lock, NULL);
   pthread_cond_init(&s->state_cv, NULL);
 
-  if (h265) {
+  if (info->is_h265) {
     err = OMX_GetHandle(&s->handle, (OMX_STRING)"OMX.qcom.video.encoder.hevc",
                         s, &omx_callbacks);
   } else {
@@ -256,8 +246,8 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   out_port.format.video.nFrameWidth = s->width;
   out_port.format.video.nFrameHeight = s->height;
   out_port.format.video.xFramerate = 0;
-  out_port.format.video.nBitrate = bitrate;
-  if (h265) {
+  out_port.format.video.nBitrate = info->bitrate;
+  if (info->is_h265) {
     out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingHEVC;
   } else {
     out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
@@ -281,13 +271,13 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   assert(err == OMX_ErrorNone);
 
   bitrate_type.eControlRate = OMX_Video_ControlRateVariable;
-  bitrate_type.nTargetBitrate = bitrate;
+  bitrate_type.nTargetBitrate = info->bitrate;
 
   err = OMX_SetParameter(s->handle, OMX_IndexParamVideoBitrate,
                          (OMX_PTR) &bitrate_type);
   assert(err == OMX_ErrorNone);
 
-  if (h265) {
+  if (info->is_h265) {
     #ifndef QCOM2
       // setup HEVC
       OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
@@ -446,17 +436,10 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   assert(err == OMX_ErrorNone);
 }
 
-int encoder_encode_frame(EncoderState *s,
-                         const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                         int in_width, int in_height,
-                         int *frame_segment, VIPCBufExtra *extra) {
+int encoder_encode_frame(EncoderState *s, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                         int in_width, int in_height, VIPCBufExtra *extra) {
   int err;
   pthread_mutex_lock(&s->lock);
-
-  if (s->opening) {
-    encoder_open(s, s->next_path);
-    s->opening = false;
-  }
 
   if (!s->open) {
     pthread_mutex_unlock(&s->lock);
@@ -469,12 +452,6 @@ int encoder_encode_frame(EncoderState *s,
   OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
   //pthread_mutex_lock(&s->lock);
 
-  // if (s->rotating) {
-  //   encoder_close(s);
-  //   encoder_open(s, s->next_path);
-  //   s->segment = s->next_segment;
-  //   s->rotating = false;
-  // }
   int ret = s->counter;
 
   uint8_t *in_buf_ptr = in_buf->pBuffer;
@@ -529,15 +506,6 @@ int encoder_encode_frame(EncoderState *s,
   s->dirty = true;
 
   s->counter++;
-
-  if (frame_segment) {
-    *frame_segment = s->segment;
-  }
-
-  if (s->closing) {
-    encoder_close(s);
-    s->closing = false;
-  }
 
   pthread_mutex_unlock(&s->lock);
   return ret;
@@ -644,21 +612,9 @@ void encoder_close(EncoderState *s) {
   pthread_mutex_unlock(&s->lock);
 }
 
-void encoder_rotate(EncoderState *s, const char* new_path, int new_segment) {
-  pthread_mutex_lock(&s->lock);
-  snprintf(s->next_path, sizeof(s->next_path), "%s", new_path);
-  s->next_segment = new_segment;
-  if (s->open) {
-    if (s->next_segment == -1) {
-      s->closing = true;
-    } else {
-      s->rotating = true;
-    }
-  } else {
-    s->segment = s->next_segment;
-    s->opening = true;
-  }
-  pthread_mutex_unlock(&s->lock);
+void encoder_rotate(EncoderState *s, const char* new_path) {
+  encoder_close(s);
+  encoder_open(s, new_path);
 }
 
 void encoder_destroy(EncoderState *s) {

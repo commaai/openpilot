@@ -43,6 +43,17 @@ static int mkpath(char* file_path) {
   return 0;
 }
 
+int logger_mk_segment_path(LoggerState* s, const char* root_path, int segment, char* segment_path, size_t len, bool need_lock) {
+  int ret = -1;
+  if (need_lock) pthread_mutex_lock(&s->lock);
+  if (snprintf(segment_path, len, "%s/%s--%d/", root_path, s->route_name, segment) > 0 ) {
+    ret = mkpath(segment_path);
+    segment_path[strlen(segment_path) - 1] = '\0';
+  }
+  if (need_lock) pthread_mutex_unlock(&s->lock);
+  return ret;
+}
+
 void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog) {
   memset(s, 0, sizeof(*s));
   if (init_data) {
@@ -80,15 +91,12 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   }
   assert(h);
 
-  snprintf(h->segment_path, sizeof(h->segment_path),
-          "%s/%s--%d", root_path, s->route_name, s->part);
+  err = logger_mk_segment_path(s, root_path, s->part, h->segment_path, sizeof(h->segment_path));
+  if (err != 0) return NULL;
 
   snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
   snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
-
-  err = mkpath(h->log_path);
-  if (err) return NULL;
 
   FILE* lock_file = fopen(h->lock_path, "wb");
   if (lock_file == NULL) return NULL;
@@ -146,9 +154,7 @@ fail:
   return NULL;
 }
 
-int logger_next(LoggerState *s, const char* root_path,
-                            char* out_segment_path, size_t out_segment_path_len,
-                            int* out_part) {
+int logger_next(LoggerState *s, const char* root_path, std::string * out_segment_path, std::atomic<int>* out_part) {
   bool is_start_of_route = !s->cur_handle;
   if (!is_start_of_route) log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_SEGMENT);
 
@@ -167,7 +173,7 @@ int logger_next(LoggerState *s, const char* root_path,
   s->cur_handle = next_h;
 
   if (out_segment_path) {
-    snprintf(out_segment_path, out_segment_path_len, "%s", next_h->segment_path);
+    *out_segment_path = next_h->segment_path;
   }
   if (out_part) {
     *out_part = s->part;

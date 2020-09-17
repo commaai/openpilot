@@ -6,20 +6,16 @@
 #include <signal.h>
 #include <errno.h>
 #include <poll.h>
-#include <string.h>
 #include <inttypes.h>
 #include <libyuv.h>
 #include <sys/resource.h>
 #include <pthread.h>
-
-#include <string>
 #include <iostream>
 #include <fstream>
 #include <streambuf>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <atomic>
 #include <random>
 
 #include <ftw.h>
@@ -53,10 +49,10 @@
 #define QCAM_BITRATE 128000
 #define MAIN_FPS 20
 #ifndef QCOM2
-#define MAX_CAM_IDX LOG_CAMERA_ID_DCAMERA
+const bool is_qcom2 = false;
 #define DCAM_BITRATE 2500000
 #else
-#define MAX_CAM_IDX LOG_CAMERA_ID_ECAMERA
+const bool is_qcom2 = true;
 #define DCAM_BITRATE MAIN_BITRATE
 #endif
 
@@ -126,119 +122,54 @@ double randrange(double a, double b) {
   return dist(gen);
 }
 
-
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
 }
 
-class RotateState {
-public:
-  SubSocket* fpkt_sock;
-  uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
-  bool enabled, should_rotate, initialized;
-
-  RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false) {};
-
-  void waitLogThread() {
-    std::unique_lock<std::mutex> lk(fid_lock);
-    while (stream_frame_id > log_frame_id           //if the log camera is older, wait for it to catch up.
-           && (stream_frame_id - log_frame_id) < 8  // but if its too old then there probably was a discontinuity (visiond restarted)
-           && !do_exit) {
-      cv.wait(lk);
-    }
-  }
-
-  void cancelWait() { cv.notify_one(); }
-
-  void setStreamFrameId(uint32_t frame_id) {
-    fid_lock.lock();
-    stream_frame_id = frame_id;
-    fid_lock.unlock();
-    cv.notify_one();
-  }
-
-  void setLogFrameId(uint32_t frame_id) {
-    fid_lock.lock();
-    log_frame_id = frame_id;
-    fid_lock.unlock();
-    cv.notify_one();
-  }
-
-  void rotate() {
-    if (!enabled) { return; }
-    std::unique_lock<std::mutex> lk(fid_lock);
-    should_rotate = true;
-    last_rotate_frame_id = stream_frame_id;
-  }
-
-  void finish_rotate() {
-    std::unique_lock<std::mutex> lk(fid_lock);
-    should_rotate = false;
-  }
-
-private:
-  std::mutex fid_lock;
-  std::condition_variable cv;
-};
-
 struct LoggerdState {
   Context *ctx;
   LoggerState logger;
-  char segment_path[4096];
-  int rotate_segment;
-  pthread_mutex_t rotate_lock;
-  int num_encoder;
-  std::atomic<int> rotate_seq_id;
-  std::atomic<int> should_close;
-  std::atomic<int> finish_close;
 
-  RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
+  int segment_length;
+  int num_encoder_need_sync;
+
+  double last_rotate_tms;
+  int num_encoder_rotated;
+  std::atomic<int> num_rotating;
+  std::atomic<int> rotate_segment;
+  std::atomic<double> last_camera_seen_tms;
+  std::mutex rotate_lock;
+  std::condition_variable rotate_cv;
 };
-LoggerdState s;
+LoggerdState s = {};
 
 #ifndef DISABLE_ENCODER
-void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
 
-  switch (cam_idx) {
-    case LOG_CAMERA_ID_DCAMERA: {
-      LOGW("recording front camera");
-      set_thread_name("FrontCameraEncoder");
-      break;
-    }
-    case LOG_CAMERA_ID_FCAMERA: {
-      set_thread_name("RearCameraEncoder");
-      break;
-    }
-    case LOG_CAMERA_ID_ECAMERA: {
-      set_thread_name("WideCameraEncoder");
-      break;
-    }
-    default: {
-      LOGE("unexpected camera index provided");
-      assert(false);
-    }
+void encoder_thread(bool raw_clips, int cam_idx) {
+  {
+    char thread_name[64];
+    snprintf(thread_name, sizeof(thread_name), "%sEncoder", cameras_logged[cam_idx].frame_packet_name);
+    set_thread_name(thread_name);
   }
-
-  VisionStream stream;
 
   bool encoder_inited = false;
   EncoderState encoder;
   EncoderState encoder_alt;
   bool has_encoder_alt = cameras_logged[cam_idx].has_qcamera;
 
+  std::unique_ptr<PubSocket> idx_sock(PubSocket::create(s.ctx, cameras_logged[cam_idx].encode_idx_name));
+  assert(idx_sock != nullptr);
+  std::unique_ptr<SubSocket> frame_sock(SubSocket::create(s.ctx, cameras_logged[cam_idx].frame_packet_name));
+  assert(frame_sock != nullptr);
+
+  LoggerHandle* lh = nullptr;
   int encoder_segment = -1;
-  int cnt = 0;
-  pthread_mutex_lock(&s.rotate_lock);
-  int my_idx = s.num_encoder;
-  s.num_encoder += 1;
-  pthread_mutex_unlock(&s.rotate_lock);
-
-  PubSocket *idx_sock = PubSocket::create(s.ctx, cameras_logged[cam_idx].encode_idx_name);
-  assert(idx_sock != NULL);
-
-  LoggerHandle *lh = NULL;
+  uint64_t cnt = 0;
+  uint32_t segment_encoded_frames = 0;
+  char segment_path[4096];
+  const bool is_rotate_camera = is_qcom2 ? true : cam_idx == LOG_CAMERA_ID_FCAMERA;
+  VisionStream stream;
 
   while (!do_exit) {
     VisionStreamBufs buf_info;
@@ -251,22 +182,11 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
 
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-      encoder_init(&encoder, cameras_logged[cam_idx].filename,
-                             buf_info.width,
-                             buf_info.height,
-                             cameras_logged[cam_idx].fps,
-                             cameras_logged[cam_idx].bitrate,
-                             cameras_logged[cam_idx].is_h265,
-                             cameras_logged[cam_idx].downscale);
+      encoder_init(&encoder, &cameras_logged[cam_idx], buf_info.width, buf_info.height);
 
       if (has_encoder_alt) {
-        encoder_init(&encoder_alt, cameras_logged[LOG_CAMERA_ID_QCAMERA].filename,
-                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].frame_width,
-                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].frame_height,
-                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].fps,
-                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].bitrate,
-                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].is_h265,
-                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].downscale);
+        const LogCameraInfo &cam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
+        encoder_init(&encoder_alt, &cam_info, cam_info.frame_width, cam_info.frame_height);
       }
 
       encoder_inited = true;
@@ -276,7 +196,6 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
     double rawlogger_start_time = seconds_since_boot()+RAW_CLIP_FREQUENCY;
     int rawlogger_clip_cnt = 0;
     RawLogger *rawlogger = NULL;
-
     if (raw_clips) {
       rawlogger = new RawLogger("prcamera", buf_info.width, buf_info.height, MAIN_FPS);
     }
@@ -288,105 +207,80 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
         LOG("visionstream get failed");
         break;
       }
+      s.last_camera_seen_tms = millis_since_boot();
 
-      //uint64_t current_time = nanos_since_boot();
-      //uint64_t diff = current_time - extra.timestamp_eof;
-      //double msdiff = (double) diff / 1000000.0;
-      // printf("logger latency to tsEof: %f\n", msdiff);
-
-      { // all the rotation stuff
-
-        pthread_mutex_lock(&s.rotate_lock);
-        pthread_mutex_unlock(&s.rotate_lock);
-
-        // wait if camera pkt id is older than stream
-        rotate_state->waitLogThread();
-
-        if (do_exit) break;
-
-        // rotate the encoder if the logger is on a newer segment
-        if (rotate_state->should_rotate) {
-          if (!rotate_state->initialized) {
-            rotate_state->last_rotate_frame_id = extra.frame_id - 1;
-            rotate_state->initialized = true;
-          }
-          while (s.rotate_seq_id != my_idx && !do_exit) { usleep(1000); }
-          LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
-          encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
-          s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
-          if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
-          }
-          if (raw_clips) {
-            rawlogger->Rotate(s.segment_path, s.rotate_segment);
-          }
-          encoder_segment = s.rotate_segment;
-          if (lh) {
-            lh_close(lh);
-          }
-          lh = logger_get_handle(&s.logger);
-
-          pthread_mutex_lock(&s.rotate_lock);
-          s.should_close += 1;
-          pthread_mutex_unlock(&s.rotate_lock);
-
-          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) { usleep(1000); }
-
-          pthread_mutex_lock(&s.rotate_lock);
-          s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
-
-          encoder_close(&encoder);
-          encoder_open(&encoder, encoder.next_path);
-          encoder.segment = encoder.next_segment;
-          encoder.rotating = false;
-          if (has_encoder_alt) {
-            encoder_close(&encoder_alt);
-            encoder_open(&encoder_alt, encoder_alt.next_path);
-            encoder_alt.segment = encoder_alt.next_segment;
-            encoder_alt.rotating = false;
-          }
-          s.finish_close += 1;
-          pthread_mutex_unlock(&s.rotate_lock);
-
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) { usleep(1000); }
-          s.finish_close = 0;
-
-          rotate_state->finish_rotate();
-        }
+      bool should_rotate = false;
+      const int log_segment = s.rotate_segment;
+      if (encoder_segment != log_segment) {
+        // rotate if the logger is on a newer segment.
+        should_rotate = true;
+        encoder_segment = log_segment;
+      } else if (is_rotate_camera && segment_encoded_frames == (s.segment_length * MAIN_FPS)) {
+        should_rotate = true;
+        encoder_segment = log_segment + 1;
+        
+        // inform the logger that we are rotating
+        s.num_rotating += 1;
       }
 
-      rotate_state->setStreamFrameId(extra.frame_id);
+      if (should_rotate) {
+        err = logger_mk_segment_path(&s.logger, LOG_ROOT, encoder_segment, segment_path, sizeof(segment_path), true);
+        assert(err == 0);
+        encoder_rotate(&encoder, segment_path);
+        if (has_encoder_alt) {
+          encoder_rotate(&encoder_alt, segment_path);
+        }
+        if (raw_clips) {
+          rawlogger->Rotate(segment_path, encoder_segment);
+        }
+        if (lh) {
+          lh_close(lh);
+        }
+        segment_encoded_frames = 0;
+
+        if (is_rotate_camera) {
+          { // wait for all rotations(encoders&logger) to complete.
+            std::unique_lock<std::mutex> lk(s.rotate_lock);
+            s.num_encoder_rotated += 1;
+            s.rotate_cv.wait(lk, [&] { return (s.num_encoder_rotated == s.num_encoder_need_sync || s.num_encoder_rotated == 0) &&
+                                              s.num_rotating == 0; });
+            s.num_encoder_rotated = 0;
+          }
+          s.rotate_cv.notify_all();
+        }
+
+        lh = logger_get_handle(&s.logger);
+        LOGW("camera %d rotate encoder to %s.", cam_idx, segment_path);
+      }
+
+      // log frame messages
+      while (!do_exit) {
+        Message* msg = frame_sock->receive(true);
+        if (!msg) break;
+
+        if (lh) {
+          lh_log(lh, (uint8_t*)msg->getData(), msg->getSize(), false);
+        }
+        delete msg;
+      }
 
       uint8_t *y = (uint8_t*)buf->addr;
       uint8_t *u = y + (buf_info.width*buf_info.height);
       uint8_t *v = u + (buf_info.width/2)*(buf_info.height/2);
       {
         // encode hevc
-        int out_segment = -1;
-        int out_id = encoder_encode_frame(&encoder,
-                                          y, u, v,
-                                          buf_info.width, buf_info.height,
-                                          &out_segment, &extra);
+        int out_id = encoder_encode_frame(&encoder, y, u, v, buf_info.width, buf_info.height, &extra);
         if (has_encoder_alt) {
-          int out_segment_alt = -1;
-          encoder_encode_frame(&encoder_alt,
-                               y, u, v,
-                               buf_info.width, buf_info.height,
-                               &out_segment_alt, &extra);
+          encoder_encode_frame(&encoder_alt, y, u, v, buf_info.width, buf_info.height, &extra);
         }
 
         // publish encode index
         MessageBuilder msg;
         auto eidx = msg.initEvent().initEncodeIdx();
         eidx.setFrameId(extra.frame_id);
-  #ifdef QCOM2
-        eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
-  #else
-        eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT:cereal::EncodeIndex::Type::FULL_H_E_V_C);
-  #endif
-
+        eidx.setType(!is_qcom2 && cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
         eidx.setEncodeId(cnt);
-        eidx.setSegmentNum(out_segment);
+        eidx.setSegmentNum(encoder_segment);
         eidx.setSegmentId(out_id);
 
         auto bytes = msg.toBytes();
@@ -438,11 +332,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
       }
 
       cnt++;
-    }
-
-    if (lh) {
-      lh_close(lh);
-      lh = NULL;
+      segment_encoded_frames++;
     }
 
     if (raw_clips) {
@@ -452,8 +342,6 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
 
     visionstream_destroy(&stream);
   }
-
-  delete idx_sock;
 
   if (encoder_inited) {
     LOG("encoder destroy");
@@ -577,9 +465,10 @@ static void bootlog() {
     logger_init(&s.logger, "bootlog", bytes.begin(), bytes.size(), false);
   }
 
-  err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+  std::string segment_path;
+  err = logger_next(&s.logger, LOG_ROOT, &segment_path);
   assert(err == 0);
-  LOGW("bootlog to %s", s.segment_path);
+  LOGW("bootlog to %s", segment_path.c_str());
 
   {
     MessageBuilder msg;
@@ -603,22 +492,40 @@ static void bootlog() {
   logger_close(&s.logger);
 }
 
-int main(int argc, char** argv) {
-  int err;
+static void rotate_log_if_needed(LoggerdState *s) {
+  bool should_rotate = false;
+  if (s->num_encoder_need_sync > 0 && s->num_rotating == s->num_encoder_need_sync) { // all encoders are rotating.
+    should_rotate = true;
+  } else { // time-based rotation if all cameras are dead
+    double tms = millis_since_boot();
+    if ((tms - s->last_rotate_tms) > s->segment_length * 1000 &&
+        (tms - s->last_camera_seen_tms) > NO_CAMERA_PATIENCE &&
+        s->num_rotating == 0) {
+      should_rotate = true;
+    }
+  }
+  if (should_rotate) {
+    std::string segment_path;
+    assert(logger_next(&s->logger, LOG_ROOT, &segment_path, &s->rotate_segment) == 0);
+    s->last_rotate_tms = millis_since_boot();
+    LOGW("rotated to %s", segment_path.c_str());
+    // notify encoders the logger has rotated.
+    s->num_rotating = 0;
+    s->rotate_cv.notify_all();
+  }
+}
 
+int main(int argc, char** argv) {
   if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
     bootlog();
     return 0;
   }
 
-  int segment_length = SEGMENT_LENGTH;
+  s.segment_length = SEGMENT_LENGTH;
   if (getenv("LOGGERD_TEST")) {
-    segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
+    s.segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
   }
-  bool record_front = true;
-#ifndef QCOM2
-  record_front = Params().read_db_bool("RecordFront");
-#endif
+  bool record_front = is_qcom2 ? true : Params().read_db_bool("RecordFront");
 
   setpriority(PRIO_PROCESS, 0, -12);
 
@@ -639,16 +546,15 @@ int main(int argc, char** argv) {
 
   for (const auto& it : services) {
     std::string name = it.name;
+    if (name == "frame" || name == "wideFrame" || (name == "frontFrame" && record_front)) {
+      continue;
+    }
 
     if (it.should_log) {
       SubSocket * sock = SubSocket::create(s.ctx, name);
       assert(sock != NULL);
       poller->registerSocket(sock);
       socks.push_back(sock);
-
-      for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
-        if (name == cameras_logged[cid].frame_packet_name) { s.rotate_state[cid].fpkt_sock = sock; }
-      }
 
       qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
       qlog_freqs[sock] = it.decimation;
@@ -659,149 +565,73 @@ int main(int argc, char** argv) {
     auto words = gen_init_data();
     auto bytes = words.asBytes();
     logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
+    std::string segment_path;
+    int err = logger_next(&s.logger, LOG_ROOT, &segment_path);
+    assert(err == 0);
+    LOGW("logging to %s", segment_path.c_str());
   }
 
-  s.rotate_seq_id = 0;
-  s.should_close = 0;
-  s.finish_close = 0;
-  s.num_encoder = 0;
-  pthread_mutex_init(&s.rotate_lock, NULL);
+  std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
-  // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], false, LOG_CAMERA_ID_FCAMERA);
-  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
-  // front camera
-  std::thread front_encoder_thread_handle;
-  if (record_front) {
-    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, LOG_CAMERA_ID_DCAMERA);
-    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
+  if (is_qcom2) {
+    // hard code it for convenience
+    s.num_encoder_need_sync = 2 + record_front;  // sync all cameras on tici
+    // wide camera
+    encoder_threads.push_back(std::thread(encoder_thread, false, LOG_CAMERA_ID_ECAMERA));
+  } else {
+    s.num_encoder_need_sync = 1;
   }
-  #ifdef QCOM2
-  // wide camera
-  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, LOG_CAMERA_ID_ECAMERA);
-  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
-  #endif
+  // rear camera
+  encoder_threads.push_back(std::thread(encoder_thread, false, LOG_CAMERA_ID_FCAMERA));
+  // front camera
+  if (record_front) {
+    encoder_threads.push_back(std::thread(encoder_thread, false, LOG_CAMERA_ID_DCAMERA));
+  }
 #endif
 
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
-  kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
+  Message* msg = nullptr;
 
   double start_ts = seconds_since_boot();
-  double last_rotate_tms = millis_since_boot();
-  double last_camera_seen_tms = millis_since_boot();
+  s.last_camera_seen_tms = s.last_rotate_tms = millis_since_boot();
+
   while (!do_exit) {
-   for (auto sock : poller->poll(100 * 1000)) {
-     Message * last_msg = nullptr;
-      while (true) {
-        Message * msg = sock->receive(true);
-        if (msg == NULL){
-          break;
-        }
-        delete last_msg;
-        last_msg = msg;
+    for (auto sock : poller->poll(100)) {
+      int& counter = qlog_counter[sock];
+      const int freq = qlog_freqs[sock];
 
-        logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qlog_counter[sock] == 0);
-
-        if (qlog_counter[sock] != -1) {
-          //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
-          qlog_counter[sock]++;
-          qlog_counter[sock] %= qlog_freqs[sock];
+      while ((msg = sock->receive(true))) {
+        logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), counter == 0);
+        if (counter != -1) {
+          counter = (counter + 1) % freq;
         }
         bytes_count += msg->getSize();
-        msg_count++;
-      }
+        delete msg;
 
-      if (last_msg) {
-        int fpkt_id = -1;
-        for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
-          if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
+        ++msg_count;
+        if ((msg_count % 1000) == 0) {
+          double ts = seconds_since_boot();
+          LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count * 1.0 / (ts - start_ts), bytes_count * 0.001 / (ts - start_ts));
         }
-        if (fpkt_id>=0) {
-          // track camera frames to sync to encoder
-          // only process last frame
-          const uint8_t* data = (uint8_t*)last_msg->getData();
-          const size_t len = last_msg->getSize();
-          const size_t size = len / sizeof(capnp::word) + 1;
-          if (buf.size() < size) {
-            buf = kj::heapArray<capnp::word>(size);
-          }
-          memcpy(buf.begin(), data, len);
-
-          capnp::FlatArrayMessageReader cmsg(buf);
-          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-          if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
-          } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
-          } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
-          }
-          last_camera_seen_tms = millis_since_boot();
+        if (msg_count % 3 == 0) {
+          rotate_log_if_needed(&s);
         }
-        delete last_msg;
       }
     }
-
-    double ts = seconds_since_boot();
-    double tms = millis_since_boot();
-
-    bool new_segment = false;
-
-    if (s.logger.part > -1) {
-      new_segment = true;
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE) {
-        for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
-          // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS) &&
-                           (!s.rotate_state[cid].should_rotate) && (s.rotate_state[cid].initialized)) ||
-                          (!s.rotate_state[cid].enabled));
-#ifndef QCOM2
-          break; // only look at fcamera frame id if not QCOM2
-#endif
-        }
-      } else {
-        new_segment &= tms - last_rotate_tms > segment_length * 1000;
-        if (new_segment) { LOGW("no camera packet seen. auto rotated"); }
-      }
-    } else if (s.logger.part == -1) {
-      // always starts first segment immediately
-      new_segment = true;
-    }
-
-    if (new_segment) {
-      pthread_mutex_lock(&s.rotate_lock);
-      last_rotate_tms = millis_since_boot();
-
-      err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-      assert(err == 0);
-      if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
-      LOGW("rotated to %s", s.segment_path);
-
-      // rotate the encoders
-      for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
-      pthread_mutex_unlock(&s.rotate_lock);
-    }
-
-    if ((msg_count%1000) == 0) {
-      LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count*1.0/(ts-start_ts), bytes_count*0.001/(ts-start_ts));
-    }
+    rotate_log_if_needed(&s);
   }
 
   LOGW("joining threads");
-  for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].cancelWait(); }
-
-#ifndef DISABLE_ENCODER
-#ifdef QCOM2
-  wide_encoder_thread_handle.join();
-#endif
-  if (record_front) {
-    front_encoder_thread_handle.join();
+  { // wakeup waiting encoder threads
+    std::unique_lock<std::mutex> lk(s.rotate_lock);
+    s.num_rotating = s.num_encoder_rotated = 0;
+    s.rotate_cv.notify_all();
   }
-  encoder_thread_handle.join();
+  for (auto& t : encoder_threads) {
+    t.join();
+  }
   LOGW("encoder joined");
-#endif
 
   logger_close(&s.logger);
 

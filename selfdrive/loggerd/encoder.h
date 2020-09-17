@@ -1,5 +1,4 @@
-#ifndef ENCODER_H
-#define ENCODER_H
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
@@ -12,6 +11,7 @@
 
 #include "common/cqueue.h"
 #include "common/visionipc.h"
+#include "camerad/cameras/camera_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,13 +26,6 @@ typedef struct EncoderState {
   bool open;
   bool dirty;
   int counter;
-  int segment;
-
-  bool rotating;
-  bool closing;
-  bool opening;
-  char next_path[1024];
-  int next_segment;
 
   const char* filename;
   FILE *of;
@@ -65,18 +58,14 @@ typedef struct EncoderState {
   uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
 } EncoderState;
 
-void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
-int encoder_encode_frame(EncoderState *s,
-                         const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                         int in_width, int in_height,
-                         int *frame_segment, VIPCBufExtra *extra);
+void encoder_init(EncoderState *s, const LogCameraInfo *info, int width, int height);
+int encoder_encode_frame(EncoderState *s, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                         int in_width, int in_height, VIPCBufExtra *extra);
 void encoder_open(EncoderState *s, const char* path);
-void encoder_rotate(EncoderState *s, const char* new_path, int new_segment);
+void encoder_rotate(EncoderState *s, const char* new_path);
 void encoder_close(EncoderState *s);
 void encoder_destroy(EncoderState *s);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

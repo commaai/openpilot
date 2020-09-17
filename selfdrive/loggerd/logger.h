@@ -1,14 +1,9 @@
-#ifndef LOGGER_H
-#define LOGGER_H
-
+#pragma once
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
 #include <bzlib.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <atomic>
 
 #define LOGGER_MAX_HANDLES 16
 
@@ -41,19 +36,12 @@ typedef struct LoggerState {
   LoggerHandle* cur_handle;
 } LoggerState;
 
+int logger_mk_segment_path(LoggerState *s, const char *root_path, int segment, char *segment_path, size_t len, bool need_lock = false);
 void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog);
-int logger_next(LoggerState *s, const char* root_path,
-                            char* out_segment_path, size_t out_segment_path_len,
-                            int* out_part);
+int logger_next(LoggerState *s, const char* root_path, std::string * out_segment_path, std::atomic<int>* out_part = nullptr);
 LoggerHandle* logger_get_handle(LoggerState *s);
 void logger_close(LoggerState *s);
 void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
 
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);
 void lh_close(LoggerHandle* h);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
