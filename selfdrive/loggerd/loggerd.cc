@@ -1,12 +1,24 @@
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+#include <cassert>
+#include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <poll.h>
+#include <string.h>
+#include <inttypes.h>
 #include <libyuv.h>
 #include <sys/resource.h>
 #include <pthread.h>
 
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <streambuf>
+#include <thread>
 #include <condition_variable>
 #include <random>
-#include <thread>
 
 #include <ftw.h>
 #include <zmq.h>
@@ -14,10 +26,11 @@
 #include <cutils/properties.h>
 #endif
 
+#include "common/version.h"
+#include "common/timing.h"
 #include "common/visionipc.h"
 
 #include "logger.h"
-#include "messaging.hpp"
 #include "services.h"
 
 #if !(defined(QCOM) || defined(QCOM2))
@@ -30,8 +43,6 @@
 #include "encoder.h"
 #include "raw_logger.h"
 #endif
-
-#include "cereal/gen/cpp/log.capnp.h"
 
 #define CAM_IDX_FCAM 0
 #define CAM_IDX_DCAM 1
@@ -68,7 +79,7 @@ static void set_do_exit(int sig) {
 }
 struct LoggerdState {
   Context *ctx;
-  std::unique_ptr<Logger> logger;
+  Logger *logger;
 
   std::mutex lock;
   std::condition_variable cv;
@@ -181,14 +192,12 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
       //double msdiff = (double) diff / 1000000.0;
       // printf("logger latency to tsEof: %f\n", msdiff);
 
-      uint8_t *y = (uint8_t*)buf->addr;
-      uint8_t *u = y + (buf_info.width*buf_info.height);
-      uint8_t *v = u + (buf_info.width/2)*(buf_info.height/2);
-
       {
         // all the rotation stuff
         bool should_rotate = false;
         std::unique_lock<std::mutex> lk(s.lock);
+        const int rotate_segment = s.logger->getPart();
+        const std::string segment_path = s.logger->getSegmentPath();
         if (cam_idx == CAM_IDX_FCAM) { // TODO: should wait for three cameras on tici?
           // wait if log camera is older on back camera
           while ( extra.frame_id > s.last_frame_id //if the log camera is older, wait for it to catch up.
@@ -196,29 +205,29 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
                  && !do_exit) {
             s.cv.wait(lk);
           }
-          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < s.logger->getPart() && s.rotate_seq_id == cam_idx;
+          should_rotate = extra.frame_id > s.rotate_last_frame_id && encoder_segment < rotate_segment && s.rotate_seq_id == my_idx;
         } else {
           // front camera is best effort
-          should_rotate = encoder_segment < s.logger->getPart() && s.rotate_seq_id == my_idx;
+          should_rotate = encoder_segment < rotate_segment && s.rotate_seq_id == my_idx;
         }
         if (do_exit) break;
 
         // rotate the encoder if the logger is on a newer segment
         if (should_rotate) {
-          LOG("rotate encoder to %s", s.logger->getSegmentPath());
+          LOG("rotate encoder to %s", segment_path);
 
-          encoder_rotate(&encoder, s.logger->getSegmentPath(), s.logger->getPart());
+          encoder_rotate(&encoder, segment_path, rotate_segment);
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
 
           if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.logger->getSegmentPath(), s.logger->getPart());
+            encoder_rotate(&encoder_alt, segment_path, rotate_segment);
           }
 
           if (raw_clips) {
-            rawlogger->Rotate(s.logger->getSegmentPath(), s.logger->getPart());
+            rawlogger->Rotate(segment_path, rotate_segment);
           }
 
-          encoder_segment = s.logger->getPart();
+          encoder_segment = rotate_segment;
           lh = s.logger->getHandle();
         }
 
@@ -299,6 +308,9 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
       if (raw_clips) {
         double ts = seconds_since_boot();
         if (ts > rawlogger_start_time) {
+          uint8_t* y = (uint8_t*)buf->addr;
+          uint8_t* u = y + (buf_info.width * buf_info.height);
+          uint8_t* v = u + (buf_info.width / 2) * (buf_info.height / 2);
           // encode raw if in clip
           int out_segment = -1;
           int out_id = rawlogger->LogFrame(cnt, y, u, v, &out_segment);
@@ -362,6 +374,90 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
 
 }
 
+void append_property(const char* key, const char* value, void *cookie) {
+  std::vector<std::pair<std::string, std::string> > *properties =
+    (std::vector<std::pair<std::string, std::string> > *)cookie;
+
+  properties->push_back(std::make_pair(std::string(key), std::string(value)));
+}
+
+kj::Array<capnp::word> gen_init_data() {
+  MessageBuilder msg;
+  auto init = msg.initEvent().initInitData();
+
+  init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
+
+  std::ifstream cmdline_stream("/proc/cmdline");
+  std::vector<std::string> kernel_args;
+  std::string buf;
+  while (cmdline_stream >> buf) {
+    kernel_args.push_back(buf);
+  }
+
+  auto lkernel_args = init.initKernelArgs(kernel_args.size());
+  for (int i=0; i<kernel_args.size(); i++) {
+    lkernel_args.set(i, kernel_args[i]);
+  }
+
+  init.setKernelVersion(util::read_file("/proc/version"));
+
+#ifdef QCOM
+  {
+    std::vector<std::pair<std::string, std::string> > properties;
+    property_list(append_property, (void*)&properties);
+
+    auto lentries = init.initAndroidProperties().initEntries(properties.size());
+    for (int i=0; i<properties.size(); i++) {
+      auto lentry = lentries[i];
+      lentry.setKey(properties[i].first);
+      lentry.setValue(properties[i].second);
+    }
+  }
+#endif
+
+  const char* dongle_id = getenv("DONGLE_ID");
+  if (dongle_id) {
+    init.setDongleId(std::string(dongle_id));
+  }
+
+  const char* clean = getenv("CLEAN");
+  if (!clean) {
+    init.setDirty(true);
+  }
+
+  std::vector<char> git_commit = read_db_bytes("GitCommit");
+  if (git_commit.size() > 0) {
+    init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
+  }
+
+  std::vector<char> git_branch = read_db_bytes("GitBranch");
+  if (git_branch.size() > 0) {
+    init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
+  }
+
+  std::vector<char> git_remote = read_db_bytes("GitRemote");
+  if (git_remote.size() > 0) {
+    init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
+  }
+
+  init.setPassive(read_db_bool("Passive"));
+  {
+    // log params
+    std::map<std::string, std::string> params;
+    read_db_all(&params);
+    auto lparams = init.initParams().initEntries(params.size());
+    int i = 0;
+    for (auto& kv : params) {
+      auto lentry = lparams[i];
+      lentry.setKey(kv.first);
+      lentry.setValue(kv.second);
+      i++;
+    }
+  }
+  return capnp::messageToFlatArray(msg);
+}
+
 static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
   const char* dot = strrchr(fpath, '.');
   if (dot && strcmp(dot, ".lock") == 0) {
@@ -375,8 +471,8 @@ static void clear_locks() {
 }
 
 static void bootlog() {
-  Logger logger("bootlog", false);
-  std::shared_ptr<LoggerHandle> log = logger.openNext(LOG_ROOT);
+  Logger logger(LOG_ROOT, "bootlog", false);
+  std::shared_ptr<LoggerHandle> log = logger.openNext();
   assert(log != nullptr);
   LOGW("bootlog to %s", logger.getSegmentPath());
   MessageBuilder msg;
@@ -412,7 +508,7 @@ int main(int argc, char** argv) {
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
   s.ctx = Context::create();
-  s.logger = std::make_unique<Logger>("rlog", true);
+  s.logger = new Logger(LOG_ROOT, "rlog", true);
   Poller * poller = Poller::create();
 
   // subscribe to all services
@@ -454,7 +550,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<LoggerHandle> log;
   if (is_logging) {
-    log = s.logger->openNext(LOG_ROOT);
+    log = s.logger->openNext();
     assert(log != nullptr);
     LOGW("logging to %s", s.logger->getSegmentPath());
   }
@@ -510,7 +606,6 @@ int main(int argc, char** argv) {
         if (log) {
           log->write(data, len, qlog_counter[sock] == 0);
         }
-        
         delete msg;
 
         if (qlog_counter[sock] != -1) {
@@ -534,7 +629,7 @@ int main(int argc, char** argv) {
       s.rotate_last_frame_id = s.last_frame_id;
 
       if (is_logging) {
-        log = s.logger->openNext(LOG_ROOT);
+        log = s.logger->openNext();
         assert(log != nullptr);
         LOGW("rotated to %s", s.logger->getSegmentPath());
       }
@@ -556,6 +651,8 @@ int main(int argc, char** argv) {
   encoder_thread_handle.join();
   LOGW("encoder joined");
 #endif
+
+  delete s.logger;
 
   for (auto s : socks){
     delete s;

@@ -2,15 +2,16 @@
 #include <sys/stat.h>
 #include <fstream>
 #include <streambuf>
-#include <vector>
-#include <string>
-#include "cereal/gen/cpp/log.capnp.h"
 #include "common/version.h"
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
 
+void append_property(const char* key, const char* value, void *cookie);
+kj::Array<capnp::word> gen_init_data();
+
 typedef cereal::Sentinel::SentinelType SentinelType;
+
 static void log_sentinel(LoggerHandle* log, SentinelType type) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
@@ -34,124 +35,36 @@ static int mkpath(char* file_path) {
   return 0;
 }
 
-void append_property(const char* key, const char* value, void *cookie) {
-  std::vector<std::pair<std::string, std::string> > *properties =
-    (std::vector<std::pair<std::string, std::string> > *)cookie;
+Logger::Logger(const char* root_path, const char* log_name, bool has_qlog)
+    : root_path(root_path), log_name(log_name), has_qlog(has_qlog), part(-1) {
 
-  properties->push_back(std::make_pair(std::string(key), std::string(value)));
-}
-
-static kj::Array<capnp::word> gen_init_data() {
-  capnp::MallocMessageBuilder msg;
-  auto event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto init = event.initInitData();
-
-  init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
-
-  std::ifstream cmdline_stream("/proc/cmdline");
-  std::vector<std::string> kernel_args;
-  std::string buf;
-  while (cmdline_stream >> buf) {
-    kernel_args.push_back(buf);
-  }
-
-  auto lkernel_args = init.initKernelArgs(kernel_args.size());
-  for (int i=0; i<kernel_args.size(); i++) {
-    lkernel_args.set(i, kernel_args[i]);
-  }
-
-  init.setKernelVersion(util::read_file("/proc/version"));
-
-#ifdef QCOM
-  {
-    std::vector<std::pair<std::string, std::string> > properties;
-    property_list(append_property, (void*)&properties);
-
-    auto lentries = init.initAndroidProperties().initEntries(properties.size());
-    for (int i=0; i<properties.size(); i++) {
-      auto lentry = lentries[i];
-      lentry.setKey(properties[i].first);
-      lentry.setValue(properties[i].second);
-    }
-  }
-#endif
-
-  const char* dongle_id = getenv("DONGLE_ID");
-  if (dongle_id) {
-    init.setDongleId(std::string(dongle_id));
-  }
-
-  const char* clean = getenv("CLEAN");
-  if (!clean) {
-    init.setDirty(true);
-  }
-
-  std::vector<char> git_commit = read_db_bytes("GitCommit");
-  if (git_commit.size() > 0) {
-    init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
-  }
-
-  std::vector<char> git_branch = read_db_bytes("GitBranch");
-  if (git_branch.size() > 0) {
-    init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
-  }
-
-  std::vector<char> git_remote = read_db_bytes("GitRemote");
-  if (git_remote.size() > 0) {
-    init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
-  }
-
-  std::vector<char> passive = read_db_bytes("Passive");
-  init.setPassive(passive.size() > 0 && passive[0] == '1');
-  {
-    // log params
-    std::map<std::string, std::string> params;
-    read_db_all(&params);
-    auto lparams = init.initParams().initEntries(params.size());
-    int i = 0;
-    for (auto& kv : params) {
-      auto lentry = lparams[i];
-      lentry.setKey(kv.first);
-      lentry.setValue(kv.second);
-      i++;
-    }
-  }
-  return capnp::messageToFlatArray(msg);
-}
-
-Logger::Logger(const char* log_name, bool has_qlog) : part(-1), has_qlog(has_qlog), log_name(log_name) {
   umask(0);
+
+  init_data = gen_init_data();
 
   time_t rawtime = time(NULL);
   struct tm timeinfo;
   localtime_r(&rawtime, &timeinfo);
   strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
-
-  init_data = gen_init_data();
 }
 
-std::shared_ptr<LoggerHandle> Logger::openNext(const char* root_path) {
+std::shared_ptr<LoggerHandle> Logger::openNext() {
   if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_SEGMENT);
 
   part += 1;
-  segment_path = util::string_format("%s/%s--%d", root_path, route_name, part);
+  segment_path = util::string_format("%s/%s--%d", root_path.c_str(), route_name, part);
   auto log = std::make_shared<LoggerHandle>();
-  if (!log->open(segment_path, log_name, part, has_qlog)) {
+  if (!log->open(segment_path, log_name, has_qlog)) {
     return nullptr;
   }
   auto bytes = init_data.asBytes();
   log->write(bytes.begin(), bytes.size(), has_qlog);
   log_sentinel(log.get(), !cur_handle ? SentinelType::START_OF_ROUTE : SentinelType::START_OF_SEGMENT);
-  return cur_handle = log;
+  cur_handle = log;
+  return cur_handle;
 }
 
-Logger::~Logger() {
-  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_ROUTE);
-}
-
-bool LoggerHandle::open(const std::string& segment_path, const std::string& log_name, int part, bool has_qlog) {
+bool LoggerHandle::open(const std::string& segment_path, const std::string& log_name, bool has_qlog) {
   std::string log_path = util::string_format("%s/%s.bz2", segment_path.c_str(), log_name.c_str());
   std::string qlog_path = segment_path + "/qlog.bz2";
   lock_path = log_path + ".lock";
@@ -172,7 +85,8 @@ bool LoggerHandle::open(const std::string& segment_path, const std::string& log_
     return false;
   };
 
-  if (!open_files(log_path, log_file, bz_file) || (has_qlog && !open_files(qlog_path, qlog_file, bz_qlog))) {
+  if (!open_files(log_path, log_file, bz_file) ||
+      (has_qlog && !open_files(qlog_path, qlog_file, bz_qlog))) {
     close();
     return false;
   }
@@ -183,23 +97,27 @@ void LoggerHandle::write(uint8_t* data, size_t data_size, bool in_qlog) {
   const std::lock_guard<std::mutex> lock(mutex);
   int bzerror;
   BZ2_bzWrite(&bzerror, bz_file, data, data_size);
-  if (in_qlog && bz_qlog != NULL) BZ2_bzWrite(&bzerror, bz_qlog, data, data_size);
+  if (in_qlog && bz_qlog != NULL) {
+    BZ2_bzWrite(&bzerror, bz_qlog, data, data_size);
+  }
 }
 
-void LoggerHandle::write(capnp::MessageBuilder& msg, bool in_qlog) {
-  auto words = capnp::messageToFlatArray(msg);
-  auto bytes = words.asBytes();
+void LoggerHandle::write(MessageBuilder& msg, bool in_qlog) {
+  auto bytes = msg.toBytes();
   write(bytes.begin(), bytes.size(), in_qlog);
 }
 
 void LoggerHandle::close() {
   auto close_files = [](FILE*& f, BZFILE*& bz_f) {
     int bzerror;
-    if (bz_f) BZ2_bzWriteClose(&bzerror, bz_f, 0, NULL, NULL);
-    if (f) fclose(f);
-
-    f = nullptr;
-    bz_f = nullptr;
+    if (bz_f) {
+      BZ2_bzWriteClose(&bzerror, bz_f, 0, NULL, NULL);
+      bz_f = nullptr;
+    }
+    if (f) {
+      fclose(f);
+      f = nullptr;
+    }
   };
 
   close_files(qlog_file, bz_qlog);
