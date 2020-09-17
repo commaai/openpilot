@@ -6,6 +6,7 @@ from statistics import mean
 from cereal import log
 from common.realtime import sec_since_boot
 from common.params import Params, put_nonblocking
+from common.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 PANDA_OUTPUT_VOLTAGE = 5.28
@@ -127,7 +128,10 @@ class PowerMonitoring:
         is_uno = health.health.hwType == log.HealthData.HwType.uno
         # Get current power draw somehow
         current_power = 0
-        if get_battery_status() == 'Discharging':
+        if TICI:
+          with open("/sys/class/hwmon/hwmon1/power1_input") as f:
+            current_power = int(f.read()) / 1e6
+        elif get_battery_status() == 'Discharging':
           # If the battery is discharging, we can use this measurement
           # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
           current_power = ((get_battery_voltage() / 1000000) * (get_battery_current() / 1000000))
@@ -232,4 +236,3 @@ class PowerMonitoring:
     should_shutdown |= ((get_battery_capacity() < BATT_PERC_OFF) and (not get_battery_charging()) and ((now - offroad_timestamp) > 60))
     should_shutdown &= started_seen
     return should_shutdown
-
