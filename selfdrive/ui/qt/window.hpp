@@ -55,6 +55,7 @@ private:
   UIState * ui_state;
   QtSound sound;
   QLabel * label = NULL;
+  bool onroad = true;
 
 public slots:
   void timerUpdate();
