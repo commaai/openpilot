@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <signal.h>
 
 #include <QVBoxLayout>
@@ -95,6 +96,21 @@ void GLWindow::initializeGL() {
 
 void GLWindow::timerUpdate(){
   ui_update(ui_state);
+
+#ifdef QCOM2
+  if (ui_state->started != onroad){
+    onroad = ui_state->started;
+    timer->setInterval(onroad ? 50 : 1000);
+
+    int brightness = onroad ? 1023 : 0;
+    std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
+    if (brightness_control.is_open()){
+      brightness_control << int(brightness) << "\n";
+      brightness_control.close();
+    }
+  }
+#endif
+
   update();
 
   if (label != NULL){
