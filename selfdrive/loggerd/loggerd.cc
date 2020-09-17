@@ -128,17 +128,25 @@ LoggerdState s;
 #ifndef DISABLE_ENCODER
 void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips, int cam_idx) {
   VisionStreamType stream_type;
+  const char *idx_sock_name;
+  const char *encoder_filename;
   // 0:f, 1:d, 2:e
   if (cam_idx == CAM_IDX_DCAM) {
     LOGW("recording front camera");
     set_thread_name("FrontCameraEncoder");
     stream_type = VISION_STREAM_YUV_FRONT;
+    idx_sock_name = "frontEncodeIdx";
+    encoder_filename = "dcamera.hevc";
   } else if (cam_idx == CAM_IDX_FCAM) {
     set_thread_name("RearCameraEncoder");
     stream_type = VISION_STREAM_YUV;
+    idx_sock_name = "encodeIdx";
+    encoder_filename = "fcamera.hevc";
   } else if (cam_idx == CAM_IDX_ECAM) {
     set_thread_name("WideCameraEncoder");
     stream_type = VISION_STREAM_YUV_WIDE;
+    idx_sock_name = "wideEncodeIdx";
+    encoder_filename = "ecamera.hevc";
   } else {
     LOGE("unexpected camera index provided");
     assert(false);
@@ -154,7 +162,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
   int encoder_segment = -1;
   int cnt = 0;
 
-  PubSocket *idx_sock = PubSocket::create(s.ctx, cam_idx == CAM_IDX_DCAM ? "frontEncodeIdx" : (cam_idx == CAM_IDX_ECAM ? "wideEncodeIdx" : "encodeIdx"));
+  PubSocket *idx_sock = PubSocket::create(s.ctx, idx_sock_name);
   assert(idx_sock != NULL);
 
   LoggerHandle *lh = NULL;
@@ -170,15 +178,16 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-      encoder_init(&encoder, cam_idx == CAM_IDX_DCAM ? "dcamera.hevc" : (cam_idx == CAM_IDX_ECAM ? "ecamera.hevc" : "fcamera.hevc"), buf_info.width, buf_info.height, CAMERA_FPS, cam_idx == CAM_IDX_DCAM ? DCAM_BITRATE:MAIN_BITRATE, true, false);
+      encoder_init(&encoder, encoder_filename, buf_info.width, buf_info.height, CAMERA_FPS,
+                   cam_idx == CAM_IDX_DCAM ? DCAM_BITRATE : MAIN_BITRATE, true, false);
 
-      #ifndef QCOM2
+#ifndef QCOM2
       // TODO: fix qcamera on tici
       if (cam_idx == CAM_IDX_FCAM) {
         encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
         has_encoder_alt = true;
       }
-      #endif
+#endif
       encoder_inited = true;
       if (is_streaming) {
         encoder.zmq_ctx = zmq_ctx_new();
