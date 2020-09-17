@@ -188,6 +188,7 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
+  "rtshield": "selfdrive.rtshield",
 }
 
 daemon_processes = {
@@ -227,6 +228,7 @@ if not PC:
 if ANDROID:
   persistent_processes += [
     'updated',
+    'rtshield',
   ]
 
 car_started_processes = [
