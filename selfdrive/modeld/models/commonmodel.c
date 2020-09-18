@@ -30,9 +30,9 @@ void frame_init(ModelFrame* frame, int width, int height,
   loadyuv_init(&frame->loadyuv, context, device_id, frame->transformed_width, frame->transformed_height);
 }
 
-float *frame_prepare(ModelFrame* frame, cl_command_queue q,
+void frame_prepare(ModelFrame* frame, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
-                           mat3 transform) {
+                           mat3 transform, void* buffer) {
   int err;
   transform_queue(&frame->transform, q,
                   yuv_cl, width, height,
@@ -42,11 +42,10 @@ float *frame_prepare(ModelFrame* frame, cl_command_queue q,
   loadyuv_queue(&frame->loadyuv, q,
                 frame->transformed_y_cl, frame->transformed_u_cl, frame->transformed_v_cl,
                 frame->net_input);
-  float *net_input_buf = (float *)clEnqueueMapBuffer(q, frame->net_input, CL_TRUE,
-                                            CL_MAP_READ, 0, frame->net_input_size,
-                                            0, NULL, NULL, &err);
+  
+  err = clEnqueueWriteBuffer(q, frame->net_input, CL_TRUE, 0, frame->net_input_size, buffer, 0, NULL, NULL);
+  assert(err == 0);
   clFinish(q);
-  return net_input_buf;
 }
 
 void frame_free(ModelFrame* frame) {

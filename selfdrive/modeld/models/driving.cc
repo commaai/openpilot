@@ -91,9 +91,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
-  float *new_frame_buf = frame_prepare(&s->frame, q, yuv_cl, width, height, transform);
   memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
-  memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
+  frame_prepare(&s->frame, q, yuv_cl, width, height, transform, &s->input_frames[MODEL_FRAME_SIZE]);
   s->m->execute(s->input_frames, MODEL_FRAME_SIZE*2);
 
   #ifdef DUMP_YUV
@@ -102,8 +101,6 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
     fclose(dump_yuv_file);
     assert(1==2);
   #endif
-
-  clEnqueueUnmapMemObject(q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
 
   // net outputs
   ModelDataRaw net_outputs;
