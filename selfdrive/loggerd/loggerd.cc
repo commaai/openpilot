@@ -1,27 +1,39 @@
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+#include <cassert>
+#include <unistd.h>
+#include <signal.h>
 #include <errno.h>
-#include <ftw.h>
+#include <poll.h>
+#include <string.h>
 #include <inttypes.h>
 #include <libyuv.h>
-#include <poll.h>
-#include <signal.h>
 #include <sys/resource.h>
-#include <unistd.h>
-#include <zmq.h>
+#include <pthread.h>
 
-#include <cassert>
-#include <condition_variable>
-#include <mutex>
-#include <random>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <streambuf>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <random>
+
+#include <ftw.h>
+#include <zmq.h>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
 
+#include "common/version.h"
+#include "common/timing.h"
 #include "common/params.h"
 #include "common/swaglog.h"
-#include "common/utilpp.h"
-#include "common/version.h"
 #include "common/visionipc.h"
+#include "common/utilpp.h"
+#include "common/util.h"
 #include "logger.h"
 #include "messaging.hpp"
 #include "services.h"
@@ -87,7 +99,7 @@ public:
     }
   }
 
-  void quitWaitLogThread() { cv.notify_one(); }
+  void cancelWait() { cv.notify_one(); }
 
   bool shouldRotate(uint32_t frame_id) {
     std::unique_lock<std::mutex> lk(lock);
@@ -663,9 +675,9 @@ int main(int argc, char** argv) {
   }
 
   LOGW("joining threads");
-  s.frame_rotate.quitWaitLogThread();
-  s.front_rotate.quitWaitLogThread();
-  s.wide_rotate.quitWaitLogThread();
+  s.frame_rotate.cancelWait();
+  s.front_rotate.cancelWait();
+  s.wide_rotate.cancelWait();
 
 
 #ifndef DISABLE_ENCODER
