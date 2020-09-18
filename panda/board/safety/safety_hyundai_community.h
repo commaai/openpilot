@@ -28,10 +28,7 @@ AddrCheckStruct hyundai_community_rx_checks[] = {
   {.msg = {{608, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U},
            {881, 0, 8, .expected_timestep = 10000U}}},
   {.msg = {{902, 0, 8, .expected_timestep = 20000U}}},
-  {.msg = {{916, 0, 8, .expected_timestep = 20000U}}},
-  {.msg = {{1057, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U},
-           {1057, 1, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U},
-           {1057, 2, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}}},
+  // {.msg = {{916, 0, 8, .expected_timestep = 20000U}}}, some Santa Fe does not have this msg, need to find alternative
 };
 const int HYUNDAI_COMMUNITY_RX_CHECK_LEN = sizeof(hyundai_community_rx_checks) / sizeof(hyundai_community_rx_checks[0]);
 

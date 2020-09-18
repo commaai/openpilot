@@ -13,18 +13,22 @@ support:
 
 Installation:
 ------
-The best way to install this fork while keeping comma.ai files is the following:
+The best way to install this fork on comma.ai Openpilot repo is the following:
 - move to openpilot folder and add new remote, xx979xx e.g.:
 ```
 cd /data/openpilot
 git remote add xx979xx https://github.com/xx979xx/openpilot.git
 git fetch --all
 ```
-- To change branch to/from community:
+- To change branch to community:
 ```
-git checkout xx979xx/HKG_community
-git checkout origin/release2
+git checkout HKG_community
 ```
+- To change branch back to offical Openpilot release:
+```
+git checkout release2
+```
+
 - To update a branch:
 ```
 git pull
