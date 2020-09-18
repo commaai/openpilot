@@ -591,8 +591,9 @@ int main(int argc, char** argv) {
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, &s.frame_rotate, is_streaming, false, CAM_IDX_FCAM);
   // front camera
+  std::thread front_encoder_thread_handle;
   if (record_front) {
-    std::thread front_encoder_thread_handle(encoder_thread, &s.front_rotate, false, false, CAM_IDX_DCAM);
+    front_encoder_thread_handle = std::thread(encoder_thread, &s.front_rotate, false, false, CAM_IDX_DCAM);
   }
   #ifdef QCOM2
   // wide camera
@@ -681,10 +682,12 @@ int main(int argc, char** argv) {
 
 
 #ifndef DISABLE_ENCODER
-  #ifdef QCOM2
+#ifdef QCOM2
   wide_encoder_thread_handle.join();
-  #endif
-  front_encoder_thread_handle.join();
+#endif
+  if (record_front) {
+    front_encoder_thread_handle.join();
+  }
   encoder_thread_handle.join();
   LOGW("encoder joined");
 #endif
