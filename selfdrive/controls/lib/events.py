@@ -1,6 +1,7 @@
 from functools import total_ordering
 
 from cereal import log, car
+import cereal.messaging as messaging
 from common.realtime import DT_CTRL
 from selfdrive.config import Conversions as CV
 from selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
@@ -174,7 +175,7 @@ class EngagementAlert(Alert):
 
 # ********** alert callback functions **********
 
-def below_steer_speed_alert(CP, sm, metric):
+def below_steer_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   speed = int(round(CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
   unit = "km/h" if metric else "mph"
   return Alert(
@@ -183,7 +184,7 @@ def below_steer_speed_alert(CP, sm, metric):
     AlertStatus.userPrompt, AlertSize.mid,
     Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3)
 
-def calibration_incomplete_alert(CP, sm, metric):
+def calibration_incomplete_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   speed = int(MIN_SPEED_FILTER * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
   unit = "km/h" if metric else "mph"
   return Alert(
@@ -192,7 +193,7 @@ def calibration_incomplete_alert(CP, sm, metric):
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
 
-def no_gps_alert(CP, sm, metric):
+def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   gps_integrated = sm['health'].hwType in [log.HealthData.HwType.uno, log.HealthData.HwType.dos]
   return Alert(
     "Poor GPS reception",
@@ -200,7 +201,7 @@ def no_gps_alert(CP, sm, metric):
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.)
 
-def wrong_car_mode_alert(CP, sm, metric):
+def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   text = "Cruise Mode Disabled"
   if CP.carName == "honda":
     text = "Main Switch Off"
