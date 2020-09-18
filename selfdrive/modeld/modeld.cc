@@ -148,8 +148,7 @@ int main(int argc, char **argv) {
     const float frame_filter_k = (dt / ts) / (1. + dt / ts);
     float frames_dropped = 0;
 
-    // one frame in memory
-    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context);
+    std::map<void*, cl_mem> cl_buffers;
 
     uint32_t frame_id = 0, last_vipc_frame_id = 0;
     double last = 0;
@@ -186,11 +185,14 @@ int main(int argc, char **argv) {
 
         mt1 = millis_since_boot();
 
-        // TODO: don't make copies!
-        memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
+        cl_mem yuv_cl = cl_buffers[buf->addr];
+        if (!yuv_cl) {
+          yuv_cl = create_cl_mem_from_visionbuf(context, buf->fd, buf->addr, buf->len);
+          cl_buffers[buf->addr] = yuv_cl;
+        }
 
         ModelDataRaw model_buf =
-            model_eval_frame(&model, q, yuv_ion.buf_cl, buf_info.width, buf_info.height,
+            model_eval_frame(&model, q, yuv_cl, buf_info.width, buf_info.height,
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
         float model_execution_time = (mt2 - mt1) / 1000.0;
@@ -212,7 +214,9 @@ int main(int argc, char **argv) {
       }
 
     }
-    visionbuf_free(&yuv_ion);
+    for(auto &v : cl_buffers) {
+      clReleaseMemObject(v.second);
+    }
     visionstream_destroy(&stream);
   }
 
