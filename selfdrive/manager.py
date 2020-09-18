@@ -228,7 +228,6 @@ if not PC:
 if ANDROID:
   persistent_processes += [
     'updated',
-    'rtshield',
   ]
 
 car_started_processes = [
@@ -268,6 +267,7 @@ if not PC:
 if ANDROID:
   car_started_processes += [
     'gpsd',
+    'rtshield',
   ]
 
 
