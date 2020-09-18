@@ -97,18 +97,18 @@ class Events:
 @total_ordering
 class Alert:
   def __init__(self,
-               alert_text_1,
-               alert_text_2,
+               alert_text_1: str,
+               alert_text_2: str,
                alert_status,
                alert_size,
                alert_priority,
                visual_alert,
                audible_alert,
-               duration_sound,
-               duration_hud_alert,
-               duration_text,
-               alert_rate=0.,
-               creation_delay=0.):
+               duration_sound: float,
+               duration_hud_alert: float,
+               duration_text: float,
+               alert_rate: float = 0.,
+               creation_delay: float = 0.):
 
     self.alert_type = ""
     self.alert_text_1 = alert_text_1
@@ -131,14 +131,14 @@ class Alert:
     tst = car.CarControl.new_message()
     tst.hudControl.visualAlert = self.visual_alert
 
-  def __str__(self):
+  def __str__(self) -> str:
     return self.alert_text_1 + "/" + self.alert_text_2 + " " + str(self.alert_priority) + "  " + str(
       self.visual_alert) + " " + str(self.audible_alert)
 
-  def __gt__(self, alert2):
+  def __gt__(self, alert2) -> bool:
     return self.alert_priority > alert2.alert_priority
 
-  def __eq__(self, alert2):
+  def __eq__(self, alert2) -> bool:
     return self.alert_priority == alert2.alert_priority
 
 class NoEntryAlert(Alert):
