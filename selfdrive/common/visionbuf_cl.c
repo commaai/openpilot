@@ -74,6 +74,13 @@ VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context c
   };
 }
 
+cl_mem create_cl_mem_from_visionbuf(cl_context ctx, int fd, void* addr, size_t len) {
+  int err;
+  cl_mem mem = clCreateBuffer(ctx, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, len, addr, &err);
+  assert(err == 0);
+  return mem;
+}
+
 void visionbuf_sync(const VisionBuf* buf, int dir) {
   int err = 0;
   if (!buf->buf_cl) return;

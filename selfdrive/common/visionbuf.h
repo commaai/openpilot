@@ -29,6 +29,7 @@ typedef struct VisionBuf {
 
 VisionBuf visionbuf_allocate(size_t len);
 VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx);
+cl_mem create_cl_mem_from_visionbuf(cl_context ctx, int fd, void* addr, size_t len);
 void visionbuf_sync(const VisionBuf* buf, int dir);
 void visionbuf_free(const VisionBuf* buf);
 
