@@ -1062,8 +1062,8 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
                                                   {0x3362, s->dc_gain_enabled?0x1:0x0}, // DC_GAIN
-                                                  {0x305A, 0x00C4}, // red gain
-                                                  {0x3058, 0x00B1}, // blue gain
+                                                  {0x305A, 0x00D1}, // red gain
+                                                  {0x3058, 0x0118}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
                                                   {0x3012, s->exposure_time}}; // integ time
