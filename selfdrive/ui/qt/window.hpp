@@ -2,7 +2,6 @@
 
 #include <QWidget>
 #include <QTimer>
-#include <QLabel>
 #include <QGuiApplication>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
@@ -40,7 +39,6 @@ class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions
 public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget *parent = 0);
-  void setLabel(QLabel *l);
   ~GLWindow();
 
 protected:
@@ -54,7 +52,7 @@ private:
   QTimer * timer;
   UIState * ui_state;
   QtSound sound;
-  QLabel * label = NULL;
+
   bool onroad = true;
 
 public slots:
