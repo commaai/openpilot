@@ -7,6 +7,7 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
 from selfdrive.controls.lib.lane_planner import LanePlanner
 from selfdrive.config import Conversions as CV
 from common.params import Params
+from common.hardware import TICI
 import cereal.messaging as messaging
 from cereal import log
 
@@ -164,9 +165,11 @@ class PathPlanner():
       self.LP.r_prob *= self.lane_change_ll_prob
     self.LP.update_d_poly(v_ego)
 
-    # Rolling shutter takes 16 ms
-    frame_delay = min(0.008 + (sm.logMonoTime['model'] - sm['model'].timestampEof) / 1e9, 0.250)
-    delay = frame_delay + CP.steerActuatorDelay
+    if TICI:
+      frame_delay = min((sm.logMonoTime['model'] - sm['model'].timestampEof) / 1e9, 0.250)
+      delay = frame_delay + CP.steerActuatorDelay
+    else:
+      delay = CP.steerActuatorDelay
 
     # account for actuation + frame delay
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, delay)
