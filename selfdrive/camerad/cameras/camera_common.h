@@ -75,7 +75,10 @@ typedef struct {
   uint8_t *y, *u, *v;
 } YUVBuf;
 
-typedef struct CameraBuf {
+struct CameraState;
+class CameraBuf {
+public:
+  CameraState *camera_state;
   cl_kernel krnl_debayer;
   cl_command_queue q;
 
@@ -98,8 +101,17 @@ typedef struct CameraBuf {
   mat3 yuv_transform;
 
   int cur_yuv_idx, cur_rgb_idx;
-} CameraBuf;
+  FrameMetadata cur_frame_data;
+  VisionBuf *cur_rgb_buf;
+
+  CameraBuf() = default;
+  void init(cl_device_id device_id, cl_context context, CameraState *s, const char *name);
+  void free();
+  bool acquire();
+  void release();
+  void stop();
+};
 
 struct MultiCameraState;
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
-void common_camera_process_buf(MultiCameraState *s, const CameraBuf *b, int cnt, PubMaster *pm);
+void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total);

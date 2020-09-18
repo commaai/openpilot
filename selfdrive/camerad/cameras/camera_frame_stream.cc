@@ -111,7 +111,7 @@ void cameras_init(MultiCameraState *s) {
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
+void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
 
@@ -132,6 +132,7 @@ void cameras_run(MultiCameraState *s) {
   cameras_close(s);
 }
 
-void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
-  common_camera_process_buf(s, b, cnt, pm);
+// called by processing_thread
+void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
+  // empty
 }

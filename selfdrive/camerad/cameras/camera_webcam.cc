@@ -235,11 +235,13 @@ void cameras_init(MultiCameraState *s) {
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0,
   }};
+
+  s->pm = new PubMaster({"frame", "frontFrame"});
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
+void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
   int err;
@@ -254,6 +256,7 @@ void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *c
 void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
+  delete s->pm;
 }
 
 void cameras_run(MultiCameraState *s) {
@@ -272,6 +275,21 @@ void cameras_run(MultiCameraState *s) {
   cameras_close(s);
 }
 
-void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
-  common_camera_process_buf(s, b, cnt, pm);
+// called by processing_thread
+void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt, ) {
+  MessageBuilder msg;
+  if (b->camera_state == &s->front) {
+    auto framed = msg.initEvent().initFrontFrame();
+    framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+    fill_frame_data(framed, b->cur_frame_data, cnt);
+
+    s->pm->send("frontFrame", msg);
+  } else {
+    auto framed = msg.initEvent().initFrame();
+    fill_frame_data(framed, b->cur_frame_data, cnt);
+    framed.setImage(kj::arrayPtr((const uint8_t *)b->yuv_ion[b->cur_yuv_idx].addr, b->yuv_buf_size));
+    framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+
+    s->pm->send("frame", msg);
+  }
 }

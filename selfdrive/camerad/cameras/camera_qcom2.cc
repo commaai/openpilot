@@ -814,9 +814,12 @@ void cameras_init(MultiCameraState *s) {
   assert(rgb_sock);
   s->rgb_sock = rgb_sock;
 #endif
+
+  s->sm = new SubMaster({"driverState"});
+  s->pm = new PubMaster({"frame", "frontFrame", "wideFrame"});
 }
 
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide) {
+void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide) {
   int ret;
 
   LOG("-- Opening devices");
@@ -921,6 +924,8 @@ static void cameras_close(MultiCameraState *s) {
 #ifdef NOSCREEN
   zsock_destroy(&s->rgb_sock);
 #endif
+  delete s->sm;
+  delete s->pm;
 }
 
 void handle_camera_event(CameraState *s, void *evdat) {
@@ -1110,22 +1115,86 @@ void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
 }
 #endif
 
-void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
-  common_camera_process_buf(s, b, cnt, pm);
-}
 
-void camera_wide_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
-  const FrameMetadata &frame_data = b->yuv_metas[b->cur_yuv_idx];
-  if (pm != nullptr) {
-    MessageBuilder msg;
-    auto framed = msg.initEvent().initWideFrame();
-    fill_frame_data(framed, frame_data, cnt);
-    pm->send("wideFrame", msg);
+void process_front_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
+#ifndef DEBUG_DRIVER_MONITOR
+  if (cnt % 3 == 0)
+#endif
+  {
+    int x_start = 0.15 * b->rgb_width;
+    int x_end = 0.85 * b->rgb_width;
+    int y_start = 0.5 * b->rgb_height;
+    int y_end = 0.75 * b->rgb_height;
+    int skip = 2;
+    const uint8_t *bgr_front_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
+    uint32_t lum_binning[256] = {0};
+    for (int y = y_start; y < y_end; y += skip) {
+      for (int x = x_start; x < x_end; x += 2) {  // every 2nd col
+        const uint8_t *pix = &bgr_front_ptr[y * b->rgb_stride + x * 3];
+        unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
+#ifdef DEBUG_DRIVER_MONITOR
+        uint8_t *pix_rw = (uint8_t *)pix;
+
+        // set all the autoexposure pixels to pure green (pixel format is bgr)
+        pix_rw[0] = pix_rw[2] = 0;
+        pix_rw[1] = 0xff;
+#endif
+        lum_binning[std::min(lum / 3, 255u)]++;
+      }
+    }
+    const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
+    autoexposure(b->camera_state, lum_binning, ARRAYSIZE(lum_binning), lum_total);
   }
+
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrontFrame();
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  s->pm->send("frontFrame", msg);
 
 #ifdef NOSCREEN
-  if (frame_data.frame_id % 4 == 0) {
-    sendrgb(s, (uint8_t *)b->rgb_bufs[b-cur_rgb_idx]->addr, b->rgb_bufs[b-cur_rgb_idx]->len, 1);
+  if (b->cur_frame_data.frame_id % 4 == 2) {
+    sendrgb(&s->cameras, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, 2);
   }
 #endif
+}
+
+// called by processing_thread
+void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
+  if (b->camera_state == &s->front) {
+    process_front_frame(s, b, cnt);
+    return;
+  }
+
+  CameraState *c = b->camera_state;
+#ifdef NOSCREEN
+  if (b->cur_frame_data.frame_id % 4 == (c == &s->rear ? 1 : 0)) {
+    sendrgb(s, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, c == &s->rear ? 0 : 1);
+  }
+#endif
+
+  MessageBuilder msg;
+  auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+  s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
+
+  if (cnt % 3 == 0) {
+    const int exposure_x = 384;
+    const int exposure_y = 300;
+    const int exposure_height = 400;
+    const int exposure_width = 1152;
+    const int skip = 2;
+    uint8_t *yuv_ptr_y = b->yuv_bufs[b->cur_yuv_idx].y;
+    // find median box luminance for AE
+    uint32_t lum_binning[256] = {0};
+    for (int y = 0; y < exposure_height; y += skip) {
+      for (int x = 0; x < exposure_width; x += skip) {
+        uint8_t lum = yuv_ptr_y[((exposure_y + y) * b->yuv_width) + exposure_x + x];
+        lum_binning[lum]++;
+      }
+    }
+    const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
+    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
+  }
 }

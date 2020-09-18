@@ -339,6 +339,9 @@ void cameras_init(MultiCameraState *s) {
 
   s->rear.device = s->device;
   s->front.device = s->device;
+
+  s->sm = new SubMaster({"driverState"});
+  s->pm = new PubMaster({"frame", "frontFrame"});
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
@@ -1823,7 +1826,7 @@ cl_program build_conv_program(cl_device_id device_id, cl_context context, int im
   return CLU_LOAD_FROM_FILE(context, device_id, "imgproc/conv.cl", args);
 }
 
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
+void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
   int err;
   int rgb_width = s->rear.ci.frame_width;
   int rgb_height = s->rear.ci.frame_height;
@@ -1836,7 +1839,7 @@ void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *c
     s->focus_bufs[i] = visionbuf_allocate(0xb80);
     s->stats_bufs[i] = visionbuf_allocate(0xb80);
   }
-  s->prg_rgb_laplacian = build_conv_program(camera_bufs_rear->device_id, camera_bufs_rear->ctx, rgb_width/NUM_SEGMENTS_X, rgb_height/NUM_SEGMENTS_Y, 3);
+  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, rgb_width/NUM_SEGMENTS_X, rgb_height/NUM_SEGMENTS_Y, 3);
   s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
   assert(err == 0);
   // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
@@ -2258,23 +2261,104 @@ void cameras_close(MultiCameraState *s) {
 
   clReleaseProgram(s->prg_rgb_laplacian);
   clReleaseKernel(s->krnl_rgb_laplacian);
+  delete s->sm;
+  delete s->pm;
 }
 
-void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm) {
+void process_front_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
+  static int meteringbox_xmin = 0, meteringbox_xmax = 0;
+  static int meteringbox_ymin = 0, meteringbox_ymax = 0;
+  static const bool rhd_front = read_db_bool("IsRHD");
+
+  if (s->sm->update(0) > 0) {
+    auto state = (*(s->sm))["driverState"].getDriverState();
+    // set front camera metering target
+    if (state.getFaceProb() > 0.4) {
+      auto face_position = state.getFacePosition();
+
+      const int x_offset = rhd_front ? 0 : b->rgb_width - 0.5 * b->rgb_height;
+      const int x = x_offset + (face_position[0] + 0.5) * (0.5 * b->rgb_height);
+      const int y = (face_position[1] + 0.5) * (b->rgb_height);
+      meteringbox_xmin = x - 72;
+      meteringbox_xmax = x + 72;
+      meteringbox_ymin = y - 72;
+      meteringbox_ymax = y + 72;
+    } else {  // use default setting if no face
+      meteringbox_ymin = b->rgb_height * 1 / 3;
+      meteringbox_ymax = b->rgb_height * 1;
+      meteringbox_xmin = rhd_front ? 0 : b->rgb_width * 3 / 5;
+      meteringbox_xmax = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
+    }
+  }
+
+  // auto exposure
+#ifndef DEBUG_DRIVER_MONITOR
+  if (cnt % 3 == 0)
+#endif
+  {
+    // use driver face crop for AE
+    int x_start, x_end, y_start, y_end;
+    int skip = 1;
+
+    if (meteringbox_xmax > 0) {
+      x_start = std::max(0, meteringbox_xmin);
+      x_end = std::min(b->rgb_width - 1, meteringbox_xmax);
+      y_start = std::max(0, meteringbox_ymin);
+      y_end = std::min(b->rgb_height - 1, meteringbox_ymax);
+    } else {
+      y_start = b->rgb_height * 1 / 3;
+      y_end = b->rgb_height * 1;
+      x_start = rhd_front ? 0 : b->rgb_width * 3 / 5;
+      x_end = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
+    }
+    const uint8_t *bgr_front_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
+    uint32_t lum_binning[256] = {0};
+    for (int y = y_start; y < y_end; y += skip) {
+      for (int x = x_start; x < x_end; x += 2) {  // every 2nd col
+        const uint8_t *pix = &bgr_front_ptr[y * b->rgb_stride + x * 3];
+        unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
+#ifdef DEBUG_DRIVER_MONITOR
+        uint8_t *pix_rw = (uint8_t *)pix;
+
+        // set all the autoexposure pixels to pure green (pixel format is bgr)
+        pix_rw[0] = pix_rw[2] = 0;
+        pix_rw[1] = 0xff;
+#endif
+        lum_binning[std::min(lum / 3, 255u)]++;
+      }
+    }
+    const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
+    autoexposure(b->camera_state, lum_binning, ARRAYSIZE(lum_binning), lum_total);
+  }
+
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrontFrame();
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  s->pm->send("frontFrame", msg);
+}
+
+// called by processing_thread
+void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
+  if (b->camera_state == &s->front) {
+    process_front_frame(s, b, cnt);
+    return;
+  }
+  
   // cache rgb roi and write to cl
   int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
   int roi_x_offset = roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
   int roi_y_offset = roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
 
   uint8_t *rgb_roi_buf = s->rgb_roi_buf.get();
-  uint8_t *rgb_bufs =  (uint8_t *)b->rgb_bufs[b-cur_rgb_idx]->addr +
+  uint8_t *rgb_buf =  (uint8_t *)b->cur_rgb_buf->addr +
                (ROI_Y_MIN + roi_y_offset) * b->rgb_height / NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 +
                (ROI_X_MIN + roi_x_offset) * b->rgb_width / NUM_SEGMENTS_X * 3;
 
   for (int r = 0; r < (b->rgb_height / NUM_SEGMENTS_Y); r++) {
-    memcpy(rgb_roi_buf, rgb_bufs, b->rgb_width / NUM_SEGMENTS_X * 3);
+    memcpy(rgb_roi_buf, rgb_buf, b->rgb_width / NUM_SEGMENTS_X * 3);
     rgb_roi_buf += (b->rgb_width / NUM_SEGMENTS_X) * 3;
-    rgb_bufs += FULL_STRIDE_X * 3;
+    rgb_buf += FULL_STRIDE_X * 3;
   }
 
   assert(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0,
@@ -2321,17 +2405,44 @@ void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* p
     self_recover += 1;  // reset if fine
   }
 
-  if (pm != nullptr) {
+  {
     MessageBuilder msg;
     auto framed = msg.initEvent().initFrame();
-    fill_frame_data(framed, b->yuv_metas[b->cur_yuv_idx], cnt);
-#ifndef QCOM_REPLAY
+    fill_frame_data(framed, b->cur_frame_data, cnt);
     framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));
     framed.setFocusConf(kj::ArrayPtr<const uint8_t>(&s->rear.confidence[0], NUM_FOCUS));
     framed.setSharpnessScore(kj::ArrayPtr<const uint16_t>(&s->lapres[0], ARRAYSIZE(s->lapres)));
     framed.setRecoverState(self_recover);
-#endif
     framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
-    pm->send("frame", msg);
+    s->pm->send("frame", msg);
+  }
+
+  const int exposure_x = 290;
+  const int exposure_y = 322;
+  const int exposure_height = 314;
+  const int exposure_width = 560;
+  const int skip = 1;
+  uint8_t *yuv_ptr_y = b->yuv_bufs[b->cur_yuv_idx].y;
+  if (cnt % 3 == 0) {
+    // find median box luminance for AE
+    uint32_t lum_binning[256] = {0};
+    for (int y = 0; y < exposure_height; y += skip) {
+      for (int x = 0; x < exposure_width; x += skip) {
+        uint8_t lum = yuv_ptr_y[((exposure_y + y) * b->yuv_width) + exposure_x + x];
+        lum_binning[lum]++;
+      }
+    }
+    const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
+    unsigned int lum_cur = 0;
+    int lum_med = 0;
+    for (lum_med = 0; lum_med < 256; lum_med++) {
+      // shouldn't be any values less than 16 - yuv footroom
+      lum_cur += lum_binning[lum_med];
+      if (lum_cur >= lum_total / 2) {
+        break;
+      }
+    }
+
+    camera_autoexposure(&s->rear, lum_med / 256.0);
   }
 }

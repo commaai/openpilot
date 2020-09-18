@@ -38,8 +38,8 @@ typedef struct MultiCameraState {
 } MultiCameraState;
 
 void cameras_init(MultiCameraState *s);
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front);
+void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm);
+void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt);

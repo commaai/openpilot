@@ -45,13 +45,6 @@ VisionBuf visionbuf_allocate(size_t len) {
   };
 }
 
-cl_mem visionbuf_to_cl(const VisionBuf* buf, cl_device_id device_id, cl_context ctx) {
-  // HACK because this platform is just for convenience
-  VisionBuf *w_buf = (VisionBuf*)buf;
-  *w_buf = visionbuf_allocate_cl(buf->len, device_id, ctx);
-  return w_buf->buf_cl;
-}
-
 VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx) {
   int err;
 

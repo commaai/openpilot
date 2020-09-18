@@ -79,14 +79,16 @@ typedef struct MultiCameraState {
 #endif
 
   pthread_mutex_t isp_lock;
+
+  SubMaster *sm;
+  PubMaster *pm;
 } MultiCameraState;
 
 void cameras_init(MultiCameraState *s);
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
+void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
 void cameras_run(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm);
-void camera_wide_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* pm);
+void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt);
 #ifdef NOSCREEN
 void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
 #endif

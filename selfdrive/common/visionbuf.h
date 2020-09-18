@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__
@@ -29,7 +29,6 @@ typedef struct VisionBuf {
 
 VisionBuf visionbuf_allocate(size_t len);
 VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx);
-cl_mem visionbuf_to_cl(const VisionBuf* buf, cl_device_id device_id, cl_context ctx);
 void visionbuf_sync(const VisionBuf* buf, int dir);
 void visionbuf_free(const VisionBuf* buf);
 
