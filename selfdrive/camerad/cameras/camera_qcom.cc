@@ -2304,7 +2304,7 @@ void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* p
     // truly stuck, needs help
     self_recover -= 1;
     if (self_recover < -FOCUS_RECOVER_PATIENCE) {
-      LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
+      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
            lens_true_pos, self_recover.load());
       self_recover = FOCUS_RECOVER_STEPS + ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M)) ? 1 : 0);  // parity determined by which end is stuck at
     }
@@ -2314,7 +2314,7 @@ void camera_process_buf(MultiCameraState *s, CameraBuf *b, int cnt, PubMaster* p
     // in suboptimal position with high prob, but may still recover by itself
     self_recover -= 1;
     if (self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover.load());
+      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover.load());
       self_recover = FOCUS_RECOVER_STEPS / 2 + ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M)) ? 1 : 0);
     }
   } else if (self_recover < 0) {
