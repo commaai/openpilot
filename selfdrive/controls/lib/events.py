@@ -287,7 +287,6 @@ EVENTS = {
   EventName.communityFeatureDisallowed: {
     # LOW priority to overcome Cruise Error
     ET.PERMANENT: Alert(
-      "",
       "Community Feature Detected",
       "Enable Community Features in Developer Settings",
       AlertStatus.normal, AlertSize.mid,
