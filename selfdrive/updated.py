@@ -32,7 +32,7 @@ import fcntl
 import time
 import threading
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Tuple, Optional
 
 from common.hardware import ANDROID
 from common.basedir import BASEDIR
@@ -78,7 +78,7 @@ class WaitTimeHelper:
     cloudlog.info("caught SIGHUP, running update check immediately")
     self.ready_event.set()
 
-  def sleep(self, t: float):
+  def sleep(self, t: float) -> None:
     self.ready_event.wait(timeout=t)
 
 
@@ -98,7 +98,7 @@ def set_consistent_flag(consistent: bool) -> None:
   os.sync()
 
 
-def set_params(new_version: bool, failed_count: int, exception) -> None:
+def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -> None:
   params = Params()
 
   params.put("UpdateFailedCount", str(failed_count))
@@ -244,9 +244,15 @@ def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
   cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
 
 
-def check_for_update() -> bool:
-  # TODO: actually check for an update
-  return os.system("git ls-remotes --heads --exit-code") == 0
+def check_for_update() -> Tuple[bool, bool]:
+  remote = run(["git", "symbolic-ref", "--quiet", "HEAD"], OVERLAY_MERGED).rstrip()
+  branch = run(["git", "symbolic-ref", "--quiet", "HEAD"], OVERLAY_MERGED).rstrip()
+  cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
+  try:
+    upstream_hash = run(["git", "ls-remote", branch, remote], OVERLAY_MERGED).rstrip().split()[0]
+    return True, (cur_hash != upstream_hash)
+  except subprocess.CalledProcessError:
+    return False, False
 
 
 def fetch_update(wait_helper: WaitTimeHelper) -> bool:
@@ -296,7 +302,7 @@ def main():
   if params.get("DisableUpdates") == b"1":
     raise RuntimeError("updates are disabled by the DisableUpdates param")
 
-  if os.geteuid() != 0:
+  if ANDROID and os.geteuid() != 0:
     raise RuntimeError("updated must be launched as root!")
 
   # Set low io priority
@@ -314,13 +320,11 @@ def main():
   wait_helper = WaitTimeHelper(proc)
   wait_helper.sleep(30)
 
-  update_ready = False
   last_fetch_time = 0
   update_failed_count = 0
 
   # Run the update loop
-  #  * every 30s, check if we're offroad
-  #  * every 60s, check if remote HEAD is different than local HEAD
+  #  * every 2m, check if remote HEAD is different than local HEAD
   #  * every 10m, if remote and local HEAD don't match, git fetch
   while not wait_helper.shutdown:
     wait_helper.ready_event.clear()
@@ -334,21 +338,22 @@ def main():
 
     # Attempt an update
     exception = None
+    new_version = False
     update_failed_count += 1
     try:
       init_overlay()
 
-      update_available = check_for_update()
-      if not update_available:
+      internet_ok, update_available = check_for_update()
+      if internet_ok and not update_available:
         update_failed_count = 0
 
       # Fetch updates at most every 10 minutes
-      if update_available and time.monotonic() - last_fetch_time > 60*10:
-        update_ready = fetch_update(wait_helper) or update_ready
+      if internet_ok and time.monotonic() - last_fetch_time > 60*10:
+        new_version = fetch_update(wait_helper)
         update_failed_count = 0
         last_fetch_time = time.monotonic()
 
-        if not update_ready and os.path.isdir(NEOSUPDATE_DIR):
+        if not new_version and os.path.isdir(NEOSUPDATE_DIR):
           shutil.rmtree(NEOSUPDATE_DIR)
     except subprocess.CalledProcessError as e:
       cloudlog.event(
@@ -361,8 +366,8 @@ def main():
     except Exception:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
 
-    set_params(update_ready, update_failed_count, exception)
-    wait_helper.sleep(60)
+    set_params(new_version, update_failed_count, exception)
+    wait_helper.sleep(120)
 
   dismount_overlay()
 
