@@ -17,13 +17,13 @@
 
 #include "common/params.h"
 
-ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon, QWidget *parent): QFrame(parent) , param(param) {
+ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
   QVBoxLayout *vlayout = new QVBoxLayout;
 
   hlayout->addSpacing(25);
-  if (icon.length()){
-    QPixmap pix(icon);
+  if (icon_path.length()){
+    QPixmap pix(icon_path);
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
