@@ -32,14 +32,14 @@ import fcntl
 import time
 import threading
 from pathlib import Path
+from typing import List, Optional
 
-from common.android import ANDROID
+from common.hardware import ANDROID
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
-TEST_IP = os.getenv("UPDATER_TEST_IP", "8.8.8.8")
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
@@ -61,7 +61,7 @@ class WaitTimeHelper:
     signal.signal(signal.SIGINT, self.graceful_shutdown)
     signal.signal(signal.SIGHUP, self.update_now)
 
-  def graceful_shutdown(self, signum, frame):
+  def graceful_shutdown(self, signum: int, frame) -> None:
     # umount -f doesn't appear effective in avoiding "device busy" on NEOS,
     # so don't actually die until the next convenient opportunity in main().
     cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
@@ -74,21 +74,21 @@ class WaitTimeHelper:
     self.shutdown = True
     self.ready_event.set()
 
-  def update_now(self, signum, frame):
+  def update_now(self, signum: int, frame) -> None:
     cloudlog.info("caught SIGHUP, running update check immediately")
     self.ready_event.set()
 
-  def sleep(self, t):
+  def sleep(self, t: float):
     self.ready_event.wait(timeout=t)
 
 
-def run(cmd, cwd=None, low_priority=False):
+def run(cmd: List[str], cwd: Optional[str] = None, low_priority: bool = False):
   if low_priority:
     cmd = ["nice", "-n", "19"] + cmd
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
-def set_consistent_flag(consistent):
+def set_consistent_flag(consistent: bool) -> None:
   os.sync()
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
   if consistent:
@@ -98,7 +98,7 @@ def set_consistent_flag(consistent):
   os.sync()
 
 
-def set_params(new_version, failed_count, exception):
+def set_params(new_version: bool, failed_count: int, exception) -> None:
   params = Params()
 
   params.put("UpdateFailedCount", str(failed_count))
@@ -122,7 +122,7 @@ def set_params(new_version, failed_count, exception):
     params.put("UpdateAvailable", "1")
 
 
-def setup_git_options(cwd):
+def setup_git_options(cwd: str) -> None:
   # We sync FS object atimes (which NEOS doesn't use) and mtimes, but ctimes
   # are outside user control. Make sure Git is set up to ignore system ctimes,
   # because they change when we make hard links during finalize. Otherwise,
@@ -136,24 +136,16 @@ def setup_git_options(cwd):
     ("core.checkStat", "minimal"),
   ]
   for option, value in git_cfg:
-    try:
-      ret = run(["git", "config", "--get", option], cwd)
-      config_ok = ret.strip() == value
-    except subprocess.CalledProcessError:
-      config_ok = False
-
-    if not config_ok:
-      cloudlog.info(f"Setting git '{option}' to '{value}'")
-      run(["git", "config", option, value], cwd)
+    run(["git", "config", option, value], cwd)
 
 
-def dismount_overlay():
+def dismount_overlay() -> None:
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.error("unmounting existing overlay")
     run(["umount", "-l", OVERLAY_MERGED])
 
 
-def init_overlay():
+def init_overlay() -> None:
 
   overlay_init_file = Path(os.path.join(BASEDIR, ".overlay_init"))
 
@@ -197,7 +189,7 @@ def init_overlay():
   run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
 
 
-def finalize_update():
+def finalize_update() -> None:
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
@@ -215,7 +207,7 @@ def finalize_update():
   cloudlog.info("done finalizing overlay")
 
 
-def handle_neos_update(wait_helper):
+def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
   with open(NEOS_VERSION, "r") as f:
     cur_neos = f.read().strip()
 
@@ -252,12 +244,12 @@ def handle_neos_update(wait_helper):
   cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
 
 
-def check_for_update():
+def check_for_update() -> bool:
   # TODO: actually check for an update
   return os.system("git ls-remotes --heads --exit-code") == 0
 
 
-def fetch_update(wait_helper):
+def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   cloudlog.info("attempting git fetch inside staging overlay")
 
   setup_git_options(OVERLAY_MERGED)
@@ -326,7 +318,7 @@ def main():
   last_fetch_time = 0
   update_failed_count = 0
 
-  # Start update loop
+  # Run the update loop
   #  * every 30s, check if we're offroad
   #  * every 60s, check if remote HEAD is different than local HEAD
   #  * every 10m, if remote and local HEAD don't match, git fetch
