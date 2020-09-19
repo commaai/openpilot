@@ -36,14 +36,14 @@ class AlertManager:
     return len(self.activealerts) > 0
 
   def clear_current_alert(self) -> None:
-    self.alert_type = ""
-    self.alert_text_1 = ""
-    self.alert_text_2 = ""
+    self.alert_type:str = ""
+    self.alert_text_1: str = ""
+    self.alert_text_2: str = ""
     self.alert_status = log.ControlsState.AlertStatus.normal
     self.alert_size = log.ControlsState.AlertSize.none
-    self.visual_alert = car.CarControl.VisualAlert.none
-    self.audible_alert = car.CarControl.AudibleAlert.none
-    self.alert_rate = 0.
+    self.visual_alert = car.CarControl.HUDControl.VisualAlert.none
+    self.audible_alert = car.CarControl.HUDControl.AudibleAlert.none
+    self.alert_rate: float = 0.
 
   def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
     for a in alerts:
