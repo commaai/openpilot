@@ -2,7 +2,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include <memory>
+#include <thread>
 #include "common/buffering.h"
 #include "common/mat.h"
 #include "common/swaglog.h"
@@ -75,15 +76,17 @@ typedef struct {
   uint8_t *y, *u, *v;
 } YUVBuf;
 
+
+struct MultiCameraState;
 struct CameraState;
+typedef void (*release_cb)(void *cookie, int buf_idx);
+
 class CameraBuf {
 public:
+
   CameraState *camera_state;
   cl_kernel krnl_debayer;
   cl_command_queue q;
-
-  TBuffer ui_tb;
-  TBuffer *yuv_tb;
 
   Pool yuv_pool;
   VisionBuf yuv_ion[YUV_COUNT];
@@ -96,22 +99,32 @@ public:
   int rgb_width, rgb_height, rgb_stride;
   VisionBuf rgb_bufs[UI_BUF_COUNT];
 
-  VisionBuf *camera_bufs;
-
   mat3 yuv_transform;
 
   int cur_yuv_idx, cur_rgb_idx;
   FrameMetadata cur_frame_data;
   VisionBuf *cur_rgb_buf;
 
+
+  std::unique_ptr<VisionBuf[]> camera_bufs;
+  std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
+  TBuffer camera_tb, ui_tb;
+  TBuffer *yuv_tb; // only for visionserver
+
   CameraBuf() = default;
-  void init(cl_device_id device_id, cl_context context, CameraState *s, const char *name);
-  void free();
+  ~CameraBuf();
+  void init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt,
+            const char *name = "frame", release_cb relase_callback = nullptr);
   bool acquire();
   void release();
   void stop();
+  int frame_buf_count;
+  int frame_size;
 };
 
-struct MultiCameraState;
+typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
+
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
 void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total);
+std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
+                                    CameraState *cs, int priority, process_thread_cb callback);

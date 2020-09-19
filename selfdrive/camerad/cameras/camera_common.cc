@@ -39,12 +39,17 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, const char *name) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt,
+                     const char *name, release_cb relase_callback) {
   const CameraInfo *ci = &s->ci;
   camera_state = s;
-  camera_bufs = new VisionBuf[FRAME_BUF_COUNT];
-  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-    camera_bufs[i] = visionbuf_allocate_cl(s->frame_size, device_id, context);
+  frame_buf_count = frame_cnt;
+  frame_size = ci->frame_height * ci->frame_stride;
+ 
+  camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
+  camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
+  for (int i = 0; i < frame_buf_count; i++) {
+    camera_bufs[i] = visionbuf_allocate_cl(frame_size, device_id, context);
   }
 
   rgb_width = ci->frame_width;
@@ -70,10 +75,11 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     }
   }
   tbuffer_init(&ui_tb, UI_BUF_COUNT, name);
+  tbuffer_init2(&camera_tb, frame_buf_count, "frame", relase_callback, s);
 
   // yuv back for recording and orbd
   pool_init(&yuv_pool, YUV_COUNT);
-  yuv_tb = pool_get_tbuffer(&yuv_pool);  //only for visionserver...
+  yuv_tb = pool_get_tbuffer(&yuv_pool);
 
   yuv_width = rgb_width;
   yuv_height = rgb_height;
@@ -105,12 +111,10 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   assert(err == 0);
 }
 
-void CameraBuf::free() {
-  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+CameraBuf::~CameraBuf() {
+  for (int i = 0; i < frame_buf_count; i++) {
     visionbuf_free(&camera_bufs[i]);
   }
-  delete[] camera_bufs;
-
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     visionbuf_free(&rgb_bufs[i]);
   }
@@ -122,14 +126,14 @@ void CameraBuf::free() {
 }
 
 bool CameraBuf::acquire() {
-  const int buf_idx = tbuffer_acquire(&camera_state->camera_tb);
+  const int buf_idx = tbuffer_acquire(&camera_tb);
   if (buf_idx < 0) {
     return false;
   }
-  const FrameMetadata &frame_data = camera_state->camera_bufs_metadata[buf_idx];
+  const FrameMetadata &frame_data = camera_bufs_metadata[buf_idx];
   if (frame_data.frame_id == -1) {
     LOGE("no frame data? wtf");
-    tbuffer_release(&camera_state->camera_tb, buf_idx);
+    tbuffer_release(&camera_tb, buf_idx);
     return false;
   }
 
@@ -160,7 +164,7 @@ bool CameraBuf::acquire() {
                                   &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event) == 0);
 #endif
   } else {
-    assert(cur_rgb_buf->len >= camera_state->frame_size);
+    assert(cur_rgb_buf->len >= frame_size);
     assert(rgb_stride == camera_state->ci.frame_stride);
     assert(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0,
                                cur_rgb_buf->len, 0, 0, &debayer_event) == 0);
@@ -169,7 +173,7 @@ bool CameraBuf::acquire() {
   clWaitForEvents(1, &debayer_event);
   clReleaseEvent(debayer_event);
 
-  tbuffer_release(&camera_state->camera_tb, buf_idx);
+  tbuffer_release(&camera_tb, buf_idx);
   visionbuf_sync(cur_rgb_buf, VISIONBUF_SYNC_FROM_DEVICE);
 
   cur_yuv_idx = pool_select(&yuv_pool);
@@ -191,6 +195,7 @@ void CameraBuf::release() {
 
 void CameraBuf::stop() {
   tbuffer_stop(&ui_tb);
+  tbuffer_stop(&camera_tb);
   pool_stop(&yuv_pool);
 }
 
@@ -221,4 +226,27 @@ void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total)
     }
   }
   camera_autoexposure(s, lum_med / 256.0);
+}
+
+extern volatile sig_atomic_t do_exit;
+
+void *processing_thread(MultiCameraState *cameras, const char *tname,
+                              CameraState *cs, int priority, process_thread_cb callback) {
+  set_thread_name(tname);
+  int err = set_realtime_priority(priority);
+  LOG("%s start! setpriority returns %d", tname, err);
+
+  for (int cnt = 0; !do_exit; cnt++) {
+    if (!cs->buf.acquire()) continue;
+
+    callback(cameras, cs, cnt);
+
+    cs->buf.release();
+  }
+  return NULL;
+}
+
+std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
+                                          CameraState *cs, int priority, process_thread_cb callback) {
+  return std::thread(processing_thread, cameras, tname, cs, priority, callback);
 }

@@ -33,6 +33,7 @@ void set_do_exit(int sig) {
 }
 
 struct VisionState;
+
 struct VisionClientState {
   VisionState *s;
   int fd;
@@ -49,47 +50,21 @@ struct VisionClientStreamState {
 };
 
 struct VisionState {
-  cl_device_id device_id;
-  cl_context context;
-
-  CameraBuf rear;
-  CameraBuf front;
-#ifdef QCOM2
-  CameraBuf wide;
-#endif
-  
   MultiCameraState cameras;
   zsock_t *terminate_pub;
   pthread_mutex_t clients_lock;
   VisionClientState clients[MAX_CLIENTS];
 };
 
-// processing thread
-void *processing_thread(VisionState *s, const char *tname, CameraBuf *b, int priority) {
-  set_thread_name(tname);
-  int err = set_realtime_priority(priority);
-  LOG("%s start! setpriority returns %d", tname, err);
-
-  for (int cnt = 0; !do_exit; cnt++) {
-    if (!b->acquire()) continue;
-
-    camera_process_frame(&s->cameras, b, cnt);
-
-    b->release();
-  }
-  return NULL;
-}
-
-
 static CameraBuf *get_camerabuf_by_type(VisionState *s, VisionStreamType type) {
   assert(type >= 0 && type < VISION_STREAM_MAX);
   if (type == VISION_STREAM_RGB_BACK || type == VISION_STREAM_YUV) {
-    return &s->rear;
+    return &s->cameras.rear.buf;
   } else if (type == VISION_STREAM_RGB_FRONT || VISION_STREAM_YUV_FRONT) {
-    return &s->front;
+    return &s->cameras.front.buf;
   }
 #ifdef QCOM2
-  return &s->wide;
+  return &s->cameras.wide.buf;
 #endif
   assert(0);
 }
@@ -341,58 +316,28 @@ void* visionserver_thread(void* arg) {
   return NULL;
 }
 
-void cl_init(VisionState *s) {
-  int err;
-  clu_init();
-  s->device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  s->context = clCreateContext(NULL, 1, &s->device_id, NULL, NULL, &err);
-  assert(err == 0);
-}
-
-void init_buffers(VisionState *s) {
-  s->rear.init(s->device_id, s->context, &s->cameras.rear, "rgb");
-  s->front.init(s->device_id, s->context, &s->cameras.front, "frontrgb");
-#ifdef QCOM2
-  s->wide.init(s->device_id, s->context, &s->cameras.wide, "widergb");
-#endif
-}
-
-void free_buffers(VisionState *s) {
-  s->rear.free();
-  s->front.free();
-#ifdef QCOM2
-  s->wide.free();
-#endif
-}
-
-void party(VisionState *s) {
+void party(cl_device_id device_id, cl_context context) {
+  VisionState state = {};
+  VisionState *s = &state;
+  
+  cameras_init(&s->cameras, device_id, context);
+  cameras_open(&s->cameras);
+  
   s->terminate_pub = zsock_new_pub("@inproc://terminate");
   assert(s->terminate_pub);
 
   std::vector<std::thread> threads;
-  threads.push_back(std::thread(visionserver_thread, s));
-  threads.push_back(std::thread(processing_thread, s, "processing", &s->rear, 51));
-#if !defined(__APPLE__) && !defined(QCOM_REPLAY)
-  threads.push_back(std::thread(processing_thread, s, "frontview", &s->front, 51));
-#endif
-#ifdef QCOM2
-  threads.push_back(std::thread(processing_thread, s, "wideview", &s->wide, 51));
-#endif
-
+  std::thread server_thread(visionserver_thread, s);
+  
   // priority for cameras
   int err = set_realtime_priority(51);
   LOG("setpriority returns %d", err);
 
   cameras_run(&s->cameras);
 
-  s->rear.stop();
-  s->front.stop();
-#ifdef QCOM2
-  s->wide.stop();
-#endif
   zsock_signal(s->terminate_pub, 0);
 
-  for (auto &t : threads) t.join();
+  server_thread.join();
 
   zsock_destroy(&s->terminate_pub);
 }
@@ -407,20 +352,13 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  VisionState state = {};
-  VisionState *s = &state;
-  cl_init(s);
-  cameras_init(&s->cameras);
-  init_buffers(s);
+  int err;
+  clu_init();
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
+  assert(err == 0);
 
-#ifndef QCOM2
-  cameras_open(s->device_id, s->context, &s->cameras, &s->rear.camera_bufs[0], &s->front.camera_bufs[0]);
-#else
-  cameras_open(s->device_id, s->context, &s->cameras, &s->rear.camera_bufs[0], &s->front.camera_bufs[0], &s->wide.camera_bufs[0]);
-#endif
+  party(device_id, context);
 
-  party(s);
-
-  free_buffers(s);
-  clReleaseContext(s->context);
+  clReleaseContext(context);
 }

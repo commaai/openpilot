@@ -15,11 +15,6 @@
 typedef struct CameraState {
   int camera_id;
   CameraInfo ci;
-  int frame_size;
-
-  VisionBuf *camera_bufs;
-  FrameMetadata camera_bufs_metadata[FRAME_BUF_COUNT];
-  TBuffer camera_tb;
 
   int fps;
   float digital_gain;
@@ -27,6 +22,8 @@ typedef struct CameraState {
   float cur_gain_frac;
 
   mat3 transform;
+
+  CameraBuf buf;
 } CameraState;
 
 
@@ -39,9 +36,8 @@ typedef struct MultiCameraState {
   PubMaster *pm;
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s);
-void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front);
+void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt);

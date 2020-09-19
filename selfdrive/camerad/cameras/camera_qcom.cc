@@ -107,14 +107,13 @@ static void camera_release_buffer(void* cookie, int buf_idx) {
 
 static void camera_init(CameraState *s, int camera_id, int camera_num,
                         uint32_t pixel_clock, uint32_t line_length_pclk,
-                        unsigned int max_gain, unsigned int fps) {
+                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx) {
   s->camera_num = camera_num;
   s->camera_id = camera_id;
 
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
-  s->frame_size = s->ci.frame_height * s->ci.frame_stride;
 
   s->pixel_clock = pixel_clock;
   s->line_length_pclk = line_length_pclk;
@@ -127,8 +126,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   assert(s->ops_sock);
   s->ops_sock_handle = zsock_resolve(s->ops_sock);
 
-  tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame",
-    camera_release_buffer, s);
+  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame", camera_release_buffer);
 
   pthread_mutex_init(&s->frame_info_lock, NULL);
 }
@@ -259,7 +257,18 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
   return err;
 }
 
-void cameras_init(MultiCameraState *s) {
+cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
+  char args[4096];
+  snprintf(args, sizeof(args),
+          "-cl-fast-relaxed-math -cl-denorms-are-zero "
+          "-DIMAGE_W=%d -DIMAGE_H=%d -DFLIP_RB=%d "
+          "-DFILTER_SIZE=%d -DHALF_FILTER_SIZE=%d -DTWICE_HALF_FILTER_SIZE=%d -DHALF_FILTER_SIZE_IMAGE_W=%d",
+          image_w, image_h, 1,
+          filter_size, filter_size/2, (filter_size/2)*2, (filter_size/2)*image_w);
+  return CLU_LOAD_FROM_FILE(context, device_id, "imgproc/conv.cl", args);
+}
+
+void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
 
@@ -303,23 +312,24 @@ void cameras_init(MultiCameraState *s) {
 #else
               /*fps*/20
 #endif
+, device_id, ctx
   );
   s->rear.apply_exposure = imx298_apply_exposure;
 
   if (s->device == DEVICE_OP3T) {
     camera_init(&s->front, CAMERA_ID_S5K3P8SP, 1,
                 /*pixel_clock=*/561000000, /*line_length_pclk=*/5120,
-                /*max_gain=*/510, 10);
+                /*max_gain=*/510, 10, device_id, ctx);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   } else if (s->device == DEVICE_LP3) {
     camera_init(&s->front, CAMERA_ID_OV8865, 1,
                 /*pixel_clock=*/251200000, /*line_length_pclk=*/7000,
-                /*max_gain=*/510, 10);
+                /*max_gain=*/510, 10, device_id, ctx);
     s->front.apply_exposure = ov8865_apply_exposure;
   } else {
     camera_init(&s->front, CAMERA_ID_IMX179, 1,
                 /*pixel_clock=*/251200000, /*line_length_pclk=*/3440,
-                /*max_gain=*/224, 20);
+                /*max_gain=*/224, 20, device_id, ctx);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
 
@@ -342,6 +352,42 @@ void cameras_init(MultiCameraState *s) {
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"frame", "frontFrame"});
+
+
+  int err;
+  int rgb_width = s->rear.ci.frame_width;
+  int rgb_height = s->rear.ci.frame_height;
+  if (s->rear.ci.bayer) {
+    rgb_width = s->rear.ci.frame_width / 2;
+    rgb_height = s->rear.ci.frame_height / 2;
+  }
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    // TODO: make lengths correct
+    s->focus_bufs[i] = visionbuf_allocate(0xb80);
+    s->stats_bufs[i] = visionbuf_allocate(0xb80);
+  }
+  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, rgb_width/NUM_SEGMENTS_X, rgb_height/NUM_SEGMENTS_Y, 3);
+  s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
+  assert(err == 0);
+  // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
+  s->rgb_conv_roi_cl = clCreateBuffer(ctx, CL_MEM_READ_WRITE,
+      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, NULL);
+  s->rgb_conv_result_cl = clCreateBuffer(ctx, CL_MEM_READ_WRITE,
+      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, NULL);
+  s->rgb_conv_filter_cl = clCreateBuffer(ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+      9 * sizeof(int16_t), (void*)&lapl_conv_krnl, NULL);
+  s->conv_cl_localMemSize = ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) ) * ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) );
+  s->conv_cl_localMemSize *= 3 * sizeof(uint8_t);
+  s->conv_cl_globalWorkSize[0] = rgb_width/NUM_SEGMENTS_X;
+  s->conv_cl_globalWorkSize[1] = rgb_height/NUM_SEGMENTS_Y;
+  s->conv_cl_localWorkSize[0] = CONV_LOCAL_WORKSIZE;
+  s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
+
+  for (int i=0; i<ARRAYSIZE(s->lapres); i++) {s->lapres[i] = 16160;}
+
+  const size_t size = (rgb_width/NUM_SEGMENTS_X)*(rgb_height/NUM_SEGMENTS_Y);
+  s->rgb_roi_buf = std::make_unique<uint8_t[]>(size*3);
+  s->conv_result = std::make_unique<int16_t[]>(size);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
@@ -1815,53 +1861,8 @@ static void front_start(CameraState *s) {
   LOG("sensor start regs: %d", err);
 }
 
-cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
-  char args[4096];
-  snprintf(args, sizeof(args),
-          "-cl-fast-relaxed-math -cl-denorms-are-zero "
-          "-DIMAGE_W=%d -DIMAGE_H=%d -DFLIP_RB=%d "
-          "-DFILTER_SIZE=%d -DHALF_FILTER_SIZE=%d -DTWICE_HALF_FILTER_SIZE=%d -DHALF_FILTER_SIZE_IMAGE_W=%d",
-          image_w, image_h, 1,
-          filter_size, filter_size/2, (filter_size/2)*2, (filter_size/2)*image_w);
-  return CLU_LOAD_FROM_FILE(context, device_id, "imgproc/conv.cl", args);
-}
-
-void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front) {
+void cameras_open(MultiCameraState *s) {
   int err;
-  int rgb_width = s->rear.ci.frame_width;
-  int rgb_height = s->rear.ci.frame_height;
-  if (s->rear.ci.bayer) {
-    rgb_width = s->rear.ci.frame_width / 2;
-    rgb_height = s->rear.ci.frame_height / 2;
-  }
-  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-    // TODO: make lengths correct
-    s->focus_bufs[i] = visionbuf_allocate(0xb80);
-    s->stats_bufs[i] = visionbuf_allocate(0xb80);
-  }
-  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, rgb_width/NUM_SEGMENTS_X, rgb_height/NUM_SEGMENTS_Y, 3);
-  s->krnl_rgb_laplacian = clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err);
-  assert(err == 0);
-  // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
-  s->rgb_conv_roi_cl = clCreateBuffer(camera_bufs_rear->ctx, CL_MEM_READ_WRITE,
-      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, NULL);
-  s->rgb_conv_result_cl = clCreateBuffer(camera_bufs_rear->ctx, CL_MEM_READ_WRITE,
-      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, NULL);
-  s->rgb_conv_filter_cl = clCreateBuffer(camera_bufs_rear->ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-      9 * sizeof(int16_t), (void*)&lapl_conv_krnl, NULL);
-  s->conv_cl_localMemSize = ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) ) * ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) );
-  s->conv_cl_localMemSize *= 3 * sizeof(uint8_t);
-  s->conv_cl_globalWorkSize[0] = rgb_width/NUM_SEGMENTS_X;
-  s->conv_cl_globalWorkSize[1] = rgb_height/NUM_SEGMENTS_Y;
-  s->conv_cl_localWorkSize[0] = CONV_LOCAL_WORKSIZE;
-  s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
-
-  for (int i=0; i<ARRAYSIZE(s->lapres); i++) {s->lapres[i] = 16160;}
-
-  const size_t size = (rgb_width/NUM_SEGMENTS_X)*(rgb_height/NUM_SEGMENTS_Y);
-  s->rgb_roi_buf = std::make_unique<uint8_t[]>(size*3);
-  s->conv_result = std::make_unique<int16_t[]>(size);
-
   struct ispif_cfg_data ispif_cfg_data = {};
   struct msm_ispif_param_data ispif_params = {};
   ispif_params.num = 4;
@@ -1890,11 +1891,8 @@ void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, V
   ispif_params.entries[3].cids[0] = CID2;
   ispif_params.entries[3].csid = CSID0;
 
-  assert(camera_bufs_rear);
-  assert(camera_bufs_front);
-
-  s->msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
-  assert(s->msmcfg_fd >= 0);
+  int msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
+  assert(msmcfg_fd >= 0);
 
   sensors_init(s);
 
@@ -1916,11 +1914,11 @@ void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, V
   // LOG("ispif stop: %d", err);
 
   LOG("*** open front ***");
-  s->front.ss[0].bufs = camera_bufs_front;
+  s->front.ss[0].bufs = s->front.buf.camera_bufs.get();
   camera_open(&s->front, false);
 
   LOG("*** open rear ***");
-  s->rear.ss[0].bufs = camera_bufs_rear;
+  s->rear.ss[0].bufs = s->rear.buf.camera_bufs.get();
   s->rear.ss[1].bufs = s->focus_bufs;
   s->rear.ss[2].bufs = s->stats_bufs;
   camera_open(&s->rear, true);
@@ -1963,7 +1961,7 @@ void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, V
 static void camera_close(CameraState *s) {
   int err;
 
-  tbuffer_stop(&s->camera_tb);
+  s->buf.stop();
 
   // ISP: STOP_STREAM
   s->stream_cfg.cmd = STOP_STREAM;
@@ -2136,136 +2134,9 @@ static void* ops_thread(void* arg) {
   return NULL;
 }
 
-void cameras_run(MultiCameraState *s) {
-  int err;
+void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
+  const CameraBuf *b = &c->buf;
 
-  pthread_t ops_thread_handle;
-  err = pthread_create(&ops_thread_handle, NULL,
-                       ops_thread, s);
-  assert(err == 0);
-
-  CameraState* cameras[2] = {&s->rear, &s->front};
-
-  while (!do_exit) {
-    struct pollfd fds[2] = {{0}};
-
-    fds[0].fd = cameras[0]->isp_fd;
-    fds[0].events = POLLPRI;
-
-    fds[1].fd = cameras[1]->isp_fd;
-    fds[1].events = POLLPRI;
-
-    int ret = poll(fds, ARRAYSIZE(fds), 1000);
-    if (ret <= 0) {
-      if (errno == EINTR || errno == EAGAIN) continue;
-      LOGE("poll failed (%d - %d)", ret, errno);
-      break;
-    }
-
-    // process cameras
-    for (int i=0; i<2; i++) {
-      if (!fds[i].revents) continue;
-
-      CameraState *c = cameras[i];
-
-      struct v4l2_event ev;
-      ret = ioctl(c->isp_fd, VIDIOC_DQEVENT, &ev);
-      struct msm_isp_event_data *isp_event_data = (struct msm_isp_event_data *)ev.u.data;
-      unsigned int event_type = ev.type;
-
-      uint64_t timestamp = (isp_event_data->mono_timestamp.tv_sec*1000000000ULL
-                            + isp_event_data->mono_timestamp.tv_usec*1000);
-
-      int buf_idx = isp_event_data->u.buf_done.buf_idx;
-      int stream_id = isp_event_data->u.buf_done.stream_id;
-      int buffer = (stream_id&0xFFFF) - 1;
-
-      uint64_t t = nanos_since_boot();
-
-      /*if (i == 1) {
-        printf("%10.2f: VIDIOC_DQEVENT: %d  type:%X (%s)\n", t*1.0/1e6, ret, event_type, get_isp_event_name(event_type));
-      }*/
-
-      // printf("%d: %s\n", i, get_isp_event_name(event_type));
-
-      switch (event_type) {
-      case ISP_EVENT_BUF_DIVERT:
-
-        /*if (c->is_samsung) {
-          printf("write %d\n", c->frame_size);
-          FILE *f = fopen("/tmp/test", "wb");
-          fwrite((void*)c->camera_bufs[i].addr, 1, c->frame_size, f);
-          fclose(f);
-        }*/
-        //printf("divert: %d %d %d\n", i, buffer, buf_idx);
-
-        if (buffer == 0) {
-          c->camera_bufs_metadata[buf_idx] = get_frame_metadata(c, isp_event_data->frame_id);
-          tbuffer_dispatch(&c->camera_tb, buf_idx);
-        } else {
-          uint8_t *d = (uint8_t*)(c->ss[buffer].bufs[buf_idx].addr);
-          if (buffer == 1) {
-            parse_autofocus(c, d);
-          }
-          c->ss[buffer].qbuf_info[buf_idx].dirty_buf = 1;
-          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &c->ss[buffer].qbuf_info[buf_idx]);
-        }
-        break;
-      case ISP_EVENT_EOF:
-        // printf("ISP_EVENT_EOF delta %f\n", (t-last_t)/1e6);
-        c->last_t = t;
-
-        pthread_mutex_lock(&c->frame_info_lock);
-        c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
-          .frame_id = isp_event_data->frame_id,
-          .timestamp_eof = timestamp,
-          .frame_length = (unsigned int)c->cur_frame_length,
-          .integ_lines = (unsigned int)c->cur_integ_lines,
-          .global_gain = (unsigned int)c->cur_gain,
-          .lens_pos = c->cur_lens_pos,
-          .lens_sag = c->last_sag_acc_z,
-          .lens_err = c->focus_err,
-          .lens_true_pos = c->lens_true_pos,
-          .gain_frac = c->cur_gain_frac,
-        };
-        c->frame_metadata_idx = (c->frame_metadata_idx+1)%METADATA_BUF_COUNT;
-        pthread_mutex_unlock(&c->frame_info_lock);
-
-        break;
-      case ISP_EVENT_ERROR:
-        LOGE("ISP_EVENT_ERROR! err type: 0x%08x", isp_event_data->u.error_info.err_type);
-        break;
-      }
-    }
-  }
-
-  LOG(" ************** STOPPING **************");
-
-  ops_term();
-  err = pthread_join(ops_thread_handle, NULL);
-  assert(err == 0);
-
-  cameras_close(s);
-}
-
-void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-  camera_close(&s->front);
-  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-    visionbuf_free(&s->focus_bufs[i]);
-    visionbuf_free(&s->stats_bufs[i]);
-  }
-  clReleaseMemObject(s->rgb_conv_roi_cl);
-  clReleaseMemObject(s->rgb_conv_result_cl);
-  clReleaseMemObject(s->rgb_conv_filter_cl);
-
-  clReleaseProgram(s->prg_rgb_laplacian);
-  clReleaseKernel(s->krnl_rgb_laplacian);
-  delete s->sm;
-  delete s->pm;
-}
-
-void process_front_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
   static int meteringbox_xmin = 0, meteringbox_xmax = 0;
   static int meteringbox_ymin = 0, meteringbox_ymax = 0;
   static const bool rhd_front = read_db_bool("IsRHD");
@@ -2328,7 +2199,7 @@ void process_front_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
       }
     }
     const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
-    autoexposure(b->camera_state, lum_binning, ARRAYSIZE(lum_binning), lum_total);
+    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
   }
 
   MessageBuilder msg;
@@ -2339,13 +2210,10 @@ void process_front_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
 }
 
 // called by processing_thread
-void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
-  if (b->camera_state == &s->front) {
-    process_front_frame(s, b, cnt);
-    return;
-  }
-  
+void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   // cache rgb roi and write to cl
+  const CameraBuf *b = &c->buf;
+
   int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
   int roi_x_offset = roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
   int roi_y_offset = roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
@@ -2445,4 +2313,138 @@ void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
 
     camera_autoexposure(&s->rear, lum_med / 256.0);
   }
+}
+
+void cameras_run(MultiCameraState *s) {
+  int err;
+
+  pthread_t ops_thread_handle;
+  err = pthread_create(&ops_thread_handle, NULL,
+                       ops_thread, s);
+  assert(err == 0);
+  std::vector<std::thread> threads;
+  threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
+  threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
+
+  CameraState* cameras[2] = {&s->rear, &s->front};
+
+  while (!do_exit) {
+    struct pollfd fds[2] = {{0}};
+
+    fds[0].fd = cameras[0]->isp_fd;
+    fds[0].events = POLLPRI;
+
+    fds[1].fd = cameras[1]->isp_fd;
+    fds[1].events = POLLPRI;
+
+    int ret = poll(fds, ARRAYSIZE(fds), 1000);
+    if (ret <= 0) {
+      if (errno == EINTR || errno == EAGAIN) continue;
+      LOGE("poll failed (%d - %d)", ret, errno);
+      break;
+    }
+
+    // process cameras
+    for (int i=0; i<2; i++) {
+      if (!fds[i].revents) continue;
+
+      CameraState *c = cameras[i];
+
+      struct v4l2_event ev;
+      ret = ioctl(c->isp_fd, VIDIOC_DQEVENT, &ev);
+      struct msm_isp_event_data *isp_event_data = (struct msm_isp_event_data *)ev.u.data;
+      unsigned int event_type = ev.type;
+
+      uint64_t timestamp = (isp_event_data->mono_timestamp.tv_sec*1000000000ULL
+                            + isp_event_data->mono_timestamp.tv_usec*1000);
+
+      int buf_idx = isp_event_data->u.buf_done.buf_idx;
+      int stream_id = isp_event_data->u.buf_done.stream_id;
+      int buffer = (stream_id&0xFFFF) - 1;
+
+      uint64_t t = nanos_since_boot();
+
+      /*if (i == 1) {
+        printf("%10.2f: VIDIOC_DQEVENT: %d  type:%X (%s)\n", t*1.0/1e6, ret, event_type, get_isp_event_name(event_type));
+      }*/
+
+      // printf("%d: %s\n", i, get_isp_event_name(event_type));
+
+      switch (event_type) {
+      case ISP_EVENT_BUF_DIVERT:
+
+        /*if (c->is_samsung) {
+          printf("write %d\n", c->frame_size);
+          FILE *f = fopen("/tmp/test", "wb");
+          fwrite((void*)c->camera_bufs[i].addr, 1, c->frame_size, f);
+          fclose(f);
+        }*/
+        //printf("divert: %d %d %d\n", i, buffer, buf_idx);
+
+        if (buffer == 0) {
+          c->buf.camera_bufs_metadata[buf_idx] = get_frame_metadata(c, isp_event_data->frame_id);
+          tbuffer_dispatch(&c->buf.camera_tb, buf_idx);
+        } else {
+          uint8_t *d = (uint8_t*)(c->ss[buffer].bufs[buf_idx].addr);
+          if (buffer == 1) {
+            parse_autofocus(c, d);
+          }
+          c->ss[buffer].qbuf_info[buf_idx].dirty_buf = 1;
+          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &c->ss[buffer].qbuf_info[buf_idx]);
+        }
+        break;
+      case ISP_EVENT_EOF:
+        // printf("ISP_EVENT_EOF delta %f\n", (t-last_t)/1e6);
+        c->last_t = t;
+
+        pthread_mutex_lock(&c->frame_info_lock);
+        c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
+          .frame_id = isp_event_data->frame_id,
+          .timestamp_eof = timestamp,
+          .frame_length = (unsigned int)c->cur_frame_length,
+          .integ_lines = (unsigned int)c->cur_integ_lines,
+          .global_gain = (unsigned int)c->cur_gain,
+          .lens_pos = c->cur_lens_pos,
+          .lens_sag = c->last_sag_acc_z,
+          .lens_err = c->focus_err,
+          .lens_true_pos = c->lens_true_pos,
+          .gain_frac = c->cur_gain_frac,
+        };
+        c->frame_metadata_idx = (c->frame_metadata_idx+1)%METADATA_BUF_COUNT;
+        pthread_mutex_unlock(&c->frame_info_lock);
+
+        break;
+      case ISP_EVENT_ERROR:
+        LOGE("ISP_EVENT_ERROR! err type: 0x%08x", isp_event_data->u.error_info.err_type);
+        break;
+      }
+    }
+  }
+
+  LOG(" ************** STOPPING **************");
+
+  ops_term();
+  err = pthread_join(ops_thread_handle, NULL);
+  assert(err == 0);
+
+  cameras_close(s);
+
+  for (auto &t : threads) t.join();
+}
+
+void cameras_close(MultiCameraState *s) {
+  camera_close(&s->rear);
+  camera_close(&s->front);
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    visionbuf_free(&s->focus_bufs[i]);
+    visionbuf_free(&s->stats_bufs[i]);
+  }
+  clReleaseMemObject(s->rgb_conv_roi_cl);
+  clReleaseMemObject(s->rgb_conv_result_cl);
+  clReleaseMemObject(s->rgb_conv_filter_cl);
+
+  clReleaseProgram(s->prg_rgb_laplacian);
+  clReleaseKernel(s->krnl_rgb_laplacian);
+  delete s->sm;
+  delete s->pm;
 }

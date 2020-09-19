@@ -12,10 +12,7 @@
 
 typedef struct CameraState {
   CameraInfo ci;
-  FrameMetadata camera_bufs_metadata[FRAME_BUF_COUNT];
-  TBuffer camera_tb;
 
-  int frame_size;
   //float digital_gain;
   //int digital_gain_pre;
   float analog_gain_frac;
@@ -38,7 +35,6 @@ typedef struct CameraState {
 
   int camera_num;
 
-  VisionBuf *bufs;
 
   uint32_t session_handle;
 
@@ -62,6 +58,8 @@ typedef struct CameraState {
   size_t debayer_cl_localWorkSize[2];
 
   struct cam_req_mgr_session_info req_mgr_session_info;
+
+  CameraBuf buf;
 } CameraState;
 
 typedef struct MultiCameraState {
@@ -84,11 +82,10 @@ typedef struct MultiCameraState {
   PubMaster *pm;
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s);
-void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
+void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt);
 #ifdef NOSCREEN
 void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
 #endif

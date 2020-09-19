@@ -530,7 +530,7 @@ void enqueue_buffer(struct CameraState *s, int i) {
   mem_mgr_map_cmd.mmu_hdls[0] = s->device_iommu;
   mem_mgr_map_cmd.num_hdl = 1;
   mem_mgr_map_cmd.flags = 1;
-  mem_mgr_map_cmd.fd = s->bufs[i].fd;
+  mem_mgr_map_cmd.fd = s->buf.camera_bufs[i].fd;
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
   // LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
   s->buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
@@ -552,7 +552,7 @@ void enqueue_req_multi(struct CameraState *s, int start, int n) {
 
 // ******************* camera *******************
 
-static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps) {
+static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx) {
   LOGD("camera init %d", camera_num);
 
   assert(camera_id < ARRAYSIZE(cameras_supported));
@@ -560,9 +560,6 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_num;
-  s->frame_size = s->ci.frame_height * s->ci.frame_stride;
-
-  tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", NULL, s);
 
   s->transform = (mat3){{
     1.0, 0.0, 0.0,
@@ -584,12 +581,12 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->debayer_cl_globalWorkSize[1] = s->ci.frame_height;
   s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
   s->debayer_cl_localWorkSize[1] = DEBAYER_LOCAL_WORKSIZE;
+
+  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
 }
 
-static void camera_open(CameraState *s, VisionBuf* b) {
+static void camera_open(CameraState *s) {
   int ret;
-  s->bufs = b;
-
   // /dev/v4l-subdev10 is sensor, 11, 12, 13 are the other sensors
   switch (s->camera_num) {
     case 0:
@@ -802,12 +799,12 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT);
 }
 
-void cameras_init(MultiCameraState *s) {
-  camera_init(&s->rear, CAMERA_ID_AR0231, 1, 20); // swap left/right
+void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(&s->rear, CAMERA_ID_AR0231, 1, 20, device_id, ctx); // swap left/right
   printf("rear initted \n");
-  camera_init(&s->wide, CAMERA_ID_AR0231, 0, 20);
+  camera_init(&s->wide, CAMERA_ID_AR0231, 0, 20, device_id, ctx);
   printf("wide initted \n");
-  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
+  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20, device_id, ctx);
   printf("front initted \n");
 #ifdef NOSCREEN
   zsock_t *rgb_sock = zsock_new_push("tcp://192.168.3.4:7768");
@@ -819,7 +816,7 @@ void cameras_init(MultiCameraState *s) {
   s->pm = new PubMaster({"frame", "frontFrame", "wideFrame"});
 }
 
-void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide) {
+void cameras_open(MultiCameraState *s) {
   int ret;
 
   LOG("-- Opening devices");
@@ -865,11 +862,11 @@ void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, V
   ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   printf("req mgr subscribe: %d\n", ret);
   
-  camera_open(&s->rear, camera_bufs_rear);
+  camera_open(&s->rear);
   printf("rear opened \n");
-  camera_open(&s->wide, camera_bufs_wide);
+  camera_open(&s->wide);
   printf("wide opened \n");
-  camera_open(&s->front, camera_bufs_front);
+  camera_open(&s->front);
   printf("front opened \n");
   // TODO: refactor this api for compat
 }
@@ -914,7 +911,7 @@ static void camera_close(CameraState *s) {
 
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &s->req_mgr_session_info, sizeof(s->req_mgr_session_info));
   LOGD("destroyed session: %d", ret);
-  tbuffer_stop(&s->camera_tb);
+  s->buf.stop();
 }
 
 static void cameras_close(MultiCameraState *s) {
@@ -957,12 +954,12 @@ void handle_camera_event(CameraState *s, void *evdat) {
     // metas
     s->frame_id_last = main_id;
     s->request_id_last = real_id;
-    s->camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
-    s->camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
+    s->buf.camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
+    s->buf.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
 
     // dispatch
     enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1);
-    tbuffer_dispatch(&s->camera_tb, buf_idx);
+    tbuffer_dispatch(&s->buf.camera_tb, buf_idx);
   } else { // not ready
     // reset after half second of no response
     if (main_id > s->frame_id_last + 10) {
@@ -974,9 +971,93 @@ void handle_camera_event(CameraState *s, void *evdat) {
   }
 }
 
+
+void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
+  const CameraBuf *b = &c->buf;
+#ifndef DEBUG_DRIVER_MONITOR
+  if (cnt % 3 == 0)
+#endif
+  {
+    int x_start = 0.15 * b->rgb_width;
+    int x_end = 0.85 * b->rgb_width;
+    int y_start = 0.5 * b->rgb_height;
+    int y_end = 0.75 * b->rgb_height;
+    int skip = 2;
+    const uint8_t *bgr_front_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
+    uint32_t lum_binning[256] = {0};
+    for (int y = y_start; y < y_end; y += skip) {
+      for (int x = x_start; x < x_end; x += 2) {  // every 2nd col
+        const uint8_t *pix = &bgr_front_ptr[y * b->rgb_stride + x * 3];
+        unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
+#ifdef DEBUG_DRIVER_MONITOR
+        uint8_t *pix_rw = (uint8_t *)pix;
+
+        // set all the autoexposure pixels to pure green (pixel format is bgr)
+        pix_rw[0] = pix_rw[2] = 0;
+        pix_rw[1] = 0xff;
+#endif
+        lum_binning[std::min(lum / 3, 255u)]++;
+      }
+    }
+    const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
+    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
+  }
+
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrontFrame();
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  s->pm->send("frontFrame", msg);
+
+#ifdef NOSCREEN
+  if (b->cur_frame_data.frame_id % 4 == 2) {
+    sendrgb(&s->cameras, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, 2);
+  }
+#endif
+}
+
+// called by processing_thread
+void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
+  const CameraBuf *b = &c->buf;
+#ifdef NOSCREEN
+  if (b->cur_frame_data.frame_id % 4 == (c == &s->rear ? 1 : 0)) {
+    sendrgb(s, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, c == &s->rear ? 0 : 1);
+  }
+#endif
+
+  MessageBuilder msg;
+  auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+  s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
+
+  if (cnt % 3 == 0) {
+    const int exposure_x = 384;
+    const int exposure_y = 300;
+    const int exposure_height = 400;
+    const int exposure_width = 1152;
+    const int skip = 2;
+    uint8_t *yuv_ptr_y = b->yuv_bufs[b->cur_yuv_idx].y;
+    // find median box luminance for AE
+    uint32_t lum_binning[256] = {0};
+    for (int y = 0; y < exposure_height; y += skip) {
+      for (int x = 0; x < exposure_width; x += skip) {
+        uint8_t lum = yuv_ptr_y[((exposure_y + y) * b->yuv_width) + exposure_x + x];
+        lum_binning[lum]++;
+      }
+    }
+    const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
+    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
+  }
+}
+
 void cameras_run(MultiCameraState *s) {
   // start devices
   LOG("-- Start devices");
+  std::vector<std::thread> threads;
+  threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
+  threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
+  threads.push_back(start_process_thread(s, "wideview", &s->wide, 51, camera_process_frame));
   int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
   sensors_i2c(&s->rear, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
   sensors_i2c(&s->wide, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
@@ -1021,6 +1102,8 @@ void cameras_run(MultiCameraState *s) {
 
   LOG(" ************** STOPPING **************");
   cameras_close(s);
+  
+  for (auto &t : threads) t.join();
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
@@ -1034,28 +1117,23 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   const int exposure_time_max = 1066; //1416; // no slower than 1/25 sec. calculated from 0x300C and clock freq
   float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.16 );
 
-  if (s->analog_gain_frac > 1 && exposure_factor > 0.98 && exposure_factor < 1.02) { // high analog gains are coarse
-    return;
-  } else if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // switch to HCG at iso 800
+  if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // iso 800
     s->dc_gain_enabled = true;
     s->analog_gain_frac *= 0.5;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // switch back to LCG at iso 400
+  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // iso 400
     s->dc_gain_enabled = false;
-    s->analog_gain_frac *= 2.0;
+    s->analog_gain_frac *= 2;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac > 1 && exposure_factor < 1) { // force gain down first
-    s->analog_gain_frac /= 2.0;
+  } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) {
+    s->analog_gain_frac *= sqrt(exposure_factor);
+    s->exposure_time = fmax(fmin(s->exposure_time * sqrt(exposure_factor), exposure_time_max),exposure_time_min);
     s->dc_opstate = 0;
-  } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) { // smoother transistion on large stepdowns
-    s->analog_gain_frac = max(min(s->analog_gain_frac * sqrt(exposure_factor), analog_gain_frac_max), analog_gain_frac_min);
-    s->exposure_time = max(min(s->exposure_time * sqrt(exposure_factor), exposure_time_max), exposure_time_min);
-    s->dc_opstate = 0;
-  } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) { // ramp up shutter time before gain
-    s->exposure_time = max(min(s->exposure_time * exposure_factor, exposure_time_max), exposure_time_min);
+  } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) {
+    s->exposure_time = fmax(fmin(s->exposure_time * exposure_factor, exposure_time_max),exposure_time_min);
     s->dc_opstate = 0;
   } else {
-    s->analog_gain_frac = max(min(s->analog_gain_frac * exposure_factor, analog_gain_frac_max), analog_gain_frac_min);
+    s->analog_gain_frac = fmax(fmin(s->analog_gain_frac * exposure_factor, analog_gain_frac_max),analog_gain_frac_min);
     s->dc_opstate = 0;
   }
   // set up config
@@ -1075,8 +1153,8 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
-                                                  {0x305A, 0x00D1}, // red gain
-                                                  {0x3058, 0x0118}, // blue gain
+                                                  {0x305A, 0x00C4}, // red gain
+                                                  {0x3058, 0x00B1}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
                                                   {0x3012, (uint16_t)s->exposure_time}}; // integ time
@@ -1091,22 +1169,15 @@ void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   int err, err2;
   int scale = 6;
   int old_width = FRAME_WIDTH;
-  // int old_height = FRAME_HEIGHT;
   int new_width = FRAME_WIDTH / scale;
   int new_height = FRAME_HEIGHT / scale;
   uint8_t resized_dat[new_width*new_height*3];
-  // int goff, loff;
-  // goff = ((old_width*(scale-1)*old_height/scale)/2);
   memset(&resized_dat, cam_id, 3);
   for (uint32_t r=1;r<new_height;r++) {
     for (uint32_t c=1;c<new_width;c++) {
       resized_dat[(r*new_width+c)*3] = dat[(r*old_width + c)*3*scale];
       resized_dat[(r*new_width+c)*3+1] = dat[(r*old_width + c)*3*scale+1];
       resized_dat[(r*new_width+c)*3+2] = dat[(r*old_width + c)*3*scale+2];
-      // loff = r*old_width + c;
-      // resized_dat[(r*new_width+c)*3] = dat[(goff+loff)*3];
-      // resized_dat[(r*new_width+c)*3+1] = dat[(goff+loff)*3+1];
-      // resized_dat[(r*new_width+c)*3+2] = dat[(goff+loff)*3+2];
     }
   }
   err = zmq_send(zsock_resolve(s->rgb_sock), &resized_dat, new_width*new_height*3, 0);
@@ -1114,87 +1185,3 @@ void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   //printf("zmq errcode %d, %d\n",err,err2);
 }
 #endif
-
-
-void process_front_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
-#ifndef DEBUG_DRIVER_MONITOR
-  if (cnt % 3 == 0)
-#endif
-  {
-    int x_start = 0.15 * b->rgb_width;
-    int x_end = 0.85 * b->rgb_width;
-    int y_start = 0.5 * b->rgb_height;
-    int y_end = 0.75 * b->rgb_height;
-    int skip = 2;
-    const uint8_t *bgr_front_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
-    uint32_t lum_binning[256] = {0};
-    for (int y = y_start; y < y_end; y += skip) {
-      for (int x = x_start; x < x_end; x += 2) {  // every 2nd col
-        const uint8_t *pix = &bgr_front_ptr[y * b->rgb_stride + x * 3];
-        unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
-#ifdef DEBUG_DRIVER_MONITOR
-        uint8_t *pix_rw = (uint8_t *)pix;
-
-        // set all the autoexposure pixels to pure green (pixel format is bgr)
-        pix_rw[0] = pix_rw[2] = 0;
-        pix_rw[1] = 0xff;
-#endif
-        lum_binning[std::min(lum / 3, 255u)]++;
-      }
-    }
-    const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
-    autoexposure(b->camera_state, lum_binning, ARRAYSIZE(lum_binning), lum_total);
-  }
-
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initFrontFrame();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, b->cur_frame_data, cnt);
-  s->pm->send("frontFrame", msg);
-
-#ifdef NOSCREEN
-  if (b->cur_frame_data.frame_id % 4 == 2) {
-    sendrgb(&s->cameras, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, 2);
-  }
-#endif
-}
-
-// called by processing_thread
-void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt) {
-  if (b->camera_state == &s->front) {
-    process_front_frame(s, b, cnt);
-    return;
-  }
-
-  CameraState *c = b->camera_state;
-#ifdef NOSCREEN
-  if (b->cur_frame_data.frame_id % 4 == (c == &s->rear ? 1 : 0)) {
-    sendrgb(s, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, c == &s->rear ? 0 : 1);
-  }
-#endif
-
-  MessageBuilder msg;
-  auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
-  fill_frame_data(framed, b->cur_frame_data, cnt);
-  framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
-  s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
-
-  if (cnt % 3 == 0) {
-    const int exposure_x = 384;
-    const int exposure_y = 300;
-    const int exposure_height = 400;
-    const int exposure_width = 1152;
-    const int skip = 2;
-    uint8_t *yuv_ptr_y = b->yuv_bufs[b->cur_yuv_idx].y;
-    // find median box luminance for AE
-    uint32_t lum_binning[256] = {0};
-    for (int y = 0; y < exposure_height; y += skip) {
-      for (int x = 0; x < exposure_width; x += skip) {
-        uint8_t lum = yuv_ptr_y[((exposure_y + y) * b->yuv_width) + exposure_x + x];
-        lum_binning[lum]++;
-      }
-    }
-    const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
-    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
-  }
-}

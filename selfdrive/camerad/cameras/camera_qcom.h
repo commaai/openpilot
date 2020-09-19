@@ -52,7 +52,6 @@ typedef struct CameraState {
   int camera_num;
   int camera_id;
   CameraInfo ci;
-  int frame_size;
 
   int device;
 
@@ -78,8 +77,6 @@ typedef struct CameraState {
   uint8_t *eeprom;
 
   // uint32_t camera_bufs_ids[FRAME_BUF_COUNT];
-  FrameMetadata camera_bufs_metadata[FRAME_BUF_COUNT];
-  TBuffer camera_tb;
 
   pthread_mutex_t frame_info_lock;
   FrameMetadata frame_metadata[METADATA_BUF_COUNT];
@@ -114,6 +111,8 @@ typedef struct CameraState {
   int fps;
 
   mat3 transform;
+
+  CameraBuf buf;
 } CameraState;
 
 
@@ -148,12 +147,11 @@ typedef struct MultiCameraState {
 
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s);
-void cameras_open(cl_device_id device_id, cl_context ctx, MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_front);
+void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 
 void camera_autoexposure(CameraState *s, float grey_frac);
 void actuator_move(CameraState *s, uint16_t target);
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, int data_type);
-void camera_process_frame(MultiCameraState *s, CameraBuf *b, int cnt);
