@@ -52,6 +52,7 @@ struct ModelDataRaw {
 typedef struct ModelState {
   ModelFrame frame;
   float *output;
+  std::unique_ptr <float[]> input_frames_buf;
   float *input_frames;
   RunModel *m;
 #ifdef DESIRE

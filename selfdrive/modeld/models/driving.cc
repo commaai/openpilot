@@ -25,15 +25,15 @@
 #else
   #define TEMPORAL_SIZE 0
 #endif
-
+#define MODEL_FRAME_BUF_COUNT 20
 // #define DUMP_YUV
 
 Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> vander;
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context, int temporal) {
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
-  s->input_frames = (float*)calloc(MODEL_FRAME_SIZE * 2, sizeof(float));
-
+  s->input_frames_buf = std::make_unique<float[]>(MODEL_FRAME_SIZE * MODEL_FRAME_BUF_COUNT);
+  s->input_frames = &s->input_frames_buf[0];
   const int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output = (float*)calloc(output_size, sizeof(float));
 
@@ -89,12 +89,16 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   }
 #endif
 
-  //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
-
   float *new_frame_buf = frame_prepare(&s->frame, q, yuv_cl, width, height, transform);
-  memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
-  memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
-  s->m->execute(s->input_frames, MODEL_FRAME_SIZE*2);
+
+  if ((s->input_frames - &s->input_frames_buf[0]) >= (MODEL_FRAME_BUF_COUNT - 1) * MODEL_FRAME_SIZE) {
+    // move current frame to the start
+    memmove(&s->input_frames_buf[0], s->input_frames, sizeof(float)*MODEL_FRAME_SIZE);
+    s->input_frames = &s->input_frames_buf[0];
+  }
+  memcpy(s->input_frames + MODEL_FRAME_SIZE, new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
+  s->m->execute(s->input_frames, MODEL_FRAME_SIZE * 2);
+  s->input_frames += MODEL_FRAME_SIZE;
 
   #ifdef DUMP_YUV
     FILE *dump_yuv_file = fopen("/sdcard/dump.yuv", "wb");
@@ -121,7 +125,6 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 
 void model_free(ModelState* s) {
   free(s->output);
-  free(s->input_frames);
   frame_free(&s->frame);
   delete s->m;
 }
