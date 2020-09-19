@@ -1,11 +1,13 @@
 import os
 import copy
 import json
+from typing import List, Optional
 
 from cereal import car, log
 from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import DT_CTRL
+from selfdrive.controls.lib.events import Alert
 from selfdrive.swaglog import cloudlog
 
 AlertSize = log.ControlsState.AlertSize
@@ -18,7 +20,7 @@ with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) a
   OFFROAD_ALERTS = json.load(f)
 
 
-def set_offroad_alert(alert, show_alert, extra_text=None):
+def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = None) -> None:
   if show_alert:
     a = OFFROAD_ALERTS[alert]
     if extra_text is not None:
@@ -29,19 +31,19 @@ def set_offroad_alert(alert, show_alert, extra_text=None):
     Params().delete(alert)
 
 
-class AlertManager():
+class AlertManager:
 
   def __init__(self):
-    self.activealerts = []
+    self.activealerts: List[Alert] = []
 
-  def alert_present(self):
+  def alert_present(self) -> bool:
     return len(self.activealerts) > 0
 
-  def add_many(self, frame, alerts, enabled=True):
+  def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
     for a in alerts:
       self.add(frame, a, enabled=enabled)
 
-  def add(self, frame, alert, enabled=True):
+  def add(self, frame: int, alert: Alert, enabled: bool = True) -> None:
     added_alert = copy.copy(alert)
     added_alert.start_time = frame * DT_CTRL
 
@@ -54,7 +56,7 @@ class AlertManager():
     # sort by priority first and then by start_time
     self.activealerts.sort(key=lambda k: (k.alert_priority, k.start_time), reverse=True)
 
-  def process_alerts(self, frame):
+  def process_alerts(self, frame: int) -> None:
     cur_time = frame * DT_CTRL
 
     # first get rid of all the expired alerts
