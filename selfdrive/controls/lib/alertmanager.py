@@ -10,11 +10,6 @@ from common.realtime import DT_CTRL
 from selfdrive.controls.lib.events import Alert
 from selfdrive.swaglog import cloudlog
 
-AlertSize = log.ControlsState.AlertSize
-AlertStatus = log.ControlsState.AlertStatus
-VisualAlert = car.CarControl.HUDControl.VisualAlert
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-
 
 with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
   OFFROAD_ALERTS = json.load(f)
@@ -44,10 +39,10 @@ class AlertManager:
     self.alert_type = ""
     self.alert_text_1 = ""
     self.alert_text_2 = ""
-    self.alert_status = AlertStatus.normal
-    self.alert_size = AlertSize.none
-    self.visual_alert = VisualAlert.none
-    self.audible_alert = AudibleAlert.none
+    self.alert_status = log.ControlsState.AlertStatus.normal
+    self.alert_size = log.ControlsState.AlertSize.none
+    self.visual_alert = car.CarControl.VisualAlert.none
+    self.audible_alert = car.CarControl.AudibleAlert.none
     self.alert_rate = 0.
 
   def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
