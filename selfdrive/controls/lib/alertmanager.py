@@ -35,9 +35,20 @@ class AlertManager:
 
   def __init__(self):
     self.activealerts: List[Alert] = []
+    self.clear_current_alert()
 
   def alert_present(self) -> bool:
     return len(self.activealerts) > 0
+
+  def clear_current_alert(self) -> None:
+    self.alert_type = ""
+    self.alert_text_1 = ""
+    self.alert_text_2 = ""
+    self.alert_status = AlertStatus.normal
+    self.alert_size = AlertSize.none
+    self.visual_alert = VisualAlert.none
+    self.audible_alert = AudibleAlert.none
+    self.alert_rate = 0.
 
   def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
     for a in alerts:
@@ -63,19 +74,11 @@ class AlertManager:
     self.activealerts = [a for a in self.activealerts if a.start_time +
                          max(a.duration_sound, a.duration_hud_alert, a.duration_text) > cur_time]
 
-    current_alert = self.activealerts[0] if self.alert_present() else None
-
     # start with assuming no alerts
-    self.alert_type = ""
-    self.alert_text_1 = ""
-    self.alert_text_2 = ""
-    self.alert_status = AlertStatus.normal
-    self.alert_size = AlertSize.none
-    self.visual_alert = VisualAlert.none
-    self.audible_alert = AudibleAlert.none
-    self.alert_rate = 0.
+    self.clear_current_alert()
 
-    if current_alert:
+    current_alert = self.activealerts[0] if self.alert_present() else None
+    if current_alert is not None:
       self.alert_type = current_alert.alert_type
 
       if current_alert.start_time + current_alert.duration_sound > cur_time:
