@@ -36,7 +36,7 @@ class AlertManager:
     return len(self.activealerts) > 0
 
   def clear_current_alert(self) -> None:
-    self.alert_type:str = ""
+    self.alert_type: str = ""
     self.alert_text_1: str = ""
     self.alert_text_2: str = ""
     self.alert_status = log.ControlsState.AlertStatus.normal
