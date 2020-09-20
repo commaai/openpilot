@@ -51,9 +51,9 @@ def raise_on_thread(t, exctype):
 def get_directory_sort(d):
   return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
 
-def listdir_by_creation(d):
+def listdir_by_creation(d, last_uploaded_path=''):
   try:
-    paths = os.listdir(d)
+    paths = [p for p in os.listdir(d) if p > last_uploaded_path]
     paths = sorted(paths, key=get_directory_sort)
     return paths
   except OSError:
@@ -93,6 +93,8 @@ class Uploader():
 
     self.last_resp = None
     self.last_exc = None
+    self.last_uploaded_path = ''
+    self.upload_files = []
 
     self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
     self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2, "ecamera.hevc": 3}
@@ -107,7 +109,8 @@ class Uploader():
   def gen_upload_files(self):
     if not os.path.isdir(self.root):
       return
-    for logname in listdir_by_creation(self.root):
+    files = []
+    for logname in listdir_by_creation(self.root, self.last_uploaded_path):
       path = os.path.join(self.root, logname)
       try:
         names = os.listdir(path)
@@ -116,6 +119,7 @@ class Uploader():
       if any(name.endswith(".lock") for name in names):
         continue
 
+      hasFile = False
       for name in sorted(names, key=self.get_upload_sort):
         key = os.path.join(logname, name)
         fn = os.path.join(path, name)
@@ -127,26 +131,32 @@ class Uploader():
           is_uploaded = True  # deleter could have deleted
         if is_uploaded:
           continue
+        files.append((name, key, fn))
+        hasFile = True
 
-        yield (name, key, fn)
+      if not hasFile:
+        self.last_uploaded_path = logname
+    
+    return files
 
   def next_file_to_upload(self, with_raw):
-    upload_files = list(self.gen_upload_files())
+    if not self.upload_files:
+      self.upload_files = self.gen_upload_files()
     # try to upload qlog files first
-    for name, key, fn in upload_files:
+    for idx, (name, key, fn) in enumerate(self.upload_files):
       if name in self.immediate_priority:
-        return (key, fn)
+        return idx, (key, fn)
 
     if with_raw:
       # then upload the full log files, rear and front camera files
-      for name, key, fn in upload_files:
+      for idx, (name, key, fn) in enumerate(self.upload_files):
         if name in self.high_priority:
-          return (key, fn)
+          return idx, (key, fn)
 
       # then upload other files
-      for name, key, fn in upload_files:
+      for idx, (name, key, fn) in enumerate(self.upload_files):
         if not name.endswith('.lock') and not name.endswith(".tmp"):
-          return (key, fn)
+          return idx, (key, fn)
 
     return None
 
@@ -243,7 +253,7 @@ def uploader_fn(exit_event):
     on_wifi = is_on_wifi()
     should_upload = on_wifi and not on_hotspot
 
-    d = uploader.next_file_to_upload(with_raw=allow_raw_upload and should_upload)
+    idx, d = uploader.next_file_to_upload(with_raw=allow_raw_upload and should_upload)
     if d is None:  # Nothing to upload
       time.sleep(60 if offroad else 5)
       continue
@@ -254,6 +264,7 @@ def uploader_fn(exit_event):
     cloudlog.info("to upload %r", d)
     success = uploader.upload(key, fn)
     if success:
+      del uploader.upload_files[idx]
       backoff = 0.1
     else:
       cloudlog.info("backoff %r", backoff)
