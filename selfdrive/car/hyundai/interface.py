@@ -17,7 +17,7 @@ class CarInterface(CarInterfaceBase):
     self.cp2 = self.CS.get_can2_parser(CP)
     self.mad_mode_enabled = Params().get('MadModeEnabled') == b'1' # only for non-SCC cars
     self.lkas_button_alert = False
-
+ 
   @staticmethod
   def compute_gb(accel, speed):
     return float(accel) / 3.0
@@ -146,14 +146,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     # kia  
-    elif candidate == CAR.SORENTO:
+    elif candidate == CAR.KIA_SORENTO:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1985. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate in [CAR.KIA_SPORTAGE, CAR.KIA_OPTIMA_H]:
+    elif candidate in [CAR.KIA_SPORTAGE, CAR.KIA_OPTIMA_HEV]:
       if candidate == CAR.KIA_SPORTAGE:
         ret.lateralTuning.pid.kf = 0.00005
         ret.mass = 1499. + STD_CARGO_KG
@@ -184,7 +184,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1825.0 + STD_CARGO_KG
       ret.wheelbase = 2.906 # https://www.kia.com/us/en/stinger/specs
       ret.steerRatio = 13.56   # 10.28 measured by wheel alignment machine/reported steering angle by OP. 2020 GT Limited AWD has a variable steering ratio ultimately ending in 10.28.  13.56 after 1200km in LiveParamaters (Tunder)
-    elif candidate == CAR.FORTE:
+    elif candidate == CAR.KIA_FORTE:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
@@ -192,7 +192,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate == CAR.CEED:
+    elif candidate == CAR.KIA_CEED:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1350. + STD_CARGO_KG
       ret.wheelbase = 2.65
@@ -216,7 +216,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1737. + STD_CARGO_KG
       ret.wheelbase = 2.7
       tire_stiffness_factor = 0.385
-    elif candidate in [CAR.CARDENZA, CAR.CARDENZA_HEV]:
+    elif candidate in [CAR.KAI_CARDENZA, CAR.KAI_CARDENZA_HEV]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1575. + STD_CARGO_KG
       ret.wheelbase = 2.85
