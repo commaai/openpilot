@@ -419,11 +419,11 @@ CHECKSUM = {
 
 FEATURES = {
   # Use Cluster for Gear Selection, rather than Transmission
-  "use_cluster_gears": set([CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30, CAR.CARDENZA, CAR.KIA_NIRO_HEV, CAR.GRANDEUR]),     
+  "use_cluster_gears": set([CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30, CAR.KIA_CARDENZA, CAR.KIA_NIRO_HEV, CAR.GRANDEUR]),     
   # Use TCU Message for Gear Selection
   "use_tcu_gears": set([CAR.KIA_SPORTAGE, CAR.SONATA19, CAR.VELOSTER]),
   # Use E_GEAR Message for Gear Selection
-  "use_elect_gears": set([CAR.KIA_OPTIMA_HEV, CAR.IONIQ_EV, CAR.KONA_EV, CAR.SONATA_HEV, CAR.KIA_NIRO_EV, CAR.CARDENZA_HEV, CAR.GRANDEUR_HEV]),
+  "use_elect_gears": set([CAR.KIA_OPTIMA_HEV, CAR.IONIQ_EV, CAR.KONA_EV, CAR.SONATA_HEV, CAR.KIA_NIRO_EV, CAR.KIA_CARDENZA_HEV, CAR.GRANDEUR_HEV]),
   # Use E_EMS11 Message for Gas and Brake for Hybrid/ELectric
   "use_elect_ems": set([CAR.KIA_OPTIMA_HEV, CAR.IONIQ_EV, CAR.KONA_EV, CAR.SONATA_HEV, CAR.KIA_NIRO_EV, CAR.KIA_CARDENZA_HEV, CAR.GRANDEUR_HEV]),
   # send LFA MFA message for new HKG models
@@ -459,6 +459,7 @@ DBC = {
   CAR.GRANDEUR: dbc_dict('hyundai_kia_generic', None),
   CAR.GRANDEUR_HEV: dbc_dict('hyundai_kia_generic', None),
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', None),
+  # Kia
   CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SPORTAGE: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_HEV: dbc_dict('hyundai_kia_generic', None),
