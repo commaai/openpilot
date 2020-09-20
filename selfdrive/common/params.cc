@@ -285,7 +285,7 @@ int read_db_value(const char* key, char** value, size_t* value_sz, bool persiste
   }
 
   // Take lock.
-  result = flock(lock_fd, LOCK_EX);
+  result = flock(lock_fd, LOCK_SH);
   if (result < 0) {
     goto cleanup;
   }
@@ -330,7 +330,7 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
   int lock_fd = open(lock_path.c_str(), 0);
   if (lock_fd < 0) return -1;
 
-  err = flock(lock_fd, LOCK_EX);
+  err = flock(lock_fd, LOCK_SH);
   if (err < 0) return err;
 
   std::string key_path = util::string_format("%s/d", params_path);
