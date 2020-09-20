@@ -69,7 +69,7 @@ class CarState(CarStateBase):
     ret.cruiseState.available = (cp_scc.vl["SCC11"]["MainMode_ACC"] != 0) if not self.no_radar else \
                                       cp.vl['EMS16']['CRUISE_LAMP_M'] != 0
     ret.cruiseState.standstill = cp_scc.vl["SCC11"]['SCCInfoDisplay'] == 4. if not self.no_radar else False
-    self.is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
+    self.is_set_speed_in_mph = bool(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     if ret.cruiseState.enabled:
       speed_conv = CV.MPH_TO_MS if self.is_set_speed_in_mph else CV.KPH_TO_MS
       ret.cruiseState.speed = cp_scc.vl["SCC11"]['VSetDis'] * speed_conv if not self.no_radar else \
@@ -374,7 +374,7 @@ class CarState(CarStateBase):
       ]
       checks += [("FCA11", 50)]
 
-    if CP.carFingerprint in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
+    if CP.carFingerprint in [CAR.SANTA_FE]:
       checks.remove(("TCS13", 50))
     if CP.spasEnabled:
       if CP.mdpsBus == 1:
@@ -502,7 +502,7 @@ class CarState(CarStateBase):
 
     signals = [
       # sig_name, sig_address, default
-      ("CF_Lkas_Bca_R", "LKAS11", 0),
+      ("CF_Lkas_LdwsActivemode", "LKAS11", 0),
       ("CF_Lkas_LdwsSysState", "LKAS11", 0),
       ("CF_Lkas_SysWarning", "LKAS11", 0),
       ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
@@ -521,7 +521,9 @@ class CarState(CarStateBase):
       ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
     ]
 
-    checks = []
+    checks = [
+      ("LKAS11", 100)
+    ]
     if CP.sccBus == 2:
       signals += [
         ("MainMode_ACC", "SCC11", 1),
@@ -576,5 +578,6 @@ class CarState(CarStateBase):
         ("SCC11", 50),
         ("SCC12", 50),
       ]
+
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 

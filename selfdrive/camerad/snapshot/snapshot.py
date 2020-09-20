@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import json
 import signal
 import subprocess
 import time
@@ -8,9 +7,7 @@ from PIL import Image
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.camerad.snapshot.visionipc import VisionIPC
-
-with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
-   OFFROAD_ALERTS = json.load(json_file)
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 
 def jpeg_write(fn, dat):
@@ -26,7 +23,7 @@ def snapshot():
     return None
 
   params.put("IsTakingSnapshot", "1")
-  params.put("Offroad_IsTakingSnapshot", json.dumps(OFFROAD_ALERTS["Offroad_IsTakingSnapshot"]))
+  set_offroad_alert("Offroad_IsTakingSnapshot", True)
   time.sleep(2.0)  # Give thermald time to read the param, or if just started give camerad time to start
 
   # Check if camerad is already started
@@ -64,7 +61,7 @@ def snapshot():
   proc.communicate()
 
   params.put("IsTakingSnapshot", "0")
-  params.delete("Offroad_IsTakingSnapshot")
+  set_offroad_alert("Offroad_IsTakingSnapshot", False)
   return ret
 
 

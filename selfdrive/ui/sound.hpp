@@ -2,7 +2,7 @@
 #include <map>
 #include "cereal/gen/cpp/log.capnp.h"
 
-#if defined(QCOM) || defined(QCOM2)
+#if defined(QCOM)
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #endif
@@ -18,7 +18,7 @@ class Sound {
   void setVolume(int volume);
   ~Sound();
 
-#if defined(QCOM) || defined(QCOM2)
+#if defined(QCOM)
  private:
   SLObjectItf engine_ = nullptr;
   SLObjectItf outputMix_ = nullptr;

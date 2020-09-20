@@ -14,4 +14,3 @@ can/packer_pyx.cpp
 can/parser_pyx.cpp
 can/packer_pyx.html
 can/parser_pyx.html
-can/packer_impl.cpp
