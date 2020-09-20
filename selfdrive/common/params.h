@@ -28,7 +28,9 @@ int delete_db_value(const char* key, bool persistent_param = false);
 
 // Reads a value from the params database, blocking until successful.
 // Inputs are the same as read_db_value.
-void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param = false);
+int  read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param = false);
+
+int write_db_value_blocking(const char* key, const char* value, size_t value_size, bool persistent_param = false);
 
 #ifdef __cplusplus
 }  // extern "C"

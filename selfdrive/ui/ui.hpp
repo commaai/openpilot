@@ -210,7 +210,7 @@ int read_param(T* param, const char *param_name, bool persistent_param = false){
   char *value;
   size_t sz;
 
-  int result = read_db_value(param_name, &value, &sz, persistent_param);
+  int result = read_db_value_blocking(param_name, &value, &sz, persistent_param);
   if (result == 0){
     std::string s = std::string(value, sz); // value is not null terminated
     free(value);

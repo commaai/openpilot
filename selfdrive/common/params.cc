@@ -18,6 +18,7 @@
 #include "common/util.h"
 #include "common/utilpp.h"
 
+#define FLOCK_ERROR -19
 
 namespace {
 
@@ -170,6 +171,7 @@ int write_db_value(const char* key, const char* value, size_t value_size, bool p
   // Take lock.
   result = flock(lock_fd, LOCK_EX);
   if (result < 0) {
+    result = FLOCK_ERROR;
     goto cleanup;
   }
 
@@ -216,6 +218,19 @@ cleanup:
   return result;
 }
 
+int write_db_value_blocking(const char* key, const char* value, size_t value_size, bool persistent_param) {
+  int result = -1;
+  while (1) {
+    result = write_db_value(key, value, value_size, persistent_param);
+    if (result != FLOCK_ERROR) {
+      break;
+    }
+    // Sleep for 0.1 seconds if flock fail.
+    usleep(100000);
+  }
+  return result;
+}
+
 int delete_db_value(const char* key, bool persistent_param) {
   int lock_fd = -1;
   int result;
@@ -232,6 +247,7 @@ int delete_db_value(const char* key, bool persistent_param) {
   // Take lock.
   result = flock(lock_fd, LOCK_EX);
   if (result < 0) {
+    result = FLOCK_ERROR;
     goto cleanup;
   }
 
@@ -269,7 +285,7 @@ cleanup:
 
 int read_db_value(const char* key, char** value, size_t* value_sz, bool persistent_param) {
   int lock_fd = -1;
-  int result;
+  int result = -1;
   char path[1024];
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
 
@@ -287,6 +303,7 @@ int read_db_value(const char* key, char** value, size_t* value_sz, bool persiste
   // Take lock.
   result = flock(lock_fd, LOCK_EX);
   if (result < 0) {
+    result = FLOCK_ERROR;
     goto cleanup;
   }
 
@@ -309,16 +326,17 @@ cleanup:
   return result;
 }
 
-void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
+int read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
+  int result = -1;
   while (1) {
-    const int result = read_db_value(key, value, value_sz, persistent_param);
-    if (result == 0) {
-      return;
-    } else {
-      // Sleep for 0.1 seconds.
-      usleep(100000);
+    result = read_db_value(key, value, value_sz, persistent_param);
+    if (result != FLOCK_ERROR) {
+      break;
     }
+    // Sleep for 0.1 seconds if flock fail.
+    usleep(100000);
   }
+  return result;
 }
 
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param) {
@@ -359,7 +377,7 @@ std::vector<char> read_db_bytes(const char* param_name, bool persistent_param) {
   std::vector<char> bytes;
   char* value;
   size_t sz;
-  int result = read_db_value(param_name, &value, &sz, persistent_param);
+  int result = read_db_value_blocking(param_name, &value, &sz, persistent_param);
   if (result == 0) {
     bytes.assign(value, value+sz);
     free(value);
