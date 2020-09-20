@@ -63,7 +63,7 @@ class TestCarInterfaces(unittest.TestCase):
 
       # Run radar interface once
       radar_interface.update([])
-      if hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
+      if not car_params.radarOffCan and hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
         radar_interface._update([radar_interface.trigger_msg])
 
 if __name__ == "__main__":

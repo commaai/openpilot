@@ -191,8 +191,12 @@ BO_ 916 TCS13: 8 ESC
  SG_ BrakeLight : 11|1@1+ (1.0,0.0) [0.0|1.0] ""  CLU,EMS,SCC
  SG_ DCEnable : 12|1@1+ (1.0,0.0) [0.0|1.0] ""  EMS,SCC
  SG_ AliveCounterTCS : 13|3@1+ (1.0,0.0) [0.0|7.0] ""  EMS,SCC
- SG_ ACCReqLim : 22|2@1+ (1.0,0.0) [0.0|3.0] ""  EMS,SCC
- SG_ TQI_ACC : 24|8@1+ (0.390625,0.0) [0.0|99.609375] "%"  EMS
+ SG_ Pre_TCS_CTL : 16|1@1+ (1.0,0.0) [0.0|1.0] ""  Vector__XXX
+ SG_ EBA_ACK : 17|1@1+ (1.0,0.0) [0.0|1.0] ""  Vector__XXX
+ SG_ FCA_ACK : 18|1@1+ (1.0,0.0) [0.0|1.0] ""  Vector__XXX
+ SG_ DF_BF_STAT : 19|2@1+ (1.0,0.0) [0.0|3.0] ""  BCW
+ SG_ SCCReqLim : 21|2@1+ (1.0,0.0) [0.0|3.0] ""  SCC
+ SG_ TQI_SCC : 23|9@1+ (0.390625,0.0) [0.0|199.609375] "%"  Vector__XXX
  SG_ ACCEL_REF_ACC : 32|11@1+ (0.01,-10.23) [-10.23|10.24] "m/s^2"  EMS,SCC
  SG_ ACCEnable : 43|2@1+ (1.0,0.0) [0.0|3.0] ""  EMS,SCC
  SG_ DriverOverride : 45|2@1+ (1.0,0.0) [0.0|3.0] ""  EMS,SCC
@@ -448,6 +452,7 @@ BO_ 897 MDPS11: 8 MDPS
  SG_ CF_Mdps_LKAS_FUNC : 58|1@1+ (1.0,0.0) [0.0|1.0] "flag"  LDWS_LKAS
  SG_ CF_Mdps_CurrMode : 59|2@1+ (1.0,0.0) [0.0|3.0] ""  LDWS_LKAS
  SG_ CF_Mdps_Type : 61|2@1+ (1.0,0.0) [0.0|2.0] ""  LDWS_LKAS,SPAS
+ SG_ CF_MDPS_VSM_FUNC : 56|1@0+ (1.0,0.0) [0.0|1.0] "" XXX
 
 BO_ 896 DI_BOX13: 8 DI_BOX
  SG_ CF_DiBox_HPreInjVConfStat : 0|8@1+ (1.0,0.0) [0.0|255.0] ""  EMS
@@ -961,7 +966,7 @@ BO_ 64 DATC14: 8 DATC
  SG_ DATC_ADSDisp : 28|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
 
 BO_ 832 LKAS11: 8 LDWS_LKAS
- SG_ CF_Lkas_Bca_R : 0|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU,IBOX,PSB
+ SG_ CF_Lkas_LdwsActivemode : 0|2@1+ (1,0) [0|3] "" CLU,IBOX,PSB
  SG_ CF_Lkas_LdwsSysState : 2|4@1+ (1.0,0.0) [0.0|15.0] ""  CLU,IBOX,PSB
  SG_ CF_Lkas_SysWarning : 6|4@1+ (1.0,0.0) [0.0|15.0] ""  BCM,CLU
  SG_ CF_Lkas_LdwsLHWarning : 10|2@1+ (1.0,0.0) [0.0|3.0] ""  BCM,CLU,PSB
@@ -978,11 +983,11 @@ BO_ 832 LKAS11: 8 LDWS_LKAS
  SG_ CF_Lkas_FcwSysState : 40|3@1+ (1.0,0.0) [0.0|7.0] ""  CLU
  SG_ CF_Lkas_FcwCollisionWarning : 43|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
  SG_ CF_Lkas_FusionState : 45|2@1+ (1.0,0.0) [0.0|3.0] ""  SCC
+ SG_ CF_Lkas_Unknown1 : 47|1@1+ (1.0,0.0) [0.0|1.0] "" XXX
  SG_ CF_Lkas_Chksum : 48|8@1+ (1.0,0.0) [0.0|255.0] ""  MDPS
  SG_ CF_Lkas_FcwOpt_USM : 56|3@1+ (1.0,0.0) [0.0|7.0] ""  CLU
  SG_ CF_Lkas_LdwsOpt_USM : 59|3@1+ (1.0,0.0) [0.0|7.0] ""  CLU,MDPS
- SG_ CF_Lkas_Unknown1 : 47|1@1+ (1,0) [0|3] "" XXX
- SG_ CF_Lkas_Unknown2 : 63|2@0+ (1,0) [0|3] "" XXX
+ SG_ CF_Lkas_Unknown2 : 62|2@1+ (1.0,0.0) [0.0|1.0] "" XXX
 
 BO_ 1342 LKAS12: 6 LDWS_LKAS
  SG_ CF_Lkas_TsrSlifOpt : 10|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
@@ -1037,6 +1042,7 @@ BO_ 1322 CLU15: 8 CLU
  SG_ CF_Clu_HudFontSizeSet : 31|2@1+ (1.0,0.0) [0.0|3.0] ""  HUD
  SG_ CF_Clu_LanguageInfo : 33|5@1+ (1.0,0.0) [0.0|31.0] ""  BCM,PGS
  SG_ CF_Clu_ClusterSound : 38|1@1- (1.0,0.0) [0.0|0.0] ""  BCM,CGW,FATC
+ SG_ CF_Clu_VehicleSpeed2 : 48|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 1066 _4WD13: 6 _4WD
  SG_ _4WD_CURRENT : 0|8@1+ (0.390625,0.0) [-50.0|50.0] "A"  TCU
@@ -1250,14 +1256,6 @@ BO_ 790 EMS11: 8 EMS
  SG_ VS : 48|8@1+ (1.0,0.0) [0.0|254.0] "km/h"  _4WD,AAF,ACU,AHLS,BCM,CLU,DATC,ECS,EPB,IBOX,LCA,LDWS_LKAS,LVR,MDPS,ODS,SCC,SMK,SPAS,TCU,TPMS
  SG_ RATIO_TQI_BAS_MAX_STND : 56|8@1+ (0.0078,0.0) [0.0|2.0] ""  _4WD,IBOX,TCU
 
-BO_ 881 E_EMS11: 8 XXX
- SG_ Cruise_Limit_Status : 13|1@1+ (1,0) [0|1] "" XXX
- SG_ Cruise_Limit_Target : 23|8@1+ (1,0) [0|15] "" XXX
- SG_ Gear_Change : 12|1@0+ (1,0) [0|31] "" XXX
- SG_ IG_Reactive_Stat : 8|3@1+ (1,0) [0|3] "" XXX
- SG_ Brake_Pedal_Pos : 0|8@1+ (1,0) [0|127] "" XXX
- SG_ Accel_Pedal_Pos : 31|8@1+ (1,0) [0|7] "" XXX
-
 BO_ 1301 CLU14: 8 CLU
  SG_ CF_Clu_ADrUNValueSet : 0|3@1+ (1.0,0.0) [0.0|7.0] ""  BCM
  SG_ CF_Clu_ADrLNValueSet : 3|3@1+ (1.0,0.0) [0.0|7.0] ""  BCM
@@ -1380,6 +1378,7 @@ BO_ 1290 SCC13: 8 SCC
  SG_ SCCDrvModeRValue : 0|3@1+ (1,0) [0|7] "" CLU
  SG_ SCC_Equip : 3|1@1+ (1,0) [0|1] "" ESC
  SG_ AebDrvSetStatus : 4|3@1+ (1,0) [0|7] "" CLU,ESC
+ SG_ Lead_Veh_Dep_Alert_USM : 13|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 1287 TCS15: 4 ESC
  SG_ ABS_W_LAMP : 0|1@1+ (1.0,0.0) [0.0|1.0] ""  _4WD,CLU,CUBIS,IBOX
@@ -1451,6 +1450,18 @@ BO_ 909 FCA11: 8 FCA
  SG_ Supplemental_Counter : 35|4@1+ (1,0) [0|15] "" XXX
  SG_ PAINT1_Status : 16|2@1+ (1,0) [0|1] "" XXX
 
+BO_ 1156 HDA11_MFC: 8 XXX
+ SG_ Counter : 5|4@0+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_1 : 1|2@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_2 : 7|2@0+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_3 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_4 : 16|2@1+ (1,0) [0|3] "" XXX
+ SG_ NEW_SIGNAL_5 : 18|14@1+ (1,0) [0|63] "" XXX
+ SG_ NEW_SIGNAL_6 : 33|2@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_7 : 34|14@1+ (1,0) [0|16383] "" XXX
+ SG_ NEW_SIGNAL_8 : 49|2@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_9 : 50|14@1- (1,-4095) [0|16383] "" XXX
+
 BO_ 1155 FCA12: 8 FCA
  SG_ FCA_USM : 0|3@1+ (1,0) [0|7] "" CGW,CLU,ESC
  SG_ FCA_DrvSetState : 3|3@1+ (1,0) [0|7] "" CGW
@@ -1459,22 +1470,166 @@ BO_ 1186 FRT_RADAR11: 2 FCA
  SG_ CF_FCA_Equip_Front_Radar : 0|3@1+ (1,0) [0|7] "" LDWS_LKAS,LDW_LKA,ESC
 
 BO_ 905 SCC14: 8 SCC
- SG_ ComfortBandLower : 6|6@1+ (1,0) [0|0] "" Vector__XXX
- SG_ ComfortBandUpper : 0|6@1+ (1,0) [0|0] "" Vector__XXX
- SG_ JerkLowerLimit : 19|7@1+ (1,0) [0|0] "" Vector__XXX
- SG_ JerkUpperLimit : 12|7@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ ComfortBandUpper : 0|6@1+ (0.0986,-4.14) [0|1.26] "m/s^2" ESC
+ SG_ ComfortBandLower : 6|6@1+ (0.0986,-4.14) [0|1.26] "m/s^2" ESC
+ SG_ JerkUpperLimit : 12|7@1+ (1,0) [0|12.7] "m/s^3" ESC
+ SG_ JerkLowerLimit : 19|7@1+ (0.1,0) [0|12.7] "m/s^3" ESC
  SG_ ACCMode : 32|3@1+ (1,0) [0|7] "" CLU,HUD,LDWS_LKAS,ESC
  SG_ ObjGap : 56|8@1+ (1,0) [0|255] "" CLU,HUD,ESC
 
-BO_ 882 ELECT_GEAR: 8 XXX
- SG_ Elect_Gear_Shifter : 16|3@1+ (1,0) [0|7] ""  CLU
-
 BO_ 1157 LFAHDA_MFC: 4 XXX
- SG_ LFA_USM : 28|2@1+ (1,0) [0|3] "" XXX
- SG_ LFA_SysWarning : 16|2@1+ (1,0) [0|3] "" XXX
- SG_ ACTIVE2 : 4|2@0+ (1,0) [0|3] "" XXX
  SG_ HDA_USM : 0|2@1+ (1,0) [0|3] "" XXX
+ SG_ ACTIVE2 : 4|2@0+ (1,0) [0|3] "" XXX
+ SG_ LFA_SysWarning : 16|2@1+ (1,0) [0|3] "" XXX
  SG_ ACTIVE : 25|1@1+ (1,0) [0|3] "" XXX
+ SG_ LFA_USM : 28|2@1+ (1,0) [0|3] "" XXX
 
+BO_ 913 BCM_PO_11: 8 Vector__XXX
+ SG_ BCM_Door_Dri_Status : 5|1@0+ (1,0) [0|1] "" PT_ESC_ABS
+ SG_ BCM_Shift_R_MT_SW_Status : 39|2@0+ (1,0) [0|3] "" PT_ESC_ABS
+
+BO_ 1426 LABEL11: 8 XXX
+ SG_ CC_React : 34|1@1+ (1,0) [0|1] "" XXX
+
+BO_ 910 WHL_SPD12_FS: 5 iBAU
+ SG_ CRC : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ WHL_SPD12_AliveCounter : 8|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ WHL_SPD_FL : 12|14@1+ (0.03125,0) [0|511.96875] "km/h" Vector__XXX
+ SG_ WHL_SPD_FR : 26|14@1+ (0.03125,0) [0|511.96875] "km/h" Vector__XXX
+
+BO_ 911 WHL_SPD13_FS: 5 iBAU
+ SG_ CRC : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ WHL_SPD13_AliveCounter : 8|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ WHL_SPD_RL : 12|14@1+ (0.03125,0) [0|511.96875] "km/h" Vector__XXX
+ SG_ WHL_SPD_RR : 26|14@1+ (0.03125,0) [0|511.96875] "km/h" Vector__XXX
+
+BO_ 865 ADAS_PRK_11: 8 ADAS_PRK
+ SG_ CF_PCA_BrkReq : 24|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ CF_PCA_DclTrgtVal : 28|4@1+ (0.04,0) [0|0] "g" Vector__XXX
+ SG_ PCA_ALIVE_CNT : 40|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ PCA_CHECK_SUM : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 882 ELECT_GEAR: 8 XXX
+ SG_ Elect_Gear_Shifter : 16|4@1+ (1,0) [0|7] ""  CLU
+
+BO_ 881 E_EMS11: 8 XXX
+ SG_ Brake_Pedal_Pos : 0|8@1+ (1,0) [0|127] "" XXX
+ SG_ IG_Reactive_Stat : 8|3@1+ (1,0) [0|3] "" XXX
+ SG_ Gear_Change : 12|1@0+ (1,0) [0|31] "" XXX
+ SG_ Cruise_Limit_Status : 13|1@1+ (1,0) [0|1] "" XXX
+ SG_ Cruise_Limit_Target : 23|8@1+ (1,0) [0|15] "" XXX
+ SG_ Accel_Pedal_Pos : 31|8@1+ (1,0) [0|7] "" XXX
+
+BO_ 1355 EV_PC6: 8 CGW
+ SG_ CF_Vcu_SbwWarnMsg : 16|3@1+ (1,0) [0|7] "" Vector__XXX
+
+BO_ 1430 EV_PC2: 8 CGW
+ SG_ CR_Ldc_ActVol_LS_V : 32|8@1+ (0.1,0) [0|0] "V" Vector__XXX
+
+BO_ 1535 EV_PC10: 8 CGW
+ SG_ CF_Vcu_EpbRequest : 37|1@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 908 RSPA11: 8 RSPA
+ SG_ CF_RSPA_State : 0|4@1+ (1,0) [0|15] "" XXX
+ SG_ CF_RSPA_Act : 4|2@1+ (1,0) [0|3] "" XXX
+ SG_ CF_RSPA_DecCmd : 6|2@1+ (1,0) [0|3] "" XXX
+ SG_ CF_RSPA_Trgt_Spd : 8|10@1+ (0.01,0) [0|10.23] "km/h" XXX
+ SG_ CF_RSPA_StopReq : 18|1@1+ (1,0) [0|2] "" XXX
+ SG_ CR_RSPA_EPB_Req : 22|2@1+ (1,0) [0|3] "" XXX
+ SG_ CF_RSPA_ACC_ACT : 50|1@1+ (1,0) [0|2] "" XXX
+ SG_ CF_RSPA_AliveCounter : 52|4@1+ (1,0) [0|15] "" XXX
+ SG_ CF_RSPA_CRC : 56|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 914 S_MDPS11: 8 XXX
+ SG_ CF_Mdps_Stat : 0|4@1+ (1,0) [0|15] "" XXX
+ SG_ CR_Mdps_DrvTq : 8|12@1+ (1,0) [0|15] "" XXX
+ SG_ CR_Mdps_StrAng : 24|16@1- (1,0) [0|65535] "" XXX
+ SG_ CF_Mdps_AliveCnt : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ CF_Mdps_Chksum : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 357 S_MDPS12: 8 XXX
+ SG_ NEW_SIGNAL_1 : 0|12@1+ (1,0) [0|4095] "" XXX
+ SG_ NEW_SIGNAL_2 : 12|12@1+ (1,0) [0|4095] "" XXX
+ SG_ Counter : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ Checksum : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 352 AHB1: 8 iBAU
+ SG_ CF_Ahb_SLmp : 0|2@1+ (1,0) [0|3] "" CLU
+ SG_ CF_Ahb_Def : 2|2@1+ (1,0) [0|3] "" CGW
+ SG_ CF_Ahb_Act : 4|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ CF_Ahb_Diag : 6|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CF_Ahb_WLmp : 7|1@1+ (1,0) [0|1] "" CLU
+ SG_ CR_Ahb_StDep_mm : 8|16@1- (0.1,0) [-3276.8|3276.7] "mm" Vector__XXX
+ SG_ CF_Ahb_SnsFail : 24|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CF_Ahb_PedalCalStat : 25|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CF_Ahb_Bzzr : 26|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ CF_Ahb_ChkSum : 56|8@1+ (1,0) [0|255] "" Vector__XXX
+
+BO_ 1191 4a7MFC: 8 XXX
+ SG_ PAINT1 : 0|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1162 BCA11: 8 BCW
+ SG_ CF_BCA_State : 16|3@1+ (1,0) [0|7] "" CLU,iBAU
+ SG_ CF_BCA_Warning : 19|2@1+ (1,0) [0|3] "" CLU,iBAU
+ SG_ AliveCounter : 21|4@1+ (1,0) [0|15] "" CLU,iBAU
+ SG_ RCCA_Brake_Command : 29|1@1+ (1,0) [0|1] "" iBAU
+ SG_ Check_Sum : 56|8@1+ (1,0) [0|16] "" iBAU
+
+BO_ 1136 P_STS: 6 CGW
+ SG_ HCU1_STS : 6|2@1+ (1,0) [0|3] "" BCW,EPB,FCA,MDPS,SCC,iBAU
+ SG_ HCU5_STS : 8|2@1+ (1,0) [0|3] "" EPB,FCA,MDPS,iBAU
+
+BO_ 304 YRS11: 8 ACU
+ SG_ CR_Yrs_Yr : 0|16@1+ (0.005,-163.84) [-163.84|163.83] "deg/s" CGW,iBAU
+ SG_ CR_Yrs_LatAc : 16|16@1+ (0.000127465,-4.17677312) [-4.17677312|4.17651819] "g" iBAU
+ SG_ CF_Yrs_YrStat : 32|4@1+ (1,0) [0|15] "" iBAU
+ SG_ CF_Yrs_LatAcStat : 36|4@1+ (1,0) [0|15] "" iBAU
+ SG_ CF_Yrs_MCUStat : 40|4@1+ (1,0) [0|15] "" iBAU
+ SG_ CR_Yrs_MsgCnt1 : 48|4@1+ (1,0) [0|15] "" iBAU
+ SG_ CR_Yrs_Crc1 : 56|8@1+ (1,0) [0|255] "" iBAU
+
+BO_ 320 YRS12: 8 ACU
+ SG_ CF_Yrs_LongAcStat : 16|4@1+ (1,0) [0|15] "" iBAU
+ SG_ CF_IMU_ResetStat : 20|4@1+ (1,0) [0|15] "" iBAU
+ SG_ YRS_Temp : 24|8@1+ (1,-68) [-68|187] "" iBAU
+ SG_ YRS_TempStat : 32|4@1+ (1,0) [0|15] "" iBAU
+ SG_ CF_Yrs_Type : 36|4@1+ (1,0) [0|15] "" iBAU
+ SG_ CR_Yrs_MsgCnt2 : 48|4@1+ (1,0) [0|15] "" iBAU
+ SG_ CR_Yrs_Crc2 : 56|8@1+ (1,0) [0|255] "" iBAU
+ SG_ CR_Yrs_LongAc : 0|16@1+ (0.000127465,-4.17677312) [-4.17677312|4.17651819] "g" CGW,iBAU
+
+BO_ 1173 YRS13: 8 ACU
+ SG_ YRS_SeralNo : 16|48@1+ (1,0) [0|281474976710655] "" iBAU
+
+BO_ 870 366_EMS: 8 EMS
+ SG_ N : 7|16@0+ (1,0.25) [0|16383.75] "rpm" XXX
+ SG_ EMS_Related : 23|16@0+ (1,0) [0|65535] "" XXX
+ SG_ TQFR : 39|8@0+ (0.390625,0) [0|99.6094] "%" XXX
+ SG_ VS : 40|8@1+ (1,0) [0|255] "km/h" MDPS
+ SG_ SWI_IGK : 48|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 854 356: 8 XXX
+ SG_ PAINT1 : 32|1@0+ (1,0) [0|1] "" XXX
+ SG_ PAINT2 : 34|2@0+ (1,0) [0|1] "" XXX
+ SG_ PAINT3 : 36|2@0+ (1,0) [0|3] "" XXX
+ SG_ PAINT4 : 38|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1042 ICM_412h: 8 ICM
+ SG_ T_Outside_input : 0|9@0+ (0.01,0) [0|5] "V" Vector__XXX
+ SG_ WarningSoundOutput_1Group : 5|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ WarningSoundOutput_2Group : 6|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ WarningSoundOutput_3Group : 7|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ TRIP_A_DT_Display_clock : 22|7@0+ (1,0) [0|99] "clock" Vector__XXX
+ SG_ TRIP_A_DT_Display_minute : 29|6@0+ (1,0) [0|59] "minute" Vector__XXX
+ SG_ TRIP_B_DT_Display_clock : 38|7@0+ (1,0) [0|99] "clock" Vector__XXX
+ SG_ TRIP_B_DT_Display_minute : 45|6@0+ (1,0) [0|59] "minute" Vector__XXX
+ SG_ PopupMessageOutput_1Level : 48|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ PopupMessageOutput_2Level : 49|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ PopupMessageOutput_3Level : 50|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ PopupMessageOutput_4Level : 51|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ PopupMessageOutput_5Level : 52|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ PopupMessageOutput_6Level : 53|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ PopupMessageOutput_7Level : 54|1@0+ (1,0) [0|1] "" Vector__XXX
+ SG_ PopupMessageOutput_8Level : 55|1@0+ (1,0) [0|1] "" Vector__XXX
 
 VAL_ 909 CF_VSM_Warn 2 "FCW" 3 "AEB";

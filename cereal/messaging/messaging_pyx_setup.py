@@ -39,7 +39,7 @@ if ARCH == "aarch64" and os.path.isdir("/system"):
   extra_compile_args += ["-Wno-deprecated-register"]
   libraries += ['gnustl_shared']
 
-setup(name='CAN parser',
+setup(name='messaging',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},
       ext_modules=cythonize(
         Extension(
@@ -51,7 +51,7 @@ setup(name='CAN parser',
           extra_objects=[
             os.path.join(os.path.dirname(os.path.realpath(__file__)), '../', 'libmessaging.a'),
           ]
-        )
+        ),
+        nthreads=4,
       ),
-      nthreads=4,
 )

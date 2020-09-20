@@ -54,9 +54,9 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
   left_lane_warning = 0
   right_lane_warning = 0
   if left_lane_depart:
-    left_lane_warning = 1 if fingerprint in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
+    left_lane_warning = 1 if fingerprint in [CAR.GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90] else 2
   if right_lane_depart:
-    right_lane_warning = 1 if fingerprint in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G90, CAR.GENESIS_G80] else 2
+    right_lane_warning = 1 if fingerprint in [CAR.GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90] else 2
 
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
@@ -116,15 +116,16 @@ class CarController():
     lkas_active = enabled and abs(CS.out.steeringAngle) < 90. and self.lkas_button_on and not spas_active
 
     # fix for Genesis hard fault at low speed
-    if CS.out.vEgo < 60 * CV.KPH_TO_MS and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
+    if CS.out.vEgo < 60 * CV.KPH_TO_MS and self.car_fingerprint == CAR.GENESIS and not CS.mdps_bus:
       lkas_active = False
 
-    # Disable steering while turning blinker on and speed below 60 kph
-    if CS.out.leftBlinker or CS.out.rightBlinker:
-      if self.car_fingerprint not in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
-        self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
-      elif CS.left_blinker_flash or CS.right_blinker_flash: # Optima has blinker flash signal only
+    # Optima has blinker flash signal only
+    if self.car_fingerprint in [CAR.OPTIMA, CAR.OPTIMA_HEV]:
+      if CS.left_blinker_flash or CS.right_blinker_flash: 
         self.turning_signal_timer = 100
+    # Disable steering while turning blinker on and speed below 60 kph
+    elif CS.out.leftBlinker or CS.out.rightBlinker:
+      self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
     if self.turning_indicator_alert: # set and clear by interface
       lkas_active = 0
     if self.turning_signal_timer > 0:
@@ -218,7 +219,7 @@ class CarController():
       # SPAS11 50hz
       if (frame % 2) == 0:
         if CS.mdps11_stat == 7 and not self.mdps11_stat_last == 7:
-          self.en_spas == 7
+          self.en_spas = 7
           self.en_cnt = 0
 
         if self.en_spas == 7 and self.en_cnt >= 8:

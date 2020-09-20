@@ -5,7 +5,7 @@ os.environ['FAKEUPLOAD'] = "1"
 from common.params import Params
 from common.realtime import sec_since_boot
 from selfdrive.manager import manager_init, manager_prepare, start_daemon_process
-from selfdrive.test.helpers import phone_only, with_processes
+from selfdrive.test.helpers import phone_only, with_processes, set_params_enabled
 import json
 import requests
 import signal
@@ -16,6 +16,7 @@ import time
 # must run first
 @phone_only
 def test_manager_prepare():
+  set_params_enabled()
   manager_init()
   manager_prepare()
 

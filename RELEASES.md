@@ -1,3 +1,10 @@
+Version 0.7.8 (2020-08-19)
+========================
+ * New driver monitoring model: improved face detection and better compatibility with sunglasses
+ * Download NEOS operating system updates in the background
+ * Improved updater reliability and responsiveness
+ * Hyundai Kona 2020, Veloster 2019, and Genesis G70 2018 support thanks to xps-genesis!
+
 Version 0.7.7 (2020-07-20)
 ========================
  * White panda is no longer supported, upgrade to comma two or black panda

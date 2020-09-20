@@ -11,7 +11,6 @@ class CarController():
     self.prev_frame = -1
     self.hud_count = 0
     self.car_fingerprint = CP.carFingerprint
-    self.alert_active = False
     self.gone_fast_yet = False
     self.steer_rate_limited = False
 

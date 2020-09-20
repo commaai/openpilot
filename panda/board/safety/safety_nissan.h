@@ -56,7 +56,7 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       // X-Trail 0x15c, Leaf 0x239
       if ((addr == 0x15c) || (addr == 0x239)) {
         if (addr == 0x15c){
-          gas_pressed = ((GET_BYTE(to_push, 5) << 2) | ((GET_BYTE(to_push, 6) >> 6) & 0x3)) > 1;
+          gas_pressed = ((GET_BYTE(to_push, 5) << 2) | ((GET_BYTE(to_push, 6) >> 6) & 0x3)) > 3;
         } else {
           gas_pressed = GET_BYTE(to_push, 0) > 3;
         }

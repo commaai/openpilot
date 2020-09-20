@@ -1,35 +1,34 @@
-Import('env', 'arch', 'zmq')
+Import('env', 'arch', 'zmq', 'cython_dependencies')
+
+import shutil
 
 gen_dir = Dir('gen')
 messaging_dir = Dir('messaging')
 
 # TODO: remove src-prefix and cereal from command string. can we set working directory?
 env.Command(["gen/c/include/c++.capnp.h", "gen/c/include/java.capnp.h"], [], "mkdir -p " + gen_dir.path + "/c/include && touch $TARGETS")
-env.Command(
-  ['gen/cpp/car.capnp.c++', 'gen/cpp/log.capnp.c++', 'gen/cpp/car.capnp.h', 'gen/cpp/log.capnp.h'],
-  ['car.capnp', 'log.capnp'],
-  'capnpc $SOURCES --src-prefix=cereal -o c++:' + gen_dir.path + '/cpp/')
-import shutil
+env.Command(['gen/cpp/car.capnp.c++', 'gen/cpp/log.capnp.c++', 'gen/cpp/car.capnp.h', 'gen/cpp/log.capnp.h'],
+            ['car.capnp', 'log.capnp'],
+            'capnpc $SOURCES --src-prefix=cereal -o c++:' + gen_dir.path + '/cpp/')
+
 if shutil.which('capnpc-java'):
-  env.Command(
-    ['gen/java/Car.java', 'gen/java/Log.java'],
-    ['car.capnp', 'log.capnp'],
-    'capnpc $SOURCES --src-prefix=cereal -o java:' + gen_dir.path + '/java/')
+  env.Command(['gen/java/Car.java', 'gen/java/Log.java'],
+              ['car.capnp', 'log.capnp'],
+              'capnpc $SOURCES --src-prefix=cereal -o java:' + gen_dir.path + '/java/')
 
 # TODO: remove non shared cereal and messaging
 cereal_objects = env.SharedObject([
-    'gen/cpp/car.capnp.c++',
-    'gen/cpp/log.capnp.c++',
-  ])
+  'gen/cpp/car.capnp.c++',
+  'gen/cpp/log.capnp.c++',
+])
 
 env.Library('cereal', cereal_objects)
 env.SharedLibrary('cereal_shared', cereal_objects)
 
 cereal_dir = Dir('.')
-services_h = env.Command(
-  ['services.h'],
-  ['service_list.yaml', 'services.py'],
-  'python3 ' + cereal_dir.path + '/services.py > $TARGET')
+services_h = env.Command(['services.h'],
+                          ['service_list.yaml', 'services.py'],
+                          'python3 ' + cereal_dir.path + '/services.py > $TARGET')
 
 messaging_objects = env.SharedObject([
   'messaging/messaging.cc',
@@ -56,9 +55,9 @@ Depends('messaging/bridge.cc', services_h)
 #env.Program('messaging/demo', ['messaging/demo.cc'], LIBS=[messaging_lib, 'zmq'])
 
 
-env.Command(['messaging/messaging_pyx.so'],
-  [messaging_lib, 'messaging/messaging_pyx_setup.py', 'messaging/messaging_pyx.pyx', 'messaging/messaging.pxd'],
-  "cd " + messaging_dir.path + " && python3 messaging_pyx_setup.py build_ext --inplace")
+env.Command(['messaging/messaging_pyx.so', 'messaging/messaging_pyx.cpp'],
+            cython_dependencies + [messaging_lib, 'messaging/messaging_pyx_setup.py', 'messaging/messaging_pyx.pyx', 'messaging/messaging.pxd'],
+            "cd " + messaging_dir.path + " && python3 messaging_pyx_setup.py build_ext --inplace")
 
 
 if GetOption('test'):
