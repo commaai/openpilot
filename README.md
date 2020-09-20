@@ -137,27 +137,36 @@ Community Maintained Cars and Features
 | Chrysler  | Pacifica 2020                 | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica Hybrid 2019-20       | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Genesis   | G70 2018                      | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G80 2018                      | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G90 2018                      | All               | Stock            | 0mph               | 0mph         |
 | GMC       | Acadia Denali 2018<sup>2</sup>| Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
-| Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
-| Hyundai   | Ioniq Electric Premium SE 2020| SCC + LKAS        | Stock            | 0mph               | 32mph        |
-| Hyundai   | Ioniq Electric Limited 2019   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
-| Hyundai   | Kona 2020                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Kona EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Santa Fe 2019                 | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Sonata 2019                   | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Veloster 2019                 | SCC + LKAS        | Stock            | 5mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
+| Genesis   | Genesis 2014-16               | SCC + LKAS/LDWS   | Stock            | 19mph              | 37mph        |
+| Genesis   | Genesis G70 2018              | All               | Stock            | 0mph               | 0mph         |
+| Genesis   | Genesis G80 2018              | All               | Stock            | 0mph               | 0mph         |
+| Genesis   | Genesis G90 2018              | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
+| Hyundai   | Elantra i30 2017-19           | SCC + LKAS        | Stock            | 19mph              | 34mph        |
+| Hyundai   | Sonata 2019                   | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Kona 2020                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Kona EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Kona HEV 2019                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Ioniq EV 2019                 | SCC + LKAS        | Stock            | 0mph               | 32mph        |
+| Hyundai   | Ioniq HEV 2020                | SCC + LKAS        | Stock            | 0mph               | 32mph        |
+| Hyundai   | Santa Fe 2019                 | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Veloster 2019                 | SCC + LKAS        | Stock            | 5mph               | 0mph         |
+| Hyundai   | Grandeur 2017                 | SCC + LKAS        | Stock            | 5mph               | 0mph         |
+| Hyundai   | Grandeur HEV 2019             | SCC + LKAS        | Stock            | 5mph               | 0mph         |
 | Kia       | Forte 2018-19                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Optima 2017                   | SCC + LKAS/LDWS   | Stock            | 0mph               | 32mph        |
+| Kia       | Optima 2016-17                | SCC + LKAS/LDWS   | Stock            | 0mph               | 32mph        |
 | Kia       | Optima 2019                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Niro EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Niro HEV 2018                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Cardenza 2016-19              | SCC + LKAS/LDWS   | Stock            | 5mph               | 0mph         |
+| Kia       | Cardenza HEV 2017             | SCC + LKAS/LDWS   | Stock            | 5mph               | 0mph         |
 | Nissan    | Leaf 2018-19                  | Propilot          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2019                    | Propilot          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | Propilot          | Stock            | 0mph               | 0mph         |
