@@ -16,7 +16,7 @@ from cereal import log
 from common.hardware import HARDWARE
 from common.api import Api
 from common.params import Params
-from common.xattr import getxattr, setxattr
+from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
@@ -25,6 +25,7 @@ UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
+
 
 def raise_on_thread(t, exctype):
   '''Raises an exception in the threads with id tid'''
@@ -77,9 +78,9 @@ def is_on_hotspot():
   try:
     result = subprocess.check_output(["ifconfig", "wlan0"], stderr=subprocess.STDOUT, encoding='utf8')
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
-    return (result.startswith('192.168.43.') or # android
-            result.startswith('172.20.10.') or # ios
-            result.startswith('10.0.2.')) # toyota entune
+    return (result.startswith('192.168.43.') or  # android
+            result.startswith('172.20.10.') or  # ios
+            result.startswith('10.0.2.'))  # toyota entune
   except Exception:
     return False
 
@@ -263,6 +264,7 @@ def uploader_fn(exit_event):
 
 def main():
   uploader_fn(threading.Event())
+
 
 if __name__ == "__main__":
   main()
