@@ -141,7 +141,7 @@ def setup_git_options(cwd: str) -> None:
 
 def dismount_overlay() -> None:
   if os.path.ismount(OVERLAY_MERGED):
-    cloudlog.error("unmounting existing overlay")
+    cloudlog.info("unmounting existing overlay")
     run(["umount", "-l", OVERLAY_MERGED])
 
 
@@ -149,7 +149,6 @@ def init_overlay() -> None:
 
   overlay_init_file = Path(os.path.join(BASEDIR, ".overlay_init"))
 
-  # TODO: can we take a git lock instead?
   # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
   if overlay_init_file.is_file():
     git_dir_path = os.path.join(BASEDIR, ".git")
@@ -244,13 +243,16 @@ def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
   cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
 
 
+def check_git_fetch_result(fetch_txt):
+  err_msg = "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n"
+  return len(fetch_txt) > 0 and (fetch_txt != err_msg)
+
+
 def check_for_update() -> Tuple[bool, bool]:
-  remote = run(["git", "symbolic-ref", "--quiet", "HEAD"], OVERLAY_MERGED).rstrip()
-  branch = run(["git", "symbolic-ref", "--quiet", "HEAD"], OVERLAY_MERGED).rstrip()
-  cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
+  setup_git_options(OVERLAY_MERGED)
   try:
-    upstream_hash = run(["git", "ls-remote", branch, remote], OVERLAY_MERGED).rstrip().split()[0]
-    return True, (cur_hash != upstream_hash)
+    git_fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
+    return True, check_git_fetch_result(git_fetch_output)
   except subprocess.CalledProcessError:
     return False, False
 
@@ -266,9 +268,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
   upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
   new_version = cur_hash != upstream_hash
-
-  err_msg = "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n"
-  git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != err_msg)
+  git_fetch_result = check_git_fetch_result(git_fetch_output)
 
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
   if new_version or git_fetch_result:
@@ -324,9 +324,10 @@ def main():
   update_failed_count = 0
 
   # Run the update loop
-  #  * every 2m, check if remote HEAD is different than local HEAD
+  #  * every 1m, check if remote HEAD is different than local HEAD
   #  * every 10m, if remote and local HEAD don't match, git fetch
   while not wait_helper.shutdown:
+    update_now = wait_helper.ready_event.is_set()
     wait_helper.ready_event.clear()
 
     # Don't run updater while onroad or if the time's wrong
@@ -348,7 +349,7 @@ def main():
         update_failed_count = 0
 
       # Fetch updates at most every 10 minutes
-      if internet_ok and time.monotonic() - last_fetch_time > 60*10:
+      if internet_ok and (update_now or time.monotonic() - last_fetch_time > 60*10):
         new_version = fetch_update(wait_helper)
         update_failed_count = 0
         last_fetch_time = time.monotonic()
@@ -363,11 +364,12 @@ def main():
         returncode=e.returncode
       )
       exception = f"command failed: {e.cmd}\n{e.output}"
-    except Exception:
+    except Exception as e:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
+      exception = str(e)
 
     set_params(new_version, update_failed_count, exception)
-    wait_helper.sleep(120)
+    wait_helper.sleep(60)
 
   dismount_overlay()
 
