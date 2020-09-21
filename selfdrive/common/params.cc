@@ -268,45 +268,19 @@ cleanup:
 }
 
 int read_db_value(const char* key, char** value, size_t* value_sz, bool persistent_param) {
-  int lock_fd = -1;
-  int result;
   char path[1024];
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
 
-  result = snprintf(path, sizeof(path), "%s/.lock", params_path);
+  int result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
   if (result < 0) {
-    goto cleanup;
-  }
-  lock_fd = open(path, 0);
-
-  result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
-  if (result < 0) {
-    goto cleanup;
+    return result;
   }
 
-  // Take lock.
-  result = flock(lock_fd, LOCK_SH);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // Read value.
-  // TODO(mgraczyk): If there is a lot of contention, we can release the lock
-  //                 after opening the file, before reading.
   *value = static_cast<char*>(read_file(path, value_sz));
   if (*value == NULL) {
-    result = -22;
-    goto cleanup;
+    return -22;
   }
-
-  result = 0;
-
-cleanup:
-  // Release lock.
-  if (lock_fd >= 0) {
-    close(lock_fd);
-  }
-  return result;
+  return 0;
 }
 
 void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
