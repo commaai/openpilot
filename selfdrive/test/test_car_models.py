@@ -193,7 +193,7 @@ routes = {
     'enableCamera': True,
   },
   "b2a38c712dcf90bd|2020-05-18--18-12-48": {
-    'carFingerprint': HYUNDAI.SONATA_2019,
+    'carFingerprint': HYUNDAI.SONATA19,
     'enableCamera': True,
   },
   "5875672fc1d4bf57|2020-07-23--21-33-28": {
