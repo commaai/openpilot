@@ -113,7 +113,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   if (cam_idx == CAM_IDX_DCAM) {
   // TODO: add this back
   #ifndef QCOM2
-    if (!red_db_bool("RecordFront")) return;
+    if (!read_db_bool("RecordFront")) return;
     LOGW("recording front camera");
   #endif
     set_thread_name("FrontCameraEncoder");
