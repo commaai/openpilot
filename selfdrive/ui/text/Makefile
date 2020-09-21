@@ -20,6 +20,7 @@ FRAMEBUFFER_LIBS = -lutils -lgui -lEGL
 
 OBJS = text.o \
        ../../common/framebuffer.o \
+       ../../common/util.o \
        ../../../selfdrive/common/touch.o \
        $(PHONELIBS)/nanovg/nanovg.o \
        opensans_regular.o \
