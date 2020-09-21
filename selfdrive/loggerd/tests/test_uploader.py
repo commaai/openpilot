@@ -30,7 +30,6 @@ class TestLogHandler(logging.Handler):
     except Exception:
       pass
 
-
 log_handler = TestLogHandler()
 cloudlog.addHandler(log_handler)
 
