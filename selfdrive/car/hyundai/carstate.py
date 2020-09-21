@@ -218,7 +218,7 @@ class CarState(CarStateBase):
       ]
       checks += [("LCA11", 50)]
 
-    if CP.carFingerprint in EV_HYBRID:
+    if CP.carFingerprint in FEATURES["use_elect_ems"]:
       signals += [
         ("Accel_Pedal_Pos", "E_EMS11", 0),
       ]
