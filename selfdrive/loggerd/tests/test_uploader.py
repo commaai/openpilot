@@ -30,7 +30,6 @@ class TestLogHandler(logging.Handler):
     except Exception:
       pass
 
-
 log_handler = TestLogHandler()
 cloudlog.addHandler(log_handler)
 
@@ -121,8 +120,6 @@ class TestUploader(UploaderTestCase):
     for f_path in f_paths:
       self.assertTrue(getxattr(f_path, uploader.UPLOAD_ATTR_NAME), "All files not uploaded")
     exp_order = self.gen_order(seg1_nums, seg2_nums)
-    for f in exp_order:
-      print(f)
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
 
   def test_no_upload_with_lock_file(self):
