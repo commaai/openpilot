@@ -45,7 +45,7 @@ int sensor_loop() {
   sensors.push_back(&accel);
   sensors.push_back(&gyro);
   sensors.push_back(&light);
-  // sensors.push_back(&magn);
+  sensors.push_back(&magn);
 
 
   for (Sensor * sensor : sensors){
