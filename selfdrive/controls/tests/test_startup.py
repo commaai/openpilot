@@ -25,8 +25,8 @@ class TestStartup(unittest.TestCase):
     (EventName.startupMaster, HYUNDAI.SONATA, True),
 
     # community supported car
-    (EventName.startupMaster, HYUNDAI.KIA_STINGER, True),
-    (EventName.communityFeatureDisallowed, HYUNDAI.KIA_STINGER, False),
+    (EventName.startupMaster, HYUNDAI.STINGER, True),
+    (EventName.communityFeatureDisallowed, HYUNDAI.STINGER, False),
 
     # dashcamOnly car
     (EventName.startupNoControl, MAZDA.CX5, True),
