@@ -106,6 +106,7 @@ class Uploader():
     return 1000
 
   def gen_upload_files(self):
+    list_of_files = []
     if not os.path.isdir(self.root):
       return
     for logname in listdir_by_creation(self.root):
@@ -128,11 +129,13 @@ class Uploader():
           is_uploaded = True  # deleter could have deleted
         if is_uploaded:
           continue
-
-        yield (name, key, fn)
+        list_of_files.append((name, key, fn))
+    return list_of_files
 
   def next_file_to_upload(self, with_raw):
-    upload_files = list(self.gen_upload_files())
+    upload_files = self.gen_upload_files()
+    for f in upload_files:
+      print(f)
     # try to upload qlog files first
     for name, key, fn in upload_files:
       if name in self.immediate_priority:
