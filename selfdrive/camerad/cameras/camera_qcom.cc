@@ -355,12 +355,8 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
 
 
   int err;
-  int rgb_width = s->rear.ci.frame_width;
-  int rgb_height = s->rear.ci.frame_height;
-  if (s->rear.ci.bayer) {
-    rgb_width = s->rear.ci.frame_width / 2;
-    rgb_height = s->rear.ci.frame_height / 2;
-  }
+  const int rgb_width = s->rear.buf.rgb_width;
+  const int rgb_height = s->rear.buf.rgb_height;
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
     s->focus_bufs[i] = visionbuf_allocate(0xb80);
