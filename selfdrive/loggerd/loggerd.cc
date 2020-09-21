@@ -113,8 +113,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   if (cam_idx == CAM_IDX_DCAM) {
   // TODO: add this back
   #ifndef QCOM2
-    std::vector<char> value = read_db_bytes("RecordFront");
-    if (value.size() == 0 || value[0] != '1') return;
+    if (!read_db_bool("RecordFront")) return;
     LOGW("recording front camera");
   #endif
     set_thread_name("FrontCameraEncoder");
@@ -461,8 +460,7 @@ kj::Array<capnp::word> gen_init_data() {
     init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
   }
 
-  std::vector<char> passive = read_db_bytes("Passive");
-  init.setPassive(passive.size() > 0 && passive[0] == '1');
+  init.setPassive(read_db_bool("Passive"));
   {
     // log params
     std::map<std::string, std::string> params;
