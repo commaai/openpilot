@@ -43,10 +43,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
 
   setLayout(hlayout);
 
-  auto p = read_db_bytes(param.toStdString().c_str());
-  if (p.size()){
-    checkbox->setChecked(p[0] == '1');
-  }
+  checkbox->setChecked(read_db_bool(param.toStdString().c_str()));
 
   setStyleSheet(R"(
     QCheckBox { font-size: 70px }
