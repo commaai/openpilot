@@ -169,7 +169,7 @@ routes = {
     'enableCamera': True,
   },
   "6fe86b4e410e4c37|2020-07-22--16-27-13": {
-    'carFingerprint': HYUNDAI.HYUNDAI_GENESIS,
+    'carFingerprint': HYUNDAI.GENESIS,
     'enableCamera': True,
   },
   "70c5bec28ec8e345|2020-08-08--12-22-23": {
@@ -185,7 +185,7 @@ routes = {
     'enableCamera': True,
   },
   "7653b2bce7bcfdaa|2020-03-04--15-34-32": {
-    'carFingerprint': HYUNDAI.KIA_OPTIMA,
+    'carFingerprint': HYUNDAI.OPTIMA,
     'enableCamera': True,
   },
   "5b7c365c50084530|2020-04-15--16-13-24": {
@@ -197,7 +197,7 @@ routes = {
     'enableCamera': True,
   },
   "5875672fc1d4bf57|2020-07-23--21-33-28": {
-    'carFingerprint': HYUNDAI.KIA_SORENTO,
+    'carFingerprint': HYUNDAI.SORENTO,
     'enableCamera': True,
   },
   "9c917ba0d42ffe78|2020-04-17--12-43-19": {
@@ -205,11 +205,11 @@ routes = {
     'enableCamera': True,
   },
   "610ebb9faaad6b43|2020-06-13--15-28-36": {
-    'carFingerprint': HYUNDAI.IONIQ_EV_LTD,
+    'carFingerprint': HYUNDAI.IONIQ_EV,
     'enableCamera': True,
   },
   "2c5cf2dd6102e5da|2020-06-26--16-00-08": {
-    'carFingerprint': HYUNDAI.IONIQ,
+    'carFingerprint': HYUNDAI.IONIQ_HEV,
     'enableCamera': True,
   },
   "22d955b2cd499c22|2020-08-10--19-58-21": {
@@ -217,7 +217,7 @@ routes = {
     'enableCamera': True,
   },
   "5dddcbca6eb66c62|2020-07-26--13-24-19": {
-    'carFingerprint': HYUNDAI.KIA_STINGER,
+    'carFingerprint': HYUNDAI.STINGER,
     'enableCamera': True,
   },
   "d624b3d19adce635|2020-08-01--14-59-12": {
@@ -475,8 +475,8 @@ non_tested_cars = [
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
-  HYUNDAI.KIA_FORTE,
-  HYUNDAI.KIA_OPTIMA_H,
+  HYUNDAI.FORTE,
+  HYUNDAI.OPTIMA_HEV,
   HYUNDAI.KONA_EV,
   TOYOTA.CAMRYH,
   TOYOTA.CHR,
