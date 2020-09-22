@@ -29,7 +29,7 @@ elif TICI:
 else:
   CAMERAS = {}
 
-ALL_CAMERA_COMBINATIONS = [(cameras,) for cameras in [CAMERAS, {k:CAMERAS[k] for k in CAMERAS if k!='dcamera'}]]
+ALL_CAMERA_COMBINATIONS = [(cameras,) for cameras in [CAMERAS, {k: CAMERAS[k] for k in CAMERAS if k != 'dcamera'}]]
 
 FRAME_TOLERANCE = 2
 FILE_SIZE_TOLERANCE = 0.25
@@ -79,7 +79,7 @@ class TestLoggerd(unittest.TestCase):
     for i in trange(num_segments):
       # check each camera file size
       for camera, size in cameras.items():
-        ext = "ts" if camera=='qcamera' else "hevc"
+        ext = "ts" if camera == 'qcamera' else "hevc"
         file_path = f"{route_prefix_path}--{i}/{camera}.{ext}"
 
         # check file size
@@ -94,7 +94,7 @@ class TestLoggerd(unittest.TestCase):
         # check frame count
         cmd = f"ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \
                -of default=nokey=1:noprint_wrappers=1 {file_path}"
-        expected_frames = self.segment_length * CAMERA_FPS // 2 if (EON and camera=='dcamera') else self.segment_length * CAMERA_FPS
+        expected_frames = self.segment_length * CAMERA_FPS // 2 if (EON and camera == 'dcamera') else self.segment_length * CAMERA_FPS
         frame_count = int(subprocess.check_output(cmd, shell=True, encoding='utf8').strip())
         self.assertTrue(abs(expected_frames - frame_count) <= FRAME_TOLERANCE,
                         f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
