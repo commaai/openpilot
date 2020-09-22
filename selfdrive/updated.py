@@ -181,7 +181,7 @@ def init_overlay() -> None:
   consistent_file = Path(os.path.join(BASEDIR, ".overlay_consistent"))
   if consistent_file.is_file():
     consistent_file.unlink()
-  consistent_file.touch()
+  overlay_init_file.touch()
 
   os.sync()
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
@@ -201,7 +201,6 @@ def finalize_update() -> None:
     shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
-  # TODO: check for changes in lower dir. also lock lower and upper dir?
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
@@ -320,12 +319,13 @@ def main():
   wait_helper = WaitTimeHelper(proc)
   wait_helper.sleep(30)
 
+  first_run = True
   last_fetch_time = 0
   update_failed_count = 0
 
   # Run the update loop
-  #  * every 1m, check if remote HEAD is different than local HEAD
-  #  * every 10m, if remote and local HEAD don't match, git fetch
+  #  * every 1m, do a lightweight internet/update check
+  #  * every 10m, do a full git fetch
   while not wait_helper.shutdown:
     update_now = wait_helper.ready_event.is_set()
     wait_helper.ready_event.clear()
@@ -335,6 +335,7 @@ def main():
     is_onroad = params.get("IsOffroad") != b"1"
     if is_onroad or time_wrong:
       wait_helper.sleep(30)
+      cloudlog.info("not running updater, not offroad")
       continue
 
     # Attempt an update
@@ -354,8 +355,9 @@ def main():
         update_failed_count = 0
         last_fetch_time = time.monotonic()
 
-        if not new_version and os.path.isdir(NEOSUPDATE_DIR):
+        if first_run and not new_version and os.path.isdir(NEOSUPDATE_DIR):
           shutil.rmtree(NEOSUPDATE_DIR)
+        first_run = False
     except subprocess.CalledProcessError as e:
       cloudlog.event(
         "update process failed",
