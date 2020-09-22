@@ -53,7 +53,6 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   const int crop_x_offset = width - cropped_width;
   const int crop_y_offset = 0;
 #else
-
   const int full_width_tici = 1928;
   const int full_height_tici = 1208;
   const int adapt_width_tici = 808;
@@ -84,7 +83,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
     uint8_t *premirror_cropped_y_buf = get_buffer(s->premirror_cropped_buf, cropped_width*cropped_height*3/2);
     uint8_t *premirror_cropped_u_buf = premirror_cropped_y_buf + (cropped_width * cropped_height);
     uint8_t *premirror_cropped_v_buf = premirror_cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
-    for (int r = 0; r < height/2; r++) {
+    for (int r = 0; r < cropped_height/2; r++) {
       memcpy(premirror_cropped_y_buf + (2*r)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset)*width + global_x_offset, cropped_width);
       memcpy(premirror_cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset + 1)*width + global_x_offset, cropped_width);
       memcpy(premirror_cropped_u_buf + r*cropped_width/2, raw_u_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + global_x_offset/2, cropped_width/2);

@@ -53,6 +53,8 @@ private:
   UIState * ui_state;
   QtSound sound;
 
+  bool onroad = true;
+
 public slots:
   void timerUpdate();
 

@@ -1,8 +1,8 @@
 const __constant float3 color_correction[3] = {
   // post wb CCM
-  (float3)(1.17898387, -0.19583185, -0.19881648),
-  (float3)(-0.03367879,  1.33692858, -0.02475203),
-  (float3)(-0.14530508, -0.14109673,  1.22356851),
+  (float3)(1.44602146, -0.24727126, -0.0403062),
+  (float3)(-0.37658179, 1.26329038, -0.45978396),
+  (float3)(-0.06943967, -0.01601912, 1.50009016),
 };
 
 float3 color_correct(float r, float g, float b) {
@@ -29,7 +29,7 @@ float to_normal(uint x) {
   const float black_level = 0;
   pv = max(0.0, pv - black_level);
   pv /= (1024.0f - black_level);
-  pv = 1.6*pv / (1.0f + 1.6*pv); // reinhard
+  pv = 5*pv / (1.0f + 5*pv); // reinhard
   return pv;
 }
 

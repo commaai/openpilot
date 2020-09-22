@@ -9,13 +9,14 @@ source "$BASEDIR/launch_env.sh"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
-  # Android and other system processes are not permitted to run on CPU 3
-  # NEOS installed app processes can run anywhere
-  echo 0-2 > /dev/cpuset/background/cpus
-  echo 0-2 > /dev/cpuset/system-background/cpus
-  [ -d "/dev/cpuset/foreground/boost/cpus" ] && echo 0-2 > /dev/cpuset/foreground/boost/cpus  # Not present in < NEOS 15
-  echo 0-2 > /dev/cpuset/foreground/cpus
-  echo 0-2 > /dev/cpuset/android/cpus
+  # Restrict Android and other system processes to the first two cores
+  echo 0-1 > /dev/cpuset/background/cpus
+  echo 0-1 > /dev/cpuset/system-background/cpus
+  echo 0-1 > /dev/cpuset/foreground/boost/cpus
+  echo 0-1 > /dev/cpuset/foreground/cpus
+  echo 0-1 > /dev/cpuset/android/cpus
+
+  # openpilot gets all the cores
   echo 0-3 > /dev/cpuset/app/cpus
 
   # Collect RIL and other possibly long-running I/O interrupts onto CPU 1
@@ -52,7 +53,6 @@ function two_init {
   # Remove and regenerate qcom sensor registry. Only done on OP3T mainboards.
   # Performed exactly once. The old registry is preserved just-in-case, and
   # doubles as a flag denoting we've already done the reset.
-  # TODO: we should really grow per-platform detect and setup routines
   if ! $(grep -q "letv" /proc/cmdline) && [ ! -f "/persist/comma/op3t-sns-reg-backup" ]; then
     echo "Performing OP3T sensor registry reset"
     mv /persist/sensors/sns.reg /persist/comma/op3t-sns-reg-backup &&

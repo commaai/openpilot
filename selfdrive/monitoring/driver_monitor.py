@@ -15,8 +15,8 @@ EventName = car.CarEvent.EventName
 # ******************************************************************************************
 
 _AWARENESS_TIME = 70.  # one minute limit without user touching steering wheels make the car enter a terminal status
-_AWARENESS_PRE_TIME_TILL_TERMINAL = 15.  # a first alert is issued 25s before expiration
-_AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.  # a second alert is issued 15s before start decelerating the car
+_AWARENESS_PRE_TIME_TILL_TERMINAL = 15.  # a first alert is issued 15s before expiration
+_AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.  # a second alert is issued 6s before start decelerating the car
 _DISTRACTED_TIME = 11.
 _DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
 _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
@@ -24,10 +24,10 @@ _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 _FACE_THRESHOLD = 0.6
 _EYE_THRESHOLD = 0.6
 _SG_THRESHOLD = 0.5
-_BLINK_THRESHOLD = 0.5  # 0.225
+_BLINK_THRESHOLD = 0.5
 _BLINK_THRESHOLD_SLACK = 0.65
 _BLINK_THRESHOLD_STRICT = 0.5
-_PITCH_WEIGHT = 1.35  # 1.5  # pitch matters a lot more
+_PITCH_WEIGHT = 1.35  # pitch matters a lot more
 _POSESTD_THRESHOLD = 0.14
 _METRIC_THRESHOLD = 0.4
 _METRIC_THRESHOLD_SLACK = 0.55
@@ -116,6 +116,7 @@ class DriverStatus():
     self.step_change = 0.
     self.active_monitoring_mode = True
     self.hi_stds = 0
+    self.hi_std_alert_enabled = True
     self.threshold_prompt = _DISTRACTED_PROMPT_TIME_TILL_TERMINAL / _DISTRACTED_TIME
 
     self.is_rhd_region = False
@@ -212,7 +213,7 @@ class DriverStatus():
     self._set_timers(self.face_detected and not is_model_uncertain)
     if self.face_detected and not self.pose.low_std:
       if not is_model_uncertain:
-        self.step_change *= max(0, (model_std_max-0.5)*(model_std_max-2))
+        self.step_change *= min(1.0, max(0.6, 1.6*(model_std_max-0.5)*(model_std_max-2)))
       self.hi_stds += 1
     elif self.face_detected and self.pose.low_std:
       self.hi_stds = 0
@@ -228,8 +229,9 @@ class DriverStatus():
     driver_attentive = self.driver_distraction_filter.x < 0.37
     awareness_prev = self.awareness
 
-    if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT:
+    if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT and self.hi_std_alert_enabled:
       events.add(EventName.driverMonitorLowAcc)
+      self.hi_std_alert_enabled = False # only showed once until orange prompt resets it
 
     if (driver_attentive and self.face_detected and self.pose.low_std and self.awareness > 0):
       # only restore awareness when paying attention and alert is not red
@@ -255,6 +257,7 @@ class DriverStatus():
     elif self.awareness <= self.threshold_prompt:
       # prompt orange alert
       alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
+      self.hi_std_alert_enabled = True
     elif self.awareness <= self.threshold_pre:
       # pre green alert
       alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive

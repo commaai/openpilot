@@ -14,6 +14,7 @@
 #include "sensors/bmx055_accel.hpp"
 #include "sensors/bmx055_gyro.hpp"
 #include "sensors/bmx055_magn.hpp"
+#include "sensors/bmx055_temp.hpp"
 #include "sensors/light_sensor.hpp"
 
 volatile sig_atomic_t do_exit = 0;
@@ -38,14 +39,16 @@ int sensor_loop() {
   BMX055_Accel accel(i2c_bus_imu);
   BMX055_Gyro gyro(i2c_bus_imu);
   BMX055_Magn magn(i2c_bus_imu);
+  BMX055_Temp temp(i2c_bus_imu);
   LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
   // Sensor init
   std::vector<Sensor *> sensors;
   sensors.push_back(&accel);
   sensors.push_back(&gyro);
+  sensors.push_back(&magn);
+  sensors.push_back(&temp);
   sensors.push_back(&light);
-  // sensors.push_back(&magn);
 
 
   for (Sensor * sensor : sensors){
@@ -60,16 +63,12 @@ int sensor_loop() {
 
   while (!do_exit){
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    uint64_t log_time = nanos_since_boot();
 
+    const int num_events = sensors.size();
     MessageBuilder msg;
-    auto event = msg.initEvent();
-    event.setLogMonoTime(log_time);
+    auto sensor_events = msg.initEvent().initSensorEvents(num_events);
 
-    int num_events = sensors.size();
-    auto sensor_events = event.initSensorEvents(num_events);
-
-    for (size_t i = 0; i < num_events; i++){
+    for (int i = 0; i < num_events; i++){
       auto event = sensor_events[i];
       sensors[i]->get_event(event);
     }

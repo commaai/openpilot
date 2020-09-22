@@ -129,6 +129,16 @@ void release_fd(int video0_fd, uint32_t handle) {
   release(video0_fd, handle);
 }
 
+void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
+  struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+  req_mgr_flush_request.session_hdl = session_hdl;
+  req_mgr_flush_request.link_hdl = link_hdl;
+  req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+  int ret;
+  ret = cam_control(fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+  // LOGD("flushed all req: %d", ret);
+}
+
 // ************** high level camera helpers ****************
 
 void sensors_poke(struct CameraState *s, int request_id) {
@@ -479,15 +489,15 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
 
 void enqueue_buffer(struct CameraState *s, int i) {
   int ret;
-  int request_id = s->camera_bufs_metadata[i].frame_id;
+  int request_id = s->request_ids[i];
 
   if (s->buf_handle[i]) {
     release(s->video0_fd, s->buf_handle[i]);
     // wait
-    // struct cam_sync_wait sync_wait = {0};
-    // sync_wait.sync_obj = s->sync_objs[i];
-    // sync_wait.timeout_ms = 100;
-    // ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    struct cam_sync_wait sync_wait = {0};
+    sync_wait.sync_obj = s->sync_objs[i];
+    sync_wait.timeout_ms = 50;
+    ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
  
     // destroy old output fence
@@ -531,13 +541,14 @@ void enqueue_buffer(struct CameraState *s, int i) {
   config_isp(s, s->buf_handle[i], s->sync_objs[i], request_id, s->buf0_handle, 65632*(i+1));
 }
 
+void enqueue_req_multi(struct CameraState *s, int start, int n) {
+   for (int i=start;i<start+n;++i) {
+     s->request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
+     enqueue_buffer(s, (i - 1) % FRAME_BUF_COUNT);
+   }
+}
 
 // ******************* camera *******************
-
-static void camera_release_buffer(void* cookie, int i) {
-  CameraState *s = cookie;
-  enqueue_buffer(s, i);
-}
 
 static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps) {
   LOGD("camera init %d", camera_num);
@@ -549,7 +560,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->camera_num = camera_num;
   s->frame_size = s->ci.frame_height * s->ci.frame_stride;
 
-  tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", camera_release_buffer, s);
+  tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", NULL, s);
 
   s->transform = (mat3){{
     1.0, 0.0, 0.0,
@@ -563,9 +574,8 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->analog_gain_frac = 1.0;
   s->analog_gain = 0x8;
   s->exposure_time = 598;
-  s->frame_id = -1;
-  s->first = true;
-  //s->missed_frame = 0;
+  s->request_id_last = 0;
+  s->skipped = true;
 }
 
 static void camera_open(CameraState *s, VisionBuf* b) {
@@ -781,6 +791,7 @@ static void camera_open(CameraState *s, VisionBuf* b) {
   LOGD("start sensor: %d", ret);
   ret = device_control(s->sensor_fd, CAM_START_DEV, s->session_handle, s->sensor_dev_handle);
 
+  enqueue_req_multi(s, 1, FRAME_BUF_COUNT);
 }
 
 void cameras_init(MultiCameraState *s) {
@@ -791,7 +802,7 @@ void cameras_init(MultiCameraState *s) {
   camera_init(&s->front, CAMERA_ID_AR0231, 2, 20);
   printf("front initted \n");
 #ifdef NOSCREEN
-  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.200.51:7768");
+  zsock_t *rgb_sock = zsock_new_push("tcp://192.168.3.4:7768");
   assert(rgb_sock);
   s->rgb_sock = rgb_sock;
 #endif
@@ -904,26 +915,59 @@ static void cameras_close(MultiCameraState *s) {
 #endif
 }
 
-struct video_event_data {
-  int32_t   session_hdl;
-  int32_t   link_hdl;
-  int32_t   frame_id;
-  int32_t   reserved;
-  int64_t   req_id;
-  uint64_t  tv_sec;
-  uint64_t  tv_usec;
-};
+void handle_camera_event(CameraState *s, void *evdat) {
+  struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
+
+  uint64_t timestamp = event_data->u.frame_msg.timestamp;
+  int main_id = event_data->u.frame_msg.frame_id;
+  int real_id = event_data->u.frame_msg.request_id;
+
+  if (real_id != 0) { // next ready
+    if (real_id == 1) {s->idx_offset = main_id;}
+    int buf_idx = (real_id - 1) % FRAME_BUF_COUNT;
+
+    // check for skipped frames
+    if (main_id > s->frame_id_last + 1 && !s->skipped) {
+      // realign
+      clear_req_queue(s->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
+      enqueue_req_multi(s, real_id + 1, FRAME_BUF_COUNT - 1);
+      s->skipped = true;
+    } else if (main_id == s->frame_id_last + 1) {
+      s->skipped = false;
+    }
+
+    // check for dropped requests
+    if (real_id > s->request_id_last + 1) {
+      enqueue_req_multi(s, s->request_id_last + 1 + FRAME_BUF_COUNT, real_id - (s->request_id_last + 1));
+    }
+
+    // metas
+    s->frame_id_last = main_id;
+    s->request_id_last = real_id;
+    s->camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
+    s->camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
+
+    // dispatch
+    enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1);
+    tbuffer_dispatch(&s->camera_tb, buf_idx);
+  } else { // not ready
+    // reset after half second of no response
+    if (main_id > s->frame_id_last + 10) {
+      clear_req_queue(s->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
+      enqueue_req_multi(s, s->request_id_last + 1, FRAME_BUF_COUNT);
+      s->frame_id_last = main_id;
+      s->skipped = true;
+    }
+  }
+}
 
 void cameras_run(MultiCameraState *s) {
   // start devices
   LOG("-- Start devices");
-
-  sensors_i2c(&s->rear, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
-    CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(&s->wide, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
-    CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(&s->front, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
-    CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
+  sensors_i2c(&s->rear, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(&s->wide, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(&s->front, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 
   // poll events
   LOG("-- Dequeueing Video events");
@@ -946,42 +990,18 @@ void cameras_run(MultiCameraState *s) {
     ret = ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev);
     if (ev.type == 0x8000000) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
-      uint64_t timestamp = event_data->u.frame_msg.timestamp;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
-     if (event_data->u.frame_msg.request_id != 0 || (event_data->u.frame_msg.request_id == 0 &&
-         ((s->rear.first && event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) ||
-          (s->wide.first && event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) ||
-          (s->front.first && event_data->session_hdl == s->front.req_mgr_session_info.session_hdl)))) {
-        if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
-          if (event_data->u.frame_msg.request_id > 0) {s->rear.first = false;}
-          s->rear.frame_id++;
-          //printf("rear %d\n", s->rear.frame_id);
-          int buf_idx = s->rear.frame_id % FRAME_BUF_COUNT;
-          s->rear.camera_bufs_metadata[buf_idx].frame_id = s->rear.frame_id;
-          s->rear.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
-          tbuffer_dispatch(&s->rear.camera_tb, buf_idx);
-        } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
-          if (event_data->u.frame_msg.request_id > 0) {s->wide.first = false;}
-          s->wide.frame_id++;
-          //printf("wide %d\n", s->wide.frame_id);
-          int buf_idx = s->wide.frame_id % FRAME_BUF_COUNT;
-          s->wide.camera_bufs_metadata[buf_idx].frame_id = s->wide.frame_id;
-          s->wide.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
-          tbuffer_dispatch(&s->wide.camera_tb, buf_idx);
-        } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
-          if (event_data->u.frame_msg.request_id > 0) {s->front.first = false;}
-          s->front.frame_id++;
-          //printf("front %d\n", s->front.frame_id);
-          int buf_idx = s->front.frame_id % FRAME_BUF_COUNT;
-          s->front.camera_bufs_metadata[buf_idx].frame_id = s->front.frame_id;
-          s->front.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp;
-          tbuffer_dispatch(&s->front.camera_tb, buf_idx);
-        } else {
-          printf("Unknown vidioc event source\n");
-          assert(false);
-        } 
+      if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
+        handle_camera_event(&s->rear, event_data);
+      } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
+        handle_camera_event(&s->wide, event_data);
+      } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
+        handle_camera_event(&s->front, event_data);
+      } else {
+        printf("Unknown vidioc event source\n");
+        assert(false);
       }
     }
   }
@@ -1001,23 +1021,28 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   const int exposure_time_max = 1066; //1416; // no slower than 1/25 sec. calculated from 0x300C and clock freq
   float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.16 );
 
-  if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // iso 800
+  if (s->analog_gain_frac > 1 && exposure_factor > 0.98 && exposure_factor < 1.02) { // high analog gains are coarse
+    return;
+  } else if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // switch to HCG at iso 800
     s->dc_gain_enabled = true;
     s->analog_gain_frac *= 0.5;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // iso 400
+  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // switch back to LCG at iso 400
     s->dc_gain_enabled = false;
-    s->analog_gain_frac *= 2;
+    s->analog_gain_frac *= 2.0;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) {
-    s->analog_gain_frac *= sqrt(exposure_factor);
-    s->exposure_time = max(min(s->exposure_time * sqrt(exposure_factor), exposure_time_max),exposure_time_min);
+  } else if (s->analog_gain_frac > 1 && exposure_factor < 1) { // force gain down first
+    s->analog_gain_frac /= 2.0;
     s->dc_opstate = 0;
-  } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) {
-    s->exposure_time = max(min(s->exposure_time * exposure_factor, exposure_time_max),exposure_time_min);
+  } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) { // smoother transistion on large stepdowns
+    s->analog_gain_frac = max(min(s->analog_gain_frac * sqrt(exposure_factor), analog_gain_frac_max), analog_gain_frac_min);
+    s->exposure_time = max(min(s->exposure_time * sqrt(exposure_factor), exposure_time_max), exposure_time_min);
+    s->dc_opstate = 0;
+  } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) { // ramp up shutter time before gain
+    s->exposure_time = max(min(s->exposure_time * exposure_factor, exposure_time_max), exposure_time_min);
     s->dc_opstate = 0;
   } else {
-    s->analog_gain_frac = max(min(s->analog_gain_frac * exposure_factor, analog_gain_frac_max),analog_gain_frac_min);
+    s->analog_gain_frac = max(min(s->analog_gain_frac * exposure_factor, analog_gain_frac_max), analog_gain_frac_min);
     s->dc_opstate = 0;
   }
   // set up config
@@ -1034,16 +1059,18 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     AG = AG * 4096 + AG * 256 + AG * 16 + AG; 
     // printf("cam %d gain_frac is %f, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, s->analog_gain_frac, AG, s->exposure_time, s->dc_gain_enabled);
   }
+
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
                                                   {0x3362, s->dc_gain_enabled?0x1:0x0}, // DC_GAIN
-                                                  {0x305A, 0x00C4}, // red gain
-                                                  {0x3058, 0x00B1}, // blue gain
+                                                  {0x305A, 0x00D1}, // red gain
+                                                  {0x3058, 0x0118}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
-                                                  {0x3012, s->exposure_time}, // integ time
-                                                  {0x301A, 0x091C}}; // reset
+                                                  {0x3012, s->exposure_time}}; // integ time
+                                                  //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+
 }
 
 #ifdef NOSCREEN
@@ -1051,15 +1078,22 @@ void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   int err, err2;
   int scale = 6;
   int old_width = FRAME_WIDTH;
+  // int old_height = FRAME_HEIGHT;
   int new_width = FRAME_WIDTH / scale;
   int new_height = FRAME_HEIGHT / scale;
   uint8_t resized_dat[new_width*new_height*3];
+  // int goff, loff;
+  // goff = ((old_width*(scale-1)*old_height/scale)/2);
   memset(&resized_dat, cam_id, 3);
   for (uint32_t r=1;r<new_height;r++) {
     for (uint32_t c=1;c<new_width;c++) {
       resized_dat[(r*new_width+c)*3] = dat[(r*old_width + c)*3*scale];
       resized_dat[(r*new_width+c)*3+1] = dat[(r*old_width + c)*3*scale+1];
       resized_dat[(r*new_width+c)*3+2] = dat[(r*old_width + c)*3*scale+2];
+      // loff = r*old_width + c;
+      // resized_dat[(r*new_width+c)*3] = dat[(goff+loff)*3];
+      // resized_dat[(r*new_width+c)*3+1] = dat[(goff+loff)*3+1];
+      // resized_dat[(r*new_width+c)*3+2] = dat[(goff+loff)*3+2];
     }
   }
   err = zmq_send(zsock_resolve(s->rgb_sock), &resized_dat, new_width*new_height*3, 0);

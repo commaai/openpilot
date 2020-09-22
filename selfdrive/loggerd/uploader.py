@@ -16,7 +16,7 @@ from cereal import log
 from common.hardware import HARDWARE
 from common.api import Api
 from common.params import Params
-from common.xattr import getxattr, setxattr
+from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
@@ -25,6 +25,7 @@ UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
+
 
 def raise_on_thread(t, exctype):
   '''Raises an exception in the threads with id tid'''
@@ -77,9 +78,9 @@ def is_on_hotspot():
   try:
     result = subprocess.check_output(["ifconfig", "wlan0"], stderr=subprocess.STDOUT, encoding='utf8')
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
-    return (result.startswith('192.168.43.') or # android
-            result.startswith('172.20.10.') or # ios
-            result.startswith('10.0.2.')) # toyota entune
+    return (result.startswith('192.168.43.') or  # android
+            result.startswith('172.20.10.') or  # ios
+            result.startswith('10.0.2.'))  # toyota entune
   except Exception:
     return False
 
@@ -127,11 +128,11 @@ class Uploader():
           is_uploaded = True  # deleter could have deleted
         if is_uploaded:
           continue
-
         yield (name, key, fn)
 
   def next_file_to_upload(self, with_raw):
     upload_files = list(self.gen_upload_files())
+
     # try to upload qlog files first
     for name, key, fn in upload_files:
       if name in self.immediate_priority:
@@ -236,14 +237,19 @@ def uploader_fn(exit_event):
   uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
+  counter = 0
+  should_upload = False
   while not exit_event.is_set():
     offroad = params.get("IsOffroad") == b'1'
     allow_raw_upload = (params.get("IsUploadRawEnabled") != b"0") and offroad
-    on_hotspot = is_on_hotspot()
-    on_wifi = is_on_wifi()
-    should_upload = on_wifi and not on_hotspot
+    check_network = (counter % 12 == 0 if offroad else True)
+    if check_network:
+      on_hotspot = is_on_hotspot()
+      on_wifi = is_on_wifi()
+      should_upload = on_wifi and not on_hotspot
 
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and should_upload)
+    counter += 1
     if d is None:  # Nothing to upload
       time.sleep(60 if offroad else 5)
       continue
@@ -263,6 +269,7 @@ def uploader_fn(exit_event):
 
 def main():
   uploader_fn(threading.Event())
+
 
 if __name__ == "__main__":
   main()

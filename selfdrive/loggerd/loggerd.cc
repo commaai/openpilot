@@ -113,8 +113,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
   if (cam_idx == CAM_IDX_DCAM) {
   // TODO: add this back
   #ifndef QCOM2
-    std::vector<char> value = read_db_bytes("RecordFront");
-    if (value.size() == 0 || value[0] != '1') return;
+    if (!read_db_bool("RecordFront")) return;
     LOGW("recording front camera");
   #endif
     set_thread_name("FrontCameraEncoder");
@@ -312,8 +311,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
+        auto bytes = msg.toBytes();
 
         if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
@@ -343,8 +341,7 @@ void encoder_thread(bool is_streaming, bool raw_clips, int cam_idx) {
           eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
 
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
+          auto bytes = msg.toBytes();
           if (lh) {
             lh_log(lh, bytes.begin(), bytes.size(), false);
           }
@@ -404,10 +401,8 @@ void append_property(const char* key, const char* value, void *cookie) {
 }
 
 kj::Array<capnp::word> gen_init_data() {
-  capnp::MallocMessageBuilder msg;
-  auto event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto init = event.initInitData();
+  MessageBuilder msg;
+  auto init = msg.initEvent().initInitData();
 
   init.setDeviceType(cereal::InitData::DeviceType::NEO);
   init.setVersion(capnp::Text::Reader(COMMA_VERSION));
@@ -465,8 +460,7 @@ kj::Array<capnp::word> gen_init_data() {
     init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
   }
 
-  std::vector<char> passive = read_db_bytes("Passive");
-  init.setPassive(passive.size() > 0 && passive[0] == '1');
+  init.setPassive(read_db_bool("Passive"));
   {
     // log params
     std::map<std::string, std::string> params;
@@ -509,11 +503,8 @@ static void bootlog() {
   LOGW("bootlog to %s", s.segment_path);
 
   {
-    capnp::MallocMessageBuilder msg;
-    auto event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-
-    auto boot = event.initBoot();
+    MessageBuilder msg;
+    auto boot = msg.initEvent().initBoot();
 
     boot.setWallTimeNanos(nanos_since_epoch());
 
@@ -523,8 +514,7 @@ static void bootlog() {
     std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
     boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-    auto words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
+    auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size(), false);
   }
 
