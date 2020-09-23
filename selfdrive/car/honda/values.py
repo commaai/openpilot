@@ -760,6 +760,7 @@ FW_VERSIONS = {
       b'78109-THR-AB20\x00\x00',
       b'78109-THR-AB30\x00\x00',
       b'78109-THR-AB40\x00\x00',
+      b'78109-THR-AC20\x00\x00',
       b'78109-THR-AC40\x00\x00',
       b'78109-THR-AE20\x00\x00',
       b'78109-THR-AE40\x00\x00',
