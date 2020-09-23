@@ -34,7 +34,9 @@ from selfdrive.swaglog import cloudlog
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'ws://athena.comma.ai:8765')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
-MAX_LOG_QUEUE_SIZE = 200
+# TODO: Decice the proper queue size (usually the highest number of logs
+# created on openpilot is around 1300 a minute)
+MAX_LOG_QUEUE_SIZE = 2000
 
 dispatcher["echo"] = lambda s: s
 payload_queue: Any = queue.Queue()
@@ -145,8 +147,12 @@ def reboot():
   return {"success": 1}
 
 @dispatcher.add_method
-def pull_log():
-  return {"success": 1, "payload": "logs..."}
+def pullLog():
+  resp = []
+  # upload the logs and clear the queue
+  while not log_queue.empty():
+    resp.append(log_queue.get())
+  return resp
 
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
@@ -287,20 +293,15 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
 def log_recv(sock, end_event):
   while not end_event.is_set():
     try:
-      print("waiting...")
       dat = b''.join(sock.recv_multipart())
       dat = dat.decode('utf8')
 
-      # TODO: Figure out how to handle the case in which the queue
-      #       is full.
+      # TODO: Figure out the retention policy here
+      #       current policy: discard the oldest log
       if log_queue.full():
         log_queue.get()
       log_queue.put(dat)
 
-    # TODO: handle timeout
-    # except socket.timeout:
-    #   pass
-    
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
       end_event.set()
@@ -347,7 +348,7 @@ def main():
 
   conn_retries = 0
 
-  # Set up zmq socket (should be moved)
+  # Set up zmq socket
   ctx = zmq.Context().instance()
   sock = ctx.socket(zmq.PULL)
   sock.bind("ipc:///tmp/logmessage")
