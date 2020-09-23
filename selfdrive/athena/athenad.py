@@ -15,6 +15,7 @@ from functools import partial
 from typing import Any
 
 import requests
+import zmq
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import ABNF, WebSocketTimeoutException, create_connection
 
@@ -28,25 +29,30 @@ from common.realtime import sec_since_boot
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
-ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
+# FIXME: For local development
+# ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai:8765')
+ATHENA_HOST = os.getenv('ATHENA_HOST', 'ws://athena.comma.ai:8765')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
+MAX_LOG_QUEUE_SIZE = 200
 
 dispatcher["echo"] = lambda s: s
 payload_queue: Any = queue.Queue()
 response_queue: Any = queue.Queue()
 upload_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
+log_queue: Any = queue.Queue(maxsize=MAX_LOG_QUEUE_SIZE)
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
 
 
-def handle_long_poll(ws):
+def handle_long_poll(ws, sock):
   end_event = threading.Event()
 
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event)),
     threading.Thread(target=ws_send, args=(ws, end_event)),
-    threading.Thread(target=upload_handler, args=(end_event,))
+    threading.Thread(target=upload_handler, args=(end_event,)),
+    threading.Thread(target=log_recv, args=(sock, end_event))
   ] + [
     threading.Thread(target=jsonrpc_handler, args=(end_event,))
     for x in range(HANDLER_THREADS)
@@ -138,6 +144,9 @@ def reboot():
 
   return {"success": 1}
 
+@dispatcher.add_method
+def pull_log():
+  return {"success": 1, "payload": "logs..."}
 
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
@@ -275,6 +284,26 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
       cloudlog.exception("athenad.ws_proxy_send.exception")
       end_event.set()
 
+def log_recv(sock, end_event):
+  while not end_event.is_set():
+    try:
+      print("waiting...")
+      dat = b''.join(sock.recv_multipart())
+      dat = dat.decode('utf8')
+
+      # TODO: Figure out how to handle the case in which the queue
+      #       is full.
+      if log_queue.full():
+        log_queue.get()
+      log_queue.put(dat)
+
+    # TODO: handle timeout
+    # except socket.timeout:
+    #   pass
+    
+    except Exception:
+      cloudlog.exception("athenad.ws_recv.exception")
+      end_event.set()
 
 def ws_recv(ws, end_event):
   while not end_event.is_set():
@@ -317,6 +346,12 @@ def main():
   api = Api(dongle_id)
 
   conn_retries = 0
+
+  # Set up zmq socket (should be moved)
+  ctx = zmq.Context().instance()
+  sock = ctx.socket(zmq.PULL)
+  sock.bind("ipc:///tmp/logmessage")
+
   while 1:
     try:
       ws = create_connection(ws_uri,
@@ -325,7 +360,7 @@ def main():
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       ws.settimeout(1)
       conn_retries = 0
-      handle_long_poll(ws)
+      handle_long_poll(ws, sock)
     except (KeyboardInterrupt, SystemExit):
       break
     except Exception:
