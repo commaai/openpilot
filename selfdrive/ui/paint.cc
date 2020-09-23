@@ -17,11 +17,20 @@ extern "C"{
 #include "sidebar.hpp"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
+// TODO: choose based on frame input size
+#ifdef QCOM2	
+const mat3 intrinsic_matrix = (mat3){{	
+  2648.0, 0.0, 1928.0/2,	
+  0.0, 2648.0, 1208.0/2,	
+  0.0,   0.0,   1.0	
+}};	
+#else
 const mat3 intrinsic_matrix = (mat3){{
   910., 0., 582.,
   0., 910., 437.,
   0.,   0.,   1.
 }};
+#endif
 
 const uint8_t alert_colors[][4] = {
   [STATUS_OFFROAD] = {0x07, 0x23, 0x39, 0xf1},
