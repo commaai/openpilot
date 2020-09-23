@@ -251,7 +251,7 @@ void cameras_close(MultiCameraState *s) {
 }
 
 
-void camera_process_front(MultiCameraState *s, CameraState *c, int cnt, ) {
+void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrontFrame();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
@@ -259,7 +259,7 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt, ) {
   s->pm->send("frontFrame", msg);
 }
 
-void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt, ) {
+void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrame();
