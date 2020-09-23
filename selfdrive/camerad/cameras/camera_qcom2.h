@@ -16,10 +16,13 @@
 
 #define FRAME_BUF_COUNT 4
 
+#define ANALOG_GAIN_MAX_IDX 15 // 0xF is bypass
+#define EXPOSURE_TIME_MIN 32 // min time limited by HDR exp factor
+#define EXPOSURE_TIME_MAX 1330 // with HDR, no slower than 1/25 sec (1416 lines)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 typedef struct CameraState {
   CameraInfo ci;
@@ -27,13 +30,12 @@ typedef struct CameraState {
   TBuffer camera_tb;
 
   int frame_size;
-  //float digital_gain;
-  //int digital_gain_pre;
   float analog_gain_frac;
   uint16_t analog_gain;
-  uint8_t dc_opstate;
   bool dc_gain_enabled;
   int exposure_time;
+  int exposure_time_min;
+  int exposure_time_max;
 
   mat3 transform;
 
