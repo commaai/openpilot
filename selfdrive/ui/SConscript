@@ -22,7 +22,7 @@ else:
     qt_libs += ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus", "Qt5Multimedia"]
 
   if arch == "larch64":
-    qt_libs += ["GLESv2"]
+    qt_libs += ["GLESv2", "wayland-client"]
   else:
     qt_libs += ["GL"]
 
