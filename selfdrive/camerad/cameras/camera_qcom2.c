@@ -952,6 +952,9 @@ void handle_camera_event(CameraState *s, void *evdat) {
     s->request_id_last = real_id;
     s->camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
     s->camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
+    s->camera_bufs_metadata[buf_idx].global_gain = s->analog_gain + (100*s->dc_gain_enabled);
+    s->camera_bufs_metadata[buf_idx].gain_frac = s->analog_gain_frac;
+    s->camera_bufs_metadata[buf_idx].integ_lines = s->exposure_time;
 
     // dispatch
     enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1);
@@ -1104,6 +1107,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   // set up config
   uint16_t AG = s->analog_gain;
   AG = AG * 4096 + AG * 256 + AG * 16 + AG;
+  s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
 
   // printf("cam %d, min %d, max %d \n", s->camera_num, s->exposure_time_min, s->exposure_time_max);
   // printf("cam %d, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, AG, s->exposure_time, s->dc_gain_enabled);
