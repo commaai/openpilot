@@ -38,8 +38,6 @@
 #define DEBAYER_LOCAL_WORKSIZE 16
 #define YUV_COUNT 40
 #define MAX_CLIENTS 6
-#define HLC_THRESH 200
-#define HLC_A 80
 
 extern "C" {
 volatile sig_atomic_t do_exit = 0;
