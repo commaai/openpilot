@@ -23,6 +23,8 @@
 #define HLC_THRESH 200
 #define HLC_A 80
 
+#define EF_LOWPASS_K 0.125
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,7 +41,7 @@ typedef struct CameraState {
   int exposure_time;
   int exposure_time_min;
   int exposure_time_max;
-  bool lazy_exp;
+  float ef_filtered;
 
   mat3 transform;
 

@@ -581,7 +581,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->exposure_time_min = 0.75 * EXPOSURE_TIME_MIN * 2;
   s->request_id_last = 0;
   s->skipped = true;
-  s->lazy_exp = true;
+  s->ef_filtered = 1.0;
 }
 
 static void camera_open(CameraState *s, VisionBuf* b) {
@@ -1058,17 +1058,8 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   const float target_grey = 0.3;
   float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.06);
 
-  if (exposure_factor > 1 && exposure_factor < 1.1 && s->lazy_exp)
-  {
-    return;
-  }
-
-  if (exposure_factor < 1 && exposure_factor > 0.97)
-  {
-    s->lazy_exp = true;
-  } else {
-    s->lazy_exp = false;
-  }
+  s->ef_filtered = (1 - EF_LOWPASS_K) * s->ef_filtered + EF_LOWPASS_K * exposure_factor;
+  exposure_factor = s->ef_filtered;
 
   // always prioritize exposure time adjust
   s->exposure_time *= exposure_factor;
