@@ -29,13 +29,9 @@ from common.realtime import sec_since_boot
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
-# FIXME: For local development
-# ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai:8765')
-ATHENA_HOST = os.getenv('ATHENA_HOST', 'ws://athena.comma.ai:8765')
+ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai:8765')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
-# TODO: Decice the proper queue size (usually the highest number of logs
-# created on openpilot is around 1300 a minute)
 MAX_LOG_QUEUE_SIZE = 100000
 LOG_RETHREIVE_UPLOAD_THRESHOLD = 3
 BATCH_LOG_SIZE = 100
@@ -156,9 +152,7 @@ def reboot():
   return {"success": 1}
 
 @dispatcher.add_method
-def pullLog(prev_success):
-  print("pulling log....")
-  print(prev_success)
+def pullLogs(prev_success):
   # if the upload of the previous batch didn't finish correcly then we
   # reupload the same batch
   global current_num_retrieve_upload_log_batch
@@ -314,8 +308,7 @@ def log_recv(sock, end_event):
       dat = b''.join(sock.recv_multipart())
       dat = dat.decode('utf8')
 
-      # TODO: Figure out the retention policy here
-      #       current policy: discard the oldest log
+      # current retention policy: discard the oldest log
       if log_queue.full():
         log_queue.get()
       log_queue.put(dat)

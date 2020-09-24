@@ -188,5 +188,62 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
       thread.join()
 
+  def test_pullLogsSuccess(self):
+    dummy_log_entry = '\x14{"msg": "dummy_msg, "ctx": {}, "level": "INFO", "levelnum": 20, "name": "swaglog", "filename": "athenad.py", "lineno": 379, "pathname": "./athenad.py", "module": "athenad", "funcName": "main", "host": "z840-infra2", "process": 68233, "thread": 140263466559232, "threadName": "MainThread", "created": 1600910060.4126267}'
+    athenad.log_queue.put_nowait(dummy_log_entry)
+
+    uploaded_logs = dispatcher['pullLogs'](False)
+
+    # check that the log queue is cleared
+    self.assertTrue(athenad.log_queue.empty())
+    # check if the logs are uploaded correctly
+    self.assertEqual(uploaded_logs[0], dummy_log_entry)
+
+  def test_pullLogsRetrySuccess(self):
+    dummy_log_entry = '\x14{"msg": "dummy_msg, "ctx": {}, "level": "INFO", "levelnum": 20, "name": "swaglog", "filename": "athenad.py", "lineno": 379, "pathname": "./athenad.py", "module": "athenad", "funcName": "main", "host": "z840-infra2", "process": 68233, "thread": 140263466559232, "threadName": "MainThread", "created": 1600910060.4126267}'
+    athenad.last_uploaded_log_batch = [dummy_log_entry]
+    starting_retries_count = athenad.current_num_retrieve_upload_log_batch
+    uploaded_logs = dispatcher['pullLogs'](False)
+    # Check that the number of retries increased by one
+    self.assertEqual(athenad.current_num_retrieve_upload_log_batch, starting_retries_count + 1)
+    # Check that the saved batch has been uploaded correctly
+    self.assertEqual(uploaded_logs[0], dummy_log_entry)
+
+    uploaded_logs = dispatcher['pullLogs'](True)
+    # check that the saved batch has been cleared correctly
+    self.assertEqual(len(athenad.last_uploaded_log_batch), 0)
+
+  def test_pullLogsRetryFail(self):
+    dummy_log_entry = '\x14{"msg": "dummy_msg, "ctx": {}, "level": "INFO", "levelnum": 20, "name": "swaglog", "filename": "athenad.py", "lineno": 379, "pathname": "./athenad.py", "module": "athenad", "funcName": "main", "host": "z840-infra2", "process": 68233, "thread": 140263466559232, "threadName": "MainThread", "created": 1600910060.4126267}'
+    athenad.last_uploaded_log_batch = [dummy_log_entry]
+    starting_retries_count = athenad.current_num_retrieve_upload_log_batch
+    uploaded_logs = dispatcher['pullLogs'](False)
+    # Check that the number of retries increased by one
+    self.assertEqual(athenad.current_num_retrieve_upload_log_batch, starting_retries_count + 1)
+
+    uploaded_logs = dispatcher['pullLogs'](False)
+    self.assertEqual(athenad.current_num_retrieve_upload_log_batch, starting_retries_count + 2)
+
+    # check that the saved batch has been retained correctly
+    self.assertEqual(len(athenad.last_uploaded_log_batch), 1)
+
+  def test_pullLogsRetryFailAfterMaxRetry(self):
+    dummy_log_entry = '\x14{"msg": "dummy_msg, "ctx": {}, "level": "INFO", "levelnum": 20, "name": "swaglog", "filename": "athenad.py", "lineno": 379, "pathname": "./athenad.py", "module": "athenad", "funcName": "main", "host": "z840-infra2", "process": 68233, "thread": 140263466559232, "threadName": "MainThread", "created": 1600910060.4126267}'
+    athenad.last_uploaded_log_batch = [dummy_log_entry]
+    starting_retries_count = athenad.current_num_retrieve_upload_log_batch
+    # check if the saved batch is discarded after 3 times that the upload fail
+    uploaded_logs = dispatcher['pullLogs'](False)
+    uploaded_logs = dispatcher['pullLogs'](False)
+    uploaded_logs = dispatcher['pullLogs'](False)
+    # Check that the number of retries increased
+    self.assertEqual(athenad.current_num_retrieve_upload_log_batch, starting_retries_count + 3)
+
+    uploaded_logs = dispatcher['pullLogs'](False)
+    # check that the current number of retry has been reset correctly
+    self.assertEqual(athenad.current_num_retrieve_upload_log_batch, starting_retries_count)
+    # check that the saved batch has been cleared correctly
+    self.assertEqual(len(athenad.last_uploaded_log_batch), 0)
+
+
 if __name__ == '__main__':
   unittest.main()
