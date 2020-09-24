@@ -1025,11 +1025,11 @@ void set_exposure_time_bounds(CameraState *s) {
   switch (s->analog_gain) {
     case 0: {
       s->exposure_time_min = EXPOSURE_TIME_MIN;
-      s->exposure_time_max = EXPOSURE_TIME_MIN * 4;
+      s->exposure_time_max = EXPOSURE_TIME_MAX; // EXPOSURE_TIME_MIN * 4;
       break;
     }
     case ANALOG_GAIN_MAX_IDX - 1: {
-      s->exposure_time_min = EXPOSURE_TIME_MAX / 4;
+      s->exposure_time_min = EXPOSURE_TIME_MIN; // EXPOSURE_TIME_MAX / 4;
       s->exposure_time_max = EXPOSURE_TIME_MAX;
       break;
     }
