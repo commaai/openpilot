@@ -39,6 +39,7 @@ typedef struct CameraState {
   int exposure_time;
   int exposure_time_min;
   int exposure_time_max;
+  bool lazy_exp;
 
   mat3 transform;
 
