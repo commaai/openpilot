@@ -1052,7 +1052,7 @@ void switch_conversion_gain(CameraState *s) {
 void camera_autoexposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor?
   const float target_grey = 0.3;
-  float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.16 );
+  float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.06);
 
   // always prioritize exposure time adjust
   s->exposure_time *= exposure_factor;
