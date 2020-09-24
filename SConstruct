@@ -6,6 +6,8 @@ import subprocess
 import sys
 import platform
 
+TICI = os.path.isfile('/TICI')
+
 AddOption('--test',
           action='store_true',
           help='build test files')
@@ -21,7 +23,8 @@ Export('cython_dependencies')
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-if arch == "aarch64" and not os.path.isdir("/system"):
+
+if arch == "aarch64" and TICI:
   arch = "larch64"
 
 webcam = bool(ARGUMENTS.get("use_webcam", 0))
