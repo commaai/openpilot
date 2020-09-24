@@ -9,7 +9,6 @@
 #include "common/mat.h"
 #include "common/visionbuf.h"
 #include "common/buffering.h"
-#include "common/utilpp.h"
 
 #include "camera_common.h"
 
@@ -41,12 +40,12 @@ typedef struct CameraState {
   int device_iommu;
   int cdm_iommu;
 
-  unique_fd video0_fd;
-  unique_fd video1_fd;
-  unique_fd isp_fd;
+  int video0_fd;
+  int video1_fd;
+  int isp_fd;
 
-  unique_fd sensor_fd;
-  unique_fd csiphy_fd;
+  int sensor_fd;
+  int csiphy_fd;
 
   int camera_num;
 
@@ -76,9 +75,9 @@ typedef struct CameraState {
 typedef struct MultiCameraState {
   int device;
 
-  unique_fd video0_fd;
-  unique_fd video1_fd;
-  unique_fd isp_fd;
+  int video0_fd;
+  int video1_fd;
+  int isp_fd;
 
   CameraState rear;
   CameraState front;
