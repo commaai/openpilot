@@ -1071,6 +1071,12 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   s->exposure_time *= exposure_factor;
 
   // switch gain if max/min exposure time is reached
+  // or always switch down to a lower gain when possible
+  bool kd = false;
+  if (s->analog_gain > 0) {
+    kd = 1.1 * s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain]) < EXPOSURE_TIME_MAX / 2;
+  }
+
   if (s->exposure_time > s->exposure_time_max) {
     if (s->analog_gain < ANALOG_GAIN_MAX_IDX - 1) {
       s->exposure_time = EXPOSURE_TIME_MAX / 2;
@@ -1082,9 +1088,9 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     } else {
       s->exposure_time = s->exposure_time_max;
     }
-  } else if (s->exposure_time < s->exposure_time_min) {
+  } else if (s->exposure_time < s->exposure_time_min || kd) {
     if (s->analog_gain > 0) {
-      s->exposure_time = EXPOSURE_TIME_MIN * 2;
+      s->exposure_time = max(EXPOSURE_TIME_MIN * 2, s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain]));
       s->analog_gain -= 1;
       if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 0.25) { // switch back to LCG at iso 200
         switch_conversion_gain(s);
@@ -1099,6 +1105,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   uint16_t AG = s->analog_gain;
   AG = AG * 4096 + AG * 256 + AG * 16 + AG;
 
+  // printf("cam %d, min %d, max %d \n", s->camera_num, s->exposure_time_min, s->exposure_time_max);
   // printf("cam %d, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, AG, s->exposure_time, s->dc_gain_enabled);
 
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
