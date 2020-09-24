@@ -525,7 +525,7 @@ void* wideview_thread(void *arg) {
         // shouldn't be any values less than 16 - yuv footroom
         lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
-        if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
+        if (lum_cur > lum_total / (2*HLC_A) && lum_med > HLC_THRESH) {
           lum_med_alt = 80;
         }
 #endif
@@ -856,8 +856,8 @@ void* processing_thread(void *arg) {
     // auto exposure over big box
 #ifdef QCOM2
     const int exposure_x = 96;
-    const int exposure_y = 60;
-    const int exposure_height = 1086;
+    const int exposure_y = 160;
+    const int exposure_height = 986;
     const int exposure_width = 1734;
     const int skip = 2;
 #else
