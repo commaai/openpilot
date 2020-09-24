@@ -15,6 +15,7 @@
 #include "common/mat.h"
 #include "common/visionbuf.h"
 #include "common/buffering.h"
+#include "common/utilpp.h"
 
 #include "camera_common.h"
 
@@ -69,13 +70,13 @@ typedef struct CameraState {
   uint32_t line_length_pclk;
   unsigned int max_gain;
 
-  int csid_fd;
-  int csiphy_fd;
-  int sensor_fd;
-  int isp_fd;
-  int eeprom_fd;
+  unique_fd csid_fd;
+  unique_fd csiphy_fd;
+  unique_fd sensor_fd;
+  unique_fd isp_fd;
+  unique_fd eeprom_fd;
   // rear only
-  int ois_fd, actuator_fd;
+  unique_fd ois_fd, actuator_fd;
   uint16_t infinity_dac;
 
   struct msm_vfe_axi_stream_cfg_cmd stream_cfg;
@@ -126,7 +127,9 @@ typedef struct CameraState {
 typedef struct MultiCameraState {
   int device;
 
-  int ispif_fd;
+  unique_fd ispif_fd;
+  unique_fd msmcfg_fd;
+  unique_fd v4l_fd;
 
   CameraState rear;
   CameraState front;

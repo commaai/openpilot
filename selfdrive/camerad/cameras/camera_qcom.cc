@@ -548,7 +548,7 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
 static void sensors_init(MultiCameraState *s) {
   int err;
 
-  int sensorinit_fd = -1;
+  unique_fd sensorinit_fd;
   if (s->device == DEVICE_LP3) {
     sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
   } else {
@@ -1866,13 +1866,13 @@ void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *c
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
 
-  int msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
-  assert(msmcfg_fd >= 0);
+  s->msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
+  assert(s->msmcfg_fd >= 0);
 
   sensors_init(s);
 
-  int v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
-  assert(v4l_fd >= 0);
+  s->v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
+  assert(s->v4l_fd >= 0);
 
   if (s->device == DEVICE_LP3) {
     s->ispif_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
