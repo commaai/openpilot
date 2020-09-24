@@ -36,7 +36,9 @@ HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
 # TODO: Decice the proper queue size (usually the highest number of logs
 # created on openpilot is around 1300 a minute)
-MAX_LOG_QUEUE_SIZE = 2000
+MAX_LOG_QUEUE_SIZE = 100000
+LOG_RETHREIVE_UPLOAD_THRESHOLD = 3
+BATCH_LOG_SIZE = 100
 
 dispatcher["echo"] = lambda s: s
 payload_queue: Any = queue.Queue()
@@ -45,6 +47,8 @@ upload_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
 log_queue: Any = queue.Queue(maxsize=MAX_LOG_QUEUE_SIZE)
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
+last_uploaded_log_batch = []
+current_num_retrieve_upload_log_batch = 0
 
 
 def handle_long_poll(ws, sock):
@@ -109,6 +113,11 @@ def _do_upload(upload_item):
                         headers={**upload_item.headers, 'Content-Length': str(size)},
                         timeout=10)
 
+def _clear_log_batch_retry():
+  global current_num_retrieve_upload_log_batch
+  global last_uploaded_log_batch
+  current_num_retrieve_upload_log_batch = 0
+  last_uploaded_log_batch = []
 
 # security: user should be able to request any message from their car
 @dispatcher.add_method
@@ -147,12 +156,21 @@ def reboot():
   return {"success": 1}
 
 @dispatcher.add_method
-def pullLog():
-  resp = []
+def pullLog(prev_success):
+  print("pulling log....")
+  print(prev_success)
+  # if the upload of the previous batch didn't finish correcly then we
+  # reupload the same batch
+  global current_num_retrieve_upload_log_batch
+  global last_uploaded_log_batch
+  if not prev_success and last_uploaded_log_batch and current_num_retrieve_upload_log_batch < LOG_RETHREIVE_UPLOAD_THRESHOLD:
+    current_num_retrieve_upload_log_batch += 1
+    return last_uploaded_log_batch
+  _clear_log_batch_retry()
   # upload the logs and clear the queue
-  while not log_queue.empty():
-    resp.append(log_queue.get())
-  return resp
+  while not log_queue.empty() and len(last_uploaded_log_batch) < BATCH_LOG_SIZE:
+    last_uploaded_log_batch.append(log_queue.get())
+  return last_uploaded_log_batch
 
 @dispatcher.add_method
 def uploadFileToUrl(fn, url, headers):
