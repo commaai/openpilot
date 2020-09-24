@@ -327,7 +327,7 @@ void* frontview_thread(void *arg) {
         lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
         if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
-          lum_med_alt = 86;
+          lum_med_alt = 80;
         }
 #endif
         if (lum_cur >= lum_total / 2) {
@@ -526,7 +526,7 @@ void* wideview_thread(void *arg) {
         lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
         if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
-          lum_med_alt = 86;
+          lum_med_alt = 80;
         }
 #endif
         if (lum_cur >= lum_total / 2) {
@@ -885,7 +885,7 @@ void* processing_thread(void *arg) {
         lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
         if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
-          lum_med_alt = 86;
+          lum_med_alt = 80;
         }
 #endif
         if (lum_cur >= lum_total / 2) {
