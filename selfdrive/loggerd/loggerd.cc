@@ -521,8 +521,7 @@ int main(int argc, char** argv) {
   }
   bool record_front = true;
 #ifndef QCOM2
-  std::vector<char> value = read_db_bytes("RecordFront");
-  record_front = (value.size() == 0 || value[0] != '1');
+  record_front = read_db_bool("RecordFront");
 #endif
 
   setpriority(PRIO_PROCESS, 0, -12);
