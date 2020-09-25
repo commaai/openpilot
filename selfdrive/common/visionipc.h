@@ -1,5 +1,4 @@
-#ifndef VISIONIPC_H
-#define VISIONIPC_H
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
@@ -93,27 +92,20 @@ typedef struct VIPCBuf {
   size_t len;
   void* addr;
 } VIPCBuf;
-void vipc_bufs_load(VIPCBuf *bufs, const VisionStreamBufs *stream_bufs,
-                     int num_fds, const int* fds);
-
-
 
 typedef struct VisionStream {
   int ipc_fd;
   int last_idx;
-  int last_type;
+  VisionStreamType last_type;
   int num_bufs;
   VisionStreamBufs bufs_info;
   VIPCBuf *bufs;
 } VisionStream;
 
 int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, VisionStreamBufs *out_bufs_info);
-void visionstream_release(VisionStream *s);
 VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra);
 void visionstream_destroy(VisionStream *s);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
