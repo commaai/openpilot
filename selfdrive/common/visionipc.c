@@ -1,14 +1,18 @@
-#include "visionipc.h"
-
-#include <assert.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/un.h>
+#include <stdbool.h>
+#include <string.h>
 #include <unistd.h>
+#include <assert.h>
+#include <errno.h>
+
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include "ipc.h"
+
+#include "visionipc.h"
 
 typedef struct VisionPacketWire {
   int type;
@@ -18,6 +22,7 @@ typedef struct VisionPacketWire {
 int vipc_connect() {
   return ipc_connect(VIPC_SOCKET_PATH);
 }
+
 
 int vipc_recv(int fd, VisionPacket *out_p) {
   VisionPacketWire p = {0};
@@ -49,15 +54,24 @@ int vipc_send(int fd, const VisionPacket *p2) {
 void vipc_bufs_load(VIPCBuf *bufs, const VisionStreamBufs *stream_bufs,
                      int num_fds, const int* fds) {
   for (int i=0; i<num_fds; i++) {
+    if (bufs[i].addr) {
+      munmap(bufs[i].addr, bufs[i].len);
+      bufs[i].addr = NULL;
+      close(bufs[i].fd);
+    }
     bufs[i].fd = fds[i];
     bufs[i].len = stream_bufs->buf_len;
-    bufs[i].addr = mmap(NULL, bufs[i].len, PROT_READ, MAP_SHARED, bufs[i].fd, 0);
+    bufs[i].addr = mmap(NULL, bufs[i].len,
+                        PROT_READ | PROT_WRITE,
+                        MAP_SHARED, bufs[i].fd, 0);
     // printf("b %d %zu -> %p\n", bufs[i].fd, bufs[i].len, bufs[i].addr);
     assert(bufs[i].addr != MAP_FAILED);
   }
 }
 
+
 int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, VisionStreamBufs *out_bufs_info) {
+  int err;
 
   memset(s, 0, sizeof(*s));
 
@@ -73,13 +87,20 @@ int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, Visi
       .tbuffer = tbuffer,
     }, },
   };
-  VisionPacket rp;
-  if (vipc_send(s->ipc_fd, &p) < 0 ||  vipc_recv(s->ipc_fd, &rp) <= 0) {
+  err = vipc_send(s->ipc_fd, &p);
+  if (err < 0) {
     close(s->ipc_fd);
     s->ipc_fd = -1;
     return -1;
   }
 
+  VisionPacket rp;
+  err = vipc_recv(s->ipc_fd, &rp);
+  if (err <= 0) {
+    close(s->ipc_fd);
+    s->ipc_fd = -1;
+    return -1;
+  }
   assert(rp.type == VIPC_STREAM_BUFS);
   assert(rp.d.stream_bufs.type == type);
 
@@ -98,8 +119,8 @@ int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, Visi
   return 0;
 }
 
-static int visionstream_release(VisionStream *s) {
-  int err = 1;
+void visionstream_release(VisionStream *s) {
+  int err;
   if (s->last_idx >= 0) {
     VisionPacket rep = {
       .type = VIPC_STREAM_RELEASE,
@@ -111,18 +132,30 @@ static int visionstream_release(VisionStream *s) {
     err = vipc_send(s->ipc_fd, &rep);
     s->last_idx = -1;
   }
-  return err;
 }
 
 VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra) {
+  int err;
+
   VisionPacket rp;
-  if (vipc_recv(s->ipc_fd, &rp) <= 0) {
+  err = vipc_recv(s->ipc_fd, &rp);
+  if (err <= 0) {
     return NULL;
   }
   assert(rp.type == VIPC_STREAM_ACQUIRE);
 
-  if (visionstream_release(s) <= 0) {
-    return NULL;
+  if (s->last_idx >= 0) {
+    VisionPacket rep = {
+      .type = VIPC_STREAM_RELEASE,
+      .d = { .stream_rel = {
+        .type = s->last_type,
+        .idx = s->last_idx,
+      }}
+    };
+    err = vipc_send(s->ipc_fd, &rep);
+    if (err <= 0) {
+      return NULL;
+    }
   }
 
   s->last_type = rp.d.stream_acq.type;
@@ -137,7 +170,19 @@ VIPCBuf* visionstream_get(VisionStream *s, VIPCBufExtra *out_extra) {
 }
 
 void visionstream_destroy(VisionStream *s) {
-  visionstream_release(s);
+  int err;
+
+  if (s->last_idx >= 0) {
+    VisionPacket rep = {
+      .type = VIPC_STREAM_RELEASE,
+      .d = { .stream_rel = {
+        .type = s->last_type,
+        .idx = s->last_idx,
+      }}
+    };
+    err = vipc_send(s->ipc_fd, &rep);
+    s->last_idx = -1;
+  }
 
   for (int i=0; i<s->num_bufs; i++) {
     if (s->bufs[i].addr) {
@@ -146,12 +191,6 @@ void visionstream_destroy(VisionStream *s) {
       close(s->bufs[i].fd);
     }
   }
-  if (s->bufs) {
-    free(s->bufs);
-    s->bufs = NULL;
-  }
-  if (s->ipc_fd >= 0) {
-    close(s->ipc_fd);
-    s->ipc_fd = -1;
-  }
+  if (s->bufs) free(s->bufs);
+  if (s->ipc_fd >= 0) close(s->ipc_fd);
 }
