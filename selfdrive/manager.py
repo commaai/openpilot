@@ -177,7 +177,6 @@ managed_processes = {
   "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
   "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
-  "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
   "paramsd": "selfdrive.locationd.paramsd",
@@ -473,7 +472,7 @@ def manager_thread():
     start_offroad()
 
   if os.getenv("NOBOARD") is None:
-    start_managed_process("pandad")
+    start_managed_process("boardd")
 
   if os.getenv("BLOCK") is not None:
     for k in os.getenv("BLOCK").split(","):

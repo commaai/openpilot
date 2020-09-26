@@ -16,7 +16,7 @@ from common.params import Params, put_nonblocking
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.loggerd.config import get_available_percent
-from selfdrive.pandad import get_expected_signature
+from selfdrive.boardd.boardd import get_expected_signature
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import (PowerMonitoring,
                                                  get_battery_capacity,

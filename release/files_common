@@ -78,7 +78,6 @@ selfdrive/manager.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
-selfdrive/pandad.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 
