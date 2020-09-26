@@ -255,18 +255,13 @@ class CarInterface(CarInterfaceBase):
       
     elif candidate == CAR.PRIUS_TSS2:
       stop_and_go = True
-      ret.safetyParam = 73
-      ret.wheelbase = 2.70
-      ret.steerRatio = 15.74   # unknown end-to-end spec
+      ret.safetyParam = 73 # this should be 50 from what i can tell from cabana. 
+      ret.wheelbase = 2.70002 #from toyota online sepc.
+      ret.steerRatio = 13.4   # True steerRation from older prius
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
-
-      ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGain = 6
-      ret.lateralTuning.indi.outerLoopGain = 15.0
-      ret.lateralTuning.indi.timeConstant = 5.5
-      ret.lateralTuning.indi.actuatorEffectiveness = 6.0
-      ret.steerActuatorDelay = 0.60
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.5], [0.15]]
+      ret.lateralTuning.pid.kfV = [0.00007818594]
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
