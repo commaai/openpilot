@@ -12,10 +12,16 @@ MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
 
 
 def get_tombstones():
-  """Returns list of (filename, ctime) for all tombstones in /data/tombstones"""
-  DIR_DATA = "/data/tombstones/"
-  return [(DIR_DATA + fn, int(os.stat(DIR_DATA + fn).st_ctime))
-          for fn in os.listdir(DIR_DATA) if fn.startswith("tombstone")]
+  """Returns list of (filename, ctime) for all tombstones in /data/tombstones
+  and apport crashlogs in /var/crash"""
+  files = []
+  for folder in ["/data/tombstones/", "/var/crash/"]:
+    if os.path.exists(folder):
+      for fn in os.listdir(folder):
+        if fn.startswith("tombstone") or fn.endswith(".crash"):
+          path = os.path.join(folder, fn)
+          files.append((path, int(os.stat(path).st_ctime)))
+  return files
 
 
 def report_tombstone(fn, client):
@@ -28,17 +34,27 @@ def report_tombstone(fn, client):
     contents = f.read()
 
   # Get summary for sentry title
-  message = " ".join(contents.split('\n')[5:7])
+  if fn.endswith(".crash"):
+    lines = contents.split('\n')
+    message = lines[6]
 
-  # Cut off pid/tid, since that varies per run
-  name_idx = message.find('name')
-  if name_idx >= 0:
-    message = message[name_idx:]
+    status_idx = contents.find('ProcStatus')
+    if status_idx >= 0:
+      lines = contents[status_idx:].split('\n')
+      message += " " + lines[1]
+  else:
+    message = " ".join(contents.split('\n')[5:7])
 
-  # Cut off fault addr
-  fault_idx = message.find(', fault addr')
-  if fault_idx >= 0:
-    message = message[:fault_idx]
+    # Cut off pid/tid, since that varies per run
+    name_idx = message.find('name')
+    if name_idx >= 0:
+      message = message[name_idx:]
+
+    # Cut off fault addr
+    fault_idx = message.find(', fault addr')
+    if fault_idx >= 0:
+      message = message[:fault_idx]
+
 
   cloudlog.error({'tombstone': message})
   client.captureMessage(
@@ -53,7 +69,6 @@ def report_tombstone(fn, client):
 
 def main():
   initial_tombstones = set(get_tombstones())
-
   client = Client('https://d3b175702f62402c91ade04d1c547e68:b20d68c813c74f63a7cdf9c4039d8f56@sentry.io/157615',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty}, string_max_length=10000)
 

@@ -8,8 +8,8 @@ from functools import wraps
 import cereal.messaging as messaging
 from cereal import car
 from common.basedir import PARAMS
-from common.android import ANDROID
 from common.params import Params # pylint: disable=no-name-in-module, import-error
+from common.hardware import ANDROID
 from common.spinner import Spinner
 from panda import Panda
 from selfdrive.boardd.boardd import can_list_to_can_capnp

@@ -14,12 +14,8 @@ void panda_set_power(bool power){
   int err = 0;
   err += gpio_init(GPIO_STM_RST_N, true);
   err += gpio_init(GPIO_STM_BOOT0, true);
-  err += gpio_init(GPIO_HUB_RST_N, true);
 
   err += gpio_set(GPIO_STM_RST_N, false);
-
-  // TODO: set hub somewhere else
-  err += gpio_set(GPIO_HUB_RST_N, true);
   err += gpio_set(GPIO_STM_BOOT0, false);
 
   usleep(100*1000); // 100 ms

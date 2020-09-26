@@ -9,12 +9,11 @@ from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
-from common.android import get_network_type, get_network_strength
 from common.params import Params, put_nonblocking # pylint: disable=no-name-in-module, import-error
-from common.realtime import sec_since_boot, DT_TRML
-from common.numpy_fast import clip, interp
 from common.filter_simple import FirstOrderFilter
-from common.hardware import EON, TICI
+from common.hardware import EON, HARDWARE, TICI
+from common.numpy_fast import clip, interp
+from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
@@ -241,8 +240,8 @@ def thermald_thread():
     # get_network_type is an expensive call. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
       try:
-        network_type = get_network_type()
-        network_strength = get_network_strength(network_type)
+        network_type = HARDWARE.get_network_type()
+        network_strength = HARDWARE.get_network_strength(network_type)
       except Exception:
         cloudlog.exception("Error getting network status")
 
@@ -277,7 +276,8 @@ def thermald_thread():
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
     # We only do this if there is a relay that prevents the car from faulting
-    if max_cpu_temp > 107. or bat_temp >= 63. or (has_relay and (started_ts is None) and max_cpu_temp > 70.0):
+    is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
+    if max_cpu_temp > 107. or bat_temp >= 63. or (has_relay and is_offroad_for_5_min and max_cpu_temp > 70.0):
       # onroad not allowed
       thermal_status = ThermalStatus.danger
     elif max_comp_temp > 96.0 or bat_temp > 60.:

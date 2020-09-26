@@ -13,7 +13,8 @@ by generating a rotation matrix and multiplying.
 | ECEF | [x, y, z] | meters | We use **ITRF14 (IGS14)**, NOT NAD83. <br> This is the global Mesh3D frame. |
 | NED | [North, East, Down] | meters | Relative to earth's surface, useful for vizualizing. |
 | Device | [Forward, Right, Down] | meters | This is the Mesh3D local frame. <br> Relative to camera, **not imu.** <br> ![img](http://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/RPY_angles_of_airplanes.png/440px-RPY_angles_of_airplanes.png)|
-| Road | [Forward, Left, Up] | meters | On the road plane aligned to the vehicle. <br> ![img](https://upload.wikimedia.org/wikipedia/commons/f/f5/RPY_angles_of_cars.png) |
+| Calibrated | [Forward, Right, Down] | meters | This is the frame the model outputs are in. <br> More details below. <br>|
+| Car | [Forward, Right, Down] | meters | This is useful for estimating position of points on the road. <br> More details below. <br>|
 | View | [Right, Down, Forward] | meters | Like device frame, but according to camera conventions. |
 | Camera | [u, v, focal] | pixels | Like view frame, but 2d on the camera image.|
 | Normalized Camera | [u / focal, v / focal, 1] | / | |
@@ -43,13 +44,16 @@ convention is to rotate around roll, then pitch and then yaw,
 while rotating around the rotated axes, not the original axes.
 
 
-Calibration
+Car frame
 ------
-Device frame is aligned with the road-facing camera used by openpilot. However, when controlling the vehicle it makes more sense to think in a reference frame aligned with the vehicle. These two reference frames are not necessarily aligned. Calibration is defined as the roll, pitch and yaw angles that describe the orientation of the vehicle in device frame. The vehicle orientation is the orientation of the vehicles's body, the orientation of the vehicle can change relative to the road because of suspension movements.
+Device frame is aligned with the road-facing camera used by openpilot. However, when controlling the vehicle it is helpful to think in a reference frame aligned with the vehicle. These two reference frames can be different.
 
-The roll of the vehicle is defined to be 0 when the vehicle is on a flat road and not turning. Pitch and yaw are defined as the angles that describe the direction in which the vehicle travels when it is driving on a flat road and not turning.
+The orientation of car frame is defined to be aligned with the car's direction of travel and the road plane when the vehicle is driving on a flat road and not turning. The origin of car frame is defined to be directly below device frame (in car frame), such that it is on the road plane. The position and orientation of this frame is not necessarily always aligned with the direction of travel or the road plane due to suspension movements and other effects.
 
-It is important for openpilot's driving model to take in images that look as if the calibration angles were all zero. To achieve this the images input into the model are transformed with the estimated calibration angles. At the moment, roll calibration is always estimated to be zero. 
+
+Calibrated frame
+------
+It is helpful for openpilot's driving model to take in images that look similar when mounted differently in different cars. To achieve this we "calibrate" the images by transforming it into calibrated frame. Calibrated frame is defined to be aligned with car frame in pitch and yaw, and aligned with device frame in roll. It also has the same origin as device frame.
 
 
 Example

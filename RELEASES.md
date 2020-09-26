@@ -1,6 +1,7 @@
 Version 0.7.9 (2020-XX-XX)
 ========================
  * Improved car battery power management
+ * Improved realtime performance
 
 Version 0.7.8 (2020-08-19)
 ========================

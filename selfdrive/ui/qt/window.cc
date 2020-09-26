@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <signal.h>
 
 #include <QVBoxLayout>
@@ -13,12 +14,16 @@
 #include "settings.hpp"
 
 #include "paint.hpp"
-#include "sound.hpp"
+#include "common/util.h"
 
 volatile sig_atomic_t do_exit = 0;
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
+
+#ifdef QCOM2
+  set_core_affinity(7);
+#endif
 
   GLWindow * glWindow = new GLWindow(this);
   main_layout->addWidget(glWindow);
@@ -40,19 +45,19 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
-void MainWindow::openSettings(){
+void MainWindow::openSettings() {
   main_layout->setCurrentIndex(1);
 }
 
-void MainWindow::closeSettings(){
+void MainWindow::closeSettings() {
   main_layout->setCurrentIndex(0);
 }
-
 
 
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
+
 }
 
 GLWindow::~GLWindow() {
@@ -62,29 +67,36 @@ GLWindow::~GLWindow() {
 
 void GLWindow::initializeGL() {
   initializeOpenGLFunctions();
+  std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+  std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
+  std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
+  std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
   ui_state = new UIState();
-  ui_init(ui_state);
+  ui_state->sound = &sound;
   ui_state->fb_w = vwp_w;
   ui_state->fb_h = vwp_h;
-
-  int err = pthread_create(&connect_thread_handle, NULL,
-                           vision_connect_thread, ui_state);
-  assert(err == 0);
+  ui_init(ui_state);
 
   timer->start(50);
 }
 
 void GLWindow::timerUpdate(){
-  pthread_mutex_lock(&ui_state->lock);
+  ui_update(ui_state);
 
-  ui_update_sizes(ui_state);
+#ifdef QCOM2
+  if (ui_state->started != onroad){
+    onroad = ui_state->started;
+    timer->setInterval(onroad ? 50 : 1000);
 
-  check_messages(ui_state);
-  if (ui_state->vision_connected){
-    ui_update(ui_state);
+    int brightness = onroad ? 1023 : 0;
+    std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
+    if (brightness_control.is_open()){
+      brightness_control << int(brightness) << "\n";
+      brightness_control.close();
+    }
   }
-  pthread_mutex_unlock(&ui_state->lock);
+#endif
 
   update();
 }
@@ -94,34 +106,21 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
-  pthread_mutex_lock(&ui_state->lock);
   ui_draw(ui_state);
-  pthread_mutex_unlock(&ui_state->lock);
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *e) {
   // Settings button click
-  if (!ui_state->scene.uilayout_sidebarcollapsed && e->x() <= sbr_w) {
-    if (e->x() >= settings_btn_x && e->x() < (settings_btn_x + settings_btn_w)
-        && e->y() >= settings_btn_y && e->y() < (settings_btn_y + settings_btn_h)) {
-      emit openSettings();
-    }
+  if (!ui_state->scene.uilayout_sidebarcollapsed && settings_btn.ptInRect(e->x(), e->y())) {
+    emit openSettings();
   }
 
   // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.ui_viz_rx - bdr_s)){
+  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)){
     ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
   }
-
 }
 
-
-/* HACKS */
-bool Sound::init(int volume) { return true; }
-bool Sound::play(AudibleAlert alert) { printf("play sound: %d\n", (int)alert); return true; }
-void Sound::stop() {}
-void Sound::setVolume(int volume) {}
-Sound::~Sound() {}
 
 GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
   unsigned int texture;

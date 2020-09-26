@@ -17,8 +17,10 @@ apk/ai.comma*.apk
 
 common/.gitignore
 common/__init__.py
-common/android.py
 common/hardware.py
+common/hardware_android.py
+common/hardware_tici.py
+common/hardware_base.py
 common/gpio.py
 common/realtime.py
 common/clock.pyx
@@ -78,6 +80,7 @@ selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/pandad.py
 selfdrive/updated.py
+selfdrive/rtshield.py
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
@@ -215,8 +218,11 @@ selfdrive/common/visionimg.cc
 selfdrive/common/visionimg.h
 selfdrive/common/spinner.c
 selfdrive/common/spinner.h
+
 selfdrive/common/gpio.cc
 selfdrive/common/gpio.h
+selfdrive/common/i2c.cc
+selfdrive/common/i2c.h
 
 
 selfdrive/controls/__init__.py
@@ -287,10 +293,10 @@ selfdrive/locationd/models/car_kf.py
 selfdrive/locationd/models/constants.py
 
 selfdrive/locationd/calibrationd.py
-selfdrive/locationd/calibration_helpers.py
 
 selfdrive/logcatd/SConscript
-selfdrive/logcatd/logcatd.cc
+selfdrive/logcatd/logcatd_android.cc
+selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
 selfdrive/proclogd/proclogd.cc
@@ -309,11 +315,15 @@ selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py
 selfdrive/loggerd/uploader.py
 selfdrive/loggerd/deleter.py
+selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
 selfdrive/sensord/gpsd.cc
 selfdrive/sensord/libdiag.h
-selfdrive/sensord/sensors.cc
+selfdrive/sensord/sensors_qcom.cc
+selfdrive/sensord/sensors_qcom2.cc
+selfdrive/sensord/sensors/*.cc
+selfdrive/sensord/sensors/*.hpp
 selfdrive/sensord/sensord
 selfdrive/sensord/gpsd
 
@@ -341,6 +351,9 @@ selfdrive/ui/text/text.c
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
+
+selfdrive/ui/android/*.cc
+selfdrive/ui/android/*.hpp
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc

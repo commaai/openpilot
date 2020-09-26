@@ -73,6 +73,8 @@ pyprof2calltree = "*"
 pre-commit = "*"
 mypy = "*"
 parameterized = "*"
+torch = "*"
+torchsummary = "*"
 
 [packages]
 atomicwrites = "*"

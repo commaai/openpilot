@@ -760,6 +760,7 @@ FW_VERSIONS = {
       b'78109-THR-AB20\x00\x00',
       b'78109-THR-AB30\x00\x00',
       b'78109-THR-AB40\x00\x00',
+      b'78109-THR-AC20\x00\x00',
       b'78109-THR-AC40\x00\x00',
       b'78109-THR-AE20\x00\x00',
       b'78109-THR-AE40\x00\x00',
@@ -864,6 +865,7 @@ FW_VERSIONS = {
       b'36161-T6Z-A020\x00\x00',
       b'36161-T6Z-A310\x00\x00',
       b'36161-T6Z-A520\x00\x00',
+      b'36161-TJZ-A120\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-T6Z-A010\x00\x00',
@@ -872,6 +874,7 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-T6Z-A420\x00\x00',
       b'78109-T6Z-A510\x00\x00',
+      b'78109-TJZ-A510\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-T6Z-A020\x00\x00',
@@ -880,6 +883,7 @@ FW_VERSIONS = {
       b'57114-T6Z-A120\x00\x00',
       b'57114-T6Z-A130\x00\x00',
       b'57114-T6Z-A520\x00\x00',
+      b'57114-TJZ-A520\x00\x00',
     ],
   },
   CAR.INSIGHT: {
@@ -897,6 +901,7 @@ FW_VERSIONS = {
       b'77959-TXM-A230\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TXM-A030\x00\x00',
       b'57114-TXM-A040\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
@@ -906,7 +911,9 @@ FW_VERSIONS = {
       b'38897-TXM-A020\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TXM-A010\x00\x00',
       b'78109-TXM-A020\x00\x00',
+      b'78109-TXM-A110\x00\x00',
     ],
   },
   CAR.HRV: {

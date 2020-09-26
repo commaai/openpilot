@@ -22,14 +22,27 @@ WHITE = (255, 255, 255)
 _PATH_X = np.arange(192.)
 _PATH_XD = np.arange(192.)
 _PATH_PINV = compute_path_pinv(50)
-#_BB_OFFSET = 290, 332
-_BB_OFFSET = 0, 0
-_BB_SCALE = 1164/640.
-_BB_TO_FULL_FRAME = np.asarray([
-    [_BB_SCALE, 0., _BB_OFFSET[0]],
-    [0., _BB_SCALE, _BB_OFFSET[1]],
-    [0., 0.,   1.]])
-_FULL_FRAME_TO_BB = np.linalg.inv(_BB_TO_FULL_FRAME)
+
+_FULL_FRAME_SIZE = {
+}
+
+_BB_TO_FULL_FRAME = {}
+_FULL_FRAME_TO_BB = {}
+_INTRINSICS = {}
+for width, height, focal in [(1164, 874, 910), (1928, 1208, 2648)]:
+  sz = width * height
+  _BB_SCALE = width / 640.
+  _BB_TO_FULL_FRAME[sz] = np.asarray([
+      [_BB_SCALE, 0., 0.],
+      [0., _BB_SCALE, 0.],
+      [0., 0., 1.]])
+  _FULL_FRAME_TO_BB[sz] = np.linalg.inv(_BB_TO_FULL_FRAME[sz])
+  _FULL_FRAME_SIZE[sz] = (width, height)
+  _INTRINSICS[sz] = np.array([
+    [focal, 0., width / 2.],
+    [0., focal, height / 2.],
+    [0., 0., 1.]])
+
 
 METER_WIDTH = 20
 
@@ -188,14 +201,15 @@ def draw_mpc(liveMpc, top_down):
 
 
 class CalibrationTransformsForWarpMatrix(object):
-  def __init__(self, model_to_full_frame, K, E):
+  def __init__(self, num_px, model_to_full_frame, K, E):
     self._model_to_full_frame = model_to_full_frame
     self._K = K
     self._E = E
+    self.num_px = num_px
 
   @property
   def model_to_bb(self):
-    return _FULL_FRAME_TO_BB.dot(self._model_to_full_frame)
+    return _FULL_FRAME_TO_BB[self.num_px].dot(self._model_to_full_frame)
 
   @lazy_property
   def model_to_full_frame(self):
@@ -208,7 +222,7 @@ class CalibrationTransformsForWarpMatrix(object):
 
   @lazy_property
   def car_to_bb(self):
-    return _BB_TO_FULL_FRAME.dot(self._K).dot(self._E[:, [0, 1, 3]])
+    return _BB_TO_FULL_FRAME[self.num_px].dot(self._K).dot(self._E[:, [0, 1, 3]])
 
 
 def pygame_modules_have_loaded():

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <czmq.h>
 
 #include "common/mat.h"
 #include "common/visionbuf.h"
@@ -14,7 +15,6 @@
 #include "media/cam_req_mgr.h"
 
 #define FRAME_BUF_COUNT 4
-#define METADATA_BUF_COUNT 4
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,14 @@ typedef struct CameraState {
   TBuffer camera_tb;
 
   int frame_size;
-  float digital_gain;
+  //float digital_gain;
+  //int digital_gain_pre;
+  float analog_gain_frac;
+  uint16_t analog_gain;
+  uint8_t dc_opstate;
+  bool dc_gain_enabled;
+  int exposure_time;
+
   mat3 transform;
 
   int device_iommu;
@@ -54,14 +61,18 @@ typedef struct CameraState {
 
   int buf0_handle;
   int buf_handle[FRAME_BUF_COUNT];
-  int sched_request_id;
-  int request_ids[FRAME_BUF_COUNT];
   int sync_objs[FRAME_BUF_COUNT];
+  int request_ids[FRAME_BUF_COUNT];
+  int request_id_last;
+  int frame_id_last;
+  int idx_offset;
+  bool skipped;
 
   struct cam_req_mgr_session_info req_mgr_session_info;
+
 } CameraState;
 
-typedef struct DualCameraState {
+typedef struct MultiCameraState {
   int device;
 
   int video0_fd;
@@ -71,12 +82,20 @@ typedef struct DualCameraState {
   CameraState rear;
   CameraState front;
   CameraState wide;
-} DualCameraState;
+#ifdef NOSCREEN
+  zsock_t *rgb_sock;
+#endif
 
-void cameras_init(DualCameraState *s);
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front);
-void cameras_run(DualCameraState *s);
+  pthread_mutex_t isp_lock;
+} MultiCameraState;
+
+void cameras_init(MultiCameraState *s);
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
+void cameras_run(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
+#ifdef NOSCREEN
+void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

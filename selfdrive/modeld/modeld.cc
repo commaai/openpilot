@@ -37,11 +37,19 @@ void* live_thread(void *arg) {
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
+#ifndef QCOM2
   Eigen::Matrix<float, 3, 3> eon_intrinsics;
   eon_intrinsics <<
     910.0, 0.0, 582.0,
     0.0, 910.0, 437.0,
     0.0,   0.0,   1.0;
+#else
+  Eigen::Matrix<float, 3, 3> eon_intrinsics;
+  eon_intrinsics <<
+    2648.0, 0.0, 1928.0/2,
+    0.0, 2648.0, 1208.0/2,
+    0.0,   0.0,   1.0;
+#endif
 
     // debayering does a 2x downscale
   mat3 yuv_transform = transform_scale_buffer((mat3){{
@@ -84,6 +92,13 @@ int main(int argc, char **argv) {
   int err;
   set_realtime_priority(51);
 
+#ifdef QCOM
+  set_core_affinity(2);
+#elif QCOM2
+  // CPU usage is much lower when pinned to a single big core
+  set_core_affinity(4);
+#endif
+
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
@@ -98,7 +113,7 @@ int main(int argc, char **argv) {
   PubMaster pm({"model", "cameraOdometry"});
   SubMaster sm({"pathPlan", "frame"});
 
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
   cl_device_type device_type = CL_DEVICE_TYPE_DEFAULT;
 #else
   cl_device_type device_type = CL_DEVICE_TYPE_CPU;

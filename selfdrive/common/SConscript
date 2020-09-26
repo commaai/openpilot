@@ -5,6 +5,8 @@ if SHARED:
 else:
   fxn = env.Library
 
+common_libs = ['params.cc', 'swaglog.cc', 'util.c', 'cqueue.c', 'gpio.cc', 'i2c.cc']
+
 _common = fxn('common', ['params.cc', 'swaglog.cc', 'util.c', 'cqueue.c', 'params_helper.cpp', 'gpio.cc'], LIBS="json11")
 _visionipc = fxn('visionipc', ['visionipc.c', 'ipc.c'])
 

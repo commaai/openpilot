@@ -75,7 +75,7 @@ int read_db_value(const char* key, char** value, size_t* value_sz, bool persiste
   } catch (const exception& e) {
     result = -1;
   }
-  return result;
+  return 0;
 }
 
 void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
@@ -125,4 +125,9 @@ std::vector<char> read_db_bytes(const char* param_name, bool persistent_param) {
     free(value);
   }
   return bytes;
+}
+
+bool read_db_bool(const char* param_name, bool persistent_param) {
+  std::vector<char> bytes = read_db_bytes(param_name, persistent_param);
+  return bytes.size() > 0 and bytes[0] == '1';
 }
