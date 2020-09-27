@@ -115,7 +115,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.95 #116 inches in meters
       ret.steerRatio = 17.3 # guess for tourx
       ret.steerRatioRear = 0. # unknown online
-      ret.centerToFront =   # ret.wheelbase * 0.4 # wild guess
+      ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
 
     elif candidate == CAR.CADILLAC_ATS:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
