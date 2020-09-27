@@ -108,6 +108,15 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0. # unknown online
       ret.centerToFront = ret.wheelbase * 0.4 # wild guess
 
+    elif candidate == CAR.TAHOE:
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.mass = 5602. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
+      ret.safetyModel = car.CarParams.SafetyModel.gm
+      ret.wheelbase = 2.95 #116 inches in meters
+      ret.steerRatio = 17.3 # guess for tourx
+      ret.steerRatioRear = 0. # unknown online
+      ret.centerToFront =   # ret.wheelbase * 0.4 # wild guess
+
     elif candidate == CAR.CADILLAC_ATS:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1601. + STD_CARGO_KG
