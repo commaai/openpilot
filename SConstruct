@@ -11,7 +11,7 @@ AddOption('--asan',
           action='store_true',
           help='turn on ASAN')
 
-arch = subprocess.check_output(["uname", "-m"]).rstrip()
+arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
 
