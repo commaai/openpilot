@@ -305,7 +305,10 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
   if (lock_fd < 0) return -1;
 
   err = flock(lock_fd, LOCK_SH);
-  if (err < 0) return err;
+  if (err < 0) {
+    close(lock_fd);
+    return err;
+  }
 
   std::string key_path = util::string_format("%s/d", params_path);
   DIR *d = opendir(key_path.c_str());
