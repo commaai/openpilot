@@ -15,6 +15,12 @@
 #define CAMERA_ID_AR0231 8
 #define CAMERA_ID_MAX 9
 
+#define LOG_CAMERA_ID_FCAMERA 0
+#define LOG_CAMERA_ID_DCAMERA 1
+#define LOG_CAMERA_ID_ECAMERA 2
+#define LOG_CAMERA_ID_QCAMERA 3
+#define LOG_CAMERA_ID_MAX 4
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,6 +33,20 @@ typedef struct CameraInfo {
   int bayer_flip;
   bool hdr;
 } CameraInfo;
+
+typedef struct LogCameraInfo {
+  const char* filename;
+  const char* frame_packet_name;
+  const char* encode_idx_name;
+  int stream_type;
+  int encode_type;
+  int frame_width, frame_height;
+  int fps;
+  int bitrate;
+  bool is_h265;
+  bool downscale;
+  bool has_qcamera;
+} LogCameraInfo;
 
 typedef struct FrameMetadata {
   uint32_t frame_id;

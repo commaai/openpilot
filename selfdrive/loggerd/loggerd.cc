@@ -34,6 +34,7 @@
 #include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
+#include "camerad/camera_common.h"
 #include "logger.h"
 #include "messaging.hpp"
 #include "services.h"
@@ -43,25 +44,78 @@
 #define DISABLE_ENCODER
 #endif
 
-
 #ifndef DISABLE_ENCODER
 #include "encoder.h"
 #include "raw_logger.h"
 #endif
 
-#define CAM_IDX_FCAM 0
-#define CAM_IDX_DCAM 1
-#define CAM_IDX_ECAM 2
-
-#define CAMERA_FPS 20
-#define SEGMENT_LENGTH 60
-
 #define MAIN_BITRATE 5000000
+#define QCAM_BITRATE 128000
+#define MAIN_FPS 20
 #ifndef QCOM2
 #define DCAM_BITRATE 2500000
+#define DCAM_FPS 10
 #else
 #define DCAM_BITRATE MAIN_BITRATE
+#define DCAM_FPS MAIN_FPS
 #endif
+
+LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
+  [LOG_CAMERA_ID_FCAMERA] = {
+    .stream_type = VISION_STREAM_YUV,
+    .encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
+    .filename = "fcamera.hevc",
+    .frame_packet_name = "frame",
+    .encode_idx_name = "encodeIdx",
+    .fps = MAIN_FPS,
+    .bitrate = MAIN_BITRATE,
+    .is_h265 = true,
+    .downscale = false,
+    .has_qcamera = true
+  },
+  [LOG_CAMERA_ID_DCAMERA] = {
+    .stream_type = VISION_STREAM_YUV_FRONT,
+#ifndef QCOM2
+    .encode_type = cereal::EncodeIndex::Type::FRONT,
+#else
+    .encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
+#endif
+    .filename = "dcamera.hevc",
+    .frame_packet_name = "frontFrame",
+    .encode_idx_name = "frontEncodeIdx",
+    .fps = DCAM_FPS,
+    .bitrate = DCAM_BITRATE,
+    .is_h265 = true,
+    .downscale = false,
+    .has_qcamera = false
+  },
+  [LOG_CAMERA_ID_ECAMERA] = {
+    .stream_type = VISION_STREAM_YUV_WIDE,
+    .encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
+    .filename = "ecamera.hevc",
+    .frame_packet_name = "wideFrame",
+    .encode_idx_name = "wideEncodeIdx",
+    .fps = MAIN_FPS,
+    .bitrate = MAIN_BITRATE,
+    .is_h265 = true,
+    .downscale = false,
+    .has_qcamera = false
+  },
+  [LOG_CAMERA_ID_QCAMERA] = {
+    .filename = "qcamera.ts",
+    .fps = MAIN_FPS,
+    .bitrate = QCAM_BITRATE,
+    .is_h265 = false,
+    .downscale = true,
+#ifndef QCOM2
+    .frame_width = 480, .frame_height = 360
+#else
+    // TODO: fix qcamera warning on tici
+    .frame_width = 526, .frame_height = 330 // keep pixel count the same?
+#endif
+  },
+
+#define SEGMENT_LENGTH 60
 
 #define LOG_ROOT "/data/media/0/realdata"
 
@@ -142,26 +196,25 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
   VisionStreamType stream_type;
   const char *idx_sock_name;
   const char *encoder_filename;
-  // 0:f, 1:d, 2:e
-  if (cam_idx == CAM_IDX_DCAM) {
-    LOGW("recording front camera");
-    set_thread_name("FrontCameraEncoder");
-    stream_type = VISION_STREAM_YUV_FRONT;
-    idx_sock_name = "frontEncodeIdx";
-    encoder_filename = "dcamera.hevc";
-  } else if (cam_idx == CAM_IDX_FCAM) {
-    set_thread_name("RearCameraEncoder");
-    stream_type = VISION_STREAM_YUV;
-    idx_sock_name = "encodeIdx";
-    encoder_filename = "fcamera.hevc";
-  } else if (cam_idx == CAM_IDX_ECAM) {
-    set_thread_name("WideCameraEncoder");
-    stream_type = VISION_STREAM_YUV_WIDE;
-    idx_sock_name = "wideEncodeIdx";
-    encoder_filename = "ecamera.hevc";
-  } else {
-    LOGE("unexpected camera index provided");
-    assert(false);
+
+  switch (cam_idx) {
+    case LOG_CAMERA_ID_DCAMERA: {
+      LOGW("recording front camera");
+      set_thread_name("FrontCameraEncoder");
+      break;
+    }
+    case LOG_CAMERA_ID_FCAMERA: {
+      set_thread_name("RearCameraEncoder");
+      break;
+    }
+    case LOG_CAMERA_ID_ECAMERA: {
+      set_thread_name("WideCameraEncoder");
+      break;
+    }
+    default: {
+      LOGE("unexpected camera index provided");
+      assert(false);
+    }
   }
 
   VisionStream stream;
@@ -169,19 +222,19 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
   bool encoder_inited = false;
   EncoderState encoder;
   EncoderState encoder_alt;
-  bool has_encoder_alt = false;
+  bool has_encoder_alt = cameras_logged[cam_idx].has_qcamera;
 
   int encoder_segment = -1;
   int cnt = 0;
 
-  PubSocket *idx_sock = PubSocket::create(s.ctx, idx_sock_name);
+  PubSocket *idx_sock = PubSocket::create(s.ctx, cameras_logged[cam_idx].encode_idx_name);
   assert(idx_sock != NULL);
 
   LoggerHandle *lh = NULL;
 
   while (!do_exit) {
     VisionStreamBufs buf_info;
-    int err = visionstream_init(&stream, stream_type, false, &buf_info);
+    int err = visionstream_init(&stream, cameras_logged[cam_idx].stream_type, false, &buf_info);
     if (err != 0) {
       LOGD("visionstream connect fail");
       usleep(100000);
@@ -190,16 +243,22 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
     if (!encoder_inited) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-      encoder_init(&encoder, encoder_filename, buf_info.width, buf_info.height, CAMERA_FPS,
-                   cam_idx == CAM_IDX_DCAM ? DCAM_BITRATE : MAIN_BITRATE, true, false);
+      encoder_init(&encoder, cameras_logged[cam_idx].filename,
+                             buf_info.width,
+                             buf_info.height,
+                             cameras_logged[cam_idx].fps,
+                             cameras_logged[cam_idx].bitrate,
+                             cameras_logged[cam_idx].is_h265,
+                             cameras_logged[cam_idx].downscale);
 
-      if (cam_idx == CAM_IDX_FCAM) {
-  #ifndef QCOM2
-        encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
-  #else
-        encoder_init(&encoder_alt, "qcamera.ts", 526, 330, CAMERA_FPS, 128000, false, true); // TODO: fix qcamera warning on tici
-  #endif
-        has_encoder_alt = true;
+      if (has_encoder_alt) {
+        encoder_init(&encoder_alt, cameras_logged[LOG_CAMERA_ID_QCAMERA].filename,
+                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].frame_width,
+                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].frame_height,
+                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].fps,
+                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].bitrate,
+                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].is_h265,
+                                   cameras_logged[LOG_CAMERA_ID_QCAMERA].downscale);
       }
 
       encoder_inited = true;
@@ -217,7 +276,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
     RawLogger *rawlogger = NULL;
 
     if (raw_clips) {
-      rawlogger = new RawLogger("prcamera", buf_info.width, buf_info.height, CAMERA_FPS);
+      rawlogger = new RawLogger("prcamera", buf_info.width, buf_info.height, MAIN_FPS);
     }
 
     while (!do_exit) {
@@ -290,11 +349,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
         MessageBuilder msg;
         auto eidx = msg.initEvent().initEncodeIdx();
         eidx.setFrameId(extra.frame_id);
-#ifdef QCOM2
-        eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
-#else
-        eidx.setType(cam_idx == CAM_IDX_DCAM ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
-#endif
+        eidx.setType(cameras_logged[cam_idx].encode_type);
         eidx.setEncodeId(cnt);
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
@@ -545,7 +600,6 @@ int main(int argc, char** argv) {
 
   for (const auto& it : services) {
     std::string name = it.name;
-    if (!record_front && name == "frontFrame") continue;
 
     if (it.should_log) {
       SubSocket * sock = SubSocket::create(s.ctx, name);
@@ -553,11 +607,11 @@ int main(int argc, char** argv) {
       poller->registerSocket(sock);
       socks.push_back(sock);
 
-      if (name == "frame") {
+      if (name == cameras_logged[LOG_CAMERA_ID_FCAMERA].frame_packet_name) {
         s.frame_rotate.sock = sock;
-      } else if (name == "frontFrame") {
+      } else if (name == cameras_logged[LOG_CAMERA_ID_DCAMERA].frame_packet_name) {
         s.front_rotate.sock = sock;
-      } else if (name == "wideFrame") {
+      } else if (name == cameras_logged[LOG_CAMERA_ID_ECAMERA].frame_packet_name) {
         s.wide_rotate.sock = sock;
       }
 
@@ -590,15 +644,15 @@ int main(int argc, char** argv) {
 
 #ifndef DISABLE_ENCODER
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.frame_rotate, is_streaming, false, CAM_IDX_FCAM);
+  std::thread encoder_thread_handle(encoder_thread, &s.frame_rotate, is_streaming, false, LOG_CAMERA_ID_FCAMERA);
   // front camera
   std::thread front_encoder_thread_handle;
   if (record_front) {
-    front_encoder_thread_handle = std::thread(encoder_thread, &s.front_rotate, false, false, CAM_IDX_DCAM);
+    front_encoder_thread_handle = std::thread(encoder_thread, &s.front_rotate, false, false, LOG_CAMERA_ID_DCAMERA);
   }
   #ifdef QCOM2
   // wide camera
-  std::thread wide_encoder_thread_handle(encoder_thread, &s.wide_rotate, false, false, CAM_IDX_ECAM);
+  std::thread wide_encoder_thread_handle(encoder_thread, &s.wide_rotate, false, false, LOG_CAMERA_ID_ECAMERA);
   #endif
 #endif
 
