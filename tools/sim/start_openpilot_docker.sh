@@ -5,6 +5,7 @@ xhost +local:root
 docker pull commaai/openpilot-sim:latest
 
 docker run --net=host\
+  --name openpilot_client \
   --rm \
   -it \
   --gpus all \
