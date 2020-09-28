@@ -142,8 +142,10 @@ def setup_git_options(cwd: str) -> None:
 def dismount_overlay() -> None:
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.info("unmounting existing overlay")
-    extra_args = "sudo" if TICI else ""
-    run([extra_args, "umount", "-l", OVERLAY_MERGED])
+    args = ["umount", "-l", OVERLAY_MERGED]
+    if TICI:
+      args = ["sudo"] + args
+    run(args)
 
 
 def init_overlay() -> None:
@@ -186,8 +188,11 @@ def init_overlay() -> None:
 
   os.sync()
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
-  extra_args = "sudo" if TICI else ""
-  run([extra_args, "mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
+
+  args = ["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED]
+  if TICI:
+    args = ["sudo"] + args
+  run(args)
 
 
 def finalize_update() -> None:
