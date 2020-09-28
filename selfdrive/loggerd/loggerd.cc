@@ -193,13 +193,15 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
       encoder_init(&encoder, encoder_filename, buf_info.width, buf_info.height, CAMERA_FPS,
                    cam_idx == CAM_IDX_DCAM ? DCAM_BITRATE : MAIN_BITRATE, true, false);
 
-#ifndef QCOM2
-      // TODO: fix qcamera on tici
       if (cam_idx == CAM_IDX_FCAM) {
+  #ifndef QCOM2
         encoder_init(&encoder_alt, "qcamera.ts", 480, 360, CAMERA_FPS, 128000, false, true);
+  #else
+        encoder_init(&encoder_alt, "qcamera.ts", 526, 330, CAMERA_FPS, 128000, false, true); // TODO: fix qcamera warning on tici
+  #endif
         has_encoder_alt = true;
       }
-#endif
+
       encoder_inited = true;
       if (is_streaming) {
         encoder.zmq_ctx = zmq_ctx_new();
