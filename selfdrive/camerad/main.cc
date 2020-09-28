@@ -327,7 +327,7 @@ void* frontview_thread(void *arg) {
         lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
         if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
-          lum_med_alt = 80;
+          lum_med_alt = 86;
         }
 #endif
         if (lum_cur >= lum_total / 2) {
@@ -526,7 +526,7 @@ void* wideview_thread(void *arg) {
         lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
         if (lum_cur > lum_total / (2*HLC_A) && lum_med > HLC_THRESH) {
-          lum_med_alt = 80;
+          lum_med_alt = 86;
         }
 #endif
         if (lum_cur >= lum_total / 2) {
@@ -885,7 +885,7 @@ void* processing_thread(void *arg) {
         lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
         if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
-          lum_med_alt = 80;
+          lum_med_alt = 86;
         }
 #endif
         if (lum_cur >= lum_total / 2) {
@@ -1543,6 +1543,9 @@ void free_buffers(VisionState *s) {
 
 void party(VisionState *s) {
   int err;
+
+  err = set_core_affinity(6);
+  assert(err == 0);
 
   s->terminate_pub = zsock_new_pub("@inproc://terminate");
   assert(s->terminate_pub);
