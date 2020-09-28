@@ -326,7 +326,6 @@ void party(cl_device_id device_id, cl_context context) {
   s->terminate_pub = zsock_new_pub("@inproc://terminate");
   assert(s->terminate_pub);
 
-  std::vector<std::thread> threads;
   std::thread server_thread(visionserver_thread, s);
   
   // priority for cameras
