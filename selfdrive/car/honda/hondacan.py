@@ -1,7 +1,7 @@
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import HONDA_BOSCH
+from selfdrive.car.honda.values import HONDA_BOSCH, HONDA_BOSCH_EXT
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -174,7 +174,12 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
     'SOLID_LANES': hud.lanes,
     'BEEP': 0,
   }
-  commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
+
+  if car_fingerprint in HONDA_BOSCH_EXT and not openpilot_longitudinal_control:
+    commands.append(packer.make_can_msg('LKAS_HUD_A', bus_lkas, lkas_hud_values, idx))
+    commands.append(packer.make_can_msg('LKAS_HUD_B', bus_lkas, lkas_hud_values, idx))
+  else:
+    commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
 
   if radar_disabled and car_fingerprint in HONDA_BOSCH:
     radar_hud_values = {

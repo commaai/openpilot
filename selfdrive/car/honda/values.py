@@ -43,6 +43,8 @@ VISUAL_HUD = {
 class CAR:
   ACCORD = "HONDA ACCORD 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"
+  ACCORD_2021 = "HONDA ACCORD 2021"
+  ACCORDH_2021 = "HONDA ACCORD HYBRID 2021"
   CIVIC = "HONDA CIVIC 2016"
   CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
   CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"
@@ -309,6 +311,78 @@ FW_VERSIONS = {
       b'39990-TVA-A160\x00\x00',
       b'39990-TVA-A150\x00\x00',
       b'39990-TVA-A340\x00\x00',
+    ],
+  },
+  CAR.ACCORD_2021: {
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-6B2-C520\x00\x00',
+    ],
+    (Ecu.transmission, 0x18da1ef1, None): [
+      b'28102-6B8-A700\x00\x00',
+    ],
+    (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
+      b'46114-TVA-A320\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TVA-A020\x00\x00',
+    ],
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TVA-E520\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TVA-L420\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TVC-A230\x00\x00',
+    ],
+    (Ecu.hud, 0x18da61f1, None): [
+      b'78209-TVA-A110\x00\x00',
+    ],
+    (Ecu.shiftByWire, 0x18da0bf1, None): [
+      b'54008-TVC-A910\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'36161-TVC-A330\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36802-TVC-A330\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TVA-A340\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da3af1, None): [
+      b'39390-TVA-A120\x00\x00',
+    ],
+  },
+  CAR.ACCORDH_2021: {
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TWD-J020\x00\x00',
+    ],
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TWA-A530\x00\x00',
+      b'57114-TWA-B520\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TWA-L420\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TWA-A030\x00\x00',
+      b'78109-TWA-A230\x00\x00',
+    ],
+    (Ecu.shiftByWire, 0x18da0bf1, None): [
+      b'54008-TWA-A910\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'36161-TWA-A330\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36802-TWA-A330\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TVA-A340\x00\x00',
+    ],
+    (Ecu.unknown, 0x18da3af1, None): [
+      b'39390-TVA-A120\x00\x00',
     ],
   },
   CAR.CIVIC: {
@@ -1239,7 +1313,9 @@ FW_VERSIONS = {
 
 DBC = {
   CAR.ACCORD: dbc_dict('honda_accord_2018_can_generated', None),
+  CAR.ACCORD_2021: dbc_dict('honda_accord_2018_can_generated', None),
   CAR.ACCORDH: dbc_dict('honda_accord_2018_can_generated', None),
+  CAR.ACCORDH_2021: dbc_dict('honda_accord_2018_can_generated', None),
   CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX_3G: dbc_dict('acura_rdx_2020_can_generated', None),
@@ -1262,7 +1338,9 @@ DBC = {
 
 STEER_THRESHOLD = {
   CAR.ACCORD: 1200,
+  CAR.ACCORD_2021: 1200,
   CAR.ACCORDH: 1200,
+  CAR.ACCORDH_2021: 1200,
   CAR.ACURA_ILX: 1200,
   CAR.ACURA_RDX: 400,
   CAR.ACURA_RDX_3G: 1200,
@@ -1285,7 +1363,9 @@ STEER_THRESHOLD = {
 
 SPEED_FACTOR = {
   CAR.ACCORD: 1.,
+  CAR.ACCORD_2021: 1.,
   CAR.ACCORDH: 1.,
+  CAR.ACCORDH_2021: 1.,
   CAR.ACURA_ILX: 1.,
   CAR.ACURA_RDX: 1.,
   CAR.ACURA_RDX_3G: 1.,
@@ -1306,5 +1386,6 @@ SPEED_FACTOR = {
   CAR.INSIGHT: 1.,
 }
 
-HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
-HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])
+HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
+HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.ACCORD_2021, CAR.CRV_5G, CAR.ACURA_RDX_3G])
+HONDA_BOSCH_EXT = set([CAR.ACCORD_2021, CAR.ACCORDH_2021])
