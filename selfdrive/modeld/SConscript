@@ -19,9 +19,9 @@ if arch == "aarch64":
     lenv['CFLAGS'].append("-DUSE_THNEED")
     lenv['CXXFLAGS'].append("-DUSE_THNEED")
 elif arch == "larch64":
-  libs += ['gsl', 'CB', 'symphony-cpu', 'pthread']
+  libs += ['gsl', 'CB', 'pthread']
 else:
-  libs += ['symphony-cpu', 'pthread']
+  libs += ['pthread']
 
   # for tensorflow support
   common_src += ['runners/tfmodel.cc']
