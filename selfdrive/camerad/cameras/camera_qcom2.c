@@ -1055,8 +1055,8 @@ void switch_conversion_gain(CameraState *s) {
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor?
-  const float target_grey = 0.3;
-  float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.06);
+  float target_grey = 0.3 - (s->analog_gain / 105.0);
+  float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.03);
 
   s->ef_filtered = (1 - EF_LOWPASS_K) * s->ef_filtered + EF_LOWPASS_K * exposure_factor;
   exposure_factor = s->ef_filtered;
@@ -1105,8 +1105,8 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
                                                   {0x3362, s->dc_gain_enabled?0x1:0x0}, // DC_GAIN
-                                                  {0x305A, 0x00D4}, // red gain
-                                                  {0x3058, 0x011F}, // blue gain
+                                                  {0x305A, 0x00D8}, // red gain
+                                                  {0x3058, 0x011B}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
                                                   {0x3012, s->exposure_time}}; // integ time
