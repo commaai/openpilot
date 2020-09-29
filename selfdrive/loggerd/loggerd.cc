@@ -188,8 +188,6 @@ struct LoggerdState {
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
-  std::mutex lock;
-  std::condition_variable cv;
   int num_encoder;
   int rotate_seq_id;
   int should_close;
@@ -311,9 +309,8 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
         if (do_exit) break;
 
         // rotate the encoder if the logger is on a newer segment
-        std::unique_lock<std::mutex> lk(s.lock);
         if (rotate_state->should_rotate) {
-          while (s.rotate_seq_id != my_idx) { s.cv.wait(lk); }
+          while (s.rotate_seq_id != my_idx) { usleep(1000); }
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
           encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
@@ -333,7 +330,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
           s.should_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.should_close > 0 && s.should_close < s.num_encoder) { s.cv.wait(lk); }
+          while(s.should_close > 0 && s.should_close < s.num_encoder) { usleep(1000); }
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
@@ -351,7 +348,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
           s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder) { s.cv.wait(lk); }
+          while(s.finish_close > 0 && s.finish_close < s.num_encoder) { usleep(1000); }
           s.finish_close = 0;
 
           rotate_state->finish_rotate();
