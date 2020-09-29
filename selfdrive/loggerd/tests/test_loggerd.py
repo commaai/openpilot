@@ -25,7 +25,7 @@ if EON:
     "qcamera": 38533,
   }
 elif TICI:
-  CAMERAS = {f"{c}camera": FULL_SIZE for c in ["f", "e", "d"]}
+  CAMERAS = {f"{c}camera": FULL_SIZE if c!="q" else 38533 for c in ["f", "e", "d", "q"]}
 else:
   CAMERAS = {}
 
