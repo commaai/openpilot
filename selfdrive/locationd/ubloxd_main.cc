@@ -12,7 +12,6 @@
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <iostream>
 
 #include "messaging.hpp"
 #include "common/util.h"
@@ -42,6 +41,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
   subscriber->setTimeout(100);
 
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
+
   while (!do_exit) {
     Message * msg = subscriber->receive();
     if (!msg){
@@ -53,6 +53,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
     auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
     memcpy(amsg.begin(), msg->getData(), msg->getSize());
+
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto ubloxRaw = event.getUbloxRaw();

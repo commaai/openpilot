@@ -201,7 +201,7 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
   recv_socks = []
-  frame = fsm.frame + 1  # incrementing hasn't happened yet in SubMaster
+  frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
   if frame == 0 or (msg.which() == 'cameraOdometry' and (frame % 5) == 0):
     recv_socks = ["liveCalibration"]
   return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
@@ -288,7 +288,6 @@ CONFIGS = [
 ]
 
 def replay_process(cfg, lr):
-  print("Running replay on inputs " + str(cfg) + " " + str(lr))
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 

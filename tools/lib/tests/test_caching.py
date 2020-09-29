@@ -38,6 +38,8 @@ class TestFileDownload(unittest.TestCase):
     # Make sure we don't force cache
     os.environ["FILEREADER_CACHE"] = "0"
     small_file_url = "https://raw.githubusercontent.com/commaai/openpilot/master/SAFETY.md"
+    #  If you want large file to be larger than a chunk
+    #  large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/fcamera.hevc"
 
     #  Load full small file
     self.compare_loads(small_file_url)
@@ -53,10 +55,7 @@ class TestFileDownload(unittest.TestCase):
       self.compare_loads(small_file_url, 100 * i, 100)
 
   def test_large_file(self):
-    #  If you want large file to be larger than a chunk
-    #  large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/fcamera.hevc"
     large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
-
     #  Load the end 100 bytes of both files
     file_large = URLFile(large_file_url)
     length = file_large.get_length()
