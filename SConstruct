@@ -134,6 +134,7 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Werror",
+    "-Wno-unknown-warning-option"
     "-Wno-deprecated-register",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
