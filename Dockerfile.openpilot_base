@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qt5-default \
     qtmultimedia5-dev \
     sudo \
+    valgrind \
     wget \
   && rm -rf /var/lib/apt/lists/*
 
