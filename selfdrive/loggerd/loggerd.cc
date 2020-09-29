@@ -141,7 +141,7 @@ public:
                   last_rotate_frame_id(0), enabled(false), should_rotate(false) {};
 
   void waitLogThread() {
-    std::unique_lock<std::mutex> lk(lock);
+    std::unique_lock<std::mutex> lk(fid_lock);
     while (stream_frame_id > log_frame_id           //if the log camera is older, wait for it to catch up.
            && (stream_frame_id - log_frame_id) < 8  // but if its too old then there probably was a discontinuity (visiond restarted)
            && !do_exit) {
@@ -152,33 +152,33 @@ public:
   void cancelWait() { cv.notify_one(); }
 
   void setStreamFrameId(uint32_t frame_id) {
-    lock.lock();
+    fid_lock.lock();
     stream_frame_id = frame_id;
-    lock.unlock();
+    fid_lock.unlock();
     cv.notify_one();
   }
 
   void setLogFrameId(uint32_t frame_id) {
-    lock.lock();
+    fid_lock.lock();
     log_frame_id = frame_id;
-    lock.unlock();
+    fid_lock.unlock();
     cv.notify_one();
   }
 
   void rotate() {
     if (!enabled) { return; }
-    std::unique_lock<std::mutex> lk(lock);
+    std::unique_lock<std::mutex> lk(fid_lock);
     should_rotate = true;
     last_rotate_frame_id = stream_frame_id;
   }
 
   void finish_rotate() {
-    std::unique_lock<std::mutex> lk(lock);
+    std::unique_lock<std::mutex> lk(fid_lock);
     should_rotate = false;
   }
 
 private:
-  std::mutex lock;
+  std::mutex fid_lock;
   std::condition_variable cv;
 };
 
@@ -188,6 +188,8 @@ struct LoggerdState {
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
+  std::mutex lock;
+  std::condition_variable cv;
   int num_encoder;
   int rotate_seq_id;
   int should_close;
@@ -309,6 +311,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
         if (do_exit) break;
 
         // rotate the encoder if the logger is on a newer segment
+        std::unique_lock<std::mutex> lk(s.lock);
         if (rotate_state->should_rotate) {
           while (s.rotate_seq_id != my_idx) { s.cv.wait(lk); }
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
