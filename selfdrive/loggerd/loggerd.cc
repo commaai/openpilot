@@ -187,7 +187,7 @@ struct LoggerdState {
   LoggerState logger;
   char segment_path[4096];
   int rotate_segment;
-  std::mutex rotate_lock;
+  pthread_mutex_t rotate_lock;
   int num_encoder;
   int rotate_seq_id;
   int should_close;
@@ -309,7 +309,6 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
         if (do_exit) break;
 
         // rotate the encoder if the logger is on a newer segment
-        std::unique_lock<std::mutex> lk(s.rotate_lock);
         if (rotate_state->should_rotate) {
           while (s.rotate_seq_id != my_idx) { s.cv.wait(lk); }
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
@@ -674,6 +673,7 @@ int main(int argc, char** argv) {
   s.should_close = 0;
   s.finish_close = 0;
   s.num_encoder = 0;
+  pthread_mutex_init(&s.rotate_lock, NULL);
 #ifndef DISABLE_ENCODER
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, false, LOG_CAMERA_ID_FCAMERA);
@@ -772,7 +772,6 @@ int main(int argc, char** argv) {
     // TODO: fall back to time if camera missing
 
     if (new_segment) {
-      std::unique_lock<std::mutex> lk(s.rotate_lock);
       last_rotate_tms += segment_length * 1000;
 
       // rotate the encoders
