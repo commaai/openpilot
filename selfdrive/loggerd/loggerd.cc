@@ -34,7 +34,7 @@
 #include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
-#include "camerad/camera_common.h"
+#include "camerad/cameras/camera_common.h"
 #include "logger.h"
 #include "messaging.hpp"
 #include "services.h"
