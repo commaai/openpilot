@@ -25,17 +25,5 @@ You can control openpilot driving in the simulation with the following keys
 |   3   |   Cruise cancel   |
 |   q   |     Exit all      |
 
-## Arguments
-Arguments for `start_openpilot_docker.sh`:
-```
-  -h, --help            show this help message and exit
-  --joystick
-  --town TOWN
-  --spawn_point NUM_SELECTED_SPAWN_POINT
-  --cloudyness CLOUDYNESS
-  --precipitation PRECIPITATION
-  --precipitation_deposits PRECIPITATION_DEPOSITS
-  --wind_intensity WIND_INTENSITY
-  --sun_azimuth_angle SUN_AZIMUTH_ANGLE
-  --sun_altitude_angle SUN_ALTITUDE_ANGLE
-```
+To see the options for changing the environment, such as the town, spawn point or precipitation, you can run `./start_openpilot_docker.sh --help`.
+This will print the help output inside the docker container. You need to exit the docker container before running `./start_openpilot_docker.sh` again.
