@@ -53,9 +53,11 @@
 #define QCAM_BITRATE 128000
 #define MAIN_FPS 20
 #ifndef QCOM2
+#define MAX_CAM_IDX LOG_CAMERA_ID_DCAMERA
 #define DCAM_BITRATE 2500000
 #define DCAM_FPS 10
 #else
+#define MAX_CAM_IDX LOG_CAMERA_ID_ECAMERA
 #define DCAM_BITRATE MAIN_BITRATE
 #define DCAM_FPS MAIN_FPS
 #endif
@@ -135,10 +137,10 @@ class RotateState {
 public:
   SubSocket* fpkt_sock;
   uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
-  bool should_rotate;
+  bool enabled, should_rotate;
 
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX), should_rotate(false) {};
+                  last_rotate_frame_id(0), enabled(false), should_rotate(false) {};
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(lock);
@@ -166,6 +168,7 @@ public:
   }
 
   void rotate() {
+    if (!enabled) { return; }
     std::unique_lock<std::mutex> lk(lock);
     should_rotate = true;
     last_rotate_frame_id = stream_frame_id;
@@ -224,6 +227,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
   int encoder_segment = -1;
   int cnt = 0;
+  rotate_state->enabled = true;
 
   PubSocket *idx_sock = PubSocket::create(s.ctx, cameras_logged[cam_idx].encode_idx_name);
   assert(idx_sock != NULL);
@@ -616,7 +620,7 @@ int main(int argc, char** argv) {
       poller->registerSocket(sock);
       socks.push_back(sock);
 
-      for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) {
+      for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
         if (name == cameras_logged[cid].frame_packet_name) { s.rotate_state[cid].fpkt_sock = sock; }
       }
       if (name == "model") { model_sock = sock; }
@@ -690,7 +694,7 @@ int main(int argc, char** argv) {
           mpkt_seen = true;
         } else {
           int fpkt_id = -1;
-          for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) {
+          for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
             if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
           }
           if (fpkt_id>=0) {
@@ -720,23 +724,21 @@ int main(int argc, char** argv) {
       }
     }
 
+    double ts = seconds_since_boot();
+
     bool new_segment = true;
-    for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) {
+    for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
       // this *should* be redundant on tici since all camera frames are synced
-      new_segment &= (s.logger.part > -1 &&
-                       s.rotate_state[cid].stream_frame_id > s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS);
-#ifndef QCOM2
-      break; // only look at fcamera frame id if not QCOM2
-#endif
+      new_segment &= ((s.rotate_state[cid].stream_frame_id > s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS &&
+                       s.logger.part > -1 && !s.rotate_state[cid].should_rotate) || (!s.rotate_state[cid].enabled));
     }
     new_segment |= (s.logger.part == -1 && mpkt_seen);
 
-    double ts = seconds_since_boot();
     if (new_segment) {
       last_rotate_tms += segment_length * 1000;
 
       // rotate the encoders
-      for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) { s.rotate_state[cid].rotate(); }
+      for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
 
       // rotate the log
       if (is_logging) {
@@ -747,13 +749,14 @@ int main(int argc, char** argv) {
         LOGW("rotated to %s", s.segment_path);
       }
     }
+
     if ((msg_count%1000) == 0) {
       LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count*1.0/(ts-start_ts), bytes_count*0.001/(ts-start_ts));
     }
   }
 
   LOGW("joining threads");
-  for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) { s.rotate_state[cid].cancelWait(); }
+  for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].cancelWait(); }
 
 #ifndef DISABLE_ENCODER
 #ifdef QCOM2
