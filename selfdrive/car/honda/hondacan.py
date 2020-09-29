@@ -104,9 +104,10 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx, has_relay):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)
 
 
-def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, has_relay, radar_disabled, stock_hud):
+def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, has_relay, openpilot_longitudinal_control, stock_hud):
   commands = []
   bus_pt = get_pt_bus(car_fingerprint, has_relay)
+  radar_disabled = car_fingerprint in HONDA_BOSCH and openpilot_longitudinal_control
   bus_lkas = get_lkas_cmd_bus(car_fingerprint, has_relay, radar_disabled)
 
   if car_fingerprint in HONDA_BOSCH:
@@ -136,7 +137,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
       "FCM_PROBLEM": stock_hud["FCM_PROBLEM"],
       "ICONS": stock_hud["ICONS"],
     }
-  if radar_disabled:
+  if openpilot_longitudinal_control:
     commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values, idx))
 
   lkas_hud_values = {
