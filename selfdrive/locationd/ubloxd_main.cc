@@ -12,7 +12,7 @@
 #include <math.h>
 #include <ctime>
 #include <chrono>
-// #include <iostream>
+#include <iostream>
 
 #include "messaging.hpp"
 #include "common/util.h"
