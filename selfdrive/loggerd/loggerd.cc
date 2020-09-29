@@ -740,6 +740,7 @@ int main(int argc, char** argv) {
       new_segment = mpkt_seen; // modeld startup hangs the whole system, so no point start logging before that
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) { new_segment &= (s.rotate_state[cid].stream_frame_id > 0 || !s.rotate_state[cid].enabled); }
     }
+    // TODO: fall back to time if camera missing
 
     if (new_segment) {
       std::unique_lock<std::mutex> lk(s.rotate_lock);
