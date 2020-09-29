@@ -55,11 +55,9 @@
 #ifndef QCOM2
 #define MAX_CAM_IDX LOG_CAMERA_ID_DCAMERA
 #define DCAM_BITRATE 2500000
-#define DCAM_FPS 10
 #else
 #define MAX_CAM_IDX LOG_CAMERA_ID_ECAMERA
 #define DCAM_BITRATE MAIN_BITRATE
-#define DCAM_FPS MAIN_FPS
 #endif
 
 LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
@@ -79,7 +77,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .filename = "dcamera.hevc",
     .frame_packet_name = "frontFrame",
     .encode_idx_name = "frontEncodeIdx",
-    .fps = DCAM_FPS,
+    .fps = MAIN_FPS, // on EONs, more compressed this way
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
     .downscale = false,
@@ -289,14 +287,13 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
         break;
       }
 
-      rotate_state->setStreamFrameId(extra.frame_id);
-
       //uint64_t current_time = nanos_since_boot();
       //uint64_t diff = current_time - extra.timestamp_eof;
       //double msdiff = (double) diff / 1000000.0;
       // printf("logger latency to tsEof: %f\n", msdiff);
 
       { // all the rotation stuff
+        // TO FIX: closing and opening virtually take no time, but switching loggerhandle can sometimes hang for up to 30ms
 
         // wait if camera pkt id is older than stream
         rotate_state->waitLogThread();
@@ -333,6 +330,8 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
           rotate_state->finish_rotate();
         }
       }
+
+      rotate_state->setStreamFrameId(extra.frame_id);
 
       uint8_t *y = (uint8_t*)buf->addr;
       uint8_t *u = y + (buf_info.width*buf_info.height);
@@ -726,15 +725,24 @@ int main(int argc, char** argv) {
 
     double ts = seconds_since_boot();
 
-    bool new_segment = true;
-    for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
-      // this *should* be redundant on tici since all camera frames are synced
-      new_segment &= ((s.rotate_state[cid].stream_frame_id > s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS &&
-                       s.logger.part > -1 && !s.rotate_state[cid].should_rotate) || (!s.rotate_state[cid].enabled));
+    bool new_segment;
+    if (s.logger.part > -1) {
+     new_segment = true;
+      for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
+        // this *should* be redundant on tici since all camera frames are synced
+        new_segment &= ((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS &&
+                         !s.rotate_state[cid].should_rotate) || (!s.rotate_state[cid].enabled));
+#ifndef QCOM2
+        break; // only look at fcamera frame id if not QCOM2
+#endif
+      }
+    } else if (s.logger.part == -1) {
+      new_segment = mpkt_seen; // modeld startup hangs the whole system, so no point start logging before that
+      for (int cid=0;cid<=MAX_CAM_IDX;cid++) { new_segment &= (s.rotate_state[cid].stream_frame_id > 0 || !s.rotate_state[cid].enabled); }
     }
-    new_segment |= (s.logger.part == -1 && mpkt_seen);
 
     if (new_segment) {
+      std::unique_lock<std::mutex> lk(s.rotate_lock);
       last_rotate_tms += segment_length * 1000;
 
       // rotate the encoders
@@ -742,7 +750,6 @@ int main(int argc, char** argv) {
 
       // rotate the log
       if (is_logging) {
-        std::unique_lock<std::mutex> lk(s.rotate_lock);
         err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
         assert(err == 0);
         if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
