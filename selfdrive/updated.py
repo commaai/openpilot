@@ -201,6 +201,11 @@ def finalize_update() -> None:
     shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
+  # Log git repo corruption
+  fsck = run(["git", "fsck", "--no-progress"], FINALIZED).rstrip()
+  if len(fsck):
+    cloudlog.error(f"found git corruption, git fsck:\n{fsck}")
+
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
