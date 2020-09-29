@@ -179,7 +179,7 @@ managed_processes = {
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
   "boardd": ("selfdrive/boardd", ["./boardd"]),
   "pandad": "selfdrive.pandad",
-  "ui": ("selfdrive/ui", ["./ui"]),
+  "ui": ("selfdrive/ui", ["./ui"]),  # 2
   "calibrationd": "selfdrive.locationd.calibrationd",
   "paramsd": "selfdrive.locationd.paramsd",
   "camerad": ("selfdrive/camerad", ["./camerad"]),

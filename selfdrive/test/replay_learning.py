@@ -10,13 +10,10 @@ else:
   from tqdm import tqdm   # type: ignore
 
 import cereal.messaging as messaging
-from common.params import Params
-# from cereal.services import service_list
 from collections import namedtuple
 from tools.lib.logreader import LogReader
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore',])
-
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path'])
 
 def wait_for_event(evt):
   if not evt.wait(20):
@@ -27,14 +24,14 @@ def wait_for_event(evt):
       # done testing this process, let it die
       sys.exit(0)
 
-class SimplePubMaster(messaging.PubMaster):
+class SimplePubMaster():
   def __init__(self, services):  # pylint: disable=super-init-not-called
     self.sock = {}
     for s in services:
       self.sock[s] = messaging.pub_sock(s)
 
   def send(self, s, dat):
-    print(dat)
+    # print(dat)
     self.sock[s].send(dat.to_bytes())
 
 
@@ -94,6 +91,17 @@ CONFIGS = [
       "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
     },
     ignore=[],
+    command="./ubloxd & sleep 10; kill $!",
+    path="../locationd",
+  ),
+  ProcessConfig(
+    proc_name="loggerd",
+    pub_sub={
+      "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
+    },
+    ignore=[],
+    command="./loggerd & sleep 10; kill $!",
+    path="../loggerd",
   ),
 ]
 
@@ -113,33 +121,23 @@ def valgrindlauncher(arg, cwd):
 def replay_process(cfg, lr):
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']  # We dump data from logs here
 
-  fpm = SimplePubMaster(pub_sockets)
-
+  pm = SimplePubMaster(pub_sockets)
+  print("Sorting logs")
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  params = Params()
-  params.clear_all()
-  params.manager_start()
-  params.put("OpenpilotEnabledToggle", "1")
-  params.put("Passive", "0")
-  params.put("CommunityFeaturesToggle", "1")
-
-  os.environ['NO_RADAR_SLEEP'] = "1"
-
-  thread = threading.Thread(target=valgrindlauncher, args=("./ubloxd & sleep 10; kill $!", "../locationd"))
+  thread = threading.Thread(target=valgrindlauncher, args=(cfg.command, cfg.path))
   thread.daemon = True
   thread.start()
-
+  time.sleep(10)  # We give the process time to start
   for msg in tqdm(pub_msgs):
-    print("MSG incoming(not a chemical, a message)")
-    # print(msg)
-    fpm.send(msg.which(), msg.as_builder())
+    pm.send(msg.which(), msg.as_builder())
 
-URL = "https://commadata2.blob.core.windows.net/commadata2/a74b011b32b51b56/\
-2020-09-21--10-29-15/0/rlog.bz2?se=2020-09-29T12%3A08%3A10Z&sp=r&sv=2018-03-2\
-8&sr=b&rscd=attachment%3B%20filename%3Da74b011b32b51b56_2020-09-21--10-29-15--0--rlog.bz2\
-&sig=0KVC2BWVlvW4yXTPpUm9Sim8Pp0HFKA5rNyTpnvHv8o%3D"
+  # for s in pub_sockets:
+  #   pm.send(s, b"")
+
+URL = "https://commadata2.blob.core.windows.net/commadata2/a74b011b32b51b56/2020-09-21--10-29-15\
+/0/rlog.bz2?se=2020-09-29T13%3A13%3A40Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3Da74b011b32b51b56_2020-09-21--10-29-15--0--rlog.bz2&sig=iPiuSfthiYo3xL3tDKoKwr8kQH7odHW%2BqGcCqmnY2EY%3D"
 if __name__ == "__main__":
   cfg = CONFIGS[0]
 

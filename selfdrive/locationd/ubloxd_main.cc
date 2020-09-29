@@ -43,10 +43,11 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
   subscriber->setTimeout(100);
 
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
-  // int t=0;
+  int t=0;
   while (!do_exit) {
-    // std::cout<<"Got to here on round "<<t++<<std::endl;
+    std::cout<<"Got to here on round "<<t++<<std::endl;
     Message * msg = subscriber->receive();
+    std::cout<<msg->getData()<<std::endl;
     if (!msg){
       if (errno == EINTR) {
         do_exit = true;
@@ -56,8 +57,8 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
     auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
     memcpy(amsg.begin(), msg->getData(), msg->getSize());
-    // std::cout<<"Message is :"<<std::endl;
-    // std::cout<<amsg.begin()<<std::endl;
+    std::cout<<"Message is :"<<std::endl;
+    std::cout<<amsg.begin()<<std::endl;
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto ubloxRaw = event.getUbloxRaw();
