@@ -98,7 +98,7 @@ class TestLoggerd(unittest.TestCase):
         frame_tolerance = FRAME_TOLERANCE+1 if (EON and camera=='dcamera') else FRAME_TOLERANCE
         frame_count = int(subprocess.check_output(cmd, shell=True, encoding='utf8').strip())
 
-        self.assertTrue(abs(expected_frames - frame_count) <= FRAME_TOLERANCE,
+        self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
                         f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
 
 if __name__ == "__main__":
