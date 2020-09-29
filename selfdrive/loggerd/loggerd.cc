@@ -188,6 +188,10 @@ struct LoggerdState {
   char segment_path[4096];
   int rotate_segment;
   std::mutex rotate_lock;
+  int num_encoder;
+  int rotate_seq_id;
+  int should_close;
+  int finish_close;
 
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
@@ -226,6 +230,10 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
   int encoder_segment = -1;
   int cnt = 0;
   rotate_state->enabled = true;
+  pthread_mutex_lock(&s.rotate_lock);
+  int my_idx = s.num_encoder;
+  s.num_encoder += 1;
+  pthread_mutex_unlock(&s.rotate_lock);
 
   PubSocket *idx_sock = PubSocket::create(s.ctx, cameras_logged[cam_idx].encode_idx_name);
   assert(idx_sock != NULL);
@@ -303,8 +311,10 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
         // rotate the encoder if the logger is on a newer segment
         std::unique_lock<std::mutex> lk(s.rotate_lock);
         if (rotate_state->should_rotate) {
+          while (s.rotate_seq_id != my_idx) { s.cv.wait(lk); }
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
           encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
+          s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
           if (has_encoder_alt) {
             encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
           }
@@ -317,6 +327,15 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
           }
           lh = logger_get_handle(&s.logger);
 
+          pthread_mutex_lock(&s.rotate_lock);
+          s.should_close += 1;
+          pthread_mutex_unlock(&s.rotate_lock);
+
+          while(s.should_close > 0 && s.should_close < s.num_encoder) { s.cv.wait(lk); }
+
+          pthread_mutex_lock(&s.rotate_lock);
+          s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
+
           encoder_close(&encoder);
           encoder_open(&encoder, encoder.next_path);
           encoder.segment = encoder.next_segment;
@@ -327,6 +346,12 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
             encoder_alt.segment = encoder_alt.next_segment;
             encoder_alt.rotating = false;
           }
+          s.finish_close += 1;
+          pthread_mutex_unlock(&s.rotate_lock);
+
+          while(s.finish_close > 0 && s.finish_close < s.num_encoder) { s.cv.wait(lk); }
+          s.finish_close = 0;
+
           rotate_state->finish_rotate();
         }
       }
@@ -645,6 +670,10 @@ int main(int argc, char** argv) {
     is_logging = false;
   }
 
+  s.rotate_seq_id = 0;
+  s.should_close = 0;
+  s.finish_close = 0;
+  s.num_encoder = 0;
 #ifndef DISABLE_ENCODER
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, false, LOG_CAMERA_ID_FCAMERA);
