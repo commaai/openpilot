@@ -727,7 +727,7 @@ int main(int argc, char** argv) {
 
     bool new_segment;
     if (s.logger.part > -1) {
-     new_segment = true;
+      new_segment = true;
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
         // this *should* be redundant on tici since all camera frames are synced
         new_segment &= ((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS &&
