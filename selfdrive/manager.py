@@ -237,7 +237,7 @@ car_started_processes = [
   'radard',
   'calibrationd',
   'paramsd',
-  'camerad',
+  'modeld',
   'proclogd',
   'locationd',
   'clocksd',
@@ -269,9 +269,7 @@ if ANDROID:
     'rtshield',
   ]
 
-# starting dmonitoringmodeld when modeld is initializing can sometimes \
-# result in a weird snpe state where dmon constantly uses more cpu than normal.
-car_started_processes += ['modeld']
+car_started_processes += ['camerad']
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
@@ -295,6 +293,8 @@ def nativelauncher(pargs, cwd):
 def start_managed_process(name):
   if name in running or name not in managed_processes:
     return
+  if name == 'camerad':
+    time.sleep(10)
   proc = managed_processes[name]
   if isinstance(proc, str):
     cloudlog.info("starting python %s" % proc)
