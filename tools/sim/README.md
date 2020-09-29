@@ -25,3 +25,17 @@ You can control openpilot driving in the simulation with the following keys
 |   3   |   Cruise cancel   |
 |   q   |     Exit all      |
 
+## Arguments
+Arguments for `start_openpilot_docker.sh`:
+```
+  -h, --help            show this help message and exit
+  --joystick
+  --town TOWN
+  --spawn_point NUM_SELECTED_SPAWN_POINT
+  --cloudyness CLOUDYNESS
+  --precipitation PRECIPITATION
+  --precipitation_deposits PRECIPITATION_DEPOSITS
+  --wind_intensity WIND_INTENSITY
+  --sun_azimuth_angle SUN_AZIMUTH_ANGLE
+  --sun_altitude_angle SUN_ALTITUDE_ANGLE
+```
