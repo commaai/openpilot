@@ -12,6 +12,7 @@
 #include <math.h>
 #include <ctime>
 #include <chrono>
+// #include <iostream>
 
 #include "messaging.hpp"
 #include "common/util.h"
@@ -29,6 +30,7 @@ void set_do_exit(int sig) {
 
 using namespace ublox;
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
+  // std::cout<<"Runnning ublox_main"<<std::endl;
   LOGW("starting ubloxd");
   signal(SIGINT, (sighandler_t) set_do_exit);
   signal(SIGTERM, (sighandler_t) set_do_exit);
@@ -41,8 +43,9 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
   subscriber->setTimeout(100);
 
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
-
+  // int t=0;
   while (!do_exit) {
+    // std::cout<<"Got to here on round "<<t++<<std::endl;
     Message * msg = subscriber->receive();
     if (!msg){
       if (errno == EINTR) {
@@ -53,7 +56,8 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
     auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
     memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
+    // std::cout<<"Message is :"<<std::endl;
+    // std::cout<<amsg.begin()<<std::endl;
     capnp::FlatArrayMessageReader cmsg(amsg);
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto ubloxRaw = event.getUbloxRaw();

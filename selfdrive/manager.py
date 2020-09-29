@@ -22,6 +22,7 @@ os.environ['BASEDIR'] = BASEDIR
 TOTAL_SCONS_NODES = 1005
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
+VALGRIND = os.getenv("VALGRIND") is not None
 # Create folders needed for msgq
 try:
   os.mkdir("/dev/shm")
@@ -169,14 +170,14 @@ managed_processes = {
   "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
   "dmonitoringd": "selfdrive.monitoring.dmonitoringd",
-  "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
-  "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
+  "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),  # 0
+  "loggerd": ("selfdrive/loggerd", ["./loggerd"]),  # 1
   "logmessaged": "selfdrive.logmessaged",
   "locationd": "selfdrive.locationd.locationd",
   "tombstoned": "selfdrive.tombstoned",
   "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
-  "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
+  "boardd": ("selfdrive/boardd", ["./boardd"]),
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
@@ -291,6 +292,18 @@ def nativelauncher(pargs, cwd):
   os.chmod(pargs[0], 0o700)
 
   os.execvp(pargs[0], pargs)
+def valgrindlauncher(pargs, cwd):
+  # exec the process
+  os.chdir(cwd)
+
+  # Run valgrind on a process
+  command = "valgrind --leak-check=full " + pargs[0]
+  output = os.popen(command)
+  while True:
+    s = output.read()
+    if s == "":
+      break
+    # print(s)
 
 def start_managed_process(name):
   if name in running or name not in managed_processes:
@@ -302,9 +315,17 @@ def start_managed_process(name):
   else:
     pdir, pargs = proc
     cwd = os.path.join(BASEDIR, pdir)
-    cloudlog.info("starting process %s" % name)
-    running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
-  running[name].start()
+    if VALGRIND:
+      print("\nVALGRIND" * 5)
+      print(pargs)
+      print(cwd)
+      running[name] = Process(name=name, target=valgrindlauncher, args=(pargs, cwd))
+    else:
+      cloudlog.info("starting process %s" % name)
+      print(pargs)
+      print(cwd)
+      running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
+    running[name].start()
 
 def start_daemon_process(name):
   params = Params()

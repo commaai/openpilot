@@ -40,7 +40,8 @@ class TestLoggerd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     if not (EON or TICI):
-      raise unittest.SkipTest
+      pass
+      # raise unittest.SkipTest
 
   def setUp(self):
     self._clear_logs()
