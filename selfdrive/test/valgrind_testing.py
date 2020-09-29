@@ -1,15 +1,45 @@
 import os
 import time
-import subprocess
+from multiprocessing import Process
+import cereal.messaging as messaging
+import random
+
+def valgrindlauncher(arg, cwd):
+  os.chdir(cwd)
+
+  # Run valgrind on a process
+  command = "valgrind " + arg
+  print(command)
+  output = os.popen(command)
+  while True:
+    s = output.read()
+    if s == "":
+      break
+    print(s)
 
 def test_ubloxd():
-  # unlogger_command = '~/openpilot/tools/replay/unlogger.py "202fc0c905c39dd8|2020-09-09--10-50-37"'
-  subprocess.Popen(["python", "~/openpilot/tools/replay/unlogger.py", "202fc0c905c39dd8|2020-09-09--10-50-37"])
+  running = Process(name="ublox", target=valgrindlauncher, args=("./ubloxd & sleep 10; kill $!", "../locationd"))
+  running.start()
 
-  time.sleep(5)
+def random_carstate():
+  fields = ["vEgo", "aEgo", "gas", "steeringAngle"]
+  msg = messaging.new_message("carState")
+  cs = msg.carState
+  for f in fields:
+    setattr(cs, f, random.random() * 10)
+  return msg
 
-  output = os.popen("valgrind --leak-check=full ~/openpilot/selfdrive/locationd/ubloxd & sleep 10; kill $!")
-  print("\n\n\n\n")
+def send_gps():
+  pub_sock = messaging.pub_sock("ubloxRaw")
+  time.sleep(3)
+
+  msg = random_carstate()
+  pub_sock.send(msg.to_bytes())
+
+# python test_loggerd in tests kind of works, with VALGRIND=1 in ENV
+def test_loggerd():
+  output = os.popen("valgrind --leak-check=full ~/openpilot/selfdrive/loggerd/loggerd & sleep 30; kill $!")
+  print(2 * "\n")
   while True:
     s = output.read()
     if s == "":
@@ -19,4 +49,6 @@ def test_ubloxd():
 
 
 if __name__ == "__main__":
-  test_ubloxd()
+  # pm = messaging.PubMaster(['ubloxRaw'])
+  send_gps()
+  # test_ubloxd()

@@ -18,13 +18,13 @@ segments = [
   ("GM", "7cc2a8365b4dd8a9|2018-12-02--12-10-44--2"),         # GM.ACADIA
   ("CHRYSLER", "b6849f5cf2c926b1|2020-02-28--07-29-48--13"),  # CHRYSLER.PACIFICA
   ("HYUNDAI", "5b7c365c50084530|2020-04-15--16-13-24--3"),    # HYUNDAI.SONATA
-  #("CHRYSLER", "b6e1317e1bfbefa6|2020-03-04--13-11-40"),   # CHRYSLER.JEEP_CHEROKEE
+  # ("CHRYSLER", "b6e1317e1bfbefa6|2020-03-04--13-11-40"),   # CHRYSLER.JEEP_CHEROKEE
   ("SUBARU", "7873afaf022d36e2|2019-07-03--18-46-44--0"),     # SUBARU.IMPREZA
   ("VOLKSWAGEN", "76b83eb0245de90e|2020-03-05--19-16-05--3"),  # VW.GOLF
   ("NISSAN", "fbbfa6af821552b9|2020-03-03--08-09-43--0"),     # NISSAN.XTRAIL
 
   # Enable when port is tested and dascamOnly is no longer set
-  #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
+  # ("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
 ]
 
 # ford doesn't need to be tested until a full port is done
@@ -105,6 +105,7 @@ def format_diff(results, ref_commit):
   return diff1, diff2, failed
 
 if __name__ == "__main__":
+  # os.environ["VALGRIND"] = "1"
 
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
 
@@ -140,9 +141,8 @@ if __name__ == "__main__":
     tested_cars = set(c.lower() for c, _ in segments)
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
     assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
-
   results: Any = {}
-  for car_brand, segment in segments:
+  for car_brand, segment in segments:  # Runs all tests, can focus on inside of the loop :)
     if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
        (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
       continue
@@ -152,6 +152,7 @@ if __name__ == "__main__":
     results[segment] = {}
 
     rlog_fn = get_segment(segment)
+    print(rlog_fn)
     lr = LogReader(rlog_fn)
 
     for cfg in CONFIGS:
