@@ -63,7 +63,6 @@
 LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_FCAMERA] = {
     .stream_type = VISION_STREAM_YUV,
-    .encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
     .filename = "fcamera.hevc",
     .frame_packet_name = "frame",
     .encode_idx_name = "encodeIdx",
@@ -75,11 +74,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   },
   [LOG_CAMERA_ID_DCAMERA] = {
     .stream_type = VISION_STREAM_YUV_FRONT,
-#ifndef QCOM2
-    .encode_type = cereal::EncodeIndex::Type::FRONT,
-#else
-    .encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
-#endif
     .filename = "dcamera.hevc",
     .frame_packet_name = "frontFrame",
     .encode_idx_name = "frontEncodeIdx",
@@ -91,7 +85,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   },
   [LOG_CAMERA_ID_ECAMERA] = {
     .stream_type = VISION_STREAM_YUV_WIDE,
-    .encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
     .filename = "ecamera.hevc",
     .frame_packet_name = "wideFrame",
     .encode_idx_name = "wideEncodeIdx",
@@ -114,7 +107,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .frame_width = 526, .frame_height = 330 // keep pixel count the same?
 #endif
   },
-
+};
 #define SEGMENT_LENGTH 60
 
 #define LOG_ROOT "/data/media/0/realdata"
@@ -141,9 +134,11 @@ static void set_do_exit(int sig) {
 class RotateState {
 public:
   SubSocket* fpkt_sock;
+  uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
+  bool should_rotate;
 
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX){}, should_rotate(false);
+                  last_rotate_frame_id(UINT32_MAX), should_rotate(false) {};
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(lock);
@@ -182,8 +177,6 @@ public:
   }
 
 private:
-  uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
-  bool should_rotate;
   std::mutex lock;
   std::condition_variable cv;
 };
@@ -195,15 +188,12 @@ struct LoggerdState {
   int rotate_segment;
   std::mutex rotate_lock;
 
-  RotateState[LOG_CAMERA_ID_MAX-1] rotate_state;
+  RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
 LoggerdState s;
 
 #ifndef DISABLE_ENCODER
 void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips, int cam_idx) {
-  VisionStreamType stream_type;
-  const char *idx_sock_name;
-  const char *encoder_filename;
 
   switch (cam_idx) {
     case LOG_CAMERA_ID_DCAMERA: {
@@ -362,7 +352,12 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
         MessageBuilder msg;
         auto eidx = msg.initEvent().initEncodeIdx();
         eidx.setFrameId(extra.frame_id);
-        eidx.setType(cameras_logged[cam_idx].encode_type);
+  #ifdef QCOM2
+        eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
+  #else
+        eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT:cereal::EncodeIndex::Type::FULL_H_E_V_C);
+  #endif
+
         eidx.setEncodeId(cnt);
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
@@ -647,12 +642,6 @@ int main(int argc, char** argv) {
     is_logging = false;
   }
 
-  if (is_logging) {
-    err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-    assert(err == 0);
-    LOGW("logging to %s", s.segment_path);
-  }
-
 #ifndef DISABLE_ENCODER
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, false, LOG_CAMERA_ID_FCAMERA);
@@ -734,7 +723,8 @@ int main(int argc, char** argv) {
     bool new_segment = true;
     for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) {
       // this *should* be redundant on tici since all camera frames are synced
-      new_segment &= s.rotate_state[cid].stream_frame_id > s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS;
+      new_segment &= (s.logger.part > -1 &&
+                       s.rotate_state[cid].stream_frame_id > s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS);
 #ifndef QCOM2
       break; // only look at fcamera frame id if not QCOM2
 #endif
@@ -753,6 +743,7 @@ int main(int argc, char** argv) {
         std::unique_lock<std::mutex> lk(s.rotate_lock);
         err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
         assert(err == 0);
+        if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
         LOGW("rotated to %s", s.segment_path);
       }
     }

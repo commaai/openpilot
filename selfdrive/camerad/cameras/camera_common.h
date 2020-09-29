@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "common/visionipc.h"
+
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1
 #define CAMERA_ID_S5K3P8SP 2
@@ -38,8 +40,7 @@ typedef struct LogCameraInfo {
   const char* filename;
   const char* frame_packet_name;
   const char* encode_idx_name;
-  int stream_type;
-  int encode_type;
+  VisionStreamType stream_type;
   int frame_width, frame_height;
   int fps;
   int bitrate;
