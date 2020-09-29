@@ -754,7 +754,7 @@ int main(int argc, char** argv) {
 
     double ts = seconds_since_boot();
 
-    bool new_segment;
+    bool new_segment = false;
     if (s.logger.part > -1) {
       new_segment = true;
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
