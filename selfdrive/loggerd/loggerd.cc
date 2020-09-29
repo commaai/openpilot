@@ -607,6 +607,7 @@ int main(int argc, char** argv) {
   // subscribe to all services
 
   std::vector<SubSocket*> socks;
+  SubSocket* model_sock;
 
   std::map<SubSocket*, int> qlog_counter;
   std::map<SubSocket*, int> qlog_freqs;
@@ -623,6 +624,7 @@ int main(int argc, char** argv) {
       for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) {
         if (name == cameras_logged[cid].frame_packet_name) { s.rotate_state[cid].fpkt_sock = sock; }
       }
+      if (name == "model") { model_sock = sock; }
 
       qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
       qlog_freqs[sock] = it.decimation;
@@ -668,9 +670,10 @@ int main(int argc, char** argv) {
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
   kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
+  bool mpkt_seen = false;
 
   double start_ts = seconds_since_boot();
-  double last_rotate_ts = start_ts;
+  double last_rotate_tms = millis_since_boot();
   while (!do_exit) {
    for (auto sock : poller->poll(100 * 1000)) {
      Message * last_msg = nullptr;
@@ -694,30 +697,34 @@ int main(int argc, char** argv) {
       }
       
       if (last_msg) {
-        int fpkt_id = -1;
-        for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) {
-          if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
-        }
-        if (fpkt_id>=0) {
-          // track camera frames to sync to encoder
-          // only process last frame
-          const uint8_t* data = (uint8_t*)last_msg->getData();
-          const size_t len = last_msg->getSize();
-          const size_t size = len / sizeof(capnp::word) + 1;
-          if (buf.size() < size) {
-            buf = kj::heapArray<capnp::word>(size);
+        if (sock == model_sock) {
+          mpkt_seen = true;
+        } else {
+          int fpkt_id = -1;
+          for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) {
+            if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
           }
-          memcpy(buf.begin(), data, len);
+          if (fpkt_id>=0) {
+            // track camera frames to sync to encoder
+            // only process last frame
+            const uint8_t* data = (uint8_t*)last_msg->getData();
+            const size_t len = last_msg->getSize();
+            const size_t size = len / sizeof(capnp::word) + 1;
+            if (buf.size() < size) {
+              buf = kj::heapArray<capnp::word>(size);
+            }
+            memcpy(buf.begin(), data, len);
 
-          capnp::FlatArrayMessageReader cmsg(buf);
-          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+            capnp::FlatArrayMessageReader cmsg(buf);
+            cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-          if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
-          } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
-          } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
+            if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
+              s.rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
+            } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
+              s.rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
+            } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
+              s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
+            }
           }
         }
         delete last_msg;
@@ -732,13 +739,16 @@ int main(int argc, char** argv) {
       break; // only look at fcamera frame id if not QCOM2
 #endif
     }
+    new_segment |= (s.logger.part == -1 && mpkt_seen);
 
     double ts = seconds_since_boot();
     if (new_segment) {
-      // rotate the log
-      last_rotate_ts += segment_length;
+      last_rotate_tms += segment_length * 1000;
+
+      // rotate the encoders
       for (int cid=LOG_CAMERA_ID_FCAMERA;cid<=LOG_CAMERA_ID_ECAMERA;cid++) { s.rotate_state[cid].rotate(); }
 
+      // rotate the log
       if (is_logging) {
         std::unique_lock<std::mutex> lk(s.rotate_lock);
         err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
