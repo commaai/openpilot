@@ -59,6 +59,7 @@ class TestValgrind(unittest.TestCase):
     possibly_lost_amount = int(err_lost3.split(" ")[0])
     if max(definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount) > 0:
       self.leak = True
+      print(err)
       return
     self.leak = False
 
