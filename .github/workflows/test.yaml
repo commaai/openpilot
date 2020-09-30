@@ -80,7 +80,7 @@ jobs:
   build_webcam:
     name: build webcam
     runs-on: ubuntu-16.04
-    timeout-minutes: 50
+    timeout-minutes: 90
     steps:
     - uses: actions/checkout@v2
       with:
