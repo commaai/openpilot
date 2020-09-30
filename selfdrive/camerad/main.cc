@@ -190,7 +190,7 @@ void* frontview_thread(void *arg) {
   // TODO: the loop is bad, ideally models shouldn't affect sensors
   SubMaster sm({"driverState"});
 
-  cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
+  cl_command_queue q = clCreateCommandQueueWithProperties(s->context, s->device_id, 0, &err);
   assert(err == 0);
 
   for (int cnt = 0; !do_exit; cnt++) {
