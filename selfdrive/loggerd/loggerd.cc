@@ -779,7 +779,10 @@ int main(int argc, char** argv) {
           break; // only look at fcamera frame id if not QCOM2
 #endif
         }
-      } else { new_segment &= tms - last_rotate_tms > segment_length * 1000; LOGW("no camera packet seen. auto rotated"); }
+      } else {
+        new_segment &= tms - last_rotate_tms > segment_length * 1000;
+        if (new_segment) { LOGW("no camera packet seen. auto rotated"); }
+      }
     } else if (s.logger.part == -1) {
       if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE * 30) { // 15s
         new_segment = mpkt_seen; // modeld startup hangs the whole system, so no point start logging before that
