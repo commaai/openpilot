@@ -11,6 +11,7 @@
 #include <libyuv.h>
 #include <sys/resource.h>
 #include <pthread.h>
+#include <math.h>
 
 #include <string>
 #include <iostream>
@@ -59,6 +60,8 @@
 #define MAX_CAM_IDX LOG_CAMERA_ID_ECAMERA
 #define DCAM_BITRATE MAIN_BITRATE
 #endif
+
+#define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
 LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_FCAMERA] = {
@@ -695,6 +698,9 @@ int main(int argc, char** argv) {
 
   double start_ts = seconds_since_boot();
   double last_rotate_tms = millis_since_boot();
+  double last_camera_seen_tms = millis_since_boot();
+  uint32_t last_seen_log_frame_id[LOG_CAMERA_ID_MAX-1] = {0};
+  uint32_t last_seen_log_frame_id_max = 0;
   while (!do_exit) {
    for (auto sock : poller->poll(100 * 1000)) {
      Message * last_msg = nullptr;
@@ -746,6 +752,9 @@ int main(int argc, char** argv) {
             } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
               s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
             }
+            last_seen_log_frame_id[fpkt_id] = s.rotate_state[fpkt_id].log_frame_id;
+            last_seen_log_frame_id_max = fmax(last_seen_log_frame_id_max, s.rotate_state[fpkt_id].log_frame_id);
+            last_camera_seen_tms = millis_since_boot();
           }
         }
         delete last_msg;
@@ -753,26 +762,34 @@ int main(int argc, char** argv) {
     }
 
     double ts = seconds_since_boot();
+    double tms = millis_since_boot();
 
     bool new_segment = false;
+
     if (s.logger.part > -1) {
       new_segment = true;
-      for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
-        // this *should* be redundant on tici since all camera frames are synced
-        new_segment &= ((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS &&
-                         !s.rotate_state[cid].should_rotate) || (!s.rotate_state[cid].enabled));
+      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE) {
+        for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
+          // this *should* be redundant on tici since all camera frames are synced
+          new_segment &= (((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS) &&
+                           (!s.rotate_state[cid].should_rotate)) ||
+                          (!s.rotate_state[cid].enabled) ||
+                          (last_seen_log_frame_id[cid] + 2 < last_seen_log_frame_id_max)); // if one falls behind, don't count it (should never happen)
 #ifndef QCOM2
-        break; // only look at fcamera frame id if not QCOM2
+          break; // only look at fcamera frame id if not QCOM2
 #endif
-      }
+        }
+      } else { new_segment &= tms - last_rotate_tms > segment_length * 1000 }
     } else if (s.logger.part == -1) {
-      new_segment = mpkt_seen; // modeld startup hangs the whole system, so no point start logging before that
-      for (int cid=0;cid<=MAX_CAM_IDX;cid++) { new_segment &= (s.rotate_state[cid].stream_frame_id > 0 || !s.rotate_state[cid].enabled); }
+      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE * 30) { // 15s
+        new_segment = mpkt_seen; // modeld startup hangs the whole system, so no point start logging before that
+        new_segment |= tms - last_rotate_tms > NO_CAMERA_PATIENCE * 30; // but if for some reason modeld refuses to start, start logging anyways
+        for (int cid=0;cid<=MAX_CAM_IDX;cid++) { new_segment &= (s.rotate_state[cid].stream_frame_id > 0 || !s.rotate_state[cid].enabled); }
+      } else { new_segment = true; }
     }
-    // TODO: fall back to time if camera missing
 
     if (new_segment) {
-      last_rotate_tms += segment_length * 1000;
+      last_rotate_tms = millis_since_boot();
 
       // rotate the encoders
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
