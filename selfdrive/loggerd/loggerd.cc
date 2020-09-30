@@ -784,9 +784,6 @@ int main(int argc, char** argv) {
     if (new_segment) {
       last_rotate_tms = millis_since_boot();
 
-      // rotate the encoders
-      for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
-
       // rotate the log
       if (is_logging) {
         err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
@@ -794,6 +791,8 @@ int main(int argc, char** argv) {
         if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
         LOGW("rotated to %s", s.segment_path);
       }
+      // rotate the encoders
+      for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
     }
 
     if ((msg_count%1000) == 0) {
