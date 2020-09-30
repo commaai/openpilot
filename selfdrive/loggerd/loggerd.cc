@@ -172,7 +172,7 @@ public:
     if (!enabled) { return; }
     std::unique_lock<std::mutex> lk(fid_lock);
     should_rotate = true;
-    last_rotate_frame_id = stream_frame_id > 0 ? stream_frame_id : log_frame_id;
+    last_rotate_frame_id = stream_frame_id;
   }
 
   void finish_rotate() {
@@ -313,6 +313,9 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state->should_rotate) {
+          if (rotate_state->last_rotate_frame_id == 0) {
+            rotate_state->last_rotate_frame_id = extra.frame_id - 1;
+          }
           while (s.rotate_seq_id != my_idx) { usleep(1000); }
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
           encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
