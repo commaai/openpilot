@@ -245,7 +245,6 @@ void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
                   VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
-  int err;
 
   // LOG("*** open front ***");
   camera_open(&s->front, camera_bufs_front, false);
