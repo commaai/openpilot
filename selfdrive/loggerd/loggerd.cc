@@ -141,7 +141,7 @@ public:
   bool enabled, should_rotate;
 
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
-                  last_rotate_frame_id(0), enabled(false), should_rotate(false) {};
+                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false) {};
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(fid_lock);
@@ -172,7 +172,7 @@ public:
     if (!enabled) { return; }
     std::unique_lock<std::mutex> lk(fid_lock);
     should_rotate = true;
-    last_rotate_frame_id = stream_frame_id;
+    last_rotate_frame_id = stream_frame_id > 0 ? stream_frame_id : log_frame_id;
   }
 
   void finish_rotate() {
