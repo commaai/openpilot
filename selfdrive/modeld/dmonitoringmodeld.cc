@@ -59,6 +59,7 @@ int main(int argc, char **argv) {
         printf("visionstream get failed\n");
         break;
       }
+      if (extra.frame_id < 100) { continue; }
 
       double t1 = millis_since_boot();
       DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf_info.width, buf_info.height);

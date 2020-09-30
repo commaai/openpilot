@@ -293,8 +293,6 @@ def nativelauncher(pargs, cwd):
 def start_managed_process(name):
   if name in running or name not in managed_processes:
     return
-  if name == 'camerad':
-    time.sleep(10)
   proc = managed_processes[name]
   if isinstance(proc, str):
     cloudlog.info("starting python %s" % proc)
