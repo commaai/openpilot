@@ -304,7 +304,6 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
       // printf("logger latency to tsEof: %f\n", msdiff);
 
       { // all the rotation stuff
-        // TO FIX: closing and opening virtually take no time, but switching loggerhandle can sometimes hang for up to 30ms
 
         pthread_mutex_lock(&s.rotate_lock);
         pthread_mutex_unlock(&s.rotate_lock);
