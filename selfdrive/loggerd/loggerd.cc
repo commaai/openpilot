@@ -632,7 +632,6 @@ int main(int argc, char** argv) {
   // subscribe to all services
 
   std::vector<SubSocket*> socks;
-  SubSocket* model_sock;
 
   std::map<SubSocket*, int> qlog_counter;
   std::map<SubSocket*, int> qlog_freqs;
@@ -649,7 +648,6 @@ int main(int argc, char** argv) {
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
         if (name == cameras_logged[cid].frame_packet_name) { s.rotate_state[cid].fpkt_sock = sock; }
       }
-      if (name == "model") { model_sock = sock; }
 
       qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
       qlog_freqs[sock] = it.decimation;
@@ -694,7 +692,6 @@ int main(int argc, char** argv) {
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
   kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
-  bool mpkt_seen = false;
 
   double start_ts = seconds_since_boot();
   double last_rotate_tms = millis_since_boot();
@@ -724,38 +721,34 @@ int main(int argc, char** argv) {
       }
       
       if (last_msg) {
-        if (sock == model_sock) {
-          mpkt_seen = true;
-        } else {
-          int fpkt_id = -1;
-          for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
-            if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
+        int fpkt_id = -1;
+        for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
+          if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
+        }
+        if (fpkt_id>=0) {
+          // track camera frames to sync to encoder
+          // only process last frame
+          const uint8_t* data = (uint8_t*)last_msg->getData();
+          const size_t len = last_msg->getSize();
+          const size_t size = len / sizeof(capnp::word) + 1;
+          if (buf.size() < size) {
+            buf = kj::heapArray<capnp::word>(size);
           }
-          if (fpkt_id>=0) {
-            // track camera frames to sync to encoder
-            // only process last frame
-            const uint8_t* data = (uint8_t*)last_msg->getData();
-            const size_t len = last_msg->getSize();
-            const size_t size = len / sizeof(capnp::word) + 1;
-            if (buf.size() < size) {
-              buf = kj::heapArray<capnp::word>(size);
-            }
-            memcpy(buf.begin(), data, len);
+          memcpy(buf.begin(), data, len);
 
-            capnp::FlatArrayMessageReader cmsg(buf);
-            cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+          capnp::FlatArrayMessageReader cmsg(buf);
+          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-            if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
-              s.rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
-            } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
-              s.rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
-            } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
-              s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
-            }
-            last_seen_log_frame_id[fpkt_id] = s.rotate_state[fpkt_id].log_frame_id;
-            last_seen_log_frame_id_max = fmax(last_seen_log_frame_id_max, s.rotate_state[fpkt_id].log_frame_id);
-            last_camera_seen_tms = millis_since_boot();
+          if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
+            s.rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
+          } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
+            s.rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
+          } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
+            s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
           }
+          last_seen_log_frame_id[fpkt_id] = s.rotate_state[fpkt_id].log_frame_id;
+          last_seen_log_frame_id_max = fmax(last_seen_log_frame_id_max, s.rotate_state[fpkt_id].log_frame_id);
+          last_camera_seen_tms = millis_since_boot();
         }
         delete last_msg;
       }
@@ -784,12 +777,8 @@ int main(int argc, char** argv) {
         if (new_segment) { LOGW("no camera packet seen. auto rotated"); }
       }
     } else if (s.logger.part == -1) {
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE * 30) { // 15s
-        new_segment = mpkt_seen; // modeld startup hangs the whole system, so no point start logging before that
-        new_segment |= tms - last_rotate_tms > NO_CAMERA_PATIENCE * 30; // but if for some reason modeld refuses to start, start logging anyways
-        if (tms - last_rotate_tms > NO_CAMERA_PATIENCE * 30) { LOGW("no model packet seen. logging started"); }
-        for (int cid=0;cid<=MAX_CAM_IDX;cid++) { new_segment &= (s.rotate_state[cid].stream_frame_id > 0 || !s.rotate_state[cid].enabled); }
-      } else { new_segment = true; LOGW("no camera packet seen. logging started"); }
+      // always starts first segment immediately
+      new_segment = true;
     }
 
     if (new_segment) {
