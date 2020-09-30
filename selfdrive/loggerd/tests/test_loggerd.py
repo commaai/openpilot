@@ -5,6 +5,7 @@ import random
 import shutil
 import subprocess
 import time
+import threading
 import unittest
 from parameterized import parameterized
 from pathlib import Path
@@ -72,8 +73,9 @@ class TestLoggerd(unittest.TestCase):
     time.sleep(1)
 
     num_segments = random.randint(80, 150)
-    self._log_data(self.segment_length * num_segments + 5)
-    time.sleep(5)
+    if "CI" in os.environ:
+      num_segments = random.randint(15, 20) # ffprobe is slow on comma two
+    self._log_data(self.segment_length * num_segments + 10)
 
     route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
     for i in trange(num_segments):
@@ -98,6 +100,10 @@ class TestLoggerd(unittest.TestCase):
         frame_count = int(subprocess.check_output(cmd, shell=True, encoding='utf8').strip())
         self.assertTrue(abs(expected_frames - frame_count) <= FRAME_TOLERANCE,
                         f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+      segment_path = f"{route_prefix_path}--{i}"
+      def delete_segment(path):
+        shutil.rmtree(path)
+      threading.Thread(target=delete_segment, args=(segment_path,)).start()
 
 if __name__ == "__main__":
   unittest.main()
