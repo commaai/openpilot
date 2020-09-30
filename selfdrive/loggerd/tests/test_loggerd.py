@@ -84,7 +84,7 @@ class TestLoggerd(unittest.TestCase):
     while route_prefix_path is None:
       try:
         route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
-      except:
+      except Exception:
         time.sleep(2)
         continue
 
@@ -99,7 +99,7 @@ class TestLoggerd(unittest.TestCase):
               break
             time.sleep(0.1)
       else:
-        time.sleep(self.segment_length + 2)
+        time.sleep(self.segment_length)
 
       # check each camera file size
       for camera, size in cameras.items():
@@ -122,10 +122,7 @@ class TestLoggerd(unittest.TestCase):
         frame_count = int(subprocess.check_output(cmd, shell=True, encoding='utf8').strip())
         self.assertTrue(abs(expected_frames - frame_count) <= FRAME_TOLERANCE,
                         f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
-      segment_path = f"{route_prefix_path}--{i}"
-      def delete_segment(path):
-        shutil.rmtree(path)
-      threading.Thread(target=delete_segment, args=(segment_path,)).start()
+      shutil.rmtree(f"{route_prefix_path}--{i}")
 
 if __name__ == "__main__":
   unittest.main()
