@@ -2,6 +2,7 @@ import os
 import threading
 import time
 import unittest
+import subprocess
 
 if "CI" in os.environ:
   def tqdm(x):
@@ -16,6 +17,7 @@ from tools.lib.logreader import LogReader
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path'])
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
+
 CONFIGS = [
   ProcessConfig(
     proc_name="ubloxd",
@@ -45,13 +47,20 @@ class TestValgrind(unittest.TestCase):
 
     # Run valgrind on a process
     command = "valgrind --leak-check=full " + arg
-    # print(command)
-    output = os.popen(command)
-    while True:
-      s = output.read()
-      print(s)
-      if s == "":
-        break
+
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    _, err = p.communicate()
+    error_msg = str(err, encoding='utf-8')
+    err_lost1 = error_msg.split("definitely lost: ")[1]
+    err_lost2 = error_msg.split("indirectly lost: ")[1]
+    err_lost3 = error_msg.split("possibly lost: ")[1]
+    definitely_lost_amount = int(err_lost1.split(" ")[0])
+    indirectly_lost_amount = int(err_lost2.split(" ")[0])
+    possibly_lost_amount = int(err_lost3.split(" ")[0])
+    if max(definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount) > 0:
+      self.leak = True
+      return
+    self.leak = False
 
   def replay_process(self, cfg, lr):
     pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']  # We dump data from logs here
@@ -60,7 +69,7 @@ class TestValgrind(unittest.TestCase):
     print("Sorting logs")
     all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
     pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
-    print(len(pub_msgs))
+
     thread = threading.Thread(target=self.valgrindlauncher, args=(cfg.command, cfg.path))
     thread.daemon = True
     thread.start()
@@ -83,11 +92,11 @@ class TestValgrind(unittest.TestCase):
     cfg = CONFIGS[0]
 
     URL = self.get_segment("0375fdf7b1ce594d|2019-06-13--08-32-25--3")
-    print(URL)
     lr = LogReader(URL)
-    print(str(cfg))
     self.replay_process(cfg, lr)
+    # Wait for the replay to complete
     time.sleep(30)
+    assert not self.leak
 
 if __name__ == "__main__":
   unittest.main()
