@@ -79,8 +79,16 @@ class TestLoggerd(unittest.TestCase):
       time.sleep(t)
     threading.Thread(target=log_data, args=(self.segment_length * num_segments + 10,)).start()
 
+    # wait for dir to create
+    route_prefix_path = None
+    while route_prefix_path is None:
+      try:
+        route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
+      except:
+        time.sleep(2)
+        continue
+
     # do checks
-    route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
     for i in trange(num_segments):
       # wait for lastest segment
       if i < num_segments - 1:
