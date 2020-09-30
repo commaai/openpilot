@@ -306,6 +306,9 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
       { // all the rotation stuff
         // TO FIX: closing and opening virtually take no time, but switching loggerhandle can sometimes hang for up to 30ms
 
+        pthread_mutex_lock(&s.rotate_lock);
+        pthread_mutex_unlock(&s.rotate_lock);
+
         // wait if camera pkt id is older than stream
         rotate_state->waitLogThread();
 
@@ -785,6 +788,7 @@ int main(int argc, char** argv) {
     }
 
     if (new_segment) {
+      pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
       // rotate the log
@@ -796,6 +800,7 @@ int main(int argc, char** argv) {
       }
       // rotate the encoders
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
+      pthread_mutex_unlock(&s.rotate_lock);
     }
 
     if ((msg_count%1000) == 0) {
