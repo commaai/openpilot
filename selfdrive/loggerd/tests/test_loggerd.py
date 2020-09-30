@@ -61,10 +61,6 @@ class TestLoggerd(unittest.TestCase):
     last_route = sorted(Path(ROOT).iterdir(), key=os.path.getmtime)[-1]
     return os.path.join(ROOT, last_route)
 
-  @with_processes(['camerad', 'loggerd'], init_time=5)
-  def _log_data(self, t):
-    time.sleep(t)
-
   # TODO: this should run faster than real time
   @parameterized.expand(ALL_CAMERA_COMBINATIONS)
   def test_log_rotation(self, cameras):
@@ -75,10 +71,27 @@ class TestLoggerd(unittest.TestCase):
     num_segments = random.randint(80, 150)
     if "CI" in os.environ:
       num_segments = random.randint(15, 20) # ffprobe is slow on comma two
-    self._log_data(self.segment_length * num_segments + 10)
 
+    # run logger
+    @with_processes(['camerad', 'loggerd'], init_time=5)
+    def log_data(t):
+      time.sleep(t)
+    threading.Thread(target=log_data, args=(self.segment_length * num_segments + 10,)).start()
+
+    # do checks
     route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
     for i in trange(num_segments):
+      # wait for lastest segment
+      if i < num_segments - 1:
+        with Timeout(self.segment_length*3, error_msg=f"timed out waiting for segment {i}"):
+          while True:
+            seg_num = int(self._get_latest_segment_path().rsplit("--", 1)[1])
+            if seg_num > i:
+              break
+            time.sleep(0.1)
+      else:
+        time.sleep(self.segment_length + 2)
+
       # check each camera file size
       for camera, size in cameras.items():
         ext = "ts" if camera=='qcamera' else "hevc"
