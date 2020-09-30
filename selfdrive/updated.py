@@ -324,6 +324,10 @@ def main():
   wait_helper = WaitTimeHelper(proc)
   wait_helper.sleep(30)
 
+  overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
+  if overlay_init.exists():
+    overlay_init.unlink()
+
   first_run = True
   last_fetch_time = 0
   update_failed_count = 0
