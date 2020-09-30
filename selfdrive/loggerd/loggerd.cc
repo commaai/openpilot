@@ -773,19 +773,20 @@ int main(int argc, char** argv) {
           // this *should* be redundant on tici since all camera frames are synced
           new_segment &= (((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS) &&
                            (!s.rotate_state[cid].should_rotate)) ||
-                          (!s.rotate_state[cid].enabled) ||
-                          (last_seen_log_frame_id[cid] + 2 < last_seen_log_frame_id_max)); // if one falls behind, don't count it (should never happen)
+                          (!s.rotate_state[cid].enabled));
+          if (last_seen_log_frame_id[cid] + 2 < last_seen_log_frame_id_max) { LOGW("camera %d lags behind", cid); }
 #ifndef QCOM2
           break; // only look at fcamera frame id if not QCOM2
 #endif
         }
-      } else { new_segment &= tms - last_rotate_tms > segment_length * 1000 }
+      } else { new_segment &= tms - last_rotate_tms > segment_length * 1000; LOGW("no camera packet seen. auto rotated"); }
     } else if (s.logger.part == -1) {
       if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE * 30) { // 15s
         new_segment = mpkt_seen; // modeld startup hangs the whole system, so no point start logging before that
         new_segment |= tms - last_rotate_tms > NO_CAMERA_PATIENCE * 30; // but if for some reason modeld refuses to start, start logging anyways
+        if (tms - last_rotate_tms > NO_CAMERA_PATIENCE * 30) { LOGW("no model packet seen. logging started"); }
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) { new_segment &= (s.rotate_state[cid].stream_frame_id > 0 || !s.rotate_state[cid].enabled); }
-      } else { new_segment = true; }
+      } else { new_segment = true; LOGW("no camera packet seen. logging started"); }
     }
 
     if (new_segment) {
