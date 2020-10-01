@@ -106,7 +106,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 #ifndef QCOM2
     .frame_width = 480, .frame_height = 360
 #else
-    // TODO: fix qcamera warning on tici
     .frame_width = 526, .frame_height = 330 // keep pixel count the same?
 #endif
   },
