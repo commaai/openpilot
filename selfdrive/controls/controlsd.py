@@ -220,8 +220,8 @@ class Controls:
       self.events.add(EventName.pedalPressedPreEnable if self.disengage_on_accelerator else
                       EventName.gasPressedOverride)
 
-    if not self.CP.notCar:
-      self.events.add_from_msg(self.sm['driverMonitoringState'].events)
+    #if not self.CP.notCar:
+    #  self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
     # Handle car events. Ignore when CAN is invalid
     if CS.canTimeout:
@@ -289,8 +289,8 @@ class Controls:
       if safety_mismatch or self.mismatch_counter >= 200:
         self.events.add(EventName.controlsMismatch)
 
-      if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
-        self.events.add(EventName.relayMalfunction)
+      #if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
+      #  self.events.add(EventName.relayMalfunction)
 
     # Handle HW and system malfunctions
     # Order is very intentional here. Be careful when modifying this.
@@ -334,19 +334,21 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
-    if not self.sm['liveParameters'].valid:
-      self.events.add(EventName.vehicleModelInvalid)
-    if not self.sm['lateralPlan'].mpcSolutionValid:
-      self.events.add(EventName.plannerError)
+    #if not self.sm['liveParameters'].valid:
+    #  self.events.add(EventName.vehicleModelInvalid)
+    #if not self.sm['lateralPlan'].mpcSolutionValid:
+    #  self.events.add(EventName.plannerError)
+    #if not self.sm['lateralPlan'].mpcSolutionValid:
+    #  self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
-    if not self.sm['liveLocationKalman'].posenetOK:
-      self.events.add(EventName.posenetInvalid)
+    #if not self.sm['liveLocationKalman'].posenetOK:
+    #  self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
 
-    if not REPLAY:
+    if not REPLAY and False:
       # Check for mismatch between openpilot and car's PCM
       cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
       self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0

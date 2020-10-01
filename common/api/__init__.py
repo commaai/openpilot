@@ -40,7 +40,7 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
   headers = {}
   if access_token is not None:
     headers['Authorization'] = "JWT " + access_token
-
   headers['User-Agent'] = "openpilot-" + get_version()
 
-  return requests.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
+  backend = API_HOST if endpoint == "v2/pilotauth/" else "http://testing.comma.life/api/"
+  return requests.request(method, backend + "/" + endpoint, timeout=timeout, headers=headers, params=params)
