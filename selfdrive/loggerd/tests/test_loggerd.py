@@ -34,7 +34,7 @@ else:
 ALL_CAMERA_COMBINATIONS = [(cameras,) for cameras in [CAMERAS, {k:CAMERAS[k] for k in CAMERAS if k!='dcamera'}]]
 
 FRAME_TOLERANCE = 2
-FILE_SIZE_TOLERANCE = 0.25
+FILE_SIZE_TOLERANCE = 0.5
 
 class TestLoggerd(unittest.TestCase):
 
