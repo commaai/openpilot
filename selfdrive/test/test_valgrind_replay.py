@@ -33,30 +33,27 @@ CONFIGS = [
 class TestValgrind(unittest.TestCase):
 
   def extract_leak_sizes(self, log):
-    print(log)
     err_lost1 = log.split("definitely lost: ")[1]
     err_lost2 = log.split("indirectly lost: ")[1]
     err_lost3 = log.split("possibly lost: ")[1]
-    definitely_lost_amount = int(err_lost1.split(" ")[0])
-    indirectly_lost_amount = int(err_lost2.split(" ")[0])
-    possibly_lost_amount = int(err_lost3.split(" ")[0])
-    return (definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount)
+    definitely_lost = int(err_lost1.split(" ")[0])
+    indirectly_lost = int(err_lost2.split(" ")[0])
+    possibly_lost = int(err_lost3.split(" ")[0])
+    return (definitely_lost, indirectly_lost, possibly_lost)
+
   def valgrindlauncher(self, arg, cwd):
     os.chdir(cwd)
-
     # Run valgrind on a process
     command = "valgrind --leak-check=full " + arg + " & sleep 20; kill $!"
-
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     _, err = p.communicate()
     error_msg = str(err, encoding='utf-8')
-    definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount = self.extract_leak_sizes(error_msg)
-    if max(definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount) > 0:
+    definitely_lost, indirectly_lost, possibly_lost = self.extract_leak_sizes(error_msg)
+    if max(definitely_lost, indirectly_lost, possibly_lost) > 0:
       self.leak = True
-      print(definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount)
-      # print(err)
-      return
-    self.leak = False
+      print(definitely_lost, indirectly_lost, possibly_lost)
+    else:
+      self.leak = False
 
   def replay_process(self, config, logreader):
     pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
