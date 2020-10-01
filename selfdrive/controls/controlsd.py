@@ -159,12 +159,14 @@ class Controls:
       self.events.add(self.startup_event)
       self.startup_event = None
 
-    # Create events for battery, temperature, disk space, and memory
+    # Create events for battery, temperature, disk space, fan, and memory
     if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
       # at zero percent battery, while discharging, OP should not allowed
       self.events.add(EventName.lowBattery)
     if self.sm['thermal'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
+    if not self.sm['thermal'].fanIsSpinning:
+      self.events.add(EventName.fanNotSpinning)
     if self.sm['thermal'].freeSpace < 0.07:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)

@@ -205,6 +205,11 @@ def thermald_thread():
 
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
+      # Previously attempted to set the fan speed 10+% but the fan is running at 0 rpm
+      if EON:
+        msg.thermal.fanIsSpinning = not (health.health.fanSpeedRpm == 0 and fan_speed >= 6553.5)
+      else:
+        msg.thermal.fanIsSpinning = not (health.health.fanSpeedRpm == 0 and fan_speed >= 10)
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
       if health.health.hwType == log.HealthData.HwType.unknown:

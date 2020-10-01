@@ -471,6 +471,15 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   },
 
+  EventName.fanNotSpinning: {
+    ET.WARNING: Alert(
+      "Device Fan Not Spinning",
+      "Risk of overheating",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.NO_ENTRY: NoEntryAlert("Device fan is not spinning"),
+  },
+
   # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {
