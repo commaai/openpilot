@@ -32,6 +32,15 @@ CONFIGS = [
 
 class TestValgrind(unittest.TestCase):
 
+  def extract_leak_sizes(self, log):
+    print(log)
+    err_lost1 = log.split("definitely lost: ")[1]
+    err_lost2 = log.split("indirectly lost: ")[1]
+    err_lost3 = log.split("possibly lost: ")[1]
+    definitely_lost_amount = int(err_lost1.split(" ")[0])
+    indirectly_lost_amount = int(err_lost2.split(" ")[0])
+    possibly_lost_amount = int(err_lost3.split(" ")[0])
+    return (definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount)
   def valgrindlauncher(self, arg, cwd):
     os.chdir(cwd)
 
@@ -41,12 +50,7 @@ class TestValgrind(unittest.TestCase):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     _, err = p.communicate()
     error_msg = str(err, encoding='utf-8')
-    err_lost1 = error_msg.split("definitely lost: ")[1]
-    err_lost2 = error_msg.split("indirectly lost: ")[1]
-    err_lost3 = error_msg.split("possibly lost: ")[1]
-    definitely_lost_amount = int(err_lost1.split(" ")[0])
-    indirectly_lost_amount = int(err_lost2.split(" ")[0])
-    possibly_lost_amount = int(err_lost3.split(" ")[0])
+    definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount = self.extract_leak_sizes(error_msg)
     if max(definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount) > 0:
       self.leak = True
       print(definitely_lost_amount, indirectly_lost_amount, possibly_lost_amount)
@@ -72,12 +76,8 @@ class TestValgrind(unittest.TestCase):
     for msg in tqdm(pub_msgs):
       pm.send(msg.which(), msg.as_builder())
       if config.wait_for_response:
-        gotResponse = False
-        while not gotResponse:
+        while not any([sm.updated[s] for s in sub_sockets]):
           sm.update()
-          for s in sub_sockets:
-            if sm.updated[s]:
-              gotResponse = True
 
   def test_config_0(self):
     cfg = CONFIGS[0]
