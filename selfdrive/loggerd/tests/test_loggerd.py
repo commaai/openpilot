@@ -64,6 +64,7 @@ class TestLoggerd(unittest.TestCase):
 
   # TODO: this should run faster than real time
   @parameterized.expand(ALL_CAMERA_COMBINATIONS)
+  @with_processes(['camerad', 'loggerd'], init_time=5)
   def test_log_rotation(self, cameras):
     print("checking targets:", cameras)
     Params().put("RecordFront", "1" if 'dcamera' in cameras else "0")
@@ -72,12 +73,6 @@ class TestLoggerd(unittest.TestCase):
     num_segments = random.randint(80, 150)
     if "CI" in os.environ:
       num_segments = random.randint(15, 20) # ffprobe is slow on comma two
-
-    # run logger
-    @with_processes(['camerad', 'loggerd'], init_time=5)
-    def log_data(t):
-      time.sleep(t)
-    threading.Thread(target=log_data, args=(self.segment_length * num_segments + 10,)).start()
 
     # wait for dir to create
     route_prefix_path = None
@@ -88,9 +83,8 @@ class TestLoggerd(unittest.TestCase):
         time.sleep(2)
         continue
 
-    # do checks
     for i in trange(num_segments):
-      # wait for lastest segment
+      # poll for next segment
       if i < num_segments - 1:
         with Timeout(self.segment_length*3, error_msg=f"timed out waiting for segment {i}"):
           while True:
