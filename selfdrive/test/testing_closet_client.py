@@ -17,44 +17,23 @@ import os
 if __name__ == "__main__":
   unblock_stdout()
 
-MASTER_HOST = "testing.comma.life"
-
-
-def get_workdir():
-  continue_sh = open('/data/data/com.termux/files/continue.sh').read()
-  for l in continue_sh.split('\n'):
-    if l.startswith('#'):
-      continue
-
-    if 'cd "$HOME/one"' in l:
-      work_dir = expanduser('~/one')
-      return work_dir
-
-  work_dir = '/data/openpilot'
-  return work_dir
+HOST = "testing.comma.life"
 
 
 def heartbeat():
-  work_dir = get_workdir()
-  # env = {
-  #   "LD_LIBRARY_PATH": "",
-  #   "ANDROID_DATA": "/data",
-  #   "ANDROID_ROOT": "/system",
-  # }
+  work_dir = '/data/openpilot'
 
   while True:
     try:
       with open(os.path.join(work_dir, "selfdrive", "common", "version.h")) as _versionf:
         version = _versionf.read().split('"')[1]
 
-      # subprocess.check_output(["/system/bin/screencap", "-p", "/tmp/screen.png"], cwd=work_dir, env=env)
-      # screenshot = base64.b64encode(open('/tmp/screen.png').read())
       tmux = ""
 
-      try:
-        tmux = os.popen('tail -n 100 /tmp/tmux_out').read()
-      except Exception:
-        pass
+      #try:
+      #  tmux = os.popen('tail -n 100 /tmp/tmux_out').read()
+      #except Exception:
+      #  pass
 
       params = Params()
       msg = {
@@ -63,11 +42,10 @@ def heartbeat():
         'remote': subprocess.check_output(["git", "config", "--get", "remote.origin.url"], cwd=work_dir).decode('utf8').rstrip(),
         'revision': subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=work_dir).decode('utf8').rstrip(),
         'serial': subprocess.check_output(["getprop", "ro.boot.serialno"]).decode('utf8').rstrip(),
-        # 'screenshot': screenshot,
         'tmux': tmux,
       }
       with Timeout(10):
-        requests.post('http://%s/eon/heartbeat/' % MASTER_HOST, json=msg, timeout=5.0)
+        requests.post('http://%s/eon/heartbeat/' % HOST, json=msg, timeout=5.0)
     except Exception as e:
       print("Unable to send heartbeat", e)
 
