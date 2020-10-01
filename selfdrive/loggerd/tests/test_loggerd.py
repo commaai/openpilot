@@ -5,7 +5,6 @@ import random
 import shutil
 import subprocess
 import time
-import threading
 import unittest
 from parameterized import parameterized
 from pathlib import Path
