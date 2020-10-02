@@ -34,7 +34,7 @@ import threading
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from common.hardware import ANDROID
+from common.hardware import ANDROID, TICI
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
@@ -142,7 +142,10 @@ def setup_git_options(cwd: str) -> None:
 def dismount_overlay() -> None:
   if os.path.ismount(OVERLAY_MERGED):
     cloudlog.info("unmounting existing overlay")
-    run(["umount", "-l", OVERLAY_MERGED])
+    args = ["umount", "-l", OVERLAY_MERGED]
+    if TICI:
+      args = ["sudo"] + args
+    run(args)
 
 
 def init_overlay() -> None:
@@ -185,7 +188,13 @@ def init_overlay() -> None:
 
   os.sync()
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
-  run(["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED])
+
+  mount_cmd = ["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED]
+  if TICI:
+    run(["sudo"] + mount_cmd)
+    run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
+  else:
+    run(mount_cmd)
 
 
 def finalize_update() -> None:
