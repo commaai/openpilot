@@ -67,20 +67,21 @@ class TestLoggerd(unittest.TestCase):
   def test_log_rotation(self, cameras):
     print("checking targets:", cameras)
     Params().put("RecordFront", "1" if 'dcamera' in cameras else "0")
-    time.sleep(1)
 
     num_segments = random.randint(80, 150)
     if "CI" in os.environ:
       num_segments = random.randint(15, 20) # ffprobe is slow on comma two
 
-    # wait for dir to create
+    # wait for loggerd to make the dir for first segment
+    time.sleep(10)
     route_prefix_path = None
-    while route_prefix_path is None:
-      try:
-        route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
-      except Exception:
-        time.sleep(2)
-        continue
+    with Timeout(30):
+      while route_prefix_path is None:
+        try:
+          route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
+        except Exception:
+          time.sleep(2)
+          continue
 
     for i in trange(num_segments):
       # poll for next segment
