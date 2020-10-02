@@ -20,7 +20,7 @@ from websocket import ABNF, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common import android
+from common.hardware import HARDWARE
 from common.api import Api
 from common.basedir import PERSIST
 from common.params import Params
@@ -132,7 +132,7 @@ def reboot():
 
   def do_reboot():
     time.sleep(2)
-    android.reboot()
+    HARDWARE.reboot()
 
   threading.Thread(target=do_reboot).start()
 
@@ -218,21 +218,7 @@ def getSshAuthorizedKeys():
 
 @dispatcher.add_method
 def getSimInfo():
-  sim_state = android.getprop("gsm.sim.state").split(",")
-  network_type = android.getprop("gsm.network.type").split(',')
-  mcc_mnc = android.getprop("gsm.sim.operator.numeric") or None
-
-  sim_id = android.parse_service_call_string(android.service_call(['iphonesubinfo', '11']))
-  cell_data_state = android.parse_service_call_unpack(android.service_call(['phone', '46']), ">q")
-  cell_data_connected = (cell_data_state == 2)
-
-  return {
-    'sim_id': sim_id,
-    'mcc_mnc': mcc_mnc,
-    'network_type': network_type,
-    'sim_state': sim_state,
-    'data_connected': cell_data_connected
-  }
+  return HARDWARE.get_sim_info()
 
 
 @dispatcher.add_method

@@ -21,6 +21,8 @@
 
 #include <stdio.h>
 
+#include "services.h"
+
 #include "msgq.hpp"
 
 void sigusr2_handler(int signal) {
@@ -81,11 +83,20 @@ void msgq_wait_for_subscriber(msgq_queue_t *q){
   return;
 }
 
-
+bool service_exists(std::string path){
+  for (const auto& it : services) {
+    if (it.name == path) {
+      return true;
+    }
+  }
+  return false;
+}
 
 int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
   assert(size < 0xFFFFFFFF); // Buffer must be smaller than 2^32 bytes
-
+  if (!service_exists(std::string(path))){
+    std::cout << "Warning, " << std::string(path) << " is not in service list." << std::endl;
+  }
   std::signal(SIGUSR2, sigusr2_handler);
 
   const char * prefix = "/dev/shm/";
@@ -102,15 +113,15 @@ int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
   delete[] full_path;
 
   int rc = ftruncate(fd, size + sizeof(msgq_header_t));
-  if (rc < 0)
+  if (rc < 0){
     return -1;
-
+  }
   char * mem = (char*)mmap(NULL, size + sizeof(msgq_header_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   close(fd);
 
-  if (mem == NULL)
+  if (mem == NULL){
     return -1;
-
+  }
   q->mmap_p = mem;
 
   msgq_header_t *header = (msgq_header_t *)mem;
@@ -418,8 +429,6 @@ int msgq_msg_recv(msgq_msg_t * msg, msgq_queue_t * q){
 
 
 int msgq_poll(msgq_pollitem_t * items, size_t nitems, int timeout){
-  assert(timeout >= 0);
-
   int num = 0;
 
   // Check if messages ready

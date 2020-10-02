@@ -9,6 +9,7 @@
 #ifdef PANDA
   #include "drivers/fan.h"
   #include "drivers/rtc.h"
+  #include "drivers/clock_source.h"
   #include "boards/white.h"
   #include "boards/grey.h"
   #include "boards/black.h"
@@ -23,7 +24,7 @@ void detect_board_type(void) {
     // SPI lines floating: white (TODO: is this reliable? Not really, we have to enable ESP/GPS to be able to detect this on the UART)
     set_gpio_output(GPIOC, 14, 1);
     set_gpio_output(GPIOC, 5, 1);
-    if(!detect_with_pull(GPIOB, 1, PULL_UP) && detect_with_pull(GPIOB, 15, PULL_UP)){
+    if(!detect_with_pull(GPIOB, 1, PULL_UP) && !detect_with_pull(GPIOB, 7, PULL_UP)){
       hw_type = HW_TYPE_DOS;
       current_board = &board_dos;
     } else if((detect_with_pull(GPIOA, 4, PULL_DOWN)) || (detect_with_pull(GPIOA, 5, PULL_DOWN)) || (detect_with_pull(GPIOA, 6, PULL_DOWN)) || (detect_with_pull(GPIOA, 7, PULL_DOWN))){
@@ -53,22 +54,10 @@ void detect_board_type(void) {
 
 // ///// Configuration detection ///// //
 bool has_external_debug_serial = 0;
-bool is_entering_bootmode = 0;
 
 void detect_configuration(void) {
   // detect if external serial debugging is present
   has_external_debug_serial = detect_with_pull(GPIOA, 3, PULL_DOWN);
-
-  #ifdef PANDA
-    if(hw_type == HW_TYPE_WHITE_PANDA) {
-      // check if the ESP is trying to put me in boot mode
-      is_entering_bootmode = !detect_with_pull(GPIOB, 0, PULL_UP);
-    } else {
-      is_entering_bootmode = 0;
-    }
-  #else
-    is_entering_bootmode = 0;
-  #endif
 }
 
 // ///// Board functions ///// //

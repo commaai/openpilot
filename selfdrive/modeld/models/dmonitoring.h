@@ -10,7 +10,6 @@ extern "C" {
 #endif
 
 #define OUTPUT_SIZE 34
-#define RHD_CHECK_INTERVAL 10
 
 typedef struct DMonitoringResult {
   float face_orientation[3];
@@ -28,7 +27,6 @@ typedef struct DMonitoringResult {
 typedef struct DMonitoringModelState {
   RunModel *m;
   bool is_rhd;
-  bool is_rhd_checked;
   float output[OUTPUT_SIZE];
   std::vector<uint8_t> resized_buf;
   std::vector<uint8_t> cropped_buf;
