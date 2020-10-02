@@ -210,6 +210,11 @@ def finalize_update() -> None:
     shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
+  # Log git repo corruption
+  fsck = run(["git", "fsck", "--no-progress"], FINALIZED).rstrip()
+  if len(fsck):
+    cloudlog.error(f"found git corruption, git fsck:\n{fsck}")
+
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
@@ -327,6 +332,10 @@ def main():
   # Wait for IsOffroad to be set before our first update attempt
   wait_helper = WaitTimeHelper(proc)
   wait_helper.sleep(30)
+
+  overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
+  if overlay_init.exists():
+    overlay_init.unlink()
 
   first_run = True
   last_fetch_time = 0
