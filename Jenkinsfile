@@ -132,6 +132,7 @@ pipeline {
                       ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
+                      ["test loggerd", "CI=1 python selfdrive/loggerd/tests/test_loggerd.py"],
                       //["test updater", "python installer/updater/test_updater.py"],
                     ])
                   }
