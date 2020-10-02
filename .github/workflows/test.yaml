@@ -138,6 +138,10 @@ jobs:
           submodules: true
       - name: Build Docker image
         run: eval "$BUILD"
+      - name: Run scons
+        run: |
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc)
       - name: valgrind
         run: $RUN "cd /tmp/openpilot/selfdrive/test/ && python test_valgrind_replay.py"
 
