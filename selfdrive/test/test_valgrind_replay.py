@@ -14,6 +14,8 @@ import cereal.messaging as messaging
 from collections import namedtuple
 from tools.lib.logreader import LogReader
 from selfdrive.test.process_replay.test_processes import get_segment
+from common.basedir import BASEDIR
+
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
 
 CONFIGS = [
@@ -24,7 +26,7 @@ CONFIGS = [
     },
     ignore=[],
     command="./ubloxd",
-    path="../locationd",
+    path="selfdrive/locationd/",
     segment="0375fdf7b1ce594d|2019-06-13--08-32-25--3",
     wait_for_response=True
   ),
@@ -42,7 +44,7 @@ class TestValgrind(unittest.TestCase):
     return (definitely_lost, indirectly_lost, possibly_lost)
 
   def valgrindlauncher(self, arg, cwd):
-    os.chdir(cwd)
+    os.chdir(os.path.join(BASEDIR, cwd))
     # Run valgrind on a process
     command = "valgrind --leak-check=full " + arg + " & sleep 20; kill $!"
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -72,13 +74,15 @@ class TestValgrind(unittest.TestCase):
     time.sleep(5)  # We give the process time to start
     for msg in tqdm(pub_msgs):
       pm.send(msg.which(), msg.as_builder())
+      curr = time.time()
       if config.wait_for_response:
         while not any([sm.updated[s] for s in sub_sockets]):
           sm.update()
+          if time.time() - curr > 0.1:# if process doesn't respond send it another package
+            break
 
   def test_config_0(self):
     cfg = CONFIGS[0]
-
     URL = cfg.segment
     lr = LogReader(get_segment(URL))
     self.replay_process(cfg, lr)
