@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import Ecu, ECU_FINGERPRINT, CAR, TSS2_CAR, FINGERPRINTS
@@ -66,11 +67,11 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam = 88
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
+      ret.steerActuatorDelay = 0.14 if os.path.exists('/data/use_14') else 0.12
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
-      ret.steerActuatorDelay = 0.14
 
     elif candidate == CAR.LEXUS_RX:
       stop_and_go = True
