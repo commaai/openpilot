@@ -142,7 +142,7 @@ jobs:
         run: |
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    python /selfdrive/test/test_valgrind_replay.py"
+                    python selfdrive/test/test_valgrind_replay.py"
 
   unit_tests:
     name: unit tests
