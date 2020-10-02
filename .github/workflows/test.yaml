@@ -139,7 +139,7 @@ jobs:
       - name: Build Docker image
         run: eval "$BUILD"
       - name: valgrind
-        run: $RUN "cd /tmp/openpilot/selfdrive/tests && python test_valgrind_replay.py"
+        run: $RUN "cd /tmp/openpilot/selfdrive/tests/ && python test_valgrind_replay.py"
 
   unit_tests:
     name: unit tests
