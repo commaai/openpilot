@@ -189,10 +189,12 @@ def init_overlay() -> None:
   os.sync()
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
 
-  args = ["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED]
+  mount_cmd = ["mount", "-t", "overlay", "-o", overlay_opts, "none", OVERLAY_MERGED]
   if TICI:
-    args = ["sudo"] + args
-  run(args)
+    run(["sudo"] + mount_cmd)
+    run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
+  else:
+    run(mount_cmd)
 
 
 def finalize_update() -> None:
