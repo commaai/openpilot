@@ -12,6 +12,7 @@ from tqdm import trange
 
 from common.params import Params
 from common.hardware import EON, TICI
+from common.timeout import Timeout
 from selfdrive.test.helpers import with_processes
 from selfdrive.loggerd.config import ROOT, CAMERA_FPS
 
@@ -32,7 +33,7 @@ else:
 ALL_CAMERA_COMBINATIONS = [(cameras,) for cameras in [CAMERAS, {k:CAMERAS[k] for k in CAMERAS if k!='dcamera'}]]
 
 FRAME_TOLERANCE = 2
-FILE_SIZE_TOLERANCE = 0.25
+FILE_SIZE_TOLERANCE = 0.5
 
 class TestLoggerd(unittest.TestCase):
 
@@ -60,23 +61,40 @@ class TestLoggerd(unittest.TestCase):
     last_route = sorted(Path(ROOT).iterdir(), key=os.path.getmtime)[-1]
     return os.path.join(ROOT, last_route)
 
-  @with_processes(['camerad', 'loggerd'], init_time=5)
-  def _log_data(self, t):
-    time.sleep(t)
-
   # TODO: this should run faster than real time
   @parameterized.expand(ALL_CAMERA_COMBINATIONS)
+  @with_processes(['camerad', 'loggerd'], init_time=5)
   def test_log_rotation(self, cameras):
     print("checking targets:", cameras)
     Params().put("RecordFront", "1" if 'dcamera' in cameras else "0")
-    time.sleep(1)
 
     num_segments = random.randint(80, 150)
-    self._log_data(self.segment_length * num_segments + 5)
-    time.sleep(5)
+    if "CI" in os.environ:
+      num_segments = random.randint(15, 20) # ffprobe is slow on comma two
 
-    route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
+    # wait for loggerd to make the dir for first segment
+    time.sleep(10)
+    route_prefix_path = None
+    with Timeout(30):
+      while route_prefix_path is None:
+        try:
+          route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
+        except Exception:
+          time.sleep(2)
+          continue
+
     for i in trange(num_segments):
+      # poll for next segment
+      if i < num_segments - 1:
+        with Timeout(self.segment_length*3, error_msg=f"timed out waiting for segment {i}"):
+          while True:
+            seg_num = int(self._get_latest_segment_path().rsplit("--", 1)[1])
+            if seg_num > i:
+              break
+            time.sleep(0.1)
+      else:
+        time.sleep(self.segment_length)
+
       # check each camera file size
       for camera, size in cameras.items():
         ext = "ts" if camera=='qcamera' else "hevc"
@@ -98,6 +116,7 @@ class TestLoggerd(unittest.TestCase):
         frame_count = int(subprocess.check_output(cmd, shell=True, encoding='utf8').strip())
         self.assertTrue(abs(expected_frames - frame_count) <= FRAME_TOLERANCE,
                         f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+      shutil.rmtree(f"{route_prefix_path}--{i}")
 
 if __name__ == "__main__":
   unittest.main()
