@@ -1,7 +1,10 @@
-Version 0.7.9 (2020-XX-XX)
+Version 0.7.9 (2020-10-09)
 ========================
  * Improved car battery power management
+ * Improved updater robustness
  * Improved realtime performance
+ * Reduced UI and modeld lags
+ * Increased torque on 2020 Hyundai Sonata and Palisade
 
 Version 0.7.8 (2020-08-19)
 ========================

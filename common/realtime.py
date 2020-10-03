@@ -31,7 +31,7 @@ def set_core_affinity(core):
     os.sched_setaffinity(0, [core,])
 
 
-def config_rt_process(core, priority):
+def config_realtime_process(core, priority):
   gc.disable()
   set_realtime_priority(priority)
   set_core_affinity(core)
