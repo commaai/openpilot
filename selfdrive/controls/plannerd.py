@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from common.params import Params
-from common.realtime import Priority, config_rt_process
+from common.realtime import Priority, config_realtime_process
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -11,7 +11,7 @@ import cereal.messaging as messaging
 
 def plannerd_thread(sm=None, pm=None):
 
-  config_rt_process(2, Priority.CTRL_LOW)
+  config_realtime_process(2, Priority.CTRL_LOW)
 
   cloudlog.info("plannerd is waiting for CarParams")
   CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
