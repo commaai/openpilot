@@ -26,13 +26,13 @@ if EON:
     "qcamera": 38533,
   }
 elif TICI:
-  CAMERAS = {f"{c}camera": FULL_SIZE for c in ["f", "e", "d"]}
+  CAMERAS = {f"{c}camera": FULL_SIZE if c!="q" else 38533 for c in ["f", "e", "d", "q"]}
 else:
   CAMERAS = {}
 
 ALL_CAMERA_COMBINATIONS = [(cameras,) for cameras in [CAMERAS, {k:CAMERAS[k] for k in CAMERAS if k!='dcamera'}]]
 
-FRAME_TOLERANCE = 2
+FRAME_TOLERANCE = 0
 FILE_SIZE_TOLERANCE = 0.5
 
 class TestLoggerd(unittest.TestCase):
@@ -113,8 +113,10 @@ class TestLoggerd(unittest.TestCase):
         cmd = f"ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \
                -of default=nokey=1:noprint_wrappers=1 {file_path}"
         expected_frames = self.segment_length * CAMERA_FPS // 2 if (EON and camera=='dcamera') else self.segment_length * CAMERA_FPS
+        frame_tolerance = FRAME_TOLERANCE+1 if (EON and camera=='dcamera') or i==0 else FRAME_TOLERANCE
         frame_count = int(subprocess.check_output(cmd, shell=True, encoding='utf8').strip())
-        self.assertTrue(abs(expected_frames - frame_count) <= FRAME_TOLERANCE,
+
+        self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
                         f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
