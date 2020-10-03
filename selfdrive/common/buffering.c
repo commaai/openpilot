@@ -68,9 +68,8 @@ void tbuffer_dispatch(TBuffer *tb, int idx) {
   tb->pending_idx = idx;
 
   efd_write(tb->efd);
-  pthread_cond_signal(&tb->cv);
-
   pthread_mutex_unlock(&tb->lock);
+  pthread_cond_signal(&tb->cv);
 }
 
 int tbuffer_acquire(TBuffer *tb) {
@@ -136,18 +135,9 @@ void tbuffer_stop(TBuffer *tb) {
   pthread_mutex_lock(&tb->lock);
   tb->stopped = true;
   efd_write(tb->efd);
-  pthread_cond_signal(&tb->cv);
   pthread_mutex_unlock(&tb->lock);
+  pthread_cond_signal(&tb->cv);
 }
-
-
-
-
-
-
-
-
-
 
 
 void pool_init(Pool *s, int num_bufs) {
