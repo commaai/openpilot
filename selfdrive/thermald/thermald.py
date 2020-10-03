@@ -9,8 +9,6 @@ from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
-from common.android import ANDROID, get_network_type, get_network_strength
-from common.basedir import BASEDIR
 from common.params import Params, put_nonblocking # pylint: disable=no-name-in-module, import-error
 from common.filter_simple import FirstOrderFilter
 from common.hardware import EON, HARDWARE, TICI
