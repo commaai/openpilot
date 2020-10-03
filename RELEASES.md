@@ -1,3 +1,6 @@
+Version 0.7.10 (2020-10-XX)
+========================
+
 Version 0.7.9 (2020-10-09)
 ========================
  * Improved car battery power management
