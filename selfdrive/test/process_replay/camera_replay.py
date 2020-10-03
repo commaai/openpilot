@@ -5,7 +5,7 @@ import time
 from typing import Any
 from tqdm import tqdm
 
-from common.android import ANDROID
+from common.hardware import ANDROID
 os.environ['CI'] = "1"
 if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
@@ -84,6 +84,8 @@ if __name__ == "__main__":
 
   if update:
     ref_commit = get_git_commit()
+    if ref_commit is None:
+      raise Exception("couldn't get ref commit")
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     save_log(log_fn, log_msgs)
     with open("model_replay_ref_commit", "w") as f:
@@ -93,7 +95,7 @@ if __name__ == "__main__":
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
     results: Any = {TEST_ROUTE: {}}
-    results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, ignore_fields=['logMonoTime', 'valid'])
+    results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, ignore_fields=['logMonoTime', 'valid', 'model.frameDropPerc'])
     diff1, diff2, failed = format_diff(results, ref_commit)
 
     print(diff1)
@@ -101,4 +103,3 @@ if __name__ == "__main__":
       f.write(diff2)
 
     sys.exit(int(failed))
-

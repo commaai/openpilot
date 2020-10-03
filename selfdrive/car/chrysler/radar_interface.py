@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-import os
 from opendbc.can.parser import CANParser
 from cereal import car
 from selfdrive.car.interfaces import RadarInterfaceBase
+from selfdrive.car.chrysler.values import DBC
 
 RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724
 RADAR_MSGS_D = list(range(0x2a2, 0x2b4+2, 2))  # d_ messages
 LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
 NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 
-def _create_radar_can_parser():
-  dbc_f = 'chrysler_pacifica_2017_hybrid_private_fusion.dbc'
+def _create_radar_can_parser(car_fingerprint):
   msg_n = len(RADAR_MSGS_C)
   # list of [(signal name, message name or number, initial values), (...)]
   # [('RADAR_STATE', 1024, 0),
@@ -37,7 +36,7 @@ def _create_radar_can_parser():
                [20]*msg_n +  # 20Hz (0.05s)
                [20]*msg_n))  # 20Hz (0.05s)
 
-  return CANParser(os.path.splitext(dbc_f)[0], signals, checks, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
 def _address_to_track(address):
   if address in RADAR_MSGS_C:
@@ -49,7 +48,7 @@ def _address_to_track(address):
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.rcp = _create_radar_can_parser()
+    self.rcp = _create_radar_can_parser(CP.carFingerprint)
     self.updated_messages = set()
     self.trigger_msg = LAST_MSG
 

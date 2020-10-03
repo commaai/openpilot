@@ -6,8 +6,7 @@ from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.process_replay import (CONFIGS,
-                                                          replay_process)
+from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from tools.lib.logreader import LogReader
 
 INJECT_MODEL = 0
@@ -71,8 +70,10 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception("Route never enabled: %s" % segment)
 
-  return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs)
-
+  try:
+    return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
+  except Exception as e:
+    return str(e)
 
 def format_diff(results, ref_commit):
   diff1, diff2 = "", ""

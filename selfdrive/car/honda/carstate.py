@@ -79,7 +79,7 @@ def get_can_signals(CP):
       ("GEARBOX", 100),
     ]
 
-  if CP.radarOffCan:
+  if CP.carFingerprint in HONDA_BOSCH:
     # Civic is only bosch to use the same brake message as other hondas.
     if CP.carFingerprint not in (CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT):
       signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
@@ -90,6 +90,10 @@ def get_can_signals(CP):
                 ("EPB_STATE", "EPB_STATUS", 0),
                 ("CRUISE_SPEED", "ACC_HUD", 0)]
     checks += [("GAS_PEDAL_2", 100)]
+    if CP.openpilotLongitudinalControl:
+      signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
+                  ("BRAKE_ERROR_2", "STANDSTILL", 1)]
+      checks += [("STANDSTILL", 50)]
   else:
     # Nidec signals.
     signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
@@ -172,7 +176,7 @@ class CarState(CarStateBase):
     self.v_cruise_pcm_prev = 0
     self.cruise_mode = 0
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
     # car params
@@ -206,7 +210,7 @@ class CarState(CarStateBase):
     # LOW_SPEED_LOCKOUT is not worth a warning
     ret.steerWarning = steer_status not in ['NORMAL', 'LOW_SPEED_LOCKOUT', 'NO_TORQUE_ALERT_2']
 
-    if self.CP.radarOffCan:
+    if not self.CP.openpilotLongitudinalControl:
       self.brake_error = 0
     else:
       self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
@@ -270,7 +274,7 @@ class CarState(CarStateBase):
 
     self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != 0
 
-    if self.CP.radarOffCan:
+    if self.CP.carFingerprint in HONDA_BOSCH:
       self.cruise_mode = cp.vl["ACC_HUD"]['CRUISE_CONTROL_LABEL']
       ret.cruiseState.standstill = cp.vl["ACC_HUD"]['CRUISE_SPEED'] == 252.
       ret.cruiseState.speedOffset = calc_cruise_offset(0, ret.vEgo)
@@ -322,6 +326,12 @@ class CarState(CarStateBase):
       self.stock_hud = cp_cam.vl["ACC_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
 
+    if self.CP.carFingerprint in (CAR.CRV_5G, ):
+      # BSM messages are on B-CAN, requires a panda forwarding B-CAN messages to CAN 0
+      # more info here: https://github.com/commaai/openpilot/pull/1867
+      ret.leftBlindspot = cp_body.vl["BSM_STATUS_LEFT"]['BSM_ALERT'] == 1
+      ret.rightBlindspot = cp_body.vl["BSM_STATUS_RIGHT"]['BSM_ALERT'] == 1
+
     return ret
 
   @staticmethod
@@ -354,3 +364,17 @@ class CarState(CarStateBase):
 
     bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH and not CP.isPandaBlack else 2
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_cam)
+
+  @staticmethod
+  def get_body_can_parser(CP):
+    signals = []
+    checks = []
+
+    if CP.carFingerprint == CAR.CRV_5G:
+      signals += [("BSM_ALERT", "BSM_STATUS_RIGHT", 0),
+                  ("BSM_ALERT", "BSM_STATUS_LEFT", 0)]
+
+      bus_body = 0 # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
+      return CANParser(DBC[CP.carFingerprint]['body'], signals, checks, bus_body)
+
+    return None

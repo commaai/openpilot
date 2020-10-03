@@ -63,7 +63,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
-      ret.safetyParam = 100
+      ret.safetyParam = 88
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -313,7 +313,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-    ret.buttonEvents = []
 
     # events
     events = self.create_common_events(ret)

@@ -1,5 +1,4 @@
-#ifndef UTILPP_H
-#define UTILPP_H
+#pragma once
 
 #include <cstdio>
 #include <unistd.h>
@@ -63,4 +62,16 @@ inline std::string readlink(std::string path) {
 
 }
 
-#endif
+struct unique_fd {
+  unique_fd(int fd = -1) : fd_(fd) {}
+  unique_fd& operator=(unique_fd&& uf) {
+    fd_ = uf.fd_;
+    uf.fd_ = -1;
+    return *this;
+  }
+  ~unique_fd() {
+    if (fd_ != -1) close(fd_);
+  }
+  operator int() const { return fd_; }
+  int fd_;
+};

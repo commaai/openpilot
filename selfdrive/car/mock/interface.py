@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     return accel
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "mock"
     ret.safetyModel = car.CarParams.SafetyModel.noOutput
@@ -63,6 +63,7 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
+    ret.canValid = True
 
     # speeds
     ret.vEgo = self.speed
@@ -81,9 +82,6 @@ class CarInterface(CarInterfaceBase):
     self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
     curvature = self.yaw_rate / max(self.speed, 1.)
     ret.steeringAngle = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
-
-    events = []
-    ret.events = events
 
     return ret.as_reader()
 

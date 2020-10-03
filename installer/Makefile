@@ -21,6 +21,7 @@ FRAMEBUFFER_LIBS = -lutils -lgui -lEGL
 
 COMMON_OBJS = ../selfdrive/common/glutil.o \
        ../selfdrive/common/framebuffer.o \
+       ../selfdrive/common/util.o \
        $(PHONELIBS)/nanovg/nanovg.o \
        ../selfdrive/common/spinner.o \
        opensans_semibold.o \

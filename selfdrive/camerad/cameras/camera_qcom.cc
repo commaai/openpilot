@@ -12,7 +12,6 @@
 #include <cutils/properties.h>
 
 #include <pthread.h>
-#include <czmq.h>
 #include <capnp/serialize.h>
 #include "msmb_isp.h"
 #include "msmb_ispif.h"
@@ -108,8 +107,6 @@ static void camera_release_buffer(void* cookie, int buf_idx) {
 static void camera_init(CameraState *s, int camera_id, int camera_num,
                         uint32_t pixel_clock, uint32_t line_length_pclk,
                         unsigned int max_gain, unsigned int fps) {
-  memset(s, 0, sizeof(*s));
-
   s->camera_num = camera_num;
   s->camera_id = camera_id;
 
@@ -125,9 +122,9 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
 
   s->self_recover = 0;
 
-  zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
-  assert(ops_sock);
-  s->ops_sock = zsock_resolve(ops_sock);
+  s->ops_sock = zsock_new_push(">inproc://cameraops");
+  assert(s->ops_sock);
+  s->ops_sock_handle = zsock_resolve(s->ops_sock);
 
   tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame",
     camera_release_buffer, s);
@@ -261,9 +258,7 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
   return err;
 }
 
-void cameras_init(DualCameraState *s) {
-  memset(s, 0, sizeof(*s));
-
+void cameras_init(MultiCameraState *s) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
 
@@ -397,7 +392,9 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
   if (err == 0) {
     s->cur_exposure_frac = exposure_frac;
+    pthread_mutex_lock(&s->frame_info_lock);
     s->cur_gain_frac = gain_frac;
+    pthread_mutex_unlock(&s->frame_info_lock);
   }
 
   //LOGD("set exposure: %f %f - %d", exposure_frac, gain_frac, err);
@@ -414,16 +411,20 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     const unsigned int exposure_time_min = 16;
     const unsigned int exposure_time_max = frame_length - 11; // copied from set_exposure()
 
+    float cur_gain_frac = s->cur_gain_frac;
     float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.05);
-    if (s->cur_gain_frac > 0.125 && exposure_factor < 1) {
-      s->cur_gain_frac *= exposure_factor;
+    if (cur_gain_frac > 0.125 && exposure_factor < 1) {
+      cur_gain_frac *= exposure_factor;
     } else if (s->cur_integ_lines * exposure_factor <= exposure_time_max && s->cur_integ_lines * exposure_factor >= exposure_time_min) { // adjust exposure time first
       s->cur_exposure_frac *= exposure_factor;
-    } else if (s->cur_gain_frac * exposure_factor <= gain_frac_max && s->cur_gain_frac * exposure_factor >= gain_frac_min) {
-      s->cur_gain_frac *= exposure_factor;
+    } else if (cur_gain_frac * exposure_factor <= gain_frac_max && cur_gain_frac * exposure_factor >= gain_frac_min) {
+      cur_gain_frac *= exposure_factor;
     }
+    pthread_mutex_lock(&s->frame_info_lock);
+    s->cur_gain_frac = cur_gain_frac;
+    pthread_mutex_unlock(&s->frame_info_lock);
 
-    set_exposure(s, s->cur_exposure_frac, s->cur_gain_frac);
+    set_exposure(s, s->cur_exposure_frac, cur_gain_frac);
 
   } else { // keep the old for others
     float new_exposure = s->cur_exposure_frac;
@@ -448,7 +449,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     .grey_frac = grey_frac,
   };
 
-  zmq_send(s->ops_sock, &msg, sizeof(msg), ZMQ_DONTWAIT);
+  zmq_send(s->ops_sock_handle, &msg, sizeof(msg), ZMQ_DONTWAIT);
 }
 
 static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
@@ -544,10 +545,10 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
 
 
 
-static void sensors_init(DualCameraState *s) {
+static void sensors_init(MultiCameraState *s) {
   int err;
 
-  int sensorinit_fd = -1;
+  unique_fd sensorinit_fd;
   if (s->device == DEVICE_LP3) {
     sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
   } else {
@@ -1795,15 +1796,16 @@ static void do_autofocus(CameraState *s) {
   const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
   const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
 
+  float lens_true_pos = s->lens_true_pos;
   if (!isnan(err))  {
     // learn lens_true_pos
-    s->lens_true_pos -= err*focus_kp;
+    lens_true_pos -= err*focus_kp;
   }
 
   // stay off the walls
-  s->lens_true_pos = clamp(s->lens_true_pos, dac_down, dac_up);
-
-  int target = clamp(s->lens_true_pos - sag, dac_down, dac_up);
+  lens_true_pos = clamp(lens_true_pos, dac_down, dac_up);
+  int target = clamp(lens_true_pos - sag, dac_down, dac_up);
+  s->lens_true_pos = lens_true_pos;
 
   /*char debug[4096];
   char *pdebug = debug;
@@ -1827,7 +1829,7 @@ static void front_start(CameraState *s) {
 
 
 
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front) {
   int err;
 
   struct ispif_cfg_data ispif_cfg_data;
@@ -1864,13 +1866,13 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *ca
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
 
-  int msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
-  assert(msmcfg_fd >= 0);
+  s->msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
+  assert(s->msmcfg_fd >= 0);
 
   sensors_init(s);
 
-  int v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
-  assert(v4l_fd >= 0);
+  s->v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
+  assert(s->v4l_fd >= 0);
 
   if (s->device == DEVICE_LP3) {
     s->ispif_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
@@ -1956,6 +1958,8 @@ static void camera_close(CameraState *s) {
   }
 
   free(s->eeprom);
+
+  zsock_destroy(&s->ops_sock);
 }
 
 
@@ -2014,7 +2018,7 @@ static void ops_term() {
 
 static void* ops_thread(void* arg) {
   int err;
-  DualCameraState *s = (DualCameraState*)arg;
+  MultiCameraState *s = (MultiCameraState*)arg;
 
   set_thread_name("camera_settings");
 
@@ -2105,7 +2109,7 @@ static void* ops_thread(void* arg) {
   return NULL;
 }
 
-void cameras_run(DualCameraState *s) {
+void cameras_run(MultiCameraState *s) {
   int err;
 
   pthread_t ops_thread_handle;
@@ -2217,7 +2221,7 @@ void cameras_run(DualCameraState *s) {
   cameras_close(s);
 }
 
-void cameras_close(DualCameraState *s) {
+void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
 }

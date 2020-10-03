@@ -2,8 +2,7 @@ name: openpilot tests
 on:
   push:
   pull_request:
-  schedule:
-  - cron: '0 * * * *'
+  status:
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
@@ -11,9 +10,14 @@ env:
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
   BUILD: |
-      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot) || true
+      # build the openpilot docker base image
+      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
+      docker pull docker.io/commaai/openpilot-base:latest || true
+      docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot_base .
+
+      # build the final CI image
       docker pull docker.io/commaai/openpilotci:latest || true
-      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilot .
+      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
 
 jobs:
   build_release:
@@ -30,14 +34,14 @@ jobs:
       run: |
         mkdir $TEST_DIR
         cp -pR --parents $(cat release/files_common) $TEST_DIR
-        cp Dockerfile.openpilot $TEST_DIR
+        cp Dockerfile.openpilot_base Dockerfile.openpilotci $TEST_DIR
 
         # need this to build on x86
         cp -pR --parents phonelibs/libyuv phonelibs/snpe \
                          external/bin selfdrive/modeld/runners $TEST_DIR
 
         # need these so docker copy won't fail
-        cp Pipfile Pipfile.lock .pylintrc .coveragerc-app .pre-commit-config.yaml $TEST_DIR
+        cp Pipfile Pipfile.lock .pylintrc .pre-commit-config.yaml $TEST_DIR
         cd $TEST_DIR
         mkdir laika laika_repo tools
     - name: Build Docker image
@@ -47,6 +51,31 @@ jobs:
           $RUN "cd /tmp/openpilot && \
                 scons -j$(nproc) && \
                 $UNIT_TEST selfdrive/car"
+
+  #build_mac:
+  #  name: build macos
+  #  runs-on: macos-10.15
+  #  timeout-minutes: 60
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #    with:
+  #      submodules: true
+  #  - name: Cache dependencies
+  #    id: dependency-cache
+  #    uses: actions/cache@v2
+  #    with:
+  #      path: |
+  #        ~/.pyenv
+  #        ~/Library/Caches/pip
+  #        ~/Library/Caches/pipenv
+  #        ~/Library/Caches/Homebrew
+  #      key: ${{ hashFiles('tools/mac_setup.sh') }}
+  #  - name: Install dependencies
+  #    run: ./tools/mac_setup.sh
+  #  - name: Build openpilot
+  #    run: eval "$(pyenv init -)" && scons -j$(nproc)
+  #  - name: Brew cleanup
+  #    run: brew cleanup # keeps our cache small
 
   docker_push:
     name: docker push
@@ -63,6 +92,8 @@ jobs:
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag commaai/openpilot-base:latest docker.io/commaai/openpilot-base:latest
+          docker push docker.io/commaai/openpilot-base:latest
           docker tag tmppilot docker.io/commaai/openpilotci:latest
           docker push docker.io/commaai/openpilotci:latest
 
@@ -70,14 +101,14 @@ jobs:
     name: docker push prebuilt
     runs-on: ubuntu-16.04
     timeout-minutes: 50
-    if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
+    if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
     needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
       - name: Build Docker image
-        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j3" >> Dockerfile.openpilot && eval "$BUILD"
+        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j\$(nproc)" >> Dockerfile.openpilotci && eval "$BUILD"
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
@@ -121,6 +152,7 @@ jobs:
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
+                    $UNIT_TEST selfdrive/thermald && \
                     $UNIT_TEST tools/lib/tests"
       - name: Upload coverage to Codecov
         run: |
@@ -197,10 +229,10 @@ jobs:
         run: eval "$BUILD"
       - name: Test car models
         run: |
-          $PERSIST "mkdir -p /data/params && \
-                    cd /tmp/openpilot && \
+          $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    coverage run --parallel-mode --concurrency=multiprocessing --rcfile=./.coveragerc-app selfdrive/test/test_car_models.py && \
+                    coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                                 selfdrive/test/test_models.py && \
                     coverage combine"
       - name: Upload coverage to Codecov
         run: |

@@ -5,7 +5,7 @@ import subprocess
 from common.basedir import BASEDIR
 
 
-class TextWindow():
+class TextWindow:
   def __init__(self, s, noop=False):
     # text window is only implemented for android currently
     self.text_proc = None

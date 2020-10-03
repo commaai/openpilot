@@ -19,7 +19,10 @@ from common.params import Params
 from cereal.services import service_list
 from collections import namedtuple
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback'])
+# Numpy gives different results based on CPU features after version 19
+NUMPY_TOLERANCE = 1e-7
+
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance'])
 
 
 def wait_for_event(evt):
@@ -197,15 +200,11 @@ def radar_rcv_callback(msg, CP, cfg, fsm):
 def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
-  if msg.which() == 'carState':
-    if ((fsm.frame + 1) % 25) == 0:
-      recv_socks = ["liveCalibration"]
-    else:
-      recv_socks = []
-    return recv_socks, True
-  else:
-    return [], False
-
+  recv_socks = []
+  frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
+  if frame == 0 or (msg.which() == 'cameraOdometry' and (frame % 5) == 0):
+    recv_socks = ["liveCalibration"]
+  return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 
 CONFIGS = [
   ProcessConfig(
@@ -218,6 +217,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
     should_recv_callback=None,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="radard",
@@ -228,6 +228,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -238,6 +239,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "plan.processingDelay"],
     init_callback=get_car_params,
     should_recv_callback=None,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="calibrationd",
@@ -248,6 +250,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
+    tolerance=None,
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
@@ -258,6 +261,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=None,
+    tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="locationd",
@@ -268,8 +272,19 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=None,
+    tolerance=NUMPY_TOLERANCE,
   ),
-
+  ProcessConfig(
+    proc_name="paramsd",
+    pub_sub={
+      "liveLocationKalman": ["liveParameters"],
+      "carState": []
+    },
+    ignore=["logMonoTime", "valid"],
+    init_callback=get_car_params,
+    should_recv_callback=None,
+    tolerance=NUMPY_TOLERANCE,
+  ),
 ]
 
 def replay_process(cfg, lr):

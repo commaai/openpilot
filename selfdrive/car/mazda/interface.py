@@ -15,7 +15,7 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 4.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.carName = "mazda"
@@ -25,26 +25,36 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarOffCan = True
 
-    # Mazda port is a community feature for now
-    ret.communityFeature = True
-
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 0.70   # not optimized yet
 
-    if candidate in [CAR.CX5]:
+    if candidate == CAR.CX5:
       ret.mass = 3655 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 15.5
-
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.2]]
-
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
+      ret.lateralTuning.pid.kf = 0.00006
+    elif candidate == CAR.CX9:
+      ret.mass = 4217 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 3.1
+      ret.steerRatio = 17.6
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
+      ret.lateralTuning.pid.kf = 0.00006
+    elif candidate == CAR.Mazda3:
+      ret.mass = 2875 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      ret.steerRatio = 14.0
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
 
-      # No steer below disable speed
-      ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS
+
+    # No steer below disable speed
+    ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS
 
     ret.centerToFront = ret.wheelbase * 0.41
 
@@ -69,9 +79,6 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp, self.cp_cam)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
-
-    # TODO: button presses
-    ret.buttonEvents = []
 
     # events
     events = self.create_common_events(ret)
