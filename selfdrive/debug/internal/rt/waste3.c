@@ -5,8 +5,8 @@
 #include <arm_neon.h>
 #include <sys/prctl.h>
 #include <sys/syscall.h>
-#include "../../common/util.h"
-#include "../../common/timing.h"
+#include "../../../common/util.h"
+#include "../../../common/timing.h"
 
 #define CORES 3
 double ttime[CORES];

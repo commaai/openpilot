@@ -16,6 +16,15 @@ from selfdrive.test.helpers import set_params_enabled
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
+parser.add_argument('--town', type=str, default='Town04')
+parser.add_argument('--spawn_point', dest='num_selected_spawn_point', 
+        type=int, default=16)
+parser.add_argument('--cloudyness', default=0.1, type=float)
+parser.add_argument('--precipitation', default=0.0, type=float)
+parser.add_argument('--precipitation_deposits', default=0.0, type=float)
+parser.add_argument('--wind_intensity', default=0.0, type=float)
+parser.add_argument('--sun_azimuth_angle', default=15.0, type=float)
+parser.add_argument('--sun_altitude_angle', default=75.0, type=float)
 args = parser.parse_args()
 
 W, H = 1164, 874
@@ -127,23 +136,19 @@ def go(q):
   # setup CARLA
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(10.0)
-  world = client.load_world('Town04')
-  world.set_weather(carla.WeatherParameters(
-    cloudyness=0.1,
-    precipitation=0.0,
-    precipitation_deposits=0.0,
-    wind_intensity=0.0,
-    sun_azimuth_angle=15.0,
-    sun_altitude_angle=75.0
-  ))
+  world = client.load_world(args.town)
 
   blueprint_library = world.get_blueprint_library()
 
   world_map = world.get_map()
 
   vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[0]
-  # vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
-  vehicle = world.spawn_actor(vehicle_bp, world_map.get_spawn_points()[16])
+  spawn_points = world_map.get_spawn_points()
+  assert len(spawn_points) > args.num_selected_spawn_point, \
+    f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and 
+    {len(spawn_points)} for this town.'''
+  spawn_point = spawn_points[args.num_selected_spawn_point]
+  vehicle = world.spawn_actor(vehicle_bp, spawn_point)
 
   max_steer_angle = vehicle.get_physics_control().wheels[0].max_steer_angle
 
@@ -164,6 +169,15 @@ def go(q):
   transform = carla.Transform(carla.Location(x=0.8, z=1.45))
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
   camera.listen(cam_callback)
+
+  world.set_weather(carla.WeatherParameters(
+    cloudyness=args.cloudyness,
+    precipitation=args.precipitation,
+    precipitation_deposits=args.precipitation_deposits,
+    wind_intensity=args.wind_intensity,
+    sun_azimuth_angle=args.sun_azimuth_angle,
+    sun_altitude_angle=args.sun_altitude_angle
+  ))
 
   # reenable IMU
   imu_bp = blueprint_library.find('sensor.other.imu')
