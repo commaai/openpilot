@@ -5,8 +5,8 @@ from statistics import mean
 
 from cereal import log
 from common.realtime import sec_since_boot
-from common.hardware import TICI
 from common.params import Params, put_nonblocking # pylint: disable=no-name-in-module, import-error
+from common.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 PANDA_OUTPUT_VOLTAGE = 5.28

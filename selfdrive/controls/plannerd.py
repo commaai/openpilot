@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
-from common.realtime import Priority, config_realtime_process
 from common.params import Params # pylint: disable=no-name-in-module, import-error
+from common.realtime import Priority, config_realtime_process
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.planner import Planner
 from selfdrive.controls.lib.vehicle_model import VehicleModel

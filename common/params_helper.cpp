@@ -578,7 +578,7 @@ namespace params {
       if (!block || (val != "")) {
         break;
       }
-      usleep(50);
+      usleep(50000);
     }
     return val;
   }
