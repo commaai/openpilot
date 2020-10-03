@@ -9,7 +9,7 @@ import time
 
 import requests
 
-from common.params import Params
+from common.params import Params # pylint: disable=no-name-in-module, import-error
 from common.timeout import Timeout
 
 HOST = "testing.comma.life"
