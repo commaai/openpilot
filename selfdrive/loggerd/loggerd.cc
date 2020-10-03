@@ -191,9 +191,9 @@ struct LoggerdState {
   int rotate_segment;
   pthread_mutex_t rotate_lock;
   int num_encoder;
-  int rotate_seq_id;
-  int should_close;
-  int finish_close;
+  std::atomic<int> rotate_seq_id;
+  std::atomic<int> should_close;
+  std::atomic<int> finish_close;
 
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
