@@ -55,6 +55,7 @@ class PIController():
   def reset(self):
     self.p = 0.0
     self.i = 0.0
+    self.d = 0.0
     self.f = 0.0
     self.last_error = 0.0
     self.sat_count = 0.0
@@ -67,14 +68,14 @@ class PIController():
     error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
-    d = self.k_d * (error - self.last_error)
+    self.d = self.k_d * (error - self.last_error)
     self.last_error = float(error)
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
       i = self.i + error * self.k_i * self.i_rate
-      control = self.p + self.f + i + d
+      control = self.p + i + self.d + self.f
 
       if self.convert is not None:
         control = self.convert(control, speed=self.speed)
@@ -86,7 +87,7 @@ class PIController():
          not freeze_integrator:
         self.i = i
 
-    control = self.p + self.f + self.i + d
+    control = self.p + self.i + self.d + self.f
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
 
