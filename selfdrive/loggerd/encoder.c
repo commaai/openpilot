@@ -564,6 +564,9 @@ void encoder_open(EncoderState *s, const char* path) {
     avformat_alloc_output_context2(&s->ofmt_ctx, NULL, NULL, s->vid_path);
     assert(s->ofmt_ctx);
 
+#ifdef QCOM2
+    s->ofmt_ctx->oformat->flags = AVFMT_TS_NONSTRICT;
+#endif
     s->out_stream = avformat_new_stream(s->ofmt_ctx, NULL);
     assert(s->out_stream);
 
@@ -637,6 +640,7 @@ void encoder_close(EncoderState *s) {
 
     if (s->remuxing) {
       av_write_trailer(s->ofmt_ctx);
+      avcodec_free_context(&s->codec_ctx);
       avio_closep(&s->ofmt_ctx->pb);
       avformat_free_context(s->ofmt_ctx);
     } else {

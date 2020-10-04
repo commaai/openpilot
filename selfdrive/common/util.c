@@ -3,7 +3,8 @@
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
-
+#include <fcntl.h>
+#include <errno.h> 
 #ifdef __linux__
 #include <sys/prctl.h>
 #include <sys/syscall.h>
@@ -39,6 +40,16 @@ void* read_file(const char* path, size_t* out_len) {
   }
 
   return buf;
+}
+
+int write_file(const char* path, const void* data, size_t size) {
+  int fd = open(path, O_WRONLY);
+  if (fd == -1) {
+    return -1;
+  }
+  ssize_t n = write(fd, data, size);
+  close(fd);
+  return n == size ? 0 : -1;
 }
 
 void set_thread_name(const char* name) {

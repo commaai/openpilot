@@ -84,6 +84,8 @@ if __name__ == "__main__":
 
   if update:
     ref_commit = get_git_commit()
+    if ref_commit is None:
+      raise Exception("couldn't get ref commit")
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     save_log(log_fn, log_msgs)
     with open("model_replay_ref_commit", "w") as f:

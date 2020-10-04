@@ -183,8 +183,7 @@ typedef struct UIState {
 
   // device state
   bool awake;
-  int awake_timeout;
-  std::atomic<float> light_sensor;
+  float light_sensor;
 
   bool started;
   bool ignition;

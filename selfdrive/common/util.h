@@ -41,6 +41,7 @@ extern "C" {
 // Returns NULL on failure, otherwise the NULL-terminated file contents.
 // The result must be freed by the caller.
 void* read_file(const char* path, size_t* out_len);
+int write_file(const char* path, const void* data, size_t size);
 
 void set_thread_name(const char* name);
 
