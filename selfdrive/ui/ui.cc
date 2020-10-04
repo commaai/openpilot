@@ -217,8 +217,6 @@ void update_sockets(UIState *s) {
   } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
-
-#ifdef QCOM2 // TODO: use this for QCOM too
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
@@ -226,7 +224,6 @@ void update_sockets(UIState *s) {
       }
     }
   }
-#endif
 
   s->started = scene.thermal.getStarted() || scene.frontview;
 }
