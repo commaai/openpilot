@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import cProfile  # pylint: disable=import-error
 import pprofile  # pylint: disable=import-error
 import pyprof2calltree  # pylint: disable=import-error
 
 from tools.lib.logreader import LogReader
-from selfdrive.controls.controlsd import main as controlsd_thread
 from selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
 from selfdrive.test.process_replay.process_replay import CONFIGS
 
@@ -31,7 +31,7 @@ def get_inputs(msgs, process):
   return sm, pm, can_sock
 
 
-if __name__ == "__main__":
+def profile(proc, func, car='toyota'):
   segment, fingerprint = CARS['toyota']
   segment = segment.replace('|', '/')
   rlog_url = f"{BASE_URL}{segment}/rlog.bz2"
@@ -40,19 +40,36 @@ if __name__ == "__main__":
   os.environ['FINGERPRINT'] = fingerprint
 
   # Statistical
-  sm, pm, can_sock = get_inputs(msgs, 'controlsd')
+  sm, pm, can_sock = get_inputs(msgs, proc)
   with pprofile.StatisticalProfile()(period=0.00001) as pr:
     try:
-      controlsd_thread(sm, pm, can_sock)
+      func(sm, pm, can_sock)
     except ReplayDone:
       pass
-  pr.dump_stats('cachegrind.out.controlsd_statistical')
+  pr.dump_stats(f'cachegrind.out.{proc}_statistical')
 
   # Deterministic
-  sm, pm, can_sock = get_inputs(msgs, 'controlsd')
+  sm, pm, can_sock = get_inputs(msgs, proc)
   with cProfile.Profile() as pr:
     try:
-      controlsd_thread(sm, pm, can_sock)
+      func(sm, pm, can_sock)
     except ReplayDone:
       pass
-  pyprof2calltree.convert(pr.getstats(), 'cachegrind.out.controlsd_deterministic')
+  pyprof2calltree.convert(pr.getstats(), f'cachegrind.out.{proc}_deterministic')
+
+
+if __name__ == '__main__':
+  from selfdrive.controls.controlsd import main as controlsd_thread
+  from selfdrive.controls.radard import radard_thread
+
+  procs = {
+    'radard': radard_thread,
+    'controlsd': controlsd_thread,
+  }
+  
+  proc = sys.argv[1]
+  if proc not in procs:
+    print(f"{proc} not available")
+    sys.exit(0)
+  else:
+    profile(proc, procs[proc])
