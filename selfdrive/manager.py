@@ -224,6 +224,7 @@ if not PC:
     'updated',
     'logcatd',
     'tombstoned',
+    'sensord',
   ]
 
 car_started_processes = [
@@ -254,7 +255,6 @@ if WEBCAM:
 if not PC:
   car_started_processes += [
     'ubloxd',
-    'sensord',
     'dmonitoringd',
     'dmonitoringmodeld',
   ]

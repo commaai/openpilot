@@ -48,7 +48,10 @@ void sigpipe_handler(int sig) {
 
 void sensor_loop() {
   LOG("*** sensor loop");
+
+  bool low_power_mode = true;
   while (!do_exit) {
+    SubMaster sm({"thermal"});
     PubMaster pm({"sensorEvents"});
 
     struct sensors_poll_device_t* device;
@@ -90,9 +93,16 @@ void sensor_loop() {
       {SENSOR_LIGHT, ms2ns(100)}
     };
 
+    // sensors needed while offroad
+    std::set<int> low_power_sensors = {
+      SENSOR_LIGHT,
+    };
+
     for (auto &s : sensors) {
       device->activate(device, s.first, 0);
-      device->activate(device, s.first, 1);
+      if (low_power_mode && low_power_sensors.find(s.first) != low_power_sensors.end()) {
+        device->activate(device, s.first, 1);
+      }
       device->setDelay(device, s.first, s.second);
     }
 
@@ -188,6 +198,16 @@ void sensor_loop() {
         LOGE("Resetting sensors");
         re_init_sensors = false;
         break;
+      }
+
+      // check offroad status
+      if (sm.update(0) > 0) {
+        bool offroad = !sm["thermal"].getThermal().getStarted();
+        if (low_power_mode != offroad) {
+          LOGD("Resetting sensors, offroad: %d", offroad);
+          low_power_mode = offroad;
+          break;
+        }
       }
     }
     sensors_close(device);
