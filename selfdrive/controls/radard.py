@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import importlib
 import math
-import functools
 from collections import defaultdict, deque
 
 import cereal.messaging as messaging
@@ -98,7 +97,7 @@ class RadarD():
 
     self.ready = False
 
-  def update(self, frame, sm, rr, enable_lead):
+  def update(self, sm, rr, enable_lead):
     self.current_time = 1e-9*max([t for t in sm.logMonoTime.values()])
 
     if sm.updated['controlsState']:
@@ -209,7 +208,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
     sm.update(0)
 
-    dat = RD.update(rk.frame, sm, rr, enable_lead)
+    dat = RD.update(sm, rr, enable_lead)
     dat.radarState.cumLagMs = -rk.remaining*1000.
 
     pm.send('radarState', dat)

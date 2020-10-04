@@ -32,7 +32,7 @@ def get_inputs(msgs, process):
 
 
 def profile(proc, func, car='toyota'):
-  segment, fingerprint = CARS['toyota']
+  segment, fingerprint = CARS[car]
   segment = segment.replace('|', '/')
   rlog_url = f"{BASE_URL}{segment}/rlog.bz2"
   msgs = list(LogReader(rlog_url))
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     'radard': radard_thread,
     'controlsd': controlsd_thread,
   }
-  
+
   proc = sys.argv[1]
   if proc not in procs:
     print(f"{proc} not available")
