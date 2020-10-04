@@ -13,21 +13,32 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // check if LKAS connected to Bus0
   if (addr == 832) {
     if (bus == 0) {
-      if (HKG_forward_BUS2 != false) { HKG_forward_BUS2 = false;}
+      if (HKG_forward_BUS2 != false) {
+        HKG_forward_BUS2 = false;
+        puts("  LKAS on bus0: forwarding disabled"); puts("\n");
+      }
       HKG_lkas_bus0_cnt = 10;
     } else if (bus == 2) {
-      if (HKG_lkas_bus0_cnt == 0) { HKG_forward_BUS2 = true;}
+      if (HKG_lkas_bus0_cnt == 0 && !HKG_forward_BUS2) {
+        HKG_forward_BUS2 = true;
+        puts("  LKAS on bus2 & not on bus0: forwarding enabled"); puts("\n");
+      }
       else if (HKG_lkas_bus0_cnt > 0) { HKG_lkas_bus0_cnt -= 1;}
     }
   }
   // check if we have a LCAN on Bus1
   if (bus == 1 && (addr == 1296 || addr == 524)) {
-    HKG_LCAN_on_BUS1 = true;
+    if (HKG_forward_BUS1 || !HKG_LCAN_on_BUS1) {
+      HKG_LCAN_on_BUS1 = true;
+      HKG_forward_BUS1 = false;
+      puts("  LCAN on bus1: forwarding disabled"); puts("\n");
+    }
   }
   // check if we have a MDPS or SCC on Bus1
   if (bus == 1 && (addr == 593 || addr == 897 || addr == 1057) && !HKG_LCAN_on_BUS1) {
     if (HKG_forward_BUS1 != true) {
       HKG_forward_BUS1 = true;
+      puts("  MDPS or SCC on bus1: forwarding enabled"); puts("\n");
     }
   }
 
@@ -61,6 +72,7 @@ static void nooutput_init(int16_t param) {
   relay_malfunction_reset();
   if (board_has_obd() && HKG_forward_BUS2) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
+    puts("  MDPS or SCC on bus1: set CAN2 mode normal"); puts("\n");
   }
 }
 
@@ -169,6 +181,7 @@ static void alloutput_init(int16_t param) {
   relay_malfunction_reset();
   if (board_has_obd() && HKG_forward_BUS2) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
+    puts("  MDPS or SCC on bus1: set CAN2 mode normal"); puts("\n");
   }
 }
 
