@@ -75,7 +75,7 @@ jobs:
     - name: Build openpilot
       run: eval "$(pyenv init -)" && scons -j$(nproc)
     - name: Brew cleanup
-      run: brew cleanup # keeps our cache small
+      run: brew cleanup || true # keeps our cache small
 
   docker_push:
     name: docker push
