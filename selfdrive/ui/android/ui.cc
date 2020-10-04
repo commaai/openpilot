@@ -46,6 +46,11 @@ static void handle_display_state(UIState *s, bool user_input) {
   static int display_mode = HWC_POWER_MODE_OFF;
   static int display_timeout = 0;
 
+  if (!user_input && display_mode == HWC_POWER_MODE_OFF) {
+    // TODO: tap to wake with accel logic
+    user_input = true;
+  }
+
   // determine desired state
   int desired_mode = display_mode;
   if (user_input || s->ignition || s->started) {
@@ -54,7 +59,12 @@ static void handle_display_state(UIState *s, bool user_input) {
   } else {
     display_timeout = std::max(display_timeout-1, 0);
     if (display_timeout == 0) {
-      desired_mode = HWC_POWER_MODE_OFF;
+      if (display_mode == HWC_POWER_MODE_NORMAL) {
+        desired_mode = HWC_POWER_MODE_DOZE;
+        display_timeout = 5*UI_FREQ; // small timeout before turning off display
+      } else {
+        desired_mode = HWC_POWER_MODE_OFF;
+      }
     }
   }
 
