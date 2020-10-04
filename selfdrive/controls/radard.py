@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import importlib
 import math
+import functools
 from collections import defaultdict, deque
 
 import cereal.messaging as messaging
@@ -91,8 +92,6 @@ class RadarD():
     self.tracks = defaultdict(dict)
     self.kalman_params = KalmanParams(radar_ts)
 
-    self.active = 0
-
     # v_ego
     self.v_ego = 0.
     self.v_ego_hist = deque([0], maxlen=delay+1)
@@ -100,10 +99,9 @@ class RadarD():
     self.ready = False
 
   def update(self, frame, sm, rr, enable_lead):
-    self.current_time = 1e-9*max([sm.logMonoTime[key] for key in sm.logMonoTime.keys()])
+    self.current_time = 1e-9*max([t for t in sm.logMonoTime.values()])
 
     if sm.updated['controlsState']:
-      self.active = sm['controlsState'].active
       self.v_ego = sm['controlsState'].vEgo
       self.v_ego_hist.append(self.v_ego)
     if sm.updated['model']:
@@ -160,15 +158,16 @@ class RadarD():
 
     # *** publish radarState ***
     dat = messaging.new_message('radarState')
-    dat.valid = sm.all_alive_and_valid(service_list=['controlsState', 'model'])
-    dat.radarState.mdMonoTime = sm.logMonoTime['model']
-    dat.radarState.canMonoTimes = list(rr.canMonoTimes)
-    dat.radarState.radarErrors = list(rr.errors)
-    dat.radarState.controlsStateMonoTime = sm.logMonoTime['controlsState']
+    dat.valid = sm.all_alive_and_valid()
+    radarState = dat.radarState
+    radarState.mdMonoTime = sm.logMonoTime['model']
+    radarState.canMonoTimes = list(rr.canMonoTimes)
+    radarState.radarErrors = list(rr.errors)
+    radarState.controlsStateMonoTime = sm.logMonoTime['controlsState']
 
     if enable_lead:
-      dat.radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['model'].lead, low_speed_override=True)
-      dat.radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['model'].leadFuture, low_speed_override=False)
+      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['model'].lead, low_speed_override=True)
+      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['model'].leadFuture, low_speed_override=False)
     return dat
 
 
@@ -185,13 +184,11 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   cloudlog.info("radard is importing %s", CP.carName)
   RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % CP.carName).RadarInterface
 
+  # *** setup messaging
   if can_sock is None:
     can_sock = messaging.sub_sock('can')
-
   if sm is None:
-    sm = messaging.SubMaster(['model', 'controlsState', 'liveParameters'])
-
-  # *** publish radarState and liveTracks
+    sm = messaging.SubMaster(['model', 'controlsState'])
   if pm is None:
     pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
