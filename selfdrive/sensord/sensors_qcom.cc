@@ -49,7 +49,9 @@ void sigpipe_handler(int sig) {
 void sensor_loop() {
   LOG("*** sensor loop");
 
-  bool low_power_mode = true;
+  uint64_t frame = 0;
+  bool low_power_mode = false;
+
   while (!do_exit) {
     SubMaster sm({"thermal"});
     PubMaster pm({"sensorEvents"});
@@ -94,15 +96,15 @@ void sensor_loop() {
     };
 
     // sensors needed while offroad
-    std::set<int> low_power_sensors = {
+    std::set<int> offroad_sensors = {
       SENSOR_LIGHT,
+      SENSOR_ACCELEROMETER,
     };
 
+    // init all the sensors
     for (auto &s : sensors) {
       device->activate(device, s.first, 0);
-      if (low_power_mode && low_power_sensors.find(s.first) != low_power_sensors.end()) {
-        device->activate(device, s.first, 1);
-      }
+      device->activate(device, s.first, 1);
       device->setDelay(device, s.first, s.second);
     }
 
@@ -200,15 +202,21 @@ void sensor_loop() {
         break;
       }
 
-      // check offroad status
-      if (sm.update(0) > 0) {
+      // Check whether to go into low power mode at 5Hz
+      if (frame % 20 == 0 && sm.update(0) > 0) {
         bool offroad = !sm["thermal"].getThermal().getStarted();
         if (low_power_mode != offroad) {
-          LOGD("Resetting sensors, offroad: %d", offroad);
+          for (auto &s : sensors) {
+            device->activate(device, s.first, 0);
+            if (!offroad || offroad_sensors.find(s.first) != offroad_sensors.end()) {
+              device->activate(device, s.first, 1);
+            }
+          }
           low_power_mode = offroad;
-          break;
         }
       }
+
+      frame++;
     }
     sensors_close(device);
   }
