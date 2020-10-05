@@ -115,7 +115,7 @@ class URLFile(object):
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def read_aux(self, ll=None):
     if ll is None:
-      trange = 'bytes=%d-%d' % (self._pos, self.get_length()-1)
+      trange = 'bytes=%d-' % self._pos
     else:
       trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
 
