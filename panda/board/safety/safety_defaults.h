@@ -71,6 +71,7 @@ static void nooutput_init(int16_t param) {
   controls_allowed = false;
   relay_malfunction_reset();
   if (board_has_obd() && HKG_forward_BUS2) {
+    set_intercept_relay(true);
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
     puts("  MDPS or SCC on bus1: set CAN2 mode normal"); puts("\n");
   }
@@ -180,6 +181,7 @@ static void alloutput_init(int16_t param) {
   controls_allowed = true;
   relay_malfunction_reset();
   if (board_has_obd() && HKG_forward_BUS2) {
+    set_intercept_relay(true);
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
     puts("  MDPS or SCC on bus1: CAN2 mode set to normal"); puts("\n");
   }
