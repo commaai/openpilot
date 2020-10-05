@@ -1056,10 +1056,10 @@ void switch_conversion_gain(CameraState *s) {
 void camera_autoexposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor?
   float target_grey = 0.3 - (s->analog_gain / 105.0);
-  float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.03);
+  float exposure_factor = 1 + 20 * pow((target_grey - grey_frac), 3);
 
   s->ef_filtered = (1 - EF_LOWPASS_K) * s->ef_filtered + EF_LOWPASS_K * exposure_factor;
-  exposure_factor = s->ef_filtered;
+  // exposure_factor = s->ef_filtered;
 
   // always prioritize exposure time adjust
   s->exposure_time *= exposure_factor;
