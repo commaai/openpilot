@@ -33,8 +33,8 @@ CONFIGS = [
   ),
 ]
 
-class TestValgrind(unittest.TestCase):
 
+class TestValgrind(unittest.TestCase):
   def extract_leak_sizes(self, log):
     err_lost1 = log.split("definitely lost: ")[1]
     err_lost2 = log.split("indirectly lost: ")[1]
@@ -48,14 +48,14 @@ class TestValgrind(unittest.TestCase):
     os.chdir(os.path.join(BASEDIR, cwd))
     # Run valgrind on a process
     command = "valgrind --leak-check=full " + arg
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid) # pylint: disable=W1509
+    p = subprocess.Popen(command, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)  # pylint: disable=W1509
     while not self.done:
       time.sleep(0.1)
 
     os.killpg(os.getpgid(p.pid), signal.SIGINT)
     _, err = p.communicate()
     error_msg = str(err, encoding='utf-8')
-    with open(os.path.join(BASEDIR,"selfdrive/test/valgrind_logs.txt"),"a") as f:
+    with open(os.path.join(BASEDIR, "selfdrive/test/valgrind_logs.txt"), "a") as f:
       f.write(error_msg)
       f.write(5 * "\n")
     definitely_lost, indirectly_lost, possibly_lost = self.extract_leak_sizes(error_msg)
@@ -82,23 +82,21 @@ class TestValgrind(unittest.TestCase):
     time.sleep(5)  # We give the process time to start
     for msg in tqdm(pub_msgs):
       pm.send(msg.which(), msg.as_builder())
-      curr = time.time()
       if config.wait_for_response:
-        while not any([sm.updated[s] for s in sub_sockets]):
-          sm.update()
-          if time.time() - curr > 0.1:# if process doesn't respond send it another package
-            break
-    self.done=True
+        sm.update(100)
+
+    self.done = True
 
   def test_config(self):
-    with open(os.path.join(BASEDIR,"selfdrive/test/valgrind_logs.txt"),"w") as _:
-      pass #Initialize log file for valgrind
+    open(os.path.join(BASEDIR, "selfdrive/test/valgrind_logs.txt"), "w")
+
     for cfg in CONFIGS:
-      self.done=False
+      self.done = False
       URL = cfg.segment
       lr = LogReader(get_segment(URL))
       self.replay_process(cfg, lr)
-      time.sleep(1) # Wait for the logs to get written
+      time.sleep(1)  # Wait for the logs to get written
+
 
 if __name__ == "__main__":
   unittest.main()
