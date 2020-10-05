@@ -6,22 +6,24 @@
 
 #include "bmx055_magn.hpp"
 
-int16_t parse_xy(uint8_t lsb, uint8_t msb){
+static int16_t parse_xy(uint8_t lsb, uint8_t msb){
   // 13 bit
   uint16_t combined = (uint16_t(msb) << 5) | uint16_t(lsb >> 3);
   return int16_t(combined << 3) / (1 << 3);
 }
 
-int16_t parse_z(uint8_t lsb, uint8_t msb){
+static int16_t parse_z(uint8_t lsb, uint8_t msb){
   // 15 bit
   uint16_t combined = (uint16_t(msb) << 7) | uint16_t(lsb >> 1);
   return int16_t(combined << 1) / (1 << 1);
 }
 
-uint16_t parse_rhall(uint8_t lsb, uint8_t msb){
+/*
+static uint16_t parse_rhall(uint8_t lsb, uint8_t msb){
   // 14 bit
   return (uint16_t(msb) << 6) | uint16_t(lsb >> 2);
 }
+*/
 
 BMX055_Magn::BMX055_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
