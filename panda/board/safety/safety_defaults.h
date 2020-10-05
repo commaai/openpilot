@@ -62,7 +62,7 @@ static void nooutput_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
   relay_malfunction_reset();
-  if (board_has_obd() && HKG_forward_BUS2) {
+  if (board_has_obd() && HKG_forward_BUS1) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
   }
 }
@@ -170,7 +170,7 @@ static void alloutput_init(int16_t param) {
   UNUSED(param);
   controls_allowed = true;
   relay_malfunction_reset();
-  if (board_has_obd() && HKG_forward_BUS2) {
+  if (board_has_obd() && HKG_forward_BUS1) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
   }
 }
