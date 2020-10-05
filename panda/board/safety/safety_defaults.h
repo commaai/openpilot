@@ -34,7 +34,7 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (bus == 1 && (addr == 593 || addr == 897 || addr == 1057) && !HKG_LCAN_on_bus1) {
     if (HKG_forward_bus1 != true) {
       HKG_forward_bus1 = true;
-      if (HKG_obd_int_cnt > 0 || current_safety_mode == SAFETY_ELM327) {HKG_forward_obd = true;}
+      if (HKG_obd_int_cnt > 0) {HKG_forward_obd = true;}
     }
   }
   // set CAN2 mode to normal if int_cnt expaired
@@ -71,7 +71,7 @@ static void nooutput_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
   relay_malfunction_reset();
-  if (board_has_obd() && (HKG_forward_obd || HKG_obd_int_cnt > 0) {
+  if (board_has_obd() && (HKG_forward_obd || HKG_obd_int_cnt > 0)) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
   }
 }
