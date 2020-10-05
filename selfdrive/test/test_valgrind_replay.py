@@ -36,6 +36,7 @@ CONFIGS = [
 
 class TestValgrind(unittest.TestCase):
   def extract_leak_sizes(self, log):
+    log = log.replace(",","")  # fixes casting to int issue with large leaks
     err_lost1 = log.split("definitely lost: ")[1]
     err_lost2 = log.split("indirectly lost: ")[1]
     err_lost3 = log.split("possibly lost: ")[1]
