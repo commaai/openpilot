@@ -1,7 +1,9 @@
-bool HKG_forward_BUS1 = false;
-bool HKG_forward_BUS2 = true;
-bool HKG_LCAN_on_BUS1 = false;
-int HKG_lkas_bus0_cnt = 0;
+bool HKG_LCAN_on_bus1 = false;
+bool HKG_forward_bus1 = false;
+bool HKG_forward_obd = false;
+bool HKG_forward_bus2 = true;
+int HKG_obd_int_cnt = 10;
+int HKG_LKAS_bus0_cnt = 0;
 int HKG_MDPS12_checksum = -1;
 int HKG_MDPS12_cnt = 0;   
 int HKG_last_StrColT = 0;
@@ -13,25 +15,32 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   // check if LKAS connected to Bus0
   if (addr == 832) {
     if (bus == 0) {
-      if (HKG_forward_BUS2 != false) { HKG_forward_BUS2 = false;}
-      HKG_lkas_bus0_cnt = 10;
+      if (HKG_forward_bus2 != false) { HKG_forward_bus2 = false;}
+      HKG_LKAS_bus0_cnt = 10;
     } else if (bus == 2) {
-      if (HKG_lkas_bus0_cnt == 0 && !HKG_forward_BUS2) { HKG_forward_BUS2 = true;}
-      else if (HKG_lkas_bus0_cnt > 0) { HKG_lkas_bus0_cnt -= 1;}
+      if (HKG_LKAS_bus0_cnt == 0 && !HKG_forward_bus2) { HKG_forward_bus2 = true;}
+      else if (HKG_LKAS_bus0_cnt > 0) { HKG_LKAS_bus0_cnt -= 1;}
+      if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt -= 1;}
     }
   }
   // check if we have a LCAN on Bus1
   if (bus == 1 && (addr == 1296 || addr == 524)) {
-    if (HKG_forward_BUS1 || !HKG_LCAN_on_BUS1) {
-      HKG_LCAN_on_BUS1 = true;
-      HKG_forward_BUS1 = false;
+    if (HKG_forward_bus1 || !HKG_LCAN_on_bus1) {
+      HKG_LCAN_on_bus1 = true;
+      HKG_forward_bus1 = false;
     }
   }
   // check if we have a MDPS or SCC on Bus1
-  if (bus == 1 && (addr == 593 || addr == 897 || addr == 1057) && !HKG_LCAN_on_BUS1) {
-    if (HKG_forward_BUS1 != true) {
-      HKG_forward_BUS1 = true;
+  if (bus == 1 && (addr == 593 || addr == 897 || addr == 1057) && !HKG_LCAN_on_bus1) {
+    if (HKG_forward_bus1 != true) {
+      HKG_forward_bus1 = true;
+      if (HKG_obd_int_cnt > 0 || current_safety_mode == SAFETY_ELM327) {HKG_forward_obd = true;}
     }
+  }
+  // set CAN2 mode to normal if int_cnt expaired
+  if (HKG_obd_int_cnt == 1) {
+    if (!HKG_forward_obd) {current_board->set_can_mode(CAN_MODE_NORMAL);}
+    HKG_obd_int_cnt = 0;
   }
 
   if ((addr == 593) && (HKG_MDPS12_checksum == -1)){
@@ -62,7 +71,7 @@ static void nooutput_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
   relay_malfunction_reset();
-  if (board_has_obd() && HKG_forward_BUS1) {
+  if (board_has_obd() && (HKG_forward_obd || HKG_obd_int_cnt > 0) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
   }
 }
@@ -83,16 +92,16 @@ static int default_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   int addr = GET_ADDR(to_fwd);
   int bus_fwd = -1;
   int HKG_bus1 = 0, HKG_bus2 = 0;
-  if (HKG_forward_BUS1){HKG_bus1 = 1;}
-  if (HKG_forward_BUS2){HKG_bus2 = 2;}
+  if (HKG_forward_bus1){HKG_bus1 = 1;}
+  if (HKG_forward_bus2){HKG_bus2 = 2;}
 
-  if (bus_num == 0 && (HKG_forward_BUS1 || HKG_forward_BUS2)) {
-    bus_fwd = (HKG_forward_BUS1 && HKG_forward_BUS2) ? 12 : HKG_bus1 + HKG_bus2;
+  if (bus_num == 0 && (HKG_forward_bus1 || HKG_forward_bus2)) {
+    bus_fwd = (HKG_forward_bus1 && HKG_forward_bus2) ? 12 : HKG_bus1 + HKG_bus2;
   }
-  if (bus_num == 1 && HKG_forward_BUS1) {
+  if (bus_num == 1 && HKG_forward_bus1) {
     bus_fwd = HKG_bus2 * 10;
   }
-  if (bus_num == 2 && HKG_forward_BUS2) {
+  if (bus_num == 2 && HKG_forward_bus2) {
     bus_fwd = HKG_bus1 * 10;
   }
     // Code for LKA/LFA/HDA anti-nagging.
@@ -170,7 +179,7 @@ static void alloutput_init(int16_t param) {
   UNUSED(param);
   controls_allowed = true;
   relay_malfunction_reset();
-  if (board_has_obd() && HKG_forward_BUS1) {
+  if (board_has_obd() && HKG_forward_obd) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
   }
 }
