@@ -195,13 +195,6 @@ jobs:
           submodules: true
       - name: Build Docker image
         run: eval "$BUILD"
-      - uses: actions/cache@v2
-        id: cache-url_loads  # give it a name for checking the cache hit-or-not
-        with:
-          path: /tmp/comma_download_cache/  # what we cache: the folder
-          key: save-${{ hashFiles('*') }}
-          restore-keys: |
-            save
       - name: Run replay
         env :
           FILEREADER_CACHE: 1
@@ -209,6 +202,12 @@ jobs:
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
                     CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+      - name: Cache replays
+        id: replay-cache
+        uses: actions/cache@v2
+        with:
+          path: /tmp/comma_download_cache/
+          key: ${{ hashFiles('**') }}
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
