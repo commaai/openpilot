@@ -173,9 +173,9 @@ class Controls:
       self.events.add(EventName.lowMemory)
 
     if self.hw_type in [HwType.uno, HwType.dos]:
-      if self.sm['health'].fanSpeedRpm < (self.last_desired_fan_speed/2):
+      if self.sm['health'].fanSpeedRpm == 0 and self.last_desired_fan_speed > 50:
         self.events.add(EventName.fanMalfunction)
-      self.last_desired_fan_speed = self.sm['thermal'].fanSpeedRpm
+      self.last_desired_fan_speed = self.sm['thermal'].fanSpeed
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
