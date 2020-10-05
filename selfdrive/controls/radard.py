@@ -98,7 +98,7 @@ class RadarD():
     self.ready = False
 
   def update(self, sm, rr, enable_lead):
-    self.current_time = 1e-9*max([t for t in sm.logMonoTime.values()])
+    self.current_time = 1e-9*max(sm.logMonoTime.values())
 
     if sm.updated['controlsState']:
       self.v_ego = sm['controlsState'].vEgo
