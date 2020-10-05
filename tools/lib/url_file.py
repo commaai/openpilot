@@ -114,10 +114,10 @@ class URLFile(object):
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def read_aux(self, ll=None):
-    if ll is None:
-      trange = 'bytes=%d-' % self._pos
-    else:
-      trange = 'bytes=%d-%d' % (self._pos, self._pos + ll - 1)
+    headers = ["Connection: keep-alive"]
+    if self._pos != 0 or ll is not None:
+      end = (ll if ll is not None else self.get_length()) - 1
+      headers.append(f"Range: bytes={self._pos}-{end}")
 
     dats = BytesIO()
     c = self._curl
@@ -125,7 +125,7 @@ class URLFile(object):
     c.setopt(pycurl.WRITEDATA, dats)
     c.setopt(pycurl.NOSIGNAL, 1)
     c.setopt(pycurl.TIMEOUT_MS, 500000)
-    c.setopt(pycurl.HTTPHEADER, ["Range: " + trange, "Connection: keep-alive"])
+    c.setopt(pycurl.HTTPHEADER, headers)
     c.setopt(pycurl.FOLLOWLOCATION, True)
 
     if self._debug:
@@ -149,7 +149,7 @@ class URLFile(object):
     if self._debug:
       t2 = time.time()
       if t2 - t1 > 0.1:
-        print("get %s %r %.f slow" % (self._url, trange, t2 - t1))
+        print("get %s %r %.f slow" % (self._url, headers, t2 - t1))
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable
