@@ -195,6 +195,13 @@ jobs:
           submodules: true
       - name: Build Docker image
         run: eval "$BUILD"
+      - name: Run replay
+        env :
+          FILEREADER_CACHE: 1
+        run: |
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
       - uses: actions/cache@v2
         id: cache-url_loads  # give it a name for checking the cache hit-or-not
         with:
@@ -202,11 +209,6 @@ jobs:
           key: save-${{ hashFiles('*') }}
           restore-keys: |
             save
-      - name: Run replay
-        run: |
-          $PERSIST "cd /tmp/openpilot && \
-                    scons -j$(nproc) && \
-                    CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
