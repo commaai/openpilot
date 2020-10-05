@@ -195,6 +195,13 @@ jobs:
           submodules: true
       - name: Build Docker image
         run: eval "$BUILD"
+      - uses: actions/cache@v2
+        id: cache-url_loads  # give it a name for checking the cache hit-or-not
+        with:
+          path: /tmp/comma_download_cache/  # what we cache: the folder
+          key: save-${{ hashFiles('*') }}
+          restore-keys: |
+            save
       - name: Run replay
         run: |
           $PERSIST "cd /tmp/openpilot && \
