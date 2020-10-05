@@ -11,7 +11,7 @@ class SubSocket():
   def __init__(self, msgs, trigger):
     self.i = 0
     self.trigger = trigger
-    self.msgs = [m for m in msgs if m.which() == trigger]
+    self.msgs = [m.as_builder().to_bytes() for m in msgs if m.which() == trigger]
     self.max_i = len(self.msgs) - 1
 
   def receive(self, non_blocking=False):
@@ -23,16 +23,14 @@ class SubSocket():
 
     while True:
       msg = self.msgs[self.i]
-      msg = msg.as_builder()
-
       self.i += 1
-
-      return msg.to_bytes()
+      return msg
 
 
 class PubSocket():
   def send(self, data):
-    pass
+    if not isinstance(data, bytes):
+      data = data.to_bytes()
 
 
 class SubMaster(messaging.SubMaster):
