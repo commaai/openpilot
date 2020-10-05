@@ -153,9 +153,9 @@ class URLFile(object):
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable
-      raise Exception("Error, range out of bounds {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
+      raise Exception(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
     if response_code != 206 and response_code != 200:
-      raise Exception("Error {} ({}): {}".format(response_code, self._url, repr(dats.getvalue())[:500]))
+      raise Exception(f"Error {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
 
     ret = dats.getvalue()
     self._pos += len(ret)
