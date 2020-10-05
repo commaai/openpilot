@@ -45,6 +45,7 @@ static void handle_display_state(UIState *s, bool user_input) {
 
   static int display_mode = HWC_POWER_MODE_OFF;
   static int display_timeout = 0;
+  static float accel_prev = 0;
 
   // determine desired state
   int desired_mode = display_mode;
@@ -54,7 +55,25 @@ static void handle_display_state(UIState *s, bool user_input) {
   } else {
     display_timeout = std::max(display_timeout-1, 0);
     if (display_timeout == 0) {
-      desired_mode = HWC_POWER_MODE_OFF;
+      if (display_mode == HWC_POWER_MODE_NORMAL) {
+        desired_mode = HWC_POWER_MODE_DOZE;
+        display_timeout = 5*UI_FREQ; // small timeout before turning off display
+      } else {
+        if (abs(s->accel_sensor - accel_prev) > 1) {
+          // turn screen back on
+          display_mode = HWC_POWER_MODE_NORMAL;
+          framebuffer_set_power(s->fb, display_mode);
+          usleep(500); // 0.5ms
+
+          // check if touched
+          int touch_x = -1, touch_y = -1;
+          int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
+          printf("\n\n ACCEL EVENT, %d \n\n", touched == 1);
+        }
+
+        desired_mode = HWC_POWER_MODE_OFF;
+        accel_prev = s->accel_sensor;
+      }
     }
   }
 
