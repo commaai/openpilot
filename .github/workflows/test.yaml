@@ -128,6 +128,32 @@ jobs:
       - name: pre-commit
         run: $RUN "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
 
+  valgrind:
+    name: valgrind
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run valgrind
+        run: |
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    python selfdrive/test/test_valgrind_replay.py"
+      - name: Print logs
+        if: always()
+        run: |
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/valgrind_logs.txt valgrind_logs.txt
+          cat valgrind_logs.txt
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: valgrind_logs.txt
+          path: valgrind_logs.txt
+
   unit_tests:
     name: unit tests
     runs-on: ubuntu-16.04
