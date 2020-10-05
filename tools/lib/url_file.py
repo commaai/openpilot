@@ -116,7 +116,7 @@ class URLFile(object):
   def read_aux(self, ll=None):
     headers = ["Connection: keep-alive"]
     if self._pos != 0 or ll is not None:
-      end = (ll if ll is not None else self.get_length()) - 1
+      end = (self._pos + ll if ll is not None else self.get_length()) - 1
       headers.append(f"Range: bytes={self._pos}-{end}")
 
     dats = BytesIO()
