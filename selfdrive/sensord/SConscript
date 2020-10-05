@@ -13,5 +13,8 @@ else:
     'sensors/bmx055_gyro.cc',
     'sensors/bmx055_magn.cc',
     'sensors/bmx055_temp.cc',
+    'sensors/lsm6ds3_accel.cc',
+    'sensors/lsm6ds3_gyro.cc',
+    'sensors/lsm6ds3_temp.cc',
   ]
   env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=[common, cereal, messaging, 'capnp', 'zmq', 'kj'])
