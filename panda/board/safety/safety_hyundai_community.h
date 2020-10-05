@@ -296,7 +296,7 @@ static void hyundai_community_init(int16_t param) {
   controls_allowed = false;
   relay_malfunction_reset();
 
-  if (board_has_obd() && HKG_forward_BUS2) {
+  if (board_has_obd() && HKG_forward_BUS1) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
     }
 }
