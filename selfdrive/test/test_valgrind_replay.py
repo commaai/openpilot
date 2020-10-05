@@ -48,11 +48,11 @@ class TestValgrind(unittest.TestCase):
     os.chdir(os.path.join(BASEDIR, cwd))
     # Run valgrind on a process
     command = "valgrind --leak-check=full " + arg
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid) # pylint: disable=W1509
     while not self.done:
       time.sleep(0.1)
-    pid = p.pid
-    os.kill(pid+1, signal.SIGINT)
+
+    os.killpg(os.getpgid(p.pid), signal.SIGINT)
     _, err = p.communicate()
     error_msg = str(err, encoding='utf-8')
     with open(os.path.join(BASEDIR,"selfdrive/test/valgrind_logs.txt"),"a") as f:
