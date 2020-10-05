@@ -19,6 +19,7 @@
 
 #include "sensors/lsm6ds3_accel.hpp"
 #include "sensors/lsm6ds3_gyro.hpp"
+#include "sensors/lsm6ds3_temp.hpp"
 
 #include "sensors/light_sensor.hpp"
 
@@ -48,6 +49,7 @@ int sensor_loop() {
 
   LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu);
   LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu);
+  LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu);
 
   LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
@@ -60,6 +62,7 @@ int sensor_loop() {
 
   sensors.push_back(&lsm6ds3_accel);
   sensors.push_back(&lsm6ds3_gyro);
+  sensors.push_back(&lsm6ds3_temp);
 
   sensors.push_back(&light);
 
