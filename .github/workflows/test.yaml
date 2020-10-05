@@ -143,6 +143,16 @@ jobs:
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
                     python selfdrive/test/test_valgrind_replay.py"
+      - name: Print diff
+        if: always()
+        run: |
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/valgrind_logs.txt valgrind_logs.txt
+          cat valgrind_logs.txt
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: valgrind_logs.txt
+          path: valgrind_logs.txt
 
   unit_tests:
     name: unit tests

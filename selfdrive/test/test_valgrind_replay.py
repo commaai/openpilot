@@ -50,10 +50,13 @@ class TestValgrind(unittest.TestCase):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     _, err = p.communicate()
     error_msg = str(err, encoding='utf-8')
+    with open(os.path.join(BASEDIR,"selfdrive/test/valgrind_logs.txt"),"a") as f:
+      f.write(error_msg)
+      f.write(5 * "\n")
     definitely_lost, indirectly_lost, possibly_lost = self.extract_leak_sizes(error_msg)
     if max(definitely_lost, indirectly_lost, possibly_lost) > 0:
       self.leak = True
-      print("LEAKED: ", definitely_lost, indirectly_lost, possibly_lost)
+      print("LEAKS from", arg, "\nDefinitely lost:", definitely_lost, "\nIndirectly lost", indirectly_lost, "\nPossibly lost", possibly_lost)
     else:
       self.leak = False
 
@@ -81,14 +84,16 @@ class TestValgrind(unittest.TestCase):
           if time.time() - curr > 0.1:# if process doesn't respond send it another package
             break
 
-  def test_config_0(self):
-    cfg = CONFIGS[0]
-    URL = cfg.segment
-    lr = LogReader(get_segment(URL))
-    self.replay_process(cfg, lr)
-    # Wait for the replay to complete
-    time.sleep(30)
-    self.assertFalse(1 + 1 == 3)
+  def test_config(self):
+    with open(os.path.join(BASEDIR,"selfdrive/test/valgrind_logs.txt"),"w") as _:
+      pass #Initialize log file for valgrind
+    for cfg in CONFIGS:
+      URL = cfg.segment
+      lr = LogReader(get_segment(URL))
+      self.replay_process(cfg, lr)
+      # Wait for the replay to complete
+      time.sleep(30)
+      self.assertFalse(1 + 1 == 3)
 
 if __name__ == "__main__":
   unittest.main()
