@@ -3,6 +3,7 @@ import threading
 import time
 import unittest
 import subprocess
+import signal
 
 if "CI" in os.environ:
   def tqdm(x):
@@ -46,8 +47,12 @@ class TestValgrind(unittest.TestCase):
   def valgrindlauncher(self, arg, cwd):
     os.chdir(os.path.join(BASEDIR, cwd))
     # Run valgrind on a process
-    command = "valgrind --leak-check=full " + arg + " & sleep 20; kill $!"
+    command = "valgrind --leak-check=full " + arg
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    while not self.done:
+      time.sleep(0.1)
+    pid = p.pid
+    os.kill(pid+1, signal.SIGINT)
     _, err = p.communicate()
     error_msg = str(err, encoding='utf-8')
     with open(os.path.join(BASEDIR,"selfdrive/test/valgrind_logs.txt"),"a") as f:
@@ -83,17 +88,17 @@ class TestValgrind(unittest.TestCase):
           sm.update()
           if time.time() - curr > 0.1:# if process doesn't respond send it another package
             break
+    self.done=True
 
   def test_config(self):
     with open(os.path.join(BASEDIR,"selfdrive/test/valgrind_logs.txt"),"w") as _:
       pass #Initialize log file for valgrind
     for cfg in CONFIGS:
+      self.done=False
       URL = cfg.segment
       lr = LogReader(get_segment(URL))
       self.replay_process(cfg, lr)
-      # Wait for the replay to complete
-      time.sleep(30)
-      self.assertFalse(1 + 1 == 3)
+      time.sleep(1) # Wait for the logs to get written
 
 if __name__ == "__main__":
   unittest.main()
