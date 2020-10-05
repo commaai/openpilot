@@ -141,7 +141,7 @@ class TestMonitoring(unittest.TestCase):
   # 5. op engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
   #  - both actions should clear the alert, but momentary appearence should not
   def test_sometimes_transparent_commuter(self):
-      _visible_time = np.random.choice([1, 10])  # seconds
+      _visible_time = np.random.choice([0.5, 10])  # seconds
       # print _visible_time
       ds_vector = always_no_face[:]*2
       interaction_vector = always_false[:]*2
@@ -151,7 +151,7 @@ class TestMonitoring(unittest.TestCase):
       self.assertTrue(len(events_output[int(_INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)]) == 0)
       self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
       self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)]) == 0)
-      if _visible_time == 1:
+      if _visible_time == 0.5:
         self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
         self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)].names[0], EventName.preDriverUnresponsive)
       elif _visible_time == 10:
