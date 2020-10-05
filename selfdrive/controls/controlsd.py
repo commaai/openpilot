@@ -61,8 +61,8 @@ class Controls:
       self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
     # wait for one health and one CAN packet
-    hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
-    has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
+    self.hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
+    has_relay = self.hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
@@ -123,6 +123,7 @@ class Controls:
     self.distance_traveled = 0
     self.events_prev = []
     self.current_alert_types = [ET.PERMANENT]
+    self.last_desired_fan_speed = 0
 
     self.sm['liveCalibration'].calStatus = Calibration.CALIBRATED
     self.sm['thermal'].freeSpace = 1.
@@ -140,7 +141,7 @@ class Controls:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
-    if hw_type == HwType.whitePanda:
+    if self.hw_type == HwType.whitePanda:
       self.events.add(EventName.whitePandaUnsupported, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
@@ -165,13 +166,16 @@ class Controls:
       self.events.add(EventName.lowBattery)
     if self.sm['thermal'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
-    if not self.sm['thermal'].fanIsSpinning:
-      self.events.add(EventName.fanNotSpinning)
     if self.sm['thermal'].freeSpace < 0.07:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
     if self.sm['thermal'].memUsedPercent > 90:
       self.events.add(EventName.lowMemory)
+
+    if self.hw_type in [HwType.uno, HwType.dos]:
+      if self.sm['health'].fanSpeedRpm < (self.last_desired_fan_speed/2):
+        self.events.add(EventName.fanMalfunction)
+      self.last_desired_fan_speed = self.sm['thermal'].fanSpeedRpm
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
