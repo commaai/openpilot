@@ -7,7 +7,7 @@
 
 // Registers of the chip
 #define LSM6DS3_ACCEL_I2C_REG_ID        0x0F
-#define LSM6DS3_ACCEL_I2C_REG_ODR       0x10
+#define LSM6DS3_ACCEL_I2C_REG_CTRL1_XL  0x10
 #define LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL 0x28
 
 // Constants

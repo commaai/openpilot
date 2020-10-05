@@ -24,7 +24,7 @@ int LSM6DS3_Accel::init(){
   }
 
   // TODO: set scale and bandwith. Default is +- 2G, 50 Hz
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_ODR, LSM6DS3_ACCEL_ODR_104HZ);
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ);
   if (ret < 0){
     goto fail;
   }
