@@ -531,14 +531,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
                               duration_hud_alert=0.),
   },
 
-  EventName.focusRecoverActive: {
-    ET.WARNING: Alert(
-      "TAKE CONTROL",
-      "Attempting Refocus: Camera Focus Invalid",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3., creation_delay=3.1),
-  },
-
   EventName.outOfSpace: {
     ET.NO_ENTRY: NoEntryAlert("Out of Storage Space",
                               duration_hud_alert=0.),
