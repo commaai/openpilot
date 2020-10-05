@@ -321,7 +321,7 @@ static void hyundai_community_init(int16_t param) {
 
   if (board_has_obd() && HKG_forward_BUS2) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
-    set_intercept_relay(true);
+    set_intercept_relay(false);
     puts("  MDPS or SCC on bus1: CAN2 mode set to normal"); puts("\n");
     }
 }
