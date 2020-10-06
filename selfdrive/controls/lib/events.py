@@ -263,7 +263,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.whitePandaUnsupported: {
     ET.PERMANENT: Alert(
-      "White Panda Is No Longer Supported",
+      "White Panda No Longer Supported",
       "Upgrade to comma two or black panda",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
@@ -540,15 +540,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
   },
 
-  EventName.neosUpdateRequired: {
-    ET.PERMANENT: Alert(
-      "NEOS Update Required",
-      "Please Wait for Update",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.HIGHEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-    ET.NO_ENTRY: NoEntryAlert("NEOS Update Required"),
-  },
-
   EventName.sensorDataInvalid: {
     ET.PERMANENT: Alert(
       "No Data from Device Sensors",
@@ -577,7 +568,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.overheat: {
     ET.SOFT_DISABLE: SoftDisableAlert("System Overheated"),
-    ET.NO_ENTRY: NoEntryAlert("System overheated"),
+    ET.NO_ENTRY: NoEntryAlert("System Overheated"),
   },
 
   EventName.wrongGear: {
@@ -588,27 +579,27 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.calibrationInvalid: {
     ET.PERMANENT: Alert(
       "Calibration Invalid",
-      "Reposition Device and Recalibrate",
+      "Remount Device and Recalibrate",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-    ET.SOFT_DISABLE: SoftDisableAlert("Calibration Invalid: Reposition Device & Recalibrate"),
-    ET.NO_ENTRY: NoEntryAlert("Calibration Invalid: Reposition Device & Recalibrate"),
+    ET.SOFT_DISABLE: SoftDisableAlert("Calibration Invalid: Remount Device & Recalibrate"),
+    ET.NO_ENTRY: NoEntryAlert("Calibration Invalid: Remount Device & Recalibrate"),
   },
 
   EventName.calibrationIncomplete: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Calibration in Progress"),
     ET.PERMANENT: calibration_incomplete_alert,
+    ET.SOFT_DISABLE: SoftDisableAlert("Calibration in Progress"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
 
   EventName.doorOpen: {
     ET.SOFT_DISABLE: SoftDisableAlert("Door Open"),
-    ET.NO_ENTRY: NoEntryAlert("Door open"),
+    ET.NO_ENTRY: NoEntryAlert("Door Open"),
   },
 
   EventName.seatbeltNotLatched: {
     ET.SOFT_DISABLE: SoftDisableAlert("Seatbelt Unlatched"),
-    ET.NO_ENTRY: NoEntryAlert("Seatbelt unlatched"),
+    ET.NO_ENTRY: NoEntryAlert("Seatbelt Unlatched"),
   },
 
   EventName.espDisabled: {
@@ -661,7 +652,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.lowMemory: {
     ET.SOFT_DISABLE: SoftDisableAlert("Low Memory: Reboot Your Device"),
     ET.PERMANENT: Alert(
-      "RAM Critically Low",
+      "Low Memory",
       "Reboot your Device",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
@@ -772,6 +763,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
   },
 
+  # TODO: this is unclear, update check only happens offroad
   EventName.internetConnectivityNeeded: {
     ET.PERMANENT: Alert(
       "Please connect to Internet",
