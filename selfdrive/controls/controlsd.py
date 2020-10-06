@@ -61,8 +61,8 @@ class Controls:
       self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
     # wait for one health and one CAN packet
-    self.hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
-    has_relay = self.hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
+    hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
+    has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
@@ -121,9 +121,9 @@ class Controls:
     self.last_blinker_frame = 0
     self.saturated_count = 0
     self.distance_traveled = 0
+    self.last_functional_fan_frame = 0
     self.events_prev = []
     self.current_alert_types = [ET.PERMANENT]
-    self.last_desired_fan_speed = 0
 
     self.sm['liveCalibration'].calStatus = Calibration.CALIBRATED
     self.sm['thermal'].freeSpace = 1.
@@ -141,7 +141,7 @@ class Controls:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
-    if self.hw_type == HwType.whitePanda:
+    if hw_type == HwType.whitePanda:
       self.events.add(EventName.whitePandaUnsupported, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
@@ -160,7 +160,7 @@ class Controls:
       self.events.add(self.startup_event)
       self.startup_event = None
 
-    # Create events for battery, temperature, disk space, fan, and memory
+    # Create events for battery, temperature, disk space, and memory
     if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
       # at zero percent battery, while discharging, OP should not allowed
       self.events.add(EventName.lowBattery)
@@ -172,10 +172,13 @@ class Controls:
     if self.sm['thermal'].memUsedPercent > 90:
       self.events.add(EventName.lowMemory)
 
-    if self.hw_type in [HwType.uno, HwType.dos]:
-      if self.sm['health'].fanSpeedRpm == 0 and self.last_desired_fan_speed > 50:
-        self.events.add(EventName.fanMalfunction)
-      self.last_desired_fan_speed = self.sm['thermal'].fanSpeed
+    # Alert if fan isn't spinning for 5 seconds
+    if self.sm['health'].hwType in [HwType.uno, HwType.dos]:
+      if self.sm['health'].fanSpeedRpm == 0 and self.sm['thermal'].fanSpeed > 50:
+        if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
+          self.events.add(EventName.fanMalfunction)
+      else:
+        self.last_functional_fan_frame = self.sm.frame
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
