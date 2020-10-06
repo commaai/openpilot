@@ -19,9 +19,7 @@
 
 #include <msm_media_info.h>
 
-#include "common/mutex.h"
 #include "common/swaglog.h"
-#include "common/utilpp.h"
 #include "encoder.h"
 
 // encoder: lossey codec using hardware hevc
@@ -195,7 +193,6 @@ EncoderState::EncoderState(const LogCameraInfo &info, int width, int height, boo
     LOGE("error getting codec: %x", err);
   }
   assert(err == OMX_ErrorNone);
-  // printf("handle: %p\n", handle);
 
   // setup input port
 
@@ -336,7 +333,6 @@ EncoderState::EncoderState(const LogCameraInfo &info, int width, int height, boo
 
   // give omx all the output buffers
   for (int i = 0; i < num_out_bufs; i++) {
-    // printf("fill %p\n", out_buf_headers[i]);
     err = OMX_FillThisBuffer(handle, out_buf_headers[i]);
     assert(err == OMX_ErrorNone);
   }
@@ -393,6 +389,7 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
       s->codec_ctx->extradata_size = s->codec_config_len;
       memcpy(s->codec_ctx->extradata, s->codec_config, s->codec_config_len);
       memset(s->codec_ctx->extradata + s->codec_ctx->extradata_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+
       err = avcodec_parameters_from_context(s->out_stream->codecpar, s->codec_ctx);
       assert(err >= 0);
       err = avformat_write_header(s->ofmt_ctx, NULL);
@@ -415,8 +412,10 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
       if (out_buf->nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
         pkt.flags |= AV_PKT_FLAG_KEY;
       }
+
       err = av_write_frame(s->ofmt_ctx, &pkt);
       if (err < 0) { LOGW("ts encoder write issue"); }
+
       av_free_packet(&pkt);
     }
   }
@@ -428,7 +427,7 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
 
 bool EncoderState::ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                                 int in_width, int in_height, const VIPCBufExtra &extra) {
-  
+
   OMX_BUFFERHEADERTYPE* in_buf = (OMX_BUFFERHEADERTYPE*)queue_pop(&free_in);
   uint8_t *in_buf_ptr = in_buf->pBuffer;
   // printf("in_buf ptr %p\n", in_buf_ptr);
@@ -484,7 +483,7 @@ bool EncoderState::ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_
   return true;
 }
 
-void EncoderState::Open(const std::string &path) {
+bool EncoderState::Open(const std::string path, int segment) {
   LOGD("encoder_open %s remuxing:%d", path.c_str(), remuxing);
 
   if (remuxing) {
@@ -519,6 +518,7 @@ void EncoderState::Open(const std::string &path) {
       fwrite(codec_config, codec_config_len, 1, of);
     }
   }
+  return true;
 }
 
 void EncoderState::Close() {

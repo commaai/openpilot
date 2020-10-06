@@ -39,14 +39,9 @@
 #include "messaging.hpp"
 #include "services.h"
 
-#if !(defined(QCOM) || defined(QCOM2))
-// no encoder on PC
-#define DISABLE_ENCODER
-#endif
-
-#ifndef DISABLE_ENCODER
+#include "ffmpeg_encoder.h"
+#if (defined(QCOM) || defined(QCOM2))
 #include "encoder.h"
-#include "raw_logger.h"
 #endif
 
 #define MAIN_BITRATE 5000000
@@ -97,7 +92,8 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .has_qcamera = false
   },
   [LOG_CAMERA_ID_QCAMERA] = {
-    .filename = "qcamera.ts",
+    // .filename = "qcamera.ts",
+    .filename = "qcamera.hevc",
     .fps = MAIN_FPS,
     .bitrate = QCAM_BITRATE,
     .is_h265 = false,
@@ -112,8 +108,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 #define SEGMENT_LENGTH 60
 
 #define LOG_ROOT "/data/media/0/realdata"
-
-namespace {
 
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
@@ -186,7 +180,6 @@ struct LoggerdState {
 };
 LoggerdState s;
 
-#ifndef DISABLE_ENCODER
 void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips, int cam_idx) {
 
   switch (cam_idx) {
@@ -213,7 +206,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
   std::unique_ptr<EncoderState> encoder;
   std::unique_ptr<EncoderState> encoder_alt;
-  std::unique_ptr<RawLogger> rawlogger;
+  std::unique_ptr<RawEncoder> raw_encoder;
   std::vector<FrameLogger*> frame_loggers;
 
   int encoder_segment = -1;
@@ -244,13 +237,12 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
       if (cameras_logged[cam_idx].has_qcamera) {
         const LogCameraInfo &cam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
         encoder_alt = std::make_unique<EncoderState>(cam_info, cam_info.frame_width, cam_info.frame_height);
-        frame_loggers.push_back(encoder_alt.get());
       }
     }
 
     if (raw_clips) {
-      rawlogger = std::make_unique<RawLogger>("prcamera", buf_info.width, buf_info.height, MAIN_FPS);
-      frame_loggers.push_back(rawlogger.get());
+      raw_encoder = std::make_unique<RawEncoder>("prcamera.mkv", buf_info.width, buf_info.height, MAIN_FPS);
+      frame_loggers.push_back((FrameLogger*)raw_encoder.get());
     }
 
     while (!do_exit) {
@@ -296,7 +288,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
 
           for (FrameLogger* logger : frame_loggers) {
-            logger->Rotate(s.segment_path);
+            logger->Rotate(s.segment_path, s.rotate_segment);
           }
           s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
@@ -320,7 +312,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
           cereal::EncodeIndex::Type type;
           if (logger == encoder.get()) {
             type = cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C;
-          } else { // rawlogger
+          } else { // raw_encoder
             type = cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP;
           }
           eidx.setType(type);
@@ -350,9 +342,6 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
   }
 
   delete idx_sock;
-}
-#endif
-
 }
 
 void append_property(const char* key, const char* value, void *cookie) {
@@ -556,9 +545,8 @@ int main(int argc, char** argv) {
   s.finish_close = 0;
   s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
-#ifndef DISABLE_ENCODER
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, false, LOG_CAMERA_ID_FCAMERA);
+  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, true, LOG_CAMERA_ID_FCAMERA);
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
   // front camera
   std::thread front_encoder_thread_handle;
@@ -571,7 +559,6 @@ int main(int argc, char** argv) {
   std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, false, LOG_CAMERA_ID_ECAMERA);
   s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
   #endif
-#endif
 
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
@@ -684,7 +671,6 @@ int main(int argc, char** argv) {
   LOGW("joining threads");
   for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].cancelWait(); }
 
-#ifndef DISABLE_ENCODER
 #ifdef QCOM2
   wide_encoder_thread_handle.join();
 #endif
@@ -693,7 +679,6 @@ int main(int argc, char** argv) {
   }
   encoder_thread_handle.join();
   LOGW("encoder joined");
-#endif
 
   logger_close(&s.logger);
 

@@ -1,15 +1,15 @@
 #pragma once
 
 #include <cstdint>
-#include <mutex>
 #include <string>
-
+#include <fcntl.h>
+#include <assert.h>
+#include "common/utilpp.h"
 #include "common/visionipc.h"
-// #include "logger.h"
 #include "messaging.hpp"
 class FrameLogger {
  public:
-  FrameLogger(const std::string &afilename, int awidth, int aheight, int afps)
+  FrameLogger(const std::string afilename, int awidth, int aheight, int afps)
       : filename(afilename), width(awidth), height(aheight), fps(afps) {}
 
   virtual ~FrameLogger() {
@@ -31,15 +31,15 @@ class FrameLogger {
     return ret;
   }
 
-  void Rotate(const std::string &new_path) {
+  void Rotate(const std::string new_path, int segment) {
     CloseFile();
     // create camera lock file
     lock_path = util::string_format("%s/%s.lock", new_path.c_str(), filename.c_str());
     int lock_fd = open(lock_path.c_str(), O_RDWR | O_CREAT, 0777);
     assert(lock_fd >= 0);
     close(lock_fd);
-
-    Open(new_path);
+    std::string path = util::string_format("%s/%s", new_path.c_str(), filename.c_str());
+    is_open = Open(path, segment);
   }
 
  protected:
@@ -53,7 +53,7 @@ class FrameLogger {
     }
   }
 
-  virtual void Open(const std::string &path) = 0;
+  virtual bool Open(const std::string path, int segment) = 0;
   virtual void Close() = 0;
   virtual bool ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                             int in_width, int in_height, const VIPCBufExtra &extra) = 0;

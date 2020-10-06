@@ -1,12 +1,10 @@
 #pragma once
 
 #include <OMX_Component.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
-// #include <memory>
 extern "C" {
 #include <libavformat/avformat.h>
 }
@@ -33,10 +31,10 @@ class EncoderState : public FrameLogger {
   OMX_HANDLETYPE handle;
 
   int num_in_bufs;
-  OMX_BUFFERHEADERTYPE **in_buf_headers;
+  OMX_BUFFERHEADERTYPE** in_buf_headers;
 
   int num_out_bufs;
-  OMX_BUFFERHEADERTYPE **out_buf_headers;
+  OMX_BUFFERHEADERTYPE** out_buf_headers;
 
   Queue free_in;
   Queue done_out;
@@ -56,7 +54,7 @@ class EncoderState : public FrameLogger {
  private:
   bool ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                     int in_width, int in_height, const VIPCBufExtra &extra);
-  void Open(const std::string &path);
+  bool Open(const std::string path, int segment);
   void Close();
   void Destroy();
 
