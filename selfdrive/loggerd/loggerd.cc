@@ -6,13 +6,11 @@
 #include <signal.h>
 #include <errno.h>
 #include <poll.h>
-#include <string.h>
 #include <inttypes.h>
 #include <libyuv.h>
 #include <sys/resource.h>
 #include <pthread.h>
 
-#include <string>
 #include <iostream>
 #include <fstream>
 #include <streambuf>
@@ -31,15 +29,12 @@
 #include "common/timing.h"
 #include "common/params.h"
 #include "common/swaglog.h"
-#include "common/visionipc.h"
-#include "common/utilpp.h"
 #include "common/util.h"
-#include "camerad/cameras/camera_common.h"
 #include "logger.h"
 #include "messaging.hpp"
 #include "services.h"
 
-#include "ffmpeg_encoder.h"
+#include "raw_logger.h"
 #if (defined(QCOM) || defined(QCOM2))
 #include "encoder.h"
 #endif
@@ -92,8 +87,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .has_qcamera = false
   },
   [LOG_CAMERA_ID_QCAMERA] = {
-    // .filename = "qcamera.ts",
-    .filename = "qcamera.hevc",
+    .filename = "qcamera.ts",
     .fps = MAIN_FPS,
     .bitrate = QCAM_BITRATE,
     .is_h265 = false,
@@ -237,6 +231,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
       if (cameras_logged[cam_idx].has_qcamera) {
         const LogCameraInfo &cam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
         encoder_alt = std::make_unique<EncoderState>(cam_info, cam_info.frame_width, cam_info.frame_height);
+        frame_loggers.push_back(encoder_alt.get());
       }
     }
 

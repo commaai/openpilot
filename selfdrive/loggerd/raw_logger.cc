@@ -1,61 +1,52 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
+#include <fcntl.h>
+#include <math.h>
+#include <unistd.h>
+
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
-#include <cassert>
-
-#include <fcntl.h>
-#include <unistd.h>
-#include <random>
-#include <math.h>
 #define __STDC_CONSTANT_MACROS
 
 extern "C" {
-#include <libavutil/imgutils.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
 }
 
 #include "common/swaglog.h"
 #include "common/utilpp.h"
-
 #include "raw_logger.h"
 
-#define RAW_CLIP_LENGTH 100 // 5 seconds at 20fps
-#define RAW_CLIP_FREQUENCY (randrange(61, 8*60)) // once every ~4 minutes
-
-
-double randrange(double a, double b) __attribute__((unused));
-double randrange(double a, double b) {
-  static std::mt19937 gen(millis_since_boot());
-
-  std::uniform_real_distribution<> dist(a, b);
-  return dist(gen);
-}
-
-RawLogger::RawLogger(const std::string &afilename, int awidth, int aheight, int afps)
-    : FrameLogger(afilename, awidth, aheight, afps) {
+FFmpegEncoder::FFmpegEncoder(std::string filename, AVCodecID codec_id, int bitrate, int width, int height, int fps)
+    : FrameLogger(filename, width, height, fps) {
   int err = 0;
 
   av_register_all();
-  codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
-  // codec = avcodec_find_encoder(AV_CODEC_ID_FFV1);
+  codec = avcodec_find_encoder(codec_id);
+
   assert(codec);
 
   codec_ctx = avcodec_alloc_context3(codec);
   assert(codec_ctx);
+  if (bitrate > 0) {
+    codec_ctx->bit_rate = bitrate;
+  }
   codec_ctx->width = width;
   codec_ctx->height = height;
+  codec_ctx->time_base = (AVRational){1, fps};
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
-  // codec_ctx->thread_count = 2;
+  AVDictionary *pDic = 0;
+  if (codec_id == AV_CODEC_ID_H265) {
+    av_dict_set(&pDic, "x265-params", "qp=20", 0);
+    av_dict_set(&pDic, "preset", "ultrafast", 0);
+    av_dict_set(&pDic, "tune", "zero-latency", 0);
+  }
 
-  // ffv1enc doesn't respect AV_PICTURE_TYPE_I. make every frame a key frame for now.
-  // codec_ctx->gop_size = 0;
-
-  codec_ctx->time_base = (AVRational){ 1, fps };
-
-  err = avcodec_open2(codec_ctx, codec, NULL);
+  err = avcodec_open2(codec_ctx, codec, &pDic);
+  // err = avcodec_open2(codec_ctx, codec, nullptr);
   assert(err >= 0);
 
   frame = av_frame_alloc();
@@ -64,28 +55,25 @@ RawLogger::RawLogger(const std::string &afilename, int awidth, int aheight, int 
   frame->width = width;
   frame->height = height;
   frame->linesize[0] = width;
-  frame->linesize[1] = width/2;
-  frame->linesize[2] = width/2;
+  frame->linesize[1] = width / 2;
+  frame->linesize[2] = width / 2;
 }
 
-RawLogger::~RawLogger() {
+FFmpegEncoder::~FFmpegEncoder() {
   av_frame_free(&frame);
   avcodec_close(codec_ctx);
   av_free(codec_ctx);
 }
 
-void RawLogger::Open(const std::string &path) {
-
+bool FFmpegEncoder::Open(const std::string path, int segment) {
   format_ctx = NULL;
   avformat_alloc_output_context2(&format_ctx, NULL, NULL, path.c_str());
   assert(format_ctx);
 
   stream = avformat_new_stream(format_ctx, codec);
-  // AVStream *stream = avformat_new_stream(format_ctx, NULL);
   assert(stream);
   stream->id = 0;
-  stream->time_base = (AVRational){ 1, fps };
-  // codec_ctx->time_base = stream->time_base;
+  stream->time_base = (AVRational){1, fps};
 
   int err = avcodec_parameters_from_context(stream->codecpar, codec_ctx);
   assert(err >= 0);
@@ -95,13 +83,10 @@ void RawLogger::Open(const std::string &path) {
 
   err = avformat_write_header(format_ctx, NULL);
   assert(err >= 0);
-
-  rawlogger_start_time = seconds_since_boot()+RAW_CLIP_FREQUENCY;
-
+  return true;
 }
 
-void RawLogger::Close() {
-
+void FFmpegEncoder::Close() {
   int err = av_write_trailer(format_ctx);
   assert(err == 0);
 
@@ -112,16 +97,10 @@ void RawLogger::Close() {
 
   avformat_free_context(format_ctx);
   format_ctx = NULL;
-
 }
 
-bool RawLogger::ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                             int in_width, int in_height, const VIPCBufExtra &extra) {
-  double ts = seconds_since_boot();
-  if (ts <= rawlogger_start_time) {
-    return false;
-  }
-
+bool FFmpegEncoder::ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                                 int in_width, int in_height, const VIPCBufExtra &extra) {
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = NULL;
@@ -151,12 +130,5 @@ bool RawLogger::ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *
     }
   }
 
-  // stop rawlogger if clip ended
-  rawlogger_clip_cnt++;
-
-  if (rawlogger_clip_cnt >= RAW_CLIP_LENGTH) {
-    rawlogger_clip_cnt = 0;
-    rawlogger_start_time = ts + RAW_CLIP_FREQUENCY;
-  }
   return ret;
 }

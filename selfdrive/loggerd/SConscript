@@ -1,4 +1,4 @@
-Import('env', 'qt_env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
 
 src = ['loggerd.cc', 'logger.cc']
 libs = ['zmq', 'czmq', 'capnp', 'kj', 'z',
@@ -6,13 +6,13 @@ libs = ['zmq', 'czmq', 'capnp', 'kj', 'z',
   'yuv', 'bz2', common, cereal, messaging, visionipc]
 
 if arch == "aarch64":
-  src += ['encoder.cc', 'ffmpeg_encoder.cc']
+  src += ['encoder.cc', 'raw_logger.cc']
   libs += ['OmxVenc', 'OmxCore', 'cutils']
 elif arch == "larch64":
-  src += ['encoder.cc', 'ffmpeg_encoder.cc']
+  src += ['encoder.cc', 'raw_logger.cc']
   libs += ['OmxVenc', 'OmxCore', 'pthread']
 else:
-  src += ['ffmpeg_encoder.cc']
+  src += ['raw_logger.cc']
   libs += ['pthread']
 
 env.Program(src, LIBS=libs)
