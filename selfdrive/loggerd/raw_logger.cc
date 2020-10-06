@@ -6,7 +6,8 @@
 
 #include <fcntl.h>
 #include <unistd.h>
-
+#include <random>
+#include <math.h>
 #define __STDC_CONSTANT_MACROS
 
 extern "C" {
@@ -20,12 +21,20 @@ extern "C" {
 
 #include "raw_logger.h"
 
-RawLogger::RawLogger(const std::string &afilename, int awidth, int aheight, int afps)
-  : filename(afilename),
-    width(awidth),
-    height(aheight),
-    fps(afps) {
+#define RAW_CLIP_LENGTH 100 // 5 seconds at 20fps
+#define RAW_CLIP_FREQUENCY (randrange(61, 8*60)) // once every ~4 minutes
 
+
+double randrange(double a, double b) __attribute__((unused));
+double randrange(double a, double b) {
+  static std::mt19937 gen(millis_since_boot());
+
+  std::uniform_real_distribution<> dist(a, b);
+  return dist(gen);
+}
+
+RawLogger::RawLogger(const std::string &afilename, int awidth, int aheight, int afps)
+    : FrameLogger(afilename, awidth, aheight, afps) {
   int err = 0;
 
   av_register_all();
@@ -66,23 +75,9 @@ RawLogger::~RawLogger() {
 }
 
 void RawLogger::Open(const std::string &path) {
-  int err = 0;
-
-  std::lock_guard<std::recursive_mutex> guard(lock);
-
-  vid_path = util::string_format("%s/%s.mkv", path.c_str(), filename.c_str());
-
-  // create camera lock file
-  lock_path = util::string_format("%s/%s.lock", path.c_str(), filename.c_str());
-
-  LOG("open %s\n", lock_path.c_str());
-
-  int lock_fd = open(lock_path.c_str(), O_RDWR | O_CREAT, 0777);
-  assert(lock_fd >= 0);
-  close(lock_fd);
 
   format_ctx = NULL;
-  avformat_alloc_output_context2(&format_ctx, NULL, NULL, vid_path.c_str());
+  avformat_alloc_output_context2(&format_ctx, NULL, NULL, path.c_str());
   assert(format_ctx);
 
   stream = avformat_new_stream(format_ctx, codec);
@@ -92,27 +87,22 @@ void RawLogger::Open(const std::string &path) {
   stream->time_base = (AVRational){ 1, fps };
   // codec_ctx->time_base = stream->time_base;
 
-  err = avcodec_parameters_from_context(stream->codecpar, codec_ctx);
+  int err = avcodec_parameters_from_context(stream->codecpar, codec_ctx);
   assert(err >= 0);
 
-  err = avio_open(&format_ctx->pb, vid_path.c_str(), AVIO_FLAG_WRITE);
+  err = avio_open(&format_ctx->pb, path.c_str(), AVIO_FLAG_WRITE);
   assert(err >= 0);
 
   err = avformat_write_header(format_ctx, NULL);
   assert(err >= 0);
 
-  is_open = true;
-  counter = 0;
+  rawlogger_start_time = seconds_since_boot()+RAW_CLIP_FREQUENCY;
+
 }
 
 void RawLogger::Close() {
-  int err = 0;
 
-  std::lock_guard<std::recursive_mutex> guard(lock);
-
-  if (!is_open) return;
-
-  err = av_write_trailer(format_ctx);
+  int err = av_write_trailer(format_ctx);
   assert(err == 0);
 
   avcodec_close(stream->codec);
@@ -123,12 +113,14 @@ void RawLogger::Close() {
   avformat_free_context(format_ctx);
   format_ctx = NULL;
 
-  unlink(lock_path.c_str());
-  is_open = false;
 }
 
-int RawLogger::ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr) {
-  int err = 0;
+bool RawLogger::ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                             int in_width, int in_height, const VIPCBufExtra &extra) {
+  double ts = seconds_since_boot();
+  if (ts <= rawlogger_start_time) {
+    return false;
+  }
 
   AVPacket pkt;
   av_init_packet(&pkt);
@@ -138,15 +130,15 @@ int RawLogger::ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_
   frame->data[0] = (uint8_t*)y_ptr;
   frame->data[1] = (uint8_t*)u_ptr;
   frame->data[2] = (uint8_t*)v_ptr;
-  frame->pts = ts;
+  frame->pts = cnt;
 
-  int ret = counter;
+  bool ret = true;
 
   int got_output = 0;
-  err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
+  int err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
   if (err) {
     LOGE("encoding error\n");
-    ret = -1;
+    ret = false;
   } else if (got_output) {
 
     av_packet_rescale_ts(&pkt, codec_ctx->time_base, stream->time_base);
@@ -155,11 +147,16 @@ int RawLogger::ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_
     err = av_interleaved_write_frame(format_ctx, &pkt);
     if (err < 0) {
       LOGE("encoder writer error\n");
-      ret = -1;
-    } else {
-      counter++;
+      ret = false;
     }
   }
 
+  // stop rawlogger if clip ended
+  rawlogger_clip_cnt++;
+
+  if (rawlogger_clip_cnt >= RAW_CLIP_LENGTH) {
+    rawlogger_clip_cnt = 0;
+    rawlogger_start_time = ts + RAW_CLIP_FREQUENCY;
+  }
   return ret;
 }
