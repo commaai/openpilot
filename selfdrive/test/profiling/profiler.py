@@ -27,7 +27,10 @@ def get_inputs(msgs, process):
 
   sm = SubMaster(msgs, trigger, sub_socks)
   pm = PubMaster()
-  can_sock = SubSocket(msgs, 'can')
+  if 'can' in sub_socks:
+    can_sock = SubSocket(msgs, 'can')
+  else:
+    can_sock = None
   return sm, pm, can_sock
 
 
@@ -39,32 +42,38 @@ def profile(proc, func, car='toyota'):
 
   os.environ['FINGERPRINT'] = fingerprint
 
-  # Statistical
-  sm, pm, can_sock = get_inputs(msgs, proc)
-  with pprofile.StatisticalProfile()(period=0.00001) as pr:
+  def run():
+    sm, pm, can_sock = get_inputs(msgs, proc)
     try:
-      func(sm, pm, can_sock)
+      if can_sock is not None:
+        func(sm, pm, can_sock)
+      else:
+        func(sm, pm)
     except ReplayDone:
       pass
+
+  # Statistical
+  with pprofile.StatisticalProfile()(period=0.00001) as pr:
+    run()
   pr.dump_stats(f'cachegrind.out.{proc}_statistical')
 
   # Deterministic
-  sm, pm, can_sock = get_inputs(msgs, proc)
   with cProfile.Profile() as pr:
-    try:
-      func(sm, pm, can_sock)
-    except ReplayDone:
-      pass
+    run()
   pyprof2calltree.convert(pr.getstats(), f'cachegrind.out.{proc}_deterministic')
 
 
 if __name__ == '__main__':
   from selfdrive.controls.controlsd import main as controlsd_thread
   from selfdrive.controls.radard import radard_thread
+  from selfdrive.locationd.locationd import locationd_thread
+  from selfdrive.locationd.paramsd import main as paramsd_thread
 
   procs = {
     'radard': radard_thread,
     'controlsd': controlsd_thread,
+    'locationd': locationd_thread,
+    'paramsd': paramsd_thread,
   }
 
   proc = sys.argv[1]
