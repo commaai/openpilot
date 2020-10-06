@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-
 import os
 import sys
 import cProfile  # pylint: disable=import-error
 import pprofile  # pylint: disable=import-error
 import pyprof2calltree  # pylint: disable=import-error
 
+from common.params import Params
 from tools.lib.logreader import LogReader
 from selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
 from selfdrive.test.process_replay.process_replay import CONFIGS
@@ -25,6 +25,12 @@ def get_inputs(msgs, process):
       trigger = sub_socks[0]
       break
 
+  # some procs block on CarParams
+  for msg in msgs:
+    if msg.which() == 'carParams':
+      Params().put("CarParams", msg.as_builder().to_bytes())
+      break
+
   sm = SubMaster(msgs, trigger, sub_socks)
   pm = PubMaster()
   if 'can' in sub_socks:
@@ -38,7 +44,7 @@ def profile(proc, func, car='toyota'):
   segment, fingerprint = CARS[car]
   segment = segment.replace('|', '/')
   rlog_url = f"{BASE_URL}{segment}/rlog.bz2"
-  msgs = list(LogReader(rlog_url))
+  msgs = list(LogReader(rlog_url)) * int(os.getenv("LOOP", "1"))
 
   os.environ['FINGERPRINT'] = fingerprint
 
