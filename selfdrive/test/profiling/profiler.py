@@ -42,8 +42,7 @@ def profile(proc, func, car='toyota'):
 
   os.environ['FINGERPRINT'] = fingerprint
 
-  def run():
-    sm, pm, can_sock = get_inputs(msgs, proc)
+  def run(sm, pm, can_sock):
     try:
       if can_sock is not None:
         func(sm, pm, can_sock)
@@ -53,13 +52,15 @@ def profile(proc, func, car='toyota'):
       pass
 
   # Statistical
+  sm, pm, can_sock = get_inputs(msgs, proc)
   with pprofile.StatisticalProfile()(period=0.00001) as pr:
-    run()
+    run(sm, pm, can_sock)
   pr.dump_stats(f'cachegrind.out.{proc}_statistical')
 
   # Deterministic
+  sm, pm, can_sock = get_inputs(msgs, proc)
   with cProfile.Profile() as pr:
-    run()
+    run(sm, pm, can_sock)
   pyprof2calltree.convert(pr.getstats(), f'cachegrind.out.{proc}_deterministic')
 
 
