@@ -363,7 +363,8 @@ def thermald_thread():
     should_start = should_start and msg.thermal.freeSpace > 0.02
 
     # confirm we have completed training and aren't uninstalling
-    should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
+    should_start = should_start and accepted_terms and (not do_uninstall) and \
+                   (completed_training or current_branch in ['dashcam', 'dashcam-staging'])
 
     # check for firmware mismatch
     should_start = should_start and fw_version_match
