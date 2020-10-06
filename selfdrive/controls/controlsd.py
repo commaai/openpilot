@@ -124,7 +124,7 @@ class Controls:
     self.events_prev = []
     self.current_alert_types = [ET.PERMANENT]
 
-    self.sm['liveCalibration'].calStatus = Calibration.INVALID
+    self.sm['liveCalibration'].calStatus = Calibration.CALIBRATED
     self.sm['thermal'].freeSpace = 1.
     self.sm['dMonitoringState'].events = []
     self.sm['dMonitoringState'].awarenessStatus = 1.
