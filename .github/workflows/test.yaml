@@ -29,7 +29,7 @@ jobs:
         env :
           FILEREADER_CACHE: 1
         run: |
-          "dir"
+          "ls"
       - name: Cache replays
         id: replay-cache
         uses: actions/cache@v2
