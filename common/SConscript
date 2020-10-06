@@ -1,0 +1,6 @@
+Import('env', 'cython_dependencies')
+
+# Build cython clock module
+env.Command(['common_pyx.so', 'clock.cpp'],
+            cython_dependencies + ['common_pyx_setup.py', 'clock.pyx'],
+            "cd common && python3 common_pyx_setup.py build_ext --inplace")
