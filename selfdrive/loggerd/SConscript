@@ -6,10 +6,10 @@ libs = ['zmq', 'czmq', 'capnp', 'kj', 'z',
   'yuv', 'bz2', common, cereal, messaging, visionipc]
 
 if arch == "aarch64":
-  src += ['encoder.c', 'raw_logger.cc']
+  src += ['encoder.cc', 'raw_logger.cc']
   libs += ['OmxVenc', 'OmxCore', 'cutils']
 elif arch == "larch64":
-  src += ['encoder.c', 'raw_logger.cc']
+  src += ['encoder.cc', 'raw_logger.cc']
   libs += ['OmxVenc', 'OmxCore', 'pthread']
 else:
   libs += ['pthread']
