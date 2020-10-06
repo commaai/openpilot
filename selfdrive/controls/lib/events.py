@@ -473,8 +473,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.fanMalfunction: {
     ET.PERMANENT: Alert(
-      "Device Fan Malfunction",
-      "Risk of overheating",
+      "Fan Malfunction",
+      "Reboot your Device",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
   },
