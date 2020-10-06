@@ -12,16 +12,8 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
-  // check if LKAS connected to Bus0
-  if (addr == 832) {
-    if (bus == 0) {
-      if (HKG_forward_bus2 != false) { HKG_forward_bus2 = false;}
-      HKG_LKAS_bus0_cnt = 10;
-    } else if (bus == 2) {
-      if (HKG_LKAS_bus0_cnt == 0 && !HKG_forward_bus2) { HKG_forward_bus2 = true;}
-      else if (HKG_LKAS_bus0_cnt > 0) { HKG_LKAS_bus0_cnt -= 1;}
-      if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt -= 1;}
-    }
+  if (addr == 832 && bus == 2) {
+    if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt -= 1;}
   }
   // check if we have a LCAN on Bus1
   if (bus == 1 && (addr == 1296 || addr == 524)) {
@@ -91,18 +83,15 @@ static int nooutput_tx_lin_hook(int lin_num, uint8_t *data, int len) {
 static int default_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   int addr = GET_ADDR(to_fwd);
   int bus_fwd = -1;
-  int HKG_bus1 = 0, HKG_bus2 = 0;
-  if (HKG_forward_bus1){HKG_bus1 = 1;}
-  if (HKG_forward_bus2){HKG_bus2 = 2;}
 
-  if (bus_num == 0 && (HKG_forward_bus1 || HKG_forward_bus2)) {
-    bus_fwd = (HKG_forward_bus1 && HKG_forward_bus2) ? 12 : HKG_bus1 + HKG_bus2;
+  if (bus_num == 0 && HKG_forward_bus1) {
+    bus_fwd = HKG_forward_bus1 ? 12 : 2;
   }
   if (bus_num == 1 && HKG_forward_bus1) {
-    bus_fwd = HKG_bus2 * 10;
+    bus_fwd = 20;
   }
-  if (bus_num == 2 && HKG_forward_bus2) {
-    bus_fwd = HKG_bus1 * 10;
+  if (bus_num == 2) {
+    bus_fwd = HKG_forward_bus1 ? 10 : 0;
   }
     // Code for LKA/LFA/HDA anti-nagging.
   if (addr == 593 && bus_fwd != -1) {
