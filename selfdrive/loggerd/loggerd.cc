@@ -218,7 +218,6 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
   int encoder_segment = -1;
   int cnt = 0;
-  rotate_state->enabled = true;
   pthread_mutex_lock(&s.rotate_lock);
   int my_idx = s.num_encoder;
   s.num_encoder += 1;
@@ -560,14 +559,17 @@ int main(int argc, char** argv) {
 #ifndef DISABLE_ENCODER
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, false, LOG_CAMERA_ID_FCAMERA);
+  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
   // front camera
   std::thread front_encoder_thread_handle;
   if (record_front) {
     front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, false, LOG_CAMERA_ID_DCAMERA);
+    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
   #ifdef QCOM2
   // wide camera
   std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, false, LOG_CAMERA_ID_ECAMERA);
+  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
   #endif
 #endif
 
