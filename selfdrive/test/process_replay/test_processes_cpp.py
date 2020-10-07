@@ -1,7 +1,8 @@
 import os
-import threading
 import time
 import subprocess
+import signal
+from hashlib import sha256
 
 if "CI" in os.environ:
   def tqdm(x):
@@ -15,10 +16,10 @@ from tools.lib.logreader import LogReader
 from selfdrive.test.process_replay.test_processes import get_segment
 from common.basedir import BASEDIR
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
+ProcessConfig_cpp = namedtuple('ProcessConfig_cpp', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
 
 CONFIGS = [
-  ProcessConfig(
+  ProcessConfig_cpp(
     proc_name="ubloxd",
     pub_sub={
       "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
@@ -30,9 +31,6 @@ CONFIGS = [
     wait_for_response=True
   ),
 ]
-def launcher(arg, cwd):
-  os.chdir(os.path.join(BASEDIR, cwd))
-  subprocess.Popen(arg, stderr=subprocess.PIPE, shell=True) 
 
 def replay_process(config, logreader):
   pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
@@ -43,28 +41,37 @@ def replay_process(config, logreader):
   print("Sorting logs")
   all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
-
-  thread = threading.Thread(target=launcher, args=(config.command, config.path))
-  thread.daemon = True
-  thread.start()
+  os.chdir(os.path.join(BASEDIR, config.path))
+  p = subprocess.Popen(config.command, stderr=subprocess.PIPE)
 
   time.sleep(5)  # We give the process time to start
-  # for msg in tqdm(pub_msgs):
-  #   pm.send(msg.which(), msg.as_builder())
-  #   if config.wait_for_response:
-  #     sm.update(100)
-  log_msgs= []
+  #log_msgs= []
+  #for msg in tqdm(pub_msgs):
+  #  pm.send(msg.which(), msg.as_builder())
+  #  sm.update(100)
+  #  for s in sub_sockets:
+  #    if sm.updated[s]:
+  #      log_msgs.append(str(sm.__getitem__(s)))
+  log_msgs = []
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())
-    sm.update(100)
+    for s in sub_sockets:
+      if sm.updated[s]:
+        log_msgs.append(sm.__getitem__(s))
+      else:
+        sm.update()
+  os.kill(p.pid, signal.SIGINT)
   return log_msgs
 
 def test_config():
   for cfg in CONFIGS:
     URL = cfg.segment
     lr = LogReader(get_segment(URL))
-    replay_process(cfg, lr)
-
-
+    response = replay_process(cfg, lr)
+    dump = "".join(list(map(str,response)))
+    hs = sha256(dump.encode('utf-8')).hexdigest()
+    print(hs)
+    print(len(response))
+    #print(response[0])
 if __name__ == "__main__":
   test_config()

@@ -4,6 +4,9 @@ import os
 import sys
 import threading
 import importlib
+import time
+import subprocess
+import signal
 
 if "CI" in os.environ:
   def tqdm(x):
@@ -18,11 +21,13 @@ import cereal.messaging as messaging
 from common.params import Params
 from cereal.services import service_list
 from collections import namedtuple
+from common.basedir import BASEDIR
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance'])
+ProcessConfig_cpp = namedtuple('ProcessConfig_cpp', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'should_recv_callback'])
 
 
 def wait_for_event(evt):
@@ -206,6 +211,24 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
     recv_socks = ["liveCalibration"]
   return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 
+def ublox_rcv_callback(msg):
+  byte_list = msg.as_builder().ubloxRaw
+  msg_class = byte_list[2]
+  msg_id = byte_list[3]
+  # print(msg_class, msg_id)
+  if msg_class == 1:
+    if msg_id == 7 * 16 + 0:
+      return True
+  elif msg_class == 2:
+    if msg_id == 1 * 16 + 5:
+      return True
+    elif msg_id == 1 * 16 + 3:
+      return True
+  elif msg_class == 10:
+    if msg_id == 9:
+      return True
+  return False
+
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -288,6 +311,15 @@ CONFIGS = [
 ]
 
 def replay_process(cfg, lr):
+  if isinstance(cfg, ProcessConfig):
+    return python_replay_process(cfg, lr)
+  elif isinstance(cfg, ProcessConfig_cpp):
+    return cpp_replay_process(cfg, lr)
+  else:
+    print("Config is not well defined")
+    print(cfg)
+
+def python_replay_process(cfg, lr):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
@@ -352,4 +384,39 @@ def replay_process(cfg, lr):
         log_msgs.append(m)
 
         recv_cnt -= m.which() in recv_socks
+  return log_msgs
+
+def cpp_replay_process(config, logreader):
+  pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
+  sub_sockets = [s for _, sub in config.pub_sub.items() for s in sub]  # We get responses here
+  pm = messaging.PubMaster(pub_sockets)
+  sm = messaging.SubMaster(sub_sockets)
+
+  print("Sorting logs")
+  all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
+  pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
+  #print(len(pub_msgs))
+  #print(pub_msgs[0])
+  os.chdir(os.path.join(BASEDIR, config.path))
+  p = subprocess.Popen(config.command, stderr=subprocess.PIPE)
+
+  time.sleep(5)  # We give the process time to start
+
+  log_msgs = []
+  for msg in tqdm(pub_msgs):
+    pm.send(msg.which(), msg.as_builder())
+    if (config.should_recv_callback is None) or config.should_recv_callback(msg):
+      sent_package = False
+      sm.update(2000)
+      for s in sub_sockets:
+        if sm.updated[s]:
+          sent_package = True
+          log_msgs.append(sm.__getitem__(s))
+      if not sent_package:
+        print("Package was not received")
+        print(msg)
+    
+        
+  os.kill(p.pid, signal.SIGINT)
+  print(len(log_msgs),len(pub_msgs))
   return log_msgs

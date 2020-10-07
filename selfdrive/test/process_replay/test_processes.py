@@ -152,8 +152,8 @@ if __name__ == "__main__":
     results[segment] = {}
 
     rlog_fn = get_segment(segment)
+    print(rlog_fn)
     lr = LogReader(rlog_fn)
-
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
