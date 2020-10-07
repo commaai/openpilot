@@ -35,7 +35,6 @@ if __name__ == "__main__":
       log_msgs = replay_process(cfg, lr)
       log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
       save_log(log_fn, log_msgs)
-
       if not no_upload:
         upload_file(log_fn, os.path.basename(log_fn))
         os.remove(log_fn)

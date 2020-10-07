@@ -3,7 +3,6 @@ import bz2
 import os
 import sys
 import numbers
-
 import dictdiffer
 
 if "CI" in os.environ:
