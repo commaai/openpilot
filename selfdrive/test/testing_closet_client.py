@@ -68,6 +68,7 @@ def heartbeat():
         'version': version,
         'dongle_id': params.get("DongleId").rstrip().decode('utf8'),
         'remote': subprocess.check_output(["git", "config", "--get", "remote.origin.url"], cwd=work_dir).decode('utf8').rstrip(),
+        'branch': subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=work_dir).decode('utf8').rstrip(),
         'revision': subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=work_dir).decode('utf8').rstrip(),
         'serial': subprocess.check_output(["getprop", "ro.boot.serialno"]).decode('utf8').rstrip(),
         'tmux': tmux,
