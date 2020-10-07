@@ -24,7 +24,7 @@ class PandaDFU(object):
           self._handle = device.open()
           self.legacy = "07*128Kg" in self._handle.getASCIIStringDescriptor(4)
           return
-    raise Exception("failed to open " + dfu_serial)
+    raise Exception("failed to open " + dfu_serial if dfu_serial is not None else "DFU device")
 
   @staticmethod
   def list():

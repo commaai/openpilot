@@ -45,7 +45,7 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps) {
   tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", camera_release_buffer, s);
 }
 
-void run_frame_stream(DualCameraState *s) {
+void run_frame_stream(MultiCameraState *s) {
   SubMaster sm({"frame"});
 
   CameraState *const rear_camera = &s->rear;
@@ -93,7 +93,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(DualCameraState *s) {
+void cameras_init(MultiCameraState *s) {
   camera_init(&s->rear, CAMERA_ID_IMX298, 20);
   s->rear.transform = (mat3){{
     1.0,  0.0, 0.0,
@@ -111,7 +111,7 @@ void cameras_init(DualCameraState *s) {
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
-void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear,
+void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
                   VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats,
                   VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
@@ -124,11 +124,11 @@ void cameras_open(DualCameraState *s, VisionBuf *camera_bufs_rear,
   camera_open(&s->rear, camera_bufs_rear, true);
 }
 
-void cameras_close(DualCameraState *s) {
+void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
 }
 
-void cameras_run(DualCameraState *s) {
+void cameras_run(MultiCameraState *s) {
   set_thread_name("frame_streaming");
   run_frame_stream(s);
   cameras_close(s);

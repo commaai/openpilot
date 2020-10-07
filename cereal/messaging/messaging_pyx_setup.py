@@ -6,6 +6,7 @@ from distutils.core import Extension, setup  # pylint: disable=import-error,no-n
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
+TICI = os.path.isfile('/TICI')
 
 def get_ext_filename_without_platform_suffix(filename):
   name, ext = os.path.splitext(filename)
@@ -30,11 +31,11 @@ class BuildExtWithoutPlatformSuffix(build_ext):
 
 
 sourcefiles = ['messaging_pyx.pyx']
-extra_compile_args = ["-std=c++14"]
+extra_compile_args = ["-std=c++14", "-Wno-nullability-completeness"]
 libraries = ['zmq']
 ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()  # pylint: disable=unexpected-keyword-arg
 
-if ARCH == "aarch64" and os.path.isdir("/system"):
+if ARCH == "aarch64" and not TICI:
   # android
   extra_compile_args += ["-Wno-deprecated-register"]
   libraries += ['gnustl_shared']

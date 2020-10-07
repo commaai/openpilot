@@ -187,7 +187,7 @@ void CANParser::UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Rea
         continue;
       }
 
-      if (cmsg.getDat().size() > 8) continue; //shouldnt ever happen
+      if (cmsg.getDat().size() > 8) continue; //shouldn't ever happen
       uint8_t dat[8] = {0};
       memcpy(dat, cmsg.getDat().begin(), cmsg.getDat().size());
 
