@@ -74,4 +74,7 @@ def test_config():
     print(len(response))
     #print(response[0])
 if __name__ == "__main__":
-  test_config()
+  #test_config()
+  path = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d|2019-06-13--08-32-25--3_controlsd_925721984d73b0751e18001f2bacdca9832d9278.bz2"
+  lr = LogReader(path)
+  print(len(list(lr)))
