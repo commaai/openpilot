@@ -137,10 +137,10 @@ class RotateState {
 public:
   SubSocket* fpkt_sock;
   uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
-  bool enabled, should_rotate;
+  bool enabled, should_rotate, initialized;
 
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false) {};
+                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false) {};
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(fid_lock);
@@ -313,8 +313,9 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state->should_rotate) {
-          if (rotate_state->last_rotate_frame_id == 0) {
+          if (!rotate_state->initialized) {
             rotate_state->last_rotate_frame_id = extra.frame_id - 1;
+            rotate_state->initialized = true;
           }
           while (s.rotate_seq_id != my_idx && !do_exit) { usleep(1000); }
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
@@ -723,7 +724,7 @@ int main(int argc, char** argv) {
         bytes_count += msg->getSize();
         msg_count++;
       }
-      
+
       if (last_msg) {
         int fpkt_id = -1;
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
@@ -767,7 +768,7 @@ int main(int argc, char** argv) {
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
           // this *should* be redundant on tici since all camera frames are synced
           new_segment &= (((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS) &&
-                           (!s.rotate_state[cid].should_rotate) && (s.rotate_state[cid].last_rotate_frame_id != UINT32_MAX)) ||
+                           (!s.rotate_state[cid].should_rotate) && (s.rotate_state[cid].initialized)) ||
                           (!s.rotate_state[cid].enabled));
 #ifndef QCOM2
           break; // only look at fcamera frame id if not QCOM2
