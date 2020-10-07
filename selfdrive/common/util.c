@@ -3,7 +3,8 @@
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
-
+#include <fcntl.h>
+#include <errno.h> 
 #ifdef __linux__
 #include <sys/prctl.h>
 #include <sys/syscall.h>
@@ -41,6 +42,16 @@ void* read_file(const char* path, size_t* out_len) {
   return buf;
 }
 
+int write_file(const char* path, const void* data, size_t size) {
+  int fd = open(path, O_WRONLY);
+  if (fd == -1) {
+    return -1;
+  }
+  ssize_t n = write(fd, data, size);
+  close(fd);
+  return n == size ? 0 : -1;
+}
+
 void set_thread_name(const char* name) {
 #ifdef __linux__
   // pthread_setname_np is dumb (fails instead of truncates)
@@ -50,7 +61,6 @@ void set_thread_name(const char* name) {
 
 int set_realtime_priority(int level) {
 #ifdef __linux__
-
   long tid = syscall(SYS_gettid);
 
   // should match python using chrt
@@ -64,8 +74,7 @@ int set_realtime_priority(int level) {
 }
 
 int set_core_affinity(int core) {
-#ifdef QCOM
-
+#ifdef __linux__
   long tid = syscall(SYS_gettid);
   cpu_set_t rt_cpu;
 

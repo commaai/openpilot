@@ -1,4 +1,4 @@
-from selfdrive.car.mazda.values import CAR, Buttons
+from selfdrive.car.mazda.values import GEN1, Buttons
 
 def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
 
@@ -40,7 +40,7 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
 
   csum = csum % 256
 
-  if car_fingerprint == CAR.CX5:
+  if car_fingerprint in GEN1:
     values = {
       "LKAS_REQUEST"     : apply_steer,
       "CTR"              : ctr,
@@ -69,7 +69,7 @@ def create_button_cmd(packer, car_fingerprint, button):
     can = 0
     res = 0
 
-  if car_fingerprint == CAR.CX5:
+  if car_fingerprint in GEN1:
     values = {
       "CAN_OFF"           : can,
       "CAN_OFF_INV"       : (can + 1) % 2,

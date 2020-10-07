@@ -187,13 +187,9 @@ void usb_retry_connect() {
 }
 
 void can_recv(PubMaster &pm) {
-  uint64_t start_time = nanos_since_boot();
-
   // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(start_time);
-
+  MessageBuilder msg;
+  auto event = msg.initEvent();
   int recv = panda->can_receive(event);
   if (recv){
     pm.send("can", msg);
@@ -258,7 +254,7 @@ void can_recv_thread() {
       useconds_t sleep = remaining / 1000;
       usleep(sleep);
     } else {
-      LOGW("missed cycle");
+      LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
       next_frame_time = cur_time;
     }
 
@@ -275,10 +271,8 @@ void can_health_thread() {
 
   // Broadcast empty health message when panda is not yet connected
   while (!panda){
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto healthData = event.initHealth();
+    MessageBuilder msg;
+    auto healthData  = msg.initEvent().initHealth();
 
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
     pm.send("health", msg);
@@ -287,10 +281,8 @@ void can_health_thread() {
 
   // run at 2hz
   while (!do_exit && panda->connected) {
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
-    auto healthData = event.initHealth();
+    MessageBuilder msg;
+    auto healthData = msg.initEvent().initHealth();
 
     health_t health = panda->get_health();
 
@@ -392,8 +384,8 @@ void hardware_control_thread() {
   LOGD("start hardware control thread");
   SubMaster sm({"thermal", "frontFrame"});
 
-  // Only control fan speed on UNO
-  if (panda->hw_type != cereal::HealthData::HwType::UNO) return;
+  // Other pandas don't have hardware to control
+  if (panda->hw_type != cereal::HealthData::HwType::UNO && panda->hw_type != cereal::HealthData::HwType::DOS) return;
 
   uint64_t last_front_frame_t = 0;
   uint16_t prev_fan_speed = 999;
@@ -460,10 +452,8 @@ void hardware_control_thread() {
 
 static void pigeon_publish_raw(PubMaster &pm, std::string dat) {
   // create message
-  capnp::MallocMessageBuilder msg;
-  cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-  event.setLogMonoTime(nanos_since_boot());
-  auto ublox_raw = event.initUbloxRaw(dat.length());
+  MessageBuilder msg;
+  auto ublox_raw = msg.initEvent().initUbloxRaw(dat.length());
   memcpy(ublox_raw.begin(), dat.data(), dat.length());
 
   pm.send("ubloxRaw", msg);

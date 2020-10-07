@@ -20,6 +20,7 @@ brew install capnp \
              libtool \
              llvm \
              pyenv \
+             qt5 \
              zeromq
 
 # Detect shell and pick correct RC file.
@@ -50,5 +51,5 @@ pyenv global 3.8.2
 pyenv rehash
 eval "$(pyenv init -)" # CI doesn't use .bash_profile, and will use python2.7 if this line isn't here.
 
-pip install pipenv==2018.11.26
+pip install pipenv==2020.8.13
 pipenv install --system --deploy

@@ -23,8 +23,10 @@ typedef enum VisionIPCPacketType {
 typedef enum VisionStreamType {
   VISION_STREAM_RGB_BACK,
   VISION_STREAM_RGB_FRONT,
+  VISION_STREAM_RGB_WIDE,
   VISION_STREAM_YUV,
   VISION_STREAM_YUV_FRONT,
+  VISION_STREAM_YUV_WIDE,
   VISION_STREAM_MAX,
 } VisionStreamType;
 
@@ -35,6 +37,10 @@ typedef struct VisionUIInfo {
 
   int front_box_x, front_box_y;
   int front_box_width, front_box_height;
+
+  int wide_box_x, wide_box_y;
+  int wide_box_width, wide_box_height;
+
 } VisionUIInfo;
 
 typedef struct VisionStreamBufs {

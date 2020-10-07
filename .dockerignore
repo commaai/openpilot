@@ -1,5 +1,21 @@
 .git
 .DS_Store
+*.dylib
+*.DSYM
+*.d
+*.pyc
+*.pyo
+.*.swp
+.*.swo
+.*.un~
+*.tmp
+*.o
+*.o-*
+*.os
+*.os-*
+*.so
+*.a
+
 notebooks
 phone
 massivemap
@@ -22,3 +38,5 @@ xx/projects
 !xx/projects/map3d
 xx/ops
 xx/junk
+tools/sim/carla
+tools/sim/*.tar.gz

@@ -3,7 +3,7 @@ from selfdrive.config import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, CAR
+from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -121,7 +121,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 100),
     ]
 
-    if CP.carFingerprint == CAR.CX5:
+    if CP.carFingerprint in GEN1:
       signals += [
         ("LKAS_BLOCK", "STEER_RATE", 0),
         ("LKAS_TRACK_STATE", "STEER_RATE", 0),
@@ -165,7 +165,7 @@ class CarState(CarStateBase):
     signals = []
     checks = []
 
-    if CP.carFingerprint == CAR.CX5:
+    if CP.carFingerprint in GEN1:
       signals += [
         # sig_name, sig_address, default
         ("LKAS_REQUEST",     "CAM_LKAS", 0),
