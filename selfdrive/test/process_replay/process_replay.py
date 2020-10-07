@@ -308,6 +308,16 @@ CONFIGS = [
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
+  # ProcessConfig_cpp(
+  #   proc_name="ubloxd",
+  #   pub_sub={
+  #     "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
+  #   },
+  #   ignore=[],
+  #   command="./ubloxd",
+  #   path="selfdrive/locationd/",
+  #   should_recv_callback=ublox_rcv_callback,
+  # ),
 ]
 
 def replay_process(cfg, lr):
