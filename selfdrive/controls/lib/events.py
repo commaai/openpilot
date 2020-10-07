@@ -211,8 +211,6 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
-  EventName.fanMalfunction: {},
-
   # ********** events only containing alerts displayed in all states **********
 
   EventName.debugAlert: {
@@ -469,6 +467,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Turn Exceeds Steering Limit",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
+  },
+
+  EventName.fanMalfunction: {
+    ET.PERMANENT: Alert(
+      "Fan Malfunction",
+      "Contact Support",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
   },
 
   # ********** events that affect controls state transitions **********
