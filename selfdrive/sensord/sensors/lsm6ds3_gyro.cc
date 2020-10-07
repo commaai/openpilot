@@ -58,7 +58,7 @@ void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event){
   float xyz[] = {y, -x, z};
   kj::ArrayPtr<const float> vs(&xyz[0], 3);
 
-  auto svec = event.initAcceleration();
+  auto svec = event.initGyroUncalibrated();
   svec.setV(vs);
   svec.setStatus(true);
 
