@@ -256,6 +256,11 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31'],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW'],
+  },
+  CAR.IONIQ_EV_2020: {
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7200 '],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00AEE MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819'],
   }
 }
 
