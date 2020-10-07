@@ -11,7 +11,6 @@
 #include <libyuv.h>
 #include <sys/resource.h>
 #include <pthread.h>
-#include <math.h>
 
 #include <string>
 #include <iostream>
@@ -232,7 +231,6 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
   int encoder_segment = -1;
   int cnt = 0;
-  rotate_state->enabled = true;
   pthread_mutex_lock(&s.rotate_lock);
   int my_idx = s.num_encoder;
   s.num_encoder += 1;
@@ -683,14 +681,17 @@ int main(int argc, char** argv) {
 #ifndef DISABLE_ENCODER
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, false, LOG_CAMERA_ID_FCAMERA);
+  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
   // front camera
   std::thread front_encoder_thread_handle;
   if (record_front) {
     front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, false, LOG_CAMERA_ID_DCAMERA);
+    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
   #ifdef QCOM2
   // wide camera
   std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, false, LOG_CAMERA_ID_ECAMERA);
+  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
   #endif
 #endif
 
@@ -701,8 +702,6 @@ int main(int argc, char** argv) {
   double start_ts = seconds_since_boot();
   double last_rotate_tms = millis_since_boot();
   double last_camera_seen_tms = millis_since_boot();
-  uint32_t last_seen_log_frame_id[LOG_CAMERA_ID_MAX-1] = {0};
-  uint32_t last_seen_log_frame_id_max = 0;
   while (!do_exit) {
    for (auto sock : poller->poll(100 * 1000)) {
      Message * last_msg = nullptr;
@@ -751,8 +750,6 @@ int main(int argc, char** argv) {
           } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
             s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
           }
-          last_seen_log_frame_id[fpkt_id] = s.rotate_state[fpkt_id].log_frame_id;
-          last_seen_log_frame_id_max = fmax(last_seen_log_frame_id_max, s.rotate_state[fpkt_id].log_frame_id);
           last_camera_seen_tms = millis_since_boot();
         }
         delete last_msg;
@@ -770,9 +767,8 @@ int main(int argc, char** argv) {
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
           // this *should* be redundant on tici since all camera frames are synced
           new_segment &= (((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS) &&
-                           (!s.rotate_state[cid].should_rotate)) ||
+                           (!s.rotate_state[cid].should_rotate) && (s.rotate_state[cid].last_rotate_frame_id != UINT32_MAX)) ||
                           (!s.rotate_state[cid].enabled));
-          if (last_seen_log_frame_id[cid] + 2 < last_seen_log_frame_id_max) { LOGW("camera %d lags behind", cid); }
 #ifndef QCOM2
           break; // only look at fcamera frame id if not QCOM2
 #endif
