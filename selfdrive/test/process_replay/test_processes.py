@@ -2,7 +2,6 @@
 import argparse
 import os
 import sys
-import traceback
 from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
@@ -55,7 +54,6 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
   if ignore_msgs is None:
     ignore_msgs = []
   url = BASE_URL + os.path.basename(cmp_log_fn)
-  print(url)
   cmp_log_msgs = list(LogReader(url))
   log_msgs = replay_process(cfg, lr)
   # check to make sure openpilot is engaged in the route
@@ -69,12 +67,9 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
     else:
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception("Route never enabled: %s" % segment)
-  print("Time to compare logs")
   try:
     return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
   except Exception as e:
-    print(e)
-    traceback.print_tb(e.__traceback__)
     return str(e)
 
 def format_diff(results, ref_commit):
@@ -141,7 +136,7 @@ if __name__ == "__main__":
   if FULL_TEST:
     tested_cars = set(c.lower() for c, _ in segments)
     untested = (set(interface_names) - set(excluded_interfaces)) - tested_cars
-    # assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
+    assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
 
   results: Any = {}
   for car_brand, segment in segments:
@@ -154,7 +149,6 @@ if __name__ == "__main__":
     results[segment] = {}
 
     rlog_fn = get_segment(segment)
-    print(rlog_fn)
     lr = LogReader(rlog_fn)
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \

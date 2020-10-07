@@ -214,18 +214,8 @@ def ublox_rcv_callback(msg):
   byte_list = msg.as_builder().ubloxRaw
   msg_class = byte_list[2]
   msg_id = byte_list[3]
-  if msg_class == 1:
-    if msg_id == 7 * 16 + 0:
-      return True
-  elif msg_class == 2:
-    if msg_id == 1 * 16 + 5:
-      return True
-    elif msg_id == 1 * 16 + 3:  # Sometimes sends back...
-      return False
-  elif msg_class == 10:
-    if msg_id == 9:
-      return True
-  return False
+  return (msg_class, msg_id) in {(1, 7 * 16), (2, 1 * 16 + 5), (10, 9)}
+
 
 CONFIGS = [
   ProcessConfig(
@@ -331,7 +321,7 @@ CONFIGS = [
     lang="cpp",
     proc_name="ubloxd",
     pub_sub={
-      "ubloxRaw": ["ubloxGnss"],
+      "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
     },
     ignore=["logMonoTime"],
     command="./ubloxd",
@@ -428,8 +418,7 @@ def cpp_replay_process(config, logreader):
   print("Sorting logs")
   all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
-  #print(len(pub_msgs))
-  #print(pub_msgs[0])
+
   os.chdir(os.path.join(BASEDIR, config.path))
   p = subprocess.Popen(config.command, stderr=subprocess.PIPE)
 
@@ -440,7 +429,7 @@ def cpp_replay_process(config, logreader):
     pm.send(msg.which(), msg.as_builder())
     if (config.should_recv_callback is None) or config.should_recv_callback(msg):
       sent_package = False
-      time.sleep(0.1)
+      time.sleep(0.01)
       sm.update(100)
       for s in sub_sockets:
         if sm.updated[s]:
@@ -449,12 +438,9 @@ def cpp_replay_process(config, logreader):
           m = messaging.new_message(s)
           setattr(m, s, sm.data[s])
           log_msgs.append(m.as_reader())
-          #print(log_msgs[-1].to_dict(verbose=True))
       if not sent_package:
         print("Package was not received")
         print(msg)
     
-        
   os.kill(p.pid, signal.SIGINT)
-  print(len(log_msgs),len(pub_msgs))
   return log_msgs

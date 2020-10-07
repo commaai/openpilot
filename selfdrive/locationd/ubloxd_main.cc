@@ -83,7 +83,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
               auto bytes = words.asBytes();
               pm.send("ubloxGnss", bytes.begin(), bytes.size());
             }
-          } else if(parser.msg_id() == MSG_RXM_SFRBX) {//sometimes sends back
+          } else if(parser.msg_id() == MSG_RXM_SFRBX) {
             //LOGD("MSG_RXM_SFRBX");
             auto words = parser.gen_nav_data();
             if(words.size() > 0) {
