@@ -41,7 +41,7 @@ class FCWChecker():
     if delta < 0.1 or (math.sqrt(delta) + v_rel < 0.1):
       ttc = max_ttc
     else:
-      ttc = math.minimum(2 * x_lead / (math.sqrt(delta) + v_rel), max_ttc)
+      ttc = min(2 * x_lead / (math.sqrt(delta) + v_rel), max_ttc)
     return ttc
 
   def update(self, mpc_solution, cur_time, active, v_ego, a_ego, x_lead, v_lead, a_lead, y_lead, vlat_lead, fcw_lead, blinkers):
