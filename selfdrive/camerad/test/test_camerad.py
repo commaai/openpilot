@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
-import math
-import os
+
 import random
-import shutil
-import subprocess
 import time
 import unittest
-from parameterized import parameterized
-from pathlib import Path
-from tqdm import trange
+import cv2
+import numpy as np
 
 import cereal.messaging as messaging
-from common.params import Params
-from common.timeout import Timeout
 from selfdrive.test.helpers import with_processes
 from selfdrive.camerad.snapshot.visionipc import VisionIPC
 
@@ -64,21 +58,25 @@ class TestCamerad(unittest.TestCase):
         time.sleep(1)
     return ret
 
-  def _is_really_sharp(i, threshold=800, roi_max=[8,6], roi_xxyy=[1,6,2,3]):
-      i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
-      x_pitch = i.shape[1] // roi_max[0]
-      y_pitch = i.shape[0] // roi_max[1]
-      lap = cv2.Laplacian(i, cv2.CV_16S)
-      lap_map = numpy.zeros((roi_max[1], roi_max[0]))
-      for r in range(lap_map.shape[0]):
-        for c in range(lap_map.shape[1]):
-          selected_lap = lap[r*y_pitch:(r+1)*y_pitch, c*x_pitch:(c+1)*x_pitch]
-          lap_map[r][c] = 5*selected_lap.var() + selected_lap.max()
-      if (lap_map[roi_xxyy[2]:roi_xxyy[3]+1,roi_xxyy[0]:roi_xxyy[1]+1] > threshold).sum() > \
-            (roi_xxyy[1]+1-roi_xxyy[0]) * (roi_xxyy[3]+1-roi_xxyy[2]) * 0.9:
-        return True
-      else:
-        return False
+  def _is_really_sharp(self, i, threshold=800, roi_max=np.array([8,6]), roi_xxyy=np.array([1,6,2,3])):
+    i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+    x_pitch = i.shape[1] // roi_max[0]
+    y_pitch = i.shape[0] // roi_max[1]
+    lap = cv2.Laplacian(i, cv2.CV_16S)
+    lap_map = np.zeros((roi_max[1], roi_max[0]))
+    for r in range(lap_map.shape[0]):
+      for c in range(lap_map.shape[1]):
+        selected_lap = lap[r*y_pitch:(r+1)*y_pitch, c*x_pitch:(c+1)*x_pitch]
+        lap_map[r][c] = 5*selected_lap.var() + selected_lap.max()
+    if (lap_map[roi_xxyy[2]:roi_xxyy[3]+1,roi_xxyy[0]:roi_xxyy[1]+1] > threshold).sum() > \
+          (roi_xxyy[1]+1-roi_xxyy[0]) * (roi_xxyy[3]+1-roi_xxyy[2]) * 0.9:
+      return True
+    else:
+      return False
+
+  def _is_exposure_okay(self, i):
+    # to add
+    return True
 
   @with_processes(['camerad'], init_time=15) # wait for startup and AF
   def test_camera_operation(self):
@@ -87,12 +85,16 @@ class TestCamerad(unittest.TestCase):
       # run checks similar to prov
       pic, fpic = self._get_snapshots()
       self.assertTrue(self._is_really_sharp(pic))
+      self.assertTrue(self._is_exposure_okay(pic))
+      self.assertTrue(self._is_exposure_okay(fpic))
 
       time.sleep(30)
 
       # check again for consistency
       pic, fpic = self._get_snapshots()
       self.assertTrue(self._is_really_sharp(pic))
+      self.assertTrue(self._is_exposure_okay(pic))
+      self.assertTrue(self._is_exposure_okay(fpic))
 
     elif TICI:
       raise unittest.SkipTest # TBD
