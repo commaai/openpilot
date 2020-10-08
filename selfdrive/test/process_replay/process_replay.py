@@ -207,9 +207,7 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 
 def ublox_rcv_callback(msg):
-  byte_list = msg.ubloxRaw
-  msg_class = byte_list[2]
-  msg_id = byte_list[3]
+  msg_class, msg_id = msg.ubloxRaw[2:4]
   return (msg_class, msg_id) in {(1, 7 * 16), (2, 1 * 16 + 5), (10, 9)}
 
 
