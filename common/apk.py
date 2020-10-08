@@ -3,6 +3,7 @@ import subprocess
 import glob
 import hashlib
 import shutil
+import threading
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
@@ -90,8 +91,10 @@ def update_apks():
       assert success
 
 def pm_apply_packages(cmd):
-  for p in android_packages:
-    system("pm %s %s" % (cmd, p))
+  def apply():
+    for p in android_packages:
+      system("pm %s %s" % (cmd, p))
+  threading.Thread(target=apply).start()
 
 if __name__ == "__main__":
   update_apks()
