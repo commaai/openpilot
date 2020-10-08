@@ -431,14 +431,15 @@ static void ui_draw_vision_event(UIState *s) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
     ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size, s->img_turn, 1.0f);
-  } else if (s->scene.controls_state.getEngageable()) {
+  } else {
     // draw steering wheel
     const int bg_wheel_size = 96;
     const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
     const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
     const NVGcolor color = bg_colors[s->status];
+    const float alpha = s->scene.controls_state.getEngageable() ? 1.0 : 0.4;
 
-    ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_button_home, color, 1.0f, bg_wheel_y - 25);
+    ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_button_home, color, alpha, bg_wheel_y - 25);
   }
 }
 
