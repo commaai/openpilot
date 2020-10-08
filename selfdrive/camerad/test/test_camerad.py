@@ -132,14 +132,14 @@ class TestCamerad(unittest.TestCase):
             start_frame_id[camera] = last_frame_id[camera] = sm[camera].frameId
             continue
           dfid = sm[camera].frameId - last_frame_id[camera]
-          self.assertTrue(dfid - 1 <= SKIP_FRAME_TOLERANCE)
+          self.assertTrue(abs(dfid - 1) <= SKIP_FRAME_TOLERANCE)
           last_frame_id[camera] = sm[camera].frameId
 
       time.sleep(0.01)
 
     for camera in CAMERAS:
       print(camera, (last_frame_id[camera] - start_frame_id[camera]))
-      self.assertTrue((last_frame_id[camera] - start_frame_id[camera]) - TEST_TIMESPAN*CAMERAS[camera] <= FRAME_COUNT_TOLERANCE)
+      self.assertTrue(abs((last_frame_id[camera] - start_frame_id[camera]) - TEST_TIMESPAN*CAMERAS[camera]) <= FRAME_COUNT_TOLERANCE)
 
 if __name__ == "__main__":
   unittest.main()
