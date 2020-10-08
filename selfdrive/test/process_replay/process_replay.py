@@ -398,6 +398,7 @@ def cpp_replay_process(config, logreader):
   log_msgs = []
   if len(pub_msgs) > 0:  # Send initial message, helps the process get running
     pm.send(pub_msgs[0].which(), pub_msgs[0].as_builder())
+  time.sleep(1)
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())
     if (config.should_recv_callback is None) or len(config.should_recv_callback(msg)) > 0:
