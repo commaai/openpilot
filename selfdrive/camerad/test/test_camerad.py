@@ -62,10 +62,13 @@ class TestCamerad(unittest.TestCase):
       ret = np.clip(im[:,:,0] * 0.114 + im[:,:,1] * 0.587 + im[:,:,2] * 0.299, 0, 255).astype(np.uint8)
       return ret
     def numpy_lap(im):
-      ret = np.zeros(im.shape, dtype=np.uint8)
-      for r in range(im.shape[0] - 2):
-        for c in range(im.shape[1] - 2):
-          ret[r+1,c+1] = np.clip(-4 * im[r+1,c+1] + im[r,c+1] + im[r+1,c] + im[r+2,c+1] + im[r+1,c+2], 0, 255).astype(np.uint8)
+      ret = np.zeros(im.shape)
+      ret += -4 * im
+      ret += np.concatenate([np.zeros((im.shape[0],1)),im[:,:-1]], axis=1)
+      ret += np.concatenate([im[:,1:],np.zeros((im.shape[0],1))], axis=1)
+      ret += np.concatenate([np.zeros((1,im.shape[1])),im[:-1,:]], axis=0)
+      ret += np.concatenate([im[1:,:],np.zeros((1,im.shape[1]))], axis=0)
+      ret = np.clip(ret, 0, 255).astype(np.uint8)
       return ret
     i = numpy_bgr2gray(i)
     x_pitch = i.shape[1] // roi_max[0]
@@ -76,7 +79,7 @@ class TestCamerad(unittest.TestCase):
       for c in range(lap_map.shape[1]):
         selected_lap = lap[r*y_pitch:(r+1)*y_pitch, c*x_pitch:(c+1)*x_pitch]
         lap_map[r][c] = 5*selected_lap.var() + selected_lap.max()
-        print(lap_map[r][c])
+    print(lap_map[roi_xxyy[2]:roi_xxyy[3]+1,roi_xxyy[0]:roi_xxyy[1]+1])
     if (lap_map[roi_xxyy[2]:roi_xxyy[3]+1,roi_xxyy[0]:roi_xxyy[1]+1] > threshold).sum() > \
           (roi_xxyy[1]+1-roi_xxyy[0]) * (roi_xxyy[3]+1-roi_xxyy[2]) * 0.9:
       return True
@@ -87,18 +90,18 @@ class TestCamerad(unittest.TestCase):
     # to add
     return True
 
-  @with_processes(['camerad'], init_time=15) # wait for startup and AF
+  @with_processes(['camerad'])
   def test_camera_operation(self):
     print("checking image outputs")
     if EON:
       # run checks similar to prov
+      time.sleep(15) # wait for startup and AF
       pic, fpic = self._get_snapshots()
       self.assertTrue(self._is_really_sharp(pic))
       self.assertTrue(self._is_exposure_okay(pic))
       self.assertTrue(self._is_exposure_okay(fpic))
 
       time.sleep(30)
-
       # check again for consistency
       pic, fpic = self._get_snapshots()
       self.assertTrue(self._is_really_sharp(pic))
