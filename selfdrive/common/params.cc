@@ -72,7 +72,16 @@ static int ensure_dir_exists(const char* path) {
   return 0;
 }
 
-int write_db_value(const char* key, const char* value, size_t value_size, bool persistent_param) {
+Params::Params(bool persistent_param){
+  const char * path = persistent_param ? persistent_params_path : default_params_path;
+  Params((char*)path);
+}
+
+Params::Params(char * path) {
+  strncpy(params_path, path, sizeof(params_path));
+}
+
+int Params::write_db_value(const char* key, const char* value, size_t value_size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -87,7 +96,6 @@ int write_db_value(const char* key, const char* value, size_t value_size, bool p
   char path[1024];
   char *tmp_dir;
   ssize_t bytes_written;
-  const char* params_path = persistent_param ? persistent_params_path : default_params_path;
 
   // Make sure params path exists
   result = ensure_dir_exists(params_path);
@@ -216,11 +224,10 @@ cleanup:
   return result;
 }
 
-int delete_db_value(const char* key, bool persistent_param) {
+int Params::delete_db_value(const char* key) {
   int lock_fd = -1;
   int result;
   char path[1024];
-  const char* params_path = persistent_param ? persistent_params_path : default_params_path;
 
   // Build lock path, and open lockfile
   result = snprintf(path, sizeof(path), "%s/.lock", params_path);
@@ -267,9 +274,8 @@ cleanup:
   return result;
 }
 
-int read_db_value(const char* key, char** value, size_t* value_sz, bool persistent_param) {
+int Params::read_db_value(const char* key, char** value, size_t* value_sz) {
   char path[1024];
-  const char* params_path = persistent_param ? persistent_params_path : default_params_path;
 
   int result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
   if (result < 0) {
@@ -283,9 +289,9 @@ int read_db_value(const char* key, char** value, size_t* value_sz, bool persiste
   return 0;
 }
 
-void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
+void Params::read_db_value_blocking(const char* key, char** value, size_t* value_sz) {
   while (1) {
-    const int result = read_db_value(key, value, value_sz, persistent_param);
+    const int result = read_db_value(key, value, value_sz);
     if (result == 0) {
       return;
     } else {
@@ -295,9 +301,8 @@ void read_db_value_blocking(const char* key, char** value, size_t* value_sz, boo
   }
 }
 
-int read_db_all(std::map<std::string, std::string> *params, bool persistent_param) {
+int Params::read_db_all(std::map<std::string, std::string> *params) {
   int err = 0;
-  const char* params_path = persistent_param ? persistent_params_path : default_params_path;
 
   std::string lock_path = util::string_format("%s/.lock", params_path);
 
@@ -332,11 +337,11 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
   return 0;
 }
 
-std::vector<char> read_db_bytes(const char* param_name, bool persistent_param) {
+std::vector<char> Params::read_db_bytes(const char* param_name) {
   std::vector<char> bytes;
   char* value;
   size_t sz;
-  int result = read_db_value(param_name, &value, &sz, persistent_param);
+  int result = read_db_value(param_name, &value, &sz);
   if (result == 0) {
     bytes.assign(value, value+sz);
     free(value);
@@ -344,7 +349,7 @@ std::vector<char> read_db_bytes(const char* param_name, bool persistent_param) {
   return bytes;
 }
 
-bool read_db_bool(const char* param_name, bool persistent_param) {
-  std::vector<char> bytes = read_db_bytes(param_name, persistent_param);
+bool Params::read_db_bool(const char* param_name) {
+  std::vector<char> bytes = read_db_bytes(param_name);
   return bytes.size() > 0 and bytes[0] == '1';
 }
