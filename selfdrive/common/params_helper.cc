@@ -1,5 +1,4 @@
-#include "params_helper.h"
-
+#include <algorithm>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +13,8 @@
 #include <libgen.h>
 #include <limits.h>     /* PATH_MAX */
 #include <errno.h>
+
+#include "params_helper.h"
 
 using std::cout;
 using std::endl;
@@ -290,8 +291,7 @@ namespace params {
   }
 
   string DBAccessor::_data_path() {
-    string ret_path = _path + "/d";
-    return ret_path;
+    return _path + "/d";
   }
 
   void DBAccessor::_check_entered() {
@@ -350,11 +350,7 @@ namespace params {
   }
 
   void DBWriter::_delete(string key) {
-    map<string, string>::iterator itr;
-    itr = _vals->find(key);
-    if(itr != _vals->end()) {
-      _vals->erase(itr);
-    }
+    _vals->erase(key);
   }
 
   void DBWriter::enter() {
@@ -395,13 +391,13 @@ namespace params {
       tempdir_path = mkdtemp(path);
       chmod(tempdir_path.c_str(), 0777);
 
-      map<string,string>::iterator itr;
-      for (itr = _vals->begin(); itr != _vals->end(); itr++) {
-        file_path = tempdir_path + "/" + itr->first;
+      for (auto const& itr : *_vals) {
+        file_path = tempdir_path + "/" + itr.first;
         tmp_fd = open(file_path.c_str(), O_DIRECTORY|O_WRONLY|O_APPEND|O_CREAT, 0700);
         if (tmp_fd < 0) throw OSError();
+
         file.open(file_path.c_str());
-        file << itr->second;
+        file << itr.second;
         file.close();
         fsync(tmp_fd);
       }
@@ -537,22 +533,16 @@ namespace params {
   }
 
   bool Params::has(vector<TxType> v, TxType t) {
-    vector<TxType>::iterator itr;
-
-    for (itr = v.begin(); itr != v.end(); itr++) {
-      if (*itr == t) return true;
-    }
-    return false;
+    return std::find(v.begin(), v.end(), t) != v.end();
   }
 
 
   void Params::_clear_keys_with_type(TxType t) {
     DBAccessor* accessor = transaction(true);
-    map<string,vector<TxType>>::iterator itr;
 
-    for(itr = key_map.begin(); itr != key_map.end(); itr++) {
-      if(has(itr->second, t)) {
-        accessor->_delete(itr->first);
+    for(auto &itr : key_map) {
+      if(has(itr.second, t)) {
+        accessor->_delete(itr.first);
       }
     }
     delete accessor;

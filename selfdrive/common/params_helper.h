@@ -11,14 +11,14 @@ using std::map;
 using std::exception;
 using std::string;
 
-namespace params {  
+namespace params {
 
   enum class TxType {
-    PERSISTENT=1, 
-    CLEAR_ON_MANAGER_START=2, 
+    PERSISTENT=1,
+    CLEAR_ON_MANAGER_START=2,
     CLEAR_ON_PANDA_DISCONNECT=3
   };
-  
+
   struct UnknownKeyName : public exception {
     const char* what() const throw() {
       return "UnknownKeyName";
@@ -36,10 +36,9 @@ namespace params {
       return "OSError";
     }
   };
-  
+
 
   class FileLock {
-    
     private:
       string _path;
       bool _create;
@@ -50,11 +49,10 @@ namespace params {
       void acquire();
       void release();
   };
-  
+
   class DBAccessor {
-  
     protected:
-      map<string, string> *_vals = NULL; 
+      map<string, string> *_vals = NULL;
       string _path;
     public:
       DBAccessor(string path);
@@ -65,24 +63,22 @@ namespace params {
       FileLock* _get_lock(bool create);
       string _data_path();
       void _check_entered();
-      virtual void exit() = 0; 
+      virtual void exit() = 0;
       virtual void _delete(string key) = 0;
   };
 
   class DBReader : public DBAccessor {
-    
     private:
       FileLock *_lock;
     public:
       DBReader(string path);
       ~DBReader();
-      void enter();      
+      void enter();
       void exit();
       void _delete(string key);
   };
 
   class DBWriter : public DBAccessor {
-
     private:
       FileLock *_lock;
       int prev_umask;
@@ -98,7 +94,6 @@ namespace params {
 
 
   class Params {
-
     private:
       string db;
       bool has(vector<TxType>, TxType);
