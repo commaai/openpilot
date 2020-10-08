@@ -13,6 +13,7 @@
 
 #include <map>
 #include <string>
+#include <iostream>
 #include <string.h>
 
 #include "common/util.h"
@@ -39,7 +40,7 @@ static const char* persistent_params_path = default_params_path;
 
 static int fsync_dir(const char* path){
   int result = 0;
-  int fd = open(path, O_RDONLY);
+  int fd = open(path, O_RDONLY, 0755);
 
   if (fd < 0){
     result = -1;
@@ -74,12 +75,17 @@ static int ensure_dir_exists(const char* path) {
 
 Params::Params(bool persistent_param){
   const char * path = persistent_param ? persistent_params_path : default_params_path;
-  Params((char*)path);
+  params_path = std::string(path);
+}
+
+Params::Params(std::string path) {
+  params_path = path;
 }
 
 Params::Params(char * path) {
-  strncpy(params_path, path, sizeof(params_path));
+  params_path = std::string(path);
 }
+
 
 int Params::write_db_value(const char* key, const char* value, size_t value_size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
@@ -98,12 +104,12 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
   ssize_t bytes_written;
 
   // Make sure params path exists
-  result = ensure_dir_exists(params_path);
+  result = ensure_dir_exists(params_path.c_str());
   if (result < 0) {
     goto cleanup;
   }
 
-  result = snprintf(path, sizeof(path), "%s/d", params_path);
+  result = snprintf(path, sizeof(path), "%s/d", params_path.c_str());
   if (result < 0) {
     goto cleanup;
   }
@@ -112,7 +118,7 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
   struct stat st;
   if (stat(path, &st) == -1) {
     // Create temp folder
-    result = snprintf(path, sizeof(path), "%s/.tmp_XXXXXX", params_path);
+    result = snprintf(path, sizeof(path), "%s/.tmp_XXXXXX", params_path.c_str());
     if (result < 0) {
       goto cleanup;
     }
@@ -138,7 +144,7 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
     }
 
     // Move symlink to <params>/d
-    result = snprintf(path, sizeof(path), "%s/d", params_path);
+    result = snprintf(path, sizeof(path), "%s/d", params_path.c_str());
     if (result < 0) {
       goto cleanup;
     }
@@ -150,7 +156,7 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
 
   // Write value to temp.
   result =
-      snprintf(tmp_path, sizeof(tmp_path), "%s/.tmp_value_XXXXXX", params_path);
+    snprintf(tmp_path, sizeof(tmp_path), "%s/.tmp_value_XXXXXX", params_path.c_str());
   if (result < 0) {
     goto cleanup;
   }
@@ -163,14 +169,14 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
   }
 
   // Build lock path
-  result = snprintf(path, sizeof(path), "%s/.lock", params_path);
+  result = snprintf(path, sizeof(path), "%s/.lock", params_path.c_str());
   if (result < 0) {
     goto cleanup;
   }
-  lock_fd = open(path, O_CREAT);
+  lock_fd = open(path, O_CREAT, 0775);
 
   // Build key path
-  result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
+  result = snprintf(path, sizeof(path), "%s/d/%s", params_path.c_str(), key);
   if (result < 0) {
     goto cleanup;
   }
@@ -200,7 +206,7 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
   }
 
   // fsync parent directory
-  result = snprintf(path, sizeof(path), "%s/d", params_path);
+  result = snprintf(path, sizeof(path), "%s/d", params_path.c_str());
   if (result < 0) {
     goto cleanup;
   }
@@ -230,11 +236,11 @@ int Params::delete_db_value(const char* key) {
   char path[1024];
 
   // Build lock path, and open lockfile
-  result = snprintf(path, sizeof(path), "%s/.lock", params_path);
+  result = snprintf(path, sizeof(path), "%s/.lock", params_path.c_str());
   if (result < 0) {
     goto cleanup;
   }
-  lock_fd = open(path, O_CREAT);
+  lock_fd = open(path, O_CREAT, 0775);
 
   // Take lock.
   result = flock(lock_fd, LOCK_EX);
@@ -243,7 +249,7 @@ int Params::delete_db_value(const char* key) {
   }
 
   // Build key path
-  result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
+  result = snprintf(path, sizeof(path), "%s/d/%s", params_path.c_str(), key);
   if (result < 0) {
     goto cleanup;
   }
@@ -256,7 +262,7 @@ int Params::delete_db_value(const char* key) {
   }
 
   // fsync parent directory
-  result = snprintf(path, sizeof(path), "%s/d", params_path);
+  result = snprintf(path, sizeof(path), "%s/d", params_path.c_str());
   if (result < 0) {
     goto cleanup;
   }
@@ -274,10 +280,22 @@ cleanup:
   return result;
 }
 
+std::string Params::get(std::string key){
+  char* value;
+  size_t size;
+
+  int r = read_db_value((const char*)key.c_str(), &value, &size);
+  if (r == 0){
+    return std::string(value, size);
+  } else {
+    return "";
+  }
+}
+
 int Params::read_db_value(const char* key, char** value, size_t* value_sz) {
   char path[1024];
 
-  int result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
+  int result = snprintf(path, sizeof(path), "%s/d/%s", params_path.c_str(), key);
   if (result < 0) {
     return result;
   }
@@ -304,7 +322,7 @@ void Params::read_db_value_blocking(const char* key, char** value, size_t* value
 int Params::read_db_all(std::map<std::string, std::string> *params) {
   int err = 0;
 
-  std::string lock_path = util::string_format("%s/.lock", params_path);
+  std::string lock_path = util::string_format("%s/.lock", params_path.c_str());
 
   int lock_fd = open(lock_path.c_str(), 0);
   if (lock_fd < 0) return -1;
@@ -315,7 +333,7 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
     return err;
   }
 
-  std::string key_path = util::string_format("%s/d", params_path);
+  std::string key_path = util::string_format("%s/d", params_path.c_str());
   DIR *d = opendir(key_path.c_str());
   if (!d) {
     close(lock_fd);

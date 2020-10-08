@@ -8,11 +8,13 @@
 
 class Params {
  private:
-  char params_path[1024];
+  std::string params_path;
 
  public:
   Params(bool persistent_param = false);
+  Params(std::string path);
   Params(char* path);
+
   int write_db_value(const char* key, const char* value, size_t value_size);
 
   // Reads a value from the params database.
@@ -39,4 +41,6 @@ class Params {
   int read_db_all(std::map<std::string, std::string> *params);
   std::vector<char> read_db_bytes(const char* param_name);
   bool read_db_bool(const char* param_name);
+
+  std::string get(std::string key);
 };
