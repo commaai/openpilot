@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     lr = LogReader(rlog_fn)
 
-    for cfg in CONFIGS:
+    for cfg in CONFIGS[-1:]:
       log_msgs = replay_process(cfg, lr)
       log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
       save_log(log_fn, log_msgs)

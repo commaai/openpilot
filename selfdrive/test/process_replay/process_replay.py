@@ -5,8 +5,6 @@ import sys
 import threading
 import importlib
 import time
-import subprocess
-import signal
 
 if "CI" in os.environ:
   def tqdm(x):
@@ -21,13 +19,11 @@ import cereal.messaging as messaging
 from common.params import Params
 from cereal.services import service_list
 from collections import namedtuple
-from common.basedir import BASEDIR
-
+from selfdrive.manager import managed_processes
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
 
-ProcessConfig = namedtuple('ProcessConfig', ['lang', 'proc_name', 'pub_sub', 'ignore', 'command', 'path', 'init_callback', 'should_recv_callback', 'tolerance'])
-
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance'])
 
 def wait_for_event(evt):
   if not evt.wait(15):
@@ -219,7 +215,6 @@ def ublox_rcv_callback(msg):
 
 CONFIGS = [
   ProcessConfig(
-    lang="python",
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
@@ -227,120 +222,95 @@ CONFIGS = [
       "model": [], "frame": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
-    command="",
-    path="",
     init_callback=fingerprint,
     should_recv_callback=None,
     tolerance=None,
   ),
   ProcessConfig(
-    lang="python",
     proc_name="radard",
     pub_sub={
       "can": ["radarState", "liveTracks"],
       "liveParameters":  [], "controlsState":  [], "model":  [],
     },
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
-    command="",
-    path="",
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
     tolerance=None,
   ),
   ProcessConfig(
-    lang="python",
     proc_name="plannerd",
     pub_sub={
       "model": ["pathPlan"], "radarState": ["plan"],
       "carState": [], "controlsState": [], "liveParameters": [],
     },
     ignore=["logMonoTime", "valid", "plan.processingDelay"],
-    command="",
-    path="",
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=None,
   ),
   ProcessConfig(
-    lang="python",
     proc_name="calibrationd",
     pub_sub={
       "carState": ["liveCalibration"],
       "cameraOdometry": []
     },
     ignore=["logMonoTime", "valid"],
-    command="",
-    path="",
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
     tolerance=None,
   ),
   ProcessConfig(
-    lang="python",
     proc_name="dmonitoringd",
     pub_sub={
       "driverState": ["dMonitoringState"],
       "liveCalibration": [], "carState": [], "model": [], "gpsLocation": [],
     },
     ignore=["logMonoTime", "valid"],
-    command="",
-    path="",
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
-    lang="python",
     proc_name="locationd",
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],
-    command="",
-    path="",
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
-    lang="python",
     proc_name="paramsd",
     pub_sub={
       "liveLocationKalman": ["liveParameters"],
       "carState": []
     },
     ignore=["logMonoTime", "valid"],
-    command="",
-    path="",
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
-    lang="cpp",
     proc_name="ubloxd",
     pub_sub={
       "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
     },
     ignore=["logMonoTime"],
-    command="./ubloxd",
-    path="selfdrive/locationd/",
     init_callback=None,
     should_recv_callback=ublox_rcv_callback,
-    tolerance=NUMPY_TOLERANCE,
+    tolerance=None,
   ),
 ]
 
 def replay_process(cfg, lr):
-  if cfg.lang == "python":
+  proc = managed_processes[cfg.proc_name]
+  if isinstance(proc, str):
     return python_replay_process(cfg, lr)
-  elif cfg.lang == "cpp":
-    return cpp_replay_process(cfg, lr)
   else:
-    print("Config is not well defined")
-    print(cfg)
-    return None
+    return cpp_replay_process(cfg, lr)
+
 
 def python_replay_process(cfg, lr):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
@@ -419,8 +389,7 @@ def cpp_replay_process(config, logreader):
   all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
 
-  os.chdir(os.path.join(BASEDIR, config.path))
-  p = subprocess.Popen(config.command, stderr=subprocess.PIPE)
+  manager.start_managed_process(config.proc_name)
 
   time.sleep(5)  # We give the process time to start
 
@@ -442,5 +411,5 @@ def cpp_replay_process(config, logreader):
         print("Package was not received")
         print(msg)
     
-  os.kill(p.pid, signal.SIGINT)
+  manager.kill_managed_process(config.proc_name)
   return log_msgs
