@@ -13,7 +13,11 @@
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
-#include "../imgproc/utils.h"
+#include "common/mat.h"
+#include "common/visionbuf.h"
+#include "common/buffering.h"
+#include "common/utilpp.h"
+
 #include "camera_common.h"
 
 #define FRAME_BUF_COUNT 4

@@ -250,3 +250,86 @@ std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
                                           CameraState *cs, int priority, process_thread_cb callback) {
   return std::thread(processing_thread, cameras, tname, cs, priority, callback);
 }
+
+void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+  const CameraBuf *b = &c->buf;
+
+  static int meteringbox_xmin = 0, meteringbox_xmax = 0;
+  static int meteringbox_ymin = 0, meteringbox_ymax = 0;
+  static const bool rhd_front = read_db_bool("IsRHD");
+
+  if (sm->updated("driverState")) {
+    auto state = (*sm)["driverState"].getDriverState();
+    float face_prob = state.getFaceProb();
+    float face_position[2];
+    face_position[0] = state.getFacePosition()[0];
+    face_position[1] = state.getFacePosition()[1];
+
+    // set front camera metering target
+    if (face_prob > 0.4) {
+      int x_offset = rhd_front ? 0:b->rgb_width - 0.5 * b->rgb_height;
+      meteringbox_xmin = x_offset + (face_position[0] + 0.5) * (0.5 * b->rgb_height) - 72;
+      meteringbox_xmax = x_offset + (face_position[0] + 0.5) * (0.5 * b->rgb_height) + 72;
+      meteringbox_ymin = (face_position[1] + 0.5) * (b->rgb_height) - 72;
+      meteringbox_ymax = (face_position[1] + 0.5) * (b->rgb_height) + 72;
+    } else {// use default setting if no face
+      meteringbox_ymin = b->rgb_height * 1 / 3;
+      meteringbox_ymax = b->rgb_height * 1;
+      meteringbox_xmin = rhd_front ? 0:b->rgb_width * 3 / 5;
+      meteringbox_xmax = rhd_front ? b->rgb_width * 2 / 5:b->rgb_width;
+    }
+  }
+
+  // auto exposure
+#ifndef DEBUG_DRIVER_MONITOR
+  if (cnt % 3 == 0)
+#endif
+  {
+    // use driver face crop for AE
+    int x_start, x_end, y_start, y_end;
+    int skip = 1;
+
+    if (meteringbox_xmax > 0) {
+      x_start = std::max(0, meteringbox_xmin);
+      x_end = std::min(b->rgb_width - 1, meteringbox_xmax);
+      y_start = std::max(0, meteringbox_ymin);
+      y_end = std::min(b->rgb_height - 1, meteringbox_ymax);
+    } else {
+      y_start = b->rgb_height * 1 / 3;
+      y_end = b->rgb_height * 1;
+      x_start = rhd_front ? 0 : b->rgb_width * 3 / 5;
+      x_end = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
+    }
+#ifdef QCOM2
+      x_start = 0.15*b->rgb_width;
+      x_end = 0.85*b->rgb_width;
+      y_start = 0.5*b->rgb_height;
+      y_end = 0.75*b->rgb_height;
+      skip = 2;
+#endif
+    const uint8_t *bgr_front_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
+    uint32_t lum_binning[256] = {0};
+    for (int y = y_start; y < y_end; y += skip) {
+      for (int x = x_start; x < x_end; x += 2) {  // every 2nd col
+        const uint8_t *pix = &bgr_front_ptr[y * b->rgb_stride + x * 3];
+        unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
+#ifdef DEBUG_DRIVER_MONITOR
+        uint8_t *pix_rw = (uint8_t *)pix;
+
+        // set all the autoexposure pixels to pure green (pixel format is bgr)
+        pix_rw[0] = pix_rw[2] = 0;
+        pix_rw[1] = 0xff;
+#endif
+        lum_binning[std::min(lum / 3, 255u)]++;
+      }
+    }
+    const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
+    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
+  }
+
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrontFrame();
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  pm->send("frontFrame", msg);
+}

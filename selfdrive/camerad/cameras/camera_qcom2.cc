@@ -973,43 +973,9 @@ void handle_camera_event(CameraState *s, void *evdat) {
 
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  const CameraBuf *b = &c->buf;
-#ifndef DEBUG_DRIVER_MONITOR
-  if (cnt % 3 == 0)
-#endif
-  {
-    int x_start = 0.15 * b->rgb_width;
-    int x_end = 0.85 * b->rgb_width;
-    int y_start = 0.5 * b->rgb_height;
-    int y_end = 0.75 * b->rgb_height;
-    int skip = 2;
-    const uint8_t *bgr_front_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
-    uint32_t lum_binning[256] = {0};
-    for (int y = y_start; y < y_end; y += skip) {
-      for (int x = x_start; x < x_end; x += 2) {  // every 2nd col
-        const uint8_t *pix = &bgr_front_ptr[y * b->rgb_stride + x * 3];
-        unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
-#ifdef DEBUG_DRIVER_MONITOR
-        uint8_t *pix_rw = (uint8_t *)pix;
-
-        // set all the autoexposure pixels to pure green (pixel format is bgr)
-        pix_rw[0] = pix_rw[2] = 0;
-        pix_rw[1] = 0xff;
-#endif
-        lum_binning[std::min(lum / 3, 255u)]++;
-      }
-    }
-    const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
-    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
-  }
-
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initFrontFrame();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, b->cur_frame_data, cnt);
-  s->pm->send("frontFrame", msg);
-
+  common_camera_process_front(s->sm, s->pm, c, cnt);
 #ifdef NOSCREEN
+  const CameraBuf *b = &c->buf;
   if (b->cur_frame_data.frame_id % 4 == 2) {
     sendrgb(&s->cameras, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, 2);
   }
@@ -1028,7 +994,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
-  framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+  if (c == &s->rear) {
+    framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+  }
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
   if (cnt % 3 == 0) {
@@ -1117,23 +1085,28 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   const int exposure_time_max = 1066; //1416; // no slower than 1/25 sec. calculated from 0x300C and clock freq
   float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.16 );
 
-  if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // iso 800
+  if (s->analog_gain_frac > 1 && exposure_factor > 0.98 && exposure_factor < 1.02) { // high analog gains are coarse
+    return;
+  } else if (s->analog_gain_frac > 1 && exposure_factor > 1 && !s->dc_gain_enabled && s->dc_opstate != 1) { // switch to HCG at iso 800
     s->dc_gain_enabled = true;
     s->analog_gain_frac *= 0.5;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // iso 400
+  } else if (s->analog_gain_frac < 0.5 && exposure_factor < 1 && s->dc_gain_enabled && s->dc_opstate != 1) { // switch back to LCG at iso 400
     s->dc_gain_enabled = false;
-    s->analog_gain_frac *= 2;
+    s->analog_gain_frac *= 2.0;
     s->dc_opstate = 1;
-  } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) {
-    s->analog_gain_frac *= sqrt(exposure_factor);
-    s->exposure_time = fmax(fmin(s->exposure_time * sqrt(exposure_factor), exposure_time_max),exposure_time_min);
+  } else if (s->analog_gain_frac > 1 && exposure_factor < 1) { // force gain down first
+    s->analog_gain_frac /= 2.0;
     s->dc_opstate = 0;
-  } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) {
-    s->exposure_time = fmax(fmin(s->exposure_time * exposure_factor, exposure_time_max),exposure_time_min);
+  } else if (s->analog_gain_frac > 0.5 && exposure_factor < 0.9) { // smoother transistion on large stepdowns
+    s->analog_gain_frac = fmax(fmin(s->analog_gain_frac * sqrt(exposure_factor), analog_gain_frac_max), analog_gain_frac_min);
+    s->exposure_time = fmax(fmin(s->exposure_time * sqrt(exposure_factor), exposure_time_max), exposure_time_min);
+    s->dc_opstate = 0;
+  } else if ((s->exposure_time < exposure_time_max || exposure_factor < 1) && (s->exposure_time > exposure_time_min || exposure_factor > 1)) { // ramp up shutter time before gain
+    s->exposure_time = fmax(fmin(s->exposure_time * exposure_factor, exposure_time_max), exposure_time_min);
     s->dc_opstate = 0;
   } else {
-    s->analog_gain_frac = fmax(fmin(s->analog_gain_frac * exposure_factor, analog_gain_frac_max),analog_gain_frac_min);
+    s->analog_gain_frac = fmax(fmin(s->analog_gain_frac * exposure_factor, analog_gain_frac_max), analog_gain_frac_min);
     s->dc_opstate = 0;
   }
   // set up config
@@ -1153,8 +1126,8 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 
   struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
-                                                  {0x305A, 0x00C4}, // red gain
-                                                  {0x3058, 0x00B1}, // blue gain
+                                                  {0x305A, 0x00D1}, // red gain
+                                                  {0x3058, 0x0118}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
                                                   {0x3012, (uint16_t)s->exposure_time}}; // integ time
@@ -1169,15 +1142,22 @@ void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id) {
   int err, err2;
   int scale = 6;
   int old_width = FRAME_WIDTH;
+  // int old_height = FRAME_HEIGHT;
   int new_width = FRAME_WIDTH / scale;
   int new_height = FRAME_HEIGHT / scale;
   uint8_t resized_dat[new_width*new_height*3];
+  // int goff, loff;
+  // goff = ((old_width*(scale-1)*old_height/scale)/2);
   memset(&resized_dat, cam_id, 3);
   for (uint32_t r=1;r<new_height;r++) {
     for (uint32_t c=1;c<new_width;c++) {
       resized_dat[(r*new_width+c)*3] = dat[(r*old_width + c)*3*scale];
       resized_dat[(r*new_width+c)*3+1] = dat[(r*old_width + c)*3*scale+1];
       resized_dat[(r*new_width+c)*3+2] = dat[(r*old_width + c)*3*scale+2];
+      // loff = r*old_width + c;
+      // resized_dat[(r*new_width+c)*3] = dat[(goff+loff)*3];
+      // resized_dat[(r*new_width+c)*3+1] = dat[(goff+loff)*3+1];
+      // resized_dat[(r*new_width+c)*3+2] = dat[(goff+loff)*3+2];
     }
   }
   err = zmq_send(zsock_resolve(s->rgb_sock), &resized_dat, new_width*new_height*3, 0);

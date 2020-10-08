@@ -26,17 +26,16 @@
 #define CAMERA_ID_AR0231 8
 #define CAMERA_ID_MAX 9
 
+#define UI_BUF_COUNT 4
+#define YUV_COUNT 40
 #define LOG_CAMERA_ID_FCAMERA 0
 #define LOG_CAMERA_ID_DCAMERA 1
 #define LOG_CAMERA_ID_ECAMERA 2
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
 
-#define UI_BUF_COUNT 4
-#define YUV_COUNT 40
-
 typedef struct CameraInfo {
-  const char *name;
+  const char* name;
   int frame_width, frame_height;
   int frame_stride;
   bool bayer;
@@ -75,7 +74,6 @@ extern CameraInfo cameras_supported[CAMERA_ID_MAX];
 typedef struct {
   uint8_t *y, *u, *v;
 } YUVBuf;
-
 
 struct MultiCameraState;
 struct CameraState;
@@ -128,3 +126,4 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total);
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
                                     CameraState *cs, int priority, process_thread_cb callback);
+void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
