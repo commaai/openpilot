@@ -123,7 +123,7 @@ class TestCamerad(unittest.TestCase):
     last_frame_id = dict.fromkeys(CAMERAS, None)
     start_frame_id = dict.fromkeys(CAMERAS, None)
     start_time_milli = int(round(time.time() * 1000))
-    while int(round(time.time() * 1000)) - start_time_milli < TEST_TIMESPAN * 1000:
+    while int(round(time.time() * 1000)) - start_time_milli < (TEST_TIMESPAN+1) * 1000:
       sm.update()
 
       for camera in CAMERAS:
