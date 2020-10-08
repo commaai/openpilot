@@ -435,7 +435,7 @@ static void ui_draw_vision_speed(UIState *s) {
 static void ui_draw_vision_event(UIState *s) {
   const int viz_event_w = 220;
   const int viz_event_x = s->scene.viz_rect.right() - (viz_event_w + bdr_s*2);
-  const int viz_event_y = s->scene.viz_rect.y + (bdr_s*2.5);
+  const int viz_event_y = s->scene.viz_rect.y + (bdr_s*3);
   if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
@@ -587,13 +587,13 @@ static void ui_draw_vision(UIState *s) {
 
   glViewport(0, 0, s->fb_w, s->fb_h);
 
-  // hacked border
+  // TODO: move this
   const Color bgclr = bg_colors[s->status];
   NVGcolor bgcolor = nvgRGBA(bgclr.r, bgclr.g, bgclr.b, 100);
-  ui_draw_rect(s->vg, 0, 0, bdr_s, s->fb_h, bgcolor, 0);
-  ui_draw_rect(s->vg, s->fb_w - bdr_s, 0, bdr_s, s->fb_h, bgcolor, 0);
-  ui_draw_rect(s->vg, 0, 0, s->fb_w, bdr_s, bgcolor, 0);
-  ui_draw_rect(s->vg, 0, s->fb_h-bdr_s, s->fb_w, bdr_s, bgcolor, 0);
+  ui_draw_rect(s->vg, 0, 0, s->fb_w, s->fb_h, COLOR_BLACK_ALPHA(0), 0);
+  nvgStrokeColor(s->vg, bgcolor);
+  nvgStrokeWidth(s->vg, bdr_s);
+  nvgStroke(s->vg);
 
   // Draw augmented elements
   if (!scene->frontview && scene->world_objects_visible) {
