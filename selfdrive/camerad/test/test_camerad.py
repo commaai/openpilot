@@ -3,7 +3,6 @@
 import random
 import time
 import unittest
-import cv2
 import numpy as np
 
 import cereal.messaging as messaging
@@ -59,10 +58,19 @@ class TestCamerad(unittest.TestCase):
     return ret
 
   def _is_really_sharp(self, i, threshold=800, roi_max=np.array([8,6]), roi_xxyy=np.array([1,6,2,3])):
-    i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+    def numpy_bgr2gray(im):
+      ret = np.clip(im[:,:,0] * 0.114 + im[:,:,1] * 0.587 + im[:,:,2] * 0.299, 0, 255).astype(np.uint8)
+      return ret
+    def numpy_lap(im):
+      ret = np.zeros(im.shape, dtype=np.uint8)
+      for r in range(im.shape[0] - 2):
+        for c in range(im.shape[1] - 2):
+          ret[r+1,c+1] = np.clip(-4 * im[r+1,c+1] + im[r,c+1] + im[r+1,c] + im[r,c-1] + im[r-1,c], 0, 255).astype(np.uint8)
+      return ret
+    i = numpy_bgr2gray(i)
     x_pitch = i.shape[1] // roi_max[0]
     y_pitch = i.shape[0] // roi_max[1]
-    lap = cv2.Laplacian(i, cv2.CV_16S)
+    lap = numpy_lap(i)
     lap_map = np.zeros((roi_max[1], roi_max[0]))
     for r in range(lap_map.shape[0]):
       for c in range(lap_map.shape[1]):
