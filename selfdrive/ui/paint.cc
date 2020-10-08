@@ -32,6 +32,7 @@ const mat3 intrinsic_matrix = (mat3){{
 }};
 #endif
 
+// TODO: this is a duplicate of bg colors
 const uint8_t alert_colors[][4] = {
   [STATUS_OFFROAD] = {0x07, 0x23, 0x39, 0xf1},
   [STATUS_DISENGAGED] = {0x00, 0x00, 0x00, 120},
@@ -117,7 +118,7 @@ static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int
 }
 
 static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int image, bool active) {
-  float bg_alpha = active ? 0.3f : 0.1f;
+  float bg_alpha = 0.6f;
   float img_alpha = active ? 1.0f : 0.15f;
   ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
@@ -450,7 +451,7 @@ static void ui_draw_vision_event(UIState *s) {
     } else if (s->status == STATUS_WARNING) {
       color = COLOR_OCHRE;
     } else {
-      color = nvgRGBA(23, 51, 73, 255);
+      color = nvgRGBA(0, 0, 0, 128);
     }
 
     ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_button_home, color, 1.0f, bg_wheel_y - 25);
