@@ -31,7 +31,7 @@ def start_offroad(start: bool):
   def f(start):
     pm_apply_packages('enable' if start else 'disable')
     if start:
-      os.system("am start -n ai.comma.plus.offroad/.MainActivity")
+      system("am start -n ai.comma.plus.offroad/.MainActivity")
   threading.Thread(target=f, args=(start,)).start()
 
 def set_package_permissions():

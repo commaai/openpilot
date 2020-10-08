@@ -54,7 +54,7 @@ def with_apks():
     def wrap():
       update_apks()
       pm_apply_packages('enable')
-      start_offroad()
+      start_offroad(True)
 
       func()
 
