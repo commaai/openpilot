@@ -432,14 +432,14 @@ static void ui_draw_vision_event(UIState *s) {
     const int img_turn_size = 160*1.5;
     ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size, s->img_turn, 1.0f);
   } else {
-    // draw steering wheel
-    const int bg_wheel_size = 96;
-    const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
-    const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
-    const NVGcolor color = bg_colors[s->status];
+    // draw comma
+    const int bg_comma_size = 96;
+    const int bg_comma_x = viz_event_x + (viz_event_w-bg_comma_size);
+    const int bg_comma_y = viz_event_y + (bg_comma_size/2);
+    const NVGcolor color = bg_colors[STATUS_DISENGAGED];
     const float alpha = s->scene.controls_state.getEngageable() ? 1.0 : 0.4;
 
-    ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_button_home, color, alpha, bg_wheel_y - 25);
+    ui_draw_circle_image(s->vg, bg_comma_x, bg_comma_y, bg_comma_size, s->img_comma, color, alpha, bg_comma_y - 25);
   }
 }
 
@@ -714,8 +714,8 @@ void ui_nvg_init(UIState *s) {
   s->font_sans_bold = nvgCreateFont(s->vg, "sans-bold", "../assets/fonts/opensans_bold.ttf");
   assert(s->font_sans_bold >= 0);
 
-  s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
-  assert(s->img_wheel != 0);
+  s->img_comma = nvgCreateImage(s->vg, "../assets/img_comma.png", 1);
+  assert(s->img_comma != 0);
   s->img_turn = nvgCreateImage(s->vg, "../assets/img_trafficSign_turn.png", 1);
   assert(s->img_turn != 0);
   s->img_face = nvgCreateImage(s->vg, "../assets/img_driver_face.png", 1);
