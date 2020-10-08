@@ -208,7 +208,12 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
 
 def ublox_rcv_callback(msg):
   msg_class, msg_id = msg.ubloxRaw[2:4]
-  return (msg_class, msg_id) in {(1, 7 * 16), (2, 1 * 16 + 5), (10, 9)}
+  if (msg_class, msg_id) in {(1, 7 * 16)}:
+    return ["gpsLocationExternal"]
+  elif (msg_class, msg_id) in {(2, 1 * 16 + 5), (10, 9)}:
+    return ["ubloxGnss"]
+  else:
+     return []
 
 
 CONFIGS = [
@@ -381,8 +386,8 @@ def cpp_replay_process(config, logreader):
   pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
   sub_sockets = [s for _, sub in config.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(pub_sockets)
-  sm = messaging.SubMaster(sub_sockets)
-
+  #sm = messaging.SubMaster(sub_sockets)
+  sockets = {s : messaging.sub_sock(s) for s in sub_sockets}
   print("Sorting logs")
   all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
@@ -392,22 +397,23 @@ def cpp_replay_process(config, logreader):
   time.sleep(5)  # We give the process time to start
 
   log_msgs = []
+  if len(pub_msgs) > 0:
+    pm.send(pub_msgs[0].which(), pub_msgs[0].as_builder())
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())
-    if (config.should_recv_callback is None) or config.should_recv_callback(msg):
-      sent_package = False
-      time.sleep(0.01)
-      sm.update(100)
-      for s in sub_sockets:
-        if sm.updated[s]:
-          sent_package = True
-          # Create an event
+    if (config.should_recv_callback is None) or len(config.should_recv_callback(msg)) > 0:
+      for s in config.should_recv_callback(msg):
+        ctime = time.time()
+        response = None
+        while response is None and time.time() - ctime < 2.5:
+          response = messaging.recv_one_or_none(sockets[s])
+        if response is None:
+          print("Package was not received")
+          print(msg)
+        else:
           m = messaging.new_message(s)
-          setattr(m, s, sm.data[s])
+          setattr(m, s, getattr(response,s))
           log_msgs.append(m.as_reader())
-      if not sent_package:
-        print("Package was not received")
-        print(msg)
-    
+
   manager.kill_managed_process(config.proc_name)
   return log_msgs
