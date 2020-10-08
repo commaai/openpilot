@@ -34,7 +34,7 @@ const mat3 intrinsic_matrix = (mat3){{
 
 const uint8_t alert_colors[][4] = {
   [STATUS_OFFROAD] = {0x07, 0x23, 0x39, 0xf1},
-  [STATUS_DISENGAGED] = {0x17, 0x33, 0x49, 0xc8},
+  [STATUS_DISENGAGED] = {0x00, 0x00, 0x00, 120},
   [STATUS_ENGAGED] = {0x17, 0x86, 0x44, 0xf1},
   [STATUS_WARNING] = {0xDA, 0x6F, 0x25, 0xf1},
   [STATUS_ALERT] = {0xC9, 0x22, 0x31, 0xf1},
@@ -239,7 +239,7 @@ static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
   } else {
     // Draw white vision track
     track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-      COLOR_WHITE, COLOR_WHITE_ALPHA(0));
+                                 COLOR_WHITE, COLOR_WHITE_ALPHA(0));
   }
   nvgFillPaint(s->vg, track_bg);
   nvgFill(s->vg);
@@ -391,27 +391,23 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   int viz_maxspeed_w = 184;
   int viz_maxspeed_h = 202;
   int viz_maxspeed_x = s->scene.viz_rect.x + (bdr_s*2);
-  int viz_maxspeed_y = s->scene.viz_rect.y + (bdr_s*1.5);
+  int viz_maxspeed_y = s->scene.viz_rect.y + (bdr_s*2.5);
   int viz_maxspeed_xo = 180;
 
   viz_maxspeed_xo = 0;
 
   // Draw Background
-  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_BLACK_ALPHA(100), 30);
-
-  // Draw Border
-  NVGcolor color = COLOR_WHITE_ALPHA(100);
-  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
+  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_BLACK_ALPHA(150), 30);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
-  ui_draw_text(s->vg, text_x, 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
+  ui_draw_text(s->vg, text_x, viz_maxspeed_y+75, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
 
   if (is_cruise_set) {
     snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", maxspeed_calc);
-    ui_draw_text(s->vg, text_x, 242, maxspeed_str, 48 * 2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, text_x, viz_maxspeed_y+175, maxspeed_str, 48 * 2.5, COLOR_WHITE, s->font_sans_bold);
   } else {
-    ui_draw_text(s->vg, text_x, 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
+    ui_draw_text(s->vg, text_x, viz_maxspeed_y+175, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
   }
 }
 
@@ -438,12 +434,12 @@ static void ui_draw_vision_speed(UIState *s) {
 static void ui_draw_vision_event(UIState *s) {
   const int viz_event_w = 220;
   const int viz_event_x = s->scene.viz_rect.right() - (viz_event_w + bdr_s*2);
-  const int viz_event_y = s->scene.viz_rect.y + (bdr_s*1.5);
+  const int viz_event_y = s->scene.viz_rect.y + (bdr_s*2.5);
   if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
     ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size, s->img_turn, 1.0f);
-  } else {
+  } else if (s->scene.controls_state.getEngageable()) {
     // draw steering wheel
     const int bg_wheel_size = 96;
     const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
@@ -457,9 +453,7 @@ static void ui_draw_vision_event(UIState *s) {
       color = nvgRGBA(23, 51, 73, 255);
     }
 
-    if (s->scene.controls_state.getEngageable()){
-      ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
-    }
+    ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_button_home, color, 1.0f, bg_wheel_y - 25);
   }
 }
 
@@ -524,14 +518,6 @@ static void ui_draw_driver_view(UIState *s) {
 }
 
 static void ui_draw_vision_header(UIState *s) {
-  const Rect &viz_rect = s->scene.viz_rect;
-  NVGpaint gradient = nvgLinearGradient(s->vg, viz_rect.x,
-                        viz_rect.y+(header_h-(header_h/2.5)),
-                        viz_rect.x, viz_rect.y+header_h,
-                        nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
-
-  ui_draw_rect(s->vg, viz_rect.x, viz_rect.y, viz_rect.w, header_h, gradient);
-
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_event(s);
@@ -592,11 +578,21 @@ static void ui_draw_vision(UIState *s) {
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
   glViewport(viz_rect.x+scene->ui_viz_ro, viz_rect.y, s->fb_w - bdr_s*2, viz_rect.h);
-  glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
+  //glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
+  glViewport(0, 0, s->fb_w, s->fb_h);
+  glScissor(0, 0, s->fb_w, s->fb_h);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
 
   glViewport(0, 0, s->fb_w, s->fb_h);
+
+  // hacked border
+  const Color bgclr = bg_colors[s->status];
+  NVGcolor bgcolor = nvgRGBA(bgclr.r, bgclr.g, bgclr.b, 100);
+  ui_draw_rect(s->vg, 0, 0, bdr_s, s->fb_h, bgcolor, 0);
+  ui_draw_rect(s->vg, s->fb_w - bdr_s, 0, bdr_s, s->fb_h, bgcolor, 0);
+  ui_draw_rect(s->vg, 0, 0, s->fb_w, bdr_s, bgcolor, 0);
+  ui_draw_rect(s->vg, 0, s->fb_h-bdr_s, s->fb_w, bdr_s, bgcolor, 0);
 
   // Draw augmented elements
   if (!scene->frontview && scene->world_objects_visible) {
@@ -619,12 +615,12 @@ static void ui_draw_vision(UIState *s) {
 
 static void ui_draw_background(UIState *s) {
   const Color color = bg_colors[s->status];
-  glClearColor(color.r/256.0, color.g/256.0, color.b/256.0, 1.0);
+  glClearColor(color.r/256.0, color.g/256.0, color.b/256.0, 0.9);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
 void ui_draw(UIState *s) {
-  s->scene.viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  s->scene.viz_rect = Rect{bdr_s, 0, s->fb_w - 2 * bdr_s, s->fb_h};
   s->scene.ui_viz_ro = 0;
   if (!s->scene.uilayout_sidebarcollapsed) {
     s->scene.viz_rect.x = sbr_w + bdr_s;
