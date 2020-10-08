@@ -86,13 +86,13 @@ class TestCamerad(unittest.TestCase):
     if EON:
       # run checks similar to prov
       pic, fpic = self._get_snapshots()
-      assertTrue(self._is_really_sharp(pic))
+      self.assertTrue(self._is_really_sharp(pic))
 
       time.sleep(30)
 
       # check again for consistency
       pic, fpic = self._get_snapshots()
-      assertTrue(self._is_really_sharp(pic))
+      self.assertTrue(self._is_really_sharp(pic))
 
     elif TICI:
       raise unittest.SkipTest # TBD
@@ -118,14 +118,14 @@ class TestCamerad(unittest.TestCase):
             start_frame_id[camera] = last_frame_id[camera] = sm[camera].frameId
             continue
           dfid = sm[camera].frameId - last_frame_id[camera]
-          assertTrue(dfid - 1 <= SKIP_FRAME_TOLERANCE)
+          self.assertTrue(dfid - 1 <= SKIP_FRAME_TOLERANCE)
           last_frame_id[camera] = sm[camera].frameId
 
       time.sleep(0.01)
 
     for camera in CAMERAS:
       print(camera, (last_frame_id[camera] - start_frame_id[camera]))
-      assertTrue((last_frame_id[camera] - start_frame_id[camera]) - TEST_TIMESPAN*CAMERAS[camera] <= FRAME_COUNT_TOLERANCE)
+      self.assertTrue((last_frame_id[camera] - start_frame_id[camera]) - TEST_TIMESPAN*CAMERAS[camera] <= FRAME_COUNT_TOLERANCE)
 
 if __name__ == "__main__":
   unittest.main()
