@@ -94,9 +94,9 @@ cdef class Params:
   def __dealloc__(self):
     del self.p
 
-def put_nonblocking(key, val):
+def put_nonblocking(key, val, d=None):
   def f(key, val):
-    params = Params()
+    params = Params(d)
     params.put(key, val)
 
   t = threading.Thread(target=f, args=(key, val))

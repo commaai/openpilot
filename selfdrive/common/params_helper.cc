@@ -226,10 +226,7 @@ namespace params {
     }
   }
 
-  DBAccessor::DBAccessor(string path) {
-    _path = path;
-  }
-
+  DBAccessor::DBAccessor(string path) : _path(path){}
   DBAccessor::~DBAccessor() {}
 
   vector<string> DBAccessor::keys() {
@@ -245,13 +242,11 @@ namespace params {
 
   const char* DBAccessor::get(string key) {
     _check_entered();
-    const char* ret_str;
 
     if (_vals == NULL) return NULL;
 
     try {
-      ret_str = _vals->at(key).c_str();
-      return ret_str;
+      return _vals->at(key).c_str();
     } catch (const exception& e) {
       return NULL;
     }
