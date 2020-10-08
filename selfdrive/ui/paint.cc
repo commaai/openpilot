@@ -562,16 +562,14 @@ static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
   const Rect &viz_rect = scene->viz_rect;
 
+  glViewport(0, 0, s->fb_w, s->fb_h);
+
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
-  glViewport(viz_rect.x+scene->ui_viz_ro, viz_rect.y, s->fb_w - bdr_s*2, viz_rect.h);
-  //glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
-  glViewport(0, 0, s->fb_w, s->fb_h);
-  glScissor(0, 0, s->fb_w, s->fb_h);
+  glScissor(viz_rect.x - bdr_s, viz_rect.y - bdr_s, viz_rect.w+bdr_s*2, viz_rect.h+bdr_s*2);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
 
-  glViewport(0, 0, s->fb_w, s->fb_h);
 
   // Draw augmented elements
   if (!scene->frontview && scene->world_objects_visible) {

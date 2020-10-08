@@ -62,10 +62,6 @@ const int TRACK_POINTS_MAX_CNT = 50 * 2;
 
 const int SET_SPEED_NA = 255;
 
-typedef struct Color {
-  uint8_t r, g, b, a;
-} Color;
-
 typedef enum NetStatus {
   NET_CONNECTED,
   NET_DISCONNECTED,
