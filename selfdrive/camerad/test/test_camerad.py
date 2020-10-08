@@ -14,6 +14,7 @@ import cereal.messaging as messaging
 from common.params import Params
 from common.timeout import Timeout
 from selfdrive.test.helpers import with_processes
+from selfdrive.camerad.snapshot.visionipc import VisionIPC
 
 from common.hardware import EON, TICI
 # only tests for EON and TICI
@@ -44,15 +45,55 @@ class TestCamerad(unittest.TestCase):
   def tearDown(self):
     pass
 
-  def _get_latest_segment_path(self):
-    last_route = sorted(Path(ROOT).iterdir(), key=os.path.getmtime)[-1]
-    return os.path.join(ROOT, last_route)
+  def _get_snapshots(self):
+    ret = None
+    start_time = time.time()
+    while time.time() - start_time < 5.0:
+      try:
+        ipc = VisionIPC()
+        pic = ipc.get()
+        del ipc
 
-  @with_processes(['camerad'])
+        ipc_front = VisionIPC(front=True) # need to add another for tici
+        fpic = ipc_front.get()
+        del ipc_front
+
+        ret = pic, fpic
+        break
+      except Exception:
+        time.sleep(1)
+    return ret
+
+  def _is_really_sharp(i, threshold=800, roi_max=[8,6], roi_xxyy=[1,6,2,3]):
+      i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+      x_pitch = i.shape[1] // roi_max[0]
+      y_pitch = i.shape[0] // roi_max[1]
+      lap = cv2.Laplacian(i, cv2.CV_16S)
+      lap_map = numpy.zeros((roi_max[1], roi_max[0]))
+      for r in range(lap_map.shape[0]):
+        for c in range(lap_map.shape[1]):
+          selected_lap = lap[r*y_pitch:(r+1)*y_pitch, c*x_pitch:(c+1)*x_pitch]
+          lap_map[r][c] = 5*selected_lap.var() + selected_lap.max()
+      if (lap_map[roi_xxyy[2]:roi_xxyy[3]+1,roi_xxyy[0]:roi_xxyy[1]+1] > threshold).sum() > \
+            (roi_xxyy[1]+1-roi_xxyy[0]) * (roi_xxyy[3]+1-roi_xxyy[2]) * 0.9:
+        return True
+      else:
+        return False
+
+  @with_processes(['camerad'], init_time=15) # wait for startup and AF
   def test_camera_operation(self):
+    print("checking image outputs")
     if EON:
-      assertTrue(1)
       # run checks similar to prov
+      pic, fpic = self._get_snapshots()
+      assertTrue(self._is_really_sharp(pic))
+
+      time.sleep(30)
+
+      # check again for consistency
+      pic, fpic = self._get_snapshots()
+      assertTrue(self._is_really_sharp(pic))
+
     elif TICI:
       raise unittest.SkipTest # TBD
     else:
