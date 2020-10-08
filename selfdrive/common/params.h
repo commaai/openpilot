@@ -1,9 +1,8 @@
 #pragma once
 #include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <map>
+#include <string>
+#include <vector>
 
 #define ERR_NO_VALUE -33
 
@@ -30,15 +29,6 @@ int delete_db_value(const char* key, bool persistent_param = false);
 // Inputs are the same as read_db_value.
 void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param = false);
 
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-#ifdef __cplusplus
-#include <map>
-#include <string>
-#include <vector>
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param = false);
 std::vector<char> read_db_bytes(const char* param_name, bool persistent_param = false);
 bool read_db_bool(const char* param_name, bool persistent_param = false);
-#endif
