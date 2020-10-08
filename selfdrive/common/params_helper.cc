@@ -19,7 +19,7 @@ using std::cout;
 using std::endl;
 
 namespace params {
-  
+
   map<string, vector<TxType>> key_map = {
     {"AccessToken", {TxType::CLEAR_ON_MANAGER_START} },
     {"AthenadPid", {TxType::PERSISTENT} },
@@ -87,30 +87,32 @@ namespace params {
     /* Adapted from http://stackoverflow.com/a/2336245/119527 */
     const size_t len = strlen(path);
     char _path[PATH_MAX];
-    char *p; 
+    char *p;
     errno = 0;
+
     /* Copy string so its mutable */
     if (len > sizeof(_path)-1) {
         errno = ENAMETOOLONG;
-        return -1; 
-    }   
+        return -1;
+    }
+
     strcpy(_path, path);
     /* Iterate the string */
     for (p = _path + 1; *p; p++) {
         if (*p == '/') {
             /* Temporarily truncate */
             *p = '\0';
-            if (mkdir(_path, 0666) != 0) {
+            if (mkdir(_path, 0775) != 0) {
                 if (errno != EEXIST)
-                    return -1; 
+                    return -1;
             }
             *p = '/';
         }
-    }   
-    if (mkdir(_path, 0666) != 0) {
+    }
+    if (mkdir(_path, 0775) != 0) {
         if (errno != EEXIST)
-            return -1; 
-    }   
+            return -1;
+    }
     return 0;
   }
 
@@ -123,7 +125,7 @@ namespace params {
     }
     return false;
   }
-  
+
   static bool is_symlink(string path) {
     struct stat st;
     int result;
@@ -167,7 +169,7 @@ namespace params {
       if (file != "." && file != "..") {
         if (is_directory(file_path)) {
           remove_all(file_path);
-        } else {  
+        } else {
           remove(file_path.c_str());
         }
       }
@@ -180,8 +182,8 @@ namespace params {
     int result = 0;
     int fd = open(path, O_RDONLY);
 
-    if (fd < 0){ 
-      result = -1; 
+    if (fd < 0){
+      result = -1;
       goto cleanup;
     }
 
@@ -192,7 +194,7 @@ namespace params {
 
     cleanup:
       int result_close = 0;
-      if (fd >= 0){ 
+      if (fd >= 0){
         result_close = close(fd);
       }
       if (result_close < 0) {
@@ -214,7 +216,7 @@ namespace params {
     } else {
       _fd = open(_path.c_str(), O_DIRECTORY|O_WRONLY|O_APPEND, 0400);
     }
-    flock(_fd, LOCK_EX); 
+    flock(_fd, LOCK_EX);
   }
 
   void FileLock::release() {
@@ -238,13 +240,13 @@ namespace params {
     for (itr = (*_vals).begin(); itr != (*_vals).end(); itr++) {
       ret_keys.push_back(itr->first);
     }
-    return ret_keys; 
+    return ret_keys;
   }
 
   const char* DBAccessor::get(string key) {
     _check_entered();
     const char* ret_str;
- 
+
     if (_vals == NULL) return NULL;
 
     try {
@@ -306,9 +308,9 @@ namespace params {
     _lock = NULL;
     enter();
   }
-   
+
   void DBReader::_delete(string key) {
-    return; 
+    return;
   }
 
   void DBReader::enter() {
@@ -325,7 +327,7 @@ namespace params {
     finally:
       _lock->release();
   }
-  
+
   void DBReader::exit() {
     return;
   }
@@ -334,7 +336,7 @@ namespace params {
     delete _lock;
     delete _vals;
   }
-      
+
   DBWriter::DBWriter(string path)
     : DBAccessor(path) {
     _lock = NULL;
@@ -351,7 +353,7 @@ namespace params {
   void DBWriter::put(string key, string value) {
     _vals->insert({key,value});
   }
-  
+
   void DBWriter::_delete(string key) {
     map<string, string>::iterator itr;
     itr = _vals->find(key);
@@ -359,7 +361,7 @@ namespace params {
       _vals->erase(itr);
     }
   }
-  
+
   void DBWriter::enter() {
     mkdirs_exists_ok(_path);
     prev_umask = umask(0);
@@ -378,7 +380,7 @@ namespace params {
     prev_umask = -1;
     _lock->release();
   }
-  
+
   void DBWriter::exit() {
     _check_entered();
     string new_data_path = "NULL";
@@ -390,13 +392,14 @@ namespace params {
     int result;
     char path[1024];
     std::ofstream file;
-    
+
     // TODO Are files being fsynced correctly
-    try { 
+    try {
       result = snprintf(path, sizeof(path), "%s/.tmp_XXXXXX", _path.c_str());
       if (result < 0 ) throw OSError();
       tempdir_path = mkdtemp(path);
       chmod(tempdir_path.c_str(), 0777);
+
       map<string,string>::iterator itr;
       for (itr = _vals->begin(); itr != _vals->end(); itr++) {
         file_path = tempdir_path + "/" + itr->first;
@@ -407,6 +410,7 @@ namespace params {
         file.close();
         fsync(tmp_fd);
       }
+
       fsync_dir(tempdir_path.c_str());
       data_path = _data_path();
 
@@ -422,7 +426,7 @@ namespace params {
         old_data_path = string(buf);
       } catch (const exception& e){old_data_path = "NULL";}
 
-      new_data_path = tempdir_path + "/.link"; 
+      new_data_path = tempdir_path + "/.link";
       result = symlink(basename(const_cast<char*>(tempdir_path.c_str())), new_data_path.c_str());
       if (result < 0 ) throw OSError();
       rename(new_data_path.c_str(), data_path.c_str());
@@ -456,18 +460,21 @@ namespace params {
         }
         finally_outer();
   }
-  
+
   string Params::read_db(string params_path, string key) {
     string path = params_path + "/d/" + key;
     string ret_str = "";
+
     std::ifstream reader;
     std::stringstream buffer;
+
     try {
       reader.open(path);
       buffer << reader.rdbuf();
       ret_str = buffer.str();
       reader.close();
     } catch (const exception& e) {ret_str = "";}
+
     return ret_str;
   }
 
@@ -483,33 +490,37 @@ namespace params {
     std::ofstream file;
 
     // TODO Are files being fynced correctly
-
     try {
       result = snprintf(path, sizeof(path), "%s/.tmp_XXXXXX", params_path.c_str());
       if (result < 0 ) throw OSError();
+
       tmp_fd = mkstemp(path);
       if (tmp_fd < 0 ) throw OSError();
+
       file.open(path);
       file << value;
       file.close();
       fsync(tmp_fd);
+
       data_path = params_path + "/d/" + key;
+
       result = rename(path, data_path.c_str());
       if (result < 0 ) throw OSError();
+
       chmod(data_path.c_str(), 0666);
 
       fsync_dir((params_path + "/d").c_str());
     } catch (const exception& e) {goto finally;}
-    
+
     finally:
       umask(prev_umask);
       lock->release();
       delete lock;
   }
-      
+
   Params::Params(string d) {
     db = d;
-  
+
     if (!exists(db + "/d")) {
       DBAccessor* accessor = transaction(true);
       delete accessor;
@@ -521,7 +532,7 @@ namespace params {
     DBAccessor* accessor = transaction(true);
     delete accessor;
   }
-   
+
   DBAccessor* Params::transaction(bool write) {
     if (write) {
       return new DBWriter(db);
@@ -532,10 +543,10 @@ namespace params {
 
   bool Params::has(vector<TxType> v, TxType t) {
     vector<TxType>::iterator itr;
-    
+
     for (itr = v.begin(); itr != v.end(); itr++) {
-      if (*itr == t) return true;  
-    } 
+      if (*itr == t) return true;
+    }
     return false;
   }
 
@@ -551,7 +562,7 @@ namespace params {
     }
     delete accessor;
   }
-   
+
   void Params::manager_start() {
     _clear_keys_with_type(TxType::CLEAR_ON_MANAGER_START);
   }
@@ -559,13 +570,13 @@ namespace params {
   void Params::panda_disconnect() {
     _clear_keys_with_type(TxType::CLEAR_ON_PANDA_DISCONNECT);
   }
-   
+
   void Params::_delete(string key) {
     DBAccessor* accessor = transaction(true);
     accessor->_delete(key);
     delete accessor;
   }
-  
+
   string Params::get(string key, bool block) {
     string val = "";
     try {
@@ -582,13 +593,13 @@ namespace params {
     }
     return val;
   }
-   
+
   void Params::put(string key, string data) {
     try {
       key_map.at(key);
     } catch(const exception&) {
       throw UnknownKeyName();
-    }  
-    write_db(db, key, data); 
+    }
+    write_db(db, key, data);
   }
 }
