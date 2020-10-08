@@ -164,6 +164,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391162M003\xf1\xa0000F',
+      b'\xf1\x87391162M003\xf1\xa00240',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x8756310L0010\x00\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101\xf1\xa01.01',
