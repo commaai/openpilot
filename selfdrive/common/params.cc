@@ -87,6 +87,10 @@ Params::Params(char * path) {
 }
 
 
+void Params::put(std::string key, std::string dat){
+  write_db_value(key.c_str(), dat.c_str(), dat.length());
+}
+
 int Params::write_db_value(const char* key, const char* value, size_t value_size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
@@ -230,6 +234,10 @@ cleanup:
   return result;
 }
 
+void Params::rm(std::string key){
+  delete_db_value(key.c_str());
+}
+
 int Params::delete_db_value(const char* key) {
   int lock_fd = -1;
   int result;
@@ -280,15 +288,19 @@ cleanup:
   return result;
 }
 
-std::string Params::get(std::string key){
+std::string Params::get(std::string key, bool block){
   char* value;
   size_t size;
 
-  int r = read_db_value((const char*)key.c_str(), &value, &size);
-  if (r == 0){
-    return std::string(value, size);
+  if (block){
+    if (0 == read_db_value((const char*)key.c_str(), &value, &size)){
+      return std::string(value, size);
+    } else {
+      return "";
+    }
   } else {
-    return "";
+    read_db_value_blocking((const char*)key.c_str(), &value, &size);
+    return std::string(value, size);
   }
 }
 

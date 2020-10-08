@@ -5,6 +5,68 @@ from libcpp cimport bool
 from libcpp.string cimport string
 from params_definition cimport Params as c_Params
 
+cdef enum TxType:
+  PERSISTENT = 1
+  CLEAR_ON_MANAGER_START = 2
+  CLEAR_ON_PANDA_DISCONNECT = 3
+
+keys = {
+  b"AccessToken": [TxType.CLEAR_ON_MANAGER_START],
+  b"AthenadPid": [TxType.PERSISTENT],
+  b"CalibrationParams": [TxType.PERSISTENT],
+  b"CarBatteryCapacity": [TxType.PERSISTENT],
+  b"CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  b"CarParamsCache": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  b"CarVin": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  b"CommunityFeaturesToggle": [TxType.PERSISTENT],
+  b"CompletedTrainingVersion": [TxType.PERSISTENT],
+  b"DisablePowerDown": [TxType.PERSISTENT],
+  b"DisableUpdates": [TxType.PERSISTENT],
+  b"DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
+  b"DongleId": [TxType.PERSISTENT],
+  b"GitBranch": [TxType.PERSISTENT],
+  b"GitCommit": [TxType.PERSISTENT],
+  b"GitRemote": [TxType.PERSISTENT],
+  b"GithubSshKeys": [TxType.PERSISTENT],
+  b"HasAcceptedTerms": [TxType.PERSISTENT],
+  b"HasCompletedSetup": [TxType.PERSISTENT],
+  b"IsDriverViewEnabled": [TxType.CLEAR_ON_MANAGER_START],
+  b"IsLdwEnabled": [TxType.PERSISTENT],
+  b"IsMetric": [TxType.PERSISTENT],
+  b"IsOffroad": [TxType.CLEAR_ON_MANAGER_START],
+  b"IsRHD": [TxType.PERSISTENT],
+  b"IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
+  b"IsUpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
+  b"IsUploadRawEnabled": [TxType.PERSISTENT],
+  b"LastAthenaPingTime": [TxType.PERSISTENT],
+  b"LastUpdateTime": [TxType.PERSISTENT],
+  b"LastUpdateException": [TxType.PERSISTENT],
+  b"LiveParameters": [TxType.PERSISTENT],
+  b"OpenpilotEnabledToggle": [TxType.PERSISTENT],
+  b"LaneChangeEnabled": [TxType.PERSISTENT],
+  b"PandaFirmware": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  b"PandaFirmwareHex": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  b"PandaDongleId": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  b"Passive": [TxType.PERSISTENT],
+  b"RecordFront": [TxType.PERSISTENT],
+  b"ReleaseNotes": [TxType.PERSISTENT],
+  b"ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
+  b"SubscriberInfo": [TxType.PERSISTENT],
+  b"TermsVersion": [TxType.PERSISTENT],
+  b"TrainingVersion": [TxType.PERSISTENT],
+  b"UpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
+  b"UpdateFailedCount": [TxType.CLEAR_ON_MANAGER_START],
+  b"Version": [TxType.PERSISTENT],
+  b"Offroad_ChargeDisabled": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  b"Offroad_ConnectivityNeeded": [TxType.CLEAR_ON_MANAGER_START],
+  b"Offroad_ConnectivityNeededPrompt": [TxType.CLEAR_ON_MANAGER_START],
+  b"Offroad_TemperatureTooHigh": [TxType.CLEAR_ON_MANAGER_START],
+  b"Offroad_PandaFirmwareMismatch": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
+  b"Offroad_InvalidTime": [TxType.CLEAR_ON_MANAGER_START],
+  b"Offroad_IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
+  b"Offroad_NeosUpdate": [TxType.CLEAR_ON_MANAGER_START],
+  b"Offroad_UpdateFailed": [TxType.CLEAR_ON_MANAGER_START],
+}
 
 class UnknownKeyName(Exception):
   pass
@@ -12,17 +74,34 @@ class UnknownKeyName(Exception):
 cdef class Params:
   cdef c_Params* p;
 
-  def __cinit__(self):
-    self.p = new c_Params(<bool>False)
+  def __cinit__(self, d=None):
+    if d is not None:
+      self.p = new c_Params(<string>d.encode())
+    else:
+      self.p = new c_Params(<bool>False)
 
   def __dealloc__(self):
     del self.p
+
+  def _clear_keys_with_type(self, tx_type):
+    for key in keys:
+      if tx_type in keys[key]:
+        self.delete(key)
+
+  def manager_start(self):
+    self._clear_keys_with_type(TxType.CLEAR_ON_MANAGER_START)
+
+  def panda_disconnect(self):
+    self._clear_keys_with_type(TxType.CLEAR_ON_PANDA_DISCONNECT)
 
   def get(self, key, block=False, encoding=None):
     if isinstance(key, str):
       key = key.encode('UTF-8')
 
-    cdef string val = self.p.get(key)
+    if key not in keys:
+      raise UnknownKeyName(key)
+
+    cdef string val = self.p.get(key, block)
 
     if val == b"":
       return None
@@ -31,6 +110,27 @@ cdef class Params:
       return val.decode(encoding)
     else:
       return val
+
+  def put(self, key, dat):
+    """
+    Warning: This function blocks until the param is written to disk!
+    In very rare cases this can take over a second, and your code will hang.
+    Use the put_nonblocking helper function in time sensitive code, but
+    in general try to avoid writing params as much as possible.
+    """
+    if isinstance(key, str):
+      key = key.encode('UTF-8')
+
+    if isinstance(dat, str):
+      dat = dat.encode('UTF-8')
+
+    if key not in keys:
+      raise UnknownKeyName(key)
+
+    self.p.put(key, dat)
+
+  def delete(self, key):
+    self.p.rm(key)
 
 
 def put_nonblocking(key, val, d=None):
