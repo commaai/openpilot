@@ -60,11 +60,7 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
 static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                        OMX_BUFFERHEADERTYPE *buffer) {
   EncoderState *s = (EncoderState *)app_data;
-
-  // printf("empty_buffer_done\n");
-
   queue_push(&s->free_in, (void*)buffer);
-
   return OMX_ErrorNone;
 }
 
@@ -72,11 +68,7 @@ static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_dat
 static OMX_ERRORTYPE fill_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                       OMX_BUFFERHEADERTYPE *buffer) {
   EncoderState *s = (EncoderState *)app_data;
-
-  // printf("fill_buffer_done\n");
-
   queue_push(&s->done_out, (void*)buffer);
-
   return OMX_ErrorNone;
 }
 
@@ -159,11 +151,10 @@ static const char* omx_color_fomat_name(uint32_t format) {
   }
 }
 
-
 EncoderState::EncoderState(const LogCameraInfo &info, int width, int height, bool streaming)
     : FrameLogger(info.filename, width, height, info.fps), downscale(info.downscale) {
   int err;
-  
+
   if (!info.is_h265) {
     remuxing = true;
   }
@@ -223,9 +214,6 @@ EncoderState::EncoderState(const LogCameraInfo &info, int width, int height, boo
                          (OMX_PTR) &in_port);
   assert(err == OMX_ErrorNone);
   num_in_bufs = in_port.nBufferCountActual;
-
-  // printf("in width: %d, stride: %d\n",
-  //   in_port.format.video.nFrameWidth, in_port.format.video.nStride);
 
   // setup output port
 
@@ -377,7 +365,6 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   }
 
   if (s->of) {
-    //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
     fwrite(buf_data, out_buf->nFilledLen, 1, s->of);
   }
 
@@ -489,6 +476,10 @@ bool EncoderState::Open(const std::string path, int segment) {
   if (remuxing) {
     avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, path.c_str());
     assert(ofmt_ctx);
+
+#ifdef QCOM2
+    ofmt_ctx->oformat->flags = AVFMT_TS_NONSTRICT;
+#endif
 
     out_stream = avformat_new_stream(ofmt_ctx, NULL);
     assert(out_stream);

@@ -33,13 +33,19 @@ class FrameLogger {
 
   void Rotate(const std::string new_path, int segment) {
     CloseFile();
+    
+    std::string path = util::string_format("%s/%s", new_path.c_str(), filename.c_str());
     // create camera lock file
     lock_path = util::string_format("%s/%s.lock", new_path.c_str(), filename.c_str());
     int lock_fd = open(lock_path.c_str(), O_RDWR | O_CREAT, 0777);
     assert(lock_fd >= 0);
     close(lock_fd);
-    std::string path = util::string_format("%s/%s", new_path.c_str(), filename.c_str());
+
     is_open = Open(path, segment);
+
+    if (!is_open) {
+       unlink(lock_path.c_str());
+    }
   }
 
  protected:

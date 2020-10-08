@@ -1,10 +1,9 @@
 #pragma once
 
-#include <OMX_Component.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
-
+#include <stdint.h>
+#include <stdbool.h>
+#include <OMX_Component.h>
 extern "C" {
 #include <libavformat/avformat.h>
 }

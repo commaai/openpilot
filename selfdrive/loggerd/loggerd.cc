@@ -9,7 +9,6 @@
 #include <inttypes.h>
 #include <libyuv.h>
 #include <sys/resource.h>
-#include <pthread.h>
 
 #include <iostream>
 #include <fstream>
@@ -281,7 +280,6 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
-
           for (FrameLogger* logger : frame_loggers) {
             logger->Rotate(s.segment_path, s.rotate_segment);
           }
@@ -300,7 +298,7 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
       for (FrameLogger* logger : frame_loggers) {
         int counter = logger->LogFrame(cnt, (uint8_t*)buf->addr, buf_info.width, buf_info.height, extra);
 
-        if (counter >= 0 && (logger != encoder_alt.get())) {
+        if (counter != -1 && (logger != encoder_alt.get())) {
           MessageBuilder msg;
           auto eidx = msg.initEvent().initEncodeIdx();
           eidx.setFrameId(extra.frame_id);

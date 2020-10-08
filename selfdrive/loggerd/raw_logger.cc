@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <random>
 #define __STDC_CONSTANT_MACROS
 
 extern "C" {
@@ -18,6 +19,17 @@ extern "C" {
 #include "common/swaglog.h"
 #include "common/utilpp.h"
 #include "raw_logger.h"
+
+#define RAW_CLIP_LENGTH 100                         // 5 seconds at 20fps
+#define RAW_CLIP_FREQUENCY (randrange(61, 8 * 60))  // once every ~4 minutes
+
+double randrange(double a, double b) __attribute__((unused));
+double randrange(double a, double b) {
+  static std::mt19937 gen(millis_since_boot());
+
+  std::uniform_real_distribution<> dist(a, b);
+  return dist(gen);
+}
 
 FFmpegEncoder::FFmpegEncoder(std::string filename, AVCodecID codec_id, int bitrate, int width, int height, int fps)
     : FrameLogger(filename, width, height, fps) {
@@ -46,7 +58,6 @@ FFmpegEncoder::FFmpegEncoder(std::string filename, AVCodecID codec_id, int bitra
   }
 
   err = avcodec_open2(codec_ctx, codec, &pDic);
-  // err = avcodec_open2(codec_ctx, codec, nullptr);
   assert(err >= 0);
 
   frame = av_frame_alloc();
