@@ -1,4 +1,4 @@
-from distutils.core import Extension, setup 
+from distutils.core import Extension, setup
 from Cython.Build import cythonize
 from common.cython_hacks import BuildExtWithoutPlatformSuffix
 
@@ -9,7 +9,7 @@ setup(name='Common',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},
       ext_modules=cythonize(
         Extension(
-          "params",
+          "params_pyx",
           language="c++",
           sources=sourcefiles,
           extra_compile_args=extra_compile_args

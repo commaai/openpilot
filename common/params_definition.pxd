@@ -1,11 +1,11 @@
 from libcpp.string cimport string
 from libcpp cimport bool
 
-cdef extern from "params_helper.cpp":
+cdef extern from "../selfdrive/common/params_helper.cc":
   pass
 
 # Declare the class with cdef
-cdef extern from "params_helper.h" namespace "params":
+cdef extern from "../selfdrive/common/params_helper.h" namespace "params":
   cdef cppclass Params:
     string db;
     Params(string) except +
