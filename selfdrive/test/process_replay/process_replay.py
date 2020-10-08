@@ -386,7 +386,6 @@ def cpp_replay_process(config, logreader):
   pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
   sub_sockets = [s for _, sub in config.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(pub_sockets)
-  #sm = messaging.SubMaster(sub_sockets)
   sockets = {s : messaging.sub_sock(s) for s in sub_sockets}
   print("Sorting logs")
   all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
@@ -397,7 +396,7 @@ def cpp_replay_process(config, logreader):
   time.sleep(5)  # We give the process time to start
 
   log_msgs = []
-  if len(pub_msgs) > 0:
+  if len(pub_msgs) > 0:  # Send initial message, helps the process get running
     pm.send(pub_msgs[0].which(), pub_msgs[0].as_builder())
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())

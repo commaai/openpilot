@@ -12,6 +12,7 @@ Currently the following processes are tested:
 * radard
 * plannerd
 * calibrationd
+* ubloxd
 
 ## Forks
 
