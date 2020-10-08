@@ -27,9 +27,12 @@ def install_apk(path):
   os.remove(install_path)
   return ret == 0
 
-def start_offroad():
-  set_package_permissions()
-  system("am start -n ai.comma.plus.offroad/.MainActivity")
+def start_offroad(start: bool):
+  def f(start):
+    pm_apply_packages('enable' if start else 'disable')
+    if start:
+      os.system("am start -n ai.comma.plus.offroad/.MainActivity")
+  threading.Thread(target=f, args=(start,)).start()
 
 def set_package_permissions():
   pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
@@ -91,10 +94,8 @@ def update_apks():
       assert success
 
 def pm_apply_packages(cmd):
-  def apply():
-    for p in android_packages:
-      system("pm %s %s" % (cmd, p))
-  threading.Thread(target=apply).start()
+  for p in android_packages:
+    system("pm %s %s" % (cmd, p))
 
 if __name__ == "__main__":
   update_apks()

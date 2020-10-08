@@ -596,7 +596,7 @@ static void ui_draw_vision(UIState *s) {
 
 static void ui_draw_background(UIState *s) {
   const NVGcolor color = bg_colors[s->status];
-  glClearColor(color.r/256.0, color.g/256.0, color.b/256.0, 0.5);
+  glClearColor(color.r, color.g, color.b, 0.5);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
