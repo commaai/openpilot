@@ -65,7 +65,7 @@ class TestCamerad(unittest.TestCase):
       ret = np.zeros(im.shape, dtype=np.uint8)
       for r in range(im.shape[0] - 2):
         for c in range(im.shape[1] - 2):
-          ret[r+1,c+1] = np.clip(-4 * im[r+1,c+1] + im[r,c+1] + im[r+1,c] + im[r,c-1] + im[r-1,c], 0, 255).astype(np.uint8)
+          ret[r+1,c+1] = np.clip(-4 * im[r+1,c+1] + im[r,c+1] + im[r+1,c] + im[r+2,c+1] + im[r+1,c+2], 0, 255).astype(np.uint8)
       return ret
     i = numpy_bgr2gray(i)
     x_pitch = i.shape[1] // roi_max[0]
@@ -76,6 +76,7 @@ class TestCamerad(unittest.TestCase):
       for c in range(lap_map.shape[1]):
         selected_lap = lap[r*y_pitch:(r+1)*y_pitch, c*x_pitch:(c+1)*x_pitch]
         lap_map[r][c] = 5*selected_lap.var() + selected_lap.max()
+        print(lap_map[r][c])
     if (lap_map[roi_xxyy[2]:roi_xxyy[3]+1,roi_xxyy[0]:roi_xxyy[1]+1] > threshold).sum() > \
           (roi_xxyy[1]+1-roi_xxyy[0]) * (roi_xxyy[3]+1-roi_xxyy[2]) * 0.9:
       return True
