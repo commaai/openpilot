@@ -6,7 +6,7 @@ import shutil
 import stat
 import unittest
 
-from common.params import Params, UnknownKeyName, put_nonblocking # pylint: disable=no-name-in-module, import-error
+from common.params import Params, UnknownKeyName, put_nonblocking
 
 class TestParams(unittest.TestCase):
   def setUp(self):
@@ -80,7 +80,7 @@ class TestParams(unittest.TestCase):
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
-    
+
 
 if __name__ == "__main__":
   unittest.main()

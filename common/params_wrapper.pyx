@@ -1,9 +1,20 @@
 # distutils: langauge = c++
-from common.basedir import PARAMS
 import threading
+import os
 from libcpp cimport bool
 from libcpp.string cimport string
 from params_definition cimport Params as c_Params
+
+# TODO: Remove duplication with common.basedir
+BASEDIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../"))
+EON = os.path.isfile('/EON')
+TICI = os.path.isfile('/TICI')
+PC = not (EON or TICI)
+
+if PC:
+  PARAMS = os.path.join(BASEDIR, "persist", "params")
+else:
+  PARAMS = "/data/params"
 
 class UnknownKeyName(Exception):
   pass
@@ -79,7 +90,7 @@ cdef class Params:
           self.p.put(k, v)
     except (RuntimeError):
       raise UnknownKeyName(key)
-  
+
   def __dealloc__(self):
     del self.p
 
