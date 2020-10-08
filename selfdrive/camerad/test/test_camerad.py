@@ -14,7 +14,7 @@ from common.hardware import EON, TICI
 
 TEST_TIMESPAN = random.randint(60, 180) # seconds
 SKIP_FRAME_TOLERANCE = 0
-FRAME_COUNT_TOLERANCE = 0 # over the whole test time
+FRAME_COUNT_TOLERANCE = 1 # over the whole test time
 
 FPS_BASELINE = 20
 CAMERAS = {
