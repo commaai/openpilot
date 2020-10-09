@@ -32,27 +32,24 @@ def start_offroad():
   set_package_permissions()
   system("am start -n ai.comma.plus.offroad/.MainActivity")
 
+def extract_current_permissions(dump):
+  perms = dump.split("runtime permissions")[1]
+  return perms
+
 
 def set_package_permissions():
-  time_dump = open("/tmp/apktiming.txt","w")
-  init = time.time()
-  print(20*"WORKING\n")
   out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-  stdout,stderr = out.communicate()
-  time_dump.write(str(stdout))
-  time_dump.write("\n\n")
-  time_dump.write(str(stderr))
-  time_dump.write("\n\n")
-  
+  _,stderr = out.communicate()
+  print(extract_current_permissions(str(stderr)))
+  print(extract_current_permissions(str(stderr)))
+  print(extract_current_permissions(str(stderr)))
+  print(extract_current_permissions(str(stderr)))
+  time.sleep(5)
   pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
-  time_dump.write(("Spent "+str(time.time()-init)+" on packages1\n"))
-  init = time.time()
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
-  time_dump.write("Spent "+str(time.time()-init)+" on package2s\n")
-  time_dump.close()
 def appops_set(package, op, mode):
   system(f"LD_LIBRARY_PATH= appops set {package} {op} {mode}")
 
