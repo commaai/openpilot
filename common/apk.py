@@ -33,9 +33,15 @@ def start_offroad():
   system("am start -n ai.comma.plus.offroad/.MainActivity")
 
 def extract_current_permissions(dump):
-  print(dump)
-  perms = dump.split("runtime")[1]
-  return perms
+  perms = dump.split("runtime permissions")[1]
+  print("\n")
+  print(perms)
+  print("\n")
+  perms2 = perms.split("\n")
+  for x in perms2:
+    print(x)
+  print("\n")
+  return perms2
 
 
 def set_package_permissions():
