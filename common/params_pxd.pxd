@@ -7,11 +7,10 @@ cdef extern from "selfdrive/common/params.cc":
 cdef extern from "selfdrive/common/util.c":
   pass
 
-# Declare the class with cdef
 cdef extern from "selfdrive/common/params.h":
   cdef cppclass Params:
     Params(bool)
     Params(string)
     string get(string, bool) nogil
-    int delete_db_value(const char*);
-    int write_db_value(string, string);
+    int delete_db_value(const char*)
+    int write_db_value(string, string)

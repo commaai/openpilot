@@ -72,7 +72,7 @@ class UnknownKeyName(Exception):
   pass
 
 cdef class Params:
-  cdef c_Params* p;
+  cdef c_Params* p
 
   def __cinit__(self, d=None):
     if d is not None:
@@ -102,10 +102,10 @@ cdef class Params:
       raise UnknownKeyName(key)
 
     # TODO: Handle keyboard interrupt when doing blocking read
-    cdef string k = key;
-    cdef bool b = block;
+    cdef string k = key
+    cdef bool b = block
 
-    cdef string val;
+    cdef string val
     with nogil:
       val = self.p.get(k, b)
 

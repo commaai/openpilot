@@ -7,7 +7,7 @@ from common.basedir import BASEDIR
 sourcefiles = ['params_pyx.pyx']
 extra_compile_args = ["-std=c++11"]
 
-setup(name='Common',
+setup(name='common',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},
       ext_modules=cythonize(
         Extension(
