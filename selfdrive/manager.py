@@ -539,14 +539,18 @@ def main():
   os.environ['PARAMS_PATH'] = PARAMS
   init = time.time()
   time_dump = open("/tmp/timing.txt","w")
-  time_dump.write("Test timing of startup")
-  time_dump.write(str(time.time()-init))
+  time_dump.write("Test timing of startup\n")
+  time_dump.write(str(time.time()-init)+"\n")
   if ANDROID:
     # the flippening!
     os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
 
     # disable bluetooth
     os.system('service call bluetooth_manager 8')
+
+  time_dump.write("Time spent rotating\n")
+  time_dump.write(str(time.time()-init)+"\n")
+  init = time.time()
 
   params = Params()
   params.manager_start()
@@ -572,24 +576,35 @@ def main():
     if params.get(k) is None:
       params.put(k, v)
 
+  time_dump.write("Time spent setting params\n")
+  time_dump.write(str(time.time()-init)+"\n")
+  init = time.time()
+  
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:
     params.put("Passive", str(int(os.getenv("PASSIVE"))))
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
-
+  
   if ANDROID:
     update_apks()
   manager_init()
   manager_prepare(spinner)
   spinner.close()
 
+  time_dump.write("Time spent updating_apk\n")
+  time_dump.write(str(time.time()-init)+"\n")
+  init = time.time()
+  
   if os.getenv("PREPAREONLY") is not None:
     return
 
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
+  
+  time_dump.write("Time spent finishing\n")
+  time_dump.write(str(time.time()-init)+"\n")
 
   time_dump.close()
   try:
