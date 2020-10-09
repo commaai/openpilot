@@ -19,7 +19,7 @@ FRAME_COUNT_TOLERANCE = 1 # over the whole test time
 FPS_BASELINE = 20
 CAMERAS = {
   "frame": FPS_BASELINE,
-  "frontFrame": FPS_BASELINE // 2, # TODO: seem to be slightly higher than 10FPS? fix it
+  "frontFrame": FPS_BASELINE // 2,
 }
 
 if TICI:
