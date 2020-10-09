@@ -530,7 +530,7 @@ def manager_prepare(spinner=None):
       init = time.time()
       prepare_managed_process(p)
       f.write(p)
-      f.write("\n"+str(time.time()-init)+"\n")
+      f.write("\n"+str(time.time()-init)+"\n\n")
 
 def uninstall():
   cloudlog.warning("uninstalling")
@@ -610,6 +610,11 @@ def main():
   init = time.time()
 
   manager_prepare(spinner)
+
+  time_dump.write("Time spent with preparing spinner\n")
+  time_dump.write(str(time.time()-init)+"\n")
+  init = time.time()
+
   spinner.close()
 
   time_dump.write("Time spent with spinner\n")
