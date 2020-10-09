@@ -38,8 +38,10 @@ def extract_current_permissions(dump):
   print(perms)
   print("\n")
   perms2 = perms.split("\\n")
-  for x in perms2:
+  perms3 = [p.replace(" ","") for p in perms2]
+  for x in perms3:
     print(x)
+    print(len(x))
   print("\n")
   return perms2
 
