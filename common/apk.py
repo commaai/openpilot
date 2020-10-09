@@ -38,7 +38,7 @@ def start_offroad():
 def set_package_permissions():
   time_dump = open("/tmp/apktiming.txt","w")
   init = time.time()
-  out = subprocess.Popen(['wc', '-l', 'my_text_file.txt'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   stdout,stderr = out.communicate()
   time_dump.write(stdout)
   time_dump.write("\n\n")
