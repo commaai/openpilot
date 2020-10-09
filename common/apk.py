@@ -40,9 +40,11 @@ def set_package_permissions():
   pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
+  time_dump.write(("Spent "+str(time.time()-init)+" on packages1\n"))
+  init = time.time()
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
-  time_dump.write(5*("Spent "+str(time.time()-init)+" on packages\n"))
+  time_dump.write("Spent "+str(time.time()-init)+" on package2s\n")
   time_dump.close()
 def appops_set(package, op, mode):
   system(f"LD_LIBRARY_PATH= appops set {package} {op} {mode}")
