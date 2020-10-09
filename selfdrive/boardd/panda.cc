@@ -323,6 +323,7 @@ int Panda::can_receive(cereal::Event::Builder &event){
 
   // return if length is 0
   if (recv <= 0) {
+    event.initCan(0);
     return 0;
   } else if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");

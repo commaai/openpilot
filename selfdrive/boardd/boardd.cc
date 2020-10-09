@@ -190,10 +190,8 @@ void can_recv(PubMaster &pm) {
   // create message
   MessageBuilder msg;
   auto event = msg.initEvent();
-  int recv = panda->can_receive(event);
-  if (recv){
-    pm.send("can", msg);
-  }
+  panda->can_receive(event);
+  pm.send("can", msg);
 }
 
 void can_send_thread() {
