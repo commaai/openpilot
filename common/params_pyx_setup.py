@@ -4,7 +4,7 @@ from Cython.Build import cythonize
 from common.cython_hacks import BuildExtWithoutPlatformSuffix
 from common.basedir import BASEDIR
 
-sourcefiles = ['params_wrapper.pyx']
+sourcefiles = ['params_pyx.pyx']
 extra_compile_args = ["-std=c++11"]
 
 setup(name='Common',

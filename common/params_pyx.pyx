@@ -3,7 +3,7 @@ import threading
 import os
 from libcpp cimport bool
 from libcpp.string cimport string
-from params_definition cimport Params as c_Params
+from params_pxd cimport Params as c_Params
 
 cdef enum TxType:
   PERSISTENT = 1
