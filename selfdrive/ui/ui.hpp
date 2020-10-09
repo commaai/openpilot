@@ -77,10 +77,10 @@ typedef enum UIStatus {
 
 static std::map<UIStatus, NVGcolor> bg_colors = {
   {STATUS_OFFROAD, nvgRGBA(0x07, 0x23, 0x39, 0xf1)},
-  {STATUS_DISENGAGED, nvgRGBA(0x00, 0x00, 0x00, 0xa0)},
-  {STATUS_ENGAGED, nvgRGBA(0x17, 0x86, 0x44, 0xa0)},
-  {STATUS_WARNING, nvgRGBA(0xDA, 0x6F, 0x25, 0xa0)},
-  {STATUS_ALERT, nvgRGBA(0xC9, 0x22, 0x31, 0xa0)},
+  {STATUS_DISENGAGED, nvgRGBA(0x17, 0x33, 0x49, 0xc8)},
+  {STATUS_ENGAGED, nvgRGBA(0x17, 0x86, 0x44, 0xf1)},
+  {STATUS_WARNING, nvgRGBA(0xDA, 0x6F, 0x25, 0xf1)},
+  {STATUS_ALERT, nvgRGBA(0xC9, 0x22, 0x31, 0xf1)},
 };
 
 typedef struct UIScene {
@@ -145,7 +145,7 @@ typedef struct UIState {
   int font_sans_regular;
   int font_sans_semibold;
   int font_sans_bold;
-  int img_comma;
+  int img_wheel;
   int img_turn;
   int img_face;
   int img_button_settings;

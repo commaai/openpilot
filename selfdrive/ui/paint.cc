@@ -109,7 +109,7 @@ static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int
 }
 
 static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int image, bool active) {
-  float bg_alpha = 0.6f;
+  float bg_alpha = active ? 0.3f : 0.1f;
   float img_alpha = active ? 1.0f : 0.15f;
   ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
@@ -383,23 +383,27 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   int viz_maxspeed_w = 184;
   int viz_maxspeed_h = 202;
   int viz_maxspeed_x = s->scene.viz_rect.x + (bdr_s*2);
-  int viz_maxspeed_y = s->scene.viz_rect.y + (bdr_s*2.5);
+  int viz_maxspeed_y = s->scene.viz_rect.y + (bdr_s*1.5);
   int viz_maxspeed_xo = 180;
 
   viz_maxspeed_xo = 0;
 
   // Draw Background
-  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_BLACK_ALPHA(150), 30);
+  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_BLACK_ALPHA(100), 30);
+
+  // Draw Border
+  NVGcolor color = COLOR_WHITE_ALPHA(100);
+  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
-  ui_draw_text(s->vg, text_x, viz_maxspeed_y+75, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
+  ui_draw_text(s->vg, text_x, 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
 
   if (is_cruise_set) {
     snprintf(maxspeed_str, sizeof(maxspeed_str), "%d", maxspeed_calc);
-    ui_draw_text(s->vg, text_x, viz_maxspeed_y+175, maxspeed_str, 48 * 2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, text_x, 242, maxspeed_str, 48 * 2.5, COLOR_WHITE, s->font_sans_bold);
   } else {
-    ui_draw_text(s->vg, text_x, viz_maxspeed_y+175, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
+    ui_draw_text(s->vg, text_x, 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
   }
 }
 
@@ -426,20 +430,19 @@ static void ui_draw_vision_speed(UIState *s) {
 static void ui_draw_vision_event(UIState *s) {
   const int viz_event_w = 220;
   const int viz_event_x = s->scene.viz_rect.right() - (viz_event_w + bdr_s*2);
-  const int viz_event_y = s->scene.viz_rect.y + (bdr_s*3);
+  const int viz_event_y = s->scene.viz_rect.y + (bdr_s*1.5);
   if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
     ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size, s->img_turn, 1.0f);
-  } else {
-    // draw comma
-    const int bg_comma_size = 96;
-    const int bg_comma_x = viz_event_x + (viz_event_w-bg_comma_size);
-    const int bg_comma_y = viz_event_y + (bg_comma_size/2);
-    const NVGcolor color = bg_colors[STATUS_DISENGAGED];
-    const float alpha = s->scene.controls_state.getEngageable() ? 1.0 : 0.4;
+  } else if (s->scene.controls_state.getEngageable()) {
+    // draw steering wheel
+    const int bg_wheel_size = 96;
+    const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
+    const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
+    const NVGcolor color = bg_colors[s->status];
 
-    ui_draw_circle_image(s->vg, bg_comma_x, bg_comma_y, bg_comma_size, s->img_comma, color, alpha, bg_comma_y - 25);
+    ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
   }
 }
 
@@ -504,6 +507,14 @@ static void ui_draw_driver_view(UIState *s) {
 }
 
 static void ui_draw_vision_header(UIState *s) {
+  const Rect &viz_rect = s->scene.viz_rect;
+  NVGpaint gradient = nvgLinearGradient(s->vg, viz_rect.x,
+                        viz_rect.y+(header_h-(header_h/2.5)),
+                        viz_rect.x, viz_rect.y+header_h,
+                        nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
+
+  ui_draw_rect(s->vg, viz_rect.x, viz_rect.y, viz_rect.w, header_h, gradient);
+
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_event(s);
@@ -563,14 +574,15 @@ static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
   const Rect &viz_rect = scene->viz_rect;
 
-  glViewport(0, 0, s->fb_w, s->fb_h);
 
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
-  glScissor(viz_rect.x - bdr_s, viz_rect.y - bdr_s, viz_rect.w+bdr_s*2, viz_rect.h+bdr_s*2);
+  glViewport(viz_rect.x+scene->ui_viz_ro, viz_rect.y, s->fb_w - bdr_s*2, viz_rect.h);
+  glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
 
+  glViewport(0, 0, s->fb_w, s->fb_h);
 
   // Draw augmented elements
   if (!scene->frontview && scene->world_objects_visible) {
@@ -589,10 +601,6 @@ static void ui_draw_vision(UIState *s) {
   } else if (!scene->frontview) {
     ui_draw_vision_footer(s);
   }
-
-  // TODO: move this
-  const NVGcolor bgcolor = bg_colors[s->status];
-  ui_draw_rect(s->vg, 0, 0, s->fb_w, s->fb_h, bgcolor, 0, bdr_s);
 }
 
 static void ui_draw_background(UIState *s) {
@@ -602,7 +610,7 @@ static void ui_draw_background(UIState *s) {
 }
 
 void ui_draw(UIState *s) {
-  s->scene.viz_rect = Rect{bdr_s, 0, s->fb_w - 2 * bdr_s, s->fb_h};
+  s->scene.viz_rect = Rect{bdr_s * 3, bdr_s, s->fb_w - 4 * bdr_s, s->fb_h - 2 * bdr_s};
   s->scene.ui_viz_ro = 0;
   if (!s->scene.uilayout_sidebarcollapsed) {
     s->scene.viz_rect.x = sbr_w + bdr_s;
@@ -714,8 +722,8 @@ void ui_nvg_init(UIState *s) {
   s->font_sans_bold = nvgCreateFont(s->vg, "sans-bold", "../assets/fonts/opensans_bold.ttf");
   assert(s->font_sans_bold >= 0);
 
-  s->img_comma = nvgCreateImage(s->vg, "../assets/img_comma.png", 1);
-  assert(s->img_comma != 0);
+  s->img_wheel = nvgCreateImage(s->vg, "../assets/img_chffr_wheel.png", 1);
+  assert(s->img_wheel != 0);
   s->img_turn = nvgCreateImage(s->vg, "../assets/img_trafficSign_turn.png", 1);
   assert(s->img_turn != 0);
   s->img_face = nvgCreateImage(s->vg, "../assets/img_driver_face.png", 1);

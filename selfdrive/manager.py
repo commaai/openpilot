@@ -156,7 +156,7 @@ from selfdrive.registration import register
 from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
-from common.apk import set_package_permissions, update_apks, start_offroad
+from common.apk import update_apks, pm_apply_packages, start_offroad
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
@@ -389,7 +389,8 @@ def kill_managed_process(name):
 def cleanup_all_processes(signal, frame):
   cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
 
-  start_offroad(False)
+  if ANDROID:
+    pm_apply_packages('disable')
 
   for name in list(running.keys()):
     kill_managed_process(name)
@@ -461,8 +462,8 @@ def manager_thread():
 
   # start offroad
   if ANDROID:
-    set_package_permissions()
-    start_offroad(True)
+    pm_apply_packages('enable')
+    start_offroad()
 
   if os.getenv("NOBOARD") is None:
     start_managed_process("pandad")
@@ -479,9 +480,6 @@ def manager_thread():
 
     if msg.thermal.freeSpace < 0.05:
       logger_dead = True
-
-    if msg.thermal.started != started_prev:
-      start_offroad(not msg.thermal.started)
 
     if msg.thermal.started:
       for p in car_started_processes:
