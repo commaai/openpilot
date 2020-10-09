@@ -528,7 +528,7 @@ def manager_prepare(spinner=None):
     
     init = time.time()
     prepare_managed_process(p)
-    with open("/tmp/aa_"+p+".txt") as f:
+    with open("/tmp/aa_"+p+".txt", "w") as f:
       f.write(str(time.time-init))
 
 def uninstall():
