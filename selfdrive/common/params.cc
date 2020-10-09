@@ -293,14 +293,14 @@ std::string Params::get(std::string key, bool block){
   size_t size;
 
   if (block){
+    read_db_value_blocking((const char*)key.c_str(), &value, &size);
+    return std::string(value, size);
+  } else {
     if (0 == read_db_value((const char*)key.c_str(), &value, &size)){
       return std::string(value, size);
     } else {
       return "";
     }
-  } else {
-    read_db_value_blocking((const char*)key.c_str(), &value, &size);
-    return std::string(value, size);
   }
 }
 

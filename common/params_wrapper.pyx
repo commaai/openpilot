@@ -101,7 +101,13 @@ cdef class Params:
     if key not in keys:
       raise UnknownKeyName(key)
 
-    cdef string val = self.p.get(key, block)
+    # TODO: Handle keyboard interrupt when doing blocking read
+    cdef string k = key;
+    cdef bool b = block;
+
+    cdef string val;
+    with nogil:
+      val = self.p.get(k, b)
 
     if val == b"":
       return None
@@ -130,6 +136,9 @@ cdef class Params:
     self.p.put(key, dat)
 
   def delete(self, key):
+    if isinstance(key, str):
+      key = key.encode('UTF-8')
+
     self.p.rm(key)
 
 

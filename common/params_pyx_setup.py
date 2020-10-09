@@ -5,7 +5,7 @@ from common.cython_hacks import BuildExtWithoutPlatformSuffix
 from common.basedir import BASEDIR
 
 sourcefiles = ['params_wrapper.pyx']
-extra_compile_args = ["-std=c++17"]
+extra_compile_args = ["-std=c++11"]
 
 setup(name='Common',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},

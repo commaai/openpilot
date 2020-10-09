@@ -6,6 +6,6 @@ env.Command(['common_pyx.so', 'clock.cpp'],
             "cd common && python3 common_pyx_setup.py build_ext --inplace")
 
 #Build cython params module
-env.Command(['params.so', 'params.cpp'],
+env.Command(['params_pyx.so', 'params_wrapper.cpp'],
             cython_dependencies + ['params_pyx_setup.py', 'params_wrapper.pyx'],
             "cd common && python3 params_pyx_setup.py build_ext --inplace")
