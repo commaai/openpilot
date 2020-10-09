@@ -84,7 +84,10 @@ class TestCamerad(unittest.TestCase):
 
   def _is_exposure_okay(self, i, med_ex=np.array([0.2,0.4]), mean_ex=np.array([0.2,0.6])):
     i = self._numpy_bgr2gray(i)
-    return med_ex[0] < np.median(i) < med_ex[1] and mean_ex[0] < np.mean(i) < mean_ex[1]
+    i_median = np.median(i) / 256
+    i_mean = np.mean(i) / 256
+    print([i_median, i_mean])
+    return med_ex[0] < i_median < med_ex[1] and mean_ex[0] < i_mean < mean_ex[1]
 
   @with_processes(['camerad'])
   def test_camera_operation(self):
