@@ -34,9 +34,17 @@ def start_offroad():
     system("am start -n ai.comma.plus.offroad/.MainActivity")
   threading.Thread(target=f).start()
 
+
 def set_package_permissions():
   time_dump = open("/tmp/apktiming.txt","w")
   init = time.time()
+  out = subprocess.Popen(['wc', '-l', 'my_text_file.txt'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  stdout,stderr = out.communicate()
+  time_dump.write(stdout)
+  time_dump.write("\n\n")
+  time_dump.write(stderr)
+  time_dump.write("\n\n")
+  
   pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
