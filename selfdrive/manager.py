@@ -539,7 +539,7 @@ def main():
   os.environ['PARAMS_PATH'] = PARAMS
   init = time.time()
   time_dump = open("/tmp/timing.txt","w")
-  time_dump.write(time.time()-init)
+  time_dump.write(str(time.time()-init))
   if ANDROID:
     # the flippening!
     os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
