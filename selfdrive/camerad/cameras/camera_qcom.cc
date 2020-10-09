@@ -312,7 +312,7 @@ void cameras_init(MultiCameraState *s) {
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   } else if (s->device == DEVICE_LP3) {
     camera_init(&s->front, CAMERA_ID_OV8865, 1,
-                /*pixel_clock=*/251200000, /*line_length_pclk=*/7000,
+                /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
                 /*max_gain=*/510, 10);
     s->front.apply_exposure = ov8865_apply_exposure;
   } else {
