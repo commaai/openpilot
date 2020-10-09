@@ -40,11 +40,8 @@ def extract_current_permissions(dump):
 
 def set_package_permissions():
   out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-  _,stderr = out.communicate()
-  print(extract_current_permissions(str(stderr)))
-  print(extract_current_permissions(str(stderr)))
-  print(extract_current_permissions(str(stderr)))
-  print(extract_current_permissions(str(stderr)))
+  stdout, _ = out.communicate()
+  print(extract_current_permissions(str(stdout)))
   time.sleep(5)
   pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
