@@ -598,11 +598,19 @@ def main():
   time_dump.write("Time spent updating_apk\n")
   time_dump.write(str(time.time()-init)+"\n")
   init = time.time()
+
   manager_init()
+
+  time_dump.write("Time spent with manager\n")
+  time_dump.write(str(time.time()-init)+"\n")
+  init = time.time()
+
   manager_prepare(spinner)
   spinner.close()
 
-  
+  time_dump.write("Time spent with spinner\n")
+  time_dump.write(str(time.time()-init)+"\n")
+  init = time.time()
   
   if os.getenv("PREPAREONLY") is not None:
     return
