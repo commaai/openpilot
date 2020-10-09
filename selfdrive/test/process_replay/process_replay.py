@@ -385,8 +385,8 @@ def cpp_replay_process(config, logreader):
   pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
   sub_sockets = [s for _, sub in config.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(pub_sockets)
-  sockets = {s : messaging.sub_sock(s) for s in sub_sockets}
-  print("Sorting logs")
+  sockets = {s : messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
+
   all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
 
@@ -401,15 +401,10 @@ def cpp_replay_process(config, logreader):
   time.sleep(1)
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())
-    for s in config.should_recv_callback(msg):
-      ctime = time.time()
-      response = None
-      while response is None and time.time() - ctime < 2.5:
-        response = messaging.recv_one_or_none(sockets[s])
-      if response is None:
-        print("Package was not received")
-        print(msg)
-      else:
+    resp_sockets = config.should_recv_callback(msg) if config.should_recv_callback is not None else sub_sockets
+    for s in resp_sockets:
+      response = messaging.recv_one(sockets[s])
+      if response is not None:
         m = messaging.new_message(s)
         setattr(m, s, getattr(response,s))
         log_msgs.append(m.as_reader())
