@@ -110,7 +110,12 @@ cdef class Params:
       val = self.p.get(k, b)
 
     if val == b"":
-      return None
+      if block:
+        # If we got no value while running in blocked mode
+        # it means we got an interrupt while waiting
+        raise KeyboardInterrupt
+      else:
+        return None
 
     if encoding is not None:
       return val.decode(encoding)

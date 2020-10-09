@@ -36,7 +36,7 @@ class Params {
 
   // Reads a value from the params database, blocking until successful.
   // Inputs are the same as read_db_value.
-  void read_db_value_blocking(const char* key, char** value, size_t* value_sz);
+  int read_db_value_blocking(const char* key, char** value, size_t* value_sz);
 
   int read_db_all(std::map<std::string, std::string> *params);
   std::vector<char> read_db_bytes(const char* param_name);

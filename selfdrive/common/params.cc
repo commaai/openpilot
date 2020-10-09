@@ -14,6 +14,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <csignal>
 #include <string.h>
 
 #include "common/util.h"
@@ -37,6 +38,12 @@ static const char* persistent_params_path = default_params_path;
 
 } //namespace
 
+
+volatile sig_atomic_t params_do_exit = 0;
+void params_sig_handler(int signal) {
+  std::cout << "got signal" << std::endl;
+  params_do_exit = 1;
+}
 
 static int fsync_dir(const char* path){
   int result = 0;
@@ -252,16 +259,18 @@ cleanup:
 std::string Params::get(std::string key, bool block){
   char* value;
   size_t size;
+  int r;
 
   if (block){
-    read_db_value_blocking((const char*)key.c_str(), &value, &size);
+    r = read_db_value_blocking((const char*)key.c_str(), &value, &size);
+  } else {
+    r = read_db_value((const char*)key.c_str(), &value, &size);
+  }
+
+  if (r == 0){
     return std::string(value, size);
   } else {
-    if (0 == read_db_value((const char*)key.c_str(), &value, &size)){
-      return std::string(value, size);
-    } else {
-      return "";
-    }
+    return "";
   }
 }
 
@@ -274,16 +283,23 @@ int Params::read_db_value(const char* key, char** value, size_t* value_sz) {
   return 0;
 }
 
-void Params::read_db_value_blocking(const char* key, char** value, size_t* value_sz) {
-  while (1) {
+int Params::read_db_value_blocking(const char* key, char** value, size_t* value_sz) {
+  params_do_exit = 0;
+  void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
+  void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
+
+  while (!params_do_exit) {
     const int result = read_db_value(key, value, value_sz);
     if (result == 0) {
-      return;
+      break;
     } else {
-      // Sleep for 0.1 seconds.
-      usleep(100000);
+      usleep(100000); // 0.1 s
     }
   }
+
+  std::signal(SIGINT, prev_handler_sigint);
+  std::signal(SIGTERM, prev_handler_sigterm);
+  return params_do_exit; // Return 0 if we had no interrupt
 }
 
 int Params::read_db_all(std::map<std::string, std::string> *params) {
