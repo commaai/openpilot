@@ -42,6 +42,5 @@ class Params {
   bool read_db_bool(const char* param_name);
 
   std::string get(std::string key, bool block=false);
-  void rm(std::string key);
   void put(std::string key, std::string dat);
 };

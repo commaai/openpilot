@@ -144,7 +144,7 @@ cdef class Params:
     if isinstance(key, str):
       key = key.encode('UTF-8')
 
-    self.p.rm(key)
+    self.p.delete_db_value(key)
 
 
 def put_nonblocking(key, val, d=None):
