@@ -215,7 +215,6 @@ def ublox_rcv_callback(msg):
   else:
      return []
 
-
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
