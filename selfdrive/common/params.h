@@ -13,7 +13,6 @@ class Params {
  public:
   Params(bool persistent_param = false);
   Params(std::string path);
-  Params(char* path);
 
   int write_db_value(const char* key, const char* value, size_t value_size);
 

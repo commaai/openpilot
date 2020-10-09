@@ -89,11 +89,6 @@ Params::Params(std::string path) {
   params_path = path;
 }
 
-Params::Params(char * path) {
-  params_path = std::string(path);
-}
-
-
 void Params::put(std::string key, std::string dat){
   write_db_value(key.c_str(), dat.c_str(), dat.length());
 }
