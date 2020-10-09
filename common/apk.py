@@ -32,28 +32,28 @@ def start_offroad():
   set_package_permissions()
   system("am start -n ai.comma.plus.offroad/.MainActivity")
 
-def extract_current_permissions(dump):
+def extract_current_permissions(dump): #  Doesn't look nice, but the output from dumpsys is also not very nice so blame them
   perms = dump.split("runtime permissions")[1]
-  print("\n")
-  print(perms)
-  print("\n")
   perms2 = perms.split("\\n")
   perms3 = [p.replace(" ","") for p in perms2]
   permsfiltered = [p.split(":")[0].split("android.permission.")[1] for p in perms3 if len(p) > 20]
-  for x in permsfiltered:
-    print(x)
-  print("\n")
   return permsfiltered
 
 
 def set_package_permissions():
   out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   stdout, _ = out.communicate()
-  print(extract_current_permissions(str(stdout)))
+  print(str(stdout).replace("\\n","\n"))
+  given = extract_current_permissions(str(stdout))
   time.sleep(5)
-  pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
-  pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
-  pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
+  wanted_permissions = ["ACCESS_FINE_LOCATION", "READ_PHONE_STATE", "READ_EXTERNAL_STORAGE"]
+  for permission in wanted_permissions:
+    if permission not in given:
+      pm_grant("ai.comma.plus.offroad", "android.permission."+permission)
+    else:
+      print("SKIP "+permission)
+      time.sleep(5)
+
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
 def appops_set(package, op, mode):
