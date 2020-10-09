@@ -341,7 +341,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   // HDR Settings
   {0x3082, 0x0004}, // OPERATION_MODE_CTRL
-  {0x3238, 0x0444}, // EXPOSURE_RATIO
+  {0x3238, 0x0222}, // EXPOSURE_RATIO
   {0x3014, 0x098E}, // FINE_INTEGRATION_TIME_
   {0x321E, 0x098E}, // FINE_INTEGRATION_TIME2
   {0x3222, 0x098E}, // FINE_INTEGRATION_TIME3
@@ -357,10 +357,10 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
    // Initial Gains
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
-  {0x3366, 0x7777}, // ANALOG_GAIN
+  {0x3366, 0x5555}, // ANALOG_GAIN
   {0x3060, 0xBBBB}, // ANALOG_COLOR_GAIN
-  {0x305A, 0x00D1}, // RED_GAIN
-  {0x3058, 0x0118}, // BLUE_GAIN
+  {0x305A, 0x00D8}, // RED_GAIN
+  {0x3058, 0x011B}, // BLUE_GAIN
   {0x3056, 0x009A}, // GREEN1_GAIN
   {0x305C, 0x009A}, // GREEN2_GAIN
   {0x3022, 0x00}, // GROUPED_PARAMETER_HOLD_

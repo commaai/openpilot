@@ -298,11 +298,11 @@ void* frontview_thread(void *arg) {
         x_end = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
 #ifdef QCOM2
-      x_start = 0.15*s->rgb_front_width;
-      x_end = 0.85*s->rgb_front_width;
-      y_start = 0.5*s->rgb_front_height;
-      y_end = 0.75*s->rgb_front_height;
-      skip = 2;
+      x_start = 96;
+      x_end = 1832;
+      y_start = 242;
+      y_end = 1148;
+      skip = 4;
 #endif
       uint32_t lum_binning[256] = {0,};
       for (int y = y_start; y < y_end; y += skip) {
@@ -322,12 +322,19 @@ void* frontview_thread(void *arg) {
       const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
       unsigned int lum_cur = 0;
       int lum_med = 0;
-      for (lum_med=0; lum_med<256; lum_med++) {
+      int lum_med_alt = 0;
+      for (lum_med=255; lum_med>=0; lum_med--) {
         lum_cur += lum_binning[lum_med];
+#ifdef QCOM2
+        if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
+          lum_med_alt = 86;
+        }
+#endif
         if (lum_cur >= lum_total / 2) {
           break;
         }
       }
+      lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
       camera_autoexposure(&s->cameras.front, lum_med / 256.0);
     }
 
@@ -497,10 +504,10 @@ void* wideview_thread(void *arg) {
 
     // auto exposure over big box
     // TODO: fix this? should not use med imo
-    const int exposure_x = 384;
-    const int exposure_y = 300;
-    const int exposure_height = 400;
-    const int exposure_width = 1152;
+    const int exposure_x = 96;
+    const int exposure_y = 250;
+    const int exposure_height = 524;
+    const int exposure_width = 1734;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
@@ -513,14 +520,21 @@ void* wideview_thread(void *arg) {
       const unsigned int lum_total = exposure_height * exposure_width / 4;
       unsigned int lum_cur = 0;
       int lum_med = 0;
-      for (lum_med=0; lum_med<256; lum_med++) {
+      int lum_med_alt = 0;
+      for (lum_med=255; lum_med>=0; lum_med--) {
         // shouldn't be any values less than 16 - yuv footroom
         lum_cur += lum_binning[lum_med];
+#ifdef QCOM2
+        if (lum_cur > 2*lum_total / (3*HLC_A) && lum_med > HLC_THRESH) {
+          lum_med_alt = 86;
+        }
+#endif
         if (lum_cur >= lum_total / 2) {
           break;
         }
       }
 
+      lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
       camera_autoexposure(&s->cameras.wide, lum_med / 256.0);
     }
 
@@ -841,10 +855,10 @@ void* processing_thread(void *arg) {
 
     // auto exposure over big box
 #ifdef QCOM2
-    const int exposure_x = 384;
-    const int exposure_y = 300;
-    const int exposure_height = 400;
-    const int exposure_width = 1152;
+    const int exposure_x = 96;
+    const int exposure_y = 160;
+    const int exposure_height = 986;
+    const int exposure_width = 1734;
     const int skip = 2;
 #else
     const int exposure_x = 290;
@@ -865,14 +879,21 @@ void* processing_thread(void *arg) {
       const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
       unsigned int lum_cur = 0;
       int lum_med = 0;
-      for (lum_med=0; lum_med<256; lum_med++) {
+      int lum_med_alt = 0;
+      for (lum_med=255; lum_med>=0; lum_med--) {
         // shouldn't be any values less than 16 - yuv footroom
         lum_cur += lum_binning[lum_med];
+#ifdef QCOM2
+        if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
+          lum_med_alt = 86;
+        }
+#endif
         if (lum_cur >= lum_total / 2) {
           break;
         }
       }
 
+      lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
       camera_autoexposure(&s->cameras.rear, lum_med / 256.0);
     }
 
@@ -1589,8 +1610,10 @@ void party(VisionState *s) {
 
 int main(int argc, char *argv[]) {
   set_realtime_priority(51);
-#ifdef QCOM
+#if defined(QCOM)
   set_core_affinity(2);
+#elif defined(QCOM2)
+  set_core_affinity(6);
 #endif
 
   zsys_handler_set(NULL);
