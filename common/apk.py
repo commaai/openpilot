@@ -39,9 +39,9 @@ def set_package_permissions():
   print(20*"WORKING\n")
   out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   stdout,stderr = out.communicate()
-  time_dump.write(stdout)
+  time_dump.write(str(stdout))
   time_dump.write("\n\n")
-  time_dump.write(stderr)
+  time_dump.write(str(stderr))
   time_dump.write("\n\n")
   
   pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
