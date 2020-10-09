@@ -7,6 +7,7 @@ import sys
 import platform
 
 TICI = os.path.isfile('/TICI')
+Decider('make')
 
 AddOption('--test',
           action='store_true',
