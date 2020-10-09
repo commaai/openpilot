@@ -536,11 +536,14 @@ def uninstall():
   HARDWARE.reboot(reason="recovery")
 
 def main():
-  os.environ['PARAMS_PATH'] = PARAMS
   init = time.time()
   time_dump = open("/tmp/timing.txt","w")
+
+  os.environ['PARAMS_PATH'] = PARAMS
+
   time_dump.write("Test timing of startup\n")
   time_dump.write(str(time.time()-init)+"\n")
+
   if ANDROID:
     # the flippening!
     os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
