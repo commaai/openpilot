@@ -29,15 +29,14 @@ def install_apk(path):
   return ret == 0
 
 def start_offroad():
-  def f():
-    set_package_permissions()
-    system("am start -n ai.comma.plus.offroad/.MainActivity")
-  threading.Thread(target=f).start()
+  set_package_permissions()
+  system("am start -n ai.comma.plus.offroad/.MainActivity")
 
 
 def set_package_permissions():
   time_dump = open("/tmp/apktiming.txt","w")
   init = time.time()
+  print(20*"WORKING\n")
   out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   stdout,stderr = out.communicate()
   time_dump.write(stdout)
