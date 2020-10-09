@@ -392,13 +392,12 @@ def cpp_replay_process(config, logreader):
 
   manager.start_managed_process(config.proc_name)
 
-  time.sleep(5)  # We give the process time to start
+  time.sleep(1)  # We give the process time to start
 
   log_msgs = []
   for s in sub_sockets:
     messaging.recv_one_or_none(sockets[s])
 
-  time.sleep(1)
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())
     resp_sockets = config.should_recv_callback(msg) if config.should_recv_callback is not None else sub_sockets
