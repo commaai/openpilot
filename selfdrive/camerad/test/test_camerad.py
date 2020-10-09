@@ -32,12 +32,6 @@ class TestCamerad(unittest.TestCase):
     if not (EON or TICI):
       raise unittest.SkipTest
 
-  def setUp(self):
-    pass
-
-  def tearDown(self):
-    pass
-
   def _get_snapshots(self):
     ret = None
     start_time = time.time()
@@ -57,23 +51,25 @@ class TestCamerad(unittest.TestCase):
         time.sleep(1)
     return ret
 
+  def _numpy_bgr2gray(self, im):
+    ret = np.clip(im[:,:,0] * 0.114 + im[:,:,1] * 0.587 + im[:,:,2] * 0.299, 0, 255).astype(np.uint8)
+    return ret
+
+  def _numpy_lap(self, im):
+    ret = np.zeros(im.shape)
+    ret += -4 * im
+    ret += np.concatenate([np.zeros((im.shape[0],1)),im[:,:-1]], axis=1)
+    ret += np.concatenate([im[:,1:],np.zeros((im.shape[0],1))], axis=1)
+    ret += np.concatenate([np.zeros((1,im.shape[1])),im[:-1,:]], axis=0)
+    ret += np.concatenate([im[1:,:],np.zeros((1,im.shape[1]))], axis=0)
+    ret = np.clip(ret, 0, 255).astype(np.uint8)
+    return ret
+
   def _is_really_sharp(self, i, threshold=800, roi_max=np.array([8,6]), roi_xxyy=np.array([1,6,2,3])):
-    def numpy_bgr2gray(im):
-      ret = np.clip(im[:,:,0] * 0.114 + im[:,:,1] * 0.587 + im[:,:,2] * 0.299, 0, 255).astype(np.uint8)
-      return ret
-    def numpy_lap(im):
-      ret = np.zeros(im.shape)
-      ret += -4 * im
-      ret += np.concatenate([np.zeros((im.shape[0],1)),im[:,:-1]], axis=1)
-      ret += np.concatenate([im[:,1:],np.zeros((im.shape[0],1))], axis=1)
-      ret += np.concatenate([np.zeros((1,im.shape[1])),im[:-1,:]], axis=0)
-      ret += np.concatenate([im[1:,:],np.zeros((1,im.shape[1]))], axis=0)
-      ret = np.clip(ret, 0, 255).astype(np.uint8)
-      return ret
-    i = numpy_bgr2gray(i)
+    i = self._numpy_bgr2gray(i)
     x_pitch = i.shape[1] // roi_max[0]
     y_pitch = i.shape[0] // roi_max[1]
-    lap = numpy_lap(i)
+    lap = self._numpy_lap(i)
     lap_map = np.zeros((roi_max[1], roi_max[0]))
     for r in range(lap_map.shape[0]):
       for c in range(lap_map.shape[1]):
@@ -86,9 +82,9 @@ class TestCamerad(unittest.TestCase):
     else:
       return False
 
-  def _is_exposure_okay(self, i):
-    # to add
-    return True
+  def _is_exposure_okay(self, i, med_ex=np.array([0.2,0.4]), mean_ex=np.array([0.2,0.6])):
+    i = self._numpy_bgr2gray(i)
+    return med_ex[0] < np.median(i) < med_ex[1] and mean_ex[0] < np.mean(i) < mean_ex[1]
 
   @with_processes(['camerad'])
   def test_camera_operation(self):
@@ -107,7 +103,6 @@ class TestCamerad(unittest.TestCase):
       self.assertTrue(self._is_really_sharp(pic))
       self.assertTrue(self._is_exposure_okay(pic))
       self.assertTrue(self._is_exposure_okay(fpic))
-
     elif TICI:
       raise unittest.SkipTest # TBD
     else:
