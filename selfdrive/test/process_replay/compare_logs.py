@@ -61,14 +61,14 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   #check for missaligned starts
   if len(log1) == len(log2) + 1:
     try:
-      diff = compare_logs(log1[1:], log2)
+      diff = compare_logs(log1[1:], log2, ignore_fields, ignore_msgs, tolerance)
       return diff
     except Exception:
       pass
 
   if len(log1) + 1 == len(log2):
     try:
-      diff = compare_logs(log1, log2[1:])
+      diff = compare_logs(log1, log2[1:], ignore_fields, ignore_msgs, tolerance)
       return diff
     except Exception:
       pass
