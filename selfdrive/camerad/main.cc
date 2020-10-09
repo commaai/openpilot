@@ -1544,9 +1544,6 @@ void free_buffers(VisionState *s) {
 void party(VisionState *s) {
   int err;
 
-  err = set_core_affinity(6);
-  assert(err == 0);
-
   s->terminate_pub = zsock_new_pub("@inproc://terminate");
   assert(s->terminate_pub);
 
@@ -1613,8 +1610,10 @@ void party(VisionState *s) {
 
 int main(int argc, char *argv[]) {
   set_realtime_priority(51);
-#ifdef QCOM
+#if defined(QCOM)
   set_core_affinity(2);
+#elif defined(QCOM2)
+  set_core_affinity(6);
 #endif
 
   zsys_handler_set(NULL);
