@@ -133,6 +133,7 @@ pipeline {
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "CI=1 python selfdrive/loggerd/tests/test_loggerd.py"],
+                      //["test camerad", "CI=1 python selfdrive/camerad/test/test_camerad.py"], // wait for shelf refactor
                       //["test updater", "python installer/updater/test_updater.py"],
                     ])
                   }
