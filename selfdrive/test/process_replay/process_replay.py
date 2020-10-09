@@ -382,9 +382,8 @@ def python_replay_process(cfg, lr):
   return log_msgs
 
 def cpp_replay_process(config, logreader):
-  pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
   sub_sockets = [s for _, sub in config.pub_sub.items() for s in sub]  # We get responses here
-  pm = messaging.PubMaster(pub_sockets)
+  pm = messaging.PubMaster(config.pub_sub.keys())
   sockets = {s : messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
 
   all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
