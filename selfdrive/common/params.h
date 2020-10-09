@@ -14,6 +14,7 @@ class Params {
   Params(bool persistent_param = false);
   Params(std::string path);
 
+  int write_db_value(std::string key, std::string dat);
   int write_db_value(const char* key, const char* value, size_t value_size);
 
   // Reads a value from the params database.
@@ -42,5 +43,4 @@ class Params {
   bool read_db_bool(const char* param_name);
 
   std::string get(std::string key, bool block=false);
-  void put(std::string key, std::string dat);
 };

@@ -138,7 +138,7 @@ cdef class Params:
     if key not in keys:
       raise UnknownKeyName(key)
 
-    self.p.put(key, dat)
+    self.p.write_db_value(key, dat)
 
   def delete(self, key):
     if isinstance(key, str):
