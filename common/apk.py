@@ -39,11 +39,11 @@ def extract_current_permissions(dump):
   print("\n")
   perms2 = perms.split("\\n")
   perms3 = [p.replace(" ","") for p in perms2]
-  for x in perms3:
+  permsfiltered = [p.split(":")[0].split("android.permission.")[1] for p in perms3 if len(p) > 20]
+  for x in permsfiltered:
     print(x)
-    print(len(x))
   print("\n")
-  return perms2
+  return permsfiltered
 
 
 def set_package_permissions():
