@@ -579,9 +579,7 @@ def main():
     if params.get(k) is None:
       params.put(k, v)
 
-  time_dump.write("Time spent setting params\n")
-  time_dump.write(str(time.time()-init)+"\n")
-  init = time.time()
+  
   
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:
@@ -590,15 +588,21 @@ def main():
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
   
+  time_dump.write("Time spent setting params\n")
+  time_dump.write(str(time.time()-init)+"\n")
+  init = time.time()
+  
   if ANDROID:
     update_apks()
-  manager_init()
-  manager_prepare(spinner)
-  spinner.close()
 
   time_dump.write("Time spent updating_apk\n")
   time_dump.write(str(time.time()-init)+"\n")
   init = time.time()
+  manager_init()
+  manager_prepare(spinner)
+  spinner.close()
+
+  
   
   if os.getenv("PREPAREONLY") is not None:
     return
