@@ -268,7 +268,9 @@ std::string Params::get(std::string key, bool block){
   }
 
   if (r == 0){
-    return std::string(value, size);
+    std::string s(value, size);
+    free(value);
+    return s;
   } else {
     return "";
   }
