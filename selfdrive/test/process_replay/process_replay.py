@@ -401,19 +401,18 @@ def cpp_replay_process(config, logreader):
   time.sleep(1)
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())
-    if (config.should_recv_callback is None) or len(config.should_recv_callback(msg)) > 0:
-      for s in config.should_recv_callback(msg):
-        ctime = time.time()
-        response = None
-        while response is None and time.time() - ctime < 2.5:
-          response = messaging.recv_one_or_none(sockets[s])
-        if response is None:
-          print("Package was not received")
-          print(msg)
-        else:
-          m = messaging.new_message(s)
-          setattr(m, s, getattr(response,s))
-          log_msgs.append(m.as_reader())
+    for s in config.should_recv_callback(msg):
+      ctime = time.time()
+      response = None
+      while response is None and time.time() - ctime < 2.5:
+        response = messaging.recv_one_or_none(sockets[s])
+      if response is None:
+        print("Package was not received")
+        print(msg)
+      else:
+        m = messaging.new_message(s)
+        setattr(m, s, getattr(response,s))
+        log_msgs.append(m.as_reader())
 
   manager.kill_managed_process(config.proc_name)
   return log_msgs
