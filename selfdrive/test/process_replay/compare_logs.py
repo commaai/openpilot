@@ -58,21 +58,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     ignore_msgs = []
 
   log1, log2 = [list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2)]
-  # check for missaligned starts
-  if len(log1) == len(log2) + 1:
-    try:
-      diff = compare_logs(log1[1:], log2, ignore_fields, ignore_msgs, tolerance)
-      return diff
-    except Exception:
-      pass
 
-  if len(log1) + 1 == len(log2):
-    try:
-      diff = compare_logs(log1, log2[1:], ignore_fields, ignore_msgs, tolerance)
-      return diff
-    except Exception:
-      pass
-    
   if len(log1) != len(log2):
     raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}")
 
