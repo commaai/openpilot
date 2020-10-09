@@ -389,6 +389,7 @@ def cpp_replay_process(config, logreader):
   all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
 
+  manager.prepare_managed_process(config.proc_name)
   manager.start_managed_process(config.proc_name)
 
   time.sleep(1)  # We give the process time to start
