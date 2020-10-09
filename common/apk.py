@@ -50,6 +50,8 @@ def set_package_permissions():
   for permission in wanted_permissions:
     if permission not in given:
       pm_grant("ai.comma.plus.offroad", "android.permission."+permission)
+      print("SET "+permission)
+      time.sleep(5)
     else:
       print("SKIP "+permission)
       time.sleep(5)
