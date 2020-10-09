@@ -55,7 +55,9 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
     ignore_msgs = []
   url = BASE_URL + os.path.basename(cmp_log_fn)
   cmp_log_msgs = list(LogReader(url))
+
   log_msgs = replay_process(cfg, lr)
+
   # check to make sure openpilot is engaged in the route
   # TODO: update routes so enable check can run
   #       failed enable check: honda bosch, hyundai, chrysler, and subaru
@@ -67,6 +69,7 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
     else:
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception("Route never enabled: %s" % segment)
+
   try:
     return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
   except Exception as e:
@@ -150,6 +153,7 @@ if __name__ == "__main__":
 
     rlog_fn = get_segment(segment)
     lr = LogReader(rlog_fn)
+
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):

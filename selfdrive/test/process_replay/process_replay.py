@@ -398,6 +398,7 @@ def cpp_replay_process(config, logreader):
   log_msgs = []
   for s in sub_sockets:
     messaging.recv_one_or_none(sockets[s])
+
   time.sleep(1)
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())
