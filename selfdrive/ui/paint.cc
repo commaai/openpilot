@@ -574,7 +574,6 @@ static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
   const Rect &viz_rect = scene->viz_rect;
 
-
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
   glViewport(viz_rect.x+scene->ui_viz_ro, viz_rect.y, s->fb_w - bdr_s*2, viz_rect.h);
@@ -605,7 +604,7 @@ static void ui_draw_vision(UIState *s) {
 
 static void ui_draw_background(UIState *s) {
   const NVGcolor color = bg_colors[s->status];
-  glClearColor(color.r, color.g, color.b, 0.5);
+  glClearColor(color.r, color.g, color.b, 1.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
