@@ -539,6 +539,7 @@ def main():
   os.environ['PARAMS_PATH'] = PARAMS
   init = time.time()
   time_dump = open("/tmp/timing.txt","w")
+  time_dump.write("Test timing of startup")
   time_dump.write(str(time.time()-init))
   if ANDROID:
     # the flippening!
