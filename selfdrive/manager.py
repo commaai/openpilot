@@ -520,16 +520,17 @@ def manager_prepare(spinner=None):
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-  # Spinner has to start from 70 here
-  total = 100.0 if prebuilt else 30.0
-  for i, p in enumerate(managed_processes):
-    if spinner is not None:
-      spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
-    
-    init = time.time()
-    prepare_managed_process(p)
-    with open("/tmp/aa_"+p+".txt", "w") as f:
-      f.write(str(time.time()-init))
+  with open("/tmp/ptiming.txt", "w") as f:
+    # Spinner has to start from 70 here
+    total = 100.0 if prebuilt else 30.0
+    for i, p in enumerate(managed_processes):
+      if spinner is not None:
+        spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
+      
+      init = time.time()
+      prepare_managed_process(p)
+      f.write(p)
+      f.write("\n"+str(time.time()-init)+"\n")
 
 def uninstall():
   cloudlog.warning("uninstalling")
