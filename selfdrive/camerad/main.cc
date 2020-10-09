@@ -298,10 +298,10 @@ void* frontview_thread(void *arg) {
         x_end = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
 #ifdef QCOM2
-      x_start = 0.05*s->rgb_front_width;
-      x_end = 0.95*s->rgb_front_width;
-      y_start = 0.05*s->rgb_front_height;
-      y_end = 0.95*s->rgb_front_height;
+      x_start = 96;
+      x_end = 1832;
+      y_start = 242;
+      y_end = 1148;
       skip = 4;
 #endif
       uint32_t lum_binning[256] = {0,};
@@ -505,8 +505,8 @@ void* wideview_thread(void *arg) {
     // auto exposure over big box
     // TODO: fix this? should not use med imo
     const int exposure_x = 96;
-    const int exposure_y = 60;
-    const int exposure_height = 724;
+    const int exposure_y = 250;
+    const int exposure_height = 524;
     const int exposure_width = 1734;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
@@ -525,7 +525,7 @@ void* wideview_thread(void *arg) {
         // shouldn't be any values less than 16 - yuv footroom
         lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
-        if (lum_cur > lum_total / (2*HLC_A) && lum_med > HLC_THRESH) {
+        if (lum_cur > 2*lum_total / (3*HLC_A) && lum_med > HLC_THRESH) {
           lum_med_alt = 86;
         }
 #endif

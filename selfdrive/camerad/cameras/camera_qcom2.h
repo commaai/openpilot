@@ -20,10 +20,10 @@
 #define EXPOSURE_TIME_MIN 8 // min time limited by HDR exp factor
 #define EXPOSURE_TIME_MAX 1132 // with HDR, no slower than 1/25 sec (1416 lines)
 
-#define HLC_THRESH 200
+#define HLC_THRESH 240
 #define HLC_A 80
 
-#define EF_LOWPASS_K 0.125
+#define EF_LOWPASS_K 0.35
 
 #ifdef __cplusplus
 extern "C" {
