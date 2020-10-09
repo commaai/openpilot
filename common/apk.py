@@ -45,6 +45,9 @@ def set_package_permissions():
   stdout, _ = out.communicate()
   print(str(stdout).replace("\\n","\n"))
   given = extract_current_permissions(str(stdout))
+  for x in given:
+    print("\n" + x + "\n")
+    
   time.sleep(5)
   wanted_permissions = ["ACCESS_FINE_LOCATION", "READ_PHONE_STATE", "READ_EXTERNAL_STORAGE"]
   for permission in wanted_permissions:
