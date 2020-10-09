@@ -35,6 +35,7 @@ if __name__ == '__main__':
 
     hist = cv2.calcHist([cv2.cvtColor(cam_bufs[cam_id], cv2.COLOR_BGR2GRAY)],[0],None,[32],[0,256])
     hist = (H*hist/hist.max()).astype(np.uint8)
+    hist_bufs[cam_id] = 0
     for i,bb in enumerate(hist):
         hist_bufs[cam_id, H-bb[0]:,i*(200//32):(i+1)*(200//32), :] = (222,222,222)
 
