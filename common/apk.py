@@ -4,6 +4,7 @@ import glob
 import hashlib
 import shutil
 import threading
+import time
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
@@ -34,12 +35,13 @@ def start_offroad():
   threading.Thread(target=f).start()
 
 def set_package_permissions():
+  init = time.time()
   pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
   pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
-
+  print(5*("Spent "+str(time.time()-init)+" on packages\n"))
 def appops_set(package, op, mode):
   system(f"LD_LIBRARY_PATH= appops set {package} {op} {mode}")
 
