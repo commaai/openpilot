@@ -536,9 +536,6 @@ def uninstall():
   HARDWARE.reboot(reason="recovery")
 
 def main():
-  init = time.time()
-  dump = open("~/timing.txt","w")
-  dump.write(time.time()-init)
   os.environ['PARAMS_PATH'] = PARAMS
 
   if ANDROID:
@@ -590,7 +587,6 @@ def main():
 
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
-  dump.close()
   try:
     manager_thread()
   except Exception:
