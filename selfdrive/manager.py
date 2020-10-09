@@ -522,11 +522,14 @@ def manager_prepare(spinner=None):
 
   # Spinner has to start from 70 here
   total = 100.0 if prebuilt else 30.0
-
   for i, p in enumerate(managed_processes):
     if spinner is not None:
       spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
+    
+    init = time.time()
     prepare_managed_process(p)
+    with open("/tmp/aa_"+p+".txt") as f:
+      f.write(str(time.time-init))
 
 def uninstall():
   cloudlog.warning("uninstalling")
