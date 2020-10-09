@@ -591,6 +591,7 @@ def main():
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
 
+  time_dump.close()
   try:
     manager_thread()
   except Exception:
@@ -602,7 +603,6 @@ def main():
   if params.get("DoUninstall", encoding='utf8') == "1":
     uninstall()
 
-  time_dump.close()
 
 if __name__ == "__main__":
   try:
