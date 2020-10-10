@@ -43,20 +43,21 @@ void* live_thread(void *arg) {
     910.0, 0.0, 582.0,
     0.0, 910.0, 437.0,
     0.0,   0.0,   1.0;
+  float db_s = 0.5; // debayering does a 2x downscale
 #else
   Eigen::Matrix<float, 3, 3> eon_intrinsics;
   eon_intrinsics <<
     2648.0, 0.0, 1928.0/2,
     0.0, 2648.0, 1208.0/2,
     0.0,   0.0,   1.0;
+  float db_s = 1.0;
 #endif
 
-    // debayering does a 2x downscale
   mat3 yuv_transform = transform_scale_buffer((mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0,
-  }}, 0.5);
+  }}, db_s);
 
   while (!do_exit) {
     if (sm.update(10) > 0){

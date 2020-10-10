@@ -1,6 +1,6 @@
 //==============================================================================
 //
-// Copyright (c) 2017-2019 Qualcomm Technologies, Inc.
+// Copyright (c) 2017-2020 Qualcomm Technologies, Inc.
 // All Rights Reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -160,6 +160,14 @@ public:
             m_StepExactly0(stepFor0),
             m_QuantizedStepSize(stepSize) {};
 
+    UserBufferEncodingTf8(const zdl::DlSystem::UserBufferEncoding &ubEncoding) : UserBufferEncodingUnsigned8Bit(ubEncoding.getElementType()){
+            const zdl::DlSystem::UserBufferEncodingTf8* ubEncodingTf8
+                            = dynamic_cast <const zdl::DlSystem::UserBufferEncodingTf8*> (&ubEncoding);
+            if (ubEncodingTf8) {
+                m_StepExactly0 = ubEncodingTf8->getStepExactly0();
+                m_QuantizedStepSize = ubEncodingTf8->getQuantizedStepSize();
+            }
+    }
 
 /**
       * @brief Sets the step value that represents 0
@@ -246,6 +254,17 @@ public:
                                            bitWidth(bWidth),
                                            m_StepExactly0(stepFor0),
                                            m_QuantizedStepSize(stepSize){};
+
+   UserBufferEncodingTfN(const zdl::DlSystem::UserBufferEncoding &ubEncoding) : UserBufferEncoding(ubEncoding.getElementType()){
+            const zdl::DlSystem::UserBufferEncodingTfN* ubEncodingTfN
+                            = dynamic_cast <const zdl::DlSystem::UserBufferEncodingTfN*> (&ubEncoding);
+            if (ubEncodingTfN) {
+                m_StepExactly0 = ubEncodingTfN->getStepExactly0();
+                m_QuantizedStepSize = ubEncodingTfN->getQuantizedStepSize();
+                bitWidth = ubEncodingTfN->bitWidth;
+            }
+   }
+
    size_t getElementSize() const noexcept override;
    /**
       * @brief Sets the step value that represents 0
@@ -283,7 +302,7 @@ public:
     * @return Minimum representable floating point value
     */
    float getMin() const {
-      return m_QuantizedStepSize * (0 - (double)m_StepExactly0);
+      return static_cast<float>(m_QuantizedStepSize * (0 - (double)m_StepExactly0));
    }
 
    /**
@@ -293,7 +312,7 @@ public:
     * @return Maximum representable floating point value
     */
    float getMax() const{
-       return m_QuantizedStepSize * (pow(2,bitWidth)-1 - (double)m_StepExactly0);
+       return static_cast<float>(m_QuantizedStepSize * (pow(2,bitWidth)-1 - (double)m_StepExactly0));
    };
 
    /**

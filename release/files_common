@@ -434,6 +434,7 @@ phonelibs/libyuv/lib/**
 
 phonelibs/snpe/include/**
 phonelibs/snpe/aarch64**
+phonelibs/snpe/dsp**
 
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**

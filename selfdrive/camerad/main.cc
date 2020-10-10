@@ -343,8 +343,10 @@ void party(cl_device_id device_id, cl_context context) {
 
 int main(int argc, char *argv[]) {
   set_realtime_priority(51);
-#ifdef QCOM
+#if defined(QCOM)
   set_core_affinity(2);
+#elif defined(QCOM2)
+  set_core_affinity(6);
 #endif
 
   zsys_handler_set(NULL);

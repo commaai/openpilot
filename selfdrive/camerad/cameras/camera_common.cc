@@ -218,13 +218,25 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total) {
   unsigned int lum_cur = 0;
   int lum_med = 0;
-  for (lum_med = 0; lum_med < len; lum_med++) {
-    // shouldn't be any values less than 16 - yuv footroom
+  int lum_med_alt = 0;
+  for (lum_med=255; lum_med>=0; lum_med--) {
     lum_cur += lum_binning[lum_med];
+#ifdef QCOM2
+    bool reach_hlc_perc = false;
+    if (s->camera_num == 0) { // wide
+      reach_hlc_perc = lum_cur > 2*lum_total / (3*HLC_A);
+    } else {
+      reach_hlc_perc = lum_cur > lum_total / HLC_A;
+    }
+    if (reach_hlc_perc && lum_med > HLC_THRESH) {
+      lum_med_alt = 86;
+    }
+#endif
     if (lum_cur >= lum_total / 2) {
       break;
     }
   }
+  lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
   camera_autoexposure(s, lum_med / 256.0);
 }
 
@@ -301,11 +313,11 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       x_end = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
     }
 #ifdef QCOM2
-      x_start = 0.15*b->rgb_width;
-      x_end = 0.85*b->rgb_width;
-      y_start = 0.5*b->rgb_height;
-      y_end = 0.75*b->rgb_height;
-      skip = 2;
+    x_start = 96;
+    x_end = 1832;
+    y_start = 242;
+    y_end = 1148;
+    skip = 4;
 #endif
     const uint8_t *bgr_front_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
     uint32_t lum_binning[256] = {0};
