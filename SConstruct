@@ -108,6 +108,7 @@ else:
     ]
 
   rpath = [
+    "phonelibs/snpe/x86_64-linux-clang",
     "external/tensorflow/lib",
     "cereal",
     "selfdrive/common"
