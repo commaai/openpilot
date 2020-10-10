@@ -986,7 +986,7 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 #ifdef NOSCREEN
   const CameraBuf *b = &c->buf;
   if (b->cur_frame_data.frame_id % 4 == 2) {
-    sendrgb(&s->cameras, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, 2);
+    sendrgb(s, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, 2);
   }
 #endif
 }
