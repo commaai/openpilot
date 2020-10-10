@@ -360,33 +360,46 @@ def thermald_thread():
     should_start = ignition
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    should_start = should_start and msg.thermal.freeSpace > 0.02
+    if should_start and msg.thermal.freeSpace <= 0.02:
+      cloudlog.info("Blocking start: <2 percent memory")
+      should_start = False
 
     # confirm we have completed training and aren't uninstalling
-    should_start = should_start and accepted_terms and (not do_uninstall) and \
-                   (completed_training or current_branch in ['dashcam', 'dashcam-staging'])
-
-    # check for firmware mismatch
-    should_start = should_start and fw_version_match
+    if should_start and not (accepted_terms and (not do_uninstall) and
+      (completed_training or current_branch in ['dashcam', 'dashcam-staging'])):
+      cloudlog.info("Blocking start: Did not complete training or uninstalling")
+      should_start = False
 
     # check if system time is valid
-    should_start = should_start and time_valid
+    if should_start and not time_valid:
+      cloudlog.info("Blocking start: Invalid system time")
+      should_start = False
 
     # don't start while taking snapshot
-    if not should_start_prev:
+    if should_start and not should_start_prev:
       is_viewing_driver = params.get("IsDriverViewEnabled") == b"1"
       is_taking_snapshot = params.get("IsTakingSnapshot") == b"1"
-      should_start = should_start and (not is_taking_snapshot) and (not is_viewing_driver)
+      if is_taking_snapshot:
+        cloudlog.info("Blocking start: Taking snapshot")
+        should_start = False
+      elif is_viewing_driver:
+        cloudlog.info("Blocking start: Driver view enabled")
+        should_start = False
 
+    # check for firmware mismatch
     if fw_version_match and not fw_version_match_prev:
       set_offroad_alert("Offroad_PandaFirmwareMismatch", False)
-    if not fw_version_match and fw_version_match_prev:
-      set_offroad_alert("Offroad_PandaFirmwareMismatch", True)
+    if not fw_version_match:
+      cloudlog.info("Blocking start: Firmware mismatch")
+      should_start = False
+      if fw_version_match_prev:
+        set_offroad_alert("Offroad_PandaFirmwareMismatch", True)
 
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
-    if thermal_status >= ThermalStatus.danger:
+    if should_start and thermal_status >= ThermalStatus.danger:
       should_start = False
+      cloudlog.info("Blocking start: Device temperature too high")
       if thermal_status_prev < ThermalStatus.danger:
         set_offroad_alert("Offroad_TemperatureTooHigh", True)
     else:
