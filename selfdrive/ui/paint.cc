@@ -269,6 +269,8 @@ static void draw_frame(UIState *s) {
   glUniform1i(s->frame_texture_loc, 0);
   glUniformMatrix4fv(s->frame_transform_loc, 1, GL_TRUE, out_mat->v);
 
+  // The following assertion fails on Intel GPU with Open GL
+  // Commenting it for now, it needs to be investigated
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void*)0);
@@ -586,7 +588,9 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
   }
 }
 
-static void ui_draw_vision(UIState *s) {
+// configures the GL options for main vision
+// this needs to be separate from nvgBeginFrame and nvgEndFrame
+static void ui_draw_vision_GL(UIState *s) {
   const UIScene *scene = &s->scene;
   const Rect &viz_rect = scene->viz_rect;
   // Draw video frames
@@ -595,9 +599,14 @@ static void ui_draw_vision(UIState *s) {
   glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
-
   glViewport(0, 0, s->fb_w, s->fb_h);
+}
 
+static void ui_draw_vision(UIState *s) {
+  const UIScene *scene = &s->scene;
+  ui_draw_vision_GL(s);
+  
+  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   // Draw augmented elements
   if (!scene->frontview && scene->world_objects_visible) {
     ui_draw_world(s);
@@ -615,6 +624,7 @@ static void ui_draw_vision(UIState *s) {
   } else if (!scene->frontview) {
     ui_draw_vision_footer(s);
   }
+  nvgEndFrame(s->vg);
 }
 
 static void ui_draw_background(UIState *s) {
@@ -636,13 +646,16 @@ void ui_draw(UIState *s) {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, s->fb_w, s->fb_h);
+  
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
+  nvgEndFrame(s->vg);
+  
   if (s->started && s->active_app == cereal::UiLayoutState::App::NONE &&
       s->status != STATUS_OFFROAD && s->vision_connected) {
     ui_draw_vision(s);
   }
-  nvgEndFrame(s->vg);
+  
   glDisable(GL_BLEND);
 }
 
