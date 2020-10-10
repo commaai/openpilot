@@ -261,8 +261,6 @@ static void draw_frame(UIState *s) {
   glUniform1i(s->frame_texture_loc, 0);
   glUniformMatrix4fv(s->frame_transform_loc, 1, GL_TRUE, out_mat->v);
 
-  // The following assertion fails on Intel GPU with Open GL
-  // Commenting it for now, it needs to be investigated
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void*)0);
