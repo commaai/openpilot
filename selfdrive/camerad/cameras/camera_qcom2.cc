@@ -1161,7 +1161,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
     }
   } else if (s->exposure_time < s->exposure_time_min || kd) {
     if (s->analog_gain > 0) {
-      s->exposure_time = max(EXPOSURE_TIME_MIN * 2, s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain]));
+      s->exposure_time = std::max(EXPOSURE_TIME_MIN * 2, (int)(s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain])));
       s->analog_gain -= 1;
       if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 0.25) { // switch back to LCG at iso 200
         switch_conversion_gain(s);
