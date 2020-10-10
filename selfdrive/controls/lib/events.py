@@ -267,7 +267,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Upgrade to comma two or black panda",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-    ET.NO_ENTRY: NoEntryAlert("White panda is no longer supported"),
+    ET.NO_ENTRY: NoEntryAlert("Unsupported Hardware"),
   },
 
   EventName.invalidLkasSetting: {
@@ -771,11 +771,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # TODO: this is unclear, update check only happens offroad
   EventName.internetConnectivityNeeded: {
     ET.PERMANENT: Alert(
-      "Please connect to Internet",
+      "Connect to Internet",
       "An Update Check Is Required to Engage",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-    ET.NO_ENTRY: NoEntryAlert("Please Connect to Internet",
+    ET.NO_ENTRY: NoEntryAlert("Connect to Internet",
                               audible_alert=AudibleAlert.chimeDisengage),
   },
 
