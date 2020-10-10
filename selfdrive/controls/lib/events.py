@@ -469,6 +469,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   },
 
+  EventName.fanMalfunction: {
+    ET.PERMANENT: Alert(
+      "Fan Malfunction",
+      "Contact Support",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
+  },
+
   # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {

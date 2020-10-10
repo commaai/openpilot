@@ -1,4 +1,4 @@
-import numpy as np
+import math
 from collections import defaultdict
 
 from common.numpy_fast import interp
@@ -32,16 +32,16 @@ class FCWChecker():
     # then limit ARel so that v_lead will get to zero in no sooner than t_decel.
     # This helps underweighting ARel when v_lead is close to zero.
     t_decel = 2.
-    a_rel = np.minimum(a_rel, v_lead / t_decel)
+    a_rel = min(a_rel, v_lead / t_decel)
 
     # delta of the quadratic equation to solve for ttc
     delta = v_rel**2 + 2 * x_lead * a_rel
 
     # assign an arbitrary high ttc value if there is no solution to ttc
-    if delta < 0.1 or (np.sqrt(delta) + v_rel < 0.1):
+    if delta < 0.1 or (math.sqrt(delta) + v_rel < 0.1):
       ttc = max_ttc
     else:
-      ttc = np.minimum(2 * x_lead / (np.sqrt(delta) + v_rel), max_ttc)
+      ttc = min(2 * x_lead / (math.sqrt(delta) + v_rel), max_ttc)
     return ttc
 
   def update(self, mpc_solution, cur_time, active, v_ego, a_ego, x_lead, v_lead, a_lead, y_lead, vlat_lead, fcw_lead, blinkers):
