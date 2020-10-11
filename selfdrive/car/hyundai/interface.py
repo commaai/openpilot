@@ -213,7 +213,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1737. + STD_CARGO_KG
       ret.wheelbase = 2.7
       tire_stiffness_factor = 0.385
-    elif candidate in [CAR.CARDENZA, CAR.CARDENZA_HEV]:      
+    elif candidate in [CAR.CADENZA, CAR.CADENZA_HEV]:      
       ret.mass = 1575. + STD_CARGO_KG
       ret.wheelbase = 2.85
       ret.steerRatio = 12.5
