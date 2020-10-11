@@ -1,4 +1,4 @@
-from functools import total_ordering
+from enum import Enum, IntEnum
 from typing import Dict, Union, Callable, Any
 
 from cereal import log, car
@@ -14,7 +14,7 @@ AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EventName = car.CarEvent.EventName
 
 # Alert priorities
-class Priority:
+class Priority(IntEnum):
   LOWEST = 0
   LOWER = 1
   LOW = 2
@@ -23,7 +23,7 @@ class Priority:
   HIGHEST = 5
 
 # Event types
-class ET:
+class ET(Enum):
   ENABLE = 'enable'
   PRE_ENABLE = 'preEnable'
   NO_ENTRY = 'noEntry'
@@ -97,16 +97,15 @@ class Events:
       ret.append(event)
     return ret
 
-@total_ordering
 class Alert:
   def __init__(self,
                alert_text_1: str,
                alert_text_2: str,
-               alert_status,
-               alert_size,
-               alert_priority,
-               visual_alert,
-               audible_alert,
+               alert_status: log.ControlsState.AlertStatus,
+               alert_size: log.ControlsState.AlertSize,
+               alert_priority: Priority,
+               visual_alert: car.CarControl.HUDControl.VisualAlert,
+               audible_alert: car.CarControl.HUDControl.AudibleAlert,
                duration_sound: float,
                duration_hud_alert: float,
                duration_text: float,
@@ -128,24 +127,15 @@ class Alert:
     self.alert_rate = alert_rate
     self.creation_delay = creation_delay
 
-    # alertmanager writes these
     self.start_time = 0.
     self.alert_type = ""
     self.event_type = None
 
-    # typecheck that enums are valid on startup
-    tst = car.CarControl.new_message()
-    tst.hudControl.visualAlert = self.visual_alert
-
   def __str__(self) -> str:
-    return self.alert_text_1 + "/" + self.alert_text_2 + " " + str(self.alert_priority) + "  " + str(
-      self.visual_alert) + " " + str(self.audible_alert)
+    return f"{self.alert_text_1}/{self.alert_text_2} {self.alert_priority} {self.visual_alert} {self.audible_alert}"
 
   def __gt__(self, alert2) -> bool:
     return self.alert_priority > alert2.alert_priority
-
-  def __eq__(self, alert2) -> bool:
-    return self.alert_priority == alert2.alert_priority
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
@@ -212,7 +202,7 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
     text = "Main Switch Off"
   return NoEntryAlert(text, duration_hud_alert=0.)
 
-EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
+EVENTS: Dict[int, Dict[ET, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
   # ********** events only containing alerts displayed in all states **********
