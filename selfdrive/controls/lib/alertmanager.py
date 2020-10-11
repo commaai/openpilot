@@ -53,12 +53,12 @@ class AlertManager:
 
       self.activealerts.append(added_alert)
 
-  def process_alerts(self, frame: int) -> None:
+  def process_alerts(self, frame: int, clear_event_type=None) -> None:
     cur_time = frame * DT_CTRL
 
     # first get rid of all the expired alerts
-    self.activealerts = [a for a in self.activealerts if a.start_time +
-                         max(a.duration_sound, a.duration_hud_alert, a.duration_text) > cur_time]
+    self.activealerts = [a for a in self.activealerts if a.event_type != clear_event_type and
+                         a.start_time + max(a.duration_sound, a.duration_hud_alert, a.duration_text) > cur_time]
 
     # sort by priority first and then by start_time
     self.activealerts.sort(key=lambda k: (k.alert_priority, k.start_time), reverse=True)

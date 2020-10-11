@@ -79,6 +79,7 @@ class Events:
 
           if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
             alert.alert_type = f"{EVENT_NAME[e]}/{et}"
+            alert.event_type = et
             ret.append(alert)
     return ret
 
@@ -112,7 +113,6 @@ class Alert:
                alert_rate: float = 0.,
                creation_delay: float = 0.):
 
-    self.alert_type = ""
     self.alert_text_1 = alert_text_1
     self.alert_text_2 = alert_text_2
     self.alert_status = alert_status
@@ -125,9 +125,13 @@ class Alert:
     self.duration_hud_alert = duration_hud_alert
     self.duration_text = duration_text
 
-    self.start_time = 0.
     self.alert_rate = alert_rate
     self.creation_delay = creation_delay
+
+    # alertmanager writes these
+    self.start_time = 0.
+    self.alert_type = ""
+    self.event_type = None
 
     # typecheck that enums are valid on startup
     tst = car.CarControl.new_message()
