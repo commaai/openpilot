@@ -243,7 +243,7 @@ void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total)
 extern volatile sig_atomic_t do_exit;
 
 void *processing_thread(MultiCameraState *cameras, const char *tname,
-                              CameraState *cs, int priority, process_thread_cb callback) {
+                        CameraState *cs, int priority, process_thread_cb callback) {
   set_thread_name(tname);
   int err = set_realtime_priority(priority);
   LOG("%s start! setpriority returns %d", tname, err);
@@ -259,7 +259,7 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
 }
 
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                          CameraState *cs, int priority, process_thread_cb callback) {
+                                 CameraState *cs, int priority, process_thread_cb callback) {
   return std::thread(processing_thread, cameras, tname, cs, priority, callback);
 }
 

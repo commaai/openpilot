@@ -2139,7 +2139,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 
   int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
   int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
-    int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
+  int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
 
   for (int r=0;r<(b->rgb_height/NUM_SEGMENTS_Y);r++) {
     memcpy(s->rgb_roi_buf.get() + r * (b->rgb_width/NUM_SEGMENTS_X) * 3,
