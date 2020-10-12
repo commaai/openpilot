@@ -268,7 +268,7 @@ Safety and Testing
 
 Testing on PC
 ------
-For simplified development and experimentation, openpilot runs in the CARLA driving simulator, which allows you to develop openpilot without a car.
+For simplified development and experimentation, openpilot can be run in the CARLA driving simulator, which allows you to develop openpilot without a car. The whole setup should only take a few minutes. 
 
 Steps:
 1) Start the CARLA server on first terminal
