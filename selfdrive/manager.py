@@ -37,6 +37,7 @@ def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0:  # parent
+
     # child is in its own process group, manually pass kill signals
     signal.signal(signal.SIGINT, lambda signum, frame: os.kill(child_pid, signal.SIGINT))
     signal.signal(signal.SIGTERM, lambda signum, frame: os.kill(child_pid, signal.SIGTERM))
@@ -59,6 +60,8 @@ def unblock_stdout():
         sys.stdout.write(dat.decode('utf8'))
       except (OSError, IOError, UnicodeDecodeError):
         pass
+
+    # os.wait() returns a tuple with the pid and a 16 bit value
     # whose low byte is the signal number and whose high byte is the exit satus
     exit_status = os.wait()[1] >> 8
     os._exit(exit_status)
@@ -519,6 +522,7 @@ def manager_prepare(spinner=None):
 
   # Spinner has to start from 70 here
   total = 100.0 if prebuilt else 30.0
+
   for i, p in enumerate(managed_processes):
     if spinner is not None:
       spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
@@ -577,6 +581,7 @@ def main():
   manager_init()
   manager_prepare(spinner)
   spinner.close()
+
   if os.getenv("PREPAREONLY") is not None:
     return
 
