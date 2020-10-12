@@ -38,7 +38,10 @@ jobs:
           key: "ci cache"
       - name: Create cache folder if not exists
         run: |
+          ls /tmp
           mkdir -p /tmp/comma_download_cache
+          ls /tmp/comma_download_cache
+
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run replay
