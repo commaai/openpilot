@@ -123,6 +123,7 @@ public:
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
+void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr);
 void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total);
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
                                     CameraState *cs, int priority, process_thread_cb callback);

@@ -350,7 +350,7 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->front.device = s->device;
 
   s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"frame", "frontFrame"});
+  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 
   int err;
   const int rgb_width = s->rear.buf.rgb_width;
@@ -2203,6 +2203,10 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     framed.setRecoverState(self_recover);
     framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
     s->pm->send("frame", msg);
+  }
+
+  if (cnt % 100 == 3) {
+    create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
   }
 
   const int exposure_x = 290;

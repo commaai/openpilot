@@ -15,6 +15,7 @@
 #include "camera_common.h"
 #include <czmq.h>
 #include <libyuv.h>
+#include <jpeglib.h>
 
 #include "clutil.h"
 #include "common/params.h"
@@ -213,6 +214,64 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setGainFrac(frame_data.gain_frac);
+}
+
+void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
+  const CameraBuf *b = &c->buf;
+
+  // one thumbnail per 5 seconds (instead of %5 == 0 posenet)
+  uint8_t* thumbnail_buffer = NULL;
+  unsigned long thumbnail_len = 0;
+
+  unsigned char *row = (unsigned char *)malloc(b->rgb_width/4*3);
+
+  struct jpeg_compress_struct cinfo;
+  struct jpeg_error_mgr jerr;
+
+  cinfo.err = jpeg_std_error(&jerr);
+  jpeg_create_compress(&cinfo);
+  jpeg_mem_dest(&cinfo, &thumbnail_buffer, &thumbnail_len);
+
+  cinfo.image_width = b->rgb_width / 4;
+  cinfo.image_height = b->rgb_height / 4;
+  cinfo.input_components = 3;
+  cinfo.in_color_space = JCS_RGB;
+
+  jpeg_set_defaults(&cinfo);
+  jpeg_set_quality(&cinfo, 50, true);
+  jpeg_start_compress(&cinfo, true);
+
+  JSAMPROW row_pointer[1];
+  for (int i = 0; i < b->rgb_height - 4; i+=4) {
+    for (int j = 0; j < b->rgb_width*3; j+=12) {
+      for (int k = 0; k < 3; k++) {
+        uint16_t dat = 0;
+        dat += bgr_ptr[b->rgb_stride*i + j + k];
+        dat += bgr_ptr[b->rgb_stride*i + j+3 + k];
+        dat += bgr_ptr[b->rgb_stride*(i+1) + j + k];
+        dat += bgr_ptr[b->rgb_stride*(i+1) + j+3 + k];
+        dat += bgr_ptr[b->rgb_stride*(i+2) + j + k];
+        dat += bgr_ptr[b->rgb_stride*(i+2) + j+3 + k];
+        dat += bgr_ptr[b->rgb_stride*(i+3) + j + k];
+        dat += bgr_ptr[b->rgb_stride*(i+3) + j+3 + k];
+        row[(j/4) + (2-k)] = dat/8;
+      }
+    }
+    row_pointer[0] = row;
+    jpeg_write_scanlines(&cinfo, row_pointer, 1);
+  }
+  free(row);
+  jpeg_finish_compress(&cinfo);
+
+  MessageBuilder msg;
+  auto thumbnaild = msg.initEvent().initThumbnail();
+  thumbnaild.setFrameId(b->cur_frame_data.frame_id);
+  thumbnaild.setTimestampEof(b->cur_frame_data.timestamp_eof);
+  thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
+
+  if (s->pm != NULL) {
+    s->pm->send("thumbnail", msg);
+  }
 }
 
 void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total) {

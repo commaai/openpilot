@@ -819,7 +819,7 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
 #endif
 
   s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"frame", "frontFrame", "wideFrame"});
+  s->pm = new PubMaster({"frame", "frontFrame", "wideFrame", "thumbnail"});
 }
 
 void cameras_open(MultiCameraState *s) {
@@ -994,6 +994,7 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 // called by processing_thread
 void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
+
 #ifdef NOSCREEN
   if (b->cur_frame_data.frame_id % 4 == (c == &s->rear ? 1 : 0)) {
     sendrgb(s, (uint8_t *)b->cur_rgb_buf->addr, b->cur_rgb_buf->len, c == &s->rear ? 0 : 1);
@@ -1007,6 +1008,11 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
   }
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
+
+  if (cnt % 100 == 3) {
+    // TODO: fix on QCOM2, giving scanline error
+    create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
+  }
 
   if (cnt % 3 == 0) {
     int exposure_x;
