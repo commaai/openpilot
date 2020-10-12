@@ -92,7 +92,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
                                             ));
   settings_list->addWidget(new ParamsToggle("IsMetric",
                                             "Use Metric System",
-                                            "Display speed in km/h instead of mph.",
+                                            "Display speed in km/h instead of mp/h.",
                                             "../assets/offroad/icon_metric.png"
                                             ));
   settings_list->addWidget(new ParamsToggle("CommunityFeaturesToggle",
