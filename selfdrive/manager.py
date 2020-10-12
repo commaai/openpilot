@@ -37,7 +37,6 @@ def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0:  # parent
-
     # child is in its own process group, manually pass kill signals
     signal.signal(signal.SIGINT, lambda signum, frame: os.kill(child_pid, signal.SIGINT))
     signal.signal(signal.SIGTERM, lambda signum, frame: os.kill(child_pid, signal.SIGTERM))
@@ -60,8 +59,6 @@ def unblock_stdout():
         sys.stdout.write(dat.decode('utf8'))
       except (OSError, IOError, UnicodeDecodeError):
         pass
-
-    # os.wait() returns a tuple with the pid and a 16 bit value
     # whose low byte is the signal number and whose high byte is the exit satus
     exit_status = os.wait()[1] >> 8
     os._exit(exit_status)
@@ -535,7 +532,6 @@ def uninstall():
   HARDWARE.reboot(reason="recovery")
 
 def main():
-
   os.environ['PARAMS_PATH'] = PARAMS
 
   if ANDROID:
@@ -569,18 +565,15 @@ def main():
     if params.get(k) is None:
       params.put(k, v)
 
-  
-  
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:
     params.put("Passive", str(int(os.getenv("PASSIVE"))))
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
-  
+
   if ANDROID:
     update_apks()
-
   manager_init()
   manager_prepare(spinner)
   spinner.close()
@@ -589,7 +582,7 @@ def main():
 
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
-  
+
   try:
     manager_thread()
   except Exception:
