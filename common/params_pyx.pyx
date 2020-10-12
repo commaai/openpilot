@@ -90,16 +90,16 @@ cdef class Params:
   def __dealloc__(self):
     del self.p
 
-  def _clear_keys_with_type(self, tx_type):
+  def clear(self, tx_type=None):
     for key in keys:
-      if tx_type in keys[key]:
+      if tx_type is None or tx_type in keys[key]:
         self.delete(key)
 
   def manager_start(self):
-    self._clear_keys_with_type(TxType.CLEAR_ON_MANAGER_START)
+    self.clear(TxType.CLEAR_ON_MANAGER_START)
 
   def panda_disconnect(self):
-    self._clear_keys_with_type(TxType.CLEAR_ON_PANDA_DISCONNECT)
+    self.clear(TxType.CLEAR_ON_PANDA_DISCONNECT)
 
   def get(self, key, block=False, encoding=None):
     key = ensure_bytes(key)
