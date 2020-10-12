@@ -24,26 +24,22 @@ jobs:
     name: process replay
     runs-on: ubuntu-16.04
     timeout-minutes: 50
+
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Cache dependencies
+        id: dependency-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/comma_download_cache
+          key: "ci cache"
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run replay
-        env:
-          FILEREADER_CACHE: "1"
         run: |
-          $PERSIST "cd /tmp/openpilot && \
+          $RUN -v /tmp/comma_download_cache:/tmp/comma_download_cache "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
-      - name: Copy artifacts
-        if: always()
-        run: |
-          mkdir folder
-          docker cp tmppilot:tmp/comma_download_cache/ folder/
-      - uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: dump
-          path: folder
+                    FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"

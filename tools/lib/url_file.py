@@ -102,6 +102,7 @@ class URLFile(object):
         with atomic_write_in_dir(full_path, mode="wb") as new_cached_file:
           new_cached_file.write(data)
       else:
+        print("Returning cached version for", file_name)
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()
 
