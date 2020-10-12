@@ -33,6 +33,7 @@ typedef struct MultiCameraState {
   CameraState rear;
   CameraState front;
 
+  SubMaster *sm;
   PubMaster *pm;
 } MultiCameraState;
 

@@ -40,15 +40,15 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id d
 }
 
 void run_frame_stream(MultiCameraState *s) {
-  SubMaster sm({"frame"});
+  s->sm = new SubMaster({"frame"});
 
   CameraState *const rear_camera = &s->rear;
   auto *tb = &rear_camera->buf.camera_tb;
 
   while (!do_exit) {
-    if (sm.update(1000) == 0) continue;
+    if (s->sm.update(1000) == 0) continue;
 
-    auto frame = sm["frame"].getFrame();
+    auto frame = s->sm["frame"].getFrame();
 
     const int buf_idx = tbuffer_select(tb);
     rear_camera->buf.camera_bufs_metadata[buf_idx] = {

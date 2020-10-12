@@ -31,6 +31,9 @@ typedef struct MultiCameraState {
 
   CameraState rear;
   CameraState front;
+
+  SubMaster *sm;
+  PubMaster *pm;
 } MultiCameraState;
 
 void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
