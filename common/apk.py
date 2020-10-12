@@ -4,7 +4,6 @@ import glob
 import hashlib
 import shutil
 import threading
-import time
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
@@ -29,38 +28,19 @@ def install_apk(path):
   return ret == 0
 
 def start_offroad():
-  set_package_permissions()
-  system("am start -n ai.comma.plus.offroad/.MainActivity")
-
-def extract_current_permissions(dump): #  Doesn't look nice, but the output from dumpsys is also not very nice so blame them
-  perms = dump.split("runtime permissions")[1]
-  perms2 = perms.split("\\n")
-  perms3 = [p.replace(" ","") for p in perms2]
-  permsfiltered = [p.split(":")[0].split("android.permission.")[1] for p in perms3 if len(p) > 20]
-  return permsfiltered
-
+  def f():
+    set_package_permissions()
+    system("am start -n ai.comma.plus.offroad/.MainActivity")
+  threading.Thread(target=f).start()
 
 def set_package_permissions():
-  out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-  stdout, _ = out.communicate()
-  print(str(stdout).replace("\\n","\n"))
-  given = extract_current_permissions(str(stdout))
-  for x in given:
-    print("\n" + x + "\n")
-    
-  time.sleep(5)
-  wanted_permissions = ["ACCESS_FINE_LOCATION", "READ_PHONE_STATE", "READ_EXTERNAL_STORAGE"]
-  for permission in wanted_permissions:
-    if permission not in given:
-      pm_grant("ai.comma.plus.offroad", "android.permission."+permission)
-      print("SET "+permission)
-      time.sleep(5)
-    else:
-      print("SKIP "+permission)
-      time.sleep(5)
+  pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
+  pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
+  pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
 
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
+  
 def appops_set(package, op, mode):
   system(f"LD_LIBRARY_PATH= appops set {package} {op} {mode}")
 

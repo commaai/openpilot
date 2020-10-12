@@ -535,13 +535,8 @@ def uninstall():
   HARDWARE.reboot(reason="recovery")
 
 def main():
-  init = time.time()
-  time_dump = open("/tmp/timing.txt","w")
 
   os.environ['PARAMS_PATH'] = PARAMS
-
-  time_dump.write("Test timing of startup\n")
-  time_dump.write(str(time.time()-init)+"\n")
 
   if ANDROID:
     # the flippening!
@@ -549,10 +544,6 @@ def main():
 
     # disable bluetooth
     os.system('service call bluetooth_manager 8')
-
-  time_dump.write("Time spent rotating\n")
-  time_dump.write(str(time.time()-init)+"\n")
-  init = time.time()
 
   params = Params()
   params.manager_start()
@@ -587,45 +578,18 @@ def main():
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
   
-  time_dump.write("Time spent setting params\n")
-  time_dump.write(str(time.time()-init)+"\n")
-  init = time.time()
-  
   if ANDROID:
     update_apks()
 
-  time_dump.write("Time spent updating_apk\n")
-  time_dump.write(str(time.time()-init)+"\n")
-  init = time.time()
-
   manager_init()
-
-  time_dump.write("Time spent with manager\n")
-  time_dump.write(str(time.time()-init)+"\n")
-  init = time.time()
-
   manager_prepare(spinner)
-
-  time_dump.write("Time spent with preparing spinner\n")
-  time_dump.write(str(time.time()-init)+"\n")
-  init = time.time()
-
   spinner.close()
-
-  time_dump.write("Time spent with spinner\n")
-  time_dump.write(str(time.time()-init)+"\n")
-  init = time.time()
-  
   if os.getenv("PREPAREONLY") is not None:
     return
 
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
   
-  time_dump.write("Time spent finishing\n")
-  time_dump.write(str(time.time()-init)+"\n")
-
-  time_dump.close()
   try:
     manager_thread()
   except Exception:
