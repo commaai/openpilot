@@ -83,7 +83,7 @@ int visionstream_init(VisionStream *s, VisionStreamType type, bool tbuffer, Visi
   s->bufs = calloc(s->num_bufs, sizeof(VIPCBuf));
   assert(s->bufs);
 
-  for (int i=0; i<s->num_bufs; i++) {
+  for (int i = 0; i < s->num_bufs; i++) {
     s->bufs[i].fd = rp.fds[i];
     s->bufs[i].len = s->bufs_info.buf_len;
     s->bufs[i].addr = mmap(NULL, s->bufs[i].len, PROT_READ, MAP_SHARED, s->bufs[i].fd, 0);
