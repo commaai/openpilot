@@ -7,7 +7,7 @@ import sys
 import platform
 
 TICI = os.path.isfile('/TICI')
-Decider('make')
+Decider('MD5-timestamp')
 
 AddOption('--test',
           action='store_true',
