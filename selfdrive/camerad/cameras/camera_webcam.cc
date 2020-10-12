@@ -33,7 +33,6 @@ void camera_close(CameraState *s) {
 }
 
 void camera_release_buffer(void *cookie, int buf_idx) {
-  CameraState *s = static_cast<CameraState *>(cookie);
 }
 
 void camera_init(CameraState *s, int camera_id, unsigned int fps) {
@@ -262,7 +261,6 @@ void cameras_close(MultiCameraState *s) {
 void cameras_run(MultiCameraState *s) {
   set_thread_name("webcam_thread");
 
-  int err;
   pthread_t rear_thread_handle;
   err = pthread_create(&rear_thread_handle, NULL,
                         rear_thread, &s->rear);
