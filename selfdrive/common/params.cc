@@ -209,6 +209,10 @@ cleanup:
   return result;
 }
 
+int Params::delete_db_value(std::string key) {
+  return delete_db_value(key.c_str());
+}
+
 int Params::delete_db_value(const char* key) {
   int lock_fd = -1;
   int result;
