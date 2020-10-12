@@ -39,6 +39,8 @@ DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without inte
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
+prev_offroad_states = {}
+
 LEON = False
 last_eon_fan_val = None
 
@@ -156,6 +158,24 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
   return new_speed
 
 
+def set_offroad_alert_if_changed(offroad_alert, show_alert):
+  if offroad_alert in prev_offroad_states and \
+    show_alert == prev_offroad_states[offroad_alert]:
+    return
+  prev_offroad_states[offroad_alert] = show_alert
+  set_offroad_alert(offroad_alert, show_alert)
+
+
+def startup_allowed(should_start, condition, reason, offroad_alert=None):
+  if should_start and not condition:
+    should_start = False
+    cloudlog.info(f"Blocking startup: {reason}")
+
+  if offroad_alert is not None:
+    set_offroad_alert_if_changed(offroad_alert, not condition)
+
+  return should_start
+
 def thermald_thread():
   health_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected health frequency
 
@@ -172,9 +192,7 @@ def thermald_thread():
   started_ts = None
   started_seen = False
   thermal_status = ThermalStatus.green
-  thermal_status_prev = ThermalStatus.green
   usb_power = True
-  usb_power_prev = True
   current_branch = get_git_branch()
 
   network_type = NetworkType.none
@@ -183,9 +201,7 @@ def thermald_thread():
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
   health_prev = None
-  fw_version_match_prev = True
   current_update_alert = None
-  time_valid_prev = True
   should_start_prev = False
   handle_fan = None
   is_uno = False
@@ -303,11 +319,7 @@ def thermald_thread():
 
     # show invalid date/time alert
     time_valid = now.year >= 2019
-    if time_valid and not time_valid_prev:
-      set_offroad_alert("Offroad_InvalidTime", False)
-    if not time_valid and time_valid_prev:
-      set_offroad_alert("Offroad_InvalidTime", True)
-    time_valid_prev = time_valid
+    set_offroad_alert_if_changed("Offroad_InvalidTime", not time_valid)
 
     # Show update prompt
     try:
@@ -328,27 +340,27 @@ def thermald_thread():
 
       if current_update_alert != "update" + extra_text:
         current_update_alert = "update" + extra_text
-        set_offroad_alert("Offroad_ConnectivityNeeded", False)
-        set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
-        set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
+        set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
+        set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
+        set_offroad_alert_if_changed("Offroad_UpdateFailed", True, extra_text=extra_text)
     elif dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
       if current_update_alert != "expired":
         current_update_alert = "expired"
-        set_offroad_alert("Offroad_UpdateFailed", False)
-        set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
-        set_offroad_alert("Offroad_ConnectivityNeeded", True)
+        set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
+        set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
+        set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", True)
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
       remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
       if current_update_alert != "prompt" + remaining_time:
         current_update_alert = "prompt" + remaining_time
-        set_offroad_alert("Offroad_UpdateFailed", False)
-        set_offroad_alert("Offroad_ConnectivityNeeded", False)
-        set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
+        set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
+        set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
+        set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
     elif current_update_alert is not None:
       current_update_alert = None
-      set_offroad_alert("Offroad_UpdateFailed", False)
-      set_offroad_alert("Offroad_ConnectivityNeeded", False)
-      set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
+      set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
 
     do_uninstall = params.get("DoUninstall") == b"1"
     accepted_terms = params.get("HasAcceptedTerms") == terms_version
@@ -360,51 +372,29 @@ def thermald_thread():
     should_start = ignition
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    if should_start and msg.thermal.freeSpace <= 0.02:
-      cloudlog.info("Blocking start: <2 percent memory")
-      should_start = False
+    should_start = startup_allowed(should_start, (msg.thermal.freeSpace > 0.02), "<2 percent memory")
 
-    # confirm we have completed training and aren't uninstalling
-    if should_start and not (accepted_terms and (not do_uninstall) and
-      (completed_training or current_branch in ['dashcam', 'dashcam-staging'])):
-      cloudlog.info("Blocking start: Did not complete training or uninstalling")
-      should_start = False
+    should_start = startup_allowed(should_start, (not do_uninstall), "Uninstalling")
 
-    # check if system time is valid
-    if should_start and not time_valid:
-      cloudlog.info("Blocking start: Invalid system time")
-      should_start = False
+    should_start = startup_allowed(should_start,
+      (accepted_terms and (completed_training or current_branch in ['dashcam', 'dashcam-staging'])),
+      "Did not complete training")
 
-    # don't start while taking snapshot
+    should_start = startup_allowed(should_start, time_valid, "Invalid system time")
+
     if should_start and not should_start_prev:
       is_viewing_driver = params.get("IsDriverViewEnabled") == b"1"
-      is_taking_snapshot = params.get("IsTakingSnapshot") == b"1"
-      if is_taking_snapshot:
-        cloudlog.info("Blocking start: Taking snapshot")
-        should_start = False
-      elif is_viewing_driver:
-        cloudlog.info("Blocking start: Driver view enabled")
-        should_start = False
+      should_start = startup_allowed(should_start, (not is_viewing_driver), "Driver view enabled")
+      if should_start:
+        is_taking_snapshot = params.get("IsTakingSnapshot") == b"1"
+        should_start = startup_allowed(should_start, (not is_taking_snapshot), "Taking a snapshot")
 
-    # check for firmware mismatch
-    if fw_version_match and not fw_version_match_prev:
-      set_offroad_alert("Offroad_PandaFirmwareMismatch", False)
-    if not fw_version_match:
-      cloudlog.info("Blocking start: Firmware mismatch")
-      should_start = False
-      if fw_version_match_prev:
-        set_offroad_alert("Offroad_PandaFirmwareMismatch", True)
+    should_start = startup_allowed(should_start, fw_version_match, "Firmware mismatch", "Offroad_PandaFirmwareMismatch")
 
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
-    if should_start and thermal_status >= ThermalStatus.danger:
-      should_start = False
-      cloudlog.info("Blocking start: Device temperature too high")
-      if thermal_status_prev < ThermalStatus.danger:
-        set_offroad_alert("Offroad_TemperatureTooHigh", True)
-    else:
-      if thermal_status_prev >= ThermalStatus.danger:
-        set_offroad_alert("Offroad_TemperatureTooHigh", False)
+    should_start = startup_allowed(should_start, thermal_status < ThermalStatus.danger,
+      "Device temperature too high", "Offroad_TemperatureTooHigh")
 
     if should_start:
       if not should_start_prev:
@@ -446,14 +436,8 @@ def thermald_thread():
     msg.thermal.thermalStatus = thermal_status
     thermal_sock.send(msg.to_bytes())
 
-    if usb_power_prev and not usb_power:
-      set_offroad_alert("Offroad_ChargeDisabled", True)
-    elif usb_power and not usb_power_prev:
-      set_offroad_alert("Offroad_ChargeDisabled", False)
+    set_offroad_alert_if_changed("Offroad_ChargeDisabled", not usb_power)
 
-    thermal_status_prev = thermal_status
-    usb_power_prev = usb_power
-    fw_version_match_prev = fw_version_match
     should_start_prev = should_start
 
     # report to server once per minute
