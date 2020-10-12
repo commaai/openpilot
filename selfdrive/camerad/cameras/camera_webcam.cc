@@ -235,8 +235,6 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
 void cameras_open(MultiCameraState *s) {
-  int err;
-
   // LOG("*** open front ***");
   camera_open(&s->front, false);
 
