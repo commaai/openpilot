@@ -47,6 +47,6 @@ jobs:
         run: eval "$BUILD"
       - name: Run replay
         run: |
-          $RUN_WITH_CACHE  cd /tmp/openpilot && \
+          $RUN_WITH_CACHE  "cd /tmp/openpilot && \
           scons -j$(nproc) && \
           FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
