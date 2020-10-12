@@ -381,16 +381,16 @@ def python_replay_process(cfg, lr):
         recv_cnt -= m.which() in recv_socks
   return log_msgs
 
-def cpp_replay_process(config, logreader):
-  sub_sockets = [s for _, sub in config.pub_sub.items() for s in sub]  # We get responses here
-  pm = messaging.PubMaster(config.pub_sub.keys())
+def cpp_replay_process(cfg, lr):
+  sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
+  pm = messaging.PubMaster(cfg.pub_sub.keys())
   sockets = {s : messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
 
-  all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
-  pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
+  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  manager.prepare_managed_process(config.proc_name)
-  manager.start_managed_process(config.proc_name)
+  manager.prepare_managed_process(cfg.proc_name)
+  manager.start_managed_process(cfg.proc_name)
 
   time.sleep(1)  # We give the process time to start
 
@@ -400,7 +400,7 @@ def cpp_replay_process(config, logreader):
 
   for msg in tqdm(pub_msgs):
     pm.send(msg.which(), msg.as_builder())
-    resp_sockets = config.should_recv_callback(msg) if config.should_recv_callback is not None else sub_sockets
+    resp_sockets = sub_sockets if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
     for s in resp_sockets:
       response = messaging.recv_one(sockets[s])
       if response is not None:
@@ -408,5 +408,5 @@ def cpp_replay_process(config, logreader):
         setattr(m, s, getattr(response,s))
         log_msgs.append(m.as_reader())
 
-  manager.kill_managed_process(config.proc_name)
+  manager.kill_managed_process(cfg.proc_name)
   return log_msgs
