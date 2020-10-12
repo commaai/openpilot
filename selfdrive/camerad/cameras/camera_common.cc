@@ -242,10 +242,11 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   jpeg_start_compress(&cinfo, true);
 
   JSAMPROW row_pointer[1];
-  for (int i = 0; i < b->rgb_height - 4; i+=4) {
+  for (int ii = 0; ii < b->rgb_height/4; ii+=1) {
     for (int j = 0; j < b->rgb_width*3; j+=12) {
       for (int k = 0; k < 3; k++) {
         uint16_t dat = 0;
+        int i = ii * 4;
         dat += bgr_ptr[b->rgb_stride*i + j + k];
         dat += bgr_ptr[b->rgb_stride*i + j+3 + k];
         dat += bgr_ptr[b->rgb_stride*(i+1) + j + k];

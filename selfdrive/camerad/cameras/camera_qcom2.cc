@@ -1010,7 +1010,6 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
   if (cnt % 100 == 3) {
-    // TODO: fix on QCOM2, giving scanline error
     create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
   }
 
