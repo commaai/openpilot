@@ -404,9 +404,7 @@ def cpp_replay_process(cfg, lr):
     for s in resp_sockets:
       response = messaging.recv_one(sockets[s])
       if response is not None:
-        m = messaging.new_message(s)
-        setattr(m, s, getattr(response,s))
-        log_msgs.append(m.as_reader())
+        log_msgs.append(response)
 
   manager.kill_managed_process(cfg.proc_name)
   return log_msgs
