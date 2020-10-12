@@ -68,6 +68,13 @@ keys = {
   b"Offroad_UpdateFailed": [TxType.CLEAR_ON_MANAGER_START],
 }
 
+def ensure_bytes(v):
+  if isinstance(v, str):
+    return v.encode()
+  else:
+    return v
+
+
 class UnknownKeyName(Exception):
   pass
 
@@ -95,8 +102,7 @@ cdef class Params:
     self._clear_keys_with_type(TxType.CLEAR_ON_PANDA_DISCONNECT)
 
   def get(self, key, block=False, encoding=None):
-    if isinstance(key, str):
-      key = key.encode('UTF-8')
+    key = ensure_bytes(key)
 
     if key not in keys:
       raise UnknownKeyName(key)
@@ -128,11 +134,8 @@ cdef class Params:
     Use the put_nonblocking helper function in time sensitive code, but
     in general try to avoid writing params as much as possible.
     """
-    if isinstance(key, str):
-      key = key.encode('UTF-8')
-
-    if isinstance(dat, str):
-      dat = dat.encode('UTF-8')
+    key = ensure_bytes(key)
+    dat = ensure_bytes(dat)
 
     if key not in keys:
       raise UnknownKeyName(key)
@@ -140,9 +143,7 @@ cdef class Params:
     self.p.write_db_value(key, dat)
 
   def delete(self, key):
-    if isinstance(key, str):
-      key = key.encode('UTF-8')
-
+    key = ensure_bytes(key)
     self.p.delete_db_value(key)
 
 
