@@ -33,7 +33,6 @@ void camera_close(CameraState *s) {
 }
 
 void camera_release_buffer(void *cookie, int buf_idx) {
-  CameraState *s = static_cast<CameraState *>(cookie);
 }
 
 void camera_init(CameraState *s, int camera_id, unsigned int fps) {
@@ -245,7 +244,6 @@ void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
                   VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
-  int err;
 
   // LOG("*** open front ***");
   camera_open(&s->front, camera_bufs_front, false);
