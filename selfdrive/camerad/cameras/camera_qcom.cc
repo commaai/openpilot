@@ -232,12 +232,6 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
   //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
   int err;
 
-  if (gain > 448) {
-    s->digital_gain = (512.0/(512-(gain))) / 8.0;
-  } else {
-    s->digital_gain = 1.0;
-  }
-
   struct msm_camera_i2c_reg_array reg_array[] = {
     {0x104,0x1,0},
 
