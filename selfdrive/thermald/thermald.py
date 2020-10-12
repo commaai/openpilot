@@ -158,12 +158,11 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
   return new_speed
 
 
-def set_offroad_alert_if_changed(offroad_alert, show_alert):
-  if offroad_alert in prev_offroad_states and \
-    show_alert == prev_offroad_states[offroad_alert]:
+def set_offroad_alert_if_changed(offroad_alert, show_alert, extra_text=None):
+  if prev_offroad_states.get(offroad_alert, None) == show_alert:
     return
   prev_offroad_states[offroad_alert] = show_alert
-  set_offroad_alert(offroad_alert, show_alert)
+  set_offroad_alert(offroad_alert, show_alert, extra_text)
 
 
 def startup_allowed(should_start, condition, reason, offroad_alert=None):
