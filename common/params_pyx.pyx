@@ -101,7 +101,6 @@ cdef class Params:
     if key not in keys:
       raise UnknownKeyName(key)
 
-    # TODO: Handle keyboard interrupt when doing blocking read
     cdef string k = key
     cdef bool b = block
 
