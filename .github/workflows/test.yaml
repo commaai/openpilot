@@ -36,6 +36,9 @@ jobs:
           path: |
             /tmp/comma_download_cache
           key: "ci cache"
+      - name: Create cache folder if not exists
+        run: |
+          mkdir -p /tmp/comma_download_cache
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run replay
