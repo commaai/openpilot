@@ -81,11 +81,11 @@ class UnknownKeyName(Exception):
 cdef class Params:
   cdef c_Params* p
 
-  def __cinit__(self, d=None):
+  def __cinit__(self, d=None, persistent_params=False):
     if d is not None:
       self.p = new c_Params(<string>d.encode())
     else:
-      self.p = new c_Params(<bool>False)
+      self.p = new c_Params(<bool>persistent_params)
 
   def __dealloc__(self):
     del self.p
