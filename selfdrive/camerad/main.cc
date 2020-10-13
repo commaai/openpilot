@@ -173,7 +173,7 @@ void* visionserver_client_thread(void* arg) {
       }
     } else {
       int stream_i = VISION_STREAM_MAX;
-      for (int i=2; i<num_polls; i++) {
+      for (int i=1; i<num_polls; i++) {
         int si = poll_to_stream[i];
         if (!streams[si].subscribed) continue;
         if (polls[i].revents) {
