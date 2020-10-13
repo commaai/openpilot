@@ -4,7 +4,6 @@ import glob
 import hashlib
 import shutil
 import threading
-import time
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
@@ -42,18 +41,16 @@ def extract_current_permissions(dump): #  Doesn't look nice, but the output from
   return permsfiltered
 
 def set_package_permissions():
-  init = time.time()
   out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   stdout, _ = out.communicate()
-  given = extract_current_permissions(str(stdout))
+  given_permissions = extract_current_permissions(str(stdout))
   wanted_permissions = ["ACCESS_FINE_LOCATION", "READ_PHONE_STATE", "READ_EXTERNAL_STORAGE"]
   for permission in wanted_permissions:
-    if permission not in given:
+    if permission not in given_permissions:
       pm_grant("ai.comma.plus.offroad", "android.permission."+permission)
 
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
-  print("Time spent with android:", str(time.time()-init))
 def appops_set(package, op, mode):
   system(f"LD_LIBRARY_PATH= appops set {package} {op} {mode}")
 
