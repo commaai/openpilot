@@ -33,17 +33,15 @@ def start_offroad():
     system("am start -n ai.comma.plus.offroad/.MainActivity")
   threading.Thread(target=f).start()
 
-def extract_current_permissions(dump): #  Doesn't look nice, but the output from dumpsys is also not very nice so blame them
-  perms = dump.split("runtime permissions")[1]
-  perms2 = perms.split("\\n")
-  perms3 = [p.replace(" ","") for p in perms2]
-  permsfiltered = [p.split(":")[0].split("android.permission.")[1] for p in perms3 if len(p) > 20]
-  return permsfiltered
-
 def set_package_permissions():
-  out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-  stdout, _ = out.communicate()
-  given_permissions = extract_current_permissions(str(stdout))
+  try:
+    out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    stdout, _ = out.communicate()
+    given_permissions = str(stdout).split("runtime permissions")[1]
+  except subprocess.CalledProcessError as e:
+    given_permissions = ""
+    print(e.output)
+
   wanted_permissions = ["ACCESS_FINE_LOCATION", "READ_PHONE_STATE", "READ_EXTERNAL_STORAGE"]
   for permission in wanted_permissions:
     if permission not in given_permissions:
