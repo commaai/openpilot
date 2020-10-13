@@ -258,7 +258,7 @@ jobs:
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
                     coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
-                                  selfdrive/test/test_models.py && \
+                    selfdrive/test/test_models.py && \
                     coverage combine"
       - name: Upload coverage to Codecov
         run: |
