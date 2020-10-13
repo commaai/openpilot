@@ -13,7 +13,7 @@ print("starting read loops")
 
 def read(d):
   for event in d.read_loop():
-    print(event)
+    print(evdev.categorize(event))
 
 for d in devices:
   threading.Thread(target=read,args=(d,)).start()

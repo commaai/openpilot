@@ -222,7 +222,7 @@ void update_sockets(UIState *s) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
         s->light_sensor = sensor.getLight();
-      } else if (!s->awake && sensor.which() == cereal::SensorEventData::ACCELERATION) {
+      } else if (!s->started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
         s->accel_sensor = 0;
         for(int i = 0; i < 3; i++) {
