@@ -1,7 +1,7 @@
 from cereal import car
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, NWL, TRANS, GEAR
-#from common.params import put_nonblocking
+from common.params import Params, put_nonblocking
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -106,8 +106,8 @@ class CarInterface(CarInterfaceBase):
     # TODO: add a field for this to carState, car interface code shouldn't write params
     # Update the device metric configuration to match the car at first startup,
     # or if there's been a change.
-    #if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
-    #  put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
+    if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
+      put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
 
     # Check for and process state-change events (button press or release) from
     # the turn stalk switch or ACC steering wheel/control stalk buttons.
