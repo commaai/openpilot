@@ -60,7 +60,7 @@ static CameraBuf *get_camerabuf_by_type(VisionState *s, VisionStreamType type) {
   assert(type >= 0 && type < VISION_STREAM_MAX);
   if (type == VISION_STREAM_RGB_BACK || type == VISION_STREAM_YUV) {
     return &s->cameras.rear.buf;
-  } else if (type == VISION_STREAM_RGB_FRONT || VISION_STREAM_YUV_FRONT) {
+  } else if (type == VISION_STREAM_RGB_FRONT || type == VISION_STREAM_YUV_FRONT) {
     return &s->cameras.front.buf;
   }
 #ifdef QCOM2
