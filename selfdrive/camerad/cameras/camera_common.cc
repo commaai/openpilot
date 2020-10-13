@@ -13,7 +13,6 @@
 #endif
 
 #include "camera_common.h"
-#include <czmq.h>
 #include <libyuv.h>
 #include <jpeglib.h>
 

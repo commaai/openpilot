@@ -31,19 +31,6 @@
 #include "camera_qcom.h"
 
 
-// enable this to run the camera at 60fps and sample every third frame
-// supposed to reduce 33ms of lag, but no results
-//#define HIGH_FPS
-
-#define CAMERA_MSG_AUTOEXPOSE 0
-
-typedef struct CameraMsg {
-  int type;
-  int camera_num;
-
-  float grey_frac;
-} CameraMsg;
-
 extern volatile sig_atomic_t do_exit;
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
@@ -121,10 +108,6 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   s->fps = fps;
 
   s->self_recover = 0;
-
-  s->ops_sock = zsock_new_push(">inproc://cameraops");
-  assert(s->ops_sock);
-  s->ops_sock_handle = zsock_resolve(s->ops_sock);
 
   s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame", camera_release_buffer);
 
@@ -343,7 +326,7 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->rear.device = s->device;
   s->front.device = s->device;
 
-  s->sm = new SubMaster({"driverState"});
+  s->sm = new SubMaster({"driverState", "sensorEvents"});
   s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 
   int err;
@@ -481,13 +464,10 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
-  CameraMsg msg = {
-    .type = CAMERA_MSG_AUTOEXPOSE,
-    .camera_num = s->camera_num,
-    .grey_frac = grey_frac,
-  };
-
-  zmq_send(s->ops_sock_handle, &msg, sizeof(msg), ZMQ_DONTWAIT);
+  do_autoexposure(s, grey_frac);
+  if (s->camera_num == 0) {
+    do_autofocus(s);
+  }
 }
 
 static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
@@ -1971,8 +1951,6 @@ static void camera_close(CameraState *s) {
   }
 
   free(s->eeprom);
-
-  zsock_destroy(&s->ops_sock);
 }
 
 
@@ -2019,103 +1997,6 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
   };
 }
 
-static void ops_term() {
-  zsock_t *ops_sock = zsock_new_push(">inproc://cameraops");
-  assert(ops_sock);
-
-  CameraMsg msg = {.type = -1};
-  zmq_send(zsock_resolve(ops_sock), &msg, sizeof(msg), ZMQ_DONTWAIT);
-
-  zsock_destroy(&ops_sock);
-}
-
-static void* ops_thread(void* arg) {
-  int err;
-  MultiCameraState *s = (MultiCameraState*)arg;
-
-  set_thread_name("camera_settings");
-
-  zsock_t *cameraops = zsock_new_pull("@inproc://cameraops");
-  assert(cameraops);
-
-  zpoller_t *poller = zpoller_new(cameraops, NULL);
-  assert(poller);
-
-  SubMaster sm({"sensorEvents"}); // msgq submaster
-
-  while (!do_exit) {
-    // zmq handling
-    zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
-    if (which != NULL) {
-      void* sockraw = zsock_resolve(which);
-
-      if (which == cameraops) {
-        zmq_msg_t msg;
-        err = zmq_msg_init(&msg);
-        assert(err == 0);
-
-        err = zmq_msg_recv(&msg, sockraw, 0);
-        if (err >= 0) {
-          CameraMsg cmsg;
-          if (zmq_msg_size(&msg) == sizeof(cmsg)) {
-            memcpy(&cmsg, zmq_msg_data(&msg), zmq_msg_size(&msg));
-
-            //LOGD("cameraops %d", cmsg.type);
-
-            if (cmsg.type == CAMERA_MSG_AUTOEXPOSE) {
-              if (cmsg.camera_num == 0) {
-                do_autoexposure(&s->rear, cmsg.grey_frac);
-                do_autofocus(&s->rear);
-              } else {
-                do_autoexposure(&s->front, cmsg.grey_frac);
-              }
-            } else if (cmsg.type == -1) {
-              break;
-            }
-          }
-        } else {
-          // skip if zmq is interrupted by msgq
-          int err_no = zmq_errno();
-          assert(err_no == EINTR || err_no == EAGAIN);
-        }
-
-        zmq_msg_close(&msg);
-      }
-    }
-    // msgq handling
-    if (sm.update(0) > 0) {
-      float vals[3] = {0.0};
-      bool got_accel = false;
-
-      auto sensor_events = sm["sensorEvents"].getSensorEvents();
-      for (auto sensor_event : sensor_events) {
-        if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-          auto v = sensor_event.getAcceleration().getV();
-          if (v.size() < 3) {
-            continue;  //wtf
-          }
-          for (int j = 0; j < 3; j++) {
-            vals[j] = v[j];
-          }
-          got_accel = true;
-          break;
-        }
-      }
-
-      uint64_t ts = nanos_since_boot();
-      if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
-        s->rear.last_sag_ts = ts;
-        s->rear.last_sag_acc_z = -vals[2];
-      }
-    }
-  }
-
-  zpoller_destroy(&poller);
-  zsock_destroy(&cameraops);
-
-  return NULL;
-}
-
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   common_camera_process_front(s->sm, s->pm, c, cnt);
 }
@@ -2125,6 +2006,32 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   // cache rgb roi and write to cl
 
+  // gz compensation
+  if (sm->updated("sensorEvents")) {
+    float vals[3] = {0.0};
+    bool got_accel = false;
+    auto sensor_events = (*sm)["sensorEvents"].getSensorEvents();
+    for (auto sensor_event : sensor_events) {
+      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
+        auto v = sensor_event.getAcceleration().getV();
+        if (v.size() < 3) {
+          continue;  //wtf
+        }
+        for (int j = 0; j < 3; j++) {
+          vals[j] = v[j];
+        }
+        got_accel = true;
+        break;
+      }
+    }
+    uint64_t ts = nanos_since_boot();
+    if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
+      s->rear.last_sag_ts = ts;
+      s->rear.last_sag_acc_z = -vals[2];
+    }
+  }
+
+  // sharpness scores
   int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
   int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
   int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
@@ -2210,10 +2117,6 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   int err;
 
-  pthread_t ops_thread_handle;
-  err = pthread_create(&ops_thread_handle, NULL,
-                       ops_thread, s);
-  assert(err == 0);
   std::vector<std::thread> threads;
   threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
   threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
@@ -2314,10 +2217,6 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
-
-  ops_term();
-  err = pthread_join(ops_thread_handle, NULL);
-  assert(err == 0);
 
   cameras_close(s);
 
