@@ -4,6 +4,7 @@ Version 0.7.9 + VW 1.5 (2020-10-09)
  * (VW Community) FCW/AEB detection support (still in testing)
  * (VW Community) Several additional MQB vehicles added to fingerprint
  * (VW Community) Fix bug with steering angle-change-rate signal handling
+ * (VW Community) Major overhaul of MQB CAN database (DBC)
  * Improved car battery power management
  * Improved updater robustness
  * Improved realtime performance
