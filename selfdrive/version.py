@@ -56,6 +56,7 @@ branch = get_git_full_branchname()
 if (origin is not None) and (branch is not None):
   try:
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
+    vw_community_remote = origin.startswith('git@github.com:jyoung8607') or origin.startswith('https://github.com/jyoung8607')
     tested_branch = get_git_branch() in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']
 
     dirty = False
