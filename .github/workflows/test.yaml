@@ -151,7 +151,7 @@ jobs:
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    python selfdrive/test/test_valgrind_replay.py"
+                    FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
       - name: Print logs
         if: always()
         run: |
