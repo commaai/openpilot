@@ -277,7 +277,18 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   }
 }
 
-void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total) {
+void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+  const CameraBuf *b = &c->buf;
+  const uint8_t *yuv_ptr_y = (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y;
+  uint32_t lum_binning[256] = {0};
+  for (int y = y_start; y < y_end; y += y_skip) {
+    for (int x = x_start; x < x_end; x += x_skip) {
+      uint8_t lum = yuv_ptr_y[((y_start + y) * b->yuv_width) + x_start + x];
+      lum_binning[lum]++;
+    }
+  }
+
+  unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / x_skip / y_skip;
   unsigned int lum_cur = 0;
   int lum_med = 0;
   int lum_med_alt = 0;
@@ -299,7 +310,7 @@ void autoexposure(CameraState *s, uint32_t *lum_binning, int len, int lum_total)
     }
   }
   lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
-  camera_autoexposure(s, lum_med / 256.0);
+  camera_autoexposure(c, lum_med / 256.0);
 }
 
 extern volatile sig_atomic_t do_exit;
@@ -378,17 +389,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     y_end = 1148;
     skip = 4;
 #endif
-    const uint8_t *bgr_front_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
-    uint32_t lum_binning[256] = {0};
-    for (int y = y_start; y < y_end; y += skip) {
-      for (int x = x_start; x < x_end; x += 2) {  // every 2nd col
-        const uint8_t *pix = &bgr_front_ptr[y * b->rgb_stride + x * 3];
-        unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
-        lum_binning[std::min(lum / 3, 255u)]++;
-      }
-    }
-    const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
-    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
+    set_exposure_target(c, x_start, x_end, 2, y_start, y_end, skip);
   }
 
   MessageBuilder msg;

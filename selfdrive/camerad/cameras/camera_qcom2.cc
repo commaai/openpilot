@@ -874,7 +874,6 @@ void cameras_open(MultiCameraState *s) {
   printf("wide opened \n");
   camera_open(&s->front);
   printf("front opened \n");
-  // TODO: refactor this api for compat
 }
 
 static void camera_close(CameraState *s) {
@@ -1009,38 +1008,28 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   }
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
-  if (cnt % 100 == 3) {
+  if (c == &s->rear && cnt % 100 == 3) {
     create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
   }
 
   if (cnt % 3 == 0) {
     int exposure_x;
     int exposure_y;
-    int exposure_height;
     int exposure_width;
+    int exposure_height;
     if (c == &s->rear) {
       exposure_x = 96;
       exposure_y = 160;
-      exposure_height = 986;
       exposure_width = 1734;
+      exposure_height = 986;
     } else { // c == &s->wide
       exposure_x = 96;
       exposure_y = 250;
-      exposure_height = 524;
       exposure_width = 1734;
+      exposure_height = 524;
     }
     int skip = 2;
-    uint8_t *yuv_ptr_y = b->yuv_bufs[b->cur_yuv_idx].y;
-    // find median box luminance for AE
-    uint32_t lum_binning[256] = {0};
-    for (int y = 0; y < exposure_height; y += skip) {
-      for (int x = 0; x < exposure_width; x += skip) {
-        uint8_t lum = yuv_ptr_y[((exposure_y + y) * b->yuv_width) + exposure_x + x];
-        lum_binning[lum]++;
-      }
-    }
-    const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
-    autoexposure(c, lum_binning, ARRAYSIZE(lum_binning), lum_total);
+    set_exposure_target(c, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip)
   }
 }
 

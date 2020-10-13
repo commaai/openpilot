@@ -2205,31 +2205,11 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 
   const int exposure_x = 290;
   const int exposure_y = 322;
-  const int exposure_height = 314;
   const int exposure_width = 560;
+  const int exposure_height = 314;
   const int skip = 1;
-  uint8_t *yuv_ptr_y = b->yuv_bufs[b->cur_yuv_idx].y;
   if (cnt % 3 == 0) {
-    // find median box luminance for AE
-    uint32_t lum_binning[256] = {0};
-    for (int y = 0; y < exposure_height; y += skip) {
-      for (int x = 0; x < exposure_width; x += skip) {
-        uint8_t lum = yuv_ptr_y[((exposure_y + y) * b->yuv_width) + exposure_x + x];
-        lum_binning[lum]++;
-      }
-    }
-    const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
-    unsigned int lum_cur = 0;
-    int lum_med = 0;
-    for (lum_med = 0; lum_med < 256; lum_med++) {
-      // shouldn't be any values less than 16 - yuv footroom
-      lum_cur += lum_binning[lum_med];
-      if (lum_cur >= lum_total / 2) {
-        break;
-      }
-    }
-
-    camera_autoexposure(&s->rear, lum_med / 256.0);
+    set_exposure_target(c, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
   }
 }
 
