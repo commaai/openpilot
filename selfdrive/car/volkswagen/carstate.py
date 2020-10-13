@@ -118,7 +118,7 @@ class CarState(CarStateBase):
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
-    ret.cruiseState.speed = acc_cp.vl["ACC_02"]["ACC_Wunschgeschw"]
+    ret.cruiseState.speed = acc_cp.vl["ACC_02"]["ACC_Wunschgeschw"] * CV.KPH_TO_MS
     if ret.cruiseState.speed > 90:
       ret.cruiseState.speed = 0
 
@@ -239,7 +239,8 @@ class CarState(CarStateBase):
                   ("SWA_Warnung_SWA_re", "SWA_01", 0),    # Blindspot object warning, right
                   ("ACC_Wunschgeschw", "ACC_02", 0)]      # ACC set speed
       checks += [("ACC_10", 50),  # From J428 ACC radar control module
-                 ("SWA_01", 20),  # From J1086 Lane Change Assist module
+                 # FIXME: SWA_01 should be checked when we have better detection of installed hardware
+                 #("SWA_01", 20),  # From J1086 Lane Change Assist module
                  ("ACC_02", 17)]  # From J428 ACC radar control module
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
@@ -259,7 +260,8 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
-      ("LDW_02", 10),  # From R242 Driver assistance camera
+      # FIXME: LDW_02 should be checked when we have better detection of installed hardware
+      #("LDW_02", 10),  # From R242 Driver assistance camera
     ]
 
     if CP.networkLocation == NWL.gateway:
@@ -275,7 +277,8 @@ class CarState(CarStateBase):
                   ("SWA_Warnung_SWA_re", "SWA_01", 0),    # Blindspot object warning, right
                   ("ACC_Wunschgeschw", "ACC_02", 0)]              # ACC set speed
       checks += [("ACC_10", 50),  # From J428 ACC radar control module
-                 ("SWA_01", 20),  # From J1086 Lane Change Assist module
+                 # FIXME: SWA_01 should be checked when we have better detection of installed hardware
+                 #("SWA_01", 20),  # From J1086 Lane Change Assist module
                  ("ACC_02", 17)]  # From J428 ACC radar control module
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)
