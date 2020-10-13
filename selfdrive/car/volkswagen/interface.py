@@ -52,9 +52,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.2]
       tire_stiffness_factor = 1.0
 
-    # Determine installed network location by checking for radar-camera
-    # sensor fusion messages on bus 1.
-    if 0x238 in fingerprint[1]:
+    # Determine installed network location.
+    params = Params()
+    manual_network_location = params.get("ForceNetworkLocation", encoding='utf8')
+    if manual_network_location == "camera":
+      ret.networkLocation = NWL.fwdCamera
+    elif manual_network_location == "gateway":
+      ret.networkLocation = NWL.gateway
+    elif 0x238 in fingerprint[1]:
       ret.networkLocation = NWL.fwdCamera
     else:
       ret.networkLocation = NWL.gateway
