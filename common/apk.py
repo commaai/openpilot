@@ -35,12 +35,10 @@ def start_offroad():
 
 def set_package_permissions():
   try:
-    out = subprocess.Popen(['dumpsys', 'package', 'ai.comma.plus.offroad'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    stdout, _ = out.communicate()
-    given_permissions = str(stdout).split("runtime permissions")[1]
-  except subprocess.CalledProcessError as e:
+    output = subprocess.check_output(['dumpsys', 'package', 'ai.comma.plus.offroad'])
+    given_permissions = output.split("runtime permissions")[1]
+  except (subprocess.CalledProcessError, IndexError):
     given_permissions = ""
-    print(e.output)
 
   wanted_permissions = ["ACCESS_FINE_LOCATION", "READ_PHONE_STATE", "READ_EXTERNAL_STORAGE"]
   for permission in wanted_permissions:
