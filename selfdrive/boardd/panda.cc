@@ -189,7 +189,7 @@ void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int sa
 }
 
 void Panda::set_unsafe_mode(){
-  # Disables "disengage on gas" check only
+  // Disables "disengage on gas" check only
   usb_write(0xdf, 1, 0);
 }
 
