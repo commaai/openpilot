@@ -177,7 +177,7 @@ env = Environment(
   RPATH=rpath,
 
   CFLAGS=["-std=gnu11"] + cflags,
-  CXXFLAGS=["-std=c++14"] + cxxflags,
+  CXXFLAGS=["-std=c++17"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
     "#selfdrive/common",
