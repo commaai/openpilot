@@ -72,35 +72,20 @@ static int fsync_dir(const char* path){
   }
 }
 
-static int mkdir_p(const char *path) {
-  /* Adapted from http://stackoverflow.com/a/2336245/119527 */
-  const size_t len = strlen(path);
-  char _path[PATH_MAX];
-  char *p;
-  errno = 0;
+static int mkdir_p(std::string path) {
+  char * _path = (char *)path.c_str();
 
-  /* Copy string so its mutable */
-  if (len > sizeof(_path)-1) {
-    errno = ENAMETOOLONG;
-    return -1;
-  }
-
-  strcpy(_path, path);
-  /* Iterate the string */
-  for (p = _path + 1; *p; p++) {
+  for (char *p = _path + 1; *p; p++) {
     if (*p == '/') {
-      /* Temporarily truncate */
-      *p = '\0';
+      *p = '\0'; // Temporarily truncate
       if (mkdir(_path, 0775) != 0) {
-        if (errno != EEXIST)
-          return -1;
+        if (errno != EEXIST) return -1;
       }
       *p = '/';
     }
   }
   if (mkdir(_path, 0775) != 0) {
-    if (errno != EEXIST)
-      return -1;
+    if (errno != EEXIST) return -1;
   }
   return 0;
 }
