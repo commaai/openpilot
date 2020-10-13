@@ -342,6 +342,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   static int meteringbox_ymin = 0, meteringbox_ymax = 0;
   static const bool rhd_front = Params().read_db_bool("IsRHD");
 
+  sm->update(0);
   if (sm->updated("driverState")) {
     auto state = (*sm)["driverState"].getDriverState();
     float face_prob = state.getFaceProb();

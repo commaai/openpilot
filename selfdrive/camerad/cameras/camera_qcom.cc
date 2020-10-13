@@ -2007,6 +2007,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   // cache rgb roi and write to cl
 
   // gz compensation
+  s->sm->update(0);
   if (s->sm->updated("sensorEvents")) {
     float vals[3] = {0.0};
     bool got_accel = false;
