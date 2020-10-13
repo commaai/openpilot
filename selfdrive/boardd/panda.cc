@@ -188,6 +188,11 @@ void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int sa
   usb_write(0xdc, (uint16_t)safety_model, safety_param);
 }
 
+void Panda::set_unsafe_mode(){
+  # Disables "disengage on gas" check only
+  usb_write(0xdf, 1, 0);
+}
+
 cereal::HealthData::HwType Panda::get_hw_type() {
   unsigned char hw_query[1] = {0};
 
