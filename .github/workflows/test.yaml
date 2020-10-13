@@ -70,7 +70,7 @@ jobs:
           ~/Library/Caches/pip
           ~/Library/Caches/pipenv
           ~/Library/Caches/Homebrew
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'tools/mac_setup.sh') }}
+        key: ${{ hashFiles('tools/mac_setup.sh') }}
     - name: Install dependencies
       run: ./tools/mac_setup.sh
     - name: Build openpilot
@@ -279,7 +279,7 @@ jobs:
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \v
+                    FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
                                  selfdrive/test/test_models.py && \
                     coverage combine"
       - name: Upload coverage to Codecov
