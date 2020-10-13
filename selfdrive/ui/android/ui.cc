@@ -34,11 +34,14 @@ static void handle_display_state(UIState *s, bool user_input) {
   static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout-1, 0);
 
-  // detect taps with accelerometer
+  // tap detection while display is off
   const float accel_samples = 5*UI_FREQ;
-  static float accel_prev = s->accel_sensor;
-  user_input |= abs(s->accel_sensor - accel_prev) > 0.95;
-  //printf("accel: %.2f avg, %.2f cur, %.2f diff\n", accel_prev, s->accel_sensor, abs(s->accel_sensor - accel_prev));
+  static float accel_prev, gyro_prev = 0;
+
+  bool accel_trigger = abs(s->accel_sensor - accel_prev) > 0.2;
+  bool gyro_trigger = abs(s->gyro_sensor - gyro_prev) > 0.1;
+  user_input = user_input || (accel_trigger && gyro_trigger);
+  gyro_prev = s->gyro_sensor;
   accel_prev = (accel_prev*(accel_samples - 1) + s->accel_sensor) / accel_samples;
 
   // determine desired state
@@ -141,8 +144,7 @@ int main(int argc, char* argv[]) {
 
   while (!do_exit) {
     if (!s->started) {
-      // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
-      usleep(30 * 1000);
+      usleep(50 * 1000);
     }
     double u1 = millis_since_boot();
 

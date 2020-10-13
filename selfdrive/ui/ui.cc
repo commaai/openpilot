@@ -223,12 +223,9 @@ void update_sockets(UIState *s) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
         s->light_sensor = sensor.getLight();
       } else if (!s->started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        auto accel = sensor.getAcceleration().getV();
-        s->accel_sensor = 0;
-        for(int i = 0; i < 3; i++) {
-          s->accel_sensor += pow(accel[i], 2);
-        }
-        s->accel_sensor = sqrt(s->accel_sensor);
+        s->accel_sensor = sensor.getAcceleration().getV()[2];
+      } else if (!s->started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        s->gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
       }
     }
   }
