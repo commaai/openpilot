@@ -228,12 +228,12 @@ def thermald_thread():
       if health.health.hwType == log.HealthData.HwType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
-          if startup_conditions.ignition:
+          if startup_conditions["ignition"]:
             cloudlog.error("Lost panda connection while onroad")
-          startup_conditions.ignition = False
+          startup_conditions["ignition"] = False
       else:
         no_panda_cnt = 0
-        startup_conditions.ignition = health.health.ignitionLine or health.health.ignitionCan
+        startup_conditions["ignition"] = health.health.ignitionLine or health.health.ignitionCan
 
       # Setup fan handler on first connect to panda
       if handle_fan is None and health.health.hwType != log.HealthData.HwType.unknown:
@@ -288,7 +288,7 @@ def thermald_thread():
     bat_temp = msg.thermal.bat
 
     if handle_fan is not None:
-      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions.ignition)
+      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
       msg.thermal.fanSpeed = fan_speed
 
     # If device is offroad we want to cool down before going onroad
@@ -320,8 +320,8 @@ def thermald_thread():
     now = datetime.datetime.utcnow()
 
     # show invalid date/time alert
-    startup_conditions.time_valid = now.year >= 2019
-    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions.time_valid))
+    startup_conditions["time_valid"] = now.year >= 2019
+    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
 
     # Show update prompt
     try:
@@ -364,23 +364,23 @@ def thermald_thread():
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
 
-    startup_conditions.not_uninstalling = not params.get("DoUninstall") == b"1"
-    startup_conditions.accepted_terms = params.get("HasAcceptedTerms") == terms_version
+    startup_conditions["not_uninstalling"] = not params.get("DoUninstall") == b"1"
+    startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
     completed_training = params.get("CompletedTrainingVersion") == training_version
 
     panda_signature = params.get("PandaFirmware")
-    startup_conditions.fw_version_match = (panda_signature is None) or (panda_signature == FW_SIGNATURE)   # don't show alert is no panda is connected (None)
-    set_offroad_alert_if_changed("Offroad_PandaFirmwareMismatch", (not startup_conditions.fw_version_match))
+    startup_conditions["fw_version_match"] = (panda_signature is None) or (panda_signature == FW_SIGNATURE)   # don't show alert is no panda is connected (None)
+    set_offroad_alert_if_changed("Offroad_PandaFirmwareMismatch", (not startup_conditions["fw_version_match"]))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    startup_conditions.free_space = msg.thermal.freeSpace > 0.02
-    startup_conditions.completed_training = completed_training or (current_branch in ['dashcam', 'dashcam-staging'])
-    startup_conditions.not_driver_view = params.get("IsDriverViewEnabled") == b"1"
-    startup_conditions.not_taking_snapshot = params.get("IsTakingSnapshot") == b"1"
+    startup_conditions["free_space"] = msg.thermal.freeSpace > 0.02
+    startup_conditions["completed_training"] = completed_training or (current_branch in ['dashcam', 'dashcam-staging'])
+    startup_conditions["not_driver_view"] = params.get("IsDriverViewEnabled") == b"1"
+    startup_conditions["not_taking_snapshot"] = params.get("IsTakingSnapshot") == b"1"
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
-    startup_conditions.device_temp_good = thermal_status < ThermalStatus.danger
-    set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions.device_temp_good))
+    startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
+    set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
     should_start = all(startup_conditions.values())
 
     if should_start:
