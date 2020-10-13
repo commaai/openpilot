@@ -6,7 +6,7 @@ on:
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
-  RUN_WITH_CACHE: docker run --shm-size 1G --rm -v /tmp/comma_download_cache:/tmp/comma_download_cache tmppilot /bin/sh -c
+  PERSIST_WITH_CACHE: docker run --shm-size 1G -v /tmp/comma_download_cache:/tmp/comma_download_cache tmppilot /bin/sh -c
   PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
@@ -212,9 +212,23 @@ jobs:
         run: eval "$BUILD"
       - name: Run replay
         run: |
-          $RUN_WITH_CACHE  "cd /tmp/openpilot && \
+          $PERSIST_WITH_CACHE  "cd /tmp/openpilot && \
           scons -j$(nproc) && \
           FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F process_replay"
+      - name: Print diff
+        if: always()
+        run: |
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
+          cat diff.txt
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: process_replay_diff.txt
+          path: diff.txt
 
   test_longitudinal:
     name: longitudinal
