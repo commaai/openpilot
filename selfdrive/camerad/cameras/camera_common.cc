@@ -341,7 +341,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
 
   static int meteringbox_xmin = 0, meteringbox_xmax = 0;
   static int meteringbox_ymin = 0, meteringbox_ymax = 0;
-  static const bool rhd_front = read_db_bool("IsRHD");
+  static const bool rhd_front = Params().read_db_bool("IsRHD");
 
   if (sm->updated("driverState")) {
     auto state = (*sm)["driverState"].getDriverState();

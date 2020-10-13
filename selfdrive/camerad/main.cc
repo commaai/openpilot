@@ -322,7 +322,7 @@ void party(cl_device_id device_id, cl_context context) {
   
   cameras_init(&s->cameras, device_id, context);
   cameras_open(&s->cameras);
-  
+
   s->terminate_pub = zsock_new_pub("@inproc://terminate");
   assert(s->terminate_pub);
 

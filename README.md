@@ -309,7 +309,7 @@ Directory Structure
     ├── phonelibs           # Libraries used on NEOS devices
     ├── pyextra             # Libraries used on NEOS devices
     └── selfdrive           # Code needed to drive the car
-        ├── assets          # Fonts, images, and sounds for UI
+        ├── assets          # Fonts, images and sounds for UI
         ├── athena          # Allows communication with the app
         ├── boardd          # Daemon to talk to the board
         ├── camerad         # Driver to capture images from the camera sensors
