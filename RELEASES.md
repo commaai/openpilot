@@ -3,6 +3,8 @@ Version 0.7.9 + VW 1.5 (2020-10-09)
  * (VW Community) Lane Change Assist radar input for auto lane-change blocking
  * (VW Community) FCW/AEB detection support (still in testing)
  * (VW Community) Several additional MQB vehicles added to fingerprint
+ * (VW Community) Manual config support for "unsafe" gas pedal mode
+ * (VW Community) Manual config support for C2/BP integrations at the CAN gateway
  * (VW Community) Fix bug with steering angle-change-rate signal handling
  * (VW Community) Major overhaul of MQB CAN database (DBC)
  * Improved car battery power management
