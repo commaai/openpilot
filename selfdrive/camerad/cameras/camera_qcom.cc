@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <math.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 
@@ -460,13 +461,6 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     }
 
     set_exposure(s, new_exposure, new_gain);
-  }
-}
-
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  do_autoexposure(s, grey_frac);
-  if (s->camera_num == 0) {
-    do_autofocus(s);
   }
 }
 
@@ -1819,6 +1813,12 @@ static void do_autofocus(CameraState *s) {
   actuator_move(s, target);
 }
 
+void camera_autoexposure(CameraState *s, float grey_frac) {
+  do_autoexposure(s, grey_frac);
+  if (s->camera_num == 0) {
+    do_autofocus(s);
+  }
+}
 
 static void front_start(CameraState *s) {
   int err;
@@ -2007,10 +2007,10 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   // cache rgb roi and write to cl
 
   // gz compensation
-  if (sm->updated("sensorEvents")) {
+  if (s->sm->updated("sensorEvents")) {
     float vals[3] = {0.0};
     bool got_accel = false;
-    auto sensor_events = (*sm)["sensorEvents"].getSensorEvents();
+    auto sensor_events = (*(s->sm))["sensorEvents"].getSensorEvents();
     for (auto sensor_event : sensor_events) {
       if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
         auto v = sensor_event.getAcceleration().getV();
@@ -2115,8 +2115,6 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 }
 
 void cameras_run(MultiCameraState *s) {
-  int err;
-
   std::vector<std::thread> threads;
   threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
   threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));

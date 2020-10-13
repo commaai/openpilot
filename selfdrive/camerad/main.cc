@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <poll.h>
+#include <sys/socket.h>
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "cameras/camera_qcom.h"
