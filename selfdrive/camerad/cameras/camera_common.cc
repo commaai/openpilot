@@ -56,15 +56,18 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
 #ifndef QCOM2
+  // debayering does a 2x downscale
   if (ci->bayer) {
     rgb_width = ci->frame_width / 2;
     rgb_height = ci->frame_height / 2;
   }
+  float db_s = 0.5;
+#else
+  float db_s = 1.0;
 #endif
 
   if (ci->bayer) {
-    // debayering does a 2x downscale
-    yuv_transform = transform_scale_buffer(s->transform, 0.5);
+    yuv_transform = transform_scale_buffer(s->transform, db_s);
   } else {
     yuv_transform = s->transform;
   }
@@ -219,7 +222,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   const CameraBuf *b = &c->buf;
 
-  // one thumbnail per 5 seconds (instead of %5 == 0 posenet)
   uint8_t* thumbnail_buffer = NULL;
   unsigned long thumbnail_len = 0;
 
@@ -344,7 +346,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       meteringbox_xmax = x_offset + (face_position[0] + 0.5) * (0.5 * b->rgb_height) + 72;
       meteringbox_ymin = (face_position[1] + 0.5) * (b->rgb_height) - 72;
       meteringbox_ymax = (face_position[1] + 0.5) * (b->rgb_height) + 72;
-    } else {// use default setting if no face
+    } else { // use default setting if no face
       meteringbox_ymin = b->rgb_height * 1 / 3;
       meteringbox_ymax = b->rgb_height * 1;
       meteringbox_xmin = rhd_front ? 0:b->rgb_width * 3 / 5;
@@ -353,10 +355,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   }
 
   // auto exposure
-#ifndef DEBUG_DRIVER_MONITOR
-  if (cnt % 3 == 0)
-#endif
-  {
+  if (cnt % 3 == 0) {
     // use driver face crop for AE
     int x_start, x_end, y_start, y_end;
     int skip = 1;
@@ -385,13 +384,6 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       for (int x = x_start; x < x_end; x += 2) {  // every 2nd col
         const uint8_t *pix = &bgr_front_ptr[y * b->rgb_stride + x * 3];
         unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
-#ifdef DEBUG_DRIVER_MONITOR
-        uint8_t *pix_rw = (uint8_t *)pix;
-
-        // set all the autoexposure pixels to pure green (pixel format is bgr)
-        pix_rw[0] = pix_rw[2] = 0;
-        pix_rw[1] = 0xff;
-#endif
         lum_binning[std::min(lum / 3, 255u)]++;
       }
     }
