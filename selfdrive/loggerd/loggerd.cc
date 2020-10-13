@@ -522,30 +522,31 @@ kj::Array<capnp::word> gen_init_data() {
   if (!clean) {
     init.setDirty(true);
   }
+  Params params = Params();
 
-  std::vector<char> git_commit = read_db_bytes("GitCommit");
+  std::vector<char> git_commit = params.read_db_bytes("GitCommit");
   if (git_commit.size() > 0) {
     init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
   }
 
-  std::vector<char> git_branch = read_db_bytes("GitBranch");
+  std::vector<char> git_branch = params.read_db_bytes("GitBranch");
   if (git_branch.size() > 0) {
     init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
   }
 
-  std::vector<char> git_remote = read_db_bytes("GitRemote");
+  std::vector<char> git_remote = params.read_db_bytes("GitRemote");
   if (git_remote.size() > 0) {
     init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
   }
 
-  init.setPassive(read_db_bool("Passive"));
+  init.setPassive(params.read_db_bool("Passive"));
   {
     // log params
-    std::map<std::string, std::string> params;
-    read_db_all(&params);
-    auto lparams = init.initParams().initEntries(params.size());
+    std::map<std::string, std::string> params_map;
+    params.read_db_all(&params_map);
+    auto lparams = init.initParams().initEntries(params_map.size());
     int i = 0;
-    for (auto& kv : params) {
+    for (auto& kv : params_map) {
       auto lentry = lparams[i];
       lentry.setKey(kv.first);
       lentry.setValue(kv.second);
@@ -613,7 +614,7 @@ int main(int argc, char** argv) {
   }
   bool record_front = true;
 #ifndef QCOM2
-  record_front = read_db_bool("RecordFront");
+  record_front = Params().read_db_bool("RecordFront");
 #endif
 
   setpriority(PRIO_PROCESS, 0, -12);
