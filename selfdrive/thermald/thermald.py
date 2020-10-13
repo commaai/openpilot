@@ -160,7 +160,6 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
 
 def set_offroad_alert_if_changed(offroad_alert, show_alert, extra_text=None):
-  global prev_offroad_states
   if prev_offroad_states.get(offroad_alert, None) == show_alert:
     return
   prev_offroad_states[offroad_alert] = show_alert
