@@ -71,7 +71,7 @@ jobs:
           ~/Library/Caches/pip
           ~/Library/Caches/pipenv
           ~/Library/Caches/Homebrew
-        key: ${{ hashFiles('tools/mac_setup.sh') }}
+        key: ${{ hashFiles('.github/workflows/test.yaml', 'tools/mac_setup.sh') }}
     - name: Install dependencies
       run: ./tools/mac_setup.sh
     - name: Build openpilot
@@ -144,7 +144,7 @@ jobs:
         with:
           path: |
             /tmp/comma_download_cache
-          key: ${{ hashFiles('selfdrive/test/test_valgrind_replay.py') }}
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run valgrind
@@ -208,7 +208,7 @@ jobs:
         with:
           path: |
             /tmp/comma_download_cache
-          key: ${{ hashFiles('selfdrive/test/process_replay/test_processes.py') }}
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run replay
@@ -273,7 +273,7 @@ jobs:
         with:
           path: |
             /tmp/comma_download_cache
-          key: ${{ hashFiles('selfdrive/test/test_car_models.py') }}
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Test car models
