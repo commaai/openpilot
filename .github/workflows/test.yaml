@@ -266,11 +266,23 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Cache dependencies
+        id: dependency-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/comma_download_cache
+          key: "ci cache"
+      - name: Create cache folder if not exists
+        run: |
+          ls /tmp
+          mkdir -p /tmp/comma_download_cache
+          ls /tmp/comma_download_cache
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Test car models
         run: |
-          $PERSIST "cd /tmp/openpilot && \
+          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
                     coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
                                  selfdrive/test/test_models.py && \
