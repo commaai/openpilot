@@ -52,14 +52,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.2]
       tire_stiffness_factor = 1.0
 
-    # Determine installed network location.
+    # Determine installed network location: take a manually forced setting if
+    # present, otherwise assume camera for C2/BP and gateway for white/grey Panda.
+    # TODO: autodetect C2/BP gateway-side installation based on convenience/powertrain on CAN1
     params = Params()
     manual_network_location = params.get("ForceNetworkLocation", encoding='utf8')
     if manual_network_location == "camera":
       ret.networkLocation = NWL.fwdCamera
     elif manual_network_location == "gateway":
       ret.networkLocation = NWL.gateway
-    elif 0x238 in fingerprint[1]:
+    elif has_relay:
       ret.networkLocation = NWL.fwdCamera
     else:
       ret.networkLocation = NWL.gateway
