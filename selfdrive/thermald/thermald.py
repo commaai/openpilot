@@ -3,6 +3,7 @@ import datetime
 import os
 import time
 from collections import namedtuple
+from typing import Dict
 
 import psutil
 from smbus2 import SMBus
@@ -39,7 +40,7 @@ DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without inte
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
-prev_offroad_states = {}
+prev_offroad_states: Dict[str, bool] = {}
 
 LEON = False
 last_eon_fan_val = None
