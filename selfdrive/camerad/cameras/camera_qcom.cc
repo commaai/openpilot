@@ -2038,10 +2038,7 @@ static void* ops_thread(void* arg) {
   zsock_t *cameraops = zsock_new_pull("@inproc://cameraops");
   assert(cameraops);
 
-  zsock_t *terminate = zsock_new_sub(">inproc://terminate", "");
-  assert(terminate);
-
-  zpoller_t *poller = zpoller_new(cameraops, terminate, NULL);
+  zpoller_t *poller = zpoller_new(cameraops, NULL);
   assert(poller);
 
   SubMaster sm({"sensorEvents"}); // msgq submaster
@@ -2049,9 +2046,7 @@ static void* ops_thread(void* arg) {
   while (!do_exit) {
     // zmq handling
     zsock_t *which = (zsock_t*)zpoller_wait(poller, -1);
-    if (which == terminate) {
-      break;
-    } else if (which != NULL) {
+    if (which != NULL) {
       void* sockraw = zsock_resolve(which);
 
       if (which == cameraops) {
@@ -2117,7 +2112,6 @@ static void* ops_thread(void* arg) {
 
   zpoller_destroy(&poller);
   zsock_destroy(&cameraops);
-  zsock_destroy(&terminate);
 
   return NULL;
 }

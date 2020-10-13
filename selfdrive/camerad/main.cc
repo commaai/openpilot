@@ -51,7 +51,6 @@ struct VisionClientStreamState {
 
 struct VisionState {
   MultiCameraState cameras;
-  zsock_t *terminate_pub;
   pthread_mutex_t clients_lock;
   VisionClientState clients[MAX_CLIENTS];
 };
@@ -78,23 +77,17 @@ void* visionserver_client_thread(void* arg) {
 
   set_thread_name("clientthread");
 
-  zsock_t *terminate = zsock_new_sub(">inproc://terminate", "");
-  assert(terminate);
-  void* terminate_raw = zsock_resolve(terminate);
-
   VisionClientStreamState streams[VISION_STREAM_MAX] = {{0}};
 
   LOGW("client start fd %d", fd);
 
-  while (true) {
-    zmq_pollitem_t polls[2+VISION_STREAM_MAX] = {{0}};
-    polls[0].socket = terminate_raw;
+  while (!do_exit) {
+    zmq_pollitem_t polls[1+VISION_STREAM_MAX] = {{0}};
+    polls[0].fd = fd;
     polls[0].events = ZMQ_POLLIN;
-    polls[1].fd = fd;
-    polls[1].events = ZMQ_POLLIN;
 
-    int poll_to_stream[2+VISION_STREAM_MAX] = {0};
-    int num_polls = 2;
+    int poll_to_stream[1+VISION_STREAM_MAX] = {0};
+    int num_polls = 1;
     for (int i=0; i<VISION_STREAM_MAX; i++) {
       if (!streams[i].subscribed) continue;
       polls[num_polls].events = ZMQ_POLLIN;
@@ -116,8 +109,6 @@ void* visionserver_client_thread(void* arg) {
       break;
     }
     if (polls[0].revents) {
-      break;
-    } else if (polls[1].revents) {
       VisionPacket p;
       err = vipc_recv(fd, &p);
       if (err <= 0) {
@@ -231,7 +222,6 @@ void* visionserver_client_thread(void* arg) {
   }
 
   close(fd);
-  zsock_destroy(&terminate);
 
   pthread_mutex_lock(&s->clients_lock);
   client->running = false;
@@ -246,17 +236,11 @@ void* visionserver_thread(void* arg) {
 
   set_thread_name("visionserver");
 
-  zsock_t *terminate = zsock_new_sub(">inproc://terminate", "");
-  assert(terminate);
-  void* terminate_raw = zsock_resolve(terminate);
-
   int sock = ipc_bind(VIPC_SOCKET_PATH);
   while (!do_exit) {
-    zmq_pollitem_t polls[2] = {{0}};
-    polls[0].socket = terminate_raw;
+    zmq_pollitem_t polls[1] = {{0}};
+    polls[0].fd = sock;
     polls[0].events = ZMQ_POLLIN;
-    polls[1].fd = sock;
-    polls[1].events = ZMQ_POLLIN;
 
     int ret = zmq_poll(polls, ARRAYSIZE(polls), -1);
     if (ret < 0) {
@@ -264,9 +248,7 @@ void* visionserver_thread(void* arg) {
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
-    if (polls[0].revents) {
-      break;
-    } else if (!polls[1].revents) {
+    if (!polls[0].revents) {
       continue;
     }
 
@@ -311,7 +293,6 @@ void* visionserver_thread(void* arg) {
   }
 
   close(sock);
-  zsock_destroy(&terminate);
 
   return NULL;
 }
@@ -323,9 +304,6 @@ void party(cl_device_id device_id, cl_context context) {
   cameras_init(&s->cameras, device_id, context);
   cameras_open(&s->cameras);
 
-  s->terminate_pub = zsock_new_pub("@inproc://terminate");
-  assert(s->terminate_pub);
-
   std::thread server_thread(visionserver_thread, s);
   
   // priority for cameras
@@ -334,11 +312,7 @@ void party(cl_device_id device_id, cl_context context) {
 
   cameras_run(&s->cameras);
 
-  zsock_signal(s->terminate_pub, 0);
-
   server_thread.join();
-
-  zsock_destroy(&s->terminate_pub);
 }
 
 int main(int argc, char *argv[]) {
