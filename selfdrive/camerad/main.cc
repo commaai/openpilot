@@ -1,6 +1,7 @@
 #include <thread>
 #include <stdio.h>
 #include <signal.h>
+#include <poll.h>
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "cameras/camera_qcom.h"
@@ -12,7 +13,6 @@
 #include "cameras/camera_frame_stream.h"
 #endif
 
-#include <czmq.h>
 #include <libyuv.h>
 
 #include "clutil.h"
@@ -82,15 +82,15 @@ void* visionserver_client_thread(void* arg) {
   LOGW("client start fd %d", fd);
 
   while (!do_exit) {
-    zmq_pollitem_t polls[1+VISION_STREAM_MAX] = {{0}};
+    struct pollfd polls[1+VISION_STREAM_MAX] = {{0}};
     polls[0].fd = fd;
-    polls[0].events = ZMQ_POLLIN;
+    polls[0].events = POLLIN;
 
     int poll_to_stream[1+VISION_STREAM_MAX] = {0};
     int num_polls = 1;
     for (int i=0; i<VISION_STREAM_MAX; i++) {
       if (!streams[i].subscribed) continue;
-      polls[num_polls].events = ZMQ_POLLIN;
+      polls[num_polls].events = POLLIN;
       if (streams[i].bufs_outstanding >= 2) {
         continue;
       }
@@ -102,7 +102,7 @@ void* visionserver_client_thread(void* arg) {
       poll_to_stream[num_polls] = i;
       num_polls++;
     }
-    int ret = zmq_poll(polls, num_polls, -1);
+    int ret = poll(polls, num_polls, -1);
     if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);
@@ -238,11 +238,11 @@ void* visionserver_thread(void* arg) {
 
   int sock = ipc_bind(VIPC_SOCKET_PATH);
   while (!do_exit) {
-    zmq_pollitem_t polls[1] = {{0}};
+    struct pollfd polls[1] = {{0}};
     polls[0].fd = sock;
-    polls[0].events = ZMQ_POLLIN;
+    polls[0].events = POLLIN;
 
-    int ret = zmq_poll(polls, ARRAYSIZE(polls), -1);
+    int ret = poll(polls, ARRAYSIZE(polls), -1);
     if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);
@@ -323,7 +323,6 @@ int main(int argc, char *argv[]) {
   set_core_affinity(6);
 #endif
 
-  zsys_handler_set(NULL);
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
