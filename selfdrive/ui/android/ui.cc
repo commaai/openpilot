@@ -37,7 +37,7 @@ static void handle_display_state(UIState *s, bool user_input) {
   // detect taps with accelerometer
   const float accel_samples = 5*UI_FREQ;
   static float accel_prev = s->accel_sensor;
-  user_input |= abs(s->accel_sensor - accel_prev) > 0.85;
+  user_input |= abs(s->accel_sensor - accel_prev) > 0.95;
   //printf("accel: %.2f avg, %.2f cur, %.2f diff\n", accel_prev, s->accel_sensor, abs(s->accel_sensor - accel_prev));
   accel_prev = (accel_prev*(accel_samples - 1) + s->accel_sensor) / accel_samples;
 
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
   while (!do_exit) {
     if (!s->started) {
       // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
-      usleep(10 * 1000);
+      usleep(30 * 1000);
     }
     double u1 = millis_since_boot();
 
