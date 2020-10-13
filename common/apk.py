@@ -36,7 +36,7 @@ def start_offroad():
 def set_package_permissions():
   try:
     output = subprocess.check_output(['dumpsys', 'package', 'ai.comma.plus.offroad'])
-    given_permissions = output.split("runtime permissions")[1]
+    given_permissions = str(output).split("runtime permissions")[1]
   except (subprocess.CalledProcessError, IndexError):
     given_permissions = ""
 
