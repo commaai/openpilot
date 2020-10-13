@@ -39,7 +39,7 @@ static void handle_display_state(UIState *s, bool user_input) {
   static float accel_prev, gyro_prev = 0;
 
   bool accel_trigger = abs(s->accel_sensor - accel_prev) > 0.2;
-  bool gyro_trigger = abs(s->gyro_sensor - gyro_prev) > 0.1;
+  bool gyro_trigger = abs(s->gyro_sensor - gyro_prev) > 0.15;
   user_input = user_input || (accel_trigger && gyro_trigger);
   gyro_prev = s->gyro_sensor;
   accel_prev = (accel_prev*(accel_samples - 1) + s->accel_sensor) / accel_samples;
