@@ -280,7 +280,7 @@ jobs:
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                    FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \v
                                  selfdrive/test/test_models.py && \
                     coverage combine"
       - name: Upload coverage to Codecov
