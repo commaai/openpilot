@@ -16,7 +16,7 @@ setup(name='Boardd API Implementation',
           ],
           sources=['boardd_api_impl.pyx'],
           language="c++",
-          extra_compile_args=["-std=c++17", "-Wno-nullability-completeness"],
+          extra_compile_args=["-std=c++1z", "-Wno-nullability-completeness"],
         )
       )
 )
