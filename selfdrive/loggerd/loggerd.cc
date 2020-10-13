@@ -23,7 +23,6 @@
 #include <random>
 
 #include <ftw.h>
-#include <zmq.h>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
@@ -200,7 +199,7 @@ struct LoggerdState {
 LoggerdState s;
 
 #ifndef DISABLE_ENCODER
-void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips, int cam_idx) {
+void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
 
   switch (cam_idx) {
     case LOG_CAMERA_ID_DCAMERA: {
@@ -271,12 +270,6 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
       }
 
       encoder_inited = true;
-      if (is_streaming) {
-        encoder.zmq_ctx = zmq_ctx_new();
-        encoder.stream_sock_raw = zmq_socket(encoder.zmq_ctx, ZMQ_PUB);
-        assert(encoder.stream_sock_raw);
-        zmq_bind(encoder.stream_sock_raw, "tcp://*:9002");
-      }
     }
 
     // dont log a raw clip in the first minute
@@ -664,16 +657,6 @@ int main(int argc, char** argv) {
     logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
   }
 
-  bool is_streaming = false;
-  bool is_logging = true;
-
-  if (argc > 1 && strcmp(argv[1], "--stream") == 0) {
-    is_streaming = true;
-  } else if (argc > 1 && strcmp(argv[1], "--only-stream") == 0) {
-    is_streaming = true;
-    is_logging = false;
-  }
-
   s.rotate_seq_id = 0;
   s.should_close = 0;
   s.finish_close = 0;
@@ -681,17 +664,17 @@ int main(int argc, char** argv) {
   pthread_mutex_init(&s.rotate_lock, NULL);
 #ifndef DISABLE_ENCODER
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, false, LOG_CAMERA_ID_FCAMERA);
+  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], false, LOG_CAMERA_ID_FCAMERA);
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
   // front camera
   std::thread front_encoder_thread_handle;
   if (record_front) {
-    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, false, LOG_CAMERA_ID_DCAMERA);
+    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, LOG_CAMERA_ID_DCAMERA);
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
   #ifdef QCOM2
   // wide camera
-  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, false, LOG_CAMERA_ID_ECAMERA);
+  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, LOG_CAMERA_ID_ECAMERA);
   s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
   #endif
 #endif
@@ -787,13 +770,11 @@ int main(int argc, char** argv) {
       pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
-      // rotate the log
-      if (is_logging) {
-        err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-        assert(err == 0);
-        if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
-        LOGW("rotated to %s", s.segment_path);
-      }
+      err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+      assert(err == 0);
+      if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
+      LOGW("rotated to %s", s.segment_path);
+
       // rotate the encoders
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
       pthread_mutex_unlock(&s.rotate_lock);

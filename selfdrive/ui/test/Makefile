@@ -14,7 +14,7 @@ CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
 
 ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
-           -l:libczmq.a -l:libzmq.a \
+           -l:libzmq.a \
            -lgnustl_shared
 
 NANOVG_FLAGS = -I$(PHONELIBS)/nanovg
