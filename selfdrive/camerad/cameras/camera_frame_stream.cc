@@ -46,9 +46,9 @@ void run_frame_stream(MultiCameraState *s) {
   auto *tb = &rear_camera->buf.camera_tb;
 
   while (!do_exit) {
-    if (s->sm.update(1000) == 0) continue;
+    if (s->sm->update(1000) == 0) continue;
 
-    auto frame = s->sm["frame"].getFrame();
+    auto frame = (*(s->sm))["frame"].getFrame();
 
     const int buf_idx = tbuffer_select(tb);
     rear_camera->buf.camera_bufs_metadata[buf_idx] = {
