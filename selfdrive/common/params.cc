@@ -72,11 +72,6 @@ static int fsync_dir(const char* path){
   }
 }
 
-static int ensure_dir_exists(std::string path) {
-  // TODO: replace by std::filesystem::create_directories
-  return mkdir_p(path.c_str());
-}
-
 static int mkdir_p(const char *path) {
   /* Adapted from http://stackoverflow.com/a/2336245/119527 */
   const size_t len = strlen(path);
@@ -108,7 +103,13 @@ static int mkdir_p(const char *path) {
       return -1;
   }
   return 0;
-  }
+}
+
+static int ensure_dir_exists(std::string path) {
+  // TODO: replace by std::filesystem::create_directories
+  return mkdir_p(path.c_str());
+}
+
 
 Params::Params(bool persistent_param){
   const char * path = persistent_param ? persistent_params_path : default_params_path;
