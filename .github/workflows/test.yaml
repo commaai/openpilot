@@ -138,11 +138,18 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Cache dependencies
+        id: dependency-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/comma_download_cache
+          key: ${{ hashFiles('selfdrive/test/test_valgrind_replay.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run valgrind
         run: |
-          $PERSIST "cd /tmp/openpilot && \
+          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
                     python selfdrive/test/test_valgrind_replay.py"
       - name: Print logs
