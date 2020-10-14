@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <poll.h>
+#include <math.h>
 
 #include "common/util.h"
 #include "common/swaglog.h"
