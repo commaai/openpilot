@@ -69,6 +69,11 @@ typedef struct FrameMetadata {
   float gain_frac;
 } FrameMetadata;
 
+typedef struct CameraExpInfo {
+  int op_id;
+  float grey_frac;
+} CameraExpInfo;
+
 extern CameraInfo cameras_supported[CAMERA_ID_MAX];
 
 typedef struct {
