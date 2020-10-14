@@ -8,7 +8,7 @@ curl -O http://carla-assets-internal.s3.amazonaws.com/Releases/Linux/$FILE
 rm -rf carla_tmp
 mkdir -p carla_tmp
 cd carla_tmp
-tar xvf ../$FILE
+tar xvf ../$FILE PythonAPI/
 easy_install PythonAPI/carla/dist/carla-0.9.7-py3.5-linux-x86_64.egg || true
 cd ..
 rm -rf /tmp/$FILE

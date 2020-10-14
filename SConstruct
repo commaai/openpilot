@@ -7,6 +7,7 @@ import sys
 import platform
 
 TICI = os.path.isfile('/TICI')
+Decider('MD5-timestamp')
 
 AddOption('--test',
           action='store_true',
@@ -108,6 +109,7 @@ else:
     ]
 
   rpath = [
+    "phonelibs/snpe/x86_64-linux-clang",
     "external/tensorflow/lib",
     "cereal",
     "selfdrive/common"

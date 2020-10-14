@@ -183,7 +183,7 @@ struct VisionState {
 void* frontview_thread(void *arg) {
   int err;
   VisionState *s = (VisionState*)arg;
-  s->rhd_front = read_db_bool("IsRHD");
+  s->rhd_front = Params().read_db_bool("IsRHD");
 
   set_thread_name("frontview");
   err = set_realtime_priority(51);
@@ -1538,7 +1538,7 @@ void free_buffers(VisionState *s) {
 
   clReleaseProgram(s->prg_rgb_laplacian);
   clReleaseKernel(s->krnl_rgb_laplacian);
-  
+
 }
 
 void party(VisionState *s) {
