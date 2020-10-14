@@ -2036,6 +2036,8 @@ static void* ops_thread(void* arg) {
 
     usleep(50000);
   }
+
+  return NULL;
 }
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
