@@ -150,7 +150,7 @@ cdef class Params:
     self.p.delete_db_value(key)
 
 
-def put_nonblocking(key, val, d=None):
+def put_nonblocking(key, val, d=PARAMS):
   def f(key, val):
     params = Params(d)
     params.put(key, val)
