@@ -469,11 +469,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.fanMalfunction: {
-    ET.PERMANENT: Alert(
-      "Fan Malfunction",
-      "Contact Support",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
+    ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Contact Support"),
   },
 
   # ********** events that affect controls state transitions **********
