@@ -283,14 +283,20 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   }
 }
 
-void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, bool front, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
   const CameraBuf *b = &c->buf;
 
   uint32_t lum_binning[256] = {0};
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
-      uint8_t lum = pix_ptr[((y_start + y) * b->yuv_width) + x_start + x];
-      lum_binning[lum]++;
+      if (!front) {
+        uint8_t lum = pix_ptr[((y_start + y) * b->yuv_width) + x_start + x];
+        lum_binning[lum]++;
+      } else {
+        uint8_t *pix = &pix_ptr[y * b->rgb_stride + x * 3];
+        unsigned int lum = (unsigned int)(pix[0] + pix[1] + pix[2]);
+        lum_binning[std::min(lum / 3, 255u)]++;
+      }
     }
   }
 
@@ -396,7 +402,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     y_end = 1148;
     skip = 4;
 #endif
-    set_exposure_target(c, (const uint8_t *)b->cur_rgb_buf->addr, x_start, x_end, 2, y_start, y_end, skip);
+    set_exposure_target(c, (const uint8_t *)b->cur_rgb_buf->addr, 1, x_start, x_end, 2, y_start, y_end, skip);
   }
 
   MessageBuilder msg;
