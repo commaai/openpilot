@@ -2016,7 +2016,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
       if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
         auto v = sensor_event.getAcceleration().getV();
         if (v.size() < 3) {
-          continue;  //wtf
+          continue;
         }
         for (int j = 0; j < 3; j++) {
           vals[j] = v[j];
@@ -2082,7 +2082,6 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     // in suboptimal position with high prob, but may still recover by itself
     self_recover -= 1;
     if (self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover.load());
       self_recover = FOCUS_RECOVER_STEPS / 2 + ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M)) ? 1 : 0);
     }
   } else if (self_recover < 0) {
