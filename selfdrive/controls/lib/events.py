@@ -173,6 +173,11 @@ class EngagementAlert(Alert):
                      Priority.MID, VisualAlert.none,
                      audible_alert, .2, 0., 0.),
 
+class NormalPermanentAlert(Alert):
+  def __init__(self, alert_text_1, alert_text_2):
+    super().__init__(alert_text_1, alert_text_2,
+                     AlertStatus.normal, AlertSize.mid,
+                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 
 # ********** alert callback functions **********
 
@@ -536,7 +541,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Out of Storage",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=1.),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
     ET.NO_ENTRY: NoEntryAlert("Out of Storage Space",
                               duration_hud_alert=0.),
   },
@@ -559,11 +564,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.soundsUnavailable: {
-    ET.PERMANENT: Alert(
-      "Speaker not found",
-      "Reboot your Device",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.PERMANENT: NormalPermanentAlert("Speaker not found", "Reboot your Device"),
     ET.NO_ENTRY: NoEntryAlert("Speaker not found"),
   },
 
@@ -587,11 +588,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.calibrationInvalid: {
-    ET.PERMANENT: Alert(
-      "Calibration Invalid",
-      "Remount Device and Recalibrate",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.PERMANENT: NormalPermanentAlert("Calibration Invalid", "Remount Device and Recalibrate"),
     ET.SOFT_DISABLE: SoftDisableAlert("Calibration Invalid: Remount Device & Recalibrate"),
     ET.NO_ENTRY: NoEntryAlert("Calibration Invalid: Remount Device & Recalibrate"),
   },
@@ -661,11 +658,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.lowMemory: {
     ET.SOFT_DISABLE: SoftDisableAlert("Low Memory: Reboot Your Device"),
-    ET.PERMANENT: Alert(
-      "Low Memory",
-      "Reboot your Device",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.PERMANENT: NormalPermanentAlert("Low Memory", "Reboot your Device"),
     ET.NO_ENTRY : NoEntryAlert("Low Memory: Reboot Your Device",
                                audible_alert=AudibleAlert.chimeDisengage),
   },
@@ -730,11 +723,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.relayMalfunction: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Harness Malfunction"),
-    ET.PERMANENT: Alert(
-      "Harness Malfunction",
-      "Check Hardware",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.PERMANENT: NormalPermanentAlert("Harness Malfunction", "Check Hardware"),
     ET.NO_ENTRY: NoEntryAlert("Harness Malfunction"),
   },
 
@@ -770,11 +759,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   # TODO: this is unclear, update check only happens offroad
   EventName.internetConnectivityNeeded: {
-    ET.PERMANENT: Alert(
-      "Connect to Internet",
-      "An Update Check Is Required to Engage",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+    ET.PERMANENT: NormalPermanentAlert("Connect to Internet", "An Update Check Is Required to Engage"),
     ET.NO_ENTRY: NoEntryAlert("Connect to Internet",
                               audible_alert=AudibleAlert.chimeDisengage),
   },
