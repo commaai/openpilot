@@ -23,17 +23,17 @@
 
 namespace {
 
-template <typename T>
-T* null_coalesce(T* a, T* b) {
-  return a != NULL ? a : b;
+std::string getenv_default(const char* env_var, const char* default_val) {
+  const char* env_val = getenv(env_var);
+  return std::string(env_val != NULL ? env_val : default_val);
 }
 
-static const char* default_params_path = null_coalesce(const_cast<const char*>(getenv("PARAMS_PATH")), "/data/params");
+const std::string default_params_path = getenv_default("PARAMS_PATH", "/data/params");
 
 #ifdef QCOM
-static const char* persistent_params_path = null_coalesce(const_cast<const char*>(getenv("PERSISTENT_PARAMS_PATH")), "/persist/comma/params");
+const std::string persistent_params_path = getenv_default("PERSISTENT_PARAMS_PATH", "/persist/comma/params");
 #else
-static const char* persistent_params_path = default_params_path;
+const std::string persistent_params_path = default_params_path;
 #endif
 
 } //namespace
@@ -99,8 +99,7 @@ static int ensure_dir_exists(std::string path) {
 
 
 Params::Params(bool persistent_param){
-  const char * path = persistent_param ? persistent_params_path : default_params_path;
-  params_path = std::string(path);
+  params_path = persistent_param ? persistent_params_path : default_params_path;
 }
 
 Params::Params(std::string path) {
