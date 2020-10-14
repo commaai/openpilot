@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <poll.h>
 #include <assert.h>
+#include <unistd.h>
 #include <sys/socket.h>
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
