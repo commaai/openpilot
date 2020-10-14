@@ -283,13 +283,13 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   }
 }
 
-void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
   const CameraBuf *b = &c->buf;
-  const uint8_t *yuv_ptr_y = (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y;
+
   uint32_t lum_binning[256] = {0};
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
-      uint8_t lum = yuv_ptr_y[((y_start + y) * b->yuv_width) + x_start + x];
+      uint8_t lum = pix_ptr[((y_start + y) * b->yuv_width) + x_start + x];
       lum_binning[lum]++;
     }
   }
@@ -396,7 +396,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     y_end = 1148;
     skip = 4;
 #endif
-    set_exposure_target(c, x_start, x_end, 2, y_start, y_end, skip);
+    set_exposure_target(c, (const uint8_t *)b->cur_rgb_buf->addr, x_start, x_end, 2, y_start, y_end, skip);
   }
 
   MessageBuilder msg;
