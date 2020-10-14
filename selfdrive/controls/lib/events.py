@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 from typing import Dict, Union, Callable, Any
 
 from cereal import log, car
@@ -23,7 +23,7 @@ class Priority(IntEnum):
   HIGHEST = 5
 
 # Event types
-class ET(Enum):
+class ET:
   ENABLE = 'enable'
   PRE_ENABLE = 'preEnable'
   NO_ENTRY = 'noEntry'
@@ -202,7 +202,7 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
     text = "Main Switch Off"
   return NoEntryAlert(text, duration_hud_alert=0.)
 
-EVENTS: Dict[int, Dict[ET, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
+EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
   # ********** events only containing alerts displayed in all states **********
