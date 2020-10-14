@@ -1,4 +1,4 @@
-Version 0.7.9 + VW 1.5 (2020-10-09)
+Version 0.7.9 + VW 1.5 (2020-10-14)
 ========================
  * (VW Community) Lane Change Assist radar input for auto lane-change blocking
  * (VW Community) FCW/AEB detection support (still in testing)
