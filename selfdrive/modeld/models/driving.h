@@ -14,7 +14,6 @@
 #include "commonmodel.h"
 #include "runners/run.h"
 
-#include <czmq.h>
 #include <memory>
 #include "messaging.hpp"
 
