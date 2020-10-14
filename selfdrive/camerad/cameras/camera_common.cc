@@ -241,8 +241,13 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   cinfo.in_color_space = JCS_RGB;
 
   jpeg_set_defaults(&cinfo);
+#ifndef __APPLE__
   jpeg_set_quality(&cinfo, 50, true);
   jpeg_start_compress(&cinfo, true);
+#else
+  jpeg_set_quality(&cinfo, 50, static_cast<boolean>(true) );
+  jpeg_start_compress(&cinfo, static_cast<boolean>(true) );
+#endif
 
   JSAMPROW row_pointer[1];
   for (int ii = 0; ii < b->rgb_height/4; ii+=1) {
