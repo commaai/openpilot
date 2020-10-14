@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <czmq.h>
 
 #include "camera_common.h"
 #include "media/cam_req_mgr.h"
