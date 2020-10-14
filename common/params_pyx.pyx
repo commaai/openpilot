@@ -1,9 +1,12 @@
 # distutils: langauge = c++
-import threading
-import os
+# cython: language_level = 3
 from libcpp cimport bool
 from libcpp.string cimport string
 from params_pxd cimport Params as c_Params
+
+import os
+import threading
+from common.basedir import PARAMS
 
 cdef enum TxType:
   PERSISTENT = 1
@@ -81,11 +84,11 @@ class UnknownKeyName(Exception):
 cdef class Params:
   cdef c_Params* p
 
-  def __cinit__(self, d=None, persistent_params=False):
-    if d is not None:
-      self.p = new c_Params(<string>d.encode())
+  def __cinit__(self, d=PARAMS, bool persistent_params=False):
+    if persistent_params:
+      self.p = new c_Params(True)
     else:
-      self.p = new c_Params(<bool>persistent_params)
+      self.p = new c_Params(<string>d.encode())
 
   def __dealloc__(self):
     del self.p
