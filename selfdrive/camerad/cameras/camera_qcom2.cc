@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 #include <poll.h>
 #include <math.h>
+#include <atomic>
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -35,7 +36,7 @@
 extern volatile sig_atomic_t do_exit;
 
 // global var for AE ops
-std::atomic<CameraExpInfo> cam_exp[3] = {0};
+std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_AR0231] = {

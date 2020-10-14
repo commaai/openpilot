@@ -9,7 +9,7 @@ if arch == "aarch64":
   else:
     cameras = ['cameras/camera_qcom.cc']
 elif arch == "larch64":
-  libs += []
+  libs += ['atomic']
   cameras = ['cameras/camera_qcom2.cc']
   # no screen
   # env = env.Clone()
