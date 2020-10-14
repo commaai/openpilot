@@ -36,8 +36,8 @@
 extern volatile sig_atomic_t do_exit;
 
 // global var for AE/AF ops
-std::atomic<CameraExpInfo> rear_exp{0};
-std::atomic<CameraExpInfo> front_exp{0};
+std::atomic<CameraExpInfo> rear_exp{{0}};
+std::atomic<CameraExpInfo> front_exp{{0}};
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
