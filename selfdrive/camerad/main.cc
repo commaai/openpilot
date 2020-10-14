@@ -27,11 +27,9 @@
 
 #define MAX_CLIENTS 6
 
-extern "C" {
 volatile sig_atomic_t do_exit = 0;
-}
 
-void set_do_exit(int sig) {
+static void set_do_exit(int sig) {
   do_exit = 1;
 }
 
@@ -84,7 +82,7 @@ void* visionserver_client_thread(void* arg) {
 
   LOGW("client start fd %d", fd);
 
-  while (!do_exit) {
+  while (true) {
     struct pollfd polls[1+VISION_STREAM_MAX] = {{0}};
     polls[0].fd = fd;
     polls[0].events = POLLIN;
@@ -111,6 +109,7 @@ void* visionserver_client_thread(void* arg) {
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
+    if (do_exit) break;
     if (polls[0].revents) {
       VisionPacket p;
       err = vipc_recv(fd, &p);
@@ -245,12 +244,13 @@ void* visionserver_thread(void* arg) {
     polls[0].fd = sock;
     polls[0].events = POLLIN;
 
-    int ret = poll(polls, ARRAYSIZE(polls), -1);
+    int ret = poll(polls, ARRAYSIZE(polls), 1000);
     if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
+    if (do_exit) break;
     if (!polls[0].revents) {
       continue;
     }
