@@ -7,6 +7,7 @@
 #include <math.h>
 #include <poll.h>
 #include <sys/ioctl.h>
+#include <atomic>
 
 #include <linux/media.h>
 
@@ -33,6 +34,10 @@
 
 
 extern volatile sig_atomic_t do_exit;
+
+// global var for AE/AF ops
+std::atomic<CameraExpInfo> rear_exp{0};
+std::atomic<CameraExpInfo> front_exp{0};
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
@@ -1814,9 +1819,16 @@ static void do_autofocus(CameraState *s) {
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
-  do_autoexposure(s, grey_frac);
   if (s->camera_num == 0) {
-    do_autofocus(s);
+    CameraExpInfo tmp = rear_exp.load();
+    tmp.op_id++;
+    tmp.grey_frac = grey_frac;
+    rear_exp.store(tmp);
+  } else {
+    CameraExpInfo tmp = front_exp.load();
+    tmp.op_id++;
+    tmp.grey_frac = grey_frac;
+    front_exp.store(tmp);
   }
 }
 
@@ -1997,6 +2009,35 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
   };
 }
 
+static void* ops_thread(void* arg) {
+  MultiCameraState *s = (MultiCameraState*)arg;
+
+  int rear_op_id_last = 0;
+  int front_op_id_last = 0;
+
+  CameraExpInfo rear_op;
+  CameraExpInfo front_op;
+
+  set_thread_name("camera_settings");
+
+  while(!do_exit) {
+    rear_op = rear_exp.load();
+    if (rear_op.op_id != rear_op_id_last) {
+      do_autoexposure(&s->rear, rear_op.grey_frac);
+      do_autofocus(&s->rear);
+      rear_op_id_last = rear_op.op_id;
+    }
+
+    front_op = front_exp.load();
+    if (front_op.op_id != front_op_id_last) {
+      do_autoexposure(&s->front, front_op.grey_frac);
+      front_op_id_last = front_op.op_id;
+    }
+
+    usleep(50000);
+  }
+}
+
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   common_camera_process_front(s->sm, s->pm, c, cnt);
 }
@@ -2115,6 +2156,12 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 }
 
 void cameras_run(MultiCameraState *s) {
+  int err;
+
+  pthread_t ops_thread_handle;
+  err = pthread_create(&ops_thread_handle, NULL,
+                       ops_thread, s);
+  assert(err == 0);
   std::vector<std::thread> threads;
   threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
   threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
@@ -2215,6 +2262,9 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
+
+  err = pthread_join(ops_thread_handle, NULL);
+  assert(err == 0);
 
   cameras_close(s);
 

@@ -115,6 +115,11 @@ typedef struct CameraState {
   CameraBuf buf;
 } CameraState;
 
+typedef struct CameraExpInfo {
+  int op_id;
+  float grey_frac;
+} CameraExpInfo;
+
 
 typedef struct MultiCameraState {
   int device;
