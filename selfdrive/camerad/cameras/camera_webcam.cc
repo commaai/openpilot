@@ -1,6 +1,7 @@
 #include "camera_webcam.h"
 
 #include <unistd.h>
+#include <assert.h>
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>

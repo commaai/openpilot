@@ -1,6 +1,8 @@
 #include <thread>
 #include <stdio.h>
 #include <signal.h>
+#include <assert.h>
+#include <unistd.h>
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "cameras/camera_qcom.h"
