@@ -75,18 +75,20 @@ static int fsync_dir(const char* path){
 static int mkdir_p(std::string path) {
   char * _path = (char *)path.c_str();
 
+  mode_t prev_mask = umask(0);
   for (char *p = _path + 1; *p; p++) {
     if (*p == '/') {
       *p = '\0'; // Temporarily truncate
-      if (mkdir(_path, 0775) != 0) {
+      if (mkdir(_path, 0777) != 0) {
         if (errno != EEXIST) return -1;
       }
       *p = '/';
     }
   }
-  if (mkdir(_path, 0775) != 0) {
+  if (mkdir(_path, 0777) != 0) {
     if (errno != EEXIST) return -1;
   }
+  umask(prev_mask);
   return 0;
 }
 
