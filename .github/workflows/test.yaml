@@ -7,6 +7,7 @@ on:
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
+  RUN_WEBCAM: docker run --shm-size 1G --rm tmppilotwebcam /bin/sh -c
   PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
@@ -18,6 +19,9 @@ env:
       eval "$BUILD_BASE"
       docker pull docker.io/commaai/openpilotci:latest || true
       docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
+  BUILD_WEBCAM: |
+      eval "$BUILD"
+      docker build --cache-from docker.io/commaai/openpilotwebcamci:latest -t tmppilotwebcam -f tools/webcam/Dockerfile .
 
 jobs:
   build_release:
@@ -87,10 +91,9 @@ jobs:
         submodules: true
     - name: Build Docker image
       run: |
-        eval "$BUILD"
-        docker build -t tmppilot -f tools/webcam/Dockerfile .
+        eval "$BUILD_WEBCAM"
     - name: Build openpilot
-      run: $RUN "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
+      run: $RUN_WEBCAM "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
 
   docker_push:
     name: docker push
@@ -103,7 +106,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: eval "$BUILD"
+        run: eval "$BUILD_WEBCAM"
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
@@ -111,6 +114,8 @@ jobs:
           docker push docker.io/commaai/openpilot-base:latest
           docker tag tmppilot docker.io/commaai/openpilotci:latest
           docker push docker.io/commaai/openpilotci:latest
+          docker tag tmppilotwebcam docker.io/commaai/openpilotwebcamci:latest
+          docker push docker.io/commaai/openpilotwebcamci:latest
 
   docker_push_prebuilt:
     name: docker push prebuilt
