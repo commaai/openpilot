@@ -34,6 +34,9 @@ pipeline {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
   }
+  options {
+      timeout(time: 1, unit: 'HOURS')
+  }
 
   stages {
 
