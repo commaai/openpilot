@@ -21,6 +21,11 @@ class TestParams(unittest.TestCase):
     self.params.put("DongleId", "cb38263377b873ee")
     assert self.params.get("DongleId") == b"cb38263377b873ee"
 
+  def test_persist_params_put_and_get(self):
+    p = Params(persistent_params=True)
+    p.put("DongleId", "cb38263377b873ee")
+    assert p.get("DongleId") == b"cb38263377b873ee"
+
   def test_params_non_ascii(self):
     st = b"\xe1\x90\xff"
     self.params.put("CarParams", st)
