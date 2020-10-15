@@ -179,15 +179,6 @@ def thermald_thread():
 
   startup_conditions = {
     "ignition": False,
-    "time_valid": False,
-    "not_uninstalling": False,
-    "accepted_terms": False,
-    "fw_version_match": False,
-    "free_space": False,
-    "completed_training": False,
-    "not_driver_view": False,
-    "not_taking_snapshot": False,
-    "device_temp_good": False
   }
 
   off_ts = None
