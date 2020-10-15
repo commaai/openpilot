@@ -32,8 +32,6 @@ int main(int argc, char **argv) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  // messaging
-  SubMaster sm({"dMonitoringState"});
   PubMaster pm({"driverState"});
 
   // init the models
@@ -71,6 +69,11 @@ int main(int argc, char **argv) {
 
       LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
+#ifdef QCOM2
+      // this makes it run at about 2.7Hz on tici CPU to deal with modeld lags
+      // TODO: DSP needs to be freed (again)
+      usleep(250000);
+#endif
     }
     visionstream_destroy(&stream);
   }

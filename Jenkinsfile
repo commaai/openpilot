@@ -58,7 +58,7 @@ pipeline {
       when {
         not {
           anyOf {
-            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'
+            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'; branch 'testing-closet*'
           }
         }
       }
@@ -132,6 +132,8 @@ pipeline {
                       ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
+                      ["test loggerd", "CI=1 python selfdrive/loggerd/tests/test_loggerd.py"],
+                      //["test camerad", "CI=1 python selfdrive/camerad/test/test_camerad.py"], // wait for shelf refactor
                       //["test updater", "python installer/updater/test_updater.py"],
                     ])
                   }
@@ -140,6 +142,13 @@ pipeline {
               }
             }
           }
+
+          post {
+            always {
+              cleanWs()
+            }
+          }
+
         }
 
       }

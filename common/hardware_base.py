@@ -1,6 +1,13 @@
 from abc import abstractmethod
 
+
 class HardwareBase:
+  @staticmethod
+  def get_cmdline():
+    with open('/proc/cmdline') as f:
+      cmdline = f.read()
+    return {kv[0]: kv[1] for kv in [s.split('=') for s in cmdline.split(' ')] if len(kv) == 2}
+
   @abstractmethod
   def get_sound_card_online(self):
     pass

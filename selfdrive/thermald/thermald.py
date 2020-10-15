@@ -124,7 +124,7 @@ _TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
 # fan speed options
 _FAN_SPEEDS = [0, 16384, 32768, 65535]
 # max fan speed only allowed if battery is hot
-_BAT_TEMP_THERSHOLD = 45.
+_BAT_TEMP_THRESHOLD = 45.
 
 
 def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
@@ -138,7 +138,7 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
     # update speed if using the low thresholds results in fan speed decrement
     fan_speed = new_speed_l
 
-  if bat_temp < _BAT_TEMP_THERSHOLD:
+  if bat_temp < _BAT_TEMP_THRESHOLD:
     # no max fan speed unless battery is hot
     fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
 
@@ -363,7 +363,8 @@ def thermald_thread():
     should_start = should_start and msg.thermal.freeSpace > 0.02
 
     # confirm we have completed training and aren't uninstalling
-    should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
+    should_start = should_start and accepted_terms and (not do_uninstall) and \
+                   (completed_training or current_branch in ['dashcam', 'dashcam-staging'])
 
     # check for firmware mismatch
     should_start = should_start and fw_version_match

@@ -1,13 +1,7 @@
 #!/bin/bash -e
 
-# Install brew if required.
-if [[ $(command -v brew) == "" ]]; then
-    echo "Installing Hombrew"
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-else
-    echo "Updating Homebrew"
-    brew update
-fi
+echo "Updating Homebrew"
+brew update
 
 brew install capnp \
              czmq \
@@ -51,5 +45,5 @@ pyenv global 3.8.2
 pyenv rehash
 eval "$(pyenv init -)" # CI doesn't use .bash_profile, and will use python2.7 if this line isn't here.
 
-pip install pipenv==2018.11.26
+pip install pipenv==2020.8.13
 pipenv install --system --deploy

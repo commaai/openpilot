@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
 #include <eigen3/Eigen/Dense>
 
 #include "common/visionbuf.h"
@@ -43,20 +44,21 @@ void* live_thread(void *arg) {
     910.0, 0.0, 582.0,
     0.0, 910.0, 437.0,
     0.0,   0.0,   1.0;
+  float db_s = 0.5; // debayering does a 2x downscale
 #else
   Eigen::Matrix<float, 3, 3> eon_intrinsics;
   eon_intrinsics <<
     2648.0, 0.0, 1928.0/2,
     0.0, 2648.0, 1208.0/2,
     0.0,   0.0,   1.0;
+  float db_s = 1.0;
 #endif
 
-    // debayering does a 2x downscale
   mat3 yuv_transform = transform_scale_buffer((mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0,
-  }}, 0.5);
+  }}, db_s);
 
   while (!do_exit) {
     if (sm.update(10) > 0){
@@ -92,7 +94,9 @@ int main(int argc, char **argv) {
   int err;
   set_realtime_priority(51);
 
-#ifdef QCOM2
+#ifdef QCOM
+  set_core_affinity(2);
+#elif QCOM2
   // CPU usage is much lower when pinned to a single big core
   set_core_affinity(4);
 #endif

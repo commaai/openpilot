@@ -49,7 +49,7 @@ def car_plant(pos, speed, grade, gas, brake):
   power_peak = 100000   # 100kW
   speed_base = power_peak/force_peak
   rolling_res = 0.01
-  g = 9.81
+  gravity = 9.81
   frontal_area = 2.2
   air_density = 1.225
   gas_to_peak_linear_slope = 3.33
@@ -65,12 +65,12 @@ def car_plant(pos, speed, grade, gas, brake):
   else:  # power control
     force_gas = gas * power_peak / speed * gas_to_peak_linear_slope
 
-  force_grade = - grade * mass  # positive grade means uphill
+  force_grade = - np.sin(np.arctan(grade)) * mass * gravity
 
   creep_accel = np.interp(speed, creep_accel_bp, creep_accel_v)
   force_creep = creep_accel * mass
 
-  force_resistance = -(rolling_res * mass * g + 0.5 * speed**2 * aero_cd * air_density * frontal_area)
+  force_resistance = -(rolling_res * mass * gravity + 0.5 * speed**2 * aero_cd * air_density * frontal_area)
   force = force_gas + force_brake + force_resistance + force_grade + force_creep
   acceleration = force / mass
 

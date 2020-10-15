@@ -37,7 +37,7 @@
 #define UI_BUF_COUNT 4
 #define DEBAYER_LOCAL_WORKSIZE 16
 #define YUV_COUNT 40
-#define MAX_CLIENTS 5
+#define MAX_CLIENTS 6
 
 extern "C" {
 volatile sig_atomic_t do_exit = 0;
@@ -183,9 +183,10 @@ struct VisionState {
 void* frontview_thread(void *arg) {
   int err;
   VisionState *s = (VisionState*)arg;
-  s->rhd_front = read_db_bool("IsRHD");
+  s->rhd_front = Params().read_db_bool("IsRHD");
 
   set_thread_name("frontview");
+  err = set_realtime_priority(51);
   // we subscribe to this for placement of the AE metering box
   // TODO: the loop is bad, ideally models shouldn't affect sensors
   SubMaster sm({"driverState"});
@@ -235,6 +236,7 @@ void* frontview_thread(void *arg) {
     }
     clWaitForEvents(1, &debayer_event);
     clReleaseEvent(debayer_event);
+
     tbuffer_release(&s->cameras.front.camera_tb, buf_idx);
     visionbuf_sync(&s->rgb_front_bufs[ui_idx], VISIONBUF_SYNC_FROM_DEVICE);
 
@@ -279,6 +281,7 @@ void* frontview_thread(void *arg) {
       int x_end;
       int y_start;
       int y_end;
+      int skip = 1;
 
       if (s->front_meteringbox_xmax > 0)
       {
@@ -295,13 +298,14 @@ void* frontview_thread(void *arg) {
         x_end = s->rhd_front ? s->rgb_front_width * 2 / 5:s->rgb_front_width;
       }
 #ifdef QCOM2
-      x_start = 0.15*s->rgb_front_width;
-      x_end = 0.85*s->rgb_front_width;
-      y_start = 0.15*s->rgb_front_height;
-      y_end = 0.85*s->rgb_front_height;
+      x_start = 96;
+      x_end = 1832;
+      y_start = 242;
+      y_end = 1148;
+      skip = 4;
 #endif
       uint32_t lum_binning[256] = {0,};
-      for (int y = y_start; y < y_end; ++y) {
+      for (int y = y_start; y < y_end; y += skip) {
         for (int x = x_start; x < x_end; x += 2) { // every 2nd col
           const uint8_t *pix = &bgr_front_ptr[y * s->rgb_front_stride + x * 3];
           unsigned int lum = (unsigned int)pix[0] + pix[1] + pix[2];
@@ -315,15 +319,22 @@ void* frontview_thread(void *arg) {
           lum_binning[std::min(lum / 3, 255u)]++;
         }
       }
-      const unsigned int lum_total = (y_end - y_start) * (x_end - x_start)/2;
+      const unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / 2 / skip;
       unsigned int lum_cur = 0;
       int lum_med = 0;
-      for (lum_med=0; lum_med<256; lum_med++) {
+      int lum_med_alt = 0;
+      for (lum_med=255; lum_med>=0; lum_med--) {
         lum_cur += lum_binning[lum_med];
+#ifdef QCOM2
+        if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
+          lum_med_alt = 86;
+        }
+#endif
         if (lum_cur >= lum_total / 2) {
           break;
         }
       }
+      lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
       camera_autoexposure(&s->cameras.front, lum_med / 256.0);
     }
 
@@ -343,11 +354,8 @@ void* frontview_thread(void *arg) {
     // send frame event
     {
       if (s->pm != NULL) {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initFrontFrame();
+        MessageBuilder msg;
+        auto framed = msg.initEvent().initFrontFrame();
         framed.setFrameId(frame_data.frame_id);
         framed.setEncodeId(cnt);
         framed.setTimestampEof(frame_data.timestamp_eof);
@@ -388,7 +396,7 @@ void* wideview_thread(void *arg) {
 
   set_thread_name("wideview");
 
-  err = set_realtime_priority(1);
+  err = set_realtime_priority(51);
   LOG("setpriority returns %d", err);
 
   // init cl stuff
@@ -474,11 +482,8 @@ void* wideview_thread(void *arg) {
     // send frame event
     {
       if (s->pm != NULL) {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initWideFrame();
+        MessageBuilder msg;
+        auto framed = msg.initEvent().initWideFrame();
         framed.setFrameId(frame_data.frame_id);
         framed.setEncodeId(cnt);
         framed.setTimestampEof(frame_data.timestamp_eof);
@@ -499,30 +504,37 @@ void* wideview_thread(void *arg) {
 
     // auto exposure over big box
     // TODO: fix this? should not use med imo
-    const int exposure_x = 240;
-    const int exposure_y = 300;
-    const int exposure_height = 600;
-    const int exposure_width = 1440;
+    const int exposure_x = 96;
+    const int exposure_y = 250;
+    const int exposure_height = 524;
+    const int exposure_width = 1734;
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
-      for (int y=0; y<exposure_height; y++) {
-        for (int x=0; x<exposure_width; x++) {
+      for (int y=0; y<exposure_height; y+=2) {
+        for (int x=0; x<exposure_width; x+=2) {
           uint8_t lum = yuv_ptr_y[((exposure_y+y)*s->yuv_wide_width) + exposure_x + x];
           lum_binning[lum]++;
         }
       }
-      const unsigned int lum_total = exposure_height * exposure_width;
+      const unsigned int lum_total = exposure_height * exposure_width / 4;
       unsigned int lum_cur = 0;
       int lum_med = 0;
-      for (lum_med=0; lum_med<256; lum_med++) {
+      int lum_med_alt = 0;
+      for (lum_med=255; lum_med>=0; lum_med--) {
         // shouldn't be any values less than 16 - yuv footroom
         lum_cur += lum_binning[lum_med];
+#ifdef QCOM2
+        if (lum_cur > 2*lum_total / (3*HLC_A) && lum_med > HLC_THRESH) {
+          lum_med_alt = 86;
+        }
+#endif
         if (lum_cur >= lum_total / 2) {
           break;
         }
       }
 
+      lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
       camera_autoexposure(&s->cameras.wide, lum_med / 256.0);
     }
 
@@ -695,7 +707,7 @@ void* processing_thread(void *arg) {
       // truly stuck, needs help
       s->cameras.rear.self_recover -= 1;
       if (s->cameras.rear.self_recover < -FOCUS_RECOVER_PATIENCE) {
-        LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
+        LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
                                       lens_true_pos, s->cameras.rear.self_recover.load());
         s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS + ((lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0); // parity determined by which end is stuck at
       }
@@ -705,7 +717,7 @@ void* processing_thread(void *arg) {
       // in suboptimal position with high prob, but may still recover by itself
       s->cameras.rear.self_recover -= 1;
       if (s->cameras.rear.self_recover < -(FOCUS_RECOVER_PATIENCE*3)) {
-        LOGW("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, s->cameras.rear.self_recover.load());
+        LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, s->cameras.rear.self_recover.load());
         s->cameras.rear.self_recover = FOCUS_RECOVER_STEPS/2 + ((lens_true_pos < (s->cameras.device == DEVICE_LP3? LP3_AF_DAC_M:OP3T_AF_DAC_M))?1:0);
       }
     } else if (s->cameras.rear.self_recover < 0) {
@@ -740,11 +752,8 @@ void* processing_thread(void *arg) {
     // send frame event
     {
       if (s->pm != NULL) {
-        capnp::MallocMessageBuilder msg;
-        cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-        event.setLogMonoTime(nanos_since_boot());
-
-        auto framed = event.initFrame();
+        MessageBuilder msg;
+        auto framed = msg.initEvent().initFrame();
         framed.setFrameId(frame_data.frame_id);
         framed.setEncodeId(cnt);
         framed.setTimestampEof(frame_data.timestamp_eof);
@@ -828,11 +837,8 @@ void* processing_thread(void *arg) {
       free(row);
       jpeg_finish_compress(&cinfo);
 
-      capnp::MallocMessageBuilder msg;
-      cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-
-      auto thumbnaild = event.initThumbnail();
+      MessageBuilder msg;
+      auto thumbnaild = msg.initEvent().initThumbnail();
       thumbnaild.setFrameId(frame_data.frame_id);
       thumbnaild.setTimestampEof(frame_data.timestamp_eof);
       thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
@@ -849,36 +855,45 @@ void* processing_thread(void *arg) {
 
     // auto exposure over big box
 #ifdef QCOM2
-    const int exposure_x = 240;
-    const int exposure_y = 300;
-    const int exposure_height = 600;
-    const int exposure_width = 1440;
+    const int exposure_x = 96;
+    const int exposure_y = 160;
+    const int exposure_height = 986;
+    const int exposure_width = 1734;
+    const int skip = 2;
 #else
     const int exposure_x = 290;
     const int exposure_y = 322;
     const int exposure_height = 314;
     const int exposure_width = 560;
+    const int skip = 1;
 #endif
     if (cnt % 3 == 0) {
       // find median box luminance for AE
       uint32_t lum_binning[256] = {0,};
-      for (int y=0; y<exposure_height; y++) {
-        for (int x=0; x<exposure_width; x++) {
+      for (int y=0; y<exposure_height; y+=skip) {
+        for (int x=0; x<exposure_width; x+=skip) {
           uint8_t lum = yuv_ptr_y[((exposure_y+y)*s->yuv_width) + exposure_x + x];
           lum_binning[lum]++;
         }
       }
-      const unsigned int lum_total = exposure_height * exposure_width;
+      const unsigned int lum_total = exposure_height * exposure_width / skip / skip;
       unsigned int lum_cur = 0;
       int lum_med = 0;
-      for (lum_med=0; lum_med<256; lum_med++) {
+      int lum_med_alt = 0;
+      for (lum_med=255; lum_med>=0; lum_med--) {
         // shouldn't be any values less than 16 - yuv footroom
         lum_cur += lum_binning[lum_med];
+#ifdef QCOM2
+        if (lum_cur > lum_total / HLC_A && lum_med > HLC_THRESH) {
+          lum_med_alt = 86;
+        }
+#endif
         if (lum_cur >= lum_total / 2) {
           break;
         }
       }
 
+      lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
       camera_autoexposure(&s->cameras.rear, lum_med / 256.0);
     }
 
@@ -1523,7 +1538,7 @@ void free_buffers(VisionState *s) {
 
   clReleaseProgram(s->prg_rgb_laplacian);
   clReleaseKernel(s->krnl_rgb_laplacian);
-  
+
 }
 
 void party(VisionState *s) {
@@ -1595,6 +1610,11 @@ void party(VisionState *s) {
 
 int main(int argc, char *argv[]) {
   set_realtime_priority(51);
+#if defined(QCOM)
+  set_core_affinity(2);
+#elif defined(QCOM2)
+  set_core_affinity(6);
+#endif
 
   zsys_handler_set(NULL);
   signal(SIGINT, (sighandler_t)set_do_exit);

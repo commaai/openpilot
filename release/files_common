@@ -17,8 +17,9 @@ apk/ai.comma*.apk
 
 common/.gitignore
 common/__init__.py
-common/android.py
 common/hardware.py
+common/hardware_android.py
+common/hardware_tici.py
 common/hardware_base.py
 common/gpio.py
 common/realtime.py
@@ -29,6 +30,9 @@ common/file_helpers.py
 common/logging_extra.py
 common/numpy_fast.py
 common/params.py
+common/params_pxd.pxd
+common/params_pyx.pyx
+common/params_pyx_setup.py
 common/xattr.py
 common/profiler.py
 common/basedir.py
@@ -79,6 +83,7 @@ selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/pandad.py
 selfdrive/updated.py
+selfdrive/rtshield.py
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
@@ -313,6 +318,7 @@ selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py
 selfdrive/loggerd/uploader.py
 selfdrive/loggerd/deleter.py
+selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
 selfdrive/sensord/gpsd.cc
@@ -431,6 +437,7 @@ phonelibs/libyuv/lib/**
 
 phonelibs/snpe/include/**
 phonelibs/snpe/aarch64**
+phonelibs/snpe/dsp**
 
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**

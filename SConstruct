@@ -6,6 +6,9 @@ import subprocess
 import sys
 import platform
 
+TICI = os.path.isfile('/TICI')
+Decider('MD5-timestamp')
+
 AddOption('--test',
           action='store_true',
           help='build test files')
@@ -21,7 +24,8 @@ Export('cython_dependencies')
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-if arch == "aarch64" and not os.path.isdir("/system"):
+
+if arch == "aarch64" and TICI:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
@@ -44,7 +48,6 @@ if arch == "aarch64" or arch == "larch64":
 
   libpath = [
     "/usr/lib",
-    "/data/data/com.termux/files/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
     "#phonelibs/nanovg",
@@ -62,11 +65,12 @@ if arch == "aarch64" or arch == "larch64":
   else:
     libpath += [
       "#phonelibs/snpe/aarch64",
-      "#phonelibs/libyuv/lib"
+      "#phonelibs/libyuv/lib",
+      "/system/vendor/lib64"
     ]
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
-    rpath = ["/system/vendor/lib64"]
+    rpath = []
 
     if QCOM_REPLAY:
       cflags += ["-DQCOM_REPLAY"]
@@ -105,6 +109,7 @@ else:
     ]
 
   rpath = [
+    "phonelibs/snpe/x86_64-linux-clang",
     "external/tensorflow/lib",
     "cereal",
     "selfdrive/common"
@@ -131,8 +136,11 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Werror",
+    "-Wno-unknown-warning-option",
     "-Wno-deprecated-register",
     "-Wno-inconsistent-missing-override",
+    "-Wno-c99-designator",
+    "-Wno-reorder-init-list",
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
@@ -201,6 +209,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
     ]
 
   qt_env.Tool('qt')

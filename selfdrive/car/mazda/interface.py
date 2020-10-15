@@ -25,9 +25,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarOffCan = True
 
-    # Mazda port is a community feature for now
-    ret.communityFeature = True
-
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.8

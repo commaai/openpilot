@@ -88,4 +88,4 @@ COPY ./selfdrive $HOME/openpilot/selfdrive
 COPY ./tools $HOME/openpilot/tools
 
 WORKDIR $HOME/openpilot
-RUN scons -j40
+RUN scons -j$(nproc)
