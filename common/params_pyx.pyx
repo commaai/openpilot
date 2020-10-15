@@ -6,7 +6,8 @@ from params_pxd cimport Params as c_Params
 
 import os
 import threading
-from common.basedir import PARAMS
+from common.basedir import BASEDIR
+os.environ['BASEDIR'] = BASEDIR
 
 cdef enum TxType:
   PERSISTENT = 1
@@ -84,9 +85,9 @@ class UnknownKeyName(Exception):
 cdef class Params:
   cdef c_Params* p
 
-  def __cinit__(self, d=PARAMS, bool persistent_params=False):
-    if persistent_params:
-      self.p = new c_Params(True)
+  def __cinit__(self, d=None, bool persistent_params=False):
+    if d is None:
+      self.p = new c_Params(persistent_params)
     else:
       self.p = new c_Params(<string>d.encode())
 
@@ -150,7 +151,7 @@ cdef class Params:
     self.p.delete_db_value(key)
 
 
-def put_nonblocking(key, val, d=PARAMS):
+def put_nonblocking(key, val, d=None):
   def f(key, val):
     params = Params(d)
     params.put(key, val)

@@ -21,22 +21,26 @@
 #include "common/utilpp.h"
 
 
-namespace {
-
-std::string getenv_default(const char* env_var, const char* default_val) {
+std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
   const char* env_val = getenv(env_var);
-  return std::string(env_val != NULL ? env_val : default_val);
+  if (env_val != NULL){
+    return std::string(env_val) + std::string(suffix);
+  } else{
+    return std::string(default_val);
+  }
 }
 
-const std::string default_params_path = getenv_default("PARAMS_PATH", "/data/params");
+#if defined(QCOM) || defined(QCOM2)
+const std::string default_params_path = "/data/params";
+#else
+const std::string default_params_path = getenv_default("BASEDIR", "persists/params", "/data/params");
+#endif
 
-#ifdef QCOM
-const std::string persistent_params_path = getenv_default("PERSISTENT_PARAMS_PATH", "/persist/comma/params");
+#if defined(QCOM) || defined(QCOM2)
+const std::string persistent_params_path = "/persist/comma/params";
 #else
 const std::string persistent_params_path = default_params_path;
 #endif
-
-} //namespace
 
 
 volatile sig_atomic_t params_do_exit = 0;
