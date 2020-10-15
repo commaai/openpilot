@@ -3,7 +3,6 @@ import subprocess
 import glob
 import hashlib
 import shutil
-import threading
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
@@ -28,10 +27,8 @@ def install_apk(path):
   return ret == 0
 
 def start_offroad():
-  def f():
-    set_package_permissions()
-    system("am start -n ai.comma.plus.offroad/.MainActivity")
-  threading.Thread(target=f).start()
+  set_package_permissions()
+  system("am start -n ai.comma.plus.offroad/.MainActivity")
 
 def set_package_permissions():
   try:
@@ -101,10 +98,8 @@ def update_apks():
       assert success
 
 def pm_apply_packages(cmd):
-  def f():
-    for p in android_packages:
-      system("pm %s %s" % (cmd, p))
-  threading.Thread(target=f).start()
+  for p in android_packages:
+    system("pm %s %s" % (cmd, p))
 
 if __name__ == "__main__":
   update_apks()
