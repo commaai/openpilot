@@ -3,7 +3,7 @@ import datetime
 import os
 import time
 from collections import namedtuple
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 import psutil
 from smbus2 import SMBus
@@ -40,7 +40,7 @@ DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without inte
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
-prev_offroad_states: Dict[str, bool] = {}
+prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
 LEON = False
 last_eon_fan_val = None
@@ -159,7 +159,7 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
   return new_speed
 
 
-def set_offroad_alert_if_changed(offroad_alert, show_alert, extra_text=None):
+def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: Optional[str]=None):
   if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
     return
   prev_offroad_states[offroad_alert] = (show_alert, extra_text)
