@@ -393,7 +393,7 @@ def thermald_thread():
         started_seen = True
         os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
     else:
-      cloudlog.info(f"Start was blocked, startup conditions: {str(startup_conditions)}")
+      cloudlog.event("Startup blocked", startup_conditions=startup_conditions)
       if should_start_prev or (count == 0):
         put_nonblocking("IsOffroad", "1")
 
