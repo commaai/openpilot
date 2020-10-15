@@ -375,8 +375,8 @@ def thermald_thread():
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     startup_conditions["free_space"] = msg.thermal.freeSpace > 0.02
     startup_conditions["completed_training"] = completed_training or (current_branch in ['dashcam', 'dashcam-staging'])
-    startup_conditions["not_driver_view"] = params.get("IsDriverViewEnabled") == b"1"
-    startup_conditions["not_taking_snapshot"] = params.get("IsTakingSnapshot") == b"1"
+    startup_conditions["not_driver_view"] = not params.get("IsDriverViewEnabled") == b"1"
+    startup_conditions["not_taking_snapshot"] = not params.get("IsTakingSnapshot") == b"1"
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
     startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
