@@ -710,6 +710,7 @@ void TIM1_BRK_TIM9_IRQ_Handler(void) {
       // increase heartbeat counter and cap it at the uint32 limit
       if (heartbeat_counter < __UINT32_MAX__) {
         heartbeat_counter += 1U;
+      }
 
       #ifdef EON
       // check heartbeat counter if we are running EON code.
