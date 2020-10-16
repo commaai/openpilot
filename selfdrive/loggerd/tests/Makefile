@@ -13,23 +13,9 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++1z -g -fPIC -O2 $(WARN_FLAGS)
 
-FFMPEG_LIBS = -lavformat \
-              -lavcodec \
-              -lswscale \
-              -lavutil \
-              -lz \
-              -lzmq 
-
-OBJS = testraw.o \
-       ../raw_logger.o \
-       ../../common/visionipc.o \
-       ../../common/ipc.o \
-       ../../common/swaglog.o\
-       $(PHONELIBS)/json11/json11.o 
-
-
-ENCODER_OBJS = test_encoder.o \
+OBJS = test_encoder.o \
        ../encoder.o \
+       ../raw_logger.o \
        ../../common/swaglog.o\
        ../../common/cqueue.o \
         ../../common/visionipc.o \
@@ -46,8 +32,6 @@ ENCODER_LIBS = -lOmxVenc \
        -lzmq \
        -lyuv
 
-.PHONY: all
-all: testraw test_encoder
 %.o: %.cc
 	@echo "[ CXX ] $@"
 	$(CXX) $(CXXFLAGS) \
@@ -60,8 +44,5 @@ all: testraw test_encoder
          -c -o '$@' '$<'
 
 
-testraw: $(OBJS)
-	$(CXX) -fPIC -o '$@' $^ -L/usr/lib $(FFMPEG_LIBS)
-
-test_encoder: $(ENCODER_OBJS)
+test_encoder: $(OBJS)
 	$(CXX) -fPIC -o '$@' $^ -L$(PHONELIBS)/libyuv/lib -L $(ENCODER_LIBS) 
