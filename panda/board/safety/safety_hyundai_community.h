@@ -41,12 +41,17 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
                             hyundai_get_counter);
 
   if (bus == 1 && HKG_LCAN_on_bus1) {valid = false;}
-
+  // check if we have a LCAN on Bus1
+  if (bus == 1 && (addr == 1296 || addr == 524)) {
+    HKG_Lcan_bus1_cnt = 100;
+    if (HKG_forward_bus1 || !HKG_LCAN_on_bus1) { HKG_LCAN_on_bus1 = true; HKG_forward_bus1 = false;}
+  }
   // check if LKAS on Bus0
   if (addr == 832) {
-    if (bus == 0 && HKG_forward_BUS2) {HKG_forward_BUS2 = false; HKG_LKAS_bus0_cnt = 10;}
+    if (bus == 0 && HKG_forward_bus2) {HKG_forward_bus2 = false; HKG_LKAS_bus0_cnt = 10;}
     if (bus == 2) {
-      if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_BUS2) {HKG_forward_BUS2 = true;}
+      if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_bus2) {HKG_forward_bus2 = true;}
+      if (HKG_Lcan_bus1_cnt > 0) {HKG_Lcan_bus1_cnt--;} else if (HKG_LCAN_on_bus1) {HKG_LCAN_on_bus1 = false;}
     }
   }
   // check MDPS on Bus
@@ -234,7 +239,7 @@ static int hyundai_community_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
   if (HKG_forward_bus1){fwd_to_bus1 = 1;}
 
   // forward cam to ccan and viceversa, except lkas cmd
-  if (!relay_malfunction) {
+  if (HKG_forward_bus2) {
     if (bus_num == 0) {
       if (!OP_CLU_live || addr != 1265 || HKG_mdps_bus == 0) {
         if (!OP_MDPS_live || addr != 593) {
