@@ -17,11 +17,15 @@ FFMPEG_LIBS = -lavformat \
               -lavcodec \
               -lswscale \
               -lavutil \
-              -lz
+              -lz \
+              -lzmq 
 
 OBJS = testraw.o \
-       ../RawLogger.o \
-       ../../common/visionipc.o
+       ../raw_logger.o \
+       ../../common/visionipc.o \
+       ../../common/ipc.o \
+       ../../common/swaglog.o\
+       $(PHONELIBS)/json11/json11.o 
 
 testraw: $(OBJS)
 	$(CXX) -fPIC -o '$@' $^ -L/usr/lib $(FFMPEG_LIBS)

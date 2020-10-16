@@ -7,7 +7,7 @@
 #include "common/visionipc.h"
 #include "common/timing.h"
 
-#include "RawLogger.h"
+#include "raw_logger.h"
 
 int main() {
   int err;
@@ -29,7 +29,7 @@ int main() {
 
   for (int cnt=0; cnt<200; cnt++) {
     VIPCBufExtra extra;
-    VIPSBuf* buf = visionstream_get(&stream, &extra);
+    VIPCBuf* buf = visionstream_get(&stream, &extra);
     if (buf == NULL) {
       printf("visionstream get failed\n");
       break;
