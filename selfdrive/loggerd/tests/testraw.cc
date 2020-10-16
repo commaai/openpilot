@@ -13,13 +13,13 @@ int main() {
   int err;
 
   VisionStream stream;
-
   VisionStreamBufs buf_info;
   while (true) {
     err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
     if (err != 0) {
       printf("visionstream fail\n");
       usleep(100000);
+      continue;
     }
     break;
   }

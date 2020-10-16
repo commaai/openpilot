@@ -27,13 +27,13 @@ OBJS = testraw.o \
        ../../common/swaglog.o\
        $(PHONELIBS)/json11/json11.o 
 
-testraw: $(OBJS)
-	$(CXX) -fPIC -o '$@' $^ -L/usr/lib $(FFMPEG_LIBS)
 
 ENCODER_OBJS = test_encoder.o \
        ../encoder.o \
        ../../common/swaglog.o\
        ../../common/cqueue.o \
+        ../../common/visionipc.o \
+       ../../common/ipc.o \
        $(PHONELIBS)/json11/json11.o 
 
 ENCODER_LIBS = -lOmxVenc \
@@ -46,10 +46,8 @@ ENCODER_LIBS = -lOmxVenc \
        -lzmq \
        -lyuv
 
-test_encoder: $(ENCODER_OBJS)
-	$(CXX) -fPIC -o '$@' $^ -L$(PHONELIBS)/libyuv/lib -L $(ENCODER_LIBS) 
-
-
+.PHONY: all
+all: testraw test_encoder
 %.o: %.cc
 	@echo "[ CXX ] $@"
 	$(CXX) $(CXXFLAGS) \
@@ -60,3 +58,10 @@ test_encoder: $(ENCODER_OBJS)
          -I$(PHONELIBS)/libyuv/include \
          -I$(PHONELIBS)/json11 \
          -c -o '$@' '$<'
+
+
+testraw: $(OBJS)
+	$(CXX) -fPIC -o '$@' $^ -L/usr/lib $(FFMPEG_LIBS)
+
+test_encoder: $(ENCODER_OBJS)
+	$(CXX) -fPIC -o '$@' $^ -L$(PHONELIBS)/libyuv/lib -L $(ENCODER_LIBS) 
