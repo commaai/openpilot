@@ -12,8 +12,12 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
-  if (addr == 832 && bus == 2) {
-    if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt -= 1;}
+  if (addr == 832) {
+    if (bus == 0 && HKG_forward_BUS2) {HKG_forward_BUS2 = false;HKG_LKAS_bus0_cnt = 10;}
+    if (bus == 2) {
+      if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_BUS2) {HKG_forward_BUS2 = true;}
+      if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt -= 1;}
+    }
   }
   // check if we have a LCAN on Bus1
   if (bus == 1 && (addr == 1296 || addr == 524)) {

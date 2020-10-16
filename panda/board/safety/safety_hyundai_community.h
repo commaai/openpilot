@@ -1,4 +1,3 @@
-bool hyundai_has_scc = false;
 int OP_LKAS_live = 0;
 int OP_MDPS_live = 0;
 int OP_CLU_live = 0;
@@ -6,6 +5,7 @@ int OP_SCC_live = 0;
 int car_SCC_live = 0;
 int OP_EMS_live = 0;
 int HKG_mdps_bus = -1;
+int HKG_scc_bus = -1;
 const CanMsg HYUNDAI_COMMUNITY_TX_MSGS[] = {
   {832, 0, 8}, {832, 1, 8}, // LKAS11 Bus 0, 1
   {1265, 0, 4}, {1265, 1, 4}, {1265, 2, 4}, // CLU11 Bus 0, 1, 2
@@ -42,19 +42,25 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   if (bus == 1 && HKG_LCAN_on_bus1) {valid = false;}
 
+  // check if LKAS on Bus0
+  if (addr == 832) {
+    if (bus == 0 && HKG_forward_BUS2) {HKG_forward_BUS2 = false; HKG_LKAS_bus0_cnt = 10;}
+    if (bus == 2) {
+      if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_BUS2) {HKG_forward_BUS2 = true;}
+    }
+  }
   // check MDPS on Bus
   if ((addr == 593 || addr == 897) && HKG_mdps_bus != bus) {
-    if (bus == 0){
+    if (bus != 1 || !HKG_LCAN_on_bus1) {
       HKG_mdps_bus = bus;
-    } else if (bus == 1 && !HKG_LCAN_on_bus1) {
-      HKG_mdps_bus = bus;
-      HKG_forward_bus1 = true;
-    } 
+      if (bus == 1 && !HKG_forward_bus1) {HKG_forward_bus1 = true;}
+    }
   }
-  // check if we have a SCC on Bus1 and LCAN not on the bus
-  if (bus == 1 && addr == 1057 && !HKG_LCAN_on_bus1) {
-    if (!HKG_forward_bus1) {
-      HKG_forward_bus1 = true;
+  // check SCC on Bus
+  if ((addr == 1056 || addr == 1057) && HKG_scc_bus != bus) {
+    if (bus != 1 || !HKG_LCAN_on_bus1) {
+      HKG_scc_bus = bus;
+      if (bus == 1 && !HKG_forward_bus1) {HKG_forward_bus1 = true;}
     }
   }
 
@@ -67,7 +73,6 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == 1057 && OP_SCC_live) { // for cars with long control
-      hyundai_has_scc = true;
       car_SCC_live = 50;
       // 2 bits: 13-14
       int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
@@ -80,7 +85,6 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       cruise_engaged_prev = cruise_engaged;
     }
     if (addr == 1056 && !OP_SCC_live) { // for cars without long control
-      hyundai_has_scc = true;
       // 2 bits: 13-14
       int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
       if (cruise_engaged && !cruise_engaged_prev) {
@@ -92,7 +96,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       cruise_engaged_prev = cruise_engaged;
     }
     // cruise control for car without SCC
-    if (addr == 608 && bus == 0 && !hyundai_has_scc && !OP_SCC_live) {
+    if (addr == 608 && bus == 0 && HKG_scc_bus != -1 && !OP_SCC_live) {
       // bit 25
       int cruise_engaged = (GET_BYTES_04(to_push) >> 25 & 0x1); // ACC main_on signal
       if (cruise_engaged && !cruise_engaged_prev) {
