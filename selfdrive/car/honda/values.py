@@ -864,6 +864,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x18dab0f1, None): [
       b'36161-T6Z-A020\x00\x00',
       b'36161-T6Z-A310\x00\x00',
+      b'36161-T6Z-A420\x00\x00',
       b'36161-T6Z-A520\x00\x00',
       b'36161-TJZ-A120\x00\x00',
     ],
