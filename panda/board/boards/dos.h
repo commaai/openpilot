@@ -2,8 +2,8 @@
 // Dos + Harness //
 // ///////////// //
 
-void dos_enable_can_transciever(uint8_t transciever, bool enabled) {
-  switch (transciever){
+void dos_enable_can_transceiver(uint8_t transceiver, bool enabled) {
+  switch (transceiver){
     case 1U:
       set_gpio_output(GPIOC, 1, !enabled);
       break;
@@ -17,18 +17,18 @@ void dos_enable_can_transciever(uint8_t transciever, bool enabled) {
       set_gpio_output(GPIOB, 10, !enabled);
       break;
     default:
-      puts("Invalid CAN transciever ("); puth(transciever); puts("): enabling failed\n");
+      puts("Invalid CAN transceiver ("); puth(transceiver); puts("): enabling failed\n");
       break;
   }
 }
 
-void dos_enable_can_transcievers(bool enabled) {
+void dos_enable_can_transceivers(bool enabled) {
   for(uint8_t i=1U; i<=4U; i++){
     // Leave main CAN always on for CAN-based ignition detection
     if((car_harness_status == HARNESS_STATUS_FLIPPED) ? (i == 3U) : (i == 1U)){
-      uno_enable_can_transciever(i, true);
+      uno_enable_can_transceiver(i, true);
     } else {
-      uno_enable_can_transciever(i, enabled);
+      uno_enable_can_transceiver(i, enabled);
     }
   }
 }
@@ -54,20 +54,18 @@ void dos_set_gps_load_switch(bool enabled) {
 }
 
 void dos_set_bootkick(bool enabled){
-  UNUSED(enabled);
+  set_gpio_output(GPIOC, 4, !enabled);
 }
-
-void dos_bootkick(void) {}
 
 void dos_set_phone_power(bool enabled){
   UNUSED(enabled);
 }
 
 void dos_set_usb_power_mode(uint8_t mode) {
-  UNUSED(mode);
+  dos_set_bootkick(mode == USB_POWER_CDP);
 }
 
-void dos_set_esp_gps_mode(uint8_t mode) {
+void dos_set_gps_mode(uint8_t mode) {
   UNUSED(mode);
 }
 
@@ -101,11 +99,6 @@ void dos_set_can_mode(uint8_t mode){
 
 void dos_usb_power_mode_tick(uint32_t uptime){
   UNUSED(uptime);
-  if(bootkick_timer != 0U){
-    bootkick_timer--;
-  } else {
-    dos_set_bootkick(false);
-  }
 }
 
 bool dos_check_ignition(void){
@@ -130,6 +123,14 @@ void dos_set_fan_power(uint8_t percentage){
 uint32_t dos_read_current(void){
   // No current sense on Dos
   return 0U;
+}
+
+void dos_set_clock_source_mode(uint8_t mode){
+  clock_source_init(mode);
+}
+
+void dos_set_siren(bool enabled){
+  set_gpio_output(GPIOC, 12, enabled);
 }
 
 void dos_init(void) {
@@ -171,8 +172,8 @@ void dos_init(void) {
   // Initialize RTC
   rtc_init();
 
-  // Enable CAN transcievers
-  dos_enable_can_transcievers(true);
+  // Enable CAN transceivers
+  dos_enable_can_transceivers(true);
 
   // Disable LEDs
   dos_set_led(LED_RED, false);
@@ -189,6 +190,9 @@ void dos_init(void) {
 
   // init multiplexer
   can_set_obd(car_harness_status, false);
+
+  // Init clock source as internal free running
+  dos_set_clock_source_mode(CLOCK_SOURCE_MODE_FREE_RUNNING);
 }
 
 const harness_configuration dos_harness_config = {
@@ -209,16 +213,18 @@ const board board_dos = {
   .board_type = "Dos",
   .harness_config = &dos_harness_config,
   .init = dos_init,
-  .enable_can_transciever = dos_enable_can_transciever,
-  .enable_can_transcievers = dos_enable_can_transcievers,
+  .enable_can_transceiver = dos_enable_can_transceiver,
+  .enable_can_transceivers = dos_enable_can_transceivers,
   .set_led = dos_set_led,
   .set_usb_power_mode = dos_set_usb_power_mode,
-  .set_esp_gps_mode = dos_set_esp_gps_mode,
+  .set_gps_mode = dos_set_gps_mode,
   .set_can_mode = dos_set_can_mode,
   .usb_power_mode_tick = dos_usb_power_mode_tick,
   .check_ignition = dos_check_ignition,
   .read_current = dos_read_current,
   .set_fan_power = dos_set_fan_power,
   .set_ir_power = dos_set_ir_power,
-  .set_phone_power = dos_set_phone_power
+  .set_phone_power = dos_set_phone_power,
+  .set_clock_source_mode = dos_set_clock_source_mode,
+  .set_siren = dos_set_siren
 };

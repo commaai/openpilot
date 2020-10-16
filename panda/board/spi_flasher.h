@@ -290,7 +290,7 @@ void soft_flasher_start(void) {
   // B8,B9: CAN 1
   set_gpio_alternate(GPIOB, 8, GPIO_AF9_CAN1);
   set_gpio_alternate(GPIOB, 9, GPIO_AF9_CAN1);
-  current_board->enable_can_transciever(1, true);
+  current_board->enable_can_transceiver(1, true);
 
   // init can
   llcan_set_speed(CAN1, 5000, false, false);

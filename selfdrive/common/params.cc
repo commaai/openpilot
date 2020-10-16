@@ -268,45 +268,19 @@ cleanup:
 }
 
 int read_db_value(const char* key, char** value, size_t* value_sz, bool persistent_param) {
-  int lock_fd = -1;
-  int result;
   char path[1024];
   const char* params_path = persistent_param ? persistent_params_path : default_params_path;
 
-  result = snprintf(path, sizeof(path), "%s/.lock", params_path);
+  int result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
   if (result < 0) {
-    goto cleanup;
-  }
-  lock_fd = open(path, 0);
-
-  result = snprintf(path, sizeof(path), "%s/d/%s", params_path, key);
-  if (result < 0) {
-    goto cleanup;
+    return result;
   }
 
-  // Take lock.
-  result = flock(lock_fd, LOCK_EX);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // Read value.
-  // TODO(mgraczyk): If there is a lot of contention, we can release the lock
-  //                 after opening the file, before reading.
   *value = static_cast<char*>(read_file(path, value_sz));
   if (*value == NULL) {
-    result = -22;
-    goto cleanup;
+    return -22;
   }
-
-  result = 0;
-
-cleanup:
-  // Release lock.
-  if (lock_fd >= 0) {
-    close(lock_fd);
-  }
-  return result;
+  return 0;
 }
 
 void read_db_value_blocking(const char* key, char** value, size_t* value_sz, bool persistent_param) {
@@ -330,8 +304,11 @@ int read_db_all(std::map<std::string, std::string> *params, bool persistent_para
   int lock_fd = open(lock_path.c_str(), 0);
   if (lock_fd < 0) return -1;
 
-  err = flock(lock_fd, LOCK_EX);
-  if (err < 0) return err;
+  err = flock(lock_fd, LOCK_SH);
+  if (err < 0) {
+    close(lock_fd);
+    return err;
+  }
 
   std::string key_path = util::string_format("%s/d", params_path);
   DIR *d = opendir(key_path.c_str());
@@ -365,4 +342,9 @@ std::vector<char> read_db_bytes(const char* param_name, bool persistent_param) {
     free(value);
   }
   return bytes;
+}
+
+bool read_db_bool(const char* param_name, bool persistent_param) {
+  std::vector<char> bytes = read_db_bytes(param_name, persistent_param);
+  return bytes.size() > 0 and bytes[0] == '1';
 }

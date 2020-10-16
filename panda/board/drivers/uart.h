@@ -50,8 +50,8 @@ void debug_ring_callback(uart_ring *ring);
 
 // ******************************** UART buffers ********************************
 
-// esp_gps = USART1
-UART_BUFFER(esp_gps, FIFO_SIZE_DMA, FIFO_SIZE_INT, USART1, NULL, true)
+// gps = USART1
+UART_BUFFER(gps, FIFO_SIZE_DMA, FIFO_SIZE_INT, USART1, NULL, true)
 
 // lin1, K-LINE = UART5
 // lin2, L-LINE = USART3
@@ -68,7 +68,7 @@ uart_ring *get_ring_by_number(int a) {
       ring = &uart_ring_debug;
       break;
     case 1:
-      ring = &uart_ring_esp_gps;
+      ring = &uart_ring_gps;
       break;
     case 2:
       ring = &uart_ring_lin1;
@@ -185,8 +185,8 @@ void uart_interrupt_handler(uart_ring *q) {
     // Reset IDLE flag
     UART_READ_DR(q->uart)
 
-    if(q == &uart_ring_esp_gps){
-      dma_pointer_handler(&uart_ring_esp_gps, DMA2_Stream5->NDTR);
+    if(q == &uart_ring_gps){
+      dma_pointer_handler(&uart_ring_gps, DMA2_Stream5->NDTR);
     } else {
       #ifdef DEBUG_UART
         puts("No IDLE dma_pointer_handler implemented for this UART.");
@@ -197,7 +197,7 @@ void uart_interrupt_handler(uart_ring *q) {
   EXIT_CRITICAL();
 }
 
-void USART1_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_esp_gps); }
+void USART1_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_gps); }
 void USART2_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_debug); }
 void USART3_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_lin2); }
 void UART5_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_lin1); }
@@ -219,7 +219,7 @@ void DMA2_Stream5_IRQ_Handler(void) {
   }
 
   // Re-calculate write pointer and reset flags
-  dma_pointer_handler(&uart_ring_esp_gps, DMA2_Stream5->NDTR);
+  dma_pointer_handler(&uart_ring_gps, DMA2_Stream5->NDTR);
   DMA2->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5;
 
   EXIT_CRITICAL();
@@ -229,7 +229,7 @@ void DMA2_Stream5_IRQ_Handler(void) {
 
 void dma_rx_init(uart_ring *q) {
   // Initialization is UART-dependent
-  if(q == &uart_ring_esp_gps){
+  if(q == &uart_ring_gps){
     // DMA2, stream 5, channel 4
 
     // Disable FIFO mode (enable direct)

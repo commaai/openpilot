@@ -311,7 +311,7 @@ CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
 CM_ SG_ 37 STEER_FRACTION "1/15th of the signal STEER_ANGLE, which is 1.5 deg; note that 0x8 is never set";
 CM_ SG_ 37 STEER_RATE "factor is tbd";
 CM_ SG_ 466 ACCEL_NET "net acceleration produced by the system, given ACCEL_CMD, road grade and other factors";
-CM_ SG_ 467 SET_SPEED "43 kph are shown as 28mph, so conversion isnt perfect";
+CM_ SG_ 467 SET_SPEED "43 kph are shown as 28mph, so conversion isn't perfect";
 CM_ SG_ 467 LOW_SPEED_LOCKOUT "in low speed lockout, system would always disengage below 28mph";
 CM_ SG_ 560 BRAKE_PRESSED "another brake pressed?";
 CM_ SG_ 608 STEER_TORQUE_DRIVER "driver torque";
@@ -375,7 +375,7 @@ BO_ 705 GAS_PEDAL: 8 XXX
  SG_ GAS_PEDAL : 55|8@0+ (0.005,0) [0|1] "" XXX
 
 BO_ 608 STEER_TORQUE_SENSOR: 8 XXX
- SG_ STEER_TORQUE_EPS : 47|16@0- (1.0,0) [-20000|20000] "" XXX
+ SG_ STEER_TORQUE_EPS : 47|16@0- (0.88,0) [-20000|20000] "" XXX
  SG_ STEER_TORQUE_DRIVER : 15|16@0- (1,0) [-32768|32767] "" XXX
  SG_ STEER_OVERRIDE : 0|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX

@@ -32,7 +32,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyModel = car.CarParams.SafetyModel.hyundai
 
     # Most Hyundai car ports are community features for now
-    ret.communityFeature = candidate not in [CAR.SONATA]
+    ret.communityFeature = candidate not in [CAR.SONATA, CAR.PALISADE]
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
@@ -213,7 +213,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1737. + STD_CARGO_KG
       ret.wheelbase = 2.7
       tire_stiffness_factor = 0.385
-    elif candidate in [CAR.CARDENZA, CAR.CARDENZA_HEV]:      
+    elif candidate in [CAR.CADENZA, CAR.CADENZA_HEV]:      
       ret.mass = 1575. + STD_CARGO_KG
       ret.wheelbase = 2.85
       ret.steerRatio = 12.5

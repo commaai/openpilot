@@ -64,13 +64,9 @@ void early(void) {
 
   if (enter_bootloader_mode == ENTER_BOOTLOADER_MAGIC) {
   #ifdef PANDA
-    current_board->set_esp_gps_mode(ESP_GPS_DISABLED);
+    current_board->set_gps_mode(GPS_DISABLED);
   #endif
     current_board->set_led(LED_GREEN, 1);
     jump_to_bootloader();
-  }
-
-  if (is_entering_bootmode) {
-    enter_bootloader_mode = ENTER_SOFTLOADER_MAGIC;
   }
 }

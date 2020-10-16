@@ -6,6 +6,10 @@
 #include <capnp/serialize.h>
 #include "../gen/cpp/log.capnp.h"
 
+#ifdef __APPLE__
+#define CLOCK_BOOTTIME CLOCK_MONOTONIC
+#endif
+
 #define MSG_MULTIPLE_PUBLISHERS 100
 
 class Context {
@@ -82,11 +86,34 @@ private:
   std::map<std::string, SubMessage *> services_;
 };
 
+class MessageBuilder : public capnp::MallocMessageBuilder {
+public:
+  MessageBuilder() = default;
+
+  cereal::Event::Builder initEvent(bool valid = true) {
+    cereal::Event::Builder event = initRoot<cereal::Event>();
+    struct timespec t;
+    clock_gettime(CLOCK_BOOTTIME, &t);
+    uint64_t current_time = t.tv_sec * 1000000000ULL + t.tv_nsec;
+    event.setLogMonoTime(current_time);
+    event.setValid(valid);
+    return event;
+  }
+
+  kj::ArrayPtr<capnp::byte> toBytes() {
+    heapArray_ = capnp::messageToFlatArray(*this);
+    return heapArray_.asBytes();
+  }
+
+private:
+  kj::Array<capnp::word> heapArray_;
+};
+
 class PubMaster {
 public:
   PubMaster(const std::initializer_list<const char *> &service_list);
   inline int send(const char *name, capnp::byte *data, size_t size) { return sockets_.at(name)->send((char *)data, size); }
-  int send(const char *name, capnp::MessageBuilder &msg);
+  int send(const char *name, MessageBuilder &msg);
   ~PubMaster();
 
 private:

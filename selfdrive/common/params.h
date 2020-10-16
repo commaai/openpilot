@@ -40,4 +40,5 @@ void read_db_value_blocking(const char* key, char** value, size_t* value_sz, boo
 #include <vector>
 int read_db_all(std::map<std::string, std::string> *params, bool persistent_param = false);
 std::vector<char> read_db_bytes(const char* param_name, bool persistent_param = false);
+bool read_db_bool(const char* param_name, bool persistent_param = false);
 #endif
