@@ -39,10 +39,6 @@
 #define YUV_COUNT 40
 #define MAX_CLIENTS 6
 
-#ifdef __APPLE__
-#define clCreateCommandQueueWithProperties clCreateCommandQueue
-#endif
-
 extern "C" {
 volatile sig_atomic_t do_exit = 0;
 }
@@ -195,7 +191,12 @@ void* frontview_thread(void *arg) {
   // TODO: the loop is bad, ideally models shouldn't affect sensors
   SubMaster sm({"driverState"});
 
-  cl_command_queue q = clCreateCommandQueueWithProperties(s->context, s->device_id, 0, &err);
+  #ifdef __APPLE__
+    cl_command_queue q = clCreateCommandQueue(s->context, s->device_id, 0, &err);
+  #else
+    const cl_queue_properties props[] = {0}; //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
+    cl_command_queue q = clCreateCommandQueueWithProperties(s->context, s->device_id, props, &err);
+  #endif
   assert(err == 0);
 
   for (int cnt = 0; !do_exit; cnt++) {
