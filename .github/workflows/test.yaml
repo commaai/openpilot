@@ -5,7 +5,6 @@ on:
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
-  RUN_WEBCAM: docker run --shm-size 1G --rm tmppilotwebcam /bin/sh -c
   PERSIST_WITH_CACHE: docker run --shm-size 1G -v /tmp/comma_download_cache:/tmp/comma_download_cache  --name tmppilot tmppilot /bin/sh -c
   PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
@@ -87,7 +86,7 @@ jobs:
     - name: Build Docker image
       run: docker build --cache-from docker.io/commaai/openpilotwebcamci:latest -t tmppilotwebcam -f tools/webcam/Dockerfile .
     - name: Build openpilot
-      run: $RUN_WEBCAM "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
+      run: docker run --shm-size 1G --rm tmppilotwebcam /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
     - name: Push to dockerhub
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
