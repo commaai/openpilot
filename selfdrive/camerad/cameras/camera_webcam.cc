@@ -10,10 +10,14 @@
 #include "common/swaglog.h"
 #include "buffering.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundefined-inline"
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
+#pragma clang diagnostic pop
+
 
 extern volatile sig_atomic_t do_exit;
 
@@ -244,7 +248,6 @@ void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
                   VisionBuf *camera_bufs_front) {
   assert(camera_bufs_rear);
   assert(camera_bufs_front);
-  int err;
 
   // LOG("*** open front ***");
   camera_open(&s->front, camera_bufs_front, false);
@@ -260,7 +263,7 @@ void cameras_close(MultiCameraState *s) {
 
 void cameras_run(MultiCameraState *s) {
   set_thread_name("webcam_thread");
-
+  int err;
   pthread_t rear_thread_handle;
   err = pthread_create(&rear_thread_handle, NULL,
                         rear_thread, &s->rear);
