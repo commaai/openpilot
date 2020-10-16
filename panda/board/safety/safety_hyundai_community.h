@@ -112,7 +112,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       cruise_engaged_prev = cruise_engaged;
     }
     // cruise control for car without SCC
-    if (addr == 608 && bus == 0 && HKG_scc_bus != -1 && !OP_SCC_live) {
+    if (addr == 608 && bus == 0 && HKG_scc_bus == -1 && !OP_SCC_live) {
       // bit 25
       int cruise_engaged = (GET_BYTES_04(to_push) >> 25 & 0x1); // ACC main_on signal
       if (cruise_engaged && !cruise_engaged_prev) {
