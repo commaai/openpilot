@@ -157,9 +157,9 @@ bool usb_connect() {
 
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
 #ifndef __x86_64__
-  if (!connected_once) {
-    panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
-  }
+  //if (!connected_once) {
+  panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
+  //}
 #endif
 
   if (panda->has_rtc){
