@@ -30,10 +30,33 @@ OBJS = testraw.o \
 testraw: $(OBJS)
 	$(CXX) -fPIC -o '$@' $^ -L/usr/lib $(FFMPEG_LIBS)
 
+ENCODER_OBJS = test_encoder.o \
+       ../encoder.o \
+       ../../common/swaglog.o\
+       ../../common/cqueue.o \
+       $(PHONELIBS)/json11/json11.o 
+
+ENCODER_LIBS = -lOmxVenc \
+       -lOmxCore \
+       -llog \
+       -lavformat \
+       -lavcodec \
+       -lswscale \
+       -lavutil \
+       -lzmq \
+       -lyuv
+
+test_encoder: $(ENCODER_OBJS)
+	$(CXX) -fPIC -o '$@' $^ -L$(PHONELIBS)/libyuv/lib -L $(ENCODER_LIBS) 
+
+
 %.o: %.cc
 	@echo "[ CXX ] $@"
 	$(CXX) $(CXXFLAGS) \
          -I../ \
          -I../../ \
          -I../../../ \
+         -I$(PHONELIBS)/openmax/include \
+         -I$(PHONELIBS)/libyuv/include \
+         -I$(PHONELIBS)/json11 \
          -c -o '$@' '$<'
