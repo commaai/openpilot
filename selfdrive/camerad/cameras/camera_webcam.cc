@@ -10,13 +10,13 @@
 #include "common/swaglog.h"
 #include "buffering.h"
 
-#pragma diagnostic push
-#pragma diagnostic ignored "-Wundefined-inline"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundefined-inline"
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
-#pragma diagnostic pop
+#pragma clang diagnostic pop
 
 
 extern volatile sig_atomic_t do_exit;
