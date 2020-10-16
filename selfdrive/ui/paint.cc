@@ -799,9 +799,9 @@ void ui_nvg_init(UIState *s) {
     glBindVertexArray(0);
   }
 
-  // frame from 4/3 to box size with a 2x zoom
+  float ratio = intrinsic_matrix.v[2] / intrinsic_matrix.v[5];
   const mat4 frame_transform = {{
-    (float)(2*(4./3.)/((float)(s->fb_w-(bdr_s*2))/(s->fb_h-(bdr_s*2)))), 0.0, 0.0, 0.0,
+    (float)(2*ratio/((float)(s->fb_w-(bdr_s*2))/(s->fb_h-(bdr_s*2)))), 0.0, 0.0, 0.0,
     0.0, 2.0, 0.0, 0.0,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0,
