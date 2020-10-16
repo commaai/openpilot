@@ -17,9 +17,6 @@ env:
 
       docker pull docker.io/commaai/openpilotci:latest || true
       docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
-  BUILD_WEBCAM: |
-      docker build --cache-from docker.io/commaai/openpilotwebcamci:latest -t tmppilotwebcam -f tools/webcam/Dockerfile .
-
 
 jobs:
   build_release:
@@ -88,11 +85,16 @@ jobs:
       with:
         submodules: true
     - name: Build Docker image
-      run: |
-        eval "$BUILD_WEBCAM"
+      run: docker build --cache-from docker.io/commaai/openpilotwebcamci:latest -t tmppilotwebcam -f tools/webcam/Dockerfile .
     - name: Build openpilot
       run: $RUN_WEBCAM "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
-
+    - name: Push to dockerhub
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      run: |
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag tmppilotwebcam docker.io/commaai/openpilotwebcamci:latest
+          docker push docker.io/commaai/openpilotwebcamci:latest
+  
   docker_push:
     name: docker push
     runs-on: ubuntu-16.04
@@ -105,17 +107,12 @@ jobs:
           submodules: true
       - name: Build Docker image
         run: eval "$BUILD"
-      - name: Build webcam Docker image
-        run: eval "$BUILD_WEBCAM"
       - name: Push to dockerhub
         run: |
-          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
           docker tag commaai/openpilot-base:latest docker.io/commaai/openpilot-base:latest
           docker push docker.io/commaai/openpilot-base:latest
           docker tag tmppilot docker.io/commaai/openpilotci:latest
           docker push docker.io/commaai/openpilotci:latest
-          docker tag tmppilotwebcam docker.io/commaai/openpilotwebcamci:latest
-          docker push docker.io/commaai/openpilotwebcamci:latest
 
   docker_push_prebuilt:
     name: docker push prebuilt
