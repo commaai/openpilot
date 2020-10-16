@@ -39,6 +39,10 @@
 #define YUV_COUNT 40
 #define MAX_CLIENTS 6
 
+#ifdef __APPLE__
+#define clCreateCommandQueueWithProperties clCreateCommandQueue
+#endif
+
 extern "C" {
 volatile sig_atomic_t do_exit = 0;
 }
