@@ -6,6 +6,7 @@
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
+#include "common/clutil.h"
 
 #include "models/driving.h"
 #include "messaging.hpp"
@@ -36,11 +37,26 @@ void* live_thread(void *arg) {
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
+#ifndef QCOM2
   Eigen::Matrix<float, 3, 3> eon_intrinsics;
   eon_intrinsics <<
     910.0, 0.0, 582.0,
     0.0, 910.0, 437.0,
     0.0,   0.0,   1.0;
+#else
+  Eigen::Matrix<float, 3, 3> eon_intrinsics;
+  eon_intrinsics <<
+    2648.0, 0.0, 1928.0/2,
+    0.0, 2648.0, 1208.0/2,
+    0.0,   0.0,   1.0;
+#endif
+
+    // debayering does a 2x downscale
+  mat3 yuv_transform = transform_scale_buffer((mat3){{
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0,
+  }}, 0.5);
 
   while (!do_exit) {
     if (sm.update(10) > 0){
@@ -58,12 +74,13 @@ void* live_thread(void *arg) {
       camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
 
       auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
-
-      pthread_mutex_lock(&transform_lock);
+      mat3 transform = {};
       for (int i=0; i<3*3; i++) {
-        cur_transform.v[i] = warp_matrix(i / 3, i % 3);
+        transform.v[i] = warp_matrix(i / 3, i % 3);
       }
-
+      mat3 model_transform = matmul3(yuv_transform, transform);
+      pthread_mutex_lock(&transform_lock);
+      cur_transform = model_transform;
       run_model = true;
       pthread_mutex_unlock(&transform_lock);
     }
@@ -75,8 +92,17 @@ int main(int argc, char **argv) {
   int err;
   set_realtime_priority(51);
 
+#ifdef QCOM
+  set_core_affinity(2);
+#elif QCOM2
+  // CPU usage is much lower when pinned to a single big core
+  set_core_affinity(4);
+#endif
+
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
+
+  pthread_mutex_init(&transform_lock, NULL);
 
   // start calibration thread
   pthread_t live_thread_handle;
@@ -87,77 +113,24 @@ int main(int argc, char **argv) {
   PubMaster pm({"model", "cameraOdometry"});
   SubMaster sm({"pathPlan", "frame"});
 
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
   cl_device_type device_type = CL_DEVICE_TYPE_DEFAULT;
 #else
   cl_device_type device_type = CL_DEVICE_TYPE_CPU;
 #endif
 
   // cl init
-  cl_device_id device_id;
-  cl_context context;
-  cl_command_queue q;
-  {
-    cl_uint num_platforms;
-    err = clGetPlatformIDs(0, NULL, &num_platforms);
-    assert(err == 0);
+  cl_device_id device_id = cl_get_device_id(device_type);
+  cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
+  assert(err == 0);
 
-    cl_platform_id * platform_ids = new cl_platform_id[num_platforms];
-    err = clGetPlatformIDs(num_platforms, platform_ids, NULL);
-    assert(err == 0);
-
-    LOGD("got %d opencl platform(s)", num_platforms);
-
-    char cBuffer[1024];
-    bool opencl_platform_found = false;
-
-    for (size_t i = 0; i < num_platforms; i++){
-      err = clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
-      assert(err == 0);
-      LOGD("platform[%zu] CL_PLATFORM_NAME: %s", i, cBuffer);
-
-      cl_uint num_devices;
-      err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
-      if (err != 0|| !num_devices){
-        continue;
-      }
-
-      // Get first device
-      err = clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL);
-      assert(err == 0);
-
-      context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
-      assert(err == 0);
-
-      q = clCreateCommandQueue(context, device_id, 0, &err);
-      assert(err == 0);
-
-      opencl_platform_found = true;
-      break;
-    }
-
-    delete[] platform_ids;
-
-    if (!opencl_platform_found){
-      LOGE("No valid openCL platform found");
-      assert(opencl_platform_found);
-    }
-
-
-    LOGD("opencl init complete");
-  }
+  cl_command_queue q = clCreateCommandQueue(context, device_id, 0, &err);
+  assert(err == 0);
 
   // init the models
   ModelState model;
   model_init(&model, device_id, context, true);
   LOGW("models loaded, modeld starting");
-
-  // debayering does a 2x downscale
-  mat3 yuv_transform = transform_scale_buffer((mat3){{
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
-  }}, 0.5);
 
   // loop
   VisionStream stream;
@@ -194,7 +167,7 @@ int main(int argc, char **argv) {
       }
 
       pthread_mutex_lock(&transform_lock);
-      mat3 transform = cur_transform;
+      mat3 model_transform = cur_transform;
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
@@ -211,8 +184,6 @@ int main(int argc, char **argv) {
           vec_desire[desire] = 1.0;
         }
 
-        mat3 model_transform = matmul3(yuv_transform, transform);
-        
         mt1 = millis_since_boot();
 
         // TODO: don't make copies!
@@ -249,5 +220,6 @@ int main(int argc, char **argv) {
   clReleaseCommandQueue(q);
   clReleaseContext(context);
 
+  pthread_mutex_destroy(&transform_lock);
   return 0;
 }

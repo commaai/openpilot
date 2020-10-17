@@ -4,6 +4,7 @@ bool HKG_forward_obd = false;
 bool HKG_forward_bus2 = true;
 int HKG_obd_int_cnt = 10;
 int HKG_LKAS_bus0_cnt = 0;
+int HKG_Lcan_bus1_cnt = 0;
 int HKG_MDPS12_checksum = -1;
 int HKG_MDPS12_cnt = 0;   
 int HKG_last_StrColT = 0;
@@ -12,11 +13,17 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
-  if (addr == 832 && bus == 2) {
-    if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt -= 1;}
+  if (addr == 832) {
+    if (bus == 0 && HKG_forward_bus2) {HKG_forward_bus2 = false; HKG_LKAS_bus0_cnt = 10;}
+    if (bus == 2) {
+      if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_bus2) {HKG_forward_bus2 = true;}
+      if (HKG_Lcan_bus1_cnt > 0) {HKG_Lcan_bus1_cnt--;} else if (HKG_LCAN_on_bus1) {HKG_LCAN_on_bus1 = false;}
+      if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt--;}
+    }
   }
   // check if we have a LCAN on Bus1
   if (bus == 1 && (addr == 1296 || addr == 524)) {
+    HKG_Lcan_bus1_cnt = 100;
     if (HKG_forward_bus1 || !HKG_LCAN_on_bus1) {
       HKG_LCAN_on_bus1 = true;
       HKG_forward_bus1 = false;

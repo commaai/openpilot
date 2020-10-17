@@ -409,7 +409,7 @@ CM_ SG_ 571 CHECKSUM "standard checksum";
 CM_ SG_ 825 BEEP_339 "sent every 0.5s. 0050 is no beep. To beep send 4355 or 4155. Used by ParkSense warning.";
 CM_ SG_ 270 ELECTRIC_MOTOR "0x7fff indicates electric motor not in use";
 CM_ SG_ 291 ENERGY_GAIN_LOSS "unsure what this actually is";
-CM_ SG_ 291 ENERGY_SMOOTHER_CURVE "unusre what it is, but smoother";
+CM_ SG_ 291 ENERGY_SMOOTHER_CURVE "unsure what it is, but smoother";
 CM_ SG_ 308 ACCEL_134 "only set when human presses accel pedal";
 CM_ SG_ 532 NOISY_SLOWLY_DECREASING "perhaps battery but do not know";
 CM_ SG_ 816 TRACTION_OFF "set when traction off button is enabled";
