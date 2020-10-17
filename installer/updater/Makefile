@@ -10,7 +10,7 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=format-extra-args
 
 CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
-CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
+CXXFLAGS = -std=c++1z -g -fPIC -O2 $(WARN_FLAGS)
 
 CURL_FLAGS = -I$(PHONELIBS)/curl/include
 CURL_LIBS = $(PHONELIBS)/curl/lib/libcurl.a \

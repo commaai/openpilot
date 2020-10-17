@@ -8,6 +8,7 @@
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <atomic>
+#include <algorithm>
 
 #include <linux/media.h>
 
@@ -376,7 +377,7 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
   unsigned int integ_lines = s->cur_integ_lines;
 
   if (exposure_frac >= 0) {
-    exposure_frac = clamp(exposure_frac, 2.0 / frame_length, 1.0);
+    exposure_frac = std::clamp(exposure_frac, 2.0f / frame_length, 1.0f);
     integ_lines = frame_length * exposure_frac;
 
     // See page 79 of the datasheet, this is the max allowed (-1 for phase adjust)
@@ -385,7 +386,7 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
   if (gain_frac >= 0) {
     // ISO200 is minimum gain
-    gain_frac = clamp(gain_frac, 1.0/64, 1.0);
+    gain_frac = std::clamp(gain_frac, 1.0f/64, 1.0f);
 
     // linearize gain response
     // TODO: will be wrong for front camera
@@ -1718,7 +1719,7 @@ void actuator_move(CameraState *s, uint16_t target) {
   }
 
   int dest_step_pos = s->cur_step_pos + step;
-  dest_step_pos = clamp(dest_step_pos, 0, 255);
+  dest_step_pos = std::clamp(dest_step_pos, 0, 255);
 
   struct msm_actuator_cfg_data actuator_cfg_data = {0};
   actuator_cfg_data.cfgtype = CFG_MOVE_FOCUS;
@@ -1804,8 +1805,8 @@ static void do_autofocus(CameraState *s) {
   }
 
   // stay off the walls
-  lens_true_pos = clamp(lens_true_pos, dac_down, dac_up);
-  int target = clamp(lens_true_pos - sag, dac_down, dac_up);
+  lens_true_pos = std::clamp(lens_true_pos, float(dac_down), float(dac_up));
+  int target = std::clamp(lens_true_pos - sag, float(dac_down), float(dac_up));
   s->lens_true_pos = lens_true_pos;
 
   /*char debug[4096];
