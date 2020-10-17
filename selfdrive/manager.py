@@ -13,12 +13,11 @@ from typing import Dict, List
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 
 
-from common.basedir import BASEDIR, PARAMS
+from common.basedir import BASEDIR
 from common.hardware import HARDWARE, ANDROID, PC
 WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
-os.environ['PARAMS_PATH'] = PARAMS
 
 TOTAL_SCONS_NODES = 1005
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))

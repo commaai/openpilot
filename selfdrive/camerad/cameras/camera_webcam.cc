@@ -10,10 +10,14 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundefined-inline"
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
+#pragma clang diagnostic pop
+
 
 extern volatile sig_atomic_t do_exit;
 
@@ -248,7 +252,6 @@ void cameras_close(MultiCameraState *s) {
   camera_close(&s->front);
   delete s->pm;
 }
-
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
