@@ -41,7 +41,7 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id d
 
   s->fps = fps;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT "frame");
+  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
 }
 
 static void* rear_thread(void *arg) {
