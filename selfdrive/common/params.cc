@@ -92,6 +92,7 @@ static int mkdir_p(std::string path) {
   if (mkdir(_path, 0777) != 0) {
     if (errno != EEXIST) return -1;
   }
+  chmod(_path, 0777);
   umask(prev_mask);
   return 0;
 }
@@ -164,6 +165,12 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
     // Move symlink to <params>/d
     path = params_path + "/d";
     result = rename(tmp_path.c_str(), path.c_str());
+    if (result < 0) {
+      goto cleanup;
+    }
+  } else {
+    // Ensure permissions are correct in case we didn't create the symlink
+    result = chmod(path.c_str(), 0777);
     if (result < 0) {
       goto cleanup;
     }
