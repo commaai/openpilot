@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/times.h>
 #include <memory>
+#include <signal.h>
 #include "common/timing.h"
 #include "common/visionipc.h"
 #include "encoder.h"
@@ -23,6 +24,11 @@ enum TestType {
 
 static clock_t lastCPU, lastSysCPU, lastUserCPU;
 static int numProcessors;
+
+volatile sig_atomic_t do_exit = 0;
+static void set_do_exit(int sig) {
+  do_exit = 1;
+}
 
 void cpuusage_init() {
   FILE *file;
@@ -97,6 +103,8 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 // test_encoder
 //   test encoder&rawlogger
 int main(int argc, char *argv[]) {
+  signal(SIGINT, (sighandler_t)set_do_exit);
+
   TestType test_type = typeAll;
   if (argc > 1) {
     int t = strtol(argv[1], nullptr, 10);
@@ -121,7 +129,7 @@ int main(int argc, char *argv[]) {
 
   VisionStream stream;
   VisionStreamBufs buf_info;
-  while (true) {
+  while (!do_exit) {
     if (visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info) != 0) {
       printf("visionstream fail\n");
       usleep(100000);
@@ -129,6 +137,8 @@ int main(int argc, char *argv[]) {
     }
     break;
   }
+
+  if (do_exit) return 0;
 
   if (test_type & typeEncoder) {
     encoder.reset(new EncoderState);
@@ -148,7 +158,7 @@ int main(int argc, char *argv[]) {
   double t1 = millis_since_boot();
   
   int cnt = 0;
-  for (; cnt < segment_length * MAIN_FPS; cnt++) {
+  for (; cnt < segment_length * MAIN_FPS && !do_exit; cnt++) {
     VIPCBufExtra extra;
     VIPCBuf *buf = visionstream_get(&stream, &extra);
     if (buf == NULL) {
