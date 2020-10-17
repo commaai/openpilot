@@ -374,6 +374,7 @@ void encoder_open(EncoderState *s, const char* path) {
     s->fd = open(vid_path, O_CREAT | O_WRONLY);
     assert(s->fd >= 0);
     fallocate(s->fd, 0,  0, 50*1024*1024);
+    lseek(s->fd, 0, SEEK_SET);
     s->total_written = 0;
     if (s->codec_config_len > 0) {
       write(s->fd, s->codec_config, s->codec_config_len);

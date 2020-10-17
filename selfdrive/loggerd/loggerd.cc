@@ -239,7 +239,8 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
   assert(idx_sock != NULL);
 
   LoggerHandle *lh = NULL;
-
+  MessageBuilder msg;
+  auto eidx = msg.initEvent().initEncodeIdx();
   while (!do_exit) {
     VisionStreamBufs buf_info;
     int err = visionstream_init(&stream, cameras_logged[cam_idx].stream_type, false, &buf_info);
@@ -346,8 +347,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
         }
 
         // publish encode index
-        MessageBuilder msg;
-        auto eidx = msg.initEvent().initEncodeIdx();
+        
         eidx.setFrameId(extra.frame_id);
   #ifdef QCOM2
         eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
@@ -381,8 +381,6 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
           }
 
           // publish encode index
-          MessageBuilder msg;
-          auto eidx = msg.initEvent().initEncodeIdx();
           eidx.setFrameId(extra.frame_id);
           eidx.setType(cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP);
           eidx.setEncodeId(cnt);
