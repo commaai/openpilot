@@ -37,7 +37,7 @@ BU_: K109_FCM B233B_LRR NEO VIS_FO VIS2_FO K124_ASCM Vector__XXX EOCM_F_FO EOCM2
 VAL_TABLE_ RangeMode 1 "Active" 0 "Inactive" ;
 VAL_TABLE_ TrkConf 3 "Confident" 2 "Speculative" 1 "Highly speculative" 0 "Invalid" ;
 VAL_TABLE_ TrkMeasStatus 3 "Measured current cycle" 2 "Latent track not detected" 1 "New object" 0 "No object" ;
-VAL_TABLE_ TrkDynProp 4 "Moving in opposite direction" 3 "Moving in same direction" 2 "Has moved but currenty stopped" 1 "Has never moved," 0 "Unkown" ;
+VAL_TABLE_ TrkDynProp 4 "Moving in opposite direction" 3 "Moving in same direction" 2 "Has moved but currently stopped" 1 "Has never moved," 0 "Unknown" ;
 VAL_TABLE_ FrntVsnInPthVehBrkNwSt 10 "Active" 5 "Inactive" ;
 VAL_TABLE_ FrntVsnClostPedBrkNwSt 10 "Active" 5 "Inactive" ;
 VAL_TABLE_ LaneSnsLLnPosValid 1 "Invalid" 0 "Valid" ;

@@ -1,10 +1,10 @@
-
-#include "sound.hpp"
 #include <math.h>
 #include <stdlib.h>
 #include <atomic>
 #include "common/swaglog.h"
 #include "common/timing.h"
+
+#include "android/sl_sound.hpp"
 
 #define LogOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); }
@@ -12,24 +12,20 @@
 #define ReturnOnError(func, msg) \
   if ((func) != SL_RESULT_SUCCESS) { LOGW(msg); return false; }
 
-static std::map<AudibleAlert, std::pair<const char *, int>> sound_map {
-    {AudibleAlert::CHIME_DISENGAGE, {"../assets/sounds/disengaged.wav", 0}},
-    {AudibleAlert::CHIME_ENGAGE, {"../assets/sounds/engaged.wav", 0}},
-    {AudibleAlert::CHIME_WARNING1, {"../assets/sounds/warning_1.wav", 0}},
-    {AudibleAlert::CHIME_WARNING2, {"../assets/sounds/warning_2.wav", 0}},
-    {AudibleAlert::CHIME_WARNING2_REPEAT, {"../assets/sounds/warning_2.wav", 3}},
-    {AudibleAlert::CHIME_WARNING_REPEAT, {"../assets/sounds/warning_repeat.wav", 3}},
-    {AudibleAlert::CHIME_ERROR, {"../assets/sounds/error.wav", 0}},
-    {AudibleAlert::CHIME_PROMPT, {"../assets/sounds/error.wav", 0}}};
-
-struct Sound::Player {
+struct SLSound::Player {
   SLObjectItf player;
   SLPlayItf playItf;
   // slplay_callback runs on a background thread,use atomic to ensure thread safe.
   std::atomic<int> repeat;
 };
 
-bool Sound::init(int volume) {
+SLSound::SLSound() {
+  if (!init()){
+    throw std::runtime_error("Failed to initialize sound");
+  }
+}
+
+bool SLSound::init() {
   SLEngineOption engineOptions[] = {{SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE}};
   const SLInterfaceID ids[1] = {SL_IID_VOLUME};
   const SLboolean req[1] = {SL_BOOLEAN_FALSE};
@@ -54,15 +50,13 @@ bool Sound::init(int volume) {
     ReturnOnError((*player)->GetInterface(player, SL_IID_PLAY, &playItf), "Failed to get player interface");
     ReturnOnError((*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
 
-    player_[kv.first] = new Sound::Player{player, playItf};
+    player_[kv.first] = new SLSound::Player{player, playItf};
   }
-
-  setVolume(volume);
   return true;
 }
 
 void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event) {
-  Sound::Player *s = reinterpret_cast<Sound::Player *>(context);
+  SLSound::Player *s = reinterpret_cast<SLSound::Player *>(context);
   if (event == SL_PLAYEVENT_HEADATEND && s->repeat > 1) {
     --s->repeat;
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
@@ -71,7 +65,7 @@ void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event
   }
 }
 
-bool Sound::play(AudibleAlert alert) {
+bool SLSound::play(AudibleAlert alert) {
   if (currentSound_ != AudibleAlert::NONE) {
     stop();
   }
@@ -93,7 +87,7 @@ bool Sound::play(AudibleAlert alert) {
   return true;
 }
 
-void Sound::stop() {
+void SLSound::stop() {
   if (currentSound_ != AudibleAlert::NONE) {
     auto player = player_.at(currentSound_);
     player->repeat = 0;
@@ -102,9 +96,9 @@ void Sound::stop() {
   }
 }
 
-void Sound::setVolume(int volume) {
+void SLSound::setVolume(int volume) {
   if (last_volume_ == volume) return;
-  
+
   double current_time = nanos_since_boot();
   if ((current_time - last_set_volume_time_) > (5 * (1e+9))) { // 5s timeout on updating the volume
     char volume_change_cmd[64];
@@ -115,11 +109,15 @@ void Sound::setVolume(int volume) {
   }
 }
 
-Sound::~Sound() {
+SLSound::~SLSound() {
   for (auto &kv : player_) {
     (*(kv.second->player))->Destroy(kv.second->player);
     delete kv.second;
   }
-  if (outputMix_) (*outputMix_)->Destroy(outputMix_);
-  if (engine_) (*engine_)->Destroy(engine_);
+  if (outputMix_) {
+    (*outputMix_)->Destroy(outputMix_);
+  }
+  if (engine_) {
+    (*engine_)->Destroy(engine_);
+  }
 }

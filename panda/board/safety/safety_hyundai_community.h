@@ -1,4 +1,3 @@
-bool hyundai_has_scc = false;
 int OP_LKAS_live = 0;
 int OP_MDPS_live = 0;
 int OP_CLU_live = 0;
@@ -6,6 +5,7 @@ int OP_SCC_live = 0;
 int car_SCC_live = 0;
 int OP_EMS_live = 0;
 int HKG_mdps_bus = -1;
+int HKG_scc_bus = -1;
 const CanMsg HYUNDAI_COMMUNITY_TX_MSGS[] = {
   {832, 0, 8}, {832, 1, 8}, // LKAS11 Bus 0, 1
   {1265, 0, 4}, {1265, 1, 4}, {1265, 2, 4}, // CLU11 Bus 0, 1, 2
@@ -43,27 +43,36 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (!valid){
     puts("  CAN RX invalid: "); puth(addr); puts("\n");
   }
-  if (bus == 1 && HKG_LCAN_on_BUS1) {valid = false;}
-
+  if (bus == 1 && HKG_LCAN_on_bus1) {valid = false;}
+  // check if we have a LCAN on Bus1
+  if (bus == 1 && (addr == 1296 || addr == 524)) {
+    HKG_Lcan_bus1_cnt = 100;
+    if (HKG_forward_bus1 || !HKG_LCAN_on_bus1) {
+      HKG_LCAN_on_bus1 = true;
+      HKG_forward_bus1 = false;
+      puts("  LCAN on bus1: forwarding disabled\n");
+    }
+  }
+  // check if LKAS on Bus0
+  if (addr == 832) {
+    if (bus == 0 && HKG_forward_bus2) {HKG_forward_bus2 = false; HKG_LKAS_bus0_cnt = 10; puts("  LKAS on bus0: forwarding disabled\n");}
+    if (bus == 2) {
+      if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_bus2) {HKG_forward_bus2 = true; puts("  LKAS on bus2 & not on bus0: forwarding enabled\n");}
+      if (HKG_Lcan_bus1_cnt > 0) {HKG_Lcan_bus1_cnt--;} else if (HKG_LCAN_on_bus1) {HKG_LCAN_on_bus1 = false; puts("  Lcan not on bus1\n");}
+    }
+  }
   // check MDPS on Bus
   if ((addr == 593 || addr == 897) && HKG_mdps_bus != bus) {
-    if (bus == 0){
+    if (bus != 1 || !HKG_LCAN_on_bus1) {
       HKG_mdps_bus = bus;
-      if (!HKG_forward_BUS1 && board_has_obd()) {
-        current_board->set_can_mode(CAN_MODE_NORMAL);
-        puts("  MDPS on bus0: harrness set to normal"); puts("\n");
-      }
-    } else if (bus == 1 && !HKG_LCAN_on_BUS1) {
-      HKG_mdps_bus = bus;
-      HKG_forward_BUS1 = true;
-      puts("  MDPS on bus1: forwarding enabled"); puts("\n");
-    } 
+      if (bus == 1 && !HKG_forward_bus1) {HKG_forward_bus1 = true; puts("  MDPS on bus1: forwarding enabled\n");}
+    }
   }
-  // check if we have a SCC on Bus1 and LCAN not on the bus
-  if (bus == 1 && addr == 1057 && !HKG_LCAN_on_BUS1) {
-    if (!HKG_forward_BUS1) {
-      HKG_forward_BUS1 = true;
-      puts("  SCC on bus1: forwarding enabled"); puts("\n");
+  // check SCC on Bus
+  if ((addr == 1056 || addr == 1057) && HKG_scc_bus != bus) {
+    if (bus != 1 || !HKG_LCAN_on_bus1) {
+      HKG_scc_bus = bus;
+      if (bus == 1 && !HKG_forward_bus1) {HKG_forward_bus1 = true;puts("  SCC on bus1: forwarding enabled\n");}
     }
   }
 
@@ -76,7 +85,6 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == 1057 && OP_SCC_live) { // for cars with long control
-      hyundai_has_scc = true;
       car_SCC_live = 50;
       // 2 bits: 13-14
       int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
@@ -91,7 +99,6 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       cruise_engaged_prev = cruise_engaged;
     }
     if (addr == 1056 && !OP_SCC_live) { // for cars without long control
-      hyundai_has_scc = true;
       // 2 bits: 13-14
       int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
       if (cruise_engaged && !cruise_engaged_prev) {
@@ -105,7 +112,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       cruise_engaged_prev = cruise_engaged;
     }
     // cruise control for car without SCC
-    if (addr == 608 && bus == 0 && !hyundai_has_scc && !OP_SCC_live) {
+    if (addr == 608 && bus == 0 && HKG_scc_bus == -1 && !OP_SCC_live) {
       // bit 25
       int cruise_engaged = (GET_BYTES_04(to_push) >> 25 & 0x1); // ACC main_on signal
       if (cruise_engaged && !cruise_engaged_prev) {
@@ -253,15 +260,15 @@ static int hyundai_community_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
   int bus_fwd = -1;
   int addr = GET_ADDR(to_fwd);
   int fwd_to_bus1 = -1;
-  if (HKG_forward_BUS1){fwd_to_bus1 = 1;}
+  if (HKG_forward_bus1){fwd_to_bus1 = 1;}
 
   // forward cam to ccan and viceversa, except lkas cmd
-  if (!relay_malfunction) {
+  if (HKG_forward_bus2) {
     if (bus_num == 0) {
       if (!OP_CLU_live || addr != 1265 || HKG_mdps_bus == 0) {
         if (!OP_MDPS_live || addr != 593) {
           if (!OP_EMS_live || addr != 790) {
-            bus_fwd = HKG_forward_BUS1 ? 12 : 2;
+            bus_fwd = HKG_forward_bus1 ? 12 : 2;
           } else {
             bus_fwd = 2;  // EON create EMS11 for MDPS
             OP_EMS_live -= 1;
@@ -275,7 +282,7 @@ static int hyundai_community_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
         OP_CLU_live -= 1;
       }
     }
-    if (bus_num == 1 && HKG_forward_BUS1) {
+    if (bus_num == 1 && HKG_forward_bus1) {
       if (!OP_MDPS_live || addr != 593) {
         if (!OP_SCC_live || (addr != 1056 && addr != 1057 && addr != 1290 && addr != 905)) {
           bus_fwd = 20;
@@ -291,7 +298,7 @@ static int hyundai_community_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
     if (bus_num == 2) {
       if (!OP_LKAS_live || (addr != 832 && addr != 1157)) {
         if (!OP_SCC_live || (addr != 1056 && addr != 1057 && addr != 1290 && addr != 905)) {
-          bus_fwd = HKG_forward_BUS1 ? 10 : 0;
+          bus_fwd = HKG_forward_bus1 ? 10 : 0;
         } else {
           bus_fwd = fwd_to_bus1;  // EON create SCC12 for Car
           OP_SCC_live -= 1;
@@ -307,7 +314,7 @@ static int hyundai_community_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_f
     if (bus_num == 0) {
       bus_fwd = fwd_to_bus1;
     }
-    if (bus_num == 1 && HKG_forward_BUS1) {
+    if (bus_num == 1 && HKG_forward_bus1) {
       bus_fwd = 0;
     }
   }
@@ -319,10 +326,10 @@ static void hyundai_community_init(int16_t param) {
   controls_allowed = false;
   relay_malfunction_reset();
 
-  if (board_has_obd() && HKG_forward_BUS2) {
+  if (board_has_obd() && HKG_forward_obd) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
-    puts("  MDPS or SCC on bus1: CAN2 mode set to normal"); puts("\n");
-    }
+    puts("  MDPS or SCC on OBD2 CAN: setting can mode obd\n");
+  }
 }
 
 const safety_hooks hyundai_community_hooks = {

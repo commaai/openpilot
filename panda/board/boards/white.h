@@ -2,8 +2,8 @@
 // White Panda //
 // /////////// //
 
-void white_enable_can_transciever(uint8_t transciever, bool enabled) {
-  switch (transciever){
+void white_enable_can_transceiver(uint8_t transceiver, bool enabled) {
+  switch (transceiver){
     case 1U:
       set_gpio_output(GPIOC, 1, !enabled);
       break;
@@ -14,15 +14,15 @@ void white_enable_can_transciever(uint8_t transciever, bool enabled) {
       set_gpio_output(GPIOA, 0, !enabled);
       break;
     default:
-      puts("Invalid CAN transciever ("); puth(transciever); puts("): enabling failed\n");
+      puts("Invalid CAN transceiver ("); puth(transceiver); puts("): enabling failed\n");
       break;
   }
 }
 
-void white_enable_can_transcievers(bool enabled) {
-  uint8_t t1 = enabled ? 1U : 2U;  // leave transciever 1 enabled to detect CAN ignition
+void white_enable_can_transceivers(bool enabled) {
+  uint8_t t1 = enabled ? 1U : 2U;  // leave transceiver 1 enabled to detect CAN ignition
   for(uint8_t i=t1; i<=3U; i++) {
-    white_enable_can_transciever(i, enabled);
+    white_enable_can_transceiver(i, enabled);
   }
 }
 
@@ -71,21 +71,21 @@ void white_set_usb_power_mode(uint8_t mode){
   }
 }
 
-void white_set_esp_gps_mode(uint8_t mode) {
+void white_set_gps_mode(uint8_t mode) {
   switch (mode) {
-    case ESP_GPS_DISABLED:
+    case GPS_DISABLED:
       // ESP OFF
       set_gpio_output(GPIOC, 14, 0);
       set_gpio_output(GPIOC, 5, 0);
       break;
 #ifndef EON
-    case ESP_GPS_ENABLED:
+    case GPS_ENABLED:
       // ESP ON
       set_gpio_output(GPIOC, 14, 1);
       set_gpio_output(GPIOC, 5, 1);
       break;
 #endif
-    case ESP_GPS_BOOTMODE:
+    case GPS_BOOTMODE:
       set_gpio_output(GPIOC, 14, 1);
       set_gpio_output(GPIOC, 5, 0);
       break;
@@ -242,6 +242,14 @@ void white_set_phone_power(bool enabled){
   UNUSED(enabled);
 }
 
+void white_set_clock_source_mode(uint8_t mode){
+  UNUSED(mode);
+}
+
+void white_set_siren(bool enabled){
+  UNUSED(enabled);
+}
+
 void white_grey_common_init(void) {
   common_init_gpio();
 
@@ -291,8 +299,8 @@ void white_grey_common_init(void) {
   set_gpio_alternate(GPIOC, 11, GPIO_AF7_USART3);
   set_gpio_pullup(GPIOC, 11, PULL_UP);
 
-  // Enable CAN transcievers
-  white_enable_can_transcievers(true);
+  // Enable CAN transceivers
+  white_enable_can_transceivers(true);
 
   // Disable LEDs
   white_set_led(LED_RED, false);
@@ -316,12 +324,8 @@ void white_grey_common_init(void) {
 void white_init(void) {
   white_grey_common_init();
 
-  // Set default state of ESP
-  #ifdef EON
-    current_board->set_esp_gps_mode(ESP_GPS_DISABLED);
-  #else
-    current_board->set_esp_gps_mode(ESP_GPS_ENABLED);
-  #endif
+  // Set ESP off by default
+  current_board->set_gps_mode(GPS_DISABLED);
 }
 
 const harness_configuration white_harness_config = {
@@ -332,16 +336,18 @@ const board board_white = {
   .board_type = "White",
   .harness_config = &white_harness_config,
   .init = white_init,
-  .enable_can_transciever = white_enable_can_transciever,
-  .enable_can_transcievers = white_enable_can_transcievers,
+  .enable_can_transceiver = white_enable_can_transceiver,
+  .enable_can_transceivers = white_enable_can_transceivers,
   .set_led = white_set_led,
   .set_usb_power_mode = white_set_usb_power_mode,
-  .set_esp_gps_mode = white_set_esp_gps_mode,
+  .set_gps_mode = white_set_gps_mode,
   .set_can_mode = white_set_can_mode,
   .usb_power_mode_tick = white_usb_power_mode_tick,
   .check_ignition = white_check_ignition,
   .read_current = white_read_current,
   .set_fan_power = white_set_fan_power,
   .set_ir_power = white_set_ir_power,
-  .set_phone_power = white_set_phone_power
+  .set_phone_power = white_set_phone_power,
+  .set_clock_source_mode = white_set_clock_source_mode,
+  .set_siren = white_set_siren
 };

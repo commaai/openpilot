@@ -4,11 +4,12 @@ import json
 from datetime import datetime, timedelta
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import version, terms_version, training_version, get_git_commit, get_git_branch, get_git_remote
-from common.android import get_imei, get_serial, get_subscriber_info
+from common.hardware import HARDWARE
 from common.api import api_get
 from common.params import Params
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
+
 
 def register():
   params = Params()
@@ -19,7 +20,7 @@ def register():
   params.put("GitCommit", get_git_commit(default=""))
   params.put("GitBranch", get_git_branch(default=""))
   params.put("GitRemote", get_git_remote(default=""))
-  params.put("SubscriberInfo", get_subscriber_info())
+  params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
@@ -50,7 +51,7 @@ def register():
   try:
     cloudlog.info("getting pilotauth")
     resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                   imei=get_imei(0), imei2=get_imei(1), serial=get_serial(), public_key=public_key, register_token=register_token)
+                   imei=HARDWARE.get_imei(0), imei2=HARDWARE.get_imei(1), serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
     dongleauth = json.loads(resp.text)
     dongle_id = dongleauth["dongle_id"]
 

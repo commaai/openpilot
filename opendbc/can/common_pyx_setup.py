@@ -34,7 +34,7 @@ class BuildExtWithoutPlatformSuffix(build_ext):
     return get_ext_filename_without_platform_suffix(filename)
 
 
-extra_compile_args = ["-std=c++14"]
+extra_compile_args = ["-std=c++14", "-Wno-nullability-completeness"]
 ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()  # pylint: disable=unexpected-keyword-arg
 if ARCH == "aarch64":
   extra_compile_args += ["-Wno-deprecated-register"]
