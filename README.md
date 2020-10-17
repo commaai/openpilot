@@ -194,7 +194,7 @@ Many factors can impact the performance of openpilot ALC and openpilot LDW, caus
 * The road facing camera is obstructed, covered or damaged by mud, ice, snow, etc.
 * Obstruction caused by applying excessive paint or adhesive products (such as wraps, stickers, rubber coating, etc.) onto the vehicle.
 * The device is mounted incorrectly.
-* When in sharp curves, like on-off ramps, intersections etc...; openpilot is designed to be limited in the amount of steering torque it can produce.
+* When in sharp curves, like on-off ramps, intersections etc... , openpilot is designed to be limited in the amount of steering torque it can produce.
 * In the presence of restricted lanes or construction zones.
 * When driving on highly banked roads or in presence of strong cross-wind.
 * Extremely hot or cold temperatures.
@@ -215,7 +215,7 @@ Many factors can impact the performance of openpilot ACC and openpilot FCW, caus
 * Obstruction caused by applying excessive paint or adhesive products (such as wraps, stickers, rubber coating, etc.) onto the vehicle.
 * The device is mounted incorrectly.
 * Approaching a toll booth, a bridge or a large metal plate.
-* When driving on roads with pedestrians, cyclists, etc...
+* When driving on roads with pedestrians, cyclists, etc... .
 * In presence of traffic signs or stop lights, which are not detected by openpilot at this time.
 * When the posted speed limit is below the user selected set speed. openpilot does not detect speed limits at this time.
 * In presence of vehicles in the same lane that are not moving.
@@ -223,7 +223,7 @@ Many factors can impact the performance of openpilot ACC and openpilot FCW, caus
 * When surrounding vehicles perform close cut-ins from neighbor lanes.
 * Driving on hills, narrow, or winding roads.
 * Extremely hot or cold temperatures.
-* Bright light (due to oncoming headlights, direct sunlight, etc.).
+* Bright light (due to oncoming headlights, direct sunlight, etc... .
 * Interference from other equipment that generates radar waves.
 
 The list above does not represent an exhaustive list of situations that may interfere with proper operation of openpilot components. It is the driver's responsibility to be in control of the vehicle at all times.
