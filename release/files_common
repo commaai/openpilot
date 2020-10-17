@@ -360,11 +360,11 @@ selfdrive/ui/android/*.hpp
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
-selfdrive/camerad/bufs.h
 
 selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
+selfdrive/camerad/cameras/camera_common.cc
 selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc

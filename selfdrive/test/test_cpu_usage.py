@@ -27,7 +27,7 @@ def print_cpu_usage(first_proc, last_proc):
     ("selfdrive.controls.radard", 5.67),
     ("./boardd", 3.63),
     ("./_dmonitoringmodeld", 2.67),
-    ("selfdrive.logmessaged", 2.71),
+    ("selfdrive.logmessaged", 1.7),
     ("selfdrive.thermald.thermald", 2.41),
     ("selfdrive.locationd.calibrationd", 2.0),
     ("selfdrive.monitoring.dmonitoringd", 1.90),
