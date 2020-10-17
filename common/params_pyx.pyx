@@ -1,4 +1,4 @@
-# distutils: langauge = c++
+# distutils: language = c++
 # cython: language_level = 3
 from libcpp cimport bool
 from libcpp.string cimport string
