@@ -18,7 +18,7 @@ extern "C" {
 typedef struct EncoderState {
   pthread_mutex_t lock;
   int width, height;
-  char lock_path[1024];
+  char lock_path[4096];
   bool open;
   bool dirty;
   int counter;

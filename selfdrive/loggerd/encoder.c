@@ -92,7 +92,7 @@ void encoder_init(EncoderState *s, LogCameraInfo *camera_info, int width, int he
 
   queue_init(&s->free_in);
   queue_init(&s->done_out);
-  
+
   mutex_init_reentrant(&s->lock);
   pthread_mutex_init(&s->state_lock, NULL);
   pthread_cond_init(&s->state_cv, NULL);
@@ -334,7 +334,7 @@ int encoder_encode_frame(EncoderState *s, const uint8_t *y_ptr, const uint8_t *u
 
 void encoder_open(EncoderState *s, const char* path) {
   int err;
-  char vid_path[1024];
+  char vid_path[4096];
   pthread_mutex_lock(&s->lock);
 
   snprintf(vid_path, sizeof(vid_path), "%s/%s", path, s->camera_info.filename);
