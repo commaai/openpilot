@@ -12,7 +12,7 @@ setup(
       "transformations",
       sources=["transformations.pyx"],
       language="c++",
-      extra_compile_args=["-std=c++14", "-Wno-cpp"],
+      extra_compile_args=["-std=c++1z", "-Wno-cpp"],
       include_dirs=[numpy.get_include()],
     ),
     nthreads=4,

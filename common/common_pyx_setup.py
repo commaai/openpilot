@@ -4,7 +4,7 @@ from Cython.Build import cythonize
 from common.cython_hacks import BuildExtWithoutPlatformSuffix
 
 sourcefiles = ['clock.pyx']
-extra_compile_args = ["-std=c++14"]
+extra_compile_args = ["-std=c++1z"]
 
 setup(name='common',
       cmdclass={'build_ext': BuildExtWithoutPlatformSuffix},

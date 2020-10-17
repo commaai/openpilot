@@ -21,12 +21,6 @@ typedef void (*sighandler_t)(int sig);
 
 #endif
 
-#define clamp(a,b,c) \
- ({ __typeof__ (a) _a = (a); \
-     __typeof__ (b) _b = (b); \
-     __typeof__ (c) _c = (c); \
-   _a < _b ? _b : (_a > _c ? _c : _a); })
-
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
 
 #undef ALIGN

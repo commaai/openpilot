@@ -20,7 +20,7 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=format-extra-args
 
 CFLAGS = -std=gnu11 -g -fPIC $(OPT_FLAGS) $(WARN_FLAGS)
-CXXFLAGS = -std=c++14 -fPIC $(OPT_FLAGS) $(WARN_FLAGS)
+CXXFLAGS = -std=c++1z -fPIC $(OPT_FLAGS) $(WARN_FLAGS)
 
 EIGEN_FLAGS = -I$(PHONELIBS)/eigen
 

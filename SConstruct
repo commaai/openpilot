@@ -138,6 +138,7 @@ env = Environment(
     "-Werror",
     "-Wno-unknown-warning-option",
     "-Wno-deprecated-register",
+    "-Wno-register",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
@@ -177,7 +178,7 @@ env = Environment(
   RPATH=rpath,
 
   CFLAGS=["-std=gnu11"] + cflags,
-  CXXFLAGS=["-std=c++14"] + cxxflags,
+  CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
     "#selfdrive/common",
