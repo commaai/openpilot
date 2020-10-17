@@ -4,13 +4,16 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <errno.h> 
+#include <errno.h>
+
 #ifdef __linux__
 #include <sys/prctl.h>
 #include <sys/syscall.h>
+#ifndef __USE_GNU
 #define __USE_GNU
-#include <sched.h>
 #endif
+#include <sched.h>
+#endif // __linux__
 
 void* read_file(const char* path, size_t* out_len) {
   FILE* f = fopen(path, "r");

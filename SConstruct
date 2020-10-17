@@ -202,6 +202,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     ]
     qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
   else:
+    qt_env['QTDIR'] = "/usr"
     qt_dirs = [
       f"/usr/include/{real_arch}-linux-gnu/qt5",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtWidgets",

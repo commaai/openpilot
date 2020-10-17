@@ -173,7 +173,7 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
   tmp_path = params_path + "/.tmp_value_XXXXXX";
   tmp_fd = mkstemp((char*)tmp_path.c_str());
   bytes_written = write(tmp_fd, value, value_size);
-  if (bytes_written != value_size) {
+  if (bytes_written < 0 || (size_t)bytes_written != value_size) {
     result = -20;
     goto cleanup;
   }
