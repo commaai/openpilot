@@ -1,6 +1,7 @@
 #include "camera_webcam.h"
 
 #include <unistd.h>
+#include <assert.h>
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
@@ -8,7 +9,6 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "buffering.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-inline"
@@ -27,27 +27,21 @@ extern volatile sig_atomic_t do_exit;
 #define FRAME_HEIGHT_FRONT 864
 
 namespace {
-void camera_open(CameraState *s, VisionBuf *camera_bufs, bool rear) {
-  assert(camera_bufs);
-  s->camera_bufs = camera_bufs;
+void camera_open(CameraState *s, bool rear) {
 }
 
 void camera_close(CameraState *s) {
-  tbuffer_stop(&s->camera_tb);
+  s->buf.stop();
 }
 
-void camera_release_buffer(void *cookie, int buf_idx) {
-}
-
-void camera_init(CameraState *s, int camera_id, unsigned int fps) {
+void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
-  s->frame_size = s->ci.frame_height * s->ci.frame_stride;
   s->fps = fps;
 
-  tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", camera_release_buffer, s);
+  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
 }
 
 static void* rear_thread(void *arg) {
@@ -83,7 +77,7 @@ static void* rear_thread(void *arg) {
   }
 
   uint32_t frame_id = 0;
-  TBuffer* tb = &s->camera_tb;
+  TBuffer* tb = &s->buf.camera_tb;
 
   while (!do_exit) {
     cv::Mat frame_mat;
@@ -100,12 +94,12 @@ static void* rear_thread(void *arg) {
     int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
 
     const int buf_idx = tbuffer_select(tb);
-    s->camera_bufs_metadata[buf_idx] = {
+    s->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame_id,
     };
 
-    cl_command_queue q = s->camera_bufs[buf_idx].copy_q;
-    cl_mem yuv_cl = s->camera_bufs[buf_idx].buf_cl;
+    cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
+    cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
     cl_event map_event;
     void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
                                                 CL_MAP_WRITE, 0, transformed_size,
@@ -157,7 +151,7 @@ void front_thread(CameraState *s) {
   }
 
   uint32_t frame_id = 0;
-  TBuffer* tb = &s->camera_tb;
+  TBuffer* tb = &s->buf.camera_tb;
 
   while (!do_exit) {
     cv::Mat frame_mat;
@@ -174,12 +168,12 @@ void front_thread(CameraState *s) {
     int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
 
     const int buf_idx = tbuffer_select(tb);
-    s->camera_bufs_metadata[buf_idx] = {
+    s->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame_id,
     };
 
-    cl_command_queue q = s->camera_bufs[buf_idx].copy_q;
-    cl_mem yuv_cl = s->camera_bufs[buf_idx].buf_cl;
+    cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
+    cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
     cl_event map_event;
     void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
                                                 CL_MAP_WRITE, 0, transformed_size,
@@ -224,54 +218,69 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(MultiCameraState *s) {
+void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
 
-  camera_init(&s->rear, CAMERA_ID_LGC920, 20);
+  camera_init(&s->rear, CAMERA_ID_LGC920, 20, device_id, ctx);
   s->rear.transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0,
   }};
 
-  camera_init(&s->front, CAMERA_ID_LGC615, 10);
+  camera_init(&s->front, CAMERA_ID_LGC615, 10, device_id, ctx);
   s->front.transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0,
   }};
+
+  s->pm = new PubMaster({"frame", "frontFrame"});
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
-                  VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats,
-                  VisionBuf *camera_bufs_front) {
-  assert(camera_bufs_rear);
-  assert(camera_bufs_front);
-
+void cameras_open(MultiCameraState *s) {
   // LOG("*** open front ***");
-  camera_open(&s->front, camera_bufs_front, false);
+  camera_open(&s->front, false);
 
   // LOG("*** open rear ***");
-  camera_open(&s->rear, camera_bufs_rear, true);
+  camera_open(&s->rear, true);
 }
 
 void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
+  delete s->pm;
+}
+
+void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrontFrame();
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  fill_frame_data(framed, c->buf.cur_frame_data, cnt);
+  s->pm->send("frontFrame", msg);
+}
+
+void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
+  const CameraBuf *b = &c->buf;
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrame();
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  framed.setImage(kj::arrayPtr((const uint8_t *)b->yuv_ion[b->cur_yuv_idx].addr, b->yuv_buf_size));
+  framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+  s->pm->send("frame", msg);
 }
 
 void cameras_run(MultiCameraState *s) {
+  std::vector<std::thread> threads;
+  threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_rear));
+  threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
+  
+  std::thread t_rear = std::thread(rear_thread, &s->rear);
   set_thread_name("webcam_thread");
-  int err;
-  pthread_t rear_thread_handle;
-  err = pthread_create(&rear_thread_handle, NULL,
-                        rear_thread, &s->rear);
-  assert(err == 0);
-
   front_thread(&s->front);
-
-  err = pthread_join(rear_thread_handle, NULL);
-  assert(err == 0);
+  t_rear.join();
   cameras_close(s);
+  
+  for (auto &t : threads) t.join();
 }

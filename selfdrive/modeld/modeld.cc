@@ -153,8 +153,7 @@ int main(int argc, char **argv) {
     float frames_dropped = 0;
 
     // one frame in memory
-    cl_mem yuv_cl;
-    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context, &yuv_cl);
+    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context);
 
     uint32_t frame_id = 0, last_vipc_frame_id = 0;
     double last = 0;
@@ -192,7 +191,7 @@ int main(int argc, char **argv) {
         memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
 
         ModelDataRaw model_buf =
-            model_eval_frame(&model, q, yuv_cl, buf_info.width, buf_info.height,
+            model_eval_frame(&model, q, yuv_ion.buf_cl, buf_info.width, buf_info.height,
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 
