@@ -86,6 +86,7 @@ void encoder_init(EncoderState *s, LogCameraInfo *camera_info, int width, int he
   s->width = width;
   s->height = height;
   s->state = OMX_StateLoaded;
+  s->fd = -1;
   if (!camera_info->is_h265) {
     s->remuxing = true;
   }
@@ -229,8 +230,9 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
     memcpy(s->codec_config, buf_data, out_buf->nFilledLen);
   }
 
-  if (s->of) {
-    fwrite(buf_data, out_buf->nFilledLen, 1, s->of);
+  if (s->fd >= 0) {
+    write(s->fd, buf_data, out_buf->nFilledLen);
+    s->total_written += out_buf->nFilledLen;
   }
 
   if (s->remuxing) {
@@ -369,10 +371,13 @@ void encoder_open(EncoderState *s, const char* path) {
 
     s->wrote_codec_config = false;
   } else {
-    s->of = fopen(vid_path, "wb");
-    assert(s->of);
+    s->fd = open(vid_path, O_CREAT | O_WRONLY);
+    assert(s->fd >= 0);
+    fallocate(s->fd, 0,  0, 50*1024*1024);
+    s->total_written = 0;
     if (s->codec_config_len > 0) {
-      fwrite(s->codec_config, s->codec_config_len, 1, s->of);
+      write(s->fd, s->codec_config, s->codec_config_len);
+      s->total_written += s->codec_config_len;
     }
   }
 
@@ -421,7 +426,10 @@ void encoder_close(EncoderState *s) {
       avio_closep(&s->ofmt_ctx->pb);
       avformat_free_context(s->ofmt_ctx);
     } else {
-      fclose(s->of);
+      ftruncate(s->fd, s->total_written);
+      close(s->fd);
+      s->fd = -1;
+
     }
     unlink(s->lock_path);
   }

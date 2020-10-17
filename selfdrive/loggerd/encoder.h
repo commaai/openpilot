@@ -24,7 +24,8 @@ typedef struct EncoderState {
   int counter;
 
   LogCameraInfo camera_info;
-  FILE *of;
+  int fd;
+  size_t total_written;
 
   size_t codec_config_len;
   uint8_t *codec_config;
