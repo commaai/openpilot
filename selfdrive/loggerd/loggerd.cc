@@ -336,9 +336,9 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
       uint8_t *v = u + (buf_info.width/2)*(buf_info.height/2);
       {
         // encode hevc
-        int out_id = encoder->EncodeFrame(y, u, v, &extra);
+        int out_id = encoder->EncodeFrame(y, u, v, extra);
         if (encoder_alt) {
-          encoder_alt->EncodeFrame(y, u, v, &extra);
+          encoder_alt->EncodeFrame(y, u, v, extra);
         }
 
         // publish encode index

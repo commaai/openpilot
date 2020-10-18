@@ -15,7 +15,7 @@ extern "C" {
 class EncoderState {
 public:
   EncoderState(const LogCameraInfo &camera_info, int width, int height);
-  int EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, VIPCBufExtra *extra);
+  int EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, const VIPCBufExtra &extra);
   void Rotate(const char *new_path);
   ~EncoderState();
 

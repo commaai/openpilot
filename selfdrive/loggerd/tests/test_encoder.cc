@@ -15,7 +15,7 @@
 #define MAIN_FPS 20
 #define MAIN_BITRATE 5000000
 #define QCAM_BITRATE 128000
-const int segment_length = 60;
+const int segment_length = 10;
 
 enum TestType {
   typeEncoder = 0x01,
@@ -166,8 +166,8 @@ int main(int argc, char *argv[]) {
     uint8_t *v = u + (buf_info.width / 2) * (buf_info.height / 2);
     double t1 = millis_since_boot();
     if (encoder) {
-        encoder->EncodeFrame(y, u, v, &extra);
-        encoder_alt->EncodeFrame(y, u, v, &extra);
+        encoder->EncodeFrame(y, u, v, extra);
+        encoder_alt->EncodeFrame(y, u, v, extra);
     }
     if (rawlogger) {
       rawlogger->LogFrame(cnt, y, u, v, nullptr);

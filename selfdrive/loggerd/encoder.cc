@@ -27,38 +27,28 @@ void EncoderState::wait_for_state(OMX_STATETYPE state) {
 static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, OMX_EVENTTYPE event,
                                    OMX_U32 data1, OMX_U32 data2, OMX_PTR event_data) {
   EncoderState *s = (EncoderState *)app_data;
-
-  switch (event) {
-    case OMX_EventCmdComplete: {
-      assert(data1 == OMX_CommandStateSet);
-      LOG("set state event 0x%x", data2);
-      std::unique_lock<std::mutex> lk(s->state_lock);
-      s->state = (OMX_STATETYPE)data2;
-      s->state_cv.notify_all();
-      break;
-    }
-    case OMX_EventError:
-      LOGE("OMX error 0x%08x", data1);
-      // assert(false);
-      break;
-    default:
-      LOGE("unhandled event %d", event);
-      assert(false);
-      break;
+  if (event == OMX_EventCmdComplete) {
+    assert(data1 == OMX_CommandStateSet);
+    LOG("set state event 0x%x", data2);
+    std::unique_lock<std::mutex> lk(s->state_lock);
+    s->state = (OMX_STATETYPE)data2;
+    s->state_cv.notify_all();
+  } else if (event == OMX_EventError) {
+    LOGE("OMX error 0x%08x", data1);
+  } else {
+    LOGE("OMX unhandled event %d", event);
+    assert(false);
   }
-
   return OMX_ErrorNone;
 }
 
 static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data, OMX_BUFFERHEADERTYPE *buffer) {
-  EncoderState *s = (EncoderState *)app_data;
-  queue_push(&s->free_in, (void *)buffer);
+  queue_push(&reinterpret_cast<EncoderState*>(app_data)->free_in, (void *)buffer);
   return OMX_ErrorNone;
 }
 
 static OMX_ERRORTYPE fill_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data, OMX_BUFFERHEADERTYPE *buffer) {
-  EncoderState *s = (EncoderState *)app_data;
-  queue_push(&s->done_out, (void *)buffer);
+  queue_push(&reinterpret_cast<EncoderState*>(app_data)->done_out, (void *)buffer);
   return OMX_ErrorNone;
 }
 
@@ -125,7 +115,6 @@ EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int heig
 
   bitrate_type.eControlRate = OMX_Video_ControlRateVariable;
   bitrate_type.nTargetBitrate = camera_info.bitrate;
-
   OERR(OMX_SetParameter(handle, OMX_IndexParamVideoBitrate, (OMX_PTR)&bitrate_type));
 
   if (camera_info.is_h265) {
@@ -138,7 +127,6 @@ EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int heig
 
     hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
     hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
-
     OERR(OMX_SetParameter(handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc, (OMX_PTR)&hecv_type));
 #endif
   } else {
@@ -156,7 +144,6 @@ EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int heig
 
     avc.nAllowedPictureTypes |= OMX_VIDEO_PictureTypeB;
     avc.eLoopFilterMode = OMX_VIDEO_AVCLoopFilterEnable;
-
     OERR(OMX_SetParameter(handle, OMX_IndexParamVideoAvc, &avc));
   }
 
@@ -192,7 +179,6 @@ EncoderState::~EncoderState() {
 
   OERR(OMX_SendCommand(handle, OMX_CommandStateSet, OMX_StateIdle, NULL));
   wait_for_state(OMX_StateIdle);
-
   OERR(OMX_SendCommand(handle, OMX_CommandStateSet, OMX_StateLoaded, NULL));
 
   for (int i = 0; i < in_buf_headers.size(); i++) {
@@ -262,7 +248,7 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
   OERR(OMX_FillThisBuffer(handle, out_buf));
 }
 
-int EncoderState::EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, VIPCBufExtra *extra) {
+int EncoderState::EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, const VIPCBufExtra &extra) {
   OMX_BUFFERHEADERTYPE *in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&free_in);
   uint8_t *in_buf_ptr = in_buf->pBuffer;
 
@@ -271,18 +257,14 @@ int EncoderState::EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const 
   int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, width);
   uint8_t *in_uv_ptr = in_buf_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, height));
 
-  int err = libyuv::I420ToNV12(y_ptr, width,
-                           u_ptr, width / 2,
-                           v_ptr, width / 2,
-                           in_y_ptr, in_y_stride,
-                           in_uv_ptr, in_uv_stride,
-                           width, height);
+  int err = libyuv::I420ToNV12(y_ptr, width, u_ptr, width / 2, v_ptr, width / 2,
+                           in_y_ptr, in_y_stride, in_uv_ptr, in_uv_stride, width, height);
   assert(err == 0);
 
   in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, width, height);
   in_buf->nFlags = OMX_BUFFERFLAG_ENDOFFRAME;
   in_buf->nOffset = 0;
-  in_buf->nTimeStamp = extra->timestamp_eof / 1000LL;  // OMX_TICKS, in microseconds
+  in_buf->nTimeStamp = extra.timestamp_eof / 1000LL;  // OMX_TICKS, in microseconds
 
   OERR(OMX_EmptyThisBuffer(handle, in_buf));
 
