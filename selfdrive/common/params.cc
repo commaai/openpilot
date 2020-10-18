@@ -92,6 +92,7 @@ static int mkdir_p(std::string path) {
   if (mkdir(_path, 0777) != 0) {
     if (errno != EEXIST) return -1;
   }
+  chmod(_path, 0777);
   umask(prev_mask);
   return 0;
 }
