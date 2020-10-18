@@ -70,8 +70,7 @@ static OMX_CALLBACKTYPE omx_callbacks = {
 };
 
 EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int height)
-    : camera_info(camera_info), width(width), height(height), state(OMX_StateLoaded), 
-      fd(-1), is_open(false), remuxing(!camera_info.is_h265) {
+    : camera_info(camera_info), width(width), height(height), state(OMX_StateLoaded), remuxing(!camera_info.is_h265) {
   
   queue_init(&free_in);
   queue_init(&done_out);
@@ -221,7 +220,12 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
 
   if (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
     if (codec_config_len < out_buf->nFilledLen) {
-      codec_config = (uint8_t *)realloc(codec_config, out_buf->nFilledLen);
+      uint8_t *tmp = (uint8_t *)realloc(codec_config, out_buf->nFilledLen);
+      if (tmp != nullptr) {
+        codec_config = tmp;
+      } else {
+        assert(0);
+      }
     }
     codec_config_len = out_buf->nFilledLen;
     memcpy(codec_config, buf_data, out_buf->nFilledLen);
@@ -230,7 +234,12 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
   if (remuxing) {
     if (!wrote_codec_config && codec_config_len > 0) {
       if (codec_ctx->extradata_size < codec_config_len) {
-        codec_ctx->extradata = (uint8_t *)realloc(codec_ctx->extradata, codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
+        uint8_t *tmp = (uint8_t *)realloc(codec_ctx->extradata, codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
+        if (tmp != nullptr) {
+          codec_ctx->extradata = tmp;
+        } else {
+          assert(0);
+        }
       }
       codec_ctx->extradata_size = codec_config_len;
       memcpy(codec_ctx->extradata, codec_config, codec_config_len);
