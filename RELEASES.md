@@ -3,7 +3,7 @@ Version 0.7.9 + VW 1.6 (2020-10-18)
  * (VW Community) Restore AVRT and de-deprecate White Panda (experimental)
  * (VW Community) Use raw steering angle signal (experimental)
  * (VW Community) Lane Change Assist radar input for auto lane-change blocking
- * (VW Community) FCW/AEB detection support (still in testing)
+ * (VW Community) FCW/AEB detection support (experimental)
  * (VW Community) Several additional MQB vehicles added to fingerprint
  * (VW Community) Manual config support for "unsafe" gas pedal mode
  * (VW Community) Manual config support for C2/BP integrations at the CAN gateway
