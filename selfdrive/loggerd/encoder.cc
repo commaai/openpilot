@@ -264,7 +264,6 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
       if (err < 0) {
         LOGW("ts encoder write issue");
       }
-
       av_free_packet(&pkt);
     }
   } else {
@@ -310,7 +309,6 @@ int EncoderState::EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const 
     handle_out_buf(out_buf);
   }
 
-  dirty = true;
   counter++;
   return ret;
 }
@@ -374,7 +372,7 @@ void EncoderState::Open(const char *path) {
 }
 
 void EncoderState::Close() {
-  if (dirty) {
+  if (counter > 0) {
     // drain output only if there could be frames in the encoder
 
     OMX_BUFFERHEADERTYPE *in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&free_in);
@@ -386,12 +384,12 @@ void EncoderState::Close() {
 
     while (true) {
       OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&done_out);
-      handle_out_buf(out_buf);
       if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
         break;
       }
+      handle_out_buf(out_buf);
     }
-    dirty = false;
+    counter = 0;
   }
 
   if (remuxing) {
