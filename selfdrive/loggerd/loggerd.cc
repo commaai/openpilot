@@ -223,10 +223,8 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
 
   VisionStream stream;
 
-  bool encoder_inited = false;
-  EncoderState encoder;
-  EncoderState encoder_alt;
-  bool has_encoder_alt = cameras_logged[cam_idx].has_qcamera;
+  std::unique_ptr<EncoderState> encoder;
+  std::unique_ptr<EncoderState> encoder_alt;
 
   int encoder_segment = -1;
   int cnt = 0;
@@ -250,15 +248,12 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
       continue;
     }
 
-    if (!encoder_inited) {
+    if (!encoder) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-      encoder_init(&encoder, &cameras_logged[cam_idx], buf_info.width, buf_info.height);
-
-      if (has_encoder_alt) {
-        encoder_init(&encoder_alt, &cameras_logged[LOG_CAMERA_ID_QCAMERA], buf_info.width, buf_info.height);
+      encoder.reset(new EncoderState(cameras_logged[cam_idx], buf_info.width, buf_info.height));
+      if (cameras_logged[cam_idx].has_qcamera) {
+        encoder_alt.reset(new EncoderState(cameras_logged[LOG_CAMERA_ID_QCAMERA], buf_info.width, buf_info.height));
       }
-
-      encoder_inited = true;
     }
 
     // dont log a raw clip in the first minute
@@ -320,9 +315,9 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
 
-          encoder_rotate(&encoder, s.segment_path);
-          if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.segment_path);
+          encoder->Rotate(s.segment_path);
+          if (encoder_alt) {
+            encoder_alt->Rotate(s.segment_path);
           }
           s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
@@ -341,9 +336,9 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
       uint8_t *v = u + (buf_info.width/2)*(buf_info.height/2);
       {
         // encode hevc
-        int out_id = encoder_encode_frame(&encoder, y, u, v, &extra);
-        if (has_encoder_alt) {
-          encoder_encode_frame(&encoder_alt, y, u, v, &extra);
+        int out_id = encoder->EncodeFrame(y, u, v, &extra);
+        if (encoder_alt) {
+          encoder_alt->EncodeFrame(y, u, v, &extra);
         }
 
         // publish encode index
@@ -422,18 +417,6 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
   }
 
   delete idx_sock;
-
-  if (encoder_inited) {
-    LOG("encoder destroy");
-    encoder_close(&encoder);
-    encoder_destroy(&encoder);
-  }
-
-  if (has_encoder_alt) {
-    LOG("encoder alt destroy");
-    encoder_close(&encoder_alt);
-    encoder_destroy(&encoder_alt);
-  }
 }
 #endif
 

@@ -30,7 +30,7 @@ ENCODER_LIBS = -lOmxVenc \
        -lswscale \
        -lavutil \
        -lzmq \
-       -lyuv
+       -lyuv 
 
 %.o: %.cc
 	@echo "[ CXX ] $@"
@@ -38,11 +38,13 @@ ENCODER_LIBS = -lOmxVenc \
          -I../ \
          -I../../ \
          -I../../../ \
+         -I../../camerad \
+         -I../../../cereal/messaging \
          -I$(PHONELIBS)/openmax/include \
+         -I$(PHONELIBS)/opencl/include \
          -I$(PHONELIBS)/libyuv/include \
          -I$(PHONELIBS)/json11 \
          -c -o '$@' '$<'
 
-
 test_encoder: $(OBJS)
-	$(CXX) -fPIC -o '$@' $^ -L$(PHONELIBS)/libyuv/lib -L $(ENCODER_LIBS) 
+	$(CXX) -fPIC -o '$@' $^ -L$(PHONELIBS)/libyuv/lib -L $(ENCODER_LIBS)
