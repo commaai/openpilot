@@ -167,6 +167,12 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
     if (result < 0) {
       goto cleanup;
     }
+  } else {
+    // Ensure permissions are correct in case we didn't create the symlink
+    result = chmod(path.c_str(), 0777);
+    if (result < 0) {
+      goto cleanup;
+    }
   }
 
   // Write value to temp.
