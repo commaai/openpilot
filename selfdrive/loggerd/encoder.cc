@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "common/mutex.h"
 #include "common/swaglog.h"
 
 #define PORT_INDEX_IN 0
