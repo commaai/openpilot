@@ -74,16 +74,12 @@ EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int heig
   queue_init(&free_in);
   queue_init(&done_out);
 
-  int err;
-  if (camera_info.is_h265) {
-    err = OMX_GetHandle(&handle, (OMX_STRING) "OMX.qcom.video.encoder.hevc", this, &omx_callbacks);
-  } else {
-    err = OMX_GetHandle(&handle, (OMX_STRING) "OMX.qcom.video.encoder.avc", this, &omx_callbacks);
-  }
+  const char *component_name = camera_info.is_h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.avc";
+  int err = OMX_GetHandle(&handle, (OMX_STRING)component_name, this, &omx_callbacks);
   if (err != OMX_ErrorNone) {
     LOGE("error getting codec: %x", err);
+    assert(0);
   }
-  assert(err == OMX_ErrorNone);
 
   // setup input port
 
@@ -103,7 +99,7 @@ EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int heig
 
   OERR(OMX_SetParameter(handle, OMX_IndexParamPortDefinition, (OMX_PTR)&in_port));
   OERR(OMX_GetParameter(handle, OMX_IndexParamPortDefinition, (OMX_PTR)&in_port));
-  num_in_bufs = in_port.nBufferCountActual;
+  in_buf_headers.resize(in_port.nBufferCountActual);
 
   // setup output port
 
@@ -120,7 +116,7 @@ EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int heig
 
   OERR(OMX_SetParameter(handle, OMX_IndexParamPortDefinition, (OMX_PTR)&out_port));
   OERR(OMX_GetParameter(handle, OMX_IndexParamPortDefinition, (OMX_PTR)&out_port));
-  num_out_bufs = out_port.nBufferCountActual;
+  out_buf_headers.resize(out_port.nBufferCountActual);
 
   OMX_VIDEO_PARAM_BITRATETYPE bitrate_type = {0};
   bitrate_type.nSize = sizeof(bitrate_type);
@@ -166,13 +162,11 @@ EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int heig
 
   OERR(OMX_SendCommand(handle, OMX_CommandStateSet, OMX_StateIdle, NULL));
 
-  in_buf_headers = std::make_unique<OMX_BUFFERHEADERTYPE *[]>(num_in_bufs);
-  for (int i = 0; i < num_in_bufs; i++) {
+  for (int i = 0; i < in_buf_headers.size(); i++) {
     OERR(OMX_AllocateBuffer(handle, &in_buf_headers[i], PORT_INDEX_IN, this, in_port.nBufferSize));
   }
 
-  out_buf_headers = std::make_unique<OMX_BUFFERHEADERTYPE *[]>(num_out_bufs);
-  for (int i = 0; i < num_out_bufs; i++) {
+  for (int i = 0; i < out_buf_headers.size(); i++) {
     OERR(OMX_AllocateBuffer(handle, &out_buf_headers[i], PORT_INDEX_OUT, this, out_port.nBufferSize));
   }
 
@@ -181,12 +175,12 @@ EncoderState::EncoderState(const LogCameraInfo &camera_info, int width, int heig
   wait_for_state(OMX_StateExecuting);
 
   // give omx all the output buffers
-  for (int i = 0; i < num_out_bufs; i++) {
+  for (int i = 0; i < out_buf_headers.size(); i++) {
     OERR(OMX_FillThisBuffer(handle, out_buf_headers[i]));
   }
 
   // fill the input free queue
-  for (int i = 0; i < num_in_bufs; i++) {
+  for (int i = 0; i < in_buf_headers.size(); i++) {
     queue_push(&free_in, (void *)in_buf_headers[i]);
   }
 }
@@ -201,10 +195,10 @@ EncoderState::~EncoderState() {
 
   OERR(OMX_SendCommand(handle, OMX_CommandStateSet, OMX_StateLoaded, NULL));
 
-  for (int i = 0; i < num_in_bufs; i++) {
+  for (int i = 0; i < in_buf_headers.size(); i++) {
     OERR(OMX_FreeBuffer(handle, PORT_INDEX_IN, in_buf_headers[i]));
   }
-  for (int i = 0; i < num_out_bufs; i++) {
+  for (int i = 0; i < out_buf_headers.size(); i++) {
     OERR(OMX_FreeBuffer(handle, PORT_INDEX_OUT, out_buf_headers[i]));
   }
   wait_for_state(OMX_StateLoaded);
@@ -214,7 +208,6 @@ EncoderState::~EncoderState() {
 }
 
 void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
-  int err;
   uint8_t *buf_data = out_buf->pBuffer + out_buf->nOffset;
 
   if (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
@@ -226,16 +219,11 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
 
   if (remuxing) {
     if (!wrote_codec_config && codec_config.size() > 0) {
-      if (codec_ctx->extradata_size < codec_config.size()) {
-        if (codec_ctx->extradata) {
-          free(codec_ctx->extradata);
-        }
-        codec_ctx->extradata = (uint8_t *)calloc(codec_config.size() + AV_INPUT_BUFFER_PADDING_SIZE, sizeof(uint8_t));
-      }
+      codec_ctx->extradata = (uint8_t *)calloc(codec_config.size() + AV_INPUT_BUFFER_PADDING_SIZE, sizeof(uint8_t));
       codec_ctx->extradata_size = codec_config.size();
       memcpy(codec_ctx->extradata, codec_config.data(), codec_config.size());
 
-      err = avcodec_parameters_from_context(out_stream->codecpar, codec_ctx);
+      int err = avcodec_parameters_from_context(out_stream->codecpar, codec_ctx);
       assert(err >= 0);
       err = avformat_write_header(ofmt_ctx, NULL);
       assert(err >= 0);
@@ -259,7 +247,7 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
         pkt.flags |= AV_PKT_FLAG_KEY;
       }
 
-      err = av_write_frame(ofmt_ctx, &pkt);
+      int err = av_write_frame(ofmt_ctx, &pkt);
       if (err < 0) {
         LOGW("ts encoder write issue");
       }
@@ -275,7 +263,6 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
 }
 
 int EncoderState::EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, VIPCBufExtra *extra) {
-  int ret = counter;
   OMX_BUFFERHEADERTYPE *in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&free_in);
   uint8_t *in_buf_ptr = in_buf->pBuffer;
 
@@ -308,14 +295,11 @@ int EncoderState::EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const 
     handle_out_buf(out_buf);
   }
 
-  counter++;
-  return ret;
+  return ++counter;
 }
 
 void EncoderState::Open(const char *path) {
-  int err;
   char vid_path[4096];
-
   snprintf(vid_path, sizeof(vid_path), "%s/%s", path, camera_info.filename);
   LOGD("encoder_open %s remuxing:%d", vid_path, remuxing);
 
@@ -332,8 +316,7 @@ void EncoderState::Open(const char *path) {
     // set codec correctly
     av_register_all();
 
-    AVCodec *codec = NULL;
-    codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_H264);
     assert(codec);
 
     codec_ctx = avcodec_alloc_context3(codec);
@@ -343,7 +326,7 @@ void EncoderState::Open(const char *path) {
     codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
     codec_ctx->time_base = (AVRational){1, camera_info.fps};
 
-    err = avio_open(&ofmt_ctx->pb, vid_path, AVIO_FLAG_WRITE);
+    int err = avio_open(&ofmt_ctx->pb, vid_path, AVIO_FLAG_WRITE);
     assert(err >= 0);
 
     wrote_codec_config = false;
@@ -367,13 +350,10 @@ void EncoderState::Open(const char *path) {
 
   is_open = true;
   counter = 0;
-
 }
 
 void EncoderState::Close() {
-  if (counter > 0) {
-    // drain output only if there could be frames in the encoder
-
+  if (counter > 0) { // drain output only if there could be frames in the encoder
     OMX_BUFFERHEADERTYPE *in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&free_in);
     in_buf->nFilledLen = 0;
     in_buf->nOffset = 0;
@@ -401,6 +381,7 @@ void EncoderState::Close() {
     close(fd);
     fd = -1;
   }
+  
   unlink(lock_path);
   is_open = false;
 }

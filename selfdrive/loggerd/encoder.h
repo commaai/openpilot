@@ -11,7 +11,6 @@ extern "C" {
 
 #include "camerad/cameras/camera_common.h"
 #include "common/cqueue.h"
-#include "common/visionipc.h"
 
 class EncoderState {
 public:
@@ -22,7 +21,7 @@ public:
 
   std::mutex state_lock;
   std::condition_variable state_cv;
-  OMX_STATETYPE state;
+  OMX_STATETYPE state = OMX_StateLoaded;
   Queue free_in, done_out;
 
 private:
@@ -35,7 +34,7 @@ private:
   int width, height;
   char lock_path[4096];
 
-  bool is_open = false, dirty = false, remuxing = false;
+  bool is_open = false, remuxing = false;
   int counter = 0;
 
   int fd = -1;
@@ -45,8 +44,7 @@ private:
   bool wrote_codec_config = false;
 
   OMX_HANDLETYPE handle;
-  int num_in_bufs, num_out_bufs;
-  std::unique_ptr<OMX_BUFFERHEADERTYPE *[]> in_buf_headers, out_buf_headers;
+  std::vector<OMX_BUFFERHEADERTYPE *> in_buf_headers, out_buf_headers;
 
   AVFormatContext *ofmt_ctx;
   AVCodecContext *codec_ctx;
