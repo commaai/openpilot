@@ -71,7 +71,7 @@ VisionBuf visionbuf_allocate(size_t len) {
   };
 }
 
-VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx, cl_mem *out_mem) {
+VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx) {
   VisionBuf buf = visionbuf_allocate(len);
   buf.buf_cl = create_cl_mem_from_visionbuf(ctx, buf.fd, buf.addr, buf.len);
   return buf;
