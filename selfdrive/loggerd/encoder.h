@@ -6,6 +6,7 @@ extern "C" {
 }
 #include <stdint.h>
 #include <stdio.h>
+
 #include <mutex>
 
 #include "camerad/cameras/camera_common.h"
@@ -15,9 +16,9 @@ extern "C" {
 class EncoderState {
 public:
   EncoderState(const LogCameraInfo &camera_info, int width, int height);
-  ~EncoderState();
   int EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, VIPCBufExtra *extra);
   void Rotate(const char *new_path);
+  ~EncoderState();
 
   std::mutex state_lock;
   std::condition_variable state_cv;
@@ -27,10 +28,10 @@ public:
 private:
   void Open(const char *path);
   void Close();
-  void Destroy();
+  void handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf);
+  void wait_for_state(OMX_STATETYPE state);
 
   LogCameraInfo camera_info;
-
   int width, height;
   char lock_path[4096];
 
@@ -45,14 +46,10 @@ private:
   bool wrote_codec_config;
 
   OMX_HANDLETYPE handle;
-
   int num_in_bufs, num_out_bufs;
-  OMX_BUFFERHEADERTYPE **in_buf_headers, **out_buf_headers;
+  std::unique_ptr<OMX_BUFFERHEADERTYPE *[]> in_buf_headers, out_buf_headers;
 
   AVFormatContext *ofmt_ctx;
   AVCodecContext *codec_ctx;
   AVStream *out_stream;
-
-  void handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf);
-  void wait_for_state(OMX_STATETYPE state);
 };
