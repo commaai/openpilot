@@ -7,10 +7,10 @@
 #define ERR_NO_VALUE -33
 
 class Params {
- private:
+private:
   std::string params_path;
 
- public:
+public:
   Params(bool persistent_param = false);
   Params(std::string path);
 
