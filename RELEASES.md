@@ -1,5 +1,6 @@
-Version 0.7.9 + VW 1.5 (2020-10-14)
+Version 0.7.9 + VW 1.6 (2020-10-18)
 ========================
+ * (VW Community) Use raw steering angle signal (experimental)
  * (VW Community) Lane Change Assist radar input for auto lane-change blocking
  * (VW Community) FCW/AEB detection support (still in testing)
  * (VW Community) Several additional MQB vehicles added to fingerprint
