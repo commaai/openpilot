@@ -35,15 +35,14 @@ private:
   int width, height;
   char lock_path[4096];
 
-  bool is_open, dirty, remuxing;
-  int counter;
+  bool is_open = false, dirty = false, remuxing = false;
+  int counter = 0;
 
-  int fd;
-  size_t total_written;
+  int fd = -1;
+  size_t total_written = 0;
 
-  size_t codec_config_len;
-  uint8_t *codec_config;
-  bool wrote_codec_config;
+  std::vector<uint8_t> codec_config;
+  bool wrote_codec_config = false;
 
   OMX_HANDLETYPE handle;
   int num_in_bufs, num_out_bufs;

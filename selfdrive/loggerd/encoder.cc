@@ -219,31 +219,22 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
   uint8_t *buf_data = out_buf->pBuffer + out_buf->nOffset;
 
   if (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
-    if (codec_config_len < out_buf->nFilledLen) {
-      uint8_t *tmp = (uint8_t *)realloc(codec_config, out_buf->nFilledLen);
-      if (tmp != nullptr) {
-        codec_config = tmp;
-      } else {
-        assert(0);
-      }
+    if (codec_config.size() < out_buf->nFilledLen) {
+      codec_config.resize(out_buf->nFilledLen);
     }
-    codec_config_len = out_buf->nFilledLen;
-    memcpy(codec_config, buf_data, out_buf->nFilledLen);
+    memcpy(codec_config.data(), buf_data, out_buf->nFilledLen);
   }
 
   if (remuxing) {
-    if (!wrote_codec_config && codec_config_len > 0) {
-      if (codec_ctx->extradata_size < codec_config_len) {
-        uint8_t *tmp = (uint8_t *)realloc(codec_ctx->extradata, codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
-        if (tmp != nullptr) {
-          codec_ctx->extradata = tmp;
-        } else {
-          assert(0);
+    if (!wrote_codec_config && codec_config.size() > 0) {
+      if (codec_ctx->extradata_size < codec_config.size()) {
+        if (codec_ctx->extradata) {
+          free(codec_ctx->extradata);
         }
+        codec_ctx->extradata = (uint8_t *)calloc(codec_config.size() + AV_INPUT_BUFFER_PADDING_SIZE, sizeof(uint8_t));
       }
-      codec_ctx->extradata_size = codec_config_len;
-      memcpy(codec_ctx->extradata, codec_config, codec_config_len);
-      memset(codec_ctx->extradata + codec_ctx->extradata_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+      codec_ctx->extradata_size = codec_config.size();
+      memcpy(codec_ctx->extradata, codec_config.data(), codec_config.size());
 
       err = avcodec_parameters_from_context(out_stream->codecpar, codec_ctx);
       assert(err >= 0);
@@ -365,9 +356,9 @@ void EncoderState::Open(const char *path) {
     fallocate(fd, 0, 0, 50 * 1024 * 1024);
     lseek(fd, 0, SEEK_SET);
     total_written = 0;
-    if (codec_config_len > 0) {
-      write(fd, codec_config, codec_config_len);
-      total_written += codec_config_len;
+    if (codec_config.size() > 0) {
+      write(fd, codec_config.data(), codec_config.size());
+      total_written += codec_config.size();
     }
   }
 
