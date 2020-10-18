@@ -82,8 +82,7 @@ class CarState(CarStateBase):
     # active if the partial braking or target braking release bits are set.
     # Ref: VW SSP 890253 "Volkswagen Driver Assistance Systems V2", "Front
     # Assist with Braking: Golf Family" (applies to all MQB)
-    ret.stockFcw = any([bool(acc_cp.vl["ACC_10"]["AWV2_Priowarnung"]),
-                        bool(acc_cp.vl["ACC_10"]["AWV2_Freigabe"])])
+    ret.stockFcw = bool(acc_cp.vl["ACC_10"]["AWV2_Freigabe"])
     ret.stockAeb = any([bool(acc_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]),
                         bool(acc_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])])
 
