@@ -91,8 +91,7 @@ def main(sm=None, pm=None):
   if (params is not None) and not all((
       abs(params['angleOffsetAverage']) < 10.0,
       0.2 <= params['stiffnessFactor'] <= 5.0,
-      min_sr <= params['steerRatio'] <= max_sr,
-    )):
+      min_sr <= params['steerRatio'] <= max_sr)):
     cloudlog.info(f"Invalid starting values found {params}")
     params = None
 
