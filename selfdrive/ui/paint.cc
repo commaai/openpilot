@@ -346,7 +346,7 @@ static void ui_draw_world(UIState *s) {
   nvgScissor(s->vg, s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
 
   // Apply transformation such that video pixel coordinates match video
-  // 1) Put (0, 0)the middle of the video
+  // 1) Put (0, 0) in the middle of the video
   nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2);
 
   // 2) Apply same scaling as video
