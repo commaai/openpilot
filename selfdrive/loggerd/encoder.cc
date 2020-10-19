@@ -206,6 +206,7 @@ void EncoderState::handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf) {
 
   if (remuxing) {
     if (!wrote_codec_config && codec_config.size() > 0) {
+      // extradata will be freed by avcodec_free_context()
       codec_ctx->extradata = (uint8_t *)calloc(codec_config.size() + AV_INPUT_BUFFER_PADDING_SIZE, sizeof(uint8_t));
       codec_ctx->extradata_size = codec_config.size();
       memcpy(codec_ctx->extradata, codec_config.data(), codec_config.size());
@@ -258,8 +259,12 @@ int EncoderState::EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const 
   int in_uv_stride = VENUS_UV_STRIDE(COLOR_FMT_NV12, width);
   uint8_t *in_uv_ptr = in_buf_ptr + (in_y_stride * VENUS_Y_SCANLINES(COLOR_FMT_NV12, height));
 
-  int err = libyuv::I420ToNV12(y_ptr, width, u_ptr, width / 2, v_ptr, width / 2,
-                           in_y_ptr, in_y_stride, in_uv_ptr, in_uv_stride, width, height);
+  int err = libyuv::I420ToNV12(y_ptr, width,
+                               u_ptr, width / 2,
+                               v_ptr, width / 2,
+                               in_y_ptr, in_y_stride,
+                               in_uv_ptr, in_uv_stride,
+                               width, height);
   assert(err == 0);
 
   in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, width, height);
@@ -335,6 +340,13 @@ void EncoderState::Open(const char *path) {
   counter = 0;
 }
 
+void EncoderState::Rotate(const char *new_path) {
+  if (is_open) {
+    Close();
+  }
+  Open(new_path);
+}
+
 void EncoderState::Close() {
   if (counter > 0) { // drain output only if there could be frames in the encoder
     OMX_BUFFERHEADERTYPE *in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&free_in);
@@ -367,11 +379,4 @@ void EncoderState::Close() {
   
   unlink(lock_path);
   is_open = false;
-}
-
-void EncoderState::Rotate(const char *new_path) {
-  if (is_open) {
-    Close();
-  }
-  Open(new_path);
 }
