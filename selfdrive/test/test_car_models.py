@@ -92,6 +92,11 @@ routes = {
     'carFingerprint': GM.BUICK_REGAL,
     'enableCamera': True,
   },
+  "0e7a2ba168465df5|2020-10-18--14-14-22": {
+    'carFingerprint': HONDA.ACURA_RDX_3G,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
+  },
   "a74b011b32b51b56|2020-07-26--17-09-36": {
     'carFingerprint': HONDA.CIVIC,
     'enableCamera': True,
