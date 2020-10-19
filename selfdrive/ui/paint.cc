@@ -16,7 +16,7 @@ extern "C"{
 #include "paint.hpp"
 #include "sidebar.hpp"
 
-const float zoom = 2;
+const float zoom = 2.35;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
