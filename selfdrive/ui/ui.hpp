@@ -178,7 +178,7 @@ typedef struct UIState {
 
   // device state
   bool awake;
-  float light_sensor;
+  float light_sensor, accel_sensor, gyro_sensor;
 
   bool started;
   bool ignition;
