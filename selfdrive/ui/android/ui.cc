@@ -29,47 +29,36 @@ static void ui_set_brightness(UIState *s, int brightness) {
   }
 }
 
-int event_processing_enabled = -1;
-static void enable_event_processing(bool yes) {
-  if (event_processing_enabled != 1 && yes) {
-    system("service call window 18 i32 1");  // enable event processing
-    event_processing_enabled = 1;
-  } else if (event_processing_enabled != 0 && !yes) {
-    system("service call window 18 i32 0");  // disable event processing
-    event_processing_enabled = 0;
-  }
-}
-
-// TODO: implement double tap to wake and actually turn display off
 static void handle_display_state(UIState *s, bool user_input) {
 
-  static int display_mode = HWC_POWER_MODE_OFF;
-  static int display_timeout = 0;
+  static int awake_timeout = 0;
+  awake_timeout = std::max(awake_timeout-1, 0);
+
+  // tap detection while display is off
+  const float accel_samples = 5*UI_FREQ;
+  static float accel_prev, gyro_prev = 0;
+
+  bool accel_trigger = abs(s->accel_sensor - accel_prev) > 0.2;
+  bool gyro_trigger = abs(s->gyro_sensor - gyro_prev) > 0.15;
+  user_input = user_input || (accel_trigger && gyro_trigger);
+  gyro_prev = s->gyro_sensor;
+  accel_prev = (accel_prev*(accel_samples - 1) + s->accel_sensor) / accel_samples;
 
   // determine desired state
-  int desired_mode = display_mode;
+  bool should_wake = s->awake;
   if (user_input || s->ignition || s->started) {
-    desired_mode = HWC_POWER_MODE_NORMAL;
-    display_timeout = 30*UI_FREQ;
-  } else {
-    display_timeout = std::max(display_timeout-1, 0);
-    if (display_timeout == 0) {
-      desired_mode = HWC_POWER_MODE_DOZE;
-    }
+    should_wake = true;
+    awake_timeout = 30*UI_FREQ;
+  } else if (awake_timeout == 0){
+    should_wake = false;
   }
 
   // handle state transition
-  if (display_mode != desired_mode) {
-    LOGW("setting display mode %d", desired_mode);
-
-    display_mode = desired_mode;
-    s->awake = display_mode == HWC_POWER_MODE_NORMAL;
+  if (s->awake != should_wake) {
+    s->awake = should_wake;
+    int display_mode = s->awake ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF;
+    LOGW("setting display mode %d", display_mode);
     framebuffer_set_power(s->fb, display_mode);
-    enable_event_processing(s->awake);
-
-    if (!s->awake) {
-      ui_set_brightness(s, 0);
-    }
   }
 }
 
@@ -129,13 +118,11 @@ int main(int argc, char* argv[]) {
   ui_init(s);
   s->sound = &sound;
 
-  handle_display_state(s, true);
-  enable_event_processing(true);
-
-  PubMaster *pm = new PubMaster({"offroadLayout"});
-
   TouchState touch = {0};
   touch_init(&touch);
+  handle_display_state(s, true);
+
+  PubMaster *pm = new PubMaster({"offroadLayout"});
 
   // light sensor scaling and volume params
   const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
@@ -156,9 +143,8 @@ int main(int argc, char* argv[]) {
   s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
-    if (!s->started || !s->vision_connected) {
-      // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
-      usleep(30 * 1000);
+    if (!s->started) {
+      usleep(50 * 1000);
     }
     double u1 = millis_since_boot();
 

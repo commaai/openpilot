@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <assert.h>
+#include <math.h>
 #include <poll.h>
 #include <sys/mman.h>
 
@@ -221,6 +222,10 @@ void update_sockets(UIState *s) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
         s->light_sensor = sensor.getLight();
+      } else if (!s->started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
+        s->accel_sensor = sensor.getAcceleration().getV()[2];
+      } else if (!s->started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        s->gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
       }
     }
   }
