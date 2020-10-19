@@ -30,6 +30,7 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
   if (event == OMX_EventCmdComplete) {
     assert(data1 == OMX_CommandStateSet);
     LOG("set state event 0x%x", data2);
+    
     std::unique_lock<std::mutex> lk(s->state_lock);
     s->state = (OMX_STATETYPE)data2;
     s->state_cv.notify_all();
@@ -285,6 +286,12 @@ void EncoderState::Open(const char *path) {
   snprintf(vid_path, sizeof(vid_path), "%s/%s", path, camera_info.filename);
   LOGD("encoder_open %s remuxing:%d", vid_path, remuxing);
 
+  // create camera lock file
+  snprintf(lock_path, sizeof(lock_path), "%s.lock", vid_path);
+  int lock_fd = open(lock_path, O_RDWR | O_CREAT, 0777);
+  assert(lock_fd >= 0);
+  close(lock_fd);
+
   if (remuxing) {
     avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, vid_path);
     assert(ofmt_ctx);
@@ -323,12 +330,6 @@ void EncoderState::Open(const char *path) {
       total_written += codec_config.size();
     }
   }
-
-  // create camera lock file
-  snprintf(lock_path, sizeof(lock_path), "%s/%s.lock", path, camera_info.filename);
-  int lock_fd = open(lock_path, O_RDWR | O_CREAT, 0777);
-  assert(lock_fd >= 0);
-  close(lock_fd);
 
   is_open = true;
   counter = 0;
