@@ -16,17 +16,18 @@ extern "C"{
 #include "paint.hpp"
 #include "sidebar.hpp"
 
-const float zoom = 2.35;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
 #ifdef QCOM2
+const float zoom = 1.5;
 const mat3 intrinsic_matrix = (mat3){{
   2648.0, 0.0, 1928.0/2,
   0.0, 2648.0, 1208.0/2,
   0.0,   0.0,   1.0
 }};
 #else
+const float zoom = 2.35;
 const mat3 intrinsic_matrix = (mat3){{
   910., 0., 1164.0/2,
   0., 910., 874.0/2,
