@@ -6,7 +6,7 @@ if [[ $(command -v brew) == "" ]]; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 else
     echo "Updating Homebrew"
-    brew update
+    brew update || true
 fi
 
 brew install capnp \

@@ -30,6 +30,9 @@ common/file_helpers.py
 common/logging_extra.py
 common/numpy_fast.py
 common/params.py
+common/params_pxd.pxd
+common/params_pyx.pyx
+common/params_pyx_setup.py
 common/xattr.py
 common/profiler.py
 common/basedir.py
@@ -357,11 +360,11 @@ selfdrive/ui/android/*.hpp
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
-selfdrive/camerad/bufs.h
 
 selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
+selfdrive/camerad/cameras/camera_common.cc
 selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
@@ -443,7 +446,6 @@ phonelibs/android_system_core/**
 installer/updater/updater
 installer/updater/updater.cc
 installer/updater/update.json
-installer/updater/update_kernel.json
 installer/updater/Makefile
 
 scripts/update_now.sh

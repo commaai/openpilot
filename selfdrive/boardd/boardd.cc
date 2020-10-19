@@ -71,7 +71,7 @@ void safety_setter_thread() {
       return;
     };
 
-    std::vector<char> value_vin = read_db_bytes("CarVin");
+    std::vector<char> value_vin = Params().read_db_bytes("CarVin");
     if (value_vin.size() > 0) {
       // sanity check VIN format
       assert(value_vin.size() == 17);
@@ -93,7 +93,7 @@ void safety_setter_thread() {
       return;
     };
 
-    params = read_db_bytes("CarParams");
+    params = Params().read_db_bytes("CarParams");
     if (params.size() > 0) break;
     usleep(100*1000);
   }
@@ -124,13 +124,15 @@ bool usb_connect() {
     return false;
   }
 
+  Params params = Params();
+
   if (getenv("BOARDD_LOOPBACK")) {
     panda->set_loopback(true);
   }
 
   const char *fw_sig_buf = panda->get_firmware_version();
   if (fw_sig_buf){
-    write_db_value("PandaFirmware", fw_sig_buf, 128);
+    params.write_db_value("PandaFirmware", fw_sig_buf, 128);
 
     // Convert to hex for offroad
     char fw_sig_hex_buf[16] = {0};
@@ -139,7 +141,7 @@ bool usb_connect() {
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
     }
 
-    write_db_value("PandaFirmwareHex", fw_sig_hex_buf, 16);
+    params.write_db_value("PandaFirmwareHex", fw_sig_hex_buf, 16);
     LOGW("fw signature: %.*s", 16, fw_sig_hex_buf);
 
     delete[] fw_sig_buf;
@@ -150,7 +152,7 @@ bool usb_connect() {
   if (serial_buf) {
     size_t serial_sz = strnlen(serial_buf, 16);
 
-    write_db_value("PandaDongleId", serial_buf, serial_sz);
+    params.write_db_value("PandaDongleId", serial_buf, serial_sz);
     LOGW("panda serial: %.*s", serial_sz, serial_buf);
 
     delete[] serial_buf;
@@ -269,6 +271,7 @@ void can_health_thread() {
 
   uint32_t no_ignition_cnt = 0;
   bool ignition_last = false;
+  Params params = Params();
 
   // Broadcast empty health message when panda is not yet connected
   while (!panda){
@@ -318,9 +321,9 @@ void can_health_thread() {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      int result = delete_db_value("CarVin");
+      int result = params.delete_db_value("CarVin");
       assert((result == 0) || (result == ERR_NO_VALUE));
-      result = delete_db_value("CarParams");
+      result = params.delete_db_value("CarParams");
       assert((result == 0) || (result == ERR_NO_VALUE));
 
       if (!safety_setter_thread_running) {

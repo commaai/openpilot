@@ -12,8 +12,8 @@ function two_init {
   # Restrict Android and other system processes to the first two cores
   echo 0-1 > /dev/cpuset/background/cpus
   echo 0-1 > /dev/cpuset/system-background/cpus
-  echo 0-1 > /dev/cpuset/foreground/boost/cpus
   echo 0-1 > /dev/cpuset/foreground/cpus
+  echo 0-1 > /dev/cpuset/foreground/boost/cpus
   echo 0-1 > /dev/cpuset/android/cpus
 
   # openpilot gets all the cores
@@ -43,10 +43,6 @@ function two_init {
     fi
 
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
-  else
-    if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
-      "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
-    fi
   fi
 
   # One-time fix for a subset of OP3T with gyro orientation offsets.

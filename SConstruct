@@ -28,7 +28,7 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and TICI:
   arch = "larch64"
 
-webcam = bool(ARGUMENTS.get("use_webcam", 0))
+USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
 if arch == "aarch64" or arch == "larch64":
@@ -138,6 +138,7 @@ env = Environment(
     "-Werror",
     "-Wno-unknown-warning-option",
     "-Wno-deprecated-register",
+    "-Wno-register",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
@@ -177,7 +178,7 @@ env = Environment(
   RPATH=rpath,
 
   CFLAGS=["-std=gnu11"] + cflags,
-  CXXFLAGS=["-std=c++14"] + cxxflags,
+  CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
     "#selfdrive/common",
@@ -202,6 +203,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     ]
     qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
   else:
+    qt_env['QTDIR'] = "/usr"
     qt_dirs = [
       f"/usr/include/{real_arch}-linux-gnu/qt5",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtWidgets",
@@ -261,7 +263,7 @@ def abspath(x):
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])

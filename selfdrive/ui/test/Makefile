@@ -10,11 +10,11 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=format-extra-args
 
 CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
-CXXFLAGS = -std=c++11 -g -fPIC -O2 $(WARN_FLAGS)
+CXXFLAGS = -std=c++1z -g -fPIC -O2 $(WARN_FLAGS)
 
 ZMQ_FLAGS = -I$(PHONELIBS)/zmq/aarch64/include
 ZMQ_LIBS = -L$(PHONELIBS)/zmq/aarch64/lib \
-           -l:libczmq.a -l:libzmq.a \
+           -l:libzmq.a \
            -lgnustl_shared
 
 NANOVG_FLAGS = -I$(PHONELIBS)/nanovg

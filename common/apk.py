@@ -3,7 +3,6 @@ import subprocess
 import glob
 import hashlib
 import shutil
-import threading
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
@@ -28,15 +27,21 @@ def install_apk(path):
   return ret == 0
 
 def start_offroad():
-  def f():
-    set_package_permissions()
-    system("am start -n ai.comma.plus.offroad/.MainActivity")
-  threading.Thread(target=f).start()
+  set_package_permissions()
+  system("am start -n ai.comma.plus.offroad/.MainActivity")
 
 def set_package_permissions():
-  pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
-  pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
-  pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
+  try:
+    output = subprocess.check_output(['dumpsys', 'package', 'ai.comma.plus.offroad'], encoding="utf-8")
+    given_permissions = output.split("runtime permissions")[1]
+  except Exception:
+    given_permissions = ""
+
+  wanted_permissions = ["ACCESS_FINE_LOCATION", "READ_PHONE_STATE", "READ_EXTERNAL_STORAGE"]
+  for permission in wanted_permissions:
+    if permission not in given_permissions:
+      pm_grant("ai.comma.plus.offroad", "android.permission."+permission)
+
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
 
@@ -93,10 +98,8 @@ def update_apks():
       assert success
 
 def pm_apply_packages(cmd):
-  def f():
-    for p in android_packages:
-      system("pm %s %s" % (cmd, p))
-  threading.Thread(target=f).start()
+  for p in android_packages:
+    system("pm %s %s" % (cmd, p))
 
 if __name__ == "__main__":
   update_apks()

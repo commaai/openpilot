@@ -5,11 +5,11 @@ from nose.tools import nottest
 
 from common.hardware import PC
 from common.apk import update_apks, start_offroad, pm_apply_packages, android_packages
-from common.params import Params
 from selfdrive.version import training_version, terms_version
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
 
 def set_params_enabled():
+  from common.params import Params
   params = Params()
   params.put("HasAcceptedTerms", terms_version)
   params.put("HasCompletedSetup", "1")
