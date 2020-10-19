@@ -446,7 +446,6 @@ phonelibs/android_system_core/**
 installer/updater/updater
 installer/updater/updater.cc
 installer/updater/update.json
-installer/updater/update_kernel.json
 installer/updater/Makefile
 
 scripts/update_now.sh
