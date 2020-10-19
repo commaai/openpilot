@@ -1,6 +1,8 @@
 Version 0.7.10 (2020-10-XX)
 ========================
- * NEOS update
+ * NEOS update required
+ * Reduced offroad power usage
+ * Acura RDX 2020 support thanks to csouers!
 
 Version 0.7.9 (2020-10-09)
 ========================
