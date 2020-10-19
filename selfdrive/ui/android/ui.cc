@@ -54,7 +54,7 @@ static void handle_display_state(UIState *s, bool user_input) {
   } else {
     display_timeout = std::max(display_timeout-1, 0);
     if (display_timeout == 0) {
-      desired_mode = HWC_POWER_MODE_OFF;
+      desired_mode = HWC_POWER_MODE_DOZE;
     }
   }
 
