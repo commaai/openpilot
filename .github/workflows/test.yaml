@@ -1,6 +1,8 @@
 name: openpilot tests
 on:
   push:
+    branches-ignore:
+      - 'testing-closet*'
   pull_request:
 
 env:
