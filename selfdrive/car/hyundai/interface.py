@@ -300,7 +300,7 @@ class CarInterface(CarInterfaceBase):
 
     # LKAS button alert logic: reverse on/off
     if bool(self.CS.lkas_button) != bool(self.CS.prev_lkas_button) and self.CS.lkas_button != 7 != self.CS.prev_lkas_button and \
-                  self.CP.carFingerprint not in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_HEV, CAR.SANTA_FE, CAR.KONA_EV, CAR.NIRO_EV]:
+                  self.CP.carFingerprint not in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_HEV, CAR.SANTA_FE, CAR.KONA_EV, CAR.NIRO_EV, CAR.KONA]:
       self.CC.lkas_button_on = not self.CC.lkas_button_on
       self.lkas_button_alert = not self.CC.lkas_button_on
 
