@@ -1,59 +1,63 @@
-#ifndef LOGGER_H
-#define LOGGER_H
-
-#include <stdio.h>
-#include <stdint.h>
-#include <pthread.h>
+#pragma once
+#include <assert.h>
 #include <bzlib.h>
+#include <zstd.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <memory>
+#include <mutex>
 
-#define LOGGER_MAX_HANDLES 16
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/util.h"
+#include "common/utilpp.h"
+#include "messaging.hpp"
 
-typedef struct LoggerHandle {
-  pthread_mutex_t lock;
-  int refcnt;
-  char segment_path[4096];
-  char log_path[4096];
-  char lock_path[4096];
-  FILE* log_file;
-  BZFILE* bz_file;
+class ZSTDWriter {
+public:
+  ZSTDWriter(int cLevel);
+  bool open(const char* filename);
+  void close();
+  size_t write(void* data, size_t size);
+  ~ZSTDWriter();
 
-  FILE* qlog_file;
-  char qlog_path[4096];
-  BZFILE* bz_qlog;
-} LoggerHandle;
+private : 
+  FILE* file = nullptr;
+  ZSTD_CCtx* cctx = nullptr;
+  std::vector<char> buf_out;
+  ZSTD_outBuffer output;
+};
 
-typedef struct LoggerState {
-  pthread_mutex_t lock;
+class LoggerHandle {
+public:
+  LoggerHandle(bool has_qlog);
+  ~LoggerHandle() { close(); }
+  void write(uint8_t* data, size_t data_size, bool in_qlog = false);
+  void write(MessageBuilder& msg, bool in_qlog = false);
 
-  uint8_t* init_data;
-  size_t init_data_len;
+private:
+  bool open(const std::string& segment_path, const std::string& log_name);
+  void close();
+  std::mutex mutex;
+  std::string lock_path;
+  std::unique_ptr<ZSTDWriter> log, qlog;
+  std::vector<char> output_buf;
+  friend class Logger;
+};
 
-  int part;
-  char route_name[64];
-  char log_name[64];
-  bool has_qlog;
+class Logger {
+public:
+  Logger(const char* root_path, const char* log_name, bool has_qlog);
+  ~Logger(){};
+  std::shared_ptr<LoggerHandle> openNext();
+  inline std::shared_ptr<LoggerHandle> getHandle() const { return cur_handle; }
+  inline int getPart() const { return part; }
+  inline const char* getSegmentPath() const { return segment_path.c_str(); }
 
-  LoggerHandle handles[LOGGER_MAX_HANDLES];
-  LoggerHandle* cur_handle;
-} LoggerState;
-
-void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog);
-int logger_next(LoggerState *s, const char* root_path,
-                            char* out_segment_path, size_t out_segment_path_len,
-                            int* out_part);
-LoggerHandle* logger_get_handle(LoggerState *s);
-void logger_close(LoggerState *s);
-void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
-
-void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);
-void lh_close(LoggerHandle* h);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+private:
+  std::string segment_path, log_name, root_path;
+  char route_name[64] = {};
+  int part = 0;
+  bool has_qlog = false;
+  kj::Array<capnp::word> init_data;
+  std::shared_ptr<LoggerHandle> cur_handle;
+};

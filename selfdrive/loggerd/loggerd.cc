@@ -185,9 +185,7 @@ private:
 
 struct LoggerdState {
   Context *ctx;
-  LoggerState logger;
-  char segment_path[4096];
-  int rotate_segment;
+  Logger *logger;
   pthread_mutex_t rotate_lock;
   int num_encoder;
   std::atomic<int> rotate_seq_id;
@@ -238,7 +236,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
   PubSocket *idx_sock = PubSocket::create(s.ctx, cameras_logged[cam_idx].encode_idx_name);
   assert(idx_sock != NULL);
 
-  LoggerHandle *lh = NULL;
+  std::shared_ptr<LoggerHandle> lh;
 
   while (!do_exit) {
     VisionStreamBufs buf_info;
@@ -311,20 +309,18 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
             rotate_state->initialized = true;
           }
           while (s.rotate_seq_id != my_idx && !do_exit) { usleep(1000); }
-          LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
-          encoder_rotate(&encoder, s.segment_path, s.rotate_segment);
+          const char *segment_path = s.logger->getSegmentPath();
+          int rotate_segment = s.logger->getPart();
+          LOGW("camera %d rotate encoder to %s.", cam_idx, segment_path);
+          encoder_rotate(&encoder, segment_path, rotate_segment);
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
           if (has_encoder_alt) {
-            encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
+            encoder_rotate(&encoder_alt, segment_path, rotate_segment);
           }
           if (raw_clips) {
-            rawlogger->Rotate(s.segment_path, s.rotate_segment);
+            rawlogger->Rotate(segment_path, rotate_segment);
           }
-          encoder_segment = s.rotate_segment;
-          if (lh) {
-            lh_close(lh);
-          }
-          lh = logger_get_handle(&s.logger);
+          encoder_segment = rotate_segment;
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close += 1;
@@ -352,6 +348,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
           s.finish_close = 0;
 
           rotate_state->finish_rotate();
+          lh = s.logger->getHandle();
         }
       }
 
@@ -394,9 +391,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
         if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
-        if (lh) {
-          lh_log(lh, bytes.begin(), bytes.size(), false);
-        }
+        lh->write(bytes.begin(), bytes.size(), false);
       }
 
       if (raw_clips) {
@@ -419,10 +414,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
           eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
 
-          auto bytes = msg.toBytes();
-          if (lh) {
-            lh_log(lh, bytes.begin(), bytes.size(), false);
-          }
+          lh->write(msg);
 
           // close rawlogger if clip ended
           rawlogger_clip_cnt++;
@@ -438,11 +430,6 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
       }
 
       cnt++;
-    }
-
-    if (lh) {
-      lh_close(lh);
-      lh = NULL;
     }
 
     if (raw_clips) {
@@ -569,40 +556,25 @@ static void clear_locks() {
 }
 
 static void bootlog() {
-  int err;
+  Logger logger(LOG_ROOT, "bootlog", false);
+  std::shared_ptr<LoggerHandle> log = logger.openNext();
+  assert(log != nullptr);
+  LOGW("bootlog to %s", logger.getSegmentPath());
+  MessageBuilder msg;
+  auto boot = msg.initEvent().initBoot();
 
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    logger_init(&s.logger, "bootlog", bytes.begin(), bytes.size(), false);
-  }
+  boot.setWallTimeNanos(nanos_since_epoch());
 
-  err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-  assert(err == 0);
-  LOGW("bootlog to %s", s.segment_path);
+  std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
+  boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
 
-  {
-    MessageBuilder msg;
-    auto boot = msg.initEvent().initBoot();
+  std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
+  boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
-    boot.setWallTimeNanos(nanos_since_epoch());
-
-    std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
-    boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
-
-    std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
-    boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
-
-    auto bytes = msg.toBytes();
-    logger_log(&s.logger, bytes.begin(), bytes.size(), false);
-  }
-
-  logger_close(&s.logger);
+  log->write(msg);
 }
 
 int main(int argc, char** argv) {
-  int err;
-
   if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
     bootlog();
     return 0;
@@ -652,11 +624,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
-  }
+  std::shared_ptr<LoggerHandle> log;
+  s.logger = new Logger(LOG_ROOT, "rlog", true);
 
   s.rotate_seq_id = 0;
   s.should_close = 0;
@@ -698,7 +667,9 @@ int main(int argc, char** argv) {
         delete last_msg;
         last_msg = msg;
 
-        logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qlog_counter[sock] == 0);
+        if (log) {
+          log->write((uint8_t*)msg->getData(), msg->getSize(), qlog_counter[sock] == 0);
+        }
 
         if (qlog_counter[sock] != -1) {
           //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
@@ -746,7 +717,7 @@ int main(int argc, char** argv) {
 
     bool new_segment = false;
 
-    if (s.logger.part > -1) {
+    if (s.logger->getPart() > -1) {
       new_segment = true;
       if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE) {
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
@@ -762,7 +733,7 @@ int main(int argc, char** argv) {
         new_segment &= tms - last_rotate_tms > segment_length * 1000;
         if (new_segment) { LOGW("no camera packet seen. auto rotated"); }
       }
-    } else if (s.logger.part == -1) {
+    } else if (s.logger->getPart() == -1) {
       // always starts first segment immediately
       new_segment = true;
     }
@@ -771,10 +742,10 @@ int main(int argc, char** argv) {
       pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
-      err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-      assert(err == 0);
-      if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
-      LOGW("rotated to %s", s.segment_path);
+      log = s.logger->openNext();
+      assert(log != nullptr);
+      if (s.logger->getPart() == 0) { LOGW("logging to %s", s.logger->getSegmentPath()); }
+      LOGW("rotated to %s", s.logger->getSegmentPath());
 
       // rotate the encoders
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
@@ -800,7 +771,7 @@ int main(int argc, char** argv) {
   LOGW("encoder joined");
 #endif
 
-  logger_close(&s.logger);
+  delete s.logger;
 
   for (auto s : socks){
     delete s;
