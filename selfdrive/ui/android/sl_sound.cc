@@ -57,8 +57,8 @@ bool SLSound::init() {
 
 void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event) {
   SLSound::Player *s = reinterpret_cast<SLSound::Player *>(context);
-  if (event == SL_PLAYEVENT_HEADATEND && s->repeat > 1) {
-    --s->repeat;
+  if (event == SL_PLAYEVENT_HEADATEND && (s->repeat > 1 || s->repeat <= -1)) {
+    if (s->repeat > 1) --s->repeat;
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
     (*playItf)->SetMarkerPosition(playItf, 0);
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
