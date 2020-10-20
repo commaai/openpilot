@@ -178,6 +178,7 @@ jobs:
           cat valgrind_logs.txt
       - uses: actions/upload-artifact@v2
         if: always()
+        continue-on-error: true
         with:
           name: valgrind_logs.txt
           path: valgrind_logs.txt
@@ -246,6 +247,7 @@ jobs:
           cat diff.txt
       - uses: actions/upload-artifact@v2
         if: always()
+        continue-on-error: true
         with:
           name: process_replay_diff.txt
           path: diff.txt
@@ -274,6 +276,7 @@ jobs:
           docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
       - uses: actions/upload-artifact@v2
         if: always()
+        continue-on-error: true
         with:
           name: longitudinal
           path: out
