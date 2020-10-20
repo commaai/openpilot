@@ -107,7 +107,7 @@ void GLWindow::timerUpdate(){
   }
 #endif
 
-  std::async(std::launch::async,
+  auto f = std::async(std::launch::async,
              [brightness]{
                std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
                if (brightness_control.is_open()){
