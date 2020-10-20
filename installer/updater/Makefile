@@ -34,6 +34,7 @@ all: updater
 OBJS = opensans_regular.ttf.o \
 			 opensans_semibold.ttf.o \
 			 opensans_bold.ttf.o \
+       ../../selfdrive/common/util.o \
        ../../selfdrive/common/touch.o \
        ../../selfdrive/common/framebuffer.o \
        $(PHONELIBS)/json11/json11.o \
