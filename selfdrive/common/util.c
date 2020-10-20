@@ -52,7 +52,7 @@ int write_file(const char* path, const void* data, size_t size) {
   }
   ssize_t n = write(fd, data, size);
   close(fd);
-  return n == size ? 0 : -1;
+  return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
 
 void set_thread_name(const char* name) {
