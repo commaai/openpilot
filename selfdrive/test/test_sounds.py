@@ -19,8 +19,8 @@ SOUNDS = {
   AudibleAlert.chimePrompt: 85,
   AudibleAlert.chimeWarning1: 80,
   AudibleAlert.chimeWarning2: 107,
-  AudibleAlert.chimeWarningRepeat: 134,
   AudibleAlert.chimeWarning2Repeat: 177,
+  AudibleAlert.chimeWarningRepeat: 240,
 }
 
 def get_total_writes():
