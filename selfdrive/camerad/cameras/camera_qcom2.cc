@@ -37,6 +37,8 @@ extern volatile sig_atomic_t do_exit;
 
 // global var for AE ops
 std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
+// for each camera's individual event handlers
+std::atomic<cam_req_mgr_message> cam_req_evt[3] = {{{0}}};
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_AR0231] = {
@@ -489,7 +491,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   release_fd(s->video0_fd, cam_packet_handle);
 }
 
-void enqueue_buffer(struct CameraState *s, int i) {
+void enqueue_buffer(struct CameraState *s, int i, bool dp) {
   int ret;
   int request_id = s->request_ids[i];
 
@@ -498,10 +500,13 @@ void enqueue_buffer(struct CameraState *s, int i) {
     // wait
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = s->sync_objs[i];
-    sync_wait.timeout_ms = 50;
+    sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
     ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
- 
+
+    s->buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
+    if (dp) tbuffer_dispatch(&s->buf.camera_tb, i);
+
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
     strcpy(sync_destroy.name, "NodeOutputPortFence");
@@ -543,10 +548,10 @@ void enqueue_buffer(struct CameraState *s, int i) {
   config_isp(s, s->buf_handle[i], s->sync_objs[i], request_id, s->buf0_handle, 65632*(i+1));
 }
 
-void enqueue_req_multi(struct CameraState *s, int start, int n) {
+void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
    for (int i=start;i<start+n;++i) {
      s->request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
-     enqueue_buffer(s, (i - 1) % FRAME_BUF_COUNT);
+     enqueue_buffer(s, (i - 1) % FRAME_BUF_COUNT, dp);
    }
 }
 
@@ -577,7 +582,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->skipped = true;
   s->ef_filtered = 1.0;
 
-  s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
+  s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE) * (DEBAYER_LOCAL_WORKSIZE) * sizeof(float);
   s->debayer_cl_globalWorkSize[0] = s->ci.frame_width;
   s->debayer_cl_globalWorkSize[1] = s->ci.frame_height;
   s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
@@ -797,7 +802,7 @@ static void camera_open(CameraState *s) {
   LOGD("start sensor: %d", ret);
   ret = device_control(s->sensor_fd, CAM_START_DEV, s->session_handle, s->sensor_dev_handle);
 
-  enqueue_req_multi(s, 1, FRAME_BUF_COUNT);
+  enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
 void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
@@ -930,7 +935,7 @@ static void cameras_close(MultiCameraState *s) {
 void handle_camera_event(CameraState *s, void *evdat) {
   struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
 
-  uint64_t timestamp = event_data->u.frame_msg.timestamp;
+  // uint64_t timestamp = event_data->u.frame_msg.timestamp;
   int main_id = event_data->u.frame_msg.frame_id;
   int real_id = event_data->u.frame_msg.request_id;
 
@@ -942,7 +947,7 @@ void handle_camera_event(CameraState *s, void *evdat) {
     if (main_id > s->frame_id_last + 1 && !s->skipped) {
       // realign
       clear_req_queue(s->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
-      enqueue_req_multi(s, real_id + 1, FRAME_BUF_COUNT - 1);
+      enqueue_req_multi(s, real_id + 1, FRAME_BUF_COUNT - 1, 0);
       s->skipped = true;
     } else if (main_id == s->frame_id_last + 1) {
       s->skipped = false;
@@ -950,30 +955,53 @@ void handle_camera_event(CameraState *s, void *evdat) {
 
     // check for dropped requests
     if (real_id > s->request_id_last + 1) {
-      enqueue_req_multi(s, s->request_id_last + 1 + FRAME_BUF_COUNT, real_id - (s->request_id_last + 1));
+      enqueue_req_multi(s, s->request_id_last + 1 + FRAME_BUF_COUNT, real_id - (s->request_id_last + 1), 0);
     }
 
     // metas
     s->frame_id_last = main_id;
     s->request_id_last = real_id;
     s->buf.camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
-    s->buf.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
+    // s->buf.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
     s->buf.camera_bufs_metadata[buf_idx].global_gain = s->analog_gain + (100*s->dc_gain_enabled);
     s->buf.camera_bufs_metadata[buf_idx].gain_frac = s->analog_gain_frac;
     s->buf.camera_bufs_metadata[buf_idx].integ_lines = s->exposure_time;
 
     // dispatch
-    enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1);
-    tbuffer_dispatch(&s->buf.camera_tb, buf_idx);
+    enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1, 1);
   } else { // not ready
     // reset after half second of no response
     if (main_id > s->frame_id_last + 10) {
       clear_req_queue(s->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
-      enqueue_req_multi(s, s->request_id_last + 1, FRAME_BUF_COUNT);
+      enqueue_req_multi(s, s->request_id_last + 1, FRAME_BUF_COUNT, 0);
       s->frame_id_last = main_id;
       s->skipped = true;
     }
   }
+}
+
+static void* handler_thread(void* arg) {
+  CameraState *s = (CameraState*)arg;
+  int cidx = s->camera_num;
+
+  cam_req_mgr_message evt;
+  uint64_t tl = 0;
+
+  char thread_name[64];
+  snprintf(thread_name, sizeof(thread_name), "camera_event_handler_%d", cidx);
+  set_thread_name(thread_name);
+
+  while(!do_exit) {
+    evt = cam_req_evt[cidx].load();
+    if (evt.u.frame_msg.timestamp != tl) {
+      handle_camera_event(s, (void*)&evt);
+      tl = evt.u.frame_msg.timestamp;
+    }
+
+    usleep(1000);
+  }
+
+  return NULL;
 }
 
 // ******************* exposure control helpers *******************
@@ -1075,11 +1103,12 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
-  CameraExpInfo tmp = cam_exp[s->camera_num].load();
-  tmp.op_id++;
-  tmp.grey_frac = grey_frac;
-  cam_exp[s->camera_num].store(tmp);
-}
+  //CameraExpInfo tmp = cam_exp[s->camera_num].load();
+  //tmp.op_id++;
+  //tmp.grey_frac = grey_frac;
+  //cam_exp[s->camera_num].store(tmp);
+  set_camera_exposure(s, grey_frac);
+  }
 
 static void* ae_thread(void* arg) {
   MultiCameraState *s = (MultiCameraState*)arg;
@@ -1091,10 +1120,29 @@ static void* ae_thread(void* arg) {
   set_thread_name("camera_settings");
 
   while(!do_exit) {
-    for (int i=0;i<3;i++) {
+    for (int i=0;i<2;i++) {
       cam_op[i] = cam_exp[i].load();
       if (cam_op[i].op_id != op_id_last[i]) {
-        set_camera_exposure(c_handles[i], cam_op[i].grey_frac);
+        int exposure_x;
+        int exposure_y;
+        int exposure_width;
+        int exposure_height;
+        if (i==1) {
+          exposure_x = 96;
+          exposure_y = 160;
+          exposure_width = 1734;
+          exposure_height = 986;
+        } else { // c == &s->wide
+          exposure_x = 96;
+          exposure_y = 250;
+          exposure_width = 1734;
+          exposure_height = 524;
+        }
+        int skip = 4;
+        set_exposure_target(c_handles[i], (const uint8_t *)c_handles[i]->buf.yuv_bufs[c_handles[i]->buf.cur_yuv_idx].y, 0, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+
+
+        //set_camera_exposure(c_handles[i], cam_op[i].grey_frac);
         op_id_last[i] = cam_op[i].op_id;
       }
     }
@@ -1134,37 +1182,30 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
   if (c == &s->rear && cnt % 100 == 3) {
+    // this takes 10ms???
     create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
   }
 
   if (cnt % 3 == 0) {
-    int exposure_x;
-    int exposure_y;
-    int exposure_width;
-    int exposure_height;
-    if (c == &s->rear) {
-      exposure_x = 96;
-      exposure_y = 160;
-      exposure_width = 1734;
-      exposure_height = 986;
-    } else { // c == &s->wide
-      exposure_x = 96;
-      exposure_y = 250;
-      exposure_width = 1734;
-      exposure_height = 524;
-    }
-    int skip = 2;
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, 0, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+    CameraExpInfo tmp = cam_exp[c->camera_num].load();
+    tmp.op_id++;
+    cam_exp[c->camera_num].store(tmp);
   }
 }
 
 void cameras_run(MultiCameraState *s) {
+  CameraState *c_handles[3] = {&s->wide, &s->rear, &s->front};
   int err;
   // start threads
   LOG("-- Starting threads");
+  pthread_t handler_thread_handle[3];
+  for (int i=0;i<3;i++) {
+    err = pthread_create(&handler_thread_handle[i], NULL, handler_thread, c_handles[i]);
+    assert(err == 0);
+  }
+
   pthread_t ae_thread_handle;
-  err = pthread_create(&ae_thread_handle, NULL,
-                       ae_thread, s);
+  err = pthread_create(&ae_thread_handle, NULL, ae_thread, s);
   assert(err == 0);
   std::vector<std::thread> threads;
   threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
@@ -1201,13 +1242,15 @@ void cameras_run(MultiCameraState *s) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
-
       if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->rear, event_data);
+        // handle_camera_event(&s->rear, event_data, (uint64_t)fc);
+        cam_req_evt[s->rear.camera_num].store(*event_data);
       } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->wide, event_data);
+        //handle_camera_event(&s->wide, event_data, (uint64_t)0);
+        cam_req_evt[s->wide.camera_num].store(*event_data);
       } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->front, event_data);
+        //handle_camera_event(&s->front, event_data, (uint64_t)0);
+        cam_req_evt[s->front.camera_num].store(*event_data);
       } else {
         printf("Unknown vidioc event source\n");
         assert(false);
@@ -1216,6 +1259,11 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
+
+  for (int i=0;i<3;i++) {
+    err = pthread_join(handler_thread_handle[i], NULL);
+    assert(err == 0);
+  }
 
   err = pthread_join(ae_thread_handle, NULL);
   assert(err == 0);

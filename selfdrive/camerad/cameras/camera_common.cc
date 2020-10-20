@@ -147,6 +147,7 @@ bool CameraBuf::acquire() {
   cur_rgb_idx = tbuffer_select(&ui_tb);
   cur_rgb_buf = &rgb_bufs[cur_rgb_idx];
 
+  double at1 = millis_since_boot();
   cl_event debayer_event;
   cl_mem camrabuf_cl = camera_bufs[buf_idx].buf_cl;
   if (camera_state->ci.bayer) {
@@ -178,6 +179,8 @@ bool CameraBuf::acquire() {
   clWaitForEvents(1, &debayer_event);
   clReleaseEvent(debayer_event);
 
+  double at2 = millis_since_boot();
+  printf("DBT %f\n", at2-at1);
   tbuffer_release(&camera_tb, buf_idx);
   visionbuf_sync(cur_rgb_buf, VISIONBUF_SYNC_FROM_DEVICE);
 
@@ -190,11 +193,12 @@ bool CameraBuf::acquire() {
   pool_acquire(&yuv_pool, cur_yuv_idx);
   pool_push(&yuv_pool, cur_yuv_idx);
 
+  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
+
   return true;
 }
 
 void CameraBuf::release() {
-  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
   pool_release(&yuv_pool, cur_yuv_idx);
 }
 
@@ -350,6 +354,11 @@ std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
 
 void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrontFrame();
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  pm->send("frontFrame", msg);
 
   static int meteringbox_xmin = 0, meteringbox_xmax = 0;
   static int meteringbox_ymin = 0, meteringbox_ymax = 0;
@@ -405,9 +414,4 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     set_exposure_target(c, (const uint8_t *)b->cur_rgb_buf->addr, 1, x_start, x_end, 2, y_start, y_end, skip);
   }
 
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initFrontFrame();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, b->cur_frame_data, cnt);
-  pm->send("frontFrame", msg);
-}
+  }
