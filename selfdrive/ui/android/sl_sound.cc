@@ -15,7 +15,6 @@
 struct SLSound::Player {
   SLObjectItf player;
   SLPlayItf playItf;
-  // slplay_callback runs on a background thread,use atomic to ensure thread safe.
   std::atomic<int> repeat;
 };
 
@@ -69,10 +68,11 @@ bool SLSound::play(AudibleAlert alert) {
   if (currentSound_ != AudibleAlert::NONE) {
     stop();
   }
+
   auto player = player_.at(alert);
   SLPlayItf playItf = player->playItf;
   player->repeat = sound_map[alert].second;
-  if (player->repeat > 0) {
+  if (player->repeat != 0) {
     ReturnOnError((*playItf)->RegisterCallback(playItf, slplay_callback, player), "Failed to register callback");
     ReturnOnError((*playItf)->SetCallbackEventsMask(playItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
   }
