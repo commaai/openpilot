@@ -7,7 +7,6 @@ from params_pxd cimport Params as c_Params
 import os
 import threading
 from common.basedir import BASEDIR
-os.environ['BASEDIR'] = BASEDIR
 
 cdef enum TxType:
   PERSISTENT = 1
