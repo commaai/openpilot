@@ -16,18 +16,21 @@ extern "C"{
 #include "paint.hpp"
 #include "sidebar.hpp"
 
+
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
 #ifdef QCOM2
+const float zoom = 1.5;
 const mat3 intrinsic_matrix = (mat3){{
   2648.0, 0.0, 1928.0/2,
   0.0, 2648.0, 1208.0/2,
   0.0,   0.0,   1.0
 }};
 #else
+const float zoom = 2.35;
 const mat3 intrinsic_matrix = (mat3){{
-  910., 0., 582.,
-  0., 910., 437.,
+  910., 0., 1164.0/2,
+  0., 910., 874.0/2,
   0.,   0.,   1.
 }};
 #endif
@@ -339,21 +342,19 @@ static void ui_draw_vision_lanes(UIState *s) {
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
-  const Rect &viz_rect = scene->viz_rect;
-  const int viz_w = s->fb_w - bdr_s * 2;
-  const int inner_height = float(viz_w) * s->fb_h / s->fb_w;
+
   nvgSave(s->vg);
-  nvgScissor(s->vg, viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
+  nvgScissor(s->vg, s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
 
-  nvgTranslate(s->vg, viz_rect.x+scene->ui_viz_ro, viz_rect.y + (viz_rect.h-inner_height)/2.0);
-  nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
+  // Apply transformation such that video pixel coordinates match video
+  // 1) Put (0, 0) in the middle of the video
+  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2);
 
-  float w = 1440.0f; // Why 1440?
-  nvgTranslate(s->vg, (s->fb_w - w) / 2.0f, 0.0);
+  // 2) Apply same scaling as video
+  nvgScale(s->vg, zoom, zoom);
 
-  nvgTranslate(s->vg, -w / 2, -1080.0f / 2);
-  nvgScale(s->vg, 2.0, 2.0);
-  nvgScale(s->vg, w / s->stream.bufs_info.width, 1080.0f / s->stream.bufs_info.height);
+  // 3) Put (0, 0) in top left corner of video
+  nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lanes(s);
@@ -576,7 +577,7 @@ static void ui_draw_vision(UIState *s) {
 
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
-  glViewport(viz_rect.x+scene->ui_viz_ro, viz_rect.y, s->fb_w - bdr_s*2, viz_rect.h);
+  glViewport(s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
   glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
@@ -799,10 +800,13 @@ void ui_nvg_init(UIState *s) {
     glBindVertexArray(0);
   }
 
-  // frame from 4/3 to box size with a 2x zoom
+  s->video_rect = Rect{bdr_s * 3, bdr_s, s->fb_w - 4 * bdr_s, s->fb_h - 2 * bdr_s};
+  float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
+  float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
+
   const mat4 frame_transform = {{
-    (float)(2*(4./3.)/((float)(s->fb_w-(bdr_s*2))/(s->fb_h-(bdr_s*2)))), 0.0, 0.0, 0.0,
-    0.0, 2.0, 0.0, 0.0,
+    zx, 0.0, 0.0, 0.0,
+    0.0, zy, 0.0, 0.0,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0,
   }};
