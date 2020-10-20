@@ -33,7 +33,7 @@ std::string getenv_default(const char* env_var, const char * suffix, const char*
 #if defined(QCOM) || defined(QCOM2)
 const std::string default_params_path = "/data/params";
 #else
-const std::string default_params_path = getenv_default("BASEDIR", "/persist/params", "/data/params");
+const std::string default_params_path = getenv_default("HOME", "/.comma/params", "/data/params");
 #endif
 
 #if defined(QCOM) || defined(QCOM2)
