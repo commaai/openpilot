@@ -226,7 +226,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
     should_recv_callback=None,
-    tolerance=None,
+    tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="radard",
