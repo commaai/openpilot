@@ -131,7 +131,7 @@ void GLWindow::timerUpdate(){
 #endif
 
   ui_update(ui_state);
-  update();
+  repaint();
 }
 
 void GLWindow::resizeGL(int w, int h) {
