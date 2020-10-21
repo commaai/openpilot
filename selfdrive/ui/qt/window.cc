@@ -18,6 +18,9 @@
 #include "common/util.h"
 #include "common/timing.h"
 
+#define BACKLIGHT_DT 0.25
+#define BACKLIGHT_TS 2.00
+
 volatile sig_atomic_t do_exit = 0;
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
@@ -91,12 +94,15 @@ void GLWindow::initializeGL() {
   ui_init(ui_state);
 
   timer->start(0);
+  backlight_timer->start(BACKLIGHT_DT * 100);
 }
 
 void GLWindow::backlightUpdate(){
   // Update brightness
+  float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
+
   float clipped_brightness = std::min(1023.0f, (ui_state->light_sensor*brightness_m) + brightness_b);
-  smooth_brightness = clipped_brightness * 0.01f + smooth_brightness * 0.99f;
+  smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
   int brightness = smooth_brightness;
 
 #ifdef QCOM2
