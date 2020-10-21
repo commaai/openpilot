@@ -16,6 +16,7 @@
 
 #include "paint.hpp"
 #include "common/util.h"
+#include "common/timing.h"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -59,6 +60,9 @@ GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
+  backlight_timer = new QTimer(this);
+  QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
+
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
   if(result != 0) {
@@ -86,36 +90,35 @@ void GLWindow::initializeGL() {
   ui_state->fb_h = vwp_h;
   ui_init(ui_state);
 
-  timer->start(50);
+  timer->start(0);
 }
 
-void GLWindow::timerUpdate(){
+void GLWindow::backlightUpdate(){
   // Update brightness
   float clipped_brightness = std::min(1023.0f, (ui_state->light_sensor*brightness_m) + brightness_b);
   smooth_brightness = clipped_brightness * 0.01f + smooth_brightness * 0.99f;
   int brightness = smooth_brightness;
 
-
 #ifdef QCOM2
-  if (ui_state->started != onroad){
-    onroad = ui_state->started;
-    timer->setInterval(onroad ? 50 : 1000);
-  }
-
   if (!ui_state->started){
     brightness = 0;
   }
 #endif
 
-  auto f = std::async(std::launch::async,
-             [brightness]{
-               std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-               if (brightness_control.is_open()){
-                 brightness_control << brightness << "\n";
-                 brightness_control.close();
-               }
-             });
+  std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
+  if (brightness_control.is_open()){
+    brightness_control << brightness << "\n";
+    brightness_control.close();
+  }
+}
 
+void GLWindow::timerUpdate(){
+#ifdef QCOM2
+  if (ui_state->started != onroad){
+    onroad = ui_state->started;
+    timer->setInterval(onroad ? 0 : 1000);
+  }
+#endif
 
   ui_update(ui_state);
   update();
