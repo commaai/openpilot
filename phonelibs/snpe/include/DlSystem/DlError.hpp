@@ -1,6 +1,6 @@
 //==============================================================================
 //
-//  Copyright (c) 2016-2019 Qualcomm Technologies, Inc.
+//  Copyright (c) 2016-2020 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -79,6 +79,7 @@ enum class ZDL_EXPORT ErrorCode : uint32_t {
    SNPE_DLCONTAINER_BAD_DNN_FORMAT_VERSION               = 312,
    SNPE_DLCONTAINER_UNKNOWN_AXIS_ANNOTATION              = 313,
    SNPE_DLCONTAINER_UNKNOWN_SHUFFLE_TYPE                 = 314,
+   SNPE_DLCONTAINER_TEMP_FILE_FAILURE                    = 315,
 
    // Network errors
    SNPE_NETWORK_EMPTY_NETWORK                            = 400,
@@ -191,7 +192,11 @@ enum class ZDL_EXPORT ErrorCode : uint32_t {
 
    // DlCaching errors
    SNPE_DLCACHING_INVALID_METADATA                       = 1500,
-   SNPE_DLCACHING_INVALID_INITBLOB                       = 1501
+   SNPE_DLCACHING_INVALID_INITBLOB                       = 1501,
+
+   // Infrastructure Errors
+   SNPE_INFRA_CLUSTERMGR_INSTANCE_INVALID                = 1600,
+   SNPE_INFRA_CLUSTERMGR_EXECUTE_SYNC_FAILED             = 1601
 
 };
 

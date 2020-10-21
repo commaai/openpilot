@@ -44,7 +44,7 @@ def compile_code(name, c_code, c_header, directory, cflags="", libraries=None):
   ffibuilder = FFI()
   ffibuilder.set_source(name, c_code, source_extension='.cpp', libraries=libraries)
   ffibuilder.cdef(c_header)
-  os.environ['OPT'] = "-fwrapv -O2 -DNDEBUG -std=c++11"
+  os.environ['OPT'] = "-fwrapv -O2 -DNDEBUG -std=c++1z"
   os.environ['CFLAGS'] = cflags
   ffibuilder.compile(verbose=True, debug=False, tmpdir=directory)
 

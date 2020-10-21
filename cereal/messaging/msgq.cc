@@ -114,6 +114,7 @@ int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
 
   int rc = ftruncate(fd, size + sizeof(msgq_header_t));
   if (rc < 0){
+    close(fd);
     return -1;
   }
   char * mem = (char*)mmap(NULL, size + sizeof(msgq_header_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);

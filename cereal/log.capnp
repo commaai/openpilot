@@ -571,7 +571,7 @@ struct ControlsState @0x97ff69c53601abf1 {
 
   enum AlertStatus {
     normal @0;       # low priority alert for user's convenience
-    userPrompt @1;   # mid piority alert that might require user intervention
+    userPrompt @1;   # mid priority alert that might require user intervention
     critical @2;     # high priority alert that needs immediate user intervention
   }
 
@@ -1983,6 +1983,7 @@ struct Boot {
   wallTimeNanos @0 :UInt64;
   lastKmsg @1 :Data;
   lastPmsg @2 :Data;
+  launchLog @3 :Text;
 }
 
 struct LiveParametersData {

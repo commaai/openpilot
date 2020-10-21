@@ -25,7 +25,6 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     canError @0;
     steerUnavailable @1;
     brakeUnavailable @2;
-    gasUnavailable @3;
     wrongGear @4;
     doorOpen @5;
     seatbeltNotLatched @6;
@@ -98,12 +97,12 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     whitePandaUnsupported @81;
     belowEngageSpeed @84;
     noGps @85;
-    focusRecoverActive @86;
     wrongCruiseMode @87;
-    neosUpdateRequired @88;
     modeldLagging @89;
     deviceFalling @90;
+    fanMalfunction @91;
 
+    gasUnavailableDEPRECATED @3;
     dataNeededDEPRECATED @16;
     modelCommIssueDEPRECATED @27;
     ipasOverrideDEPRECATED @33;
@@ -114,6 +113,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     invalidGiraffeHondaDEPRECATED @49;
     canErrorPersistentDEPRECATED @83;
     startupWhitePandaDEPRECATED @82;
+    focusRecoverActiveDEPRECATED @86;
+    neosUpdateRequiredDEPRECATED @88;
   }
 }
 

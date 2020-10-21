@@ -12,8 +12,8 @@ function two_init {
   # Restrict Android and other system processes to the first two cores
   echo 0-1 > /dev/cpuset/background/cpus
   echo 0-1 > /dev/cpuset/system-background/cpus
-  echo 0-1 > /dev/cpuset/foreground/boost/cpus
   echo 0-1 > /dev/cpuset/foreground/cpus
+  echo 0-1 > /dev/cpuset/foreground/boost/cpus
   echo 0-1 > /dev/cpuset/android/cpus
 
   # openpilot gets all the cores
@@ -27,6 +27,8 @@ function two_init {
   [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
+  # restrict unbound kworkers to first two cores
+  #find /sys/devices/virtual/workqueue -name cpumask  -exec sh -c 'echo 3 > {}' ';'
 
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
@@ -43,10 +45,6 @@ function two_init {
     fi
 
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
-  else
-    if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
-      "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
-    fi
   fi
 
   # One-time fix for a subset of OP3T with gyro orientation offsets.
@@ -116,6 +114,9 @@ function launch {
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
+
+  # write tmux scrollback to a file
+  tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
   cd selfdrive

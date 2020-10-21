@@ -3,6 +3,8 @@
 #include <math.h>
 #include <sys/resource.h>
 
+#include <algorithm>
+
 #include "common/util.h"
 #include "common/utilpp.h"
 #include "common/params.h"
@@ -13,63 +15,9 @@
 #include "paint.hpp"
 #include "android/sl_sound.hpp"
 
-// Includes for light sensor
-#include <cutils/properties.h>
-#include <hardware/sensors.h>
-#include <utils/Timers.h>
-
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
-}
-
-
-static void* light_sensor_thread(void *args) {
-  set_thread_name("light_sensor");
-
-  int err;
-  UIState *s = (UIState*)args;
-  s->light_sensor = 0.0;
-
-  struct sensors_poll_device_t* device;
-  struct sensors_module_t* module;
-
-  hw_get_module(SENSORS_HARDWARE_MODULE_ID, (hw_module_t const**)&module);
-  sensors_open(&module->common, &device);
-
-  // need to do this
-  struct sensor_t const* list;
-  module->get_sensors_list(module, &list);
-
-  int SENSOR_LIGHT = 7;
-
-  err = device->activate(device, SENSOR_LIGHT, 0);
-  if (err != 0) goto fail;
-  err = device->activate(device, SENSOR_LIGHT, 1);
-  if (err != 0) goto fail;
-
-  device->setDelay(device, SENSOR_LIGHT, ms2ns(100));
-
-  while (!do_exit) {
-    static const size_t numEvents = 1;
-    sensors_event_t buffer[numEvents];
-
-    int n = device->poll(device, buffer, numEvents);
-    if (n < 0) {
-      LOG_100("light_sensor_poll failed: %d", n);
-    }
-    if (n > 0) {
-      s->light_sensor = buffer[0].light;
-    }
-  }
-  sensors_close(device);
-  return NULL;
-
-fail:
-  LOGE("LIGHT SENSOR IS MISSING");
-  s->light_sensor = 255;
-
-  return NULL;
 }
 
 static void ui_set_brightness(UIState *s, int brightness) {
@@ -81,36 +29,36 @@ static void ui_set_brightness(UIState *s, int brightness) {
   }
 }
 
-int event_processing_enabled = -1;
-static void enable_event_processing(bool yes) {
-  if (event_processing_enabled != 1 && yes) {
-    system("service call window 18 i32 1");  // enable event processing
-    event_processing_enabled = 1;
-  } else if (event_processing_enabled != 0 && !yes) {
-    system("service call window 18 i32 0");  // disable event processing
-    event_processing_enabled = 0;
-  }
-}
+static void handle_display_state(UIState *s, bool user_input) {
 
-static void set_awake(UIState *s, bool awake) {
-  if (awake) {
-    // 30 second timeout
-    s->awake_timeout = 30*UI_FREQ;
-  }
-  if (s->awake != awake) {
-    s->awake = awake;
+  static int awake_timeout = 0;
+  awake_timeout = std::max(awake_timeout-1, 0);
 
-    // TODO: replace command_awake and command_sleep with direct calls to android
-    if (awake) {
-      LOGW("awake normal");
-      framebuffer_set_power(s->fb, HWC_POWER_MODE_NORMAL);
-      enable_event_processing(true);
-    } else {
-      LOGW("awake off");
-      ui_set_brightness(s, 0);
-      framebuffer_set_power(s->fb, HWC_POWER_MODE_OFF);
-      enable_event_processing(false);
-    }
+  // tap detection while display is off
+  const float accel_samples = 5*UI_FREQ;
+  static float accel_prev, gyro_prev = 0;
+
+  bool accel_trigger = abs(s->accel_sensor - accel_prev) > 0.2;
+  bool gyro_trigger = abs(s->gyro_sensor - gyro_prev) > 0.15;
+  user_input = user_input || (accel_trigger && gyro_trigger);
+  gyro_prev = s->gyro_sensor;
+  accel_prev = (accel_prev*(accel_samples - 1) + s->accel_sensor) / accel_samples;
+
+  // determine desired state
+  bool should_wake = s->awake;
+  if (user_input || s->ignition || s->started) {
+    should_wake = true;
+    awake_timeout = 30*UI_FREQ;
+  } else if (awake_timeout == 0){
+    should_wake = false;
+  }
+
+  // handle state transition
+  if (s->awake != should_wake) {
+    s->awake = should_wake;
+    int display_mode = s->awake ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF;
+    LOGW("setting display mode %d", display_mode);
+    framebuffer_set_power(s->fb, display_mode);
   }
 }
 
@@ -120,7 +68,7 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
     if (!s->scene.frontview) {
       s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
     } else {
-      write_db_value("IsDriverViewEnabled", "0", 1);
+      Params().write_db_value("IsDriverViewEnabled", "0", 1);
     }
   }
 }
@@ -161,9 +109,7 @@ static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
 }
 
 int main(int argc, char* argv[]) {
-  int err;
   setpriority(PRIO_PROCESS, 0, -14);
-
   signal(SIGINT, (sighandler_t)set_do_exit);
   SLSound sound;
 
@@ -172,17 +118,11 @@ int main(int argc, char* argv[]) {
   ui_init(s);
   s->sound = &sound;
 
-  set_awake(s, true);
-  enable_event_processing(true);
-
-  PubMaster *pm = new PubMaster({"offroadLayout"});
-  pthread_t light_sensor_thread_handle;
-  err = pthread_create(&light_sensor_thread_handle, NULL,
-                       light_sensor_thread, s);
-  assert(err == 0);
-
   TouchState touch = {0};
   touch_init(&touch);
+  handle_display_state(s, true);
+
+  PubMaster *pm = new PubMaster({"offroadLayout"});
 
   // light sensor scaling and volume params
   const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
@@ -203,9 +143,8 @@ int main(int argc, char* argv[]) {
   s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
-    if (!s->started || !s->vision_connected) {
-      // Delay a while to avoid 9% cpu usage while car is not started and user is keeping touching on the screen.
-      usleep(30 * 1000);
+    if (!s->started) {
+      usleep(50 * 1000);
     }
     double u1 = millis_since_boot();
 
@@ -215,23 +154,12 @@ int main(int argc, char* argv[]) {
     int touch_x = -1, touch_y = -1;
     int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
     if (touched == 1) {
-      set_awake(s, true);
       handle_sidebar_touch(s, touch_x, touch_y);
       handle_vision_touch(s, touch_x, touch_y);
     }
 
-    // manage wakefulness
-    if (s->started || s->ignition) {
-      set_awake(s, true);
-    }
-
-    if (s->awake_timeout > 0) {
-      s->awake_timeout--;
-    } else {
-      set_awake(s, false);
-    }
-
     // Don't waste resources on drawing in case screen is off
+    handle_display_state(s, touched == 1);
     if (!s->awake) {
       continue;
     }
@@ -255,10 +183,7 @@ int main(int argc, char* argv[]) {
     framebuffer_swap(s->fb);
   }
 
-  set_awake(s, true);
-
-  err = pthread_join(light_sensor_thread_handle, NULL);
-  assert(err == 0);
+  handle_display_state(s, true);
   delete s->sm;
   delete pm;
   return 0;
