@@ -593,6 +593,9 @@ static void bootlog() {
     std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
     boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
+    std::string launchLog = util::read_file("/tmp/launch_log");
+    boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+
     auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size(), false);
   }
