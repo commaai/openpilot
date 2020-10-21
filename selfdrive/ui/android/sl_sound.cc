@@ -57,7 +57,7 @@ bool SLSound::init() {
 void SLAPIENTRY slplay_callback(SLPlayItf playItf, void *context, SLuint32 event) {
   SLSound::Player *s = reinterpret_cast<SLSound::Player *>(context);
   if (event == SL_PLAYEVENT_HEADATEND && s->repeat != 0) {
-    if (s->repeat > 1) --s->repeat;
+    if (s->repeat > 0) --s->repeat;
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_STOPPED);
     (*playItf)->SetMarkerPosition(playItf, 0);
     (*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PLAYING);
@@ -71,7 +71,9 @@ bool SLSound::play(AudibleAlert alert) {
 
   auto player = player_.at(alert);
   SLPlayItf playItf = player->playItf;
-  player->repeat = sound_map[alert].second;
+
+  int loops = sound_map[alert].second;
+  player->repeat = loops > 0 ? loops - 1 : loops;
   if (player->repeat != 0) {
     ReturnOnError((*playItf)->RegisterCallback(playItf, slplay_callback, player), "Failed to register callback");
     ReturnOnError((*playItf)->SetCallbackEventsMask(playItf, SL_PLAYEVENT_HEADATEND), "Failed to set callback event mask");
