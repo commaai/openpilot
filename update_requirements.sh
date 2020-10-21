@@ -28,3 +28,5 @@ fi
 
 echo "pip packages install ..."
 pipenv install --dev --deploy --system
+# update shims for newly installed executables (e.g. scons)
+pyenv rehash
