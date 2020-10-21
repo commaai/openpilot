@@ -53,12 +53,10 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(nanos_since_boot());
+    MessageBuilder msg;
 
     // Build message
-    auto androidEntry = event.initAndroidLog();
+    auto androidEntry = msg.initEvent().initAndroidLog();
     androidEntry.setTs(timestamp);
     androidEntry.setMessage(json11::Json(kv).dump());
     if (kv.count("_PID")) androidEntry.setPid(std::atoi(kv["_PID"].c_str()));

@@ -63,6 +63,7 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
+    ret.canValid = True
 
     # speeds
     ret.vEgo = self.speed
@@ -81,9 +82,6 @@ class CarInterface(CarInterfaceBase):
     self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
     curvature = self.yaw_rate / max(self.speed, 1.)
     ret.steeringAngle = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
-
-    events = []
-    ret.events = events
 
     return ret.as_reader()
 

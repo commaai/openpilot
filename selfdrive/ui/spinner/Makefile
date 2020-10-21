@@ -10,7 +10,7 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=format-extra-args
 
 CFLAGS = -std=gnu11 -fPIC -O2 $(WARN_FLAGS)
-CXXFLAGS = -std=c++11 -fPIC -O2 $(WARN_FLAGS)
+CXXFLAGS = -std=c++1z -fPIC -O2 $(WARN_FLAGS)
 
 NANOVG_FLAGS = -I$(PHONELIBS)/nanovg
 
@@ -20,6 +20,7 @@ FRAMEBUFFER_LIBS = -lutils -lgui -lEGL
 
 OBJS = spinner.o \
        ../../common/framebuffer.o \
+       ../../common/util.o \
        $(PHONELIBS)/nanovg/nanovg.o \
        ../../common/spinner.o \
        opensans_semibold.o \

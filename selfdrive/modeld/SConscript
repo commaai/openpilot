@@ -1,7 +1,7 @@
 Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
 lenv = env.Clone()
 
-libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
+libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'symphony-cpu', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
 
 TEST_THNEED = False
 
@@ -19,9 +19,9 @@ if arch == "aarch64":
     lenv['CFLAGS'].append("-DUSE_THNEED")
     lenv['CXXFLAGS'].append("-DUSE_THNEED")
 elif arch == "larch64":
-  libs += ['gsl', 'CB', 'symphony-cpu', 'pthread']
+  libs += ['gsl', 'CB', 'pthread']
 else:
-  libs += ['symphony-cpu', 'pthread']
+  libs += ['pthread']
 
   # for tensorflow support
   common_src += ['runners/tfmodel.cc']

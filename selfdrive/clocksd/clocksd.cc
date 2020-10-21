@@ -62,10 +62,8 @@ int main() {
     uint64_t modem_uptime_v = arm_cntpct() / 19200ULL; // 19.2 mhz clock
 #endif
 
-    capnp::MallocMessageBuilder msg;
-    cereal::Event::Builder event = msg.initRoot<cereal::Event>();
-    event.setLogMonoTime(boottime);
-    auto clocks = event.initClocks();
+    MessageBuilder msg;
+    auto clocks = msg.initEvent().initClocks();
 
     clocks.setBootTimeNanos(boottime);
     clocks.setMonotonicNanos(monotonic);

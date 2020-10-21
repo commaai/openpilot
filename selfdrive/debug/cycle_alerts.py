@@ -3,12 +3,11 @@
 # pylint: skip-file
 # type: ignore
 
-import argparse
 import time
 
 import cereal.messaging as messaging
 from selfdrive.car.honda.interface import CarInterface
-from selfdrive.controls.lib.events import ET, EVENTS, Alert, Events
+from selfdrive.controls.lib.events import ET, EVENTS, Events
 from selfdrive.controls.lib.alertmanager import AlertManager
 
 
@@ -24,7 +23,6 @@ def cycle_alerts(duration=200, is_metric=False):
   thermal = messaging.pub_sock('thermal')
 
   idx, last_alert_millis = 0, 0
-  alert = alerts[0]
 
   events = Events()
   AM = AlertManager()

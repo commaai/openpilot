@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <assert.h>
-
-#include <czmq.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <pthread.h>
 
@@ -397,15 +397,6 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
     memcpy(s->codec_config, buf_data, out_buf->nFilledLen);
   }
 
-  if (s->stream_sock_raw) {
-    //uint64_t current_time = nanos_since_boot();
-    //uint64_t diff = current_time - out_buf->nTimeStamp*1000LL;
-    //double msdiff = (double) diff / 1000000.0;
-    // printf("encoded latency to tsEof: %f\n", msdiff);
-    zmq_send(s->stream_sock_raw, &out_buf->nTimeStamp, sizeof(out_buf->nTimeStamp), ZMQ_SNDMORE);
-    zmq_send(s->stream_sock_raw, buf_data, out_buf->nFilledLen, 0);
-  }
-
   if (s->of) {
     //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
     fwrite(buf_data, out_buf->nFilledLen, 1, s->of);
@@ -564,6 +555,9 @@ void encoder_open(EncoderState *s, const char* path) {
     avformat_alloc_output_context2(&s->ofmt_ctx, NULL, NULL, s->vid_path);
     assert(s->ofmt_ctx);
 
+#ifdef QCOM2
+    s->ofmt_ctx->oformat->flags = AVFMT_TS_NONSTRICT;
+#endif
     s->out_stream = avformat_new_stream(s->ofmt_ctx, NULL);
     assert(s->out_stream);
 
@@ -637,6 +631,7 @@ void encoder_close(EncoderState *s) {
 
     if (s->remuxing) {
       av_write_trailer(s->ofmt_ctx);
+      avcodec_free_context(&s->codec_ctx);
       avio_closep(&s->ofmt_ctx->pb);
       avformat_free_context(s->ofmt_ctx);
     } else {

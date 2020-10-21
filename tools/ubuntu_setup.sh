@@ -1,5 +1,6 @@
 #!/bin/bash -e
 
+
 sudo apt-get update && sudo apt-get install -y \
     autoconf \
     build-essential \
@@ -86,7 +87,7 @@ pyenv rehash
 # **** in python env ****
 
 # install pipenv
-pip install pipenv==2018.11.26
+pip install pipenv==2020.8.13
 
 # pipenv setup (in openpilot dir)
 pipenv install --dev --system --deploy
