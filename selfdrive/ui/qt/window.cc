@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
-#include <future>
+#include <thread>
 #include <signal.h>
 
 #include <QVBoxLayout>
@@ -22,6 +22,14 @@
 #define BACKLIGHT_TS 2.00
 
 volatile sig_atomic_t do_exit = 0;
+
+static void set_backlight(int brightness){
+  std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
+  if (brightness_control.is_open()){
+    brightness_control << brightness << "\n";
+    brightness_control.close();
+  }
+}
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
@@ -111,11 +119,7 @@ void GLWindow::backlightUpdate(){
   }
 #endif
 
-  std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-  if (brightness_control.is_open()){
-    brightness_control << brightness << "\n";
-    brightness_control.close();
-  }
+  std::thread{set_backlight, brightness}.detach();
 }
 
 void GLWindow::timerUpdate(){
