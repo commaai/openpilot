@@ -290,10 +290,10 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, bool front, int
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
       if (!front) {
-        uint8_t lum = pix_ptr[((y_start + y) * b->yuv_width) + x_start + x];
+        uint8_t lum = pix_ptr[(y * b->yuv_width) + x];
         lum_binning[lum]++;
       } else {
-        const uint8_t *pix = &pix_ptr[y * b->rgb_stride + x * 3];
+        const uint8_t *pix = &pix_ptr[y * b->rgb_width * 3 + x * 3];
         unsigned int lum = (unsigned int)(pix[0] + pix[1] + pix[2]);
         lum_binning[std::min(lum / 3, 255u)]++;
       }
