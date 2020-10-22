@@ -52,7 +52,7 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration',
+      self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', 'frontFrame',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
 
     self.can_sock = can_sock
@@ -236,7 +236,9 @@ class Controls:
     if self.sm['plan'].fcw:
       self.events.add(EventName.fcw)
     if self.sm['model'].frameDropPerc > 1 and (not SIMULATION):
-        self.events.add(EventName.modeldLagging)
+       self.events.add(EventName.modeldLagging)
+    if not self.sm.alive['frontFrame']:
+       self.events.add(EventName.cameraMalfunction)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
@@ -456,7 +458,7 @@ class Controls:
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
     force_decel = (self.sm['dMonitoringState'].awarenessStatus < 0.) or \
-                    (self.state == State.softDisabling)
+                  (self.state == State.softDisabling)
 
     steer_angle_rad = (CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD
 
