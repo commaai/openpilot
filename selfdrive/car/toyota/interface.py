@@ -255,7 +255,7 @@ class CarInterface(CarInterfaceBase):
       
     elif candidate == CAR.PRIUS_TSS2:
       stop_and_go = True
-      ret.safetyParam = 55
+      ret.safetyParam = 73
       ret.wheelbase = 2.70002 #from toyota online sepc.
       ret.steerRatio = 13.4   # True steerRation from older prius
       tire_stiffness_factor = 0.6371   # hand-tune
