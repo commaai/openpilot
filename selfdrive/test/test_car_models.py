@@ -390,6 +390,11 @@ routes = {
     'enableCamera': False,
     'enableDsu': False,
   },
+  "0a0de17a1e6a2d15|2020-09-21--21-24-41": {
+    'carFingerprint': TOYOTA.PRIUS_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,
