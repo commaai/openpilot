@@ -12,6 +12,7 @@ fi
 brew install capnp \
              coreutils \
              eigen \
+             ffmpeg \
              glfw \
              libarchive \
              libusb \
