@@ -9,20 +9,6 @@ else
     brew update || true
 fi
 
-brew install capnp \
-             czmq \
-             coreutils \
-             eigen \
-             ffmpeg \
-             glfw \
-             libarchive \
-             libusb \
-             libtool \
-             llvm \
-             pyenv \
-             qt5 \
-             zeromq
-
 # Detect shell and pick correct RC file.
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
