@@ -20,62 +20,81 @@ env:
       docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
 
 jobs:
-  build_mac:
-    name: build macos
-    runs-on: macos-10.15
-    timeout-minutes: 60
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Cache dependencies
-      id: dependency-cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.pyenv
-          ~/Library/Caches/pip
-          ~/Library/Caches/pipenv
-          ~/Library/Caches/Homebrew
-        key: ${{ hashFiles('tools/mac_setup.sh') }}
-    - name: Install dependencies
-      run: ./tools/mac_setup.sh
-    - name: Build openpilot
-      run: eval "$(pyenv init -)" && scons -j$(nproc)
-    - name: Brew cleanup
-      run: brew cleanup || true # keeps our cache small
-
-  #unit_tests:
-  #  name: unit tests
-  #  runs-on: ubuntu-16.04
-  #  timeout-minutes: 50
+  #build_mac:
+  #  name: build macos
+  #  runs-on: macos-10.15
+  #  timeout-minutes: 60
   #  steps:
-  #    - uses: actions/checkout@v2
-  #      with:
-  #        submodules: true
-  #    - name: Build Docker image
-  #      run: eval "$BUILD"
-  #    - name: Run unit tests
-  #      run: |
-  #        $PERSIST "cd /tmp/openpilot && \
-  #                  scons -j$(nproc) && \
-  #                  coverage run selfdrive/test/test_fingerprints.py && \
-  #                  $UNIT_TEST common && \
-  #                  $UNIT_TEST opendbc/can && \
-  #                  $UNIT_TEST selfdrive/boardd && \
-  #                  $UNIT_TEST selfdrive/controls && \
-  #                  $UNIT_TEST selfdrive/monitoring && \
-  #                  $UNIT_TEST selfdrive/loggerd && \
-  #                  $UNIT_TEST selfdrive/car && \
-  #                  $UNIT_TEST selfdrive/locationd && \
-  #                  $UNIT_TEST selfdrive/athena && \
-  #                  $UNIT_TEST selfdrive/thermald && \
-  #                  $UNIT_TEST tools/lib/tests"
-  #    - name: Upload coverage to Codecov
-  #      run: |
-  #        docker commit tmppilot tmppilotci
-  #        $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F unit_tests"
-#
+  #  - uses: actions/checkout@v2
+  #    with:
+  #      submodules: true
+  #  - name: Cache dependencies
+  #    id: dependency-cache
+  #    uses: actions/cache@v2
+  #    with:
+  #      path: |
+  #        ~/.pyenv
+  #        ~/Library/Caches/pip
+  #        ~/Library/Caches/pipenv
+  #        ~/Library/Caches/Homebrew
+  #      key: ${{ hashFiles('tools/mac_setup.sh') }}
+  #  - name: Install dependencies
+  #    run: ./tools/mac_setup.sh
+  #  - name: Build openpilot
+  #    run: eval "$(pyenv init -)" && scons -j$(nproc)
+  #  - name: Brew cleanup
+  #    run: brew cleanup || true # keeps our cache small
+
+  unit_tests:
+    name: unit tests
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run unit tests
+        run: |
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    coverage run selfdrive/test/test_fingerprints.py && \
+                    $UNIT_TEST common && \
+                    $UNIT_TEST opendbc/can && \
+                    $UNIT_TEST selfdrive/boardd && \
+                    $UNIT_TEST selfdrive/controls && \
+                    $UNIT_TEST selfdrive/monitoring && \
+                    $UNIT_TEST selfdrive/car && \
+                    $UNIT_TEST selfdrive/locationd && \
+                    $UNIT_TEST selfdrive/athena && \
+                    $UNIT_TEST selfdrive/thermald && \
+                    $UNIT_TEST tools/lib/tests"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F unit_tests"
+
+  loggerd_tests:
+    name: loggerd tests
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run unit tests
+        run: |
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    $UNIT_TEST selfdrive/loggerd && \
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F unit_tests"         
+
   #process_replay:
   #  name: process replay
   #  runs-on: ubuntu-16.04
