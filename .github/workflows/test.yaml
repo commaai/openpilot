@@ -108,13 +108,14 @@ jobs:
         with:
           path: |
             /tmp/comma_download_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
+            /tmp/scons_cache
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}+{{date -I}}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run replay
         run: |
           $PERSIST_WITH_CACHE  "cd /tmp/openpilot && \
-          scons -j$(nproc) && \
+          SCONS_CACHE=1 scons -j$(nproc) && \
           FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
       - name: Upload coverage to Codecov
         run: |
