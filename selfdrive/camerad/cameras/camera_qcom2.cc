@@ -935,7 +935,7 @@ static void cameras_close(MultiCameraState *s) {
 void handle_camera_event(CameraState *s, void *evdat) {
   struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
 
-  // uint64_t timestamp = event_data->u.frame_msg.timestamp;
+  uint64_t timestamp = event_data->u.frame_msg.timestamp;
   int main_id = event_data->u.frame_msg.frame_id;
   int real_id = event_data->u.frame_msg.request_id;
 
@@ -962,7 +962,7 @@ void handle_camera_event(CameraState *s, void *evdat) {
     s->frame_id_last = main_id;
     s->request_id_last = real_id;
     s->buf.camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
-    // s->buf.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
+    s->buf.camera_bufs_metadata[buf_idx].timestamp_sof = timestamp;
     s->buf.camera_bufs_metadata[buf_idx].global_gain = s->analog_gain + (100*s->dc_gain_enabled);
     s->buf.camera_bufs_metadata[buf_idx].gain_frac = s->analog_gain_frac;
     s->buf.camera_bufs_metadata[buf_idx].integ_lines = s->exposure_time;
@@ -1176,6 +1176,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
+  framed.setTimestampSof(b->cur_frame_data.timestamp_sof);
   if (c == &s->rear) {
     framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
   }
