@@ -89,7 +89,7 @@ jobs:
         run: |
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    $UNIT_TEST selfdrive/loggerd && \
+                    $UNIT_TEST selfdrive/loggerd"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
