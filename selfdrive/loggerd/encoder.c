@@ -5,10 +5,6 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <assert.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#include <pthread.h>
 
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
@@ -20,10 +16,7 @@
 //#include <android/log.h>
 
 #include <msm_media_info.h>
-
-#include "common/mutex.h"
 #include "common/swaglog.h"
-
 #include "encoder.h"
 
 
@@ -67,7 +60,11 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
 static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                        OMX_BUFFERHEADERTYPE *buffer) {
   EncoderState *s = app_data;
+
+  // printf("empty_buffer_done\n");
+
   queue_push(&s->free_in, (void*)buffer);
+
   return OMX_ErrorNone;
 }
 
@@ -75,7 +72,11 @@ static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_dat
 static OMX_ERRORTYPE fill_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                       OMX_BUFFERHEADERTYPE *buffer) {
   EncoderState *s = app_data;
+
+  // printf("fill_buffer_done\n");
+
   queue_push(&s->done_out, (void*)buffer);
+
   return OMX_ErrorNone;
 }
 
@@ -158,21 +159,20 @@ static const char* omx_color_fomat_name(uint32_t format) {
   }
 }
 
-void encoder_init(EncoderState *s, const LogCameraInfo *info, int width, int height) {
+void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale) {
   int err;
 
   memset(s, 0, sizeof(*s));
-  s->filename = info->filename;
+  s->filename = filename;
   s->width = width;
   s->height = height;
-  s->fps = info->fps;
-  mutex_init_reentrant(&s->lock);
+  s->fps = fps;
 
-  if (!info->is_h265) {
+  if (!h265) {
     s->remuxing = true;
   }
 
-  if (info->downscale) {
+  if (downscale) {
     s->downscale = true;
     s->y_ptr2 = malloc(s->width*s->height);
     s->u_ptr2 = malloc(s->width*s->height/4);
@@ -189,7 +189,7 @@ void encoder_init(EncoderState *s, const LogCameraInfo *info, int width, int hei
   pthread_mutex_init(&s->state_lock, NULL);
   pthread_cond_init(&s->state_cv, NULL);
 
-  if (info->is_h265) {
+  if (h265) {
     err = OMX_GetHandle(&s->handle, (OMX_STRING)"OMX.qcom.video.encoder.hevc",
                         s, &omx_callbacks);
   } else {
@@ -246,8 +246,8 @@ void encoder_init(EncoderState *s, const LogCameraInfo *info, int width, int hei
   out_port.format.video.nFrameWidth = s->width;
   out_port.format.video.nFrameHeight = s->height;
   out_port.format.video.xFramerate = 0;
-  out_port.format.video.nBitrate = info->bitrate;
-  if (info->is_h265) {
+  out_port.format.video.nBitrate = bitrate;
+  if (h265) {
     out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingHEVC;
   } else {
     out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
@@ -271,13 +271,13 @@ void encoder_init(EncoderState *s, const LogCameraInfo *info, int width, int hei
   assert(err == OMX_ErrorNone);
 
   bitrate_type.eControlRate = OMX_Video_ControlRateVariable;
-  bitrate_type.nTargetBitrate = info->bitrate;
+  bitrate_type.nTargetBitrate = bitrate;
 
   err = OMX_SetParameter(s->handle, OMX_IndexParamVideoBitrate,
                          (OMX_PTR) &bitrate_type);
   assert(err == OMX_ErrorNone);
 
-  if (info->is_h265) {
+  if (h265) {
     #ifndef QCOM2
       // setup HEVC
       OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
@@ -439,18 +439,14 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
 int encoder_encode_frame(EncoderState *s, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                          int in_width, int in_height, VIPCBufExtra *extra) {
   int err;
-  pthread_mutex_lock(&s->lock);
 
   if (!s->open) {
-    pthread_mutex_unlock(&s->lock);
     return -1;
   }
 
   // this sometimes freezes... put it outside the encoder lock so we can still trigger rotates...
   // THIS IS A REALLY BAD IDEA, but apparently the race has to happen 30 times to trigger this
-  //pthread_mutex_unlock(&s->lock);
   OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
-  //pthread_mutex_lock(&s->lock);
 
   int ret = s->counter;
 
@@ -507,14 +503,11 @@ int encoder_encode_frame(EncoderState *s, const uint8_t *y_ptr, const uint8_t *u
 
   s->counter++;
 
-  pthread_mutex_unlock(&s->lock);
   return ret;
 }
 
 void encoder_open(EncoderState *s, const char* path) {
   int err;
-
-  pthread_mutex_lock(&s->lock);
 
   snprintf(s->vid_path, sizeof(s->vid_path), "%s/%s", path, s->filename);
   LOGD("encoder_open %s remuxing:%d", s->vid_path, s->remuxing);
@@ -555,22 +548,13 @@ void encoder_open(EncoderState *s, const char* path) {
     }
   }
 
-  // create camera lock file
-  snprintf(s->lock_path, sizeof(s->lock_path), "%s/%s.lock", path, s->filename);
-  int lock_fd = open(s->lock_path, O_RDWR | O_CREAT, 0777);
-  assert(lock_fd >= 0);
-  close(lock_fd);
-
   s->open = true;
   s->counter = 0;
 
-  pthread_mutex_unlock(&s->lock);
 }
 
 void encoder_close(EncoderState *s) {
   int err;
-
-  pthread_mutex_lock(&s->lock);
 
   if (s->open) {
     if (s->dirty) {
@@ -605,11 +589,9 @@ void encoder_close(EncoderState *s) {
     } else {
       fclose(s->of);
     }
-    unlink(s->lock_path);
   }
   s->open = false;
 
-  pthread_mutex_unlock(&s->lock);
 }
 
 void encoder_rotate(EncoderState *s, const char* new_path) {

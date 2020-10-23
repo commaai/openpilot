@@ -4,25 +4,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <pthread.h>
-
 #include <OMX_Component.h>
 #include <libavformat/avformat.h>
 
 #include "common/cqueue.h"
 #include "common/visionipc.h"
-#include "camerad/cameras/camera_common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct EncoderState {
-  pthread_mutex_t lock;
   int width, height, fps;
   const char* path;
   char vid_path[1024];
-  char lock_path[1024];
   bool open;
   bool dirty;
   int counter;
@@ -58,9 +53,10 @@ typedef struct EncoderState {
   uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
 } EncoderState;
 
-void encoder_init(EncoderState *s, const LogCameraInfo *info, int width, int height);
+void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
 int encoder_encode_frame(EncoderState *s, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                          int in_width, int in_height, VIPCBufExtra *extra);
+
 void encoder_open(EncoderState *s, const char* path);
 void encoder_rotate(EncoderState *s, const char* new_path);
 void encoder_close(EncoderState *s);
