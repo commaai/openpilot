@@ -1,4 +1,4 @@
-FROM commaai/openpilot:latest
+FROM commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
