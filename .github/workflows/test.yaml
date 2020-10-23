@@ -109,7 +109,7 @@ jobs:
           path: |
             /tmp/comma_download_cache
             /tmp/scons_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}+${{date -I -u}}
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}+${{ date -I -u }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run replay
