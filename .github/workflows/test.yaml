@@ -85,7 +85,7 @@ jobs:
           submodules: true
       - name: Build Docker image
         run: eval "$BUILD"
-      - name: Run unit tests
+      - name: Run loggerd tests
         run: |
           $PERSIST "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
