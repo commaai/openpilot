@@ -44,5 +44,3 @@ if __name__ == '__main__':
     out = np.hstack([out, hist_bufs_out])
     cv2.imshow('RGB', out)
     cv2.waitKey(55)
-    #dat.tofile('/tmp/c3rgb.img')
-    #cv2.imwrite('/tmp/c3rgb.png', out)

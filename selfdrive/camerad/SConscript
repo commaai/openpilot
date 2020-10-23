@@ -11,10 +11,6 @@ if arch == "aarch64":
 elif arch == "larch64":
   libs += ['atomic']
   cameras = ['cameras/camera_qcom2.cc']
-  # no screen
-  # env = env.Clone()
-  # env.Append(CXXFLAGS = '-DNOSCREEN')
-  # env.Append(CFLAGS = '-DNOSCREEN')
 else:
   if USE_WEBCAM:
     libs += ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_videoio']
