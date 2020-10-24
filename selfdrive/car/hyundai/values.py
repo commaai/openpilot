@@ -19,26 +19,32 @@ class SteerLimitParams:
 
 
 class CAR:
+  # Hyundai
   ELANTRA = "HYUNDAI ELANTRA LIMITED ULTIMATE 2017"
   ELANTRA_GT_I30 = "HYUNDAI I30 N LINE 2019 & GT 2018 DCT"
-  GENESIS_G70 = "GENESIS G70 2018"
-  GENESIS_G80 = "GENESIS G80 2017"
-  GENESIS_G90 = "GENESIS G90 2017"
   HYUNDAI_GENESIS = "HYUNDAI GENESIS 2015-2016"
   IONIQ = "HYUNDAI IONIQ ELECTRIC PREMIUM SE 2020"
   IONIQ_EV_LTD = "HYUNDAI IONIQ ELECTRIC LIMITED 2019"
+  SONATA = "HYUNDAI SONATA 2020"
+  SONATA_2019 = "HYUNDAI SONATA 2019"
+  KONA = "HYUNDAI KONA 2020"
+  KONA_EV = "HYUNDAI KONA ELECTRIC 2019"
+  SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"
+  PALISADE = "HYUNDAI PALISADE 2020"
+  VELOSTER = "HYUNDAI VELOSTER 2019"
+
+  # Kia
   KIA_FORTE = "KIA FORTE E 2018"
   KIA_OPTIMA = "KIA OPTIMA SX 2019 & 2016"
   KIA_OPTIMA_H = "KIA OPTIMA HYBRID 2017 & SPORTS 2019"
   KIA_SORENTO = "KIA SORENTO GT LINE 2018"
   KIA_STINGER = "KIA STINGER GT2 2018"
-  KONA = "HYUNDAI KONA 2020"
-  KONA_EV = "HYUNDAI KONA ELECTRIC 2019"
-  SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"
-  SONATA = "HYUNDAI SONATA 2020"
-  SONATA_2019 = "HYUNDAI SONATA 2019"
-  PALISADE = "HYUNDAI PALISADE 2020"
-  VELOSTER = "HYUNDAI VELOSTER 2019"
+  KIA_CEED = "KIA CEED 2019"
+
+  # Genesis
+  GENESIS_G70 = "GENESIS G70 2018"
+  GENESIS_G80 = "GENESIS G80 2017"
+  GENESIS_G90 = "GENESIS G90 2017"
 
 
 class Buttons:
@@ -144,12 +150,16 @@ FINGERPRINTS = {
   CAR.VELOSTER: [{
     64: 8, 66: 8, 67: 8, 68: 8, 127: 8, 128: 8, 129: 8, 273: 8, 274: 8, 275: 8, 339: 8, 354: 3, 356: 4, 399: 8, 512: 6, 544: 8, 558: 8, 593: 8, 608: 8, 688: 5, 790: 8, 809: 8, 832: 8, 884: 8, 897: 8, 899: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1170: 8, 1181: 5, 1186: 2, 1191: 2, 1265: 4, 1280: 1, 1282: 4, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1349: 8, 1351: 8, 1353: 8, 1356: 8, 1363: 8, 1365: 8, 1366: 8, 1367: 8, 1369: 8, 1378: 4, 1407: 8, 1414: 3, 1415: 8, 1419: 8, 1427: 6, 1440: 8, 1456: 4, 1470: 8, 1486: 8, 1487: 8, 1491: 8, 1530: 8, 1532: 5, 1872: 8, 1988: 8, 1996: 8, 2000: 8, 2001: 8, 2004: 8, 2008: 8, 2009: 8, 2012: 8, 2015: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
   }]
+  CAR.KIA_CEED: [{
+    67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 354: 3, 356: 4, 544: 8, 576: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1155: 8, 1157: 4, 1168: 7, 1170: 8, 1173: 8, 1183: 8, 1186: 2, 1191: 2, 1225: 8, 1265: 4, 1280: 4, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1384: 8, 1394: 8, 1407: 8, 1414: 3, 1427: 6, 1456: 4, 2015: 8
+  }],
 }
 
 ECU_FINGERPRINT = {
   Ecu.fwdCamera: [832, 1156, 1191, 1342]
 }
 
+# TODO: add ceed
 # Don't use these fingerprints for fingerprinting, they are still used for ECU detection
 IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA]
 
@@ -285,17 +295,9 @@ EV_HYBRID = set([CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV])
 DBC = {
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
   CAR.ELANTRA_GT_I30: dbc_dict('hyundai_kia_generic', None),
-  CAR.GENESIS_G70: dbc_dict('hyundai_kia_generic', None),
-  CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
-  CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
   CAR.HYUNDAI_GENESIS: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ_EV_LTD: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
@@ -303,6 +305,17 @@ DBC = {
   CAR.SONATA_2019: dbc_dict('hyundai_kia_generic', None),
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', None),
   CAR.VELOSTER: dbc_dict('hyundai_kia_generic', None),
+
+  CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_OPTIMA: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_CEED: dbc_dict('hyundai_kia_generic', None),
+
+  CAR.GENESIS_G70: dbc_dict('hyundai_kia_generic', None),
+  CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
+  CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
 }
 
 STEER_THRESHOLD = 150
