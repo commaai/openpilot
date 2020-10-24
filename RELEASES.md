@@ -1,3 +1,6 @@
+Version 0.7.11 (2020-XX-XX)
+========================
+
 Version 0.7.10 (2020-10-26)
 ========================
  * NEOS update: update to Python 3.8.2 and lower CPU frequency
