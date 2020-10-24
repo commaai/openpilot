@@ -260,7 +260,13 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31'],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW'],
-  }
+  },
+  CAR.KONA_EV: {
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00OSev SCC F-CUP      1.00 1.00 99110-K4100         \xf1\xa01.00', ],
+    (Ecu.esp, 0x7d1, None): [b'\xf1\x00OS IEB \x03 210 \x02\x14 58520-K4000\xf1\xa02.10', ],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x00OS  MDPS C 1.00 1.04 56310K4050\x00 4OEDC104', ],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00OE2 LKAS AT EUR LHD 1.00 1.00 95740-K4200 200', ],
+  },
 }
 
 CHECKSUM = {
