@@ -190,11 +190,11 @@ class CarInterface(CarInterfaceBase):
     #TODO: addd abs(self.CS.angle_steers) > 90 to 'steerTempUnavailable' event
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
-      self.low_speed_alert = True
-    if ret.vEgo > (self.CP.minSteerSpeed + 4.):
-      self.low_speed_alert = False
-    if self.low_speed_alert:
+    if ret.vEgo < self.CP.minSteerSpeed:
+      self.min_steer_speed_offset = 0.
+    if ret.vEgo > self.CP.minSteerSpeed + 1.:
+      self.min_steer_speed_offset = 1.
+    if ret.vEgo < (self.CP.minSteerSpeed + self.min_steer_speed_offset) and self.CP.minSteerSpeed > 10.:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
