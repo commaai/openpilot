@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
 #include <eigen3/Eigen/Dense>
 
 #include "common/visionbuf.h"
@@ -43,20 +44,21 @@ void* live_thread(void *arg) {
     910.0, 0.0, 582.0,
     0.0, 910.0, 437.0,
     0.0,   0.0,   1.0;
+  float db_s = 0.5; // debayering does a 2x downscale
 #else
   Eigen::Matrix<float, 3, 3> eon_intrinsics;
   eon_intrinsics <<
     2648.0, 0.0, 1928.0/2,
     0.0, 2648.0, 1208.0/2,
     0.0,   0.0,   1.0;
+  float db_s = 1.0;
 #endif
 
-    // debayering does a 2x downscale
   mat3 yuv_transform = transform_scale_buffer((mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0,
-  }}, 0.5);
+  }}, db_s);
 
   while (!do_exit) {
     if (sm.update(10) > 0){
@@ -151,8 +153,7 @@ int main(int argc, char **argv) {
     float frames_dropped = 0;
 
     // one frame in memory
-    cl_mem yuv_cl;
-    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context, &yuv_cl);
+    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context);
 
     uint32_t frame_id = 0, last_vipc_frame_id = 0;
     double last = 0;
@@ -190,7 +191,7 @@ int main(int argc, char **argv) {
         memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
 
         ModelDataRaw model_buf =
-            model_eval_frame(&model, q, yuv_cl, buf_info.width, buf_info.height,
+            model_eval_frame(&model, q, yuv_ion.buf_cl, buf_info.width, buf_info.height,
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
 

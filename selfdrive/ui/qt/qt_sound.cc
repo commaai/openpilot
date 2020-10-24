@@ -9,7 +9,7 @@ QtSound::QtSound() {
 }
 
 bool QtSound::play(AudibleAlert alert) {
-  sounds[alert].setLoopCount(sound_map[alert].second);
+  sounds[alert].setLoopCount(sound_map[alert].second>-1 ? sound_map[alert].second : QSoundEffect::Infinite);
   sounds[alert].setVolume(0.9);
   sounds[alert].play();
   return true;
