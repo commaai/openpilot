@@ -270,7 +270,15 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31'],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW'],
-  }
+  },
+  CAR.KIA_CEED: {
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00CD__ SCC F-CUP      1.00 1.02 99110-J7000         '],
+    (Ecu.esp, 0x7d1, None): [b'\xf1\x00CD ESC \x03 102\x18\b\x05 58920-J7350',],
+    (Ecu.engine, 0x7e0, None): [b'\x01TCD-JECU4F202H0K'],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x00CD  MDPS C 1.00 1.06 56310-XX000 4CDEC106'],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00CD  LKAS AT EUR LHD 1.00 1.01 99211-J7000 B40'],
+    (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V7051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V7051\x00\x00DCD0T14US1U\x867Z'],
+  },
 }
 
 CHECKSUM = {
