@@ -128,7 +128,7 @@ struct LoggerdState {
   LoggerState logger;
   int segment_length;
   char segment_path[4096];
-  std::atomic<double> last_rotate_tms;
+  double last_rotate_tms;
   
   std::atomic<int> rotate_segment;
   std::mutex rotate_mutex;
