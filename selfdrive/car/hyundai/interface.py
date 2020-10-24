@@ -6,7 +6,9 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
-
+  def __init__(self):
+    self.min_steer_speed_offset = 0.
+    
   @staticmethod
   def compute_gb(accel, speed):
     return float(accel) / 3.0
