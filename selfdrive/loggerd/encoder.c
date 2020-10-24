@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
@@ -16,7 +17,10 @@
 //#include <android/log.h>
 
 #include <msm_media_info.h>
+
+#include "common/mutex.h"
 #include "common/swaglog.h"
+
 #include "encoder.h"
 
 
@@ -167,6 +171,7 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   s->width = width;
   s->height = height;
   s->fps = fps;
+  mutex_init_reentrant(&s->lock);
 
   if (!h265) {
     s->remuxing = true;
@@ -439,14 +444,18 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
 int encoder_encode_frame(EncoderState *s, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                          int in_width, int in_height, VIPCBufExtra *extra) {
   int err;
+  pthread_mutex_lock(&s->lock);
 
   if (!s->open) {
+    pthread_mutex_unlock(&s->lock);
     return -1;
   }
 
   // this sometimes freezes... put it outside the encoder lock so we can still trigger rotates...
   // THIS IS A REALLY BAD IDEA, but apparently the race has to happen 30 times to trigger this
+  //pthread_mutex_unlock(&s->lock);
   OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
+  //pthread_mutex_lock(&s->lock);
 
   int ret = s->counter;
 
@@ -503,11 +512,14 @@ int encoder_encode_frame(EncoderState *s, const uint8_t *y_ptr, const uint8_t *u
 
   s->counter++;
 
+  pthread_mutex_unlock(&s->lock);
   return ret;
 }
 
 void encoder_open(EncoderState *s, const char* path) {
   int err;
+
+  pthread_mutex_lock(&s->lock);
 
   snprintf(s->vid_path, sizeof(s->vid_path), "%s/%s", path, s->filename);
   LOGD("encoder_open %s remuxing:%d", s->vid_path, s->remuxing);
@@ -548,13 +560,22 @@ void encoder_open(EncoderState *s, const char* path) {
     }
   }
 
+  // create camera lock file
+  snprintf(s->lock_path, sizeof(s->lock_path), "%s/%s.lock", path, s->filename);
+  int lock_fd = open(s->lock_path, O_RDWR | O_CREAT, 0777);
+  assert(lock_fd >= 0);
+  close(lock_fd);
+
   s->open = true;
   s->counter = 0;
 
+  pthread_mutex_unlock(&s->lock);
 }
 
 void encoder_close(EncoderState *s) {
   int err;
+
+  pthread_mutex_lock(&s->lock);
 
   if (s->open) {
     if (s->dirty) {
@@ -589,9 +610,11 @@ void encoder_close(EncoderState *s) {
     } else {
       fclose(s->of);
     }
+    unlink(s->lock_path);
   }
   s->open = false;
 
+  pthread_mutex_unlock(&s->lock);
 }
 
 void encoder_rotate(EncoderState *s, const char* new_path) {

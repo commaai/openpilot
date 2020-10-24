@@ -15,9 +15,11 @@ extern "C" {
 #endif
 
 typedef struct EncoderState {
+  pthread_mutex_t lock;
   int width, height, fps;
   const char* path;
   char vid_path[1024];
+  char lock_path[1024];
   bool open;
   bool dirty;
   int counter;
