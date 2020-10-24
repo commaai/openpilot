@@ -129,7 +129,7 @@ struct LoggerdState {
   int segment_length;
   char segment_path[4096];
   double last_rotate_tms;
-  
+
   std::atomic<int> rotate_segment;
   std::mutex rotate_mutex;
   std::condition_variable rotate_cv;
@@ -156,13 +156,16 @@ public:
      rawlogger_start_time = seconds_since_boot() + RAW_CLIP_FREQUENCY;
      raw_logger = std::make_unique<RawLogger>("prcamera", buf_info.width, buf_info.height, MAIN_FPS);
    }
-   idx_sock.reset(PubSocket::create(log_s->ctx, ci.encode_idx_name));
+   
    frame_sock.reset(SubSocket::create(log_s->ctx, ci.frame_packet_name));
    for (const auto& it : services) {
      if (strcmp(it.name, ci.frame_packet_name) == 0) {
        frame_sock_decimation = it.decimation;
+       break;
      }
    }
+
+   idx_sock.reset(PubSocket::create(log_s->ctx, ci.encode_idx_name));
  }
 
   ~Encoder() {
@@ -176,7 +179,6 @@ public:
       encoder_close(encoder_alt.get());
       encoder_destroy(encoder_alt.get());
     }
-
     if (raw_logger) {
       raw_logger->Close();
     }
@@ -227,7 +229,6 @@ public:
 
           rawlogger_clip_cnt = 0;
           rawlogger_start_time = ts + RAW_CLIP_FREQUENCY;
-
           LOG("ending raw clip in seg %d, next in %.1f sec", encoder_segment, rawlogger_start_time - ts);
         }
       }
@@ -509,19 +510,23 @@ int main(int argc, char** argv) {
 
   std::map<SubSocket*, QlogState> qlog_states;
   for (const auto& it : services) {
+    std::string name = it.name;
+
     if (it.should_log) {
-      std::string name = it.name;
-      SubSocket* sock = SubSocket::create(s.ctx, name);
-      assert(sock != NULL);
-      qlog_states[sock] = {.counter = (it.decimation == -1) ? -1 : 0,
-                           .freq = it.decimation};
+      bool is_frame_sock = false;
       for (int cid = 0; cid <= MAX_CAM_IDX; cid++) {
         if (name == cameras_logged[cid].frame_packet_name) {
-          continue;
+          is_frame_sock = true;
+          break;
         }
       }
-      poller->registerSocket(sock);
-      
+      if (!is_frame_sock) {
+        SubSocket* sock = SubSocket::create(s.ctx, name);
+        assert(sock != NULL);
+        poller->registerSocket(sock);
+        qlog_states[sock] = {.counter = (it.decimation == -1) ? -1 : 0,
+                             .freq = it.decimation};
+      }
     }
   }
 
