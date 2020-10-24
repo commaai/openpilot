@@ -131,7 +131,7 @@ class Controls:
     self.sm['dMonitoringState'].awarenessStatus = 1.
     self.sm['dMonitoringState'].faceDetected = False
 
-    self.startup_event = get_startup_event(car_recognized, controller_available)
+    self.startup_event = get_startup_event(car_recognized, controller_available, sm["health"].hwType)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
