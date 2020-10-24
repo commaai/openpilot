@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     bzip2 \
+    ca-certificates \
     capnproto \
     libcapnp-dev \
     clang \
