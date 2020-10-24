@@ -13,7 +13,7 @@
 #include <condition_variable>
 #include <thread>
 #include <random>
-
+#include <atomic>
 #include <ftw.h>
 #ifdef QCOM
 #include <cutils/properties.h>
