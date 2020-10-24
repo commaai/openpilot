@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 # Steer torque limits
 class SteerLimitParams:
   def __init__(self, CP):
-    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE]:
+    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ]:
       self.STEER_MAX = 384
     else:
       self.STEER_MAX = 255
@@ -25,7 +25,7 @@ class CAR:
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_G90 = "GENESIS G90 2017"
   HYUNDAI_GENESIS = "HYUNDAI GENESIS 2015-2016"
-  IONIQ = "HYUNDAI IONIQ ELECTRIC PREMIUM SE 2020"
+  IONIQ = "HYUNDAI IONIQ EV 2020"
   IONIQ_EV_LTD = "HYUNDAI IONIQ ELECTRIC LIMITED 2019"
   KIA_FORTE = "KIA FORTE E 2018"
   KIA_OPTIMA = "KIA OPTIMA SX 2019 & 2016"
