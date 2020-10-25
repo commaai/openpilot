@@ -1,82 +1,48 @@
-#ifndef ENCODER_H
-#define ENCODER_H
-
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-
-#include <pthread.h>
+#pragma once
 
 #include <OMX_Component.h>
-#include <libavformat/avformat.h>
-
-#include "common/cqueue.h"
-#include "common/visionipc.h"
-
-#ifdef __cplusplus
 extern "C" {
-#endif
+#include <libavformat/avformat.h>
+}
+#include <stdint.h>
+#include <stdio.h>
+#include <mutex>
+#include "camerad/cameras/camera_common.h"
+#include "common/cqueue.h"
 
-typedef struct EncoderState {
-  pthread_mutex_t lock;
-  int width, height, fps;
-  const char* path;
-  char vid_path[1024];
-  char lock_path[1024];
-  bool open;
-  bool dirty;
-  int counter;
-  int segment;
+class EncoderState {
+public:
+  EncoderState(const LogCameraInfo &camera_info, int width, int height);
+  int EncodeFrame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, const VIPCBufExtra &extra);
+  void Rotate(const char *new_path);
+  ~EncoderState();
 
-  bool rotating;
-  bool closing;
-  bool opening;
-  char next_path[1024];
-  int next_segment;
+  std::mutex state_lock;
+  std::condition_variable state_cv;
+  OMX_STATETYPE state = OMX_StateLoaded;
+  Queue free_in, done_out;
 
-  const char* filename;
-  FILE *of;
+private:
+  void Open(const char *path);
+  void Close();
+  void handle_out_buf(OMX_BUFFERHEADERTYPE *out_buf);
+  void wait_for_state(OMX_STATETYPE state);
 
-  size_t codec_config_len;
-  uint8_t *codec_config;
-  bool wrote_codec_config;
+  LogCameraInfo camera_info;
+  int in_width, in_height;
+  char lock_path[4096];
+  bool is_open = false, remuxing = false, dirty = false;
+  int counter = 0;
 
-  pthread_mutex_t state_lock;
-  pthread_cond_t state_cv;
-  OMX_STATETYPE state;
+  FILE *of = nullptr;
+
+  std::vector<uint8_t> codec_config;
+  bool wrote_codec_config = false;
 
   OMX_HANDLETYPE handle;
-
-  int num_in_bufs;
-  OMX_BUFFERHEADERTYPE** in_buf_headers;
-
-  int num_out_bufs;
-  OMX_BUFFERHEADERTYPE** out_buf_headers;
-
-  Queue free_in;
-  Queue done_out;
+  std::vector<OMX_BUFFERHEADERTYPE *> in_buf_headers, out_buf_headers;
 
   AVFormatContext *ofmt_ctx;
   AVCodecContext *codec_ctx;
   AVStream *out_stream;
-  bool remuxing;
-
-  bool downscale;
-  uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
-} EncoderState;
-
-void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
-int encoder_encode_frame(EncoderState *s,
-                         const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                         int in_width, int in_height,
-                         int *frame_segment, VIPCBufExtra *extra);
-void encoder_open(EncoderState *s, const char* path);
-void encoder_rotate(EncoderState *s, const char* new_path, int new_segment);
-void encoder_close(EncoderState *s);
-void encoder_destroy(EncoderState *s);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+};
