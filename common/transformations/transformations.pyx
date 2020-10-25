@@ -26,7 +26,7 @@ cdef np.ndarray[double, ndim=2] matrix2numpy(Matrix3 m):
         [m(2, 0), m(2, 1), m(2, 2)],
     ])
 
-cdef Matrix3 numpy2matrix (np.ndarray[double, ndim=2, mode="fortran"] m):
+cdef Matrix3 numpy2matrix(np.ndarray[double, ndim=2, mode="fortran"] m):
     assert m.shape[0] == 3
     assert m.shape[1] == 3
     return Matrix3(<double*>m.data)

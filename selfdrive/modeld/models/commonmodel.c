@@ -1,6 +1,7 @@
+#include <assert.h>
+#include <math.h>
 #include "commonmodel.h"
 
-#include <czmq.h>
 #include "common/mat.h"
 #include "common/timing.h"
 
