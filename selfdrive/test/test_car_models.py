@@ -233,6 +233,10 @@ routes = {
     'carFingerprint': HYUNDAI.VELOSTER,
     'enableCamera': True,
   },
+  "50c6c9b85fd1ff03|2020-10-25--10-18-36": {
+    'carFingerprint': HYUNDAI.KIA_NIRO_EV,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -489,7 +493,6 @@ non_tested_cars = [
   HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_FORTE,
-  HYUNDAI.KIA_NIRO_EV,
   HYUNDAI.KIA_OPTIMA_H,
   HYUNDAI.KONA_EV,
   TOYOTA.CAMRYH,
