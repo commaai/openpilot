@@ -1154,7 +1154,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
       exposure_height = 524;
     }
     int skip = 2;
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, 0, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
   }
 }
 
