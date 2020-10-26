@@ -148,61 +148,70 @@ jobs:
           name: process_replay_diff.txt
           path: diff.txt
 
-  #test_longitudinal:
-  #  name: longitudinal
-  #  runs-on: ubuntu-16.04
-  #  timeout-minutes: 50
-  #  steps:
-  #    - uses: actions/checkout@v2
-  #      with:
-  #        submodules: true
-  #    - name: Build Docker image
-  #      run: eval "$BUILD"
-  #    - name: Test longitudinal
-  #      run: |
-  #        $PERSIST "mkdir -p /tmp/openpilot/selfdrive/test/out && \
-  #                  cd /tmp/openpilot/ && \
-  #                  scons -j$(nproc) && \
-  #                  cd selfdrive/test/longitudinal_maneuvers && \
-  #                  OPTEST=1 ./test_longitudinal.py"
-  #    - name: Copy artifacts
-  #      if: always()
-  #      run: |
-  #        mkdir out
-  #        docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
-  #    - uses: actions/upload-artifact@v2
-  #      if: always()
-  #      continue-on-error: true
-  #      with:
-  #        name: longitudinal
-  #        path: out
-#
-  #test_car_models:
-  #  name: test car models
-  #  runs-on: ubuntu-16.04
-  #  timeout-minutes: 50
-  #  steps:
-  #    - uses: actions/checkout@v2
-  #      with:
-  #        submodules: true
-  #    - name: Cache dependencies
-  #      id: dependency-cache
-  #      uses: actions/cache@v2
-  #      with:
-  #        path: |
-  #          /tmp/comma_download_cache
-  #        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
-  #    - name: Build Docker image
-  #      run: eval "$BUILD"
-  #    - name: Test car models
-  #      run: |
-  #        $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
-  #                  scons -j$(nproc) && \
-  #                  FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
-  #                               selfdrive/test/test_models.py && \
-  #                  coverage combine"
-  #    - name: Upload coverage to Codecov
-  #      run: |
-  #        docker commit tmppilot tmppilotci
-  #        $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F test_car_models"
-#
+  test_longitudinal:
+    name: longitudinal
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Cache dependencies
+        id: dependency-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/comma_download_cache
+            /tmp/scons_cache
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Test longitudinal
+        run: |
+          $PERSIST_WITH_CACHE "mkdir -p /tmp/openpilot/selfdrive/test/out && \
+                    cd /tmp/openpilot/ && \
+                    SCONS_CACHE=1 scons -j$(nproc) && \
+                    cd selfdrive/test/longitudinal_maneuvers && \
+                    OPTEST=1 ./test_longitudinal.py"
+      - name: Copy artifacts
+        if: always()
+        run: |
+          mkdir out
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
+      - uses: actions/upload-artifact@v2
+        if: always()
+        continue-on-error: true
+        with:
+          name: longitudinal
+          path: out
+
+  test_car_models:
+    name: test car models
+    runs-on: ubuntu-16.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Cache dependencies
+        id: dependency-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/comma_download_cache
+            /tmp/scons_cache
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Test car models
+        run: |
+          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
+                    SCONS_CACHE=1 scons -j$(nproc) && \
+                    FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                                 selfdrive/test/test_models.py && \
+                    coverage combine"
+      - name: Upload coverage to Codecov
+        run: |
+          docker commit tmppilot tmppilotci
+          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F test_car_models"
+
