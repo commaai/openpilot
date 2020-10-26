@@ -15,11 +15,11 @@ def cputime_total(ct):
 
 def print_cpu_usage(first_proc, last_proc):
   procs = [
-    ("selfdrive.controls.controlsd", 45.0),
-    ("./loggerd", 33.90),
-    ("selfdrive.locationd.locationd", 29.5),
-    ("selfdrive.controls.plannerd", 11.84),
-    ("selfdrive.locationd.paramsd", 10.5),
+    ("selfdrive.controls.controlsd", 47.0),
+    ("./loggerd", 38.0),
+    ("selfdrive.locationd.locationd", 35.0),
+    ("selfdrive.locationd.paramsd", 12.0),
+    ("selfdrive.controls.plannerd", 10.0),
     ("./_modeld", 7.12),
     ("./camerad", 7.07),
     ("./_sensord", 6.17),
