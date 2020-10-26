@@ -22,7 +22,9 @@ if __name__ == "__main__":
   with open(ref_commit_fn, "w") as f:
     f.write(ref_commit)
 
-  for car_brand, segment in segments:
+  for s in segments:
+    segment = s.route
+    car_brand = s.car_brand
     rlog_fn = get_segment(segment)
 
     if rlog_fn is None:

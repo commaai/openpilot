@@ -211,19 +211,19 @@ if __name__ == "__main__":
     assert len(untested) == 0, "Cars missing routes: %s" % (str(untested))
 
   results: Any = {}
-  for segment in segments:
-    route=segment.route
-    car_brand=segment.car_brand
+  for s in segments:
+    segment = s.route
+    car_brand = s.car_brand
     print(car_brand)
     if (cars_whitelisted and car_brand.upper() not in args.whitelist_cars) or \
        (not cars_whitelisted and car_brand.upper() in args.blacklist_cars):
       continue
     
-    print("***** testing route segment %s *****\n" % route)
+    print("***** testing route segment %s *****\n" % segment)
 
-    results[route] = {}
+    results[segment] = {}
 
-    rlog_fn = get_segment(route)
+    rlog_fn = get_segment(segment)
     lr = LogReader(rlog_fn)
 
     for cfg in CONFIGS:
@@ -232,12 +232,12 @@ if __name__ == "__main__":
         continue
       #In case of full test, use white/blacklists from Segment
       if len(args.whitelist_procs)==0 and len(args.blacklist_procs)==0:
-        if (len(segment.whitelist_procs)>0 and cfg.proc_name not in segment.whitelist_procs) or \
-          cfg.proc_name in segment.blacklist_procs:
+        if (len(s.whitelist_procs)>0 and cfg.proc_name not in s.whitelist_procs) or \
+          cfg.proc_name in s.blacklist_procs:
           continue
       
-      cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (route, cfg.proc_name, ref_commit))
-      results[route][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+      cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
+      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:
