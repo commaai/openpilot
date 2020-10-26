@@ -4,7 +4,6 @@ ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
 RUN mkdir -p /tmp/openpilot
-RUN mkdir -p /tmp/comma_download_cache
 
 COPY SConstruct \
      .pylintrc \

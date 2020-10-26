@@ -52,29 +52,24 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Cache dependencies
-        id: dependency-cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            /tmp/scons_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run unit tests
         run: |
-          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
-                    SCONS_CACHE=1 scons -j$(nproc) && \
+          $PERSIST "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
                     coverage run selfdrive/test/test_fingerprints.py && \
                     $UNIT_TEST common && \
                     $UNIT_TEST opendbc/can && \
                     $UNIT_TEST selfdrive/boardd && \
                     $UNIT_TEST selfdrive/controls && \
                     $UNIT_TEST selfdrive/monitoring && \
+                    $UNIT_TEST selfdrive/loggerd && \
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
-                    $UNIT_TEST selfdrive/thermald"
+                    $UNIT_TEST selfdrive/thermald && \
+                    $UNIT_TEST tools/lib/tests"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
