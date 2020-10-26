@@ -233,7 +233,7 @@ routes = {
     'carFingerprint': HYUNDAI.VELOSTER,
     'enableCamera': True,
   },
-  "50c6c9b85fd1ff03|2020-10-25--10-18-36": {
+  "50c6c9b85fd1ff03|2020-10-26--17-56-06": {
     'carFingerprint': HYUNDAI.KIA_NIRO_EV,
     'enableCamera': True,
   },
