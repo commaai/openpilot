@@ -163,7 +163,7 @@ jobs:
         with:
           path: |
             /tmp/comma_download_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml') }}
+          key: VALGRIND+${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run valgrind
@@ -198,7 +198,7 @@ jobs:
           path: |
             /tmp/comma_download_cache
             /tmp/scons_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml') }}
+          key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run unit tests
@@ -237,7 +237,7 @@ jobs:
           path: |
             /tmp/comma_download_cache
             /tmp/scons_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml') }}
+          key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run loggerd tests
@@ -265,7 +265,7 @@ jobs:
           path: |
             /tmp/comma_download_cache
             /tmp/scons_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml') }}
+          key: PROCESS_REPLAY+${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run replay
@@ -304,7 +304,7 @@ jobs:
           path: |
             /tmp/comma_download_cache
             /tmp/scons_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml') }}
+          key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Test longitudinal
@@ -341,7 +341,7 @@ jobs:
           path: |
             /tmp/comma_download_cache
             /tmp/scons_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml') }}
+          key: TEST_CAR_MODELS+${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Test car models
