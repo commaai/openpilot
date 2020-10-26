@@ -34,6 +34,7 @@ class TestFileDownload(unittest.TestCase):
     self.assertEqual(file_cached.get_length(), file_downloaded.get_length())
     self.assertEqual(response_cached, response_downloaded)
 
+  @unittest.skip("doesn't work well in CI")
   def test_small_file(self):
     # Make sure we don't force cache
     os.environ["FILEREADER_CACHE"] = "0"
@@ -54,6 +55,7 @@ class TestFileDownload(unittest.TestCase):
     for i in range(length // 100):
       self.compare_loads(small_file_url, 100 * i, 100)
 
+  @unittest.skip("doesn't work well in CI")
   def test_large_file(self):
     large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
     #  Load the end 100 bytes of both files
