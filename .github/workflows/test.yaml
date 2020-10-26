@@ -196,7 +196,6 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            /tmp/comma_download_cache
             /tmp/scons_cache
           key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
@@ -235,7 +234,6 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            /tmp/comma_download_cache
             /tmp/scons_cache
           key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
@@ -302,7 +300,6 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            /tmp/comma_download_cache
             /tmp/scons_cache
           key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
