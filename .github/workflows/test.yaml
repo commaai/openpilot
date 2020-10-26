@@ -74,8 +74,7 @@ jobs:
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
-                    $UNIT_TEST selfdrive/thermald && \
-                    $UNIT_TEST tools/lib/tests"
+                    $UNIT_TEST selfdrive/thermald"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
