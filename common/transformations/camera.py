@@ -1,29 +1,65 @@
 import numpy as np
-import common.transformations.orientation as orient
+import os
 
-FULL_FRAME_SIZE = (1164, 874)
-W, H = FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1]
-eon_focal_length = FOCAL = 910.0
+import common.transformations.orientation as orient
+from common.hardware import TICI
+
+USE_TICI_PARAMS = TICI or os.getenv("TICI") is not None
+
+## -- hardcoded hardware params --
+eon_f_focal_length = 910.0
+eon_d_focal_length = 860.0
+leon_d_focal_length = 650.0
+tici_f_focal_length = 2648.0
+tici_de_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
 
 # aka 'K' aka camera_frame_from_view_frame
-eon_intrinsics = np.array([
-  [FOCAL,   0.,   W/2.],
-  [  0.,  FOCAL,  H/2.],
-  [  0.,    0.,     1.]])
-
+eon_fcam_intrinsics = np.array([
+  [eon_f_focal_length,  0.0,  1164.0/2],
+  [0.0,  eon_f_focal_length,   874.0/2],
+  [0.0,  0.0,                      1.0]])
+eon_intrinsics = eon_fcam_intrinsics # 4xx
 
 leon_dcam_intrinsics = np.array([
-  [650,   0,   816//2],
-  [  0,  650,  612//2],
-  [  0,    0,     1]])
+  [leon_d_focal_length,  0.0,  816.0/2],
+  [0.0,  leon_d_focal_length,  612.0/2],
+  [0.0,  0.0,                      1.0]])
 
 eon_dcam_intrinsics = np.array([
-  [860,   0,   1152//2],
-  [  0,  860,  864//2],
-  [  0,    0,     1]])
+  [eon_d_focal_length,  0.0,  1152.0/2],
+  [0.0,  eon_d_focal_length,   864.0/2],
+  [0.0,  0.0,                      1.0]])
+
+tici_fcam_intrinsics = np.array([
+  [tici_f_focal_length,  0.0,  1928.0/2],
+  [0.0,  tici_f_focal_length,  1208.0/2],
+  [0.0,  0.0,                       1.0]])
+
+tici_dcam_intrinsics = np.array([
+  [tici_de_focal_length,  0.0,  1928.0/2],
+  [0.0,  tici_de_focal_length,  1208.0/2],
+  [0.0,  0.0,                        1.0]])
+
+tici_ecam_intrinsics = tici_dcam_intrinsics
 
 # aka 'K_inv' aka view_frame_from_camera_frame
-eon_intrinsics_inv = np.linalg.inv(eon_intrinsics)
+eon_fcam_intrinsics_inv = np.linalg.inv(eon_fcam_intrinsics)
+eon_intrinsics_inv = eon_fcam_intrinsics_inv # 4xx
+
+tici_fcam_intrinsics_inv = np.linalg.inv(tici_fcam_intrinsics)
+tici_ecam_intrinsics_inv = np.linalg.inv(tici_ecam_intrinsics)
+
+
+if not USE_TICI_PARAMS:
+  FULL_FRAME_SIZE = (1164, 874)
+  FOCAL = eon_f_focal_length
+  fcam_intrinsics = eon_fcam_intrinsics
+else:
+  FULL_FRAME_SIZE = (1928, 1208)
+  FOCAL = tici_f_focal_length
+  fcam_intrinsics = tici_fcam_intrinsics
+
+W, H = FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1]
 
 
 # device/mesh : x->forward, y-> right, z->down
@@ -71,7 +107,7 @@ def vp_from_ke(m):
 
 def vp_from_rpy(rpy):
   e = get_view_frame_from_road_frame(rpy[0], rpy[1], rpy[2], 1.22)
-  ke = np.dot(eon_intrinsics, e)
+  ke = np.dot(fcam_intrinsics, e)
   return vp_from_ke(ke)
 
 
@@ -81,7 +117,7 @@ def roll_from_ke(m):
                     -(m[0, 0] - m[0, 1] * m[2, 0] / m[2, 1]))
 
 
-def normalize(img_pts, intrinsics=eon_intrinsics):
+def normalize(img_pts, intrinsics=fcam_intrinsics):
   # normalizes image coordinates
   # accepts single pt or array of pts
   intrinsics_inv = np.linalg.inv(intrinsics)
@@ -94,7 +130,7 @@ def normalize(img_pts, intrinsics=eon_intrinsics):
   return img_pts_normalized[:, :2].reshape(input_shape)
 
 
-def denormalize(img_pts, intrinsics=eon_intrinsics):
+def denormalize(img_pts, intrinsics=fcam_intrinsics):
   # denormalizes image coordinates
   # accepts single pt or array of pts
   img_pts = np.array(img_pts)
@@ -139,7 +175,7 @@ def img_from_device(pt_device):
 
 def get_camera_frame_from_calib_frame(camera_frame_from_road_frame):
   camera_frame_from_ground = camera_frame_from_road_frame[:, (0, 1, 3)]
-  calib_frame_from_ground = np.dot(eon_intrinsics,
+  calib_frame_from_ground = np.dot(fcam_intrinsics,
                                      get_view_frame_from_road_frame(0, 0, 0, 1.22))[:, (0, 1, 3)]
   ground_from_calib_frame = np.linalg.inv(calib_frame_from_ground)
   camera_frame_from_calib_frame = np.dot(camera_frame_from_ground, ground_from_calib_frame)
@@ -149,6 +185,6 @@ def get_camera_frame_from_calib_frame(camera_frame_from_road_frame):
 def pretransform_from_calib(calib):
   roll, pitch, yaw, height = calib
   view_frame_from_road_frame = get_view_frame_from_road_frame(roll, pitch, yaw, height)
-  camera_frame_from_road_frame = np.dot(eon_intrinsics, view_frame_from_road_frame)
+  camera_frame_from_road_frame = np.dot(fcam_intrinsics, view_frame_from_road_frame)
   camera_frame_from_calib_frame = get_camera_frame_from_calib_frame(camera_frame_from_road_frame)
   return np.linalg.inv(camera_frame_from_calib_frame)
