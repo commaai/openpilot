@@ -65,7 +65,7 @@ class TestStartup(unittest.TestCase):
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
 
-      time.sleep(0.02)
+      time.sleep(0.01)
       msgs = messaging.drain_sock(controls_sock)
       if len(msgs):
         event_name = msgs[0].controlsState.alertType.split("/")[0]
