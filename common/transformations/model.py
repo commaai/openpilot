@@ -35,7 +35,8 @@ MEDMODEL_INPUT_SIZE = (512, 256)
 MEDMODEL_YUV_SIZE = (MEDMODEL_INPUT_SIZE[0], MEDMODEL_INPUT_SIZE[1] * 3 // 2)
 MEDMODEL_CY = 47.6
 
-medmodel_zoom = 1.0 / 1.0 # raw pixel / new pixel, TODO: its inverse is probably easier to understand
+# TODO: these zooms are a bad idea, as they are defined in eon pixel space
+medmodel_zoom = 1.0 / 1.0 # raw pixel / new pixel
 medmodel_intrinsics = np.array([
   [FOCAL / medmodel_zoom,  0.0,  0.5 * MEDMODEL_INPUT_SIZE[0]],
   [0.0,  FOCAL / medmodel_zoom,                   MEDMODEL_CY],
