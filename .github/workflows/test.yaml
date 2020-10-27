@@ -208,14 +208,14 @@ jobs:
                     $UNIT_TEST common && \
                     $UNIT_TEST opendbc/can && \
                     $UNIT_TEST selfdrive/boardd && \
-                    $UNIT_TEST selfdrive/controls && \
                     $UNIT_TEST selfdrive/monitoring && \
-                    $UNIT_TEST selfdrive/loggerd && \
                     $UNIT_TEST selfdrive/car && \
                     $UNIT_TEST selfdrive/locationd && \
                     $UNIT_TEST selfdrive/athena && \
                     $UNIT_TEST selfdrive/thermald && \
-                    $UNIT_TEST tools/lib/tests"
+                    $UNIT_TEST tools/lib/tests && \
+                    $UNIT_TEST selfdrive/controls"
+                    
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
