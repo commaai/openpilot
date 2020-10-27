@@ -207,14 +207,6 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
     text = "Main Switch Off"
   return NoEntryAlert(text, duration_hud_alert=0.)
 
-def unsupported_hardware_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool):
-    hw_type = "Grey" if sm['health'].hwType == log.HealthData.HwType.grey else "White"
-    return Alert(
-      f"{hw_type} Panda No Longer Supported",
-      "Upgrade to comma two or black panda",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
@@ -276,8 +268,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
-  EventName.hardwareUnsupported: {
-    ET.PERMANENT: unsupported_hardware_alert,
+  EventName.whitePandaUnsupported: {
+    ET.PERMANENT: Alert(
+      "White Panda No Longer Supported",
+      "Upgrade to comma two or black panda",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
     ET.NO_ENTRY: NoEntryAlert("Unsupported Hardware"),
   },
 
