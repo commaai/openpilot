@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import unittest
+import os
 from parameterized import parameterized
 
 from cereal import log, car
@@ -11,7 +12,7 @@ from selfdrive.car.fingerprints import _FINGERPRINTS
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.mazda.values import CAR as MAZDA
 from selfdrive.controls.lib.events import EVENT_NAME
-from selfdrive.test.helpers import with_processes
+from selfdrive.manager import start_managed_process, kill_managed_process
 
 EventName = car.CarEvent.EventName
 
@@ -36,9 +37,12 @@ class TestStartup(unittest.TestCase):
     (EventName.startupNoCar, None, True),
     (EventName.startupNoCar, None, False),
   ])
-  @with_processes(['controlsd'])
   def test_startup_alert(self, expected_event, car, toggle_enabled):
-
+    if car is not None:
+      os.environ["FINGERPRINT"] = car
+    else:
+      os.environ["FINGERPRINT"] = ""
+    start_managed_process('controlsd')
     # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
     pm = messaging.PubMaster(['can', 'health'])
@@ -75,6 +79,7 @@ class TestStartup(unittest.TestCase):
         break
     else:
       self.fail(f"failed to fingerprint {car}")
+    kill_managed_process('controlsd')
 
 if __name__ == "__main__":
   unittest.main()
