@@ -204,7 +204,7 @@ jobs:
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
                     SCONS_CACHE=1 scons -j$(nproc) && \
-                    FILEREADER_CACHE=1 coverage run selfdrive/test/test_fingerprints.py && \
+                    coverage run selfdrive/test/test_fingerprints.py && \
                     $UNIT_TEST common && \
                     $UNIT_TEST opendbc/can && \
                     $UNIT_TEST selfdrive/boardd && \
