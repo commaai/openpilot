@@ -189,7 +189,7 @@ void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int sa
 }
 
 void Panda::set_unsafe_mode(int unsafe_mode) {
-  panda->usb_write(0xdf, unsafe_mode, 0);
+  usb_write(0xdf, unsafe_mode, 0);
 }
 
 cereal::HealthData::HwType Panda::get_hw_type() {
