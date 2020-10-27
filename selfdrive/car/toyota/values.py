@@ -41,6 +41,7 @@ class CAR:
   RAV4H_TSS2 = "TOYOTA RAV4 HYBRID 2019"
   LEXUS_NXH = "LEXUS NX300H 2018"
   LEXUS_NX = "LEXUS NX300 2018"
+  
 
 # addr: (ecu, cars, bus, 1/freq*100, vl)
 STATIC_MSGS = [
