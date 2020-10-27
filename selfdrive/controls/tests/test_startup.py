@@ -49,7 +49,7 @@ class TestStartup(unittest.TestCase):
     params.put("OpenpilotEnabledToggle", b"1")
     params.put("CommunityFeaturesToggle", b"1" if toggle_enabled else b"0")
 
-    time.sleep(2) # wait for controlsd to be ready
+    time.sleep(5) # wait for controlsd to be ready
 
     health = messaging.new_message('health')
     health.health.hwType = log.HealthData.HwType.uno
@@ -65,7 +65,7 @@ class TestStartup(unittest.TestCase):
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
 
-      time.sleep(0.01)
+      time.sleep(0.02)
       msgs = messaging.drain_sock(controls_sock)
       if len(msgs):
         event_name = msgs[0].controlsState.alertType.split("/")[0]
