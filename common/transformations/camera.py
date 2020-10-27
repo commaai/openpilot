@@ -1,24 +1,21 @@
 import numpy as np
-import os
 
 import common.transformations.orientation as orient
 from common.hardware import TICI
-
-USE_TICI_PARAMS = TICI or os.getenv("TICI") is not None
 
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0
 eon_d_focal_length = 860.0
 leon_d_focal_length = 650.0
 tici_f_focal_length = 2648.0
-tici_de_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
+tici_e_focal_length = tici_d_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
 
 # aka 'K' aka camera_frame_from_view_frame
 eon_fcam_intrinsics = np.array([
   [eon_f_focal_length,  0.0,  1164.0/2],
   [0.0,  eon_f_focal_length,   874.0/2],
   [0.0,  0.0,                      1.0]])
-eon_intrinsics = eon_fcam_intrinsics # 4xx
+eon_intrinsics = eon_fcam_intrinsics # 4xx (for now)
 
 leon_dcam_intrinsics = np.array([
   [leon_d_focal_length,  0.0,  816.0/2],
@@ -36,9 +33,9 @@ tici_fcam_intrinsics = np.array([
   [0.0,  0.0,                       1.0]])
 
 tici_dcam_intrinsics = np.array([
-  [tici_de_focal_length,  0.0,  1928.0/2],
-  [0.0,  tici_de_focal_length,  1208.0/2],
-  [0.0,  0.0,                        1.0]])
+  [tici_d_focal_length,  0.0,  1928.0/2],
+  [0.0,  tici_d_focal_length,  1208.0/2],
+  [0.0,  0.0,                       1.0]])
 
 tici_ecam_intrinsics = tici_dcam_intrinsics
 
@@ -50,7 +47,7 @@ tici_fcam_intrinsics_inv = np.linalg.inv(tici_fcam_intrinsics)
 tici_ecam_intrinsics_inv = np.linalg.inv(tici_ecam_intrinsics)
 
 
-if not USE_TICI_PARAMS:
+if not TICI:
   FULL_FRAME_SIZE = (1164, 874)
   FOCAL = eon_f_focal_length
   fcam_intrinsics = eon_fcam_intrinsics
