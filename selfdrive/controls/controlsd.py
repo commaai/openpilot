@@ -237,7 +237,7 @@ class Controls:
       self.events.add(EventName.fcw)
     if self.sm['model'].frameDropPerc > 1 and not SIMULATION:
        self.events.add(EventName.modeldLagging)
-    if not self.sm.alive['frontFrame'] and not SIMULATION:
+    if not self.sm.alive['frontFrame'] and (self.sm.frame > 5 / DT_CTRL) and not SIMULATION:
        self.events.add(EventName.cameraMalfunction)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
