@@ -114,10 +114,12 @@ class URLFile(object):
 
   @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
   def read_aux(self, ll=None):
+    download_range = False
     headers = ["Connection: keep-alive"]
     if self._pos != 0 or ll is not None:
       end = (self._pos + ll if ll is not None else self.get_length()) - 1
       headers.append(f"Range: bytes={self._pos}-{end}")
+      download_range = True
 
     dats = BytesIO()
     c = self._curl
@@ -154,7 +156,9 @@ class URLFile(object):
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable
       raise Exception(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
-    if response_code != 206 and response_code != 200:
+    if download_range and response_code != 206:  # Partial Content
+      raise Exception(f"Error, requested range but got unexpected response {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+    if (not download_range) and response_code != 200:  # OK
       raise Exception(f"Error {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
 
     ret = dats.getvalue()

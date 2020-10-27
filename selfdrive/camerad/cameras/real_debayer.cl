@@ -26,10 +26,10 @@ uint int_from_10(const uchar * source, uint start, uint offset) {
 
 float to_normal(uint x) {  
   float pv = (float)(x);
-  const float black_level = 0;
+  const float black_level = 42.0;
   pv = max(0.0, pv - black_level);
   pv /= (1024.0f - black_level);
-  pv = 5*pv / (1.0f + 5*pv); // reinhard
+  pv = 20*pv / (1.0f + 20*pv); // reinhard
   return pv;
 }
 

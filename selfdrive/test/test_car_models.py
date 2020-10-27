@@ -92,6 +92,11 @@ routes = {
     'carFingerprint': GM.BUICK_REGAL,
     'enableCamera': True,
   },
+  "0e7a2ba168465df5|2020-10-18--14-14-22": {
+    'carFingerprint': HONDA.ACURA_RDX_3G,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
+  },
   "a74b011b32b51b56|2020-07-26--17-09-36": {
     'carFingerprint': HONDA.CIVIC,
     'enableCamera': True,
@@ -166,6 +171,10 @@ routes = {
   },
   "0a78dfbacc8504ef|2020-03-04--13-29-55": {
     'carFingerprint': HONDA.CIVIC_BOSCH,
+    'enableCamera': True,
+  },
+  "f34a60d68d83b1e5|2020-10-06--14-35-55": {
+    'carFingerprint': HONDA.ACURA_RDX,
     'enableCamera': True,
   },
   "6fe86b4e410e4c37|2020-07-22--16-27-13": {
@@ -385,6 +394,11 @@ routes = {
     'enableCamera': False,
     'enableDsu': False,
   },
+  "0a0de17a1e6a2d15|2020-09-21--21-24-41": {
+    'carFingerprint': TOYOTA.PRIUS_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,
@@ -472,7 +486,6 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  HONDA.ACURA_RDX,
   HONDA.CRV,
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,

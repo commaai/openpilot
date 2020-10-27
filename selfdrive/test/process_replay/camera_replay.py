@@ -9,6 +9,8 @@ from common.hardware import ANDROID
 os.environ['CI'] = "1"
 if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
+
+from common.timeout import Timeout
 import selfdrive.manager as manager
 
 from common.spinner import Spinner
@@ -56,7 +58,8 @@ def camera_replay(lr, fr):
         frame_idx += 1
 
         pm.send(msg.which(), f)
-        log_msgs.append(messaging.recv_one(sm.sock['model']))
+        with Timeout(seconds=15):
+          log_msgs.append(messaging.recv_one(sm.sock['model']))
 
         spinner.update("modeld replay %d/%d" % (frame_idx, fr.frame_count))
 

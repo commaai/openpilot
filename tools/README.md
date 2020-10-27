@@ -108,7 +108,7 @@ Usage:
 python carcontrols/joystickd.py
 
 # In another terminal:
-PARAMS_PATH=persist/params selfdrive/boardd/boardd
+BASEDIR=$(pwd) selfdrive/boardd/boardd
 
 # In another terminal:
 python carcontrols/debug_controls.py

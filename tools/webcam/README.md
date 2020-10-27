@@ -27,8 +27,7 @@ cd ~/openpilot
 ```
 - check out selfdrive/camerad/cameras/camera_webcam.cc lines 72 and 146 before building if any camera is upside down
 ```
-scons use_webcam=1
-touch prebuilt
+USE_WEBCAM=1 scons -j$(nproc)
 ```
 
 ## Connect the hardware

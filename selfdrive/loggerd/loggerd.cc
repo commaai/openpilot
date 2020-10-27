@@ -23,7 +23,6 @@
 #include <random>
 
 #include <ftw.h>
-#include <zmq.h>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
@@ -137,10 +136,10 @@ class RotateState {
 public:
   SubSocket* fpkt_sock;
   uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
-  bool enabled, should_rotate;
+  bool enabled, should_rotate, initialized;
 
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false) {};
+                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false) {};
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(fid_lock);
@@ -200,7 +199,7 @@ struct LoggerdState {
 LoggerdState s;
 
 #ifndef DISABLE_ENCODER
-void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips, int cam_idx) {
+void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
 
   switch (cam_idx) {
     case LOG_CAMERA_ID_DCAMERA: {
@@ -271,12 +270,6 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
       }
 
       encoder_inited = true;
-      if (is_streaming) {
-        encoder.zmq_ctx = zmq_ctx_new();
-        encoder.stream_sock_raw = zmq_socket(encoder.zmq_ctx, ZMQ_PUB);
-        assert(encoder.stream_sock_raw);
-        zmq_bind(encoder.stream_sock_raw, "tcp://*:9002");
-      }
     }
 
     // dont log a raw clip in the first minute
@@ -313,8 +306,9 @@ void encoder_thread(RotateState *rotate_state, bool is_streaming, bool raw_clips
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state->should_rotate) {
-          if (rotate_state->last_rotate_frame_id == 0) {
+          if (!rotate_state->initialized) {
             rotate_state->last_rotate_frame_id = extra.frame_id - 1;
+            rotate_state->initialized = true;
           }
           while (s.rotate_seq_id != my_idx && !do_exit) { usleep(1000); }
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
@@ -528,30 +522,31 @@ kj::Array<capnp::word> gen_init_data() {
   if (!clean) {
     init.setDirty(true);
   }
+  Params params = Params();
 
-  std::vector<char> git_commit = read_db_bytes("GitCommit");
+  std::vector<char> git_commit = params.read_db_bytes("GitCommit");
   if (git_commit.size() > 0) {
     init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
   }
 
-  std::vector<char> git_branch = read_db_bytes("GitBranch");
+  std::vector<char> git_branch = params.read_db_bytes("GitBranch");
   if (git_branch.size() > 0) {
     init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
   }
 
-  std::vector<char> git_remote = read_db_bytes("GitRemote");
+  std::vector<char> git_remote = params.read_db_bytes("GitRemote");
   if (git_remote.size() > 0) {
     init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
   }
 
-  init.setPassive(read_db_bool("Passive"));
+  init.setPassive(params.read_db_bool("Passive"));
   {
     // log params
-    std::map<std::string, std::string> params;
-    read_db_all(&params);
-    auto lparams = init.initParams().initEntries(params.size());
+    std::map<std::string, std::string> params_map;
+    params.read_db_all(&params_map);
+    auto lparams = init.initParams().initEntries(params_map.size());
     int i = 0;
-    for (auto& kv : params) {
+    for (auto& kv : params_map) {
       auto lentry = lparams[i];
       lentry.setKey(kv.first);
       lentry.setValue(kv.second);
@@ -598,6 +593,9 @@ static void bootlog() {
     std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
     boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
 
+    std::string launchLog = util::read_file("/tmp/launch_log");
+    boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+
     auto bytes = msg.toBytes();
     logger_log(&s.logger, bytes.begin(), bytes.size(), false);
   }
@@ -619,7 +617,7 @@ int main(int argc, char** argv) {
   }
   bool record_front = true;
 #ifndef QCOM2
-  record_front = read_db_bool("RecordFront");
+  record_front = Params().read_db_bool("RecordFront");
 #endif
 
   setpriority(PRIO_PROCESS, 0, -12);
@@ -663,16 +661,6 @@ int main(int argc, char** argv) {
     logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
   }
 
-  bool is_streaming = false;
-  bool is_logging = true;
-
-  if (argc > 1 && strcmp(argv[1], "--stream") == 0) {
-    is_streaming = true;
-  } else if (argc > 1 && strcmp(argv[1], "--only-stream") == 0) {
-    is_streaming = true;
-    is_logging = false;
-  }
-
   s.rotate_seq_id = 0;
   s.should_close = 0;
   s.finish_close = 0;
@@ -680,17 +668,17 @@ int main(int argc, char** argv) {
   pthread_mutex_init(&s.rotate_lock, NULL);
 #ifndef DISABLE_ENCODER
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], is_streaming, false, LOG_CAMERA_ID_FCAMERA);
+  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], false, LOG_CAMERA_ID_FCAMERA);
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
   // front camera
   std::thread front_encoder_thread_handle;
   if (record_front) {
-    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, false, LOG_CAMERA_ID_DCAMERA);
+    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, LOG_CAMERA_ID_DCAMERA);
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
   #ifdef QCOM2
   // wide camera
-  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, false, LOG_CAMERA_ID_ECAMERA);
+  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, LOG_CAMERA_ID_ECAMERA);
   s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
   #endif
 #endif
@@ -723,7 +711,7 @@ int main(int argc, char** argv) {
         bytes_count += msg->getSize();
         msg_count++;
       }
-      
+
       if (last_msg) {
         int fpkt_id = -1;
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
@@ -767,7 +755,7 @@ int main(int argc, char** argv) {
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
           // this *should* be redundant on tici since all camera frames are synced
           new_segment &= (((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS) &&
-                           (!s.rotate_state[cid].should_rotate) && (s.rotate_state[cid].last_rotate_frame_id != UINT32_MAX)) ||
+                           (!s.rotate_state[cid].should_rotate) && (s.rotate_state[cid].initialized)) ||
                           (!s.rotate_state[cid].enabled));
 #ifndef QCOM2
           break; // only look at fcamera frame id if not QCOM2
@@ -786,13 +774,11 @@ int main(int argc, char** argv) {
       pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
-      // rotate the log
-      if (is_logging) {
-        err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-        assert(err == 0);
-        if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
-        LOGW("rotated to %s", s.segment_path);
-      }
+      err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+      assert(err == 0);
+      if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
+      LOGW("rotated to %s", s.segment_path);
+
       // rotate the encoders
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
       pthread_mutex_unlock(&s.rotate_lock);
