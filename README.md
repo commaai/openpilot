@@ -109,6 +109,7 @@ Supported Cars
 | Toyota    | Highlander Hybrid 2017-19     | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Highlander Hybrid 2020        | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius 2016-20                 | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Toyota    | Prius 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Rav4 2016-18                  | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Rav4 2019-21                  | All               | openpilot        | 0mph               | 0mph              |
@@ -240,7 +241,6 @@ Many factors can impact the performance of openpilot DM, causing it to be unable
 * Low light conditions, such as driving at night or in dark tunnels.
 * Bright light (due to oncoming headlights, direct sunlight, etc.).
 * The driver's face is partially or completely outside field of view of the driver facing camera.
-* Right hand driving vehicles.
 * The driver facing camera is obstructed, covered, or damaged.
 
 The list above does not represent an exhaustive list of situations that may interfere with proper operation of openpilot components. A driver should not rely on openpilot DM to assess their level of attention.
