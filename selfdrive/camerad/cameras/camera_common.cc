@@ -293,7 +293,8 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, bool front, int
         uint8_t lum = pix_ptr[(y * b->yuv_width) + x];
         lum_binning[lum]++;
       } else {
-        const uint8_t *pix = &pix_ptr[y * b->rgb_width * 3 + x * 3];
+        // TODO: should get rid of RGB here
+        const uint8_t *pix = &pix_ptr[y * b->rgb_stride + x * 3];
         unsigned int lum = (unsigned int)(pix[0] + pix[1] + pix[2]);
         lum_binning[std::min(lum / 3, 255u)]++;
       }
