@@ -1,6 +1,6 @@
 Version 0.7.11 (2020-XX-XX)
 ========================
- * Kia Nero EV 2020 support thanks to nickn17!
+ * Kia Niro EV 2020 support thanks to nickn17!
 
 Version 0.7.10 (2020-10-29)
 ========================
