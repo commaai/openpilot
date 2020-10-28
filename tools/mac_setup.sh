@@ -10,7 +10,6 @@ else
 fi
 
 brew install capnp \
-             czmq \
              coreutils \
              eigen \
              ffmpeg \
