@@ -368,6 +368,7 @@ routes = {
     'carFingerprint': TOYOTA.LEXUS_NX,
     'enableCamera': True,
     'enableDsu': False,
+    'fingerprintSource': 'fixed',
   },
   # TODO: missing some combos for highlander
   "0a302ffddbb3e3d3|2020-02-08--16-19-08": {
