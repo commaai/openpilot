@@ -38,10 +38,7 @@ class TestStartup(unittest.TestCase):
     (EventName.startupNoCar, None, False),
   ])
   def test_startup_alert(self, expected_event, car, toggle_enabled):
-    if car is not None:
-      os.environ["FINGERPRINT"] = car
-    else:
-      os.environ["FINGERPRINT"] = ""
+    os.environ["FINGERPRINT"] = "" if car is None else car
     start_managed_process('controlsd')
     # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
