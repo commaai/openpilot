@@ -3,8 +3,25 @@
 import os
 import time
 
+from common.hardware import TICI
+from common.gpio import GPIO_HUB_RST_N, GPIO_STM_BOOT0, GPIO_STM_RST_N, gpio_init, gpio_set
+from panda import BASEDIR, Panda, PandaDFU, build_st
 from selfdrive.swaglog import cloudlog
-from panda import Panda, PandaDFU, BASEDIR, build_st
+
+
+def set_panda_power(power=True):
+  if not TICI:
+    return
+
+  gpio_init(GPIO_STM_RST_N, True)
+  gpio_init(GPIO_STM_BOOT0, True)
+
+  gpio_set(GPIO_STM_RST_N, False)
+  gpio_set(GPIO_HUB_RST_N, True)
+
+  time.sleep(0.1)
+
+  gpio_set(GPIO_STM_RST_N, power)
 
 
 def get_firmware_fn():
@@ -23,7 +40,11 @@ def get_expected_signature(fw_fn=None):
   if fw_fn is None:
     fw_fn = get_firmware_fn()
 
-  return Panda.get_signature_from_firmware(fw_fn)
+  try:
+    return Panda.get_signature_from_firmware(fw_fn)
+  except Exception:
+    cloudlog.exception("Error computing expected signature")
+    return b""
 
 
 def update_panda():
@@ -88,10 +109,12 @@ def update_panda():
 
 
 def main():
+  set_panda_power()
   update_panda()
 
   os.chdir("boardd")
   os.execvp("./boardd", ["./boardd"])
+
 
 if __name__ == "__main__":
   main()

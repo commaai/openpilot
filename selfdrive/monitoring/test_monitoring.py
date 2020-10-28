@@ -31,6 +31,7 @@ class fake_DM_msg():
     self.rightBlinkProb = 1. * is_distracted
     self.faceOrientationStd = [1.*is_model_uncertain, 1.*is_model_uncertain, 1.*is_model_uncertain]
     self.facePositionStd = [1.*is_model_uncertain, 1.*is_model_uncertain]
+    self.sgProb = 0.
 
 
 # driver state from neural net, 10Hz
@@ -140,7 +141,7 @@ class TestMonitoring(unittest.TestCase):
   # 5. op engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
   #  - both actions should clear the alert, but momentary appearence should not
   def test_sometimes_transparent_commuter(self):
-      _visible_time = np.random.choice([1, 10])  # seconds
+      _visible_time = np.random.choice([0.5, 10])  # seconds
       # print _visible_time
       ds_vector = always_no_face[:]*2
       interaction_vector = always_false[:]*2
@@ -150,7 +151,7 @@ class TestMonitoring(unittest.TestCase):
       self.assertTrue(len(events_output[int(_INVISIBLE_SECONDS_TO_ORANGE*0.5/DT_DMON)]) == 0)
       self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
       self.assertTrue(len(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE+0.1)/DT_DMON)]) == 0)
-      if _visible_time == 1:
+      if _visible_time == 0.5:
         self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1-0.1)/DT_DMON)].names[0], EventName.promptDriverUnresponsive)
         self.assertEqual(events_output[int((_INVISIBLE_SECONDS_TO_ORANGE*2+1+0.1+_visible_time)/DT_DMON)].names[0], EventName.preDriverUnresponsive)
       elif _visible_time == 10:
@@ -195,8 +196,7 @@ class TestMonitoring(unittest.TestCase):
     self.assertEqual(events_output[int((_redlight_time+0.5)/DT_DMON)].names[0], EventName.promptDriverDistracted)
 
   # 9. op engaged, model is extremely uncertain. driver first attentive, then distracted
-  #  - should only pop the green alert about model uncertainty
-  #  - (note: this's just for sanity check, std output should never be this high)
+  #  - should pop a uncertain message first, then slowly into active green/orange, finally back to wheel touch but timer locked by orange 
   def test_one_indecisive_model(self):
     ds_vector = [msg_ATTENTIVE_UNCERTAIN] * int(_UNCERTAIN_SECONDS_TO_GREEN/DT_DMON) + \
                 [msg_ATTENTIVE] * int(_DISTRACTED_SECONDS_TO_ORANGE/DT_DMON) + \
@@ -204,9 +204,9 @@ class TestMonitoring(unittest.TestCase):
     interaction_vector = always_false[:]
     events_output = run_DState_seq(ds_vector, interaction_vector, always_true, always_false)[0]
     self.assertTrue(len(events_output[int(_UNCERTAIN_SECONDS_TO_GREEN*0.5/DT_DMON)]) == 0)
-    self.assertEqual(events_output[int((_UNCERTAIN_SECONDS_TO_GREEN-0.1)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
+    self.assertEqual(events_output[int((_HI_STD_TIMEOUT)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
     self.assertTrue(len(events_output[int((_UNCERTAIN_SECONDS_TO_GREEN+_DISTRACTED_SECONDS_TO_ORANGE-0.5)/DT_DMON)]) == 0)
-    self.assertEqual(events_output[int((_TEST_TIMESPAN-5.)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
+    self.assertTrue(EventName.promptDriverDistracted in events_output[int((_TEST_TIMESPAN-5.)/DT_DMON)].names)
 
   # 10. op engaged, model is somehow uncertain and driver is distracted
   #  - should slow down the alert countdown but it still gets there
@@ -215,9 +215,9 @@ class TestMonitoring(unittest.TestCase):
     interaction_vector = always_false[:]
     events_output = run_DState_seq(ds_vector, interaction_vector, always_true, always_false)[0]
     self.assertTrue(len(events_output[int(_UNCERTAIN_SECONDS_TO_GREEN*0.5/DT_DMON)]) == 0)
-    self.assertEqual(events_output[int((_UNCERTAIN_SECONDS_TO_GREEN)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
-    self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL))/DT_DMON)].names[1], EventName.preDriverDistracted)
-    self.assertEqual(events_output[int((2.5*(_DISTRACTED_TIME-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL))/DT_DMON)].names[1], EventName.promptDriverDistracted)
+    self.assertEqual(events_output[int((_HI_STD_TIMEOUT)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
+    self.assertTrue(EventName.preDriverDistracted in events_output[int((2*(_DISTRACTED_TIME-_DISTRACTED_PRE_TIME_TILL_TERMINAL))/DT_DMON)].names)
+    self.assertTrue(EventName.promptDriverDistracted in events_output[int((2*(_DISTRACTED_TIME-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL))/DT_DMON)].names)
     self.assertEqual(events_output[int((_DISTRACTED_TIME+1)/DT_DMON)].names[1], EventName.promptDriverDistracted)
     self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)].names[1], EventName.promptDriverDistracted)  # set_timer blocked
 

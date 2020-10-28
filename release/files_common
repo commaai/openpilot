@@ -1,6 +1,7 @@
 .gitignore
 LICENSE
 launch.sh
+launch_env.sh
 launch_chffrplus.sh
 launch_openpilot.sh
 
@@ -16,7 +17,11 @@ apk/ai.comma*.apk
 
 common/.gitignore
 common/__init__.py
-common/android.py
+common/hardware.py
+common/hardware_android.py
+common/hardware_tici.py
+common/hardware_base.py
+common/gpio.py
 common/realtime.py
 common/clock.pyx
 common/timeout.py
@@ -25,6 +30,9 @@ common/file_helpers.py
 common/logging_extra.py
 common/numpy_fast.py
 common/params.py
+common/params_pxd.pxd
+common/params_pyx.pyx
+common/params_pyx_setup.py
 common/xattr.py
 common/profiler.py
 common/basedir.py
@@ -75,6 +83,7 @@ selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/pandad.py
 selfdrive/updated.py
+selfdrive/rtshield.py
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
@@ -88,6 +97,10 @@ selfdrive/boardd/boardd.py
 selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/boardd_setup.py
 selfdrive/boardd/can_list_to_can_capnp.cc
+selfdrive/boardd/panda.cc
+selfdrive/boardd/panda.h
+selfdrive/boardd/pigeon.cc
+selfdrive/boardd/pigeon.h
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
@@ -209,6 +222,11 @@ selfdrive/common/visionimg.h
 selfdrive/common/spinner.c
 selfdrive/common/spinner.h
 
+selfdrive/common/gpio.cc
+selfdrive/common/gpio.h
+selfdrive/common/i2c.cc
+selfdrive/common/i2c.h
+
 
 selfdrive/controls/__init__.py
 selfdrive/controls/controlsd.py
@@ -278,10 +296,10 @@ selfdrive/locationd/models/car_kf.py
 selfdrive/locationd/models/constants.py
 
 selfdrive/locationd/calibrationd.py
-selfdrive/locationd/calibration_helpers.py
 
 selfdrive/logcatd/SConscript
-selfdrive/logcatd/logcatd.cc
+selfdrive/logcatd/logcatd_android.cc
+selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
 selfdrive/proclogd/proclogd.cc
@@ -300,11 +318,15 @@ selfdrive/loggerd/__init__.py
 selfdrive/loggerd/config.py
 selfdrive/loggerd/uploader.py
 selfdrive/loggerd/deleter.py
+selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
 selfdrive/sensord/gpsd.cc
 selfdrive/sensord/libdiag.h
-selfdrive/sensord/sensors.cc
+selfdrive/sensord/sensors_qcom.cc
+selfdrive/sensord/sensors_qcom2.cc
+selfdrive/sensord/sensors/*.cc
+selfdrive/sensord/sensors/*.hpp
 selfdrive/sensord/sensord
 selfdrive/sensord/gpsd
 
@@ -330,13 +352,19 @@ selfdrive/ui/text/Makefile
 selfdrive/ui/text/text
 selfdrive/ui/text/text.c
 
+selfdrive/ui/qt/*.cc
+selfdrive/ui/qt/*.hpp
+
+selfdrive/ui/android/*.cc
+selfdrive/ui/android/*.hpp
+
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
-selfdrive/camerad/bufs.h
 
 selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
+selfdrive/camerad/cameras/camera_common.cc
 selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
@@ -383,7 +411,6 @@ selfdrive/modeld/runners/run.h
 
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
-selfdrive/monitoring/driverview.py
 
 selfdrive/assets
 selfdrive/assets/fonts/*.ttf
@@ -410,6 +437,7 @@ phonelibs/libyuv/lib/**
 
 phonelibs/snpe/include/**
 phonelibs/snpe/aarch64**
+phonelibs/snpe/dsp**
 
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**
@@ -418,7 +446,6 @@ phonelibs/android_system_core/**
 installer/updater/updater
 installer/updater/updater.cc
 installer/updater/update.json
-installer/updater/update_kernel.json
 installer/updater/Makefile
 
 scripts/update_now.sh
@@ -498,6 +525,7 @@ opendbc/honda_accord_s2t_2018_can_generated.dbc
 opendbc/honda_accord_lx15t_2018_can_generated.dbc
 opendbc/acura_ilx_2016_can_generated.dbc
 opendbc/acura_rdx_2018_can_generated.dbc
+opendbc/acura_rdx_2020_can_generated.dbc
 opendbc/honda_civic_touring_2016_can_generated.dbc
 opendbc/honda_civic_hatchback_ex_2017_can_generated.dbc
 opendbc/honda_civic_sedan_16_diesel_2019_can_generated.dbc

@@ -4,6 +4,7 @@ from cereal import car
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 def create_steering_control(packer, apply_steer, frame, steer_step):
+
   idx = (frame / steer_step) % 16
 
   values = {

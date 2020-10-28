@@ -5,7 +5,7 @@ import subprocess
 from cereal import log, car
 import cereal.messaging as messaging
 from selfdrive.test.helpers import phone_only, with_processes
-from common.android import get_sound_card_online
+from common.hardware import HARDWARE
 from common.realtime import DT_CTRL
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
@@ -19,8 +19,8 @@ SOUNDS = {
   AudibleAlert.chimePrompt: 85,
   AudibleAlert.chimeWarning1: 80,
   AudibleAlert.chimeWarning2: 107,
-  AudibleAlert.chimeWarningRepeat: 134,
   AudibleAlert.chimeWarning2Repeat: 177,
+  AudibleAlert.chimeWarningRepeat: 240,
 }
 
 def get_total_writes():
@@ -30,7 +30,7 @@ def get_total_writes():
 
 @phone_only
 def test_sound_card_init():
-  assert get_sound_card_online()
+  assert HARDWARE.get_sound_card_online()
 
 
 @phone_only
@@ -67,5 +67,6 @@ def test_alert_sounds():
       pm.send('controlsState', msg)
       time.sleep(DT_CTRL)
 
+    tolerance = (expected_writes % 100) * 2
     actual_writes = get_total_writes() - start_writes
-    assert abs(expected_writes - actual_writes) <= 2, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
+    assert abs(expected_writes - actual_writes) <= tolerance, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"

@@ -24,23 +24,16 @@ Table of Contents
 Requirements
 ============
 
-openpilot tools and the following setup steps are developed and tested on Ubuntu 16.04, MacOS 10.14.2 and Python 3.7.3.
+openpilot tools and the following setup steps are developed and tested on Ubuntu 16.04, MacOS 10.14.2 and Python 3.8.2.
 
 Setup
 ============
-1. Run ubuntu_setup.sh, make sure everything completed correctly
+1. Run `ubuntu_setup.sh` or `mac_setup.sh`, make sure everything completed correctly
 
 2. Compile openpilot by running ```scons``` in the openpilot directory
+   or alternatively run ```./openpilot_build.sh``` (uses a pre-configured docker container)
 
-3. Add some folders to root
-    ```bash
-    sudo mkdir /data
-    sudo mkdir /data/params
-    sudo chown $USER /data/params
-    ```
-
-
-4. Try out some tools!
+3. Try out some tools!
 
 
 Tool examples
@@ -115,7 +108,7 @@ Usage:
 python carcontrols/joystickd.py
 
 # In another terminal:
-PARAMS_PATH=persist/params selfdrive/boardd/boardd
+BASEDIR=$(pwd) selfdrive/boardd/boardd
 
 # In another terminal:
 python carcontrols/debug_controls.py

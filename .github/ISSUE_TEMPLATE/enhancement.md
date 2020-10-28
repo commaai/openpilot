@@ -1,6 +1,6 @@
 ---
 name: Enhancement
-about: For suggestions for openpilot enhancements
+about: For openpilot enhancement suggestions
 title: ''
 labels: 'enhancement'
 assignees: ''

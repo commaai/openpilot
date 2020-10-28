@@ -92,7 +92,12 @@ routes = {
     'carFingerprint': GM.BUICK_REGAL,
     'enableCamera': True,
   },
-  "7d44af5b7a1b2c8e|2017-09-16--01-50-07": {
+  "0e7a2ba168465df5|2020-10-18--14-14-22": {
+    'carFingerprint': HONDA.ACURA_RDX_3G,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
+  },
+  "a74b011b32b51b56|2020-07-26--17-09-36": {
     'carFingerprint': HONDA.CIVIC,
     'enableCamera': True,
   },
@@ -168,8 +173,16 @@ routes = {
     'carFingerprint': HONDA.CIVIC_BOSCH,
     'enableCamera': True,
   },
+  "f34a60d68d83b1e5|2020-10-06--14-35-55": {
+    'carFingerprint': HONDA.ACURA_RDX,
+    'enableCamera': True,
+  },
   "6fe86b4e410e4c37|2020-07-22--16-27-13": {
     'carFingerprint': HYUNDAI.HYUNDAI_GENESIS,
+    'enableCamera': True,
+  },
+  "70c5bec28ec8e345|2020-08-08--12-22-23": {
+    'carFingerprint': HYUNDAI.GENESIS_G70,
     'enableCamera': True,
   },
   "38bfd238edecbcd7|2018-08-22--09-45-44": {
@@ -208,8 +221,16 @@ routes = {
     'carFingerprint': HYUNDAI.IONIQ,
     'enableCamera': True,
   },
+  "22d955b2cd499c22|2020-08-10--19-58-21": {
+    'carFingerprint': HYUNDAI.KONA,
+    'enableCamera': True,
+  },
   "5dddcbca6eb66c62|2020-07-26--13-24-19": {
     'carFingerprint': HYUNDAI.KIA_STINGER,
+    'enableCamera': True,
+  },
+  "d624b3d19adce635|2020-08-01--14-59-12": {
+    'carFingerprint': HYUNDAI.VELOSTER,
     'enableCamera': True,
   },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
@@ -268,6 +289,12 @@ routes = {
     'carFingerprint': TOYOTA.RAV4,
     'enableCamera': True,
     'enableDsu': True,
+    'enableGasInterceptor': True,
+  },
+  "b14c5b4742e6fc85|2020-07-28--19-50-11": {
+    'carFingerprint': TOYOTA.RAV4,
+    'enableCamera': True,
+    'enableDsu': False,
     'enableGasInterceptor': True,
   },
   "32a7df20486b0f70|2020-02-06--16-06-50": {
@@ -363,8 +390,8 @@ routes = {
     'enableCamera': False,
     'enableDsu': False,
   },
-  "1dd19ceed0ee2b48|2018-12-22--17-36-49": {
-    'carFingerprint': TOYOTA.LEXUS_IS,  # 300 hybrid
+  "0a0de17a1e6a2d15|2020-09-21--21-24-41": {
+    'carFingerprint': TOYOTA.PRIUS_TSS2,
     'enableCamera': True,
     'enableDsu': False,
   },
@@ -398,6 +425,26 @@ routes = {
     'enableCamera': True,
     'fingerprintSource': 'fixed',
   },
+  # Dashcam
+  "95441c38ae8c130e|2020-06-08--12-10-17": {
+    'carFingerprint': SUBARU.FORESTER_PREGLOBAL,
+    'enableCamera': True,
+  },
+  # Dashcam
+  "df5ca7660000fba8|2020-06-16--17-37-19": {
+    'carFingerprint': SUBARU.LEGACY_PREGLOBAL,
+    'enableCamera': True,
+  },
+  # Dashcam
+  "5ab784f361e19b78|2020-06-08--16-30-41": {
+    'carFingerprint': SUBARU.OUTBACK_PREGLOBAL,
+    'enableCamera': True,
+  },
+  # Dashcam
+  "e19eb5d5353b1ac1|2020-08-09--14-37-56": {
+    'carFingerprint': SUBARU.OUTBACK_PREGLOBAL_2018,
+    'enableCamera': True,
+  },
   "fbbfa6af821552b9|2020-03-03--08-09-43": {
     'carFingerprint': NISSAN.XTRAIL,
     'enableCamera': True,
@@ -414,6 +461,14 @@ routes = {
     'carFingerprint': MAZDA.CX5,
     'enableCamera': True,
   },
+  "10b5a4b380434151|2020-08-26--17-11-45": {
+    'carFingerprint': MAZDA.CX9,
+    'enableCamera': True,
+  },
+  "74f1038827005090|2020-08-26--20-05-50": {
+    'carFingerprint': MAZDA.Mazda3,
+    'enableCamera': True,
+  },
 }
 
 passive_routes: List[str] = [
@@ -423,8 +478,12 @@ forced_dashcam_routes = [
   # Ford fusion
   "f1b4c567731f4a1b|2018-04-18--11-29-37",
   "f1b4c567731f4a1b|2018-04-30--10-15-35",
-  # Mazda
+  # Mazda CX5
   "32a319f057902bb3|2020-04-27--15-18-58",
+  # Mazda CX9
+  "10b5a4b380434151|2020-08-26--17-11-45",
+  # Mazda3
+  "74f1038827005090|2020-08-26--20-05-50",
 ]
 
 # TODO: add routes for these cars
@@ -437,23 +496,19 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  HONDA.ACURA_RDX,
   HONDA.CRV,
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
-  HYUNDAI.HYUNDAI_GENESIS,
   HYUNDAI.KIA_FORTE,
-  HYUNDAI.KIA_OPTIMA,
   HYUNDAI.KIA_OPTIMA_H,
-  HYUNDAI.KIA_STINGER,
-  HYUNDAI.KONA,
   HYUNDAI.KONA_EV,
   TOYOTA.CAMRYH,
   TOYOTA.CHR,
   TOYOTA.CHRH,
+  TOYOTA.HIGHLANDER,
   TOYOTA.HIGHLANDERH,
   TOYOTA.HIGHLANDERH_TSS2,
   SUBARU.FORESTER_PREGLOBAL,

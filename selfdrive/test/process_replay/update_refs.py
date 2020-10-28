@@ -17,6 +17,8 @@ if __name__ == "__main__":
   ref_commit_fn = os.path.join(process_replay_dir, "ref_commit")
 
   ref_commit = get_git_commit()
+  if ref_commit is None:
+    raise Exception("couldn't get ref commit")
   with open(ref_commit_fn, "w") as f:
     f.write(ref_commit)
 

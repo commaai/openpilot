@@ -6,8 +6,7 @@ from typing import Any, cast
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.process_replay import (CONFIGS,
-                                                          replay_process)
+from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from tools.lib.logreader import LogReader
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.gm.values import CAR as GM
@@ -69,11 +68,7 @@ segments = {
     'car_brand': "NISSAN",
     'carFingerprint': NISSAN.XTRAIL,
   },
-  # Enable when port is tested and dascamOnly is no longer set
-  #"32a319f057902bb3|2020-04-27--15-18-58--2": {
-  #  'car_brand': "MAZDA",
-  #  'carFingerprint': MAZDA.CX5,
-  #},
+
 }
 
 # ford doesn't need to be tested until a full port is done
@@ -119,8 +114,10 @@ def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
       segment = cmp_log_fn.split("/")[-1].split("_")[0]
       raise Exception("Route never enabled: %s" % segment)
 
-  return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
-
+  try:
+    return compare_logs(cmp_log_msgs, log_msgs, ignore_fields+cfg.ignore, ignore_msgs, cfg.tolerance)
+  except Exception as e:
+    return str(e)
 
 def format_diff(results, ref_commit):
   diff1, diff2 = "", ""

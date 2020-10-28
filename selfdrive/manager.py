@@ -13,13 +13,13 @@ from typing import Dict, List
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 
 
-from common.basedir import BASEDIR, PARAMS
-from common.android import ANDROID
+from common.basedir import BASEDIR
+from common.hardware import HARDWARE, ANDROID, PC
 WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
 
-TOTAL_SCONS_NODES = 1140
+TOTAL_SCONS_NODES = 1040
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 # Create folders needed for msgq
@@ -156,7 +156,6 @@ from selfdrive.registration import register
 from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
-from common import android
 from common.apk import update_apks, pm_apply_packages, start_offroad
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
@@ -189,7 +188,7 @@ managed_processes = {
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
-  "driverview": "selfdrive.monitoring.driverview",
+  "rtshield": "selfdrive.rtshield",
 }
 
 daemon_processes = {
@@ -209,22 +208,20 @@ interrupt_processes: List[str] = []
 # processes to end with SIGKILL instead of SIGTERM
 kill_processes = ['sensord']
 
-# processes to end if thermal conditions exceed Green parameters
-green_temp_processes = ['uploader']
-
 persistent_processes = [
   'thermald',
   'logmessaged',
   'ui',
   'uploader',
+  'deleter',
 ]
 
-if ANDROID:
+if not PC:
   persistent_processes += [
+    'updated',
     'logcatd',
     'tombstoned',
-    'updated',
-    'deleter',
+    'sensord',
   ]
 
 car_started_processes = [
@@ -232,28 +229,42 @@ car_started_processes = [
   'plannerd',
   'loggerd',
   'radard',
-  'dmonitoringd',
   'calibrationd',
   'paramsd',
   'camerad',
-  'modeld',
   'proclogd',
-  'ubloxd',
   'locationd',
+  'clocksd',
+]
+
+driver_view_processes = [
+  'camerad',
+  'dmonitoringd',
+  'dmonitoringmodeld'
 ]
 
 if WEBCAM:
   car_started_processes += [
+    'dmonitoringd',
+    'dmonitoringmodeld',
+  ]
+
+if not PC:
+  car_started_processes += [
+    'ubloxd',
+    'dmonitoringd',
     'dmonitoringmodeld',
   ]
 
 if ANDROID:
   car_started_processes += [
-    'sensord',
-    'clocksd',
     'gpsd',
-    'dmonitoringmodeld',
+    'rtshield',
   ]
+
+# starting dmonitoringmodeld when modeld is initializing can sometimes \
+# result in a weird snpe state where dmon constantly uses more cpu than normal.
+car_started_processes += ['modeld']
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
@@ -360,6 +371,7 @@ def kill_managed_process(name):
         join_process(running[name], 15)
         if running[name].exitcode is None:
           cloudlog.critical("unkillable process %s failed to die!" % name)
+          # TODO: Use method from HARDWARE
           if ANDROID:
             cloudlog.critical("FORCE REBOOTING PHONE!")
             os.system("date >> /sdcard/unkillable_reboot")
@@ -383,6 +395,14 @@ def cleanup_all_processes(signal, frame):
   for name in list(running.keys()):
     kill_managed_process(name)
   cloudlog.info("everything is dead")
+
+
+def send_managed_process_signal(name, sig):
+  if name not in running or name not in managed_processes:
+    return
+  cloudlog.info(f"sending signal {sig} to {name}")
+  os.kill(running[name].pid, sig)
+
 
 # ****************** run loop ******************
 
@@ -452,25 +472,16 @@ def manager_thread():
     for k in os.getenv("BLOCK").split(","):
       del managed_processes[k]
 
+  started_prev = False
   logger_dead = False
 
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
 
-    # heavyweight batch processes are gated on favorable thermal conditions
-    if msg.thermal.thermalStatus >= ThermalStatus.yellow:
-      for p in green_temp_processes:
-        if p in persistent_processes:
-          kill_managed_process(p)
-    else:
-      for p in green_temp_processes:
-        if p in persistent_processes:
-          start_managed_process(p)
-
     if msg.thermal.freeSpace < 0.05:
       logger_dead = True
 
-    if msg.thermal.started and "driverview" not in running:
+    if msg.thermal.started:
       for p in car_started_processes:
         if p == "loggerd" and logger_dead:
           kill_managed_process(p)
@@ -478,13 +489,24 @@ def manager_thread():
           start_managed_process(p)
     else:
       logger_dead = False
+      driver_view = params.get("IsDriverViewEnabled") == b"1"
+
+      # TODO: refactor how manager manages processes
       for p in reversed(car_started_processes):
-        kill_managed_process(p)
-      # this is ugly
-      if "driverview" not in running and params.get("IsDriverViewEnabled") == b"1":
-        start_managed_process("driverview")
-      elif "driverview" in running and params.get("IsDriverViewEnabled") == b"0":
-        kill_managed_process("driverview")
+        if p not in driver_view_processes or not driver_view:
+          kill_managed_process(p)
+
+      for p in driver_view_processes:
+        if driver_view:
+          start_managed_process(p)
+        else:
+          kill_managed_process(p)
+
+      # trigger an update after going offroad
+      if started_prev:
+        send_managed_process_signal("updated", signal.SIGHUP)
+
+    started_prev = msg.thermal.started
 
     # check the status of all processes, did any of them die?
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
@@ -511,11 +533,9 @@ def uninstall():
   with open('/cache/recovery/command', 'w') as f:
     f.write('--wipe_data\n')
   # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
-  android.reboot(reason="recovery")
+  HARDWARE.reboot(reason="recovery")
 
 def main():
-  os.environ['PARAMS_PATH'] = PARAMS
-
   if ANDROID:
     # the flippening!
     os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
@@ -536,11 +556,6 @@ def main():
     ("HasCompletedSetup", "0"),
     ("IsUploadRawEnabled", "1"),
     ("IsLdwEnabled", "1"),
-    ("IsGeofenceEnabled", "-1"),
-    ("SpeedLimitOffset", "0"),
-    ("LongitudinalControl", "0"),
-    ("LimitSetSpeed", "0"),
-    ("LimitSetSpeedNeural", "0"),
     ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
     ("LaneChangeEnabled", "1"),
@@ -591,8 +606,7 @@ if __name__ == "__main__":
     cloudlog.exception("Manager failed to start")
 
     # Show last 3 lines of traceback
-    error = traceback.format_exc(3)
-
+    error = traceback.format_exc(-3)
     error = "Manager failed to start\n \n" + error
     with TextWindow(error) as t:
       t.wait_for_exit()

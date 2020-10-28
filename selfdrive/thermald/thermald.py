@@ -1,24 +1,33 @@
 #!/usr/bin/env python3
-import os
-import json
-import copy
 import datetime
+import os
+import time
+from collections import namedtuple
+from typing import Dict, Optional, Tuple
+
 import psutil
 from smbus2 import SMBus
-from cereal import log
-from common.android import ANDROID, get_network_type, get_network_strength
-from common.basedir import BASEDIR
-from common.params import Params, put_nonblocking
-from common.realtime import sec_since_boot, DT_TRML
-from common.numpy_fast import clip, interp
-from common.filter_simple import FirstOrderFilter
-from selfdrive.version import terms_version, training_version
-from selfdrive.swaglog import cloudlog
+
 import cereal.messaging as messaging
+from cereal import log
+from common.filter_simple import FirstOrderFilter
+from common.hardware import EON, HARDWARE, TICI
+from common.numpy_fast import clip, interp
+from common.params import Params
+from common.realtime import DT_TRML, sec_since_boot
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
-from selfdrive.thermald.power_monitoring import PowerMonitoring, get_battery_capacity, get_battery_status, \
-                                                get_battery_current, get_battery_voltage, get_usb_present
+from selfdrive.swaglog import cloudlog
+from selfdrive.thermald.power_monitoring import (PowerMonitoring,
+                                                 get_battery_capacity,
+                                                 get_battery_current,
+                                                 get_battery_status,
+                                                 get_battery_voltage,
+                                                 get_usb_present)
+from selfdrive.version import get_git_branch, terms_version, training_version
+
+ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient'])
 
 FW_SIGNATURE = get_expected_signature()
 
@@ -31,39 +40,40 @@ DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without inte
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
+prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
+
 LEON = False
 last_eon_fan_val = None
 
 
-with open(BASEDIR + "/selfdrive/controls/lib/alerts_offroad.json") as json_file:
-  OFFROAD_ALERTS = json.load(json_file)
+def get_thermal_config():
+  # (tz, scale)
+  if EON:
+    return ThermalConfig(cpu=((5, 7, 10, 12), 10), gpu=((16,), 10), mem=(2, 10), bat=(29, 1000), ambient=(25, 1))
+  elif TICI:
+    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(70, 1000))
+  else:
+    return ThermalConfig(cpu=((None,), 1), gpu=((None,), 1), mem=(None, 1), bat=(None, 1), ambient=(None, 1))
 
 
-def read_tz(x, clip=True):
-  if not ANDROID:
-    # we don't monitor thermal on PC
+def read_tz(x):
+  if x is None:
     return 0
+
   try:
     with open("/sys/devices/virtual/thermal/thermal_zone%d/temp" % x) as f:
-      ret = int(f.read())
-      if clip:
-        ret = max(0, ret)
+      return int(f.read())
   except FileNotFoundError:
     return 0
 
-  return ret
 
-
-def read_thermal():
+def read_thermal(thermal_config):
   dat = messaging.new_message('thermal')
-  dat.thermal.cpu0 = read_tz(5)
-  dat.thermal.cpu1 = read_tz(7)
-  dat.thermal.cpu2 = read_tz(10)
-  dat.thermal.cpu3 = read_tz(12)
-  dat.thermal.mem = read_tz(2)
-  dat.thermal.gpu = read_tz(16)
-  dat.thermal.bat = read_tz(29)
-  dat.thermal.pa0 = read_tz(25)
+  dat.thermal.cpu = [read_tz(z) / thermal_config.cpu[1] for z in thermal_config.cpu[0]]
+  dat.thermal.gpu = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
+  dat.thermal.mem = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
+  dat.thermal.ambient = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
+  dat.thermal.bat = read_tz(thermal_config.bat[0]) / thermal_config.bat[1]
   return dat
 
 
@@ -117,7 +127,7 @@ _TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
 # fan speed options
 _FAN_SPEEDS = [0, 16384, 32768, 65535]
 # max fan speed only allowed if battery is hot
-_BAT_TEMP_THERSHOLD = 45.
+_BAT_TEMP_THRESHOLD = 45.
 
 
 def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
@@ -131,7 +141,7 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
     # update speed if using the low thresholds results in fan speed decrement
     fan_speed = new_speed_l
 
-  if bat_temp < _BAT_TEMP_THERSHOLD:
+  if bat_temp < _BAT_TEMP_THRESHOLD:
     # no max fan speed unless battery is hot
     fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
 
@@ -149,10 +159,14 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
   return new_speed
 
 
-def thermald_thread():
-  # prevent LEECO from undervoltage
-  BATT_PERC_OFF = 10 if LEON else 3
+def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: Optional[str]=None):
+  if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
+    return
+  prev_offroad_states[offroad_alert] = (show_alert, extra_text)
+  set_offroad_alert(offroad_alert, show_alert, extra_text)
 
+
+def thermald_thread():
   health_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected health frequency
 
   # now loop
@@ -160,17 +174,20 @@ def thermald_thread():
   health_sock = messaging.sub_sock('health', timeout=health_timeout)
   location_sock = messaging.sub_sock('gpsLocation')
 
-  ignition = False
   fan_speed = 0
   count = 0
+
+  startup_conditions = {
+    "ignition": False,
+  }
+  startup_conditions_prev = startup_conditions.copy()
 
   off_ts = None
   started_ts = None
   started_seen = False
   thermal_status = ThermalStatus.green
-  thermal_status_prev = ThermalStatus.green
   usb_power = True
-  usb_power_prev = True
+  current_branch = get_git_branch()
 
   network_type = NetworkType.none
   network_strength = NetworkStrength.unknown
@@ -178,9 +195,6 @@ def thermald_thread():
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
   health_prev = None
-  fw_version_match_prev = True
-  current_connectivity_alert = None
-  time_valid_prev = True
   should_start_prev = False
   handle_fan = None
   is_uno = False
@@ -190,11 +204,13 @@ def thermald_thread():
   pm = PowerMonitoring()
   no_panda_cnt = 0
 
+  thermal_config = get_thermal_config()
+
   while 1:
     health = messaging.recv_sock(health_sock, wait=True)
     location = messaging.recv_sock(location_sock)
     location = location.gpsLocation if location else None
-    msg = read_thermal()
+    msg = read_thermal(thermal_config)
 
     if health is not None:
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
@@ -203,19 +219,19 @@ def thermald_thread():
       if health.health.hwType == log.HealthData.HwType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
-          if ignition:
+          if startup_conditions["ignition"]:
             cloudlog.error("Lost panda connection while onroad")
-          ignition = False
+          startup_conditions["ignition"] = False
       else:
         no_panda_cnt = 0
-        ignition = health.health.ignitionLine or health.health.ignitionCan
+        startup_conditions["ignition"] = health.health.ignitionLine or health.health.ignitionCan
 
       # Setup fan handler on first connect to panda
       if handle_fan is None and health.health.hwType != log.HealthData.HwType.unknown:
         is_uno = health.health.hwType == log.HealthData.HwType.uno
         has_relay = health.health.hwType in [log.HealthData.HwType.blackPanda, log.HealthData.HwType.uno, log.HealthData.HwType.dos]
 
-        if is_uno or not ANDROID:
+        if (not EON) or is_uno:
           cloudlog.info("Setting up UNO fan handler")
           handle_fan = handle_fan_uno
         else:
@@ -233,8 +249,8 @@ def thermald_thread():
     # get_network_type is an expensive call. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
       try:
-        network_type = get_network_type()
-        network_strength = get_network_strength(network_type)
+        network_type = HARDWARE.get_network_type()
+        network_strength = HARDWARE.get_network_strength(network_type)
       except Exception:
         cloudlog.exception("Error getting network status")
 
@@ -250,30 +266,27 @@ def thermald_thread():
     msg.thermal.usbOnline = get_usb_present()
 
     # Fake battery levels on uno for frame
-    if is_uno:
+    if (not EON) or is_uno:
       msg.thermal.batteryPercent = 100
       msg.thermal.batteryStatus = "Charging"
+      msg.thermal.bat = 0
 
     current_filter.update(msg.thermal.batteryCurrent / 1e6)
 
     # TODO: add car battery voltage check
-    max_cpu_temp = cpu_temp_filter.update(
-      max(msg.thermal.cpu0,
-          msg.thermal.cpu1,
-          msg.thermal.cpu2,
-          msg.thermal.cpu3) / 10.0)
-
-    max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
-    bat_temp = msg.thermal.bat / 1000.
+    max_cpu_temp = cpu_temp_filter.update(max(msg.thermal.cpu))
+    max_comp_temp = max(max_cpu_temp, msg.thermal.mem, max(msg.thermal.gpu))
+    bat_temp = msg.thermal.bat
 
     if handle_fan is not None:
-      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, ignition)
+      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
       msg.thermal.fanSpeed = fan_speed
 
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
     # We only do this if there is a relay that prevents the car from faulting
-    if max_cpu_temp > 107. or bat_temp >= 63. or (has_relay and (started_ts is None) and max_cpu_temp > 70.0):
+    is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
+    if max_cpu_temp > 107. or bat_temp >= 63. or (has_relay and is_offroad_for_5_min and max_cpu_temp > 70.0):
       # onroad not allowed
       thermal_status = ThermalStatus.danger
     elif max_comp_temp > 96.0 or bat_temp > 60.:
@@ -298,12 +311,8 @@ def thermald_thread():
     now = datetime.datetime.utcnow()
 
     # show invalid date/time alert
-    time_valid = now.year >= 2019
-    if time_valid and not time_valid_prev:
-      params.delete("Offroad_InvalidTime")
-    if not time_valid and time_valid_prev:
-      put_nonblocking("Offroad_InvalidTime", json.dumps(OFFROAD_ALERTS["Offroad_InvalidTime"]))
-    time_valid_prev = time_valid
+    startup_conditions["time_valid"] = now.year >= 2019
+    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
 
     # Show update prompt
     try:
@@ -314,66 +323,49 @@ def thermald_thread():
 
     update_failed_count = params.get("UpdateFailedCount")
     update_failed_count = 0 if update_failed_count is None else int(update_failed_count)
+    last_update_exception = params.get("LastUpdateException", encoding='utf8')
 
-    if dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
-      if current_connectivity_alert != "expired":
-        current_connectivity_alert = "expired"
-        params.delete("Offroad_ConnectivityNeededPrompt")
-        put_nonblocking("Offroad_ConnectivityNeeded", json.dumps(OFFROAD_ALERTS["Offroad_ConnectivityNeeded"]))
+    if update_failed_count > 15 and last_update_exception is not None:
+      if current_branch in ["release2", "dashcam"]:
+        extra_text = "Ensure the software is correctly installed"
+      else:
+        extra_text = last_update_exception
+
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
+      set_offroad_alert_if_changed("Offroad_UpdateFailed", True, extra_text=extra_text)
+    elif dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
+      set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", True)
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
       remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
-      if current_connectivity_alert != "prompt" + remaining_time:
-        current_connectivity_alert = "prompt" + remaining_time
-        alert_connectivity_prompt = copy.copy(OFFROAD_ALERTS["Offroad_ConnectivityNeededPrompt"])
-        alert_connectivity_prompt["text"] += remaining_time + " days."
-        params.delete("Offroad_ConnectivityNeeded")
-        put_nonblocking("Offroad_ConnectivityNeededPrompt", json.dumps(alert_connectivity_prompt))
-    elif current_connectivity_alert is not None:
-      current_connectivity_alert = None
-      params.delete("Offroad_ConnectivityNeeded")
-      params.delete("Offroad_ConnectivityNeededPrompt")
+      set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
+    else:
+      set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
 
-    do_uninstall = params.get("DoUninstall") == b"1"
-    accepted_terms = params.get("HasAcceptedTerms") == terms_version
+    startup_conditions["not_uninstalling"] = not params.get("DoUninstall") == b"1"
+    startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
     completed_training = params.get("CompletedTrainingVersion") == training_version
 
     panda_signature = params.get("PandaFirmware")
-    fw_version_match = (panda_signature is None) or (panda_signature == FW_SIGNATURE)   # don't show alert is no panda is connected (None)
-
-    should_start = ignition
+    startup_conditions["fw_version_match"] = (panda_signature is None) or (panda_signature == FW_SIGNATURE)   # don't show alert is no panda is connected (None)
+    set_offroad_alert_if_changed("Offroad_PandaFirmwareMismatch", (not startup_conditions["fw_version_match"]))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    should_start = should_start and msg.thermal.freeSpace > 0.02
-
-    # confirm we have completed training and aren't uninstalling
-    should_start = should_start and accepted_terms and completed_training and (not do_uninstall)
-
-    # check for firmware mismatch
-    should_start = should_start and fw_version_match
-
-    # check if system time is valid
-    should_start = should_start and time_valid
-
-    # don't start while taking snapshot
-    if not should_start_prev:
-      is_viewing_driver = params.get("IsDriverViewEnabled") == b"1"
-      is_taking_snapshot = params.get("IsTakingSnapshot") == b"1"
-      should_start = should_start and (not is_taking_snapshot) and (not is_viewing_driver)
-
-    if fw_version_match and not fw_version_match_prev:
-      params.delete("Offroad_PandaFirmwareMismatch")
-    if not fw_version_match and fw_version_match_prev:
-      put_nonblocking("Offroad_PandaFirmwareMismatch", json.dumps(OFFROAD_ALERTS["Offroad_PandaFirmwareMismatch"]))
-
+    startup_conditions["free_space"] = msg.thermal.freeSpace > 0.02
+    startup_conditions["completed_training"] = completed_training or (current_branch in ['dashcam', 'dashcam-staging'])
+    startup_conditions["not_driver_view"] = not params.get("IsDriverViewEnabled") == b"1"
+    startup_conditions["not_taking_snapshot"] = not params.get("IsTakingSnapshot") == b"1"
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
-    if thermal_status >= ThermalStatus.danger:
-      should_start = False
-      if thermal_status_prev < ThermalStatus.danger:
-        put_nonblocking("Offroad_TemperatureTooHigh", json.dumps(OFFROAD_ALERTS["Offroad_TemperatureTooHigh"]))
-    else:
-      if thermal_status_prev >= ThermalStatus.danger:
-        params.delete("Offroad_TemperatureTooHigh")
+    startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
+    set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
+    should_start = all(startup_conditions.values())
 
     if should_start:
       if not should_start_prev:
@@ -385,23 +377,30 @@ def thermald_thread():
         started_seen = True
         os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
     else:
+      if startup_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
+        cloudlog.event("Startup blocked", startup_conditions=startup_conditions)
       if should_start_prev or (count == 0):
-        put_nonblocking("IsOffroad", "1")
+        params.put("IsOffroad", "1")
 
       started_ts = None
       if off_ts is None:
         off_ts = sec_since_boot()
         os.system('echo powersave > /sys/class/devfreq/soc:qcom,cpubw/governor')
 
-      # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
-      # more than a minute but we were running
-      if msg.thermal.batteryPercent < BATT_PERC_OFF and msg.thermal.batteryStatus == "Discharging" and \
-         started_seen and (sec_since_boot() - off_ts) > 60:
-        os.system('LD_LIBRARY_PATH="" svc power shutdown')
-
     # Offroad power monitoring
     pm.calculate(health)
     msg.thermal.offroadPowerUsage = pm.get_power_used()
+    msg.thermal.carBatteryCapacity = max(0, pm.get_car_battery_capacity())
+
+    # Check if we need to disable charging (handled by boardd)
+    msg.thermal.chargingDisabled = pm.should_disable_charging(health, off_ts)
+
+    # Check if we need to shut down
+    if pm.should_shutdown(health, off_ts, started_seen, LEON):
+      cloudlog.info(f"shutting device down, offroad since {off_ts}")
+      # TODO: add function for blocking cloudlog instead of sleep
+      time.sleep(10)
+      os.system('LD_LIBRARY_PATH="" svc power shutdown')
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
@@ -410,15 +409,10 @@ def thermald_thread():
     msg.thermal.thermalStatus = thermal_status
     thermal_sock.send(msg.to_bytes())
 
-    if usb_power_prev and not usb_power:
-      put_nonblocking("Offroad_ChargeDisabled", json.dumps(OFFROAD_ALERTS["Offroad_ChargeDisabled"]))
-    elif usb_power and not usb_power_prev:
-      params.delete("Offroad_ChargeDisabled")
+    set_offroad_alert_if_changed("Offroad_ChargeDisabled", (not usb_power))
 
-    thermal_status_prev = thermal_status
-    usb_power_prev = usb_power
-    fw_version_match_prev = fw_version_match
     should_start_prev = should_start
+    startup_conditions_prev = startup_conditions.copy()
 
     # report to server once per minute
     if (count % int(60. / DT_TRML)) == 0:
