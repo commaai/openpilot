@@ -24,7 +24,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
-    ret.steerLimitTimer = 0.4
+    ret.steerLimitTimer = 0.1
     tire_stiffness_factor = 1.
 
     if candidate == CAR.SANTA_FE:
@@ -137,10 +137,10 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1490. + STD_CARGO_KG   #weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
       ret.wheelbase = 2.7
-      ret.steerRatio = 13.73   #Spec
+      ret.steerRatio = 13.73 * 1.15   #Spec
       tire_stiffness_factor = 0.385
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 10., 30.], [0., 10., 30.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.02, 0.03], [0.001, 0.0015, 0.002]]
     elif candidate in [CAR.IONIQ, CAR.IONIQ_EV_LTD]:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1490. + STD_CARGO_KG   #weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
