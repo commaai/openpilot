@@ -243,6 +243,7 @@ void ui_update(UIState *s) {
     s->status = STATUS_OFFROAD;
     s->active_app = cereal::UiLayoutState::App::HOME;
     s->scene.uilayout_sidebarcollapsed = false;
+    s->sound->stop();
   } else if (s->started && s->status == STATUS_OFFROAD) {
     s->status = STATUS_DISENGAGED;
     s->started_frame = s->sm->frame;

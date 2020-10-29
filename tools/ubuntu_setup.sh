@@ -33,7 +33,6 @@ sudo apt-get update && sudo apt-get install -y \
     libtool \
     libusb-1.0-0-dev \
     libzmq3-dev \
-    libczmq-dev \
     libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
     libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev libfreetype6-dev \
     libsystemd-dev \

@@ -113,6 +113,9 @@ function launch {
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
 
+  # write tmux scrollback to a file
+  tmux capture-pane -pq -S-1000 > /tmp/launch_log
+
   # start manager
   cd selfdrive
   ./manager.py
