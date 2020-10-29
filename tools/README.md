@@ -24,7 +24,7 @@ Table of Contents
 Requirements
 ============
 
-openpilot tools and the following setup steps are developed and tested on Ubuntu 16.04, MacOS 10.14.2 and Python 3.8.2.
+openpilot tools and the following setup steps are developed and tested on Ubuntu 20.04, MacOS 10.14.2 and Python 3.8.2.
 
 Setup
 ============
@@ -167,6 +167,6 @@ Welcomed contributions
 =============
 
 * Documentation: code comments, better tutorials, etc..
-* Support for other platforms other than Ubuntu 16.04.
+* Support for other platforms other than Ubuntu 20.04.
 * Performance improvements: the tools have been developed on high-performance workstations (12+ logical cores with 32+ GB of RAM), so they are not optimized for running efficiently. For example, `ui.py` might not be able to run real-time on most PCs.
 * More tools: anything that you think might be helpful to others.
