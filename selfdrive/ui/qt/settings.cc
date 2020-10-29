@@ -4,7 +4,7 @@
 #include <cassert>
 
 #include "qt/settings.hpp"
-#include "qt/keyboard.hpp"
+#include "qt/input_field.hpp"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -67,7 +67,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QVBoxLayout *settings_list = new QVBoxLayout();
 
-  settings_list->addWidget(new Keyboard(this));
   settings_list->addWidget(new ParamsToggle("OpenpilotEnabledToggle",
                                             "Enable Openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",

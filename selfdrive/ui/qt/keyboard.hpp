@@ -16,10 +16,13 @@ class KeyboardLayout : public QWidget{
 class Keyboard : public QWidget {
   Q_OBJECT
 
-  private:
-    QStackedLayout* main_layout;
   public:
     explicit Keyboard(QWidget *parent = 0);
+  private:
+    QStackedLayout* main_layout;
   private slots:
     void handleButton(QAbstractButton* m_button);
+  signals:
+    void emitButton(QString s);
+
 };

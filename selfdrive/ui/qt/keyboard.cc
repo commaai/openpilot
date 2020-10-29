@@ -1,8 +1,4 @@
 #include "qt/keyboard.hpp"
-
-#include <algorithm>
-#include <set>
-
 #include <QDebug>
 #include <QListWidget>
 #include <QVBoxLayout>
@@ -15,6 +11,10 @@
 #include <QCoreApplication>
 #include <QButtonGroup>
 #include <QStackedLayout>
+#include <QLayout>
+#include <QLineEdit>
+#include <QApplication>
+#include <QDesktopWidget>
 
 KeyboardLayout::KeyboardLayout(QWidget* parent, QVector<QString> layout[4]){
   QVBoxLayout* vlayout = new QVBoxLayout;
@@ -29,14 +29,13 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, QVector<QString> layout[4]){
       myButtongroup->addButton(m_button);
       hlayout->addSpacing(20);
       hlayout->addWidget(m_button);
-      qDebug()<<"Adding button "<<p;
+      // qDebug()<<"Adding button "<<p;
     }
     vlayout->addLayout(hlayout);
   }
 
   setLayout(vlayout);
 }
-
 
 Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {//Constructor
   main_layout = new QStackedLayout;
@@ -80,7 +79,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {//Constructor
     QLabel { font-size: 40px }
     QPushButton { font-size: 40px }
     * {
-      background-color: #000000;
+      background-color: #99777777;
     }
   )");
 }
@@ -100,4 +99,5 @@ void Keyboard::handleButton(QAbstractButton* m_button){
   if(!QString::compare(m_button->text(),"#+=")){
     main_layout->setCurrentIndex(3);
   }
+  emit emitButton(m_button->text());
 }
