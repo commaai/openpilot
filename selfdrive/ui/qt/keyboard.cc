@@ -27,7 +27,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, QVector<QString> layout[4]){
     for(QString p:s){
       QPushButton* m_button = new QPushButton(p);
       myButtongroup->addButton(m_button);
-      hlayout->addSpacing(20);
+      hlayout->addSpacing(10);
       hlayout->addWidget(m_button);
       // qDebug()<<"Adding button "<<p;
     }

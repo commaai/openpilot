@@ -34,8 +34,7 @@ bool InputField::eventFilter(QObject* object, QEvent* event){
   if(object == line && event->type() == QEvent::MouseButtonPress) {
     qDebug() << "click";
     k->setWindowFlags(Qt::FramelessWindowHint);
-    QRect rec = QApplication::desktop()->screenGeometry();
-    k->resize(rec.width(), k->height());
+    k->resize(2560, k->height());
     k->move(1920, 1300); //TODO: move to the correct position for TICI
 
     // k->setWindowState(Qt::WindowFullScreen);
@@ -56,15 +55,12 @@ void InputField::getText(QString s){
     emitText(line->text());
   }
 
-  QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫"};
+  QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};
   for(QString c:control_buttons){
     if(!QString::compare(s, c)){
       return;
     }
   }
-  if(s.length()==1){
-    line->insert(s);
-  }
-  qDebug() << "PACKETS ON THE WAAAAAAAAAAAAY " << s ;
+  line->insert(s.left(1));
 }
 
