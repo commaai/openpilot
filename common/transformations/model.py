@@ -65,6 +65,17 @@ bigmodel_intrinsics = np.array(
    [   0. ,  eon_focal_length / bigmodel_zoom,  256+MEDMODEL_CY],
    [   0. ,                            0. ,   1.]])
 
+# SBIG model (big model with the size of small model)
+
+SBIGMODEL_INPUT_SIZE = (512, 256)
+SBIGMODEL_YUV_SIZE = (SBIGMODEL_INPUT_SIZE[0], SBIGMODEL_INPUT_SIZE[1] * 3 // 2)
+
+sbigmodel_zoom = 2.
+sbigmodel_intrinsics = np.array(
+  [[ eon_focal_length / sbigmodel_zoom,    0. , 0.5 * SBIGMODEL_INPUT_SIZE[0]],
+   [   0. ,  eon_focal_length / sbigmodel_zoom,  0.5 * (256+MEDMODEL_CY)],
+   [   0. ,                            0. ,   1.]])
+
 model_frame_from_road_frame = np.dot(model_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
 

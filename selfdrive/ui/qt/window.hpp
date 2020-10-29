@@ -51,6 +51,8 @@ protected:
 
 private:
   QTimer * timer;
+  QTimer * backlight_timer;
+
   UIState * ui_state;
   QtSound sound;
 
@@ -62,6 +64,7 @@ private:
 
 public slots:
   void timerUpdate();
+  void backlightUpdate();
 
 signals:
   void openSettings();

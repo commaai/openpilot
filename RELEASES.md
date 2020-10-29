@@ -1,7 +1,13 @@
-Version 0.7.10 (2020-10-26)
+Version 0.7.11 (2020-XX-XX)
 ========================
+ * Kia Niro EV 2020 support thanks to nickn17!
+
+Version 0.7.10 (2020-10-29)
+========================
+ * Grey panda is deprecated, upgrade to comma two or black panda
  * NEOS update: update to Python 3.8.2 and lower CPU frequency
  * Improved thermals due to reduced CPU frequency
+ * Update SNPE to 1.41.0
  * Reduced offroad power consumption
  * Various system stability improvements
  * Acura RDX 2020 support thanks to csouers!

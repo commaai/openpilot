@@ -38,8 +38,10 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   QLabel *label = new QLabel(description);
   label->setWordWrap(true);
 
+  vlayout->addSpacing(50);
   vlayout->addWidget(checkbox);
   vlayout->addWidget(label);
+  vlayout->addSpacing(50);
   hlayout->addLayout(vlayout);
 
   setLayout(hlayout);
@@ -47,7 +49,19 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   checkbox->setChecked(Params().read_db_bool(param.toStdString().c_str()));
 
   setStyleSheet(R"(
-    QCheckBox { font-size: 70px }
+    QCheckBox { 
+      font-size: 70px;
+    }
+    QCheckBox::indicator {
+      width: 100px;
+      height: 100px;
+    }
+    QCheckBox::indicator:unchecked {
+      image: url(../assets/offroad/circled-checkmark-empty.png);
+    }
+    QCheckBox::indicator:checked {
+      image: url(../assets/offroad/circled-checkmark.png);
+    }
     QLabel { font-size: 40px }
     * {
       background-color: #114265;
@@ -63,15 +77,16 @@ void ParamsToggle::checkboxClicked(int state){
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
-  QWidget *container = new QWidget(this);
 
   QVBoxLayout *settings_list = new QVBoxLayout();
 
+                                              /*
   settings_list->addWidget(new ParamsToggle("OpenpilotEnabledToggle",
                                             "Enable Openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                             "../assets/offroad/icon_openpilot.png"
                                               ));
+                                              */
   settings_list->addWidget(new ParamsToggle("LaneChangeEnabled",
                                             "Enable Lane Change Assist",
                                             "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature.",
@@ -82,6 +97,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
                                             "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
                                             "../assets/offroad/icon_warning.png"
                                               ));
+                                              /*
   settings_list->addWidget(new ParamsToggle("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
@@ -92,6 +108,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
                                             "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
                                             "../assets/offroad/icon_openpilot_mirrored.png"
                                             ));
+                                            */
   settings_list->addWidget(new ParamsToggle("IsMetric",
                                             "Use Metric System",
                                             "Display speed in km/h instead of mp/h.",
@@ -105,35 +122,28 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   settings_list->setSpacing(25);
 
+  QWidget *container = new QWidget(this);
   container->setLayout(settings_list);
-  container->setFixedWidth(1650);
-
-  QScrollArea *scrollArea = new QScrollArea;
-  scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  scrollArea->setWidget(container);
-
-  QScrollerProperties sp;
-  sp.setScrollMetric(QScrollerProperties::DecelerationFactor, 2.0);
-
-  QScroller* qs = QScroller::scroller(scrollArea);
-  qs->setScrollerProperties(sp);
+  container->setFixedWidth(1900);
 
   QHBoxLayout *main_layout = new QHBoxLayout;
   main_layout->addSpacing(50);
-  main_layout->addWidget(scrollArea);
+  main_layout->addWidget(container);
 
-  QPushButton * button = new QPushButton("Close");
-  main_layout->addWidget(button);
+  QVBoxLayout *button_layout = new QVBoxLayout;
+  QPushButton * button = new QPushButton("X");
+  button_layout->addWidget(button);
+  button_layout->addSpacing(900);
+
+  main_layout->addLayout(button_layout);
   main_layout->addSpacing(20);
 
   setLayout(main_layout);
 
-  QScroller::grabGesture(scrollArea, QScroller::LeftMouseButtonGesture);
   QObject::connect(button, SIGNAL(clicked()), this, SIGNAL(closeSettings()));
 
   setStyleSheet(R"(
-    QPushButton { font-size: 40px }
+    QPushButton { font-size: 100px }
     * {
       color: white;
       background-color: #072339;

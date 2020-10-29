@@ -59,6 +59,10 @@ static void handle_display_state(UIState *s, bool user_input) {
     int display_mode = s->awake ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF;
     LOGW("setting display mode %d", display_mode);
     framebuffer_set_power(s->fb, display_mode);
+
+    if (s->awake) {
+      system("service call window 18 i32 1");
+    }
   }
 }
 
