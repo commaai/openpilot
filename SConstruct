@@ -17,9 +17,6 @@ AddOption('--asan',
           action='store_true',
           help='turn on ASAN')
 
-for v in (sys.version, distutils.__version__, Cython.__version__):
-  print(v)
-
 # Rebuild cython extensions if python, distutils, or cython change
 cython_dependencies = [Value(v) for v in (sys.version, distutils.__version__, Cython.__version__)]
 Export('cython_dependencies')
