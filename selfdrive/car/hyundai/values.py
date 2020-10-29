@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 # Steer torque limits
 class SteerLimitParams:
   def __init__(self, CP):
-    if CP.carFingerprint in [CAR.IONIQ_EV_2020, CAR.SONATA, CAR.PALISADE]:
+    if CP.carFingerprint in [CAR.KONA_EV_2020, CAR.IONIQ_EV_2020, CAR.SONATA, CAR.PALISADE]:
       self.STEER_MAX = 384
     else:
       self.STEER_MAX = 255
@@ -35,6 +35,7 @@ class CAR:
   KIA_STINGER = "KIA STINGER GT2 2018"
   KONA = "HYUNDAI KONA 2020"
   KONA_EV = "HYUNDAI KONA ELECTRIC 2019"
+  KONA_EV_2020 = "HYUNDAI KONA ELECTRIC 2020"
   SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"
   SONATA = "HYUNDAI SONATA 2020"
   SONATA_2019 = "HYUNDAI SONATA 2019"
@@ -131,6 +132,9 @@ FINGERPRINTS = {
   CAR.KONA_EV: [{
     127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 544: 8, 549: 8, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 8, 1151: 6, 1168: 7, 1173: 8, 1183: 8, 1186: 2, 1191: 2, 1225: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1307: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1378: 4, 1407: 8, 1419: 8, 1426: 8, 1427: 6, 1429: 8, 1430: 8, 1456: 4, 1470: 8, 1473: 8, 1507: 8, 1535: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8
   }],
+  CAR.KONA_EV_2020: [{
+    127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 544: 8, 549: 8, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 8, 1151: 6, 1168: 7, 1173: 8, 1183: 8, 1186: 2, 1191: 2, 1225: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1307: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1378: 4, 1407: 8, 1419: 8, 1426: 8, 1427: 6, 1429: 8, 1430: 8, 1456: 4, 1470: 8, 1473: 8, 1507: 8, 1535: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8, 1157: 4, 1193: 8, 1379: 8, 1988: 8, 1996: 8
+  }],  
   CAR.KIA_FORTE: [{
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1078: 4, 1107: 5, 1136: 8, 1156: 8, 1170: 8, 1173: 8, 1191: 2, 1225: 8, 1265: 4, 1280: 4, 1287: 4, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1384: 8, 1394: 8, 1407: 8, 1427: 6, 1456: 4, 1470: 8
   }],
@@ -255,6 +259,12 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00OS9 LKAS AT USA LHD 1.00 1.00 95740-J9300 g21', ],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2VE051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VE051\x00\x00DOS4T16NS3\x00\x00\x00\x00', ],
   },
+  CAR.KONA_EV_2020: {
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00OSev SCC F-CUP      1.00 1.00 99110-K4100         \xf1\xa01.00", ],
+    (Ecu.esp, 0x7d1, None): [b'\xf1\x00OS IEB \x03 210 \x02\x14 58520-K4000\xf1\xa02.10", ],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x00OS  MDPS C 1.00 1.04 56310K4050\x00 4OEDC104", ],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00OE2 LKAS AT EUR LHD 1.00 1.00 95740-K4200 200", ],
+  },
   CAR.KIA_OPTIMA: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4110         '],
     (Ecu.esp, 0x7d1, None): [b'\xf1\x00JF ESC \v 11 \x18\x030 58920-D5180',],
@@ -279,16 +289,16 @@ FEATURES = {
   # which message has the gear
   "use_cluster_gears": set([CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA]),
   "use_tcu_gears": set([CAR.KIA_OPTIMA, CAR.SONATA_2019, CAR.VELOSTER]),
-  "use_elect_gears": set([CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ]),
+  "use_elect_gears": set([CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KONA_EV_2020, CAR.IONIQ]),
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
 
-  "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_FORTE, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA]),
+  "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ, CAR.KONA_EV, CAR.KONA_EV_2020, CAR.KIA_FORTE, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA]),
 
-  "use_bsm": set([CAR.SONATA, CAR.IONIQ_EV_2020, CAR.PALISADE, CAR.HYUNDAI_GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.KONA]),
+  "use_bsm": set([CAR.SONATA, CAR.IONIQ_EV_2020, CAR.PALISADE, CAR.HYUNDAI_GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.KONA, CAR.KONA_EV_2020]),
 }
 
-EV_HYBRID = set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV])
+EV_HYBRID = set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KONA_EV_2020])
 
 
 DBC = {
@@ -308,6 +318,7 @@ DBC = {
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
+  CAR.KONA_EV_2020: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA_2019: dbc_dict('hyundai_kia_generic', None),
