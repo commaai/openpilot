@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QCheckBox>
 #include <QPushButton>
+#include <QStackedLayout>
 
 
 class ParamsToggle : public QFrame {
@@ -30,6 +31,13 @@ public:
 
 signals:
   void closeSettings();
+
+private:
+  std::map<QString, QWidget *> panels;
+  QStackedLayout *panel_layout;
+
+private slots:
+  void setActivePanel();
 };
 
 

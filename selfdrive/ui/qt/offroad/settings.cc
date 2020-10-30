@@ -7,7 +7,6 @@
 #include "settings.hpp"
 
 #include <QString>
-#include <QStackedLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -120,33 +119,56 @@ QWidget * toggles_panel() {
   return widget;
 }
 
+QWidget * device_panel() {
+
+  QVBoxLayout *device_layout = new QVBoxLayout;
+
+  std::vector<std::pair<QString, QString>> labels = {
+    {"Serial Number", "abcdefghijk"},
+    {"Dongle ID", "abcdefghijk"},
+  };
+
+  for (auto l : labels) {
+    device_layout->addWidget(new QLabel(l.first));
+  }
+
+  QWidget *widget = new QWidget;
+  widget->setLayout(device_layout);
+  return widget;
+}
+
+void SettingsWindow::setActivePanel() {
+  QPushButton* btn = qobject_cast<QPushButton*>(sender());
+  panel_layout->setCurrentWidget(panels[btn->text()]);
+}
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
-  std::vector<std::pair<QString, QWidget *>> panels = {
+  panels = {
+    {"device", device_panel()},
     {"toggles", toggles_panel()},
   };
 
   // sidebar
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
-  QStackedLayout *panes_layout = new QStackedLayout();
+  panel_layout = new QStackedLayout();
 
   // close button
   QPushButton * close_button = new QPushButton("<- back");
   sidebar_layout->addWidget(close_button);
-  QObject::connect(close_button, SIGNAL(clicked()), this, SIGNAL(closeSettings()));
+  QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   for (auto &panel : panels) {
-    sidebar_layout->addWidget(new QPushButton(panel.first));
-    panes_layout->addWidget(panel.second);
-    //QObject::connect(close_button, SIGNAL(clicked()), this, SIGNAL(closeSettings()));
+    QPushButton * btn = new QPushButton(panel.first);
+    sidebar_layout->addWidget(btn);
+    panel_layout->addWidget(panel.second);
+    QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
-
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->addLayout(sidebar_layout);
   settings_layout->addSpacing(10);
-  settings_layout->addLayout(panes_layout);
+  settings_layout->addLayout(panel_layout);
   setLayout(settings_layout);
 
   setStyleSheet(R"(
@@ -154,11 +176,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
       color: white;
       background-color: #072339;
     }
-
     QPushButton {
-      font-size: 80px;
-      border: none;
-      background-color: rgba(0, 0, 0, 0);
+      font-size: 60px;
     }
   )");
 }
