@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.mazda.values import CAR, LKAS_LIMITS, FINGERPRINTS, ECU_FINGERPRINT, Ecu
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, is_ecu_disconnected
+from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type

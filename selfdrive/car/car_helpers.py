@@ -9,7 +9,7 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 
-from cereal import car, log
+from cereal import car
 EventName = car.CarEvent.EventName
 
 

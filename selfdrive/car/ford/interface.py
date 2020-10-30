@@ -2,8 +2,8 @@
 from cereal import car
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.car.ford.values import MAX_ANGLE, Ecu, ECU_FINGERPRINT, FINGERPRINTS
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
+from selfdrive.car.ford.values import MAX_ANGLE
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
