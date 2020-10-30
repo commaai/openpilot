@@ -34,6 +34,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   QLabel *label = new QLabel(description);
   label->setWordWrap(true);
 
+  // TODO: show descriptions on tap
   //vlayout->addSpacing(50);
   vlayout->addWidget(checkbox);
   //vlayout->addWidget(label);
@@ -122,13 +123,16 @@ QWidget * device_panel() {
 
   QVBoxLayout *device_layout = new QVBoxLayout;
 
-  std::vector<std::pair<QString, QString>> labels = {
+
+  Params params = Params();
+  std::vector<std::pair<std::string, std::string>> labels = {
     {"Serial Number", "abcdefghijk"},
-    {"Dongle ID", "abcdefghijk"},
+    {"Dongle ID", params.get("DongleId", false)},
   };
 
   for (auto l : labels) {
-    device_layout->addWidget(new QLabel(l.first));
+    QString text = QString::fromStdString(l.first + ": " + l.second);
+    device_layout->addWidget(new QLabel(text));
   }
 
   QWidget *widget = new QWidget;
@@ -139,23 +143,25 @@ QWidget * device_panel() {
 QWidget * developer_panel() {
   QVBoxLayout *developer_layout = new QVBoxLayout;
 
+  // TODO: enable SSH toggle and github keys
+
   Params params = Params();
-  std::vector<std::pair<QString, QString>> labels = {
-    {"Version", QString::fromStdString(params.get("Version", false))},
-    {"Git Branch", QString::fromStdString(params.get("GitBranch", false))},
-    {"Git Commit", QString::fromStdString(params.get("GitCommit", false))},
+  std::vector<std::pair<std::string, std::string>> labels = {
+    {"Version", params.get("Version", false)},
+    {"Git Branch", params.get("GitBranch", false)},
+    {"Git Commit", params.get("GitCommit", false)},
+    {"Panda Firmware", params.get("PandaFirmwareHex", false)},
   };
 
   for (auto l : labels) {
-    developer_layout->addWidget(new QLabel(l.first + QString(": ") + l.second));
+    QString text = QString::fromStdString(l.first + ": " + l.second);
+    developer_layout->addWidget(new QLabel(text));
   }
 
   QWidget *widget = new QWidget;
   widget->setLayout(developer_layout);
   return widget;
 }
-
-
 
 void SettingsWindow::setActivePanel() {
   QPushButton* btn = qobject_cast<QPushButton*>(sender());
@@ -188,19 +194,26 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   }
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
+  settings_layout->addSpacing(20);
   settings_layout->addLayout(sidebar_layout);
-  settings_layout->addSpacing(10);
+  settings_layout->addSpacing(45);
   settings_layout->addLayout(panel_layout);
+  settings_layout->addSpacing(45);
   setLayout(settings_layout);
 
   setStyleSheet(R"(
     * {
       color: white;
-      background-color: #072339;
-      font-size: 60px;
+      font-size: 50px;
     }
     QPushButton {
+      padding-top: 35px;
+      padding-bottom: 35px;
       font-size: 60px;
+      text-align: right;
+      border: none;
+      background: none;
+      font-weight: bold;
     }
   )");
 }
