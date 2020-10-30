@@ -202,6 +202,8 @@ typedef struct UIState {
   track_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
+
+  Rect video_rect;
 } UIState;
 
 void ui_init(UIState *s);
