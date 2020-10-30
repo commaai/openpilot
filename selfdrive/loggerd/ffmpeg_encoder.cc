@@ -45,6 +45,14 @@ void FFmpegEncoder::Rotate(const std::string new_path) {
 
 bool FFmpegEncoder::Open(const std::string path) {
   assert(codec_ctx == nullptr);
+
+  // create camera lock file
+  lock_path = util::string_format("%s/%s.lock", path.c_str(), filename.c_str());
+  LOG("open %s\n", lock_path.c_str());
+  int lock_fd = open(lock_path.c_str(), O_RDWR | O_CREAT, 0777);
+  assert(lock_fd >= 0);
+  close(lock_fd);
+
   codec_ctx = avcodec_alloc_context3(codec);
   assert(codec_ctx);
   
@@ -107,6 +115,8 @@ void FFmpegEncoder::Close() {
     avcodec_close(codec_ctx);
     av_free(codec_ctx);
     codec_ctx = nullptr;
+
+    unlink(lock_path.c_str());
   }
 }
 

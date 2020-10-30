@@ -23,7 +23,7 @@ public:
   void Close();
 protected:
   int in_width, in_height, out_width, out_height, fps, bitrate, count;
-  std::string filename;
+  std::string filename, lock_path;
 
   AVCodec *codec = nullptr;
   AVCodecContext *codec_ctx = nullptr;
