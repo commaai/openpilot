@@ -141,8 +141,8 @@ QWidget * device_panel() {
                    [=]() { Params().delete_db_value("CalibrationParams"); });
 
   std::map<std::string, const char *> power_btns = {
-    {"Power Off", "poweroff"},
-    {"Reboot", "reboot"},
+    {"Power Off", "sudo poweroff"},
+    {"Reboot", "sudo reboot"},
   };
 
   for (auto b : power_btns) {
