@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 #include <cassert>
-#include <utility>
 
 #include "settings.hpp"
 
@@ -137,6 +136,27 @@ QWidget * device_panel() {
   return widget;
 }
 
+QWidget * developer_panel() {
+  QVBoxLayout *developer_layout = new QVBoxLayout;
+
+  Params params = Params();
+  std::vector<std::pair<QString, QString>> labels = {
+    {"Version", QString::fromStdString(params.get("Version", false))},
+    {"Git Branch", QString::fromStdString(params.get("GitBranch", false))},
+    {"Git Commit", QString::fromStdString(params.get("GitCommit", false))},
+  };
+
+  for (auto l : labels) {
+    developer_layout->addWidget(new QLabel(l.first + QString(": ") + l.second));
+  }
+
+  QWidget *widget = new QWidget;
+  widget->setLayout(developer_layout);
+  return widget;
+}
+
+
+
 void SettingsWindow::setActivePanel() {
   QPushButton* btn = qobject_cast<QPushButton*>(sender());
   panel_layout->setCurrentWidget(panels[btn->text()]);
@@ -146,6 +166,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   panels = {
     {"device", device_panel()},
+    {"developer", developer_panel()},
     {"toggles", toggles_panel()},
   };
 
@@ -175,6 +196,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     * {
       color: white;
       background-color: #072339;
+      font-size: 60px;
     }
     QPushButton {
       font-size: 60px;
