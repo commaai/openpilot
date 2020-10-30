@@ -131,7 +131,7 @@ class Controls:
     self.sm['dMonitoringState'].awarenessStatus = 1.
     self.sm['dMonitoringState'].faceDetected = False
 
-    self.startup_event = get_startup_event(car_recognized, controller_available)
+    self.startup_event = get_startup_event(car_recognized, controller_available, hw_type)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
@@ -237,7 +237,7 @@ class Controls:
       self.events.add(EventName.fcw)
     if self.sm['model'].frameDropPerc > 1 and not SIMULATION:
        self.events.add(EventName.modeldLagging)
-    if not self.sm.alive['frontFrame'] and not SIMULATION:
+    if not self.sm.alive['frontFrame'] and (self.sm.frame > 5 / DT_CTRL) and not SIMULATION:
        self.events.add(EventName.cameraMalfunction)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
