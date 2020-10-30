@@ -8,6 +8,7 @@
 #include <CL/cl.h>
 #endif
 
+#include <float.h>
 #include "common/mat.h"
 #include "transforms/transform.h"
 #include "transforms/loadyuv.h"
