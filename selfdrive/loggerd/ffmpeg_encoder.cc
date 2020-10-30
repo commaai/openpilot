@@ -27,7 +27,12 @@ FFmpegEncoder::FFmpegEncoder(std::string filename, AVCodecID codec_id, int bitra
   av_register_all();
   codec = avcodec_find_encoder(codec_id);
   assert(codec);
- }
+  if (in_width != out_width || in_height != out_height) {
+    y_ptr2 = std::make_unique<uint8_t[]>(out_width * out_height);
+    u_ptr2 = std::make_unique<uint8_t[]>(out_width * out_height / 4);
+    v_ptr2 = std::make_unique<uint8_t[]>(out_width * out_height / 4);
+  }
+}
 
 FFmpegEncoder::~FFmpegEncoder() {
   Close();
@@ -57,14 +62,14 @@ bool FFmpegEncoder::Open(const std::string path) {
   frame = av_frame_alloc();
   assert(frame);
   frame->format = codec_ctx->pix_fmt;
-  frame->width = in_width;
-  frame->height = in_height;
-  frame->linesize[0] = in_width;
-  frame->linesize[1] = in_width / 2;
-  frame->linesize[2] = in_width / 2;
+  frame->width = out_width;
+  frame->height = out_height;
+  frame->linesize[0] = out_width;
+  frame->linesize[1] = out_width / 2;
+  frame->linesize[2] = out_width / 2;
  
   std::string file = util::string_format("%s/%s", path.c_str(), filename.c_str());
-  avformat_alloc_output_context2(&format_ctx, NULL, NULL, file.c_str());
+  avformat_alloc_output_context2(&format_ctx, nullptr, nullptr, file.c_str());
   assert(format_ctx);
 
   stream = avformat_new_stream(format_ctx, codec);
@@ -78,7 +83,7 @@ bool FFmpegEncoder::Open(const std::string path) {
   err = avio_open(&format_ctx->pb, file.c_str(), AVIO_FLAG_WRITE);
   assert(err >= 0);
 
-  err = avformat_write_header(format_ctx, NULL);
+  err = avformat_write_header(format_ctx, nullptr);
   assert(err >= 0);
   count = 0;
   return true;
@@ -95,7 +100,7 @@ void FFmpegEncoder::Close() {
     assert(err == 0);
 
     avformat_free_context(format_ctx);
-    format_ctx = NULL;
+    format_ctx = nullptr;
 
     av_frame_free(&frame);
     frame = nullptr;
@@ -105,15 +110,9 @@ void FFmpegEncoder::Close() {
   }
 }
 
-int FFmpegEncoder::EncodeFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                                 int x_width, int x_height) {
-  
-  if (x_width != out_width) {
-    if (!y_ptr2) {
-      y_ptr2 = std::make_unique<uint8_t[]>(out_width * out_height);
-      u_ptr2 = std::make_unique<uint8_t[]>(out_width * out_height / 4);
-      v_ptr2 = std::make_unique<uint8_t[]>(out_width * out_height / 4);
-    }
+int FFmpegEncoder::EncodeFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr) {
+  if (in_width != out_width || in_height != out_height) {
+    
     libyuv::I420Scale(y_ptr, in_width,
               u_ptr, in_width / 2,
               v_ptr, in_width / 2,
@@ -131,7 +130,7 @@ int FFmpegEncoder::EncodeFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t
   frame->data[0] = (uint8_t*)y_ptr;
   frame->data[1] = (uint8_t*)u_ptr;
   frame->data[2] = (uint8_t*)v_ptr;
-  frame->pts = cnt;
+  frame->pts = count;
 
   AVPacket pkt;
   av_init_packet(&pkt);
