@@ -140,9 +140,9 @@ class Controls:
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
 
-    # TODO: need a health packet, but fast startup
-    #if hw_type in [HwType.whitePanda, HwType.greyPanda]:
-    #  self.events.add(EventName.whitePandaUnsupported, static=True)
+    hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
+    if hw_type in [HwType.whitePanda, HwType.greyPanda]:
+      self.events.add(EventName.whitePandaUnsupported, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
