@@ -62,11 +62,6 @@ def _read_param(path, parser, default=0):
     return default
 
 
-def panda_current_to_actual_current(panda_current):
-  # From white/grey panda schematic
-  return (3.3 - (panda_current * 3.3 / 4096)) / 8.25
-
-
 class PowerMonitoring:
   def __init__(self):
     self.params = Params()
@@ -135,11 +130,6 @@ class PowerMonitoring:
           # If the battery is discharging, we can use this measurement
           # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
           current_power = ((get_battery_voltage() / 1000000) * (get_battery_current() / 1000000))
-        elif (health.health.hwType in [log.HealthData.HwType.whitePanda, log.HealthData.HwType.greyPanda]) and (health.health.current > 1):
-          # If white/grey panda, use the integrated current measurements if the measurement is not 0
-          # If the measurement is 0, the current is 400mA or greater, and out of the measurement range of the panda
-          # This seems to be accurate to about 5%
-          current_power = (PANDA_OUTPUT_VOLTAGE * panda_current_to_actual_current(health.health.current))
         elif (self.next_pulsed_measurement_time is not None) and (self.next_pulsed_measurement_time <= now):
           # TODO: Figure out why this is off by a factor of 3/4???
           FUDGE_FACTOR = 1.33
