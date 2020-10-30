@@ -11,11 +11,11 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 3.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=None, has_relay=False, car_fw=None):
+  def get_params(candidate, fingerprint=None, car_fw=None):
     if fingerprint is None:
       fingerprint = gen_empty_fingerprint()
 
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
     ret.safetyModel = car.CarParams.SafetyModel.chrysler
 
@@ -52,7 +52,7 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera)
     print("ECU Camera Simulated: {0}".format(ret.enableCamera))
 
     return ret

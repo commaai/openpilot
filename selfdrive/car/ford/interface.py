@@ -14,8 +14,8 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 3.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "ford"
     ret.safetyModel = car.CarParams.SafetyModel.ford
     ret.dashcamOnly = True
@@ -43,7 +43,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
+    ret.enableCamera = True
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
 
     return ret
